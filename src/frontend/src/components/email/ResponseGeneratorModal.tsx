@@ -241,7 +241,7 @@ export function ResponseGeneratorModal({
                     type="button"
                     onClick={() => void generateResponse()}
                     disabled={isGenerating}
-                    className="shrink-0 text-xs font-semibold text-text underline underline-offset-2 disabled:opacity-50"
+                    className="shrink-0 text-sm font-semibold text-text underline underline-offset-2 disabled:opacity-50"
                   >
                     Réessayer
                   </button>

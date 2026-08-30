@@ -144,7 +144,7 @@ function ToolCallBlock({
     <div className="mx-3 my-1.5 rounded-md border border-border bg-surface-2">
       <button
         onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-text-muted transition hover:bg-surface-elevated"
+        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-text-muted transition hover:bg-surface-elevated"
       >
         <Wrench size={12} className="flex-shrink-0 text-agent-amber/70" />
         <span className="flex-1 truncate font-medium">{toolName}</span>
@@ -543,7 +543,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
             </p>
             <div className="mt-3 flex justify-end gap-2">
               <button type="button" onClick={() => setPendingInstruction(null)} className="rounded-md border border-border px-3 py-1.5 font-medium text-text-muted">Retour</button>
-              <button type="button" onClick={confirmSend} className="rounded-md bg-success px-3 py-1.5 font-semibold text-white">Confirmer l&apos;appel</button>
+              <button type="button" onClick={confirmSend} className="rounded-md bg-success px-3 py-1.5 font-semibold text-ink-on-fill">Confirmer l&apos;appel</button>
             </div>
           </div>
         </div>

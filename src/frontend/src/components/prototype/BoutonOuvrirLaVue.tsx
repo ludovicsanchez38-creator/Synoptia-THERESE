@@ -36,7 +36,7 @@ export function BoutonOuvrirLaVue({
       aria-label={`Ouvrir ${nom}`}
       className={
         className ??
-        'rounded-sm border border-border px-2.5 py-1.5 text-xs font-semibold text-text hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
+        'rounded-sm border border-border px-2.5 py-1.5 text-sm font-semibold text-text hover:bg-surface-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent'
       }
     >
       Ouvrir {nom}

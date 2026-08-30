@@ -222,7 +222,7 @@ export function TodayDashboardCard({
               <button
                 type="button"
                 onClick={onRetry}
-                className="inline-flex items-center gap-1.5 rounded-md border border-accent-fill bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink"
+                className="inline-flex items-center gap-1.5 rounded-md border border-accent-fill bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
                 Réessayer
@@ -306,7 +306,7 @@ export function TodayDashboardCard({
                  suite d'une liste qu'on a déjà sous les yeux. Elle se déroule
                  ici. */
               onClick={() => setToutAfficher(true)}
-              className="w-full px-4 py-3 text-center text-xs font-semibold text-accent hover:bg-surface-2"
+              className="w-full px-4 py-3 text-center text-sm font-semibold text-accent hover:bg-surface-2"
             >
               {libelleDuRepli(replies.length, retardsReplies)}
             </button>

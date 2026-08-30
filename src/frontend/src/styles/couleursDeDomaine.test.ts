@@ -41,7 +41,10 @@ function contraste(a: string, b: string): number {
   return (h + 0.05) / (l + 0.05);
 }
 function bloc(marqueur: string): Record<string, string> {
-  const debut = CSS.indexOf(marqueur);
+  // Ancré en début de ligne : cf. le même défaut corrigé dans a11y.test.tsx.
+  const ancre = new RegExp(`^${marqueur.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{`, 'm');
+  const trouve = ancre.exec(CSS);
+  const debut = trouve ? trouve.index : -1;
   const ouvre = CSS.indexOf('{', debut);
   let profondeur = 0;
   let fin = ouvre;
@@ -60,6 +63,15 @@ function bloc(marqueur: string): Record<string, string> {
 }
 
 const CLAIR = bloc('@theme');
+const SOMBRE = { ...CLAIR, ...bloc('[data-theme="dark"]') };
+
+// Tous les remplissages sur lesquels on pose du texte. En clair ils sont
+// sombres, en sombre ils sont clairs : l'encre doit donc suivre le thème.
+const REMPLISSAGES = [
+  'accent', 'success', 'warning', 'error', 'info',
+  'agent-cyan', 'agent-blue', 'agent-green', 'agent-purple', 'agent-amber', 'agent-magenta',
+  'domaine-agenda', 'domaine-taches', 'domaine-factures', 'domaine-prospects',
+] as const;
 const DOMAINES = ['agenda', 'taches', 'factures', 'prospects'] as const;
 
 describe('lot 5 : plus une seule couleur brute', () => {
@@ -88,32 +100,41 @@ describe('lot 5 : plus une seule couleur brute', () => {
     const porteurs = SOURCES.filter((f) => /domaine-(agenda|taches|factures|prospects)/.test(readFileSync(f, 'utf-8')));
     expect(porteurs.length, 'aucun composant ne porte les couleurs de domaine').toBeGreaterThanOrEqual(1);
   });
-  it("le blanc ne se pose que sur des fonds qui le supportent", () => {
-    // Trouvé après les cinq lots : les pilules encre avaient été balayées,
-    // pas les autres boutons primaires. Du blanc sur bg-accent-cyan donne
-    // 1,81:1, sur bg-green-600 3,30:1, sur bg-purple-500 3,96:1.
-    // Seuls les remplissages dont l'encre déclarée est blanche, plus les
-    // jetons d'agent et de domaine (tous >= 5:1 en blanc), sont admis.
-    const FONDS_ADMIS =
-      /bg-(success|warning|error|info)(-fill)?\b|bg-(agent|domaine)-[a-z]+\b|bg-(text-muted|accent)\b/;
+  it.each(['clair', 'sombre'])("l'encre sur remplissage passe AA en thème %s", (theme) => {
+    // Trouvé par la revue adverse le 30/08/2026 : je n'avais mesuré que le
+    // thème clair. En sombre, les mêmes jetons sont des couleurs CLAIRES, et
+    // le blanc y tombe entre 1,67:1 et 3,31:1 sur chacun d'eux.
+    const jetons = theme === 'clair' ? CLAIR : SOMBRE;
+    const encre = jetons['ink-on-fill'];
+    expect(encre, `--color-ink-on-fill absent du thème ${theme}`).toBeTruthy();
+    for (const nom of REMPLISSAGES) {
+      const fond = jetons[nom];
+      if (!fond) continue;
+      expect(contraste(encre, fond), `ink-on-fill sur ${nom} (${theme})`).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
+  it("aucune encre figée dans les composants", () => {
+    // Interdiction ferme, pas une detection a la ligne. La revue adverse du
+    // 30/08/2026 a montre qu'une regle « text-white sur la meme ligne qu'un
+    // bg-* » ne voit rien : dans PipelineView le fond vient d'une constante,
+    // dans BoardPanel d'un tableau de classes multiligne, et une icone blanche
+    // vit dans un enfant du bloc colore. Onze defauts avaient survecu.
+    //
+    // text-white, text-bg et text-background sont des valeurs de theme figees.
+    // Sur un remplissage d'accent, de domaine ou d'agent, l'une des deux
+    // versions du theme est forcement illisible : en clair ces remplissages
+    // sont sombres, en sombre ils sont clairs. C'est --color-ink-on-fill qui
+    // repond, ou text-accent-ink sur le cyan, constant dans les deux themes.
     const fautifs: string[] = [];
     for (const f of SOURCES) {
       readFileSync(f, 'utf-8')
         .split('\n')
         .forEach((ligne, i) => {
-          if (!/\btext-white\b/.test(ligne)) return;
-          const fonds = [...ligne.matchAll(/\bbg-\[?[#\w/.-]+\]?/g)].map((m) => m[0]);
-          if (fonds.length === 0) return; // icône blanche sur un fond porté ailleurs
-          // Une ligne peut porter plusieurs éléments : on ne peut pas
-          // attribuer le text-white à l'un d'eux. La règle est donc « au
-          // moins un fond capable de porter du blanc », plus faible mais
-          // sans faux positif. Elle attrape le cas réel : une ligne dont le
-          // seul fond est bg-accent-cyan, bg-green-600 ou bg-purple-500.
-          if (fonds.some((b) => FONDS_ADMIS.test(b))) return;
-          fautifs.push(`${court(f)}:${i + 1} → ${fonds.join(' ')}`);
+          if (/\btext-(white|bg|background)\b/.test(ligne)) fautifs.push(`${court(f)}:${i + 1}`);
         });
     }
-    expect(fautifs, fautifs.slice(0, 4).join(' | ')).toEqual([]);
+    expect(fautifs, `${fautifs.length} encres figées : ${fautifs.slice(0, 5).join(', ')}`).toEqual([]);
   });
 
   it("les couleurs de domaine ne sont pas nommées par un numéro", () => {

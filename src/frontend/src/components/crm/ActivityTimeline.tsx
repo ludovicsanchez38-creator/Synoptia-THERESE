@@ -28,7 +28,7 @@ const ACTIVITY_COLORS = {
   meeting: 'text-agent-purple',
   note: 'text-warning',
   stage_change: 'text-agent-cyan',
-  score_change: 'text-magenta-400',
+  score_change: 'text-agent-magenta',
 };
 
 export function ActivityTimeline({ contactId }: ActivityTimelineProps) {

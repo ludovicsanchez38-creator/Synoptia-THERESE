@@ -154,7 +154,7 @@ export function PistesPanel({ pistes, onExplore, onIgnore }: PistesPanelProps) {
             <button
               type="button"
               onClick={() => setShowTraitees((v) => !v)}
-              className="w-full flex items-center gap-1.5 px-3 py-2 text-xs text-text-muted hover:text-text transition-colors"
+              className="w-full flex items-center gap-1.5 px-3 py-2 text-sm text-text-muted hover:text-text transition-colors"
               aria-expanded={showTraitees}
             >
               {showTraitees ? <ChevronDown className="w-3.5 h-3.5" /> : <ChevronRight className="w-3.5 h-3.5" />}

@@ -156,7 +156,7 @@ export function SessionList() {
             <button
               onClick={openNewTask}
               disabled={!openclawConnected || runningCount >= maxAgents}
-              className="rounded-md bg-purple-500/10 px-3 py-1.5 text-xs font-medium text-agent-purple transition hover:bg-purple-500/20 disabled:opacity-30 disabled:cursor-not-allowed"
+              className="rounded-md bg-purple-500/10 px-3 py-1.5 text-sm font-medium text-agent-purple transition hover:bg-purple-500/20 disabled:opacity-30 disabled:cursor-not-allowed"
               title={runningCount >= maxAgents ? `${maxAgents} agents max` : undefined}
             >
               {runningCount >= maxAgents ? `${maxAgents} agents max` : "Lancer une tache"}

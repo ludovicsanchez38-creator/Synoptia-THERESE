@@ -269,7 +269,7 @@ function TaskProgress({
           <button
             onClick={onCancel}
             className={cn(
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs',
+              'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm',
               'bg-error/10 text-error hover:bg-error/20',
               'transition-colors',
             )}

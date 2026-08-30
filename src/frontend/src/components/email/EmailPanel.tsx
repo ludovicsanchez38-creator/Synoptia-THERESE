@@ -270,7 +270,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                 <div className="relative">
                   <button
                     onClick={() => setShowAccountMenu(!showAccountMenu)}
-                    className="flex items-center gap-1 text-xs text-text-muted hover:text-accent-cyan-ink transition-colors"
+                    className="flex items-center gap-1 text-sm text-text-muted hover:text-accent-cyan-ink transition-colors"
                   >
                     {currentAccount?.email || 'Sélectionner'}
                     <ChevronDown className="w-3 h-3" />
@@ -526,7 +526,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                 <div className="relative">
                   <button
                     onClick={() => setShowAccountMenu(!showAccountMenu)}
-                    className="flex items-center gap-1 text-xs text-text-muted hover:text-accent-cyan-ink transition-colors"
+                    className="flex items-center gap-1 text-sm text-text-muted hover:text-accent-cyan-ink transition-colors"
                   >
                     {currentAccount?.email || 'Sélectionner'}
                     <ChevronDown className="w-3 h-3" />

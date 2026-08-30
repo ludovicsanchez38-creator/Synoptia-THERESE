@@ -478,7 +478,7 @@ function ModelSelector({
         {selectedProvider !== 'ollama' && (
           <button
             onClick={() => setShowCustomInput(!showCustomInput)}
-            className="flex items-center gap-1 text-xs text-accent-cyan-ink hover:text-accent-cyan-ink transition-colors"
+            className="flex items-center gap-1 text-sm text-accent-cyan-ink hover:underline transition-colors"
             title="Utiliser un identifiant de modèle personnalisé"
           >
             <Plus className="w-3 h-3" />

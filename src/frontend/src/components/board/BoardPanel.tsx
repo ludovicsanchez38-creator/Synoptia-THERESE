@@ -613,8 +613,8 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                         disabled={question.trim().length < 10}
                         data-testid="board-submit-btn"
                         className={cn(
-                          'w-full py-3 px-6 rounded-md font-semibold text-white',
-                          'bg-accent-cyan hover:bg-accent-cyan/90',
+                          'w-full py-3 px-6 rounded-md font-semibold text-accent-ink',
+                          'bg-accent-fill hover:opacity-90',
                           'hover:scale-[1.02] active:scale-[0.98] transition-all duration-200',
                           'shadow-[0_4px_20px_rgba(34,211,238,0.3)]',
                           'hover:shadow-[0_6px_24px_rgba(34,211,238,0.35)]',

@@ -45,6 +45,12 @@
   --color-accent-fill: #22D3EE;
   --color-accent-ink: #06121F;
   --color-accent-tint: #DEF4F9;
+
+  /* Encre à poser SUR un remplissage d'accent, de domaine ou d'agent.
+     En clair ces remplissages sont sombres, en sombre ils sont clairs :
+     un blanc écrit en dur marche donc dans un thème et échoue dans l'autre
+     (1,67:1 à 3,31:1 en sombre). Pire écart avec ce jeton : 4,92:1. */
+  --color-ink-on-fill: #FFFFFF;
   /* 3,46:1 sur le fond clair, au-dessus du seuil UI de 3:1.
      Le cyan de marque n'y arrive pas (1,67:1) : un anneau
      invisible rend la navigation au clavier impraticable. */
@@ -141,6 +147,7 @@
   /* Sur fond sombre le cyan de marque est lisible tel quel (10,29:1).
      Le magenta non : 3,85:1 sur la surface, sous AA. */
   --color-accent-cyan-ink: #22D3EE;
+  --color-ink-on-fill: #06121F;
   --color-accent-magenta-ink: #F0509F;
   --color-bg: #0B1226;
   --color-surface: #131B35;
@@ -236,12 +243,12 @@ body {
   background-color: var(--color-bg);
   color: var(--color-text);
   overflow: hidden;
-  border-radius: 12px;
+  border-radius: var(--radius-md);
 }
 
 #root {
   background-color: var(--color-bg);
-  border-radius: 12px;
+  border-radius: var(--radius-md);
   overflow: hidden;
   height: 100vh;
 }
@@ -484,6 +491,14 @@ html[data-reduce-motion="true"] *::after {
    ============================================================ */
 [data-high-contrast="true"] {
   --color-accent-cyan-ink: #00FFFF;
+  --color-ink-on-fill: #000000;
+
+  /* Domaines en contraste élevé : les valeurs du thème clair tiennent AA
+     (4,70 à 6,23) mais pas le 7:1 AAA que ce bloc promet. */
+  --color-domaine-agenda: #164E63;
+  --color-domaine-taches: #7C2D12;
+  --color-domaine-factures: #831843;
+  --color-domaine-prospects: #4C1D95;
   --color-accent-magenta-ink: #FF00FF;
   --color-bg: #000000;
   --color-surface: #0A0A0A;

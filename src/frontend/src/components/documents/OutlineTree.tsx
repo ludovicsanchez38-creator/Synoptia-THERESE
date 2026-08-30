@@ -168,7 +168,7 @@ export function OutlineTree({
             <button
               type="button"
               onClick={() => setNewDepth(0)}
-              className={`px-2 py-1 text-xs rounded-sm border transition-colors ${
+              className={`px-2 py-1 text-sm rounded-sm border transition-colors ${
                 newDepth === 0
                   ? 'border-accent-cyan text-accent-cyan-ink bg-accent-cyan/10'
                   : 'border-border/40 text-text-muted'
@@ -179,7 +179,7 @@ export function OutlineTree({
             <button
               type="button"
               onClick={() => setNewDepth(1)}
-              className={`px-2 py-1 text-xs rounded-sm border transition-colors ${
+              className={`px-2 py-1 text-sm rounded-sm border transition-colors ${
                 newDepth === 1
                   ? 'border-accent-cyan text-accent-cyan-ink bg-accent-cyan/10'
                   : 'border-border/40 text-text-muted'

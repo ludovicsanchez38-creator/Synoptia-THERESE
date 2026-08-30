@@ -186,7 +186,7 @@ export function EntitySuggestion({
           </p>
           <button
             onClick={onDismiss}
-            className="text-xs text-text-muted/60 hover:text-text-muted transition-colors"
+            className="text-sm text-text-muted/60 hover:text-text-muted transition-colors"
           >
             Tout ignorer
           </button>

@@ -169,7 +169,7 @@ export function VerifyStep({ clientId, clientSecret, onBack, onSuccess }: Verify
           {authUrl && (
             <button
               onClick={openAuthUrlManually}
-              className="inline-flex items-center gap-2 text-xs text-accent-cyan-ink hover:text-accent-cyan-ink transition-colors mt-2"
+              className="inline-flex items-center gap-2 text-sm text-accent-cyan-ink hover:underline transition-colors mt-2"
             >
               <ExternalLink className="w-3 h-3" />
               Rouvrir la page d'autorisation Google

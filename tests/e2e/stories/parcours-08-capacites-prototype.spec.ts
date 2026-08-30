@@ -185,7 +185,7 @@ test.describe('Prototype conversationnel - parcours unifiés des capacités', ()
     await expect(page.getByTestId('settings-modal')).toHaveAttribute('data-requested-tab', 'advanced');
     await expect(page.getByTestId('settings-modal')).toHaveAttribute('data-active-tab', 'advanced');
     await expect(page.getByTestId('settings-tab-advanced')).toBeVisible();
-    await expect(page.getByTestId('settings-tab-advanced')).toHaveClass(/text-accent-cyan/);
+    await expect(page.getByTestId('settings-tab-advanced')).toHaveClass(/text-accent\b/);
     await expect(page.getByText('Comportement au lancement', { exact: true })).toBeVisible();
     await expect(page.getByTestId('ux-mode-toggle')).toBeVisible();
     const url = new URL(page.url());

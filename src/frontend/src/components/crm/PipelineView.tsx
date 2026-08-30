@@ -157,7 +157,7 @@ function DroppableStage({ stage, count, children }: DroppableStageProps) {
   return (
     <div ref={setNodeRef} className="flex-shrink-0 w-72">
       {/* Header colonne */}
-      <div className={`${stage.color} text-white rounded-t-md px-4 py-3`}>
+      <div className={`${stage.color} text-ink-on-fill rounded-t-md px-4 py-3`}>
         <div className="flex items-center justify-between">
           <h3 className="font-semibold">{stage.label}</h3>
           <span className="text-sm opacity-80">{count}</span>

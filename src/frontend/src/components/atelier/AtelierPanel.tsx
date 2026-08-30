@@ -241,7 +241,7 @@ export function AtelierPanel() {
                 </p>
                 <div className="mt-3 flex justify-end gap-2">
                   <button type="button" onClick={() => setPendingMessage(null)} className="rounded-md border border-border px-3 py-1.5 font-medium text-text-muted">Retour</button>
-                  <button type="button" onClick={() => { const message = pendingMessage; setPendingMessage(null); void runMission(message); }} className="rounded-md bg-success px-3 py-1.5 font-semibold text-white">Confirmer et lancer</button>
+                  <button type="button" onClick={() => { const message = pendingMessage; setPendingMessage(null); void runMission(message); }} className="rounded-md bg-success px-3 py-1.5 font-semibold text-ink-on-fill">Confirmer et lancer</button>
                 </div>
               </div>
             )}
@@ -308,7 +308,7 @@ function NavButton({
   return (
     <button
       onClick={onClick}
-      className={`relative flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition ${
+      className={`relative flex items-center gap-1 rounded-md px-2 py-1 text-sm font-medium transition ${
         active
           ? "bg-purple-500/20 text-agent-purple"
           : "text-text-muted hover:bg-surface-2 hover:text-text-muted"

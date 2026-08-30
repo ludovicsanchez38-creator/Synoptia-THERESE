@@ -41,7 +41,16 @@ import { resolve } from 'node:path';
 const CSS = readFileSync(resolve(process.cwd(), 'src/styles/globals.css'), 'utf-8');
 
 function extractBlock(startMarker: string): string {
-  const start = CSS.indexOf(startMarker);
+  // Ancré en début de ligne. Avec un simple indexOf, « [data-theme="dark"] »
+  // tombait sur sa MENTION en commentaire à la ligne 6, puis prenait
+  // l'accolade suivante, celle de @theme : tous les tests « thème sombre »
+  // mesuraient en réalité la palette claire. Défaut trouvé le 30/08/2026.
+  const ancre = new RegExp(
+    `^${startMarker.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{`,
+    'm',
+  );
+  const trouve = ancre.exec(CSS);
+  const start = trouve ? trouve.index : -1;
   if (start === -1) throw new Error(`Bloc introuvable dans globals.css : ${startMarker}`);
   const open = CSS.indexOf('{', start);
   let depth = 1;

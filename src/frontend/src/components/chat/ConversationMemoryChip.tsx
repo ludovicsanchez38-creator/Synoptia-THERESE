@@ -46,7 +46,7 @@ export function ConversationMemoryChip() {
       <button
         type="button"
         onClick={() => useNavigationStore.getState().setView('memory')}
-        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm text-xs text-text-muted hover:text-accent-cyan-ink bg-surface/40 hover:bg-surface/70 border border-border/40 transition-colors"
+        className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-sm text-sm text-text-muted hover:text-accent-cyan-ink bg-surface/40 hover:bg-surface/70 border border-border/40 transition-colors"
         title="Voir dans la Mémoire"
       >
         <Users className="w-3.5 h-3.5" />

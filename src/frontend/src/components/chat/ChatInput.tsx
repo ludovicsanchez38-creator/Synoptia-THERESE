@@ -1086,7 +1086,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           <button
             type="button"
             onClick={() => openSettings('ai')}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-text bg-surface px-3 py-2 text-xs font-semibold text-text"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-text bg-surface px-3 py-2 text-sm font-semibold text-text"
           >
             <Settings className="h-3.5 w-3.5" />
             Ouvrir les réglages IA
@@ -1163,7 +1163,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
                 <button
                   type="button"
                   onClick={() => void indexAttachment(file.path)}
-                  className="min-h-11 rounded-sm px-2 text-xs font-semibold text-error hover:bg-[var(--color-error-tint)]"
+                  className="min-h-11 rounded-sm px-2 text-sm font-semibold text-error hover:bg-[var(--color-error-tint)]"
                   aria-label={`Réessayer l’indexation de ${file.name}`}
                 >
                   Réessayer

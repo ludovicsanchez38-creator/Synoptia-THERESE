@@ -1462,7 +1462,7 @@ export function ConversationCanvasPrototype() {
                 setCapabilityCenterOpen(false);
                 setCommandOpen(false);
               }}
-              className="mr-1 hidden items-center gap-1.5 rounded-full border border-accent-cyan/30 bg-accent-tint px-2.5 py-1.5 text-xs font-semibold text-accent hover:border-accent/40 sm:flex"
+              className="mr-1 hidden items-center gap-1.5 rounded-full border border-accent-cyan/30 bg-accent-tint px-2.5 py-1.5 text-sm font-semibold text-accent hover:border-accent/40 sm:flex"
             >
               <ShieldCheck className="h-3.5 w-3.5 text-accent" />
               Contrôle des données
@@ -1474,7 +1474,7 @@ export function ConversationCanvasPrototype() {
                 setCapabilityCenterOpen(false);
                 setTrustCenterOpen(false);
               }}
-              className="hidden items-center gap-2 rounded-md border border-border bg-surface px-2.5 py-1.5 text-xs text-text-muted hover:bg-surface-2 md:flex"
+              className="hidden items-center gap-2 rounded-md border border-border bg-surface px-2.5 py-1.5 text-sm text-text-muted hover:bg-surface-2 md:flex"
             >
               <Search className="h-3.5 w-3.5" />
               Rechercher
@@ -1534,7 +1534,7 @@ export function ConversationCanvasPrototype() {
                       : 'Ouvrir le profil'
                 }
                 title={profileState === 'loading' ? 'Chargement du profil…' : 'Ouvrir le profil'}
-                className="grid h-11 w-11 place-items-center rounded-full border border-accent-fill bg-accent-fill text-xs font-bold text-accent-ink shadow-[var(--shadow-card)] disabled:opacity-70"
+                className="grid h-11 w-11 place-items-center rounded-full border border-accent-fill bg-accent-fill text-sm font-bold text-accent-ink shadow-[var(--shadow-card)] disabled:opacity-70"
               >
                 {profileState === 'loading' ? (
                   <Spinner taille="bouton" />
@@ -1788,7 +1788,7 @@ export function ConversationCanvasPrototype() {
                           type="button"
                           onClick={() => chooseScenario(action.id)}
                           aria-pressed={scenario === action.id}
-                          /* text-sm et non text-xs : ce sont les cinq gestes
+                          /* text-sm et non text-sm : ce sont les cinq gestes
                              principaux de l'accueil, ils avaient la taille de
                              « Connecté » et des mentions du bas de page. Une
                              action ne se lit pas comme une métadonnée. */

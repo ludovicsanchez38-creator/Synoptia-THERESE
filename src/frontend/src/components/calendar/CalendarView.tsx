@@ -238,7 +238,7 @@ function MonthView({
                   <button
                     key={event.id}
                     onClick={() => onEventClick(event.id)}
-                    className="w-full text-left px-2 py-1 bg-accent-cyan/10 hover:bg-accent-cyan/20 rounded-sm text-xs text-text truncate transition-colors"
+                    className="w-full text-left px-2 py-1 bg-accent-cyan/10 hover:bg-accent-cyan/20 rounded-sm text-sm text-text truncate transition-colors"
                   >
                     {event.summary}
                   </button>
@@ -418,7 +418,7 @@ function WeekView({
                   <button
                     key={event.id}
                     onClick={() => onEventClick(event.id)}
-                    className="w-full text-left px-2 py-0.5 bg-accent-magenta/20 hover:bg-accent-magenta/30 rounded-sm text-xs text-text truncate transition-colors mb-0.5"
+                    className="w-full text-left px-2 py-0.5 bg-accent-magenta/20 hover:bg-accent-magenta/30 rounded-sm text-sm text-text truncate transition-colors mb-0.5"
                   >
                     {event.summary}
                   </button>

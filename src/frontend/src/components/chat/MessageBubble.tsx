@@ -128,7 +128,7 @@ function CodeBlock({
         <span className="text-xs text-text-muted font-mono">{language}</span>
         <button
           onClick={copyCode}
-          className="flex items-center gap-1 text-xs text-text-muted hover:text-white transition-colors"
+          className="flex items-center gap-1 text-sm text-text-muted hover:text-text transition-colors"
         >
           {copied ? (
             <>
@@ -575,7 +575,7 @@ export const MessageBubble = memo(function MessageBubble({
                 onClick={() => handleSkillFileDownload(file)}
                 disabled={skillDownloading}
                 className={cn(
-                  'flex-1 px-2.5 py-1.5 rounded-md text-xs font-medium text-text',
+                  'flex-1 px-2.5 py-1.5 rounded-md text-sm font-medium text-text',
                   'bg-surface-2 border border-border hover:border-accent-cyan/50 transition-all',
                   skillDownloading && 'opacity-60 cursor-wait'
                 )}
@@ -587,7 +587,7 @@ export const MessageBubble = memo(function MessageBubble({
                 <button
                   type="button"
                   onClick={() => handleRevealInFolder(file.local_dir!)}
-                  className="flex-1 px-2.5 py-1.5 rounded-md text-xs font-medium text-text bg-surface-2 border border-border hover:border-accent-cyan/50 transition-all"
+                  className="flex-1 px-2.5 py-1.5 rounded-md text-sm font-medium text-text bg-surface-2 border border-border hover:border-accent-cyan/50 transition-all"
                   title={file.local_dir}
                 >
                   Afficher dans le dossier

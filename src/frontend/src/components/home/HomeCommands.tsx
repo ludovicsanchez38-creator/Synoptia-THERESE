@@ -296,7 +296,7 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
                               e.stopPropagation();
                               handleDeleteCommand(cmd.id);
                             }}
-                            className="px-2 py-0.5 rounded-sm text-xs font-medium bg-error/20 text-error hover:bg-error/30 transition-colors"
+                            className="px-2 py-0.5 rounded-sm text-sm font-medium bg-error/20 text-error hover:bg-error/30 transition-colors"
                           >
                             Confirmer
                           </button>
@@ -305,7 +305,7 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
                               e.stopPropagation();
                               setConfirmDeleteId(null);
                             }}
-                            className="px-2 py-0.5 rounded-sm text-xs font-medium text-text-muted hover:text-text transition-colors"
+                            className="px-2 py-0.5 rounded-sm text-sm font-medium text-text-muted hover:text-text transition-colors"
                           >
                             Annuler
                           </button>
@@ -339,7 +339,7 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
                   'px-4 py-2 rounded-full text-sm font-medium',
                   'bg-surface-elevated border border-dashed border-accent-cyan/30',
                   'hover:border-accent-cyan/50 hover:bg-accent-cyan/10',
-                  'text-accent-cyan-ink hover:text-accent-cyan-ink',
+                  'text-accent-cyan-ink hover:underline',
                   'transition-all duration-150',
                   'flex items-center gap-2'
                 )}

@@ -112,7 +112,7 @@ export function NewTaskDialog() {
         <div className="flex items-center justify-end gap-2 border-t border-border px-5 py-3">
           <button
             onClick={closeNewTask}
-            className="rounded-md px-3 py-1.5 text-xs font-medium text-text-muted transition hover:bg-surface-2"
+            className="rounded-md px-3 py-1.5 text-sm font-medium text-text-muted transition hover:bg-surface-2"
             disabled={isDispatching}
           >
             Annuler
@@ -120,7 +120,7 @@ export function NewTaskDialog() {
           <button
             onClick={handleSubmit}
             disabled={!instruction.trim() || isDispatching || !openclawConnected || isMaxReached}
-            className="flex items-center gap-1.5 rounded-md bg-purple-500/20 px-4 py-1.5 text-xs font-medium text-agent-purple transition hover:bg-purple-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 rounded-md bg-purple-500/20 px-4 py-1.5 text-sm font-medium text-agent-purple transition hover:bg-purple-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isDispatching ? (
               <>

@@ -166,9 +166,9 @@ export function ImageGenerationPanel({
                   initial={{ opacity: 0, scale: 0 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0 }}
-                  className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-green-500 flex items-center justify-center"
+                  className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-success flex items-center justify-center"
                 >
-                  <Check className="w-3.5 h-3.5 text-white" />
+                  <Check className="w-3.5 h-3.5 text-ink-on-fill" />
                 </motion.div>
               )}
               {status === 'error' && (
@@ -179,7 +179,7 @@ export function ImageGenerationPanel({
                   exit={{ opacity: 0, scale: 0 }}
                   className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-error flex items-center justify-center"
                 >
-                  <X className="w-3.5 h-3.5 text-white" />
+                  <X className="w-3.5 h-3.5 text-ink-on-fill" />
                 </motion.div>
               )}
             </AnimatePresence>
@@ -316,8 +316,8 @@ export function ImageGenerationPanel({
               className={cn(
                 'flex-1 flex items-center justify-center gap-2',
                 'px-4 py-3 rounded-md font-medium',
-                'bg-accent-cyan hover:bg-accent-cyan/90',
-                'text-bg shadow-lg shadow-accent-cyan/20',
+                'bg-accent-fill hover:opacity-90',
+                'text-accent-ink shadow-lg shadow-accent-cyan/20',
                 'hover:shadow-accent-cyan/30 transition-all'
               )}
             >
@@ -338,7 +338,7 @@ export function ImageGenerationPanel({
                 'px-4 py-3 rounded-md font-medium',
                 onUse
                   ? 'bg-surface border border-border text-text hover:bg-surface-elevated transition-colors'
-                  : 'bg-accent-cyan hover:bg-accent-cyan/90 text-bg shadow-lg shadow-accent-cyan/20 hover:shadow-accent-cyan/30 transition-all'
+                  : 'bg-accent-fill hover:bg-accent-fill/90 text-accent-ink shadow-lg shadow-accent-cyan/20 hover:shadow-accent-cyan/30 transition-all'
               )}
             >
               <Download className="w-4 h-4" />

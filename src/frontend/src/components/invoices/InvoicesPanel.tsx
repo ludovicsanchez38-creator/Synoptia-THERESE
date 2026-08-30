@@ -177,7 +177,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
           onClick={handleCreateNew}
           className={cn(
             'px-4 py-2 rounded-md',
-            'bg-accent-cyan text-bg font-medium',
+            'bg-accent-fill text-accent-ink font-medium',
             'hover:bg-accent-cyan/90 transition-colors',
             'flex items-center gap-2'
           )}
@@ -235,7 +235,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
             className={cn(
               'px-3 py-1 rounded-md text-sm transition-colors',
               filters.status === status
-                ? 'bg-accent-cyan text-bg font-medium'
+                ? 'bg-accent-fill text-accent-ink font-medium'
                 : 'bg-surface-elevated text-text-muted hover:bg-surface-elevated/70'
             )}
           >
@@ -260,7 +260,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
           <button
             type="button"
             onClick={handleCreateNew}
-            className="px-4 py-2 rounded-md bg-accent-cyan text-bg hover:bg-accent-cyan/90"
+            className="px-4 py-2 rounded-md bg-accent-fill text-accent-ink hover:bg-accent-fill/90"
           >
             Créer une facture
           </button>
@@ -410,7 +410,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
             disabled={isDeleting}
             className={cn(
               'px-4 py-2 rounded-md font-medium transition-colors',
-              'bg-error text-white hover:bg-error',
+              'bg-error text-ink-on-fill hover:bg-error',
               isDeleting && 'opacity-50 cursor-not-allowed'
             )}
           >

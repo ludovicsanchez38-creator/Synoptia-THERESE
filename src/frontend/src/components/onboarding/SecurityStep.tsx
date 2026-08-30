@@ -160,7 +160,7 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
         href="https://synoptia.fr/therese/securite"
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center justify-center gap-2 text-sm text-accent-cyan-ink hover:text-accent-cyan-ink transition-colors"
+        className="flex items-center justify-center gap-2 text-sm text-accent-cyan-ink hover:underline transition-colors"
       >
         <span>En savoir plus sur la sécurité</span>
         <ExternalLink className="w-4 h-4" />
@@ -220,7 +220,7 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
             'px-4 py-3 rounded-md font-medium',
             'transition-all',
             (!cloudEnabled || acknowledged)
-              ? 'bg-accent-cyan text-bg hover:bg-accent-cyan/90'
+              ? 'bg-accent-fill text-accent-ink hover:bg-accent-fill/90'
               : 'bg-surface text-text-muted cursor-not-allowed opacity-50'
           )}
         >

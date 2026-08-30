@@ -158,8 +158,8 @@ export function SkillPromptPanel({ option, onGenerate, onBack }: SkillPromptPane
             className={cn(
               'flex items-center gap-2 px-4 py-2 rounded-md',
               'font-medium text-sm',
-              'bg-accent-cyan hover:bg-accent-cyan/90',
-              'text-bg shadow-lg shadow-accent-cyan/20',
+              'bg-accent-fill hover:opacity-90',
+              'text-accent-ink shadow-lg shadow-accent-cyan/20',
               'hover:shadow-accent-cyan/30 transition-all',
               'disabled:opacity-50 disabled:cursor-not-allowed'
             )}
@@ -179,7 +179,7 @@ export function SkillPromptPanel({ option, onGenerate, onBack }: SkillPromptPane
               key={i}
               onClick={() => setPrompt(suggestion)}
               className={cn(
-                'px-3 py-1.5 rounded-md text-xs',
+                'px-3 py-1.5 rounded-md text-sm',
                 'bg-surface border border-border',
                 'text-text-muted hover:text-text',
                 'hover:border-accent-cyan/30',

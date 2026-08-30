@@ -485,7 +485,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
           <button
             type="button"
             onClick={() => void loadState()}
-            className="mt-3 text-xs font-semibold text-text underline underline-offset-2"
+            className="mt-3 text-sm font-semibold text-text underline underline-offset-2"
           >
             Revérifier la disponibilité
           </button>

@@ -301,7 +301,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                     <button
                       key={scope}
                       onClick={() => setScopeFilter(scope)}
-                      className={`px-2.5 py-1 text-xs font-medium rounded-sm transition-colors ${
+                      className={`px-2.5 py-1 text-sm font-medium rounded-sm transition-colors ${
                         scopeFilter === scope
                           ? 'bg-accent-cyan/20 text-accent-cyan-ink border border-accent-cyan/50'
                           : 'bg-background/40 text-text-muted hover:bg-background/60 border border-transparent'

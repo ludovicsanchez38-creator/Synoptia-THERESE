@@ -53,21 +53,34 @@ describe('lot 4 : le plancher typographique', () => {
   });
 
   it('ce qui se clique est à 14 px au moins', () => {
-    // Détection à la ligne : un <button> dont la ligne porte text-xs. Les
-    // className répartis sur plusieurs lignes échappent au test, limite
-    // assumée.
+    // Lecture de la BALISE entière, pas de la ligne. La revue adverse du
+    // 30/08/2026 a montré que la détection à la ligne rate tous les
+    // className répartis sur plusieurs lignes ou construits dans un tableau
+    // cn(...) : « Réessayer » du brief et les boutons de l'Atelier étaient
+    // restés à 12 px alors que le test annonçait la règle satisfaite.
     const fautifs: string[] = [];
     for (const f of SOURCES) {
-      readFileSync(f, 'utf-8')
-        .split('\n')
-        .forEach((ligne, i) => {
-          if (/<button\b/.test(ligne) && /\btext-xs\b/.test(ligne)) {
-            fautifs.push(`${court(f)}:${i + 1}`);
-          }
-        });
+      const contenu = readFileSync(f, 'utf-8');
+      for (const m of contenu.matchAll(/<button\b/g)) {
+        // La balise ouvrante s'arrête au premier > hors accolades JSX.
+        let i = m.index + 7;
+        let profondeur = 0;
+        for (; i < contenu.length; i++) {
+          const ch = contenu[i];
+          if (ch === '{') profondeur++;
+          else if (ch === '}') profondeur--;
+          else if (ch === '>' && profondeur === 0) break;
+        }
+        const balise = contenu.slice(m.index, i);
+        if (/\btext-xs\b/.test(balise)) {
+          const ligne = contenu.slice(0, m.index).split('\n').length;
+          fautifs.push(`${court(f)}:${ligne}`);
+        }
+      }
     }
-    expect(fautifs, `${fautifs.length} boutons sous le plancher : ${fautifs.slice(0, 4).join(', ')}`).toEqual(
-      [],
-    );
+    expect(
+      fautifs,
+      `${fautifs.length} boutons sous le plancher : ${fautifs.slice(0, 5).join(', ')}`,
+    ).toEqual([]);
   });
 });

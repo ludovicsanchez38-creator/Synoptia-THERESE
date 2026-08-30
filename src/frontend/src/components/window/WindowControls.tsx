@@ -79,7 +79,7 @@ export function WindowControls({ side = 'left' }: { side?: 'left' | 'right' }) {
         type="button"
         aria-label="Fermer la fenêtre"
         onClick={run((win) => win.close())}
-        className="grid h-8 w-10 place-items-center rounded-sm text-text-muted transition-colors hover:bg-error-fill/90 hover:text-white"
+        className="grid h-8 w-10 place-items-center rounded-sm text-text-muted transition-colors hover:bg-error-fill/90 hover:text-ink-on-fill"
       >
         <svg width="10" height="10" viewBox="0 0 10 10" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
           <path d="M0.8 0.8L9.2 9.2M9.2 0.8L0.8 9.2" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />

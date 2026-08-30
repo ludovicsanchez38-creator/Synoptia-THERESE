@@ -157,7 +157,11 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
                 <div
                   className={cn(
                     'flex items-center gap-1.5 px-2.5 py-1 rounded-sm text-xs font-medium transition-colors',
-                    isActive && 'bg-accent-cyan/15 text-accent-cyan-ink',
+                    // L'étape en cours se distingue par sa pastille ET sa
+                    // graisse. Avant le 30/08/2026 la distinction venait d'une
+                    // opacité sur l'étape passée, qui la faisait repasser sous
+                    // le seuil de lisibilité.
+                    isActive && 'bg-accent-cyan/15 font-semibold text-accent-cyan-ink',
                     isPast && 'text-accent-cyan-ink',
                     !isActive && !isPast && 'text-text-muted',
                   )}

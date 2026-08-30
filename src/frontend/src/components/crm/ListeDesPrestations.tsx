@@ -146,7 +146,7 @@ export function ListeDesPrestations({ contactId }: { contactId: string }) {
         <button
           type="button"
           onClick={ajouter}
-          className="rounded-sm bg-accent px-3 py-1.5 text-sm font-medium text-white"
+          className="rounded-sm bg-accent px-3 py-1.5 text-sm font-medium text-ink-on-fill"
         >
           Ajouter
         </button>

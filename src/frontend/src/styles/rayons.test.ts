@@ -71,4 +71,18 @@ describe('lot 3 : trois rayons, pas vingt-six', () => {
     );
     expect(jetons.sort()).toEqual(['md:0.875rem', 'sm:0.5rem']);
   });
+  it('le CSS lui-même ne pose pas de rayon en dur', () => {
+    // Le lot 3 ne balayait que les composants. body et #root gardaient 12 px
+    // pendant que cartes et panneaux passaient à 14 : sur une fenêtre Tauri
+    // transparente, le contour extérieur ne suivait pas.
+    const AUTORISES = new Set(['4px', '999px', '50%']); // ascenseur, pastilles
+    const fautifs: string[] = [];
+    for (const m of CSS.matchAll(/border-radius:\s*([^;]+);/g)) {
+      const valeur = m[1].trim();
+      if (valeur.startsWith('var(--radius-')) continue;
+      if (AUTORISES.has(valeur)) continue;
+      fautifs.push(valeur);
+    }
+    expect(fautifs, `rayons en dur dans globals.css : ${fautifs.join(', ')}`).toEqual([]);
+  });
 });

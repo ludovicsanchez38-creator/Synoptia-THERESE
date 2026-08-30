@@ -28,12 +28,16 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           variant === 'secondary' && 'btn-da border border-border bg-surface text-text',
           variant === 'ghost' &&
             'bg-transparent font-medium text-text-muted transition-colors hover:text-text hover:bg-surface-elevated/50 active:translate-y-px',
-          variant === 'danger' && 'btn-da border border-transparent bg-error/10 text-error',
+          variant === 'danger' && 'btn-da border border-error bg-error/10 text-error',
+          // Rayons : petit bouton, petit rayon. Le lot 3 du 30/08/2026 les
+          // avait inversés en gonflant --radius-md de 8 à 14 px sans toucher
+          // aux classes, ce qui donnait une pilule de 32 px de haut à côté
+          // d'un bouton d'action de 44 px presque carré.
           // Sizes
-          size === 'sm' && 'h-8 px-3 text-sm rounded-md',
-          size === 'md' && 'h-11 px-4 text-sm rounded-sm',
-          size === 'lg' && 'h-12 px-6 text-base rounded-sm',
-          size === 'icon' && 'h-11 w-11 rounded-sm',
+          size === 'sm' && 'h-8 px-3 text-sm rounded-sm',
+          size === 'md' && 'h-11 px-4 text-sm rounded-md',
+          size === 'lg' && 'h-12 px-6 text-base rounded-md',
+          size === 'icon' && 'h-11 w-11 rounded-md',
           className
         )}
         {...props}

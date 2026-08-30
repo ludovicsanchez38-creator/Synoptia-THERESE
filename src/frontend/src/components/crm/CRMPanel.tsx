@@ -518,7 +518,7 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
             <button
               type="submit"
               disabled={!form.first_name.trim() || submitting}
-              className="px-4 py-2 text-sm font-medium bg-accent-cyan text-background rounded-md hover:bg-accent-cyan/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm font-medium bg-accent-fill text-accent-ink rounded-md hover:bg-accent-fill/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? 'Création...' : 'Créer le contact'}
             </button>
@@ -840,7 +840,7 @@ function AddActivityModal({ contactId, onClose, onCreated }: AddActivityModalPro
             <button
               type="submit"
               disabled={!title.trim() || submitting}
-              className="px-4 py-2 text-sm font-medium bg-accent-cyan text-background rounded-md hover:bg-accent-cyan/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2 text-sm font-medium bg-accent-fill text-accent-ink rounded-md hover:bg-accent-fill/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? 'Ajout...' : 'Ajouter'}
             </button>

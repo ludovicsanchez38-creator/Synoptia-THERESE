@@ -78,7 +78,7 @@ export function TraitementsPanel() {
                     type="button"
                     onClick={() => void annuler(t.id)}
                     aria-label={`Arrêter ${t.label}`}
-                    className="flex items-center gap-1 rounded-sm border border-border px-1.5 py-0.5 text-xs text-text-muted hover:border-error hover:text-error"
+                    className="flex items-center gap-1 rounded-sm border border-border px-1.5 py-0.5 text-sm text-text-muted hover:border-error hover:text-error"
                   >
                     <Square className="h-3 w-3" />
                     Arrêter

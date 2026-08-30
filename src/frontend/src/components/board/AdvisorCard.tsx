@@ -144,7 +144,7 @@ export function AdvisorCard({
       {isLongContent && (
         <button
           onClick={() => setExpanded(!expanded)}
-          className="flex items-center gap-1 mt-2 text-xs font-medium transition-colors"
+          className="flex items-center gap-1 mt-2 text-sm font-medium transition-colors"
           style={{ color }}
         >
           {expanded ? (

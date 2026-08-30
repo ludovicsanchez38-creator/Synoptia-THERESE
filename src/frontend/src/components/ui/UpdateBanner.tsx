@@ -219,7 +219,7 @@ export function UpdateBanner() {
           <button
             onClick={handleDownloadAndInstall}
             data-testid="update-install-btn"
-            className="ml-2 px-3 py-1 rounded-md text-xs font-medium transition-colors"
+            className="ml-2 px-3 py-1 rounded-md text-sm font-medium transition-colors"
             style={{
               background: 'rgba(34, 211, 238, 0.2)',
               color: '#22D3EE',
@@ -258,7 +258,7 @@ export function UpdateBanner() {
           <button
             onClick={() => handleRestart(state.version)}
             data-testid="update-restart-btn"
-            className="ml-2 px-3 py-1 rounded-md text-xs font-medium transition-colors"
+            className="ml-2 px-3 py-1 rounded-md text-sm font-medium transition-colors"
             style={{
               background: 'rgba(34, 211, 238, 0.2)',
               color: '#22D3EE',
@@ -286,7 +286,7 @@ export function UpdateBanner() {
           <button
             onClick={() => handleRestart(state.version)}
             data-testid="update-restart-retry-btn"
-            className="ml-2 px-3 py-1 rounded-md text-xs font-medium transition-colors"
+            className="ml-2 px-3 py-1 rounded-md text-sm font-medium transition-colors"
             style={{
               background: 'rgba(34, 211, 238, 0.2)',
               color: '#22D3EE',

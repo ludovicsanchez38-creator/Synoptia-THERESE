@@ -144,7 +144,7 @@ export function AdvisorArcLayout({
                   className="absolute bottom-0 right-0 flex h-5 w-5 items-center justify-center rounded-tl-sm"
                   style={{ backgroundColor: meta.color }}
                 >
-                  <Icon className="h-3 w-3 text-white" />
+                  <Icon className="h-3 w-3 text-ink-on-fill" />
                 </div>
               </div>
 
@@ -204,7 +204,7 @@ export function AdvisorArcLayout({
                   className="absolute bottom-0 right-0 flex h-4 w-4 items-center justify-center rounded-tl-sm"
                   style={{ backgroundColor: meta.color }}
                 >
-                  <Icon className="h-2.5 w-2.5 text-white" />
+                  <Icon className="h-2.5 w-2.5 text-ink-on-fill" />
                 </div>
               </div>
               <span className="text-xs font-medium text-center" style={{ color: meta.color }}>

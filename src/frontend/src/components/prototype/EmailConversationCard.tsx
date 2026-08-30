@@ -93,7 +93,7 @@ export function EmailInboxCard({
               <button
                 type="button"
                 onClick={onRetry}
-                className="inline-flex items-center gap-1.5 rounded-md border border-accent-fill bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink"
+                className="inline-flex items-center gap-1.5 rounded-md border border-accent-fill bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
                 Réessayer
@@ -474,7 +474,7 @@ export function EmailMessageCanvas({
                 type="button"
                 onClick={() => void handleGenerate()}
                 disabled={generating}
-                className="inline-flex items-center gap-1.5 rounded-md border border-domaine-prospects bg-surface px-3 py-2 text-xs font-semibold text-domaine-prospects disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 rounded-md border border-domaine-prospects bg-surface px-3 py-2 text-sm font-semibold text-domaine-prospects disabled:opacity-60"
               >
                 {generating ? <Spinner taille="ligne" /> : <Sparkles className="h-3.5 w-3.5" />}
                 {generating ? 'Génération…' : 'Générer une proposition'}
@@ -483,7 +483,7 @@ export function EmailMessageCanvas({
                 type="button"
                 onClick={requestSave}
                 disabled={saving}
-                className="inline-flex items-center gap-1.5 rounded-md bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 rounded-md bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink disabled:opacity-60"
               >
                 <Save className="h-3.5 w-3.5" />
                 Enregistrer comme brouillon

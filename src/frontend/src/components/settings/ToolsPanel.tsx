@@ -69,7 +69,7 @@ function PresetCategory({
         aria-controls={panelId}
         className="flex items-center gap-2 w-full text-left mb-2 group"
       >
-        <span className="text-accent-cyan-ink group-hover:text-accent-cyan-ink transition-colors">
+        <span className="text-accent-cyan-ink group-hover:underline transition-colors">
           {icon}
         </span>
         <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">

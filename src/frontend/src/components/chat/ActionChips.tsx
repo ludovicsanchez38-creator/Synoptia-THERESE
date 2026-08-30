@@ -17,7 +17,7 @@ export function ActionChips({ onInsert }: { onInsert: (text: string) => void }) 
           key={label}
           type="button"
           onClick={() => onInsert(insert)}
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs text-text-muted bg-surface-2 border border-border hover:border-accent-cyan/50 hover:text-text transition-all"
+          className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-sm text-text-muted bg-surface-2 border border-border hover:border-accent-cyan/50 hover:text-text transition-all"
         >
           <Icon className="w-3 h-3 shrink-0" />
           {label}

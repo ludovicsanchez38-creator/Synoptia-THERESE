@@ -142,7 +142,7 @@ function NotificationItem({ notification }: { notification: AppNotification }) {
                 // Navigation via action_url possible ici
                 if (!notification.is_read) markAsRead(notification.id);
               }}
-              className="flex items-center gap-1 text-xs font-medium text-accent-cyan-ink hover:text-accent-cyan-ink transition-colors"
+              className="flex items-center gap-1 text-sm font-medium text-accent-cyan-ink hover:underline transition-colors"
             >
               <ExternalLink className="w-3 h-3" />
               {notification.action_label}
@@ -207,7 +207,7 @@ export function NotificationCenter() {
         <Bell className="w-4.5 h-4.5 text-text-muted" />
         {unreadCount > 0 && (
           <span
-            className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center text-xs font-bold text-white bg-error rounded-full px-1 shadow-[0_0_8px_rgba(239,68,68,0.4)]"
+            className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center text-xs font-bold text-ink-on-fill bg-error rounded-full px-1 shadow-[0_0_8px_rgba(239,68,68,0.4)]"
             aria-live="polite"
             aria-label={`${unreadCount} notification${unreadCount > 1 ? 's' : ''} non lue${unreadCount > 1 ? 's' : ''}`}
           >
@@ -234,7 +234,7 @@ export function NotificationCenter() {
                 {unreadCount > 0 && (
                   <button
                     onClick={markAllRead}
-                    className="flex items-center gap-1 text-xs text-accent-cyan-ink hover:text-accent-cyan-ink transition-colors"
+                    className="flex items-center gap-1 text-sm text-accent-cyan-ink hover:underline transition-colors"
                     title="Tout marquer comme lu"
                   >
                     <CheckCheck className="w-3.5 h-3.5" />

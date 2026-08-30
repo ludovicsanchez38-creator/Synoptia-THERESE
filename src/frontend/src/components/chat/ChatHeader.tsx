@@ -267,7 +267,7 @@ export function ChatHeader({
             </button>
             <button
               onClick={handleClose}
-              className="w-8 h-8 flex items-center justify-center text-text-muted hover:text-white hover:bg-error rounded-sm transition-colors"
+              className="w-8 h-8 flex items-center justify-center text-text-muted hover:text-ink-on-fill hover:bg-error rounded-sm transition-colors"
               title="Fermer"
             >
               <span className="text-xs leading-none">✕</span>

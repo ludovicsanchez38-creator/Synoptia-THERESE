@@ -223,7 +223,7 @@ export function CompleteStep({ onComplete, onBack }: CompleteStepProps) {
             <span className="text-sm text-error flex-1">{error}</span>
             <button
               onClick={handleRetry}
-              className="flex items-center gap-1 text-xs text-error hover:text-error transition-colors"
+              className="flex items-center gap-1 text-sm text-error hover:text-error transition-colors"
             >
               <RefreshCw className="w-3 h-3" />
               Réessayer

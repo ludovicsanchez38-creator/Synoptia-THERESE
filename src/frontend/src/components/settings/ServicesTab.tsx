@@ -339,7 +339,7 @@ export function ServicesTab({
                     window.open('https://brave.com/search/api/', '_blank');
                   }
                 }}
-                className="text-accent-cyan-ink hover:underline cursor-pointer bg-transparent border-none p-0 text-xs"
+                className="text-accent-cyan-ink hover:underline cursor-pointer bg-transparent border-none p-0 text-sm"
               >
                 Obtenir une clé API
               </button>

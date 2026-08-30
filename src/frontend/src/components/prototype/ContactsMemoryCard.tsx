@@ -94,7 +94,7 @@ export function ContactsMemoryCard({
             <button
               type="button"
               onClick={onRetry}
-              className="mt-4 inline-flex items-center gap-1.5 rounded-md border border-accent-fill bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink"
+              className="mt-4 inline-flex items-center gap-1.5 rounded-md border border-accent-fill bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink"
             >
               <RefreshCw className="h-3.5 w-3.5" />
               Réessayer

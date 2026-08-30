@@ -869,7 +869,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
               disabled={isSaving}
               className={cn(
                 'px-4 py-2 rounded-md font-medium transition-colors',
-                'bg-accent-cyan text-bg hover:bg-accent-cyan/90',
+                'bg-accent-fill text-accent-ink hover:bg-accent-fill/90',
                 'flex items-center gap-2',
                 isSaving && 'opacity-50 cursor-not-allowed'
               )}
@@ -922,7 +922,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                   onClick={handleConvertToInvoice}
                   className={cn(
                     'px-4 py-2 rounded-md font-medium transition-colors',
-                    'bg-agent-purple text-white hover:opacity-90',
+                    'bg-agent-purple text-ink-on-fill hover:opacity-90',
                     'flex items-center gap-2'
                   )}
                 >

@@ -55,14 +55,17 @@
         font-family: 'Plus Jakarta Sans';
         font-style: normal;
         font-weight: 700;
-        font-display: block;
+        /* swap et non block : « block » masque le texte jusqu'à l'arrivée de
+           la police, et le titre porte un dégradé en -webkit-text-fill-color
+           transparent. Un splash sans titre pendant trois secondes. */
+        font-display: swap;
         src: url('/fonts/plus-jakarta-sans-latin-700-normal.woff2') format('woff2');
       }
       @font-face {
         font-family: 'Inter';
         font-style: normal;
         font-weight: 500;
-        font-display: block;
+        font-display: swap;
         src: url('/fonts/inter-latin-500-normal.woff2') format('woff2');
       }
 

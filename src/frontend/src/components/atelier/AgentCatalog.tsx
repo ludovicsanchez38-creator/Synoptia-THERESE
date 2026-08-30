@@ -270,7 +270,7 @@ export function AgentCatalog({ onSelectAgent }: Props) {
                   setCustomModel("");
                   localStorage.removeItem(CUSTOM_MODEL_STORAGE_KEY);
                 }}
-                className="shrink-0 text-xs text-text-muted hover:text-error transition-colors"
+                className="shrink-0 text-sm text-text-muted hover:text-error transition-colors"
               >
                 ✕
               </button>

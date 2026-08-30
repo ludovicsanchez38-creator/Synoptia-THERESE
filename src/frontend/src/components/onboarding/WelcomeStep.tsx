@@ -89,7 +89,7 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
         transition={{ delay: 0.7 }}
         onClick={onNext}
         data-testid="onboarding-next-btn"
-        className="px-8 py-3 rounded-md bg-accent-cyan text-background font-medium hover:bg-accent-cyan/90 transition-colors"
+        className="px-8 py-3 rounded-md bg-accent-fill text-accent-ink font-medium hover:bg-accent-fill/90 transition-colors"
       >
         Commencer la configuration
       </motion.button>

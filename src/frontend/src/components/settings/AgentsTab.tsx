@@ -69,7 +69,7 @@ function AgentModelSelect({
         <button
           type="button"
           onClick={() => setShowCustom((v) => !v)}
-          className="flex items-center gap-1 text-xs text-accent-cyan-ink hover:text-accent-cyan-ink transition-colors"
+          className="flex items-center gap-1 text-sm text-accent-cyan-ink hover:underline transition-colors"
           title="Saisir un identifiant de modèle personnalisé"
         >
           <Plus size={12} />
@@ -258,7 +258,7 @@ export function AgentsTab() {
             onClick={handleRefreshStatus}
             type="button"
             aria-label="Actualiser le statut des agents"
-            className="text-xs text-text-muted hover:text-text transition"
+            className="text-sm text-text-muted hover:text-text transition"
           >
             <RefreshCw size={14} />
           </button>
