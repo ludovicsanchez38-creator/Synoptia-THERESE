@@ -249,12 +249,13 @@ class TestPerformanceMonitorUnit:
         assert latency > 0
         assert latency < 1000  # Less than 1 second
 
-        # record_first_token() doesn't count as a token, only record_token() does
+        # Revue 30/08 : record_token ne compte plus un chunk comme un token.
         metrics.record_token()
-        metrics.record_token()
+        metrics.record_output_tokens(2)
 
         summary = metrics.finish()
         assert summary["total_tokens"] == 2
+        assert summary["tokens_measured"] is True
         assert summary["first_token_ms"] > 0
         assert summary["provider"] == "anthropic"
 
@@ -276,3 +277,73 @@ class TestPerformanceMonitorUnit:
         assert "total_requests" in stats
         assert "avg_first_token_ms" in stats
         assert "meets_sla" in stats
+
+
+def _monitor_vierge():
+    """Singleton de perf : un test ne doit pas hériter des latences d'un autre."""
+    import app.services.performance as perf
+
+    perf._performance_monitor = None
+    perf.PerformanceMonitor._instance = None
+    return perf.get_performance_monitor()
+
+
+class TestVeraciteCompteursPerf:
+    """Revue 30/08 : ne pas affirmer un token ou un SLA qui n'a pas été mesuré."""
+
+    def test_un_morceau_de_flux_n_est_pas_un_token(self):
+        from app.services.performance import StreamingMetrics
+
+        metrics = StreamingMetrics(conversation_id="c")
+        metrics.record_token()
+        metrics.record_token()
+        # record_token suivait un événement SSE `text`, quelle que soit
+        # la taille du morceau. Deux chunks de 40 tokens n'en font pas 2.
+        assert metrics.total_tokens == 0
+
+    def test_seuls_les_tokens_d_usage_sont_comptes(self):
+        from app.services.performance import StreamingMetrics
+
+        metrics = StreamingMetrics(conversation_id="c")
+        metrics.record_token()
+        metrics.record_output_tokens(17)
+        summary = metrics.finish()
+        assert summary["total_tokens"] == 17
+        assert summary["tokens_measured"] is True
+
+    def test_sans_usage_les_tokens_ne_sont_pas_mesures(self):
+        from app.services.performance import StreamingMetrics
+
+        metrics = StreamingMetrics(conversation_id="c")
+        metrics.record_token()
+        summary = metrics.finish()
+        assert summary["total_tokens"] == 0
+        assert summary["tokens_measured"] is False
+
+    def test_sla_inconnu_avant_la_premiere_mesure(self):
+        monitor = _monitor_vierge()
+        stats = monitor.get_stats()
+        assert stats["total_requests"] == 0
+        assert stats["meets_sla"] is None
+
+    def test_sla_respecte_seulement_si_la_moyenne_est_sous_2s(self):
+        monitor = _monitor_vierge()
+        metrics = monitor.start_stream("c-ok")
+        metrics.first_token_time = metrics.start_time + 0.4
+        monitor.finish_stream("c-ok")
+        assert monitor.get_stats()["meets_sla"] is True
+
+    def test_sla_non_respecte_si_la_moyenne_depasse_2s(self):
+        monitor = _monitor_vierge()
+        metrics = monitor.start_stream("c-lent")
+        metrics.first_token_time = metrics.start_time + 3.0
+        monitor.finish_stream("c-lent")
+        assert monitor.get_stats()["meets_sla"] is False
+
+    def test_tokens_non_mesures_tant_qu_aucun_usage_n_est_enregistre(self):
+        monitor = _monitor_vierge()
+        monitor.start_stream("c")
+        monitor.finish_stream("c")
+        stats = monitor.get_stats()
+        assert stats["tokens_measured"] is False
+        assert stats["total_tokens"] == 0

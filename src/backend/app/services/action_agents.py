@@ -728,6 +728,9 @@ class ActionRunner:
             completed_steps = [
                 s for s in task.steps if s.status == StepStatus.COMPLETED
             ]
+            failed_steps = [
+                s for s in task.steps if s.status == StepStatus.ERROR
+            ]
             if completed_steps:
                 result_parts = [
                     f"# {agent_def.name}\n",
@@ -737,7 +740,21 @@ class ActionRunner:
                     result_parts.append(f"## {s.label}\n\n{s.content}\n")
                 task.result = "\n".join(result_parts)
 
-            task.status = TaskStatus.COMPLETED
+            # Revue 30/08 : une étape en échec laissait le statut
+            # `completed`. L'utilisateur recevait un rapport amputé
+            # présenté comme terminé.
+            if failed_steps:
+                task.status = TaskStatus.ERROR
+                task.error = (
+                    f"{len(failed_steps)} étape"
+                    f"{'s ont' if len(failed_steps) > 1 else ' a'} échoué"
+                    f" ({', '.join(s.label for s in failed_steps)})"
+                )
+            elif completed_steps:
+                task.status = TaskStatus.COMPLETED
+            else:
+                task.status = TaskStatus.ERROR
+                task.error = "Aucune étape n'a produit de résultat."
             if handle is not None:
                 await handle.progresser(progress=1.0)
         else:

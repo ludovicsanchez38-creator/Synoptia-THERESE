@@ -1104,13 +1104,17 @@ async def deep_research_endpoint(
                         {"title": s.title, "url": s.url, "snippet": s.snippet}
                         for s in progress.sources
                     ]
-                    # Sauvegarder la réponse en base
+                    # Sauvegarder la réponse en base.
+                    # Revue 30/08 : sources_data partait en SSE puis n'était
+                    # jamais écrit. Au rechargement, seules les données
+                    # textuelles survivaient.
                     try:
                         async with get_session() as save_session:
                             assistant_message = Message(
                                 conversation_id=conversation.id,
                                 role="assistant",
                                 content=full_synthesis,
+                                extra_data=json.dumps({"sources": sources_data}),
                             )
                             save_session.add(assistant_message)
                             await save_session.commit()
@@ -2415,7 +2419,6 @@ async def _do_stream_response(
                 if not first_token_recorded:
                     stream_metrics.record_first_token()
                     first_token_recorded = True
-                stream_metrics.record_token()
 
                 full_content += event.content
                 data = StreamChunk(
@@ -2571,6 +2574,11 @@ async def _do_stream_response(
         input_tokens=input_tokens,
         output_tokens=output_tokens,
     )
+    # Revue 30/08 : coller l'usage mesuré AVANT le finish_stream du
+    # finally (annulation / déconnexion). L'estimation mot×2 du tracker
+    # de coût n'est pas une mesure : on ne l'affiche pas comme token.
+    if not usage_totals["estimated"]:
+        stream_metrics.record_output_tokens(int(usage_totals["output_tokens"]))
 
     # Finding 3 de la revue Soso : le drapeau n'était consulté qu'entre deux
     # morceaux, jamais avant les effets PERSISTANTS. Un `__anext__()` pouvait
