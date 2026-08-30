@@ -1198,9 +1198,10 @@ async def get_calendar_confirmation_destination(
 
 async def _read_emails(args: dict, session: AsyncSession) -> str:
     """Read recent emails."""
-    provider, error = await _get_email_provider(
-        session, account_id=_id_compte_demande(args=args)
-    )
+    cible = _id_compte_demande(args=args)
+    if cible:
+        _compte_ecran.set(cible)
+    provider, error = await _get_email_provider(session)
     if error:
         return error
 
@@ -1256,9 +1257,10 @@ async def _summarize_emails(args: dict, session: AsyncSession) -> str:
     (sujet + expediteur + corps/snippet) et demande un resume au LLM deja
     configure. 100% local-first, aucune dependance externe ajoutee.
     """
-    provider, error = await _get_email_provider(
-        session, account_id=_id_compte_demande(args=args)
-    )
+    cible = _id_compte_demande(args=args)
+    if cible:
+        _compte_ecran.set(cible)
+    provider, error = await _get_email_provider(session)
     if error:
         return error
 
@@ -1353,9 +1355,10 @@ async def _send_email(args: dict, session: AsyncSession) -> str:
         return f"Erreur : l'adresse '{to_addr}' ne semble pas etre un email valide."
 
     # Recuperer le provider (verifie la config, le token, etc.)
-    provider, error = await _get_email_provider(
-        session, account_id=_id_compte_demande(args=args)
-    )
+    cible = _id_compte_demande(args=args)
+    if cible:
+        _compte_ecran.set(cible)
+    provider, error = await _get_email_provider(session)
     if error:
         return error
 
@@ -1395,9 +1398,10 @@ async def _send_email(args: dict, session: AsyncSession) -> str:
 
 async def _search_emails(args: dict, session: AsyncSession) -> str:
     """Search emails."""
-    provider, error = await _get_email_provider(
-        session, account_id=_id_compte_demande(args=args)
-    )
+    cible = _id_compte_demande(args=args)
+    if cible:
+        _compte_ecran.set(cible)
+    provider, error = await _get_email_provider(session)
     if error:
         return error
 

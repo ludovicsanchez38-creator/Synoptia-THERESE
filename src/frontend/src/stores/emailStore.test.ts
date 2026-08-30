@@ -37,8 +37,8 @@ describe('emailStore — bascule de compte', () => {
   beforeEach(() => {
     useEmailStore.setState({
       accounts: [
-        { id: 'acc-a', email: 'a@gmail.com', provider: 'gmail' },
-        { id: 'acc-b', email: 'b@imap.fr', provider: 'imap' },
+        { id: 'acc-a', email: 'a@gmail.com', provider: 'gmail', scopes: [], created_at: '', last_sync: null },
+        { id: 'acc-b', email: 'b@imap.fr', provider: 'imap', scopes: [], created_at: '', last_sync: null },
       ],
       currentAccountId: 'acc-a',
       messages: [messageA],

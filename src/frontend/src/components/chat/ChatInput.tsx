@@ -620,6 +620,8 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       // Stream response from backend (inclure skill_id si provient des guided prompts)
       const controller = new AbortController();
       abortRef.current = controller;
+      const compteEcran = useEmailStore.getState().currentAccountId;
+      const agendaEcran = useCalendarStore.getState().currentCalendarId;
       const stream = streamMessage({
         message: trimmed,
         conversation_id: syncedConversationId || undefined,
@@ -630,12 +632,8 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         // Finding 1-2 (30/08) : le compte / l'agenda de l'écran. Sans eux
         // le backend refuse s'il y en a plusieurs, plutôt que de parler au
         // premier de la table.
-        ...(useEmailStore.getState().currentAccountId
-          ? { email_account_id: useEmailStore.getState().currentAccountId }
-          : {}),
-        ...(useCalendarStore.getState().currentCalendarId
-          ? { calendar_id: useCalendarStore.getState().currentCalendarId }
-          : {}),
+        ...(compteEcran ? { email_account_id: compteEcran } : {}),
+        ...(agendaEcran ? { calendar_id: agendaEcran } : {}),
       }, controller.signal);
       // Consommer le skillId après envoi
       setPendingSkillId(undefined);

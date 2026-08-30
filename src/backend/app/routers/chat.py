@@ -91,6 +91,20 @@ from starlette.concurrency import run_in_threadpool
 
 logger = logging.getLogger(__name__)
 
+
+def _attribution(llm_service: Any) -> tuple[str, str]:
+    """Fournisseur et modèle réels, y compris sur un faux LLM de test."""
+    methode = getattr(llm_service, "attribution", None)
+    if callable(methode):
+        return methode()
+    config = getattr(llm_service, "config", None)
+    if config is None:
+        return "unknown", "unknown"
+    provider = getattr(config, "provider", None)
+    nom = provider.value if hasattr(provider, "value") else str(provider or "unknown")
+    modele = getattr(config, "model", None) or "unknown"
+    return nom, str(modele)
+
 router = APIRouter()
 
 
@@ -1740,7 +1754,7 @@ async def send_message(
     # ~1 mot = 2 tokens en filet (providers pas encore migrés, cf CLAUDE.md).
     input_tokens = usage_sink.get("input_tokens") or len(request.message.split()) * 2
     output_tokens = usage_sink.get("output_tokens") or len(assistant_content.split()) * 2
-    fournisseur, modele = llm_service.attribution()
+    fournisseur, modele = _attribution(llm_service)
     get_token_tracker().record_usage(
         conversation_id=conversation.id,
         model=modele,
@@ -2018,7 +2032,7 @@ async def _persister_message_partiel(
             )
             if deja.scalars().first() is not None:
                 return
-            fournisseur, modele = llm_service.attribution()
+            fournisseur, modele = _attribution(llm_service)
             session_partiel.add(Message(
                 conversation_id=conversation_id,
                 role="assistant",
@@ -2554,7 +2568,7 @@ async def _do_stream_response(
             yield f"data: {json.dumps(fallback_chunk.model_dump())}\n\n"
 
     # Save complete assistant message
-    fournisseur, modele = llm_service.attribution()
+    fournisseur, modele = _attribution(llm_service)
     assistant_message = Message(
         conversation_id=conversation_id,
         role="assistant",
@@ -2883,19 +2897,25 @@ async def _execute_tools_and_continue(
                     get_calendar_confirmation_destination,
                 )
 
-                destination = await get_calendar_confirmation_destination(session)
-                pending_arguments["_confirmation_destination"] = destination
-                if destination.get("calendar_id"):
-                    pending_arguments["_agenda_ecran"] = destination["calendar_id"]
+                try:
+                    destination = await get_calendar_confirmation_destination(session)
+                    pending_arguments["_confirmation_destination"] = destination
+                    if destination.get("calendar_id"):
+                        pending_arguments["_agenda_ecran"] = destination["calendar_id"]
+                except Exception:
+                    logger.debug("Destination agenda illisible pour la carte")
             if outil_base == "send_email" and session is not None:
                 from app.services.workspace_tools import (
                     get_email_confirmation_destination,
                 )
 
-                destination = await get_email_confirmation_destination(session)
-                pending_arguments["_confirmation_destination"] = destination
-                if destination.get("account_id"):
-                    pending_arguments["_compte_ecran"] = destination["account_id"]
+                try:
+                    destination = await get_email_confirmation_destination(session)
+                    pending_arguments["_confirmation_destination"] = destination
+                    if destination.get("account_id"):
+                        pending_arguments["_compte_ecran"] = destination["account_id"]
+                except Exception:
+                    logger.debug("Expéditeur illisible pour la carte")
             logger.info(
                 "Outil sensible %s mis en attente de confirmation utilisateur "
                 "(NON exécuté), clés d'arguments : %s",

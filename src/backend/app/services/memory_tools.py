@@ -636,17 +636,20 @@ async def execute_create_project(
     # (regression "creation en masse" via les commandes / interpretees par le LLM).
     # Finding 7 (30/08) : deux homonymes, `.first()` renvoyait l'id de l'autre
     # client. Ambigu = refus, pas un troisième ni le mauvais.
-    homonymes = await _lister_projets_homonymes(
+    existing = await _find_existing_project(
         session, name, scope=scope, scope_id=scope_id, conversation_id=conversation_id
     )
-    if len(homonymes) > 1:
-        return json.dumps({
-            "error": (
-                f"Plusieurs projets s'appellent « {name} ». "
-                "Ouvre le bon depuis le sélecteur de dossier."
-            ),
-        }, ensure_ascii=False)
-    existing = homonymes[0] if homonymes else None
+    if existing is None:
+        homonymes = await _lister_projets_homonymes(
+            session, name, scope=scope, scope_id=scope_id, conversation_id=conversation_id
+        )
+        if len(homonymes) > 1:
+            return json.dumps({
+                "error": (
+                    f"Plusieurs projets s'appellent « {name} ». "
+                    "Ouvre le bon depuis le sélecteur de dossier."
+                ),
+            }, ensure_ascii=False)
     if existing is not None:
         return json.dumps({
             "success": True,
