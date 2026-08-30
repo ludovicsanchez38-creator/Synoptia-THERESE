@@ -33,10 +33,27 @@ Vérification par moi : lecture du diff entier, les cinq portes rejouées, et
 sabotage de ses propres tests. Un test qu'il a écrit et que je peux casser
 sans le faire rougir ne compte pas.
 
-## 3. Les personas
+## 3. La release — AVANT les personas
 
-**Après** les correctifs, jamais avant : lancer cinq agents sur un code qu'on
-s'apprête à modifier produit cinq rapports périmés.
+**Changement de séquence, décidé par Ludo le 30/08 tard le soir.** La release
+part dès que les lots sont relus, sans attendre la campagne.
+
+La raison est bonne : ce bump répare ce qui empêchait l'application de
+fonctionner. Le garder au chaud le temps d'une campagne de trois jours
+laisserait les testeurs sur une version dont on SAIT qu'elle ne marche pas —
+aucun modèle OpenAI ne répondait, les documents Office sortaient vides ou
+pleins de code Python. Livrer d'abord, éprouver ensuite.
+
+## 4. Les personas — mardi
+
+Repoussés à mardi, sur la version publiée. Ça change leur nature, et en mieux :
+ils ne testeront plus un code de travail mais **ce que les testeurs ont
+réellement entre les mains**. Un finding trouvé là est un finding qui compte
+pour de vrai.
+
+Instance de campagne prête (port 17941, isolée, Luna effort bas, conversation
+vérifiée). Protocole et cinq briefs écrits, contrainte de persistance encodée
+dans chacun. Il faudra la reconfigurer sur la version publiée le moment venu.
 
 Instance de campagne prête (port 17941, isolée, Luna effort bas, conversation
 vérifiée). Protocole et cinq briefs écrits, contrainte de persistance encodée
