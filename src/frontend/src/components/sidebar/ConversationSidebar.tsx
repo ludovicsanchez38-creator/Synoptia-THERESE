@@ -16,6 +16,7 @@ import { useChatStore, Conversation } from '../../stores/chatStore';
 import { staggerContainer, staggerItem, sidebarLeftVariants, overlayVariants } from '../../lib/animations';
 import * as api from '../../services/api';
 import { useDemoMask } from '../../hooks';
+import { useStatusStore } from '../../stores/statusStore';
 import { Z_LAYER } from '../../styles/z-layers';
 
 interface ConversationSidebarProps {
@@ -37,6 +38,7 @@ export function ConversationSidebar({ isOpen, onClose }: ConversationSidebarProp
     renameConversation,
   } = useChatStore();
   const { maskText } = useDemoMask();
+  const addNotification = useStatusStore((s) => s.addNotification);
 
   // Filter conversations
   const filteredConversations = conversations.filter((c) =>
@@ -99,19 +101,27 @@ export function ConversationSidebar({ isOpen, onClose }: ConversationSidebarProp
   const handleDelete = useCallback(
     async (id: string) => {
       setDeleting(id);
+      const conv = useChatStore.getState().conversations.find((c) => c.id === id);
       try {
-        // Delete from backend
-        await api.deleteConversation(id).catch(() => {
-          // Ignore backend errors (conversation might not be synced)
-        });
-        // Delete from local store
+        // Revue 30/08 : avaler l'erreur puis supprimer en local faisait
+        // croire à une suppression durable. Une conv synced qui refuse
+        // reste affichée.
+        if (conv?.synced) {
+          await api.deleteConversation(id);
+        }
         deleteConversation(id);
+      } catch {
+        addNotification({
+          type: 'error',
+          title: 'Suppression impossible',
+          message: 'La conversation n’a pas été supprimée sur le serveur. Elle reste dans la liste.',
+        });
       } finally {
         setDeleting(null);
         setContextMenuId(null);
       }
     },
-    [deleteConversation]
+    [addNotification, deleteConversation]
   );
 
   // Close context menu on click outside
