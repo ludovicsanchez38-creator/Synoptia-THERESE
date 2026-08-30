@@ -61,7 +61,7 @@ async def test_un_statut_de_financement_invente_est_refuse(client):
         "/api/memory/contacts", json={"first_name": "Statut", "last_name": "Faux"}
     )).json()
     p = (await client.post("/api/prestations", json={
-        "contact_id": fiche["id"], "intitule": "FORGER",
+        "contact_id": fiche["id"], "intitule": "FORGER", "phase": "piste",
     })).json()
 
     # AVEC un financeur, sinon c'est l'autre garde qui refuse et ce test ne
@@ -81,7 +81,7 @@ async def test_un_statut_sans_financeur_est_refuse(client):
         "/api/memory/contacts", json={"first_name": "Sans", "last_name": "Financeur"}
     )).json()
     p = (await client.post("/api/prestations", json={
-        "contact_id": fiche["id"], "intitule": "FORGER",
+        "contact_id": fiche["id"], "intitule": "FORGER", "phase": "piste",
     })).json()
 
     reponse = await client.patch(f"/api/prestations/{p['id']}", json={

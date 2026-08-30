@@ -140,8 +140,72 @@ async def test_sans_fin_posee_la_prestation_n_annonce_pas_d_echeance(client):
         "/api/memory/contacts", json={"first_name": "Sans", "last_name": "Fin"}
     )).json()
     p = (await client.post("/api/prestations", json={
-        "contact_id": fiche["id"], "intitule": "FORGER",
+        "contact_id": fiche["id"], "intitule": "FORGER", "phase": "piste",
     })).json()
 
     assert p["fin_le"] is None
     assert p["suivi_apres_fin_le"] is None
+
+
+@pytest.mark.asyncio
+async def test_le_delai_de_suivi_se_regle_vraiment(client):
+    """Un réglage qu'on ne peut pas régler n'est pas un réglage.
+
+    Trouvé par un persona artisan sur la 0.59.0 : « 90 jours, ça ne veut rien
+    dire pour moi, et ce n'est pas réglable depuis ce que j'ai sous la main ».
+    Après une fuite il rappelle à 8 jours, après une chaudière à un an.
+
+    C'est le défaut de `next_follow_up` corrigé le matin même, réintroduit le
+    soir : un bouton qui existe dans le code et que personne ne peut tourner.
+    """
+    fiche = (await client.post(
+        "/api/memory/contacts", json={"first_name": "Sylvie", "last_name": "Morel"}
+    )).json()
+
+    p = (await client.post("/api/prestations", json={
+        "contact_id": fiche["id"], "intitule": "Fuite lavabo", "phase": "en_cours",
+        "fin_le": "2026-09-13", "suivi_apres_jours": 8,
+    })).json()
+
+    assert p["suivi_apres_jours"] == 8
+    assert p["suivi_apres_fin_le"] == "2026-09-21", "8 jours après le 13/09"
+
+    maj = await client.patch(f"/api/prestations/{p['id']}", json={"suivi_apres_jours": 365})
+    assert maj.json()["suivi_apres_fin_le"] == "2027-09-13", "un an après"
+
+
+@pytest.mark.asyncio
+async def test_le_delai_utilise_est_toujours_dit(client):
+    """Si l'application applique 90 jours par défaut, elle doit le MONTRER.
+
+    Un défaut invisible est une affirmation cachée.
+    """
+    fiche = (await client.post(
+        "/api/memory/contacts", json={"first_name": "Defaut", "last_name": "Visible"}
+    )).json()
+
+    p = (await client.post("/api/prestations", json={
+        "contact_id": fiche["id"], "intitule": "Chaudiere", "phase": "en_cours",
+        "fin_le": "2026-09-13",
+    })).json()
+
+    assert p["suivi_apres_jours"] == 90, "le délai appliqué doit être lisible"
+
+
+@pytest.mark.asyncio
+async def test_l_application_ne_choisit_pas_la_phase_a_ta_place(client):
+    """« Une fuite sous un lavabo n'est pas une piste. C'est un client qui a de
+    l'eau par terre et qui m'appelle. »
+
+    Sans phase fournie, l'application posait `piste` toute seule : elle
+    affirmait une étape commerciale que personne n'avait choisie.
+    """
+    fiche = (await client.post(
+        "/api/memory/contacts", json={"first_name": "Sans", "last_name": "Phase"}
+    )).json()
+
+    reponse = await client.post("/api/prestations", json={
+        "contact_id": fiche["id"], "intitule": "Depannage",
+    })
+
+    assert reponse.status_code in (400, 422), reponse.text

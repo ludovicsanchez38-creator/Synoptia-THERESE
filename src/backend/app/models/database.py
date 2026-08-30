@@ -169,6 +169,11 @@ def apply_adhoc_migrations(db_path) -> None:
         colonnes_prestations = {
             row[1] for row in conn.execute("PRAGMA table_info(prestations)").fetchall()
         }
+        if colonnes_prestations and "suivi_apres_jours" not in colonnes_prestations:
+            conn.execute(
+                "ALTER TABLE prestations ADD COLUMN suivi_apres_jours INTEGER NOT NULL DEFAULT 90"
+            )
+            conn.commit()
         if colonnes_prestations and "fin_le" not in colonnes_prestations:
             conn.execute("ALTER TABLE prestations ADD COLUMN fin_le DATE")
             conn.commit()

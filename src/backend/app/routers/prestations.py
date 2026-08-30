@@ -35,7 +35,10 @@ class PrestationCreee(BaseModel):
     contact_id: str
     intitule: str
     montant_ht: float | None = None
-    phase: str = "piste"
+    # Pas de defaut : « une fuite sous un lavabo n'est pas une piste ».
+    # L'application ne choisit pas l'etape a la place de qui travaille.
+    phase: str
+    suivi_apres_jours: int = 90
     financeur: str | None = None
     statut_financement: str | None = None
     fin_le: date | None = None
@@ -48,6 +51,7 @@ class PrestationModifiee(BaseModel):
     financeur: str | None = None
     statut_financement: str | None = None
     fin_le: date | None = None
+    suivi_apres_jours: int | None = None
 
 
 def _rendre(p: Prestation) -> dict[str, Any]:
@@ -64,12 +68,24 @@ def _rendre(p: Prestation) -> dict[str, Any]:
         # fait, c'est deux occasions de diverger. Pour un organisme de
         # formation c'est le questionnaire a froid J+90 ; pour un garagiste,
         # un rappel apres reparation. Meme mecanique, delai reglable.
+        # Le delai APPLIQUE est rendu avec l'echeance : sans lui, un defaut de
+        # 90 jours serait une affirmation invisible.
+        "suivi_apres_jours": p.suivi_apres_jours,
         "suivi_apres_fin_le": (
-            echeance_de_suivi(p.fin_le).isoformat() if p.fin_le else None
+            echeance_de_suivi(p.fin_le, jours=p.suivi_apres_jours).isoformat()
+            if p.fin_le
+            else None
         ),
         "created_at": p.created_at.isoformat(),
         "updated_at": p.updated_at.isoformat(),
     }
+
+
+def _verifier_le_delai(jours: int | None) -> None:
+    if jours is not None and jours < 1:
+        raise HTTPException(
+            status_code=400, detail="Un delai de suivi doit valoir au moins un jour"
+        )
 
 
 def _verifier_le_financement(statut: str | None, financeur: str | None) -> None:
@@ -120,6 +136,7 @@ async def creer(
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
     _verifier_la_phase(request.phase)
+    _verifier_le_delai(request.suivi_apres_jours)
     _verifier_le_financement(request.statut_financement, request.financeur)
     if not (request.intitule or "").strip():
         raise HTTPException(status_code=400, detail="Une prestation a besoin d'un intitule")
@@ -134,6 +151,7 @@ async def creer(
         financeur=request.financeur,
         statut_financement=request.statut_financement,
         fin_le=request.fin_le,
+        suivi_apres_jours=request.suivi_apres_jours,
     )
     session.add(p)
     await session.commit()
@@ -148,6 +166,7 @@ async def modifier(
     session: AsyncSession = Depends(get_session),
 ) -> dict[str, Any]:
     _verifier_la_phase(request.phase)
+    _verifier_le_delai(request.suivi_apres_jours)
     p = await session.get(Prestation, prestation_id)
     if p is None:
         raise HTTPException(status_code=404, detail="Prestation introuvable")

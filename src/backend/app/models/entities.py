@@ -137,6 +137,11 @@ class Prestation(SQLModel, table=True):
     # Sans elle, aucune echeance n'est annoncee : une date reglementaire
     # devinee est pire qu'une date absente.
     fin_le: date | None = None
+    # Le delai avant le suivi, en jours. Un plombier rappelle a 8 jours apres
+    # une fuite, a un an apres une chaudiere ; un organisme de formation a 90
+    # (le J+90 Qualiopi). Le defaut est VISIBLE dans la reponse : un defaut
+    # invisible est une affirmation cachee.
+    suivi_apres_jours: int = Field(default=90)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
