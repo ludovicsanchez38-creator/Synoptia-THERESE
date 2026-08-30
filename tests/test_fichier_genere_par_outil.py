@@ -82,10 +82,10 @@ class _LLMQuiAppelleLOutil:
         yield StreamEvent(type="done", stop_reason="end_turn")
 
 
-async def _evenements(db_session, llm):
+async def _evenements(db_session, llm, conv_id: str = "conv-outil-fichier"):
     from app.routers.chat import _do_stream_response
 
-    conv = Conversation(id="conv-outil-fichier", title="planning")
+    conv = Conversation(id=conv_id, title="planning")
     db_session.add(conv)
     await db_session.commit()
 
@@ -105,9 +105,29 @@ async def _evenements(db_session, llm):
     return evenements
 
 
+async def _confirmer_generation(db_session, evenements, faux_outil):
+    """Passe 4 : generate_document attend une carte. Le fichier n'est
+    plus écrit pendant le flux ; il l'est à la confirmation."""
+    from app.routers.chat import ConfirmToolRequest, confirm_tool
+
+    confirms = [e for e in evenements if e.get("type") == "confirmation_required"]
+    assert confirms, (
+        "generate_document s'est exécuté sans carte : "
+        f"{sorted({e.get('type') for e in evenements})}"
+    )
+    cid = confirms[0]["confirmation"]["confirmation_id"]
+    with patch("app.routers.chat.execute_workspace_tool", faux_outil):
+        return await confirm_tool(
+            ConfirmToolRequest(confirmation_id=cid, approved=True),
+            session=db_session,
+        )
+
+
 class TestLaCarteArriveQuandLOutilAEcrit:
     @pytest.mark.asyncio
-    async def test_un_fichier_produit_par_l_outil_emet_une_carte(self, db_session):
+    async def test_un_fichier_produit_par_l_outil_emet_une_carte(
+        self, db_session
+    ):
         from app.services import workspace_tools
 
         async def _faux_outil(nom, arguments, session, contexte=None, conversation_id=None):
@@ -123,23 +143,25 @@ class TestLaCarteArriveQuandLOutilAEcrit:
 
         with patch("app.routers.chat.execute_workspace_tool", _faux_outil), \
              patch("app.routers.chat.WORKSPACE_TOOL_NAMES", {"generate_document"}):
-            evenements = await _evenements(db_session, _LLMQuiAppelleLOutil())
+            evenements = await _evenements(
+                db_session, _LLMQuiAppelleLOutil(), conv_id="conv-outil-fichier-1"
+            )
 
         assert not [e for e in evenements if e.get("type") == "error"], (
             "le chemin doit être NOMINAL : une erreur testerait autre chose"
         )
-        cartes = [e for e in evenements if e.get("type") == "skill_file"]
-        assert cartes, (
-            "le fichier a été écrit et aucune carte n'est émise : l'utilisateur "
-            "n'a aucun moyen de le récupérer. C'est le seul abandon de la "
-            f"campagne dû à l'application. Événements vus : "
-            f"{sorted({e.get('type') for e in evenements})}"
+        data = await _confirmer_generation(db_session, evenements, _faux_outil)
+        fichiers = data.get("skill_files") or []
+        assert fichiers, (
+            "l'utilisateur a confirmé, le fichier est écrit, et aucune "
+            f"carte de téléchargement n'est renvoyée : {data}"
         )
-        assert cartes[0]["skill_file"]["file_name"] == "planning-semaine.xlsx"
+        assert fichiers[0]["file_name"] == "planning-semaine.xlsx"
 
     @pytest.mark.asyncio
-    async def test_la_carte_arrive_avant_done(self, db_session):
-        """Le client arrête la lecture sur `done` : après, plus rien n'atteint l'écran."""
+    async def test_la_carte_de_confirmation_arrive_avant_done(self, db_session):
+        """Le client arrête la lecture sur `done` : la demande de
+        confirmation doit arriver AVANT, sinon elle n'atteint jamais l'écran."""
         from app.services import workspace_tools
 
         async def _faux_outil(nom, arguments, session, contexte=None, conversation_id=None):
@@ -150,11 +172,13 @@ class TestLaCarteArriveQuandLOutilAEcrit:
 
         with patch("app.routers.chat.execute_workspace_tool", _faux_outil), \
              patch("app.routers.chat.WORKSPACE_TOOL_NAMES", {"generate_document"}):
-            evenements = await _evenements(db_session, _LLMQuiAppelleLOutil())
+            evenements = await _evenements(
+                db_session, _LLMQuiAppelleLOutil(), conv_id="conv-outil-fichier-2"
+            )
 
         types = [e.get("type") for e in evenements]
-        assert "skill_file" in types
-        assert types.index("skill_file") < types.index("done"), (
+        assert "confirmation_required" in types
+        assert types.index("confirmation_required") < types.index("done"), (
             f"carte émise après `done`, donc jamais lue : {types}"
         )
 
@@ -201,7 +225,9 @@ class _LLMQuiAppelleAuSecondTour:
 
 class TestLaCarteArriveAussiDansLaRecursion:
     @pytest.mark.asyncio
-    async def test_un_fichier_ecrit_au_second_tour_emet_une_carte(self, db_session):
+    async def test_un_fichier_ecrit_au_second_tour_emet_une_carte(
+        self, db_session
+    ):
         from app.services import workspace_tools
 
         async def _faux_outil(nom, arguments, session, contexte=None, conversation_id=None):
@@ -218,15 +244,17 @@ class TestLaCarteArriveAussiDansLaRecursion:
                  "app.routers.chat.WORKSPACE_TOOL_NAMES",
                  {"generate_document", "list_calendar_events"},
              ):
-            evenements = await _evenements(db_session, _LLMQuiAppelleAuSecondTour())
+            evenements = await _evenements(
+                db_session, _LLMQuiAppelleAuSecondTour(), conv_id="conv-outil-fichier-3"
+            )
 
         types = [e.get("type") for e in evenements]
-        assert "skill_file" in types, (
-            f"fichier écrit au second tour, aucune carte : {types}"
+        assert "confirmation_required" in types, (
+            f"fichier demandé au second tour, aucune carte : {types}"
         )
-        assert types.index("skill_file") < types.index("done"), (
-            f"carte émise après `done`, donc jamais lue : {types}"
-        )
+        data = await _confirmer_generation(db_session, evenements, _faux_outil)
+        fichiers = data.get("skill_files") or []
+        assert fichiers and fichiers[0]["file_name"] == "planning-recursion.xlsx"
 
 
 class TestLeRetourDOutilNePrometPasUneCarteQuiNexistePas:

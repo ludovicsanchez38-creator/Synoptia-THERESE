@@ -363,6 +363,14 @@ export interface ConfirmToolResponse {
   status: 'executed' | 'cancelled';
   tool_name: string;
   result?: string;
+  skill_files?: Array<{
+    skill_id: string;
+    file_id: string;
+    file_name: string;
+    file_size: number;
+    format: string;
+    local_dir?: string;
+  }>;
 }
 
 // US-002 : valide (ou annule) une action sensible mise en attente (ex. send_email).

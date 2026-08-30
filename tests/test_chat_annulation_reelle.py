@@ -14,6 +14,7 @@ producteur DOIT recevoir l'interruption.
 """
 import asyncio
 import contextlib
+from unittest.mock import MagicMock
 
 import pytest
 
@@ -176,16 +177,16 @@ class TestAnnulationCoupeLeProducteur:
 
         executes: list[str] = []
 
-        async def faux_web_search(arguments):
-            executes.append("web_search")
+        async def faux_search_emails(nom, arguments, session, **kwargs):
+            executes.append("search_emails")
             return "résultat"
 
-        monkeypatch.setattr(chat_router, "execute_web_search", faux_web_search)
+        monkeypatch.setattr(chat_router, "execute_workspace_tool", faux_search_emails)
 
         conversation_id = "conv-outils"
         chat_router._register_generation(conversation_id)
 
-        appels = [ToolCall(id="1", name="web_search", arguments={"query": "test"})]
+        appels = [ToolCall(id="1", name="search_emails", arguments={"query": "test"})]
 
         def lancer():
             return chat_router._execute_tools_and_continue(
@@ -197,7 +198,7 @@ class TestAnnulationCoupeLeProducteur:
                 tools=[],
                 conversation_id=conversation_id,
                 remaining_iterations=3,
-                session=None,
+                session=MagicMock(),
                 usage_totals={"input_tokens": 0, "output_tokens": 0, "estimated": True},
                 tool_outcomes=[],
             )
@@ -232,7 +233,7 @@ class TestAnnulationCoupeLeProducteur:
         with contextlib.suppress(StopAsyncIteration, Exception):
             async for _ in flux_temoin:
                 pass
-        assert executes == ["web_search"], (
+        assert executes == ["search_emails"], (
             "le test ne prouve rien : l'outil ne s'exécute pas non plus dans le "
             f"cas nominal (executes={executes})"
         )

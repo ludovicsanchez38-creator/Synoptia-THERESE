@@ -275,8 +275,9 @@ export function PrivacyTab() {
                 génération d'images, la dictée cloud. Avec un modèle local (Ollama), le
                 contenu de tes conversations ne part chez aucun fournisseur de modèle.</li>
               <li>• <strong>La recherche web</strong> : ta requête part chez le moteur
-                (DuckDuckGo par défaut) dès que l'assistante décide de chercher, y compris
-                en modèle local, et sans te demander confirmation. L'interrupteur de
+                (DuckDuckGo par défaut), y compris en modèle local. Dans le chat, une
+                carte te la demande avant de partir. Le Board, la recherche approfondie
+                et l'Atelier cherchent encore sans carte. L'interrupteur de
                 Réglages &gt; Services la coupe partout : le chat, le Board, la recherche
                 approfondie, l'Atelier, la navigation web et l'ancrage Google des modèles
                 Gemini. Les serveurs MCP que tu ajoutes, eux, ne passent pas par lui.</li>

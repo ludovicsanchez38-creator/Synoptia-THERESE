@@ -31,17 +31,18 @@ describe('L’onglet Confidentialité ne promet plus ce que l’app ne tient pas
     render(<PrivacyTab />);
     await screen.findByText(/Ce qui peut sortir de ta machine/i);
 
-    // Faux : la recherche web part chez DuckDuckGo sans confirmation, la
-    // vérification de mise à jour interroge synoptia.fr, et les modèles se
-    // téléchargent depuis HuggingFace — y compris en modèle 100 % local.
+    // Faux : la recherche web part chez DuckDuckGo (carte dans le chat,
+    // pas encore au Board), la vérification de mise à jour interroge
+    // synoptia.fr, et les modèles se téléchargent depuis HuggingFace —
+    // y compris en modèle 100 % local.
     expect(screen.queryByText(/Aucune donnée n'est envoyée à un serveur externe/i)).toBeNull();
   });
 
   it('dit au contraire ce qui sort, la recherche web comprise', async () => {
     render(<PrivacyTab />);
 
-    // La recherche web part SANS confirmation tant que le lot A-mécanique
-    // n'est pas livré. L'écran doit l'avouer plutôt que de le taire.
+    // La recherche web sort toujours. L'écran doit l'avouer plutôt que de
+    // la taire : le chat a désormais une carte, le Board pas encore.
     // « La recherche web » apparaît à deux endroits depuis qu'on l'a aussi
     // signalée dans le bloc des consentements : on vise la puce de l'encadré
     // Stockage, celle qui porte le contrat.
@@ -148,14 +149,13 @@ describe('Les promesses de confirmation disent ce qui est réellement confirmé'
     expect(centre).not.toContain('confirmation sur les actions externes raccordées');
   });
 
-  it('le Centre de confiance dit que la recherche web ne demande rien', () => {
-    // Verrou positif : interdire l'ancienne phrase ne suffit pas, une nouvelle
-    // formule générale repasserait. La seule chose qui tienne, c'est d'exiger
-    // que l'écran nomme l'exception - deux outils sont confirmés
-    // (SENSITIVE_TOOL_NAMES : send_email, create_calendar_event), pas la
-    // recherche web.
+  it('le Centre de confiance distingue le chat (carte) du Board (pas encore)', () => {
+    // Passe 4 : le chat confirme les mutations, y compris la recherche web.
+    // Promettre « tout effet externe » recouvrirait le Board, qui cherche
+    // encore sans carte. L'écran doit nommer les deux moitiés.
     const centre = source('components/prototype/CapabilityCenter.tsx');
-    expect(centre).toMatch(/recherche web[^<]*partent sans la demander/);
+    expect(centre).toMatch(/Dans le chat[^<]*demande une confirmation/);
+    expect(centre).toMatch(/Board[^<]*cherchent encore sans carte/);
   });
 
   it('la mention sous le composeur nomme ce qui est confirmé', () => {

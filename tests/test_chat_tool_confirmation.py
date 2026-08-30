@@ -90,6 +90,110 @@ async def test_send_email_demande_confirmation_sans_envoyer(monkeypatch):
     assert any(not tr.is_error for tr in llm.received_tool_results)
 
 
+@pytest.mark.asyncio
+async def test_les_arguments_d_un_email_n_atterrissent_pas_dans_le_journal(
+    monkeypatch, caplog
+):
+    """Passe 4 : destinataire, objet et corps d'un e-mail annulé restaient
+    sur le disque. Un rapport de bug collé sur Discord les emportait."""
+    import logging
+
+    async def _spy_execute(*args, **kwargs):
+        raise AssertionError("send_email exécuté sans confirmation")
+
+    monkeypatch.setattr(chat_mod, "execute_workspace_tool", _spy_execute)
+
+    llm = _FakeLLM()
+    tc = ToolCall(
+        id="t-log",
+        name="send_email",
+        arguments={
+            "to": "marie.dupont@exemple.fr",
+            "subject": "Objet confidentiel du dossier",
+            "body": "Voici le mot de passe IMAP de Marie",
+        },
+    )
+
+    with caplog.at_level(logging.INFO):
+        _ = [
+            chunk
+            async for chunk in _execute_tools_and_continue(
+                llm, None, None, "", [tc], [], "conv1", 3, session=MagicMock()
+            )
+        ]
+
+    journal = caplog.text
+    assert "marie.dupont@exemple.fr" not in journal
+    assert "Objet confidentiel du dossier" not in journal
+    assert "mot de passe IMAP de Marie" not in journal
+
+
+@pytest.mark.asyncio
+async def test_web_search_demande_confirmation_sans_partir(monkeypatch):
+    """Passe 4 : la requête (donc le contexte) partait chez Brave sans carte."""
+    executed = {"web": False}
+
+    async def _spy_web(*args, **kwargs):
+        executed["web"] = True
+        return "RÉSULTATS"
+
+    monkeypatch.setattr(chat_mod, "execute_web_search", _spy_web)
+
+    llm = _FakeLLM()
+    tc = ToolCall(
+        id="t-web",
+        name="web_search",
+        arguments={"query": "adresses du dossier Martin"},
+    )
+
+    raw = [
+        chunk
+        async for chunk in _execute_tools_and_continue(
+            llm, None, None, "", [tc], [], "conv1", 3, session=MagicMock()
+        )
+    ]
+    chunks = _parse_chunks(raw)
+
+    assert executed["web"] is False
+    confirms = [c for c in chunks if c.get("type") == "confirmation_required"]
+    assert len(confirms) == 1
+    assert confirms[0]["confirmation"]["tool_name"] == "web_search"
+
+
+@pytest.mark.asyncio
+async def test_outil_mcp_inconnu_demande_confirmation_sans_sexecuter():
+    """Un preset Slack/WhatsApp/Stripe s'installait en un clic, puis plus de carte."""
+
+    class _SpyMCP:
+        def __init__(self):
+            self.called = False
+
+        async def execute_tool_call(self, name, arguments):
+            self.called = True
+            raise AssertionError("outil MCP exécuté sans confirmation")
+
+    mcp = _SpyMCP()
+    llm = _FakeLLM()
+    tc = ToolCall(
+        id="t-slack",
+        name="slack__post_message",
+        arguments={"channel": "#general", "text": "secret client"},
+    )
+
+    raw = [
+        chunk
+        async for chunk in _execute_tools_and_continue(
+            llm, mcp, None, "", [tc], [], "conv1", 3, session=MagicMock()
+        )
+    ]
+    chunks = _parse_chunks(raw)
+
+    assert mcp.called is False
+    confirms = [c for c in chunks if c.get("type") == "confirmation_required"]
+    assert len(confirms) == 1
+    assert confirms[0]["confirmation"]["tool_name"] == "slack__post_message"
+
+
 class _FakeLLMReemetSendEmail:
     """Modèle faible qui re-émet send_email dans la continuation (spirale BUG-121)."""
 

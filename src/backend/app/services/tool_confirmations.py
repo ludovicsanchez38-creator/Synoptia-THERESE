@@ -1,9 +1,11 @@
 """US-002 - Confirmation humaine avant les outils sensibles.
 
-Certains outils ont un effet de bord sortant et irréversible (envoi d'email).
-Le LLM ne doit pas pouvoir les déclencher seul : l'action est mise en attente
-ici, puis exécutée seulement après validation explicite de l'utilisateur via
-l'endpoint /api/chat/confirm-tool.
+Un outil qui n'est pas une lecture classée ne s'exécute pas tout seul :
+l'action est mise en attente ici, puis exécutée seulement après validation
+explicite via /api/chat/confirm-tool.
+
+Passe 4 (30/08) : le portillon était une liste de deux noms. Tout le reste
+partait. La décision suit désormais la classe d'effet (`classe_de`).
 
 Le stockage est volontairement en mémoire (durée de vie d'une confirmation =
 quelques secondes/minutes). Une confirmation perdue à un redémarrage est sans
@@ -12,8 +14,7 @@ conséquence : l'action n'a tout simplement pas eu lieu (fail-safe).
 import uuid
 from typing import Any
 
-# Outils à effet de bord sortant/irréversible : exécution soumise à validation.
-SENSITIVE_TOOL_NAMES: set[str] = {"send_email", "create_calendar_event"}
+from app.services.contexte_execution import LECTURE_SEULE, classe_de
 
 # confirmation_id -> (tool_name, arguments)
 _pending: dict[str, tuple[str, dict[str, Any], str | None]] = {}
@@ -32,11 +33,20 @@ def _base_tool_name(tool_name: str) -> str:
 def requires_confirmation(tool_name: str) -> bool:
     """True si l'outil ne doit jamais s'exécuter sans validation utilisateur.
 
-    BUG-121 : couvre aussi un send_email exposé via MCP ('{server_id}__send_email').
-    Sans ça, un tel outil échapperait au gate (nom préfixé) et s'exécuterait
-    directement sans confirmation - violation de l'invariant US-002.
+    Passe 4 (frontière de confiance, 30/08) : le portillon comptait deux
+    noms (`send_email`, `create_calendar_event`). Tout le reste s'exécutait :
+    `web_search` chez Brave avec le contexte, `browser_navigate` vers
+    l'API locale, `create_contact`, et n'importe quel preset MCP (Slack,
+    WhatsApp, Stripe, filesystem). `classe_de()` savait déjà qu'un outil
+    inconnu est une mutation externe ; on s'en sert enfin.
+
+    Fail-closed : seule la lecture classée passe sans carte. Un nom que
+    le registre ne connaît pas (MCP y compris un préfixe collé sur un
+    nom de lecture native) est traité comme sortant. On ne dépouille
+    PAS le préfixe MCP avant de classer : `filesystem__read_file` n'est
+    pas l'outil local `read_file`.
     """
-    return _base_tool_name(tool_name) in SENSITIVE_TOOL_NAMES
+    return bool(classe_de(tool_name) != LECTURE_SEULE)
 
 
 def register_pending(
