@@ -370,9 +370,11 @@ async def _gather_local_context(tools: list[str]) -> str:
 
             async with get_session_context() as session:
                 from sqlalchemy import select
+                from sqlalchemy.orm import selectinload
 
                 stmt = (
                     select(Invoice)
+                    .options(selectinload(Invoice.contact))
                     .order_by(Invoice.created_at.desc())
                     .limit(15)
                 )
@@ -381,11 +383,17 @@ async def _gather_local_context(tools: list[str]) -> str:
                 if invoices:
                     lines = []
                     for inv in invoices:
+                        # Finding 8 (30/08) : `number` / `client_name` n'existent
+                        # pas, et EUR était en dur. Une facture USD sortait
+                        # « ? | ? | 1000 EUR ».
                         status = getattr(inv, "status", "?")
-                        amount = getattr(inv, "total_ttc", getattr(inv, "total", "?"))
-                        client = getattr(inv, "client_name", "?")
+                        amount = getattr(inv, "total_ttc", "?")
+                        devise = getattr(inv, "currency", None) or "EUR"
+                        numero = getattr(inv, "invoice_number", None) or "?"
+                        fiche = getattr(inv, "contact", None)
+                        client = fiche.display_name if fiche is not None else "?"
                         lines.append(
-                            f"- {inv.number or '?'} | {client} | {amount} EUR | {status}"
+                            f"- {numero} | {client} | {amount} {devise} | {status}"
                         )
                     context_parts.append(
                         "## Factures\n" + "\n".join(lines)
