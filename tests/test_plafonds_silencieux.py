@@ -82,3 +82,37 @@ class TestF5ImapTransmetLeJetonDePage:
         )
 
         assert fake.list_messages.await_args.kwargs.get("page_token") == "50"
+
+
+class TestF6AgendaCollecteToutesLesPages:
+    """Un mois chargé coupait aux 250 premiers : la fin du mois devenait blanche."""
+
+    @pytest.mark.asyncio
+    async def test_collecte_la_page_suivante(self) -> None:
+        from app.routers.calendar import _collecter_pages_evenements
+
+        pages = {
+            None: (list(range(250)), "250"),
+            "250": (list(range(250, 260)), None),
+        }
+
+        async def fetch_page(token: str | None):
+            return pages[token]
+
+        collected = await _collecter_pages_evenements(fetch_page)
+        assert collected == list(range(260))
+
+    @pytest.mark.asyncio
+    async def test_plafond_dit_lechec_plutot_que_de_rendre_un_mois_faux(self) -> None:
+        from fastapi import HTTPException
+
+        from app.routers.calendar import PLAFOND_EVENEMENTS_FENETRE, _collecter_pages_evenements
+
+        async def fetch_page(token: str | None):
+            offset = int(token or "0")
+            return list(range(offset, offset + 250)), str(offset + 250)
+
+        with pytest.raises(HTTPException) as exc:
+            await _collecter_pages_evenements(fetch_page)
+        assert exc.value.status_code == 409
+        assert str(PLAFOND_EVENEMENTS_FENETRE) in exc.value.detail
