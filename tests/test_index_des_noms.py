@@ -29,14 +29,22 @@ class TestLIndexNeDerivePas:
     def test_le_generateur_existe_et_tourne(self):
         assert GENERATEUR.exists()
         resultat = subprocess.run(
-            ["node", str(GENERATEUR)], capture_output=True, text=True, cwd=RACINE
+            ["node", str(GENERATEUR)],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            cwd=RACINE,
         )
         assert resultat.returncode == 0, resultat.stderr
         assert "Index des noms" in resultat.stdout
 
     def test_le_fichier_commite_est_celui_que_le_code_produit(self):
         resultat = subprocess.run(
-            ["node", str(GENERATEUR)], capture_output=True, text=True, cwd=RACINE
+            ["node", str(GENERATEUR)],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            cwd=RACINE,
         )
         # Normaliser les fins de ligne : Windows rend « \r\n » et le fichier
         # commité porte « \n ». Comparer brut faisait échouer le gate sur une

@@ -113,3 +113,35 @@ async def test_restore_chiffre_mauvaise_passphrase_refuse(client):
         f"/api/data/restore/{name}?confirm=true", json={"password": "mauvaise-pw"}
     )
     assert resp.status_code == 400
+
+
+def test_le_sel_qui_contient_un_saut_de_ligne_survit(tmp_path, monkeypatch):
+    """Un sel contenant 0x0A ne doit pas corrompre l'archive.
+
+    Sur Windows, os.open sans O_BINARY laisse le CRT en mode texte : tout
+    0x0A ecrit devient 0x0D 0x0A. Le jeton Fernet est du base64url, donc sans
+    0x0A, mais le sel est de l'aleatoire brut. Une chance sur seize environ
+    que l'un de ses 16 octets vaille 0x0A, ce qui donnait des tests de
+    sauvegarde rouges sur 2 runs Windows sur 8, jamais les memes.
+
+    Ce test force le cas au lieu de l'attendre. Sur Unix il passe dans les
+    deux cas, O_BINARY y valant zero ; sur Windows il echoue si le drapeau
+    disparait. Un test qui ne mord que sur une plateforme vaut mieux qu'un
+    test qui ne mord jamais.
+    """
+    from app.services.encryption import decrypt_backup_archive, encrypt_backup_archive
+
+    monkeypatch.setattr(
+        "app.services.encryption.os.urandom", lambda n: b"\x0a" * n, raising=True
+    )
+    clair = tmp_path / "archive.tar.gz"
+    clair.write_bytes(b"contenu\x00binaire\x0aavec des sauts\x0d\x0aet des retours")
+    chiffre = tmp_path / "archive.tar.gz.enc"
+    rendu = tmp_path / "rendu.tar.gz"
+
+    encrypt_backup_archive(clair, chiffre, "Passphrase-Test-123")
+    assert b"\x0d\x0a" not in chiffre.read_bytes()[:21], (
+        "le sel a ete reecrit en \\r\\n : l'archive est ouverte en mode texte"
+    )
+    decrypt_backup_archive(chiffre, rendu, "Passphrase-Test-123")
+    assert rendu.read_bytes() == clair.read_bytes()

@@ -27,6 +27,15 @@ logger = logging.getLogger(__name__)
 from app.config import settings as _settings  # noqa: E402
 
 THERESE_DIR = Path(str(_settings.data_dir))
+# Sur Windows, os.open sans O_BINARY laisse le CRT en mode texte : tout octet
+# 0x0A ecrit devient 0x0D 0x0A. Le jeton Fernet est du base64url, donc sans
+# 0x0A, mais le SEL du chiffrement d'archive est de l'aleatoire brut : 6,07 %
+# de chance qu'un de ses 16 octets vaille 0x0A. L'archive est alors relue avec
+# un sel faux, donc une cle derivee fausse, donc InvalidSignature. C'est ce qui
+# faisait tomber les tests de sauvegarde sur 2 runs Windows sur 8, jamais les
+# memes. O_BINARY vaut zero la ou il n'existe pas : sans effet sur Unix.
+_ECRITURE_BINAIRE = os.O_CREAT | os.O_WRONLY | os.O_TRUNC | getattr(os, "O_BINARY", 0)
+
 KEY_FILE = THERESE_DIR / ".encryption_key"
 SALT_FILE = THERESE_DIR / ".encryption_salt"
 
@@ -186,7 +195,7 @@ class EncryptionService:
         """
         try:
             THERESE_DIR.mkdir(parents=True, exist_ok=True)
-            fd = os.open(KEY_FILE, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o600)
+            fd = os.open(KEY_FILE, _ECRITURE_BINAIRE, 0o600)
             try:
                 os.write(fd, key)
             finally:
@@ -234,7 +243,7 @@ class EncryptionService:
             key = Fernet.generate_key()
 
             # Sauvegarder avec permissions restrictives (atomique)
-            fd = os.open(KEY_FILE, os.O_CREAT | os.O_WRONLY, 0o600)
+            fd = os.open(KEY_FILE, _ECRITURE_BINAIRE & ~os.O_TRUNC, 0o600)
             try:
                 os.write(fd, key)
             finally:
@@ -490,7 +499,7 @@ def encrypt_backup_archive(plain_path, enc_path, password: str) -> None:
         raise ValueError("Une passphrase est requise pour chiffrer la sauvegarde")
     salt = os.urandom(_BACKUP_SALT_LEN)
     token = Fernet(_derive_backup_key(password, salt)).encrypt(Path(plain_path).read_bytes())
-    fd = os.open(enc_path, os.O_CREAT | os.O_WRONLY | os.O_TRUNC, 0o600)
+    fd = os.open(enc_path, _ECRITURE_BINAIRE, 0o600)
     try:
         os.write(fd, _BACKUP_MAGIC + salt + token)
     finally:
