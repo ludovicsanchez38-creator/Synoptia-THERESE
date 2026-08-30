@@ -259,6 +259,8 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<PromptCategory[] | null>(null);
+  const [resultsQuery, setResultsQuery] = useState('');
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [totalResults, setTotalResults] = useState(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
@@ -286,6 +288,7 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
   // Recherche debounced
   const handleSearchChange = useCallback((value: string) => {
     setSearchQuery(value);
+    setSearchError(null);
 
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
@@ -293,7 +296,9 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
 
     if (!value.trim()) {
       setSearchResults(null);
+      setResultsQuery('');
       setTotalResults(0);
+      setSearchError(null);
       return;
     }
 
@@ -302,8 +307,15 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
         const data = await searchPromptLibrary(value.trim());
         setSearchResults(data.categories);
         setTotalResults(data.total);
+        setResultsQuery(value.trim());
+        setSearchError(null);
       } catch {
-        // Silently fail - keep showing previous results
+        // Revue 30/08 : garder les anciens résultats sous le nouveau
+        // libellé faisait croire que la nouvelle requête avait abouti.
+        setSearchResults(null);
+        setTotalResults(0);
+        setResultsQuery('');
+        setSearchError('Recherche impossible pour le moment.');
       }
     }, 300);
   }, []);
@@ -341,9 +353,11 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
           <p className="text-xs text-text-muted mt-0.5">
             {loading
               ? 'Chargement...'
-              : searchResults !== null
-                ? `${totalResults} résultat${totalResults !== 1 ? 's' : ''} pour "${searchQuery}"`
-                : `${categories.reduce((acc, c) => acc + c.prompts.length, 0)} prompts prêts à l'emploi`}
+              : searchError
+                ? 'Recherche impossible'
+                : searchResults !== null
+                  ? `${totalResults} résultat${totalResults !== 1 ? 's' : ''} pour "${resultsQuery}"`
+                  : `${categories.reduce((acc, c) => acc + c.prompts.length, 0)} prompts prêts à l'emploi`}
           </p>
         </div>
       </div>
@@ -376,6 +390,10 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
         {loading ? (
           <div className="flex items-center justify-center py-12">
             <div className="w-6 h-6 border-2 border-accent-cyan/30 border-t-accent-cyan rounded-full animate-spin" />
+          </div>
+        ) : searchError ? (
+          <div className="text-center py-12">
+            <p className="text-sm text-error" role="alert">{searchError}</p>
           </div>
         ) : error ? (
           <div className="text-center py-12">
