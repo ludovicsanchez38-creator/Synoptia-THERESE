@@ -1740,10 +1740,11 @@ async def send_message(
     # ~1 mot = 2 tokens en filet (providers pas encore migrés, cf CLAUDE.md).
     input_tokens = usage_sink.get("input_tokens") or len(request.message.split()) * 2
     output_tokens = usage_sink.get("output_tokens") or len(assistant_content.split()) * 2
+    fournisseur, modele = llm_service.attribution()
     get_token_tracker().record_usage(
         conversation_id=conversation.id,
-        model=llm_service.config.model,
-        provider=llm_service.config.provider.value,
+        model=modele,
+        provider=fournisseur,
         input_tokens=input_tokens,
         output_tokens=output_tokens,
     )
@@ -1752,8 +1753,8 @@ async def send_message(
         conversation_id=conversation.id,
         role="assistant",
         content=assistant_content,
-        model=llm_service.config.model,
-        provider=llm_service.config.provider.value,
+        model=modele,
+        provider=fournisseur,
         tokens_in=input_tokens,
         tokens_out=output_tokens,
     )
@@ -1764,8 +1765,8 @@ async def send_message(
         id=assistant_message.id,
         conversation_id=conversation.id,
         content=assistant_content,
-        model=llm_service.config.model,
-        provider=llm_service.config.provider.value,
+        model=modele,
+        provider=fournisseur,
         tokens_in=input_tokens,
         tokens_out=output_tokens,
         created_at=assistant_message.created_at,
@@ -2017,12 +2018,13 @@ async def _persister_message_partiel(
             )
             if deja.scalars().first() is not None:
                 return
+            fournisseur, modele = llm_service.attribution()
             session_partiel.add(Message(
                 conversation_id=conversation_id,
                 role="assistant",
                 content=contenu,
-                model=llm_service.config.model,
-                provider=llm_service.config.provider.value,
+                model=modele,
+                provider=fournisseur,
             ))
             await session_partiel.commit()
     except Exception:
@@ -2552,12 +2554,13 @@ async def _do_stream_response(
             yield f"data: {json.dumps(fallback_chunk.model_dump())}\n\n"
 
     # Save complete assistant message
+    fournisseur, modele = llm_service.attribution()
     assistant_message = Message(
         conversation_id=conversation_id,
         role="assistant",
         content=full_content,
-        model=llm_service.config.model,
-        provider=llm_service.config.provider.value,
+        model=modele,
+        provider=fournisseur,
     )
     # Track token usage and costs (US-ESC-02, US-ESC-04)
     #
@@ -2578,8 +2581,8 @@ async def _do_stream_response(
 
     usage_record = token_tracker.record_usage(
         conversation_id=conversation_id,
-        model=llm_service.config.model,
-        provider=llm_service.config.provider.value,
+        model=modele,
+        provider=fournisseur,
         input_tokens=input_tokens,
         output_tokens=output_tokens,
     )
@@ -2705,13 +2708,13 @@ async def _do_stream_response(
         message_id=assistant_message.id,
     )
     done_dict = done_data.model_dump()
-    done_dict["provider"] = llm_service.config.provider.value
+    done_dict["provider"] = fournisseur
     done_dict["usage"] = {
         "input_tokens": input_tokens,
         "output_tokens": output_tokens,
         "cost_eur": usage_record.cost_eur,
-        "model": llm_service.config.model,
-        "provider": llm_service.config.provider.value,
+        "model": modele,
+        "provider": fournisseur,
     }
     done_dict["uncertainty"] = uncertainty
     yield f"data: {json.dumps(done_dict)}\n\n"

@@ -426,11 +426,19 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
     ):
         self.config = config or self._default_config()
         self._provider = None
+        # Finding 5 (30/08) : après une bascule, `config` est restauré. Ces
+        # deux champs gardent QUI a réellement répondu, pour le badge et le coût.
+        self.fournisseur_effectif = self.config.provider.value
+        self.modele_effectif = self.config.model
 
         # Revue 0.48 (F3) : le Board refuse la bascule silencieuse du
         # circuit breaker - son repli est EXPLICITE (service principal,
         # actual_provider vrai). Le chat garde la bascule automatique.
         self.bascule_circuit = bascule_circuit
+
+    def attribution(self) -> tuple[str, str]:
+        """Fournisseur et modèle qui ont réellement répondu (pas le sélecteur)."""
+        return self.fournisseur_effectif, self.modele_effectif
 
     def _get_system_prompt_with_identity(self) -> str:
         """Get system prompt with user identity injected."""
@@ -848,6 +856,10 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         if provider_switched:
             self.config = effective_config
             self._provider = None  # Forcer la recréation du provider
+
+        # Posé AVANT le restore du finally : chat.py lit après la boucle.
+        self.fournisseur_effectif = effective_config.provider.value
+        self.modele_effectif = effective_config.model
 
         await self._ensure_provider()
 

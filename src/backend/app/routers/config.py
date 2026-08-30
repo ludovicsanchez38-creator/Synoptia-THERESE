@@ -353,6 +353,14 @@ async def delete_api_key(
     if provider in env_mapping and env_mapping[provider] in os.environ:
         del os.environ[env_mapping[provider]]
 
+    # Finding 5 (30/08) : sans ça, une clé « effacée » restait dans le cache
+    # et dans le singleton, et servait encore de repli.
+    from app.services.llm import invalidate_api_key_cache, load_api_key_cache
+    invalidate_api_key_cache()
+    await load_api_key_cache()
+    import app.services.llm as _llm_mod
+    _llm_mod._llm_service = None
+
     # Audit log (US-SEC-05)
     await log_activity(
         session,
