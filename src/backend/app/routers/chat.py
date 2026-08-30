@@ -724,20 +724,22 @@ async def _get_memory_context(
 
         # Format results into context string
         seen_files = set()  # Track seen files to avoid duplicates
+        from app.services.prompt_security import get_prompt_security
 
         for hit in results:
             memory_type = hit.get("type", "")
             text = hit.get("text", "")
             metadata = hit.get("metadata", {})
             score = hit.get("score", 0)
+            bloc: str | None = None
 
             if memory_type == "contact":
                 name = metadata.get("name", "Inconnu")
-                context_parts.append(f"**Contact**: {name}\n{text}")
+                bloc = f"**Contact**: {name}\n{text}"
             elif memory_type == "project":
                 name = metadata.get("name", "Sans nom")
                 status = metadata.get("status", "")
-                context_parts.append(f"**Projet** ({status}): {name}\n{text}")
+                bloc = f"**Projet** ({status}): {name}\n{text}"
             elif memory_type == "file":
                 file_name = metadata.get("name", "fichier")
                 chunk_index = metadata.get("chunk_index", 0)
@@ -747,13 +749,31 @@ async def _get_memory_context(
                 if file_name not in seen_files:
                     seen_files.add(file_name)
                     if total_chunks > 1:
-                        context_parts.append(
-                            f"**Fichier**: {file_name} (extrait {chunk_index + 1}/{total_chunks})\n{text}"
+                        bloc = (
+                            f"**Fichier**: {file_name} "
+                            f"(extrait {chunk_index + 1}/{total_chunks})\n{text}"
                         )
                     else:
-                        context_parts.append(f"**Fichier**: {file_name}\n{text}")
+                        bloc = f"**Fichier**: {file_name}\n{text}"
             else:
-                context_parts.append(text)
+                bloc = text
+
+            if bloc:
+                # Finding 1 (30/08) : le hit Qdrant arrivait nu. On enveloppe
+                # le bloc entier (étiquette comprise) : un nom de contact
+                # peut porter `[End memoire]`. Légifrance et D6, plus bas,
+                # restent hors enveloppe (ce sont nos phrases).
+                try:
+                    enveloppe = get_prompt_security().sanitize_for_context(
+                        bloc, source="memoire"
+                    )
+                except Exception:
+                    logger.warning(
+                        "Enveloppe mémoire impossible, fragment non injecté"
+                    )
+                    enveloppe = ""
+                if enveloppe:
+                    context_parts.append(enveloppe)
 
             logger.debug(f"Memory context hit: {memory_type} (score={score:.2f})")
 
