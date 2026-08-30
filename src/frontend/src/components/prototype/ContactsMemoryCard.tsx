@@ -19,6 +19,14 @@ import type { ReadResource } from './usePrototypeReadData';
 import { Spinner } from '../ui/Spinner';
 
 const EMPTY_CONTACTS: Contact[] = [];
+const LIMITE_CONTACTS_ACCUEIL = 200;
+
+function libelleContactsCharges(n: number): string {
+  if (n >= LIMITE_CONTACTS_ACCUEIL) {
+    return `${n} contacts chargés (total non mesuré)`;
+  }
+  return `${n} contact${n > 1 ? 's' : ''} dans la mémoire locale`;
+}
 
 function ContactAvatar({ contact, className = '' }: { contact: Contact; className?: string }) {
   return (
@@ -72,7 +80,7 @@ export function ContactsMemoryCard({
             <h2 id="contacts-memory-title" className="text-base font-semibold text-text">Contacts et mémoire</h2>
             <div className="text-xs text-text-muted">
               {resource.status === 'ready'
-                ? `${resource.data.length} contact${resource.data.length > 1 ? 's' : ''} dans la mémoire locale`
+                ? libelleContactsCharges(resource.data.length)
                 : 'Lecture de la mémoire locale'}
             </div>
           </div>

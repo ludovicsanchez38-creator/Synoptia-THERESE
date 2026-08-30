@@ -12,19 +12,19 @@ const confidenceConfig = {
     color: 'text-agent-green',
     bg: 'bg-agent-green/10',
     border: 'border-agent-green/30',
-    label: 'Confiance élevée',
+    label: 'Consensus élevé',
   },
   medium: {
     color: 'text-warning',
     bg: 'bg-agent-amber/10',
     border: 'border-agent-amber/30',
-    label: 'Confiance moyenne',
+    label: 'Consensus moyen',
   },
   low: {
     color: 'text-error',
     bg: 'bg-error/10',
     border: 'border-error/30',
-    label: 'Confiance faible',
+    label: 'Consensus faible',
   },
 };
 

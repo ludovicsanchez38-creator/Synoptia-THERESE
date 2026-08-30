@@ -53,6 +53,26 @@ describe('InvoiceWorkspaceCard', () => {
     fireEvent.click(screen.getByText('DEV-2026-014'));
     expect(onOpenInvoice).toHaveBeenCalledWith('invoice-1');
   });
+
+  it('au plafond de page, n’affirme pas le total des documents', () => {
+    const plein = data({
+      invoices: Array.from({ length: 50 }, (_, i) => ({
+        ...invoice,
+        id: `inv-${i}`,
+        invoice_number: `DEV-${i}`,
+      })),
+    });
+    render(
+      <InvoiceWorkspaceCard
+        resource={{ status: 'ready', data: plein, error: null }}
+        onRetry={vi.fn()}
+        onOpenInvoice={vi.fn()}
+        onCreateDevis={vi.fn()}
+        onOpenClassic={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/50 documents chargés \(total non mesuré\)/)).toBeInTheDocument();
+  });
 });
 
 describe('InvoiceWorkspaceCanvas', () => {

@@ -18,6 +18,8 @@ export interface EmailInboxData {
   currentAccount: EmailAccount | null;
   messages: EmailMessage[];
   failedMessages: number;
+  /** True si la page demandée (30) est saturée : le compteur n'est pas celui de la boîte. */
+  listeIncomplete?: boolean;
 }
 
 export type EmailTone = 'formal' | 'friendly' | 'neutral';
@@ -45,7 +47,7 @@ export function usePrototypeEmailData(enabled = true) {
         useEmailStore.getState().setMessages([]);
         setInboxResource({
           status: 'ready',
-          data: { accounts: [], currentAccount: null, messages: [], failedMessages: 0 },
+          data: { accounts: [], currentAccount: null, messages: [], failedMessages: 0, listeIncomplete: false },
           error: null,
         });
         return;
@@ -70,6 +72,7 @@ export function usePrototypeEmailData(enabled = true) {
           currentAccount,
           messages,
           failedMessages: response.messages.length - messages.length,
+          listeIncomplete: Boolean(response.nextPageToken) || response.messages.length >= 30,
         },
         error: null,
       });

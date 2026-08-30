@@ -43,6 +43,14 @@ describe('Rendez-vous 0.40 conversationnel', () => {
     expect(onOpenEvent).toHaveBeenCalledWith(meetingEventKey(event));
   });
 
+  it('quand un calendrier a saturé sa page, n’affirme pas le total des événements', () => {
+    render(<MeetingAgendaCard
+      resource={{ status: 'ready', data: { ...workspace, eventsCapped: true }, error: null }}
+      onRetry={vi.fn()} onOpenEvent={vi.fn()} onNewEvent={vi.fn()} onOpenClassic={vi.fn()}
+    />);
+    expect(screen.getByText(/liste incomplète/)).toBeInTheDocument();
+  });
+
   it('exige une confirmation avant la création Agenda', async () => {
     const onCreateEvent = vi.fn().mockResolvedValue(event);
     render(<MeetingWorkspaceCanvas

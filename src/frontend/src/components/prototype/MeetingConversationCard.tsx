@@ -23,6 +23,11 @@ import {
 } from './usePrototypeMeetingData';
 import { Spinner } from '../ui/Spinner';
 
+function libelleEvenementsCharges(n: number, incomplete?: boolean): string {
+  const base = `${n} événement${n > 1 ? 's' : ''} sur 90 jours`;
+  return incomplete ? `${base} (liste incomplète)` : base;
+}
+
 export type MeetingTarget = string | 'new-event' | null;
 
 function StateShell({ children }: { children: ReactNode }) {
@@ -102,7 +107,7 @@ export function MeetingAgendaCard({
             <h2 id="meeting-agenda-title" className="text-base font-semibold text-text">Préparer un rendez-vous</h2>
             <p className="text-xs text-text-muted">
               {resource.status === 'ready'
-                ? `${resource.data.events.length} événement${resource.data.events.length > 1 ? 's' : ''} sur 90 jours`
+                ? libelleEvenementsCharges(resource.data.events.length, resource.data.eventsCapped)
                 : 'Lecture des calendriers disponibles'}
             </p>
           </div>

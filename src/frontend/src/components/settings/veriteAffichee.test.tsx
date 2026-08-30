@@ -162,4 +162,10 @@ describe('Les promesses de confirmation disent ce qui est réellement confirmé'
     const coque = source('components/prototype/ConversationCanvasPrototype.tsx');
     expect(coque).not.toContain('Parcours réel · confirmation avant effet');
   });
+
+  it('le Board ne confirme pas un moteur qu’il n’a pas interrogé', () => {
+    // Revue 30/08 : le badge était codé en dur dès la sélection du scénario.
+    const coque = source('components/prototype/ConversationCanvasPrototype.tsx');
+    expect(coque).not.toContain('Cloud ou Ollama confirmé');
+  });
 });
