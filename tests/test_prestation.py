@@ -186,8 +186,10 @@ async def test_aucun_chemin_ne_repose_piste_en_silence(db_session: AsyncSession)
     `default="piste"` : un import, un script ou un test la reposait en
     silence. Une prestation sans phase ne doit pas pouvoir naître.
     """
+    from sqlalchemy.exc import IntegrityError
+
     c = await _client(db_session, nom="SansPhase")
-    with pytest.raises(Exception):
+    with pytest.raises(IntegrityError):
         db_session.add(Prestation(contact_id=c.id, intitule="Depannage"))
         await db_session.commit()
     await db_session.rollback()
