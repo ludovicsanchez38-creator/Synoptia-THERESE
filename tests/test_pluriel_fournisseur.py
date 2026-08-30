@@ -7,8 +7,6 @@ dans le cache et servait encore de repli.
 
 from __future__ import annotations
 
-from unittest.mock import AsyncMock
-
 import pytest
 from app.services.providers.base import LLMConfig, LLMProvider, StreamEvent
 

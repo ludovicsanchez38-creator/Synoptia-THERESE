@@ -13,7 +13,6 @@ from unittest.mock import AsyncMock
 import pytest
 from app.models.entities import Calendar, CalendarEvent, EmailAccount
 
-
 FERIE = "fr.french#holiday@group.v.calendar.google.com"
 
 
