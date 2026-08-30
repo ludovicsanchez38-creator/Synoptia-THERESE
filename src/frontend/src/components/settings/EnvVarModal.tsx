@@ -185,7 +185,7 @@ export function EnvVarModal({ preset, onSubmit, onCancel }: EnvVarModalProps) {
 
         {/* Info */}
         <div className="flex items-start gap-3 p-3 bg-accent-cyan/10 border border-accent-cyan/20 rounded-lg mb-6">
-          <AlertCircle className="w-5 h-5 text-accent-cyan shrink-0 mt-0.5" />
+          <AlertCircle className="w-5 h-5 text-accent-cyan-ink shrink-0 mt-0.5" />
           <div className="text-sm text-text-muted">
             <p>Ce serveur nécessite des clés API pour fonctionner.</p>
             <p className="mt-1">Tes clés seront chiffrées et stockées localement.</p>
@@ -216,7 +216,7 @@ export function EnvVarModal({ preset, onSubmit, onCancel }: EnvVarModalProps) {
                       href={config.consoleUrl}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-xs text-accent-cyan hover:underline flex items-center gap-1"
+                      className="text-xs text-accent-cyan-ink hover:underline flex items-center gap-1"
                     >
                       Obtenir une clé
                       <ExternalLink className="w-3 h-3" />

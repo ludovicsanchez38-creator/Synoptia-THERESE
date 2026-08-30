@@ -197,7 +197,7 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
     >
       <div className="text-center space-y-2">
         <div className="w-12 h-12 rounded-[8px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center mx-auto">
-          <Server className="w-6 h-6 text-accent-cyan" />
+          <Server className="w-6 h-6 text-accent-cyan-ink" />
         </div>
         <h3 className="text-lg font-semibold text-text">Configuration SMTP/IMAP</h3>
         <p className="text-sm text-text-muted">
@@ -339,7 +339,7 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
           type="checkbox"
           checked={form.smtp_use_tls}
           onChange={(e) => updateField('smtp_use_tls', e.target.checked)}
-          className="w-4 h-4 rounded border-border/50 bg-background/60 text-accent-cyan focus:ring-accent-cyan/50"
+          className="w-4 h-4 rounded border-border/50 bg-background/60 text-accent-cyan-ink focus:ring-accent-cyan/50"
         />
         <span className="text-sm text-text-muted">Utiliser TLS/STARTTLS (587) - décocher pour le SSL direct (465)</span>
       </label>

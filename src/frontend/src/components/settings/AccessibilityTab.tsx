@@ -53,7 +53,7 @@ export function AccessibilityTab() {
               onKeyDown={(event) => handleRovingFocus(event, '[role="radio"]', 'horizontal')}
               className={`flex-1 py-2 px-3 rounded-lg border text-sm transition-colors flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan ${
                 theme === v
-                  ? 'bg-accent-cyan/20 border-accent-cyan text-accent-cyan'
+                  ? 'bg-accent-cyan/20 border-accent-cyan text-accent-cyan-ink'
                   : 'bg-background/40 border-border/30 text-text-muted hover:border-border'
               }`}
             >
@@ -107,7 +107,7 @@ export function AccessibilityTab() {
               onKeyDown={(event) => handleRovingFocus(event, '[role="radio"]', 'horizontal')}
               className={`flex-1 py-2 px-3 rounded-lg border text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan ${
                 fontSize === size
-                  ? 'bg-accent-cyan/20 border-accent-cyan text-accent-cyan'
+                  ? 'bg-accent-cyan/20 border-accent-cyan text-accent-cyan-ink'
                   : 'bg-background/40 border-border/30 text-text-muted hover:border-border'
               }`}
             >
@@ -178,10 +178,10 @@ export function AccessibilityTab() {
       {/* Boîte d'information */}
       <div className="p-3 bg-accent-cyan/10 border border-accent-cyan/20 rounded-lg">
         <div className="flex items-start gap-2">
-          <Accessibility className="w-4 h-4 text-accent-cyan mt-0.5" />
-          <div className="text-sm text-accent-cyan">
+          <Accessibility className="w-4 h-4 text-accent-cyan-ink mt-0.5" />
+          <div className="text-sm text-accent-cyan-ink">
             <p className="font-medium">Raccourcis clavier disponibles</p>
-            <ul className="mt-1 text-xs space-y-0.5 text-accent-cyan/80">
+            <ul className="mt-1 text-xs space-y-0.5 text-accent-cyan-ink">
               <li>{mod}+K : Palette de commandes</li>
               <li>{mod}+B : Conversations</li>
               <li>{mod}+M : Mémoire</li>

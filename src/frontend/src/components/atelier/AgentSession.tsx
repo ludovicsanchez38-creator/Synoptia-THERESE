@@ -498,7 +498,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
                           : "rgba(255, 255, 255, 0.03)",
                         borderLeft: isUser ? "none" : "2px solid",
                         borderLeftColor: isUser ? "transparent" : undefined,
-                        color: "#E6EDF7",
+                        color: "var(--color-text)",
                       }}
                     >
                       <span style={{ whiteSpace: "pre-wrap" }}>

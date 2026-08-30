@@ -163,7 +163,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
     <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-lg bg-accent-cyan/20 flex items-center justify-center">
-          <FileText className="w-5 h-5 text-accent-cyan" />
+          <FileText className="w-5 h-5 text-accent-cyan-ink" />
         </div>
         <div>
           <h2 className="text-lg font-semibold text-text">Devis et factures</h2>
@@ -212,7 +212,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
             className={cn(
               'px-3 py-1 rounded-lg text-sm transition-colors',
               (type === 'all' && !filters.document_type) || filters.document_type === type
-                ? 'bg-accent-cyan/20 text-accent-cyan'
+                ? 'bg-accent-cyan/20 text-accent-cyan-ink'
                 : 'text-text-muted hover:bg-surface-elevated'
             )}
           >
@@ -326,7 +326,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
 
                   <div className="flex flex-col items-end gap-2">
                     <div className="text-right">
-                      <p className="text-2xl font-bold text-accent-cyan">{montantAvecDevise(invoice.total_ttc, invoice.currency)}</p>
+                      <p className="text-2xl font-bold text-accent-cyan-ink">{montantAvecDevise(invoice.total_ttc, invoice.currency)}</p>
                       <p className="text-sm text-text-muted">TTC</p>
                     </div>
 

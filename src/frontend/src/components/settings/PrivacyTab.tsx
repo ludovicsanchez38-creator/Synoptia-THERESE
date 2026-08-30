@@ -225,7 +225,7 @@ export function PrivacyTab() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-32">
-        <Spinner taille="zone" className="text-accent-cyan" />
+        <Spinner taille="zone" className="text-accent-cyan-ink" />
       </div>
     );
   }
@@ -235,7 +235,7 @@ export function PrivacyTab() {
       {/* En-tête */}
       <div>
         <h3 className="text-base font-semibold text-text flex items-center gap-2">
-          <Shield className="w-5 h-5 text-accent-cyan" />
+          <Shield className="w-5 h-5 text-accent-cyan-ink" />
           Confidentialité et données personnelles
         </h3>
         <p className="mt-1 text-sm text-text-muted">
@@ -297,7 +297,7 @@ export function PrivacyTab() {
         <div className="mb-3 flex flex-wrap items-start justify-between gap-3">
           <div>
             <h4 className="flex items-center gap-2 text-sm font-semibold text-text">
-              <Archive className="h-4 w-4 text-accent-cyan" />
+              <Archive className="h-4 w-4 text-accent-cyan-ink" />
               Export et sauvegardes
             </h4>
             <p className="mt-1 text-xs text-text-muted">
@@ -344,7 +344,7 @@ export function PrivacyTab() {
         <div className="overflow-hidden rounded-lg border border-border/30">
           <div className="flex items-center justify-between bg-surface-elevated/40 px-3 py-2">
             <span className="text-xs font-semibold text-text">Sauvegardes disponibles</span>
-            <button type="button" onClick={() => void refreshBackups()} className="text-xs font-medium text-accent-cyan hover:underline">Actualiser</button>
+            <button type="button" onClick={() => void refreshBackups()} className="text-xs font-medium text-accent-cyan-ink hover:underline">Actualiser</button>
           </div>
           {backupLoading ? (
             <div className="flex items-center gap-2 px-3 py-4 text-xs text-text-muted"><Spinner taille="ligne" />Chargement…</div>
@@ -414,7 +414,7 @@ export function PrivacyTab() {
       {/* Section : Consentements cloud par finalité (revue 0.40) */}
       <section className="rounded-lg border border-border/50 p-4">
         <h4 className="mb-1 flex items-center gap-2 text-sm font-semibold text-text">
-          <UserCheck className="h-4 w-4 text-accent-cyan" />
+          <UserCheck className="h-4 w-4 text-accent-cyan-ink" />
           Consentements cloud
         </h4>
         <p className="text-xs leading-5 text-text-muted">
@@ -479,7 +479,7 @@ export function PrivacyTab() {
       {/* Section : Tes données */}
       <section className="rounded-lg border border-border/50 p-4">
         <h4 className="text-sm font-semibold text-text flex items-center gap-2 mb-3">
-          <Database className="w-4 h-4 text-accent-cyan" />
+          <Database className="w-4 h-4 text-accent-cyan-ink" />
           Tes données
         </h4>
         <div className="space-y-2">
@@ -488,7 +488,7 @@ export function PrivacyTab() {
               key={type}
               className="flex items-start gap-3 rounded-lg bg-surface-elevated/30 px-3 py-2"
             >
-              <span className="text-xs font-medium text-accent-cyan min-w-[100px]">{type}</span>
+              <span className="text-xs font-medium text-accent-cyan-ink min-w-[100px]">{type}</span>
               <span className="text-xs text-text-muted">{description}</span>
             </div>
           ))}
@@ -514,7 +514,7 @@ export function PrivacyTab() {
               {RETENTION_TABLE.map(({ type, duree, justification }) => (
                 <tr key={type} className="border-t border-border/20">
                   <td className="px-3 py-2 text-text">{type}</td>
-                  <td className="px-3 py-2 text-accent-cyan">{duree}</td>
+                  <td className="px-3 py-2 text-accent-cyan-ink">{duree}</td>
                   <td className="px-3 py-2 text-text-muted">{justification}</td>
                 </tr>
               ))}
@@ -531,7 +531,7 @@ export function PrivacyTab() {
         </h4>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="rounded-lg bg-surface-elevated/30 p-3 text-center">
-            <Download className="w-5 h-5 text-accent-cyan mx-auto mb-2" />
+            <Download className="w-5 h-5 text-accent-cyan-ink mx-auto mb-2" />
             <span className="block text-xs font-medium text-text mb-1">Exporter</span>
             <span className="block text-xs text-text-muted">
               L’export global est disponible ci-dessus ; l’export individuel reste accessible dans le CRM.
@@ -600,7 +600,7 @@ export function PrivacyTab() {
       {/* Section : Purge automatique */}
       <section className="rounded-lg border border-border/50 p-4">
         <h4 className="text-sm font-semibold text-text flex items-center gap-2 mb-3">
-          <Clock className="w-4 h-4 text-accent-magenta" />
+          <Clock className="w-4 h-4 text-accent-magenta-ink" />
           Purge automatique
         </h4>
         <p className="text-xs text-text-muted mb-4">
@@ -637,7 +637,7 @@ export function PrivacyTab() {
         {purgeEnabled && (
           <div className="mb-4">
             <label className="text-xs font-medium text-text-muted block mb-2">
-              Durée de rétention : <span className="text-accent-cyan font-semibold">{purgeMonths} mois</span>
+              Durée de rétention : <span className="text-accent-cyan-ink font-semibold">{purgeMonths} mois</span>
             </label>
             <input aria-label="Ancienneté des données à purger, en mois"
               type="range"

@@ -25,17 +25,27 @@
   --color-background: #F3F6FC;
   --color-text-primary: #101C36;
 
-  /* Accents de marque (constants dans les deux modes) */
+  /* Accents de marque (constants dans les deux modes). Ce sont des couleurs
+     de REMPLISSAGE : fonds, bordures, dégradés. Jamais du texte. */
   --color-accent-cyan: #22D3EE;
   --color-accent-magenta: #E11D8D;
   --color-accent-violet: #A855F7;
+
+  /* Leur déclinaison lisible, seule autorisée pour du TEXTE. Le cyan de
+     marque donne 1,67:1 sur le fond clair ; ces valeurs passent AA.
+     Clair : 4,95:1 (cyan) et 5,42:1 (magenta) sur #F3F6FC. */
+  --color-accent-cyan-ink: #0E7490;
+  --color-accent-magenta-ink: #BE1A72;
 
   /* Accent d'action (teinté selon le mode) + tint/anneau/texte-sur-accent */
   --color-accent: #0F8FB3;
   --color-accent-fill: #22D3EE;
   --color-accent-ink: #06121F;
   --color-accent-tint: #DEF4F9;
-  --color-ring: #22D3EE;
+  /* 3,46:1 sur le fond clair, au-dessus du seuil UI de 3:1.
+     Le cyan de marque n'y arrive pas (1,67:1) : un anneau
+     invisible rend la navigation au clavier impraticable. */
+  --color-ring: #0F8FB3;
 
   /* Identité des agents de l'Atelier (BUG-150 : les text-*-400 Tailwind,
      pensés fond sombre, rendaient « Codeur » quasi invisible en thème
@@ -110,6 +120,10 @@
    MODE SOMBRE « Signature » — [data-theme="dark"]
    ============================================================ */
 [data-theme="dark"] {
+  /* Sur fond sombre le cyan de marque est lisible tel quel (10,29:1).
+     Le magenta non : 3,85:1 sur la surface, sous AA. */
+  --color-accent-cyan-ink: #22D3EE;
+  --color-accent-magenta-ink: #F0509F;
   --color-bg: #0B1226;
   --color-surface: #131B35;
   --color-surface-2: #0E1630;
@@ -239,8 +253,11 @@ select option {
 }
 
 ::selection {
-  background: var(--color-accent-cyan);
-  color: var(--color-bg);
+  /* Un lavis d'accent qui garde l'encre du thème par-dessus : lisible dans
+     les deux modes. L'ancienne paire (cyan plein / couleur du fond) donnait
+     1,67:1, une sélection quasi invisible. */
+  background: color-mix(in srgb, var(--color-accent-cyan) 35%, transparent);
+  color: var(--color-text);
 }
 
 /* Glassmorphism utility (theme-aware) */
@@ -462,6 +479,8 @@ html[data-reduce-motion="true"] *::after {
    S'applique par-dessus le thème clair ou sombre.
    ============================================================ */
 [data-high-contrast="true"] {
+  --color-accent-cyan-ink: #00FFFF;
+  --color-accent-magenta-ink: #FF00FF;
   --color-bg: #000000;
   --color-surface: #0A0A0A;
   --color-surface-2: #0A0A0A;

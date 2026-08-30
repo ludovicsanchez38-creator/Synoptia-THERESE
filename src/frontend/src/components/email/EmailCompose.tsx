@@ -209,7 +209,7 @@ export function EmailCompose() {
             />
             <button
               onClick={() => setShowCcBcc(!showCcBcc)}
-              className="text-xs text-text-muted hover:text-accent-cyan transition-colors flex items-center gap-1"
+              className="text-xs text-text-muted hover:text-accent-cyan-ink transition-colors flex items-center gap-1"
             >
               Cc/Cci
               {showCcBcc ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}

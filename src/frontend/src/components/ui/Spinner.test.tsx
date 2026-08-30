@@ -52,8 +52,8 @@ describe('Spinner', () => {
   });
 
   it('hérite de la couleur du texte, et laisse la surcharger', () => {
-    const { container } = render(<Spinner className="text-accent-cyan" />);
+    const { container } = render(<Spinner className="text-accent-cyan-ink" />);
 
-    expect(container.querySelector('svg')?.getAttribute('class')).toContain('text-accent-cyan');
+    expect(container.querySelector('svg')?.getAttribute('class')).toContain('text-accent-cyan-ink');
   });
 });

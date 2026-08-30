@@ -299,7 +299,7 @@ export function EventForm() {
             id="all-day"
             checked={allDay}
             onChange={(e) => setAllDay(e.target.checked)}
-            className="w-4 h-4 rounded border-border/50 bg-background/60 text-accent-cyan focus:ring-2 focus:ring-accent-cyan/50"
+            className="w-4 h-4 rounded border-border/50 bg-background/60 text-accent-cyan-ink focus:ring-2 focus:ring-accent-cyan/50"
           />
           <label htmlFor="all-day" className="text-sm text-text cursor-pointer">
             Événement sur toute la journée

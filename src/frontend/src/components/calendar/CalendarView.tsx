@@ -97,7 +97,7 @@ function ListView({
         <div className="space-y-6">
           {groupedEvents.map(([date, evts]) => (
             <div key={date}>
-              <h3 className="text-sm font-medium text-accent-cyan mb-3">
+              <h3 className="text-sm font-medium text-accent-cyan-ink mb-3">
                 {new Date(date).toLocaleDateString('fr-FR', {
                   weekday: 'long',
                   day: 'numeric',
@@ -390,7 +390,7 @@ function WeekView({
               <div className="text-xs text-text-muted">{weekDayLabels[i]}</div>
               <div
                 className={`text-lg font-semibold mt-0.5 ${
-                  isToday ? 'text-accent-cyan' : 'text-text'
+                  isToday ? 'text-accent-cyan-ink' : 'text-text'
                 }`}
               >
                 {date.getDate()}
@@ -622,10 +622,10 @@ function DayView({
     >
       {/* En-tête jour */}
       <div className="px-6 py-3 border-b border-border/30 shrink-0">
-        <h3 className={`text-base font-semibold capitalize ${isToday ? 'text-accent-cyan' : 'text-text'}`}>
+        <h3 className={`text-base font-semibold capitalize ${isToday ? 'text-accent-cyan-ink' : 'text-text'}`}>
           {dayLabel}
           {isToday && (
-            <span className="ml-2 text-xs font-normal text-accent-cyan/70">(aujourd'hui)</span>
+            <span className="ml-2 text-xs font-normal text-accent-cyan-ink">(aujourd'hui)</span>
           )}
         </h3>
       </div>

@@ -1208,13 +1208,13 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       {currentModel && !modelUnavailable && (
         <div className="flex items-center px-2 mb-2">
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-[6px] bg-accent-cyan/10 border border-accent-cyan/20 hover:border-accent-cyan/40 transition-all">
-            <Cpu className="w-3.5 h-3.5 text-accent-cyan" />
+            <Cpu className="w-3.5 h-3.5 text-accent-cyan-ink" />
             {availableModels.length > 1 ? (
               <select
                 aria-label="Modèle de conversation"
                 value={currentModel}
                 onChange={(e) => handleModelChange(e.target.value)}
-                className="text-xs font-medium text-text bg-transparent border-none outline-none cursor-pointer hover:text-accent-cyan transition-colors appearance-none pr-4 [&>option]:bg-[var(--color-surface)] [&>option]:text-[var(--color-text)]"
+                className="text-xs font-medium text-text bg-transparent border-none outline-none cursor-pointer hover:text-accent-cyan-ink transition-colors appearance-none pr-4 [&>option]:bg-[var(--color-surface)] [&>option]:text-[var(--color-text)]"
                 style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 24 24' fill='none' stroke='%2322D3EE' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right center' }}
               >
                 {availableModels.map((m) => (
@@ -1420,7 +1420,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           <kbd className="px-1 rounded bg-surface-elevated">K</kbd> commandes
         </p>}
         {showKeyboardHints && suggestion && (
-          <p className="text-xs text-accent-cyan/60">
+          <p className="text-xs text-accent-cyan-ink">
             <kbd className="px-1 rounded bg-surface-elevated">Tab</kbd> accepter
           </p>
         )}

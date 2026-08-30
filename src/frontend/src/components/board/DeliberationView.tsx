@@ -86,11 +86,11 @@ export function DeliberationView({
               'rounded-xl bg-surface-elevated border border-border'
             )}
           >
-            <Globe className="w-5 h-5 text-accent-cyan animate-pulse" />
+            <Globe className="w-5 h-5 text-accent-cyan-ink animate-pulse" />
             <span className="text-text-muted">
               Recherche d'informations actualisées sur le web...
             </span>
-            <Spinner taille="bouton" className="text-accent-cyan" />
+            <Spinner taille="bouton" className="text-accent-cyan-ink" />
           </motion.div>
         )}
       </AnimatePresence>
@@ -102,8 +102,8 @@ export function DeliberationView({
           animate={{ opacity: 1 }}
           className="flex items-center gap-2 px-4 py-2 rounded-lg bg-accent-magenta/10 border border-accent-magenta/20"
         >
-          <Shield className="w-4 h-4 text-accent-magenta" />
-          <span className="text-sm text-accent-magenta">
+          <Shield className="w-4 h-4 text-accent-magenta-ink" />
+          <span className="text-sm text-accent-magenta-ink">
             Mode souverain - Conseillers interrogés un par un via Ollama
           </span>
         </motion.div>
@@ -190,7 +190,7 @@ export function DeliberationView({
           animate={{ opacity: 1 }}
           className="flex items-center justify-center gap-3 py-8"
         >
-          <Spinner taille="zone" className="text-accent-cyan" />
+          <Spinner taille="zone" className="text-accent-cyan-ink" />
           <span className="text-text-muted">Synthèse en cours...</span>
         </motion.div>
       )}

@@ -55,7 +55,7 @@ export function CommandCard({ command, onClick, index }: CommandCardProps) {
       )}
       title={command.description}
     >
-      <span className="flex-shrink-0 text-accent-cyan">
+      <span className="flex-shrink-0 text-accent-cyan-ink">
         {isEmoji ? (
           <span className="text-base">{command.icon}</span>
         ) : IconComponent ? (

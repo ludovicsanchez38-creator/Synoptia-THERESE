@@ -143,7 +143,7 @@ export function VerifyStep({ clientId, clientSecret, onBack, onSuccess }: Verify
       {state === 'initiating' && (
         <div className="text-center space-y-4">
           <div className="w-16 h-16 rounded-full bg-accent-tint border border-border flex items-center justify-center mx-auto">
-            <Spinner taille="zone" className="text-accent-cyan" />
+            <Spinner taille="zone" className="text-accent-cyan-ink" />
           </div>
           <h3 className="text-lg font-semibold text-text">Préparation de l'autorisation...</h3>
           <p className="text-sm text-text-muted">
@@ -156,7 +156,7 @@ export function VerifyStep({ clientId, clientSecret, onBack, onSuccess }: Verify
       {state === 'waiting' && (
         <div className="text-center space-y-4">
           <div className="w-16 h-16 rounded-full bg-accent-tint border border-border flex items-center justify-center mx-auto">
-            <Spinner taille="zone" className="text-accent-cyan" />
+            <Spinner taille="zone" className="text-accent-cyan-ink" />
           </div>
           <h3 className="text-lg font-semibold text-text">En attente d'autorisation...</h3>
           <p className="text-sm text-text-muted">
@@ -169,7 +169,7 @@ export function VerifyStep({ clientId, clientSecret, onBack, onSuccess }: Verify
           {authUrl && (
             <button
               onClick={openAuthUrlManually}
-              className="inline-flex items-center gap-2 text-xs text-accent-cyan hover:text-accent-cyan/80 transition-colors mt-2"
+              className="inline-flex items-center gap-2 text-xs text-accent-cyan-ink hover:text-accent-cyan-ink transition-colors mt-2"
             >
               <ExternalLink className="w-3 h-3" />
               Rouvrir la page d'autorisation Google
@@ -182,7 +182,7 @@ export function VerifyStep({ clientId, clientSecret, onBack, onSuccess }: Verify
               <p className="text-xs text-text-muted">
                 Si Google affiche une erreur, ajoute cette URI dans Google Cloud Console :
               </p>
-              <code className="block text-xs text-accent-cyan bg-background/60 px-2 py-1 rounded font-mono break-all select-all">
+              <code className="block text-xs text-accent-cyan-ink bg-background/60 px-2 py-1 rounded font-mono break-all select-all">
                 {redirectUri}
               </code>
             </div>

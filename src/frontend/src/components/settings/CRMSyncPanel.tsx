@@ -274,7 +274,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center py-8">
-        <Spinner taille="zone" className="text-accent-cyan" />
+        <Spinner taille="zone" className="text-accent-cyan-ink" />
       </div>
     );
   }
@@ -401,7 +401,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
                       >
                         <ExternalLink className="w-3 h-3" />
                       </Button>
-                      <Check className="w-4 h-4 text-accent-cyan" />
+                      <Check className="w-4 h-4 text-accent-cyan-ink" />
                     </div>
                   </div>
                 ))
@@ -428,7 +428,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
           </Button>
         </div>
         <p className="text-xs text-text-muted">
-          L'ID se trouve dans l'URL du spreadsheet : docs.google.com/spreadsheets/d/<span className="text-accent-cyan">ID_ICI</span>/edit
+          L'ID se trouve dans l'URL du spreadsheet : docs.google.com/spreadsheets/d/<span className="text-accent-cyan-ink">ID_ICI</span>/edit
         </p>
       </div>
 
@@ -498,11 +498,11 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
                   href="https://console.cloud.google.com/apis/credentials"
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-accent-cyan hover:underline"
+                  className="text-accent-cyan-ink hover:underline"
                 >
                   Google Cloud Console
                 </a>
-                {' '}et importez le fichier <code className="text-accent-cyan">credentials.json</code>.
+                {' '}et importez le fichier <code className="text-accent-cyan-ink">credentials.json</code>.
               </p>
             </div>
             <input

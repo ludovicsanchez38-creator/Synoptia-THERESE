@@ -357,7 +357,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
       <div className="flex items-center gap-1 px-3 py-2 text-xs text-text-muted overflow-x-auto border-b border-border/30">
         <button
           onClick={goHome}
-          className="hover:text-accent-cyan transition-colors"
+          className="hover:text-accent-cyan-ink transition-colors"
         >
           ~
         </button>
@@ -366,7 +366,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
             <ChevronRight className="w-3 h-3 mx-1 flex-shrink-0" />
             <button
               onClick={() => navigateTo(buildBrowserPathFromParts(pathParts.slice(0, index + 1), isWindowsCurrentPath))}
-              className="hover:text-accent-cyan transition-colors truncate max-w-[100px]"
+              className="hover:text-accent-cyan-ink transition-colors truncate max-w-[100px]"
               title={part}
             >
               {part}
@@ -395,7 +395,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
       <div className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="flex items-center justify-center h-32">
-            <Spinner taille="zone" className="text-accent-cyan" />
+            <Spinner taille="zone" className="text-accent-cyan-ink" />
           </div>
         ) : filteredEntries.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-32 text-text-muted">
@@ -431,7 +431,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
                   {/* Icon */}
                   <div className={cn(
                     'flex-shrink-0',
-                    entry.isDirectory ? 'text-accent-cyan' : 'text-text-muted'
+                    entry.isDirectory ? 'text-accent-cyan-ink' : 'text-text-muted'
                   )}>
                     <Icon className="w-4 h-4" />
                   </div>

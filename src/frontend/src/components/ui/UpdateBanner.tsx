@@ -212,9 +212,9 @@ export function UpdateBanner() {
       {/* Contenu selon la phase */}
       {state.phase === 'available' && (
         <>
-          <Download size={16} className="text-accent-cyan shrink-0" />
+          <Download size={16} className="text-accent-cyan-ink shrink-0" />
           <span className="text-text">
-            Nouvelle version <strong className="text-accent-cyan">{state.version}</strong> disponible
+            Nouvelle version <strong className="text-accent-cyan-ink">{state.version}</strong> disponible
           </span>
           <button
             onClick={handleDownloadAndInstall}
@@ -239,7 +239,7 @@ export function UpdateBanner() {
 
       {state.phase === 'downloading' && (
         <>
-          <RefreshCw size={16} className="text-accent-cyan shrink-0 animate-spin" />
+          <RefreshCw size={16} className="text-accent-cyan-ink shrink-0 animate-spin" />
           <span className="text-text">
             Téléchargement de la v{state.version}...
             {state.progress > 0 && (
@@ -251,9 +251,9 @@ export function UpdateBanner() {
 
       {state.phase === 'ready' && (
         <>
-          <RefreshCw size={16} className="text-accent-cyan shrink-0" />
+          <RefreshCw size={16} className="text-accent-cyan-ink shrink-0" />
           <span className="text-text">
-            Mise à jour <strong className="text-accent-cyan">v{state.version}</strong> prête
+            Mise à jour <strong className="text-accent-cyan-ink">v{state.version}</strong> prête
           </span>
           <button
             onClick={() => handleRestart(state.version)}
@@ -278,9 +278,9 @@ export function UpdateBanner() {
 
       {state.phase === 'restart-required' && (
         <>
-          <RefreshCw size={16} className="text-accent-cyan shrink-0" />
+          <RefreshCw size={16} className="text-accent-cyan-ink shrink-0" />
           <span className="text-text">
-            Mise à jour <strong className="text-accent-cyan">v{state.version}</strong> installée.
+            Mise à jour <strong className="text-accent-cyan-ink">v{state.version}</strong> installée.
             {' '}Ferme et rouvre THÉRÈSE pour l'appliquer.
           </span>
           <button
@@ -306,7 +306,7 @@ export function UpdateBanner() {
 
       {state.phase === 'error' && (
         <>
-          <span className="text-accent-magenta">{sanitizeErrorMessage(state.message)}</span>
+          <span className="text-accent-magenta-ink">{sanitizeErrorMessage(state.message)}</span>
         </>
       )}
 

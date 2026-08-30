@@ -368,7 +368,7 @@ export function SlashCommandsMenu({
               'w-full flex items-center gap-3 px-3 py-2',
               'text-left transition-colors',
               index === selectedIndex
-                ? 'bg-accent-cyan/10 text-accent-cyan'
+                ? 'bg-accent-cyan/10 text-accent-cyan-ink'
                 : 'hover:bg-surface-elevated text-text'
             )}
             onClick={() => onSelect(cmd)}
@@ -377,7 +377,7 @@ export function SlashCommandsMenu({
             <span
               className={cn(
                 'flex-shrink-0',
-                index === selectedIndex ? 'text-accent-cyan' : 'text-text-muted'
+                index === selectedIndex ? 'text-accent-cyan-ink' : 'text-text-muted'
               )}
             >
               {cmd.icon}

@@ -137,7 +137,7 @@ export function ProfileTab({
             <div className="flex items-center justify-between px-5 py-4 border-b border-border/50">
               <div>
                 <h3 className="font-medium text-text flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-accent-cyan" />
+                  <FileText className="w-4 h-4 text-accent-cyan-ink" />
                   THERESE.md
                 </h3>
                 {mdPath && (
@@ -156,7 +156,7 @@ export function ProfileTab({
             <div className="flex-1 overflow-y-auto p-5">
               {mdLoading ? (
                 <div className="flex items-center justify-center py-12">
-                  <Spinner taille="zone" className="text-accent-cyan" />
+                  <Spinner taille="zone" className="text-accent-cyan-ink" />
                   <span className="ml-2 text-text-muted">Chargement...</span>
                 </div>
               ) : (
@@ -435,7 +435,7 @@ function DemoModeSection() {
     <div className="space-y-3 pt-4 border-t border-border/30">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-[6px] flex items-center justify-center bg-accent-tint border-[1.5px] border-[var(--btn-ink)]">
-          <Eye className="w-5 h-5 text-accent-cyan" />
+          <Eye className="w-5 h-5 text-accent-cyan-ink" />
         </div>
         <div className="flex-1">
           <h3 className="font-medium text-text">Mode Démo</h3>
@@ -459,7 +459,7 @@ function DemoModeSection() {
 
       {demoEnabled && (
         <div className="p-3 bg-accent-cyan/10 border border-accent-cyan/20 rounded-lg">
-          <span className="text-sm text-accent-cyan">
+          <span className="text-sm text-accent-cyan-ink">
             Mode démo actif - {isMac ? '⌘' : 'Ctrl'}⇧D pour basculer
           </span>
         </div>

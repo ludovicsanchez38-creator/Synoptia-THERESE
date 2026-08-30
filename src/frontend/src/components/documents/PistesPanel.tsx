@@ -30,7 +30,7 @@ import type { DocumentPiste, PisteStatus } from '../../services/api/documents';
 // =============================================================================
 
 const STATUS_META: Record<PisteStatus, { label: string; className: string }> = {
-  nouvelle: { label: 'Nouvelle', className: 'text-accent-cyan border-accent-cyan/30 bg-accent-cyan/10' },
+  nouvelle: { label: 'Nouvelle', className: 'text-accent-cyan-ink border-accent-cyan/30 bg-accent-cyan/10' },
   exploree: { label: 'Explorée', className: 'text-success border-success/30 bg-success/10' },
   ignoree: { label: 'Ignorée', className: 'text-text-muted border-border/40 bg-surface' },
 };

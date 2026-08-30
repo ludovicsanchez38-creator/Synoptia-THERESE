@@ -36,7 +36,7 @@ export function ChoiceStep({ onSelect, mcpCredentials }: ChoiceStepProps) {
       {mcpCredentials && (
         <div className="p-4 bg-accent-cyan/10 border border-accent-cyan/20 rounded-lg">
           <div className="flex items-start gap-3">
-            <Zap className="w-5 h-5 text-accent-cyan shrink-0 mt-0.5" />
+            <Zap className="w-5 h-5 text-accent-cyan-ink shrink-0 mt-0.5" />
             <div className="space-y-1">
               <p className="text-sm font-medium text-text">Credentials Google détectés</p>
               <p className="text-xs text-text-muted">
@@ -65,7 +65,7 @@ export function ChoiceStep({ onSelect, mcpCredentials }: ChoiceStepProps) {
           </div>
 
           <div className="w-12 h-12 rounded-[8px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-            <Mail className="w-6 h-6 text-accent-cyan" />
+            <Mail className="w-6 h-6 text-accent-cyan-ink" />
           </div>
 
           <h4 className="text-base font-semibold text-text mb-2">Gmail OAuth</h4>
@@ -97,7 +97,7 @@ export function ChoiceStep({ onSelect, mcpCredentials }: ChoiceStepProps) {
           className="relative p-6 bg-background/40 border-2 border-accent-cyan/30 rounded-xl hover:border-accent-cyan/60 transition-all group text-left"
         >
           <div className="absolute top-3 right-3">
-            <span className="px-2 py-1 text-xs font-medium bg-accent-cyan/20 text-accent-cyan rounded-[6px]">
+            <span className="px-2 py-1 text-xs font-medium bg-accent-cyan/20 text-accent-cyan-ink rounded-[6px]">
               Recommandé
             </span>
           </div>

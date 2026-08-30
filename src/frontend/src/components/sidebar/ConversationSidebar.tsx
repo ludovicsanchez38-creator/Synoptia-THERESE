@@ -395,7 +395,7 @@ function ConversationItem({
           }`}
         >
           <MessageSquare
-            className={`w-4 h-4 ${isActive ? 'text-accent-cyan' : 'text-text-muted'}`}
+            className={`w-4 h-4 ${isActive ? 'text-accent-cyan-ink' : 'text-text-muted'}`}
           />
         </div>
 

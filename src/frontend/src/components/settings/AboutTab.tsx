@@ -148,7 +148,7 @@ export function AboutTab() {
           </div>
           <div className="bg-bg/50 rounded-md px-3 py-2">
             <span className="text-text-muted">Phase</span>
-            <span className="ml-2 text-accent-cyan font-medium">Alpha</span>
+            <span className="ml-2 text-accent-cyan-ink font-medium">Alpha</span>
           </div>
         </div>
       </div>
@@ -159,7 +159,7 @@ export function AboutTab() {
           signaler un bug sans connaître l'URL Discord par coeur */}
       <div className="bg-surface/50 rounded-lg p-5 border border-border/30">
         <h4 className="text-sm font-medium text-text mb-3 flex items-center gap-2">
-          <MessageSquareWarning className="w-4 h-4 text-accent-cyan" />
+          <MessageSquareWarning className="w-4 h-4 text-accent-cyan-ink" />
           Un bug ? Une idée ?
         </h4>
         <p className="text-sm text-text-muted mb-3">
@@ -181,7 +181,7 @@ export function AboutTab() {
       {/* Vérification des mises à jour */}
       <div className="bg-surface/50 rounded-lg p-5 border border-border/30">
         <h4 className="text-sm font-medium text-text mb-3 flex items-center gap-2">
-          <RefreshCw className="w-4 h-4 text-accent-cyan" />
+          <RefreshCw className="w-4 h-4 text-accent-cyan-ink" />
           Mises à jour
         </h4>
 
@@ -217,7 +217,7 @@ export function AboutTab() {
           {updateStatus === 'update-available' && latestRelease && (
             <div className="space-y-3">
               <div className="bg-accent-cyan/10 border border-accent-cyan/30 rounded-md p-3">
-                <p className="text-sm text-accent-cyan font-medium mb-1">
+                <p className="text-sm text-accent-cyan-ink font-medium mb-1">
                   Nouvelle version disponible : {latestRelease.tag_name}
                 </p>
                 <p className="text-xs text-text-muted">

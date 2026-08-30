@@ -214,7 +214,7 @@ export function DocumentsList() {
         {/* En-tête */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2.5">
-            <span className="w-9 h-9 rounded-[6px] grid place-items-center bg-accent-tint text-accent-cyan border-[1.5px] border-[var(--btn-ink)]">
+            <span className="w-9 h-9 rounded-[6px] grid place-items-center bg-accent-tint text-accent-cyan-ink border-[1.5px] border-[var(--btn-ink)]">
               <FileText className="w-5 h-5" />
             </span>
             <div>
@@ -239,7 +239,7 @@ export function DocumentsList() {
         {/* Contenu */}
         {isLoading && documents.length === 0 ? (
           <div className="flex items-center justify-center gap-2 py-16 text-sm text-text-muted">
-            <Spinner taille="zone" className="text-accent-cyan" />
+            <Spinner taille="zone" className="text-accent-cyan-ink" />
             Chargement des documents...
           </div>
         ) : documents.length === 0 ? (

@@ -99,7 +99,7 @@ export function VoiceLocalSection() {
   return (
     <section className="rounded-lg border border-border/50 p-4">
       <h4 className="text-sm font-semibold text-text flex items-center gap-2 mb-3">
-        <Mic className="w-4 h-4 text-accent-cyan" />
+        <Mic className="w-4 h-4 text-accent-cyan-ink" />
         Voix locale souveraine
       </h4>
 
@@ -110,7 +110,7 @@ export function VoiceLocalSection() {
         </p>
       ) : status.setup.state === 'running' ? (
         <div className="flex items-center gap-2 text-sm text-text-muted">
-          <Spinner taille="bouton" className="text-accent-cyan" />
+          <Spinner taille="bouton" className="text-accent-cyan-ink" />
           {status.setup.step || 'Téléchargement en cours...'}
         </div>
       ) : status.ready ? (

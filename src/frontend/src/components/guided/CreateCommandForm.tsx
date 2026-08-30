@@ -148,7 +148,7 @@ export function CreateCommandForm({ onSubmit, onBack, initialContent, initialDes
         {/* Aperçu de la réponse capturée */}
         {capturedPreview && (
           <div className="px-3 py-2 rounded-lg bg-accent-cyan/5 border border-accent-cyan/20">
-            <p className="text-xs font-medium text-accent-cyan mb-1">Réponse capturée</p>
+            <p className="text-xs font-medium text-accent-cyan-ink mb-1">Réponse capturée</p>
             <p className="text-xs text-text-muted line-clamp-4">{capturedPreview}</p>
           </div>
         )}
@@ -204,7 +204,7 @@ export function CreateCommandForm({ onSubmit, onBack, initialContent, initialDes
             type="checkbox"
             checked={showOnHome}
             onChange={(e) => setShowOnHome(e.target.checked)}
-            className="w-4 h-4 rounded border-border bg-surface-elevated text-accent-cyan focus:ring-accent-cyan/30"
+            className="w-4 h-4 rounded border-border bg-surface-elevated text-accent-cyan-ink focus:ring-accent-cyan/30"
           />
           <label htmlFor="cmd-home" className="text-sm text-text">
             Afficher sur la page d'accueil

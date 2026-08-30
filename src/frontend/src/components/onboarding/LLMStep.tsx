@@ -241,7 +241,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
   if (loading) {
     return (
       <div className="flex h-64 flex-col items-center justify-center gap-3" role="status">
-        <Spinner taille="zone" className="text-accent-cyan" />
+        <Spinner taille="zone" className="text-accent-cyan-ink" />
         <p className="text-sm text-text-muted">Vérification des modèles disponibles…</p>
       </div>
     );
@@ -258,7 +258,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <div className="w-10 h-10 rounded-lg bg-accent-cyan/10 flex items-center justify-center">
-          <Cpu className="w-5 h-5 text-accent-cyan" />
+          <Cpu className="w-5 h-5 text-accent-cyan-ink" />
         </div>
         <div>
           <h2 className="text-xl font-semibold text-text">{TEXTES_ONBOARDING.choixServiceIA.titre}</h2>
@@ -310,7 +310,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm font-medium text-text">{provider.name}</span>
                   {provider.id === 'anthropic' && (
-                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-accent-cyan/20 text-accent-cyan">
+                    <span className="px-2 py-0.5 rounded text-xs font-medium bg-accent-cyan/20 text-accent-cyan-ink">
                       Recommandé
                     </span>
                   )}
@@ -387,7 +387,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
                     href={currentProviderConfig.consoleUrl}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-accent-cyan hover:underline"
+                    className="text-accent-cyan-ink hover:underline"
                   >
                     {new URL(currentProviderConfig.consoleUrl).hostname}
                   </a>

@@ -290,8 +290,8 @@ export function EmailList({ accountId }: EmailListProps) {
         {/* Indicateur de rafraîchissement */}
         {refreshing && (
           <div className="absolute top-0 left-0 right-0 z-10 flex items-center justify-center py-2 bg-accent-cyan/10 backdrop-blur-sm border-b border-accent-cyan/20">
-            <Spinner taille="bouton" className="text-accent-cyan mr-2" />
-            <span className="text-sm font-medium text-accent-cyan">Mise à jour des messages...</span>
+            <Spinner taille="bouton" className="text-accent-cyan-ink mr-2" />
+            <span className="text-sm font-medium text-accent-cyan-ink">Mise à jour des messages...</span>
           </div>
         )}
         {/* BUG-061: Erreur non-bloquante quand on a du cache */}
@@ -302,7 +302,7 @@ export function EmailList({ accountId }: EmailListProps) {
         )}
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <Spinner taille="zone" className="text-accent-cyan" />
+            <Spinner taille="zone" className="text-accent-cyan-ink" />
           </div>
         ) : error && messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-8 px-4 text-center">

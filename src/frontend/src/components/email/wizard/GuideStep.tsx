@@ -46,7 +46,7 @@ export function GuideStep({ provider, onHasProjectChange, onBack }: GuideStepPro
     >
       <div className="text-center space-y-2">
         <div className="w-12 h-12 rounded-[8px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center mx-auto mb-2">
-          <HelpCircle className="w-6 h-6 text-accent-cyan" />
+          <HelpCircle className="w-6 h-6 text-accent-cyan-ink" />
         </div>
         <h3 className="text-lg font-semibold text-text">
           🤖 Je vais t'aider à configurer Gmail
@@ -104,7 +104,7 @@ export function GuideStep({ provider, onHasProjectChange, onBack }: GuideStepPro
                         {...props}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="text-accent-cyan hover:underline inline-flex items-center gap-1"
+                        className="text-accent-cyan-ink hover:underline inline-flex items-center gap-1"
                       >
                         {props.children}
                         <ExternalLink className="w-3 h-3" />

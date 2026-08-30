@@ -71,7 +71,7 @@ export function DropZone({ isDragging, className }: DropZoneProps) {
                 ease: 'easeInOut',
               }}
             >
-              <Upload className="w-16 h-16 text-accent-cyan" />
+              <Upload className="w-16 h-16 text-accent-cyan-ink" />
             </motion.div>
 
             <div className="text-center">
@@ -120,8 +120,8 @@ export function InlineDropZone({ isDragging, className }: InlineDropZoneProps) {
           )}
         >
           <div className="flex items-center justify-center gap-2 py-3 px-4">
-            <Upload className="w-4 h-4 text-accent-cyan" />
-            <span className="text-sm text-accent-cyan">
+            <Upload className="w-4 h-4 text-accent-cyan-ink" />
+            <span className="text-sm text-accent-cyan-ink">
               Déposez ici pour joindre
             </span>
           </div>

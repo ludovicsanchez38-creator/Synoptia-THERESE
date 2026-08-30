@@ -349,7 +349,7 @@ function TaskCard({ task, onClick, onStatusChange, isOverlay, showDragHandle, ma
             {task.tags.map((tag) => (
               <span
                 key={tag}
-                className="px-2 py-0.5 text-xs bg-accent-cyan/10 text-accent-cyan rounded"
+                className="px-2 py-0.5 text-xs bg-accent-cyan/10 text-accent-cyan-ink rounded"
               >
                 {tag}
               </span>

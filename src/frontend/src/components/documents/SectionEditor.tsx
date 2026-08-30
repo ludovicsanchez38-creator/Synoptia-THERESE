@@ -70,7 +70,7 @@ const markdownComponents: Components = {
   },
   a({ href, children }) {
     return (
-      <a href={href} target="_blank" rel="noopener noreferrer" className="text-accent-cyan hover:underline">
+      <a href={href} target="_blank" rel="noopener noreferrer" className="text-accent-cyan-ink hover:underline">
         {children}
       </a>
     );
@@ -105,7 +105,7 @@ const markdownComponents: Components = {
         </pre>
       );
     }
-    return <code className="px-1.5 py-0.5 rounded bg-bg text-accent-cyan text-sm font-mono">{children}</code>;
+    return <code className="px-1.5 py-0.5 rounded bg-bg text-accent-cyan-ink text-sm font-mono">{children}</code>;
   },
   table({ children }) {
     return (

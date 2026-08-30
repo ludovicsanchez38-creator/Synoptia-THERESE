@@ -81,7 +81,7 @@ export function DeliverablesList({ projectId }: DeliverablesListProps) {
       <div className="bg-surface rounded-lg p-4">
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium text-text-primary">Progression</span>
-          <span className="text-sm font-semibold text-accent-cyan">{progress}%</span>
+          <span className="text-sm font-semibold text-accent-cyan-ink">{progress}%</span>
         </div>
         <div className="w-full bg-background rounded-full h-2">
           <div

@@ -62,7 +62,7 @@ export function EmailConnect({ onSuccess }: EmailConnectProps) {
         {/* Header */}
         <div className="text-center space-y-3">
           <div className="w-16 h-16 rounded-[10px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center mx-auto">
-            <Mail className="w-8 h-8 text-accent-cyan" />
+            <Mail className="w-8 h-8 text-accent-cyan-ink" />
           </div>
           <h3 className="text-2xl font-semibold text-text">Connecter Gmail</h3>
           <p className="text-text-muted">
@@ -80,7 +80,7 @@ export function EmailConnect({ onSuccess }: EmailConnectProps) {
                 href="https://console.cloud.google.com/apis/credentials"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-accent-cyan hover:underline inline-flex items-center gap-1"
+                className="text-accent-cyan-ink hover:underline inline-flex items-center gap-1"
               >
                 Google Cloud Console
                 <ExternalLink className="w-3 h-3" />

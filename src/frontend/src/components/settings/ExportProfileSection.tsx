@@ -97,7 +97,7 @@ export function ExportProfileSection() {
   return (
     <section className="rounded-lg border border-border/50 p-4">
       <h4 className="text-sm font-semibold text-text flex items-center gap-2 mb-1">
-        <FileDown className="w-4 h-4 text-accent-cyan" />
+        <FileDown className="w-4 h-4 text-accent-cyan-ink" />
         Exports Word (Atelier et conversations)
       </h4>
       <p className="text-xs text-text-muted mb-3">

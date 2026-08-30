@@ -227,7 +227,7 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 }}
               onClick={handleBack}
-              className="flex items-center gap-2 text-sm text-text-muted hover:text-text transition-colors duration-150 mb-4 focus:outline-none focus:text-accent-cyan"
+              className="flex items-center gap-2 text-sm text-text-muted hover:text-text transition-colors duration-150 mb-4 focus:outline-none focus:text-accent-cyan-ink"
             >
               <ChevronLeft className="w-4 h-4" />
               <span>Retour</span>
@@ -236,7 +236,7 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
             {/* Header avec icône et question */}
             <div className="flex items-center gap-3 mb-6">
               <div className="flex items-center justify-center w-12 h-12 rounded-[8px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)]">
-                <selectedCategory.icon className="w-6 h-6 text-accent-cyan" />
+                <selectedCategory.icon className="w-6 h-6 text-accent-cyan-ink" />
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-text">{selectedCategory.title}</h3>
@@ -264,7 +264,7 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
                             setShowMoveMenuId(showMoveMenuId === cmd.id ? null : cmd.id);
                             setConfirmDeleteId(null);
                           }}
-                          className="p-1 rounded-[6px] hover:bg-accent-cyan/15 text-text-muted hover:text-accent-cyan transition-colors"
+                          className="p-1 rounded-[6px] hover:bg-accent-cyan/15 text-text-muted hover:text-accent-cyan-ink transition-colors"
                           title="Déplacer"
                         >
                           <ArrowRightLeft className="w-3 h-3" />
@@ -279,7 +279,7 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
                                   e.stopPropagation();
                                   handleMoveCommand(cmd.id, cat.id);
                                 }}
-                                className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-text hover:bg-accent-cyan/10 hover:text-accent-cyan transition-colors"
+                                className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-text hover:bg-accent-cyan/10 hover:text-accent-cyan-ink transition-colors"
                               >
                                 <cat.icon className="w-3.5 h-3.5" />
                                 {cat.title}
@@ -339,7 +339,7 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
                   'px-4 py-2 rounded-full text-sm font-medium',
                   'bg-surface-elevated border border-dashed border-accent-cyan/30',
                   'hover:border-accent-cyan/50 hover:bg-accent-cyan/10',
-                  'text-accent-cyan hover:text-accent-cyan',
+                  'text-accent-cyan-ink hover:text-accent-cyan-ink',
                   'transition-all duration-150',
                   'flex items-center gap-2'
                 )}

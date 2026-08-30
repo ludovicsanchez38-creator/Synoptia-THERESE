@@ -374,7 +374,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
               onClick={() => setViewMode(mode)}
               className={`px-3 py-1 text-sm rounded transition-colors ${
                 viewMode === mode
-                  ? 'bg-accent-cyan/20 text-accent-cyan'
+                  ? 'bg-accent-cyan/20 text-accent-cyan-ink'
                   : 'text-text-muted hover:text-text'
               }`}
             >
@@ -501,7 +501,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
       <div className="flex-1 overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center h-full">
-            <RefreshCw className="w-8 h-8 animate-spin text-accent-cyan" />
+            <RefreshCw className="w-8 h-8 animate-spin text-accent-cyan-ink" />
           </div>
         ) : isEventFormOpen ? (
           <EventForm />

@@ -134,7 +134,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
             onClick={() => setViewMode('kanban')}
             className={`p-2 rounded transition-colors ${
               viewMode === 'kanban'
-                ? 'bg-accent-cyan/20 text-accent-cyan'
+                ? 'bg-accent-cyan/20 text-accent-cyan-ink'
                 : 'text-text-muted hover:text-text'
             }`}
             title="Kanban"
@@ -145,7 +145,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
             onClick={() => setViewMode('list')}
             className={`p-2 rounded transition-colors ${
               viewMode === 'list'
-                ? 'bg-accent-cyan/20 text-accent-cyan'
+                ? 'bg-accent-cyan/20 text-accent-cyan-ink'
                 : 'text-text-muted hover:text-text'
             }`}
             title="Liste"
@@ -158,7 +158,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
           variant="ghost"
           size="sm"
           onClick={() => setShowFilters(!showFilters)}
-          className={showFilters ? 'bg-accent-cyan/20 text-accent-cyan' : ''}
+          className={showFilters ? 'bg-accent-cyan/20 text-accent-cyan-ink' : ''}
         >
           <Filter className="w-4 h-4" />
         </Button>
@@ -244,7 +244,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
             setFilterProjectId(null);
             setFilterTag(null);
           }}
-          className="text-sm text-accent-cyan hover:underline"
+          className="text-sm text-accent-cyan-ink hover:underline"
         >
           Réinitialiser
         </button>
@@ -263,7 +263,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
       <div className="flex-1 overflow-hidden">
         {loading ? (
           <div className="flex items-center justify-center h-full">
-            <RefreshCw className="w-8 h-8 animate-spin text-accent-cyan" />
+            <RefreshCw className="w-8 h-8 animate-spin text-accent-cyan-ink" />
           </div>
         ) : isTaskFormOpen ? (
           <TaskForm />

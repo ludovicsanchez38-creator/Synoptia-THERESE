@@ -116,7 +116,7 @@ export function EventDetail() {
       <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
         {/* Date & Time */}
         <div className="flex items-start gap-3">
-          <Clock className="w-5 h-5 text-accent-cyan mt-0.5 shrink-0" />
+          <Clock className="w-5 h-5 text-accent-cyan-ink mt-0.5 shrink-0" />
           <div>
             <p className="text-sm font-medium text-text">
               {startDate.toLocaleDateString('fr-FR', {
@@ -146,7 +146,7 @@ export function EventDetail() {
         {/* Location */}
         {event.location && (
           <div className="flex items-start gap-3">
-            <MapPin className="w-5 h-5 text-accent-cyan mt-0.5 shrink-0" />
+            <MapPin className="w-5 h-5 text-accent-cyan-ink mt-0.5 shrink-0" />
             <p className="text-sm text-text">{event.location}</p>
           </div>
         )}
@@ -154,7 +154,7 @@ export function EventDetail() {
         {/* Attendees */}
         {event.attendees && event.attendees.length > 0 && (
           <div className="flex items-start gap-3">
-            <Users className="w-5 h-5 text-accent-cyan mt-0.5 shrink-0" />
+            <Users className="w-5 h-5 text-accent-cyan-ink mt-0.5 shrink-0" />
             <div className="flex-1">
               <p className="text-sm font-medium text-text mb-2">
                 {event.attendees.length} participant{event.attendees.length > 1 ? 's' : ''}
@@ -173,7 +173,7 @@ export function EventDetail() {
         {/* Recurrence */}
         {event.recurrence && event.recurrence.length > 0 && (
           <div className="flex items-start gap-3">
-            <Repeat className="w-5 h-5 text-accent-cyan mt-0.5 shrink-0" />
+            <Repeat className="w-5 h-5 text-accent-cyan-ink mt-0.5 shrink-0" />
             <div>
               <p className="text-sm font-medium text-text mb-1">Événement récurrent</p>
               {event.recurrence.map((rule, i) => (

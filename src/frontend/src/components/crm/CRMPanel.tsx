@@ -159,7 +159,7 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
 
         <button
           onClick={() => setShowCreateForm(true)}
-          className="flex items-center gap-2 px-3 py-2 bg-accent-cyan/10 hover:bg-accent-cyan/20 text-accent-cyan rounded-lg transition-colors text-sm font-medium"
+          className="flex items-center gap-2 px-3 py-2 bg-accent-cyan/10 hover:bg-accent-cyan/20 text-accent-cyan-ink rounded-lg transition-colors text-sm font-medium"
         >
           <UserPlus className="w-4 h-4" />
           Ajouter un contact
@@ -258,7 +258,7 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
                 </div>
                 <button
                   onClick={() => setShowAddActivity(true)}
-                  className="flex items-center gap-2 px-3 py-2 bg-accent-cyan/10 hover:bg-accent-cyan/20 text-accent-cyan rounded-lg transition-colors text-sm font-medium"
+                  className="flex items-center gap-2 px-3 py-2 bg-accent-cyan/10 hover:bg-accent-cyan/20 text-accent-cyan-ink rounded-lg transition-colors text-sm font-medium"
                 >
                   <Plus className="w-4 h-4" />
                   Ajouter une activité
@@ -624,7 +624,7 @@ function GlobalActivityView({ contacts }: { contacts: ContactResponse[] }) {
               onClick={() => setFilter(chip.id)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-[6px] text-sm font-medium transition-colors ${
                 isActive
-                  ? 'bg-accent-cyan/20 text-accent-cyan'
+                  ? 'bg-accent-cyan/20 text-accent-cyan-ink'
                   : 'bg-surface text-text-muted hover:bg-surface-elevated'
               }`}
             >
@@ -677,7 +677,7 @@ function GlobalActivityView({ contacts }: { contacts: ContactResponse[] }) {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-xs font-medium text-accent-cyan">{contactName}</span>
+                        <span className="text-xs font-medium text-accent-cyan-ink">{contactName}</span>
                         <span className="text-xs text-text-muted">·</span>
                         <span className="text-xs text-text-muted capitalize">{
                           activity.type === 'email' ? 'Email' :
@@ -794,7 +794,7 @@ function AddActivityModal({ contactId, onClose, onCreated }: AddActivityModalPro
                     onClick={() => setType(at.id)}
                     className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                       isActive
-                        ? 'bg-accent-cyan/20 text-accent-cyan'
+                        ? 'bg-accent-cyan/20 text-accent-cyan-ink'
                         : 'bg-background text-text-muted hover:bg-background/80'
                     }`}
                   >

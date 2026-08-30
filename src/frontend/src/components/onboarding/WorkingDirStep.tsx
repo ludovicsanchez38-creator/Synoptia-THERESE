@@ -61,7 +61,7 @@ export function WorkingDirStep({ onNext, onBack }: WorkingDirStepProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <Spinner taille="zone" className="text-accent-cyan" />
+        <Spinner taille="zone" className="text-accent-cyan-ink" />
       </div>
     );
   }
@@ -77,7 +77,7 @@ export function WorkingDirStep({ onNext, onBack }: WorkingDirStepProps) {
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <div className="w-10 h-10 rounded-lg bg-accent-cyan/10 flex items-center justify-center">
-          <FolderOpen className="w-5 h-5 text-accent-cyan" />
+          <FolderOpen className="w-5 h-5 text-accent-cyan-ink" />
         </div>
         <div>
           <h2 className="text-xl font-semibold text-text">Dossier de travail</h2>
@@ -95,7 +95,7 @@ export function WorkingDirStep({ onNext, onBack }: WorkingDirStepProps) {
         >
           {/* Icon */}
           <div className="w-20 h-20 rounded-2xl bg-accent-cyan/10 flex items-center justify-center mb-6 mx-auto border border-border/30">
-            <FolderOpen className="w-10 h-10 text-accent-cyan" />
+            <FolderOpen className="w-10 h-10 text-accent-cyan-ink" />
           </div>
 
           {/* Description */}

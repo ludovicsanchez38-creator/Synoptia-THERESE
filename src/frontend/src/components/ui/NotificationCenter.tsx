@@ -29,9 +29,9 @@ function NotificationIcon({ type }: { type: AppNotification["type"] }) {
     case "warning":
       return <AlertTriangle className="w-4 h-4 text-warning flex-shrink-0" />;
     case "action":
-      return <Zap className="w-4 h-4 text-accent-magenta flex-shrink-0" />;
+      return <Zap className="w-4 h-4 text-accent-magenta-ink flex-shrink-0" />;
     case "reminder":
-      return <Clock className="w-4 h-4 text-accent-cyan flex-shrink-0" />;
+      return <Clock className="w-4 h-4 text-accent-cyan-ink flex-shrink-0" />;
     default:
       return <Info className="w-4 h-4 text-info flex-shrink-0" />;
   }
@@ -142,7 +142,7 @@ function NotificationItem({ notification }: { notification: AppNotification }) {
                 // Navigation via action_url possible ici
                 if (!notification.is_read) markAsRead(notification.id);
               }}
-              className="flex items-center gap-1 text-[10px] font-medium text-accent-cyan hover:text-accent-cyan/80 transition-colors"
+              className="flex items-center gap-1 text-[10px] font-medium text-accent-cyan-ink hover:text-accent-cyan-ink transition-colors"
             >
               <ExternalLink className="w-3 h-3" />
               {notification.action_label}
@@ -234,7 +234,7 @@ export function NotificationCenter() {
                 {unreadCount > 0 && (
                   <button
                     onClick={markAllRead}
-                    className="flex items-center gap-1 text-xs text-accent-cyan hover:text-accent-cyan/80 transition-colors"
+                    className="flex items-center gap-1 text-xs text-accent-cyan-ink hover:text-accent-cyan-ink transition-colors"
                     title="Tout marquer comme lu"
                   >
                     <CheckCheck className="w-3.5 h-3.5" />

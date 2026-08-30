@@ -149,7 +149,7 @@ export function SkillExecutionPanel({
                   exit={{ opacity: 0, scale: 0 }}
                   className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-surface flex items-center justify-center"
                 >
-                  <Spinner taille="bouton" className="text-accent-cyan" />
+                  <Spinner taille="bouton" className="text-accent-cyan-ink" />
                 </motion.div>
               )}
               {status === 'success' && (

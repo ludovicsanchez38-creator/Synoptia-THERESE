@@ -44,7 +44,7 @@ export function SynthesisCard({ synthesis }: SynthesisCardProps) {
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <h3 className="text-lg font-semibold text-text flex items-center gap-2">
-          <Target className="w-5 h-5 text-accent-cyan" />
+          <Target className="w-5 h-5 text-accent-cyan-ink" />
           Synthèse du Board
         </h3>
         <span className={cn(
@@ -63,7 +63,7 @@ export function SynthesisCard({ synthesis }: SynthesisCardProps) {
         'mb-6 p-4 rounded-xl',
         'bg-accent-cyan/5 border border-accent-cyan/20'
       )}>
-        <h4 className="text-sm font-medium text-accent-cyan mb-2">
+        <h4 className="text-sm font-medium text-accent-cyan-ink mb-2">
           Recommandation
         </h4>
         <p className="text-text leading-relaxed">
@@ -113,14 +113,14 @@ export function SynthesisCard({ synthesis }: SynthesisCardProps) {
       {/* Next Steps */}
       {synthesis.next_steps.length > 0 && (
         <div>
-          <h4 className="text-sm font-medium text-accent-magenta flex items-center gap-2 mb-2">
+          <h4 className="text-sm font-medium text-accent-magenta-ink flex items-center gap-2 mb-2">
             <ArrowRight className="w-4 h-4" />
             Prochaines étapes
           </h4>
           <ol className="space-y-1.5">
             {synthesis.next_steps.map((step, i) => (
               <li key={i} className="text-sm text-text-muted flex items-start gap-2">
-                <span className="text-accent-magenta font-medium">{i + 1}.</span>
+                <span className="text-accent-magenta-ink font-medium">{i + 1}.</span>
                 {step}
               </li>
             ))}

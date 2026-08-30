@@ -105,7 +105,7 @@ export function CredentialsStep({
     >
       <div className="text-center space-y-2">
         <div className="w-12 h-12 rounded-[8px] bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center mx-auto mb-2">
-          <Key className="w-6 h-6 text-accent-cyan" />
+          <Key className="w-6 h-6 text-accent-cyan-ink" />
         </div>
         <h3 className="text-lg font-semibold text-text">Entre tes identifiants</h3>
         <p className="text-sm text-text-muted">
@@ -187,7 +187,7 @@ export function CredentialsStep({
       <div className="p-4 bg-accent-cyan/10 border border-accent-cyan/20 rounded-lg space-y-3">
         <div className="flex items-center justify-between">
           <p className="text-sm text-text-muted">
-            <strong className="text-text">Astuce :</strong> Tu peux importer directement le fichier <code className="text-accent-cyan">credentials.json</code> téléchargé depuis Google Cloud Console.
+            <strong className="text-text">Astuce :</strong> Tu peux importer directement le fichier <code className="text-accent-cyan-ink">credentials.json</code> téléchargé depuis Google Cloud Console.
           </p>
           <input
             ref={fileInputRef}

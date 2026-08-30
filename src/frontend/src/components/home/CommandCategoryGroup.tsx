@@ -40,7 +40,7 @@ export function CommandCategoryGroup({
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-2">
-        <Icon className="w-4 h-4 text-accent-cyan/70" />
+        <Icon className="w-4 h-4 text-accent-cyan-ink" />
         <h3 className="text-xs font-bold text-text-muted uppercase tracking-widest">
           {config.label}
         </h3>

@@ -160,7 +160,7 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
         href="https://synoptia.fr/therese/securite"
         target="_blank"
         rel="noopener noreferrer"
-        className="flex items-center justify-center gap-2 text-sm text-accent-cyan hover:text-accent-cyan/80 transition-colors"
+        className="flex items-center justify-center gap-2 text-sm text-accent-cyan-ink hover:text-accent-cyan-ink transition-colors"
       >
         <span>En savoir plus sur la sécurité</span>
         <ExternalLink className="w-4 h-4" />
@@ -173,7 +173,7 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
           id="security-consent"
           checked={acknowledged}
           onChange={(e) => setAcknowledged(e.target.checked)}
-          className="mt-1 w-5 h-5 rounded border-border bg-transparent text-accent-cyan focus:ring-2 focus:ring-accent-cyan focus:ring-offset-0"
+          className="mt-1 w-5 h-5 rounded border-border bg-transparent text-accent-cyan-ink focus:ring-2 focus:ring-accent-cyan focus:ring-offset-0"
         />
         <div className="text-sm">
           <p className="text-text font-medium">
@@ -187,7 +187,7 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
         </div>
       </label> : (
         <div className="flex items-start gap-3 rounded-xl border border-accent-cyan/30 bg-accent-cyan/10 p-4" data-testid="local-security-notice">
-          <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-accent-cyan" />
+          <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-accent-cyan-ink" />
           <div className="text-sm"><p className="font-medium text-text">Parcours local sans consentement cloud</p><p className="mt-1 text-text-muted">{provider === 'ollama' ? 'Ollama traite les messages sur cette machine.' : 'Aucun fournisseur cloud n’est activé pour le moment.'} Un accord distinct sera demandé au premier usage cloud réel, avec le fournisseur et les données transmis.</p></div>
         </div>
       )}

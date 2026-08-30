@@ -56,7 +56,7 @@ export function EmailAccountsSection() {
   return (
     <div className="p-4 bg-background/40 border border-border/40 rounded-lg">
       <div className="flex items-center gap-2 mb-2">
-        <Mail className="w-4 h-4 text-accent-cyan" />
+        <Mail className="w-4 h-4 text-accent-cyan-ink" />
         <h3 className="font-medium text-text">Comptes email</h3>
       </div>
 

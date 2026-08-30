@@ -39,7 +39,7 @@ export function ActionCard({ icon: Icon, title, description, onClick, index, var
     >
       {/* Badge Bientôt */}
       {isPersonnaliser && (
-        <span className="absolute top-2.5 right-2.5 px-1.5 py-0.5 rounded text-[9px] font-medium bg-accent-cyan/10 text-accent-cyan/60 border border-accent-cyan/20">
+        <span className="absolute top-2.5 right-2.5 px-1.5 py-0.5 rounded text-[9px] font-medium bg-accent-cyan/10 text-accent-cyan-ink border border-accent-cyan/20">
           Bientôt
         </span>
       )}

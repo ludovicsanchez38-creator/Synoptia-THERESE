@@ -74,7 +74,7 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
             className="p-4 rounded-xl bg-background/40 border border-border/30"
           >
             <div className="w-10 h-10 rounded-lg bg-accent-cyan/10 flex items-center justify-center mb-3 mx-auto">
-              <feature.icon className="w-5 h-5 text-accent-cyan" />
+              <feature.icon className="w-5 h-5 text-accent-cyan-ink" />
             </div>
             <h3 className="font-medium text-text text-sm mb-1">{feature.title}</h3>
             <p className="text-text-muted text-xs">{feature.description}</p>

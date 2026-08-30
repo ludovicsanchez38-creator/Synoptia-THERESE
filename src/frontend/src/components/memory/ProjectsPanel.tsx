@@ -120,7 +120,7 @@ export function ProjectsPanel() {
         {/* En-tête */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-2.5">
-            <span className="w-9 h-9 rounded-lg grid place-items-center bg-accent-cyan/10 text-accent-cyan">
+            <span className="w-9 h-9 rounded-lg grid place-items-center bg-accent-cyan/10 text-accent-cyan-ink">
               <Briefcase className="w-5 h-5" />
             </span>
             <div>
@@ -139,7 +139,7 @@ export function ProjectsPanel() {
         {/* Contenu */}
         {loading ? (
           <div className="flex items-center justify-center gap-2 py-16 text-sm text-text-muted">
-            <Spinner taille="zone" className="text-accent-cyan" /> Chargement des projets…
+            <Spinner taille="zone" className="text-accent-cyan-ink" /> Chargement des projets…
           </div>
         ) : error ? (
           <div className="py-10 text-center">

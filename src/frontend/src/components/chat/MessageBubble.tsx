@@ -303,8 +303,8 @@ export const MessageBubble = memo(function MessageBubble({
         className={cn(
           'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 transition-all',
           isUser
-            ? 'bg-accent-magenta/20 text-accent-magenta shadow-[0_0_12px_rgba(225,29,141,0.2)]'
-            : 'bg-accent-cyan/20 text-accent-cyan shadow-[0_0_12px_rgba(34,211,238,0.2)]'
+            ? 'bg-accent-magenta/20 text-accent-magenta-ink shadow-[0_0_12px_rgba(225,29,141,0.2)]'
+            : 'bg-accent-cyan/20 text-accent-cyan-ink shadow-[0_0_12px_rgba(34,211,238,0.2)]'
         )}
       >
         {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
@@ -336,7 +336,7 @@ export const MessageBubble = memo(function MessageBubble({
               onClick={onSaveAsCommand}
               className={cn(
                 'p-1.5 rounded-md transition-all',
-                'hover:bg-surface text-text-muted hover:text-accent-cyan'
+                'hover:bg-surface text-text-muted hover:text-accent-cyan-ink'
               )}
               title="Sauvegarder comme raccourci"
             >
@@ -350,7 +350,7 @@ export const MessageBubble = memo(function MessageBubble({
               disabled={downloading}
               className={cn(
                 'p-1.5 rounded-md transition-all',
-                'hover:bg-surface text-text-muted hover:text-accent-cyan',
+                'hover:bg-surface text-text-muted hover:text-accent-cyan-ink',
                 downloading && 'opacity-50'
               )}
               title="Enregistrer l'image"
@@ -399,7 +399,7 @@ export const MessageBubble = memo(function MessageBubble({
                 if (isInline) {
                   return (
                     <code
-                      className="px-1.5 py-0.5 rounded bg-bg text-accent-cyan text-sm font-mono"
+                      className="px-1.5 py-0.5 rounded bg-bg text-accent-cyan-ink text-sm font-mono"
                       {...props}
                     >
                       {children}
@@ -444,7 +444,7 @@ export const MessageBubble = memo(function MessageBubble({
                   return (
                     <a
                       href={href}
-                      className="text-accent-cyan hover:underline"
+                      className="text-accent-cyan-ink hover:underline"
                       onClick={(e) => {
                         e.preventDefault();
                         void downloadSkillFile(fileId, `document-${fileId}`);
@@ -466,7 +466,7 @@ export const MessageBubble = memo(function MessageBubble({
                     href={href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-accent-cyan hover:underline"
+                    className="text-accent-cyan-ink hover:underline"
                   >
                     {children}
                   </a>
@@ -560,8 +560,8 @@ export const MessageBubble = memo(function MessageBubble({
         {skillFilesList.length > 0 && !message.isStreaming && skillFilesList.map((file) => (
           <div key={file.file_id} className="mt-3 rounded-lg w-full max-w-sm bg-surface/60 border border-border overflow-hidden">
             <div className="flex items-center gap-2 px-3 pt-2.5">
-              <FileDown className="w-3.5 h-3.5 text-accent-cyan shrink-0" />
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-accent-cyan">
+              <FileDown className="w-3.5 h-3.5 text-accent-cyan-ink shrink-0" />
+              <span className="text-[11px] font-semibold uppercase tracking-wide text-accent-cyan-ink">
                 Fichier généré
               </span>
               <span className="text-xs text-text-muted ml-auto shrink-0">

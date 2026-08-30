@@ -130,7 +130,7 @@ export function CompleteStep({ onComplete, onBack }: CompleteStepProps) {
         className="mb-8"
       >
         <div className="w-24 h-24 rounded-2xl bg-accent-cyan/10 flex items-center justify-center border border-border/30">
-          <PartyPopper className="w-12 h-12 text-accent-cyan" />
+          <PartyPopper className="w-12 h-12 text-accent-cyan-ink" />
         </div>
       </motion.div>
 
@@ -202,8 +202,8 @@ export function CompleteStep({ onComplete, onBack }: CompleteStepProps) {
         className="mb-6 p-3 rounded-xl bg-accent-cyan/5 border border-accent-cyan/20 text-left w-full max-w-md"
       >
         <div className="flex items-center gap-2 mb-2">
-          <Sparkles className="w-4 h-4 text-accent-cyan" />
-          <span className="text-sm font-medium text-accent-cyan">Astuce</span>
+          <Sparkles className="w-4 h-4 text-accent-cyan-ink" />
+          <span className="text-sm font-medium text-accent-cyan-ink">Astuce</span>
         </div>
         <p className="text-xs text-text-muted">
           Tu peux à tout moment modifier ces paramètres dans les Paramètres (raccourci {settingsShortcut}+,).

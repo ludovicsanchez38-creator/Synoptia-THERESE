@@ -38,7 +38,7 @@ export function SubOptionsPanel({ action, onSelect, onBack }: SubOptionsPanelPro
         className={cn(
           'flex items-center gap-2 text-sm text-text-muted hover:text-text',
           'transition-colors duration-150 mb-4',
-          'focus:outline-none focus:text-accent-cyan'
+          'focus:outline-none focus:text-accent-cyan-ink'
         )}
       >
         <ChevronLeft className="w-4 h-4" />

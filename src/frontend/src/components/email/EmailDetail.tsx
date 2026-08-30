@@ -238,7 +238,7 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
   if (_loading) {
     return (
       <div className="flex-1 min-w-0 overflow-hidden flex items-center justify-center">
-        <Spinner taille="zone" className="text-accent-cyan" />
+        <Spinner taille="zone" className="text-accent-cyan-ink" />
       </div>
     );
   }
@@ -297,7 +297,7 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
         <div className="space-y-2">
           <div className="flex items-start gap-3">
             <div className="w-10 h-10 rounded-full bg-accent-tint border border-border flex items-center justify-center shrink-0">
-              <Mail className="w-5 h-5 text-accent-cyan" />
+              <Mail className="w-5 h-5 text-accent-cyan-ink" />
             </div>
             <div className="flex-1">
               <p className="text-sm font-medium text-text">
@@ -320,7 +320,7 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
       <div className="flex-1 overflow-y-auto px-6 py-6">
         {bodyLoading ? (
           <div className="flex items-center justify-center gap-2 py-10 text-sm text-text-muted">
-            <Spinner taille="zone" className="text-accent-cyan" /> Chargement du message…
+            <Spinner taille="zone" className="text-accent-cyan-ink" /> Chargement du message…
           </div>
         ) : message.body_html ? (
           (() => {
@@ -343,7 +343,7 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
                   </div>
                 )}
                 <div
-                  className="prose prose-invert max-w-none [&_*]:!text-text [&_a]:!text-accent-cyan [&_a]:hover:!text-accent-cyan/80 [&_*]:!bg-transparent"
+                  className="prose prose-invert max-w-none [&_*]:!text-text [&_a]:!text-accent-cyan-ink [&_a]:hover:!text-accent-cyan-ink [&_*]:!bg-transparent"
                   dangerouslySetInnerHTML={{ __html: sanitized }}
                 />
               </>

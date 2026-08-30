@@ -273,9 +273,9 @@ function ContactCard({ contact, onClick, isOverlay, dragListeners }: ContactCard
             className="flex items-center gap-1 text-xs"
             title="Score de potentiel commercial, calculé depuis les informations du contact et son étape dans le pipeline. Plus il est haut, plus le prospect est chaud. L'échelle n'est pas plafonnée."
           >
-            <TrendingUp className="w-3 h-3 text-accent-cyan" />
+            <TrendingUp className="w-3 h-3 text-accent-cyan-ink" />
             <span className="text-text-muted">Score:</span>
-            <span className="font-semibold text-accent-cyan">{contact.score}</span>
+            <span className="font-semibold text-accent-cyan-ink">{contact.score}</span>
             <HelpCircle
               className="w-3 h-3 text-text-muted"
               aria-label="Score de potentiel commercial, calculé depuis les informations du contact et son étape dans le pipeline. Plus il est haut, plus le prospect est chaud. L'échelle n'est pas plafonnée."

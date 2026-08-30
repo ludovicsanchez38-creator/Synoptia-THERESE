@@ -205,7 +205,7 @@ export function ServicesTab({
 
                   <p className="text-xs text-text-muted">
                     Obtiens ta clé sur{' '}
-                    <a href={provider.consoleUrl} target="_blank" rel="noopener noreferrer" className="text-accent-cyan hover:underline">
+                    <a href={provider.consoleUrl} target="_blank" rel="noopener noreferrer" className="text-accent-cyan-ink hover:underline">
                       {new URL(provider.consoleUrl).hostname}
                     </a>
                   </p>
@@ -220,7 +220,7 @@ export function ServicesTab({
       <div className="space-y-3 pt-4 border-t border-border/30">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-[6px] bg-[var(--k3bg)] border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
-            <Mic className="w-5 h-5 text-accent-magenta" />
+            <Mic className="w-5 h-5 text-accent-magenta-ink" />
           </div>
           <div>
             <h3 className="font-medium text-text">Transcription vocale</h3>
@@ -286,7 +286,7 @@ export function ServicesTab({
 
           <p className="text-xs text-text-muted">
             Obtiens ta clé sur{' '}
-            <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" className="text-accent-cyan hover:underline">
+            <a href="https://console.groq.com/keys" target="_blank" rel="noopener noreferrer" className="text-accent-cyan-ink hover:underline">
               console.groq.com
             </a>
             {' '}- gratuit jusqu'à un certain volume, puis payant
@@ -339,7 +339,7 @@ export function ServicesTab({
                     window.open('https://brave.com/search/api/', '_blank');
                   }
                 }}
-                className="text-accent-cyan hover:underline cursor-pointer bg-transparent border-none p-0 text-xs"
+                className="text-accent-cyan-ink hover:underline cursor-pointer bg-transparent border-none p-0 text-xs"
               >
                 Obtenir une clé API
               </button>

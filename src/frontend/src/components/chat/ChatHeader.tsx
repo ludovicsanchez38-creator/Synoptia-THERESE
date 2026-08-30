@@ -100,7 +100,7 @@ export function ChatHeader({
             <h1 className="text-lg font-bold gradient-text tracking-tight">THÉRÈSE</h1>
           </button>
           {demoEnabled && (
-            <span className="px-2 py-0.5 text-xs font-semibold bg-accent-cyan/20 text-accent-cyan border border-accent-cyan/40 rounded-[6px] animate-pulse">
+            <span className="px-2 py-0.5 text-xs font-semibold bg-accent-cyan/20 text-accent-cyan-ink border border-accent-cyan/40 rounded-[6px] animate-pulse">
               Mode Démo
             </span>
           )}

@@ -26,7 +26,7 @@ export function ModeSelector({ mode, onChange, ollamaAvailable, onRefreshOllama 
         className={cn(
           'relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all',
           mode === 'cloud'
-            ? 'text-accent-cyan'
+            ? 'text-accent-cyan-ink'
             : 'text-text-muted hover:text-text',
         )}
       >
@@ -49,7 +49,7 @@ export function ModeSelector({ mode, onChange, ollamaAvailable, onRefreshOllama 
           'relative flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all',
           !ollamaAvailable && 'opacity-40 cursor-not-allowed',
           mode === 'sovereign'
-            ? 'text-accent-magenta'
+            ? 'text-accent-magenta-ink'
             : 'text-text-muted hover:text-text',
         )}
       >
@@ -68,7 +68,7 @@ export function ModeSelector({ mode, onChange, ollamaAvailable, onRefreshOllama 
         <button
           onClick={onRefreshOllama}
           title="Vérifier Ollama"
-          className="p-1.5 rounded-lg text-text-muted hover:text-accent-cyan hover:bg-accent-cyan/10 transition-colors"
+          className="p-1.5 rounded-lg text-text-muted hover:text-accent-cyan-ink hover:bg-accent-cyan/10 transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
         </button>

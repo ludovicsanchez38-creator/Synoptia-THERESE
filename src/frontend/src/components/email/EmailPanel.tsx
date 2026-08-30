@@ -270,7 +270,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                 <div className="relative">
                   <button
                     onClick={() => setShowAccountMenu(!showAccountMenu)}
-                    className="flex items-center gap-1 text-xs text-text-muted hover:text-accent-cyan transition-colors"
+                    className="flex items-center gap-1 text-xs text-text-muted hover:text-accent-cyan-ink transition-colors"
                   >
                     {currentAccount?.email || 'Sélectionner'}
                     <ChevronDown className="w-3 h-3" />
@@ -282,7 +282,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                           <button
                             onClick={() => switchAccount(acc.id)}
                             className={`flex-1 text-left px-3 py-2 text-sm hover:bg-border/20 transition-colors ${
-                              acc.id === currentAccountId ? 'text-accent-cyan bg-accent-cyan/5' : 'text-text-muted'
+                              acc.id === currentAccountId ? 'text-accent-cyan-ink bg-accent-cyan/5' : 'text-text-muted'
                             }`}
                           >
                             {acc.email}
@@ -342,8 +342,8 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                   <PenLine className="w-4 h-4" />
                 </Button>
                 <Button variant="ghost" size="sm" onClick={handleSync} disabled={syncing} title="Rafraîchir les messages">
-                  <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin text-accent-cyan' : ''}`} />
-                  {syncing && <span className="ml-1 text-xs text-accent-cyan">Sync...</span>}
+                  <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin text-accent-cyan-ink' : ''}`} />
+                  {syncing && <span className="ml-1 text-xs text-accent-cyan-ink">Sync...</span>}
                 </Button>
               </>
             )}
@@ -383,7 +383,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
         <div className="min-h-0 flex-1 flex overflow-hidden">
           {loading ? (
             <div className="flex-1 flex items-center justify-center">
-              <Spinner taille="zone" className="text-accent-cyan" />
+              <Spinner taille="zone" className="text-accent-cyan-ink" />
             </div>
           ) : error ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-3">
@@ -426,7 +426,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                         onClick={() => setCurrentLabel(label.id)}
                         className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                           isActive
-                            ? 'bg-accent-cyan/10 text-accent-cyan'
+                            ? 'bg-accent-cyan/10 text-accent-cyan-ink'
                             : 'hover:bg-border/20 text-text-muted'
                         }`}
                       >
@@ -449,7 +449,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                               onClick={() => setCurrentLabel(label.id)}
                               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                                 isActive
-                                  ? 'bg-accent-cyan/10 text-accent-cyan'
+                                  ? 'bg-accent-cyan/10 text-accent-cyan-ink'
                                   : 'hover:bg-border/20 text-text-muted'
                               }`}
                             >
@@ -526,7 +526,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                 <div className="relative">
                   <button
                     onClick={() => setShowAccountMenu(!showAccountMenu)}
-                    className="flex items-center gap-1 text-xs text-text-muted hover:text-accent-cyan transition-colors"
+                    className="flex items-center gap-1 text-xs text-text-muted hover:text-accent-cyan-ink transition-colors"
                   >
                     {currentAccount?.email || 'Sélectionner'}
                     <ChevronDown className="w-3 h-3" />
@@ -538,7 +538,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                           <button
                             onClick={() => switchAccount(acc.id)}
                             className={`flex-1 text-left px-3 py-2 text-sm hover:bg-border/20 transition-colors ${
-                              acc.id === currentAccountId ? 'text-accent-cyan bg-accent-cyan/5' : 'text-text-muted'
+                              acc.id === currentAccountId ? 'text-accent-cyan-ink bg-accent-cyan/5' : 'text-text-muted'
                             }`}
                           >
                             {acc.email}
@@ -598,8 +598,8 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                   <PenLine className="w-4 h-4" />
                 </Button>
                 <Button variant="ghost" size="sm" onClick={handleSync} disabled={syncing} title="Rafraîchir les messages">
-                  <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin text-accent-cyan' : ''}`} />
-                  {syncing && <span className="ml-1 text-xs text-accent-cyan">Sync...</span>}
+                  <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin text-accent-cyan-ink' : ''}`} />
+                  {syncing && <span className="ml-1 text-xs text-accent-cyan-ink">Sync...</span>}
                 </Button>
               </>
             )}
@@ -645,7 +645,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
         <div className="min-h-0 flex-1 flex overflow-hidden">
           {loading ? (
             <div className="flex-1 flex items-center justify-center">
-              <Spinner taille="zone" className="text-accent-cyan" />
+              <Spinner taille="zone" className="text-accent-cyan-ink" />
             </div>
           ) : error ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-3">
@@ -682,7 +682,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                         onClick={() => setCurrentLabel(label.id)}
                         className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                           isActive
-                            ? 'bg-accent-cyan/10 text-accent-cyan'
+                            ? 'bg-accent-cyan/10 text-accent-cyan-ink'
                             : 'hover:bg-border/20 text-text-muted'
                         }`}
                       >
@@ -706,7 +706,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                               onClick={() => setCurrentLabel(label.id)}
                               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
                                 isActive
-                                  ? 'bg-accent-cyan/10 text-accent-cyan'
+                                  ? 'bg-accent-cyan/10 text-accent-cyan-ink'
                                   : 'hover:bg-border/20 text-text-muted'
                               }`}
                             >

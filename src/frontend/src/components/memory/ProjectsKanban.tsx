@@ -212,7 +212,7 @@ function DroppableStatusGroup({ column, projects, onSelect, onDelete }: Droppabl
       >
         {projects.length === 0 ? (
           <div className={`flex items-center justify-center h-12 text-xs text-text-muted/50 transition-colors ${
-            isOver ? 'bg-accent-cyan/10 text-accent-cyan/70' : ''
+            isOver ? 'bg-accent-cyan/10 text-accent-cyan-ink' : ''
           }`}>
             Glisser ici
           </div>

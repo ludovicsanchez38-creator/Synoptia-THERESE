@@ -84,7 +84,7 @@ export function SideToggle({ side, isOpen, onClick, label, shortcut }: SideToggl
             className={`
               absolute top-1/2 -translate-y-1/2
               ${isLeft ? 'left-1.5' : 'right-1.5'}
-              text-accent-cyan
+              text-accent-cyan-ink
             `}
             initial={{ opacity: 0, scale: 0.5 }}
             animate={{ opacity: 1, scale: 1 }}

@@ -313,14 +313,14 @@ export function AgentChat() {
                           isAction
                             ? {
                                 borderLeft: "2px solid #F59E0B",
-                                color: "#E6EDF7",
+                                color: "var(--color-text)",
                               }
                             : {
                                 backgroundColor: isUser
                                   ? "rgba(34, 211, 238, 0.1)"
                                   : "rgba(168, 85, 247, 0.1)",
                                 borderLeft: isUser ? "none" : "2px solid #A855F7",
-                                color: "#E6EDF7",
+                                color: "var(--color-text)",
                               }
                         }
                       >

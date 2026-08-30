@@ -50,7 +50,7 @@ export function LimitsTab() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-32">
-        <Spinner taille="zone" className="text-accent-cyan" />
+        <Spinner taille="zone" className="text-accent-cyan-ink" />
       </div>
     );
   }
@@ -235,10 +235,10 @@ export function LimitsTab() {
       {/* Information */}
       <div className="p-3 bg-accent-cyan/10 border border-accent-cyan/20 rounded-lg">
         <div className="flex items-start gap-2">
-          <AlertTriangle className="w-4 h-4 text-accent-cyan mt-0.5" />
-          <div className="text-sm text-accent-cyan">
+          <AlertTriangle className="w-4 h-4 text-accent-cyan-ink mt-0.5" />
+          <div className="text-sm text-accent-cyan-ink">
             <p className="font-medium">Indicateurs IA (US-ESC-01)</p>
-            <p className="text-xs text-accent-cyan/80 mt-1">
+            <p className="text-xs text-accent-cyan-ink mt-1">
               THÉRÈSE détecte automatiquement quand l'IA n'est pas sûre de sa réponse et l'indique dans la conversation.
             </p>
           </div>

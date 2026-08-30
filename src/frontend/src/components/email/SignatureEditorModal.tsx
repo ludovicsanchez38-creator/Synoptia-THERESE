@@ -132,7 +132,7 @@ export function SignatureEditorModal({ accountId, accountEmail, onClose }: Signa
           <div className="flex items-start justify-between mb-6">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-accent-cyan/10">
-                <Mail className="w-5 h-5 text-accent-cyan" />
+                <Mail className="w-5 h-5 text-accent-cyan-ink" />
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-text">Signature email</h2>
@@ -179,7 +179,7 @@ export function SignatureEditorModal({ accountId, accountEmail, onClose }: Signa
                   <div
                     role="region"
                     aria-labelledby="signature-preview-label"
-                    className="w-full h-64 px-4 py-3 bg-background border border-text-muted/20 rounded-lg overflow-auto text-sm text-text [&_a]:text-accent-cyan [&_a]:underline"
+                    className="w-full h-64 px-4 py-3 bg-background border border-text-muted/20 rounded-lg overflow-auto text-sm text-text [&_a]:text-accent-cyan-ink [&_a]:underline"
                     dangerouslySetInnerHTML={{ __html: preview }}
                   />
                 </div>

@@ -69,7 +69,7 @@ function AgentModelSelect({
         <button
           type="button"
           onClick={() => setShowCustom((v) => !v)}
-          className="flex items-center gap-1 text-xs text-accent-cyan hover:text-accent-cyan/80 transition-colors"
+          className="flex items-center gap-1 text-xs text-accent-cyan-ink hover:text-accent-cyan-ink transition-colors"
           title="Saisir un identifiant de modèle personnalisé"
         >
           <Plus size={12} />
@@ -130,7 +130,7 @@ function AgentModelSelect({
       )}
 
       {isCustom && (
-        <p className="mt-1.5 text-xs text-accent-cyan flex items-center gap-1">
+        <p className="mt-1.5 text-xs text-accent-cyan-ink flex items-center gap-1">
           <AlertCircle size={12} />
           Modèle personnalisé actif : {value}
         </p>

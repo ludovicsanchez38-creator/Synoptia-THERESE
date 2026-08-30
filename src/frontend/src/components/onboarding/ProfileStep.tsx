@@ -117,7 +117,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-accent-cyan/10 flex items-center justify-center">
-            <User className="w-5 h-5 text-accent-cyan" />
+            <User className="w-5 h-5 text-accent-cyan-ink" />
           </div>
           <div>
             <h2 className="text-xl font-semibold text-text">Ton profil</h2>

@@ -69,7 +69,7 @@ function PresetCategory({
         aria-controls={panelId}
         className="flex items-center gap-2 w-full text-left mb-2 group"
       >
-        <span className="text-accent-cyan/70 group-hover:text-accent-cyan transition-colors">
+        <span className="text-accent-cyan-ink group-hover:text-accent-cyan-ink transition-colors">
           {icon}
         </span>
         <span className="text-xs font-semibold text-text-muted uppercase tracking-wider">
@@ -151,10 +151,10 @@ function PresetCategory({
                             title={`Voir ${preset.name}`}
                             aria-label={`Voir le site de ${preset.name}`}
                           >
-                            <ExternalLink className="w-3 h-3 text-text-muted hover:text-accent-cyan" />
+                            <ExternalLink className="w-3 h-3 text-text-muted hover:text-accent-cyan-ink" />
                           </a>
                         )}
-                        {isInstalling && <Spinner taille="bouton" className="text-accent-cyan" />}
+                        {isInstalling && <Spinner taille="bouton" className="text-accent-cyan-ink" />}
                         {!isInstalling && runningServer && <Check className="w-4 h-4 text-success" />}
                         {!isInstalling && isInstalled && !runningServer && (
                           <span title="Installé mais inactif - cliquer pour démarrer">
@@ -475,7 +475,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-32">
-        <Spinner taille="zone" className="text-accent-cyan" />
+        <Spinner taille="zone" className="text-accent-cyan-ink" />
       </div>
     );
   }
@@ -521,7 +521,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
             <div className="p-4 bg-background/40 rounded-lg border border-border/30 space-y-4">
               <div className="flex items-center justify-between mb-1">
                 <div className="flex items-center gap-2">
-                  <Zap className="w-4 h-4 text-accent-cyan" />
+                  <Zap className="w-4 h-4 text-accent-cyan-ink" />
                   <span className="text-sm font-medium text-text">
                     Presets disponibles
                     <span className="text-text-muted font-normal ml-1">({presets.length})</span>
@@ -641,7 +641,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
           >
             <div className="p-4 bg-background/40 rounded-lg border border-border/30 space-y-3">
               <div className="flex items-center gap-2 mb-3">
-                <Server className="w-4 h-4 text-accent-cyan" />
+                <Server className="w-4 h-4 text-accent-cyan-ink" />
                 <span className="text-sm font-medium text-text">Nouveau connecteur</span>
               </div>
 
@@ -864,7 +864,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
                                 key={tool.name}
                                 className="flex items-start gap-2 p-2 bg-background/60 rounded-lg"
                               >
-                                <Wrench className="w-3 h-3 text-accent-cyan mt-0.5 shrink-0" />
+                                <Wrench className="w-3 h-3 text-accent-cyan-ink mt-0.5 shrink-0" />
                                 <div>
                                   <p className="text-xs font-medium text-text">{tool.name}</p>
                                   <p className="text-xs text-text-muted line-clamp-2">
@@ -892,7 +892,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
           href="https://modelcontextprotocol.io"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-accent-cyan hover:underline"
+          className="text-accent-cyan-ink hover:underline"
         >
           En savoir plus
         </a>

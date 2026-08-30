@@ -93,7 +93,7 @@ export function ShortcutsModal({ isOpen, onClose }: ShortcutsModalProps) {
             <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-lg bg-accent-cyan/20 flex items-center justify-center">
-                  <Keyboard className="w-4 h-4 text-accent-cyan" />
+                  <Keyboard className="w-4 h-4 text-accent-cyan-ink" />
                 </div>
                 <h2 className="text-lg font-semibold text-text">Raccourcis clavier</h2>
               </div>
@@ -115,7 +115,7 @@ export function ShortcutsModal({ isOpen, onClose }: ShortcutsModalProps) {
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: groupIndex * 0.05 }}
                   >
-                    <h3 className="text-sm font-medium text-accent-cyan mb-3 flex items-center gap-2">
+                    <h3 className="text-sm font-medium text-accent-cyan-ink mb-3 flex items-center gap-2">
                       <span className="w-1.5 h-1.5 rounded-full bg-accent-cyan shadow-[0_0_6px_rgba(34,211,238,0.5)]" />
                       {group.title}
                     </h3>

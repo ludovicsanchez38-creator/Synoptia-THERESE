@@ -35,7 +35,7 @@ function contrast(fg: string, bg: string): number {
 // fs direct : l'import Vite ?raw est intercepté par le pipeline CSS de vitest,
 // et import.meta.url n'est pas file:// sous vitest -> chemin depuis le cwd
 // (vitest tourne toujours depuis src/frontend).
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const CSS = readFileSync(resolve(process.cwd(), 'src/styles/globals.css'), 'utf-8');
@@ -166,5 +166,88 @@ describe('US-013 : axe sans violation', () => {
     );
     const results = await axe(container);
     expect(results.violations).toEqual([]);
+  });
+});
+
+/* ============================================================
+   Lot 1 du plan de cohérence graphique (30/08/2026).
+
+   Le bloc ci-dessus protège les jetons sémantiques. Il ne regardait pas les
+   accents : le cyan de marque #22D3EE servait de couleur de TEXTE dans 242
+   endroits, à 1,67:1 sur le thème clair. Un test qui donne une assurance
+   partielle donne une assurance fausse.
+
+   Distinction posée : --color-accent-cyan reste la couleur de REMPLISSAGE de
+   la marque (boutons, bordures, dégradés) ; --color-accent-cyan-ink est sa
+   déclinaison lisible, la seule autorisée pour du texte.
+   ============================================================ */
+
+const FICHIERS_SOURCE: string[] = [];
+(function collecter(dossier: string) {
+  for (const e of readdirSync(dossier, { withFileTypes: true })) {
+    const chemin = resolve(dossier, e.name);
+    if (e.isDirectory()) collecter(chemin);
+    else if (/\.tsx?$/.test(e.name)) FICHIERS_SOURCE.push(chemin);
+  }
+})(resolve(process.cwd(), 'src'));
+
+describe('lot 1 : les accents lisibles', () => {
+  const ENCRES = ['accent-cyan-ink', 'accent-magenta-ink'] as const;
+
+  it.each(ENCRES)('%s passe AA en thème clair', (nom) => {
+    const c = LIGHT_ALL[nom];
+    expect(c, `jeton --color-${nom} absent`).toBeTruthy();
+    expect(contrast(c, LIGHT_BG)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(c, LIGHT_SURFACE)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it.each(ENCRES)('%s passe AA en thème sombre', (nom) => {
+    const c = DARK[nom];
+    expect(c, `jeton --color-${nom} absent du thème sombre`).toBeTruthy();
+    expect(contrast(c, DARK_BG)).toBeGreaterThanOrEqual(4.5);
+    expect(contrast(c, DARK_SURFACE)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it("l'anneau de focus atteint le seuil UI de 3:1 dans les deux thèmes", () => {
+    // Un anneau invisible est une navigation au clavier impossible.
+    expect(contrast(LIGHT_ALL['ring'], LIGHT_BG)).toBeGreaterThanOrEqual(3);
+    expect(contrast(LIGHT_ALL['ring'], LIGHT_SURFACE)).toBeGreaterThanOrEqual(3);
+    expect(contrast(DARK['ring'], DARK_BG)).toBeGreaterThanOrEqual(3);
+    expect(contrast(DARK['ring'], DARK_SURFACE)).toBeGreaterThanOrEqual(3);
+  });
+
+  it("aucune source n'utilise la couleur de remplissage comme couleur de texte", () => {
+    const fautifs: string[] = [];
+    for (const f of FICHIERS_SOURCE) {
+      const contenu = readFileSync(f, 'utf-8');
+      for (const m of contenu.matchAll(/text-accent-(cyan|magenta|violet)(?!-ink)/g)) {
+        fautifs.push(`${f.slice(f.lastIndexOf('/src/') + 5)} : ${m[0]}`);
+      }
+    }
+    expect(fautifs, `${fautifs.length} usages, ex. ${fautifs.slice(0, 3).join(' | ')}`).toEqual([]);
+  });
+
+  it('la sélection de texte garde l’encre du thème', () => {
+    // L'ancienne paire mettait la couleur du FOND en texte sur le cyan plein :
+    // 1,67:1, une sélection qu'on ne voyait pas.
+    const bloc = CSS.slice(CSS.indexOf('::selection'), CSS.indexOf('::selection') + 500);
+    expect(bloc).toContain('color: var(--color-text)');
+    expect(bloc).not.toContain('color: var(--color-bg)');
+  });
+
+  it("aucune couleur de texte du thème sombre n'est forcée en dur", () => {
+    // #E6EDF7 est l'encre du thème SOMBRE. Forcée en couleur de texte sur une
+    // surface blanche, elle donne 1,18:1. Introduite en mars 2026, elle avait
+    // survécu à la refonte de mai.
+    // Le motif vise la COULEUR DE TEXTE : un remplissage SVG ou la table de
+    // référence du thème sombre (lib/accessibility.ts) sont légitimes.
+    const fautifs: string[] = [];
+    for (const f of FICHIERS_SOURCE) {
+      if (/\.test\.tsx?$/.test(f)) continue;
+      if (/color:\s*["']#E6EDF7["']/i.test(readFileSync(f, 'utf-8'))) {
+        fautifs.push(f.slice(f.lastIndexOf('/src/') + 5));
+      }
+    }
+    expect(fautifs, `encre sombre forcée dans : ${fautifs.join(', ')}`).toEqual([]);
   });
 });

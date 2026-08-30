@@ -157,8 +157,8 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
                 <div
                   className={cn(
                     'flex items-center gap-1.5 px-2.5 py-1 rounded-[6px] text-xs font-medium transition-colors',
-                    isActive && 'bg-accent-cyan/15 text-accent-cyan',
-                    isPast && 'text-accent-cyan/60',
+                    isActive && 'bg-accent-cyan/15 text-accent-cyan-ink',
+                    isPast && 'text-accent-cyan-ink',
                     !isActive && !isPast && 'text-text-muted',
                   )}
                 >

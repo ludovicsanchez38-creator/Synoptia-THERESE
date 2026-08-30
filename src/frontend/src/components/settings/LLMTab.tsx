@@ -212,7 +212,7 @@ export function LLMTab({
                   <div className="flex items-center gap-2 flex-wrap">
                     <span className="text-sm font-medium text-text">{provider.name}</span>
                     {provider.id === 'anthropic' && (
-                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-accent-cyan/20 text-accent-cyan">
+                      <span className="px-2 py-0.5 rounded text-xs font-medium bg-accent-cyan/20 text-accent-cyan-ink">
                         Recommandé
                       </span>
                     )}
@@ -240,7 +240,7 @@ export function LLMTab({
         <div className="space-y-3 pt-4 border-t border-border/30">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-[6px] bg-[var(--k3bg)] border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
-              <Key className="w-5 h-5 text-accent-magenta" />
+              <Key className="w-5 h-5 text-accent-magenta-ink" />
             </div>
             <div>
               <h3 className="font-medium text-text">Clé API {currentProviderConfig?.name}</h3>
@@ -332,7 +332,7 @@ export function LLMTab({
                   href={currentProviderConfig.consoleUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-accent-cyan hover:underline"
+                  className="text-accent-cyan-ink hover:underline"
                 >
                   {new URL(currentProviderConfig.consoleUrl).hostname}
                 </a>
@@ -478,7 +478,7 @@ function ModelSelector({
         {selectedProvider !== 'ollama' && (
           <button
             onClick={() => setShowCustomInput(!showCustomInput)}
-            className="flex items-center gap-1 text-xs text-accent-cyan hover:text-accent-cyan/80 transition-colors"
+            className="flex items-center gap-1 text-xs text-accent-cyan-ink hover:text-accent-cyan-ink transition-colors"
             title="Utiliser un identifiant de modèle personnalisé"
           >
             <Plus className="w-3 h-3" />
@@ -547,7 +547,7 @@ function ModelSelector({
       )}
 
       {isCustomModel && (
-        <p className="text-xs text-accent-cyan flex items-center gap-1">
+        <p className="text-xs text-accent-cyan-ink flex items-center gap-1">
           <AlertCircle className="w-3 h-3" />
           Modèle personnalisé actif : {selectedModel}
         </p>

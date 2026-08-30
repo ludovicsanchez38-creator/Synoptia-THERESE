@@ -116,7 +116,7 @@ export function VariablesSection() {
   return (
     <section className="rounded-lg border border-border/50 p-4">
       <h4 className="text-sm font-semibold text-text flex items-center gap-2 mb-1">
-        <Braces className="w-4 h-4 text-accent-cyan" />
+        <Braces className="w-4 h-4 text-accent-cyan-ink" />
         Variables
       </h4>
       <p className="text-xs text-text-muted mb-1">
@@ -166,7 +166,7 @@ export function VariablesSection() {
             <li key={variable.name}
               className="rounded-lg bg-background/40 border border-border/40 p-2.5">
               <div className="flex items-center gap-2">
-                <code className="text-xs text-accent-cyan shrink-0">
+                <code className="text-xs text-accent-cyan-ink shrink-0">
                   {'{'}{variable.name}{'}'}
                 </code>
                 <span className="text-xs uppercase text-text-muted shrink-0">
