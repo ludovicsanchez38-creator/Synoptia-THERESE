@@ -176,3 +176,18 @@ async def test_une_prestation_sur_un_contact_inconnu_est_refusee(client):
     })
 
     assert reponse.status_code == 404, reponse.text
+
+
+@pytest.mark.asyncio
+async def test_aucun_chemin_ne_repose_piste_en_silence(db_session: AsyncSession):
+    """Deux chemins, deux vérités.
+
+    L'API exige la phase depuis la 0.59, mais le MODÈLE gardait
+    `default="piste"` : un import, un script ou un test la reposait en
+    silence. Une prestation sans phase ne doit pas pouvoir naître.
+    """
+    c = await _client(db_session, nom="SansPhase")
+    with pytest.raises(Exception):
+        db_session.add(Prestation(contact_id=c.id, intitule="Depannage"))
+        await db_session.commit()
+    await db_session.rollback()

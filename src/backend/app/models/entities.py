@@ -128,7 +128,9 @@ class Prestation(SQLModel, table=True):
     # piste -> proposition -> gagne/perdue, puis en_cours -> terminee.
     # Six mots qui couvrent la vente ET le suivi, la ou le Kanban des contacts
     # en a sept qui ne parlent que de vente.
-    phase: str = Field(default="piste", index=True)
+    # Pas de defaut : l'API l'exige, et un defaut ici ferait revenir « piste »
+    # par les chemins qui ne passent pas par elle (import, script, test).
+    phase: str = Field(index=True)
     # Le financeur, quand il y en a un. La plupart des prestations n'en ont
     # pas : laisser vide plutot que d'affirmer « autofinance ».
     financeur: str | None = None

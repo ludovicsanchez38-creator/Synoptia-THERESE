@@ -29,6 +29,10 @@ export function ListeDesPrestations({ contactId }: { contactId: string }) {
   const [chargement, setChargement] = useState(true);
   const [intitule, setIntitule] = useState('');
   const [montant, setMontant] = useState('');
+  // Aucun defaut cache : l'application ne choisit pas l'etape a la place de
+  // qui travaille (« une fuite sous un lavabo n'est pas une piste »). Le
+  // choix est a l'ecran, et il part avec la creation.
+  const [phase, setPhase] = useState<PhaseDePrestation>('piste');
 
   const recharger = useCallback(async () => {
     setChargement(true);
@@ -52,9 +56,13 @@ export function ListeDesPrestations({ contactId }: { contactId: string }) {
       contact_id: contactId,
       intitule: nom,
       montant_ht: brut ? Number(brut) : null,
+      // Obligatoire cote API depuis la 0.59 : l'omettre rendait le bouton
+      // « Ajouter » inoperant, sans que rien ne le dise.
+      phase,
     });
     setIntitule('');
     setMontant('');
+    setPhase('piste');
     await recharger();
   }
 
@@ -111,6 +119,20 @@ export function ListeDesPrestations({ contactId }: { contactId: string }) {
             onChange={(e) => setIntitule(e.target.value)}
             placeholder="FORGER, PROPULSER, diagnostic…"
           />
+        </label>
+        <label className="text-xs text-text-muted">
+          Où ça en est
+          <select
+            className="mt-1 block rounded border border-border bg-surface px-2 py-1 text-sm text-text"
+            value={phase}
+            onChange={(e) => setPhase(e.target.value as PhaseDePrestation)}
+          >
+            {PHASES_DE_PRESTATION.map((p) => (
+              <option key={p} value={p}>
+                {LIBELLE_DE_PHASE[p]}
+              </option>
+            ))}
+          </select>
         </label>
         <label className="text-xs text-text-muted">
           Montant HT (facultatif)

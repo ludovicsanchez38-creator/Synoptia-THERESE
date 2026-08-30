@@ -77,10 +77,42 @@ describe('Les prestations à l’écran', () => {
     fireEvent.change(await screen.findByLabelText(/intitulé/i), {
       target: { value: 'PROPULSER' },
     });
+    fireEvent.change(screen.getByLabelText(/où ça en est/i), {
+      target: { value: 'en_cours' },
+    });
     fireEvent.click(screen.getByRole('button', { name: /ajouter/i }));
 
     await waitFor(() => expect(creees).toHaveLength(1));
     expect((creees[0] as { intitule: string }).intitule).toBe('PROPULSER');
+  });
+
+  it("envoie TOUJOURS une phase : sans elle l'API refuse la creation", async () => {
+    // Défaut livré en 0.59.0 : l'API a rendu la phase obligatoire, l'écran a
+    // continué d'envoyer {contact_id, intitule, montant_ht}. Le bouton
+    // « Ajouter » ne créait plus rien, et ce test — qui mockait l'appel sans
+    // regarder le corps — restait vert.
+    servir();
+    creees.length = 0;
+    render(<ListeDesPrestations contactId="c1" />);
+
+    fireEvent.change(await screen.findByLabelText(/intitulé/i), {
+      target: { value: 'Depannage fuite' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: /ajouter/i }));
+
+    await waitFor(() => expect(creees).toHaveLength(1));
+    const corps = creees[0] as { phase?: string };
+    expect(corps.phase).toBeTruthy();
+    expect(['piste', 'proposition', 'gagne', 'perdue', 'en_cours', 'terminee'])
+      .toContain(corps.phase);
+  });
+
+  it("ne choisit pas la phase en silence : elle est visible avant d'ajouter", async () => {
+    servir();
+    render(<ListeDesPrestations contactId="c1" />);
+
+    // Le choix est à l'écran, nommé, pas caché dans le code.
+    expect(await screen.findByLabelText(/où ça en est/i)).toBeInTheDocument();
   });
 
   it('refuse d’envoyer un intitulé vide', async () => {
