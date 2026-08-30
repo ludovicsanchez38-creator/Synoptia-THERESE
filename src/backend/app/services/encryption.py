@@ -41,7 +41,23 @@ SALT_FILE = THERESE_DIR / ".encryption_salt"
 
 # Keychain identifiers
 KEYCHAIN_SERVICE = "therese-app"
-KEYCHAIN_ACCOUNT = "encryption-key"
+
+
+def _compte_trousseau(data_dir: Path | None = None) -> str:
+    """L'entrée Keychain de CE profil.
+
+    Finding 9 (30/08) : `encryption-key` unique. Un second THERESE_DATA_DIR
+    écrasait la clé du premier (BUG-050). Le profil par défaut (~/.therese)
+    garde l'entrée historique pour ne pas verrouiller les installés.
+    """
+    cible = Path(data_dir if data_dir is not None else _settings.data_dir).expanduser().resolve()
+    defaut = (Path.home() / ".therese").resolve()
+    if cible == defaut:
+        return "encryption-key"
+    return f"encryption-key:{cible}"
+
+
+KEYCHAIN_ACCOUNT = _compte_trousseau()
 
 
 def _try_keyring_available() -> bool:

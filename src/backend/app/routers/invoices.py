@@ -35,9 +35,13 @@ async def _get_invoice_output_dir(session: AsyncSession) -> str:
     """Résout le répertoire de sortie des PDFs factures (dossier de travail ou défaut).
 
     Priorité : dossier de travail configuré + sous-dossier 'factures'.
-    Fallback : ~/.therese/invoices (BUG-094).
+    Fallback : {data_dir}/invoices (suit THERESE_DATA_DIR).
     """
     import os
+    from pathlib import Path
+
+    from app.config import settings
+
     result = await session.execute(
         select(Preference).where(Preference.key == "working_directory")
     )
@@ -46,7 +50,9 @@ async def _get_invoice_output_dir(session: AsyncSession) -> str:
         output_dir = os.path.join(pref.value, "factures")
         logger.info("Répertoire factures résolu depuis les préférences : %s", output_dir)
         return output_dir
-    fallback = os.path.expanduser("~/.therese/invoices")
+    # Finding 9 (30/08) : le fallback ignorait THERESE_DATA_DIR et écrivait
+    # toujours dans ~/.therese/invoices, y compris pour un second profil.
+    fallback = str(Path(settings.data_dir) / "invoices")
     logger.info("Répertoire factures : aucun dossier de travail configuré, fallback %s", fallback)
     return fallback
 
