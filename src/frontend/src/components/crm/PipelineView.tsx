@@ -160,7 +160,7 @@ function DroppableStage({ stage, count, children }: DroppableStageProps) {
       <div className={`${stage.color} text-ink-on-fill rounded-t-md px-4 py-3`}>
         <div className="flex items-center justify-between">
           <h3 className="font-semibold">{stage.label}</h3>
-          <span className="text-sm opacity-80">{count}</span>
+          <span className="text-sm ">{count}</span>
         </div>
       </div>
 

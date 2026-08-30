@@ -299,6 +299,16 @@ select option {
   outline-offset: 2px;
 }
 
+/* Tailwind 4 rend les ::placeholder à 50 % de la couleur courante
+   (color-mix in oklab, currentColor 50%, transparent). Sur l'encre muette du
+   thème clair, ça donne 2,2:1 à 3,2:1 : le texte d'aide d'un champ vide est
+   la première chose qu'on lit, et c'était la moins lisible de l'écran.
+   Firefox applique en plus une opacité par défaut, d'où le opacity: 1. */
+::placeholder {
+  color: var(--color-text-muted);
+  opacity: 1;
+}
+
 ::selection {
   /* Un lavis d'accent qui garde l'encre du thème par-dessus : lisible dans
      les deux modes. L'ancienne paire (cyan plein / couleur du fond) donnait

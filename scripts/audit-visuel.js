@@ -74,9 +74,34 @@ window.__audit = function () {
   const rap = (a, b) => { const [h, l] = [window.__lum(a), window.__lum(b)].sort((x, y) => y - x); return (h + 0.05) / (l + 0.05); };
   const visible = (el) => {
     const s = getComputedStyle(el);
-    if (s.visibility === 'hidden' || s.display === 'none' || +s.opacity < 0.5) return false;
+    if (s.visibility === 'hidden' || s.display === 'none' || +s.opacity === 0) return false;
+    // WCAG 1.4.3 exempte explicitement les composants d'interface INACTIFS.
+    // Sans cette exemption, tout `disabled:opacity-50` remonte comme un
+    // défaut : un bouton grisé est grisé, c'est le message.
+    if (el.closest('[disabled], [aria-disabled="true"], .disabled')) return false;
     const r = el.getBoundingClientRect();
     return r.width > 2 && r.height > 2;
+  };
+
+  /** Opacité effective : le produit de celles de l'élément et de ses ancêtres.
+   *  La première version écartait tout ce qui était sous 0,5 au lieu de le
+   *  composer. La carte « en attente » du Board cumulait 0,4 puis 0,5, soit
+   *  0,2 effectif et 1,3:1 — invisible pour l'outil comme pour l'œil. */
+  const opaciteEffective = (el) => {
+    let o = 1;
+    let e = el;
+    while (e && e !== document.documentElement) {
+      const v = +getComputedStyle(e).opacity;
+      // Un ZÉRO exact n'est pas un choix de design : c'est une animation
+      // d'entrée framer-motion qui n'a pas démarré. Dans un onglet caché,
+      // requestAnimationFrame est throttlé et l'état initial { opacity: 0 }
+      // reste figé indéfiniment. Compter ce zéro donnait 1,00:1 sur des
+      // écrans entiers. Les opacités fractionnaires, elles, sont bien des
+      // choix, et se composent.
+      if (v > 0) o *= v;
+      e = e.parentElement;
+    }
+    return o;
   };
 
   const contraste = [], rayons = {}, tailles = {}, polices = {}, clics = [], cibles = [];
@@ -90,7 +115,13 @@ window.__audit = function () {
       const gras = +s.fontWeight >= 700;
       const seuil = px >= 24 || (px >= 18.66 && gras) ? 3 : 4.5;
       const f = pileFond(el);
-      const c = window.__rgb([s.color], `rgb(${f.join(',')})`);
+      const o = opaciteEffective(el);
+      // La couleur est composée AVEC l'opacité héritée : c'est ce que l'œil voit.
+      ctx.clearRect(0, 0, 1, 1);
+      const c = window.__rgb([s.color.replace(/rgba?\(([^)]+)\)/, (_, v) => {
+        const p = v.split(',').map((x) => x.trim());
+        return `rgba(${p[0]}, ${p[1]}, ${p[2]}, ${(p[3] ? +p[3] : 1) * o})`;
+      })], `rgb(${f.join(',')})`);
       const r = rap(c, f);
       if (r < seuil) {
         contraste.push({ texte: t.slice(0, 30), ratio: +r.toFixed(2), px, couleur: `rgb(${c.join(',')})`, fond: `rgb(${f.join(',')})`, brut: s.color });
@@ -101,10 +132,30 @@ window.__audit = function () {
     }
     const br = s.borderRadius;
     if (br && br !== '0px') rayons[br] = (rayons[br] || 0) + 1;
+    // Un ::placeholder n'est pas un nœud texte : il faut le lire à part.
+    if (el.matches('input, textarea')) {
+      const ph = getComputedStyle(el, '::placeholder');
+      const texte = el.getAttribute('placeholder');
+      if (texte && ph.color) {
+        const f = pileFond(el);
+        const c = window.__rgb([ph.color], `rgb(${f.join(',')})`);
+        const r = rap(c, f);
+        if (r < 4.5) {
+          contraste.push({ texte: `::placeholder « ${texte.slice(0, 20)} »`, ratio: +r.toFixed(2), px: parseFloat(s.fontSize), couleur: `rgb(${c.join(',')})`, fond: `rgb(${f.join(',')})`, brut: ph.color });
+        }
+      }
+    }
     if (el.matches('button, a[href], [role="button"], [role="tab"], input, select, textarea')) {
       const px = parseFloat(s.fontSize);
-      const propre = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
-      if (propre && px < 14) clics.push({ t: (el.textContent || '').trim().slice(0, 24), px });
+      // Ne PAS exiger un nœud texte enfant : un <input> n'en a jamais, et le
+      // champ « Filtrer » des Fichiers a été compté zéro alors qu'il était à
+      // 12 px, sur une surface déclarée conforme.
+      const porteDuTexte =
+        el.matches('input, select, textarea') ||
+        [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
+      if (porteDuTexte && px < 14) {
+        clics.push({ t: (el.getAttribute('placeholder') || el.textContent || el.tagName).trim().slice(0, 24), px });
+      }
       const r = el.getBoundingClientRect();
       if (Math.min(r.width, r.height) < 24) {
         cibles.push({ t: (el.getAttribute('aria-label') || el.textContent || '').trim().slice(0, 22), w: Math.round(r.width), h: Math.round(r.height) });

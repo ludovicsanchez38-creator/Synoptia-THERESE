@@ -8,10 +8,17 @@ fonds au-dessus sont composées par le **navigateur** (canvas 1×1), puis le
 rapport de contraste est calculé sur le RGB obtenu. Les tailles, rayons,
 familles de police et cibles de clic sont relevés au passage.
 
-## Résultat
+## Résultat (seconde passe, après les revues adverses)
 
-**34 mesures (17 surfaces × 2 thèmes) : 0 texte sous le seuil, 0 élément
-cliquable sous 14 px.**
+**51 mesures (17 surfaces × 3 modes : clair, sombre, contraste élevé) :
+0 texte sous le seuil, 0 élément cliquable sous 14 px.**
+
+La première passe annonçait 34 mesures à zéro avec un auditeur bien plus
+faible. Les deux revues adverses ont rendu **NO-GO** : dix findings de Grok,
+huit de Soso, tous vérifiés dans le code. L'auditeur a été durci en
+conséquence — il compose désormais l'opacité des ancêtres, lit les
+`::placeholder`, exempte les contrôles désactivés comme le fait WCAG 1.4.3,
+et compte les `<input>` (qui n'ont jamais de nœud texte enfant).
 
 | Surface | clair | sombre | rayons observés | tailles observées |
 |---|---|---|---|---|
@@ -65,6 +72,31 @@ l'embarquement de JetBrains Mono, corrigé le jour même).
   départ pendant que `--color-bg` est déjà celui d'arrivée. Onze faux défauts,
   et j'ai failli conclure que le `body` ne suivait pas le thème. Couper les
   transitions avant de basculer.
+
+## Ce que la seconde passe a trouvé
+
+Le balayage était honnête sur ce qu'il mesurait : un état de repos, en 16 px,
+sans focus, sans survol, sans placeholder, sans contraste élevé.
+
+1. **Le mode contraste élevé était cassé de trois façons.** Son attribut était
+   posé sur un `<div>` interne, donc les modales rendues par portail sous
+   `document.body` en sortaient. Ce bloc pose un fond NOIR et les encres de
+   domaine que j'y avais mises venaient du thème clair : 1,2:1 à 2,2:1. Il
+   annonce du AAA et laissait `#FF0000` à 5,25:1.
+2. **`.gradient-text` clippait le dégradé de MARQUE sur du texte** : 1,67:1 en
+   clair. L'auditeur composait la couleur héritée et ignorait
+   `-webkit-text-fill-color: transparent`.
+3. **Tailwind 4 rend les `::placeholder` à 50 % de la couleur courante.** 115
+   champs à 2,2:1. Une règle globale les remet à pleine encre.
+4. **135 anneaux de focus au cyan de marque**, 1,67:1, après un
+   `focus:outline-none` — y compris la constante partagée, et un test qui
+   **exigeait** la classe fautive.
+5. **207 fonds, bordures et anneaux Tailwind bruts** en nuances 400/500/600.
+6. **Trois collisions de sens** : `warning` et le domaine Tâches partageaient
+   `#F59E0B` en sombre ; la bulle utilisateur changeait d'identité selon le
+   thème ; une relance était violette dans la liste et brune dans les sources.
+7. **La préférence « Petite »** posait 14 px sur `<html>`, ramenant `text-xs`
+   à 10,5 px. `--text-xs` a maintenant un plancher absolu.
 
 ## Ce qui reste, non corrigé et assumé
 
