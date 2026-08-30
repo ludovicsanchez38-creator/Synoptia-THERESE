@@ -149,7 +149,7 @@ export function EntitySuggestion({
       status: (project.status as 'active' | 'completed' | 'on_hold') || 'active',
     });
 
-    setRemainingProjects((prev) => prev.filter((p) => p.name !== project.name));
+    setRemainingProjects((prev) => prev.filter((p) => p !== project));
     onSaved();
   };
 
@@ -157,8 +157,8 @@ export function EntitySuggestion({
     setRemainingContacts((prev) => prev.filter((c) => c.name !== name));
   };
 
-  const handleIgnoreProject = (name: string) => {
-    setRemainingProjects((prev) => prev.filter((p) => p.name !== name));
+  const handleIgnoreProject = (project: ExtractedProject) => {
+    setRemainingProjects((prev) => prev.filter((p) => p !== project));
   };
 
   // Check if all items have been handled
@@ -208,13 +208,13 @@ export function EntitySuggestion({
             ))}
             {remainingProjects.map((project) => (
               <EntityItem
-                key={`project-${project.name}`}
+                key={`project-${project.name}-${project.description ?? ''}-${project.confidence}`}
                 type="project"
                 name={project.name}
                 subtitle={project.description || (project.budget ? `${project.budget} EUR` : undefined)}
                 confidence={project.confidence}
                 onSave={() => handleSaveProject(project)}
-                onIgnore={() => handleIgnoreProject(project.name)}
+                onIgnore={() => handleIgnoreProject(project)}
               />
             ))}
           </AnimatePresence>
