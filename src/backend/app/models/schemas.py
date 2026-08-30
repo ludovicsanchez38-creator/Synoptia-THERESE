@@ -129,6 +129,8 @@ class MemorySearchResponse(BaseModel):
     results: list[MemorySearchResult]
     total: int
     search_time_ms: float
+    # Lot F : ILIKE est plafonné. True = d'autres correspondances existent.
+    truncated: bool = False
 
 
 # ============================================================

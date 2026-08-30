@@ -116,3 +116,22 @@ class TestF6AgendaCollecteToutesLesPages:
             await _collecter_pages_evenements(fetch_page)
         assert exc.value.status_code == 409
         assert str(PLAFOND_EVENEMENTS_FENETRE) in exc.value.detail
+
+
+class TestF7RechercheMemoireBornee:
+    """ILIKE sans LIMIT chargeait l'annuaire pour « e ». Un SELECT par hit
+    Qdrant gelait la boucle."""
+
+    def test_requete_contacts_porte_un_plafond(self) -> None:
+        from app.routers.memory import PLAFOND_ILIKE_MEMOIRE, _requete_contacts_mot_cle
+
+        stmt = _requete_contacts_mot_cle("e")
+        assert stmt._limit_clause is not None
+        assert int(stmt._limit_clause.value) == PLAFOND_ILIKE_MEMOIRE
+
+    def test_requete_projets_porte_un_plafond(self) -> None:
+        from app.routers.memory import PLAFOND_ILIKE_MEMOIRE, _requete_projets_mot_cle
+
+        stmt = _requete_projets_mot_cle("e")
+        assert stmt._limit_clause is not None
+        assert int(stmt._limit_clause.value) == PLAFOND_ILIKE_MEMOIRE
