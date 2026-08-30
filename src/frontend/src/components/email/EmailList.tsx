@@ -32,6 +32,10 @@ export function EmailList({ accountId }: EmailListProps) {
     setSearchQuery,
     setNeedsReauth,
     refreshCounter,
+    hasMore,
+    setHasMore,
+    pageToken,
+    setPageToken,
   } = useEmailStore();
 
   const [loading, setLoading] = useState(false);
@@ -103,6 +107,8 @@ export function EmailList({ accountId }: EmailListProps) {
         // « Message introuvable » au lieu de l'état vide.
         setCurrentMessage(null);
         setError(result.warning);
+        setHasMore(false);
+        setPageToken(null);
         return;
       }
 
@@ -121,6 +127,9 @@ export function EmailList({ accountId }: EmailListProps) {
 
       // Afficher les messages immédiatement (pas de blocage)
       setMessages(mappedMessages);
+      // Lot F : le jeton existait dans le store, aucun bouton ne s'en servait.
+      setPageToken(result.nextPageToken ?? null);
+      setHasMore(Boolean(result.nextPageToken));
 
       // Classifier en arrière-plan (ne bloque plus le refresh)
       classifyInBackground(mappedMessages, accountId, controller);
@@ -204,6 +213,34 @@ export function EmailList({ accountId }: EmailListProps) {
       } catch {
         // Classification échouée = pas grave, on continue
       }
+    }
+  }
+
+  async function loadMore() {
+    const token = pageToken;
+    if (!token || isLoadingRef.current) return;
+    isLoadingRef.current = true;
+    try {
+      const labelIds = currentLabelId ? [currentLabelId] : undefined;
+      const result = await api.listEmailMessages(accountId, {
+        maxResults: 50,
+        labelIds,
+        query: searchQuery || undefined,
+        pageToken: token,
+      });
+      const deja = new Set(useEmailStore.getState().messages.map((m) => m.id));
+      const mapped = mapEmailList(
+        result.messages,
+        useEmailStore.getState().messages,
+      ).filter((m) => !deja.has(m.id));
+      setMessages([...useEmailStore.getState().messages, ...mapped]);
+      setPageToken(result.nextPageToken ?? null);
+      setHasMore(Boolean(result.nextPageToken));
+    } catch (err) {
+      console.error('[Email] Échec chargement page suivante:', err);
+      setError('Impossible de charger la suite.');
+    } finally {
+      isLoadingRef.current = false;
     }
   }
 
@@ -378,6 +415,17 @@ export function EmailList({ accountId }: EmailListProps) {
                 </button>
               );
             })}
+            {hasMore && (
+              <div className="p-3">
+                <button
+                  type="button"
+                  onClick={() => void loadMore()}
+                  className="w-full px-3 py-2 rounded-md text-sm bg-surface-elevated text-text hover:bg-surface-elevated/70"
+                >
+                  Charger la suite
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
