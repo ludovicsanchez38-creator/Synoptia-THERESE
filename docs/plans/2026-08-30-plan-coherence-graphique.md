@@ -173,8 +173,16 @@ métadonnées. C'est le lot le plus long et le plus intrusif ; il vient après.
 ### Lot 5 - Les couleurs brutes de domaine
 
 Les quatre couleurs `k1`–`k4` de la DA (agenda, tâches, factures, prospects)
-deviennent des jetons et remplacent les couleurs Tailwind brutes, dont les
-102 `text-red-400` qui ignorent le thème.
+deviennent des jetons et remplacent les couleurs Tailwind brutes.
+
+**Correction due à l'audit** : il annonçait « 102 `text-red-400` ». Il y en a
+**deux** dans tout le dépôt. Le volume réel est ailleurs : **165** couleurs
+Tailwind brutes servent de couleur de texte, en vert, violet, cyan et ambre,
+toutes entre 1,54:1 et 2,44:1 sur le fond clair.
+
+Deux couleurs de la DA ont dû être assombries pour passer AA sur leur propre
+teinte : l'agenda (`#0F8FB3` → `#0E7490`, 3,29 → 4,70) et les tâches
+(`#B45309` → `#92400E`, 4,41 → 6,23).
 
 Correction due : le violet `#7C3AED` signalé comme intrus par l'audit est la
 **couleur de domaine prévue** pour les prospects. Il reste.

@@ -10,7 +10,7 @@ body{font-family:'Inter',system-ui,sans-serif;background:#E8EDF6;color:#101C36;-
 /* ---- themes ---- */
 .clair{--bg:#F3F6FC;--surface:#FFFFFF;--surface2:#F0F4FB;--border:#E2E8F3;--ink:#101C36;--muted:#5A6A85;
   --accent:#0F8FB3;--fill:#22D3EE;--onfill:#06121F;--tint:#DEF4F9;--ring:#22D3EE;
-  --k1:#0F8FB3;--k1bg:#DEF4F9;--k2:#B45309;--k2bg:#FAEFDC;--k3:#BE1A72;--k3bg:#FBE3F0;--k4:#7C3AED;--k4bg:#F0E9FC;
+  --k1:#0E7490;--k1bg:#DEF4F9;--k2:#92400E;--k2bg:#FAEFDC;--k3:#BE1A72;--k3bg:#FBE3F0;--k4:#7C3AED;--k4bg:#F0E9FC;
   --danger:#B42318;--dangerbg:#FBE6E4;
   --shadow:0 1px 2px rgba(16,28,54,.05),0 10px 24px -10px rgba(16,28,54,.16)}
 .sombre{--bg:#0B1226;--surface:#131B35;--surface2:#0E1630;--border:#2A3550;--ink:#E6EDF7;--muted:#B6C7DA;
@@ -140,7 +140,7 @@ h1{font-family:'Plus Jakarta Sans',sans-serif;font-size:32px;font-weight:800;let
       </div>
     </div>
   </div>
-  <div class="note">Le même cyan sert d'accent dans les deux thèmes : c'est lui qui rend l'application reconnaissable quel que soit le mode. Le rouge de danger est une <b>proposition</b> : la DA de mai ne définissait pas ce rôle, et les 102 <code>text-red-400</code> actuels ignorent le thème.</div>
+  <div class="note">Le même cyan sert d'accent dans les deux thèmes : c'est lui qui rend l'application reconnaissable quel que soit le mode. Le rouge de danger est une <b>proposition</b> : la DA de mai ne définissait pas ce rôle. (L'audit annonçait « 102 <code>text-red-400</code> » : il y en avait <b>deux</b> dans tout le dépôt. Le vrai volume de couleurs brutes était ailleurs, 165 en vert, violet, cyan et ambre.)</div>
 </div>
 
 <!-- 3 -->
@@ -154,7 +154,7 @@ h1{font-family:'Plus Jakarta Sans',sans-serif;font-size:32px;font-weight:800;let
   <div class="tl"><span class="tspec">Inter 14 / 600</span><span class="t14s">Une action, un élément de liste</span></div>
   <div class="tl"><span class="tspec">Inter 14 / 400</span><span class="t14">Le texte courant de l'application, celui qui se lit vraiment. Plancher absolu : rien d'important en dessous de 14 px.</span></div>
   <div class="tl"><span class="tspec">Inter 12 / 500 · atténué</span><span class="t12">Métadonnée uniquement : une date, un compteur, une source</span></div>
-  <div class="note">Aujourd'hui <b class="chiffre">73 %</b> du texte est en 12&nbsp;px, taille réservée aux métadonnées. Deux familles suffisent : <b>Plus Jakarta Sans</b> pour les titres (elle donne la signature), <b>Inter</b> pour tout le reste. Les deux sont embarquées dans l'application, sans appel réseau : THÉRÈSE doit rester utilisable hors ligne.</div>
+  <div class="note">Aujourd'hui <b class="chiffre">53 %</b> du texte nommé est en 12&nbsp;px, taille réservée aux métadonnées, et 50 endroits descendent jusqu'à 9&nbsp;px. Deux familles suffisent : <b>Plus Jakarta Sans</b> pour les titres (elle donne la signature), <b>Inter</b> pour tout le reste. Les deux sont embarquées dans l'application, sans appel réseau : THÉRÈSE doit rester utilisable hors ligne.</div>
 </div>
 
 <!-- 4 -->
@@ -165,8 +165,8 @@ h1{font-family:'Plus Jakarta Sans',sans-serif;font-size:32px;font-weight:800;let
   <div class="clair" style="margin-bottom:14px">
     <div class="pl" style="color:#5A6A85">Thème clair</div>
     <div class="kgrid">
-      <div class="kc" style="background:var(--k1bg)"><div class="kn" style="color:var(--k1)">Agenda</div><div class="kh" style="color:var(--k1)">#0F8FB3</div><span class="kpuce" style="background:var(--k1);color:#fff">14 h · Dupont</span></div>
-      <div class="kc" style="background:var(--k2bg)"><div class="kn" style="color:var(--k2)">Tâches</div><div class="kh" style="color:var(--k2)">#B45309</div><span class="kpuce" style="background:var(--k2);color:#fff">3 en retard</span></div>
+      <div class="kc" style="background:var(--k1bg)"><div class="kn" style="color:var(--k1)">Agenda</div><div class="kh" style="color:var(--k1)">#0E7490</div><span class="kpuce" style="background:var(--k1);color:#fff">14 h · Dupont</span></div>
+      <div class="kc" style="background:var(--k2bg)"><div class="kn" style="color:var(--k2)">Tâches</div><div class="kh" style="color:var(--k2)">#92400E</div><span class="kpuce" style="background:var(--k2);color:#fff">3 en retard</span></div>
       <div class="kc" style="background:var(--k3bg)"><div class="kn" style="color:var(--k3)">Devis et factures</div><div class="kh" style="color:var(--k3)">#BE1A72</div><span class="kpuce" style="background:var(--k3);color:#fff">1 impayée</span></div>
       <div class="kc" style="background:var(--k4bg)"><div class="kn" style="color:var(--k4)">Prospects</div><div class="kh" style="color:var(--k4)">#7C3AED</div><span class="kpuce" style="background:var(--k4);color:#fff">2 à relancer</span></div>
     </div>
@@ -180,13 +180,13 @@ h1{font-family:'Plus Jakarta Sans',sans-serif;font-size:32px;font-weight:800;let
       <div class="kc" style="background:var(--k4bg)"><div class="kn" style="color:var(--k4)">Prospects</div><div class="kh" style="color:var(--k4)">#A855F7</div><span class="kpuce" style="background:var(--k4);color:#fff">2 à relancer</span></div>
     </div>
   </div>
-  <div class="note">Le violet des prospects que l'audit avait signalé comme intrus est en réalité <b>la couleur prévue par la DA</b> pour ce domaine. Il reste.</div>
+  <div class="note">Le violet des prospects que l'audit avait signalé comme intrus est en réalité <b>la couleur prévue par la DA</b> pour ce domaine. Il reste.<br>Deux valeurs de mai ont dû être assombries : sur sa propre teinte, l'agenda ne donnait que 3,29:1 et les tâches 4,41:1, tous deux sous le seuil de lisibilité.</div>
 </div>
 
 <!-- 5 -->
 <div class="bloc">
   <div class="bt">5. Les rayons</div>
-  <div class="bs">Trois systèmes cohabitent aujourd'hui : celui de la DA (14 px), les jetons du code (6/8/12/16) et 451 valeurs écrites à la main, presque toujours à un pixel du jeton.</div>
+  <div class="bs">Trois systèmes cohabitent aujourd'hui : celui de la DA (14 px), les jetons du code (6/8/12/16) et 494 valeurs écrites à la main, presque toujours à un pixel du jeton. Avec les classes nommées, 26 rayons différents.</div>
   <div class="rule"></div>
   <div class="rrow">
     <div><div class="rb" style="border-radius:6px"></div><div class="rl">6 px<br><span style="color:#93342B">83 usages</span></div></div>
@@ -200,7 +200,7 @@ h1{font-family:'Plus Jakarta Sans',sans-serif;font-size:32px;font-weight:800;let
     <div><div class="rb" style="border-radius:14px;background:#DEF4F9;border-color:#8FD8E8"></div><div class="rl"><b>14 px</b><br>boutons, cartes</div></div>
     <div><div class="rb" style="border-radius:999px;background:#DEF4F9;border-color:#8FD8E8"></div><div class="rl"><b>plein</b><br>étiquettes</div></div>
   </div>
-  <div class="note">Trois valeurs suffisent à toute l'application. La DA proposait 12 px sur le thème sombre ; garder <b>14 px dans les deux</b> est plus simple à tenir, c'est à trancher.</div>
+  <div class="note">Trois valeurs suffisent à toute l'application. La DA proposait 12 px sur le thème sombre ; <b>14 px dans les deux</b>, tranché par Ludo le 30/08.</div>
 </div>
 
 <!-- 6 -->
