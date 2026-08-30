@@ -1380,8 +1380,10 @@ async def execute_read_file(
     from app.services.prompt_security import get_prompt_security
 
     try:
-        return get_prompt_security().sanitize_for_context(
-            payload, source="fichier"
+        return str(
+            get_prompt_security().sanitize_for_context(
+                payload, source="fichier"
+            )
         )
     except Exception:
         logger.warning(

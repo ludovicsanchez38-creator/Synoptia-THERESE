@@ -309,8 +309,10 @@ class BoardService:
             from app.services.prompt_security import get_prompt_security
 
             try:
-                return get_prompt_security().sanitize_for_context(
-                    results_text, source="web"
+                return str(
+                    get_prompt_security().sanitize_for_context(
+                        results_text, source="web"
+                    )
                 )
             except Exception:
                 logger.warning(

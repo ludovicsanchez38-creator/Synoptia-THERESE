@@ -1038,8 +1038,10 @@ async def _read_emails(args: dict, session: AsyncSession) -> str:
         from app.services.prompt_security import get_prompt_security
 
         try:
-            return get_prompt_security().sanitize_for_context(
-                "\n".join(lines), source="email"
+            return str(
+                get_prompt_security().sanitize_for_context(
+                    "\n".join(lines), source="email"
+                )
             )
         except Exception:
             logger.warning("Enveloppe des emails impossible, fragment non injecté")
@@ -1226,8 +1228,10 @@ async def _search_emails(args: dict, session: AsyncSession) -> str:
         from app.services.prompt_security import get_prompt_security
 
         try:
-            return get_prompt_security().sanitize_for_context(
-                "\n".join(lines), source="email"
+            return str(
+                get_prompt_security().sanitize_for_context(
+                    "\n".join(lines), source="email"
+                )
             )
         except Exception:
             logger.warning(

@@ -120,7 +120,7 @@ def formater_resultats_pour_llm(response: SearchResponse) -> str:
     from app.services.prompt_security import get_prompt_security
 
     try:
-        return get_prompt_security().sanitize_for_context(brut, source="web")
+        return str(get_prompt_security().sanitize_for_context(brut, source="web"))
     except Exception:
         logger.warning("Enveloppe des résultats web impossible, fragment non injecté")
         return ""
