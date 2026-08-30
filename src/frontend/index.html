@@ -45,9 +45,30 @@
         user-select: none;
       }
 
+      /* Polices de l'écran de démarrage.
+         Le splash s'affiche AVANT le bundle JS : les imports @fontsource de
+         main.tsx n'ont pas encore été évalués. Il lui faut donc ses propres
+         fichiers, servis depuis public/. Copies conformes de
+         @fontsource/plus-jakarta-sans et @fontsource/inter, vérifiées
+         octet pour octet par src/styles/polices.test.ts. */
+      @font-face {
+        font-family: 'Plus Jakarta Sans';
+        font-style: normal;
+        font-weight: 700;
+        font-display: block;
+        src: url('/fonts/plus-jakarta-sans-latin-700-normal.woff2') format('woff2');
+      }
+      @font-face {
+        font-family: 'Inter';
+        font-style: normal;
+        font-weight: 500;
+        font-display: block;
+        src: url('/fonts/inter-latin-500-normal.woff2') format('woff2');
+      }
+
       /* Titre dégradé animé (pulse) */
       #therese-splash h1 {
-        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", sans-serif;
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
         font-size: 3rem;
         font-weight: 700;
         margin: 0 0 0.25rem;
@@ -72,7 +93,7 @@
 
       /* Message de statut */
       #therese-splash .therese-status {
-        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", sans-serif;
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
         font-size: 0.8rem;
         color: var(--therese-text-muted);
         margin-top: 0.75rem;
