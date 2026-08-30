@@ -1014,94 +1014,185 @@ async def _get_email_provider(session: AsyncSession, account_id: str | None = No
     return provider, None
 
 
-async def _get_calendar_provider(session: AsyncSession, auto_create_local: bool = False):
-    """Provider calendrier + id du calendrier a utiliser.
-
-    Priorite au compte Google (calendrier 'primary'). BUG-133 : sans compte
-    Google, on retombe sur le calendrier LOCAL (souverain) au lieu d'exiger Gmail
-    - le chat laissait croire a une absence de calendrier alors qu'un calendrier
-    local existait (ou pouvait etre cree). Retourne (provider, calendar_id, error).
-    `auto_create_local` cree le calendrier local s'il manque (a activer pour une
-    creation d'evenement, pas pour une simple lecture)."""
-    from app.models.entities import Calendar, EmailAccount, generate_uuid
+async def _provider_depuis_calendrier(cal, session: AsyncSession):
+    """Construit le provider du calendrier visé. Erreur en str, jamais un 404."""
+    from app.models.entities import EmailAccount
     from app.routers.email import ensure_valid_access_token
-    from app.services.calendar.google_provider import GoogleCalendarProvider
-    from app.services.calendar.local_provider import LocalCalendarProvider
+    from app.services.calendar.provider_factory import get_calendar_provider
+    from app.services.encryption import decrypt_value, is_value_encrypted
+
+    if cal.provider == "local":
+        return get_calendar_provider("local", session=session), cal.id, None
+    if cal.provider == "google":
+        if not cal.account_id:
+            return None, None, "Agenda Google sans compte associé."
+        account = await session.get(EmailAccount, cal.account_id)
+        if account is None:
+            return None, None, "Compte de l'agenda Google introuvable."
+        access_token = await ensure_valid_access_token(account, session)
+        api_id = cal.remote_id or cal.id
+        return get_calendar_provider("google", access_token=access_token), api_id, None
+    if cal.provider == "caldav":
+        mot_de_passe = cal.caldav_password
+        if mot_de_passe and is_value_encrypted(mot_de_passe):
+            mot_de_passe = decrypt_value(mot_de_passe)
+        return (
+            get_calendar_provider(
+                "caldav",
+                caldav_url=cal.caldav_url,
+                caldav_username=cal.caldav_username,
+                caldav_password=mot_de_passe,
+            ),
+            cal.remote_id or cal.id,
+            None,
+        )
+    return None, None, f"Provider calendrier non supporte : {cal.provider}"
+
+
+async def _resoudre_calendrier(
+    session: AsyncSession,
+    calendar_id: str | None = None,
+    auto_create_local: bool = False,
+):
+    """L'agenda visé, ou (None, message). Plus de priorité Gmail silencieuse.
+
+    Finding 2 (30/08) : un compte Gmail pour le courrier faisait lire
+    `primary` même quand le seul agenda en base était le local.
+    """
+    from app.models.entities import Calendar, EmailAccount, generate_uuid
+
+    cible = _id_agenda_demande(calendar_id)
+    if cible:
+        cal = await session.get(Calendar, cible)
+        if cal is None:
+            return None, (
+                "Agenda introuvable. Vérifie le calendrier sélectionné "
+                "dans le panneau Agenda."
+            )
+        return cal, None
 
     result = await session.execute(
-        select(EmailAccount).where(EmailAccount.provider == "gmail").limit(1)
+        select(Calendar).order_by(Calendar.created_at, Calendar.id)
     )
-    account = result.scalar_one_or_none()
-    if account:
-        # ensure_valid_access_token renvoie déjà le token DÉCHIFFRÉ (str).
-        # Ne pas réassigner `account` ni redéchiffrer (AttributeError sinon).
+    agendas = list(result.scalars().all())
+    if len(agendas) == 1:
+        return agendas[0], None
+    if len(agendas) > 1:
+        noms = ", ".join(cal.summary for cal in agendas)
+        return None, (
+            "Plusieurs agendas sont configurés "
+            f"({noms}). Choisis-en un dans le panneau Agenda avant "
+            "de lire ou de créer un rendez-vous depuis le chat."
+        )
+
+    # Aucun agenda en base. Un seul Gmail jamais synchronisé : `primary`,
+    # comme avant (tests BUG-133 / Gmail). Sinon, local ou refus.
+    gmail = await session.execute(
+        select(EmailAccount)
+        .where(EmailAccount.provider == "gmail")
+        .order_by(EmailAccount.created_at, EmailAccount.id)
+    )
+    comptes_gmail = list(gmail.scalars().all())
+    if len(comptes_gmail) == 1:
+        return ("gmail-primary", comptes_gmail[0]), None
+    if len(comptes_gmail) > 1:
+        adresses = ", ".join(c.email for c in comptes_gmail)
+        return None, (
+            "Plusieurs comptes Google sont connectés "
+            f"({adresses}). Choisis un agenda dans le panneau Agenda."
+        )
+    if not auto_create_local:
+        return None, (
+            "Aucun calendrier configure. Connecte un compte Google, ou cree un "
+            "calendrier local depuis le panneau Calendrier."
+        )
+    cal = Calendar(
+        id=generate_uuid(),
+        summary="Mon calendrier",
+        provider="local",
+        timezone="Europe/Paris",
+    )
+    session.add(cal)
+    await session.flush()
+    return cal, None
+
+
+async def _get_calendar_provider(
+    session: AsyncSession,
+    auto_create_local: bool = False,
+    calendar_id: str | None = None,
+):
+    """Provider calendrier + id du calendrier a utiliser.
+
+    Finding 2 (30/08) : plus de priorité Gmail. L'agenda de l'écran, le seul
+    en base, ou un refus. `auto_create_local` n'amorce le local que s'il n'y
+    a vraiment rien.
+    """
+    from app.routers.email import ensure_valid_access_token
+    from app.services.calendar.google_provider import GoogleCalendarProvider
+
+    resolu, error = await _resoudre_calendrier(
+        session, calendar_id=calendar_id, auto_create_local=auto_create_local
+    )
+    if error:
+        return None, None, error
+    if isinstance(resolu, tuple) and resolu[0] == "gmail-primary":
+        account = resolu[1]
         access_token = await ensure_valid_access_token(account, session)
         return GoogleCalendarProvider(access_token=access_token), "primary", None
-
-    # BUG-133 : repli sur le calendrier local, sans dependance Google.
-    # order_by(id) : choix déterministe si plusieurs calendriers locaux existent
-    # (sinon le chat pourrait écrire dans un autre que celui affiché au panneau).
-    local_result = await session.execute(
-        select(Calendar).where(Calendar.provider == "local").order_by(Calendar.id).limit(1)
-    )
-    cal = local_result.scalar_one_or_none()
-    if cal is None:
-        if not auto_create_local:
-            return (
-                None,
-                None,
-                "Aucun calendrier configure. Connecte un compte Google, ou cree un "
-                "calendrier local depuis le panneau Calendrier.",
-            )
-        cal = Calendar(
-            id=generate_uuid(),
-            summary="Mon calendrier",
-            provider="local",
-            timezone="Europe/Paris",
-        )
-        session.add(cal)
-        await session.flush()
-
-    return LocalCalendarProvider(session), cal.id, None
+    return await _provider_depuis_calendrier(resolu, session)
 
 
 async def get_calendar_confirmation_destination(
     session: AsyncSession,
+    calendar_id: str | None = None,
 ) -> dict[str, Any]:
     """Décrit sans mutation la destination qu'utilisera create_calendar_event."""
-    from app.models.entities import Calendar, EmailAccount
+    from app.models.entities import EmailAccount
 
-    account_result = await session.execute(
-        select(EmailAccount).where(EmailAccount.provider == "gmail").limit(1)
+    resolu, error = await _resoudre_calendrier(
+        session, calendar_id=calendar_id, auto_create_local=False
     )
-    account = account_result.scalar_one_or_none()
-    if account:
+    if error:
+        if "Aucun calendrier configure" in (error or ""):
+            return {
+                "calendar_id": None,
+                "calendar_name": "Mon calendrier",
+                "provider": "local",
+                "account": None,
+                "will_create_calendar": True,
+                "error": None,
+            }
+        return {
+            "calendar_id": None,
+            "calendar_name": None,
+            "provider": None,
+            "account": None,
+            "will_create_calendar": False,
+            "error": error,
+        }
+    if isinstance(resolu, tuple) and resolu[0] == "gmail-primary":
+        account = resolu[1]
         return {
             "calendar_id": "primary",
             "calendar_name": "Calendrier principal",
             "provider": "google",
             "account": account.email,
             "will_create_calendar": False,
+            "error": None,
         }
-
-    local_result = await session.execute(
-        select(Calendar).where(Calendar.provider == "local").order_by(Calendar.id).limit(1)
-    )
-    calendar = local_result.scalar_one_or_none()
-    if calendar:
-        return {
-            "calendar_id": calendar.id,
-            "calendar_name": calendar.summary,
-            "provider": "local",
-            "account": None,
-            "will_create_calendar": False,
-        }
+    cal = resolu
+    compte_email = None
+    if cal.account_id:
+        compte = await session.get(EmailAccount, cal.account_id)
+        compte_email = compte.email if compte else None
     return {
-        "calendar_id": None,
-        "calendar_name": "Mon calendrier",
-        "provider": "local",
-        "account": None,
-        "will_create_calendar": True,
+        "calendar_id": cal.id,
+        "calendar_name": cal.summary,
+        "provider": cal.provider if cal.provider != "google" else "google",
+        "account": compte_email,
+        "will_create_calendar": False,
+        "error": None,
     }
 
 
@@ -1366,7 +1457,9 @@ async def _list_calendar_events(
     """
     from datetime import datetime, timedelta, timezone
 
-    provider, cal_id, error = await _get_calendar_provider(session)
+    provider, cal_id, error = await _get_calendar_provider(
+        session, calendar_id=_id_agenda_demande(args=args)
+    )
     if error:
         # QW2 : sans calendrier connecté, l'IA inventait des RDV. On renvoie une
         # consigne directive pour qu'elle relaie l'absence au lieu de broder.
@@ -1433,7 +1526,11 @@ async def _create_calendar_event(
     from app.services.calendar.base_provider import CreateEventRequest
 
     # BUG-133 : creer un evenement doit pouvoir amorcer un calendrier local.
-    provider, cal_id, error = await _get_calendar_provider(session, auto_create_local=True)
+    provider, cal_id, error = await _get_calendar_provider(
+        session,
+        auto_create_local=True,
+        calendar_id=_id_agenda_demande(args=args),
+    )
     if error:
         return error
 

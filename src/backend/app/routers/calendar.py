@@ -159,7 +159,33 @@ async def list_calendars(
                 or (account.access_token and account.refresh_token)
             )
             if is_google:
-                return await _list_google_calendars(account_id, account, session)
+                google_cals = await _list_google_calendars(account_id, account, session)
+                # Finding 2 (30/08) : choisir Gmail pour le courrier vidait le
+                # menu Agenda de iCloud et du local. On les rajoute, filtrés.
+                if provider == "google":
+                    return google_cals
+                autres_stmt = select(Calendar).where(
+                    Calendar.provider.in_(("local", "caldav"))
+                )
+                if provider:
+                    autres_stmt = autres_stmt.where(Calendar.provider == provider)
+                autres = (await session.execute(autres_stmt)).scalars().all()
+                extras = [
+                    CalendarResponse(
+                        id=cal.id,
+                        account_id=cal.account_id,
+                        summary=cal.summary,
+                        description=cal.description,
+                        timezone=cal.timezone,
+                        primary=cal.primary,
+                        provider=cal.provider,
+                        synced_at=cal.synced_at.isoformat() if cal.synced_at else None,
+                    )
+                    for cal in autres
+                ]
+                if provider in ("local", "caldav"):
+                    return extras
+                return google_cals + extras
             else:
                 non_google_account = True
                 logger.warning(

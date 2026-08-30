@@ -307,6 +307,14 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
                 if contact.email and contact.email.strip()
             }
 
+        ids_agendas = {ev.calendar_id for ev in [*timed_events, *allday_events] if ev.calendar_id}
+        noms_agendas: dict[str, str] = {}
+        if ids_agendas:
+            agendas = (
+                await session.execute(select(Calendar).where(Calendar.id.in_(ids_agendas)))
+            ).scalars().all()
+            noms_agendas = {agenda.id: agenda.summary for agenda in agendas}
+
         for ev in [*timed_events, *allday_events]:
             event_attendees = attendee_emails_by_event[ev.id]
             events_today.append({
@@ -323,6 +331,9 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
                     for email in event_attendees
                     if email in contacts_by_email
                 ],
+                # Finding 2 (30/08) : sans le nom, l'accueil mélangeait
+                # tous les agendas comme s'il n'y en avait qu'un.
+                "calendar_name": noms_agendas.get(ev.calendar_id),
             })
     except Exception as e:
         logger.warning(f"Erreur lecture événements calendrier: {e}")

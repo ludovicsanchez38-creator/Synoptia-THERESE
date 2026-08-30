@@ -2880,9 +2880,10 @@ async def _execute_tools_and_continue(
                     get_calendar_confirmation_destination,
                 )
 
-                pending_arguments["_confirmation_destination"] = (
-                    await get_calendar_confirmation_destination(session)
-                )
+                destination = await get_calendar_confirmation_destination(session)
+                pending_arguments["_confirmation_destination"] = destination
+                if destination.get("calendar_id"):
+                    pending_arguments["_agenda_ecran"] = destination["calendar_id"]
             if outil_base == "send_email" and session is not None:
                 from app.services.workspace_tools import (
                     get_email_confirmation_destination,
