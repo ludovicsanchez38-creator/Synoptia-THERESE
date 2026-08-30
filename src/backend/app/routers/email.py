@@ -139,9 +139,15 @@ async def get_crm_contact_by_email(
     if not email:
         return None
     result = await session.execute(
-        select(Contact).where(func.lower(Contact.email) == email.strip().lower()).limit(1)
+        select(Contact).where(func.lower(Contact.email) == email.strip().lower())
     )
-    return result.scalar_one_or_none()
+    fiches = list(result.scalars().all())
+    # Finding 6 (30/08) : deux fiches, la même adresse, `limit(1)` en prenait
+    # une au hasard, hors cloison. Les notes de l'un partaient dans le brouillon
+    # de l'autre. Ambigu : on n'en prend aucune.
+    if len(fiches) != 1:
+        return None
+    return fiches[0]
 
 
 async def ensure_valid_access_token(

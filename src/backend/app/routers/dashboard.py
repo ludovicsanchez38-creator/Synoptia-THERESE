@@ -301,10 +301,21 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
                     select(Contact).where(func.lower(Contact.email).in_(attendee_emails))
                 )
             ).scalars().all()
+            from collections import Counter
+
+            cles = [
+                contact.email.strip().lower()
+                for contact in contacts
+                if contact.email and contact.email.strip()
+            ]
+            doublons = {cle for cle, n in Counter(cles).items() if n > 1}
+            # Finding 6 (30/08) : le dernier gagne dans un dict. Deux fiches
+            # jean@x.fr, et le brief collait l'une au hasard.
             contacts_by_email = {
                 contact.email.strip().lower(): contact
                 for contact in contacts
                 if contact.email and contact.email.strip()
+                and contact.email.strip().lower() not in doublons
             }
 
         ids_agendas = {ev.calendar_id for ev in [*timed_events, *allday_events] if ev.calendar_id}
