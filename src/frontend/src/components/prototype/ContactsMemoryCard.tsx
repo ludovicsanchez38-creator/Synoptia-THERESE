@@ -65,7 +65,7 @@ export function ContactsMemoryCard({
     >
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <div className="flex items-center gap-2.5">
-          <span className="grid h-8 w-8 place-items-center rounded-md border border-text bg-[var(--k4bg)] text-[var(--k4)]">
+          <span className="grid h-8 w-8 place-items-center rounded-md border border-text bg-domaine-prospects-tint text-domaine-prospects">
             <Users className="h-4 w-4" />
           </span>
           <div>
@@ -82,7 +82,7 @@ export function ContactsMemoryCard({
 
       {resource.status === 'loading' ? (
         <div className="flex min-h-44 items-center justify-center gap-2 px-5 py-8 text-sm text-text-muted" role="status">
-          <Spinner taille="bouton" className="text-[var(--k4)]" />
+          <Spinner taille="bouton" className="text-domaine-prospects" />
           Je consulte ta mémoire…
         </div>
       ) : resource.status === 'error' ? (
@@ -166,7 +166,7 @@ export function ContactsMemoryCanvas({
 
       {resource.status === 'loading' ? (
         <div className="flex flex-1 items-center justify-center gap-2 text-sm text-text-muted">
-          <Spinner taille="bouton" className="text-[var(--k4)]" />
+          <Spinner taille="bouton" className="text-domaine-prospects" />
           Chargement de la mémoire…
         </div>
       ) : resource.status === 'error' ? (
@@ -191,7 +191,7 @@ export function ContactsMemoryCanvas({
                 onChange={(event) => setQuery(event.target.value)}
                 aria-label="Rechercher un contact"
                 placeholder="Rechercher…"
-                className="w-full rounded-md border border-border bg-surface-2 py-2 pl-8 pr-2 text-xs text-text outline-none focus:border-[var(--k4)]"
+                className="w-full rounded-md border border-border bg-surface-2 py-2 pl-8 pr-2 text-xs text-text outline-none focus:border-domaine-prospects"
               />
             </div>
             <div className="h-[calc(100%-46px)] space-y-1 overflow-y-auto">
@@ -202,7 +202,7 @@ export function ContactsMemoryCanvas({
                   onClick={() => onSelectContact(contact.id)}
                   aria-current={selectedContact?.id === contact.id ? 'true' : undefined}
                   className={`flex w-full items-center gap-2 rounded-md px-2 py-2 text-left ${
-                    selectedContact?.id === contact.id ? 'bg-[var(--k4bg)]' : 'hover:bg-surface-2'
+                    selectedContact?.id === contact.id ? 'bg-domaine-prospects-tint' : 'hover:bg-surface-2'
                   }`}
                 >
                   <ContactAvatar contact={contact} className="h-7 w-7 text-xs" />
@@ -231,7 +231,7 @@ export function ContactsMemoryCanvas({
                 <div className="mt-5 grid gap-2">
                   {selectedContact.email && (
                     <div className="flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2.5 text-xs text-text">
-                      <Mail className="h-3.5 w-3.5 text-[var(--k4)]" />
+                      <Mail className="h-3.5 w-3.5 text-domaine-prospects" />
                       {selectedContact.email}
                     </div>
                   )}
@@ -252,7 +252,7 @@ export function ContactsMemoryCanvas({
                 {selectedContact.tags && selectedContact.tags.length > 0 && (
                   <div className="mt-4 flex flex-wrap gap-1.5">
                     {selectedContact.tags.map((tag) => (
-                      <span key={tag} className="rounded-full bg-[var(--k4bg)] px-2 py-1 text-xs font-semibold text-[var(--k4)]">{tag}</span>
+                      <span key={tag} className="rounded-full bg-domaine-prospects-tint px-2 py-1 text-xs font-semibold text-domaine-prospects">{tag}</span>
                     ))}
                   </div>
                 )}

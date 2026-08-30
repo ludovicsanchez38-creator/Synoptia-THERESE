@@ -124,11 +124,10 @@
      ombre dure décalée sans flou. Déclinées par thème ci-dessous. */
   --btn-ink: #101C36;
 
-  /* Accents KPI / catégories (clair Équilibre) */
-  --k1: #0F8FB3; --k1bg: #DEF4F9;
-  --k2: #B45309; --k2bg: #FAEFDC;
-  --k3: #BE1A72; --k3bg: #FBE3F0;
-  --k4: #7C3AED; --k4bg: #F0E9FC;
+  /* Les anciens --k1..--k4 (accents KPI / catégories, issus de la DA de mai)
+     vivent désormais sous --color-domaine-* plus haut : des noms qui disent
+     le domaine, des utilitaires Tailwind, et deux valeurs assombries pour
+     passer AA sur leur propre teinte. */
   --color-success-tint: #E7F7EF;
   --color-warning-tint: #FFF8E8;
   --color-error-tint: #FFF1F1;
@@ -209,10 +208,6 @@
   --glow-magenta-shadow: 0 0 20px rgba(225, 29, 141, 0.15), 0 0 40px rgba(225, 29, 141, 0.1), inset 0 0 20px rgba(225, 29, 141, 0.05);
 
   /* Accents KPI / catégories (sombre Signature) */
-  --k1: #22D3EE; --k1bg: rgba(34, 211, 238, 0.13);
-  --k2: #F59E0B; --k2bg: rgba(245, 158, 11, 0.13);
-  --k3: #E11D8D; --k3bg: rgba(225, 29, 141, 0.13);
-  --k4: #A855F7; --k4bg: rgba(168, 85, 247, 0.13);
   --color-success-tint: rgba(16, 185, 129, 0.13);
   --color-warning-tint: rgba(245, 158, 11, 0.13);
   --color-error-tint: rgba(239, 68, 68, 0.13);

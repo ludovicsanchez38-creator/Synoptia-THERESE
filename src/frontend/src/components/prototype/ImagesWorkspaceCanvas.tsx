@@ -185,7 +185,7 @@ export function ImagesWorkspaceCanvas({ onClose }: { onClose: () => void }) {
   return (
     <aside ref={dialogRef} role="region" aria-labelledby="images-workspace-title" tabIndex={-1} className="absolute inset-y-0 right-0 z-20 flex h-full w-full flex-col border-l border-border bg-surface-2 shadow-[-18px_0_45px_rgba(16,28,54,0.12)] sm:w-[calc(100%-48px)] xl:relative xl:w-[62%] xl:min-w-[720px] xl:shadow-none" data-testid="images-workspace-canvas">
       <header className="flex shrink-0 items-start gap-3 border-b border-border bg-surface px-5 py-4 pr-16">
-        <span className="grid h-9 w-9 place-items-center rounded-md border border-text bg-[var(--k3bg)] text-[var(--k3)] shadow-[var(--shadow-card)]"><ImageIcon className="h-4 w-4" /></span>
+        <span className="grid h-9 w-9 place-items-center rounded-md border border-text bg-domaine-factures-tint text-domaine-factures shadow-[var(--shadow-card)]"><ImageIcon className="h-4 w-4" /></span>
         <div>
           <h2 id="images-workspace-title" data-dialog-autofocus tabIndex={-1} className="text-lg font-bold text-text outline-none">Studio Images</h2>
           <p className="mt-0.5 text-xs text-text-muted">Génération réelle, aperçu local et historique conservé.</p>

@@ -95,7 +95,7 @@ export function MeetingAgendaCard({
     <section aria-labelledby="meeting-agenda-title" className="overflow-hidden rounded-md border border-border bg-surface shadow-[0_12px_28px_-22px_rgba(16,28,54,0.45)]" data-testid="meeting-agenda-card">
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
         <div className="flex items-center gap-2.5">
-          <span className="grid h-8 w-8 place-items-center rounded-md border border-text bg-[var(--k3bg)] text-[var(--k3)]">
+          <span className="grid h-8 w-8 place-items-center rounded-md border border-text bg-domaine-factures-tint text-domaine-factures">
             <Calendar className="h-4 w-4" />
           </span>
           <div>
@@ -117,7 +117,7 @@ export function MeetingAgendaCard({
       </div>
 
       {resource.status === 'loading' ? (
-        <StateShell><div className="flex items-center gap-2 text-sm text-text-muted" role="status"><Spinner taille="bouton" className="text-[var(--k3)]" />Je consulte l’agenda…</div></StateShell>
+        <StateShell><div className="flex items-center gap-2 text-sm text-text-muted" role="status"><Spinner taille="bouton" className="text-domaine-factures" />Je consulte l’agenda…</div></StateShell>
       ) : resource.status === 'error' ? (
         <StateShell>
           <div className="max-w-sm text-center" data-testid="meeting-agenda-error">
@@ -146,7 +146,7 @@ export function MeetingAgendaCard({
         <div className="divide-y divide-border">
           {events.map((event) => (
             <button key={meetingEventKey(event)} type="button" onClick={() => onOpenEvent(meetingEventKey(event))} className="flex w-full items-center gap-3 px-4 py-3.5 text-left hover:bg-surface-2">
-              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-[var(--k3bg)] text-[var(--k3)]"><Clock3 className="h-4 w-4" /></span>
+              <span className="grid h-10 w-10 shrink-0 place-items-center rounded-md bg-domaine-factures-tint text-domaine-factures"><Clock3 className="h-4 w-4" /></span>
               <span className="min-w-0 flex-1">
                 <strong className="block truncate text-sm text-text">{event.summary || 'Événement sans titre'}</strong>
                 <span className="mt-0.5 block truncate text-xs text-text-muted">{formatEventDate(event)}{event.location ? ` · ${event.location}` : ''}</span>
@@ -198,7 +198,7 @@ function CalendarProvisioning({ onEnsure }: { onEnsure: () => Promise<void> }) {
 
   return (
     <div className="flex h-full items-center justify-center gap-2 text-sm text-text-muted" role="status" data-testid="meeting-calendar-provisioning">
-      <Spinner taille="bouton" className="text-[var(--k3)]" />Je prépare ton calendrier local…
+      <Spinner taille="bouton" className="text-domaine-factures" />Je prépare ton calendrier local…
     </div>
   );
 }
@@ -349,9 +349,9 @@ function EventPreparation({
             <h3 className="text-lg font-bold text-text">{event.summary || 'Événement sans titre'}</h3>
             <p className="mt-1 flex items-center gap-1.5 text-xs text-text-muted"><Clock3 className="h-3.5 w-3.5" />{formatEventDate(event)}</p>
           </div>
-          <span className="rounded-full bg-[var(--k3bg)] px-2.5 py-1 text-xs font-semibold text-[var(--k3)]">{event.all_day ? 'Journée entière' : 'Rendez-vous'}</span>
+          <span className="rounded-full bg-domaine-factures-tint px-2.5 py-1 text-xs font-semibold text-domaine-factures">{event.all_day ? 'Journée entière' : 'Rendez-vous'}</span>
         </div>
-        {event.location && <p className="mt-3 flex items-center gap-2 rounded-md bg-surface-2 px-3 py-2 text-xs text-text"><MapPin className="h-3.5 w-3.5 text-[var(--k3)]" />{event.location}</p>}
+        {event.location && <p className="mt-3 flex items-center gap-2 rounded-md bg-surface-2 px-3 py-2 text-xs text-text"><MapPin className="h-3.5 w-3.5 text-domaine-factures" />{event.location}</p>}
         {event.description && <div className="mt-3 whitespace-pre-wrap rounded-md bg-surface-2 px-3 py-3 text-xs leading-5 text-text">{event.description}</div>}
       </section>
 
@@ -386,7 +386,7 @@ function EventPreparation({
 
       {relatedContacts.length > 0 && (
         <section className="rounded-md border border-border bg-surface p-4">
-          <div className="flex items-center gap-2"><FileText className="h-4 w-4 text-[var(--k3)]" /><h3 className="text-sm font-bold text-text">Ajouter une note de rendez-vous</h3></div>
+          <div className="flex items-center gap-2"><FileText className="h-4 w-4 text-domaine-factures" /><h3 className="text-sm font-bold text-text">Ajouter une note de rendez-vous</h3></div>
           <p className="mt-1 text-xs text-text-muted">La note sera ajoutée au CRM du contact choisi après confirmation.</p>
           <select aria-label="Contact destinataire de la note" value={contactId} onChange={(event) => { setContactId(event.target.value); setConfirming(false); }} className="mt-3 w-full rounded-md border border-border bg-surface px-3 py-2 text-xs outline-none focus:border-[#22D3EE]">{relatedContacts.map((contact) => <option key={contact.id} value={contact.id}>{contactDisplayName(contact)}</option>)}</select>
           <textarea aria-label="Note de rendez-vous" value={note} onChange={(event) => { setNote(event.target.value); setConfirming(false); }} rows={4} placeholder="Tes notes factuelles après le rendez-vous…" className="mt-2 w-full resize-y rounded-md border border-border px-3 py-2 text-xs leading-5 outline-none focus:border-[#22D3EE]" />
@@ -445,12 +445,12 @@ export function MeetingWorkspaceCanvas({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
-        {resource.status === 'loading' ? <div className="flex h-full items-center justify-center gap-2 text-sm text-text-muted"><Spinner taille="bouton" className="text-[var(--k3)]" />Chargement de l’agenda…</div>
+        {resource.status === 'loading' ? <div className="flex h-full items-center justify-center gap-2 text-sm text-text-muted"><Spinner taille="bouton" className="text-domaine-factures" />Chargement de l’agenda…</div>
           : resource.status === 'error' ? <div className="flex h-full items-center justify-center text-center"><div><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">{resource.error}</p><button type="button" onClick={onRetry} className="mt-4 rounded-md bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink">Réessayer</button></div></div>
             : target === 'new-event' ? (resource.data.calendars.length === 0
               ? <CalendarProvisioning onEnsure={onEnsureCalendar} />
               : <NewEventForm data={resource.data} onCreate={onCreateEvent} onAbandon={onAbandon} />)
-              : eventResource?.status === 'loading' ? <div className="flex h-full items-center justify-center gap-2 text-sm text-text-muted"><Spinner taille="bouton" className="text-[var(--k3)]" />Je rassemble le contexte exact…</div>
+              : eventResource?.status === 'loading' ? <div className="flex h-full items-center justify-center gap-2 text-sm text-text-muted"><Spinner taille="bouton" className="text-domaine-factures" />Je rassemble le contexte exact…</div>
                 : eventResource?.status === 'error' ? <div className="flex h-full items-center justify-center text-center"><div><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">{eventResource.error}</p><button type="button" onClick={onRetryEvent} className="mt-4 rounded-md bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink">Réessayer</button></div></div>
                   : eventResource?.status === 'ready' ? <EventPreparation context={eventResource.data} onCreateNote={onCreateNote} onAbandon={onAbandon} />
                     : <div className="flex h-full items-center justify-center text-center"><div><Calendar className="mx-auto h-6 w-6 text-text-muted" /><p className="mt-2 text-sm font-semibold text-text">Aucun rendez-vous sélectionné</p><p className="mt-1 text-xs text-text-muted">Choisis un événement dans la conversation ou prépare-en un nouveau.</p></div></div>}

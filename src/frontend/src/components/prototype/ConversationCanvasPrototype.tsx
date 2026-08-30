@@ -591,7 +591,7 @@ function CommandPalette({
                 ) : capability.id === 'agents' ? (
                   <CharacterPortrait index={6} className="h-8 w-8 rounded-sm" />
                 ) : (
-                  <span className="grid h-8 w-8 place-items-center rounded-sm bg-[var(--k4bg)] text-[var(--k4)]">
+                  <span className="grid h-8 w-8 place-items-center rounded-sm bg-domaine-prospects-tint text-domaine-prospects">
                     <Icon className="h-4 w-4" />
                   </span>
                 )}
@@ -1575,7 +1575,7 @@ export function ConversationCanvasPrototype() {
                 <div className={`mx-auto transition-[max-width] duration-200 ${canvasOpen ? 'max-w-[760px]' : 'max-w-[860px]'}`}>
                   {(boardRun.status === 'running' || atelierRun.status === 'running') && (
                     <div className="mb-4 flex flex-wrap gap-2" data-testid="shell-background-activities" role="status">
-                      {boardRun.status === 'running' && <button type="button" onClick={() => { setScenario('board'); setSelectedBoardTarget('current'); setCanvasOpen(true); }} className="inline-flex items-center gap-2 rounded-md border border-[var(--k4)]/30 bg-[var(--k4bg)] px-3 py-2 text-sm font-semibold text-[var(--k4)]"><Spinner taille="ligne" />Board en arrière-plan · {boardRun.phase || 'délibération en cours'}</button>}
+                      {boardRun.status === 'running' && <button type="button" onClick={() => { setScenario('board'); setSelectedBoardTarget('current'); setCanvasOpen(true); }} className="inline-flex items-center gap-2 rounded-md border border-domaine-prospects/30 bg-domaine-prospects-tint px-3 py-2 text-sm font-semibold text-domaine-prospects"><Spinner taille="ligne" />Board en arrière-plan · {boardRun.phase || 'délibération en cours'}</button>}
                       {atelierRun.status === 'running' && <button type="button" onClick={() => { setScenario('atelier'); setSelectedAtelierTarget('current'); setCanvasOpen(true); }} className="inline-flex items-center gap-2 rounded-md border border-accent-cyan/30 bg-accent-tint px-3 py-2 text-sm font-semibold text-accent"><Spinner taille="ligne" />Atelier en arrière-plan · {atelierRun.phase || 'mission en cours'}</button>}
                     </div>
                   )}
@@ -1813,8 +1813,8 @@ export function ConversationCanvasPrototype() {
                 <div className={`pointer-events-auto mx-auto transition-[max-width] duration-200 ${canvasOpen ? 'max-w-[760px]' : 'max-w-[860px]'}`}>
                   <div className="rounded-md border border-border bg-surface p-2 shadow-[0_18px_45px_-24px_rgba(16,28,54,0.45)] focus-within:border-[#22D3EE] focus-within:shadow-[0_0_0_3px_rgba(34,211,238,0.12),0_18px_45px_-24px_rgba(16,28,54,0.45)]">
                     {selectedCapability && SelectedCapabilityIcon && (
-                      <div className="mx-1 mt-1 flex items-center gap-2 rounded-md border border-[var(--k4)]/30 bg-[var(--k4bg)] px-2.5 py-2 text-xs text-[var(--k4)]">
-                        <span className="grid h-6 w-6 place-items-center rounded-sm bg-[var(--k4bg)] text-[var(--k4)]">
+                      <div className="mx-1 mt-1 flex items-center gap-2 rounded-md border border-domaine-prospects/30 bg-domaine-prospects-tint px-2.5 py-2 text-xs text-domaine-prospects">
+                        <span className="grid h-6 w-6 place-items-center rounded-sm bg-domaine-prospects-tint text-domaine-prospects">
                           <SelectedCapabilityIcon className="h-3.5 w-3.5" />
                         </span>
                         <span className="min-w-0 flex-1 truncate"><span className="font-semibold">Capacité :</span> {selectedCapability.title}</span>

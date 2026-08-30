@@ -543,7 +543,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
             </p>
             <div className="mt-3 flex justify-end gap-2">
               <button type="button" onClick={() => setPendingInstruction(null)} className="rounded-md border border-border px-3 py-1.5 font-medium text-text-muted">Retour</button>
-              <button type="button" onClick={confirmSend} className="rounded-md bg-green-600 px-3 py-1.5 font-semibold text-white">Confirmer l&apos;appel</button>
+              <button type="button" onClick={confirmSend} className="rounded-md bg-success px-3 py-1.5 font-semibold text-white">Confirmer l&apos;appel</button>
             </div>
           </div>
         </div>

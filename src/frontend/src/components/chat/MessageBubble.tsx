@@ -125,10 +125,10 @@ function CodeBlock({
     <div className="relative group/code my-3">
       {/* Language badge + Copy button */}
       <div className="absolute top-0 right-0 left-0 flex items-center justify-between px-3 py-1 bg-[#1e1e1e] rounded-t-md border-b border-gray-700">
-        <span className="text-xs text-gray-400 font-mono">{language}</span>
+        <span className="text-xs text-text-muted font-mono">{language}</span>
         <button
           onClick={copyCode}
-          className="flex items-center gap-1 text-xs text-gray-400 hover:text-white transition-colors"
+          className="flex items-center gap-1 text-xs text-text-muted hover:text-white transition-colors"
         >
           {copied ? (
             <>

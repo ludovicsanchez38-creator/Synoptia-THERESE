@@ -241,7 +241,7 @@ export function AtelierPanel() {
                 </p>
                 <div className="mt-3 flex justify-end gap-2">
                   <button type="button" onClick={() => setPendingMessage(null)} className="rounded-md border border-border px-3 py-1.5 font-medium text-text-muted">Retour</button>
-                  <button type="button" onClick={() => { const message = pendingMessage; setPendingMessage(null); void runMission(message); }} className="rounded-md bg-green-600 px-3 py-1.5 font-semibold text-white">Confirmer et lancer</button>
+                  <button type="button" onClick={() => { const message = pendingMessage; setPendingMessage(null); void runMission(message); }} className="rounded-md bg-success px-3 py-1.5 font-semibold text-white">Confirmer et lancer</button>
                 </div>
               </div>
             )}

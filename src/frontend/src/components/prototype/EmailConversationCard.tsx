@@ -61,7 +61,7 @@ export function EmailInboxCard({
     >
       <div className="flex items-center justify-between border-b border-border px-4 py-3">
         <div className="flex items-center gap-2.5">
-          <span className="grid h-8 w-8 place-items-center rounded-md border border-text bg-[var(--k4bg)] text-[var(--k4)]">
+          <span className="grid h-8 w-8 place-items-center rounded-md border border-text bg-domaine-prospects-tint text-domaine-prospects">
             <Mail className="h-4 w-4" />
           </span>
           <div>
@@ -79,7 +79,7 @@ export function EmailInboxCard({
       {resource.status === 'loading' ? (
         <EmailStateShell>
           <div className="flex items-center gap-2 text-sm text-text-muted" role="status">
-            <Spinner taille="bouton" className="text-[var(--k4)]" />
+            <Spinner taille="bouton" className="text-domaine-prospects" />
             Je consulte tes messages…
           </div>
         </EmailStateShell>
@@ -138,7 +138,7 @@ export function EmailInboxCard({
                       {emailSenderLabel(message)}
                     </span>
                     {priority && (
-                      <span className="rounded-full bg-[var(--k3bg)] px-2 py-0.5 text-xs font-semibold text-[var(--k3)]">{priority}</span>
+                      <span className="rounded-full bg-domaine-factures-tint px-2 py-0.5 text-xs font-semibold text-domaine-factures">{priority}</span>
                     )}
                   </span>
                   <span className="mt-0.5 block truncate text-xs font-semibold text-text">{message.subject || '(Sans objet)'}</span>
@@ -318,7 +318,7 @@ export function EmailMessageCanvas({
 
       {!nouvelleRedaction && (!resource || resource.status === 'loading') ? (
         <div className="flex flex-1 items-center justify-center gap-2 text-sm text-text-muted" role="status">
-          <Spinner taille="bouton" className="text-[var(--k4)]" />
+          <Spinner taille="bouton" className="text-domaine-prospects" />
           Chargement du message…
         </div>
       ) : !nouvelleRedaction && resource?.status === 'error' ? (
@@ -345,7 +345,7 @@ export function EmailMessageCanvas({
                 </p>
               </div>
               {!resource.data.is_read && (
-                <span className="rounded-full bg-[var(--k4bg)] px-2 py-1 text-xs font-semibold text-[var(--k4)]">Non lu</span>
+                <span className="rounded-full bg-domaine-prospects-tint px-2 py-1 text-xs font-semibold text-domaine-prospects">Non lu</span>
               )}
             </div>
             <div className="mt-4 max-h-52 overflow-y-auto whitespace-pre-wrap border-t border-border pt-4 text-sm leading-6 text-text">
@@ -358,7 +358,7 @@ export function EmailMessageCanvas({
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h3 id="email-draft-title" className="flex items-center gap-2 text-sm font-bold text-text">
-                  <Sparkles className="h-4 w-4 text-[var(--k4)]" />
+                  <Sparkles className="h-4 w-4 text-domaine-prospects" />
                   Brouillon de réponse
                 </h3>
                 <p className="mt-1 text-xs text-text-muted">Modifiable avant toute sauvegarde.</p>
@@ -397,7 +397,7 @@ export function EmailMessageCanvas({
                   aria-describedby={errorField === 'recipient' ? 'email-draft-error' : undefined}
                   value={recipient}
                   onChange={(event) => { setRecipient(event.target.value); markDraftDirty(); if (errorField === 'recipient') { setError(null); setErrorField(null); } }}
-                  className="rounded-sm border border-border px-2.5 py-2 text-xs text-text outline-none focus:border-[var(--k4)]"
+                  className="rounded-sm border border-border px-2.5 py-2 text-xs text-text outline-none focus:border-domaine-prospects"
                 />
               </label>
               <label className="grid grid-cols-[72px_1fr] items-center gap-2 text-xs text-text-muted">
@@ -409,7 +409,7 @@ export function EmailMessageCanvas({
                   aria-describedby={errorField === 'subject' ? 'email-draft-error' : undefined}
                   value={subject}
                   onChange={(event) => { setSubject(event.target.value); markDraftDirty(); if (errorField === 'subject') { setError(null); setErrorField(null); } }}
-                  className="rounded-sm border border-border px-2.5 py-2 text-xs text-text outline-none focus:border-[var(--k4)]"
+                  className="rounded-sm border border-border px-2.5 py-2 text-xs text-text outline-none focus:border-domaine-prospects"
                 />
               </label>
             </div>
@@ -427,7 +427,7 @@ export function EmailMessageCanvas({
                 if (errorField === 'draft') { setError(null); setErrorField(null); }
               }}
               placeholder="Écris ta réponse ou génère une proposition…"
-              className="mt-3 h-40 w-full resize-y rounded-md border border-border p-3 text-sm leading-6 text-text outline-none focus:border-[var(--k4)]"
+              className="mt-3 h-40 w-full resize-y rounded-md border border-border p-3 text-sm leading-6 text-text outline-none focus:border-domaine-prospects"
             />
 
             {error && <p id="email-draft-error" className="mt-2 text-sm font-medium text-error" role="alert">{error}</p>}
@@ -474,7 +474,7 @@ export function EmailMessageCanvas({
                 type="button"
                 onClick={() => void handleGenerate()}
                 disabled={generating}
-                className="inline-flex items-center gap-1.5 rounded-md border border-[var(--k4)] bg-surface px-3 py-2 text-xs font-semibold text-[var(--k4)] disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 rounded-md border border-domaine-prospects bg-surface px-3 py-2 text-xs font-semibold text-domaine-prospects disabled:opacity-60"
               >
                 {generating ? <Spinner taille="ligne" /> : <Sparkles className="h-3.5 w-3.5" />}
                 {generating ? 'Génération…' : 'Générer une proposition'}

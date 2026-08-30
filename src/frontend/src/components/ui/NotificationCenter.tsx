@@ -61,7 +61,7 @@ function SourceBadge({ source }: { source: string }) {
     calendar: "bg-cyan-500/20 text-agent-cyan",
     task: "bg-blue-500/20 text-agent-blue",
     agent: "bg-green-500/20 text-agent-green",
-    system: "bg-gray-500/20 text-gray-400",
+    system: "bg-gray-500/20 text-text-muted",
   };
   const labels: Record<string, string> = {
     crm: "CRM",

@@ -197,7 +197,7 @@ export function CodeReviewPanel() {
                   if (action === 'approve') void handleApprove();
                   else void handleReject();
                 }}
-                className="rounded-md bg-green-600 px-3 py-1.5 font-semibold text-white disabled:opacity-50"
+                className="rounded-md bg-success px-3 py-1.5 font-semibold text-white disabled:opacity-50"
               >
                 Confirmer l&apos;action
               </button>

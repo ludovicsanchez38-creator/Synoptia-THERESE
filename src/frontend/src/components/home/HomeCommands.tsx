@@ -423,7 +423,7 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
               >
                 <div
                   className="relative flex items-center justify-center w-10 h-10 rounded-sm mb-3 border-[1.5px] border-[var(--btn-ink)]"
-                  style={{ background: 'var(--k4bg)', color: 'var(--k4)' }}
+                  style={{ background: 'var(--color-domaine-prospects-tint)', color: 'var(--color-domaine-prospects)' }}
                 >
                   <BookOpen className="w-5 h-5" />
                 </div>

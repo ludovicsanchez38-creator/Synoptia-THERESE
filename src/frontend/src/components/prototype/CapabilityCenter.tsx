@@ -85,8 +85,8 @@ export const capabilityGroups: CapabilityGroup[] = [
     shortTitle: 'Quotidien',
     description: 'Voir l’essentiel et transformer les informations entrantes en actions.',
     icon: Calendar,
-    color: 'var(--k1)',
-    tint: 'var(--k1bg)',
+    color: 'var(--color-domaine-agenda)',
+    tint: 'var(--color-domaine-agenda-tint)',
   },
   {
     id: 'business',
@@ -94,8 +94,8 @@ export const capabilityGroups: CapabilityGroup[] = [
     shortTitle: 'Activité',
     description: 'Suivre les personnes, les projets et le cycle commercial de bout en bout.',
     icon: Briefcase,
-    color: 'var(--k3)',
-    tint: 'var(--k3bg)',
+    color: 'var(--color-domaine-factures)',
+    tint: 'var(--color-domaine-factures-tint)',
   },
   {
     id: 'create',
@@ -103,8 +103,8 @@ export const capabilityGroups: CapabilityGroup[] = [
     shortTitle: 'Création',
     description: 'Passer d’une idée à un livrable utilisable, dans le bon format.',
     icon: FileText,
-    color: 'var(--k2)',
-    tint: 'var(--k2bg)',
+    color: 'var(--color-domaine-taches)',
+    tint: 'var(--color-domaine-taches-tint)',
   },
   {
     id: 'decide',
@@ -112,8 +112,8 @@ export const capabilityGroups: CapabilityGroup[] = [
     shortTitle: 'Décision',
     description: 'Chercher, vérifier, comparer et éclairer une décision importante.',
     icon: Gavel,
-    color: 'var(--k4)',
-    tint: 'var(--k4bg)',
+    color: 'var(--color-domaine-prospects)',
+    tint: 'var(--color-domaine-prospects-tint)',
   },
   {
     id: 'automate',

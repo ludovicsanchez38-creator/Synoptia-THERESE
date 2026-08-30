@@ -198,7 +198,7 @@ export function SignatureEditorModal({ accountId, accountEmail, onClose }: Signa
                 <button
                   onClick={handleSave}
                   disabled={saving}
-                  className="flex items-center gap-2 px-4 py-2 bg-accent-cyan text-white rounded-md hover:bg-accent-cyan/90 transition-colors disabled:opacity-50"
+                  className="flex items-center gap-2 px-4 py-2 bg-accent-fill text-accent-ink rounded-md hover:bg-accent-cyan/90 transition-colors disabled:opacity-50"
                 >
                   {saving ? (
                     <Spinner taille="bouton" />

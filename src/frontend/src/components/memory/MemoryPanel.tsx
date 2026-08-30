@@ -781,7 +781,7 @@ function RGPDBadge({ contact }: { contact: api.Contact }) {
     consentement: 'bg-green-500/20 text-agent-green',
     contrat: 'bg-blue-500/20 text-agent-blue',
     interet_legitime: 'bg-purple-500/20 text-agent-purple',
-    obligation_legale: 'bg-gray-500/20 text-gray-400',
+    obligation_legale: 'bg-gray-500/20 text-text-muted',
   };
 
   const badgeLabels: Record<string, string> = {
@@ -803,7 +803,7 @@ function RGPDBadge({ contact }: { contact: api.Contact }) {
       className={`px-1.5 py-0.5 rounded-sm text-xs font-medium ${
         isExpired ? 'bg-error/20 text-error' :
         isExpiringSoon ? 'bg-orange-500/20 text-agent-amber' :
-        badgeColors[baseLegale] || 'bg-gray-500/20 text-gray-400'
+        badgeColors[baseLegale] || 'bg-gray-500/20 text-text-muted'
       }`}
       title={`${fullLabels[baseLegale] || baseLegale}${dateExpiration ? ` - Expire le ${new Date(dateExpiration).toLocaleDateString('fr-FR')}` : ''}`}
     >

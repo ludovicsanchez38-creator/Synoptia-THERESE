@@ -282,7 +282,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-sm bg-[var(--k3bg)] border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+                <div className="w-10 h-10 rounded-sm bg-domaine-factures-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
                   <Briefcase className="w-5 h-5 text-accent-magenta-ink" />
                 </div>
                 <div>

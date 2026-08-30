@@ -922,7 +922,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                   onClick={handleConvertToInvoice}
                   className={cn(
                     'px-4 py-2 rounded-md font-medium transition-colors',
-                    'bg-purple-500 text-white hover:bg-purple-600',
+                    'bg-agent-purple text-white hover:opacity-90',
                     'flex items-center gap-2'
                   )}
                 >

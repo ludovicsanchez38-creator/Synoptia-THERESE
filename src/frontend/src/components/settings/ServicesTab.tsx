@@ -96,7 +96,7 @@ export function ServicesTab({
 
       <div className="space-y-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-sm bg-[var(--k4bg)] border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+          <div className="w-10 h-10 rounded-sm bg-domaine-prospects-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
             <ImageIcon className="w-5 h-5 text-agent-purple" />
           </div>
           <div>
@@ -219,7 +219,7 @@ export function ServicesTab({
       {/* Transcription vocale Groq */}
       <div className="space-y-3 pt-4 border-t border-border/30">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-sm bg-[var(--k3bg)] border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+          <div className="w-10 h-10 rounded-sm bg-domaine-factures-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
             <Mic className="w-5 h-5 text-accent-magenta-ink" />
           </div>
           <div>

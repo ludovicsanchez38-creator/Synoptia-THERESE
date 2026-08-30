@@ -165,7 +165,7 @@ function ParamsForm({
                 className={cn(
                   'w-full px-3 py-2 rounded-md text-sm',
                   'bg-bg border border-border text-text',
-                  'focus:border-[#2451FF] focus:outline-none',
+                  'focus:border-ring focus:outline-none',
                 )}
               >
                 <option value="">Choisir...</option>
@@ -187,7 +187,7 @@ function ParamsForm({
                   'w-full px-3 py-2 rounded-md text-sm',
                   'bg-bg border border-border text-text',
                   'placeholder:text-text-muted',
-                  'focus:border-[#2451FF] focus:outline-none',
+                  'focus:border-ring focus:outline-none',
                 )}
               />
             )}
@@ -201,7 +201,7 @@ function ParamsForm({
           disabled={!isValid || isLoading}
           className={cn(
             'w-full py-2.5 rounded-md text-sm font-medium',
-            'bg-[#2451FF] text-white hover:bg-[#2451FF]/80',
+            'bg-accent-fill text-accent-ink hover:opacity-90',
             'disabled:opacity-40 disabled:cursor-not-allowed',
             'transition-colors duration-150',
             'flex items-center justify-center gap-2',

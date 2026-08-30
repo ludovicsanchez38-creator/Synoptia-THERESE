@@ -28,15 +28,18 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import type { ContactResponse } from '../../services/api';
 
-// Les 7 stages du pipeline
+// Les 7 stages du pipeline. Couleurs prises aux jetons depuis le 30/08/2026 :
+// les nuances Tailwind brutes d'avant (bg-yellow-500, bg-gray-400…) donnaient
+// du blanc a 1,2:1 a 3,3:1 sur l'en-tete de colonne. Toutes celles-ci passent
+// AA en blanc (5,02 a 7,09).
 const PIPELINE_STAGES = [
-  { id: 'contact', label: 'Contact', color: 'bg-gray-500' },
-  { id: 'discovery', label: 'Découverte', color: 'bg-blue-500' },
-  { id: 'proposition', label: 'Proposition', color: 'bg-purple-500' },
-  { id: 'signature', label: 'Signature', color: 'bg-yellow-500' },
-  { id: 'delivery', label: 'Livraison', color: 'bg-orange-500' },
-  { id: 'active', label: 'Actif', color: 'bg-green-500' },
-  { id: 'archive', label: 'Archive', color: 'bg-gray-400' },
+  { id: 'contact', label: 'Contact', color: 'bg-agent-cyan' },
+  { id: 'discovery', label: 'Découverte', color: 'bg-agent-blue' },
+  { id: 'proposition', label: 'Proposition', color: 'bg-domaine-prospects' },
+  { id: 'signature', label: 'Signature', color: 'bg-agent-amber' },
+  { id: 'delivery', label: 'Livraison', color: 'bg-domaine-taches' },
+  { id: 'active', label: 'Actif', color: 'bg-success' },
+  { id: 'archive', label: 'Archive', color: 'bg-text-muted' },
 ];
 
 interface PipelineViewProps {

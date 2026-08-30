@@ -297,7 +297,7 @@ export function CalculatorWorkspaceCanvas({ onClose }: { onClose: () => void }) 
 
         <section id={`calculator-panel-${active}`} role="tabpanel" aria-labelledby={`calculator-tab-${active}`} className="mt-4 rounded-md border border-border bg-surface p-4">
           <h3 className="text-sm font-bold text-text">{activeInfo.description}</h3>
-          <div className="mt-2 flex items-center gap-2 rounded-md bg-surface-2 px-3 py-2 text-xs text-text-muted"><ChevronRight className="h-3.5 w-3.5 shrink-0 text-[var(--k3)]" />{activeInfo.formula}</div>
+          <div className="mt-2 flex items-center gap-2 rounded-md bg-surface-2 px-3 py-2 text-xs text-text-muted"><ChevronRight className="h-3.5 w-3.5 shrink-0 text-domaine-factures" />{activeInfo.formula}</div>
 
           <fieldset disabled={pending} className="mt-4 grid gap-3 sm:grid-cols-2">
             <legend className="sr-only">Hypothèses pour {activeInfo.description}</legend>

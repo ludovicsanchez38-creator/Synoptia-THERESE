@@ -88,4 +88,53 @@ describe('lot 5 : plus une seule couleur brute', () => {
     const porteurs = SOURCES.filter((f) => /domaine-(agenda|taches|factures|prospects)/.test(readFileSync(f, 'utf-8')));
     expect(porteurs.length, 'aucun composant ne porte les couleurs de domaine').toBeGreaterThanOrEqual(1);
   });
+  it("le blanc ne se pose que sur des fonds qui le supportent", () => {
+    // Trouvé après les cinq lots : les pilules encre avaient été balayées,
+    // pas les autres boutons primaires. Du blanc sur bg-accent-cyan donne
+    // 1,81:1, sur bg-green-600 3,30:1, sur bg-purple-500 3,96:1.
+    // Seuls les remplissages dont l'encre déclarée est blanche, plus les
+    // jetons d'agent et de domaine (tous >= 5:1 en blanc), sont admis.
+    const FONDS_ADMIS =
+      /bg-(success|warning|error|info)(-fill)?\b|bg-(agent|domaine)-[a-z]+\b|bg-(text-muted|accent)\b/;
+    const fautifs: string[] = [];
+    for (const f of SOURCES) {
+      readFileSync(f, 'utf-8')
+        .split('\n')
+        .forEach((ligne, i) => {
+          if (!/\btext-white\b/.test(ligne)) return;
+          const fonds = [...ligne.matchAll(/\bbg-\[?[#\w/.-]+\]?/g)].map((m) => m[0]);
+          if (fonds.length === 0) return; // icône blanche sur un fond porté ailleurs
+          // Une ligne peut porter plusieurs éléments : on ne peut pas
+          // attribuer le text-white à l'un d'eux. La règle est donc « au
+          // moins un fond capable de porter du blanc », plus faible mais
+          // sans faux positif. Elle attrape le cas réel : une ligne dont le
+          // seul fond est bg-accent-cyan, bg-green-600 ou bg-purple-500.
+          if (fonds.some((b) => FONDS_ADMIS.test(b))) return;
+          fautifs.push(`${court(f)}:${i + 1} → ${fonds.join(' ')}`);
+        });
+    }
+    expect(fautifs, fautifs.slice(0, 4).join(' | ')).toEqual([]);
+  });
+
+  it("les couleurs de domaine ne sont pas nommées par un numéro", () => {
+    // --k1..--k4 venaient de la maquette de mai. Ils portaient les mêmes
+    // quatre couleurs, avec le même défaut de contraste, sous des noms que
+    // personne ne peut lire. Un seul jeu, nommé par le domaine.
+    const fautifs: string[] = [];
+    for (const f of [...SOURCES, join(RACINE, 'styles/globals.css')]) {
+      const contenu = readFileSync(f, 'utf-8');
+      for (const m of contenu.matchAll(/--k[1-4](bg)?\b/g)) {
+        if (/^\s*\/[/*]|^\s*\*/.test(contenu.slice(contenu.lastIndexOf('\n', m.index) + 1, m.index))) continue;
+        fautifs.push(`${court(f)} : ${m[0]}`);
+      }
+    }
+    expect(fautifs, fautifs.slice(0, 4).join(' | ')).toEqual([]);
+  });
+
+  it("la charte Synoptïa ne déborde pas sur THÉRÈSE", () => {
+    // Arbitrage de Ludo, 30/08/2026 : THÉRÈSE porte son identité propre.
+    // #2451FF est le bleu de la marque Synoptïa.
+    const fautifs = SOURCES.filter((f) => /2451FF/i.test(readFileSync(f, 'utf-8')));
+    expect(fautifs.map(court)).toEqual([]);
+  });
 });

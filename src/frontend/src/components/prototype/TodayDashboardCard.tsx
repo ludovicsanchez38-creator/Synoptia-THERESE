@@ -41,9 +41,9 @@ const attentionIcons = {
 const attentionColors: Record<AttentionKind, string> = {
   event: 'bg-accent-tint text-accent',
   task: 'bg-[var(--color-warning-tint)] text-warning',
-  follow_up: 'bg-[var(--k4bg)] text-[var(--k4)]',
-  invoice: 'bg-[var(--k3bg)] text-[var(--k3)]',
-  prospect: 'bg-[var(--k4bg)] text-[var(--k4)]',
+  follow_up: 'bg-domaine-prospects-tint text-domaine-prospects',
+  invoice: 'bg-domaine-factures-tint text-domaine-factures',
+  prospect: 'bg-domaine-prospects-tint text-domaine-prospects',
 };
 
 function StateShell({ children }: { children: React.ReactNode }) {
