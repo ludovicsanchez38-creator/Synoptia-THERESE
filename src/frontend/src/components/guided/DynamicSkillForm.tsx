@@ -98,7 +98,12 @@ export function DynamicSkillForm({
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="flex-1 flex flex-col overflow-hidden">
-        <div className="flex-1 overflow-y-auto space-y-5 pr-2">
+        {/* px-2 et non pr-2 : la marge n'existait qu'à DROITE. Un champ en
+              w-full touchait donc le bord gauche, et son anneau de focus, qui
+              se dessine À L'EXTÉRIEUR de l'élément, était rogné — overflow-y
+              rend l'axe horizontal découpant lui aussi. Signalé par Ludo le
+              30/08/2026 : « le cadre de saisie est tronqué à gauche ». */}
+          <div className="flex-1 overflow-y-auto space-y-5 px-2">
           {Object.entries(schema).map(([key, field]) => (
             <div key={key}>
               <label

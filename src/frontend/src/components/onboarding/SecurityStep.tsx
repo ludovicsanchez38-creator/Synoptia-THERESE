@@ -103,7 +103,7 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
       </div>
 
       {/* Risks list */}
-      <div className="space-y-2 max-h-[280px] overflow-y-auto pr-2">
+      <div className="space-y-2 max-h-[280px] overflow-y-auto px-2">
         {RISKS.map((risk, index) => {
           const Icon = risk.icon;
           const isExpanded = expanded === index;
