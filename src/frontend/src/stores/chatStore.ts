@@ -78,6 +78,8 @@ interface ChatStore {
   currentConversationId: string | null;
   isStreaming: boolean;
   queuedPrompt: string | null;
+  /** Lot F : le listing a été coupé au plafond. */
+  conversationsTruncated: boolean;
 
   // Computed
   currentConversation: () => Conversation | null;
@@ -103,6 +105,7 @@ interface ChatStore {
 
   // Sync actions
   setConversations: (conversations: Conversation[]) => void;
+  setConversationsTruncated: (truncated: boolean) => void;
   setConversationMessages: (conversationId: string, messages: Message[]) => void;
   updateConversationId: (oldId: string, newId: string) => void;
 }
@@ -114,6 +117,7 @@ export const useChatStore = create<ChatStore>()(
       currentConversationId: null,
       isStreaming: false,
       queuedPrompt: null,
+      conversationsTruncated: false,
 
       currentConversation: () => {
         const { conversations, currentConversationId } = get();
@@ -367,6 +371,8 @@ export const useChatStore = create<ChatStore>()(
         );
         set({ conversations: sorted });
       },
+
+      setConversationsTruncated: (truncated) => set({ conversationsTruncated: truncated }),
 
       setConversationMessages: (conversationId, messages) => {
         set((state) => {

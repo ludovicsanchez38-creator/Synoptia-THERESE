@@ -8,6 +8,7 @@ describe('chatStore', () => {
       conversations: [],
       currentConversationId: null,
       isStreaming: false,
+      conversationsTruncated: false,
     });
   });
 

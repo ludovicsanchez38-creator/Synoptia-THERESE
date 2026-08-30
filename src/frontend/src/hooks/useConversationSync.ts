@@ -73,6 +73,30 @@ export function formatMessageFromResponse(msg: MessageResponse): Message {
  * backend cloisonnait réellement sur un projet. Un affichage qui ment sur la
  * cloison est pire que pas de cloison du tout.
  */
+/** Lot F : le GET /conversations est paginé (50). Une seule page laissait
+ *  les plus anciennes injoignables. On enchaîne les pages jusqu'à épuisement
+ *  ou un plafond de sécurité — au-delà, on avoue la troncature. */
+export const PAGE_CONVERSATIONS = 50;
+export const PLAFOND_CONVERSATIONS = 500;
+
+export async function chargerConversationsPaginees(
+  lister: (limit: number, offset: number) => Promise<ConversationResponse[]>,
+  pageSize = PAGE_CONVERSATIONS,
+  plafond = PLAFOND_CONVERSATIONS,
+): Promise<{ conversations: ConversationResponse[]; truncated: boolean }> {
+  const conversations: ConversationResponse[] = [];
+  let offset = 0;
+  while (offset < plafond) {
+    const page = await lister(pageSize, offset);
+    conversations.push(...page);
+    if (page.length < pageSize) {
+      return { conversations, truncated: false };
+    }
+    offset += pageSize;
+  }
+  return { conversations, truncated: true };
+}
+
 export function formatConversationFromResponse(conv: ConversationResponse) {
   return {
     id: conv.id,
@@ -95,7 +119,8 @@ export function useConversationSync() {
   // Load conversations from backend and merge with local
   const syncConversations = useCallback(async () => {
     try {
-      const backendConversations = await listConversations(50, 0);
+      const { conversations: backendConversations, truncated } =
+        await chargerConversationsPaginees(listConversations);
 
       // Convert backend format to local format
       const syncedConversations = backendConversations.map(formatConversationFromResponse);
@@ -123,6 +148,7 @@ export function useConversationSync() {
       const mergedConversations = [...mergedSynced, ...localOnlyConversations];
 
       setConversations(mergedConversations);
+      useChatStore.getState().setConversationsTruncated(truncated);
 
       return syncedConversations;
     } catch (error) {

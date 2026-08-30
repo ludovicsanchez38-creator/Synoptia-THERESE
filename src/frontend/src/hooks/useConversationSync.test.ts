@@ -3,9 +3,13 @@
  * d'une conversation. Sans ça, un ancien message de génération réaffiche le code
  * brut sans bouton de téléchargement.
  */
-import { describe, expect, it } from 'vitest';
-import { formatMessageFromResponse, formatConversationFromResponse } from './useConversationSync';
-import type { MessageResponse } from '../services/api';
+import { describe, expect, it, vi } from 'vitest';
+import {
+  formatMessageFromResponse,
+  formatConversationFromResponse,
+  chargerConversationsPaginees,
+} from './useConversationSync';
+import type { ConversationResponse, MessageResponse } from '../services/api';
 
 function makeResponse(over: Partial<MessageResponse> = {}): MessageResponse {
   return {
@@ -104,5 +108,39 @@ describe('formatConversationFromResponse (0.43)', () => {
     });
     expect(out.projectId).toBeNull();
     expect(out.title).toBe('Nouvelle conversation');
+  });
+});
+
+describe('chargerConversationsPaginees - lot F', () => {
+  const conv = (id: string): ConversationResponse => ({
+    id,
+    title: id,
+    summary: null,
+    message_count: 0,
+    created_at: '2026-08-30T10:00:00Z',
+    updated_at: '2026-08-30T10:00:00Z',
+    project_id: null,
+    memory_scope: 'global',
+  });
+
+  it('enchaîne les pages jusqu’à une page courte', async () => {
+    const lister = vi.fn()
+      .mockResolvedValueOnce(Array.from({ length: 50 }, (_, i) => conv(`p1-${i}`)))
+      .mockResolvedValueOnce(Array.from({ length: 10 }, (_, i) => conv(`p2-${i}`)));
+    const { conversations, truncated } = await chargerConversationsPaginees(lister, 50, 500);
+    expect(conversations).toHaveLength(60);
+    expect(truncated).toBe(false);
+    expect(lister).toHaveBeenCalledTimes(2);
+    expect(lister).toHaveBeenNthCalledWith(2, 50, 50);
+  });
+
+  it('avoue la troncature au plafond plutôt que de s’arrêter en silence à 50', async () => {
+    const lister = vi.fn().mockImplementation(async (limit: number, offset: number) =>
+      Array.from({ length: limit }, (_, i) => conv(`c-${offset + i}`)),
+    );
+    const { conversations, truncated } = await chargerConversationsPaginees(lister, 50, 100);
+    expect(conversations).toHaveLength(100);
+    expect(truncated).toBe(true);
+    expect(lister).toHaveBeenCalledTimes(2);
   });
 });
