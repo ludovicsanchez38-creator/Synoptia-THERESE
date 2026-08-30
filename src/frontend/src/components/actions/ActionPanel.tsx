@@ -86,10 +86,10 @@ function AgentCard({
             {agent.description}
           </p>
           <div className="flex items-center gap-2 mt-2">
-            <span className="text-[10px] text-text-muted bg-surface-2 px-2 py-0.5 rounded-sm">
+            <span className="text-xs text-text-muted bg-surface-2 px-2 py-0.5 rounded-sm">
               {agent.steps_count} étapes
             </span>
-            <span className={cn('text-[10px] px-2 py-0.5 rounded-sm bg-surface-2', colorClass)}>
+            <span className={cn('text-xs px-2 py-0.5 rounded-sm bg-surface-2', colorClass)}>
               {CATEGORY_LABELS[agent.category] || agent.category}
             </span>
           </div>
@@ -305,7 +305,7 @@ function TaskProgress({
             transition={{ duration: 0.3 }}
           />
         </div>
-        <p className="text-[10px] text-text-muted mt-1 text-right">
+        <p className="text-xs text-text-muted mt-1 text-right">
           {Math.round(task.progress * 100)}%
         </p>
       </div>

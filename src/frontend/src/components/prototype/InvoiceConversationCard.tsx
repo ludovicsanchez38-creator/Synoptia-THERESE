@@ -131,7 +131,7 @@ export function InvoiceWorkspaceCard({
           </div>
         </div>
         <div className="flex gap-2">
-          <button type="button" onClick={onCreateDevis} className="inline-flex items-center gap-1.5 rounded-sm bg-accent-fill px-2.5 py-1.5 text-xs font-semibold text-accent-ink">
+          <button type="button" onClick={onCreateDevis} className="inline-flex items-center gap-1.5 rounded-sm bg-accent-fill px-2.5 py-1.5 text-sm font-semibold text-accent-ink">
             <Plus className="h-3.5 w-3.5" />
             Nouveau devis
           </button>
@@ -153,7 +153,7 @@ export function InvoiceWorkspaceCard({
             <p className="mt-2 text-sm font-semibold text-text">Facturation indisponible</p>
             <p className="mt-1 text-xs leading-5 text-text-muted">{resource.error}</p>
             <div className="mt-4 flex justify-center gap-2">
-              <button type="button" onClick={onRetry} className="inline-flex items-center gap-1.5 rounded-md bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">
+              <button type="button" onClick={onRetry} className="inline-flex items-center gap-1.5 rounded-md bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink">
                 <RefreshCw className="h-3.5 w-3.5" />
                 Réessayer
               </button>
@@ -167,7 +167,7 @@ export function InvoiceWorkspaceCard({
             <FileText className="mx-auto h-6 w-6 text-text-muted" />
             <p className="mt-2 text-sm font-semibold text-text">Aucun devis ni facture</p>
             <p className="mt-1 text-xs text-text-muted">Tu peux préparer un premier devis sans l’envoyer.</p>
-            <button type="button" onClick={onCreateDevis} className="mt-4 rounded-md bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">Préparer un devis</button>
+            <button type="button" onClick={onCreateDevis} className="mt-4 rounded-md bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink">Préparer un devis</button>
           </div>
         </StateShell>
       ) : (
@@ -460,7 +460,7 @@ function DevisDraftForm({
             </div>
             {contactError && <p id="devis-contact-error" className="mt-3 text-sm font-semibold text-error" role="alert">{contactError}</p>}
             <div className="mt-4 flex justify-end">
-              <button type="button" onClick={() => void createFirstContact()} disabled={contactSaving} className="inline-flex items-center gap-1.5 rounded-md bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink disabled:opacity-60">
+              <button type="button" onClick={() => void createFirstContact()} disabled={contactSaving} className="inline-flex items-center gap-1.5 rounded-md bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink disabled:opacity-60">
                 {contactSaving ? <Spinner taille="ligne" /> : <Plus className="h-3.5 w-3.5" />}
                 {contactSaving ? 'Création du contact…' : 'Créer et continuer le devis'}
               </button>
@@ -582,14 +582,14 @@ function DevisDraftForm({
               </div>
             </div>
             <div className="mt-3 flex justify-end gap-2">
-              <button type="button" onClick={() => setConfirmationSnapshot(null)} className="rounded-sm border border-border bg-surface px-3 py-2 text-xs font-semibold text-text">Annuler</button>
-              <button type="button" disabled={saving} onClick={() => void confirmCreation()} className="rounded-sm bg-success-fill px-3 py-2 text-xs font-semibold text-success-ink disabled:opacity-60">{saving ? 'Création…' : 'Confirmer le brouillon'}</button>
+              <button type="button" onClick={() => setConfirmationSnapshot(null)} className="rounded-sm border border-border bg-surface px-3 py-2 text-sm font-semibold text-text">Annuler</button>
+              <button type="button" disabled={saving} onClick={() => void confirmCreation()} className="rounded-sm bg-success-fill px-3 py-2 text-sm font-semibold text-success-ink disabled:opacity-60">{saving ? 'Création…' : 'Confirmer le brouillon'}</button>
             </div>
           </div>
         )}
 
         {!confirmationSnapshot && <div className="mt-4 flex justify-end">
-          <button type="button" onClick={requestConfirmation} disabled={saving} className="inline-flex items-center gap-1.5 rounded-md bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink disabled:opacity-60"><FilePlus2 className="h-3.5 w-3.5" />Enregistrer le brouillon</button>
+          <button type="button" onClick={requestConfirmation} disabled={saving} className="inline-flex items-center gap-1.5 rounded-md bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink disabled:opacity-60"><FilePlus2 className="h-3.5 w-3.5" />Enregistrer le brouillon</button>
         </div>}
       </section>
     </div>
@@ -630,13 +630,13 @@ export function InvoiceWorkspaceCanvas({
         {resource.status === 'loading' ? (
           <StateShell><div className="flex items-center gap-2 text-sm text-text-muted"><Spinner taille="bouton" />Chargement de la facturation…</div></StateShell>
         ) : resource.status === 'error' ? (
-          <StateShell><div className="text-center"><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">{resource.error}</p><button type="button" onClick={onRetry} className="mt-4 rounded-md bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">Réessayer</button></div></StateShell>
+          <StateShell><div className="text-center"><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">{resource.error}</p><button type="button" onClick={onRetry} className="mt-4 rounded-md bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink">Réessayer</button></div></StateShell>
         ) : selection === 'new-devis' ? (
           <DevisDraftForm data={resource.data} contactInitial={contactInitial} onCreateDraft={onCreateDraft} onCreateContact={onCreateContact} />
         ) : !invoiceResource || invoiceResource.status === 'loading' ? (
           <StateShell><div className="flex items-center gap-2 text-sm text-text-muted"><Spinner taille="bouton" />Chargement du document…</div></StateShell>
         ) : invoiceResource.status === 'error' ? (
-          <StateShell><div className="text-center"><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">{invoiceResource.error}</p><button type="button" onClick={onRetryInvoice} className="mt-4 rounded-md bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">Réessayer</button></div></StateShell>
+          <StateShell><div className="text-center"><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">{invoiceResource.error}</p><button type="button" onClick={onRetryInvoice} className="mt-4 rounded-md bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink">Réessayer</button></div></StateShell>
         ) : invoiceResource.status === 'ready' ? (
           <ExistingInvoiceDetail data={resource.data} invoice={invoiceResource.data} />
         ) : (

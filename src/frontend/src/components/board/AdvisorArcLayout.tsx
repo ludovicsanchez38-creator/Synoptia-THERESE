@@ -93,7 +93,7 @@ export function AdvisorArcLayout({
             {' '}<span className="text-warning ml-2">&#9679;</span> 4-8 Go (16 Go RAM)
             {' '}<span className="text-error ml-2">&#9679;</span> &gt; 8 Go (32 Go+ RAM)
           </p>
-          <p className="text-[10px] text-text-muted/70">
+          <p className="text-xs text-text-muted/70">
             Choisis des modèles adaptés à ta machine pour éviter les ralentissements
           </p>
         </motion.div>
@@ -155,7 +155,7 @@ export function AdvisorArcLayout({
               >
                 {meta.name}
               </span>
-              <span className="text-[10px] text-text-muted text-center">
+              <span className="text-xs text-text-muted text-center">
                 {meta.personality}
               </span>
 
@@ -164,7 +164,7 @@ export function AdvisorArcLayout({
                 <select aria-label={`Modèle du conseiller ${role}`}
                   value={selectedModels[role] || defaultModel}
                   onChange={(e) => onModelChange(role, e.target.value)}
-                  className="mt-1.5 w-full text-[10px] px-1.5 py-1 bg-surface border border-border/50 rounded-sm text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-magenta/50"
+                  className="mt-1.5 w-full text-xs px-1.5 py-1 bg-surface border border-border/50 rounded-sm text-text-muted focus:outline-none focus:ring-1 focus:ring-accent-magenta/50"
                 >
                   {ollamaModels.map((m) => (
                     <option key={m.name} value={m.name} className={sizeColor(m.size)}>
@@ -207,7 +207,7 @@ export function AdvisorArcLayout({
                   <Icon className="h-2.5 w-2.5 text-white" />
                 </div>
               </div>
-              <span className="text-[10px] font-medium text-center" style={{ color: meta.color }}>
+              <span className="text-xs font-medium text-center" style={{ color: meta.color }}>
                 {meta.name}
               </span>
 
@@ -215,7 +215,7 @@ export function AdvisorArcLayout({
                 <select aria-label={`Modèle du conseiller ${role}`}
                   value={selectedModels[role] || defaultModel}
                   onChange={(e) => onModelChange(role, e.target.value)}
-                  className="mt-1 w-full text-[9px] px-1 py-0.5 bg-surface border border-border/50 rounded-sm text-text-muted"
+                  className="mt-1 w-full text-xs px-1 py-0.5 bg-surface border border-border/50 rounded-sm text-text-muted"
                 >
                   {ollamaModels.map((m) => (
                     <option key={m.name} value={m.name}>

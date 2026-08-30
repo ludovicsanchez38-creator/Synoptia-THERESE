@@ -333,7 +333,7 @@ export function PrivacyTab() {
               Créer une sauvegarde
             </Button>
           </div>
-          <p className="mt-1 text-[11px] text-text-muted">
+          <p className="mt-1 text-xs text-text-muted">
             La sauvegarde est chiffrée par cette passphrase. Conserve-la : sans elle, la restauration est impossible.
           </p>
         </div>
@@ -344,7 +344,7 @@ export function PrivacyTab() {
         <div className="overflow-hidden rounded-md border border-border/30">
           <div className="flex items-center justify-between bg-surface-elevated/40 px-3 py-2">
             <span className="text-xs font-semibold text-text">Sauvegardes disponibles</span>
-            <button type="button" onClick={() => void refreshBackups()} className="text-xs font-medium text-accent-cyan-ink hover:underline">Actualiser</button>
+            <button type="button" onClick={() => void refreshBackups()} className="text-sm font-medium text-accent-cyan-ink hover:underline">Actualiser</button>
           </div>
           {backupLoading ? (
             <div className="flex items-center gap-2 px-3 py-4 text-xs text-text-muted"><Spinner taille="ligne" />Chargement…</div>

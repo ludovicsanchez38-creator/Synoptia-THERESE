@@ -48,7 +48,7 @@ function CalendarDetails({ confirmation }: { confirmation: PendingConfirmation }
           depuis le dossier d'un autre patient. Le leak était CONSENTI, donc
           pire : elle avait lu, et ce qu'on lui montrait était incomplet.
           Avouer avant de réparer — le cloisonnement de l'agenda vient après. */}
-      <p className="pt-1 text-[11px] leading-4 text-warning">
+      <p className="pt-1 text-xs leading-4 text-warning">
         Cet agenda est commun à tous tes dossiers : l’événement sera visible
         depuis n’importe quelle conversation.
       </p>

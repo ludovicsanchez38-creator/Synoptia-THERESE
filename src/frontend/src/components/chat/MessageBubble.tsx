@@ -561,7 +561,7 @@ export const MessageBubble = memo(function MessageBubble({
           <div key={file.file_id} className="mt-3 rounded-md w-full max-w-sm bg-surface/60 border border-border overflow-hidden">
             <div className="flex items-center gap-2 px-3 pt-2.5">
               <FileDown className="w-3.5 h-3.5 text-accent-cyan-ink shrink-0" />
-              <span className="text-[11px] font-semibold uppercase tracking-wide text-accent-cyan-ink">
+              <span className="text-xs font-semibold uppercase tracking-wide text-accent-cyan-ink">
                 Fichier généré
               </span>
               <span className="text-xs text-text-muted ml-auto shrink-0">

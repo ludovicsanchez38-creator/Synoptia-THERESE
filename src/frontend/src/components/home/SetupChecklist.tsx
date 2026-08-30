@@ -68,7 +68,7 @@ export function SetupChecklist({ status }: { status: SetupStatus }) {
             className="flex items-center gap-2.5 p-2.5 rounded-md border border-border bg-surface hover:border-[color-mix(in_srgb,var(--color-accent)_40%,var(--color-border))] transition-colors text-left"
           >
             <Icon className="w-4 h-4 text-accent shrink-0" />
-            <span className="text-[13px] text-text leading-tight flex-1">{label}</span>
+            <span className="text-sm text-text leading-tight flex-1">{label}</span>
             <ArrowRight className="w-3.5 h-3.5 text-text-muted shrink-0" />
           </button>
         ))}

@@ -85,7 +85,7 @@ export function TraitementsPanel() {
                   </button>
                 )}
               </div>
-              <p className="mt-1 text-[11px] text-text-muted">
+              <p className="mt-1 text-xs text-text-muted">
                 {arretDemande && t.state !== 'cancelled'
                   ? LIBELLES_ETAT.cancel_requested
                   : LIBELLES_ETAT[t.state]}
@@ -95,7 +95,7 @@ export function TraitementsPanel() {
                   : ''}
               </p>
               {t.error && (
-                <p className="mt-0.5 truncate text-[11px] text-error">{t.error}</p>
+                <p className="mt-0.5 truncate text-xs text-error">{t.error}</p>
               )}
             </li>
           );

@@ -146,7 +146,7 @@ function PromptCard({
         {prompt.tags.slice(0, 4).map((tag) => (
           <span
             key={tag}
-            className="text-[10px] px-1.5 py-0.5 rounded-sm bg-surface/50 text-text-muted border border-border/20"
+            className="text-xs px-1.5 py-0.5 rounded-sm bg-surface/50 text-text-muted border border-border/20"
           >
             {tag}
           </span>

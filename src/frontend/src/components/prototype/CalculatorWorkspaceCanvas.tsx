@@ -291,7 +291,7 @@ export function CalculatorWorkspaceCanvas({ onClose }: { onClose: () => void }) 
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
         <div role="tablist" aria-label="Type de calcul" className="grid grid-cols-5 gap-1 rounded-md border border-border bg-surface p-1">
           {CALCULATORS.map((calculator) => (
-            <button key={calculator.id} id={`calculator-tab-${calculator.id}`} role="tab" aria-selected={active === calculator.id} aria-controls={`calculator-panel-${calculator.id}`} tabIndex={active === calculator.id ? 0 : -1} type="button" disabled={pending} onKeyDown={(event) => handleRovingFocus(event, '[role="tab"]', 'horizontal')} onClick={() => select(calculator.id)} className={`rounded-sm px-2 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60 ${active === calculator.id ? 'bg-accent-fill text-accent-ink' : 'text-text-muted hover:bg-bg'}`}>{calculator.label}</button>
+            <button key={calculator.id} id={`calculator-tab-${calculator.id}`} role="tab" aria-selected={active === calculator.id} aria-controls={`calculator-panel-${calculator.id}`} tabIndex={active === calculator.id ? 0 : -1} type="button" disabled={pending} onKeyDown={(event) => handleRovingFocus(event, '[role="tab"]', 'horizontal')} onClick={() => select(calculator.id)} className={`rounded-sm px-2 py-2 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-60 ${active === calculator.id ? 'bg-accent-fill text-accent-ink' : 'text-text-muted hover:bg-bg'}`}>{calculator.label}</button>
           ))}
         </div>
 

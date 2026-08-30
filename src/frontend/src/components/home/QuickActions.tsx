@@ -46,7 +46,7 @@ export function QuickActions() {
           >
             <Icon className="w-4 h-4" />
           </span>
-          <span className="text-[13px] font-medium text-text leading-tight">{label}</span>
+          <span className="text-sm font-medium text-text leading-tight">{label}</span>
         </button>
       ))}
     </div>

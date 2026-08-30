@@ -588,8 +588,8 @@ export function TrustCenter({
           <TrustRow icon={<ShieldCheck className="h-3.5 w-3.5" />} title="RGPD" value="Export global et droits par contact accessibles depuis Confidentialité et le CRM." />
         </div>
         <div className="grid grid-cols-2 gap-2 border-t border-border bg-surface-2 p-3">
-          <button type="button" onClick={onOpenPrivacy} className="rounded-md border border-border bg-surface px-3 py-2 text-xs font-semibold text-text hover:border-border">Confidentialité</button>
-          <button type="button" onClick={onOpenAdvanced} className="rounded-md border border-accent-fill bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">Réglages avancés</button>
+          <button type="button" onClick={onOpenPrivacy} className="rounded-md border border-border bg-surface px-3 py-2 text-sm font-semibold text-text hover:border-border">Confidentialité</button>
+          <button type="button" onClick={onOpenAdvanced} className="rounded-md border border-accent-fill bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink">Réglages avancés</button>
         </div>
       </motion.section>
     </motion.div>

@@ -194,7 +194,7 @@ export function AtelierPanel() {
 
         {/* BUG-111 : Badges modèles Katia & Zézette (masqués en vue Agents) */}
         {showModelBadge && activeView !== "agents" && (
-          <div className="flex items-center gap-2 px-4 pb-2 text-[10px] text-text-muted">
+          <div className="flex items-center gap-2 px-4 pb-2 text-xs text-text-muted">
             {katiaModel && (
               <span className="rounded-sm bg-purple-500/10 px-1.5 py-0.5 text-purple-400">
                 Katia: {katiaModel}

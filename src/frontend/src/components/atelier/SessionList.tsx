@@ -128,7 +128,7 @@ export function SessionList() {
 
       {/* US-003 : Compteur agents actifs */}
       <div className="flex items-center justify-between border-b border-border px-3 py-1.5">
-        <span className="text-[10px] text-text-muted">
+        <span className="text-xs text-text-muted">
           <span className={runningCount >= maxAgents ? "text-amber-400 font-medium" : "text-purple-400"}>
             {runningCount}/{maxAgents}
           </span>
@@ -143,7 +143,7 @@ export function SessionList() {
             openclawConnected ? "bg-green-400" : "bg-error"
           }`}
         />
-        <span className="text-[10px] text-text-muted">
+        <span className="text-xs text-text-muted">
           {openclawConnected ? "OpenClaw connecté" : "OpenClaw déconnecté"}
         </span>
       </div>
@@ -219,14 +219,14 @@ export function SessionList() {
                   </div>
 
                   <div className="mt-1 flex items-center gap-2 pl-4">
-                    <span className={`text-[10px] ${statusStyle.text}`}>
+                    <span className={`text-xs ${statusStyle.text}`}>
                       {statusStyle.label}
                     </span>
-                    <span className="text-[10px] text-text-muted">
+                    <span className="text-xs text-text-muted">
                       {formatDuration(session.created_at, session.finished_at)}
                     </span>
                     {session.actions_count > 0 && (
-                      <span className="text-[10px] text-text-muted">
+                      <span className="text-xs text-text-muted">
                         {session.actions_count} action{session.actions_count > 1 ? "s" : ""}
                       </span>
                     )}
@@ -238,7 +238,7 @@ export function SessionList() {
                   {/* Result summary pour les sessions terminées */}
                   {session.status === "done" && session.result_summary && (
                     <div className="mt-1 pl-4" title={session.result_summary}>
-                      <span className="text-[10px] leading-tight text-text-muted line-clamp-2">
+                      <span className="text-xs leading-tight text-text-muted line-clamp-2">
                         {session.result_summary}
                       </span>
                     </div>

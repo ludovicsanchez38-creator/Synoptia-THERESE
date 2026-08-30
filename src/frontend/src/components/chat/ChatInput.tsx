@@ -1263,8 +1263,8 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           <p id="cloud-consent-title" className="font-semibold">Autoriser ce premier envoi à {pendingCloudConsent.providerLabel} ?</p>
           <p className="mt-1">Données transmises : {pendingCloudConsent.dataCategories.join(', ')}.</p>
           <div className="mt-3 flex justify-end gap-2">
-            <button type="button" onClick={() => setPendingCloudConsent(null)} className="rounded-sm border border-border bg-surface px-3 py-2 text-xs font-semibold text-text">Annuler</button>
-            <button type="button" onClick={confirmCloudConsent} className="rounded-sm bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">Autoriser et envoyer</button>
+            <button type="button" onClick={() => setPendingCloudConsent(null)} className="rounded-sm border border-border bg-surface px-3 py-2 text-sm font-semibold text-text">Annuler</button>
+            <button type="button" onClick={confirmCloudConsent} className="rounded-sm bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink">Autoriser et envoyer</button>
           </div>
         </div>
       )}

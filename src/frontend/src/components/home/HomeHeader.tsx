@@ -44,7 +44,7 @@ export function HomeHeader() {
   return (
     <div className="flex items-start gap-4 flex-wrap">
       <div>
-        <h1 className="text-[26px] font-extrabold tracking-tight leading-tight text-text">
+        <h1 className="text-2xl font-extrabold tracking-tight leading-tight text-text">
           {greeting} <span className="text-accent">!</span>
         </h1>
         <p className="text-sm text-text-muted mt-1.5 first-letter:capitalize">{dateStr}</p>
@@ -53,11 +53,11 @@ export function HomeHeader() {
         {/* Tags carrés bordés encre (DA brutaliste) - finis les pills.
             Texte en --color-text (AA : l'accent cyan sur tint ne tient pas
             4,5:1 en clair), seule l'icône porte l'accent. */}
-        <span className="inline-flex items-center gap-1.5 h-[30px] px-3 rounded-sm text-[12.5px] font-semibold bg-accent-tint border-[1.5px] border-[var(--btn-ink)] text-text">
+        <span className="inline-flex items-center gap-1.5 h-[30px] px-3 rounded-sm text-sm font-semibold bg-accent-tint border-[1.5px] border-[var(--btn-ink)] text-text">
           <ShieldCheck className="w-3.5 h-3.5 text-accent" /> Données locales
         </span>
         {provider && (
-          <span className="inline-flex items-center gap-1.5 h-[30px] px-3 rounded-sm text-[12.5px] font-medium bg-surface border-[1.5px] border-border text-text-muted">
+          <span className="inline-flex items-center gap-1.5 h-[30px] px-3 rounded-sm text-sm font-medium bg-surface border-[1.5px] border-border text-text-muted">
             <Cpu className="w-3.5 h-3.5" /> {provider.label}
             <span className="text-text-muted/70">· {provider.model}</span>
           </span>

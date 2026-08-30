@@ -48,7 +48,7 @@ function StatusTag({ status }: { status: DocumentSection['status'] }) {
   const meta = STATUS_META[status];
   return (
     <span
-      className={`shrink-0 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide rounded-sm border ${meta.className}`}
+      className={`shrink-0 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide rounded-sm border ${meta.className}`}
     >
       {meta.label}
     </span>

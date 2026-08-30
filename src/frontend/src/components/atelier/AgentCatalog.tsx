@@ -247,7 +247,7 @@ export function AgentCatalog({ onSelectAgent }: Props) {
 
           {/* Champ libre pour modele OpenRouter personnalise (SUG-030) */}
           <div className="flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2">
-            <span className="shrink-0 text-[10px] text-cyan-400/70">OR</span>
+            <span className="shrink-0 text-xs text-cyan-400/70">OR</span>
             <input aria-label="Modèle personnalisé"
               type="text"
               value={customModel}
@@ -270,14 +270,14 @@ export function AgentCatalog({ onSelectAgent }: Props) {
                   setCustomModel("");
                   localStorage.removeItem(CUSTOM_MODEL_STORAGE_KEY);
                 }}
-                className="shrink-0 text-[10px] text-text-muted hover:text-error transition-colors"
+                className="shrink-0 text-xs text-text-muted hover:text-error transition-colors"
               >
                 ✕
               </button>
             )}
           </div>
           {customModel.trim() && (
-            <p className="text-[10px] text-cyan-400/60 px-1">
+            <p className="text-xs text-cyan-400/60 px-1">
               Modèle personnalisé actif - prioritaire sur la liste
             </p>
           )}
@@ -316,12 +316,12 @@ export function AgentCatalog({ onSelectAgent }: Props) {
               </span>
 
               {/* Description */}
-              <span className="text-[10px] leading-snug text-text-muted">
+              <span className="text-xs leading-snug text-text-muted">
                 {profile.description}
               </span>
 
               {/* Nombre d'outils */}
-              <span className="mt-auto text-[9px] text-text-muted/60">
+              <span className="mt-auto text-xs text-text-muted/60">
                 {profile.tools.length} outil{profile.tools.length > 1 ? "s" : ""}
               </span>
             </motion.button>

@@ -525,7 +525,7 @@ function CommandPalette({
             className="flex-1 bg-transparent text-sm text-text outline-none placeholder:text-text-muted"
           />
           <kbd className="rounded-sm border border-border bg-surface-2 px-1.5 py-0.5 text-xs text-text-muted">Échap</kbd>
-          <button type="button" onClick={onClose} className="rounded-sm border border-border px-2 py-1 text-xs font-semibold text-text-muted hover:text-text">Fermer</button>
+          <button type="button" onClick={onClose} className="rounded-sm border border-border px-2 py-1 text-sm font-semibold text-text-muted hover:text-text">Fermer</button>
         </div>
         <div id="prototype-command-results" role="listbox" aria-label="Résultats" className="max-h-[440px] overflow-y-auto p-2">
           <div className="sr-only" role="status" aria-live="polite">{optionCount} résultat{optionCount > 1 ? 's' : ''}</div>
@@ -1575,14 +1575,14 @@ export function ConversationCanvasPrototype() {
                 <div className={`mx-auto transition-[max-width] duration-200 ${canvasOpen ? 'max-w-[760px]' : 'max-w-[860px]'}`}>
                   {(boardRun.status === 'running' || atelierRun.status === 'running') && (
                     <div className="mb-4 flex flex-wrap gap-2" data-testid="shell-background-activities" role="status">
-                      {boardRun.status === 'running' && <button type="button" onClick={() => { setScenario('board'); setSelectedBoardTarget('current'); setCanvasOpen(true); }} className="inline-flex items-center gap-2 rounded-md border border-[var(--k4)]/30 bg-[var(--k4bg)] px-3 py-2 text-xs font-semibold text-[var(--k4)]"><Spinner taille="ligne" />Board en arrière-plan · {boardRun.phase || 'délibération en cours'}</button>}
-                      {atelierRun.status === 'running' && <button type="button" onClick={() => { setScenario('atelier'); setSelectedAtelierTarget('current'); setCanvasOpen(true); }} className="inline-flex items-center gap-2 rounded-md border border-accent-cyan/30 bg-accent-tint px-3 py-2 text-xs font-semibold text-accent"><Spinner taille="ligne" />Atelier en arrière-plan · {atelierRun.phase || 'mission en cours'}</button>}
+                      {boardRun.status === 'running' && <button type="button" onClick={() => { setScenario('board'); setSelectedBoardTarget('current'); setCanvasOpen(true); }} className="inline-flex items-center gap-2 rounded-md border border-[var(--k4)]/30 bg-[var(--k4bg)] px-3 py-2 text-sm font-semibold text-[var(--k4)]"><Spinner taille="ligne" />Board en arrière-plan · {boardRun.phase || 'délibération en cours'}</button>}
+                      {atelierRun.status === 'running' && <button type="button" onClick={() => { setScenario('atelier'); setSelectedAtelierTarget('current'); setCanvasOpen(true); }} className="inline-flex items-center gap-2 rounded-md border border-accent-cyan/30 bg-accent-tint px-3 py-2 text-sm font-semibold text-accent"><Spinner taille="ligne" />Atelier en arrière-plan · {atelierRun.phase || 'mission en cours'}</button>}
                     </div>
                   )}
                   <div className="mb-7 flex items-start gap-3">
                     <CharacterPortrait index={0} className="mt-0.5 h-8 w-8 rounded-md border border-text shadow-[var(--shadow-card)]" />
                     <div>
-                      <h1 className="text-[24px] font-bold tracking-[-0.035em] text-text">Bonjour{displayName ? ` ${displayName}` : ''}.</h1>
+                      <h1 className="text-2xl font-bold tracking-[-0.035em] text-text">Bonjour{displayName ? ` ${displayName}` : ''}.</h1>
                       <p className="mt-1 text-sm leading-6 text-text-muted">
                         {scenario === 'today'
                           ? "J’ai regroupé ce qui mérite ton attention. Tu peux agir ici, sans chercher le bon module."

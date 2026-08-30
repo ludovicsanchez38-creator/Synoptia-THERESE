@@ -767,7 +767,7 @@ function RGPDBadge({ contact }: { contact: api.Contact }) {
 
   if (!baseLegale) {
     return (
-      <span className="px-1.5 py-0.5 rounded-sm text-[10px] font-medium bg-yellow-500/20 text-warning" title="Base légale RGPD non définie pour ce contact">
+      <span className="px-1.5 py-0.5 rounded-sm text-xs font-medium bg-yellow-500/20 text-warning" title="Base légale RGPD non définie pour ce contact">
         RGPD ?
       </span>
     );
@@ -800,7 +800,7 @@ function RGPDBadge({ contact }: { contact: api.Contact }) {
 
   return (
     <span
-      className={`px-1.5 py-0.5 rounded-sm text-[10px] font-medium ${
+      className={`px-1.5 py-0.5 rounded-sm text-xs font-medium ${
         isExpired ? 'bg-error/20 text-error' :
         isExpiringSoon ? 'bg-orange-500/20 text-orange-400' :
         badgeColors[baseLegale] || 'bg-gray-500/20 text-gray-400'

@@ -90,7 +90,7 @@ export function SubOptionsPanel({ action, onSelect, onBack }: SubOptionsPanelPro
               const FormatIcon = config.icon;
               return (
                 <span className={cn(
-                  'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-[10px] font-semibold',
+                  'inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm text-xs font-semibold',
                   config.color
                 )}>
                   <FormatIcon className="w-3 h-3" />

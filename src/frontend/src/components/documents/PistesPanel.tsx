@@ -39,7 +39,7 @@ function StatusTag({ status }: { status: PisteStatus }) {
   const meta = STATUS_META[status];
   return (
     <span
-      className={`shrink-0 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide rounded-sm border ${meta.className}`}
+      className={`shrink-0 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide rounded-sm border ${meta.className}`}
     >
       {meta.label}
     </span>
@@ -50,7 +50,7 @@ function CounterBadge({ count }: { count: number }) {
   if (count === 0) return null;
   return (
     <span
-      className="min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold rounded-full px-1 bg-accent-fill text-accent-ink"
+      className="min-w-[18px] h-[18px] flex items-center justify-center text-xs font-bold rounded-full px-1 bg-accent-fill text-accent-ink"
       aria-label={`${count} nouvelle${count > 1 ? 's' : ''} piste${count > 1 ? 's' : ''}`}
     >
       {count > 99 ? '99+' : count}

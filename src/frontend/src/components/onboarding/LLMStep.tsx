@@ -499,7 +499,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
             <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
             <span className="flex-1">{loadError}</span>
           </div>
-          <button type="button" onClick={() => void loadState()} className="mt-3 text-xs font-semibold text-text underline underline-offset-2">
+          <button type="button" onClick={() => void loadState()} className="mt-3 text-sm font-semibold text-text underline underline-offset-2">
             Réessayer la vérification
           </button>
         </div>

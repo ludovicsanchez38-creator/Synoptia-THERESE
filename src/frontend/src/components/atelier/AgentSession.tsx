@@ -165,7 +165,7 @@ function ToolCallBlock({
             transition={{ duration: 0.15 }}
             className="overflow-hidden"
           >
-            <pre className="border-t border-border px-3 py-2 text-[10px] leading-relaxed text-text-muted overflow-x-auto max-h-40 overflow-y-auto">
+            <pre className="border-t border-border px-3 py-2 text-xs leading-relaxed text-text-muted overflow-x-auto max-h-40 overflow-y-auto">
               {toolResult}
             </pre>
           </motion.div>
@@ -414,7 +414,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
 
         {/* Badge modele */}
         {activeModel && (
-          <span className="ml-auto rounded-sm bg-surface-2 px-1.5 py-0.5 text-[10px] text-text-muted">
+          <span className="ml-auto rounded-sm bg-surface-2 px-1.5 py-0.5 text-xs text-text-muted">
             {activeModel}
           </span>
         )}
@@ -630,7 +630,7 @@ function InitialPrompt({
         {profile.tools.map((tool) => (
           <span
             key={tool}
-            className="rounded-sm bg-surface-2 px-2 py-0.5 text-[10px] text-text-muted"
+            className="rounded-sm bg-surface-2 px-2 py-0.5 text-xs text-text-muted"
           >
             {tool}
           </span>

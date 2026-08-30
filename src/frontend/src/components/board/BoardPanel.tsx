@@ -487,7 +487,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                     >
                       <FileDown className="w-4 h-4 mr-1.5" />
                       PDF
-                      <span className="ml-1 px-1.5 py-0.5 bg-amber-500/20 text-amber-400 text-[10px] rounded-sm">Bientôt</span>
+                      <span className="ml-1 px-1.5 py-0.5 bg-amber-500/20 text-amber-400 text-xs rounded-sm">Bientôt</span>
                     </Button>
                     <Button variant="primary" size="sm" onClick={handleNewDeliberation}>
                       + Nouvelle question

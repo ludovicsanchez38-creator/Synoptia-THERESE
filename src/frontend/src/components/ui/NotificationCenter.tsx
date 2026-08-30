@@ -74,7 +74,7 @@ function SourceBadge({ source }: { source: string }) {
   return (
     <span
       className={cn(
-        "text-[10px] font-medium px-1.5 py-0.5 rounded-sm",
+        "text-xs font-medium px-1.5 py-0.5 rounded-sm",
         colors[source] || colors.system
       )}
     >
@@ -132,7 +132,7 @@ function NotificationItem({ notification }: { notification: AppNotification }) {
           {notification.message}
         </p>
         <div className="flex items-center gap-2 mt-1.5">
-          <span className="text-[10px] text-text-muted/60">
+          <span className="text-xs text-text-muted/60">
             {timeAgo(notification.created_at)}
           </span>
           {notification.action_url && notification.action_label && (
@@ -142,7 +142,7 @@ function NotificationItem({ notification }: { notification: AppNotification }) {
                 // Navigation via action_url possible ici
                 if (!notification.is_read) markAsRead(notification.id);
               }}
-              className="flex items-center gap-1 text-[10px] font-medium text-accent-cyan-ink hover:text-accent-cyan-ink transition-colors"
+              className="flex items-center gap-1 text-xs font-medium text-accent-cyan-ink hover:text-accent-cyan-ink transition-colors"
             >
               <ExternalLink className="w-3 h-3" />
               {notification.action_label}
@@ -207,7 +207,7 @@ export function NotificationCenter() {
         <Bell className="w-4.5 h-4.5 text-text-muted" />
         {unreadCount > 0 && (
           <span
-            className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center text-[10px] font-bold text-white bg-error rounded-full px-1 shadow-[0_0_8px_rgba(239,68,68,0.4)]"
+            className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center text-xs font-bold text-white bg-error rounded-full px-1 shadow-[0_0_8px_rgba(239,68,68,0.4)]"
             aria-live="polite"
             aria-label={`${unreadCount} notification${unreadCount > 1 ? 's' : ''} non lue${unreadCount > 1 ? 's' : ''}`}
           >

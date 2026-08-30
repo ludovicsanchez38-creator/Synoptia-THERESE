@@ -174,7 +174,7 @@ export function ContactsMemoryCanvas({
           <div>
             <AlertCircle className="mx-auto h-5 w-5 text-warning" />
             <p className="mt-2 text-sm font-semibold text-text">{resource.error}</p>
-            <button type="button" onClick={onRetry} className="mt-4 rounded-md bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">
+            <button type="button" onClick={onRetry} className="mt-4 rounded-md bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink">
               Réessayer
             </button>
           </div>

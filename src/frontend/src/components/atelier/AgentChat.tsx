@@ -211,7 +211,7 @@ export function AgentChat() {
               ? activeSession.instruction.slice(0, 80) + "..."
               : activeSession.instruction}
           </p>
-          <p className="text-[10px] text-text-muted">
+          <p className="text-xs text-text-muted">
             Agent : {activeSession.agent_name} - {activeSession.status}
             {activeSession.actions_count > 0 && (
               <> - {activeSession.actions_count} action{activeSession.actions_count > 1 ? "s" : ""}</>
@@ -328,7 +328,7 @@ export function AgentChat() {
                       </div>
                       {msg.timestamp && (
                         <div className="mt-0.5 flex items-center gap-1.5">
-                          <span className="text-[10px] text-text-muted">
+                          <span className="text-xs text-text-muted">
                             {new Date(msg.timestamp).toLocaleTimeString("fr-FR", {
                               hour: "2-digit",
                               minute: "2-digit",

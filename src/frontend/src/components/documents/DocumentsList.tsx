@@ -93,7 +93,7 @@ function DocumentCard({ document, onOpen }: DocumentCardProps) {
       <div className="flex items-center gap-2 min-w-0">
         <p className="text-sm font-medium text-text truncate">{document.title}</p>
         <span
-          className={`shrink-0 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide rounded-sm border ${
+          className={`shrink-0 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide rounded-sm border ${
             isTermine
               ? 'text-success border-success/30 bg-success/10'
               : sansTrame

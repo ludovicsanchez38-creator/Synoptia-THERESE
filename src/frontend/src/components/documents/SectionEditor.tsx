@@ -255,7 +255,7 @@ export function SectionEditor({
             disabled={isStreaming}
             className="flex-1 min-w-0 px-2.5 py-1.5 bg-transparent text-lg font-semibold text-text focus:outline-none focus:bg-background/40 rounded-md transition-colors disabled:opacity-60"
           />
-          <span className={`shrink-0 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide rounded-sm border ${meta.className}`}>
+          <span className={`shrink-0 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide rounded-sm border ${meta.className}`}>
             {meta.label}
           </span>
         </div>
@@ -304,7 +304,7 @@ export function SectionEditor({
 
         {isValidee && section.summary && (
           <div className="mt-6 pt-4 border-t border-border/30">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-text-muted mb-1.5">Résumé</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-text-muted mb-1.5">Résumé</p>
             <p className="text-sm text-text-muted italic" data-testid="section-summary">
               {section.summary}
             </p>

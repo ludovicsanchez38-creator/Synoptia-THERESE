@@ -263,7 +263,7 @@ export function ProjectSyncSection({ projectId }: Props) {
                 <ul className="max-h-32 overflow-y-auto space-y-0.5">
                   {plan.operations.slice(0, 50).map((o) => (
                     <li key={o.id} className="truncate">
-                      <span className="uppercase text-[10px] mr-1">{o.type}</span>
+                      <span className="uppercase text-xs mr-1">{o.type}</span>
                       {o.chemin.split('/').pop()}
                     </li>
                   ))}
@@ -287,7 +287,7 @@ export function ProjectSyncSection({ projectId }: Props) {
               <ul className="max-h-24 overflow-y-auto">
                 {journal.map((o) => (
                   <li key={o.id} className="truncate">
-                    <span className="uppercase text-[10px] mr-1">{o.type}</span>
+                    <span className="uppercase text-xs mr-1">{o.type}</span>
                     {o.chemin.split('/').pop()}
                     <span className="ml-1">({o.etat}{o.erreur ? ` - ${o.erreur}` : ''})</span>
                   </li>

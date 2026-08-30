@@ -116,7 +116,7 @@ export function AdvisorCard({
         </div>
         {providerInfo && (
           <span
-            className="text-[10px] px-1.5 py-0.5 rounded-sm font-medium uppercase tracking-wide"
+            className="text-xs px-1.5 py-0.5 rounded-sm font-medium uppercase tracking-wide"
             style={{
               backgroundColor: `${providerInfo.color}20`,
               color: providerInfo.color,
