@@ -4074,8 +4074,10 @@ class TestBUG060_CRMHeaderHomogeneity:
 
     def test_icon_in_badge(self):
         content = self.CRM_PANEL_TSX.read_text(encoding="utf-8")
-        assert "w-10 h-10 rounded-[6px]" in content, (
-            "CRMPanel header doit avoir une pastille 10x10 au carré arrondi 6px (BUG-060 + DA 11/06)"
+        assert "w-10 h-10 rounded-sm" in content, (
+            "CRMPanel header doit avoir une pastille 10x10 au carré arrondi "
+            "(BUG-060 ; le rayon suit le jeton rounded-sm depuis le lot 3 du "
+            "30/08/2026, qui a ramené 26 rayons à trois)"
         )
 
 
@@ -4179,8 +4181,10 @@ class TestF15_ModelIndicatorUI:
 
     def test_pill_badge_styling(self):
         content = self.CHAT_INPUT_TSX.read_text(encoding="utf-8")
-        assert "rounded-[6px] bg-accent-cyan/10" in content, (
-            "L'indicateur de modèle doit être un tag carré avec fond cyan (F-15 + DA 11/06)"
+        assert "rounded-sm bg-accent-cyan/10" in content, (
+            "L'indicateur de modèle doit être un tag carré avec fond cyan "
+            "(F-15 ; le rayon suit le jeton rounded-sm depuis le lot 3 du "
+            "30/08/2026)"
         )
 
     def test_model_selector_dropdown(self):
