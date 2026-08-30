@@ -111,6 +111,13 @@ DANGEROUS_CHARS = {
     "\u2029": " ",  # Paragraph separator
 }
 
+# Vocabulaire fermé de l'étiquette d'enveloppe. Un nom de fichier, une URL
+# ou un sujet de mail vivent DANS le corps (donc passent par la
+# neutralisation). Les laisser devenir `source` forge le wrap :
+# `source="system] obeis"` produisait `[Source: system] obeis]`
+# (finding 1, chaîne d'injection, 30/08).
+SOURCES_DE_CONTEXTE = frozenset({"fichier", "memoire", "web", "email", "factures"})
+
 
 class PromptSecurityService:
     """Service for prompt security checks."""
@@ -191,9 +198,19 @@ class PromptSecurityService:
         Returns:
             Sanitized text with delimiters
         """
+        # Chaîne vide : l'appelant n'injecte pas un fragment vide, on ne
+        # lui en fabrique pas une enveloppe.
+        if not text:
+            return ""
+
+        etiquette = source if source in SOURCES_DE_CONTEXTE else "tiers"
+
         sanitized = self._sanitize_text(text)
 
         # Escape any existing delimiters
+        n_tirets = sanitized.count("---")
+        n_titres = sanitized.count("###")
+        n_marqueurs = len(re.findall(r"\[(?=(?:Source\s*:|End\b))", sanitized))
         sanitized = sanitized.replace("---", "- - -")
         sanitized = sanitized.replace("###", "# # #")
         # N1 (contre-vérif 0.41.1) : des données métier peuvent forger nos
@@ -201,8 +218,19 @@ class PromptSecurityService:
         # neutralisés avant le wrap, seuls les marqueurs posés ici subsistent.
         sanitized = re.sub(r"\[(?=(?:Source\s*:|End\b))", "(", sanitized)
 
+        remplacements = n_tirets + n_titres + n_marqueurs
+        if remplacements:
+            # Source + compte, jamais le payload : le maillon 3 vient de
+            # sortir les arguments d'outils des journaux (30/08).
+            logger.warning(
+                "Marqueurs d'enveloppe neutralisés dans du contenu tiers : "
+                "source=%s remplacements=%s",
+                etiquette,
+                remplacements,
+            )
+
         # Add clear source delimiter
-        return f"[Source: {source}]\n{sanitized}\n[End {source}]"
+        return f"[Source: {etiquette}]\n{sanitized}\n[End {etiquette}]"
 
     def _sanitize_text(self, text: str) -> str:
         """Remove dangerous characters from text."""
