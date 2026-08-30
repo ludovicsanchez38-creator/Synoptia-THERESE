@@ -33,10 +33,9 @@ sont protégés par un test. **Les accents, non — et le test ne les regarde pa
 **La valeur qui répare existe déjà dans le fichier** : `--agent-cyan: #0E7490`
 passe à 4,95:1 sur le fond et 4,70:1 sur la teinte.
 
-**L'ironie du dossier** : `#2451FF`, le bleu primaire de la charte, est le
-**seul** accent de la marque qui passe AA en texte sur le thème clair
-(5,25:1). Il n'existe comme jeton nulle part. L'identité a été construite sur
-la couleur qui ne peut pas servir de texte dans le thème par défaut.
+Note de cadrage : `#2451FF` passerait AA en texte sur le thème clair
+(5,25:1). Ce n'est plus un argument d'identité (voir l'arbitrage ci-dessous),
+mais ça reste une valeur disponible si on cherche une couleur d'action lisible.
 
 ## Ce que le test d'accessibilité ne voit pas
 
@@ -45,6 +44,31 @@ la couleur qui ne peut pas servir de texte dans le thème par défaut.
 `accent`, `cyan`, `magenta` ou du ring**, et son analyseur n'extrait pas les
 teintes sombres en `rgba()`. Il donne une assurance en ne regardant pas là où
 ça casse.
+
+## Arbitrage de Ludo, 30/08 : THÉRÈSE ne porte PAS la charte Synoptïa
+
+**Décision produit, actée.** THÉRÈSE est un produit avec son identité propre.
+La charte Synoptïa (navy `#0B1226`, primaire `#2451FF`, cyan, magenta) sert la
+marque de l'entreprise et ses documents, pas cette application.
+
+Ce que ça retire du plan :
+
+- L'absence de `#2451FF` **n'est pas un défaut**. Le compter comme tel était
+  une erreur de cadrage de ma part.
+- Le navy absent du thème clair, le magenta par éclats : **pas des défauts**.
+- La question « est-ce reconnaissable comme du Synoptïa sans logo ? » **ne se
+  pose pas**.
+
+Ce que ça ne retire pas, et c'est l'essentiel :
+
+- **Les contrastes qui échouent restent des bugs.** 1,18:1 est illisible quelle
+  que soit la marque.
+- **Deux langages d'action concurrents restent une incohérence interne**, même
+  sans référence externe.
+- Un test qui donne une assurance fausse reste un test qui ment.
+
+La question du lot 2 se reformule : non plus « quelle couleur de marque »,
+mais **« quelle langue, la sienne, THÉRÈSE parle-t-elle »**.
 
 ## Quatre documents décrivent quatre produits
 
@@ -128,19 +152,17 @@ compter gonfle le problème.
 - L'échelle d'espacement : elle est tenue, zéro arbitraire. Ce n'est pas le
   chantier.
 
-## L'arbitrage qui n'est pas technique, et qui bloque le lot 2
+## L'arbitrage qui reste, et qui bloque le lot 2
 
-**Le produit est-il le sombre « Signature », ou le clair par défaut ?**
+**Quelle langue THÉRÈSE parle-t-elle, la sienne ?**
 
-- Si c'est le sombre : le clair devient un mode d'accessibilité, et le navy
-  `#0B1226`, le cyan et le magenta redeviennent la marque.
-- Si c'est le clair : l'identité passe par le bleu `#2451FF` en texte et en
-  fond, le cyan en filet, focus et remplissage avec encre sombre, le magenta
-  en badge rare.
+Deux boutons d'action primaire coexistent d'un écran à l'autre : la pilule
+encre de la coque et le bouton brutaliste de `Button.tsx`. Il faut en choisir
+un et l'appliquer partout. C'est un choix de goût, pas de technique, et il
+appartient à Ludo.
 
-Aujourd'hui, un utilisateur qui ne touche jamais au réglage de thème **ne voit
-pas Synoptïa** : le navy n'existe qu'en sombre, le magenta par éclats, et le
-bleu primaire nulle part.
+Le thème par défaut (clair) et le thème sombre restent tous deux à supporter :
+ce n'est plus une question d'identité de marque, mais l'Atelier prouve que le
+clair est aujourd'hui traité comme optionnel, et il ne l'est pas.
 
-Cette décision appartient à Ludo. Le lot 1 ne l'attend pas : il faut d'abord
-savoir quelle couleur d'accent **peut** porter l'identité.
+Le lot 1 n'attend pas cette décision.
