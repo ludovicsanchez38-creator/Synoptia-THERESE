@@ -115,9 +115,77 @@ class OpenAIProvider(BaseProvider):
         if self.config.effort_resolu:
             request_body["reasoning_effort"] = self.config.effort_resolu
 
+        # 30/08/2026 : sur /v1/chat/completions, la famille GPT-5 refuse les
+        # outils de fonction dès qu'un effort de raisonnement s'applique.
+        # L'API le dit mot pour mot :
+        #
+        #   Function tools with reasoning_effort are not supported for
+        #   gpt-5.6-luna in /v1/chat/completions. To use function tools, use
+        #   /v1/responses or set reasoning_effort to 'none'.
+        #
+        # OMETTRE le paramètre ne suffit PAS : le modèle a un effort par
+        # défaut, et le refus tombe quand même. Il faut le poser à « none ».
+        # Vérifié contre l'API réelle sur luna, sol, terra, 5.5 et 5.4-mini :
+        # les cinq refusaient. Comme THÉRÈSE fournit ses outils à CHAQUE
+        # message, aucun modèle OpenAI ne fonctionnait, sur aucun écran.
+        #
+        # L'arbitrage : les outils sont le produit, le raisonnement est un
+        # réglage. Sans outil, l'effort demandé part normalement.
+        if tools and _uses_max_completion_tokens(self.config.model):
+            if request_body.get("reasoning_effort") not in (None, "none"):
+                logger.info(
+                    "%s : effort %s neutralisé pour ce message, les outils et le "
+                    "raisonnement ne cohabitent pas sur /v1/chat/completions",
+                    self.config.model,
+                    request_body["reasoning_effort"],
+                )
+            request_body["reasoning_effort"] = "none"
+
         return request_body
 
     async def _stream_request(
+        self, request_body: dict[str, Any]
+    ) -> AsyncGenerator[StreamEvent, None]:
+        """Une tentative, et UN rejeu sans reasoning_effort si l'API le refuse.
+
+        Le 30/08/2026, une instance neuve sur gpt-5.6-luna répondait
+        `API error: 400` à TOUT message. L'API disait :
+
+            Function tools with reasoning_effort are not supported for
+            gpt-5.6-luna in /v1/chat/completions. To use function tools, use
+            /v1/responses or set reasoning_effort to 'none'.
+
+        THÉRÈSE fournit 29 outils à chaque message ET un effort : le produit
+        était inutilisable avec ce modèle, sur tous les écrans. On avait
+        d'abord cru à un défaut de la pièce jointe, parce que c'est là que
+        Ludo l'avait vu.
+
+        Ce repli existait chez GrokProvider seulement, pour un conflit de
+        documentation sur grok-4.6. Il vit désormais ici, donc il couvre
+        OpenAI et les cinq fournisseurs compatibles qui en héritent.
+
+        Après le début du flux, jamais de rejeu : dupliquer des jetons déjà
+        rendus à l'écran serait pire que l'erreur.
+        """
+        emis = 0
+        try:
+            async for event in self._une_tentative(request_body):
+                emis += 1
+                yield event
+        except httpx.HTTPStatusError as e:
+            if emis or e.response.status_code != 400 or "reasoning_effort" not in request_body:
+                raise
+            logger.warning(
+                "%s a refusé reasoning_effort=%s (400) : seconde tentative sans "
+                "le paramètre",
+                type(self).__name__,
+                request_body["reasoning_effort"],
+            )
+            corps = {k: v for k, v in request_body.items() if k != "reasoning_effort"}
+            async for event in self._une_tentative(corps):
+                yield event
+
+    async def _une_tentative(
         self, request_body: dict[str, Any]
     ) -> AsyncGenerator[StreamEvent, None]:
         """UNE tentative de streaming sur le corps donné (0.48).

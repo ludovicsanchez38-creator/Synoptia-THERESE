@@ -68,20 +68,25 @@ class TestQwenSeConfigureDeBoutEnBout:
 
     def test_stream_appelle_url_effective(self):
         """Le contrat de câblage : la requête doit passer par url_effective(),
-        sinon la configuration reste décorative. Depuis 0.48 l'appel réseau
-        vit dans _stream_request (extrait pour le repli Grok) - le contrat
-        se vérifie sur le POINT D'ÉMISSION, pas sur le délégant."""
+        sinon la configuration reste décorative. Le contrat se vérifie sur le
+        POINT D'ÉMISSION, pas sur le délégant.
+
+        Le 30/08/2026 ce point a été renommé `_une_tentative` : `_stream_request`
+        est devenu la couche qui rejoue sans reasoning_effort quand l'API refuse
+        la combinaison outils + effort. Le test suit le point d'émission, il ne
+        fige pas un nom."""
         import inspect
 
         from app.services.providers.openai import OpenAIProvider
 
-        source = inspect.getsource(OpenAIProvider._stream_request)
+        source = inspect.getsource(OpenAIProvider._une_tentative)
         assert "url_effective()" in source, (
-            "OpenAIProvider._stream_request doit appeler self.url_effective() : "
+            "OpenAIProvider._une_tentative doit appeler self.url_effective() : "
             "API_URL en dur rend base_url décoratif pour tous les héritiers"
         )
-        # Et stream() délègue bien à ce point d'émission unique.
+        # La chaîne complète : stream() -> _stream_request() -> _une_tentative().
         assert "_stream_request" in inspect.getsource(OpenAIProvider.stream)
+        assert "_une_tentative" in inspect.getsource(OpenAIProvider._stream_request)
 
 
 class TestLeCatalogueEstServiParLeBackend:

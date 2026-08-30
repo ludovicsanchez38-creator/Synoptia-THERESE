@@ -14,12 +14,7 @@ Avant US-009, ce provider ignorait les tools et la continuation était un stub :
 """
 
 import logging
-from collections.abc import AsyncGenerator
-from typing import Any
 
-import httpx
-
-from .base import StreamEvent
 from .openai import OpenAIProvider
 
 logger = logging.getLogger(__name__)
@@ -32,37 +27,7 @@ class GrokProvider(OpenAIProvider):
 
     API_URL = GROK_API_URL
 
-    async def _stream_request(
-        self, request_body: dict[str, Any]
-    ) -> AsyncGenerator[StreamEvent, None]:
-        """Repli 0.48 : conflit de doc sur reasoning_effort=xhigh (grok-4.6).
-
-        Si l'API refuse le paramètre par un 400 AVANT tout event, UNE
-        seconde tentative part avec le corps copié sans le champ. Après un
-        début de flux, jamais de rejeu (duplication interdite) : l'erreur
-        suit la voie normale.
-        """
-        emis = 0
-        try:
-            async for event in super()._stream_request(request_body):
-                emis += 1
-                yield event
-        except httpx.HTTPStatusError as e:
-            if (
-                emis == 0
-                and e.response.status_code == 400
-                and "reasoning_effort" in request_body
-            ):
-                logger.warning(
-                    "Grok a refusé reasoning_effort=%s (400) : "
-                    "seconde tentative sans le paramètre",
-                    request_body["reasoning_effort"],
-                )
-                corps = {
-                    k: v for k, v in request_body.items()
-                    if k != "reasoning_effort"
-                }
-                async for event in super()._stream_request(corps):
-                    yield event
-            else:
-                raise
+    # Le repli « 400 sur reasoning_effort -> rejeu sans le paramètre » vivait
+    # ici. Il est remonté chez OpenAIProvider le 30/08/2026 : le même refus
+    # frappait gpt-5.6-luna, et cinq fournisseurs héritent de cette classe
+    # sans en profiter. Grok en hérite maintenant comme les autres.
