@@ -72,7 +72,7 @@ function HighlightedPrompt({ text }: { text: string }) {
         part.startsWith('{') && part.endsWith('}') ? (
           <span
             key={i}
-            className="inline-block bg-accent-cyan/20 text-accent-cyan-ink px-1 rounded-sm font-medium"
+            className="inline-block bg-accent-tint text-accent-cyan-ink px-1 rounded-sm font-medium"
           >
             {part}
           </span>
@@ -122,7 +122,7 @@ function PromptCard({
         <div className="flex items-center gap-1 flex-shrink-0">
           <button
             onClick={handleCopy}
-            className="p-1.5 rounded-md text-text-muted hover:text-accent-cyan-ink hover:bg-accent-cyan/10 transition-colors opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+            className="p-1.5 rounded-md text-text-muted hover:text-accent-cyan-ink hover:bg-accent-tint transition-colors opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
             title="Copier le prompt"
           >
             {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
@@ -134,7 +134,7 @@ function PromptCard({
               e.stopPropagation();
               onSelect(prompt);
             }}
-            className="text-xs text-accent-cyan-ink hover:bg-accent-cyan/10 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+            className="text-xs text-accent-cyan-ink hover:bg-accent-tint opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
           >
             Utiliser
           </Button>

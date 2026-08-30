@@ -165,7 +165,7 @@
   --color-accent: #22D3EE;
   --color-accent-fill: #22D3EE;
   --color-accent-ink: #06121F;
-  --color-accent-tint: rgba(34, 211, 238, 0.12);
+  --color-accent-tint: #15314B;
   --color-ring: #22D3EE;
 
   /* Identité des agents de l'Atelier (BUG-150) : vives sur fond sombre */
@@ -177,20 +177,24 @@
   --color-agent-amber: #FBBF24;
 
   /* Domaines, thème sombre (k1..k4 de la direction « Signature »). */
+  /* Teintes opaques, composées sur --color-surface : une teinte translucide
+     laisse passer la couche du dessous et rend le contraste imprévisible. */
   --color-domaine-agenda: #22D3EE;
-  --color-domaine-agenda-tint: rgba(34, 211, 238, 0.13);
+  --color-domaine-agenda-tint: #15334D;
   --color-domaine-taches: #F59E0B;
-  --color-domaine-taches-tint: rgba(245, 158, 11, 0.13);
-  --color-domaine-factures: #F0509F;
-  --color-domaine-factures-tint: rgba(240, 80, 159, 0.13);
+  --color-domaine-taches-tint: #302C30;
+  /* #F0509F ne donnait que 4,43:1 sur sa propre teinte opaque. */
+  --color-domaine-factures: #F472B6;
+  --color-domaine-factures-tint: #302646;
   --color-domaine-prospects: #C084FC;
-  --color-domaine-prospects-tint: rgba(192, 132, 252, 0.13);
+  --color-domaine-prospects-tint: #29294F;
 
   /* Sémantiques - vives sur fond sombre (US-013 : info éclairci pour AA,
      #3B82F6 sur #0B1226 ≈ 4.0:1 limite) */
   --color-success: #10B981;
   --color-warning: #F59E0B;
-  --color-error: #EF4444;
+  /* #EF4444 ne donnait que 4,02:1 sur sa propre teinte. */
+  --color-error: #F87171;
   --color-info: #60A5FA;
   --color-success-fill: #34D399;
   --color-success-ink: #06121F;
@@ -215,10 +219,14 @@
   --glow-magenta-shadow: 0 0 20px rgba(225, 29, 141, 0.15), 0 0 40px rgba(225, 29, 141, 0.1), inset 0 0 20px rgba(225, 29, 141, 0.05);
 
   /* Accents KPI / catégories (sombre Signature) */
-  --color-success-tint: rgba(16, 185, 129, 0.13);
-  --color-warning-tint: rgba(245, 158, 11, 0.13);
-  --color-error-tint: rgba(239, 68, 68, 0.13);
-  --color-info-tint: rgba(96, 165, 250, 0.13);
+  /* Teintes opaques, composées sur --color-surface. Translucides, elles
+     laissaient passer ce qu'il y avait dessous : un badge « local » vert
+     posé sur un panneau teinté cyan tombait à 4,42:1 alors que le jeton
+     seul passait. Le contraste ne doit pas dépendre de la couche du dessous. */
+  --color-success-tint: #13303F;
+  --color-warning-tint: #302C30;
+  --color-error-tint: #302037;
+  --color-info-tint: #1D2D4F;
 
   /* DA boutons brutaliste - déclinaison sombre : encre claire, ombre cyan */
   --btn-ink: #E6EDF7;

@@ -374,7 +374,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
               onClick={() => setViewMode(mode)}
               className={`px-3 py-1 text-sm rounded-sm transition-colors ${
                 viewMode === mode
-                  ? 'bg-accent-cyan/20 text-accent-cyan-ink'
+                  ? 'bg-accent-tint text-accent-cyan-ink'
                   : 'text-text-muted hover:text-text'
               }`}
             >

@@ -212,7 +212,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
             className={cn(
               'px-3 py-1 rounded-md text-sm transition-colors',
               (type === 'all' && !filters.document_type) || filters.document_type === type
-                ? 'bg-accent-cyan/20 text-accent-cyan-ink'
+                ? 'bg-accent-tint text-accent-cyan-ink'
                 : 'text-text-muted hover:bg-surface-elevated'
             )}
           >

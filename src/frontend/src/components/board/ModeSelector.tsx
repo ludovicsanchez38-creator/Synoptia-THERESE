@@ -68,7 +68,7 @@ export function ModeSelector({ mode, onChange, ollamaAvailable, onRefreshOllama 
         <button
           onClick={onRefreshOllama}
           title="Vérifier Ollama"
-          className="p-1.5 rounded-md text-text-muted hover:text-accent-cyan-ink hover:bg-accent-cyan/10 transition-colors"
+          className="p-1.5 rounded-md text-text-muted hover:text-accent-cyan-ink hover:bg-accent-tint transition-colors"
         >
           <RefreshCw className="w-3.5 h-3.5" />
         </button>

@@ -245,7 +245,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                   'w-full flex items-center gap-3 px-4 py-2.5',
                   'text-left transition-all duration-150',
                   index === selectedIndex
-                    ? 'bg-accent-cyan/10 text-accent-cyan-ink shadow-[inset_0_0_20px_rgba(34,211,238,0.05)]'
+                    ? 'bg-accent-tint text-accent-cyan-ink shadow-[inset_0_0_20px_rgba(34,211,238,0.05)]'
                     : 'hover:bg-surface-elevated/50 text-text'
                 )}
                 onClick={() => cmd.action()}

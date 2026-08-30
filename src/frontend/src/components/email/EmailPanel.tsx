@@ -282,7 +282,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                           <button
                             onClick={() => switchAccount(acc.id)}
                             className={`flex-1 text-left px-3 py-2 text-sm hover:bg-border/20 transition-colors ${
-                              acc.id === currentAccountId ? 'text-accent-cyan-ink bg-accent-cyan/5' : 'text-text-muted'
+                              acc.id === currentAccountId ? 'text-accent-cyan-ink bg-accent-tint' : 'text-text-muted'
                             }`}
                           >
                             {acc.email}
@@ -426,7 +426,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                         onClick={() => setCurrentLabel(label.id)}
                         className={`w-full flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
                           isActive
-                            ? 'bg-accent-cyan/10 text-accent-cyan-ink'
+                            ? 'bg-accent-tint text-accent-cyan-ink'
                             : 'hover:bg-border/20 text-text-muted'
                         }`}
                       >
@@ -449,7 +449,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                               onClick={() => setCurrentLabel(label.id)}
                               className={`w-full flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
                                 isActive
-                                  ? 'bg-accent-cyan/10 text-accent-cyan-ink'
+                                  ? 'bg-accent-tint text-accent-cyan-ink'
                                   : 'hover:bg-border/20 text-text-muted'
                               }`}
                             >
@@ -538,7 +538,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                           <button
                             onClick={() => switchAccount(acc.id)}
                             className={`flex-1 text-left px-3 py-2 text-sm hover:bg-border/20 transition-colors ${
-                              acc.id === currentAccountId ? 'text-accent-cyan-ink bg-accent-cyan/5' : 'text-text-muted'
+                              acc.id === currentAccountId ? 'text-accent-cyan-ink bg-accent-tint' : 'text-text-muted'
                             }`}
                           >
                             {acc.email}
@@ -682,7 +682,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                         onClick={() => setCurrentLabel(label.id)}
                         className={`w-full flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
                           isActive
-                            ? 'bg-accent-cyan/10 text-accent-cyan-ink'
+                            ? 'bg-accent-tint text-accent-cyan-ink'
                             : 'hover:bg-border/20 text-text-muted'
                         }`}
                       >
@@ -706,7 +706,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
                               onClick={() => setCurrentLabel(label.id)}
                               className={`w-full flex items-center gap-3 px-3 py-2 rounded-md transition-colors ${
                                 isActive
-                                  ? 'bg-accent-cyan/10 text-accent-cyan-ink'
+                                  ? 'bg-accent-tint text-accent-cyan-ink'
                                   : 'hover:bg-border/20 text-text-muted'
                               }`}
                             >

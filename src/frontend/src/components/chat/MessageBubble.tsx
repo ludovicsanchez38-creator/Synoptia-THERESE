@@ -304,7 +304,7 @@ export const MessageBubble = memo(function MessageBubble({
           'w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0 transition-all',
           isUser
             ? 'bg-accent-magenta/20 text-accent-magenta-ink shadow-[0_0_12px_rgba(225,29,141,0.2)]'
-            : 'bg-accent-cyan/20 text-accent-cyan-ink shadow-[0_0_12px_rgba(34,211,238,0.2)]'
+            : 'bg-accent-tint text-accent-cyan-ink shadow-[0_0_12px_rgba(34,211,238,0.2)]'
         )}
       >
         {isUser ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}

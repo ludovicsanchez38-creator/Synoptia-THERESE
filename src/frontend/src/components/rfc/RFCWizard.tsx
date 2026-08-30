@@ -161,7 +161,7 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
                     // graisse. Avant le 30/08/2026 la distinction venait d'une
                     // opacité sur l'étape passée, qui la faisait repasser sous
                     // le seuil de lisibilité.
-                    isActive && 'bg-accent-cyan/15 font-semibold text-accent-cyan-ink',
+                    isActive && 'bg-accent-tint font-semibold text-accent-cyan-ink',
                     isPast && 'text-accent-cyan-ink',
                     !isActive && !isPast && 'text-text-muted',
                   )}

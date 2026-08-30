@@ -97,7 +97,7 @@ export function ChoiceStep({ onSelect, mcpCredentials }: ChoiceStepProps) {
           className="relative p-6 bg-background/40 border-2 border-accent-cyan/30 rounded-md hover:border-accent-cyan/60 transition-all group text-left"
         >
           <div className="absolute top-3 right-3">
-            <span className="px-2 py-1 text-xs font-medium bg-accent-cyan/20 text-accent-cyan-ink rounded-sm">
+            <span className="px-2 py-1 text-xs font-medium bg-accent-tint text-accent-cyan-ink rounded-sm">
               Recommandé
             </span>
           </div>

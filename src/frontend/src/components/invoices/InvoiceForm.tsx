@@ -459,7 +459,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                     className={cn(
                       'px-4 py-2 rounded-md text-sm font-medium transition-colors',
                       documentType === type
-                        ? 'bg-accent-cyan/20 text-accent-cyan-ink border border-accent-cyan/50'
+                        ? 'bg-accent-tint text-accent-cyan-ink border border-accent-cyan/50'
                         : 'bg-surface border border-border/50 text-text-muted hover:bg-surface-elevated'
                     )}
                   >
@@ -628,7 +628,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
               <button
                 type="button"
                 onClick={addLine}
-                className="px-3 py-1 rounded-md bg-accent-cyan/20 text-accent-cyan-ink hover:bg-accent-cyan/30 transition-colors flex items-center gap-2"
+                className="px-3 py-1 rounded-md bg-accent-tint text-accent-cyan-ink hover:bg-accent-tint transition-colors flex items-center gap-2"
               >
                 <Plus className="w-4 h-4" />
                 Ajouter une ligne

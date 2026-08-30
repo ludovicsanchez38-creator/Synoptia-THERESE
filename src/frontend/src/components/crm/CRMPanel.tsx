@@ -159,7 +159,7 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
 
         <button
           onClick={() => setShowCreateForm(true)}
-          className="flex items-center gap-2 px-3 py-2 bg-accent-cyan/10 hover:bg-accent-cyan/20 text-accent-cyan-ink rounded-md transition-colors text-sm font-medium"
+          className="flex items-center gap-2 px-3 py-2 bg-accent-tint hover:bg-accent-tint text-accent-cyan-ink rounded-md transition-colors text-sm font-medium"
         >
           <UserPlus className="w-4 h-4" />
           Ajouter un contact
@@ -258,7 +258,7 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
                 </div>
                 <button
                   onClick={() => setShowAddActivity(true)}
-                  className="flex items-center gap-2 px-3 py-2 bg-accent-cyan/10 hover:bg-accent-cyan/20 text-accent-cyan-ink rounded-md transition-colors text-sm font-medium"
+                  className="flex items-center gap-2 px-3 py-2 bg-accent-tint hover:bg-accent-tint text-accent-cyan-ink rounded-md transition-colors text-sm font-medium"
                 >
                   <Plus className="w-4 h-4" />
                   Ajouter une activité
@@ -624,7 +624,7 @@ function GlobalActivityView({ contacts }: { contacts: ContactResponse[] }) {
               onClick={() => setFilter(chip.id)}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-sm font-medium transition-colors ${
                 isActive
-                  ? 'bg-accent-cyan/20 text-accent-cyan-ink'
+                  ? 'bg-accent-tint text-accent-cyan-ink'
                   : 'bg-surface text-text-muted hover:bg-surface-elevated'
               }`}
             >
@@ -794,7 +794,7 @@ function AddActivityModal({ contactId, onClose, onCreated }: AddActivityModalPro
                     onClick={() => setType(at.id)}
                     className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                       isActive
-                        ? 'bg-accent-cyan/20 text-accent-cyan-ink'
+                        ? 'bg-accent-tint text-accent-cyan-ink'
                         : 'bg-background text-text-muted hover:bg-background/80'
                     }`}
                   >

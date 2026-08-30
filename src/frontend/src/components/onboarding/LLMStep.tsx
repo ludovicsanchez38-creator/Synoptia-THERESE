@@ -310,7 +310,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm font-medium text-text">{provider.name}</span>
                   {provider.id === 'anthropic' && (
-                    <span className="px-2 py-0.5 rounded-sm text-xs font-medium bg-accent-cyan/20 text-accent-cyan-ink">
+                    <span className="px-2 py-0.5 rounded-sm text-xs font-medium bg-accent-tint text-accent-cyan-ink">
                       Recommandé
                     </span>
                   )}

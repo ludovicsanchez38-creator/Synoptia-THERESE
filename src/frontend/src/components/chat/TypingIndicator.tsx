@@ -10,7 +10,7 @@ export function TypingIndicator() {
       className="flex gap-3"
     >
       {/* Avatar with glow */}
-      <div className="w-8 h-8 rounded-md bg-accent-cyan/20 text-accent-cyan-ink flex items-center justify-center flex-shrink-0 shadow-[0_0_12px_rgba(34,211,238,0.3)]">
+      <div className="w-8 h-8 rounded-md bg-accent-tint text-accent-cyan-ink flex items-center justify-center flex-shrink-0 shadow-[0_0_12px_rgba(34,211,238,0.3)]">
         <Bot className="w-4 h-4" />
       </div>
 

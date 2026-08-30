@@ -86,13 +86,15 @@ describe('lot 5 : plus une seule couleur brute', () => {
     expect(fautifs, `${fautifs.length} couleurs, ex. ${fautifs.slice(0, 3).join(' | ')}`).toEqual([]);
   });
 
-  it.each(DOMAINES)('le domaine %s est lisible sur sa propre teinte', (nom) => {
-    const encre = CLAIR[`domaine-${nom}`];
-    const teinte = CLAIR[`domaine-${nom}-tint`];
-    expect(encre, `--color-domaine-${nom} absent`).toBeTruthy();
-    expect(teinte, `--color-domaine-${nom}-tint absent`).toBeTruthy();
-    expect(contraste(encre, teinte)).toBeGreaterThanOrEqual(4.5);
-    expect(contraste(encre, CLAIR['bg'])).toBeGreaterThanOrEqual(4.5);
+  it.each(DOMAINES)('le domaine %s est lisible sur sa propre teinte, dans les deux thèmes', (nom) => {
+    for (const [theme, jetons] of [['clair', CLAIR], ['sombre', SOMBRE]] as const) {
+      const encre = jetons[`domaine-${nom}`];
+      const teinte = jetons[`domaine-${nom}-tint`];
+      expect(encre, `--color-domaine-${nom} absent du thème ${theme}`).toBeTruthy();
+      expect(teinte, `--color-domaine-${nom}-tint absent du thème ${theme}`).toBeTruthy();
+      expect(contraste(encre, teinte), `${nom} sur sa teinte (${theme})`).toBeGreaterThanOrEqual(4.5);
+      expect(contraste(encre, jetons['bg']), `${nom} sur le fond (${theme})`).toBeGreaterThanOrEqual(4.5);
+    }
   });
 
   it('les couleurs de domaine sont réellement portées par une surface', () => {

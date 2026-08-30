@@ -53,7 +53,7 @@ export function AccessibilityTab() {
               onKeyDown={(event) => handleRovingFocus(event, '[role="radio"]', 'horizontal')}
               className={`flex-1 py-2 px-3 rounded-md border text-sm transition-colors flex items-center justify-center gap-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan ${
                 theme === v
-                  ? 'bg-accent-cyan/20 border-accent-cyan text-accent-cyan-ink'
+                  ? 'bg-accent-tint border-accent-cyan text-accent-cyan-ink'
                   : 'bg-background/40 border-border/30 text-text-muted hover:border-border'
               }`}
             >
@@ -107,7 +107,7 @@ export function AccessibilityTab() {
               onKeyDown={(event) => handleRovingFocus(event, '[role="radio"]', 'horizontal')}
               className={`flex-1 py-2 px-3 rounded-md border text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan ${
                 fontSize === size
-                  ? 'bg-accent-cyan/20 border-accent-cyan text-accent-cyan-ink'
+                  ? 'bg-accent-tint border-accent-cyan text-accent-cyan-ink'
                   : 'bg-background/40 border-border/30 text-text-muted hover:border-border'
               }`}
             >

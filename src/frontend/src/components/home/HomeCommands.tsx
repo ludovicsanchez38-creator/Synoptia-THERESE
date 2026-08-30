@@ -264,7 +264,7 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
                             setShowMoveMenuId(showMoveMenuId === cmd.id ? null : cmd.id);
                             setConfirmDeleteId(null);
                           }}
-                          className="p-1 rounded-sm hover:bg-accent-cyan/15 text-text-muted hover:text-accent-cyan-ink transition-colors"
+                          className="p-1 rounded-sm hover:bg-accent-tint text-text-muted hover:text-accent-cyan-ink transition-colors"
                           title="Déplacer"
                         >
                           <ArrowRightLeft className="w-3 h-3" />
@@ -279,7 +279,7 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
                                   e.stopPropagation();
                                   handleMoveCommand(cmd.id, cat.id);
                                 }}
-                                className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-text hover:bg-accent-cyan/10 hover:text-accent-cyan-ink transition-colors"
+                                className="w-full flex items-center gap-2 px-3 py-1.5 text-sm text-text hover:bg-accent-tint hover:text-accent-cyan-ink transition-colors"
                               >
                                 <cat.icon className="w-3.5 h-3.5" />
                                 {cat.title}

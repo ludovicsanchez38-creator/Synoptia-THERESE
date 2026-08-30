@@ -134,7 +134,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
             onClick={() => setViewMode('kanban')}
             className={`p-2 rounded-sm transition-colors ${
               viewMode === 'kanban'
-                ? 'bg-accent-cyan/20 text-accent-cyan-ink'
+                ? 'bg-accent-tint text-accent-cyan-ink'
                 : 'text-text-muted hover:text-text'
             }`}
             title="Kanban"
@@ -145,7 +145,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
             onClick={() => setViewMode('list')}
             className={`p-2 rounded-sm transition-colors ${
               viewMode === 'list'
-                ? 'bg-accent-cyan/20 text-accent-cyan-ink'
+                ? 'bg-accent-tint text-accent-cyan-ink'
                 : 'text-text-muted hover:text-text'
             }`}
             title="Liste"
@@ -158,7 +158,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
           variant="ghost"
           size="sm"
           onClick={() => setShowFilters(!showFilters)}
-          className={showFilters ? 'bg-accent-cyan/20 text-accent-cyan-ink' : ''}
+          className={showFilters ? 'bg-accent-tint text-accent-cyan-ink' : ''}
         >
           <Filter className="w-4 h-4" />
         </Button>

@@ -354,7 +354,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
       </div>
 
       {/* Breadcrumb */}
-      <div className="flex items-center gap-1 px-3 py-2 text-xs text-text-muted overflow-x-auto border-b border-border/30">
+      <div className="flex items-center gap-1 px-3 py-2 text-sm text-text-muted overflow-x-auto border-b border-border/30">
         <button
           onClick={goHome}
           className="hover:text-accent-cyan-ink transition-colors"

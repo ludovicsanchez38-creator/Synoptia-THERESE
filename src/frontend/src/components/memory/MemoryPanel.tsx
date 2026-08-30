@@ -303,7 +303,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                       onClick={() => setScopeFilter(scope)}
                       className={`px-2.5 py-1 text-sm font-medium rounded-sm transition-colors ${
                         scopeFilter === scope
-                          ? 'bg-accent-cyan/20 text-accent-cyan-ink border border-accent-cyan/50'
+                          ? 'bg-accent-tint text-accent-cyan-ink border border-accent-cyan/50'
                           : 'bg-background/40 text-text-muted hover:bg-background/60 border border-transparent'
                       }`}
                     >
@@ -703,7 +703,7 @@ function ContactsList({
             <div className="relative">
               <button
                 onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === contact.id ? null : contact.id); }}
-                className="p-1.5 rounded-md hover:bg-accent-cyan/20 text-text-muted hover:text-accent-cyan-ink transition-colors"
+                className="p-1.5 rounded-md hover:bg-accent-tint text-text-muted hover:text-accent-cyan-ink transition-colors"
                 title="Actions RGPD"
               >
                 <Shield className="w-4 h-4" />

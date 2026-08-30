@@ -265,17 +265,26 @@ describe('lot 1 : les accents lisibles', () => {
     // la surface, jamais à la teinte sur laquelle elle s'affiche réellement.
     const PAIRES: [string, string][] = [
       ['accent', 'accent-tint'],
+      ['success', 'success-tint'],
+      ['warning', 'warning-tint'],
+      ['error', 'error-tint'],
+      ['info', 'info-tint'],
       ['domaine-agenda', 'domaine-agenda-tint'],
       ['domaine-taches', 'domaine-taches-tint'],
       ['domaine-factures', 'domaine-factures-tint'],
       ['domaine-prospects', 'domaine-prospects-tint'],
     ];
-    for (const [encre, teinte] of PAIRES) {
-      const c = LIGHT_ALL[encre];
-      const f = LIGHT_ALL[teinte];
-      expect(c, `--color-${encre} absent`).toBeTruthy();
-      expect(f, `--color-${teinte} absent`).toBeTruthy();
-      expect(contrast(c, f), `${encre} sur ${teinte}`).toBeGreaterThanOrEqual(4.5);
+    // Les deux thèmes : une teinte translucide en sombre laissait passer la
+    // couche du dessous et faisait tomber un badge à 4,42:1 alors que le
+    // jeton seul passait. Elles sont opaques depuis le 30/08/2026.
+    for (const [nomTheme, jetons] of [['clair', LIGHT_ALL], ['sombre', DARK]] as const) {
+      for (const [encre, teinte] of PAIRES) {
+        const c = jetons[encre];
+        const f = jetons[teinte];
+        expect(c, `--color-${encre} absent du thème ${nomTheme}`).toBeTruthy();
+        expect(f, `--color-${teinte} absent du thème ${nomTheme}`).toBeTruthy();
+        expect(contrast(c, f), `${encre} sur ${teinte} (${nomTheme})`).toBeGreaterThanOrEqual(4.5);
+      }
     }
   });
 });
