@@ -34,12 +34,15 @@ const ADVISOR_ICONS: Record<AdvisorRole, LucideIcon> = {
   visionary: Rocket,
 };
 
+// Couleurs prises aux jetons depuis le 30/08/2026 : posées en style inline,
+// elles échappaient à toute règle de test sur les className. Le balayage de
+// l'application lancée les a trouvées à 1,81:1 sur fond blanc.
 const ADVISOR_META: Record<AdvisorRole, { name: string; color: string; personality: string }> = {
-  analyst: { name: "L'Analyste", color: '#22D3EE', personality: 'Données & Chiffres' },
-  strategist: { name: 'Le Stratège', color: '#A855F7', personality: 'Vision long terme' },
-  devil: { name: "L'Avocat du Diable", color: '#EF4444', personality: 'Contre-arguments' },
-  pragmatic: { name: 'Le Pragmatique', color: '#F59E0B', personality: 'Faisabilité' },
-  visionary: { name: 'Le Visionnaire', color: '#E11D8D', personality: 'Innovation' },
+  analyst: { name: "L'Analyste", color: 'var(--color-agent-cyan)', personality: 'Données & Chiffres' },
+  strategist: { name: 'Le Stratège', color: 'var(--color-agent-purple)', personality: 'Vision long terme' },
+  devil: { name: "L'Avocat du Diable", color: 'var(--color-error)', personality: 'Contre-arguments' },
+  pragmatic: { name: 'Le Pragmatique', color: 'var(--color-agent-amber)', personality: 'Faisabilité' },
+  visionary: { name: 'Le Visionnaire', color: 'var(--color-agent-magenta)', personality: 'Innovation' },
 };
 
 const ROLES: AdvisorRole[] = ['analyst', 'strategist', 'devil', 'pragmatic', 'visionary'];
@@ -134,8 +137,8 @@ export function AdvisorArcLayout({
               <div
                 className="w-16 h-16 rounded-md mb-2 relative overflow-hidden"
                 style={{
-                  boxShadow: `0 0 16px ${meta.color}30`,
-                  outline: `2px solid ${meta.color}50`,
+                  boxShadow: `0 0 16px color-mix(in srgb, ${meta.color} 19%, transparent)`,
+                  outline: `2px solid color-mix(in srgb, ${meta.color} 31%, transparent)`,
                   outlineOffset: '2px',
                 }}
               >
@@ -197,7 +200,7 @@ export function AdvisorArcLayout({
             >
               <div
                 className="relative mb-1 h-10 w-10 overflow-hidden rounded-md"
-                style={{ outline: `2px solid ${meta.color}50` }}
+                style={{ outline: `2px solid color-mix(in srgb, ${meta.color} 31%, transparent)` }}
               >
                 <CharacterPortrait index={ADVISOR_PORTRAITS[role]} className="h-full w-full" />
                 <div

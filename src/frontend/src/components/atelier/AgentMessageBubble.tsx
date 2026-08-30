@@ -11,25 +11,25 @@ import type { AgentMessage } from '../../stores/atelierStore';
 
 const AGENT_STYLES: Record<string, { color: string; bg: string; icon: React.ReactNode; label: string }> = {
   katia: {
-    color: '#A855F7',
+    color: 'var(--color-agent-purple)',
     bg: 'rgba(168, 85, 247, 0.1)',
     icon: <Headphones size={14} />,
     label: 'Katia',
   },
   zezette: {
-    color: '#F59E0B',
+    color: 'var(--color-agent-amber)',
     bg: 'rgba(245, 158, 11, 0.1)',
     icon: <Wrench size={14} />,
     label: 'Zézette',
   },
   user: {
-    color: '#22D3EE',
+    color: 'var(--color-agent-cyan)',
     bg: 'rgba(34, 211, 238, 0.1)',
     icon: <User size={14} />,
     label: 'Toi',
   },
   system: {
-    color: '#6B7280',
+    color: 'var(--color-text-muted)',
     bg: 'rgba(107, 114, 128, 0.08)',
     icon: <Info size={14} />,
     label: 'Système',

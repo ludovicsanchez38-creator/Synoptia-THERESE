@@ -11,11 +11,11 @@ const ADVISOR_ORDER: AdvisorRole[] = ['analyst', 'strategist', 'devil', 'pragmat
 
 // Advisor configuration (emoji deprecated, using icons in AdvisorCard)
 const ADVISOR_CONFIG: Record<AdvisorRole, { name: string; color: string }> = {
-  analyst: { name: "L'Analyste", color: '#22D3EE' },
-  strategist: { name: 'Le Stratège', color: '#A855F7' },
-  devil: { name: "L'Avocat du Diable", color: '#EF4444' },
-  pragmatic: { name: 'Le Pragmatique', color: '#F59E0B' },
-  visionary: { name: 'Le Visionnaire', color: '#E11D8D' },
+  analyst: { name: "L'Analyste", color: 'var(--color-agent-cyan)' },
+  strategist: { name: 'Le Stratège', color: 'var(--color-agent-purple)' },
+  devil: { name: "L'Avocat du Diable", color: 'var(--color-error)' },
+  pragmatic: { name: 'Le Pragmatique', color: 'var(--color-agent-amber)' },
+  visionary: { name: 'Le Visionnaire', color: 'var(--color-agent-magenta)' },
 };
 
 interface AdvisorState {

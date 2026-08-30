@@ -119,7 +119,10 @@ export function AdvisorCard({
             className="text-xs px-1.5 py-0.5 rounded-sm font-medium uppercase tracking-wide"
             style={{
               backgroundColor: `${providerInfo.color}20`,
-              color: providerInfo.color,
+              // La couleur de marque pure donne 2,4:1 à 3,6:1 sur sa propre
+              // teinte. Mêlée à 55 % avec l'encre du thème, elle garde sa
+              // teinte et passe AA dans les deux modes (pire cas 5,47:1).
+              color: `color-mix(in srgb, ${providerInfo.color} 55%, var(--color-text))`,
             }}
           >
             {providerInfo.label}

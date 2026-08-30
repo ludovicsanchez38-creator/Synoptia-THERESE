@@ -222,7 +222,7 @@ export function UpdateBanner() {
             className="ml-2 px-3 py-1 rounded-md text-sm font-medium transition-colors"
             style={{
               background: 'rgba(34, 211, 238, 0.2)',
-              color: '#22D3EE',
+              color: 'var(--color-accent)',
               border: '1px solid rgba(34, 211, 238, 0.3)',
             }}
             onMouseEnter={(e) => {
@@ -261,7 +261,7 @@ export function UpdateBanner() {
             className="ml-2 px-3 py-1 rounded-md text-sm font-medium transition-colors"
             style={{
               background: 'rgba(34, 211, 238, 0.2)',
-              color: '#22D3EE',
+              color: 'var(--color-accent)',
               border: '1px solid rgba(34, 211, 238, 0.3)',
             }}
             onMouseEnter={(e) => {
@@ -289,7 +289,7 @@ export function UpdateBanner() {
             className="ml-2 px-3 py-1 rounded-md text-sm font-medium transition-colors"
             style={{
               background: 'rgba(34, 211, 238, 0.2)',
-              color: '#22D3EE',
+              color: 'var(--color-accent)',
               border: '1px solid rgba(34, 211, 238, 0.3)',
             }}
             onMouseEnter={(e) => {

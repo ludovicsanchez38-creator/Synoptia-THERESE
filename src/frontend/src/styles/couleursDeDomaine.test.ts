@@ -173,6 +173,32 @@ describe('lot 5 : plus une seule couleur brute', () => {
     expect(fautifs, fautifs.slice(0, 4).join(' | ')).toEqual([]);
   });
 
+  it("aucune couleur de thème n'est posée en style inline", () => {
+    // Le trou que le balayage de l'application lancée a révélé le 30/08/2026 :
+    // les cinq conseillers du Board portaient leur couleur en style inline,
+    // depuis un objet JS. Aucune règle sur les className ne pouvait la voir.
+    // Mesurée à 1,81:1 sur fond blanc, sur quatre écrans.
+    //
+    // Restent autorisées les couleurs qui ne sont PAS des couleurs de thème :
+    // l'identité des fournisseurs de modèles (mêlée à l'encre du thème au
+    // rendu) et la table de référence du thème sombre.
+    const EXCEPTIONS = new Set([
+      'components/board/AdvisorCard.tsx', // marques Claude, GPT, Gemini, Mistral, Grok, Ollama
+      'lib/accessibility.ts', // table de référence, pas du rendu
+    ]);
+    const fautifs: string[] = [];
+    for (const f of SOURCES) {
+      const chemin = court(f);
+      if ([...EXCEPTIONS].some((e) => chemin.endsWith(e))) continue;
+      for (const m of readFileSync(f, 'utf-8').matchAll(
+        /\b(color|backgroundColor|background|borderColor|fill|stroke)\s*:\s*['"`]#[0-9A-Fa-f]{3,8}['"`]/g,
+      )) {
+        fautifs.push(`${chemin} : ${m[0].slice(0, 40)}`);
+      }
+    }
+    expect(fautifs, `${fautifs.length} couleurs inline : ${fautifs.slice(0, 4).join(' | ')}`).toEqual([]);
+  });
+
   it("la charte Synoptïa ne déborde pas sur THÉRÈSE", () => {
     // Arbitrage de Ludo, 30/08/2026 : THÉRÈSE porte son identité propre.
     // #2451FF est le bleu de la marque Synoptïa.
