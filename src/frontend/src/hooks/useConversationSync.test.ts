@@ -70,6 +70,17 @@ describe('formatMessageFromResponse - restauration skillFile (BUG-130)', () => {
     expect(out.content).toBe('coucou');
     expect(out.timestamp).toBeInstanceOf(Date);
   });
+
+  it('restaure les sources d’une recherche approfondie depuis extra_data', () => {
+    const out = formatMessageFromResponse(makeResponse({
+      extra_data: JSON.stringify({
+        sources: [{ title: 'Article', url: 'https://exemple.test/a', snippet: 'Extrait' }],
+      }),
+    }));
+    expect(out.webSources).toEqual([
+      { title: 'Article', url: 'https://exemple.test/a', snippet: 'Extrait' },
+    ]);
+  });
 });
 
 describe('formatConversationFromResponse (0.43)', () => {

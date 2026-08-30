@@ -15,7 +15,7 @@ import { SlashCommandsMenu, detectSlashCommand, type SlashCommand } from './Slas
 import { handleClientActionChunk, runNavigationAction } from '../../lib/clientActions';
 import { ActionChips } from './ActionChips';
 import { InlineDropZone, FileChip } from '../files/DropZone';
-import { useChatStore } from '../../stores/chatStore';
+import { useChatStore, type Message } from '../../stores/chatStore';
 import { usePanelStore } from '../../stores/panelStore';
 import { useStatusStore } from '../../stores/statusStore';
 import {
@@ -867,6 +867,18 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           setActivity('thinking', chunk.content || 'Recherche en cours...');
         } else if (chunk.type === 'synthesizing' && !chunk.content) {
           setActivity('thinking', 'Synthèse des sources...');
+        } else if (chunk.type === 'sources' && chunk.content) {
+          // Revue 30/08 : l'événement tombait dans aucune branche.
+          try {
+            const parsed = JSON.parse(chunk.content) as unknown;
+            if (Array.isArray(parsed)) {
+              updateMessage(assistantMessageId, accumulatedContent, {
+                webSources: parsed as NonNullable<Message['webSources']>,
+              });
+            }
+          } catch {
+            // Source mal formée : on n'invente pas de liste.
+          }
         } else if (chunk.type === 'error') {
           throw new Error(chunk.content || 'Erreur lors de la recherche');
         }

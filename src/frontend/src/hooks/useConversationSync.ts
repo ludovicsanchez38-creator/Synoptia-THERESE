@@ -33,6 +33,7 @@ export function formatMessageFromResponse(msg: MessageResponse): Message {
   // jointes. Sans cela, une conversation rechargée ignore que le backend va
   // rejouer ces documents, et le consentement demandé ne mentionne rien.
   let hasAttachments = false;
+  let webSources: NonNullable<Message['webSources']> = [];
   if (msg.extra_data) {
     try {
       const parsed = JSON.parse(msg.extra_data);
@@ -43,6 +44,9 @@ export function formatMessageFromResponse(msg: MessageResponse): Message {
           skillFiles = [parsed.skill_file as NonNullable<Message['skillFile']>];
         }
         hasAttachments = Array.isArray(parsed.attachments) && parsed.attachments.length > 0;
+        if (Array.isArray(parsed.sources)) {
+          webSources = parsed.sources as NonNullable<Message['webSources']>;
+        }
       }
     } catch {
       // extra_data non-JSON ou corrompu : on ignore, le message reste affichable.
@@ -58,6 +62,7 @@ export function formatMessageFromResponse(msg: MessageResponse): Message {
     ...(skillFiles.length > 0
       ? { skillFile: skillFiles[0], skillFiles }
       : {}),
+    ...(webSources.length > 0 ? { webSources } : {}),
   };
 }
 

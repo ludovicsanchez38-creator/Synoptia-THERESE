@@ -96,25 +96,38 @@ export function PerformanceTab() {
               <p className="text-xs text-text-muted">Requêtes totales</p>
             </div>
             <div className="p-3 bg-background/40 rounded-md border border-border/30">
-              <p className="text-2xl font-bold text-text">{status.streaming.total_tokens?.toLocaleString('fr-FR') || 0}</p>
-              <p className="text-xs text-text-muted">Tokens générés</p>
+              <p className="text-2xl font-bold text-text">
+                {status.streaming.tokens_measured
+                  ? (status.streaming.total_tokens?.toLocaleString('fr-FR') || 0)
+                  : '—'}
+              </p>
+              <p className="text-xs text-text-muted">
+                {status.streaming.tokens_measured ? 'Tokens mesurés' : 'Tokens non mesurés'}
+              </p>
             </div>
           </div>
-          {/* Statut SLA */}
+          {/* Statut SLA — Revue 30/08 : sans échantillon, 0 < 2s n'est pas un respect. */}
           <div className={`flex items-center gap-2 px-3 py-2 rounded-md ${
-            status.streaming.meets_sla
+            status.streaming.meets_sla === true
               ? 'bg-[var(--color-success-tint)] border border-success/40'
-              : 'bg-[var(--color-warning-tint)] border border-warning/40'
+              : status.streaming.meets_sla === false
+                ? 'bg-[var(--color-warning-tint)] border border-warning/40'
+                : 'bg-background/40 border border-border/30'
           }`}>
-            {status.streaming.meets_sla ? (
+            {status.streaming.meets_sla === true ? (
               <>
                 <Check className="w-4 h-4 text-success" />
                 <span className="text-sm text-success">SLA respecté ({"<"} 2s)</span>
               </>
-            ) : (
+            ) : status.streaming.meets_sla === false ? (
               <>
                 <AlertCircle className="w-4 h-4 text-warning" />
                 <span className="text-sm text-warning">SLA non respecté ({">"} 2s)</span>
+              </>
+            ) : (
+              <>
+                <AlertCircle className="w-4 h-4 text-text-muted" />
+                <span className="text-sm text-text-muted">SLA non mesuré</span>
               </>
             )}
           </div>
@@ -192,11 +205,11 @@ export function PerformanceTab() {
         </div>
       )}
 
-      {/* Nombre de conversations indexées */}
-      {status?.conversations_total !== undefined && (
+      {/* Nombre de conversations réellement présentes dans l'index. */}
+      {status?.search_index?.indexed_conversations !== undefined && (
         <div className="pt-4 border-t border-border/30">
           <div className="p-3 bg-background/40 rounded-md border border-border/30">
-            <p className="text-2xl font-bold text-text">{status.conversations_total}</p>
+            <p className="text-2xl font-bold text-text">{status.search_index.indexed_conversations}</p>
             <p className="text-xs text-text-muted">Conversations indexées</p>
           </div>
         </div>
