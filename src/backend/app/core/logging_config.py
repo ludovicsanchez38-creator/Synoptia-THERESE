@@ -51,6 +51,7 @@ _BARE_SECRET_PATTERNS = re.compile(
     r"|gh[pousr]_[A-Za-z0-9]{16,}"      # GitHub
     r"|gAAAAA[A-Za-z0-9+/=_\-]{20,}"   # Fernet (nos propres secrets chiffres)
     r"|Bearer\s+[A-Za-z0-9+/=_\-\.]{20,}"
+    r"|ya29\.[A-Za-z0-9_\-]{20,}"      # jeton d'accès Google (OAuth)
     r")",
     re.IGNORECASE,
 )
