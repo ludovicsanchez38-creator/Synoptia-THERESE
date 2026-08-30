@@ -17,6 +17,9 @@ vi.mock('../../services/api', async () => {
 
 function seedDraft() {
   useEmailStore.setState({
+    accounts: [
+      { id: 'account-1', email: 'moi@cabinet.fr', provider: 'gmail', scopes: [], created_at: '', last_sync: null },
+    ],
     currentAccountId: 'account-1',
     isComposing: true,
     draftRecipients: ['client@example.fr'],
@@ -48,6 +51,9 @@ describe('EmailCompose - confirmation 0.40', () => {
     expect(preview).toHaveTextContent('client@example.fr');
     expect(preview).toHaveTextContent('Point de suivi');
     expect(preview).toHaveTextContent('Bonjour, voici le point demandé.');
+    // Finding 4 (30/08) : la confirmation affichait l'UUID du compte.
+    expect(preview).toHaveTextContent('moi@cabinet.fr');
+    expect(preview).not.toHaveTextContent('account-1');
     expect(sendEmailMock).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Confirmer et envoyer' }));

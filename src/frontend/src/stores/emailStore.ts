@@ -91,7 +91,31 @@ export const useEmailStore = create<EmailStore>()(
           accounts: get().accounts.filter((a) => a.id !== accountId),
           currentAccountId: get().currentAccountId === accountId ? null : get().currentAccountId,
         }),
-      setCurrentAccount: (accountId) => set({ currentAccountId: accountId }),
+      setCurrentAccount: (accountId) => {
+        // Finding 4 (30/08) : poser l'id sans vider laissait la liste, les
+        // labels Gmail et le brouillon de A sous le nom de B.
+        if (get().currentAccountId === accountId) {
+          set({ currentAccountId: accountId });
+          return;
+        }
+        set({
+          currentAccountId: accountId,
+          messages: [],
+          currentMessageId: null,
+          labels: [],
+          currentLabelId: null,
+          selectedLabels: [],
+          pageToken: null,
+          hasMore: false,
+          draftRecipients: [],
+          draftCc: [],
+          draftBcc: [],
+          draftSubject: '',
+          draftBody: '',
+          draftIsHtml: false,
+          isComposing: false,
+        });
+      },
 
       // Messages
       messages: [],
@@ -196,9 +220,6 @@ export const useEmailStore = create<EmailStore>()(
       partialize: (state) => ({
         accounts: state.accounts,
         currentAccountId: state.currentAccountId,
-        currentLabelId: state.currentLabelId,
-        labels: state.labels,
-        messages: state.messages,
       }),
     }
   )
