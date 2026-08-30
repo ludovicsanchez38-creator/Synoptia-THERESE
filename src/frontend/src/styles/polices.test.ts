@@ -33,6 +33,22 @@ describe('les polices sont embarquées, pas empruntées au système', () => {
     const deps = Object.keys(pkg.dependencies ?? {});
     expect(deps.some((d) => d.includes('inter'))).toBe(true);
     expect(deps.some((d) => d.includes('jakarta'))).toBe(true);
+    // La monospace avait été oubliée du lot 0 : --font-family-mono déclarait
+    // JetBrains Mono sans que rien ne la charge, exactement le défaut qu'on
+    // venait de corriger sur Inter. Trouvée en balayant le panneau des
+    // raccourcis, qui rendait 44 nœuds en ui-monospace du système.
+    expect(deps.some((d) => d.includes('mono'))).toBe(true);
+  });
+
+  it('toutes les familles déclarées sont réellement chargées', () => {
+    const entree = lire('src/main.tsx');
+    const css = lire('src/styles/globals.css');
+    const familles = [...css.matchAll(/--font-family-[a-z]+:\s*'([^']+)'/g)].map((m) => m[1]);
+    expect(familles.length, 'aucune famille déclarée').toBeGreaterThanOrEqual(2);
+    for (const f of familles) {
+      const paquet = f.toLowerCase().replace(/\s+/g, '-');
+      expect(entree, `${f} est déclarée dans globals.css mais jamais chargée`).toContain(paquet);
+    }
   });
 
   it('aucune police n’est appelée sur le réseau (l’application marche hors ligne)', () => {
