@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',system-ui,sans-serif;background:#E8EDF6;color:#101C36;-webkit-font-smoothing:antialiased;padding:40px}
+.page{width:1360px;margin:0 auto}
+
+/* ---- themes ---- */
+.clair{--bg:#F3F6FC;--surface:#FFFFFF;--surface2:#F0F4FB;--border:#E2E8F3;--ink:#101C36;--muted:#5A6A85;
+  --accent:#0F8FB3;--fill:#22D3EE;--onfill:#06121F;--tint:#DEF4F9;--ring:#22D3EE;
+  --k1:#0F8FB3;--k1bg:#DEF4F9;--k2:#B45309;--k2bg:#FAEFDC;--k3:#BE1A72;--k3bg:#FBE3F0;--k4:#7C3AED;--k4bg:#F0E9FC;
+  --danger:#B42318;--dangerbg:#FBE6E4;
+  --shadow:0 1px 2px rgba(16,28,54,.05),0 10px 24px -10px rgba(16,28,54,.16)}
+.sombre{--bg:#0B1226;--surface:#131B35;--surface2:#0E1630;--border:#2A3550;--ink:#E6EDF7;--muted:#B6C7DA;
+  --accent:#22D3EE;--fill:#22D3EE;--onfill:#06121F;--tint:rgba(34,211,238,.12);--ring:#22D3EE;
+  --k1:#22D3EE;--k1bg:rgba(34,211,238,.13);--k2:#F59E0B;--k2bg:rgba(245,158,11,.13);--k3:#E11D8D;--k3bg:rgba(225,29,141,.13);--k4:#A855F7;--k4bg:rgba(168,85,247,.13);
+  --danger:#F87171;--dangerbg:rgba(248,113,113,.13);
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 8px 22px -10px rgba(0,0,0,.5)}
+
+/* ---- chrome de la planche ---- */
+h1{font-family:'Plus Jakarta Sans',sans-serif;font-size:32px;font-weight:800;letter-spacing:-.02em}
+.sub{font-size:15px;color:#4A5A75;margin-top:8px;max-width:760px;line-height:1.55}
+.bloc{background:#FFFFFF;border:1px solid #D8E0EE;border-radius:16px;padding:26px 28px;margin-top:22px;box-shadow:0 1px 2px rgba(16,28,54,.05)}
+.bt{font-family:'Plus Jakarta Sans',sans-serif;font-size:19px;font-weight:700;letter-spacing:-.01em}
+.bs{font-size:13.5px;color:#5A6A85;margin-top:5px;line-height:1.5}
+.rule{height:1px;background:#E6EBF4;margin:20px 0}
+.tag{display:inline-block;font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;padding:4px 9px;border-radius:999px}
+.tg-av{background:#F4E7E5;color:#93342B}.tg-ap{background:#DEF4F9;color:#0B6A85}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+.pane{border-radius:16px;padding:24px;background:var(--bg);border:1px solid var(--border);color:var(--ink)}
+.pl{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:16px}
+.note{font-size:12.5px;color:#5A6A85;margin-top:12px;line-height:1.5}
+.chiffre{font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;color:#101C36}
+
+/* ---- boutons DA ---- */
+.b{font-family:'Inter',sans-serif;font-size:14px;font-weight:600;padding:10px 18px;border-radius:14px;border:1px solid transparent;cursor:default;line-height:1.2;display:inline-flex;align-items:center;gap:8px}
+.b-1{background:var(--fill);color:var(--onfill)}
+.b-2{background:var(--surface);color:var(--ink);border-color:var(--border);box-shadow:0 1px 2px rgba(16,28,54,.05)}
+.b-3{background:transparent;color:var(--accent);font-weight:600}
+.b-4{background:var(--dangerbg);color:var(--danger);border-color:transparent}
+.b-f{background:var(--fill);color:var(--onfill);outline:2px solid var(--ring);outline-offset:2px}
+.b-d{background:var(--surface2);color:var(--muted);opacity:.65}
+.brow{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.blab{font-size:11px;color:var(--muted);margin-top:7px;text-align:center}
+.bcell{display:flex;flex-direction:column;align-items:center}
+
+/* ---- avant ---- */
+.b-av{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",sans-serif;font-size:14px;font-weight:600;
+  padding:8px 12px;border-radius:9px;background:#101C36;color:#fff;border:none;line-height:1.25;display:inline-block}
+
+/* ---- typo ---- */
+.tl{display:flex;align-items:baseline;gap:20px;padding:11px 0;border-bottom:1px dashed #E6EBF4}
+.tl:last-child{border:none}
+.tspec{font-size:11.5px;color:#5A6A85;min-width:190px;font-variant-numeric:tabular-nums}
+.t26{font-family:'Plus Jakarta Sans',sans-serif;font-size:26px;font-weight:800;letter-spacing:-.02em}
+.t19{font-family:'Plus Jakarta Sans',sans-serif;font-size:19px;font-weight:700;letter-spacing:-.01em}
+.t16{font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;font-weight:700}
+.t14{font-size:14px;font-weight:400}
+.t14s{font-size:14px;font-weight:600}
+.t12{font-size:12px;font-weight:500;color:#5A6A85}
+
+/* ---- categories ---- */
+.kgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+.kc{border-radius:14px;padding:14px 15px}
+.kn{font-size:13px;font-weight:700}
+.kh{font-size:11px;margin-top:3px;font-family:ui-monospace,monospace;opacity:.85}
+.kpuce{display:inline-block;font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;margin-top:10px}
+
+/* ---- rayons ---- */
+.rrow{display:flex;gap:14px;align-items:flex-end}
+.rb{width:74px;height:56px;background:#F0F4FB;border:1px solid #D8E0EE}
+.rl{font-size:11px;color:#5A6A85;text-align:center;margin-top:6px}
+
+/* ---- carte demo ---- */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:18px;box-shadow:var(--shadow)}
+.ct{font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;font-weight:700;color:var(--ink)}
+.cm{font-size:12px;color:var(--muted);margin-top:3px}
+.li{display:flex;gap:12px;align-items:flex-start;padding:11px 0;border-bottom:1px solid var(--border)}
+.li:last-of-type{border:none}
+.lh{font-size:13px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink);min-width:44px}
+.lt{font-size:14px;font-weight:600;color:var(--ink)}
+.ls{font-size:12px;color:var(--muted);margin-top:2px}
+.pill{margin-left:auto;font-size:11px;font-weight:700;padding:4px 9px;border-radius:999px;white-space:nowrap}
+</style></head><body><div class="page">
+
+<h1>THÉRÈSE — la direction artistique homogène</h1>
+<p class="sub">Ce n'est pas une direction à inventer : c'est celle que tu as validée en mai 2026 (« Équilibre » en clair, « Signature » en sombre). Ses couleurs sont déjà dans le code de l'application. Ce sont les composants qui ne s'en servent pas.</p>
+
+<!-- 1 -->
+<div class="bloc">
+  <div class="bt">1. Le geste principal</div>
+  <div class="bs">Le bouton d'action est ce qu'on voit en premier sur chaque écran. Aujourd'hui, c'est une pilule encre foncée. C'est aussi le geste principal de Claude et de ChatGPT.</div>
+  <div class="rule"></div>
+  <div class="grid2">
+    <div style="border:1px solid #EBD9D6;border-radius:16px;padding:24px;background:#FCF8F7">
+      <span class="tag tg-av">Aujourd'hui</span>
+      <div style="margin-top:20px"><button class="b-av">Ouvrir l'agenda</button></div>
+      <div class="note">Fond <b>#101C36</b> (la couleur du texte), rayon <b>9&nbsp;px</b>, police du système.<br>Écrit en dur <b>68 fois</b> dans les composants.</div>
+    </div>
+    <div class="clair" style="border:1px solid #C7E9F2;border-radius:16px;padding:24px;background:#F7FDFE">
+      <span class="tag tg-ap">La DA validée</span>
+      <div style="margin-top:20px"><button class="b b-1">Ouvrir l'agenda</button></div>
+      <div class="note">Fond <b>#22D3EE</b> (<code>--color-accent-fill</code>, <b>déjà défini</b> dans <code>globals.css</code>), rayon <b>14&nbsp;px</b>, Inter.<br>Consommé aujourd'hui par <b>5 fichiers</b> sur tout le projet.</div>
+    </div>
+  </div>
+</div>
+
+<!-- 2 -->
+<div class="bloc">
+  <div class="bt">2. Les boutons, jeu complet</div>
+  <div class="bs">Quatre rôles, deux thèmes, un seul rayon. Le focus clavier est visible partout (anneau cyan), ce qui manque aujourd'hui sur la plupart des surfaces.</div>
+  <div class="rule"></div>
+  <div class="grid2">
+    <div class="clair pane">
+      <div class="pl">Thème clair · Équilibre · par défaut</div>
+      <div class="brow">
+        <div class="bcell"><button class="b b-1">Enregistrer</button><span class="blab">primaire</span></div>
+        <div class="bcell"><button class="b b-2">Annuler</button><span class="blab">secondaire</span></div>
+        <div class="bcell"><button class="b b-3">Tout voir</button><span class="blab">discret</span></div>
+        <div class="bcell"><button class="b b-4">Supprimer</button><span class="blab">danger</span></div>
+      </div>
+      <div class="brow" style="margin-top:20px">
+        <div class="bcell"><button class="b b-f">Enregistrer</button><span class="blab">focus clavier</span></div>
+        <div class="bcell"><button class="b b-d">Enregistrer</button><span class="blab">inactif</span></div>
+      </div>
+    </div>
+    <div class="sombre pane">
+      <div class="pl">Thème sombre · Signature</div>
+      <div class="brow">
+        <div class="bcell"><button class="b b-1">Enregistrer</button><span class="blab">primaire</span></div>
+        <div class="bcell"><button class="b b-2">Annuler</button><span class="blab">secondaire</span></div>
+        <div class="bcell"><button class="b b-3">Tout voir</button><span class="blab">discret</span></div>
+        <div class="bcell"><button class="b b-4">Supprimer</button><span class="blab">danger</span></div>
+      </div>
+      <div class="brow" style="margin-top:20px">
+        <div class="bcell"><button class="b b-f">Enregistrer</button><span class="blab">focus clavier</span></div>
+        <div class="bcell"><button class="b b-d">Enregistrer</button><span class="blab">inactif</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="note">Le même cyan sert d'accent dans les deux thèmes : c'est lui qui rend l'application reconnaissable quel que soit le mode. Le rouge de danger est une <b>proposition</b> : la DA de mai ne définissait pas ce rôle, et les 102 <code>text-red-400</code> actuels ignorent le thème.</div>
+</div>
+
+<!-- 3 -->
+<div class="bloc">
+  <div class="bt">3. Les polices</div>
+  <div class="bs">Le code déclare Inter depuis le début. Aucune police n'est embarquée, aucun <code>@font-face</code>, aucun lien : l'application emprunte donc celle du système, SF&nbsp;Pro sur Mac. Exactement celle de Claude et de ChatGPT. C'est la première cause de la confusion que tu décris.</div>
+  <div class="rule"></div>
+  <div class="tl"><span class="tspec">Jakarta 26 / 800 / -2 %</span><span class="t26">Bonjour Ludo</span></div>
+  <div class="tl"><span class="tspec">Jakarta 19 / 700</span><span class="t19">Ton brief du jour</span></div>
+  <div class="tl"><span class="tspec">Jakarta 16 / 700</span><span class="t16">Titre de carte</span></div>
+  <div class="tl"><span class="tspec">Inter 14 / 600</span><span class="t14s">Une action, un élément de liste</span></div>
+  <div class="tl"><span class="tspec">Inter 14 / 400</span><span class="t14">Le texte courant de l'application, celui qui se lit vraiment. Plancher absolu : rien d'important en dessous de 14 px.</span></div>
+  <div class="tl"><span class="tspec">Inter 12 / 500 · atténué</span><span class="t12">Métadonnée uniquement : une date, un compteur, une source</span></div>
+  <div class="note">Aujourd'hui <b class="chiffre">73 %</b> du texte est en 12&nbsp;px, taille réservée aux métadonnées. Deux familles suffisent : <b>Plus Jakarta Sans</b> pour les titres (elle donne la signature), <b>Inter</b> pour tout le reste. Les deux sont embarquées dans l'application, sans appel réseau : THÉRÈSE doit rester utilisable hors ligne.</div>
+</div>
+
+<!-- 4 -->
+<div class="bloc">
+  <div class="bt">4. Les quatre couleurs de domaine</div>
+  <div class="bs">Un domaine, une couleur, partout. C'est ce qui permet de reconnaître une facture d'un rendez-vous sans lire.</div>
+  <div class="rule"></div>
+  <div class="clair" style="margin-bottom:14px">
+    <div class="pl" style="color:#5A6A85">Thème clair</div>
+    <div class="kgrid">
+      <div class="kc" style="background:var(--k1bg)"><div class="kn" style="color:var(--k1)">Agenda</div><div class="kh" style="color:var(--k1)">#0F8FB3</div><span class="kpuce" style="background:var(--k1);color:#fff">14 h · Dupont</span></div>
+      <div class="kc" style="background:var(--k2bg)"><div class="kn" style="color:var(--k2)">Tâches</div><div class="kh" style="color:var(--k2)">#B45309</div><span class="kpuce" style="background:var(--k2);color:#fff">3 en retard</span></div>
+      <div class="kc" style="background:var(--k3bg)"><div class="kn" style="color:var(--k3)">Devis et factures</div><div class="kh" style="color:var(--k3)">#BE1A72</div><span class="kpuce" style="background:var(--k3);color:#fff">1 impayée</span></div>
+      <div class="kc" style="background:var(--k4bg)"><div class="kn" style="color:var(--k4)">Prospects</div><div class="kh" style="color:var(--k4)">#7C3AED</div><span class="kpuce" style="background:var(--k4);color:#fff">2 à relancer</span></div>
+    </div>
+  </div>
+  <div class="sombre" style="background:#0B1226;border-radius:14px;padding:16px">
+    <div class="pl">Thème sombre</div>
+    <div class="kgrid">
+      <div class="kc" style="background:var(--k1bg)"><div class="kn" style="color:var(--k1)">Agenda</div><div class="kh" style="color:var(--k1)">#22D3EE</div><span class="kpuce" style="background:var(--k1);color:#06121F">14 h · Dupont</span></div>
+      <div class="kc" style="background:var(--k2bg)"><div class="kn" style="color:var(--k2)">Tâches</div><div class="kh" style="color:var(--k2)">#F59E0B</div><span class="kpuce" style="background:var(--k2);color:#1B1206">3 en retard</span></div>
+      <div class="kc" style="background:var(--k3bg)"><div class="kn" style="color:var(--k3)">Devis et factures</div><div class="kh" style="color:var(--k3)">#E11D8D</div><span class="kpuce" style="background:var(--k3);color:#fff">1 impayée</span></div>
+      <div class="kc" style="background:var(--k4bg)"><div class="kn" style="color:var(--k4)">Prospects</div><div class="kh" style="color:var(--k4)">#A855F7</div><span class="kpuce" style="background:var(--k4);color:#fff">2 à relancer</span></div>
+    </div>
+  </div>
+  <div class="note">Le violet des prospects que l'audit avait signalé comme intrus est en réalité <b>la couleur prévue par la DA</b> pour ce domaine. Il reste.</div>
+</div>
+
+<!-- 5 -->
+<div class="bloc">
+  <div class="bt">5. Les rayons</div>
+  <div class="bs">Trois systèmes cohabitent aujourd'hui : celui de la DA (14 px), les jetons du code (6/8/12/16) et 451 valeurs écrites à la main, presque toujours à un pixel du jeton.</div>
+  <div class="rule"></div>
+  <div class="rrow">
+    <div><div class="rb" style="border-radius:6px"></div><div class="rl">6 px<br><span style="color:#93342B">83 usages</span></div></div>
+    <div><div class="rb" style="border-radius:7px"></div><div class="rl">7 px<br><span style="color:#93342B">16</span></div></div>
+    <div><div class="rb" style="border-radius:8px"></div><div class="rl">8 px<br><span style="color:#93342B">91</span></div></div>
+    <div><div class="rb" style="border-radius:9px"></div><div class="rl">9 px<br><span style="color:#93342B">127</span></div></div>
+    <div><div class="rb" style="border-radius:10px"></div><div class="rl">10 px<br><span style="color:#93342B">94</span></div></div>
+    <div><div class="rb" style="border-radius:13px"></div><div class="rl">13 px<br><span style="color:#93342B">40</span></div></div>
+    <div style="width:1px;height:70px;background:#D8E0EE;margin:0 12px"></div>
+    <div><div class="rb" style="border-radius:8px;background:#DEF4F9;border-color:#8FD8E8"></div><div class="rl"><b>8 px</b><br>champs, puces</div></div>
+    <div><div class="rb" style="border-radius:14px;background:#DEF4F9;border-color:#8FD8E8"></div><div class="rl"><b>14 px</b><br>boutons, cartes</div></div>
+    <div><div class="rb" style="border-radius:999px;background:#DEF4F9;border-color:#8FD8E8"></div><div class="rl"><b>plein</b><br>étiquettes</div></div>
+  </div>
+  <div class="note">Trois valeurs suffisent à toute l'application. La DA proposait 12 px sur le thème sombre ; garder <b>14 px dans les deux</b> est plus simple à tenir, c'est à trancher.</div>
+</div>
+
+<!-- 6 -->
+<div class="bloc">
+  <div class="bt">6. Le résultat sur un vrai écran</div>
+  <div class="bs">Ton brief du jour, avec tout ce qui précède appliqué.</div>
+  <div class="rule"></div>
+  <div class="grid2">
+    <div class="clair pane">
+      <div class="pl">Thème clair · par défaut</div>
+      <div class="card">
+        <div style="display:flex;align-items:flex-start">
+          <div><div class="ct">Ton brief du jour</div><div class="cm">samedi 30 août · 4 choses à savoir</div></div>
+          <button class="b b-1" style="margin-left:auto;padding:8px 14px;font-size:13px">Commencer</button>
+        </div>
+        <div style="height:14px"></div>
+        <div class="li"><span class="lh">09:30</span><div><div class="lt">Audit gratuit — Cabinet Mercier</div><div class="ls">visio, 30 min</div></div><span class="pill" style="background:var(--k1bg);color:var(--k1)">Agenda</span></div>
+        <div class="li"><span class="lh">—</span><div><div class="lt">Relancer Dignamik sur la convention</div><div class="ls">en retard de 3 jours</div></div><span class="pill" style="background:var(--k2bg);color:var(--k2)">Tâche</span></div>
+        <div class="li"><span class="lh">—</span><div><div class="lt">Facture 2026-041 impayée</div><div class="ls">2 490 € HT, échue le 12 août</div></div><span class="pill" style="background:var(--k3bg);color:var(--k3)">Facture</span></div>
+        <div class="li"><span class="lh">—</span><div><div class="lt">Nextra attend ta proposition</div><div class="ls">dernier échange il y a 9 jours</div></div><span class="pill" style="background:var(--k4bg);color:var(--k4)">Prospect</span></div>
+        <div style="margin-top:14px"><button class="b b-3" style="padding:6px 0">Voir les 6 autres éléments, dont 2 en retard</button></div>
+      </div>
+    </div>
+    <div class="sombre pane">
+      <div class="pl">Thème sombre</div>
+      <div class="card">
+        <div style="display:flex;align-items:flex-start">
+          <div><div class="ct">Ton brief du jour</div><div class="cm">samedi 30 août · 4 choses à savoir</div></div>
+          <button class="b b-1" style="margin-left:auto;padding:8px 14px;font-size:13px">Commencer</button>
+        </div>
+        <div style="height:14px"></div>
+        <div class="li"><span class="lh">09:30</span><div><div class="lt">Audit gratuit — Cabinet Mercier</div><div class="ls">visio, 30 min</div></div><span class="pill" style="background:var(--k1bg);color:var(--k1)">Agenda</span></div>
+        <div class="li"><span class="lh">—</span><div><div class="lt">Relancer Dignamik sur la convention</div><div class="ls">en retard de 3 jours</div></div><span class="pill" style="background:var(--k2bg);color:var(--k2)">Tâche</span></div>
+        <div class="li"><span class="lh">—</span><div><div class="lt">Facture 2026-041 impayée</div><div class="ls">2 490 € HT, échue le 12 août</div></div><span class="pill" style="background:var(--k3bg);color:var(--k3)">Facture</span></div>
+        <div class="li"><span class="lh">—</span><div><div class="lt">Nextra attend ta proposition</div><div class="ls">dernier échange il y a 9 jours</div></div><span class="pill" style="background:var(--k4bg);color:var(--k4)">Prospect</span></div>
+        <div style="margin-top:14px"><button class="b b-3" style="padding:6px 0">Voir les 6 autres éléments, dont 2 en retard</button></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</div></body></html>

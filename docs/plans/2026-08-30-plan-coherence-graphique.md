@@ -82,87 +82,117 @@ mais **« quelle langue, la sienne, THÉRÈSE parle-t-elle »**.
 Conséquence visible : deux boutons d'action primaire d'un écran à l'autre.
 L'accueil met une pilule encre, les Paramètres un bouton brutaliste cyan.
 
+## Ce que la DA de mai a réellement laissé dans le code (constat du 30/08)
+
+La refonte DA commandée en mai 2026 (`~/Desktop/Dev Synoptia/therese-da-refonte/`)
+propose trois directions. **« Équilibre » (clair) et « Signature » (sombre)** ont
+été retenues. Vérification faite sur `globals.css` :
+
+| Jeton de la DA | Valeur | Présent dans `globals.css` ? |
+|---|---|---|
+| `--bg` clair | `#F3F6FC` | oui, `--color-bg` |
+| `--border` | `#E2E8F3` | oui, `--color-border` |
+| `--ink` | `#101C36` | oui, `--color-text` |
+| `--accent` | `#0F8FB3` | oui, `--color-accent` |
+| `--accent-fill` | `#22D3EE` | oui, `--color-accent-fill` |
+| `--accent-tint` | `#DEF4F9` | oui, `--color-accent-tint` |
+| `--radius` | `14px` | **non** |
+
+**La palette a atterri. Les composants ne la consomment pas.** Mesuré :
+
+- `accent-fill` (l'accent d'action) : **5 fichiers** le consomment.
+- `bg-text` (la pilule encre `#101C36`) : **68 occurrences**.
+- Rayons écrits à la main : **451** (`9px` ×127, `10px` ×94, `8px` ×91,
+  `6px` ×83, `13px` ×40, `7px` ×16), contre des jetons existants à
+  6/8/12/16 px. La plupart sont **à un pixel du jeton**.
+
+Autre constat, non vu par les deux auditeurs : `globals.css:67` déclare
+`--font-family-sans: 'Inter', system-ui…` mais **aucune police n'est chargée**.
+Zéro `@font-face`, zéro fichier `.woff2`, zéro lien Google Fonts, zéro paquet
+`@fontsource`. THÉRÈSE emprunte donc la police du système : SF Pro sur macOS,
+Segoe UI sur Windows. C'est la police de Claude Desktop et de ChatGPT.
+
+## L'exigence de Ludo, 30/08
+
+> « Thème clair par défaut. On veut une signature graphique et un peu de
+> couleur. Aujourd'hui quand on lance Claude ou ChatGPT on ne voit pas trop la
+> différence, confusion possible. On ne doit pas confondre THÉRÈSE. »
+
+Cette signature n'est pas à inventer. Elle est déjà validée et déjà à moitié
+posée. Ce qui manque tient en trois gestes : **l'accent cyan sur les actions**,
+**un rayon unique**, **une police à soi**.
+
+Planche de référence rendue le 30/08 :
+`docs/audits/2026-08-30-planche-da.png` (source `planche-da.html`).
+
 ## Les lots
 
-### Lot 1 - Le trou de contraste (le seul à faire en premier)
+### Lot 0 - Une police à soi (le geste le plus visible, le moins risqué)
 
-Périmètre serré, dans cet ordre :
+Embarquer **Plus Jakarta Sans** (titres) et **Inter** (texte) en local, via
+`@fontsource`, sans appel réseau : THÉRÈSE est une application de bureau qui
+doit fonctionner hors ligne. Corriger aussi l'écran de démarrage
+(`index.html:50` et `:75`), qui déclare `-apple-system` en dur et donne donc la
+toute première image du produit en police système.
 
-1. Assombrir `--color-accent` en clair, au moins au niveau de `--agent-cyan`
-   (`#0E7490`), qui est déjà dans le fichier.
-2. `text-accent-cyan` devient **décoratif et sombre uniquement**. En clair, le
-   texte et les liens passent par `text-accent`.
-3. Anneau de focus et `::selection` : une couleur qui contraste en clair.
-4. **Retirer les `color: "#E6EDF7"` de l'Atelier.** Le thème clair n'est pas
-   optionnel, et 1,18:1 est le pire chiffre du dossier.
-5. **Étendre le test d'accessibilité** aux paires accent / teinte / ring, dans
-   **les deux** thèmes. Sans ça, le chantier reviendra.
+Garantie mécanique : un test qui échoue si `font-family` résout vers
+`system-ui` sur le `body`.
 
-Vérification : « Contrôle des données » et le badge « Recommandé » à 4,5:1 en
-clair, l'anneau de focus à 3:1, mesurés dans les deux thèmes.
+### Lot 1 - Le trou de contraste
 
-### Lot 2 - Une seule langue d'action
+Inchangé, périmètre serré. Reste le premier correctif fonctionnel : un texte
+illisible est un bug, indépendamment de toute question de marque.
 
-Choisir entre la pilule encre de la coque et le bouton brutaliste de
-`Button.tsx`, puis l'appliquer aux deux. C'est le lot où **l'écran change**.
+### Lot 2 - L'accent d'action (remplace « choisir une langue d'action »)
 
-Il dépend d'un arbitrage produit qui n'est pas technique (voir plus bas).
+L'arbitrage n'est plus à rendre : la DA le tranche et les jetons existent.
 
-### Lot 3 - Le plancher typographique
+- Le bouton d'action primaire porte `--color-accent-fill` (`#22D3EE`) avec
+  `--color-accent-ink` (`#06121F`), pas `bg-text`.
+- `Button.tsx` perd `.btn-brutal` : la quatrième direction disparaît.
+- L'anneau de focus est `--color-accent-fill` partout, visible au clavier.
+- Les 68 `bg-text` sont triés : ceux qui sont des **actions** basculent, ceux
+  qui sont des **surfaces** restent.
 
-Écran par écran, pas au script : un `sed` de `text-xs` vers `text-sm`
-casserait la densité des listes.
+Le tri est le vrai travail, pas la bascule. Une substitution en masse
+transformerait des fonds en boutons.
 
-- Corps et boutons d'action : **14 px plancher**.
-- Titres de carte et de panneau : **16 px**.
-- `text-xs` : légendes, badges, puces de source seulement.
-- Interdire `text-[9px]`, `[10px]`, `[11px]` hors un cas nommé.
+### Lot 3 - Un rayon unique
 
-Note : les tailles arbitraires en pixels **neutralisent le réglage de police**
-de l'application, qui agit sur la racine en `rem`.
+Trois valeurs, pas six : **8 px** (champs, puces), **14 px** (boutons, cartes),
+**plein** (étiquettes). Les 451 valeurs manuelles convergent vers ces trois.
 
-### Lot 4 - Les couleurs brutes, là où elles s'affichent
+Point à trancher : la DA donne 14 px en clair et 12 px en sombre. Garder 14 des
+deux côtés est plus simple à tenir. **Décision attendue de Ludo.**
 
-Pas les 400. Celles qui se voient en thème clair : l'assistant e-mail, le CRM,
-les tâches, l'Atelier. `guided/` (34 occurrences) **n'est plus monté** : le
-compter gonfle le problème.
+### Lot 4 - Le plancher typographique
 
-### Correctifs courts, à caler entre les lots
+Inchangé : 14 px devient le plancher du texte utile, 12 px reste réservé aux
+métadonnées. C'est le lot le plus long et le plus intrusif ; il vient après.
 
-- **Cinq fichiers contiennent des emoji** alors que la charte l'interdit :
-  `EmailPriorityBadge.tsx` (🔴🟠🟢), `AgentSession.tsx` (🤖 👤),
-  `RFCCapture.tsx` (📧), `MemoryPanel.tsx` (⚠).
-- **Inter est déclaré et jamais chargé** : aucune `@font-face`, aucun lien.
-  La police réelle est celle du système. Décider : la charger, ou cesser de
-  l'annoncer.
-- L'écran de démarrage et sa palette à lui.
+### Lot 5 - Les couleurs brutes de domaine
 
-## Ce qui sort
+Les quatre couleurs `k1`–`k4` de la DA (agenda, tâches, factures, prospects)
+deviennent des jetons et remplacent les couleurs Tailwind brutes, dont les
+102 `text-red-400` qui ignorent le thème.
 
-- **La migration des 180 champs vers `Input`.** Zéro pixel pour l'utilisateur,
-  et la primitive porte elle-même un focus trop faible : la migrer maintenant
-  propagerait le défaut.
-- **Les 492 rayons arbitraires.** Une différence entre 8, 9 et 10 px ne se voit
-  pas. Ce qui se voit, c'est la coexistence pilule / carte douce / bouton carré.
-- **Les 183 formulations d'état vide** comme telles. Le vrai défaut est
-  ailleurs : le même gabarit répété jusqu'à **trois fois sur un écran**, et
-  l'absence de distinction entre « vide », « pas chargé », « filtre sans
-  résultat » et « indisponible ».
-- Les 577 « chargement » : `Spinner` a déjà absorbé le sujet.
-- L'échelle d'espacement : elle est tenue, zéro arbitraire. Ce n'est pas le
-  chantier.
+Correction due : le violet `#7C3AED` signalé comme intrus par l'audit est la
+**couleur de domaine prévue** pour les prospects. Il reste.
 
-## L'arbitrage qui reste, et qui bloque le lot 2
+La DA ne définit pas de rôle « danger ». Proposition à valider : `#B42318` sur
+`#FBE6E4` en clair, `#F87171` sur `rgba(248,113,113,.13)` en sombre.
 
-**Quelle langue THÉRÈSE parle-t-elle, la sienne ?**
+## Ce qui sort du plan
 
-Deux boutons d'action primaire coexistent d'un écran à l'autre : la pilule
-encre de la coque et le bouton brutaliste de `Button.tsx`. Il faut en choisir
-un et l'appliquer partout. C'est un choix de goût, pas de technique, et il
-appartient à Ludo.
+- Toute question « est-ce du Synoptïa ? » : arbitrée le 30/08, THÉRÈSE porte
+  son identité propre.
+- Le glassmorphism de `RULES-DESIGN.md` : document mort, à archiver.
+- Une refonte d'écrans. Aucun lot ne déplace un composant ; ils changent ce
+  que les composants consomment.
 
-Le thème par défaut (clair) et le thème sombre restent tous deux à supporter :
-ce n'est plus une question d'identité de marque, mais l'Atelier prouve que le
-clair est aujourd'hui traité comme optionnel, et il ne l'est pas.
+## Vérification
 
-Le lot 1 n'attend pas cette décision.
+Chaque lot suit le rituel complet : test rouge d'abord, sabotage vérifié
+(la commande de sabotage doit être **constatée appliquée**), les six portes,
+puis revue Grok et Soso sur le diff. Recette visuelle dans l'application
+packagée avant de clore un lot qui touche un écran.
