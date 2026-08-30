@@ -17,7 +17,7 @@ from datetime import date
 
 import pytest
 from app.models.entities import CalendarEvent
-from app.services.echeances import echeance_du_questionnaire_a_froid
+from app.services.echeances import DELAI_PAR_DEFAUT_JOURS, echeance_de_suivi
 from sqlalchemy.ext.asyncio import AsyncSession
 
 # --- E2 : une séance peut être bloquée ---------------------------------------
@@ -89,18 +89,31 @@ async def test_lever_un_blocage(client, db_session: AsyncSession):
 
 # --- E3 : le questionnaire à froid -------------------------------------------
 
-def test_le_j90_court_depuis_la_fin_de_formation():
+def test_le_suivi_court_depuis_la_fin_de_la_prestation():
     fin = date(2026, 6, 1)
-    assert echeance_du_questionnaire_a_froid(fin) == date(2026, 8, 30)
+    assert echeance_de_suivi(fin) == date(2026, 8, 30)
+
+
+def test_le_delai_est_parametrable():
+    """90 jours est le J+90 Qualiopi d'un organisme de formation. Un garagiste
+    rappelle peut-être à 30 jours, un architecte à un an. Le délai est un
+    réglage, pas une loi de l'application."""
+    fin = date(2026, 6, 1)
+
+    assert echeance_de_suivi(fin, jours=30) == date(2026, 7, 1)
+    assert DELAI_PAR_DEFAUT_JOURS == 90
+
+
+def test_un_delai_absurde_est_refuse():
+    with pytest.raises(ValueError):
+        echeance_de_suivi(date(2026, 6, 1), jours=0)
 
 
 def test_sans_date_de_fin_on_ne_calcule_rien():
-    """Deviner une échéance réglementaire serait l'inventer.
-
-    Le J+90 est un indicateur Qualiopi : une date fausse est pire que pas de
-    date.
-    """
-    assert echeance_du_questionnaire_a_froid(None) is None
+    """Deviner une échéance serait l'inventer, et pour un organisme de
+    formation c'est un indicateur réglementaire : une date fausse est pire
+    qu'une date absente."""
+    assert echeance_de_suivi(None) is None
 
 
 @pytest.mark.asyncio
@@ -116,7 +129,7 @@ async def test_la_prestation_porte_sa_date_de_fin(client):
 
     assert maj.status_code == 200, maj.text
     assert maj.json()["fin_le"] == "2026-06-01"
-    assert maj.json()["questionnaire_a_froid_le"] == "2026-08-30", (
+    assert maj.json()["suivi_apres_fin_le"] == "2026-08-30", (
         "l'échéance se DÉDUIT de la date de fin, elle ne se saisit pas deux fois"
     )
 
@@ -131,4 +144,4 @@ async def test_sans_fin_posee_la_prestation_n_annonce_pas_d_echeance(client):
     })).json()
 
     assert p["fin_le"] is None
-    assert p["questionnaire_a_froid_le"] is None
+    assert p["suivi_apres_fin_le"] is None

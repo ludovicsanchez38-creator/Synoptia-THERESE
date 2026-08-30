@@ -17,7 +17,7 @@ from app.models.entities import (
     Contact,
     Prestation,
 )
-from app.services.echeances import echeance_du_questionnaire_a_froid
+from app.services.echeances import echeance_de_suivi
 from fastapi import APIRouter, Depends, HTTPException, Query
 from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -60,12 +60,12 @@ def _rendre(p: Prestation) -> dict[str, Any]:
         "financeur": p.financeur,
         "statut_financement": p.statut_financement,
         "fin_le": p.fin_le.isoformat() if p.fin_le else None,
-        # DEDUITE de la fin de formation, jamais saisie deux fois : deux
-        # champs pour un fait, c'est deux occasions de diverger.
-        "questionnaire_a_froid_le": (
-            echeance_du_questionnaire_a_froid(p.fin_le).isoformat()
-            if p.fin_le
-            else None
+        # DEDUITE de la fin, jamais saisie deux fois : deux champs pour un
+        # fait, c'est deux occasions de diverger. Pour un organisme de
+        # formation c'est le questionnaire a froid J+90 ; pour un garagiste,
+        # un rappel apres reparation. Meme mecanique, delai reglable.
+        "suivi_apres_fin_le": (
+            echeance_de_suivi(p.fin_le).isoformat() if p.fin_le else None
         ),
         "created_at": p.created_at.isoformat(),
         "updated_at": p.updated_at.isoformat(),
