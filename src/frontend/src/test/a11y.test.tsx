@@ -250,4 +250,23 @@ describe('lot 1 : les accents lisibles', () => {
     }
     expect(fautifs, `encre sombre forcée dans : ${fautifs.join(', ')}`).toEqual([]);
   });
+  it("un accent lisible sur le fond peut rester illisible sur sa teinte", () => {
+    // Trouvé le 30/08/2026 par une mesure dans l'application lancée, pas par
+    // ce fichier : les tests ci-dessus comparaient chaque encre au fond et à
+    // la surface, jamais à la teinte sur laquelle elle s'affiche réellement.
+    const PAIRES: [string, string][] = [
+      ['accent', 'accent-tint'],
+      ['domaine-agenda', 'domaine-agenda-tint'],
+      ['domaine-taches', 'domaine-taches-tint'],
+      ['domaine-factures', 'domaine-factures-tint'],
+      ['domaine-prospects', 'domaine-prospects-tint'],
+    ];
+    for (const [encre, teinte] of PAIRES) {
+      const c = LIGHT_ALL[encre];
+      const f = LIGHT_ALL[teinte];
+      expect(c, `--color-${encre} absent`).toBeTruthy();
+      expect(f, `--color-${teinte} absent`).toBeTruthy();
+      expect(contrast(c, f), `${encre} sur ${teinte}`).toBeGreaterThanOrEqual(4.5);
+    }
+  });
 });

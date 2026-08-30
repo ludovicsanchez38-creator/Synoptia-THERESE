@@ -38,7 +38,10 @@
   --color-accent-magenta-ink: #BE1A72;
 
   /* Accent d'action (teinté selon le mode) + tint/anneau/texte-sur-accent */
-  --color-accent: #0F8FB3;
+  /* Lu comme du TEXTE dans 75 endroits sur 91, dont sur sa propre teinte.
+     #0F8FB3 n'y donnait que 3,29:1 ; #0E7490 donne 4,70:1 sur la teinte,
+     4,95:1 sur le fond et 5,36:1 en blanc sur lui. */
+  --color-accent: #0E7490;
   --color-accent-fill: #22D3EE;
   --color-accent-ink: #06121F;
   --color-accent-tint: #DEF4F9;
