@@ -108,3 +108,91 @@ async def test_execute_sandboxed_passe_par_un_sous_process_spawn(monkeypatch, tm
 
     await execute_sandboxed(XLSX_OK, str(tmp_path / "x.xlsx"), "T", "xlsx")
     assert captured["target"].__name__ == "_run_generation_in_subprocess"
+
+
+def test_pandas_est_un_import_interdit():
+    """Passe 4 : pandas.read_csv / to_excel ne passent pas par open()
+    et atteignaient ~/.therese, ~/.ssh, ou une URL HTTP. Le prompt du
+    skill ne le proposait pas ; le validateur l'acceptait quand même."""
+    from app.services.skills.code_executor import _validate_imports
+
+    ok, msg = _validate_imports("import pandas as pd\npd.read_csv('/etc/passwd')", "xlsx")
+    assert ok is False
+    assert "pandas" in msg.lower()
+
+
+def test_save_via_variable_ecrit_dans_le_dossier_de_sortie(tmp_path):
+    """wb.save(chemin) avec une variable passait au travers de la
+    réécriture, qui ne couvrait qu'un littéral. _ensure_save_call
+    s'arrêtait dès qu'un .save( existait."""
+    dehors = tmp_path / "dehors"
+    dedans = tmp_path / "dedans"
+    dehors.mkdir()
+    dedans.mkdir()
+    hors_cible = dehors / "evasion.xlsx"
+    sortie = dedans / "autorise.xlsx"
+    code = (
+        "wb = Workbook()\n"
+        "ws = wb.active\n"
+        "ws['A1'] = title\n"
+        f"chemin = {str(hors_cible)!r}\n"
+        "wb.save(chemin)\n"
+    )
+    rq: queue.Queue = queue.Queue()
+    _run_generation_in_subprocess(code, str(sortie), "T", "xlsx", 10, rq)
+    status, detail = rq.get_nowait()
+    assert status == "ok", detail
+    assert sortie.exists(), "le fichier attendu n'a pas été écrit"
+    assert not hors_cible.exists(), (
+        "wb.save(chemin) a écrit hors du dossier de sortie"
+    )
+
+
+def test_une_bibliotheque_ne_lit_pas_hors_du_dossier(tmp_path):
+    """open() du namespace est absent ; openpyxl.load_workbook, lui,
+    utilise le vrai open du process. C'est le trou : le code généré
+    lit ~/.therese via la bibliothèque, pas via open().
+
+    Le secret est DANS UN AUTRE dossier que la sortie : le même
+    tmp_path les laisserait passer (le garde autorise le dossier
+    de sortie, pas le disque entier).
+    """
+    from openpyxl import Workbook as _WB
+
+    dehors = tmp_path / "dehors"
+    dedans = tmp_path / "dedans"
+    dehors.mkdir()
+    dedans.mkdir()
+    secret = dehors / "secret.xlsx"
+    wb = _WB()
+    wb.active["A1"] = "mot de passe imap"
+    wb.save(secret)
+
+    sortie = dedans / "autorise.xlsx"
+    code = (
+        "from openpyxl import load_workbook\n"
+        f"wb = load_workbook({str(secret)!r})\n"
+        "wb.save(output_path)\n"
+    )
+    rq: queue.Queue = queue.Queue()
+    _run_generation_in_subprocess(code, str(sortie), "T", "xlsx", 10, rq)
+    status, detail = rq.get_nowait()
+    assert status == "error", f"la bibliothèque a lu hors cible : {detail}"
+    assert "PermissionError" in detail or "hors" in detail.lower()
+    assert not sortie.exists()
+
+
+def test_la_garde_reseau_refuse_une_connexion():
+    """pandas.read_csv('https://…') parlait HTTP via urllib, pas open().
+    La garde s'installe dans le sous-processus avant exec."""
+    import socket
+
+    import app.services.skills.code_executor as ce
+
+    assert hasattr(ce, "_installer_garde_reseau"), "la garde réseau n'existe pas"
+    restaurer = ce._installer_garde_reseau()
+    try:
+        with pytest.raises(PermissionError):
+            socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    finally:
+        restaurer()

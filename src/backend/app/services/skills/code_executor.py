@@ -88,7 +88,9 @@ ALLOWED_IMPORTS: dict[str, set[str]] = {
         "openpyxl.chart.Reference",
         "openpyxl.utils",
         "openpyxl.utils.get_column_letter",
-        "pandas",
+        # pandas retiré (passe 4, frontière de confiance) : read_csv /
+        # to_excel ne passent pas par open() et lisaient ~/.therese, ~/.ssh
+        # ou une URL HTTP. Le prompt du skill ne le proposait pas.
         "datetime",
         "json",
         "re",
@@ -387,6 +389,35 @@ def repair_truncated_code(code: str) -> str | None:
     return None
 
 
+def _forcer_sauvegarde_vers_sortie(code: str) -> str:
+    """Réécrit tout appel .save(...) en .save(output_path).
+
+    Passe 4 : la réécriture regex ne couvrait qu'un littéral
+    (`.save("facture.docx")`). `chemin = "/Users/ludo/..."; wb.save(chemin)`
+    passait au travers, et `_ensure_save_call` s'arrêtait dès qu'un
+    `.save(` existait. Un AST ne se laisse pas tromper par une variable.
+    """
+    try:
+        tree = ast.parse(code)
+    except SyntaxError:
+        return code
+
+    class _SaveVersSortie(ast.NodeTransformer):
+        def visit_Call(self, node: ast.Call) -> ast.AST:
+            self.generic_visit(node)
+            if isinstance(node.func, ast.Attribute) and node.func.attr == "save":
+                return ast.Call(
+                    func=node.func,
+                    args=[ast.Name(id="output_path", ctx=ast.Load())],
+                    keywords=[],
+                )
+            return node
+
+    nouveau = _SaveVersSortie().visit(tree)
+    ast.fix_missing_locations(nouveau)
+    return ast.unparse(nouveau)
+
+
 def _ensure_save_call(code: str) -> str:
     """
     Vérifie que le code contient un appel .save(output_path).
@@ -398,8 +429,8 @@ def _ensure_save_call(code: str) -> str:
     Returns:
         Code avec .save(output_path) garanti
     """
-    # Vérifier si un .save() existe déjà (avec n'importe quel argument)
-    if re.search(r'\.save\s*\(', code):
+    code = _forcer_sauvegarde_vers_sortie(code)
+    if re.search(r"\.save\s*\(\s*output_path\s*\)", code):
         return code
 
     # Détecter le nom de la variable du document principal
@@ -671,6 +702,88 @@ def _restricted_import(format_type: str):
     return safe_import
 
 
+def _installer_garde_fs(output_path: str) -> Any:
+    """Borne builtins.open au dossier de sortie, dans CE process.
+
+    Passe 4 : `open()` du namespace sandboxé était absent (NameError),
+    mais openpyxl / python-docx / zipfile utilisent le vrai
+    `builtins.open` du process. Le sous-processus tourne sous
+    l'utilisateur de Ludo : une lecture de ~/.ssh passait.
+
+    On patche le process entier, pas le namespace : c'est le seul
+    endroit qui intercepte les bibliothèques déjà importées. Renvoie
+    un restaurateur : les tests appellent le worker dans le process
+    pytest, il ne faut pas y laisser open() borné.
+    """
+    import builtins
+    import io
+    import os
+    import tempfile
+
+    reel_open = builtins.open
+    reel_io_open = io.open
+    dossier = Path(output_path).resolve().parent
+    # openpyxl écrit un NamedTemporaryFile puis le relit. Sans ça, un
+    # save légitime échoue : le temp atterrit dans /var/folders. On
+    # redirige le dossier temp vers la sortie AVANT d'ouvrir quoi que
+    # ce soit : écrire dans /tmp n'est plus un exutoire.
+    ancien_tmpdir = os.environ.get("TMPDIR")
+    ancien_tempdir = tempfile.tempdir
+    os.environ["TMPDIR"] = str(dossier)
+    tempfile.tempdir = str(dossier)
+
+    def open_borne(file: Any, mode: str = "r", *args: Any, **kwargs: Any) -> Any:
+        if isinstance(file, int):
+            return reel_open(file, mode, *args, **kwargs)
+        try:
+            chemin = Path(file).resolve()
+            chemin.relative_to(dossier)
+        except (TypeError, ValueError, OSError) as exc:
+            raise PermissionError(
+                f"Accès hors du dossier de sortie interdit : {file}"
+            ) from exc
+        return reel_open(file, mode, *args, **kwargs)
+
+    # ZipFile utilise io.open, lié à l'import, pas builtins.open.
+    builtins.open = open_borne
+    io.open = open_borne
+
+    def restaurer() -> None:
+        builtins.open = reel_open
+        io.open = reel_io_open
+        if ancien_tmpdir is None:
+            os.environ.pop("TMPDIR", None)
+        else:
+            os.environ["TMPDIR"] = ancien_tmpdir
+        tempfile.tempdir = ancien_tempdir
+
+    return restaurer
+
+
+def _installer_garde_reseau() -> Any:
+    """Refuse toute ouverture de socket dans ce process.
+
+    pandas.read_csv('https://…') parlait HTTP via urllib, pas open().
+    Interdire le socket coupe ce canal, quelle que soit la bibliothèque.
+    Renvoie un restaurateur (même raison que la garde FS).
+    """
+    import socket
+
+    reel_socket = socket.socket
+
+    def _refuser(*_args: Any, **_kwargs: Any) -> Any:
+        raise PermissionError(
+            "Réseau interdit dans le bac à sable des documents"
+        )
+
+    setattr(socket, "socket", _refuser)  # noqa: B010
+
+    def restaurer() -> None:
+        setattr(socket, "socket", reel_socket)  # noqa: B010
+
+    return restaurer
+
+
 def _run_generation_in_subprocess(
     code: str,
     output_path: str,
@@ -685,14 +798,30 @@ def _run_generation_in_subprocess(
     backend (token de session, clé Fernet) : une évasion éventuelle du
     namespace restreint ne donne donc pas accès aux secrets du process
     principal. Le résultat (ok / error) est remonté via la queue.
+
+    Passe 4 : on importe les bibliothèques Office AVEC le vrai open
+    (sinon site-packages est hors du dossier de sortie), puis on
+    installe les gardes, puis on réécrit les `.save(...)` vers
+    output_path. Un code généré ne lit plus hors de ce qu'on lui
+    donne, et n'écrit plus hors du dossier de sortie.
     """
+    restaurer_reseau = None
+    restaurer_fs = None
     try:
+        restaurer_reseau = _installer_garde_reseau()
         namespace = _build_namespace(output_path, title, format_type, nb_slides)
+        restaurer_fs = _installer_garde_fs(output_path)
+        code = _forcer_sauvegarde_vers_sortie(code)
         compiled = compile(code, "<llm_generated>", "exec")
         exec(compiled, namespace)  # noqa: S102
         result_queue.put(("ok", ""))
     except Exception as e:  # noqa: BLE001 - tout est remonté au process parent
         result_queue.put(("error", f"{type(e).__name__}: {e}"))
+    finally:
+        if restaurer_fs is not None:
+            restaurer_fs()
+        if restaurer_reseau is not None:
+            restaurer_reseau()
 
 
 async def execute_sandboxed(
