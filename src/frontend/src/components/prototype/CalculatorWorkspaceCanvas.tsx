@@ -123,7 +123,7 @@ function InputField({
           max={max}
           step="any"
           onChange={(event) => onChange(event.target.value)}
-          className="w-full rounded-md border border-border px-3 py-2 pr-12 text-sm font-normal outline-none focus:border-[#22D3EE]"
+          className="w-full rounded-md border border-border px-3 py-2 pr-12 text-sm font-normal outline-none focus:border-accent"
         />
         {suffix && <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-xs font-medium text-text-muted">{suffix}</span>}
       </span>

@@ -35,19 +35,19 @@ export function WindowControls({ side = 'left' }: { side?: 'left' | 'right' }) {
           type="button"
           aria-label="Fermer la fenêtre"
           onClick={run((win) => win.close())}
-          className="group h-3 w-3 rounded-full bg-[#FF5F57] transition-colors hover:bg-[#ff4136]"
+          className="group h-3 w-3 rounded-full bg-[#FF5F57] transition-colors hover:bg-error"
         />
         <button
           type="button"
           aria-label="Réduire la fenêtre"
           onClick={run((win) => win.minimize())}
-          className="group h-3 w-3 rounded-full bg-[#FEBC2E] transition-colors hover:bg-[#f5a623]"
+          className="group h-3 w-3 rounded-full bg-[#FEBC2E] transition-colors hover:bg-warning"
         />
         <button
           type="button"
           aria-label="Agrandir ou restaurer la fenêtre"
           onClick={run((win) => win.toggleMaximize())}
-          className="group h-3 w-3 rounded-full bg-[#28C840] transition-colors hover:bg-[#1faa35]"
+          className="group h-3 w-3 rounded-full bg-[#28C840] transition-colors hover:bg-success"
         />
       </div>
     );

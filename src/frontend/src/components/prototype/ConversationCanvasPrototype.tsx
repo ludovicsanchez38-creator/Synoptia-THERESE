@@ -1462,7 +1462,7 @@ export function ConversationCanvasPrototype() {
                 setCapabilityCenterOpen(false);
                 setCommandOpen(false);
               }}
-              className="mr-1 hidden items-center gap-1.5 rounded-full border border-accent-cyan/30 bg-accent-tint px-2.5 py-1.5 text-xs font-semibold text-accent hover:border-[#9ED7E1] sm:flex"
+              className="mr-1 hidden items-center gap-1.5 rounded-full border border-accent-cyan/30 bg-accent-tint px-2.5 py-1.5 text-xs font-semibold text-accent hover:border-accent/40 sm:flex"
             >
               <ShieldCheck className="h-3.5 w-3.5 text-accent" />
               Contrôle des données
@@ -1811,7 +1811,7 @@ export function ConversationCanvasPrototype() {
                 data-testid="prototype-composer-backdrop"
               >
                 <div className={`pointer-events-auto mx-auto transition-[max-width] duration-200 ${canvasOpen ? 'max-w-[760px]' : 'max-w-[860px]'}`}>
-                  <div className="rounded-md border border-border bg-surface p-2 shadow-[0_18px_45px_-24px_rgba(16,28,54,0.45)] focus-within:border-[#22D3EE] focus-within:shadow-[0_0_0_3px_rgba(34,211,238,0.12),0_18px_45px_-24px_rgba(16,28,54,0.45)]">
+                  <div className="rounded-md border border-border bg-surface p-2 shadow-[0_18px_45px_-24px_rgba(16,28,54,0.45)] focus-within:border-accent focus-within:shadow-[0_0_0_3px_rgba(34,211,238,0.12),0_18px_45px_-24px_rgba(16,28,54,0.45)]">
                     {selectedCapability && SelectedCapabilityIcon && (
                       <div className="mx-1 mt-1 flex items-center gap-2 rounded-md border border-domaine-prospects/30 bg-domaine-prospects-tint px-2.5 py-2 text-xs text-domaine-prospects">
                         <span className="grid h-6 w-6 place-items-center rounded-sm bg-domaine-prospects-tint text-domaine-prospects">

@@ -131,6 +131,27 @@ describe('lot 5 : plus une seule couleur brute', () => {
     expect(fautifs, fautifs.slice(0, 4).join(' | ')).toEqual([]);
   });
 
+  it("les seules couleurs en dur sont celles qui doivent l'être", () => {
+    // Une couleur écrite en hexadécimal dans un className échappe au thème :
+    // elle est identique en clair et en sombre. Deux familles le justifient,
+    // et seulement deux.
+    const LEGITIMES = new Set([
+      // Blocs de code : un terminal reste sombre dans les deux thèmes.
+      '#0A0F1E', '#0a0f1e', '#131B35', '#1e1e1e', '#B6C7DA',
+      // Boutons de fenêtre macOS : ces trois valeurs sont imposées par le système.
+      '#FF5F57', '#FEBC2E', '#28C840',
+    ]);
+    const fautifs: string[] = [];
+    for (const f of SOURCES) {
+      for (const m of readFileSync(f, 'utf-8').matchAll(
+        /\b(?:bg|text|border|ring|from|to|via)-\[(#[0-9A-Fa-f]{3,8})\]/g,
+      )) {
+        if (!LEGITIMES.has(m[1])) fautifs.push(`${court(f)} : ${m[0]}`);
+      }
+    }
+    expect(fautifs, fautifs.slice(0, 4).join(' | ')).toEqual([]);
+  });
+
   it("la charte Synoptïa ne déborde pas sur THÉRÈSE", () => {
     // Arbitrage de Ludo, 30/08/2026 : THÉRÈSE porte son identité propre.
     // #2451FF est le bleu de la marque Synoptïa.

@@ -212,7 +212,7 @@ export function PrototypeConversationDrawer({
             placeholder="Rechercher…"
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            className="w-full rounded-md border border-border bg-surface-2 py-2 pl-9 pr-3 text-sm text-text outline-none focus:border-[#22D3EE]"
+            className="w-full rounded-md border border-border bg-surface-2 py-2 pl-9 pr-3 text-sm text-text outline-none focus:border-accent"
           />
         </div>
       </div>
@@ -240,7 +240,7 @@ export function PrototypeConversationDrawer({
             {items.map((conversation) => (
               <div key={conversation.id} className="relative mb-1">
                 {editingId === conversation.id ? (
-                  <div className="rounded-md border border-[#22D3EE] bg-surface p-2">
+                  <div className="rounded-md border border-accent bg-surface p-2">
                     <input autoFocus aria-label="Nouveau titre" value={editingTitle} maxLength={120} onChange={(event) => setEditingTitle(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void saveTitle(conversation); if (event.key === 'Escape') setEditingId(null); }} className="w-full rounded-sm border border-border px-2 py-1.5 text-sm text-text outline-none" />
                     <div className="mt-2 flex justify-end gap-2"><button type="button" onClick={() => setEditingId(null)} className="text-sm font-semibold text-text-muted">Annuler</button><button type="button" onClick={() => void saveTitle(conversation)} className="rounded-sm bg-accent-fill px-2 py-1 text-sm font-semibold text-accent-ink">Enregistrer</button></div>
                   </div>
@@ -254,7 +254,7 @@ export function PrototypeConversationDrawer({
                       aria-current={currentConversationId === conversation.id ? 'page' : undefined}
                       className={`w-full rounded-md border px-3 py-2.5 pr-10 text-left transition-colors ${
                         currentConversationId === conversation.id
-                          ? 'border-[#BDE8EF] bg-accent-tint'
+                          ? 'border-accent/40 bg-accent-tint'
                           : 'border-transparent hover:border-border hover:bg-surface-2'
                       }`}
                     >

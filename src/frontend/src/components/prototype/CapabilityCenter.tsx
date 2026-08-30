@@ -449,7 +449,7 @@ export function CapabilityCenter({
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder="Chercher une capacité, un résultat ou un outil…"
-                  className="w-full rounded-md border border-border bg-surface-2 py-2.5 pl-9 pr-3 text-sm text-text outline-none focus:border-[#22D3EE] focus:bg-surface"
+                  className="w-full rounded-md border border-border bg-surface-2 py-2.5 pl-9 pr-3 text-sm text-text outline-none focus:border-accent focus:bg-surface"
                 />
               </div>
               {!query && (
@@ -485,7 +485,7 @@ export function CapabilityCenter({
                         key={capability.id}
                         type="button"
                         onClick={() => onChoose(capability)}
-                        className="group rounded-md border border-border bg-surface p-4 text-left shadow-[0_8px_24px_-22px_rgba(16,28,54,0.55)] hover:-translate-y-0.5 hover:border-[#B8C5D8] hover:shadow-[0_14px_30px_-20px_rgba(16,28,54,0.35)]"
+                        className="group rounded-md border border-border bg-surface p-4 text-left shadow-[0_8px_24px_-22px_rgba(16,28,54,0.55)] hover:-translate-y-0.5 hover:border-border hover:shadow-[0_14px_30px_-20px_rgba(16,28,54,0.35)]"
                       >
                         <div className="flex items-start gap-3">
                           {capability.id === 'decision-board' ? (

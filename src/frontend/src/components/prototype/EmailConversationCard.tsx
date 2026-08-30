@@ -131,7 +131,7 @@ export function EmailInboxCard({
                 aria-label={`${message.is_read ? '' : 'Non lu. '}${emailSenderLabel(message)}. ${message.subject || 'Sans objet'}. ${formatEmailDate(message.date)}`}
                 className="flex w-full items-start gap-3 px-4 py-3.5 text-left hover:bg-surface-2"
               >
-                <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${message.is_read ? 'bg-[#C8D2E0]' : 'bg-[#7C3AED]'}`} />
+                <span className={`mt-1 h-2.5 w-2.5 shrink-0 rounded-full ${message.is_read ? 'bg-border' : 'bg-domaine-prospects'}`} />
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-wrap items-center gap-2">
                     <span className={`truncate text-sm text-text ${message.is_read ? 'font-medium' : 'font-bold'}`}>

@@ -298,7 +298,7 @@ function TaskProgress({
           <motion.div
             className={cn(
               'h-full rounded-full',
-              isDone ? 'bg-emerald-400' : isError ? 'bg-error' : 'bg-[#22D3EE]',
+              isDone ? 'bg-emerald-400' : isError ? 'bg-error' : 'bg-accent-fill',
             )}
             initial={{ width: 0 }}
             animate={{ width: `${Math.round(task.progress * 100)}%` }}
@@ -529,7 +529,7 @@ export function ActionPanel() {
         {showList && (
           <div className="flex items-center justify-between px-4 py-3 border-b border-border">
             <div className="flex items-center gap-2">
-              <Zap size={16} className="text-[#22D3EE]" />
+              <Zap size={16} className="text-accent-cyan-ink" />
               <h2 className="text-sm font-medium text-text">Actions</h2>
             </div>
             <button
