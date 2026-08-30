@@ -79,6 +79,7 @@ from app.services.workspace_tools import (
     WORKSPACE_TOOL_NAMES,
     WORKSPACE_TOOLS,
     execute_workspace_tool,
+    poser_ecran,
 )
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -1585,6 +1586,8 @@ async def send_message(
                 pending_confirmations=inline_pending_confirmations,
                 allow_file_commands=produce_prompt is None,
                 detection_message=detection_message,
+                email_account_id=request.email_account_id,
+                calendar_id=request.calendar_id,
             ),
             media_type="text/event-stream",
             headers={
@@ -1783,6 +1786,8 @@ async def _stream_response(
     pending_confirmations: list[dict[str, Any]] | None = None,
     allow_file_commands: bool = True,
     detection_message: str | None = None,
+    email_account_id: str | None = None,
+    calendar_id: str | None = None,
 ) -> AsyncGenerator[str, None]:
     """Stream response chunks as Server-Sent Events with MCP tool support."""
 
@@ -1869,6 +1874,8 @@ async def _stream_response(
         allow_file_commands=allow_file_commands,
         detection_message=detection_message,
         contexte=contexte_execution,
+        email_account_id=email_account_id,
+        calendar_id=calendar_id,
     )
     # Déclarées hors de la boucle : le `finally` doit pouvoir les neutraliser
     # même quand c'est le CLIENT qui disparaît en pleine attente (fenêtre
@@ -2089,8 +2096,13 @@ async def _do_stream_response(
     allow_file_commands: bool = True,
     detection_message: str | None = None,
     contexte: ContexteExecution | None = None,
+    email_account_id: str | None = None,
+    calendar_id: str | None = None,
 ) -> AsyncGenerator[str, None]:
     """Internal streaming implementation."""
+    # Finding 1-2 (30/08) : coller le compte / l'agenda de l'écran AVANT
+    # tout outil. Confirm-tool rejoue depuis les arguments en attente.
+    poser_ecran(email_account_id=email_account_id, calendar_id=calendar_id)
 
     def _annulation_observee() -> bool:
         # 0.47 : le token de CETTE génération est l'autorité ; le drapeau
@@ -2862,7 +2874,8 @@ async def _execute_tools_and_continue(
         # l'action était seulement mise en attente.
         if requires_confirmation(tc.name):
             pending_arguments = canoniser_arguments(tc.name, dict(tc.arguments))
-            if tc.name.split("__", 1)[-1] == "create_calendar_event" and session is not None:
+            outil_base = tc.name.split("__", 1)[-1]
+            if outil_base == "create_calendar_event" and session is not None:
                 from app.services.workspace_tools import (
                     get_calendar_confirmation_destination,
                 )
@@ -2870,6 +2883,15 @@ async def _execute_tools_and_continue(
                 pending_arguments["_confirmation_destination"] = (
                     await get_calendar_confirmation_destination(session)
                 )
+            if outil_base == "send_email" and session is not None:
+                from app.services.workspace_tools import (
+                    get_email_confirmation_destination,
+                )
+
+                destination = await get_email_confirmation_destination(session)
+                pending_arguments["_confirmation_destination"] = destination
+                if destination.get("account_id"):
+                    pending_arguments["_compte_ecran"] = destination["account_id"]
             logger.info(
                 "Outil sensible %s mis en attente de confirmation utilisateur "
                 "(NON exécuté), clés d'arguments : %s",
@@ -3265,6 +3287,15 @@ async def confirm_tool(
     tool_name, arguments, conversation_id = action
     if not request.approved:
         return {"status": "cancelled", "tool_name": tool_name}
+
+    # Finding 1 (30/08) : la confirmation est une autre requête. Sans
+    # reposer le compte collé à la carte, send_email retomberait sur
+    # le premier de la table.
+    destination = arguments.get("_confirmation_destination") or {}
+    poser_ecran(
+        email_account_id=arguments.get("_compte_ecran") or destination.get("account_id"),
+        calendar_id=arguments.get("_agenda_ecran") or destination.get("calendar_id"),
+    )
 
     from app.services.workspace_tools import (
         drain_generated_files,

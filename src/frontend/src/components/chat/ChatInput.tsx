@@ -18,6 +18,8 @@ import { InlineDropZone, FileChip } from '../files/DropZone';
 import { useChatStore } from '../../stores/chatStore';
 import { usePanelStore } from '../../stores/panelStore';
 import { useStatusStore } from '../../stores/statusStore';
+import { useEmailStore } from '../../stores/emailStore';
+import { useCalendarStore } from '../../stores/calendarStore';
 import {
   hasVariableTokens,
   previewVariables,
@@ -625,6 +627,15 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         stream: true,
         ...(pendingSkillId && { skill_id: pendingSkillId }),
         ...(filePaths && { file_paths: filePaths }),
+        // Finding 1-2 (30/08) : le compte / l'agenda de l'écran. Sans eux
+        // le backend refuse s'il y en a plusieurs, plutôt que de parler au
+        // premier de la table.
+        ...(useEmailStore.getState().currentAccountId
+          ? { email_account_id: useEmailStore.getState().currentAccountId }
+          : {}),
+        ...(useCalendarStore.getState().currentCalendarId
+          ? { calendar_id: useCalendarStore.getState().currentCalendarId }
+          : {}),
       }, controller.signal);
       // Consommer le skillId après envoi
       setPendingSkillId(undefined);

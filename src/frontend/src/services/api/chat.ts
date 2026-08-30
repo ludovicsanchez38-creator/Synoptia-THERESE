@@ -21,6 +21,8 @@ export interface ChatRequest {
   skill_id?: string;
   file_paths?: string[];
   disable_tools?: boolean;  // BUG-097 : RFC mini-chat - pas d'outils pour éviter les boucles
+  email_account_id?: string;
+  calendar_id?: string;
 }
 
 export interface ChatResponse {

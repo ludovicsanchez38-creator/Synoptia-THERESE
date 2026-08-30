@@ -18,6 +18,12 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+# Revue 30/08 finding 1 : le chat parlait au premier compte de la table,
+# pas à celui de l'écran. L'identifiant voyage avec la requête (ChatRequest)
+# puis, pour un envoi confirmé plus tard, dans les arguments en attente.
+_compte_ecran: ContextVar[str | None] = ContextVar("compte_ecran", default=None)
+_agenda_ecran: ContextVar[str | None] = ContextVar("agenda_ecran", default=None)
+
 logger = logging.getLogger(__name__)
 
 
@@ -875,17 +881,116 @@ async def _retirer_document_orphelin(
             )
 
 
-async def _get_email_provider(session: AsyncSession):
-    """Retrieve the first configured email account and return a provider."""
+def poser_ecran(
+    *,
+    email_account_id: str | None = None,
+    calendar_id: str | None = None,
+) -> None:
+    """Pose le compte / l'agenda de l'écran pour la génération en cours.
+
+    Toujours poser, y compris None : un tour sans sélection ne doit pas
+    hériter du compte du tour précédent sur le même worker.
+    """
+    _compte_ecran.set(email_account_id)
+    _agenda_ecran.set(calendar_id)
+
+
+def _id_compte_demande(
+    account_id: str | None = None, args: dict[str, Any] | None = None
+) -> str | None:
+    if account_id:
+        return account_id
+    if args:
+        brut = args.get("_compte_ecran") or args.get("account_id")
+        if brut:
+            return str(brut)
+    return _compte_ecran.get()
+
+
+def _id_agenda_demande(
+    calendar_id: str | None = None, args: dict[str, Any] | None = None
+) -> str | None:
+    if calendar_id:
+        return calendar_id
+    if args:
+        brut = args.get("_agenda_ecran") or args.get("calendar_id")
+        if brut:
+            return str(brut)
+    return _agenda_ecran.get()
+
+
+async def _resoudre_compte_email(
+    session: AsyncSession, account_id: str | None = None
+):
+    """Le compte visé, ou (None, message) si on ne peut pas le dire sans mentir.
+
+    Finding 1 (30/08) : `limit(1)` prenait le premier créé. Deux comptes, et
+    le second (sélectionné, sain) n'était jamais essayé. Un échec franc vaut
+    mieux qu'un envoi chez le mauvais destinataire interne.
+    """
     from app.models.entities import EmailAccount
+
+    cible = account_id
+    if cible:
+        account = await session.get(EmailAccount, cible)
+        if account is None:
+            return None, (
+                "Compte e-mail introuvable. Vérifie le compte sélectionné "
+                "dans le panneau Courrier."
+            )
+        return account, None
+
+    result = await session.execute(
+        select(EmailAccount).order_by(EmailAccount.created_at, EmailAccount.id)
+    )
+    comptes = list(result.scalars().all())
+    if not comptes:
+        return None, (
+            "Aucun compte email connecte. Configure ton email dans les parametres."
+        )
+    if len(comptes) > 1:
+        adresses = ", ".join(compte.email for compte in comptes)
+        return None, (
+            "Plusieurs comptes e-mail sont connectés "
+            f"({adresses}). Choisis-en un dans le panneau Courrier avant "
+            "de lire ou d'envoyer un mail depuis le chat."
+        )
+    return comptes[0], None
+
+
+async def get_email_confirmation_destination(
+    session: AsyncSession, account_id: str | None = None
+) -> dict[str, Any]:
+    """Décrit sans mutation l'expéditeur qu'utilisera send_email."""
+    account, error = await _resoudre_compte_email(
+        session, _id_compte_demande(account_id)
+    )
+    if account is None:
+        return {
+            "account": None,
+            "account_id": None,
+            "provider": None,
+            "error": error,
+        }
+    return {
+        "account": account.email,
+        "account_id": account.id,
+        "provider": account.provider,
+        "error": None,
+    }
+
+
+async def _get_email_provider(session: AsyncSession, account_id: str | None = None):
+    """Provider e-mail du compte visé — jamais le premier de la table au hasard."""
     from app.routers.email import ensure_valid_access_token
     from app.services.email.provider_factory import get_email_provider
     from app.services.encryption import decrypt_value
 
-    result = await session.execute(select(EmailAccount).limit(1))
-    account = result.scalar_one_or_none()
-    if not account:
-        return None, "Aucun compte email connecte. Configure ton email dans les parametres."
+    account, error = await _resoudre_compte_email(
+        session, _id_compte_demande(account_id)
+    )
+    if account is None:
+        return None, error
 
     if account.provider == "gmail":
         # ensure_valid_access_token renvoie déjà le token DÉCHIFFRÉ (str).
@@ -1002,7 +1107,9 @@ async def get_calendar_confirmation_destination(
 
 async def _read_emails(args: dict, session: AsyncSession) -> str:
     """Read recent emails."""
-    provider, error = await _get_email_provider(session)
+    provider, error = await _get_email_provider(
+        session, account_id=_id_compte_demande(args=args)
+    )
     if error:
         return error
 
@@ -1058,7 +1165,9 @@ async def _summarize_emails(args: dict, session: AsyncSession) -> str:
     (sujet + expediteur + corps/snippet) et demande un resume au LLM deja
     configure. 100% local-first, aucune dependance externe ajoutee.
     """
-    provider, error = await _get_email_provider(session)
+    provider, error = await _get_email_provider(
+        session, account_id=_id_compte_demande(args=args)
+    )
     if error:
         return error
 
@@ -1153,7 +1262,9 @@ async def _send_email(args: dict, session: AsyncSession) -> str:
         return f"Erreur : l'adresse '{to_addr}' ne semble pas etre un email valide."
 
     # Recuperer le provider (verifie la config, le token, etc.)
-    provider, error = await _get_email_provider(session)
+    provider, error = await _get_email_provider(
+        session, account_id=_id_compte_demande(args=args)
+    )
     if error:
         return error
 
@@ -1193,7 +1304,9 @@ async def _send_email(args: dict, session: AsyncSession) -> str:
 
 async def _search_emails(args: dict, session: AsyncSession) -> str:
     """Search emails."""
-    provider, error = await _get_email_provider(session)
+    provider, error = await _get_email_provider(
+        session, account_id=_id_compte_demande(args=args)
+    )
     if error:
         return error
 
