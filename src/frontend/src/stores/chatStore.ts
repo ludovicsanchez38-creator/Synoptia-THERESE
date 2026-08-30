@@ -385,7 +385,14 @@ export const useChatStore = create<ChatStore>()(
             return {
               conversations: state.conversations.map((c) =>
                 c.id === conversationId
-                  ? { ...c, messages, messageCount: messages.length, synced: true }
+                  ? {
+                      ...c,
+                      messages,
+                      // Lot F : le GET /messages est plafonné (100). Le listing
+                      // connaît le vrai total. L'écraser faisait taire le plafond.
+                      messageCount: Math.max(c.messageCount ?? 0, messages.length),
+                      synced: true,
+                    }
                   : c
               ),
             };

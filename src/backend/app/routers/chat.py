@@ -3546,13 +3546,17 @@ async def get_conversation_messages(
     session: AsyncSession = Depends(get_session),
 ):
     """Get messages for a conversation."""
+    # Lot F (revue 30/08) : ASC + limit prenait le DEBUT du fil. L'écran
+    # montrait les 100 plus anciens, le modèle (BUG-031) les 50 plus récents.
+    # Au 151e, plus aucun recouvrement ; y revenir écrasait le store. Même
+    # fenêtre que le LLM : les plus récents, réordonnés pour l'affichage.
     result = await session.execute(
         select(Message)
         .where(Message.conversation_id == conversation_id)
-        .order_by(Message.created_at)
+        .order_by(Message.created_at.desc(), Message.id.desc())
         .limit(limit)
     )
-    messages = result.scalars().all()
+    messages = list(reversed(result.scalars().all()))
 
     return [
         MessageResponse(
