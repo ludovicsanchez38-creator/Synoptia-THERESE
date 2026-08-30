@@ -28,6 +28,9 @@ import { InvoiceForm } from './InvoiceForm';
 import { cn } from '../../lib/utils';
 import { Z_LAYER } from '../../styles/z-layers';
 
+/** Lot F : le GET factures plafonne à 100. Atteint = liste incomplète. */
+const PLAFOND_FACTURES = 100;
+
 const STATUS_CONFIG: Record<string, { label: string; icon: any; color: string; badgeBg?: string }> = {
   draft: { label: 'Brouillon', icon: FileText, color: 'text-text-muted', badgeBg: 'bg-gray-500/20' },
   sent: { label: 'Envoyée', icon: Mail, color: 'text-info', badgeBg: 'bg-info/20' },
@@ -61,6 +64,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
   const addNotification = useStatusStore((s) => s.addNotification);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [listeTronquee, setListeTronquee] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [deletingInvoice, setDeletingInvoice] = useState<Invoice | null>(null);
@@ -68,18 +72,28 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
 
   const effectiveOpen = standalone || isInvoicePanelOpen;
 
-  // Charger les factures au montage
+  // Lot F : recharger quand le filtre change. Avant, le filtre tournait
+  // dans les 50 plus récentes : « Payée » vide alors que mille payées
+  // étaient plus anciennes.
   useEffect(() => {
     if (effectiveOpen) {
       loadInvoices();
     }
-  }, [effectiveOpen]);
+  }, [effectiveOpen, filters.status, filters.document_type, filters.contact_id]);
 
   async function loadInvoices() {
     setIsLoading(true);
     try {
-      const data = await listInvoices();
+      const courants = useInvoiceStore.getState().filters;
+      const data = await listInvoices({
+        limit: PLAFOND_FACTURES,
+        status:
+          courants.status && courants.status !== 'all' ? courants.status : undefined,
+        document_type: courants.document_type,
+        contact_id: courants.contact_id,
+      });
       setInvoices(data);
+      setListeTronquee(data.length >= PLAFOND_FACTURES);
     } catch (error) {
       console.error('Failed to load invoices:', error);
     } finally {
@@ -167,7 +181,15 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
         </div>
         <div>
           <h2 className="text-lg font-semibold text-text">Devis et factures</h2>
-          <p className="text-sm text-text-muted">{filteredInvoices.length} document{filteredInvoices.length > 1 ? 's' : ''}</p>
+          <p className="text-sm text-text-muted">
+            {filteredInvoices.length}{listeTronquee ? '+' : ''} document{filteredInvoices.length > 1 ? 's' : ''}
+          </p>
+          {listeTronquee && (
+            <p role="alert" className="text-sm text-warning">
+              Liste incomplète : seuls les {PLAFOND_FACTURES} documents les plus
+              récents de ce filtre sont affichés.
+            </p>
+          )}
         </div>
       </div>
 

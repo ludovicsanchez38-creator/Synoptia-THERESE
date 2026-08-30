@@ -140,3 +140,41 @@ describe('InvoicesPanel suppression', () => {
     expect(screen.queryByTitle('Envoyer par email')).not.toBeInTheDocument();
   });
 });
+
+describe('InvoicesPanel - lot F plafond silencieux', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockListInvoices.mockResolvedValue([invoice]);
+    useInvoiceStore.setState({
+      invoices: [],
+      currentInvoiceId: null,
+      filters: { status: 'all' },
+      isInvoicePanelOpen: true,
+      draftInvoice: null,
+    });
+  });
+
+  it('envoie le filtre Payée au serveur plutôt que de trier le seau des 50 plus récentes', async () => {
+    render(<InvoicesPanel standalone />);
+    await screen.findByText('FAC-001');
+
+    fireEvent.click(screen.getByRole('button', { name: 'Payée' }));
+
+    await waitFor(() => {
+      expect(mockListInvoices).toHaveBeenCalledWith(
+        expect.objectContaining({ status: 'paid' }),
+      );
+    });
+  });
+
+  it('dit que la liste est incomplète si le plafond est atteint', async () => {
+    const page = Array.from({ length: 100 }, (_, i) => ({
+      ...invoice,
+      id: `inv-${i}`,
+      invoice_number: `FAC-${i}`,
+    }));
+    mockListInvoices.mockResolvedValue(page);
+    render(<InvoicesPanel standalone />);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Liste incomplète/);
+  });
+});
