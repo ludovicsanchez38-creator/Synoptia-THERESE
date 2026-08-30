@@ -41,3 +41,25 @@ s'apprête à modifier produit cinq rapports périmés.
 Instance de campagne prête (port 17941, isolée, Luna effort bas, conversation
 vérifiée). Protocole et cinq briefs écrits, contrainte de persistance encodée
 dans chacun.
+
+## 4. La release, et son changelog
+
+**Consigne explicite de Ludo, 30/08/2026 au soir :**
+
+> « Le changelog sera long, je te prie de ne pas le réduire. On va être sur un
+> des bumps les plus utiles depuis le début, puisqu'il va faire que
+> l'application marchera. »
+
+Donc : **on ne condense pas.** Les changelogs précédents tenaient en quatre
+puces pour ménager les testeurs Discord. Celui-ci ne le fera pas.
+
+La raison est juste : les bumps précédents ajoutaient des fonctionnalités ou
+soignaient l'apparence. Celui-ci répare ce qui empêchait l'application de
+fonctionner — les cinq modèles OpenAI qui ne répondaient sur aucun écran, les
+replis Office qui livraient de faux documents, les états qui affirmaient
+« Envoyé » sans l'être. Un utilisateur qui lit ce changelog doit comprendre
+que ce qui ne marchait pas chez lui est nommé, et corrigé.
+
+Le format des puces reste (émoji, titre gras, `•`, langage non technique,
+lien de téléchargement), mais la LONGUEUR n'est plus une contrainte. Une
+section par famille de défaut, et chaque défaut nommé en clair.
