@@ -37,3 +37,16 @@ audité. Tu testes si **les chiffres sont justes et si les documents partent**.
 
 ## Ton rapport
 `docs/campagnes/2026-08-30-cinq-personas-0.61/rapports/2-nadia.md`
+
+---
+
+## Rappel, et il prime sur tout le reste
+
+**Tu ne t'arrêtes pas à la première panne.** Tu la notes, tu la contournes, tu
+continues. Si le devis casse, tu passes à la facture ; si la facture casse, tu
+passes à la relance. Ton livrable est la COUVERTURE de ta chaîne, pas la
+beauté d'un finding. Relis ton mandat avant de rendre : as-tu fait les DEUX
+passes, la simple et celle qui fait mal ?
+
+Seuls trois cas t'autorisent à t'arrêter : serveur muet, jeton refusé, modèle
+indisponible. Alors tu écris `HARNAIS ?` en tête et tu décris ce que tu vois.

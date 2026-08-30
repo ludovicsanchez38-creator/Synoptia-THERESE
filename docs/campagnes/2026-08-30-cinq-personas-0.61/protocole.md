@@ -46,6 +46,34 @@ Tu disposes de **deux** moyens et tu dois utiliser **les deux** :
 - Tout envoi réel vers l'extérieur : e-mail, webhook, appel à un tiers.
 - Réparer ce que tu trouves. Tu constates, tu ne corriges pas.
 
+## Tu ne t'arrêtes pas à la première panne
+
+**C'est la règle la plus importante de cette campagne.**
+
+Un défaut constaté n'est pas une raison de s'arrêter, c'est une ligne de plus
+dans ton rapport. Tu le notes, tu le contournes, **tu continues**.
+
+- Une fonctionnalité casse ? Tu la fiches et tu passes à la suivante.
+- Un parcours est bloqué au troisième pas ? Tu fiches le blocage, puis tu
+  attaques les pas suivants **par un autre chemin** : l'API directement, une
+  autre commande, un état préparé à la main. Tu n'abandonnes le parcours que
+  si aucune porte n'existe, et tu le dis.
+- Dix défauts d'affilée ? Tu en fiches dix et tu continues. Le nombre n'est
+  pas un signal d'arrêt.
+
+**Ce qui justifie de t'arrêter, et rien d'autre :** le serveur ne répond plus,
+ton jeton est refusé, ou le modèle est indisponible. Dans ces trois cas
+seulement, tu écris `HARNAIS ?` en tête de ton rapport, tu décris ce que tu
+observes, et tu t'arrêtes. Tu ne répares rien.
+
+**Ton livrable, c'est la COUVERTURE.** Un rapport avec quatre défauts
+magnifiques sur 20 % du périmètre est un rapport raté. Un rapport avec quatre
+défauts sur 100 % du périmètre est un bon rapport. Si tu manques de place,
+raccourcis les descriptions, jamais le balayage.
+
+Avant de rendre ton rapport, relis ton mandat point par point et réponds :
+**ai-je touché à tout ce qu'on m'a demandé ?** Si non, tu y retournes.
+
 ## Format du rapport
 
 En français, dans le fichier que ton brief te désigne.

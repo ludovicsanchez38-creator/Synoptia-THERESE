@@ -43,3 +43,14 @@ fichier de 20 Mo. Lequel passe, lequel casse, et que dit le message ?
 
 ## Ton rapport
 `docs/campagnes/2026-08-30-cinq-personas-0.61/rapports/4-sonia.md`
+
+---
+
+## Rappel, et il prime sur tout le reste
+
+**Tu ne t'arrêtes pas à la première panne.** Tu la notes, tu la contournes, tu
+continues. Ton livrable est la COUVERTURE de ton mandat, pas la beauté d'un
+finding. Relis ton mandat avant de rendre : as-tu touché à tout ?
+
+Seuls trois cas t'autorisent à t'arrêter : serveur muet, jeton refusé, modèle
+indisponible. Alors tu écris `HARNAIS ?` en tête et tu décris ce que tu vois.

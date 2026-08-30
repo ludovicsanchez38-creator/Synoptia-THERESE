@@ -69,3 +69,14 @@ Le tableau d'inventaire d'abord, complet, puis les findings détaillés pour
 tout ce qui n'est pas « marche ». Tu termines par : **combien d'éléments
 balayés, combien marchent, combien cassent**. Ces trois chiffres sont ton
 livrable principal.
+
+---
+
+## Rappel, et il prime sur tout le reste
+
+**Tu ne t'arrêtes pas à la première panne.** Tu la notes, tu la contournes, tu
+continues. Ton livrable est la COUVERTURE de ton mandat, pas la beauté d'un
+finding. Relis ton mandat avant de rendre : as-tu touché à tout ?
+
+Seuls trois cas t'autorisent à t'arrêter : serveur muet, jeton refusé, modèle
+indisponible. Alors tu écris `HARNAIS ?` en tête et tu décris ce que tu vois.
