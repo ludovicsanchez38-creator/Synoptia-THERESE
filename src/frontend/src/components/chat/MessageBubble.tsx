@@ -368,7 +368,7 @@ export const MessageBubble = memo(function MessageBubble({
             title={isImage ? "Copier l'image" : "Copier le message"}
           >
             {copied ? (
-              <Check className="w-4 h-4 text-green-500" />
+              <Check className="w-4 h-4 text-agent-green" />
             ) : isImage ? (
               <ImageIcon className="w-4 h-4" />
             ) : (
@@ -614,7 +614,7 @@ export const MessageBubble = memo(function MessageBubble({
                     ? 'bg-error/10 text-error'
                     : message.uncertainty.confidence_level === 'medium'
                     ? 'bg-yellow-500/10 text-warning'
-                    : 'bg-green-500/10 text-green-400'
+                    : 'bg-green-500/10 text-agent-green'
                 )}
                 title={message.uncertainty.uncertainty_phrases.join(', ')}
               >
@@ -637,7 +637,7 @@ export const MessageBubble = memo(function MessageBubble({
               return (
                 <div
                   className={`flex items-center gap-1.5 px-2 py-1 rounded-sm ${
-                    isLocal ? 'bg-green-500/10 text-green-300' : 'bg-orange-500/10 text-orange-300'
+                    isLocal ? 'bg-green-500/10 text-agent-green' : 'bg-orange-500/10 text-agent-amber'
                   }`}
                   title={
                     isLocal

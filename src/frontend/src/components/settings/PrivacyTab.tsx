@@ -526,7 +526,7 @@ export function PrivacyTab() {
       {/* Section : Tes droits */}
       <section className="rounded-md border border-border/50 p-4">
         <h4 className="text-sm font-semibold text-text flex items-center gap-2 mb-3">
-          <UserCheck className="w-4 h-4 text-purple-400" />
+          <UserCheck className="w-4 h-4 text-agent-purple" />
           Tes droits
         </h4>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">

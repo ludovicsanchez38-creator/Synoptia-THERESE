@@ -5,10 +5,10 @@ import { cn } from '../../lib/utils';
 
 // Mapping format -> icône et couleur
 const formatConfig: Record<FileFormat, { icon: typeof FileText; color: string; label: string }> = {
-  docx: { icon: FileText, color: 'text-blue-400 bg-blue-400/20', label: 'DOCX' },
-  pptx: { icon: Presentation, color: 'text-orange-400 bg-orange-400/20', label: 'PPTX' },
-  xlsx: { icon: Table, color: 'text-green-400 bg-green-400/20', label: 'XLSX' },
-  html: { icon: FileText, color: 'text-cyan-400 bg-cyan-400/20', label: 'HTML' },
+  docx: { icon: FileText, color: 'text-agent-blue bg-blue-400/20', label: 'DOCX' },
+  pptx: { icon: Presentation, color: 'text-agent-amber bg-orange-400/20', label: 'PPTX' },
+  xlsx: { icon: Table, color: 'text-agent-green bg-green-400/20', label: 'XLSX' },
+  html: { icon: FileText, color: 'text-agent-cyan bg-cyan-400/20', label: 'HTML' },
   pdf: { icon: FileText, color: 'text-error bg-error/20', label: 'PDF' },
 };
 

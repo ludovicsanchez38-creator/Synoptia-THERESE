@@ -276,7 +276,7 @@ export function EmailCompose() {
       {/* Confirmation d'abandon */}
       {showCancelConfirm && (
         <div className="px-6 py-3 bg-yellow-500/10 border-t border-yellow-500/20 flex items-center gap-3">
-          <p className="text-sm text-yellow-200 flex-1">Abandonner ce brouillon ?</p>
+          <p className="text-sm text-agent-amber flex-1">Abandonner ce brouillon ?</p>
           <button
             onClick={confirmCancel}
             className="px-3 py-1.5 text-sm bg-error/20 text-error hover:bg-error/30 rounded-md transition-colors"

@@ -34,11 +34,11 @@ const STATUS_CONFIG: Record<string, { label: string; icon: any; color: string; b
   accepted: { label: 'Accepté', icon: CheckCircle2, color: 'text-success', badgeBg: 'bg-success/20' },
   // refused/converted : pas de token sémantique dédié (orange/purple hors success/warning/error/info) -
   // laissés en couleur Tailwind brute, cf dette CLAUDE.md contraste clair
-  refused: { label: 'Refusé', icon: ThumbsDown, color: 'text-orange-500', badgeBg: 'bg-orange-500/20' },
+  refused: { label: 'Refusé', icon: ThumbsDown, color: 'text-agent-amber', badgeBg: 'bg-orange-500/20' },
   expired: { label: 'Expiré', icon: Clock, color: 'text-warning', badgeBg: 'bg-warning/20' },
   paid: { label: 'Payée', icon: CheckCircle2, color: 'text-success', badgeBg: 'bg-success/20' },
   overdue: { label: 'En retard', icon: AlertCircle, color: 'text-error', badgeBg: 'bg-error/20' },
-  converted: { label: 'Converti', icon: ArrowRightLeft, color: 'text-purple-500', badgeBg: 'bg-purple-500/20' },
+  converted: { label: 'Converti', icon: ArrowRightLeft, color: 'text-agent-purple', badgeBg: 'bg-purple-500/20' },
   cancelled: { label: 'Annulée', icon: Ban, color: 'text-text-muted', badgeBg: 'bg-gray-500/20' },
 };
 
@@ -297,7 +297,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
                       {invoice.document_type && invoice.document_type !== 'facture' && (
                         <span className={cn(
                           'px-2 py-0.5 rounded-sm text-xs font-medium',
-                          invoice.document_type === 'devis' ? 'bg-blue-500/20 text-blue-400' : 'bg-orange-500/20 text-orange-400'
+                          invoice.document_type === 'devis' ? 'bg-blue-500/20 text-agent-blue' : 'bg-orange-500/20 text-agent-amber'
                         )}>
                           {invoice.document_type === 'devis' ? 'Devis' : 'Avoir'}
                         </span>

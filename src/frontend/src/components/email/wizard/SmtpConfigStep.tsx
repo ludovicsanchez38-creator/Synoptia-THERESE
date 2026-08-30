@@ -377,12 +377,12 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
         >
           <div className="flex items-center gap-2">
             {testResult.success ? (
-              <Check className="w-4 h-4 text-green-400" />
+              <Check className="w-4 h-4 text-agent-green" />
             ) : (
               <AlertCircle className="w-4 h-4 text-error" />
             )}
             <span
-              className={`text-sm ${testResult.success ? 'text-green-400' : 'text-error'}`}
+              className={`text-sm ${testResult.success ? 'text-agent-green' : 'text-error'}`}
             >
               {testResult.message}
             </span>

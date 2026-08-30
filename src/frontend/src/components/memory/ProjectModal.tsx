@@ -129,7 +129,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
 
   function getFileIcon(ext: string) {
     if (['.md', '.txt', '.docx', '.pdf'].includes(ext)) return <FileText className="w-4 h-4 text-accent-cyan-ink" />;
-    if (['.xlsx', '.csv'].includes(ext)) return <FileSpreadsheet className="w-4 h-4 text-green-400" />;
+    if (['.xlsx', '.csv'].includes(ext)) return <FileSpreadsheet className="w-4 h-4 text-agent-green" />;
     return <File className="w-4 h-4 text-text-muted" />;
   }
 

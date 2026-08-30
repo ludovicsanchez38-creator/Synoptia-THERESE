@@ -67,9 +67,9 @@ export function AgentMessageBubble({ message }: Props) {
         }}
       >
         <div className="mb-1 flex items-center gap-2 text-xs font-medium text-text-muted">
-          <Headphones size={12} className="text-purple-400" />
+          <Headphones size={12} className="text-agent-purple" />
           <span>Katia transmet à Zézette</span>
-          <Wrench size={12} className="text-amber-400" />
+          <Wrench size={12} className="text-agent-amber" />
         </div>
         <div className="text-text">{message.content}</div>
       </div>

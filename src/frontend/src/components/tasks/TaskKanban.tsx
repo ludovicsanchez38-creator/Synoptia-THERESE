@@ -34,8 +34,8 @@ import { useDemoMask } from '../../hooks';
 
 const COLUMNS = [
   { id: 'todo', label: 'À faire', icon: Circle, color: 'text-text-muted' },
-  { id: 'in_progress', label: 'En cours', icon: Clock, color: 'text-blue-400' },
-  { id: 'done', label: 'Terminé', icon: CheckCircle2, color: 'text-green-400' },
+  { id: 'in_progress', label: 'En cours', icon: Clock, color: 'text-agent-blue' },
+  { id: 'done', label: 'Terminé', icon: CheckCircle2, color: 'text-agent-green' },
 ];
 
 export function TaskKanban() {
@@ -279,8 +279,8 @@ function TaskCard({ task, onClick, onStatusChange, isOverlay, showDragHandle, ma
 
   const priorityColors = {
     urgent: 'bg-error/10 text-error border-error/20',
-    high: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
-    medium: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
+    high: 'bg-orange-500/10 text-agent-amber border-orange-500/20',
+    medium: 'bg-blue-500/10 text-agent-blue border-blue-500/20',
     low: 'bg-gray-500/10 text-text-muted border-gray-500/20',
   };
 
@@ -372,7 +372,7 @@ function TaskCard({ task, onClick, onStatusChange, isOverlay, showDragHandle, ma
               className="p-1 hover:bg-blue-500/20 rounded-sm transition-colors"
               title="Marquer en cours"
             >
-              <Clock className="w-3 h-3 text-blue-400" />
+              <Clock className="w-3 h-3 text-agent-blue" />
             </button>
           )}
           {task.status !== 'done' && (
@@ -381,7 +381,7 @@ function TaskCard({ task, onClick, onStatusChange, isOverlay, showDragHandle, ma
               className="p-1 hover:bg-green-500/20 rounded-sm transition-colors"
               title="Marquer terminé"
             >
-              <CheckCircle2 className="w-3 h-3 text-green-400" />
+              <CheckCircle2 className="w-3 h-3 text-agent-green" />
             </button>
           )}
           {task.status === 'done' && (

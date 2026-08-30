@@ -49,14 +49,29 @@
 
   /* Identité des agents de l'Atelier (BUG-150 : les text-*-400 Tailwind,
      pensés fond sombre, rendaient « Codeur » quasi invisible en thème
-     clair). Assombris en CLAIR pour AA texte, éclaircis en SOMBRE. */
-  --agent-cyan: #0E7490;
+     clair). Assombris en CLAIR pour AA texte, éclaircis en SOMBRE.
+     Renommés en --color-* le 30/08/2026 : Tailwind en génère alors les
+     utilitaires (text-agent-green, bg-agent-cyan…), ce qui permet de retirer
+     les 165 couleurs brutes qui restaient ailleurs dans l'application. */
+  --color-agent-cyan: #0E7490;
   /* F8 revue : #DB2777 ~ 4.25:1 sur #F3F6FC, sous AA -> pink-700 (~5.7:1) */
-  --agent-magenta: #BE185D;
-  --agent-blue: #2563EB;
-  --agent-green: #047857;
-  --agent-purple: #9333EA;
-  --agent-amber: #B45309;
+  --color-agent-magenta: #BE185D;
+  --color-agent-blue: #2563EB;
+  --color-agent-green: #047857;
+  --color-agent-purple: #9333EA;
+  --color-agent-amber: #B45309;
+
+  /* Domaines de la DA (k1..k4). Deux valeurs sont assombries par rapport à
+     la planche de mai : #0F8FB3 ne donne que 3,29:1 sur sa propre teinte et
+     #B45309 que 4,41:1, tous deux sous AA. */
+  --color-domaine-agenda: #0E7490;
+  --color-domaine-agenda-tint: #DEF4F9;
+  --color-domaine-taches: #92400E;
+  --color-domaine-taches-tint: #FAEFDC;
+  --color-domaine-factures: #BE1A72;
+  --color-domaine-factures-tint: #FBE3F0;
+  --color-domaine-prospects: #7C3AED;
+  --color-domaine-prospects-tint: #F0E9FC;
 
   /* Sémantiques - assombris en CLAIR pour WCAG AA en texte (US-013 :
      #F59E0B sur #F3F6FC ≈ 2.3:1, illisible ; les vives restent en sombre) */
@@ -145,12 +160,22 @@
   --color-ring: #22D3EE;
 
   /* Identité des agents de l'Atelier (BUG-150) : vives sur fond sombre */
-  --agent-cyan: #22D3EE;
-  --agent-magenta: #F472B6;
-  --agent-blue: #60A5FA;
-  --agent-green: #34D399;
-  --agent-purple: #C084FC;
-  --agent-amber: #FBBF24;
+  --color-agent-cyan: #22D3EE;
+  --color-agent-magenta: #F472B6;
+  --color-agent-blue: #60A5FA;
+  --color-agent-green: #34D399;
+  --color-agent-purple: #C084FC;
+  --color-agent-amber: #FBBF24;
+
+  /* Domaines, thème sombre (k1..k4 de la direction « Signature »). */
+  --color-domaine-agenda: #22D3EE;
+  --color-domaine-agenda-tint: rgba(34, 211, 238, 0.13);
+  --color-domaine-taches: #F59E0B;
+  --color-domaine-taches-tint: rgba(245, 158, 11, 0.13);
+  --color-domaine-factures: #F0509F;
+  --color-domaine-factures-tint: rgba(240, 80, 159, 0.13);
+  --color-domaine-prospects: #C084FC;
+  --color-domaine-prospects-tint: rgba(192, 132, 252, 0.13);
 
   /* Sémantiques - vives sur fond sombre (US-013 : info éclairci pour AA,
      #3B82F6 sur #0B1226 ≈ 4.0:1 limite) */
@@ -483,13 +508,13 @@ html[data-reduce-motion="true"] *::after {
   --color-ring: #FFFFFF;
 
   /* F8 revue : identité des agents en AAA sur fond noir (le mode contraste
-     élevé n'écrasait pas les --agent-*, laissant ~4:1) */
-  --agent-cyan: #67E8F9;
-  --agent-magenta: #F9A8D4;
-  --agent-blue: #93C5FD;
-  --agent-green: #6EE7B7;
-  --agent-purple: #D8B4FE;
-  --agent-amber: #FDE68A;
+     élevé n'écrasait pas les --color-agent-*, laissant ~4:1) */
+  --color-agent-cyan: #67E8F9;
+  --color-agent-magenta: #F9A8D4;
+  --color-agent-blue: #93C5FD;
+  --color-agent-green: #6EE7B7;
+  --color-agent-purple: #D8B4FE;
+  --color-agent-amber: #FDE68A;
 
   --color-success: #00FF00;
   --color-warning: #FFFF00;

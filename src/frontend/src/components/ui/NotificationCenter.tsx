@@ -56,11 +56,11 @@ function timeAgo(dateStr: string): string {
 // Badge source
 function SourceBadge({ source }: { source: string }) {
   const colors: Record<string, string> = {
-    crm: "bg-purple-500/20 text-purple-400",
-    invoice: "bg-amber-500/20 text-amber-400",
-    calendar: "bg-cyan-500/20 text-cyan-400",
-    task: "bg-blue-500/20 text-blue-400",
-    agent: "bg-green-500/20 text-green-400",
+    crm: "bg-purple-500/20 text-agent-purple",
+    invoice: "bg-amber-500/20 text-agent-amber",
+    calendar: "bg-cyan-500/20 text-agent-cyan",
+    task: "bg-blue-500/20 text-agent-blue",
+    agent: "bg-green-500/20 text-agent-green",
     system: "bg-gray-500/20 text-gray-400",
   };
   const labels: Record<string, string> = {

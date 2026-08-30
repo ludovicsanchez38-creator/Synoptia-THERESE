@@ -65,7 +65,7 @@ function EntityItem({ type, name, subtitle, confidence, onSave, onIgnore }: Enti
     >
       <div className="flex-shrink-0">
         <div className={`p-1.5 rounded-md ${type === 'contact' ? 'bg-cyan-500/20' : 'bg-magenta-500/20'}`}>
-          <Icon className={`w-4 h-4 ${type === 'contact' ? 'text-cyan-400' : 'text-[#E11D8D]'}`} />
+          <Icon className={`w-4 h-4 ${type === 'contact' ? 'text-agent-cyan' : 'text-[#E11D8D]'}`} />
         </div>
       </div>
 
@@ -80,12 +80,12 @@ function EntityItem({ type, name, subtitle, confidence, onSave, onIgnore }: Enti
         <span className="text-xs text-text-muted/60">{confidencePercent}%</span>
 
         {status === 'saving' ? (
-          <Spinner taille="bouton" className="text-cyan-400" />
+          <Spinner taille="bouton" className="text-agent-cyan" />
         ) : (
           <>
             <button
               onClick={handleSave}
-              className="p-1 rounded-sm hover:bg-cyan-500/20 text-cyan-400 transition-colors"
+              className="p-1 rounded-sm hover:bg-cyan-500/20 text-agent-cyan transition-colors"
               title="Sauvegarder"
             >
               <Check className="w-4 h-4" />

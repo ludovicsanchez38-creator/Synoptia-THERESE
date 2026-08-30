@@ -229,7 +229,7 @@ export function ChatHeader({
           className="w-8 h-8 hover:bg-cyan-500/15"
           title="Actions"
         >
-          <Play className="w-4 h-4 text-cyan-400" />
+          <Play className="w-4 h-4 text-agent-cyan" />
         </Button>
         {isContributeur && (
           <Button
@@ -239,7 +239,7 @@ export function ChatHeader({
             className="w-8 h-8 hover:bg-purple-500/15"
             title={isMac ? 'Atelier (⌘⇧A)' : 'Atelier (Ctrl+Shift+A)'}
           >
-            <Zap className="w-4 h-4 text-purple-400" />
+            <Zap className="w-4 h-4 text-agent-purple" />
           </Button>
         )}
         <NotificationCenter />

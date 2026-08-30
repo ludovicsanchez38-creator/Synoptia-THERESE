@@ -61,7 +61,7 @@ export function NewTaskDialog() {
         <div className="flex items-center justify-between border-b border-border px-5 py-3">
           <div className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-md bg-purple-500/20">
-              <Zap size={14} className="text-purple-400" />
+              <Zap size={14} className="text-agent-purple" />
             </div>
             <span className="text-sm font-semibold text-text">
               Nouvelle tâche pour Katia
@@ -78,7 +78,7 @@ export function NewTaskDialog() {
         {/* Body */}
         <div className="px-5 py-4">
           {!openclawConnected && (
-            <div className="mb-3 rounded-md border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+            <div className="mb-3 rounded-md border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-agent-amber">
               OpenClaw n&apos;est pas connecté. Vérifie que le gateway tourne.
             </div>
           )}
@@ -102,7 +102,7 @@ export function NewTaskDialog() {
           </p>
 
           {isMaxReached && (
-            <div className="mt-2 rounded-md border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-amber-300">
+            <div className="mt-2 rounded-md border border-amber-500/20 bg-amber-500/10 px-3 py-2 text-xs text-agent-amber">
               Tu as déjà {maxAgents} agents en cours. Attends qu&apos;un se termine ou annule-en un.
             </div>
           )}
@@ -120,7 +120,7 @@ export function NewTaskDialog() {
           <button
             onClick={handleSubmit}
             disabled={!instruction.trim() || isDispatching || !openclawConnected || isMaxReached}
-            className="flex items-center gap-1.5 rounded-md bg-purple-500/20 px-4 py-1.5 text-xs font-medium text-purple-300 transition hover:bg-purple-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex items-center gap-1.5 rounded-md bg-purple-500/20 px-4 py-1.5 text-xs font-medium text-agent-purple transition hover:bg-purple-500/30 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isDispatching ? (
               <>

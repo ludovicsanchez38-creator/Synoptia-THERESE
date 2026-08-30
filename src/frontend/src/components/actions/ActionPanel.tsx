@@ -26,10 +26,10 @@ const ICON_MAP: Record<string, LucideIcon> = {
 
 /** Couleurs par categorie */
 const CATEGORY_COLORS: Record<string, string> = {
-  organisation: 'text-cyan-400',
-  commercial: 'text-blue-400',
-  finance: 'text-emerald-400',
-  strategie: 'text-violet-400',
+  organisation: 'text-agent-cyan',
+  commercial: 'text-agent-blue',
+  finance: 'text-agent-green',
+  strategie: 'text-agent-purple',
 };
 
 /** Labels des categories */
@@ -52,7 +52,7 @@ function AgentCard({
   onSelect: (agent: ActionAgent) => void;
 }) {
   const IconComp = ICON_MAP[agent.icon] || Zap;
-  const colorClass = CATEGORY_COLORS[agent.category] || 'text-cyan-400';
+  const colorClass = CATEGORY_COLORS[agent.category] || 'text-agent-cyan';
 
   return (
     <motion.button
@@ -116,7 +116,7 @@ function ParamsForm({
 }) {
   const [values, setValues] = useState<Record<string, string>>({});
   const IconComp = ICON_MAP[agent.icon] || Zap;
-  const colorClass = CATEGORY_COLORS[agent.category] || 'text-cyan-400';
+  const colorClass = CATEGORY_COLORS[agent.category] || 'text-agent-cyan';
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -250,9 +250,9 @@ function TaskProgress({
 
   const statusColor = {
     pending: 'text-warning',
-    running: 'text-cyan-400',
+    running: 'text-agent-cyan',
     cancel_requested: 'text-warning',
-    completed: 'text-emerald-400',
+    completed: 'text-agent-green',
     cancelled: 'text-text-muted',
     error: 'text-error',
   }[task.status];
@@ -334,8 +334,8 @@ function StepItem({ step, index: _index }: { step: TaskStep; index: number }) {
 
   const statusIcon = {
     pending: <Clock size={14} className="text-text-muted" />,
-    running: <Spinner taille="ligne" className="text-cyan-400" />,
-    completed: <CheckCircle2 size={14} className="text-emerald-400" />,
+    running: <Spinner taille="ligne" className="text-agent-cyan" />,
+    completed: <CheckCircle2 size={14} className="text-agent-green" />,
     skipped: <Clock size={14} className="text-text-muted" />,
     error: <AlertCircle size={14} className="text-error" />,
   }[step.status];
@@ -484,7 +484,7 @@ export function ActionPanel() {
       return (
         <button
           onClick={() => openPanel()}
-          className="fixed bottom-4 right-4 z-50 flex items-center gap-2 px-4 py-2 rounded-full bg-surface border border-cyan-400/30 text-sm text-cyan-400 shadow-lg shadow-cyan-400/10 hover:bg-surface-elevated transition-colors animate-pulse"
+          className="fixed bottom-4 right-4 z-50 flex items-center gap-2 px-4 py-2 rounded-full bg-surface border border-cyan-400/30 text-sm text-agent-cyan shadow-lg shadow-cyan-400/10 hover:bg-surface-elevated transition-colors animate-pulse"
         >
           <Spinner taille="ligne" />
           {activeTask.status === 'cancel_requested'

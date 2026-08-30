@@ -50,11 +50,22 @@ function StateShell({ children }: { children: React.ReactNode }) {
   return <div className="flex min-h-44 items-center justify-center px-5 py-8">{children}</div>;
 }
 
+// Les quatre couleurs de domaine de la DA « Équilibre » : un domaine, une
+// couleur, pour reconnaître une facture d'un rendez-vous sans lire. « CRM »
+// partage la couleur des prospects, « Relances » celle des tâches : ce sont
+// les mêmes domaines vus sous un autre angle.
+const COULEUR_DE_DOMAINE: Record<string, string> = {
+  Agenda: 'bg-domaine-agenda-tint text-domaine-agenda',
+  Tâches: 'bg-domaine-taches-tint text-domaine-taches',
+  Relances: 'bg-domaine-taches-tint text-domaine-taches',
+  Factures: 'bg-domaine-factures-tint text-domaine-factures',
+  CRM: 'bg-domaine-prospects-tint text-domaine-prospects',
+};
+
 function SourcePill({ label }: { label: string }) {
+  const couleur = COULEUR_DE_DOMAINE[label] ?? 'bg-surface-2 text-text-muted';
   return (
-    <span className="rounded-full border border-border bg-surface-2 px-2.5 py-1 text-xs font-semibold text-text-muted">
-      {label}
-    </span>
+    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${couleur}`}>{label}</span>
   );
 }
 

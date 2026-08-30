@@ -317,7 +317,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
             {/* RGPD Alert Banner */}
             {rgpdStats && rgpdStats.expires_ou_bientot > 0 && (
               <div className="mx-3 mt-3 p-2.5 rounded-md bg-orange-500/10 border border-orange-500/30">
-                <div className="flex items-center gap-2 text-sm text-orange-400">
+                <div className="flex items-center gap-2 text-sm text-agent-amber">
                   <Shield className="w-4 h-4 flex-shrink-0" />
                   <span>
                     <strong>{rgpdStats.expires_ou_bientot}</strong> contact{rgpdStats.expires_ou_bientot > 1 ? 's' : ''} RGPD expire{rgpdStats.expires_ou_bientot > 1 ? 'nt' : ''} bientot
@@ -519,7 +519,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                       <>
                         <div className="flex items-center gap-3 mb-4">
                           <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
-                            <RefreshCw className="w-5 h-5 text-green-400" />
+                            <RefreshCw className="w-5 h-5 text-agent-green" />
                           </div>
                           <div>
                             <h3 className="text-base font-semibold text-text">Renouveler le consentement</h3>
@@ -729,7 +729,7 @@ function ContactsList({
                       onClick={() => { onRGPDAction('renew', contact); setOpenMenuId(null); }}
                       className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text hover:bg-background/40 transition-colors"
                     >
-                      <RefreshCw className="w-4 h-4 text-green-400" />
+                      <RefreshCw className="w-4 h-4 text-agent-green" />
                       Renouveler consentement
                     </button>
                     <div className="border-t border-border/50 my-1" />
@@ -778,9 +778,9 @@ function RGPDBadge({ contact }: { contact: api.Contact }) {
   const isExpired = dateExpiration && new Date(dateExpiration) < new Date();
 
   const badgeColors: Record<string, string> = {
-    consentement: 'bg-green-500/20 text-green-400',
-    contrat: 'bg-blue-500/20 text-blue-400',
-    interet_legitime: 'bg-purple-500/20 text-purple-400',
+    consentement: 'bg-green-500/20 text-agent-green',
+    contrat: 'bg-blue-500/20 text-agent-blue',
+    interet_legitime: 'bg-purple-500/20 text-agent-purple',
     obligation_legale: 'bg-gray-500/20 text-gray-400',
   };
 
@@ -802,7 +802,7 @@ function RGPDBadge({ contact }: { contact: api.Contact }) {
     <span
       className={`px-1.5 py-0.5 rounded-sm text-xs font-medium ${
         isExpired ? 'bg-error/20 text-error' :
-        isExpiringSoon ? 'bg-orange-500/20 text-orange-400' :
+        isExpiringSoon ? 'bg-orange-500/20 text-agent-amber' :
         badgeColors[baseLegale] || 'bg-gray-500/20 text-gray-400'
       }`}
       title={`${fullLabels[baseLegale] || baseLegale}${dateExpiration ? ` - Expire le ${new Date(dateExpiration).toLocaleDateString('fr-FR')}` : ''}`}

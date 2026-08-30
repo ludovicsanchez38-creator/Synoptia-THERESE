@@ -22,32 +22,32 @@ const COLOR_MAP: Record<string, { border: string; bg: string; text: string }> = 
   cyan: {
     border: "border-cyan-500/30",
     bg: "bg-cyan-500/10",
-    text: "text-[var(--agent-cyan)]",
+    text: "text-agent-cyan",
   },
   magenta: {
     border: "border-pink-500/30",
     bg: "bg-pink-500/10",
-    text: "text-[var(--agent-magenta)]",
+    text: "text-agent-magenta",
   },
   blue: {
     border: "border-blue-500/30",
     bg: "bg-blue-500/10",
-    text: "text-[var(--agent-blue)]",
+    text: "text-agent-blue",
   },
   green: {
     border: "border-emerald-500/30",
     bg: "bg-emerald-500/10",
-    text: "text-[var(--agent-green)]",
+    text: "text-agent-green",
   },
   purple: {
     border: "border-purple-500/30",
     bg: "bg-purple-500/10",
-    text: "text-[var(--agent-purple)]",
+    text: "text-agent-purple",
   },
   amber: {
     border: "border-amber-500/30",
     bg: "bg-amber-500/10",
-    text: "text-[var(--agent-amber)]",
+    text: "text-agent-amber",
   },
 };
 
@@ -202,7 +202,7 @@ export function AgentCatalog({ onSelectAgent }: Props) {
       {/* Header */}
       <div className="mb-5 text-center">
         <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-cyan-500/10">
-          <Bot size={20} className="text-cyan-400" />
+          <Bot size={20} className="text-agent-cyan" />
         </div>
         <h3 className="mb-1 text-sm font-semibold text-text">
           Choisis un agent
@@ -216,7 +216,7 @@ export function AgentCatalog({ onSelectAgent }: Props) {
       {availableModels.length > 0 && (
         <div className="mb-4 space-y-2">
           <div className="flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2">
-            <Brain size={14} className="shrink-0 text-cyan-400" />
+            <Brain size={14} className="shrink-0 text-agent-cyan" />
             <select aria-label="Modèle de l’agent"
               value={selectedModel}
               onChange={(e) => {
@@ -247,7 +247,7 @@ export function AgentCatalog({ onSelectAgent }: Props) {
 
           {/* Champ libre pour modele OpenRouter personnalise (SUG-030) */}
           <div className="flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2">
-            <span className="shrink-0 text-xs text-cyan-400/70">OR</span>
+            <span className="shrink-0 text-xs text-agent-cyan/70">OR</span>
             <input aria-label="Modèle personnalisé"
               type="text"
               value={customModel}
@@ -277,7 +277,7 @@ export function AgentCatalog({ onSelectAgent }: Props) {
             )}
           </div>
           {customModel.trim() && (
-            <p className="text-xs text-cyan-400/60 px-1">
+            <p className="text-xs text-agent-cyan/60 px-1">
               Modèle personnalisé actif - prioritaire sur la liste
             </p>
           )}

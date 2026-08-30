@@ -18,22 +18,22 @@ const formatConfig: Record<FileFormat, {
 }> = {
   docx: {
     icon: FileText,
-    color: 'text-blue-400',
+    color: 'text-agent-blue',
     bgTint: 'bg-blue-500/15',
   },
   pptx: {
     icon: Presentation,
-    color: 'text-orange-400',
+    color: 'text-agent-amber',
     bgTint: 'bg-orange-500/15',
   },
   xlsx: {
     icon: Table,
-    color: 'text-green-400',
+    color: 'text-agent-green',
     bgTint: 'bg-green-500/15',
   },
   html: {
     icon: FileText,
-    color: 'text-cyan-400',
+    color: 'text-agent-cyan',
     bgTint: 'bg-cyan-500/15',
   },
   pdf: {
@@ -50,7 +50,7 @@ export function SkillPromptPanel({ option, onGenerate, onBack }: SkillPromptPane
   const isImage = !!option.generatesImage;
   const format = option.generatesFile?.format || 'docx';
   const config = isImage
-    ? { icon: ImageIcon, color: 'text-purple-400', bgTint: 'bg-purple-500/15' }
+    ? { icon: ImageIcon, color: 'text-agent-purple', bgTint: 'bg-purple-500/15' }
     : formatConfig[format];
   const FormatIcon = config.icon;
 

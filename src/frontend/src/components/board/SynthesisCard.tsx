@@ -9,7 +9,7 @@ interface SynthesisCardProps {
 
 const confidenceConfig = {
   high: {
-    color: 'text-green-400',
+    color: 'text-agent-green',
     bg: 'bg-green-500/10',
     border: 'border-green-500/30',
     label: 'Confiance élevée',
@@ -76,14 +76,14 @@ export function SynthesisCard({ synthesis }: SynthesisCardProps) {
         {/* Consensus */}
         {synthesis.consensus_points.length > 0 && (
           <div className="space-y-2">
-            <h4 className="text-sm font-medium text-green-400 flex items-center gap-2">
+            <h4 className="text-sm font-medium text-agent-green flex items-center gap-2">
               <CheckCircle className="w-4 h-4" />
               Points de consensus
             </h4>
             <ul className="space-y-1.5">
               {synthesis.consensus_points.map((point, i) => (
                 <li key={i} className="text-sm text-text-muted flex items-start gap-2">
-                  <span className="text-green-400 mt-1">•</span>
+                  <span className="text-agent-green mt-1">•</span>
                   {point}
                 </li>
               ))}

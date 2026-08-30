@@ -354,7 +354,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
         {needsReauth && (
           <div className="px-4 py-2 bg-yellow-500/10 border-b border-yellow-500/20 flex items-center gap-3">
             <AlertTriangle className="w-4 h-4 text-warning shrink-0" />
-            <p className="text-sm text-yellow-200 flex-1">
+            <p className="text-sm text-agent-amber flex-1">
               Connexion Gmail expirée. Reconnecte-toi pour continuer.
             </p>
             <Button
@@ -362,7 +362,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
               size="sm"
               onClick={handleReauthorize}
               disabled={reauthing}
-              className="text-yellow-300 hover:text-yellow-100 shrink-0"
+              className="text-agent-amber hover:text-agent-amber shrink-0"
             >
               {reauthing ? (
                 <>
@@ -616,7 +616,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
         {needsReauth && (
           <div className="px-4 py-2 bg-yellow-500/10 border-b border-yellow-500/20 flex items-center gap-3">
             <AlertTriangle className="w-4 h-4 text-warning shrink-0" />
-            <p className="text-sm text-yellow-200 flex-1">
+            <p className="text-sm text-agent-amber flex-1">
               Connexion Gmail expirée. Reconnecte-toi pour continuer.
             </p>
             <Button
@@ -624,7 +624,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
               size="sm"
               onClick={handleReauthorize}
               disabled={reauthing}
-              className="text-yellow-300 hover:text-yellow-100 shrink-0"
+              className="text-agent-amber hover:text-agent-amber shrink-0"
             >
               {reauthing ? (
                 <>

@@ -64,7 +64,7 @@ export function AgentInput({ onSend, onCancel, isStreaming, placeholder }: Props
         <button
           onClick={handleSubmit}
           disabled={!value.trim()}
-          className="flex h-9 w-9 items-center justify-center rounded-md bg-purple-500/20 text-purple-400 transition hover:bg-purple-500/30 disabled:opacity-30 disabled:hover:bg-purple-500/20"
+          className="flex h-9 w-9 items-center justify-center rounded-md bg-purple-500/20 text-agent-purple transition hover:bg-purple-500/30 disabled:opacity-30 disabled:hover:bg-purple-500/20"
           title="Envoyer"
         >
           <Send size={16} />

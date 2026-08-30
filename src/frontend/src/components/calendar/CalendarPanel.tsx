@@ -463,7 +463,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
   const reauthBanner = needsReauth ? (
     <div className="px-4 py-2 bg-yellow-500/10 border-b border-yellow-500/20 flex items-center gap-3">
       <AlertTriangle className="w-4 h-4 text-warning shrink-0" />
-      <p className="text-sm text-yellow-200 flex-1">
+      <p className="text-sm text-agent-amber flex-1">
         Connexion Google expirée. Reconnecte-toi pour synchroniser le calendrier.
       </p>
       <Button
@@ -471,7 +471,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
         size="sm"
         onClick={handleReauthorize}
         disabled={reauthing}
-        className="text-yellow-300 hover:text-yellow-100 shrink-0"
+        className="text-agent-amber hover:text-agent-amber shrink-0"
       >
         {reauthing ? (
           <>

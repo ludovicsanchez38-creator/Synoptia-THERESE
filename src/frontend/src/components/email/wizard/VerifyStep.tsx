@@ -194,7 +194,7 @@ export function VerifyStep({ clientId, clientSecret, onBack, onSuccess }: Verify
               Google affiche une erreur 403 ?
             </summary>
             <div className="mt-2 p-3 bg-amber-500/5 border border-amber-500/20 rounded-md space-y-1.5 text-xs text-text-muted">
-              <p className="font-medium text-amber-400">Causes fréquentes :</p>
+              <p className="font-medium text-agent-amber">Causes fréquentes :</p>
               <p>• <strong className="text-text">App en mode Test</strong> : ajoute ton email dans Google Cloud Console → Écran de consentement OAuth → Utilisateurs de test.</p>
               <p>• <strong className="text-text">APIs non activées</strong> : active "Gmail API" et "Google Calendar API" dans la Bibliothèque de ton projet.</p>
               <p>• <strong className="text-text">Redirect URI manquante</strong> : copie l'URI ci-dessus dans OAuth → URIs de redirection autorisées.</p>
@@ -218,7 +218,7 @@ export function VerifyStep({ clientId, clientSecret, onBack, onSuccess }: Verify
           className="text-center space-y-4"
         >
           <div className="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center mx-auto">
-            <CheckCircle className="w-8 h-8 text-green-400" />
+            <CheckCircle className="w-8 h-8 text-agent-green" />
           </div>
           <h3 className="text-lg font-semibold text-text">Connexion réussie !</h3>
           <p className="text-sm text-text-muted">
@@ -255,7 +255,7 @@ export function VerifyStep({ clientId, clientSecret, onBack, onSuccess }: Verify
           {/* Si redirect_uri_mismatch, afficher l'URI exacte à copier dans Google Cloud */}
           {(error?.includes('redirect_uri_mismatch') || error?.includes('redirect_uri')) && redirectUri && (
             <div className="p-3 bg-amber-500/10 border border-amber-500/30 rounded-md text-left space-y-1">
-              <p className="text-xs font-medium text-amber-400">
+              <p className="text-xs font-medium text-agent-amber">
                 Ajoute cette URI dans Google Cloud Console → OAuth → URIs de redirection autorisées :
               </p>
               <code className="block text-xs text-text bg-background/60 px-2 py-1 rounded-sm font-mono break-all select-all">

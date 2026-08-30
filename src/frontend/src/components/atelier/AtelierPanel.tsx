@@ -143,7 +143,7 @@ export function AtelierPanel() {
         <div className="flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-md bg-purple-500/20">
-              <Zap size={14} className="text-purple-400" />
+              <Zap size={14} className="text-agent-purple" />
             </div>
             <span className="text-sm font-semibold text-text">Atelier</span>
           </div>
@@ -196,12 +196,12 @@ export function AtelierPanel() {
         {showModelBadge && activeView !== "agents" && (
           <div className="flex items-center gap-2 px-4 pb-2 text-xs text-text-muted">
             {katiaModel && (
-              <span className="rounded-sm bg-purple-500/10 px-1.5 py-0.5 text-purple-400">
+              <span className="rounded-sm bg-purple-500/10 px-1.5 py-0.5 text-agent-purple">
                 Katia: {katiaModel}
               </span>
             )}
             {zezetteModel && (
-              <span className="rounded-sm bg-amber-500/10 px-1.5 py-0.5 text-amber-400">
+              <span className="rounded-sm bg-amber-500/10 px-1.5 py-0.5 text-agent-amber">
                 Zézette: {zezetteModel}
               </span>
             )}
@@ -310,7 +310,7 @@ function NavButton({
       onClick={onClick}
       className={`relative flex items-center gap-1 rounded-md px-2 py-1 text-xs font-medium transition ${
         active
-          ? "bg-purple-500/20 text-purple-400"
+          ? "bg-purple-500/20 text-agent-purple"
           : "text-text-muted hover:bg-surface-2 hover:text-text-muted"
       }`}
     >
@@ -328,10 +328,10 @@ function EmptyState() {
     <div className="flex h-full flex-col items-center justify-center gap-4 px-8 text-center">
       <div className="flex gap-3">
         <div className="flex h-12 w-12 items-center justify-center rounded-md bg-purple-500/10">
-          <Headphones size={24} className="text-purple-400" />
+          <Headphones size={24} className="text-agent-purple" />
         </div>
         <div className="flex h-12 w-12 items-center justify-center rounded-md bg-amber-500/10">
-          <Wrench size={24} className="text-amber-400" />
+          <Wrench size={24} className="text-agent-amber" />
         </div>
       </div>
       <div>

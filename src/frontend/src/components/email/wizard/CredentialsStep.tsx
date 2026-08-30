@@ -130,7 +130,7 @@ export function CredentialsStep({
           {validation.clientId && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2">
               {validation.clientId.valid ? (
-                <CheckCircle className="w-5 h-5 text-green-400" />
+                <CheckCircle className="w-5 h-5 text-agent-green" />
               ) : (
                 <AlertCircle className="w-5 h-5 text-error" />
               )}
@@ -140,7 +140,7 @@ export function CredentialsStep({
         {validation.clientId && (
           <p
             className={`text-xs mt-1 ${
-              validation.clientId.valid ? 'text-green-400' : 'text-error'
+              validation.clientId.valid ? 'text-agent-green' : 'text-error'
             }`}
           >
             {validation.clientId.message}
@@ -165,7 +165,7 @@ export function CredentialsStep({
           {validation.clientSecret && (
             <div className="absolute right-3 top-1/2 -translate-y-1/2">
               {validation.clientSecret.valid ? (
-                <CheckCircle className="w-5 h-5 text-green-400" />
+                <CheckCircle className="w-5 h-5 text-agent-green" />
               ) : (
                 <AlertCircle className="w-5 h-5 text-error" />
               )}
@@ -175,7 +175,7 @@ export function CredentialsStep({
         {validation.clientSecret && (
           <p
             className={`text-xs mt-1 ${
-              validation.clientSecret.valid ? 'text-green-400' : 'text-error'
+              validation.clientSecret.valid ? 'text-agent-green' : 'text-error'
             }`}
           >
             {validation.clientSecret.message}

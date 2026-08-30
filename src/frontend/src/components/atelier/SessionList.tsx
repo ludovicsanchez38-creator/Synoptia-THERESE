@@ -13,10 +13,10 @@ import { useOpenClawStore } from "../../stores/openclawStore";
 import { useAccessibilityStore } from "../../stores/accessibilityStore";
 
 const STATUS_COLORS: Record<string, { dot: string; text: string; label: string }> = {
-  running: { dot: "bg-green-400", text: "text-green-400", label: "En cours" },
+  running: { dot: "bg-green-400", text: "text-agent-green", label: "En cours" },
   done: { dot: "bg-text-muted", text: "text-text-muted", label: "Terminée" },
   error: { dot: "bg-error", text: "text-error", label: "Erreur" },
-  cancelled: { dot: "bg-amber-400", text: "text-amber-400", label: "Annulée" },
+  cancelled: { dot: "bg-amber-400", text: "text-agent-amber", label: "Annulée" },
 };
 
 const TWENTY_FOUR_HOURS_MS = 24 * 60 * 60 * 1000;
@@ -117,7 +117,7 @@ export function SessionList() {
           <button
             onClick={openNewTask}
             disabled={!openclawConnected || runningCount >= maxAgents}
-            className="rounded-sm p-1 text-purple-400 transition hover:bg-purple-500/10 disabled:opacity-30 disabled:cursor-not-allowed"
+            className="rounded-sm p-1 text-agent-purple transition hover:bg-purple-500/10 disabled:opacity-30 disabled:cursor-not-allowed"
             title={runningCount >= maxAgents ? `${maxAgents} agents max` : "Nouvelle tache"}
             aria-label={runningCount >= maxAgents ? `${maxAgents} agents max` : "Lancer une nouvelle tache"}
           >
@@ -129,7 +129,7 @@ export function SessionList() {
       {/* US-003 : Compteur agents actifs */}
       <div className="flex items-center justify-between border-b border-border px-3 py-1.5">
         <span className="text-xs text-text-muted">
-          <span className={runningCount >= maxAgents ? "text-amber-400 font-medium" : "text-purple-400"}>
+          <span className={runningCount >= maxAgents ? "text-agent-amber font-medium" : "text-agent-purple"}>
             {runningCount}/{maxAgents}
           </span>
           {" agents actifs"}
@@ -156,7 +156,7 @@ export function SessionList() {
             <button
               onClick={openNewTask}
               disabled={!openclawConnected || runningCount >= maxAgents}
-              className="rounded-md bg-purple-500/10 px-3 py-1.5 text-xs font-medium text-purple-400 transition hover:bg-purple-500/20 disabled:opacity-30 disabled:cursor-not-allowed"
+              className="rounded-md bg-purple-500/10 px-3 py-1.5 text-xs font-medium text-agent-purple transition hover:bg-purple-500/20 disabled:opacity-30 disabled:cursor-not-allowed"
               title={runningCount >= maxAgents ? `${maxAgents} agents max` : undefined}
             >
               {runningCount >= maxAgents ? `${maxAgents} agents max` : "Lancer une tache"}
@@ -209,7 +209,7 @@ export function SessionList() {
                     {session.status === "error" && (
                       <button
                         onClick={(e) => handleRetry(e, session.instruction)}
-                        className="flex-shrink-0 rounded-sm p-0.5 text-amber-400/60 transition hover:bg-amber-500/10 hover:text-amber-400"
+                        className="flex-shrink-0 rounded-sm p-0.5 text-agent-amber/60 transition hover:bg-amber-500/10 hover:text-agent-amber"
                         title="Relancer cette tache"
                         aria-label="Relancer cette tache"
                       >

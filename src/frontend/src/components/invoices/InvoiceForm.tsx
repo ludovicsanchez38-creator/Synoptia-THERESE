@@ -811,7 +811,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
               <button
                 type="button"
                 onClick={handleMarkPaid}
-                className="px-4 py-2 rounded-md bg-green-500/20 text-green-500 hover:bg-green-500/30 transition-colors"
+                className="px-4 py-2 rounded-md bg-green-500/20 text-agent-green hover:bg-green-500/30 transition-colors"
               >
                 Marquer comme payée
               </button>
@@ -822,14 +822,14 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                 <button
                   type="button"
                   onClick={() => handleDevisStatus('accepted')}
-                  className="px-3 py-2 rounded-md bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500/30 transition-colors text-sm font-medium"
+                  className="px-3 py-2 rounded-md bg-emerald-500/20 text-agent-green hover:bg-emerald-500/30 transition-colors text-sm font-medium"
                 >
                   Accepter
                 </button>
                 <button
                   type="button"
                   onClick={() => handleDevisStatus('refused')}
-                  className="px-3 py-2 rounded-md bg-orange-500/20 text-orange-500 hover:bg-orange-500/30 transition-colors text-sm font-medium"
+                  className="px-3 py-2 rounded-md bg-orange-500/20 text-agent-amber hover:bg-orange-500/30 transition-colors text-sm font-medium"
                 >
                   Refuser
                 </button>
@@ -844,7 +844,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                 disabled={isConverting}
                 className={cn(
                   'px-4 py-2 rounded-md font-medium transition-colors',
-                  'bg-purple-500/20 text-purple-400 hover:bg-purple-500/30',
+                  'bg-purple-500/20 text-agent-purple hover:bg-purple-500/30',
                   'flex items-center gap-2',
                   isConverting && 'opacity-50 cursor-not-allowed'
                 )}

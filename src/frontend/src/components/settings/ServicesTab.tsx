@@ -97,7 +97,7 @@ export function ServicesTab({
       <div className="space-y-3">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-sm bg-[var(--k4bg)] border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
-            <ImageIcon className="w-5 h-5 text-purple-400" />
+            <ImageIcon className="w-5 h-5 text-agent-purple" />
           </div>
           <div>
             <h3 className="font-medium text-text">Génération d'images</h3>

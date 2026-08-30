@@ -185,7 +185,7 @@ export function SignatureEditorModal({ accountId, accountEmail, onClose }: Signa
                 </div>
               </div>
 
-              {notice && <p className="mt-3 text-sm text-yellow-300">{notice}</p>}
+              {notice && <p className="mt-3 text-sm text-agent-amber">{notice}</p>}
               {error && <p className="mt-3 text-sm text-error">{error}</p>}
 
               <div className="flex items-center justify-end gap-3 mt-6">

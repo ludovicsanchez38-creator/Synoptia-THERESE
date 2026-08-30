@@ -46,7 +46,7 @@ export function LocalModelFeasibility({
   }
 
   return (
-    <div className="flex items-start gap-2 rounded-md border border-green-500/30 bg-green-500/10 px-3 py-2 text-xs leading-5 text-green-400" data-testid="local-model-feasibility" data-status="feasible">
+    <div className="flex items-start gap-2 rounded-md border border-green-500/30 bg-green-500/10 px-3 py-2 text-xs leading-5 text-agent-green" data-testid="local-model-feasibility" data-status="feasible">
       <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
       <span>
         <strong className="mr-1 inline-flex rounded-full bg-green-500/15 px-2 py-0.5">RAM compatible</strong>

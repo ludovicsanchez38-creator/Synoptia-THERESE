@@ -66,8 +66,8 @@ export function TaskList() {
 
   const priorityColors = {
     urgent: 'text-error',
-    high: 'text-orange-400',
-    medium: 'text-blue-400',
+    high: 'text-agent-amber',
+    medium: 'text-agent-blue',
     low: 'text-text-muted',
   };
 
@@ -130,7 +130,7 @@ export function TaskList() {
                   className="mt-0.5 shrink-0 hover:scale-110 transition-transform"
                 >
                   {isDone ? (
-                    <CheckCircle2 className="w-5 h-5 text-green-400" />
+                    <CheckCircle2 className="w-5 h-5 text-agent-green" />
                   ) : (
                     <Circle className="w-5 h-5 text-text-muted" />
                   )}
@@ -150,7 +150,7 @@ export function TaskList() {
                     {/* Priority & Status */}
                     <div className="flex items-center gap-2 shrink-0">
                       {task.status === 'in_progress' && (
-                        <Clock className="w-4 h-4 text-blue-400" />
+                        <Clock className="w-4 h-4 text-agent-blue" />
                       )}
                       {isOverdue && <AlertCircle className="w-4 h-4 text-error" />}
                       <span

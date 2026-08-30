@@ -37,28 +37,28 @@ const formatConfig: Record<FileFormat, {
 }> = {
   docx: {
     icon: FileText,
-    color: 'text-blue-400',
+    color: 'text-agent-blue',
     bgTint: 'bg-blue-500/15',
     label: 'Document Word',
     description: 'Fichier .docx prêt à être téléchargé'
   },
   pptx: {
     icon: Presentation,
-    color: 'text-orange-400',
+    color: 'text-agent-amber',
     bgTint: 'bg-orange-500/15',
     label: 'Présentation PowerPoint',
     description: 'Fichier .pptx prêt à être téléchargé'
   },
   xlsx: {
     icon: Table,
-    color: 'text-green-400',
+    color: 'text-agent-green',
     bgTint: 'bg-green-500/15',
     label: 'Tableur Excel',
     description: 'Fichier .xlsx prêt à être téléchargé'
   },
   html: {
     icon: FileText,
-    color: 'text-cyan-400',
+    color: 'text-agent-cyan',
     bgTint: 'bg-cyan-500/15',
     label: 'Page Web',
     description: 'Fichier .html prêt à être téléchargé'

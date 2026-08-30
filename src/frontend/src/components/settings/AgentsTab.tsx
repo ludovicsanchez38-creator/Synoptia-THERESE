@@ -121,7 +121,7 @@ function AgentModelSelect({
               type="button"
               onClick={handleUseCustom}
               disabled={!customInput.trim()}
-              className="shrink-0 rounded-md bg-purple-500/20 px-3 py-2 text-sm font-medium text-purple-400 transition hover:bg-purple-500/30 disabled:opacity-50"
+              className="shrink-0 rounded-md bg-purple-500/20 px-3 py-2 text-sm font-medium text-agent-purple transition hover:bg-purple-500/30 disabled:opacity-50"
             >
               Utiliser
             </button>
@@ -242,7 +242,7 @@ export function AgentsTab() {
       {/* Header */}
       <div>
         <h3 className="text-base font-semibold text-text flex items-center gap-2">
-          <Zap size={18} className="text-purple-400" />
+          <Zap size={18} className="text-agent-purple" />
           Agents IA Embarqués
         </h3>
         <p className="mt-1 text-sm text-text-muted">
@@ -304,7 +304,7 @@ export function AgentsTab() {
         <AgentModelSelect
           label="Katia (PM/Guide)"
           icon={<Headphones size={12} />}
-          accentClass="text-purple-400"
+          accentClass="text-agent-purple"
           value={katiaModel}
           onChange={(value) => { setThereseModel(value); setSaved(false); }}
           models={models}
@@ -376,7 +376,7 @@ export function AgentsTab() {
       <button
         onClick={handleSave}
         disabled={saving}
-        className="w-full rounded-md bg-purple-500/20 px-4 py-2.5 text-sm font-medium text-purple-400 transition hover:bg-purple-500/30 disabled:opacity-50"
+        className="w-full rounded-md bg-purple-500/20 px-4 py-2.5 text-sm font-medium text-agent-purple transition hover:bg-purple-500/30 disabled:opacity-50"
       >
         {saving ? 'Sauvegarde...' : 'Sauvegarder la configuration'}
       </button>

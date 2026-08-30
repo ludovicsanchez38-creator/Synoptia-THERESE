@@ -38,12 +38,12 @@ interface AgentSessionMessage {
 
 /** Couleurs par profil */
 const COLOR_MAP: Record<string, { accent: string; bg: string }> = {
-  cyan: { accent: "text-[var(--agent-cyan)]", bg: "bg-cyan-500/10" },
-  magenta: { accent: "text-[var(--agent-magenta)]", bg: "bg-pink-500/10" },
-  blue: { accent: "text-[var(--agent-blue)]", bg: "bg-blue-500/10" },
-  green: { accent: "text-[var(--agent-green)]", bg: "bg-emerald-500/10" },
-  purple: { accent: "text-[var(--agent-purple)]", bg: "bg-purple-500/10" },
-  amber: { accent: "text-[var(--agent-amber)]", bg: "bg-amber-500/10" },
+  cyan: { accent: "text-agent-cyan", bg: "bg-cyan-500/10" },
+  magenta: { accent: "text-agent-magenta", bg: "bg-pink-500/10" },
+  blue: { accent: "text-agent-blue", bg: "bg-blue-500/10" },
+  green: { accent: "text-agent-green", bg: "bg-emerald-500/10" },
+  purple: { accent: "text-agent-purple", bg: "bg-purple-500/10" },
+  amber: { accent: "text-agent-amber", bg: "bg-amber-500/10" },
 };
 
 const DEFAULT_COLOR = { accent: "text-text-muted", bg: "bg-surface-2" };
@@ -117,7 +117,7 @@ function ThinkingDots({ color }: { color: string }) {
       {[0, 1, 2].map((i) => (
         <motion.span
           key={i}
-          className={`inline-block h-1 w-1 rounded-full ${color === "text-[var(--agent-cyan)]" ? "bg-[var(--agent-cyan)]/60" : color === "text-[var(--agent-magenta)]" ? "bg-[var(--agent-magenta)]/60" : color === "text-[var(--agent-blue)]" ? "bg-[var(--agent-blue)]/60" : color === "text-[var(--agent-green)]" ? "bg-[var(--agent-green)]/60" : color === "text-[var(--agent-purple)]" ? "bg-[var(--agent-purple)]/60" : color === "text-[var(--agent-amber)]" ? "bg-[var(--agent-amber)]/60" : "bg-white/40"}`}
+          className={`inline-block h-1 w-1 rounded-full ${color === "text-agent-cyan" ? "bg-[var(--color-agent-cyan)]/60" : color === "text-agent-magenta" ? "bg-[var(--color-agent-magenta)]/60" : color === "text-agent-blue" ? "bg-[var(--color-agent-blue)]/60" : color === "text-agent-green" ? "bg-[var(--color-agent-green)]/60" : color === "text-agent-purple" ? "bg-[var(--color-agent-purple)]/60" : color === "text-agent-amber" ? "bg-[var(--color-agent-amber)]/60" : "bg-white/40"}`}
           animate={{ opacity: [0.3, 1, 0.3] }}
           transition={{
             repeat: Infinity,
@@ -146,7 +146,7 @@ function ToolCallBlock({
         onClick={() => setExpanded(!expanded)}
         className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-xs text-text-muted transition hover:bg-surface-elevated"
       >
-        <Wrench size={12} className="flex-shrink-0 text-amber-400/70" />
+        <Wrench size={12} className="flex-shrink-0 text-agent-amber/70" />
         <span className="flex-1 truncate font-medium">{toolName}</span>
         {toolResult && (
           expanded ? (
@@ -474,7 +474,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
                   <div
                     className={`mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full ${
                       isUser
-                        ? "bg-cyan-500/10 text-cyan-400"
+                        ? "bg-cyan-500/10 text-agent-cyan"
                         : `${colors.bg}`
                     } text-sm`}
                   >
@@ -582,7 +582,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
           <button
             onClick={handleSend}
             disabled={!inputValue.trim()}
-            className="flex h-9 w-9 items-center justify-center rounded-md bg-cyan-500/20 text-cyan-400 transition hover:bg-cyan-500/30 disabled:opacity-30 disabled:hover:bg-cyan-500/20"
+            className="flex h-9 w-9 items-center justify-center rounded-md bg-cyan-500/20 text-agent-cyan transition hover:bg-cyan-500/30 disabled:opacity-30 disabled:hover:bg-cyan-500/20"
             title="Envoyer"
           >
             <Send size={16} />

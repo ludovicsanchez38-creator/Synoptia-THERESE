@@ -81,7 +81,7 @@ export function CodeReviewPanel() {
       {/* Explication par Katia */}
       {currentMission.explanation && (
         <div className="border-b border-border px-4 py-3">
-          <div className="mb-1 text-xs font-medium text-purple-400">
+          <div className="mb-1 text-xs font-medium text-agent-purple">
             Explication de Katia
           </div>
           <div className="text-sm leading-relaxed text-text">
@@ -93,7 +93,7 @@ export function CodeReviewPanel() {
       {/* Résumé des changements */}
       <div className="border-b border-border px-4 py-2">
         <div className="flex items-center gap-3 text-xs text-text-muted">
-          <span className="flex items-center gap-1 text-green-400">
+          <span className="flex items-center gap-1 text-agent-green">
             <Plus size={12} /> {totalAdd} ajouts
           </span>
           <span className="flex items-center gap-1 text-error">
@@ -128,9 +128,9 @@ export function CodeReviewPanel() {
                   {file.file_path}
                 </span>
                 <span className={`text-xs ${
-                  file.change_type === 'added' ? 'text-green-400' :
+                  file.change_type === 'added' ? 'text-agent-green' :
                   file.change_type === 'deleted' ? 'text-error' :
-                  'text-amber-400'
+                  'text-agent-amber'
                 }`}>
                   {file.change_type === 'added' ? 'nouveau' :
                    file.change_type === 'deleted' ? 'supprimé' :
@@ -209,7 +209,7 @@ export function CodeReviewPanel() {
           <button
             onClick={() => setConfirmation('approve')}
             disabled={actionPending !== null}
-            className="flex flex-1 items-center justify-center gap-2 rounded-md bg-green-500/20 px-4 py-2.5 text-sm font-medium text-green-400 transition hover:bg-green-500/30 disabled:opacity-50"
+            className="flex flex-1 items-center justify-center gap-2 rounded-md bg-green-500/20 px-4 py-2.5 text-sm font-medium text-agent-green transition hover:bg-green-500/30 disabled:opacity-50"
           >
             <Check size={16} />
             {actionPending === 'approve' ? 'Application...' : 'Appliquer les changements'}

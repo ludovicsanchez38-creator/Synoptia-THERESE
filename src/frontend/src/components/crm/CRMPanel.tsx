@@ -549,9 +549,9 @@ const GLOBAL_ACTIVITY_ICONS: Record<string, typeof Mail> = {
 };
 
 const GLOBAL_ACTIVITY_COLORS: Record<string, string> = {
-  email: 'text-blue-400',
-  call: 'text-green-400',
-  meeting: 'text-purple-400',
+  email: 'text-agent-blue',
+  call: 'text-agent-green',
+  meeting: 'text-agent-purple',
   note: 'text-warning',
 };
 

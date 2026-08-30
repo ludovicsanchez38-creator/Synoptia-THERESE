@@ -24,14 +24,14 @@ const PRIORITY_CONFIG = {
   medium: {
     emoji: '🟠',
     text: 'Important',
-    color: 'text-orange-400',
+    color: 'text-agent-amber',
     bg: 'bg-orange-500/10',
     border: 'border-orange-500/30',
   },
   low: {
     emoji: '🟢',
     text: 'Normal',
-    color: 'text-green-400',
+    color: 'text-agent-green',
     bg: 'bg-green-500/10',
     border: 'border-green-500/30',
   },

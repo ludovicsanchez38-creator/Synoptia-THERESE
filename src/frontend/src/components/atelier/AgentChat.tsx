@@ -48,10 +48,10 @@ function ThinkingIndicator() {
   return (
     <div className="flex items-center gap-2.5 px-3 py-2">
       <div className="flex h-7 w-7 items-center justify-center rounded-full bg-purple-500/10">
-        <Headphones size={14} className={reduceMotion ? "text-purple-400" : "text-purple-400 animate-pulse"} />
+        <Headphones size={14} className={reduceMotion ? "text-agent-purple" : "text-agent-purple animate-pulse"} />
       </div>
       <div className="flex items-center gap-1.5">
-        <span className="text-xs text-purple-400/80">Katia reflechit</span>
+        <span className="text-xs text-agent-purple/80">Katia reflechit</span>
         {!reduceMotion && (
           <span className="flex gap-0.5">
             {[0, 1, 2].map((i) => (
@@ -95,7 +95,7 @@ function CopyButton({ text }: { text: string }) {
       title="Copier le message"
       aria-label="Copier le message"
     >
-      {copied ? <Check size={12} className="text-green-400" /> : <Copy size={12} />}
+      {copied ? <Check size={12} className="text-agent-green" /> : <Copy size={12} />}
     </button>
   );
 }
@@ -185,7 +185,7 @@ export function AgentChat() {
   if (!activeSessionId || !activeSession) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8 text-center">
-        <Headphones size={32} className="text-purple-400/30" />
+        <Headphones size={32} className="text-agent-purple/30" />
         <p className="text-xs text-text-muted">
           Selectionnez une session ou lancez une nouvelle tache.
         </p>
@@ -252,7 +252,7 @@ export function AgentChat() {
             {activeSession.status === "running" ? (
               <>
                 <div className="flex h-10 w-10 items-center justify-center rounded-full bg-purple-500/10">
-                  <Headphones size={20} className="animate-pulse text-purple-400" />
+                  <Headphones size={20} className="animate-pulse text-agent-purple" />
                 </div>
                 <p className="text-xs text-text-muted">Katia travaille sur la tache...</p>
               </>
@@ -278,10 +278,10 @@ export function AgentChat() {
                     <div
                       className={`mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full ${
                         isUser
-                          ? "bg-cyan-500/10 text-cyan-400"
+                          ? "bg-cyan-500/10 text-agent-cyan"
                           : isAction
-                          ? "bg-amber-500/10 text-amber-400"
-                          : "bg-purple-500/10 text-purple-400"
+                          ? "bg-amber-500/10 text-agent-amber"
+                          : "bg-purple-500/10 text-agent-purple"
                       }`}
                     >
                       {isUser ? (
@@ -297,7 +297,7 @@ export function AgentChat() {
                     <div className={`max-w-[85%] ${isUser ? "text-right" : ""}`}>
                       {!isUser && (
                         <div className="mb-0.5 flex items-center gap-1.5">
-                          <span className={`text-xs font-medium ${isAction ? "text-amber-400" : "text-purple-400"}`}>
+                          <span className={`text-xs font-medium ${isAction ? "text-agent-amber" : "text-agent-purple"}`}>
                             {isAction ? "Action" : "Katia"}
                           </span>
                           {isLongMessage && <CopyButton text={msg.content} />}
@@ -379,7 +379,7 @@ export function AgentChat() {
             <button
               onClick={handleSend}
               disabled={!input.trim()}
-              className="flex h-9 w-9 items-center justify-center rounded-md bg-purple-500/20 text-purple-400 transition hover:bg-purple-500/30 disabled:opacity-30"
+              className="flex h-9 w-9 items-center justify-center rounded-md bg-purple-500/20 text-agent-purple transition hover:bg-purple-500/30 disabled:opacity-30"
               title="Envoyer"
               aria-label="Envoyer le message"
             >

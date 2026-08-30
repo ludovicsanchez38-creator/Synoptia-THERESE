@@ -23,11 +23,11 @@ const ACTIVITY_ICONS = {
 };
 
 const ACTIVITY_COLORS = {
-  email: 'text-blue-400',
-  call: 'text-green-400',
-  meeting: 'text-purple-400',
+  email: 'text-agent-blue',
+  call: 'text-agent-green',
+  meeting: 'text-agent-purple',
   note: 'text-warning',
-  stage_change: 'text-cyan-400',
+  stage_change: 'text-agent-cyan',
   score_change: 'text-magenta-400',
 };
 

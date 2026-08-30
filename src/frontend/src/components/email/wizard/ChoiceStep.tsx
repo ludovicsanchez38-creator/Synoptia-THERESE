@@ -75,15 +75,15 @@ export function ChoiceStep({ onSelect, mcpCredentials }: ChoiceStepProps) {
 
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-text-muted">
-              <ShieldCheck className="w-4 h-4 text-green-400" />
+              <ShieldCheck className="w-4 h-4 text-agent-green" />
               <span>Très sécurisé (OAuth PKCE)</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-text-muted">
-              <ShieldCheck className="w-4 h-4 text-green-400" />
+              <ShieldCheck className="w-4 h-4 text-agent-green" />
               <span>Officiel Google</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-text-muted">
-              <ShieldCheck className="w-4 h-4 text-green-400" />
+              <ShieldCheck className="w-4 h-4 text-agent-green" />
               <span>Révocable à tout moment</span>
             </div>
           </div>
@@ -113,15 +113,15 @@ export function ChoiceStep({ onSelect, mcpCredentials }: ChoiceStepProps) {
 
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-text-muted">
-              <ShieldCheck className="w-4 h-4 text-green-400" />
+              <ShieldCheck className="w-4 h-4 text-agent-green" />
               <span>Prêt en 2 minutes, sans projet Google Cloud</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-text-muted">
-              <ShieldCheck className="w-4 h-4 text-green-400" />
+              <ShieldCheck className="w-4 h-4 text-agent-green" />
               <span>Compatible tous providers</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-text-muted">
-              <ShieldCheck className="w-4 h-4 text-green-400" />
+              <ShieldCheck className="w-4 h-4 text-agent-green" />
               <span>Mot de passe chiffré localement</span>
             </div>
           </div>
