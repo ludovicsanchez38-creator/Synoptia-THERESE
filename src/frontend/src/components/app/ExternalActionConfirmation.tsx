@@ -105,7 +105,7 @@ export function PrototypeExternalActionConfirmationProvider({ children }: { chil
                 type="button"
                 onClick={() => void confirm()}
                 disabled={busy}
-                className="inline-flex items-center gap-2 rounded-[8px] bg-text px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
+                className="inline-flex items-center gap-2 rounded-[8px] bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink disabled:opacity-50"
               >
                 {busy && <Spinner taille="bouton" />}
                 {pending.confirmLabel}

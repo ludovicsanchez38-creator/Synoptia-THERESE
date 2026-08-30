@@ -108,7 +108,7 @@ export function MeetingAgendaCard({
           </div>
         </div>
         <div className="flex gap-2">
-          <button type="button" onClick={onNewEvent} className="inline-flex items-center gap-1.5 rounded-[8px] bg-text px-2.5 py-1.5 text-xs font-semibold text-white">
+          <button type="button" onClick={onNewEvent} className="inline-flex items-center gap-1.5 rounded-[8px] bg-accent-fill px-2.5 py-1.5 text-xs font-semibold text-accent-ink">
             <Plus className="h-3.5 w-3.5" />
             Nouvel événement
           </button>
@@ -129,7 +129,7 @@ export function MeetingAgendaCard({
                   pixels d'ici. Deux contrôles portant le même texte ne sont pas
                   un secours de plus, c'est une ambiguïté - un testeur qui
                   signale « j'ai cliqué sur Ouvrir Agenda » ne dirait pas lequel. */}
-              <button type="button" onClick={onRetry} className="inline-flex items-center gap-1.5 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white"><RefreshCw className="h-3.5 w-3.5" />Réessayer</button>
+              <button type="button" onClick={onRetry} className="inline-flex items-center gap-1.5 rounded-[9px] bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink"><RefreshCw className="h-3.5 w-3.5" />Réessayer</button>
             </div>
           </div>
         </StateShell>
@@ -139,7 +139,7 @@ export function MeetingAgendaCard({
             <Calendar className="mx-auto h-6 w-6 text-text-muted" />
             <p className="mt-2 text-sm font-semibold text-text">Aucun rendez-vous à venir</p>
             <p className="mt-1 text-xs text-text-muted">L’agenda est disponible. Tu peux y préparer un nouvel événement.</p>
-            <button type="button" onClick={onNewEvent} className="mt-4 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white">Préparer un événement</button>
+            <button type="button" onClick={onNewEvent} className="mt-4 rounded-[9px] bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">Préparer un événement</button>
           </div>
         </StateShell>
       ) : (
@@ -190,7 +190,7 @@ function CalendarProvisioning({ onEnsure }: { onEnsure: () => Promise<void> }) {
           {/* Le pied de page du canevas porte déjà « Ouvrir Agenda », en
               permanence. Le répéter ici donnerait deux contrôles au même texte
               sur le même écran. */}
-          <button type="button" onClick={runEnsure} className="rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white">Réessayer</button>
+          <button type="button" onClick={runEnsure} className="rounded-[9px] bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">Réessayer</button>
         </div>
       </div>
     );
@@ -288,14 +288,14 @@ function NewEventForm({
       </section>
       {error && <div id="meeting-form-error" role="alert" className="rounded-[10px] border border-error/40 bg-[var(--color-error-tint)] p-3 text-sm text-error">{error}</div>}
       {!confirming ? (
-        <button type="button" onClick={prepare} className="w-full rounded-[10px] bg-text px-4 py-3 text-sm font-semibold text-white">Vérifier avant création</button>
+        <button type="button" onClick={prepare} className="w-full rounded-[10px] bg-accent-fill px-4 py-3 text-sm font-semibold text-accent-ink">Vérifier avant création</button>
       ) : (
         <div className="rounded-[12px] border border-accent-cyan/30 bg-accent-tint p-4">
           <div className="flex gap-2 text-xs leading-5 text-accent"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" /><span>Créer « {summary.trim()} » le {new Date(start).toLocaleString('fr-FR')} dans « {selectedCalendar?.summary || 'calendrier sélectionné'} » ({selectedCalendar?.provider === 'google' ? 'Google Calendar' : selectedCalendar?.provider === 'caldav' ? 'CalDAV' : 'local'}){selectedAccount ? `, compte ${selectedAccount.email}` : ''}{parsedAttendees.length ? `, avec ${parsedAttendees.length} participant${parsedAttendees.length > 1 ? 's' : ''}` : ''}. Fuseau : {Intl.DateTimeFormat().resolvedOptions().timeZone || 'Europe/Paris'}.</span></div>
           <div className="mt-3 flex gap-2">
             <button type="button" disabled={pending} onClick={onAbandon} className="flex-1 rounded-[9px] border border-error bg-surface px-3 py-2 text-xs font-semibold text-error">Annuler</button>
             <button type="button" disabled={pending} onClick={() => setConfirming(false)} className="flex-1 rounded-[9px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text">Modifier</button>
-            <button type="button" disabled={pending} onClick={() => void confirm()} className="flex flex-1 items-center justify-center gap-2 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white disabled:opacity-60">{pending && <Spinner taille="ligne" />}Confirmer la création</button>
+            <button type="button" disabled={pending} onClick={() => void confirm()} className="flex flex-1 items-center justify-center gap-2 rounded-[9px] bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink disabled:opacity-60">{pending && <Spinner taille="ligne" />}Confirmer la création</button>
           </div>
         </div>
       )}
@@ -391,11 +391,11 @@ function EventPreparation({
           <select aria-label="Contact destinataire de la note" value={contactId} onChange={(event) => { setContactId(event.target.value); setConfirming(false); }} className="mt-3 w-full rounded-[9px] border border-border bg-surface px-3 py-2 text-xs outline-none focus:border-[#22D3EE]">{relatedContacts.map((contact) => <option key={contact.id} value={contact.id}>{contactDisplayName(contact)}</option>)}</select>
           <textarea aria-label="Note de rendez-vous" value={note} onChange={(event) => { setNote(event.target.value); setConfirming(false); }} rows={4} placeholder="Tes notes factuelles après le rendez-vous…" className="mt-2 w-full resize-y rounded-[9px] border border-border px-3 py-2 text-xs leading-5 outline-none focus:border-[#22D3EE]" />
           {!confirming ? (
-            <button type="button" disabled={!note.trim()} onClick={() => setConfirming(true)} className="mt-2 w-full rounded-[9px] bg-text px-3 py-2.5 text-xs font-semibold text-white disabled:cursor-not-allowed disabled:opacity-40">Vérifier la note</button>
+            <button type="button" disabled={!note.trim()} onClick={() => setConfirming(true)} className="mt-2 w-full rounded-[9px] bg-accent-fill px-3 py-2.5 text-xs font-semibold text-accent-ink disabled:cursor-not-allowed disabled:opacity-40">Vérifier la note</button>
           ) : (
             <div className="mt-2 rounded-[10px] border border-accent-cyan/30 bg-accent-tint p-3">
               <p className="text-xs leading-5 text-accent">Confirmer l’ajout de cette note au contact sélectionné. L’événement Agenda ne sera pas modifié.</p>
-              <div className="mt-2 flex gap-2"><button type="button" disabled={pending} onClick={onAbandon} className="flex-1 rounded-[8px] border border-error bg-surface px-3 py-2 text-xs font-semibold text-error disabled:opacity-60">Annuler</button><button type="button" disabled={pending} onClick={() => setConfirming(false)} className="flex-1 rounded-[8px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text disabled:opacity-60">Modifier</button><button type="button" disabled={pending} onClick={() => void confirmNote()} className="flex flex-1 items-center justify-center gap-2 rounded-[8px] bg-text px-3 py-2 text-xs font-semibold text-white">{pending && <Spinner taille="ligne" />}Confirmer l’ajout</button></div>
+              <div className="mt-2 flex gap-2"><button type="button" disabled={pending} onClick={onAbandon} className="flex-1 rounded-[8px] border border-error bg-surface px-3 py-2 text-xs font-semibold text-error disabled:opacity-60">Annuler</button><button type="button" disabled={pending} onClick={() => setConfirming(false)} className="flex-1 rounded-[8px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text disabled:opacity-60">Modifier</button><button type="button" disabled={pending} onClick={() => void confirmNote()} className="flex flex-1 items-center justify-center gap-2 rounded-[8px] bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">{pending && <Spinner taille="ligne" />}Confirmer l’ajout</button></div>
             </div>
           )}
           {feedback && <p className="mt-2 text-xs text-accent" role="status">{feedback}</p>}
@@ -446,12 +446,12 @@ export function MeetingWorkspaceCanvas({
 
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
         {resource.status === 'loading' ? <div className="flex h-full items-center justify-center gap-2 text-sm text-text-muted"><Spinner taille="bouton" className="text-[var(--k3)]" />Chargement de l’agenda…</div>
-          : resource.status === 'error' ? <div className="flex h-full items-center justify-center text-center"><div><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">{resource.error}</p><button type="button" onClick={onRetry} className="mt-4 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white">Réessayer</button></div></div>
+          : resource.status === 'error' ? <div className="flex h-full items-center justify-center text-center"><div><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">{resource.error}</p><button type="button" onClick={onRetry} className="mt-4 rounded-[9px] bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">Réessayer</button></div></div>
             : target === 'new-event' ? (resource.data.calendars.length === 0
               ? <CalendarProvisioning onEnsure={onEnsureCalendar} />
               : <NewEventForm data={resource.data} onCreate={onCreateEvent} onAbandon={onAbandon} />)
               : eventResource?.status === 'loading' ? <div className="flex h-full items-center justify-center gap-2 text-sm text-text-muted"><Spinner taille="bouton" className="text-[var(--k3)]" />Je rassemble le contexte exact…</div>
-                : eventResource?.status === 'error' ? <div className="flex h-full items-center justify-center text-center"><div><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">{eventResource.error}</p><button type="button" onClick={onRetryEvent} className="mt-4 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white">Réessayer</button></div></div>
+                : eventResource?.status === 'error' ? <div className="flex h-full items-center justify-center text-center"><div><AlertCircle className="mx-auto h-5 w-5 text-warning" /><p className="mt-2 text-sm font-semibold text-text">{eventResource.error}</p><button type="button" onClick={onRetryEvent} className="mt-4 rounded-[9px] bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">Réessayer</button></div></div>
                   : eventResource?.status === 'ready' ? <EventPreparation context={eventResource.data} onCreateNote={onCreateNote} onAbandon={onAbandon} />
                     : <div className="flex h-full items-center justify-center text-center"><div><Calendar className="mx-auto h-6 w-6 text-text-muted" /><p className="mt-2 text-sm font-semibold text-text">Aucun rendez-vous sélectionné</p><p className="mt-1 text-xs text-text-muted">Choisis un événement dans la conversation ou prépare-en un nouveau.</p></div></div>}
       </div>

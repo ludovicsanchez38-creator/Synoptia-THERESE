@@ -93,6 +93,9 @@
 /* Variables d'effet (non-Tailwind) - défaut clair */
 :root {
   --glow: none;
+  /* Ombres de la DA « Équilibre » : douces et bleutées, pas noires. */
+  --shadow-card: 0 1px 2px rgba(16, 28, 54, 0.05), 0 10px 24px -10px rgba(16, 28, 54, 0.16);
+  --shadow-pop: 0 10px 30px -8px rgba(16, 28, 54, 0.22);
   --glass-bg: rgba(255, 255, 255, 0.72);
   --glass-border: var(--color-border);
   --glow-cyan-shadow: 0 1px 2px rgba(16, 28, 54, 0.06);
@@ -101,9 +104,6 @@
   /* DA boutons « brutaliste éditorial » (11/06/2026) : bordure encre +
      ombre dure décalée sans flou. Déclinées par thème ci-dessous. */
   --btn-ink: #101C36;
-  --btn-shadow-color: #101C36;
-  --btn-danger-ink: #B91C1C;
-  --btn-danger-shadow: #B91C1C;
 
   /* Accents KPI / catégories (clair Équilibre) */
   --k1: #0F8FB3; --k1bg: #DEF4F9;
@@ -171,6 +171,9 @@
   --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.3), 0 4px 6px -4px rgb(0 0 0 / 0.3);
 
   --glow: 0 0 22px rgba(34, 211, 238, 0.35);
+  /* Ombres de la DA « Signature » : la profondeur vient du noir. */
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.3), 0 8px 22px -10px rgba(0, 0, 0, 0.5);
+  --shadow-pop: 0 14px 34px -10px rgba(0, 0, 0, 0.6);
   --glass-bg: rgba(19, 27, 53, 0.7);
   --glass-border: #2A3550;
   --glow-cyan-shadow: 0 0 20px rgba(34, 211, 238, 0.15), 0 0 40px rgba(34, 211, 238, 0.1), inset 0 0 20px rgba(34, 211, 238, 0.05);
@@ -188,16 +191,6 @@
 
   /* DA boutons brutaliste - déclinaison sombre : encre claire, ombre cyan */
   --btn-ink: #E6EDF7;
-  --btn-shadow-color: rgba(34, 211, 238, 0.55);
-  --btn-danger-ink: #EF4444;
-  --btn-danger-shadow: rgba(239, 68, 68, 0.5);
-}
-
-/* La coque conversationnelle emploie `bg-text` pour ses actions principales.
-   En thème sombre, le fond devient clair : l'encre doit donc reprendre le fond
-   de l'application au lieu de rester blanche. */
-[data-theme="dark"] [data-testid="conversation-canvas-prototype"] .bg-text.text-white {
-  color: var(--color-bg);
 }
 
 /* Base styles - fenêtre avec coins arrondis */
@@ -302,61 +295,48 @@ img, a { -webkit-user-drag: none; }
 }
 
 /* ============================================================
-   DA BOUTONS « BRUTALISTE ÉDITORIAL » (11/06/2026)
-   Bordure encre 2px + ombre dure décalée (aucun flou).
-   Hover : le bouton se soulève (ombre 4px). Clic : il « s'enfonce »
-   (translation vers l'ombre, ombre nulle).
+   DA BOUTONS « ÉQUILIBRE » (30/08/2026, lot 2)
+   Remplace le « brutaliste éditorial » du 11/06 : bordure 2 px et ombre
+   dure sans flou, quatrième direction artistique du projet à côté de la DA
+   validée. Ici l'ombre est celle des cartes, le bouton se soulève au survol
+   et revient au clic.
    ============================================================ */
-.btn-brutal {
-  border: 2px solid var(--btn-ink);
-  box-shadow: 3px 3px 0 var(--btn-shadow-color);
+.btn-da {
+  box-shadow: var(--shadow-card);
   transition: transform 0.12s ease, box-shadow 0.12s ease,
     background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
 }
-.btn-brutal:hover:not(:disabled) {
-  transform: translate(-1px, -1px);
-  box-shadow: 4px 4px 0 var(--btn-shadow-color);
+.btn-da:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-pop);
 }
-.btn-brutal:active:not(:disabled) {
-  transform: translate(2px, 2px);
-  box-shadow: 0 0 0 var(--btn-shadow-color);
+.btn-da:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: var(--shadow-card);
 }
-.btn-brutal:disabled { box-shadow: 2px 2px 0 var(--btn-shadow-color); }
+.btn-da:disabled { box-shadow: none; }
 
-/* Variante danger : encre et ombre rouges (redéfinit juste les variables) */
-.btn-brutal-danger {
-  --btn-ink: var(--btn-danger-ink);
-  --btn-shadow-color: var(--btn-danger-shadow);
-}
-
-/* Carte-bouton brutale (QuickActions, etc.) : non-layered pour que la
-   transition transform ne soit pas écrasée par la règle « * » ci-dessous
-   (Tailwind 4 = cascade layers, unlayered > layered). */
+/* Carte cliquable : non-layered pour que la transition transform ne soit
+   pas écrasée par la règle « * » ci-dessous (Tailwind 4 = cascade layers,
+   unlayered > layered). Le nom garde « brutal » par compatibilité ; le
+   comportement suit la DA « Équilibre » depuis le 30/08/2026. */
 .card-brutal {
   transition: transform 0.12s ease, box-shadow 0.12s ease,
     background-color 0.15s ease, border-color 0.15s ease;
 }
 .card-brutal:hover {
-  border-color: var(--btn-ink);
-  box-shadow: 3px 3px 0 var(--btn-shadow-color);
-  transform: translate(-1px, -1px);
+  border-color: var(--color-ring);
+  box-shadow: var(--shadow-pop);
+  transform: translateY(-1px);
 }
 .card-brutal:active {
-  transform: translate(0, 0);
-  box-shadow: none;
+  transform: translateY(0);
+  box-shadow: var(--shadow-card);
 }
 
 /* Icônes lucide : trait affirmé (2.25 au lieu de 2) - les SVG maison
    n'ont pas la classe .lucide et gardent leur trait. */
 svg.lucide { stroke-width: 2.25; }
-
-/* Legacy : .btn-glow conservé comme alias du langage brutal (plus aucun
-   usage TSX au 11/06/2026, filet pour du HTML résiduel) */
-.btn-glow { position: relative; transition: transform 0.12s ease, box-shadow 0.12s ease; }
-.btn-glow:hover {
-  transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0 var(--btn-shadow-color);
-}
 
 /* Anneau d'accent au focus */
 .border-glow:focus-within {
@@ -534,9 +514,6 @@ html[data-reduce-motion="true"] *::after {
   /* DA boutons brutaliste : encre et ombres blanches/rouge vif sur fond noir
      (sans quoi l'ombre dure #101C36 serait invisible) */
   --btn-ink: #FFFFFF;
-  --btn-shadow-color: #FFFFFF;
-  --btn-danger-ink: #FF0000;
-  --btn-danger-shadow: #FF0000;
 }
 
 [data-high-contrast="true"] .glass { border-width: 2px; }

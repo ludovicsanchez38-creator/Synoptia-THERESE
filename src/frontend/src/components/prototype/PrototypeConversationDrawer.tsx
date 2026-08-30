@@ -199,7 +199,7 @@ export function PrototypeConversationDrawer({
           ref={newConversationRef}
           type="button"
           onClick={startConversation}
-          className="mb-3 flex w-full items-center justify-center gap-2 rounded-[10px] border border-text bg-text px-3 py-2.5 text-sm font-semibold text-white shadow-[2px_2px_0_#22D3EE]"
+          className="mb-3 flex w-full items-center justify-center gap-2 rounded-[10px] border border-accent-fill bg-accent-fill px-3 py-2.5 text-sm font-semibold text-accent-ink shadow-[var(--shadow-card)]"
         >
           <Plus className="h-4 w-4" />
           Nouvelle conversation
@@ -242,7 +242,7 @@ export function PrototypeConversationDrawer({
                 {editingId === conversation.id ? (
                   <div className="rounded-[9px] border border-[#22D3EE] bg-surface p-2">
                     <input autoFocus aria-label="Nouveau titre" value={editingTitle} maxLength={120} onChange={(event) => setEditingTitle(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void saveTitle(conversation); if (event.key === 'Escape') setEditingId(null); }} className="w-full rounded-[7px] border border-border px-2 py-1.5 text-sm text-text outline-none" />
-                    <div className="mt-2 flex justify-end gap-2"><button type="button" onClick={() => setEditingId(null)} className="text-xs font-semibold text-text-muted">Annuler</button><button type="button" onClick={() => void saveTitle(conversation)} className="rounded-[6px] bg-text px-2 py-1 text-xs font-semibold text-white">Enregistrer</button></div>
+                    <div className="mt-2 flex justify-end gap-2"><button type="button" onClick={() => setEditingId(null)} className="text-xs font-semibold text-text-muted">Annuler</button><button type="button" onClick={() => void saveTitle(conversation)} className="rounded-[6px] bg-accent-fill px-2 py-1 text-xs font-semibold text-accent-ink">Enregistrer</button></div>
                   </div>
                 ) : deleteConfirmationId === conversation.id ? (
                   <div className="rounded-[9px] border border-error/40 bg-[var(--color-error-tint)] p-3 text-xs text-error" data-testid="conversation-delete-confirmation"><strong>Supprimer définitivement cette conversation ?</strong><div className="mt-2 flex justify-end gap-2"><button type="button" onClick={() => setDeleteConfirmationId(null)} className="rounded-[6px] bg-surface px-2 py-1 font-semibold">Annuler</button><button type="button" onClick={() => void confirmDelete(conversation)} className="rounded-[6px] bg-error-fill px-2 py-1 font-semibold text-error-ink">Confirmer la suppression</button></div></div>

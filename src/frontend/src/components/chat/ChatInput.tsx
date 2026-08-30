@@ -1264,7 +1264,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           <p className="mt-1">Données transmises : {pendingCloudConsent.dataCategories.join(', ')}.</p>
           <div className="mt-3 flex justify-end gap-2">
             <button type="button" onClick={() => setPendingCloudConsent(null)} className="rounded-[8px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text">Annuler</button>
-            <button type="button" onClick={confirmCloudConsent} className="rounded-[8px] bg-text px-3 py-2 text-xs font-semibold text-white">Autoriser et envoyer</button>
+            <button type="button" onClick={confirmCloudConsent} className="rounded-[8px] bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">Autoriser et envoyer</button>
           </div>
         </div>
       )}

@@ -377,7 +377,7 @@ export function CapabilityCenter({
         className="flex h-[calc(100vh-1rem)] w-full max-w-[1120px] flex-col overflow-hidden rounded-[16px] border border-border bg-surface shadow-[0_34px_90px_rgba(16,28,54,0.28)] sm:h-[min(760px,88vh)] sm:rounded-[20px]"
       >
         <header className="flex items-start gap-3 border-b border-border px-4 py-4 sm:gap-5 sm:px-6 sm:py-5">
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[13px] border border-text bg-accent-tint text-accent shadow-[2px_2px_0_var(--btn-shadow-color)]">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-[13px] border border-text bg-accent-tint text-accent shadow-[var(--shadow-card)]">
             <Sparkles className="h-5 w-5" />
           </span>
           <div className="min-w-0 flex-1">
@@ -589,7 +589,7 @@ export function TrustCenter({
         </div>
         <div className="grid grid-cols-2 gap-2 border-t border-border bg-surface-2 p-3">
           <button type="button" onClick={onOpenPrivacy} className="rounded-[9px] border border-border bg-surface px-3 py-2 text-xs font-semibold text-text hover:border-border">Confidentialité</button>
-          <button type="button" onClick={onOpenAdvanced} className="rounded-[9px] border border-text bg-text px-3 py-2 text-xs font-semibold text-white">Réglages avancés</button>
+          <button type="button" onClick={onOpenAdvanced} className="rounded-[9px] border border-accent-fill bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">Réglages avancés</button>
         </div>
       </motion.section>
     </motion.div>

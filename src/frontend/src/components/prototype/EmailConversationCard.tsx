@@ -93,7 +93,7 @@ export function EmailInboxCard({
               <button
                 type="button"
                 onClick={onRetry}
-                className="inline-flex items-center gap-1.5 rounded-[9px] border border-text bg-text px-3 py-2 text-xs font-semibold text-white"
+                className="inline-flex items-center gap-1.5 rounded-[9px] border border-accent-fill bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
                 Réessayer
@@ -326,7 +326,7 @@ export function EmailMessageCanvas({
           <div>
             <AlertCircle className="mx-auto h-5 w-5 text-warning" />
             <p className="mt-2 text-sm font-semibold text-text">{resource.error}</p>
-            <button type="button" onClick={onRetry} className="mt-4 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white">
+            <button type="button" onClick={onRetry} className="mt-4 rounded-[9px] bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink">
               Réessayer
             </button>
           </div>
@@ -483,7 +483,7 @@ export function EmailMessageCanvas({
                 type="button"
                 onClick={requestSave}
                 disabled={saving}
-                className="inline-flex items-center gap-1.5 rounded-[9px] bg-text px-3 py-2 text-xs font-semibold text-white disabled:opacity-60"
+                className="inline-flex items-center gap-1.5 rounded-[9px] bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink disabled:opacity-60"
               >
                 <Save className="h-3.5 w-3.5" />
                 Enregistrer comme brouillon

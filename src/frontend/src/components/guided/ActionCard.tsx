@@ -34,7 +34,7 @@ export function ActionCard({ icon: Icon, title, description, onClick, index, var
         'focus:outline-none focus:ring-2 focus:ring-accent-cyan/30',
         isPersonnaliser
           ? 'border-2 border-dashed border-border/40 cursor-default opacity-70'
-          : 'border-[1.5px] border-border hover:border-[var(--btn-ink)] hover:shadow-[3px_3px_0_var(--btn-shadow-color)]'
+          : 'border-[1.5px] border-border hover:border-[var(--btn-ink)] hover:shadow-[var(--shadow-card)]'
       )}
     >
       {/* Badge Bientôt */}

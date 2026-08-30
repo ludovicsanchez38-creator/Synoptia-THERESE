@@ -101,7 +101,7 @@ export function VoiceDictationButton({
             <button
               type="button"
               onClick={confirmVoiceConsent}
-              className="rounded-[6px] bg-text px-2 py-1 font-semibold text-white"
+              className="rounded-[6px] bg-accent-fill px-2 py-1 font-semibold text-accent-ink"
             >
               Autoriser et dicter
             </button>

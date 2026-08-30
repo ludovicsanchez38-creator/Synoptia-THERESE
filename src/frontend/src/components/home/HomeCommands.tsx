@@ -377,7 +377,7 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
                     'group relative flex flex-col items-start p-4 rounded-xl',
                     'bg-surface-elevated/60 backdrop-blur-sm',
                     'border-[1.5px] border-border hover:border-[var(--btn-ink)]',
-                    'hover:shadow-[3px_3px_0_var(--btn-shadow-color)]',
+                    'hover:shadow-[var(--shadow-card)]',
                     'transition-all duration-200 text-left',
                     'focus:outline-none focus:ring-2 focus:ring-accent-cyan/30',
                   )}
@@ -416,7 +416,7 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
                   'group relative flex flex-col items-start p-4 rounded-xl',
                   'bg-surface-elevated/60 backdrop-blur-sm',
                   'border-[1.5px] border-border hover:border-[var(--btn-ink)]',
-                  'hover:shadow-[3px_3px_0_var(--btn-shadow-color)]',
+                  'hover:shadow-[var(--shadow-card)]',
                   'transition-all duration-200 text-left',
                   'focus:outline-none focus:ring-2 focus:ring-accent-cyan/30',
                 )}

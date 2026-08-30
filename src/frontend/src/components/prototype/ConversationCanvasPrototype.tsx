@@ -157,7 +157,7 @@ function IconButton({
       onClick={onClick}
       className={`grid h-11 w-11 place-items-center rounded-[10px] border transition-colors ${
         active
-          ? 'border-text bg-text text-white'
+          ? 'border-accent-fill bg-accent-fill text-accent-ink'
           : 'border-transparent text-text-muted hover:border-border hover:bg-surface hover:text-text'
       } ${className}`}
     >
@@ -1534,7 +1534,7 @@ export function ConversationCanvasPrototype() {
                       : 'Ouvrir le profil'
                 }
                 title={profileState === 'loading' ? 'Chargement du profil…' : 'Ouvrir le profil'}
-                className="grid h-11 w-11 place-items-center rounded-full border border-text bg-text text-xs font-bold text-white shadow-[2px_2px_0_var(--color-accent-fill)] disabled:opacity-70"
+                className="grid h-11 w-11 place-items-center rounded-full border border-accent-fill bg-accent-fill text-xs font-bold text-accent-ink shadow-[var(--shadow-card)] disabled:opacity-70"
               >
                 {profileState === 'loading' ? (
                   <Spinner taille="bouton" />
@@ -1580,7 +1580,7 @@ export function ConversationCanvasPrototype() {
                     </div>
                   )}
                   <div className="mb-7 flex items-start gap-3">
-                    <CharacterPortrait index={0} className="mt-0.5 h-8 w-8 rounded-[10px] border border-text shadow-[2px_2px_0_var(--btn-shadow-color)]" />
+                    <CharacterPortrait index={0} className="mt-0.5 h-8 w-8 rounded-[10px] border border-text shadow-[var(--shadow-card)]" />
                     <div>
                       <h1 className="text-[24px] font-bold tracking-[-0.035em] text-text">Bonjour{displayName ? ` ${displayName}` : ''}.</h1>
                       <p className="mt-1 text-sm leading-6 text-text-muted">
@@ -1794,7 +1794,7 @@ export function ConversationCanvasPrototype() {
                              action ne se lit pas comme une métadonnée. */
                           className={`rounded-full border px-3 py-2 text-sm font-semibold ${
                             scenario === action.id
-                              ? 'border-text bg-text text-white'
+                              ? 'border-accent-fill bg-accent-fill text-accent-ink'
                               : 'border-border bg-surface text-text-muted hover:border-border hover:text-text'
                           }`}
                         >
@@ -1880,7 +1880,7 @@ export function ConversationCanvasPrototype() {
                           disabled={destinationIsPending || (destinationUsesChat && !composerValue.trim())}
                           aria-label={composerActionLabel}
                           title={composerActionLabel}
-                          className="grid h-11 w-11 place-items-center rounded-[10px] border border-text bg-accent-fill text-accent-ink shadow-[2px_2px_0_var(--btn-shadow-color)] hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:border-border disabled:bg-surface-2 disabled:text-text-muted disabled:shadow-none disabled:hover:translate-y-0"
+                          className="grid h-11 w-11 place-items-center rounded-[10px] border border-text bg-accent-fill text-accent-ink shadow-[var(--shadow-card)] hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:border-border disabled:bg-surface-2 disabled:text-text-muted disabled:shadow-none disabled:hover:translate-y-0"
                         >
                           {destinationUsesChat ? <ArrowUp className="h-[18px] w-[18px]" /> : <ChevronRight className="h-[18px] w-[18px]" />}
                         </button>

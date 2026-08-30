@@ -291,7 +291,7 @@ export function CalculatorWorkspaceCanvas({ onClose }: { onClose: () => void }) 
       <div className="min-h-0 flex-1 overflow-y-auto px-5 py-5">
         <div role="tablist" aria-label="Type de calcul" className="grid grid-cols-5 gap-1 rounded-[11px] border border-border bg-surface p-1">
           {CALCULATORS.map((calculator) => (
-            <button key={calculator.id} id={`calculator-tab-${calculator.id}`} role="tab" aria-selected={active === calculator.id} aria-controls={`calculator-panel-${calculator.id}`} tabIndex={active === calculator.id ? 0 : -1} type="button" disabled={pending} onKeyDown={(event) => handleRovingFocus(event, '[role="tab"]', 'horizontal')} onClick={() => select(calculator.id)} className={`rounded-[8px] px-2 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60 ${active === calculator.id ? 'bg-text text-white' : 'text-text-muted hover:bg-bg'}`}>{calculator.label}</button>
+            <button key={calculator.id} id={`calculator-tab-${calculator.id}`} role="tab" aria-selected={active === calculator.id} aria-controls={`calculator-panel-${calculator.id}`} tabIndex={active === calculator.id ? 0 : -1} type="button" disabled={pending} onKeyDown={(event) => handleRovingFocus(event, '[role="tab"]', 'horizontal')} onClick={() => select(calculator.id)} className={`rounded-[8px] px-2 py-2 text-xs font-semibold disabled:cursor-not-allowed disabled:opacity-60 ${active === calculator.id ? 'bg-accent-fill text-accent-ink' : 'text-text-muted hover:bg-bg'}`}>{calculator.label}</button>
           ))}
         </div>
 
@@ -308,7 +308,7 @@ export function CalculatorWorkspaceCanvas({ onClose }: { onClose: () => void }) 
             {active === 'break-even' && <><InputField inputId="calculator-fixed-costs" invalid={errorFieldId === 'calculator-fixed-costs'} label="Coûts fixes" value={values.fixedCosts} onChange={(value) => update('fixedCosts', value)} suffix="€" min={0} /><InputField inputId="calculator-variable-cost" invalid={errorFieldId === 'calculator-variable-cost'} label="Coût variable par unité" value={values.variableCost} onChange={(value) => update('variableCost', value)} suffix="€" min={0} /><InputField inputId="calculator-price" invalid={errorFieldId === 'calculator-price'} label="Prix de vente par unité" value={values.price} onChange={(value) => update('price', value)} suffix="€" min={0} /></>}
           </fieldset>
           {error && <div id="calculator-form-error" role="alert" className="mt-3 rounded-[9px] border border-error/40 bg-[var(--color-error-tint)] px-3 py-2 text-sm leading-5 text-error">{error}</div>}
-          <button type="button" disabled={pending} onClick={() => void calculate()} className="mt-4 flex w-full items-center justify-center gap-2 rounded-[10px] bg-text px-4 py-3 text-sm font-semibold text-white disabled:opacity-60">{pending && <Spinner taille="bouton" />}Calculer avec le moteur local</button>
+          <button type="button" disabled={pending} onClick={() => void calculate()} className="mt-4 flex w-full items-center justify-center gap-2 rounded-[10px] bg-accent-fill px-4 py-3 text-sm font-semibold text-accent-ink disabled:opacity-60">{pending && <Spinner taille="bouton" />}Calculer avec le moteur local</button>
           <div className="sr-only" role="progressbar" aria-label="Progression du calcul" aria-valuemin={0} aria-valuemax={1} aria-valuenow={result ? 1 : 0} aria-valuetext={pending ? 'Calcul en cours' : result ? 'Calcul terminé' : 'Calcul non lancé'} />
         </section>
 

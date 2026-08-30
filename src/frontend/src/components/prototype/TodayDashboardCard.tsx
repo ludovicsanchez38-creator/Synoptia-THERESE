@@ -211,7 +211,7 @@ export function TodayDashboardCard({
               <button
                 type="button"
                 onClick={onRetry}
-                className="inline-flex items-center gap-1.5 rounded-[9px] border border-text bg-text px-3 py-2 text-xs font-semibold text-white"
+                className="inline-flex items-center gap-1.5 rounded-[9px] border border-accent-fill bg-accent-fill px-3 py-2 text-xs font-semibold text-accent-ink"
               >
                 <RefreshCw className="h-3.5 w-3.5" />
                 Réessayer
@@ -231,7 +231,7 @@ export function TodayDashboardCard({
                 onClick={onSetupEmail}
                 /* L'action qui sort de l'état vide : elle mérite mieux que
                    la taille des métadonnées qui l'entourent. */
-                className="mt-4 rounded-[9px] bg-text px-3 py-2 text-sm font-semibold text-white"
+                className="mt-4 rounded-[9px] bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink"
               >
                 Brancher mes mails
               </button>
