@@ -390,12 +390,22 @@ async def _get_file_context(
         if len(text_content) > max_chars:
             text_content = text_content[:max_chars] + f"\n\n[... contenu tronque, {len(text_content)} caracteres au total ...]"
 
-        context = f"""--- FICHIER: {file_name} ({size_str}) ---
-Chemin: {path}
+        # Finding 1 (30/08) : le gabarit `--- FICHIER ---` / `--- FIN DU
+        # FICHIER ---` était recopiable. Un consigne.txt refermait le closer
+        # et collait send_email au même étage que le système. On enveloppe
+        # à la source ; le chemin absolu (fuite du home) ne part plus.
+        from app.services.prompt_security import get_prompt_security
 
-{text_content}
-
---- FIN DU FICHIER ---"""
+        try:
+            context = get_prompt_security().sanitize_for_context(
+                f"Nom: {file_name} ({size_str})\n\n{text_content}",
+                source="fichier",
+            )
+        except Exception:
+            logger.warning(
+                "Enveloppe du fichier impossible, fragment non injecté"
+            )
+            return None, None
 
         return context, None
 
@@ -455,7 +465,7 @@ PLAFOND_CARACTERES_FICHIERS = 40000
 BLOC_PIECES_JOINTES = """
 ## Les fichiers joints à cette conversation
 Les pièces jointes te sont fournies plus haut, dans le contexte, sous forme de
-blocs délimités par `--- FICHIER: nom ---`. Elles restent disponibles pendant
+blocs délimités par `[Source: fichier]`. Elles restent disponibles pendant
 toute la conversation, tu n'as aucun outil à appeler pour les consulter.
 N'affirme JAMAIS que tu n'as pas accès à un fichier qui figure dans ce contexte.
 Si un bloc porte la mention « contenu tronqué » ou « extrait », tu n'en as reçu
