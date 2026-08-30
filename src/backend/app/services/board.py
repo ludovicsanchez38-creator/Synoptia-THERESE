@@ -303,7 +303,22 @@ class BoardService:
                 results_text += f"Source: {result.url}\n\n"
 
             logger.info(f"Recherche web: {len(response.results)} résultats trouvés")
-            return results_text
+            # Finding 1 (30/08) : ce chemin ne passait pas par
+            # format_results_for_llm. Descendre le web dans le message
+            # utilisateur n'avait rien fermé : le snippet restait nu.
+            from app.services.prompt_security import get_prompt_security
+
+            try:
+                return str(
+                    get_prompt_security().sanitize_for_context(
+                        results_text, source="web"
+                    )
+                )
+            except Exception:
+                logger.warning(
+                    "Enveloppe web du Board impossible, fragment non injecté"
+                )
+                return ""
 
         except RechercheWebRefusee as refus:
             # Campagne dix personas : sans cette branche, un refus tomberait

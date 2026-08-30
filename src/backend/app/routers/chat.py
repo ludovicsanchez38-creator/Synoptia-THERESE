@@ -390,12 +390,22 @@ async def _get_file_context(
         if len(text_content) > max_chars:
             text_content = text_content[:max_chars] + f"\n\n[... contenu tronque, {len(text_content)} caracteres au total ...]"
 
-        context = f"""--- FICHIER: {file_name} ({size_str}) ---
-Chemin: {path}
+        # Finding 1 (30/08) : le gabarit `--- FICHIER ---` / `--- FIN DU
+        # FICHIER ---` était recopiable. Un consigne.txt refermait le closer
+        # et collait send_email au même étage que le système. On enveloppe
+        # à la source ; le chemin absolu (fuite du home) ne part plus.
+        from app.services.prompt_security import get_prompt_security
 
-{text_content}
-
---- FIN DU FICHIER ---"""
+        try:
+            context = get_prompt_security().sanitize_for_context(
+                f"Nom: {file_name} ({size_str})\n\n{text_content}",
+                source="fichier",
+            )
+        except Exception:
+            logger.warning(
+                "Enveloppe du fichier impossible, fragment non injecté"
+            )
+            return None, None
 
         return context, None
 
@@ -455,7 +465,7 @@ PLAFOND_CARACTERES_FICHIERS = 40000
 BLOC_PIECES_JOINTES = """
 ## Les fichiers joints à cette conversation
 Les pièces jointes te sont fournies plus haut, dans le contexte, sous forme de
-blocs délimités par `--- FICHIER: nom ---`. Elles restent disponibles pendant
+blocs délimités par `[Source: fichier]`. Elles restent disponibles pendant
 toute la conversation, tu n'as aucun outil à appeler pour les consulter.
 N'affirme JAMAIS que tu n'as pas accès à un fichier qui figure dans ce contexte.
 Si un bloc porte la mention « contenu tronqué » ou « extrait », tu n'en as reçu
@@ -714,20 +724,22 @@ async def _get_memory_context(
 
         # Format results into context string
         seen_files = set()  # Track seen files to avoid duplicates
+        from app.services.prompt_security import get_prompt_security
 
         for hit in results:
             memory_type = hit.get("type", "")
             text = hit.get("text", "")
             metadata = hit.get("metadata", {})
             score = hit.get("score", 0)
+            bloc: str | None = None
 
             if memory_type == "contact":
                 name = metadata.get("name", "Inconnu")
-                context_parts.append(f"**Contact**: {name}\n{text}")
+                bloc = f"**Contact**: {name}\n{text}"
             elif memory_type == "project":
                 name = metadata.get("name", "Sans nom")
                 status = metadata.get("status", "")
-                context_parts.append(f"**Projet** ({status}): {name}\n{text}")
+                bloc = f"**Projet** ({status}): {name}\n{text}"
             elif memory_type == "file":
                 file_name = metadata.get("name", "fichier")
                 chunk_index = metadata.get("chunk_index", 0)
@@ -737,13 +749,31 @@ async def _get_memory_context(
                 if file_name not in seen_files:
                     seen_files.add(file_name)
                     if total_chunks > 1:
-                        context_parts.append(
-                            f"**Fichier**: {file_name} (extrait {chunk_index + 1}/{total_chunks})\n{text}"
+                        bloc = (
+                            f"**Fichier**: {file_name} "
+                            f"(extrait {chunk_index + 1}/{total_chunks})\n{text}"
                         )
                     else:
-                        context_parts.append(f"**Fichier**: {file_name}\n{text}")
+                        bloc = f"**Fichier**: {file_name}\n{text}"
             else:
-                context_parts.append(text)
+                bloc = text
+
+            if bloc:
+                # Finding 1 (30/08) : le hit Qdrant arrivait nu. On enveloppe
+                # le bloc entier (étiquette comprise) : un nom de contact
+                # peut porter `[End memoire]`. Légifrance et D6, plus bas,
+                # restent hors enveloppe (ce sont nos phrases).
+                try:
+                    enveloppe = get_prompt_security().sanitize_for_context(
+                        bloc, source="memoire"
+                    )
+                except Exception:
+                    logger.warning(
+                        "Enveloppe mémoire impossible, fragment non injecté"
+                    )
+                    enveloppe = ""
+                if enveloppe:
+                    context_parts.append(enveloppe)
 
             logger.debug(f"Memory context hit: {memory_type} (score={score:.2f})")
 

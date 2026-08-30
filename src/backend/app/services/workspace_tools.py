@@ -1032,7 +1032,20 @@ async def _read_emails(args: dict, session: AsyncSession) -> str:
             if msg.snippet:
                 lines.append(f"  _{msg.snippet[:120]}..._" if len(msg.snippet or "") > 120 else f"  _{msg.snippet}_")
 
-        return "\n".join(lines)
+        # Finding 1 (30/08) : le snippet mail arrivait nu. summarize_emails
+        # enveloppe déjà mail par mail : on n'y touche pas. Les messages
+        # d'erreur provider, eux, restent hors enveloppe (ce sont nos phrases).
+        from app.services.prompt_security import get_prompt_security
+
+        try:
+            return str(
+                get_prompt_security().sanitize_for_context(
+                    "\n".join(lines), source="email"
+                )
+            )
+        except Exception:
+            logger.warning("Enveloppe des emails impossible, fragment non injecté")
+            return "Erreur lors de la lecture des emails."
     except Exception as e:
         logger.exception("Erreur lecture emails")
         return f"Erreur lors de la lecture des emails : {e}"
@@ -1209,7 +1222,22 @@ async def _search_emails(args: dict, session: AsyncSession) -> str:
             if msg.snippet:
                 lines.append(f"  _{msg.snippet[:120]}_")
 
-        return "\n".join(lines)
+        # Jumeau de `_read_emails` : le même snippet de 120 caractères, le
+        # même trou. Le laisser ouvert pendant qu'on ferme read_emails
+        # serait du sabotage par oubli de jumeau (finding 1, 30/08).
+        from app.services.prompt_security import get_prompt_security
+
+        try:
+            return str(
+                get_prompt_security().sanitize_for_context(
+                    "\n".join(lines), source="email"
+                )
+            )
+        except Exception:
+            logger.warning(
+                "Enveloppe de la recherche emails impossible, fragment non injecté"
+            )
+            return "Erreur lors de la recherche."
     except Exception as e:
         logger.exception("Erreur recherche emails")
         return f"Erreur lors de la recherche : {e}"

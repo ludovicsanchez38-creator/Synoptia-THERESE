@@ -98,6 +98,34 @@ def verifier_autorisation_recherche() -> None:
         )
 
 
+def formater_resultats_pour_llm(response: SearchResponse) -> str:
+    """Formate les résultats web puis les enveloppe.
+
+    Finding 1 (30/08) : Brave, DuckDuckGo et SearXNG avaient chacun une copie
+    du formateur, et le Board formattait à la main. Un snippet qui referme
+    `[End web]` passait nu. Un seul site, `source="web"`. Les messages
+    « aucun résultat » restent hors enveloppe : ce sont nos phrases.
+    """
+    if not response.results:
+        return f"Aucun résultat trouvé pour: {response.query}"
+
+    lines = [f"Résultats de recherche web pour: {response.query}\n"]
+    for i, result in enumerate(response.results, 1):
+        lines.append(f"{i}. **{result.title}**")
+        lines.append(f"   URL: {result.url}")
+        if result.snippet:
+            lines.append(f"   {result.snippet}")
+        lines.append("")
+    brut = "\n".join(lines)
+    from app.services.prompt_security import get_prompt_security
+
+    try:
+        return str(get_prompt_security().sanitize_for_context(brut, source="web"))
+    except Exception:
+        logger.warning("Enveloppe des résultats web impossible, fragment non injecté")
+        return ""
+
+
 class BraveSearchService:
     """
     Web search service using Brave Search API.
@@ -183,19 +211,7 @@ class BraveSearchService:
 
     def format_results_for_llm(self, response: SearchResponse) -> str:
         """Format search results as context for LLM."""
-        if not response.results:
-            return f"Aucun résultat trouvé pour: {response.query}"
-
-        lines = [f"Résultats de recherche web pour: {response.query}\n"]
-
-        for i, result in enumerate(response.results, 1):
-            lines.append(f"{i}. **{result.title}**")
-            lines.append(f"   URL: {result.url}")
-            if result.snippet:
-                lines.append(f"   {result.snippet}")
-            lines.append("")
-
-        return "\n".join(lines)
+        return formater_resultats_pour_llm(response)
 
     async def close(self) -> None:
         """Close the HTTP client."""
@@ -317,19 +333,7 @@ class WebSearchService:
 
     def format_results_for_llm(self, response: SearchResponse) -> str:
         """Format search results as context for LLM."""
-        if not response.results:
-            return f"Aucun résultat trouvé pour: {response.query}"
-
-        lines = [f"Résultats de recherche web pour: {response.query}\n"]
-
-        for i, result in enumerate(response.results, 1):
-            lines.append(f"{i}. **{result.title}**")
-            lines.append(f"   URL: {result.url}")
-            if result.snippet:
-                lines.append(f"   {result.snippet}")
-            lines.append("")
-
-        return "\n".join(lines)
+        return formater_resultats_pour_llm(response)
 
     async def close(self):
         """Close the HTTP client."""
@@ -400,13 +404,7 @@ class SearXNGService:
 
     def format_results_for_llm(self, response: SearchResponse) -> str:
         """Format search results for LLM consumption."""
-        if not response.results:
-            return f"Aucun résultat trouvé pour : {response.query}"
-
-        parts = [f"Résultats de recherche pour : {response.query}\n"]
-        for i, r in enumerate(response.results, 1):
-            parts.append(f"{i}. {r.title}\n   URL: {r.url}\n   {r.snippet}\n")
-        return "\n".join(parts)
+        return formater_resultats_pour_llm(response)
 
     async def close(self) -> None:
         if self._client:

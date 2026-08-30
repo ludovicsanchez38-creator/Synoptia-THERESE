@@ -48,6 +48,18 @@ async def _fichier(
     return fichier.id
 
 
+def _json_lu(brut: str) -> dict:
+    """`read_file` enveloppe le JSON de succès (finding 1, 30/08).
+
+    Les refus restent du JSON nu : D6 exige qu'un id inconnu et un fichier
+    hors périmètre rendent le même texte, hors enveloppe.
+    """
+    if brut.startswith("[Source:"):
+        corps = brut.split("\n", 1)[1].rsplit("\n[End ", 1)[0]
+        return json.loads(corps)
+    return json.loads(brut)
+
+
 async def _chercher(db_session, query=None, **perimetre) -> dict:
     arguments = {"query": query} if query is not None else {}
     brut = await execute_memory_tool("search_files", arguments, db_session, **perimetre)
@@ -242,7 +254,7 @@ class TestLireUnFichier:
         brut = await execute_memory_tool(
             "read_file", {"file_id": identifiant}, db_session
         )
-        r = json.loads(brut)
+        r = _json_lu(brut)
 
         assert r["found"] is True
         assert "Sommaire" in r["contenu"]
@@ -324,7 +336,7 @@ class TestLireUnFichier:
         page.write_text("a" * 25000, encoding="utf-8")
         identifiant = await _fichier(db_session, nom="long.txt", chemin=str(page))
 
-        r = json.loads(
+        r = _json_lu(
             await execute_memory_tool("read_file", {"file_id": identifiant}, db_session)
         )
 
