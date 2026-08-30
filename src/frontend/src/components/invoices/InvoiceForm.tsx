@@ -10,6 +10,7 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { X, Plus, Trash2, Save, FileCheck, AlertTriangle } from 'lucide-react';
 import { createInvoice, updateInvoice, convertDevisToInvoice, updateDevisStatus, type Invoice, type InvoiceLineRequest, listContacts, type Contact, markInvoicePaid } from '../../services/api';
+import { PLAFOND_CONTACTS } from '../../stores/contactsStore';
 import { useStatusStore } from '../../stores/statusStore';
 import { useBillingProfileStore } from '../../stores/billingProfileStore';
 import { cn } from '../../lib/utils';
@@ -72,6 +73,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
   const addNotification = useStatusStore((s) => s.addNotification);
 
   const [contacts, setContacts] = useState<Contact[]>([]);
+  const [contactsTronques, setContactsTronques] = useState(false);
   // P0-PROD-2 : garde-fou profil émetteur (raison sociale + SIRET + adresse).
   // État dans un store partagé (pas un useState local) : le formulaire de facture
   // et les Réglages sont deux modales indépendantes qui peuvent rester montées
@@ -132,8 +134,11 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
 
   async function loadContacts() {
     try {
-      const data = await listContacts();
+      const data = await listContacts(0, PLAFOND_CONTACTS);
       setContacts(data);
+      // Lot F : le devis n'offrait que 50 contacts. Même plafond que le
+      // carnet, et on le dit si on l'atteint.
+      setContactsTronques(data.length >= PLAFOND_CONTACTS);
     } catch (error) {
       console.error('Failed to load contacts:', error);
     }
@@ -495,6 +500,12 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                   </option>
                 ))}
               </select>
+              {contactsTronques && (
+                <p role="alert" className="mt-1 text-sm text-warning">
+                  Liste incomplète : seuls les {PLAFOND_CONTACTS} contacts les plus récents
+                  sont proposés.
+                </p>
+              )}
             </div>
 
             <div>

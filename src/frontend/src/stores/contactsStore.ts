@@ -10,11 +10,15 @@ import { create } from 'zustand';
 import type { Contact } from '../services/api';
 import {
   listContacts as apiListContacts,
+  getContact as apiGetContact,
   createContact as apiCreateContact,
   updateContact as apiUpdateContact,
   deleteContact as apiDeleteContact,
   searchMemory as apiSearchMemory,
 } from '../services/api/memory';
+
+/** Plafond du GET /contacts (le=200). Atteint = liste incomplète. */
+export const PLAFOND_CONTACTS = 200;
 
 interface ContactsStore {
   contacts: Contact[];
@@ -24,6 +28,8 @@ interface ContactsStore {
   loaded: boolean;
   error: string | null;
   selectedContactId: string | null;
+  /** Lot F : le GET est plafonné à 200. True = le carnet a d'autres fiches. */
+  truncated: boolean;
 
   fetchContacts: () => Promise<void>;
   createContact: (data: Partial<Contact>) => Promise<Contact>;
@@ -59,12 +65,19 @@ export const useContactsStore = create<ContactsStore>((set, get) => ({
   loaded: false,
   error: null,
   selectedContactId: null,
+  truncated: false,
 
   fetchContacts: async () => {
     set({ loading: true, error: null });
     try {
-      const contacts = await apiListContacts(0, 200);
-      set({ contacts, loading: false, loaded: true, error: null });
+      const contacts = await apiListContacts(0, PLAFOND_CONTACTS);
+      set({
+        contacts,
+        loading: false,
+        loaded: true,
+        error: null,
+        truncated: contacts.length >= PLAFOND_CONTACTS,
+      });
     } catch (e) {
       set({ loading: false, loaded: false, error: 'Impossible de charger les contacts.' });
       throw e;
@@ -105,9 +118,22 @@ export const useContactsStore = create<ContactsStore>((set, get) => ({
       // On résout les hits 'contact' en contacts complets via le store (sinon la
       // moitié sémantique est morte en UI, régression trouvée par Syn).
       const byId = new Map(get().contacts.map((c) => [c.id, c]));
-      const semantic = (res.results ?? [])
+      const semanticIds = (res.results ?? [])
         .filter((r) => r.entity_type === 'contact')
-        .map((r) => byId.get(r.id))
+        .map((r) => r.id);
+      // Lot F : un hit hors des 200 chargés était jeté. Le backend l'a
+      // trouvé, on va chercher la fiche plutôt que de dire « rien ».
+      const manquants = semanticIds.filter((id) => !byId.has(id));
+      if (manquants.length > 0) {
+        const fiches = await Promise.all(
+          manquants.map((id) => apiGetContact(id).catch(() => null)),
+        );
+        for (const fiche of fiches) {
+          if (fiche) byId.set(fiche.id, fiche);
+        }
+      }
+      const semantic = semanticIds
+        .map((id) => byId.get(id))
         .filter((c): c is Contact => !!c);
       // Hybride : matches locaux d'abord, puis hits sémantiques non déjà présents.
       set({ searchResults: mergeContactsById(local, semantic), loading: false });

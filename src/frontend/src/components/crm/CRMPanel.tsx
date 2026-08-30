@@ -34,6 +34,7 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
     setSelectedContact,
     fetchContacts,
     upsertLocal,
+    truncated: contactsTronques,
   } = useContactsStore();
 
   // Le CRM est une VUE filtrée du store unique : contacts ayant une source
@@ -145,8 +146,14 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
         <div>
           <h2 className="text-lg font-semibold text-text">Pipeline</h2>
           <p className="text-sm text-text-muted">
-            {contacts.length} contact{contacts.length > 1 ? 's' : ''} · {projects.length} projet{projects.length > 1 ? 's' : ''}
+            {contacts.length} contact{contacts.length > 1 ? 's' : ''}
+            {contactsTronques ? '+' : ''} · {projects.length} projet{projects.length > 1 ? 's' : ''}
           </p>
+          {contactsTronques && (
+            <p role="alert" className="text-sm text-warning">
+              Liste incomplète : le pipeline ne montre que les 200 contacts les plus récents.
+            </p>
+          )}
         </div>
       </div>
 
