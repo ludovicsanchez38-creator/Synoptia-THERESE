@@ -74,6 +74,23 @@ raccourcis les descriptions, jamais le balayage.
 Avant de rendre ton rapport, relis ton mandat point par point et réponds :
 **ai-je touché à tout ce qu'on m'a demandé ?** Si non, tu y retournes.
 
+## Dette connue — à cocher, pas à ficher
+
+Constatée le 30/08/2026 avant la campagne, en un seul essai sur cette instance.
+**Tu ne dépenses pas un finding dessus.** Une ligne dans ce tableau, et tu
+passes. Si tu vois autre chose au même endroit, ça, c'est un finding.
+
+| Dette | Je l'ai vue | Une ligne de preuve |
+|---|---|---|
+| XLSX : le repli produit un classeur VIDE (« Tableau », en-têtes « A / B / C », rien d'autre) après `AttributeError: 'MergedCell' object attribute 'value' is read-only` | oui/non | |
+| PPTX : les diapositives se RÉPÈTENT (3 parties demandées, rendues trois fois sur 10 diapositives) | oui/non | |
+| PPTX : quand l'exécution du code échoue, le repli colle le CODE PYTHON comme texte de diapositive | oui/non | |
+| Modèles OpenAI : le 400 sur outils + effort de raisonnement (corrigé le 30/08, vérifie qu'il ne revient pas) | oui/non | |
+
+Ce que ces quatre ont en commun : **un repli qui produit un livrable faux au
+lieu d'échouer franchement.** C'est la famille à traquer. Si tu en trouves un
+cinquième, ailleurs, c'est le finding le plus utile que tu puisses rendre.
+
 ## Format du rapport
 
 En français, dans le fichier que ton brief te désigne.
