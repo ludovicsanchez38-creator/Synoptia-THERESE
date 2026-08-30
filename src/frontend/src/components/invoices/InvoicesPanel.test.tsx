@@ -139,4 +139,12 @@ describe('InvoicesPanel suppression', () => {
     await screen.findByText('FAC-001');
     expect(screen.queryByTitle('Envoyer par email')).not.toBeInTheDocument();
   });
+
+  it('une panne de chargement n’est pas un état vide « Aucune facture »', async () => {
+    mockListInvoices.mockRejectedValue(new Error('backend down'));
+    render(<InvoicesPanel standalone />);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Impossible de charger les factures/i);
+    expect(screen.queryByText('Aucune facture')).toBeNull();
+  });
 });

@@ -61,6 +61,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
   const addNotification = useStatusStore((s) => s.addNotification);
 
   const [isLoading, setIsLoading] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [showForm, setShowForm] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [deletingInvoice, setDeletingInvoice] = useState<Invoice | null>(null);
@@ -77,11 +78,13 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
 
   async function loadInvoices() {
     setIsLoading(true);
+    setLoadError(null);
     try {
       const data = await listInvoices();
       setInvoices(data);
     } catch (error) {
       console.error('Failed to load invoices:', error);
+      setLoadError('Impossible de charger les factures pour le moment.');
     } finally {
       setIsLoading(false);
     }
@@ -252,6 +255,18 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
       {isLoading ? (
         <div className="flex items-center justify-center h-full">
           <div className="text-text-muted">Chargement...</div>
+        </div>
+      ) : loadError ? (
+        <div className="flex flex-col items-center justify-center h-full gap-4" role="alert">
+          <AlertCircle className="w-16 h-16 text-warning" />
+          <p className="text-text">{loadError}</p>
+          <button
+            type="button"
+            onClick={() => { void loadInvoices(); }}
+            className="px-4 py-2 rounded-md bg-accent-fill text-accent-ink hover:bg-accent-fill/90"
+          >
+            Réessayer
+          </button>
         </div>
       ) : filteredInvoices.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-full gap-4">
