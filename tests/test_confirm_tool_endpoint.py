@@ -93,3 +93,56 @@ async def test_confirm_tool_route_send_email_mcp_vers_le_service_mcp(client, mon
     assert data["status"] == "executed"
     assert "envoyé" in data["result"].lower()
     assert captured["name"] == "therese__send_email"
+
+
+@pytest.mark.asyncio
+async def test_confirm_tool_route_web_search_vers_le_moteur(client, monkeypatch):
+    """Sans ce routage, la carte de web_search appellerait execute_workspace_tool
+    et rendrait « Outil inconnu » : l'utilisateur confirme, rien ne part."""
+    captured: dict = {}
+
+    async def _spy(arguments):
+        captured["args"] = arguments
+        return "3 résultats"
+
+    async def _fail_workspace(*args, **kwargs):
+        raise AssertionError("web_search n'est pas un outil workspace")
+
+    monkeypatch.setattr(chat_mod, "execute_web_search", _spy)
+    monkeypatch.setattr(chat_mod, "execute_workspace_tool", _fail_workspace)
+
+    cid = register_pending("web_search", {"query": "horaire marseille"})
+    resp = await client.post(
+        "/api/chat/confirm-tool", json={"confirmation_id": cid, "approved": True}
+    )
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["status"] == "executed"
+    assert captured["args"] == {"query": "horaire marseille"}
+    assert "3 résultats" in data["result"]
+
+
+@pytest.mark.asyncio
+async def test_confirm_tool_route_create_contact_vers_la_memoire(client, monkeypatch):
+    captured: dict = {}
+
+    async def _spy(tool_name, arguments, session, **kwargs):
+        captured["tool"] = tool_name
+        captured["args"] = arguments
+        return '{"id": "c1", "name": "Martin"}'
+
+    async def _fail_workspace(*args, **kwargs):
+        raise AssertionError("create_contact n'est pas un outil workspace")
+
+    monkeypatch.setattr(chat_mod, "execute_memory_tool", _spy)
+    monkeypatch.setattr(chat_mod, "execute_workspace_tool", _fail_workspace)
+
+    cid = register_pending("create_contact", {"first_name": "Martin"})
+    resp = await client.post(
+        "/api/chat/confirm-tool", json={"confirmation_id": cid, "approved": True}
+    )
+
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "executed"
+    assert captured["tool"] == "create_contact"

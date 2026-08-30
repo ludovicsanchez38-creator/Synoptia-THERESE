@@ -80,4 +80,34 @@ describe('ToolConfirmationCard (US-002)', () => {
 
     await waitFor(() => expect(confirmTool).toHaveBeenCalledWith('rdv-1', true));
   });
+
+  it("n'emprunte pas le titre d'un e-mail pour un outil sortant quelconque", () => {
+    // Passe 4 : web_search, create_contact, MCP. La carte ne connaissait
+    // que deux formes ; tout le reste s'affichait « Confirmer l'envoi de
+    // l'email » avec des champs vides. Confirmer à l'aveugle.
+    useToolConfirmationStore.getState().add({
+      confirmation_id: 'web-1',
+      tool_name: 'web_search',
+      arguments: { query: 'adresses du dossier Martin' },
+    });
+    render(<ToolConfirmationCard />);
+
+    expect(screen.queryByText(/Confirmer l[’']envoi de l[’']email/)).toBeNull();
+    expect(screen.getAllByText(/web_search/).length).toBeGreaterThan(0);
+    expect(screen.getByText('adresses du dossier Martin')).toBeTruthy();
+  });
+
+  it('montre le nom MCP et les arguments d’un outil installé', () => {
+    useToolConfirmationStore.getState().add({
+      confirmation_id: 'slack-1',
+      tool_name: 'slack__post_message',
+      arguments: { channel: '#general', text: 'facture client' },
+    });
+    render(<ToolConfirmationCard />);
+
+    expect(screen.queryByText(/Confirmer l[’']envoi de l[’']email/)).toBeNull();
+    expect(screen.getAllByText(/slack__post_message/).length).toBeGreaterThan(0);
+    expect(screen.getByText('#general')).toBeTruthy();
+    expect(screen.getByText('facture client')).toBeTruthy();
+  });
 });

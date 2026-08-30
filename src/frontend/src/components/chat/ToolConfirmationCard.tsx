@@ -1,6 +1,6 @@
 /** Confirmation humaine des mutations préparées par le chat. */
 import { useState, type ReactNode } from 'react';
-import { Calendar, Check, Mail, Send, X } from 'lucide-react';
+import { Calendar, Check, Mail, Send, Shield, X } from 'lucide-react';
 import {
   useToolConfirmationStore,
   type PendingConfirmation,
@@ -73,22 +73,49 @@ function EmailDetails({ confirmation }: { confirmation: PendingConfirmation }) {
   );
 }
 
+function GenericDetails({ confirmation }: { confirmation: PendingConfirmation }) {
+  // Passe 4 : hors e-mail et agenda, la carte empruntait le titre « envoi
+  // de l'email » et des champs vides. Confirmer à l'aveugle. On montre le
+  // nom réel et les arguments, sans les clés internes (_confirmation_*).
+  const entries = Object.entries(confirmation.arguments).filter(
+    ([key]) => !key.startsWith('_'),
+  );
+  return (
+    <dl className="mb-3 space-y-1 text-xs text-text-muted">
+      <Detail label="Outil">{confirmation.tool_name}</Detail>
+      {entries.map(([key, raw]) => (
+        <Detail key={key} label={key}>
+          {raw == null ? '' : typeof raw === 'string' ? raw : JSON.stringify(raw)}
+        </Detail>
+      ))}
+    </dl>
+  );
+}
+
 function ConfirmationItem({ confirmation }: { confirmation: PendingConfirmation }) {
   const [busy, setBusy] = useState<'approve' | 'cancel' | null>(null);
   const remove = useToolConfirmationStore((state) => state.remove);
   const addMessage = useChatStore((state) => state.addMessage);
   const toolName = baseToolName(confirmation.tool_name);
   const isCalendar = toolName === 'create_calendar_event';
-  const title = isCalendar ? 'Confirmer la création du rendez-vous' : 'Confirmer l’envoi de l’email';
+  const isEmail = toolName === 'send_email';
+  const title = isCalendar
+    ? 'Confirmer la création du rendez-vous'
+    : isEmail
+      ? 'Confirmer l’envoi de l’email'
+      : `Confirmer l’action ${confirmation.tool_name}`;
 
   async function handle(approved: boolean) {
     setBusy(approved ? 'approve' : 'cancel');
     try {
       const response = await confirmTool(confirmation.confirmation_id, approved);
       if (approved) {
+        const fichiers = response.skill_files ?? [];
         addMessage({
           role: 'assistant',
-          content: response.result || (isCalendar ? 'Rendez-vous créé.' : 'Email envoyé.'),
+          content: response.result || (isCalendar ? 'Rendez-vous créé.' : isEmail ? 'Email envoyé.' : 'Action exécutée.'),
+          skillFile: fichiers[0],
+          skillFiles: fichiers.length > 0 ? fichiers : undefined,
         });
       }
     } catch (error) {
@@ -105,14 +132,14 @@ function ConfirmationItem({ confirmation }: { confirmation: PendingConfirmation 
   return (
     <div className="rounded-md border border-accent-cyan/30 bg-surface p-3" data-testid="tool-confirmation">
       <div className="mb-2 flex items-center gap-2 text-accent-cyan-ink">
-        {isCalendar ? <Calendar className="h-4 w-4" /> : <Mail className="h-4 w-4" />}
+        {isCalendar ? <Calendar className="h-4 w-4" /> : isEmail ? <Mail className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
         <span className="text-sm font-medium text-text">{title}</span>
       </div>
-      {isCalendar ? <CalendarDetails confirmation={confirmation} /> : <EmailDetails confirmation={confirmation} />}
+      {isCalendar ? <CalendarDetails confirmation={confirmation} /> : isEmail ? <EmailDetails confirmation={confirmation} /> : <GenericDetails confirmation={confirmation} />}
       <div className="flex gap-2">
         <Button variant="primary" size="sm" onClick={() => void handle(true)} disabled={busy !== null}>
-          {busy === 'approve' ? <Spinner taille="bouton" className="mr-1" /> : isCalendar ? <Check className="mr-1 h-4 w-4" /> : <Send className="mr-1 h-4 w-4" />}
-          {isCalendar ? 'Créer' : 'Envoyer'}
+          {busy === 'approve' ? <Spinner taille="bouton" className="mr-1" /> : isCalendar ? <Check className="mr-1 h-4 w-4" /> : isEmail ? <Send className="mr-1 h-4 w-4" /> : <Check className="mr-1 h-4 w-4" />}
+          {isCalendar ? 'Créer' : isEmail ? 'Envoyer' : 'Confirmer'}
         </Button>
         <Button variant="ghost" size="sm" onClick={() => void handle(false)} disabled={busy !== null}>
           <X className="mr-1 h-4 w-4" />

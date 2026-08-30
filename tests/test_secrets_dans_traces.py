@@ -102,6 +102,7 @@ class TestLeMasquageNeRendPasLesJournauxIllisibles:
             "xai-abcdefghijklmnopqrstuvwx",
             "AIzaSyAbcdefghijklmnopqrstuvwxyz12",
             "gsk_abcdefghijklmnopqrst",
+            "ya29.a0ARrdaM-abcdefghijklmnopqrstuvwxyz012345",
         ],
     )
     def test_une_vraie_cle_est_toujours_masquee(self, secret):
@@ -109,3 +110,26 @@ class TestLeMasquageNeRendPasLesJournauxIllisibles:
         from app.core.logging_config import _mask_secrets
 
         assert _mask_secrets(secret) == "***MASKED***"
+
+
+class TestLeJournalNePortePasCeQueLudoEcrit:
+    """Passe 4 : les arguments d'outils partaient au journal AVANT la
+    carte. Annuler ne retirait pas la ligne. _mask_secrets connaissait
+    sk-/xai-/AIza/Bearer, pas ya29. ni un corps de mail."""
+
+    def test_un_jeton_google_est_masque(self):
+        from app.core.logging_config import _mask_secrets
+
+        jeton = "ya29.a0ARrdaM-abcdefghijklmnopqrstuvwxyz012345"
+        assert jeton not in _mask_secrets(f"Authorization: {jeton}")
+        assert "***MASKED***" in _mask_secrets(jeton)
+
+    def test_la_boucle_d_outils_ne_journalise_pas_les_arguments(self):
+        """Un journal collé dans un rapport de bug ne doit pas contenir
+        le destinataire, l'objet ni le corps, y compris d'un e-mail
+        que Ludo a ensuite annulé."""
+        from pathlib import Path
+
+        source = Path("src/backend/app/routers/chat.py").read_text(encoding="utf-8")
+        assert "args: {tc.arguments}" not in source
+        assert "with args: {tc.arguments}" not in source

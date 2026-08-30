@@ -256,7 +256,7 @@ class TestLeTransportDansChat:
                     yield StreamEvent(
                         type="tool_call",
                         tool_call=ToolCall(
-                            id="call_2", name="web_search",
+                            id="call_2", name="search_emails",
                             arguments={"query": "b"},
                         ),
                         assistant_content_brut=BRUT_TOUR_2,
@@ -267,7 +267,7 @@ class TestLeTransportDansChat:
                     yield StreamEvent(type="done", stop_reason="end_turn")
 
         with patch(
-            "app.routers.chat.execute_web_search",
+            "app.routers.chat.execute_workspace_tool",
             AsyncMock(return_value="résultat"),
         ):
             async for _ in _execute_tools_and_continue(
@@ -276,12 +276,13 @@ class TestLeTransportDansChat:
                 context=None,
                 assistant_content="je cherche",
                 tool_calls=[
-                    ToolCall(id="call_1", name="web_search", arguments={"query": "a"})
+                    ToolCall(id="call_1", name="search_emails", arguments={"query": "a"})
                 ],
                 tools=[],
                 conversation_id="conv-brut",
                 remaining_iterations=3,
                 assistant_content_brut=BRUT_TOUR_1,
+                session=AsyncMock(),
             ):
                 pass
 

@@ -2841,8 +2841,10 @@ async def _execute_tools_and_continue(
                     await get_calendar_confirmation_destination(session)
                 )
             logger.info(
-                f"Outil sensible {tc.name} mis en attente de confirmation utilisateur "
-                f"(NON exécuté) - args: {tc.arguments}"
+                "Outil sensible %s mis en attente de confirmation utilisateur "
+                "(NON exécuté), clés d'arguments : %s",
+                tc.name,
+                sorted(pending_arguments),
             )
             sensitive_pending = True
             empreinte = empreinte_action(tc.name, pending_arguments)
@@ -2890,7 +2892,11 @@ async def _execute_tools_and_continue(
             exec_records.append((tc.name, "en attente de confirmation utilisateur", False))
             continue
 
-        logger.info(f"Executing tool: {tc.name} with args: {tc.arguments}")
+        logger.info(
+            "Executing tool: %s, clés d'arguments : %s",
+            tc.name,
+            sorted(tc.arguments),
+        )
 
         # Execute based on tool type
         if tc.name == "web_search":
@@ -3216,7 +3222,7 @@ class ConfirmToolRequest(BaseModel):
 async def confirm_tool(
     request: ConfirmToolRequest,
     session: AsyncSession = Depends(get_session),
-):
+) -> dict[str, Any]:
     """Exécute (ou annule) une action sensible (ex. send_email) après validation
     explicite de l'utilisateur. L'action a été mise en attente par la boucle
     d'outils, qui ne l'exécute jamais automatiquement (US-002)."""
@@ -3230,11 +3236,20 @@ async def confirm_tool(
     if not request.approved:
         return {"status": "cancelled", "tool_name": tool_name}
 
-    # BUG-121 : un outil sensible exposé via MCP est nommé '{server_id}__{tool}'
-    # et doit être exécuté via le service MCP, pas via les workspace tools (qui
-    # ne connaissent pas ce nom préfixé). Le gate laisse désormais passer ces
-    # outils en attente ; l'exécution confirmée doit donc router correctement.
+    from app.services.workspace_tools import (
+        drain_generated_files,
+        start_generated_files_collection,
+    )
+
+    start_generated_files_collection()
+
+    # Passe 4 : le portillon couvre désormais web_search, les outils
+    # mémoire et n'importe quel MCP, plus seulement send_email / agenda.
+    # Recopier le dispatch de la boucle : sans ça, l'utilisateur confirme
+    # et execute_workspace_tool rend « Outil inconnu » : la carte ment.
     if "__" in tool_name:
+        # BUG-121 : '{server_id}__{tool}' n'existe pas dans les workspace
+        # tools. L'exécution confirmée doit suivre le service MCP.
         mcp_service = get_mcp_service()
         mcp_result = await mcp_service.execute_tool_call(tool_name, arguments)
         result = (
@@ -3242,11 +3257,39 @@ async def confirm_tool(
             if mcp_result.success
             else f"Erreur lors de l'envoi : {mcp_result.error}"
         )
+    elif tool_name == "web_search":
+        result = await execute_web_search(arguments)
+    elif tool_name == "browser_navigate":
+        result = await execute_browser_action(arguments)
+    elif tool_name in MEMORY_TOOL_NAMES:
+        perimetre, perimetre_id = await _perimetre_de_conversation(
+            conversation_id, session
+        )
+        result = await execute_memory_tool(
+            tool_name,
+            arguments,
+            session,
+            scope=perimetre,
+            scope_id=perimetre_id,
+            conversation_id=conversation_id,
+        )
     else:
         result = await execute_workspace_tool(
             tool_name, arguments, session, conversation_id=conversation_id
         )
-    return {"status": "executed", "tool_name": tool_name, "result": result}
+    # generate_document n'écrit plus pendant le flux : la carte a coupé
+    # l'exécution. Sans collecteur ici, record_generated_file est un no-op
+    # et l'utilisateur confirme un document qu'il ne peut pas télécharger
+    # (même trou que BUG-136, déplacé après la confirmation).
+    fichiers = drain_generated_files()
+    payload: dict[str, Any] = {
+        "status": "executed",
+        "tool_name": tool_name,
+        "result": result,
+    }
+    if fichiers:
+        payload["skill_files"] = fichiers
+    return payload
 
 
 # ============================================================

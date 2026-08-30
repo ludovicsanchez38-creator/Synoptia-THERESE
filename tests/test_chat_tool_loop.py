@@ -30,24 +30,25 @@ async def test_recursion_accumule_les_tours_dans_prior_turns(client):
                 # 1er tour de continuation : le modèle redemande un outil
                 yield StreamEvent(
                     type="tool_call",
-                    tool_call=ToolCall(id="call_2", name="web_search", arguments={"query": "b"}),
+                    tool_call=ToolCall(id="call_2", name="search_emails", arguments={"query": "b"}),
                 )
                 yield StreamEvent(type="done", stop_reason="tool_calls")
             else:
                 yield StreamEvent(type="text", content="Réponse finale.")
                 yield StreamEvent(type="done", stop_reason="end_turn")
 
-    with patch("app.routers.chat.execute_web_search", AsyncMock(return_value="résultat")):
+    with patch("app.routers.chat.execute_workspace_tool", AsyncMock(return_value="résultat")):
         chunks = []
         async for chunk in _execute_tools_and_continue(
             FakeLLMService(),
-            None,  # mcp_service inutile pour web_search
+            None,  # mcp_service inutile pour une lecture workspace
             context=None,
             assistant_content="",
-            tool_calls=[ToolCall(id="call_1", name="web_search", arguments={"query": "a"})],
+            tool_calls=[ToolCall(id="call_1", name="search_emails", arguments={"query": "a"})],
             tools=[],
             conversation_id="conv-1",
             remaining_iterations=3,
+            session=AsyncMock(),
         ):
             chunks.append(chunk)
 
@@ -112,17 +113,18 @@ async def test_tool_outcomes_accumule_les_resultats_reels(client):
             yield StreamEvent(type="done", stop_reason="end_turn")
 
     outcomes: list = []
-    with patch("app.routers.chat.execute_web_search", AsyncMock(return_value="emails de jd@tictec.fr")):
+    with patch("app.routers.chat.execute_workspace_tool", AsyncMock(return_value="emails de jd@tictec.fr")):
         async for _ in _execute_tools_and_continue(
             FakeLLMService(),
             None,
             context=None,
             assistant_content="",
-            tool_calls=[ToolCall(id="c1", name="web_search", arguments={"query": "q"})],
+            tool_calls=[ToolCall(id="c1", name="search_emails", arguments={"query": "q"})],
             tools=[],
             conversation_id="conv-1",
             remaining_iterations=3,
             tool_outcomes=outcomes,
+            session=AsyncMock(),
         ):
             pass
 
