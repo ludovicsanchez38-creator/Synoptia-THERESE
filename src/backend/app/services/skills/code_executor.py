@@ -174,12 +174,179 @@ class CodeExecutionError(Exception):
     pass
 
 
+class LivrableInexploitable(CodeExecutionError):
+    """Le modèle n'a rien produit d'utilisable : on refuse de livrer un faux.
+
+    Revue 30/08/2026 : le repli fabriquait un classeur A/B/C, collait le
+    script Python sur une diapositive, ou encapsulait un refus dans une
+    page HTML. Un échec franc (skill_file_error) vaut mieux.
+    """
+
+
 # Seuils minimum de contenu pour valider un document généré par code-execution.
+# Comptés hors coquille : titre, en-têtes inventés, slide Merci, pied de page.
 MIN_CONTENT_ELEMENTS = {
-    "docx": 3,   # au moins 3 paragraphes non vides (hors titre)
-    "pptx": 2,   # au moins 2 slides
-    "xlsx": 2,   # au moins 2 lignes de données (hors header)
+    "docx": 3,  # au moins 3 paragraphes non vides
+    "pptx": 2,  # titre + au moins une slide de contenu (Merci ne compte pas)
+    "xlsx": 1,  # au moins 1 ligne de données, hors titre / en-tête / pied
 }
+
+
+def _ligne_est_du_python(ligne: str) -> bool:
+    """True si la ligne est une instruction Python de générateur Office."""
+    s = ligne.strip()
+    if not s:
+        return False
+    if re.match(r"^(from\s+\S+\s+import|import\s+[A-Za-z_.]+)", s):
+        return True
+    if re.match(r"^(def|class|async def)\s+\w+", s):
+        return True
+    if re.match(r"^(print|raise|return|pass|break|continue)\b", s):
+        return True
+    if re.search(
+        r"\b(Workbook|load_workbook|Document|Presentation|MSO_AUTO_SHAPE_TYPE)\s*[\(\.]",
+        s,
+    ):
+        return True
+    return bool(
+        re.search(
+            r"\.(save|add_slide|add_heading|add_paragraph|merge_cells|add_shape)\s*\(",
+            s,
+        )
+    )
+
+
+def retirer_code_python(contenu: str) -> str:
+    """Retire les blocs de code avant un repli Markdown.
+
+    Incident 30/08 : un ```python jamais refermé laissait le script dans le
+    Word / la diapositive (Soso finding 2). On conserve la prose Markdown
+    qui précède ou suit le bloc (BUG-135 : une fence orpheline n'avale
+    plus la fin du document).
+    """
+    texte = re.sub(
+        r"```(?:python|py|javascript|js|bash|sh|json|html|css|xml|sql|yaml|yml)?[^\n]*\n.*?```",
+        "\n",
+        contenu,
+        flags=re.DOTALL,
+    )
+    # Fence orpheline : stop au prochain titre Markdown, sinon jusqu'à la fin.
+    texte = re.sub(
+        r"```(?:python|py)[^\n]*\n.*?(?=\n#{1,3} |\Z)",
+        "\n",
+        texte,
+        flags=re.DOTALL,
+    )
+    lignes_out: list[str] = []
+    for ligne in texte.splitlines():
+        s = ligne.strip()
+        if s.startswith("```"):
+            continue
+        if _ligne_est_du_python(s):
+            continue
+        lignes_out.append(ligne)
+    return "\n".join(lignes_out).strip()
+
+
+def contenu_ressemble_a_du_python(texte: str) -> bool:
+    """True si le texte restant est encore du script, pas du Markdown métier."""
+    lignes = [ligne.strip() for ligne in texte.splitlines() if ligne.strip()]
+    if not lignes:
+        return False
+    hits = sum(1 for ligne in lignes if _ligne_est_du_python(ligne))
+    return hits >= 3 or (hits >= 1 and hits / len(lignes) >= 0.3)
+
+
+def _contenu_repli_exploitable(texte: str) -> bool:
+    """Le repli Markdown n'a le droit de tourner que s'il reste du fond.
+
+    Un titre + un paragraphe (`# Doc\\n\\nContenu.`) est un livrable. Une
+    phrase d'intro orpheline après un script tronqué (« Voici le document : »)
+    n'en est pas un : pas de structure, trop court.
+    """
+    if not texte or not texte.strip():
+        return False
+    if contenu_ressemble_a_du_python(texte):
+        return False
+    return bool(
+        re.search(r"(?m)^#{1,3} ", texte)
+        or re.search(r"(?m)^\s*\|.+\|", texte)
+        or re.search(r"(?m)^[-*]\s+\S", texte)
+        or len(texte.strip()) >= 120
+    )
+
+
+def _pptx_textes_slides(prs: Any) -> list[str]:
+    textes: list[str] = []
+    for slide in prs.slides:
+        morceaux: list[str] = []
+        for shape in slide.shapes:
+            if shape.has_text_frame:
+                morceaux.append(shape.text_frame.text.strip())
+        textes.append("\n".join(m for m in morceaux if m))
+    return textes
+
+
+def _premiere_ligne_slide(texte: str) -> str:
+    if not texte.strip():
+        return ""
+    return texte.strip().split("\n", 1)[0].strip()
+
+
+def _pptx_cycle_repete(textes: list[str]) -> bool:
+    """True si les slides de contenu répètent un cycle (P1 P2 P3 P1 P2 P3…).
+
+    Constat du 30/08 : une demande en 3 parties sortait en 10 diapositives
+    où 1-2-3 apparaissaient trois fois (nb_slides forcé à 10, le modèle
+    remplissait en répétant).
+    """
+    corps = list(textes)
+    if corps and re.match(r"^merci\b", _premiere_ligne_slide(corps[-1]), re.I):
+        corps = corps[:-1]
+    if len(corps) > 1:
+        corps = corps[1:]
+    if len(corps) < 6:
+        return False
+    cles = [_premiere_ligne_slide(t) for t in corps]
+    n = len(cles)
+    for k in range(2, n // 2 + 1):
+        tours = n // k
+        if tours < 2:
+            continue
+        cycle = cles[:k]
+        if len(set(cycle)) < 2:
+            continue
+        reconstruit = cycle * tours + cycle[: n % k]
+        if reconstruit == cles:
+            return True
+    return False
+
+
+def _xlsx_lignes_de_donnees(ws: Any) -> int:
+    """Compte les lignes métier, pas le titre, l'en-tête ni le pied.
+
+    La garde d'avant comptait « Tableau » + A/B/C = 2 et laissait passer
+    la coquille (revue 30/08, grok-chemin-nominal finding 2).
+    """
+    lignes: list[list[Any]] = []
+    for row in ws.iter_rows(max_row=200):
+        valeurs = [c.value for c in row if c.value not in (None, "")]
+        if not valeurs:
+            continue
+        texte = " ".join(str(v) for v in valeurs)
+        if re.search(r"g[ée]n[ée]r[ée]\s+par", texte, re.I):
+            continue
+        lignes.append(valeurs)
+    if not lignes:
+        return 0
+    indice_entetes = 1 if len(lignes[0]) == 1 else 0
+    if indice_entetes >= len(lignes):
+        return 0
+    entetes = [str(v) for v in lignes[indice_entetes]]
+    donnees = lignes[indice_entetes + 1 :]
+    if entetes == ["A", "B", "C"] and not donnees:
+        return 0
+    return len(donnees)
 
 
 def _validate_document_content(output_path: str, format_type: str) -> bool:
@@ -187,15 +354,21 @@ def _validate_document_content(output_path: str, format_type: str) -> bool:
     Vérifie qu'un document généré contient assez de contenu.
 
     Retourne True si le document est suffisamment riche, False sinon.
+    Une erreur de lecture refuse le fichier (fail-closed, revue 30/08) :
+    on ne livre pas un objet qu'on n'a pas pu relire.
     """
-    min_elements = MIN_CONTENT_ELEMENTS.get(format_type, 2)
+    min_elements = MIN_CONTENT_ELEMENTS.get(format_type, 1)
     path = Path(output_path)
 
     try:
         if format_type == "docx":
             from docx import Document
             doc = Document(str(path))
-            non_empty = sum(1 for p in doc.paragraphs if p.text.strip())
+            non_empty = sum(
+                1
+                for p in doc.paragraphs
+                if p.text.strip() and not _ligne_est_du_python(p.text)
+            )
             logger.debug(
                 "Validation DOCX : %d paragraphes non vides (min=%d)",
                 non_empty, min_elements,
@@ -205,33 +378,48 @@ def _validate_document_content(output_path: str, format_type: str) -> bool:
         elif format_type == "pptx":
             from pptx import Presentation
             prs = Presentation(str(path))
-            slide_count = len(prs.slides)
+            textes = _pptx_textes_slides(prs)
+            if _pptx_cycle_repete(textes):
+                logger.warning(
+                    "Validation PPTX : cycle de diapositives répété, livrable refusé"
+                )
+                return False
+            hors_merci = [
+                t
+                for t in textes
+                if t.strip()
+                and not re.match(r"^merci\b", _premiere_ligne_slide(t), re.I)
+            ]
             logger.debug(
-                "Validation PPTX : %d slides (min=%d)",
-                slide_count, min_elements,
+                "Validation PPTX : %d slides hors Merci (min=%d)",
+                len(hors_merci), min_elements,
             )
-            return slide_count >= min_elements
+            return len(hors_merci) >= min_elements
 
         elif format_type == "xlsx":
             from openpyxl import load_workbook
             wb = load_workbook(str(path), read_only=True)
-            ws = wb.active
-            if ws is None:
-                return False
-            row_count = sum(
-                1 for row in ws.iter_rows(max_row=100) if any(c.value for c in row)
-            )
-            wb.close()
+            try:
+                total = 0
+                for ws in wb.worksheets:
+                    total += _xlsx_lignes_de_donnees(ws)
+            finally:
+                wb.close()
             logger.debug(
-                "Validation XLSX : %d lignes avec données (min=%d)",
-                row_count, min_elements,
+                "Validation XLSX : %d lignes de données (min=%d)",
+                total, min_elements,
             )
-            return row_count >= min_elements
+            return total >= min_elements
+
+        elif format_type == "html":
+            texte = path.read_text(encoding="utf-8", errors="replace")
+            return "<html" in texte.lower() and "</html>" in texte.lower()
 
     except Exception as e:
         logger.warning("Erreur validation contenu %s : %s", format_type, e)
+        return False
 
-    return True  # En cas d'erreur de lecture, on accepte le fichier
+    return False
 
 
 def extract_python_code(llm_response: str) -> str | None:
@@ -1012,29 +1200,36 @@ class CodeGenSkill(BaseSkill):
                 f"fallback vers parser legacy"
             )
 
-        # Nettoyer les blocs de code du contenu avant le fallback
-        # pour éviter que le parser Markdown ne les rende comme du texte brut
-        # On ne supprime que les blocs complets (avec ``` fermant)
-        # pour ne pas perdre le contenu quand le bloc est tronqué
-        cleaned_content = re.sub(
-            r"```(?:python|py|javascript|js|bash|json)?\s*\n.*?```",
-            "",
-            params.content,
-            flags=re.DOTALL,
-        ).strip()
-        # Si le contenu nettoyé est vide (tout était dans un bloc code),
-        # on garde le contenu original - le parser docx_generator
-        # filtrera les lignes de code via sa propre détection
-        if cleaned_content and len(cleaned_content) > 50:
-            params = SkillParams(
-                title=params.title,
-                content=cleaned_content,
-                template=params.template,
-                metadata=params.metadata,
+        # Repli Markdown seulement s'il reste du fond métier. Garder le
+        # script (fence orpheline, revue 30/08) produisait un livrable faux
+        # au lieu d'un échec franc.
+        contenu_repli = retirer_code_python(params.content)
+        if not _contenu_repli_exploitable(contenu_repli):
+            raise LivrableInexploitable(
+                "le contenu produit n'est pas exploitable"
             )
 
-        # Fallback vers l'ancien parser
-        return await self._fallback_execute(params, file_id, output_path)
+        logger.info(
+            f"[{self.skill_id}] fallback vers parser legacy"
+        )
+        params = SkillParams(
+            title=params.title,
+            content=contenu_repli,
+            template=params.template,
+            metadata=params.metadata,
+        )
+        result = await self._fallback_execute(params, file_id, output_path)
+        if (
+            not result.file_path.exists()
+            or result.file_path.stat().st_size == 0
+            or not _validate_document_content(
+                str(result.file_path), self.output_format.value
+            )
+        ):
+            raise LivrableInexploitable(
+                "le document de repli n'est pas exploitable"
+            )
+        return result
 
     def get_markdown_prompt_addition(self) -> str:
         """

@@ -11,7 +11,7 @@ from pathlib import Path
 from typing import Any
 
 from app.services.skills.base import FileFormat, SkillParams, SkillResult
-from app.services.skills.code_executor import CodeGenSkill
+from app.services.skills.code_executor import CodeGenSkill, LivrableInexploitable
 from pptx import Presentation
 from pptx.dml.color import RGBColor
 from pptx.enum.text import PP_ALIGN
@@ -198,8 +198,13 @@ NE génère PAS de code Python. Écris directement le contenu textuel des slides
         prs.slide_width = Inches(13.333)  # 16:9
         prs.slide_height = Inches(7.5)
 
-        # Parser le contenu et créer les slides
         slides_content = self._parse_content(params.content)
+        if not slides_content:
+            # Revue 30/08 : sans slides Markdown, le repli collait le Python
+            # (TRIANGLE) ou ne livrait que Titre + Merci.
+            raise LivrableInexploitable(
+                "le contenu produit n'est pas exploitable (aucune diapositive de contenu)"
+            )
 
         # Slide de titre
         self._add_title_slide(prs, params.title)
@@ -277,6 +282,32 @@ NE génère PAS de code Python. Écris directement le contenu textuel des slides
                     "points": points[:6],  # Max 6 points par slide
                 })
 
+        return self._ecraser_cycle_repete(slides)
+
+    def _ecraser_cycle_repete(
+        self, slides: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
+        """Si P1-P2-P3 se répète, on ne garde qu'un tour (constat 30/08)."""
+        n = len(slides)
+        if n < 4:
+            return slides
+        for k in range(2, n // 2 + 1):
+            tours = n // k
+            if tours < 2:
+                continue
+            cycle = slides[:k]
+            if len({s["title"] for s in cycle}) < 2:
+                continue
+            ok = True
+            for i, slide in enumerate(slides):
+                ref = cycle[i % k]
+                if i >= tours * k + (n % k):
+                    break
+                if slide["title"] != ref["title"] or slide["points"] != ref["points"]:
+                    ok = False
+                    break
+            if ok and cycle * tours + cycle[: n % k] == slides:
+                return cycle
         return slides
 
     def _add_title_slide(self, prs: Presentation, title: str) -> None:

@@ -10,7 +10,7 @@ import re
 from pathlib import Path
 
 from app.services.skills.base import FileFormat, SkillParams, SkillResult
-from app.services.skills.code_executor import CodeGenSkill
+from app.services.skills.code_executor import CodeGenSkill, retirer_code_python
 from docx import Document
 from docx.enum.text import WD_ALIGN_PARAGRAPH
 from docx.shared import Pt, RGBColor
@@ -254,15 +254,9 @@ NE génère PAS de code Python. Écris directement le contenu textuel du documen
             doc: Document Word
             content: Contenu en format Markdown
         """
-        # Supprimer les blocs de code résiduels (```python...```) - UNIQUEMENT
-        # les blocs clôturés. BUG-135 : l'ancienne alternative `(?:```|$)` avec
-        # DOTALL effaçait tout le document après une fence jamais refermée.
-        content = re.sub(
-            r"```(?:python|py|javascript|js|bash|sh|json|xml|html|css|sql|yaml|yml)?\s*\n.*?```",
-            "",
-            content,
-            flags=re.DOTALL,
-        )
+        # Retire le Python (clôturé ET orphelin) sans avaler la prose qui
+        # suit une fence jamais refermée (BUG-135 + revue 30/08 finding 2).
+        content = retirer_code_python(content)
 
         lines = content.split('\n')
         list_number = 0
