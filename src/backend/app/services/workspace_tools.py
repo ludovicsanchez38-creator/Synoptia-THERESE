@@ -921,7 +921,7 @@ def _id_agenda_demande(
 
 async def _resoudre_compte_email(
     session: AsyncSession, account_id: str | None = None
-):
+) -> tuple[Any, str | None]:
     """Le compte visé, ou (None, message) si on ne peut pas le dire sans mentir.
 
     Finding 1 (30/08) : `limit(1)` prenait le premier créé. Deux comptes, et
@@ -1014,7 +1014,9 @@ async def _get_email_provider(session: AsyncSession, account_id: str | None = No
     return provider, None
 
 
-async def _provider_depuis_calendrier(cal, session: AsyncSession):
+async def _provider_depuis_calendrier(
+    cal: Any, session: AsyncSession
+) -> tuple[Any, str | None, str | None]:
     """Construit le provider du calendrier visé. Erreur en str, jamais un 404."""
     from app.models.entities import EmailAccount
     from app.routers.email import ensure_valid_access_token
@@ -1053,7 +1055,7 @@ async def _resoudre_calendrier(
     session: AsyncSession,
     calendar_id: str | None = None,
     auto_create_local: bool = False,
-):
+) -> tuple[Any, str | None]:
     """L'agenda visé, ou (None, message). Plus de priorité Gmail silencieuse.
 
     Finding 2 (30/08) : un compte Gmail pour le courrier faisait lire

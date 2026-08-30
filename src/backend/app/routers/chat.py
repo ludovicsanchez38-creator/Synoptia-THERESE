@@ -96,12 +96,18 @@ def _attribution(llm_service: Any) -> tuple[str, str]:
     """Fournisseur et modèle réels, y compris sur un faux LLM de test."""
     methode = getattr(llm_service, "attribution", None)
     if callable(methode):
-        return methode()
+        resultat = methode()
+        if isinstance(resultat, tuple) and len(resultat) == 2:
+            return str(resultat[0]), str(resultat[1])
+        return "unknown", "unknown"
     config = getattr(llm_service, "config", None)
     if config is None:
         return "unknown", "unknown"
     provider = getattr(config, "provider", None)
-    nom = provider.value if hasattr(provider, "value") else str(provider or "unknown")
+    if provider is not None and hasattr(provider, "value"):
+        nom = str(provider.value)
+    else:
+        nom = str(provider or "unknown")
     modele = getattr(config, "model", None) or "unknown"
     return nom, str(modele)
 
