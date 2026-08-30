@@ -3378,7 +3378,7 @@ wheels = [
 
 [[package]]
 name = "therese-backend"
-version = "0.59.1"
+version = "0.60.0"
 source = { editable = "." }
 dependencies = [
     { name = "aiofiles" },
