@@ -657,6 +657,31 @@ def _backups_dir():
     return d
 
 
+def nom_sauvegarde_libre(backup_dir: Path, horodatage: str) -> str:
+    # Revue 30/08 : deux POST dans la même seconde produisaient le même
+    # `therese_backup_YYYYMMDD_HHMMSS`. La seconde écrasait l'archive
+    # chiffrée et le JSON de la première. On ne recouvre jamais un nom pris.
+    base = f"therese_backup_{horodatage}"
+    if not _artefacts_sauvegarde_presents(backup_dir, base):
+        return base
+    for indice in range(2, 100):
+        candidat = f"{base}_{indice}"
+        if not _artefacts_sauvegarde_presents(backup_dir, candidat):
+            return candidat
+    raise HTTPException(
+        status_code=409,
+        detail=(
+            "Une sauvegarde existe déjà pour cet instant. "
+            "Réessaie dans une seconde."
+        ),
+    )
+
+
+def _artefacts_sauvegarde_presents(backup_dir: Path, nom: str) -> bool:
+    suffixes = (".tar.gz", ".tar.gz.enc", ".json", ".db")
+    return any((backup_dir / f"{nom}{suffixe}").exists() for suffixe in suffixes)
+
+
 def _checkpoint_db() -> bool:
     """US-011 : flush le WAL SQLite dans therese.db avant backup/restore.
 
@@ -888,8 +913,8 @@ async def create_backup(
     """
     backup_dir = _backups_dir()
 
-    timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
-    backup_name = f"therese_backup_{timestamp}"
+    horodatage = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
+    backup_name = nom_sauvegarde_libre(backup_dir, horodatage)
     archive_path = backup_dir / f"{backup_name}.tar.gz"
 
     # US-003 : la passphrase est requise. L'archive embarque la clé de
