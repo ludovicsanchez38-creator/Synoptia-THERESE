@@ -7,6 +7,7 @@ US-SEC-02: Export toutes les donnees utilisateur
 US-SEC-05: Logs d'activite
 """
 
+import asyncio
 import json
 import logging
 import re
@@ -93,6 +94,243 @@ def _export_row(
 # ============================================================
 
 
+def _assembler_export_rgpd() -> dict[str, Any]:
+    """Construit le JSON RGPD hors de la boucle asyncio (lot F)."""
+    from app.models.database import get_sync_session
+
+    session = get_sync_session()
+    try:
+        # Contacts
+        contacts_result = session.execute(select(Contact))
+        contacts = contacts_result.scalars().all()
+
+        # Projects
+        projects_result = session.execute(select(Project))
+        projects = projects_result.scalars().all()
+
+        # Conversations
+        conversations_result = session.execute(select(Conversation))
+        conversations = conversations_result.scalars().all()
+
+        # Messages
+        messages_result = session.execute(select(Message))
+        messages = messages_result.scalars().all()
+
+        # Files
+        files_result = session.execute(select(FileMetadata))
+        files = files_result.scalars().all()
+
+        # Preferences (excluding API keys)
+        prefs_result = session.execute(select(Preference))
+        preferences = prefs_result.scalars().all()
+
+        # Board decisions
+        decisions_result = session.execute(select(BoardDecisionDB))
+        decisions = decisions_result.scalars().all()
+
+        # Documents (atelier documentaire - US-SEC-02 / Art. 20)
+        documents_result = session.execute(select(Document))
+        documents = documents_result.scalars().all()
+
+        document_sections_result = session.execute(select(DocumentSection))
+        document_sections = document_sections_result.scalars().all()
+
+        document_pistes_result = session.execute(select(DocumentPiste))
+        document_pistes = document_pistes_result.scalars().all()
+
+        # Variables utilisateur (chantier 4 - finding Codex 11 : énumération
+        # manuelle, ajout explicite obligatoire)
+        variables_result = session.execute(select(Variable))
+        variables = variables_result.scalars().all()
+
+        # Données fonctionnelles et connexions. Les secrets des comptes externes
+        # sont volontairement exclus plus bas, mais leurs contenus synchronisés
+        # font partie du droit à la portabilité.
+        prompt_templates = (session.execute(select(PromptTemplate))).scalars().all()
+        email_accounts = (session.execute(select(EmailAccount))).scalars().all()
+        email_messages = (session.execute(select(EmailMessage))).scalars().all()
+        email_labels = (session.execute(select(EmailLabel))).scalars().all()
+        email_follow_ups = (session.execute(select(EmailFollowUp))).scalars().all()
+        calendars = (session.execute(select(Calendar))).scalars().all()
+        calendar_events = (session.execute(select(CalendarEvent))).scalars().all()
+        tasks = (session.execute(select(Task))).scalars().all()
+        invoices = (session.execute(select(Invoice))).scalars().all()
+        invoice_lines = (session.execute(select(InvoiceLine))).scalars().all()
+        activities = (session.execute(select(Activity))).scalars().all()
+        deliverables = (session.execute(select(Deliverable))).scalars().all()
+        notifications = (session.execute(select(Notification))).scalars().all()
+        agent_tasks = (session.execute(select(AgentTask))).scalars().all()
+        agent_messages = (session.execute(select(AgentMessage))).scalars().all()
+        code_changes = (session.execute(select(CodeChange))).scalars().all()
+        agent_sessions = (session.execute(select(AgentSession))).scalars().all()
+
+        # Activity logs
+        logs_result = session.execute(
+            select(ActivityLog).order_by(ActivityLog.timestamp.desc())
+        )
+        logs = logs_result.scalars().all()
+
+        export_data = {
+            "exported_at": datetime.now(UTC).isoformat(),
+            "app_version": settings.app_version,
+            "data_format_version": "1.2",  # 1.2 : couverture de toutes les tables utilisateur
+            "variables": [
+                {
+                    "id": v.id,
+                    "name": v.name,
+                    "kind": v.kind,
+                    "value": v.parsed_value,
+                    "description": v.description,
+                    "created_at": v.created_at.isoformat(),
+                    "updated_at": v.updated_at.isoformat(),
+                }
+                for v in variables
+            ],
+            "contacts": [
+                _export_row(item, json_fields=("tags", "extra_data")) for item in contacts
+            ],
+            "projects": [
+                _export_row(item, json_fields=("tags", "extra_data")) for item in projects
+            ],
+            "conversations": [
+                {
+                    "id": conv.id,
+                    "title": conv.title,
+                    "summary": conv.summary,
+                    "created_at": conv.created_at.isoformat(),
+                    "updated_at": conv.updated_at.isoformat(),
+                    "messages": [
+                        _export_row(m, json_fields=("extra_data",))
+                        for m in messages
+                        if m.conversation_id == conv.id
+                    ],
+                }
+                for conv in conversations
+            ],
+            "files": [_export_row(item) for item in files],
+            "preferences": [
+                {
+                    "id": p.id,
+                    "key": p.key,
+                    "value": p.value if "api_key" not in p.key.lower() else "[REDACTED]",
+                    "category": p.category,
+                    "created_at": p.created_at.isoformat(),
+                    "updated_at": p.updated_at.isoformat(),
+                }
+                for p in preferences
+            ],
+            "board_decisions": [
+                _export_row(item, json_fields=("opinions", "synthesis"))
+                for item in decisions
+            ],
+            "prompt_templates": [_export_row(item) for item in prompt_templates],
+            "email_accounts": [
+                _export_row(
+                    item,
+                    exclude={
+                        "client_id",
+                        "client_secret",
+                        "access_token",
+                        "refresh_token",
+                        "imap_password",
+                    },
+                    json_fields=("scopes",),
+                )
+                for item in email_accounts
+            ],
+            "email_messages": [
+                _export_row(
+                    item,
+                    json_fields=("to_emails", "cc_emails", "bcc_emails", "labels"),
+                )
+                for item in email_messages
+            ],
+            "email_labels": [_export_row(item) for item in email_labels],
+            "email_follow_ups": [_export_row(item) for item in email_follow_ups],
+            "calendars": [
+                _export_row(item, exclude={"caldav_password"}) for item in calendars
+            ],
+            "calendar_events": [
+                _export_row(item, json_fields=("attendees", "recurrence"))
+                for item in calendar_events
+            ],
+            "tasks": [_export_row(item, json_fields=("tags",)) for item in tasks],
+            "invoices": [_export_row(item) for item in invoices],
+            "invoice_lines": [_export_row(item) for item in invoice_lines],
+            "activities": [
+                _export_row(item, json_fields=("extra_data",)) for item in activities
+            ],
+            "deliverables": [_export_row(item) for item in deliverables],
+            "notifications": [_export_row(item) for item in notifications],
+            "agent_tasks": [
+                _export_row(item, json_fields=("files_changed",)) for item in agent_tasks
+            ],
+            "agent_messages": [
+                _export_row(item, json_fields=("tool_calls",)) for item in agent_messages
+            ],
+            "code_changes": [_export_row(item) for item in code_changes],
+            "agent_sessions": [_export_row(item) for item in agent_sessions],
+            "documents": [
+                {
+                    "id": doc.id,
+                    "title": doc.title,
+                    "brief": doc.brief,
+                    "status": doc.status,
+                    "project_id": doc.project_id,
+                    "contact_id": doc.contact_id,
+                    "created_at": doc.created_at.isoformat(),
+                    "updated_at": doc.updated_at.isoformat(),
+                }
+                for doc in documents
+            ],
+            "document_sections": [
+                {
+                    "id": s.id,
+                    "document_id": s.document_id,
+                    "title": s.title,
+                    "brief": s.brief,
+                    "order": s.order,
+                    "depth": s.depth,
+                    "content": s.content,
+                    "summary": s.summary,
+                    "status": s.status,
+                    "orphan": s.orphan,
+                    "created_at": s.created_at.isoformat(),
+                    "updated_at": s.updated_at.isoformat(),
+                }
+                for s in document_sections
+            ],
+            "document_pistes": [
+                {
+                    "id": p.id,
+                    "document_id": p.document_id,
+                    "section_origine_id": p.section_origine_id,
+                    "texte": p.texte,
+                    "status": p.status,
+                    "created_at": p.created_at.isoformat(),
+                }
+                for p in document_pistes
+            ],
+            "activity_logs": [
+                {
+                    "id": log.id,
+                    "timestamp": log.timestamp.isoformat(),
+                    "action": log.action,
+                    "resource_type": log.resource_type,
+                    "resource_id": log.resource_id,
+                    "details": log.details,
+                }
+                for log in logs
+            ],
+        }
+
+        return export_data
+    finally:
+        session.close()
+
+
+
+
 @router.get("/export")
 async def export_all_data(
     session: AsyncSession = Depends(get_session),
@@ -117,231 +355,10 @@ async def export_all_data(
         resource_type="rgpd",
         details=json.dumps({"type": "full_export"}),
     )
-
-    # Contacts
-    contacts_result = await session.execute(select(Contact))
-    contacts = contacts_result.scalars().all()
-
-    # Projects
-    projects_result = await session.execute(select(Project))
-    projects = projects_result.scalars().all()
-
-    # Conversations
-    conversations_result = await session.execute(select(Conversation))
-    conversations = conversations_result.scalars().all()
-
-    # Messages
-    messages_result = await session.execute(select(Message))
-    messages = messages_result.scalars().all()
-
-    # Files
-    files_result = await session.execute(select(FileMetadata))
-    files = files_result.scalars().all()
-
-    # Preferences (excluding API keys)
-    prefs_result = await session.execute(select(Preference))
-    preferences = prefs_result.scalars().all()
-
-    # Board decisions
-    decisions_result = await session.execute(select(BoardDecisionDB))
-    decisions = decisions_result.scalars().all()
-
-    # Documents (atelier documentaire - US-SEC-02 / Art. 20)
-    documents_result = await session.execute(select(Document))
-    documents = documents_result.scalars().all()
-
-    document_sections_result = await session.execute(select(DocumentSection))
-    document_sections = document_sections_result.scalars().all()
-
-    document_pistes_result = await session.execute(select(DocumentPiste))
-    document_pistes = document_pistes_result.scalars().all()
-
-    # Variables utilisateur (chantier 4 - finding Codex 11 : énumération
-    # manuelle, ajout explicite obligatoire)
-    variables_result = await session.execute(select(Variable))
-    variables = variables_result.scalars().all()
-
-    # Données fonctionnelles et connexions. Les secrets des comptes externes
-    # sont volontairement exclus plus bas, mais leurs contenus synchronisés
-    # font partie du droit à la portabilité.
-    prompt_templates = (await session.execute(select(PromptTemplate))).scalars().all()
-    email_accounts = (await session.execute(select(EmailAccount))).scalars().all()
-    email_messages = (await session.execute(select(EmailMessage))).scalars().all()
-    email_labels = (await session.execute(select(EmailLabel))).scalars().all()
-    email_follow_ups = (await session.execute(select(EmailFollowUp))).scalars().all()
-    calendars = (await session.execute(select(Calendar))).scalars().all()
-    calendar_events = (await session.execute(select(CalendarEvent))).scalars().all()
-    tasks = (await session.execute(select(Task))).scalars().all()
-    invoices = (await session.execute(select(Invoice))).scalars().all()
-    invoice_lines = (await session.execute(select(InvoiceLine))).scalars().all()
-    activities = (await session.execute(select(Activity))).scalars().all()
-    deliverables = (await session.execute(select(Deliverable))).scalars().all()
-    notifications = (await session.execute(select(Notification))).scalars().all()
-    agent_tasks = (await session.execute(select(AgentTask))).scalars().all()
-    agent_messages = (await session.execute(select(AgentMessage))).scalars().all()
-    code_changes = (await session.execute(select(CodeChange))).scalars().all()
-    agent_sessions = (await session.execute(select(AgentSession))).scalars().all()
-
-    # Activity logs
-    logs_result = await session.execute(
-        select(ActivityLog).order_by(ActivityLog.timestamp.desc())
-    )
-    logs = logs_result.scalars().all()
-
-    export_data = {
-        "exported_at": datetime.now(UTC).isoformat(),
-        "app_version": settings.app_version,
-        "data_format_version": "1.2",  # 1.2 : couverture de toutes les tables utilisateur
-        "variables": [
-            {
-                "id": v.id,
-                "name": v.name,
-                "kind": v.kind,
-                "value": v.parsed_value,
-                "description": v.description,
-                "created_at": v.created_at.isoformat(),
-                "updated_at": v.updated_at.isoformat(),
-            }
-            for v in variables
-        ],
-        "contacts": [
-            _export_row(item, json_fields=("tags", "extra_data")) for item in contacts
-        ],
-        "projects": [
-            _export_row(item, json_fields=("tags", "extra_data")) for item in projects
-        ],
-        "conversations": [
-            {
-                "id": conv.id,
-                "title": conv.title,
-                "summary": conv.summary,
-                "created_at": conv.created_at.isoformat(),
-                "updated_at": conv.updated_at.isoformat(),
-                "messages": [
-                    _export_row(m, json_fields=("extra_data",))
-                    for m in messages
-                    if m.conversation_id == conv.id
-                ],
-            }
-            for conv in conversations
-        ],
-        "files": [_export_row(item) for item in files],
-        "preferences": [
-            {
-                "id": p.id,
-                "key": p.key,
-                "value": p.value if "api_key" not in p.key.lower() else "[REDACTED]",
-                "category": p.category,
-                "created_at": p.created_at.isoformat(),
-                "updated_at": p.updated_at.isoformat(),
-            }
-            for p in preferences
-        ],
-        "board_decisions": [
-            _export_row(item, json_fields=("opinions", "synthesis"))
-            for item in decisions
-        ],
-        "prompt_templates": [_export_row(item) for item in prompt_templates],
-        "email_accounts": [
-            _export_row(
-                item,
-                exclude={
-                    "client_id",
-                    "client_secret",
-                    "access_token",
-                    "refresh_token",
-                    "imap_password",
-                },
-                json_fields=("scopes",),
-            )
-            for item in email_accounts
-        ],
-        "email_messages": [
-            _export_row(
-                item,
-                json_fields=("to_emails", "cc_emails", "bcc_emails", "labels"),
-            )
-            for item in email_messages
-        ],
-        "email_labels": [_export_row(item) for item in email_labels],
-        "email_follow_ups": [_export_row(item) for item in email_follow_ups],
-        "calendars": [
-            _export_row(item, exclude={"caldav_password"}) for item in calendars
-        ],
-        "calendar_events": [
-            _export_row(item, json_fields=("attendees", "recurrence"))
-            for item in calendar_events
-        ],
-        "tasks": [_export_row(item, json_fields=("tags",)) for item in tasks],
-        "invoices": [_export_row(item) for item in invoices],
-        "invoice_lines": [_export_row(item) for item in invoice_lines],
-        "activities": [
-            _export_row(item, json_fields=("extra_data",)) for item in activities
-        ],
-        "deliverables": [_export_row(item) for item in deliverables],
-        "notifications": [_export_row(item) for item in notifications],
-        "agent_tasks": [
-            _export_row(item, json_fields=("files_changed",)) for item in agent_tasks
-        ],
-        "agent_messages": [
-            _export_row(item, json_fields=("tool_calls",)) for item in agent_messages
-        ],
-        "code_changes": [_export_row(item) for item in code_changes],
-        "agent_sessions": [_export_row(item) for item in agent_sessions],
-        "documents": [
-            {
-                "id": doc.id,
-                "title": doc.title,
-                "brief": doc.brief,
-                "status": doc.status,
-                "project_id": doc.project_id,
-                "contact_id": doc.contact_id,
-                "created_at": doc.created_at.isoformat(),
-                "updated_at": doc.updated_at.isoformat(),
-            }
-            for doc in documents
-        ],
-        "document_sections": [
-            {
-                "id": s.id,
-                "document_id": s.document_id,
-                "title": s.title,
-                "brief": s.brief,
-                "order": s.order,
-                "depth": s.depth,
-                "content": s.content,
-                "summary": s.summary,
-                "status": s.status,
-                "orphan": s.orphan,
-                "created_at": s.created_at.isoformat(),
-                "updated_at": s.updated_at.isoformat(),
-            }
-            for s in document_sections
-        ],
-        "document_pistes": [
-            {
-                "id": p.id,
-                "document_id": p.document_id,
-                "section_origine_id": p.section_origine_id,
-                "texte": p.texte,
-                "status": p.status,
-                "created_at": p.created_at.isoformat(),
-            }
-            for p in document_pistes
-        ],
-        "activity_logs": [
-            {
-                "id": log.id,
-                "timestamp": log.timestamp.isoformat(),
-                "action": log.action,
-                "resource_type": log.resource_type,
-                "resource_id": log.resource_id,
-                "details": log.details,
-            }
-            for log in logs
-        ],
-    }
-
+    # Lot F : commit avant le thread, sinon le journal d'audit n'est pas
+    # visible de la session sync. Le JSON se construit hors boucle.
+    await session.commit()
+    export_data = await asyncio.to_thread(_assembler_export_rgpd)
     return JSONResponse(
         content=export_data,
         headers={

@@ -3,6 +3,7 @@ import type { Contact } from '../services/api';
 
 vi.mock('../services/api/memory', () => ({
   listContacts: vi.fn(),
+  getContact: vi.fn(),
   createContact: vi.fn(),
   updateContact: vi.fn(),
   deleteContact: vi.fn(),
@@ -11,6 +12,7 @@ vi.mock('../services/api/memory', () => ({
 
 import {
   listContacts,
+  getContact,
   createContact,
   updateContact,
   deleteContact,
@@ -34,6 +36,7 @@ describe('contactsStore', () => {
       loaded: false,
       error: null,
       selectedContactId: null,
+      truncated: false,
     });
   });
 
@@ -141,5 +144,36 @@ describe('contactsStore', () => {
     await useContactsStore.getState().search('   ');
     expect(useContactsStore.getState().searchResults).toBeNull();
     expect(searchMemory).not.toHaveBeenCalled();
+  });
+
+  it('search remonte un hit hors des 200 déjà chargés plutôt que de le jeter', async () => {
+    // Lot F : le store ne garde que 200 fiches. Un Dupont trouvé par le
+    // backend mais absent du seau était jeté — la recherche disait « rien ».
+    useContactsStore.setState({
+      contacts: [makeContact({ id: 'c1', first_name: 'Autre' })],
+    });
+    const dupont = makeContact({ id: 'c201', first_name: 'Dupont' });
+    vi.mocked(searchMemory).mockResolvedValueOnce({
+      query: 'Dupont',
+      total: 1,
+      search_time_ms: 1,
+      results: [hit('c201')],
+    });
+    vi.mocked(getContact).mockResolvedValueOnce(dupont);
+
+    await useContactsStore.getState().search('Dupont');
+
+    expect(getContact).toHaveBeenCalledWith('c201');
+    const ids = (useContactsStore.getState().searchResults ?? []).map((c) => c.id);
+    expect(ids).toContain('c201');
+  });
+
+  it('fetchContacts pose truncated si le plafond de 200 est atteint', async () => {
+    const page = Array.from({ length: 200 }, (_, i) =>
+      makeContact({ id: `c${i}`, first_name: `N${i}` }),
+    );
+    vi.mocked(listContacts).mockResolvedValueOnce(page);
+    await useContactsStore.getState().fetchContacts();
+    expect(useContactsStore.getState().truncated).toBe(true);
   });
 });

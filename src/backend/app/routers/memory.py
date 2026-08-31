@@ -26,12 +26,45 @@ from app.services.audit import AuditAction, log_activity
 from app.services.qdrant import get_qdrant_service
 from app.services.scoring import update_contact_score
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+# Lot F : un ILIKE « e » chargeait l'annuaire, notait en Python, n'en gardait
+# que 10. 200 lignes, pas plus : au-delà on avoue la troncature.
+PLAFOND_ILIKE_MEMOIRE = 200
+
+
+def _requete_contacts_mot_cle(query: str, plafond: int = PLAFOND_ILIKE_MEMOIRE) -> Any:
+    like_pattern = f"%{query}%"
+    return (
+        select(Contact)
+        .where(
+            (Contact.first_name.ilike(like_pattern))
+            | (Contact.last_name.ilike(like_pattern))
+            | (Contact.company.ilike(like_pattern))
+            | (Contact.email.ilike(like_pattern))
+            | (Contact.notes.ilike(like_pattern))
+        )
+        .limit(plafond)
+    )
+
+
+def _requete_projets_mot_cle(query: str, plafond: int = PLAFOND_ILIKE_MEMOIRE) -> Any:
+    like_pattern = f"%{query}%"
+    return (
+        select(Project)
+        .where(
+            (Project.name.ilike(like_pattern))
+            | (Project.description.ilike(like_pattern))
+            | (Project.notes.ilike(like_pattern))
+        )
+        .limit(plafond)
+    )
 
 
 # ============================================================
@@ -180,32 +213,48 @@ async def search_memory(
             score_threshold=0.5,  # Lower threshold for semantic
         )
 
+        # Lot F : un SELECT par hit. On groupe par type, une requête chacun.
+        ids_contact = [
+            hit.get("entity_id")
+            for hit in semantic_results
+            if hit.get("entity_id") and hit.get("type") == "contact"
+        ]
+        ids_projet = [
+            hit.get("entity_id")
+            for hit in semantic_results
+            if hit.get("entity_id") and hit.get("type") == "project"
+        ]
+        contacts_par_id: dict[str, Contact] = {}
+        if ids_contact:
+            charge = await session.execute(
+                select(Contact).where(Contact.id.in_(ids_contact))
+            )
+            contacts_par_id = {c.id: c for c in charge.scalars().all()}
+        projets_par_id: dict[str, Project] = {}
+        if ids_projet:
+            charge = await session.execute(
+                select(Project).where(Project.id.in_(ids_projet))
+            )
+            projets_par_id = {p.id: p for p in charge.scalars().all()}
+
         for hit in semantic_results:
             entity_id = hit.get("entity_id")
             if not entity_id:
                 continue
-
-            # Fetch full entity from DB
             entity_type = hit.get("type", "")
             title = ""
             content = ""
-            metadata = {}
+            metadata: dict[str, Any] = {}
 
             if entity_type == "contact":
-                result = await session.execute(
-                    select(Contact).where(Contact.id == entity_id)
-                )
-                contact = result.scalar_one_or_none()
+                contact = contacts_par_id.get(entity_id)
                 if contact:
                     title = contact.display_name
                     content = contact.notes or ""
                     metadata = {"company": contact.company, "email": contact.email}
 
             elif entity_type == "project":
-                result = await session.execute(
-                    select(Project).where(Project.id == entity_id)
-                )
-                project = result.scalar_one_or_none()
+                project = projets_par_id.get(entity_id)
                 if project:
                     title = project.name
                     content = project.description or ""
@@ -229,17 +278,14 @@ async def search_memory(
     # ============================================================
 
     # Search contacts - filtrage SQL ILIKE au lieu de charger tout en mémoire
+    ilike_tronque = False
     if not request.entity_types or "contact" in request.entity_types:
-        like_pattern = f"%{request.query}%"
-        contact_stmt = select(Contact).where(
-            (Contact.first_name.ilike(like_pattern))
-            | (Contact.last_name.ilike(like_pattern))
-            | (Contact.company.ilike(like_pattern))
-            | (Contact.email.ilike(like_pattern))
-            | (Contact.notes.ilike(like_pattern))
-        )
+        contact_stmt = _requete_contacts_mot_cle(request.query)
         contact_results = await session.execute(contact_stmt)
-        for contact in contact_results.scalars().all():
+        contacts_ilike = list(contact_results.scalars().all())
+        if len(contacts_ilike) >= PLAFOND_ILIKE_MEMOIRE:
+            ilike_tronque = True
+        for contact in contacts_ilike:
             if contact.id in results_map:
                 continue  # Already found via semantic
 
@@ -268,14 +314,12 @@ async def search_memory(
 
     # Search projects - filtrage SQL ILIKE au lieu de charger tout en mémoire
     if not request.entity_types or "project" in request.entity_types:
-        like_pattern = f"%{request.query}%"
-        project_stmt = select(Project).where(
-            (Project.name.ilike(like_pattern))
-            | (Project.description.ilike(like_pattern))
-            | (Project.notes.ilike(like_pattern))
-        )
+        project_stmt = _requete_projets_mot_cle(request.query)
         project_results = await session.execute(project_stmt)
-        for project in project_results.scalars().all():
+        projets_ilike = list(project_results.scalars().all())
+        if len(projets_ilike) >= PLAFOND_ILIKE_MEMOIRE:
+            ilike_tronque = True
+        for project in projets_ilike:
             if project.id in results_map:
                 continue  # Already found via semantic
 
@@ -296,6 +340,7 @@ async def search_memory(
 
     # Sort by score and limit
     results = sorted(results_map.values(), key=lambda x: x.score, reverse=True)
+    total = len(results)
     results = results[: request.limit]
 
     search_time_ms = (time.time() - start_time) * 1000
@@ -303,8 +348,9 @@ async def search_memory(
     return MemorySearchResponse(
         query=request.query,
         results=results,
-        total=len(results),
+        total=total,
         search_time_ms=search_time_ms,
+        truncated=ilike_tronque or total > request.limit,
     )
 
 
@@ -924,16 +970,28 @@ async def get_project(
 @router.get("/projects/{project_id}/files")
 async def list_project_files(
     project_id: str,
+    limit: int = Query(default=200, ge=1, le=500),
     session: AsyncSession = Depends(get_session),
 ):
     """Liste les fichiers associés à un projet."""
-    result = await session.execute(
-        select(FileMetadata).where(
-            FileMetadata.scope == "project",
-            FileMetadata.scope_id == project_id,
-        )
+    # Lot F : un projet crawlé au millier envoyait le millier de lignes
+    # au modal, sur la boucle. On borne, et on dit si on a coupé.
+    filtre = (
+        (FileMetadata.scope == "project")
+        & (FileMetadata.scope_id == project_id)
     )
-    return result.scalars().all()
+    total = (
+        await session.execute(select(func.count()).select_from(FileMetadata).where(filtre))
+    ).scalar() or 0
+    result = await session.execute(
+        select(FileMetadata).where(filtre).order_by(FileMetadata.name).limit(limit)
+    )
+    files = result.scalars().all()
+    return {
+        "files": files,
+        "total": total,
+        "truncated": total > len(files),
+    }
 
 
 @router.patch("/projects/{project_id}", response_model=ProjectResponse)

@@ -80,6 +80,8 @@ interface ChatStore {
   currentConversationId: string | null;
   isStreaming: boolean;
   queuedPrompt: string | null;
+  /** Lot F : le listing a été coupé au plafond. */
+  conversationsTruncated: boolean;
 
   // Computed
   currentConversation: () => Conversation | null;
@@ -105,6 +107,7 @@ interface ChatStore {
 
   // Sync actions
   setConversations: (conversations: Conversation[]) => void;
+  setConversationsTruncated: (truncated: boolean) => void;
   setConversationMessages: (conversationId: string, messages: Message[]) => void;
   updateConversationId: (oldId: string, newId: string) => void;
 }
@@ -116,6 +119,7 @@ export const useChatStore = create<ChatStore>()(
       currentConversationId: null,
       isStreaming: false,
       queuedPrompt: null,
+      conversationsTruncated: false,
 
       currentConversation: () => {
         const { conversations, currentConversationId } = get();
@@ -370,6 +374,8 @@ export const useChatStore = create<ChatStore>()(
         set({ conversations: sorted });
       },
 
+      setConversationsTruncated: (truncated) => set({ conversationsTruncated: truncated }),
+
       setConversationMessages: (conversationId, messages) => {
         set((state) => {
           const existingConv = state.conversations.find((c) => c.id === conversationId);
@@ -387,7 +393,14 @@ export const useChatStore = create<ChatStore>()(
             return {
               conversations: state.conversations.map((c) =>
                 c.id === conversationId
-                  ? { ...c, messages, messageCount: messages.length, synced: true }
+                  ? {
+                      ...c,
+                      messages,
+                      // Lot F : le GET /messages est plafonné (100). Le listing
+                      // connaît le vrai total. L'écraser faisait taire le plafond.
+                      messageCount: Math.max(c.messageCount ?? 0, messages.length),
+                      synced: true,
+                    }
                   : c
               ),
             };

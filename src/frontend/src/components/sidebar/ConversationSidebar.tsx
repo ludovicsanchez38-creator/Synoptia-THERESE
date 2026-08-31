@@ -36,6 +36,7 @@ export function ConversationSidebar({ isOpen, onClose }: ConversationSidebarProp
     createConversation,
     deleteConversation,
     renameConversation,
+    conversationsTruncated,
   } = useChatStore();
   const { maskText } = useDemoMask();
   const addNotification = useStatusStore((s) => s.addNotification);
@@ -163,7 +164,14 @@ export function ConversationSidebar({ isOpen, onClose }: ConversationSidebarProp
           >
             {/* Header */}
             <div className="h-14 flex items-center justify-between px-4 border-b border-border/50">
-              <h2 className="text-lg font-semibold text-text">Conversations</h2>
+              <div>
+                <h2 className="text-lg font-semibold text-text">Conversations</h2>
+                {conversationsTruncated && (
+                  <p role="alert" className="text-sm text-warning">
+                    Liste incomplète : les plus anciennes ne sont pas listées.
+                  </p>
+                )}
+              </div>
               <div className="flex items-center gap-1">
                 <Button variant="ghost" size="icon" onClick={handleNewConversation} title="Nouvelle conversation" data-testid="sidebar-new-conversation-btn">
                   <Plus className="w-5 h-5" />

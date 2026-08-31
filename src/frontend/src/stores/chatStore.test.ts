@@ -8,6 +8,7 @@ describe('chatStore', () => {
       conversations: [],
       currentConversationId: null,
       isStreaming: false,
+      conversationsTruncated: false,
     });
   });
 
@@ -215,6 +216,39 @@ describe('chatStore', () => {
       const conv = useChatStore.getState().conversations.find((c) => c.id === convId)!;
       expect(conv.messages).toHaveLength(2);
       expect(conv.synced).toBe(true);
+    });
+  });
+
+  describe('setConversationMessages - lot F plafond silencieux', () => {
+    it('conserve le messageCount du listing quand la fenêtre chargée est plus courte', () => {
+      // Le GET /conversations annonce 110. Le GET /messages n'en ramène que
+      // 100 (plafond). Écraser le compteur avec messages.length faisait
+      // croire que le fil était complet.
+      const convId = 'conv-longue';
+      useChatStore.setState({
+        conversations: [{
+          id: convId,
+          title: 'Fil long',
+          messages: [],
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          messageCount: 110,
+          synced: true,
+        }],
+        currentConversationId: convId,
+      });
+
+      const loaded = Array.from({ length: 100 }, (_, i) => ({
+        id: `m${i}`,
+        role: 'user' as const,
+        content: `msg-${i}`,
+        timestamp: new Date(),
+      }));
+      useChatStore.getState().setConversationMessages(convId, loaded);
+
+      const conv = useChatStore.getState().conversations.find((c) => c.id === convId)!;
+      expect(conv.messages).toHaveLength(100);
+      expect(conv.messageCount).toBe(110);
     });
   });
 });

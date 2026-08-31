@@ -819,7 +819,9 @@ async def list_messages(
 
     # Route based on provider
     if account.provider == "imap":
-        return await _list_messages_imap(account, max_results, query, label_ids)
+        return await _list_messages_imap(
+            account, max_results, query, label_ids, page_token
+        )
     else:
         return await _list_messages_gmail(account_id, session, max_results, page_token, query, label_ids)
 
@@ -896,6 +898,7 @@ async def _list_messages_imap(
     max_results: int,
     query: str | None,
     label_ids: str | None = None,
+    page_token: str | None = None,
 ) -> dict:
     """List messages via IMAP provider with proper error handling."""
     provider = get_email_provider(
@@ -956,6 +959,7 @@ async def _list_messages_imap(
         messages, next_token = await provider.list_messages(
             folder=folder,
             max_results=max_results,
+            page_token=page_token,
             query=query,
             flagged_only=flagged_only,
         )

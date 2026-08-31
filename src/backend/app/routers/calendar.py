@@ -10,8 +10,9 @@ Local First - Multi-Provider
 
 import json
 import logging
+from collections.abc import Awaitable, Callable
 from datetime import UTC, date, datetime
-from typing import Any
+from typing import Any, TypeVar
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from app.models.database import get_session
@@ -44,6 +45,35 @@ from sqlmodel import select
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
+
+# Lot F : un mois d'agence (10 RDV/jour) dépasse 250. Ce n'est pas un plafond
+# métier, c'est une taille de page. Au-delà de ce filet, on refuse plutôt
+# que de blanchir la fin du mois.
+PLAFOND_EVENEMENTS_FENETRE = 2000
+
+TPage = TypeVar("TPage")
+
+
+async def _collecter_pages_evenements(
+    fetch_page: Callable[[str | None], Awaitable[tuple[list[TPage], str | None]]],
+) -> list[TPage]:
+    """Enchaîne les jetons jusqu'à épuisement, ou avoue le plafond."""
+    collected: list[TPage] = []
+    token: str | None = None
+    while True:
+        items, next_token = await fetch_page(token)
+        collected.extend(items)
+        if not next_token:
+            return collected
+        if len(collected) >= PLAFOND_EVENEMENTS_FENETRE:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "Trop d'événements dans cette période "
+                    f"(plus de {PLAFOND_EVENEMENTS_FENETRE}). Affine la vue."
+                ),
+            )
+        token = next_token
 
 
 def _validate_timezone(tz: str | None) -> str:
@@ -640,12 +670,26 @@ async def _list_events_provider(
     dt_min = _parse_dt_naive(time_min) if time_min else None
     dt_max = _parse_dt_naive(time_max) if time_max else None
 
-    events_dto, _ = await provider.list_events(
-        calendar_id=calendar.id,
-        time_min=dt_min,
-        time_max=dt_max,
-        max_results=max_results,
-    )
+    if dt_min is not None and dt_max is not None:
+        # Fenêtre bornée (mois de l'agenda) : tout ramener ou avouer.
+        async def _page(token: str | None) -> tuple[list[Any], str | None]:
+            evenements, jeton = await provider.list_events(
+                calendar_id=calendar.id,
+                time_min=dt_min,
+                time_max=dt_max,
+                max_results=250,
+                page_token=token,
+            )
+            return list(evenements), jeton
+
+        events_dto = await _collecter_pages_evenements(_page)
+    else:
+        events_dto, _ = await provider.list_events(
+            calendar_id=calendar.id,
+            time_min=dt_min,
+            time_max=dt_max,
+            max_results=max_results,
+        )
 
     # Convert DTOs to CalendarEventResponse
     return [
@@ -691,9 +735,19 @@ async def _list_events_google(
         dt_min = datetime.fromisoformat(time_min.replace("Z", "")) if time_min else None
         dt_max = datetime.fromisoformat(time_max.replace("Z", "")) if time_max else None
 
-        events_data = await calendar_service.list_events(
-            calendar_id, dt_min, dt_max, max_results
-        )
+        if dt_min is not None and dt_max is not None:
+            async def _page_google(token: str | None) -> tuple[list[Any], str | None]:
+                data = await calendar_service.list_events(
+                    calendar_id, dt_min, dt_max, 250, token
+                )
+                return data.get("items", []), data.get("nextPageToken")
+
+            items = await _collecter_pages_evenements(_page_google)
+            events_data = {"items": items}
+        else:
+            events_data = await calendar_service.list_events(
+                calendar_id, dt_min, dt_max, max_results
+            )
 
         # Sync to DB
         events = []

@@ -53,7 +53,7 @@ describe('MemoryPanel export VCF', () => {
     mockListFiles.mockResolvedValue([]);
     mockGetRGPDStats.mockResolvedValue(null);
     useStatusStore.setState({ notifications: [] });
-    useContactsStore.setState({ contacts: [], searchResults: null, loading: false, selectedContactId: null });
+    useContactsStore.setState({ contacts: [], searchResults: null, loading: false, selectedContactId: null, truncated: false });
   });
 
   it('affiche un succès desktop quand l export est réellement sauvegardé', async () => {
@@ -117,6 +117,28 @@ describe('MemoryPanel export VCF', () => {
   });
 });
 
+describe('MemoryPanel - lot F plafond contacts', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockListContactsWithScope.mockResolvedValue([]);
+    mockListFiles.mockResolvedValue([]);
+    mockGetRGPDStats.mockResolvedValue(null);
+    useStatusStore.setState({ notifications: [] });
+  });
+
+  it('dit que la liste est incomplète quand le store a atteint le plafond', async () => {
+    useContactsStore.setState({
+      contacts: [{ id: 'c1', first_name: 'A', last_name: 'B' } as never],
+      searchResults: null,
+      loading: false,
+      selectedContactId: null,
+      truncated: true,
+    });
+    render(<MemoryPanel isOpen onClose={vi.fn()} />);
+    expect(await screen.findByRole('alert')).toHaveTextContent(/Liste incomplète/);
+  });
+});
+
 // L6 (revue produit) : la Mémoire devient une VUE plein écran (content-swap),
 // au même titre que CRM/Email/Agenda/Tâches/Factures. En mode `standalone`,
 // pas de tiroir `fixed w-[420px]` ni de backdrop qui masque le chat.
@@ -125,7 +147,7 @@ describe('MemoryPanel mode standalone (vue L6)', () => {
     vi.clearAllMocks();
     mockListFiles.mockResolvedValue([]);
     mockGetRGPDStats.mockResolvedValue(null);
-    useContactsStore.setState({ contacts: [], searchResults: null, loading: false, selectedContactId: null });
+    useContactsStore.setState({ contacts: [], searchResults: null, loading: false, selectedContactId: null, truncated: false });
   });
 
   it('rend une vue pleine hauteur, sans tiroir fixe 420px', async () => {

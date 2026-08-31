@@ -10,6 +10,7 @@ import { HomeCommands } from '../home';
 import { EntitySuggestion } from './EntitySuggestion';
 import { useDemoMask } from '../../hooks';
 import { computeFollowOutput } from './followOutput';
+import { conversationEstTronquee } from './conversationTronquee';
 import type { Message } from '../../stores/chatStore';
 
 interface MessageListProps {
@@ -24,6 +25,24 @@ interface MessageListProps {
 // l'animation d'entrée du TypingIndicator rejouait en boucle pendant tout le
 // stream. Le Footer lit les stores directement pour rester autonome.
 function ListHeader() {
+  const conversations = useChatStore((state) => state.conversations);
+  const currentConversationId = useChatStore((state) => state.currentConversationId);
+  const conversation = conversations.find((c) => c.id === currentConversationId) || null;
+  if (conversationEstTronquee(conversation)) {
+    const affiches = conversation!.messages.length;
+    const total = conversation!.messageCount ?? affiches;
+    return (
+      <div className="pt-4 px-4">
+        <div
+          role="alert"
+          className="max-w-3xl mx-auto mb-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning"
+        >
+          Conversation incomplète : {affiches} / {total} messages affichés.
+          Les plus anciens ne sont pas à l'écran.
+        </div>
+      </div>
+    );
+  }
   return <div className="pt-4" aria-hidden="true" />;
 }
 

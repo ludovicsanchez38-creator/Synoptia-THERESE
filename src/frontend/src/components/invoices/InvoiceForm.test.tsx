@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { InvoiceForm } from './InvoiceForm';
 import { useBillingProfileStore } from '../../stores/billingProfileStore';
 import { useStatusStore } from '../../stores/statusStore';
-import type { Invoice } from '../../services/api';
+import { listContacts, type Invoice } from '../../services/api';
 import { PrototypeExternalActionConfirmationProvider } from '../app/ExternalActionConfirmation';
 
 const { createInvoiceMock, updateInvoiceMock, getBillingProfileStatusMock, markInvoicePaidMock, updateDevisStatusMock } = vi.hoisted(() => ({
@@ -243,6 +243,21 @@ describe('InvoiceForm - confirmations métier 0.40', () => {
         'invoice-1',
         expect.objectContaining({ status: 'accepted' }),
       );
+    });
+  });
+});
+
+describe('InvoiceForm - lot F plafond contacts', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    getBillingProfileStatusMock.mockResolvedValue({ is_complete: true, missing: [] });
+    useBillingProfileStore.setState({ missing: null });
+  });
+
+  it('demande le carnet au plafond 200, pas le défaut 50 du client HTTP', async () => {
+    render(<InvoiceForm invoice={null} onClose={vi.fn()} onSave={vi.fn()} />);
+    await waitFor(() => {
+      expect(listContacts).toHaveBeenCalledWith(0, 200);
     });
   });
 });

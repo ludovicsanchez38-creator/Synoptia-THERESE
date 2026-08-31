@@ -56,6 +56,8 @@ function seedStore() {
     searchQuery: '',
     refreshCounter: 0,
     needsReauth: false,
+    hasMore: false,
+    pageToken: null,
   });
 }
 
@@ -127,5 +129,25 @@ describe('BUG-122 - dossier IMAP introuvable', () => {
     );
     // L'ancienne liste (INBOX en cache) ne doit plus être affichée.
     expect(screen.queryByText('Contrat à valider')).not.toBeInTheDocument();
+  });
+});
+
+describe('EmailList - lot F pagination', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    seedStore();
+  });
+
+  it('propose de charger la suite quand le serveur renvoie un jeton de page', async () => {
+    listEmailMessagesMock.mockResolvedValue({
+      messages: [listMessage],
+      nextPageToken: '50',
+    });
+    render(
+      <PrototypeExternalActionConfirmationProvider>
+        <EmailList accountId="account-1" />
+      </PrototypeExternalActionConfirmationProvider>,
+    );
+    expect(await screen.findByRole('button', { name: 'Charger la suite' })).toBeInTheDocument();
   });
 });

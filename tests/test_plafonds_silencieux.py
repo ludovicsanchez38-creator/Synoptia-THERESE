@@ -1,0 +1,182 @@
+"""Plafonds atteints en silence — lot F (revue 30/08/2026, grok-lechelle).
+
+Un plafond sans le dire est un faux résultat : l'utilisateur croit tout voir.
+"""
+
+from datetime import UTC, datetime, timedelta
+
+import pytest
+from app.models.entities import Conversation, Message
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
+
+
+class TestF1ConversationMessagesPlusRecents:
+    """GET .../messages prenait les plus anciens : l'écran montrait le début,
+    le modèle voyait la fin (BUG-031, 50 derniers). Au 151e, plus aucun
+    recouvrement. Reouvrir le fil écrasait le store sur cette fenêtre morte.
+    """
+
+    @pytest.mark.asyncio
+    async def test_limite_renvoie_les_plus_recents_dans_l_ordre_chrono(
+        self, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+        conv = Conversation(title="Fil long")
+        db_session.add(conv)
+        await db_session.commit()
+        base = datetime(2026, 8, 30, 10, 0, tzinfo=UTC)
+        for i in range(5):
+            db_session.add(
+                Message(
+                    conversation_id=conv.id,
+                    role="user" if i % 2 == 0 else "assistant",
+                    content=f"msg-{i}",
+                    created_at=base + timedelta(seconds=i),
+                )
+            )
+        await db_session.commit()
+
+        resp = await client.get(
+            f"/api/chat/conversations/{conv.id}/messages",
+            params={"limit": 3},
+        )
+        assert resp.status_code == 200
+        contents = [m["content"] for m in resp.json()]
+        # Les 3 plus récents, affichés du plus ancien au plus récent de la
+        # fenêtre — pas le début du fil.
+        assert contents == ["msg-2", "msg-3", "msg-4"], contents
+
+
+class TestF5ImapTransmetLeJetonDePage:
+    """IMAP ignorait page_token : coller le jeton à la main restait page 1."""
+
+    def _account(self):
+        from types import SimpleNamespace
+
+        return SimpleNamespace(
+            email="t@example.org",
+            imap_password="enc",
+            imap_host="imap.example.org",
+            imap_port=993,
+            smtp_host="smtp.example.org",
+            smtp_port=465,
+            smtp_use_tls=True,
+            provider="imap",
+        )
+
+    @pytest.mark.asyncio
+    async def test_le_jeton_arrive_au_provider(self, monkeypatch: pytest.MonkeyPatch) -> None:
+        from unittest.mock import AsyncMock, MagicMock
+
+        from app.routers import email as email_router
+
+        fake = MagicMock()
+        fake.resolve_folder_for_label = AsyncMock(return_value="INBOX")
+        fake.list_messages = AsyncMock(return_value=([], "50"))
+        monkeypatch.setattr(email_router, "get_email_provider", lambda **kw: fake)
+        monkeypatch.setattr(email_router, "decrypt_value", lambda v: "pw")
+
+        await email_router._list_messages_imap(
+            self._account(), 50, None, None, page_token="50"
+        )
+
+        assert fake.list_messages.await_args.kwargs.get("page_token") == "50"
+
+
+class TestF6AgendaCollecteToutesLesPages:
+    """Un mois chargé coupait aux 250 premiers : la fin du mois devenait blanche."""
+
+    @pytest.mark.asyncio
+    async def test_collecte_la_page_suivante(self) -> None:
+        from app.routers.calendar import _collecter_pages_evenements
+
+        pages = {
+            None: (list(range(250)), "250"),
+            "250": (list(range(250, 260)), None),
+        }
+
+        async def fetch_page(token: str | None):
+            return pages[token]
+
+        collected = await _collecter_pages_evenements(fetch_page)
+        assert collected == list(range(260))
+
+    @pytest.mark.asyncio
+    async def test_plafond_dit_lechec_plutot_que_de_rendre_un_mois_faux(self) -> None:
+        from app.routers.calendar import PLAFOND_EVENEMENTS_FENETRE, _collecter_pages_evenements
+        from fastapi import HTTPException
+
+        async def fetch_page(token: str | None):
+            offset = int(token or "0")
+            return list(range(offset, offset + 250)), str(offset + 250)
+
+        with pytest.raises(HTTPException) as exc:
+            await _collecter_pages_evenements(fetch_page)
+        assert exc.value.status_code == 409
+        assert str(PLAFOND_EVENEMENTS_FENETRE) in exc.value.detail
+
+
+class TestF7RechercheMemoireBornee:
+    """ILIKE sans LIMIT chargeait l'annuaire pour « e ». Un SELECT par hit
+    Qdrant gelait la boucle."""
+
+    def test_requete_contacts_porte_un_plafond(self) -> None:
+        from app.routers.memory import PLAFOND_ILIKE_MEMOIRE, _requete_contacts_mot_cle
+
+        stmt = _requete_contacts_mot_cle("e")
+        assert stmt._limit_clause is not None
+        assert int(stmt._limit_clause.value) == PLAFOND_ILIKE_MEMOIRE
+
+    def test_requete_projets_porte_un_plafond(self) -> None:
+        from app.routers.memory import PLAFOND_ILIKE_MEMOIRE, _requete_projets_mot_cle
+
+        stmt = _requete_projets_mot_cle("e")
+        assert stmt._limit_clause is not None
+        assert int(stmt._limit_clause.value) == PLAFOND_ILIKE_MEMOIRE
+
+
+class TestF8FichiersProjetEtExportRgpd:
+    """La liste des fichiers d'un projet n'avait pas de plafond. L'export RGPD
+    chargeait toute la base sur la boucle asyncio."""
+
+    @pytest.mark.asyncio
+    async def test_liste_fichiers_projet_avoue_la_troncature(
+        self, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+        from app.models.entities import FileMetadata, Project
+
+        projet = Project(name="Crawl")
+        db_session.add(projet)
+        await db_session.commit()
+        for i in range(3):
+            db_session.add(
+                FileMetadata(
+                    path=f"/tmp/crawl-{i}.md",
+                    name=f"page-{i}.md",
+                    extension="md",
+                    size=10,
+                    scope="project",
+                    scope_id=projet.id,
+                )
+            )
+        await db_session.commit()
+
+        resp = await client.get(
+            f"/api/memory/projects/{projet.id}/files",
+            params={"limit": 2},
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["truncated"] is True
+        assert body["total"] == 3
+        assert len(body["files"]) == 2
+
+    def test_export_rgpd_quitte_la_boucle(self) -> None:
+        import inspect
+
+        from app.routers import data as data_router
+
+        source = inspect.getsource(data_router.export_all_data)
+        assert "asyncio.to_thread" in source, (
+            "L'export RGPD doit quitter la boucle asyncio, sinon l'app ne répond plus"
+        )
