@@ -149,11 +149,29 @@ class TestActionPasTermineeSiEtapeEnEchec:
 
 class TestRechercheApprofondiePersisteLesSources:
     def test_la_sauvegarde_emporte_les_sources(self):
+        """01/09 : ce test lisait le TEXTE de la fonction, et c'est ce qui a
+        laissé passer un correctif cassé.
+
+        Il faisait `assert '"sources"' in source` sur le code source de
+        `deep_research_endpoint`. La chaîne y était, donc il passait, pendant
+        que la ligne voisine `async with get_session()` levait une TypeError
+        avalée par un `except` : rien n'était jamais écrit.
+
+        La garantie de comportement vit désormais dans
+        `tests/test_persistance_sources_recherche.py`, qui écrit puis relit.
+        Ce qui reste ici est une garde de forme, explicitement nommée comme
+        telle : la fonction doit employer le gestionnaire de contexte, pas la
+        génératrice de dépendance.
+        """
         from app.routers import chat as chat_mod
 
         source = inspect.getsource(chat_mod.deep_research_endpoint)
-        # Revue 30/08 : sources_data était construit puis jeté. Le message
-        # ne gardait que full_synthesis ; l'événement SSE `sources` n'était
-        # lu par personne.
         assert "extra_data" in source
-        assert '"sources"' in source
+        lignes_de_code = [
+            ligne for ligne in source.splitlines()
+            if not ligne.strip().startswith("#")
+        ]
+        assert not [
+            ligne for ligne in lignes_de_code
+            if "async with get_session()" in ligne
+        ], "get_session est une génératrice de dépendance : utiliser get_session_context"

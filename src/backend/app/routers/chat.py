@@ -1167,7 +1167,15 @@ async def deep_research_endpoint(
                     # jamais écrit. Au rechargement, seules les données
                     # textuelles survivaient.
                     try:
-                        async with get_session() as save_session:
+                        # 01/09 : `get_session` est une generatrice d'injection
+                        # de dependance, sans decorateur de contexte. L'ouvrir
+                        # en gestionnaire levait une TypeError que le except
+                        # ci-dessous avalait en un log : rien n'etait jamais
+                        # ecrit, alors que le commentaire ci-dessus annoncait
+                        # le defaut corrige.
+                        from app.models.database import get_session_context
+
+                        async with get_session_context() as save_session:
                             assistant_message = Message(
                                 conversation_id=conversation.id,
                                 role="assistant",
