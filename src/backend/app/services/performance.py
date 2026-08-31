@@ -28,6 +28,9 @@ class StreamingMetrics:
     start_time: float = field(default_factory=time.time)
     first_token_time: float | None = None
     total_tokens: int = 0
+    # Revue 30/08 : total_tokens ne vaut un chiffre que si l'usage
+    # fournisseur a été reçu. Sinon l'écran dirait « 0 token généré ».
+    tokens_measured: bool = False
     total_time: float | None = None
     provider: str = ""
     model: str = ""
@@ -45,16 +48,29 @@ class StreamingMetrics:
         return 0
 
     def record_token(self) -> None:
-        """Record a token."""
+        """Marque l'arrivée du premier morceau de flux, sans compter de token.
+
+        Revue 30/08 : cet appel suivait chaque événement SSE `text`. Un
+        morceau peut contenir plusieurs tokens ; l'incrément de 1 faisait
+        afficher « Tokens générés » pour un nombre de chunks.
+        """
         if self.first_token_time is None:
             self.record_first_token()
-        self.total_tokens += 1
+
+    def record_output_tokens(self, count: int) -> None:
+        """Enregistre un nombre de tokens de sortie réellement mesuré."""
+        if count < 0:
+            return
+        self.total_tokens += count
+        self.tokens_measured = True
 
     def finish(self) -> dict:
         """Finish metrics and return summary."""
         self.total_time = time.time() - self.start_time
         tokens_per_second = (
-            self.total_tokens / self.total_time if self.total_time > 0 else 0
+            self.total_tokens / self.total_time
+            if self.total_time > 0 and self.tokens_measured
+            else 0
         )
 
         summary = {
@@ -66,6 +82,7 @@ class StreamingMetrics:
             ),
             "total_time_ms": self.total_time * 1000,
             "total_tokens": self.total_tokens,
+            "tokens_measured": self.tokens_measured,
             "tokens_per_second": tokens_per_second,
             "provider": self.provider,
             "model": self.model,
@@ -105,6 +122,7 @@ class PerformanceMonitor:
         # Aggregated stats
         self._total_requests = 0
         self._total_tokens = 0
+        self._tokens_measured = False
         self._first_token_latencies: deque[float] = deque(maxlen=100)
 
         # Memory tracking
@@ -143,7 +161,9 @@ class PerformanceMonitor:
         if summary.get("first_token_ms"):
             self._first_token_latencies.append(summary["first_token_ms"])
 
-        self._total_tokens += summary.get("total_tokens", 0)
+        if summary.get("tokens_measured"):
+            self._total_tokens += summary.get("total_tokens", 0)
+            self._tokens_measured = True
 
         # Trigger GC if needed
         self._maybe_gc()
@@ -167,11 +187,16 @@ class PerformanceMonitor:
         return {
             "total_requests": self._total_requests,
             "total_tokens": self._total_tokens,
+            "tokens_measured": self._tokens_measured,
             "active_streams": len(self._active_streams),
             "avg_first_token_ms": avg_first_token,
             "p95_first_token_ms": p95_first_token,
             "recent_metrics_count": len(self._recent_metrics),
-            "meets_sla": avg_first_token < 2000,  # < 2s SLA
+            # Revue 30/08 : 0 échantillon donnait avg=0 donc meets_sla=True.
+            # Sans mesure, on ne déclare pas le SLA respecté.
+            "meets_sla": (
+                avg_first_token < 2000 if self._first_token_latencies else None
+            ),
         }
 
     def _maybe_gc(self) -> None:

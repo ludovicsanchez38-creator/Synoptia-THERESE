@@ -22,6 +22,8 @@ export interface MeetingWorkspaceData {
   contacts: Contact[];
   accounts: EmailAccount[];
   unavailableSources: string[];
+  /** True si au moins un calendrier a rendu une page saturée (50). */
+  eventsCapped?: boolean;
 }
 
 export interface MeetingEventContext {
@@ -169,12 +171,16 @@ export function usePrototypeMeetingData(enabled = true) {
     const failedCalendars = eventResults.filter((result) => result.status === 'rejected').length;
     if (failedCalendars > 0) unavailableSources.push(`${failedCalendars} calendrier${failedCalendars > 1 ? 's' : ''}`);
 
+    const eventsCapped = eventResults.some(
+      (result) => result.status === 'fulfilled' && result.value.length >= 50,
+    );
     const data: MeetingWorkspaceData = {
       calendars,
       events,
       contacts: contactsResult.status === 'fulfilled' ? contactsResult.value : [],
       accounts,
       unavailableSources,
+      eventsCapped,
     };
     workspace.current = data;
     setResource({ status: 'ready', data, error: null });

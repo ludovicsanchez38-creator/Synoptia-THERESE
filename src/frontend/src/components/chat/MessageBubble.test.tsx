@@ -72,6 +72,21 @@ describe('Fichiers générés visibles (suggestion Dr_logic, 10/07)', () => {
   });
 });
 
+describe('MessageBubble - sources d’une recherche approfondie', () => {
+  it('affiche les sources persistées, pas seulement le texte de synthèse', () => {
+    render(
+      <MessageBubble
+        message={makeMessage({
+          content: 'Synthèse.',
+          webSources: [{ title: 'Article', url: 'https://exemple.test/a', snippet: 'Extrait' }],
+        })}
+      />,
+    );
+    expect(screen.getByText('Sources')).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /Article/ })).toHaveAttribute('href', 'https://exemple.test/a');
+  });
+});
+
 describe('MessageBubble - tableaux GFM (US-010)', () => {
   it('rend un tableau markdown GFM en vrai <table>', () => {
     const md = [

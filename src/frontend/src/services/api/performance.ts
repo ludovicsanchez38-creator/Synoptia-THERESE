@@ -9,11 +9,13 @@ import { request } from './core';
 export interface PerformanceMetrics {
   total_requests: number;
   total_tokens: number;
+  tokens_measured: boolean;
   active_streams: number;
   avg_first_token_ms: number;
   p95_first_token_ms: number;
   recent_metrics_count: number;
-  meets_sla: boolean;
+  /** null : aucune latence enregistrée, le SLA n'est pas un fait. */
+  meets_sla: boolean | null;
 }
 
 export interface StreamingMetric {

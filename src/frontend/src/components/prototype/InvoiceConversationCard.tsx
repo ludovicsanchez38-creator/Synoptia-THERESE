@@ -18,6 +18,15 @@ import type { InvoiceWorkspaceData } from './usePrototypeInvoiceData';
 import type { ReadResource } from './usePrototypeReadData';
 import { Spinner } from '../ui/Spinner';
 
+const LIMITE_DOCUMENTS_ACCUEIL = 50;
+
+function libelleDocumentsCharges(n: number): string {
+  if (n >= LIMITE_DOCUMENTS_ACCUEIL) {
+    return `${n} documents chargés (total non mesuré)`;
+  }
+  return `${n} document${n > 1 ? 's' : ''} enregistré${n > 1 ? 's' : ''}`;
+}
+
 type InvoiceSelection = string | 'new-devis' | null;
 
 interface DraftLine {
@@ -126,7 +135,7 @@ export function InvoiceWorkspaceCard({
           <div>
             <h2 id="invoice-workspace-title" className="text-base font-semibold text-text">Facturer un client</h2>
             <p className="text-xs text-text-muted">
-              {resource.status === 'ready' ? `${resource.data.invoices.length} document${resource.data.invoices.length > 1 ? 's' : ''} enregistré${resource.data.invoices.length > 1 ? 's' : ''}` : 'Lecture de tes devis et factures'}
+              {resource.status === 'ready' ? libelleDocumentsCharges(resource.data.invoices.length) : 'Lecture de tes devis et factures'}
             </p>
           </div>
         </div>

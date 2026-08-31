@@ -17,7 +17,7 @@ import css from 'react-syntax-highlighter/dist/esm/languages/hljs/css';
 import xml from 'react-syntax-highlighter/dist/esm/languages/hljs/xml';
 import yaml from 'react-syntax-highlighter/dist/esm/languages/hljs/yaml';
 import sql from 'react-syntax-highlighter/dist/esm/languages/hljs/sql';
-import { User, Bot, Copy, Check, AlertCircle, Coins, Bookmark, Download, FileDown, Image as ImageIcon, Cpu, Cloud } from 'lucide-react';
+import { User, Bot, Copy, Check, AlertCircle, Coins, Bookmark, Download, FileDown, Image as ImageIcon, Cpu, Cloud, ExternalLink } from 'lucide-react';
 
 SyntaxHighlighter.registerLanguage('python', python);
 SyntaxHighlighter.registerLanguage('javascript', javascript);
@@ -556,6 +556,34 @@ export const MessageBubble = memo(function MessageBubble({
           </ReactMarkdown>
           )}
         </div>
+
+        {message.webSources && message.webSources.length > 0 && !message.isStreaming && (
+          <div className="mt-3 rounded-md w-full max-w-sm bg-surface/60 border border-border overflow-hidden">
+            <p className="px-3 pt-2.5 text-xs font-semibold uppercase tracking-wide text-accent-cyan-ink">
+              Sources
+            </p>
+            <ul className="px-3 py-2 space-y-2">
+              {message.webSources.map((source) => (
+                <li key={source.url}>
+                  <a
+                    href={source.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-start gap-2 text-sm text-text hover:text-accent"
+                  >
+                    <ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                    <span>
+                      <strong className="block">{source.title || source.url}</strong>
+                      {source.snippet && (
+                        <span className="mt-0.5 block text-xs text-text-muted">{source.snippet}</span>
+                      )}
+                    </span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
 
         {/* Fichiers générés visibles (10/07, ex-BUG-131) : bloc « Fichier
             généré » explicite - nom, taille, téléchargement, dossier local. */}

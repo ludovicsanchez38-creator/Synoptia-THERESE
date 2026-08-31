@@ -115,4 +115,47 @@ describe('Board 0.40 conversationnel', () => {
     expect(screen.getByTestId('board-decision-detail')).toHaveTextContent('Lancer un pilote réel.');
     expect(screen.queryByText(/anthropic|openai|gemini/i)).not.toBeInTheDocument();
   });
+
+  it('qualifie le consensus, pas une fiabilité factuelle', () => {
+    render(<BoardHistoryCard
+      resource={{ status: 'ready', data: workspace, error: null }} run={idleRun}
+      onRetry={vi.fn()} onOpenDecision={vi.fn()} onNewBoard={vi.fn()}
+      onOpenCurrent={vi.fn()} onOpenClassic={vi.fn()}
+    />);
+    expect(screen.getByText(/Consensus élevé/)).toBeInTheDocument();
+    expect(screen.queryByText(/Confiance élevée/)).toBeNull();
+  });
+
+  it('présente les extraits du moteur, pas des pages consultées', () => {
+    const withSources: BoardDecisionDetail = {
+      ...decision,
+      web_sources: [{ title: 'Article', url: 'https://exemple.test/a', snippet: 'Extrait' }],
+    };
+    render(<BoardWorkspaceCanvas
+      resource={{ status: 'ready', data: workspace, error: null }}
+      decisionResource={{ status: 'ready', data: withSources, error: null }}
+      run={idleRun} target={decision.id} onRetry={vi.fn()} onRetryDecision={vi.fn()}
+      onStart={vi.fn()} onCancel={vi.fn()} onReset={vi.fn()} onOpenClassic={vi.fn()}
+    />);
+    expect(screen.getByText(/Extraits du moteur de recherche/)).toBeInTheDocument();
+    expect(screen.queryByText(/Sources web consultées/)).toBeNull();
+    expect(screen.getByText('Article')).toBeInTheDocument();
+  });
+
+  it('au plafond de page, n’affirme pas le total des décisions', () => {
+    const plein = {
+      ...workspace,
+      decisions: Array.from({ length: 30 }, (_, i) => ({
+        ...workspace.decisions[0],
+        id: `d-${i}`,
+        question: `Question ${i}`,
+      })),
+    };
+    render(<BoardHistoryCard
+      resource={{ status: 'ready', data: plein, error: null }} run={idleRun}
+      onRetry={vi.fn()} onOpenDecision={vi.fn()} onNewBoard={vi.fn()}
+      onOpenCurrent={vi.fn()} onOpenClassic={vi.fn()}
+    />);
+    expect(screen.getByText(/30 décisions chargées \(total non mesuré\)/)).toBeInTheDocument();
+  });
 });

@@ -68,7 +68,7 @@ export function EmailInboxCard({
             <h2 id="email-inbox-title" className="text-base font-semibold text-text">Messages reçus</h2>
             <div className="text-xs text-text-muted">
               {resource.status === 'ready' && resource.data.currentAccount
-                ? `${unreadCount} non lu${unreadCount > 1 ? 's' : ''} · ${resource.data.currentAccount.email}`
+                ? `${unreadCount} non lu${unreadCount > 1 ? 's' : ''}${resource.data.listeIncomplete ? ' parmi les 30 plus récents' : ''} · ${resource.data.currentAccount.email}`
                 : 'Ta boîte connectée'}
             </div>
           </div>

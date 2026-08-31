@@ -54,6 +54,8 @@ export interface Message {
   // generate_document appelé N fois) - skillFile reste le premier (compat).
   skillFiles?: MessageSkillFile[];
   provider?: string; // P0-IA-3 : provider LLM (messages d'historique)
+  /** Sources d'une recherche approfondie, persistées dans extra_data. */
+  webSources?: Array<{ title: string; url: string; snippet: string }>;
 }
 
 export interface Conversation {

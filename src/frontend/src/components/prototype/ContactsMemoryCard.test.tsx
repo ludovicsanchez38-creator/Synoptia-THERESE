@@ -39,6 +39,21 @@ describe('ContactsMemoryCard', () => {
     expect(onOpenContact).toHaveBeenCalledWith('c1');
     expect(screen.getByText('2 contacts dans la mémoire locale')).toBeInTheDocument();
   });
+
+  it('au plafond de page, n’affirme pas le total des contacts', () => {
+    const plein = Array.from({ length: 200 }, (_, i) =>
+      contact(`c-${i}`, `Prenom${i}`, '2026-07-12'),
+    );
+    render(
+      <ContactsMemoryCard
+        resource={{ status: 'ready', error: null, data: plein }}
+        onRetry={vi.fn()}
+        onOpenContact={vi.fn()}
+        onOpenClassic={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/200 contacts chargés \(total non mesuré\)/)).toBeInTheDocument();
+  });
 });
 
 describe('ContactsMemoryCanvas', () => {

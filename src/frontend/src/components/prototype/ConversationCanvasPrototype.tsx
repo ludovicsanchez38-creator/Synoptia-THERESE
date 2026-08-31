@@ -1768,7 +1768,7 @@ export function ConversationCanvasPrototype() {
                       <>
                         <SourceChip icon={<HardDrive className="h-3 w-3" />} label="Historique local" />
                         <SourceChip icon={<Users className="h-3 w-3" />} label="5 conseillers" />
-                        <SourceChip icon={<ShieldCheck className="h-3 w-3" />} label="Cloud ou Ollama confirmé" />
+                        <SourceChip icon={<ShieldCheck className="h-3 w-3" />} label="Disponibilité du moteur non vérifiée" />
                       </>
                     ) : (
                       <>

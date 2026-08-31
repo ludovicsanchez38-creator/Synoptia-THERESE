@@ -58,6 +58,31 @@ describe('EmailInboxCard', () => {
     expect(onOpenMessage).toHaveBeenCalledWith('message-1');
   });
 
+  it('quand la page est saturée, ne présente pas le compteur comme celui de toute la boîte', () => {
+    render(
+      <EmailInboxCard
+        resource={{
+          status: 'ready',
+          error: null,
+          data: {
+            accounts: [],
+            currentAccount: {
+              id: 'account-1', email: 'ludo@example.test', provider: 'imap', scopes: [],
+              created_at: '2026-07-13', last_sync: null,
+            },
+            messages: [message()],
+            failedMessages: 0,
+            listeIncomplete: true,
+          },
+        }}
+        onRetry={vi.fn()}
+        onOpenMessage={vi.fn()}
+        onOpenClassic={vi.fn()}
+      />,
+    );
+    expect(screen.getByText(/parmi les 30 plus récents/)).toBeInTheDocument();
+  });
+
   it('distingue clairement l’absence de compte connecté', () => {
     render(
       <EmailInboxCard

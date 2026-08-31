@@ -42,6 +42,17 @@ function StateShell({ children }: { children: ReactNode }) {
   return <div className="flex min-h-48 items-center justify-center px-5 py-8">{children}</div>;
 }
 
+const LIMITE_DECISIONS_ACCUEIL = 30;
+
+function libelleDecisionsChargees(n: number): string {
+  // Revue 30/08 : l'accueil ne lit que 30 décisions. Au plafond, le
+  // total réel n'est pas un fait.
+  if (n >= LIMITE_DECISIONS_ACCUEIL) {
+    return `${n} décisions chargées (total non mesuré)`;
+  }
+  return `${n} décision${n > 1 ? 's' : ''} enregistrée${n > 1 ? 's' : ''}`;
+}
+
 function formatDate(value: string): string {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? 'Date inconnue' : date.toLocaleString('fr-FR', {
@@ -50,10 +61,12 @@ function formatDate(value: string): string {
 }
 
 function confidenceLabel(value: string): string {
-  if (value === 'high') return 'Confiance élevée';
-  if (value === 'medium') return 'Confiance moyenne';
-  if (value === 'low') return 'Confiance faible';
-  return value || 'Confiance inconnue';
+  // Revue 30/08 : la valeur mesure l'accord entre conseillers, pas
+  // la solidité factuelle de la recommandation.
+  if (value === 'high') return 'Consensus élevé';
+  if (value === 'medium') return 'Consensus moyen';
+  if (value === 'low') return 'Consensus faible';
+  return value || 'Consensus inconnu';
 }
 
 export function BoardHistoryCard({
@@ -83,7 +96,7 @@ export function BoardHistoryCard({
           <CharacterPortrait index={1} className="h-9 w-9 rounded-md border border-text" />
           <div>
             <h2 id="board-history-title" className="text-base font-semibold text-text">Décision</h2>
-            <p className="text-xs text-text-muted">{resource.status === 'ready' ? `${resource.data.decisions.length} décision${resource.data.decisions.length > 1 ? 's' : ''} enregistrée${resource.data.decisions.length > 1 ? 's' : ''}` : 'Lecture de l’historique local'}</p>
+            <p className="text-xs text-text-muted">{resource.status === 'ready' ? libelleDecisionsChargees(resource.data.decisions.length) : 'Lecture de l’historique local'}</p>
           </div>
         </div>
         <div className="flex gap-2">
@@ -259,7 +272,7 @@ function DecisionDetail({ decision }: { decision: BoardDecisionDetail }) {
         ))}
       </div>
       <SynthesisView synthesis={decision.synthesis} />
-      {decision.web_sources && decision.web_sources.length > 0 && <section className="rounded-md border border-border bg-surface p-4"><h4 className="text-xs font-bold text-text">Sources web consultées</h4><div className="mt-3 space-y-2">{decision.web_sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noreferrer" className="flex items-start gap-2 rounded-md bg-surface-2 p-3 text-sm text-text hover:text-domaine-prospects"><ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0" /><span><strong className="block">{source.title || source.url}</strong>{source.snippet && <span className="mt-1 block text-xs leading-4 text-text-muted">{source.snippet}</span>}</span></a>)}</div></section>}
+      {decision.web_sources && decision.web_sources.length > 0 && <section className="rounded-md border border-border bg-surface p-4"><h4 className="text-xs font-bold text-text">Extraits du moteur de recherche</h4><div className="mt-3 space-y-2">{decision.web_sources.map((source) => <a key={source.url} href={source.url} target="_blank" rel="noreferrer" className="flex items-start gap-2 rounded-md bg-surface-2 p-3 text-sm text-text hover:text-domaine-prospects"><ExternalLink className="mt-0.5 h-3.5 w-3.5 shrink-0" /><span><strong className="block">{source.title || source.url}</strong>{source.snippet && <span className="mt-1 block text-xs leading-4 text-text-muted">{source.snippet}</span>}</span></a>)}</div></section>}
       {decision.synthesis_usage && (decision.synthesis_usage.provider || decision.synthesis_usage.model) && <div className="rounded-md border border-accent-cyan/30 bg-accent-tint px-3 py-2 text-xs text-accent">Synthèse : {decision.synthesis_usage.provider || 'provider inconnu'} · {decision.synthesis_usage.model || 'modèle non mesuré'}{typeof decision.synthesis_usage.cost_eur === 'number' ? ` · ${formaterCout(decision.synthesis_usage.cost_eur, 4)}` : ''}</div>}
     </div>
   );
