@@ -32,7 +32,14 @@ vi.mock('../../services/api', () => ({
 
 // La persistance déclenchée par le rattachement : elle change l'identifiant
 // de la conversation pendant que l'envoi patiente.
-const rattachement = vi.hoisted(() => ({ attendrePersistance: vi.fn() }));
+const rattachement = vi.hoisted(() => ({
+  attendrePersistance: vi.fn(),
+  assurerConversationPersistee: vi.fn(async (id: string) => {
+    const courante = useChatStore.getState().conversations.find((c) => c.id === id)
+      ?? useChatStore.getState().conversations[0];
+    return courante?.id ?? id;
+  }),
+}));
 vi.mock('../../lib/rattachementConversation', () => rattachement);
 
 vi.mock('../../hooks/useGhostText', () => ({

@@ -27,7 +27,7 @@ import {
 } from '../../services/api/variables';
 import { useToolConfirmationStore } from '../../stores/toolConfirmationStore';
 import { doitAdopterIdentiteServeur } from '../../lib/identiteConversation';
-import { attendrePersistance } from '../../lib/rattachementConversation';
+import { attendrePersistance, assurerConversationPersistee } from '../../lib/rattachementConversation';
 import { useFileDrop, type DroppedFile } from '../../hooks/useFileDrop';
 import { streamMessage, streamDeepResearch, indexFile, cancelGeneration, ApiError, getLLMConfig, setLLMConfig, type LLMProvider } from '../../services/api';
 import type { StreamChunk } from '../../services/api/chat';
@@ -615,7 +615,13 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       // l'ancien, c'est un identifiant que le serveur ne connaît pas.
       const conversation = currentConversation();
       const idCourant = conversation?.id ?? currentConversationId;
-      const syncedConversationId = conversation?.synced ? idCourant : undefined;
+      // Revue 30/08 : si l'envoi part AVANT le rattachement, partir sans id
+      // faisait créer une seconde conversation. On persiste ici, le
+      // rattachement attend la même promesse.
+      let syncedConversationId = conversation?.synced ? idCourant : undefined;
+      if (conversation && !conversation.ephemeral && idCourant) {
+        syncedConversationId = await assurerConversationPersistee(idCourant);
+      }
 
       // Stream response from backend (inclure skill_id si provient des guided prompts)
       const controller = new AbortController();
@@ -845,7 +851,10 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       // store, jamais repris de la valeur figée au rendu.
       const conversation = currentConversation();
       const idCourant = conversation?.id ?? currentConversationId;
-      const syncedConversationId = conversation?.synced ? idCourant : undefined;
+      let syncedConversationId = conversation?.synced ? idCourant : undefined;
+      if (conversation && !conversation.ephemeral && idCourant) {
+        syncedConversationId = await assurerConversationPersistee(idCourant);
+      }
 
       const controller = new AbortController();
       abortRef.current = controller;
