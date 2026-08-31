@@ -203,6 +203,31 @@ class ToolCallResult:
     execution_time_ms: float = 0
 
 
+def _chiffrer_variables(env: dict[str, str] | None) -> dict[str, str]:
+    """Chiffre les variables d'environnement au point de passage unique.
+
+    31/08/2026 : `create_server` chiffrait chaque valeur avant d'appeler
+    `add_server`, mais `install_preset` transmettait `env_vars` tel quel.
+    `add_server` rangeait sans rien faire et `_save_config` ecrivait le
+    dictionnaire directement en JSON : installer un serveur MCP par un
+    prereglage ecrivait ses cles d'API en clair sur le disque. La lecture,
+    qui teste `is_value_encrypted` avant de dechiffrer, tolerait ce clair
+    sans jamais s'en plaindre.
+
+    Le chiffrement descend donc ici, pour que tout appelant present et futur
+    en beneficie sans avoir a y penser. Une valeur deja chiffree est laissee
+    telle quelle : le double chiffrement la rendrait illisible.
+    """
+    from app.services.encryption import encrypt_value, is_value_encrypted
+
+    if not env:
+        return {}
+    return {
+        cle: valeur if is_value_encrypted(valeur) else encrypt_value(valeur)
+        for cle, valeur in env.items()
+    }
+
+
 class MCPService:
     """
     Service for managing MCP servers and executing tools.
@@ -307,7 +332,7 @@ class MCPService:
             name=name,
             command=command,
             args=args or [],
-            env=env or {},
+            env=_chiffrer_variables(env),
             enabled=enabled,
         )
         self.servers[server_id] = server
