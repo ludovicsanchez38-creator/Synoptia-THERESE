@@ -1,5 +1,5 @@
 """Tests du router dashboard (setup-status pour la vue Accueil)."""
-from datetime import date, datetime, time, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 
 import pytest
 from app.models.entities import (
@@ -15,6 +15,53 @@ from httpx import AsyncClient
 
 
 class TestToday:
+    @pytest.mark.asyncio
+    async def test_today_inclut_un_evenement_toute_la_journee_sur_plusieurs_jours(
+        self, client: AsyncClient, db_session
+    ):
+        """Le 30 appartient bien à un événement inclusif du 29 au 31."""
+        today = date.today()
+        calendar = Calendar(id="cal-multiday", summary="Agenda", provider="local")
+        event = CalendarEvent(
+            id="event-multiday",
+            calendar_id=calendar.id,
+            summary="Séminaire sur trois jours",
+            start_date=(today - timedelta(days=1)).isoformat(),
+            end_date=(today + timedelta(days=1)).isoformat(),
+            all_day=True,
+        )
+        db_session.add_all([calendar, event])
+        await db_session.commit()
+
+        response = await client.get("/api/dashboard/today")
+
+        assert response.status_code == 200
+        assert event.id in {item["id"] for item in response.json()["events"]}
+
+    @pytest.mark.asyncio
+    async def test_today_est_le_jour_civil_de_paris_a_la_frontiere_utc(
+        self, client: AsyncClient, monkeypatch
+    ):
+        """À 22 h 30 UTC en été, le brief doit déjà être celui du lendemain."""
+        class DateUTC(datetime):
+            @classmethod
+            def now(cls, tz=None):
+                instant = cls(2026, 8, 29, 22, 30, tzinfo=UTC)
+                return instant.astimezone(tz) if tz else instant.replace(tzinfo=None)
+
+        class JourUTC(date):
+            @classmethod
+            def today(cls):
+                return cls(2026, 8, 29)
+
+        monkeypatch.setattr("app.routers.dashboard.datetime", DateUTC)
+        monkeypatch.setattr("app.routers.dashboard.date", JourUTC, raising=False)
+
+        response = await client.get("/api/dashboard/today")
+
+        assert response.status_code == 200
+        assert response.json()["date"] == "2026-08-30"
+
     @pytest.mark.asyncio
     async def test_today_agrege_relances_et_enjeu_des_evenements(
         self, client: AsyncClient, db_session

@@ -176,6 +176,78 @@ async def _delete_embedding(entity_id: str) -> None:
         logger.warning(f"Failed to delete embedding {entity_id}: {e}")
 
 
+async def _nettoyer_et_supprimer_projet(
+    session: AsyncSession, project: Project
+) -> dict[str, int]:
+    """Supprime un dossier sans conserver de référence sur son identifiant.
+
+    Qdrant passe avant SQLite et ses erreurs remontent. Après l'incident du
+    30/08, supprimer la ligne tout en servant encore ses fragments serait un
+    faux succès plus grave qu'une suppression refusée.
+    """
+    from app.models.entities import CalendarEvent, Document
+    from app.services.project_sync_service import retirer_racine
+
+    project_id = project.id
+    files = (
+        await session.execute(
+            select(FileMetadata).where(
+                FileMetadata.scope == "project",
+                FileMetadata.scope_id == project_id,
+            )
+        )
+    ).scalars().all()
+
+    qdrant = get_qdrant_service()
+    for file in files:
+        await qdrant.async_delete_by_entity(file.id)
+    await qdrant.async_delete_by_entity(project_id)
+
+    # La racine vit dans une transaction dédiée avec ses propres verrous. Elle
+    # est détachée avant le commit métier pour qu'un dossier supprimé ne bloque
+    # jamais la réutilisation du même chemin après redémarrage.
+    await retirer_racine(project_id)
+
+    for file in files:
+        await session.delete(file)
+
+    conversations = (
+        await session.execute(
+            select(Conversation).where(Conversation.project_id == project_id)
+        )
+    ).scalars().all()
+    for conversation in conversations:
+        conversation.project_id = None
+        conversation.memory_scope = "global"
+        session.add(conversation)
+
+    documents = (
+        await session.execute(
+            select(Document).where(Document.project_id == project_id)
+        )
+    ).scalars().all()
+    for document in documents:
+        document.project_id = None
+        session.add(document)
+
+    events = (
+        await session.execute(
+            select(CalendarEvent).where(CalendarEvent.project_id == project_id)
+        )
+    ).scalars().all()
+    for event in events:
+        event.project_id = None
+        session.add(event)
+
+    await session.delete(project)
+    return {
+        "files": len(files),
+        "conversations_detachees": len(conversations),
+        "documents_detaches": len(documents),
+        "evenements_detaches": len(events),
+    }
+
+
 # ============================================================
 # Search Endpoints
 # ============================================================
@@ -788,8 +860,9 @@ async def delete_contact(
         )
         projects = projects_result.scalars().all()
         for project in projects:
-            await _delete_embedding(project.id)
-            await session.delete(project)
+            counts = await _nettoyer_et_supprimer_projet(session, project)
+            for key, count in counts.items():
+                cascade_deleted[key] = cascade_deleted.get(key, 0) + count
         cascade_deleted["projects"] = len(projects)
 
         # Delete scoped files
@@ -802,7 +875,7 @@ async def delete_contact(
         for file in files:
             await _delete_embedding(file.id)
             await session.delete(file)
-        cascade_deleted["files"] = len(files)
+        cascade_deleted["files"] = cascade_deleted.get("files", 0) + len(files)
 
     contact_name = contact.display_name
     await session.delete(contact)
@@ -1071,60 +1144,17 @@ async def delete_project(
         project_id: ID of the project to delete
         cascade: If True, also delete scoped files
     """
-    # project.sync (0.45) : ménage explicite - les FK SQLite ne sont pas
-    # activées, une racine orpheline bloquerait ce dossier pour toujours.
-    from app.services.project_sync_service import retirer_racine
-
-    await retirer_racine(project_id)
-
     result = await session.execute(select(Project).where(Project.id == project_id))
     project = result.scalar_one_or_none()
 
     if not project:
         raise HTTPException(status_code=404, detail="Project not found")
 
-    cascade_deleted: dict[str, int] = {}
-
-    if cascade:
-        # Delete scoped files (E3-06)
-        files_result = await session.execute(
-            select(FileMetadata).where(
-                (FileMetadata.scope == "project") & (FileMetadata.scope_id == project_id)
-            )
-        )
-        files = files_result.scalars().all()
-        for file in files:
-            await _delete_embedding(file.id)
-            await session.delete(file)
-        cascade_deleted["files"] = len(files)
-
     project_name = project.name
-
-    # 0.43 : détacher les conversations rattachées à ce projet.
-    # `Conversation.project_id` n'est pas une clé étrangère : sans ce ménage,
-    # elles resteraient cloisonnées sur un identifiant supprimé. Le backend
-    # continuerait de filtrer dessus — donc plus aucun document — pendant que
-    # le sélecteur, ne trouvant plus le projet dans la liste, afficherait
-    # « Toute la mémoire ». L'écran mentirait sur la cloison réelle.
-    conversations_liees = (
-        await session.execute(
-            select(Conversation).where(Conversation.project_id == project_id)
-        )
-    ).scalars().all()
-    for conversation in conversations_liees:
-        conversation.project_id = None
-        # Sans cette remise à zéro, la ligne resterait sur `project` sans
-        # projet : un état que rien ne peut plus décrire à l'écran.
-        conversation.memory_scope = "global"
-        session.add(conversation)
-    if conversations_liees:
-        cascade_deleted["conversations_detachees"] = len(conversations_liees)
-
-    await session.delete(project)
+    # `cascade` reste accepté pour compatibilité, mais le ménage n'est plus
+    # optionnel : l'interface historique ne l'envoyait jamais.
+    cascade_deleted = await _nettoyer_et_supprimer_projet(session, project)
     await session.commit()
-
-    # Remove from Qdrant
-    await _delete_embedding(project_id)
 
     # Audit log (US-SEC-05) - ne doit pas bloquer la suppression
     try:

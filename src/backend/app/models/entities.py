@@ -57,7 +57,15 @@ class Contact(SQLModel, table=True):
     # Relationships
     projects: list["Project"] = Relationship(back_populates="contact")
     activities: list["Activity"] = Relationship(back_populates="contact", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
-    invoices: list["Invoice"] = Relationship(back_populates="contact", cascade_delete=True)
+    # Une pièce comptable survit à la suppression de la fiche CRM. Le snapshot
+    # destinataire ci-dessous reste la source légale du document historique.
+    invoices: list["Invoice"] = Relationship(
+        back_populates="contact",
+        # SQLite garde le contact_id historique sans FK active. Sans
+        # passive_deletes="all", SQLAlchemy tente de le passer à NULL et la
+        # suppression CRM échoue malgré le snapshot complet.
+        sa_relationship_kwargs={"passive_deletes": "all"},
+    )
 
     @property
     def display_name(self) -> str:
@@ -566,6 +574,13 @@ class Invoice(SQLModel, table=True):
     id: str = Field(default_factory=generate_uuid, primary_key=True)
     invoice_number: str = Field(unique=True, index=True)  # FACT-2026-001, DEV-2026-001, AV-2026-001
     contact_id: str = Field(foreign_key="contacts.id", index=True)
+    # Copie figée du destinataire. Le lien CRM reste utile pour naviguer tant
+    # que la fiche existe, mais ne doit jamais réécrire une pièce passée.
+    client_name: str | None = None
+    client_company: str | None = None
+    client_email: str | None = None
+    client_phone: str | None = None
+    client_address: str | None = None
     document_type: str = Field(default="facture", index=True)  # devis, facture, avoir
     tva_applicable: bool = Field(default=True)  # Si False: "TVA non applicable, art. 293 B du CGI"
     currency: str = Field(default="EUR")  # EUR, CHF, USD, GBP

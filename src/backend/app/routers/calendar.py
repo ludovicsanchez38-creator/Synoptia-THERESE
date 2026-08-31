@@ -112,6 +112,19 @@ def _google_allday_end_exclusive(end_value: str) -> str:
     return exclusive.isoformat()
 
 
+def _google_datetime_civile(value: str, timezone: str | None = None) -> datetime:
+    """Normalise un instant Google en heure murale Europe/Paris pour SQLite.
+
+    Le schéma historique stocke des DateTime naïfs. Conserver tantôt `Z`,
+    tantôt `+02:00`, faisait dépendre le brief du format renvoyé par Google.
+    La conversion est donc faite explicitement à la frontière fournisseur.
+    """
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=ZoneInfo(_validate_timezone(timezone)))
+    return parsed.astimezone(ZoneInfo("Europe/Paris")).replace(tzinfo=None)
+
+
 # ============================================================
 # Helper Functions
 # ============================================================
@@ -771,11 +784,11 @@ async def _list_events_google(
                     existing_event.start_date = start_obj.get("date")
                     existing_event.end_date = _google_allday_end_inclusive(start_obj, end_obj)
                 else:
-                    existing_event.start_datetime = datetime.fromisoformat(
-                        start_obj["dateTime"].replace("Z", "")
+                    existing_event.start_datetime = _google_datetime_civile(
+                        start_obj["dateTime"], start_obj.get("timeZone")
                     )
-                    existing_event.end_datetime = datetime.fromisoformat(
-                        end_obj["dateTime"].replace("Z", "")
+                    existing_event.end_datetime = _google_datetime_civile(
+                        end_obj["dateTime"], end_obj.get("timeZone")
                     )
                 existing_event.all_day = all_day
                 existing_event.attendees = json.dumps(
@@ -796,12 +809,16 @@ async def _list_events_google(
                     start_date=start_obj.get("date") if all_day else None,
                     end_date=_google_allday_end_inclusive(start_obj, end_obj) if all_day else None,
                     start_datetime=(
-                        datetime.fromisoformat(start_obj["dateTime"].replace("Z", ""))
+                        _google_datetime_civile(
+                            start_obj["dateTime"], start_obj.get("timeZone")
+                        )
                         if not all_day
                         else None
                     ),
                     end_datetime=(
-                        datetime.fromisoformat(end_obj["dateTime"].replace("Z", ""))
+                        _google_datetime_civile(
+                            end_obj["dateTime"], end_obj.get("timeZone")
+                        )
                         if not all_day
                         else None
                     ),

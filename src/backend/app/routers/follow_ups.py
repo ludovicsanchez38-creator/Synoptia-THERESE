@@ -15,7 +15,9 @@ from app.models.schemas_email import (
     FollowUpResponse,
     UpdateFollowUpRequest,
 )
+from app.services.civil_time import date_civile_paris
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -128,12 +130,12 @@ async def list_due_follow_ups(
     """
     Liste les suivis échus ou du jour (status=pending, due_date <= aujourd'hui).
     """
-    today = datetime.now(UTC).strftime("%Y-%m-%d")
+    today = date_civile_paris(datetime.now(UTC)).isoformat()
 
     statement = (
         select(EmailFollowUp)
         .where(EmailFollowUp.status == "pending")
-        .where(EmailFollowUp.due_date <= today + "T23:59:59")
+        .where(func.substr(EmailFollowUp.due_date, 1, 10) <= today)
         .order_by(EmailFollowUp.due_date.asc())
     )
 

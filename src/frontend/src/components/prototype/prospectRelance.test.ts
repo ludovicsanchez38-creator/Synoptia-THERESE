@@ -9,9 +9,9 @@ import { describe, expect, it } from 'vitest';
 import type { TodayDashboard } from '../../services/api/dashboard';
 import { buildTodayAttentionItems } from './prototypeReadModels';
 
-function journee(prospects: TodayDashboard['stale_prospects']): TodayDashboard {
+function journee(prospects: TodayDashboard['stale_prospects'], date = '2026-08-29'): TodayDashboard {
   return {
-    date: '2026-08-29',
+    date,
     events: [], urgent_tasks: [], due_follow_ups: [], overdue_invoices: [],
     stale_prospects: prospects,
     summary: { events_count: 0, tasks_count: 0, follow_ups_count: 0, invoices_count: 0, prospects_count: prospects.length },
@@ -40,6 +40,16 @@ describe('La relance affichée dit sa date', () => {
     const [item] = buildTodayAttentionItems(journee([{ ...BASE, next_follow_up: null }]));
 
     expect(item.detail).not.toMatch(/\d{2}\/\d{2}/);
+    expect(item.urgent).toBe(false);
+  });
+
+  it('interprète un horodatage UTC selon le jour civil de Paris', () => {
+    const [item] = buildTodayAttentionItems(journee(
+      [{ ...BASE, next_follow_up: '2026-08-29T22:00:00Z' }],
+      '2026-08-30',
+    ));
+
+    expect(item.detail).toContain('30/08');
     expect(item.urgent).toBe(false);
   });
 });

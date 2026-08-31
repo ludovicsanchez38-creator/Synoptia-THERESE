@@ -38,6 +38,7 @@ from app.models.entities import (
     Message,
     Notification,
     Preference,
+    Prestation,
     Project,
     PromptTemplate,
     Task,
@@ -154,6 +155,7 @@ def _assembler_export_rgpd() -> dict[str, Any]:
         calendars = (session.execute(select(Calendar))).scalars().all()
         calendar_events = (session.execute(select(CalendarEvent))).scalars().all()
         tasks = (session.execute(select(Task))).scalars().all()
+        prestations = (session.execute(select(Prestation))).scalars().all()
         invoices = (session.execute(select(Invoice))).scalars().all()
         invoice_lines = (session.execute(select(InvoiceLine))).scalars().all()
         activities = (session.execute(select(Activity))).scalars().all()
@@ -173,7 +175,9 @@ def _assembler_export_rgpd() -> dict[str, Any]:
         export_data = {
             "exported_at": datetime.now(UTC).isoformat(),
             "app_version": settings.app_version,
-            "data_format_version": "1.2",  # 1.2 : couverture de toutes les tables utilisateur
+            # Lot D : l'ajout des prestations change le contrat portable. Garder
+            # 1.2 ferait croire à un export complet aux anciens consommateurs.
+            "data_format_version": "1.3",
             "variables": [
                 {
                     "id": v.id,
@@ -255,6 +259,7 @@ def _assembler_export_rgpd() -> dict[str, Any]:
                 for item in calendar_events
             ],
             "tasks": [_export_row(item, json_fields=("tags",)) for item in tasks],
+            "prestations": [_export_row(item) for item in prestations],
             "invoices": [_export_row(item) for item in invoices],
             "invoice_lines": [_export_row(item) for item in invoice_lines],
             "activities": [
@@ -417,11 +422,21 @@ async def export_conversations(
                 {
                     "id": conv.id,
                     "title": conv.title,
+                    "summary": conv.summary,
+                    "project_id": conv.project_id,
+                    "memory_scope": conv.memory_scope,
                     "created_at": conv.created_at.isoformat(),
+                    "updated_at": conv.updated_at.isoformat(),
                     "messages": [
                         {
+                            "id": m.id,
                             "role": m.role,
                             "content": m.content,
+                            "tokens_in": m.tokens_in,
+                            "tokens_out": m.tokens_out,
+                            "model": m.model,
+                            "provider": m.provider,
+                            "extra_data": m.extra_data,
                             "created_at": m.created_at.isoformat(),
                         }
                         for m in sorted(
@@ -490,6 +505,9 @@ async def delete_all_data(
     await session.execute(delete(EmailMessage))
     await session.execute(delete(EmailAccount))
     await session.execute(delete(Task))
+    # Une prestation contient montant et financeur : la laisser derrière une
+    # fiche effacée violerait précisément la promesse « toutes mes données ».
+    await session.execute(delete(Prestation))
     await session.execute(delete(Deliverable))
     await session.execute(delete(Activity))
     await session.execute(delete(PromptTemplate))
@@ -759,8 +777,7 @@ def _checkpoint_db() -> bool:
 
 
 def _create_archive(archive_path) -> list[str]:
-    """Crée une archive .tar.gz complète : DB (checkpointée) + Qdrant + images
-    + mcp_servers.json + clé de chiffrement. Retourne la liste des éléments inclus.
+    """Crée une archive complète : DB, index, images et fichiers Office.
 
     Revue adversariale US-014 : sans .encryption_key, le backup n'était PLUS
     restaurable après perte de la machine (DB chiffrée, clé dans le Keychain
@@ -779,6 +796,9 @@ def _create_archive(archive_path) -> list[str]:
         (db_path, "therese.db"),
         (Path(settings.qdrant_path) if settings.qdrant_path else None, "qdrant"),
         (data_dir / "images", "images"),
+        # Les messages persistent leurs boutons de téléchargement. Sans le
+        # fichier associé, restaurer la DB fabrique un succès qui mène à 404.
+        (data_dir / "outputs", "outputs"),
         (data_dir / "mcp_servers.json", "mcp_servers.json"),
         (data_dir / "export_profile.json", "export_profile.json"),
         (data_dir / ".encryption_key", ".encryption_key"),
@@ -1177,8 +1197,8 @@ async def restore_backup(
             raise HTTPException(status_code=400, detail=str(exc)) from exc
         archive = decrypted_temp
 
-    # US-011 : filet de sécurité COMPLET (DB + Qdrant + images + MCP), pas juste
-    # la DB, pour pouvoir faire un rollback intégral si l'extraction échoue.
+    # US-011 : filet de sécurité COMPLET (DB, Qdrant, images, outputs et MCP),
+    # pour pouvoir faire un rollback intégral si l'extraction échoue.
     # %f : deux restaurations dans la même seconde ne doivent pas se partager
     # la même archive de sécurité.
     current_backup_name = f"pre_restore_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S_%f')}"
@@ -1186,17 +1206,17 @@ async def restore_backup(
     safety_included: list[str] = []
 
     def _wipe_volatile_dirs() -> None:
-        # Restore PROPRE : on retire qdrant/ et images/ avant extraction pour ne
-        # pas laisser d'orphelins (fichiers créés après le backup).
-        for sub in ("qdrant", "images"):
+        # Restore PROPRE : les fichiers produits après la sauvegarde ne doivent
+        # pas se mélanger à l'état restauré ni garder des boutons fantômes.
+        for sub in ("qdrant", "images", "outputs"):
             p = data_dir / sub
             if p.exists():
                 shutil.rmtree(p, ignore_errors=True)
 
     def _rollback() -> None:
         # Rollback INTÉGRAL depuis l'archive de sécurité (état d'avant restore).
-        # _wipe_volatile_dirs() a pu détruire qdrant/ et images/ avant qu'une
-        # erreur (corruption OU archive piégée) ne survienne : on remet tout.
+        # _wipe_volatile_dirs() a pu détruire les artefacts avant qu'une erreur
+        # (corruption OU archive piégée) ne survienne : on remet tout.
         try:
             _wipe_volatile_dirs()
             with tarfile.open(safety_archive, "r:gz") as tar:
@@ -1383,22 +1403,59 @@ async def import_conversations(
             continue  # Skip existing
 
         # Create conversation
-        conversation = Conversation(
-            id=conv_data.get("id"),  # Preserve ID if provided
-            title=conv_data.get("title"),
-            summary=conv_data.get("summary"),
-        )
+        conversation_kwargs: dict[str, Any] = {
+            "title": conv_data.get("title"),
+            "summary": conv_data.get("summary"),
+            "project_id": conv_data.get("project_id"),
+            "memory_scope": conv_data.get("memory_scope") or "global",
+        }
+        if conv_data.get("id"):
+            conversation_kwargs["id"] = conv_data["id"]
+        for field in ("created_at", "updated_at"):
+            if conv_data.get(field):
+                try:
+                    conversation_kwargs[field] = datetime.fromisoformat(
+                        str(conv_data[field]).replace("Z", "+00:00")
+                    )
+                except ValueError as exc:
+                    raise HTTPException(
+                        status_code=400,
+                        detail=f"Date de conversation invalide ({field})",
+                    ) from exc
+        conversation = Conversation(**conversation_kwargs)
         session.add(conversation)
         await session.flush()
         imported["conversations"] += 1
 
         # Import messages
         for msg_data in conv_data.get("messages", []):
-            message = Message(
-                conversation_id=conversation.id,
-                role=msg_data.get("role", "user"),
-                content=msg_data.get("content", ""),
-            )
+            message_kwargs: dict[str, Any] = {
+                "conversation_id": conversation.id,
+                "role": msg_data.get("role", "user"),
+                "content": msg_data.get("content", ""),
+                "tokens_in": msg_data.get("tokens_in"),
+                "tokens_out": msg_data.get("tokens_out"),
+                "model": msg_data.get("model"),
+                "provider": msg_data.get("provider"),
+                "extra_data": (
+                    json.dumps(msg_data["extra_data"], ensure_ascii=False)
+                    if isinstance(msg_data.get("extra_data"), (dict, list))
+                    else msg_data.get("extra_data")
+                ),
+            }
+            if msg_data.get("id"):
+                message_kwargs["id"] = msg_data["id"]
+            if msg_data.get("created_at"):
+                try:
+                    message_kwargs["created_at"] = datetime.fromisoformat(
+                        str(msg_data["created_at"]).replace("Z", "+00:00")
+                    )
+                except ValueError as exc:
+                    raise HTTPException(
+                        status_code=400,
+                        detail="Date de message invalide (created_at)",
+                    ) from exc
+            message = Message(**message_kwargs)
             session.add(message)
             imported["messages"] += 1
 

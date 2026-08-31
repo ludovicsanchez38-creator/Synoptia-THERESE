@@ -726,9 +726,11 @@ async def _search_invoices(args: dict, session: AsyncSession) -> str:
     pattern = f"%{escaped}%"
     statement = (
         select(Invoice, Contact)
-        .join(Contact, Contact.id == Invoice.contact_id)
+        .outerjoin(Contact, Contact.id == Invoice.contact_id)
         .where(
             Invoice.invoice_number.ilike(pattern, escape="\\")
+            | Invoice.client_name.ilike(pattern, escape="\\")
+            | Invoice.client_company.ilike(pattern, escape="\\")
             | Contact.first_name.ilike(pattern, escape="\\")
             | Contact.last_name.ilike(pattern, escape="\\")
             | Contact.company.ilike(pattern, escape="\\")
@@ -747,7 +749,9 @@ async def _search_invoices(args: dict, session: AsyncSession) -> str:
     types = {"facture": "Facture", "devis": "Devis", "avoir": "Avoir"}
     lines = []
     for invoice, contact in rows:
-        client = contact.display_name if contact else "client inconnu"
+        client = invoice.client_name or (
+            contact.display_name if contact else "client inconnu"
+        )
         lines.append(
             f"- {types.get(invoice.document_type, invoice.document_type)} "
             f"{invoice.invoice_number} : {client}, "

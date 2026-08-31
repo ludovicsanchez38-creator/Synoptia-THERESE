@@ -112,6 +112,32 @@ class TestRGPDAnonymize:
         assert export_data["contact"]["phone"] is None
 
     @pytest.mark.asyncio
+    async def test_anonymize_contact_purge_ses_prestations(self, client: AsyncClient):
+        """Art. 17 : une prestation ne doit pas rester liée à [ANONYMISÉ]."""
+        contact_id = await _create_contact(client, "ClientAvecPrestation")
+        prestation = await client.post(
+            "/api/prestations",
+            json={
+                "contact_id": contact_id,
+                "intitule": "Accompagnement sensible",
+                "montant_ht": 5000.0,
+                "phase": "en_cours",
+                "financeur": "OPCO",
+            },
+        )
+        assert prestation.status_code == 201, prestation.text
+
+        response = await client.post(
+            f"/api/rgpd/anonymize/{contact_id}",
+            json={"reason": "demande du client"},
+        )
+
+        assert response.status_code == 200
+        prestations = await client.get(f"/api/prestations?contact_id={contact_id}")
+        assert prestations.status_code == 200
+        assert prestations.json() == []
+
+    @pytest.mark.asyncio
     async def test_anonymize_contact_not_found(self, client: AsyncClient):
         """POST /api/rgpd/anonymize/{contact_id} retourne 404 si le contact n'existe pas."""
         response = await client.post(

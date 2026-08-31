@@ -7,9 +7,11 @@ External services (Google Sheets, LLM) are mocked.
 """
 
 import json
+from datetime import UTC, datetime
 from unittest.mock import MagicMock, patch
 
 import pytest
+from app.models.entities import Contact
 from httpx import AsyncClient
 
 from tests.conftest import assert_contains_keys, assert_response_ok
@@ -645,6 +647,69 @@ class TestCRMImport:
         assert "total_rows" in data
         assert "detected_columns" in data
         assert "can_import" in data
+
+    @pytest.mark.asyncio
+    async def test_round_trip_contact_json_preserve_tous_les_champs_exportes(
+        self, client: AsyncClient, db_session
+    ):
+        """Export puis import redonne le même état CRM utile dans la durée."""
+        contact = Contact(
+            id="contact-round-trip",
+            first_name="Aline",
+            last_name="Durable",
+            company="Mémoire SARL",
+            email="aline@example.test",
+            phone="+33492000000",
+            address="1 rue de la Mémoire",
+            notes="Conserver exactement",
+            tags='["client","prioritaire"]',
+            extra_data='{"origine":"salon"}',
+            stage="delivery",
+            score=0,
+            source="recommandation",
+            last_interaction=datetime(2026, 7, 1, 10, 0, tzinfo=UTC),
+            next_follow_up=datetime(2026, 9, 15, 0, 0, tzinfo=UTC),
+            rgpd_base_legale="contrat",
+            rgpd_date_collecte=datetime(2026, 1, 2, 12, 0, tzinfo=UTC),
+            rgpd_date_expiration=datetime(2029, 1, 2, 12, 0, tzinfo=UTC),
+            rgpd_consentement=True,
+            purge_excluded=True,
+            scope="project",
+            scope_id="project-client",
+            created_at=datetime(2026, 1, 2, 12, 0, tzinfo=UTC),
+            updated_at=datetime(2026, 8, 30, 18, 0, tzinfo=UTC),
+        )
+        db_session.add(contact)
+        await db_session.commit()
+        contact_id = contact.id
+
+        exported = await client.post("/api/crm/export/contacts?format=json")
+        assert exported.status_code == 200, exported.text
+        deleted = await client.delete(f"/api/memory/contacts/{contact_id}")
+        assert deleted.status_code == 200, deleted.text
+
+        imported = await client.post(
+            "/api/crm/import/contacts?update_existing=true",
+            files={"file": ("contacts.json", exported.content, "application/json")},
+        )
+
+        assert imported.status_code == 200, imported.text
+        db_session.expire_all()
+        restored = await db_session.get(Contact, contact_id)
+        assert restored is not None
+        assert restored.address == "1 rue de la Mémoire"
+        assert restored.next_follow_up == datetime(2026, 9, 15, 0, 0)
+        assert restored.extra_data == '{"origine":"salon"}'
+        assert restored.rgpd_base_legale == "contrat"
+        assert restored.rgpd_date_collecte == datetime(2026, 1, 2, 12, 0)
+        assert restored.rgpd_date_expiration == datetime(2029, 1, 2, 12, 0)
+        assert restored.rgpd_consentement is True
+        assert restored.purge_excluded is True
+        assert restored.scope == "project"
+        assert restored.scope_id == "project-client"
+        assert restored.score == 0
+        assert restored.created_at == datetime(2026, 1, 2, 12, 0)
+        assert restored.updated_at == datetime(2026, 8, 30, 18, 0)
 
 
 # ============================================================

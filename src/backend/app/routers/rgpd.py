@@ -17,6 +17,7 @@ from app.models.entities import (
     Contact,
     Deliverable,
     EmailMessage,
+    Prestation,
     Project,
     Task,
 )
@@ -193,6 +194,17 @@ async def anonymize_contact(
     contact.stage = "archive"
     contact.extra_data = None
     contact.updated_at = datetime.now(UTC)
+
+    # Incident du 30/08 : l'anonymisation effaçait l'identité mais conservait
+    # l'intitulé, le montant et le financeur sous la fiche [ANONYMISÉ]. Une
+    # prestation sans personne n'a pas de sens et doit disparaître ici aussi.
+    prestations = (
+        await session.execute(
+            select(Prestation).where(Prestation.contact_id == contact_id)
+        )
+    ).scalars().all()
+    for prestation in prestations:
+        await session.delete(prestation)
 
     # Delete activities
     result = await session.execute(
