@@ -6,6 +6,8 @@ et l'acces aux fichiers sensibles.
 """
 
 import logging
+import tempfile
+from functools import lru_cache
 from pathlib import Path
 
 logger = logging.getLogger(__name__)
@@ -51,6 +53,48 @@ DENIED_ABSOLUTE_PATHS = [
 ]
 
 
+def _dans_le_dossier_temporaire(chemin: Path) -> bool:
+    """Le dossier temporaire du processus echappe a la liste noire.
+
+    Sur macOS il vit sous /var/folders, soit /private/var une fois resolu :
+    sans cette exception, fermer la faille des racines systeme fermait aussi
+    l'ecriture de tout fichier temporaire. L'exception est bornee au dossier
+    temporaire courant, pas a la branche /var entiere.
+    """
+    try:
+        temporaire = Path(tempfile.gettempdir()).resolve()
+    except OSError:
+        return False
+    return chemin == temporaire or chemin.is_relative_to(temporaire)
+
+
+@lru_cache(maxsize=1)
+def _racines_interdites() -> tuple[str, ...]:
+    """Les racines interdites SOUS LEUR FORME RÉSOLUE, en plus de la littérale.
+
+    Trouvé le 31/08/2026 : la comparaison portait sur le chemin déjà passé par
+    `resolve()`, mais la liste restait littérale. Or sur macOS `/etc` se résout
+    en `/private/etc` et `/var` en `/private/var` : plus aucune entrée ne
+    pouvait correspondre, et `validate_file_path("/etc/passwd")` renvoyait le
+    chemin au lieu de lever. La protection était inerte sur la plateforme
+    principale de développement et de livraison, sans qu'aucun test la couvre.
+
+    Les deux formes sont conservées : la littérale vaut sur les systèmes où
+    ces répertoires ne sont pas des liens, la résolue vaut partout ailleurs.
+    """
+    racines: set[str] = set()
+    for brut in DENIED_ABSOLUTE_PATHS:
+        racines.add(brut)
+        try:
+            racines.add(str(Path(brut).resolve()))
+        except OSError:
+            # Une racine absente ou illisible reste interdite sous sa forme
+            # littérale : on ne relâche jamais une garde parce qu'on n'a pas
+            # pu la calculer.
+            continue
+    return tuple(sorted(racines))
+
+
 def validate_file_path(file_path: str | Path, allowed_base: Path | None = None) -> Path:
     """
     Valide qu'un chemin de fichier est sur pour la lecture.
@@ -75,10 +119,20 @@ def validate_file_path(file_path: str | Path, allowed_base: Path | None = None) 
 
     # Verifier les repertoires systeme interdits
     path_str = str(path)
-    for denied in DENIED_ABSOLUTE_PATHS:
-        if path_str.startswith(denied + "/") or path_str == denied:
-            logger.warning(f"Acces refuse (repertoire systeme) : {path}")
-            raise PermissionError("Acces interdit : les fichiers systeme ne sont pas accessibles")
+    # 31/08 : sur macOS le dossier temporaire de l'utilisateur vit sous
+    # /var/folders, donc sous /private/var une fois resolu. Refuser toute la
+    # branche fermait la faille ET les fichiers temporaires legitimes. Le
+    # dossier temporaire du processus prime donc sur la liste noire, et lui
+    # seul : /private/var/log reste interdit.
+    if _dans_le_dossier_temporaire(path):
+        pass
+    else:
+      for denied in _racines_interdites():
+          if path_str.startswith(denied + "/") or path_str == denied:
+              logger.warning(f"Acces refuse (repertoire systeme) : {path}")
+              raise PermissionError(
+                  "Acces interdit : les fichiers systeme ne sont pas accessibles"
+              )
 
     # Verifier les repertoires sensibles dans le home
     try:
