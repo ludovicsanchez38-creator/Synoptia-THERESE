@@ -642,13 +642,14 @@ async def _list_events_provider(
     if dt_min is not None and dt_max is not None:
         # Fenêtre bornée (mois de l'agenda) : tout ramener ou avouer.
         async def _page(token: str | None) -> tuple[list[Any], str | None]:
-            return await provider.list_events(
+            evenements, jeton = await provider.list_events(
                 calendar_id=calendar.id,
                 time_min=dt_min,
                 time_max=dt_max,
                 max_results=250,
                 page_token=token,
             )
+            return list(evenements), jeton
 
         events_dto = await _collecter_pages_evenements(_page)
     else:

@@ -39,7 +39,7 @@ router = APIRouter()
 PLAFOND_ILIKE_MEMOIRE = 200
 
 
-def _requete_contacts_mot_cle(query: str, plafond: int = PLAFOND_ILIKE_MEMOIRE):
+def _requete_contacts_mot_cle(query: str, plafond: int = PLAFOND_ILIKE_MEMOIRE) -> Any:
     like_pattern = f"%{query}%"
     return (
         select(Contact)
@@ -54,7 +54,7 @@ def _requete_contacts_mot_cle(query: str, plafond: int = PLAFOND_ILIKE_MEMOIRE):
     )
 
 
-def _requete_projets_mot_cle(query: str, plafond: int = PLAFOND_ILIKE_MEMOIRE):
+def _requete_projets_mot_cle(query: str, plafond: int = PLAFOND_ILIKE_MEMOIRE) -> Any:
     like_pattern = f"%{query}%"
     return (
         select(Project)
@@ -244,7 +244,7 @@ async def search_memory(
             entity_type = hit.get("type", "")
             title = ""
             content = ""
-            metadata: dict = {}
+            metadata: dict[str, Any] = {}
 
             if entity_type == "contact":
                 contact = contacts_par_id.get(entity_id)
