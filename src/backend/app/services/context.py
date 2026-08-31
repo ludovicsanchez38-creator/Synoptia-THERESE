@@ -6,6 +6,7 @@ Sprint 2 - PERF-2.1: Extracted from monolithic llm.py
 """
 
 from dataclasses import dataclass
+from typing import Any
 
 from app.services.providers.base import Message
 
@@ -63,27 +64,63 @@ class ContextWindow:
                 )
         return self
 
+    @staticmethod
+    def _a_du_fond(m: Message) -> bool:
+        """Un message porte du fond s'il a du texte OU une image.
+
+        31/08 : le filtre ne regardait que le texte. Déposer une capture sans
+        rien écrire, le geste le plus naturel qui soit, faisait disparaître le
+        message entier avant d'atteindre le modèle.
+        """
+        return bool((m.content and m.content.strip()) or m.images)
+
     def to_anthropic_format(self) -> tuple[str | None, list[dict]]:
         """Convert to Anthropic API format."""
         # Filter out empty messages (Anthropic rejects empty content)
-        messages = [
-            {"role": m.role, "content": m.content}
-            for m in self.messages
-            if m.content and m.content.strip()
-        ]
+        messages: list[dict[str, Any]] = []
+        for m in self.messages:
+            if not self._a_du_fond(m):
+                continue
+            if not m.images:
+                messages.append({"role": m.role, "content": m.content})
+                continue
+            blocs: list[dict[str, Any]] = []
+            if m.content and m.content.strip():
+                blocs.append({"type": "text", "text": m.content})
+            blocs.extend(
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": image.media_type,
+                        "data": image.donnees_base64,
+                    },
+                }
+                for image in m.images
+            )
+            messages.append({"role": m.role, "content": blocs})
         return self.system_prompt, messages
 
     def to_mistral_format(self) -> list[dict]:
         """Convert to Mistral API format."""
-        messages = []
+        messages: list[dict[str, Any]] = []
         if self.system_prompt:
             messages.append({"role": "system", "content": self.system_prompt})
         # Filter out empty messages
-        messages.extend([
-            {"role": m.role, "content": m.content}
-            for m in self.messages
-            if m.content and m.content.strip()
-        ])
+        for m in self.messages:
+            if not self._a_du_fond(m):
+                continue
+            if not m.images:
+                messages.append({"role": m.role, "content": m.content})
+                continue
+            blocs: list[dict[str, Any]] = []
+            if m.content and m.content.strip():
+                blocs.append({"type": "text", "text": m.content})
+            blocs.extend(
+                {"type": "image_url", "image_url": {"url": image.uri_donnees()}}
+                for image in m.images
+            )
+            messages.append({"role": m.role, "content": blocs})
         return messages
 
     def to_openai_format(self) -> list[dict]:
@@ -94,13 +131,22 @@ class ContextWindow:
         """Convert to Google Gemini API format."""
         # Gemini uses "contents" with "parts" and separate systemInstruction
         # Filter out empty messages (Gemini rejects empty parts)
-        contents = []
+        contents: list[dict[str, Any]] = []
         for msg in self.messages:
-            if not msg.content or not msg.content.strip():
+            if not self._a_du_fond(msg):
                 continue
             role = "user" if msg.role == "user" else "model"
-            contents.append({
-                "role": role,
-                "parts": [{"text": msg.content}]
-            })
+            parts: list[dict[str, Any]] = []
+            if msg.content and msg.content.strip():
+                parts.append({"text": msg.content})
+            parts.extend(
+                {
+                    "inline_data": {
+                        "mime_type": image.media_type,
+                        "data": image.donnees_base64,
+                    }
+                }
+                for image in msg.images
+            )
+            contents.append({"role": role, "parts": parts})
         return self.system_prompt, contents

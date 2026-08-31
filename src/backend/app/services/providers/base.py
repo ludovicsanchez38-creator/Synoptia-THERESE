@@ -8,7 +8,7 @@ Sprint 2 - PERF-2.1: Extracted from monolithic llm.py
 import json
 import logging
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, AsyncGenerator, Literal
 
@@ -96,11 +96,33 @@ class LLMConfig:
 
 
 @dataclass
+class ImageJointe:
+    """Une image transmise AU MODÈLE, jamais indexée comme du texte.
+
+    Incident du 31/08/2026 : déposer une capture d'écran dans le chat
+    répondait « Type de fichier non autorisé pour l'indexation ». L'image
+    partait dans la chaîne d'extraction de texte, qui ne sait rien en faire.
+    Une image n'est pas un document à lire, c'est un contenu à montrer.
+    """
+
+    media_type: str
+    donnees_base64: str
+
+    def uri_donnees(self) -> str:
+        """Forme attendue par les API de style OpenAI."""
+        return f"data:{self.media_type};base64,{self.donnees_base64}"
+
+
+@dataclass
 class Message:
     """Chat message."""
 
     role: Literal["user", "assistant", "system"]
     content: str
+    #: Images portées par ce message. Vide dans l'immense majorité des cas :
+    #: le format texte simple est conservé tant qu'il n'y en a pas, pour ne
+    #: rien changer aux échanges existants.
+    images: list[ImageJointe] = field(default_factory=list)
 
 
 @dataclass
