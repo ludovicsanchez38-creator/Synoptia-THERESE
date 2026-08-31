@@ -53,6 +53,19 @@ describe('ConversationProjectPicker', () => {
     expect((screen.getByRole('combobox') as HTMLSelectElement).value).toBe('');
   });
 
+  it('désambiguïse deux projets du même nom', async () => {
+    apiMocks.listProjects.mockResolvedValue([
+      { id: 'aaaa1111-projet-a', name: 'Chantier' },
+      { id: 'bbbb2222-projet-b', name: 'Chantier' },
+    ]);
+    render(<ConversationProjectPicker conversationId="conv-1" projectId={null} />);
+    await waitFor(() => expect(screen.getAllByRole('option', { name: /Chantier/ }).length).toBe(2));
+    const options = screen.getAllByRole('option', { name: /Chantier/ }) as HTMLOptionElement[];
+    expect(options[0].textContent).not.toBe(options[1].textContent);
+    expect(options[0].value).toBe('aaaa1111-projet-a');
+    expect(options[1].value).toBe('bbbb2222-projet-b');
+  });
+
   it('affiche le projet auquel la conversation est rattachée', async () => {
     render(<ConversationProjectPicker conversationId="conv-1" projectId="projet-b" />);
 

@@ -79,6 +79,7 @@ from app.services.workspace_tools import (
     WORKSPACE_TOOL_NAMES,
     WORKSPACE_TOOLS,
     execute_workspace_tool,
+    poser_ecran,
 )
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
@@ -89,6 +90,26 @@ from sqlmodel import select
 from starlette.concurrency import run_in_threadpool
 
 logger = logging.getLogger(__name__)
+
+
+def _attribution(llm_service: Any) -> tuple[str, str]:
+    """Fournisseur et modèle réels, y compris sur un faux LLM de test."""
+    methode = getattr(llm_service, "attribution", None)
+    if callable(methode):
+        resultat = methode()
+        if isinstance(resultat, tuple) and len(resultat) == 2:
+            return str(resultat[0]), str(resultat[1])
+        return "unknown", "unknown"
+    config = getattr(llm_service, "config", None)
+    if config is None:
+        return "unknown", "unknown"
+    provider = getattr(config, "provider", None)
+    if provider is not None and hasattr(provider, "value"):
+        nom = str(provider.value)
+    else:
+        nom = str(provider or "unknown")
+    modele = getattr(config, "model", None) or "unknown"
+    return nom, str(modele)
 
 router = APIRouter()
 
@@ -1589,6 +1610,8 @@ async def send_message(
                 pending_confirmations=inline_pending_confirmations,
                 allow_file_commands=produce_prompt is None,
                 detection_message=detection_message,
+                email_account_id=request.email_account_id,
+                calendar_id=request.calendar_id,
             ),
             media_type="text/event-stream",
             headers={
@@ -1741,10 +1764,11 @@ async def send_message(
     # ~1 mot = 2 tokens en filet (providers pas encore migrés, cf CLAUDE.md).
     input_tokens = usage_sink.get("input_tokens") or len(request.message.split()) * 2
     output_tokens = usage_sink.get("output_tokens") or len(assistant_content.split()) * 2
+    fournisseur, modele = _attribution(llm_service)
     get_token_tracker().record_usage(
         conversation_id=conversation.id,
-        model=llm_service.config.model,
-        provider=llm_service.config.provider.value,
+        model=modele,
+        provider=fournisseur,
         input_tokens=input_tokens,
         output_tokens=output_tokens,
     )
@@ -1753,8 +1777,8 @@ async def send_message(
         conversation_id=conversation.id,
         role="assistant",
         content=assistant_content,
-        model=llm_service.config.model,
-        provider=llm_service.config.provider.value,
+        model=modele,
+        provider=fournisseur,
         tokens_in=input_tokens,
         tokens_out=output_tokens,
     )
@@ -1765,8 +1789,8 @@ async def send_message(
         id=assistant_message.id,
         conversation_id=conversation.id,
         content=assistant_content,
-        model=llm_service.config.model,
-        provider=llm_service.config.provider.value,
+        model=modele,
+        provider=fournisseur,
         tokens_in=input_tokens,
         tokens_out=output_tokens,
         created_at=assistant_message.created_at,
@@ -1787,6 +1811,8 @@ async def _stream_response(
     pending_confirmations: list[dict[str, Any]] | None = None,
     allow_file_commands: bool = True,
     detection_message: str | None = None,
+    email_account_id: str | None = None,
+    calendar_id: str | None = None,
 ) -> AsyncGenerator[str, None]:
     """Stream response chunks as Server-Sent Events with MCP tool support."""
 
@@ -1873,6 +1899,8 @@ async def _stream_response(
         allow_file_commands=allow_file_commands,
         detection_message=detection_message,
         contexte=contexte_execution,
+        email_account_id=email_account_id,
+        calendar_id=calendar_id,
     )
     # Déclarées hors de la boucle : le `finally` doit pouvoir les neutraliser
     # même quand c'est le CLIENT qui disparaît en pleine attente (fenêtre
@@ -2014,12 +2042,13 @@ async def _persister_message_partiel(
             )
             if deja.scalars().first() is not None:
                 return
+            fournisseur, modele = _attribution(llm_service)
             session_partiel.add(Message(
                 conversation_id=conversation_id,
                 role="assistant",
                 content=contenu,
-                model=llm_service.config.model,
-                provider=llm_service.config.provider.value,
+                model=modele,
+                provider=fournisseur,
             ))
             await session_partiel.commit()
     except Exception:
@@ -2093,8 +2122,13 @@ async def _do_stream_response(
     allow_file_commands: bool = True,
     detection_message: str | None = None,
     contexte: ContexteExecution | None = None,
+    email_account_id: str | None = None,
+    calendar_id: str | None = None,
 ) -> AsyncGenerator[str, None]:
     """Internal streaming implementation."""
+    # Finding 1-2 (30/08) : coller le compte / l'agenda de l'écran AVANT
+    # tout outil. Confirm-tool rejoue depuis les arguments en attente.
+    poser_ecran(email_account_id=email_account_id, calendar_id=calendar_id)
 
     def _annulation_observee() -> bool:
         # 0.47 : le token de CETTE génération est l'autorité ; le drapeau
@@ -2543,12 +2577,13 @@ async def _do_stream_response(
             yield f"data: {json.dumps(fallback_chunk.model_dump())}\n\n"
 
     # Save complete assistant message
+    fournisseur, modele = _attribution(llm_service)
     assistant_message = Message(
         conversation_id=conversation_id,
         role="assistant",
         content=full_content,
-        model=llm_service.config.model,
-        provider=llm_service.config.provider.value,
+        model=modele,
+        provider=fournisseur,
     )
     # Track token usage and costs (US-ESC-02, US-ESC-04)
     #
@@ -2569,8 +2604,8 @@ async def _do_stream_response(
 
     usage_record = token_tracker.record_usage(
         conversation_id=conversation_id,
-        model=llm_service.config.model,
-        provider=llm_service.config.provider.value,
+        model=modele,
+        provider=fournisseur,
         input_tokens=input_tokens,
         output_tokens=output_tokens,
     )
@@ -2701,13 +2736,13 @@ async def _do_stream_response(
         message_id=assistant_message.id,
     )
     done_dict = done_data.model_dump()
-    done_dict["provider"] = llm_service.config.provider.value
+    done_dict["provider"] = fournisseur
     done_dict["usage"] = {
         "input_tokens": input_tokens,
         "output_tokens": output_tokens,
         "cost_eur": usage_record.cost_eur,
-        "model": llm_service.config.model,
-        "provider": llm_service.config.provider.value,
+        "model": modele,
+        "provider": fournisseur,
     }
     done_dict["uncertainty"] = uncertainty
     yield f"data: {json.dumps(done_dict)}\n\n"
@@ -2870,14 +2905,31 @@ async def _execute_tools_and_continue(
         # l'action était seulement mise en attente.
         if requires_confirmation(tc.name):
             pending_arguments = canoniser_arguments(tc.name, dict(tc.arguments))
-            if tc.name.split("__", 1)[-1] == "create_calendar_event" and session is not None:
+            outil_base = tc.name.split("__", 1)[-1]
+            if outil_base == "create_calendar_event" and session is not None:
                 from app.services.workspace_tools import (
                     get_calendar_confirmation_destination,
                 )
 
-                pending_arguments["_confirmation_destination"] = (
-                    await get_calendar_confirmation_destination(session)
+                try:
+                    destination = await get_calendar_confirmation_destination(session)
+                    pending_arguments["_confirmation_destination"] = destination
+                    if destination.get("calendar_id"):
+                        pending_arguments["_agenda_ecran"] = destination["calendar_id"]
+                except Exception:
+                    logger.debug("Destination agenda illisible pour la carte")
+            if outil_base == "send_email" and session is not None:
+                from app.services.workspace_tools import (
+                    get_email_confirmation_destination,
                 )
+
+                try:
+                    destination = await get_email_confirmation_destination(session)
+                    pending_arguments["_confirmation_destination"] = destination
+                    if destination.get("account_id"):
+                        pending_arguments["_compte_ecran"] = destination["account_id"]
+                except Exception:
+                    logger.debug("Expéditeur illisible pour la carte")
             logger.info(
                 "Outil sensible %s mis en attente de confirmation utilisateur "
                 "(NON exécuté), clés d'arguments : %s",
@@ -3273,6 +3325,15 @@ async def confirm_tool(
     tool_name, arguments, conversation_id = action
     if not request.approved:
         return {"status": "cancelled", "tool_name": tool_name}
+
+    # Finding 1 (30/08) : la confirmation est une autre requête. Sans
+    # reposer le compte collé à la carte, send_email retomberait sur
+    # le premier de la table.
+    destination = arguments.get("_confirmation_destination") or {}
+    poser_ecran(
+        email_account_id=arguments.get("_compte_ecran") or destination.get("account_id"),
+        calendar_id=arguments.get("_agenda_ecran") or destination.get("calendar_id"),
+    )
 
     from app.services.workspace_tools import (
         drain_generated_files,

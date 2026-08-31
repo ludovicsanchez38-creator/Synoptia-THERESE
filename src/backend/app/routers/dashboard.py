@@ -301,11 +301,30 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
                     select(Contact).where(func.lower(Contact.email).in_(attendee_emails))
                 )
             ).scalars().all()
+            from collections import Counter
+
+            cles = [
+                contact.email.strip().lower()
+                for contact in contacts
+                if contact.email and contact.email.strip()
+            ]
+            doublons = {cle for cle, n in Counter(cles).items() if n > 1}
+            # Finding 6 (30/08) : le dernier gagne dans un dict. Deux fiches
+            # jean@x.fr, et le brief collait l'une au hasard.
             contacts_by_email = {
                 contact.email.strip().lower(): contact
                 for contact in contacts
                 if contact.email and contact.email.strip()
+                and contact.email.strip().lower() not in doublons
             }
+
+        ids_agendas = {ev.calendar_id for ev in [*timed_events, *allday_events] if ev.calendar_id}
+        noms_agendas: dict[str, str] = {}
+        if ids_agendas:
+            agendas = (
+                await session.execute(select(Calendar).where(Calendar.id.in_(ids_agendas)))
+            ).scalars().all()
+            noms_agendas = {agenda.id: agenda.summary for agenda in agendas}
 
         for ev in [*timed_events, *allday_events]:
             event_attendees = attendee_emails_by_event[ev.id]
@@ -323,6 +342,9 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
                     for email in event_attendees
                     if email in contacts_by_email
                 ],
+                # Finding 2 (30/08) : sans le nom, l'accueil mélangeait
+                # tous les agendas comme s'il n'y en avait qu'un.
+                "calendar_name": noms_agendas.get(ev.calendar_id),
             })
     except Exception as e:
         logger.warning(f"Erreur lecture événements calendrier: {e}")

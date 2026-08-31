@@ -291,17 +291,16 @@ def _cloison_projets(
     return requete
 
 
-async def _find_existing_project(
+async def _lister_projets_homonymes(
     session: AsyncSession,
     name: str,
     scope: str | None = None,
     scope_id: str | None = None,
     conversation_id: str | None = None,
-) -> Project | None:
-    """Retourne un projet existant de meme nom (insensible casse/espaces)."""
+) -> list[Project]:
     norm = name.strip().lower()
     if not norm:
-        return None
+        return []
     result = await session.execute(
         _cloison_projets(
             select(Project).where(func.lower(func.trim(Project.name)) == norm),
@@ -310,7 +309,27 @@ async def _find_existing_project(
             conversation_id,
         )
     )
-    return result.scalars().first()
+    return list(result.scalars().all())
+
+
+async def _find_existing_project(
+    session: AsyncSession,
+    name: str,
+    scope: str | None = None,
+    scope_id: str | None = None,
+    conversation_id: str | None = None,
+) -> Project | None:
+    """Retourne UN projet de même nom, ou None s'il y en a zéro ou plusieurs.
+
+    Finding 7 (30/08) : `.first()` fusionnait deux « Chantier » de clients
+    distincts. Ambigu = on n'en réutilise aucun.
+    """
+    homonymes = await _lister_projets_homonymes(
+        session, name, scope=scope, scope_id=scope_id, conversation_id=conversation_id
+    )
+    if len(homonymes) != 1:
+        return None
+    return homonymes[0]
 
 
 def _cloison_contacts(
@@ -615,9 +634,22 @@ async def execute_create_project(
 
     # Deduplication : reutilise un projet de meme nom au lieu de creer un doublon
     # (regression "creation en masse" via les commandes / interpretees par le LLM).
+    # Finding 7 (30/08) : deux homonymes, `.first()` renvoyait l'id de l'autre
+    # client. Ambigu = refus, pas un troisième ni le mauvais.
     existing = await _find_existing_project(
         session, name, scope=scope, scope_id=scope_id, conversation_id=conversation_id
     )
+    if existing is None:
+        homonymes = await _lister_projets_homonymes(
+            session, name, scope=scope, scope_id=scope_id, conversation_id=conversation_id
+        )
+        if len(homonymes) > 1:
+            return json.dumps({
+                "error": (
+                    f"Plusieurs projets s'appellent « {name} ». "
+                    "Ouvre le bon depuis le sélecteur de dossier."
+                ),
+            }, ensure_ascii=False)
     if existing is not None:
         return json.dumps({
             "success": True,

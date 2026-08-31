@@ -18,6 +18,8 @@ import { InlineDropZone, FileChip } from '../files/DropZone';
 import { useChatStore, type Message } from '../../stores/chatStore';
 import { usePanelStore } from '../../stores/panelStore';
 import { useStatusStore } from '../../stores/statusStore';
+import { useEmailStore } from '../../stores/emailStore';
+import { useCalendarStore } from '../../stores/calendarStore';
 import {
   hasVariableTokens,
   previewVariables,
@@ -618,6 +620,8 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       // Stream response from backend (inclure skill_id si provient des guided prompts)
       const controller = new AbortController();
       abortRef.current = controller;
+      const compteEcran = useEmailStore.getState().currentAccountId;
+      const agendaEcran = useCalendarStore.getState().currentCalendarId;
       const stream = streamMessage({
         message: trimmed,
         conversation_id: syncedConversationId || undefined,
@@ -625,6 +629,11 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         stream: true,
         ...(pendingSkillId && { skill_id: pendingSkillId }),
         ...(filePaths && { file_paths: filePaths }),
+        // Finding 1-2 (30/08) : le compte / l'agenda de l'écran. Sans eux
+        // le backend refuse s'il y en a plusieurs, plutôt que de parler au
+        // premier de la table.
+        ...(compteEcran ? { email_account_id: compteEcran } : {}),
+        ...(agendaEcran ? { calendar_id: agendaEcran } : {}),
       }, controller.signal);
       // Consommer le skillId après envoi
       setPendingSkillId(undefined);

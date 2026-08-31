@@ -153,11 +153,14 @@ export function ConversationProjectPicker({
             « Toute la mémoire » par défaut aurait menti — le défaut est
             désormais le moindre privilège. */}
         <option value="">Documents généraux</option>
-        {projets.map((projet) => (
-          <option key={projet.id} value={projet.id}>
-            {projet.name}
-          </option>
-        ))}
+        {projets.map((projet) => {
+          const homonymes = projets.filter((p) => p.name === projet.name).length > 1;
+          return (
+            <option key={projet.id} value={projet.id}>
+              {homonymes ? `${projet.name} · ${projet.id.slice(0, 8)}` : projet.name}
+            </option>
+          );
+        })}
         <option value={TOUS_LES_PROJETS}>Tous les projets</option>
       </select>
     </label>

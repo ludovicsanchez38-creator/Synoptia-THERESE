@@ -64,8 +64,17 @@ function CalendarDetails({ confirmation }: { confirmation: PendingConfirmation }
 
 function EmailDetails({ confirmation }: { confirmation: PendingConfirmation }) {
   const args = confirmation.arguments;
+  const destination = (args._confirmation_destination || {}) as Record<string, unknown>;
+  const expediteur = value(destination, 'account');
+  const erreurDestination = value(destination, 'error');
   return (
     <dl className="mb-3 space-y-1 text-xs text-text-muted">
+      {/* Finding 1 (30/08) : sans l'expéditeur, on confirmait un envoi
+          dont on ne savait pas DE QUEL compte il partait. */}
+      {expediteur && <Detail label="De">{expediteur}</Detail>}
+      {erreurDestination && (
+        <div className="mt-1 rounded-md border border-error/30 bg-error/10 p-2 text-error">{erreurDestination}</div>
+      )}
       <Detail label="À">{value(args, 'to')}</Detail>
       <Detail label="Objet">{value(args, 'subject')}</Detail>
       <Detail label="Message">{value(args, 'body')}</Detail>

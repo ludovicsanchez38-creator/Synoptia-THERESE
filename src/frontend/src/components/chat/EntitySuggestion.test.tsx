@@ -68,6 +68,27 @@ describe('EntitySuggestion', () => {
     );
   });
 
+  it('ignorer un projet homonyme ne retire pas l’autre', async () => {
+    const onSaved = vi.fn();
+    render(
+      <EntitySuggestion
+        contacts={[]}
+        projects={[
+          { name: 'Chantier', description: 'A', budget: null, status: null, confidence: 0.8 },
+          { name: 'Chantier', description: 'B', budget: null, status: null, confidence: 0.7 },
+        ]}
+        messageId="m1"
+        onDismiss={vi.fn()}
+        onSaved={onSaved}
+      />
+    );
+    const ignorer = screen.getAllByTitle('Ignorer');
+    expect(ignorer).toHaveLength(2);
+    fireEvent.click(ignorer[0]);
+    await waitFor(() => expect(screen.getAllByTitle('Ignorer')).toHaveLength(1));
+    expect(screen.getByText('B')).toBeTruthy();
+  });
+
   it('ne rattache pas si aucune conversation courante (le contact reste global)', async () => {
     const createSpy = vi.fn().mockResolvedValue({ id: 'c9', first_name: 'Jean' });
     useContactsStore.setState({ createContact: createSpy });

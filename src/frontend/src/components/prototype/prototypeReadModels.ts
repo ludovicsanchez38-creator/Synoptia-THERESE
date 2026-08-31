@@ -100,6 +100,7 @@ function eventToAttention(event: DashboardEvent): TodayAttentionItem {
     title: event.summary,
     detail: [
       formatEventTime(event),
+      event.calendar_name,
       event.location,
       linkedToCrm
         ? `${event.crm_contact_ids.length} contact${event.crm_contact_ids.length > 1 ? 's' : ''} CRM`

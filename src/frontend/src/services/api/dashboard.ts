@@ -20,6 +20,7 @@ export interface DashboardEvent {
   all_day: boolean;
   attendees_count: number;
   crm_contact_ids: string[];
+  calendar_name?: string | null;
 }
 
 export interface DashboardTask {

@@ -159,7 +159,33 @@ async def list_calendars(
                 or (account.access_token and account.refresh_token)
             )
             if is_google:
-                return await _list_google_calendars(account_id, account, session)
+                google_cals = await _list_google_calendars(account_id, account, session)
+                # Finding 2 (30/08) : choisir Gmail pour le courrier vidait le
+                # menu Agenda de iCloud et du local. On les rajoute, filtrés.
+                if provider == "google":
+                    return google_cals
+                autres_stmt = select(Calendar).where(
+                    Calendar.provider.in_(("local", "caldav"))
+                )
+                if provider:
+                    autres_stmt = autres_stmt.where(Calendar.provider == provider)
+                autres = (await session.execute(autres_stmt)).scalars().all()
+                extras = [
+                    CalendarResponse(
+                        id=cal.id,
+                        account_id=cal.account_id,
+                        summary=cal.summary,
+                        description=cal.description,
+                        timezone=cal.timezone,
+                        primary=cal.primary,
+                        provider=cal.provider,
+                        synced_at=cal.synced_at.isoformat() if cal.synced_at else None,
+                    )
+                    for cal in autres
+                ]
+                if provider in ("local", "caldav"):
+                    return extras
+                return google_cals + extras
             else:
                 non_google_account = True
                 logger.warning(
@@ -251,6 +277,11 @@ async def _list_google_calendars(
             existing_cal = await session.get(Calendar, cal_id)
 
             if existing_cal:
+                # Finding 3 (30/08) : les fériés ont le même id Google sur
+                # deux comptes. Écrire ici volait la ligne de A (account_id
+                # inchangé, summary de B) : déconnecter A, et B 401.
+                if existing_cal.account_id != account_id:
+                    continue
                 existing_cal.summary = cal_data.get("summary", "")
                 existing_cal.description = cal_data.get("description")
                 existing_cal.timezone = cal_data.get("timeZone", "UTC")
@@ -675,6 +706,10 @@ async def _list_events_google(
             all_day = "date" in start_obj
 
             if existing_event:
+                # Finding 3 (30/08) : même id d'événement sur deux agendas
+                # Google. Le second sync écrasait le premier.
+                if existing_event.calendar_id != calendar_id:
+                    continue
                 existing_event.summary = event_data.get("summary", "")
                 existing_event.description = event_data.get("description")
                 existing_event.location = event_data.get("location")
@@ -1119,6 +1154,8 @@ async def update_event(
         )
 
         db_event = await session.get(CalendarEvent, event_id)
+        if db_event and db_event.calendar_id != calendar_id:
+            db_event = None
         if db_event:
             all_day_flag = "date" in event_data.get("start", {})
             start_obj = event_data["start"]
@@ -1204,7 +1241,7 @@ async def delete_event(
         await calendar_service.delete_event(calendar_id, event_id)
 
         db_event = await session.get(CalendarEvent, event_id)
-        if db_event:
+        if db_event and db_event.calendar_id == calendar_id:
             await session.delete(db_event)
             await session.commit()
 

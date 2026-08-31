@@ -16,6 +16,7 @@ import { Spinner } from '../ui/Spinner';
 export function EmailCompose() {
   const requestExternalAction = useExternalActionConfirmation();
   const {
+    accounts,
     currentAccountId,
     draftRecipients,
     draftCc,
@@ -90,7 +91,7 @@ export function EmailCompose() {
       description: 'Vérifie les destinataires et le contenu. L’envoi ne partira qu’après ta confirmation.',
       confirmLabel: 'Confirmer et envoyer',
       details: [
-        { label: 'Compte d’envoi', value: currentAccountId },
+        { label: 'Compte d’envoi', value: accounts.find((a) => a.id === currentAccountId)?.email || currentAccountId },
         { label: 'À', value: recipients.join(', ') },
         { label: 'Cc', value: ccList.join(', ') },
         { label: 'Cci', value: bccList.join(', ') },

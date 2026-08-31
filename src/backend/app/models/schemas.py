@@ -33,6 +33,11 @@ class ChatRequest(BaseModel):
     skill_id: str | None = None
     file_paths: list[str] | None = None
     disable_tools: bool = False  # BUG-097 : RFC mini-chat - désactiver les outils pour éviter les boucles
+    # Finding 1-2 (30/08) : le compte / l'agenda de l'écran. Sans eux, deux
+    # comptes font parler le chat au premier de la table. Optionnels : un
+    # seul compte reste utilisable comme avant.
+    email_account_id: str | None = None
+    calendar_id: str | None = None
 
 
 class ChatResponse(BaseModel):

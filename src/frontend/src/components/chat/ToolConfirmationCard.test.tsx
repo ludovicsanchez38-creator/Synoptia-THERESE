@@ -25,11 +25,17 @@ describe('ToolConfirmationCard (US-002)', () => {
     useToolConfirmationStore.getState().add({
       confirmation_id: 'a',
       tool_name: 'send_email',
-      arguments: { to: 'x@y.fr', subject: 'Sujet', body: 'Corps' },
+      arguments: {
+        to: 'x@y.fr',
+        subject: 'Sujet',
+        body: 'Corps',
+        _confirmation_destination: { account: 'b@imap.fr', account_id: 'acc-b' },
+      },
     });
     render(<ToolConfirmationCard />);
 
     expect(screen.queryByText('x@y.fr')).toBeTruthy();
+    expect(screen.queryByText('b@imap.fr')).toBeTruthy();
 
     fireEvent.click(screen.getByText('Envoyer'));
 
