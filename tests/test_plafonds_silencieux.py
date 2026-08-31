@@ -135,3 +135,50 @@ class TestF7RechercheMemoireBornee:
         stmt = _requete_projets_mot_cle("e")
         assert stmt._limit_clause is not None
         assert int(stmt._limit_clause.value) == PLAFOND_ILIKE_MEMOIRE
+
+
+class TestF8FichiersProjetEtExportRgpd:
+    """La liste des fichiers d'un projet n'avait pas de plafond. L'export RGPD
+    chargeait toute la base sur la boucle asyncio."""
+
+    @pytest.mark.asyncio
+    async def test_liste_fichiers_projet_avoue_la_troncature(
+        self, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+        from app.models.entities import FileMetadata, Project
+
+        projet = Project(name="Crawl")
+        db_session.add(projet)
+        await db_session.commit()
+        for i in range(3):
+            db_session.add(
+                FileMetadata(
+                    path=f"/tmp/crawl-{i}.md",
+                    name=f"page-{i}.md",
+                    extension="md",
+                    size=10,
+                    scope="project",
+                    scope_id=projet.id,
+                )
+            )
+        await db_session.commit()
+
+        resp = await client.get(
+            f"/api/memory/projects/{projet.id}/files",
+            params={"limit": 2},
+        )
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["truncated"] is True
+        assert body["total"] == 3
+        assert len(body["files"]) == 2
+
+    def test_export_rgpd_quitte_la_boucle(self) -> None:
+        import inspect
+
+        from app.routers import data as data_router
+
+        source = inspect.getsource(data_router.export_all_data)
+        assert "asyncio.to_thread" in source, (
+            "L'export RGPD doit quitter la boucle asyncio, sinon l'app ne répond plus"
+        )

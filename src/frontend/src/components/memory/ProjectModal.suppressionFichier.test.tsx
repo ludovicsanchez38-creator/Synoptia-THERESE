@@ -58,7 +58,7 @@ describe('La suppression d’un fichier joint demande confirmation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockDeleteFile.mockResolvedValue(undefined);
-    mockListFiles.mockResolvedValue([FICHIER]);
+    mockListFiles.mockResolvedValue({ files: [FICHIER], total: 1, truncated: false });
   });
 
   async function ouvrir() {

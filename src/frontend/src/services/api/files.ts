@@ -98,11 +98,24 @@ export async function uploadProjectFile(
   return response.json();
 }
 
+export interface ProjectFilesList {
+  files: FileMetadata[];
+  total: number;
+  truncated: boolean;
+}
+
 /**
  * Liste les fichiers associés à un projet.
  */
 export async function listProjectFiles(
   projectId: string,
-): Promise<FileMetadata[]> {
-  return request<FileMetadata[]>(`/api/memory/projects/${projectId}/files`);
+): Promise<ProjectFilesList> {
+  const data = await request<FileMetadata[] | ProjectFilesList>(
+    `/api/memory/projects/${projectId}/files`,
+  );
+  // Ancien contrat = tableau nu. Le nouveau dit s'il a coupé.
+  if (Array.isArray(data)) {
+    return { files: data, total: data.length, truncated: false };
+  }
+  return data;
 }

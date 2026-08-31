@@ -26,6 +26,7 @@ from app.services.audit import AuditAction, log_activity
 from app.services.qdrant import get_qdrant_service
 from app.services.scoring import update_contact_score
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
+from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -969,16 +970,28 @@ async def get_project(
 @router.get("/projects/{project_id}/files")
 async def list_project_files(
     project_id: str,
+    limit: int = Query(default=200, ge=1, le=500),
     session: AsyncSession = Depends(get_session),
 ):
     """Liste les fichiers associés à un projet."""
-    result = await session.execute(
-        select(FileMetadata).where(
-            FileMetadata.scope == "project",
-            FileMetadata.scope_id == project_id,
-        )
+    # Lot F : un projet crawlé au millier envoyait le millier de lignes
+    # au modal, sur la boucle. On borne, et on dit si on a coupé.
+    filtre = (
+        (FileMetadata.scope == "project")
+        & (FileMetadata.scope_id == project_id)
     )
-    return result.scalars().all()
+    total = (
+        await session.execute(select(func.count()).select_from(FileMetadata).where(filtre))
+    ).scalar() or 0
+    result = await session.execute(
+        select(FileMetadata).where(filtre).order_by(FileMetadata.name).limit(limit)
+    )
+    files = result.scalars().all()
+    return {
+        "files": files,
+        "total": total,
+        "truncated": total > len(files),
+    }
 
 
 @router.patch("/projects/{project_id}", response_model=ProjectResponse)

@@ -58,6 +58,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
   const boutonSuppressionRef = useRef<HTMLButtonElement | null>(null);
   const [loadingContacts, setLoadingContacts] = useState(false);
   const [projectFiles, setProjectFiles] = useState<api.FileMetadata[]>([]);
+  const [fichiersTronques, setFichiersTronques] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -82,8 +83,9 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
 
   async function loadProjectFiles(projectId: string) {
     try {
-      const files = await api.listProjectFiles(projectId);
+      const { files, truncated } = await api.listProjectFiles(projectId);
       setProjectFiles(files);
+      setFichiersTronques(truncated);
     } catch (err) {
       console.error('Erreur chargement fichiers projet :', err);
     }
@@ -414,6 +416,11 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                     Fichiers du projet
                   </label>
                   {/* Liste des fichiers */}
+                  {fichiersTronques && (
+                    <p role="alert" className="text-sm text-warning">
+                      Liste incomplète : seuls les fichiers les plus récents sont affichés.
+                    </p>
+                  )}
                   {projectFiles.length > 0 && (
                     <div className="space-y-1">
                       {projectFiles.map((f) => (
