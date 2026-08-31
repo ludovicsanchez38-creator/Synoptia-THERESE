@@ -8,9 +8,8 @@ import asyncio
 import contextlib
 import logging
 import os
-import shutil
 from pathlib import Path
-from typing import Awaitable, Callable
+from typing import Awaitable, BinaryIO, Callable
 
 from app.config import settings
 from app.models.database import get_session, get_session_context
@@ -23,6 +22,7 @@ from app.services.indexation import (
     index_payload,
     remplacer_puis_indexer,
 )
+from app.services.path_security import MAX_INDEXABLE_SIZE
 from app.services.traitements import TraitementHandle
 from fastapi import APIRouter, Depends, Form, HTTPException, Query, Request, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -427,6 +427,57 @@ async def get_file_content(
 ALLOWED_UPLOAD_EXTENSIONS = {".md", ".txt", ".csv", ".xlsx", ".pdf", ".docx"}
 
 
+class NomDeFichierInvalide(ValueError):
+    """Revue 30/08 : un nom en `../` ou avec `/` sortait du dossier projet."""
+
+
+class FichierTropVolumineux(ValueError):
+    """Revue 30/08 : la limite 50 Mo n'était lue qu'après la copie disque."""
+
+
+def chemin_de_depot(therese_dir: Path, filename: str) -> Path:
+    # Revue 30/08 : `therese_dir / file.filename` avant toute validation.
+    # Un `../` sortait du dossier projet, un `/` créait des sous-dossiers.
+    # On refuse le nom plutôt que de le replier en silence : l'utilisateur
+    # saurait qu'il doit renvoyer, pas qu'un fichier a atterri ailleurs.
+    if not filename or filename in (".", ".."):
+        raise NomDeFichierInvalide("Nom de fichier invalide")
+    if "/" in filename or "\\" in filename:
+        raise NomDeFichierInvalide("Nom de fichier invalide")
+    if Path(filename).name != filename:
+        raise NomDeFichierInvalide("Nom de fichier invalide")
+    dest = (therese_dir / filename).resolve()
+    racine = therese_dir.resolve()
+    if dest == racine or not dest.is_relative_to(racine):
+        raise NomDeFichierInvalide("Nom de fichier invalide")
+    return dest
+
+
+def copier_plafonne(source: BinaryIO, dest: Path, plafond: int) -> None:
+    # Revue 30/08 : la limite n'existait qu'après l'écriture. Un 800 Mo
+    # était copié en entier avant d'être refusé. On compte pendant la copie
+    # et on retire le partiel : rien n'est livré au-delà du plafond.
+    ecrit = 0
+    try:
+        with dest.open("wb") as f:
+            while True:
+                bloc = source.read(1024 * 1024)
+                if not bloc:
+                    break
+                ecrit += len(bloc)
+                if ecrit > plafond:
+                    raise FichierTropVolumineux(
+                        "Le fichier dépasse la limite de 50 Mo"
+                    )
+                f.write(bloc)
+    except FichierTropVolumineux:
+        dest.unlink(missing_ok=True)
+        raise
+    except Exception:
+        dest.unlink(missing_ok=True)
+        raise
+
+
 @router.post("/upload", response_model=FileResponse)
 async def upload_file(
     file: UploadFile,
@@ -473,12 +524,14 @@ async def upload_file(
     # transaction longue pendant l'extraction, et vecteurs supprimés AVANT que
     # le nouveau contenu soit prêt (l'inverse de l'invariant N1). Déposer un
     # fichier DANS un projet est un geste explicite : périmètre voulu.
-    dest_path = therese_dir / file.filename
+    try:
+        dest_path = chemin_de_depot(therese_dir, file.filename)
+    except NomDeFichierInvalide as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
     temporaire = dest_path.with_name(dest_path.name + ".therese-tmp")
 
     def _copier_vers_temporaire() -> None:
-        with temporaire.open("wb") as f:
-            shutil.copyfileobj(file.file, f)
+        copier_plafonne(file.file, temporaire, MAX_INDEXABLE_SIZE)
 
     def _remplacer() -> None:
         # Écriture ATOMIQUE : une erreur de copie ne doit jamais tronquer le
@@ -500,6 +553,8 @@ async def upload_file(
                 await run_in_threadpool(_remplacer)
             except IndexationAbandonnee:
                 raise
+            except FichierTropVolumineux as e:
+                raise HTTPException(status_code=413, detail=str(e)) from e
             except Exception as e:
                 logger.error(f"Erreur sauvegarde fichier : {e}")
                 raise HTTPException(
