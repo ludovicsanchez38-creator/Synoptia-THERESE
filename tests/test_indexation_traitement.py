@@ -499,7 +499,6 @@ class TestLeSecondPanel:
         l'entrée dans le dépôt. Un arrêt posé pendant la copie (longue sur
         un gros fichier) doit préserver la version en place."""
         import io
-        import shutil as shutil_module
 
         from app.routers import files as surface
 
@@ -516,16 +515,21 @@ class TestLeSecondPanel:
         chemin = Path(resp.json()["path"])
         assert chemin.read_bytes() == b"VERSION UN"
 
-        copie_originale = shutil_module.copyfileobj
+        # 31/08 : le dépôt ne passe plus par `shutil.copyfileobj` mais par
+        # `copier_plafonne` (lot G, plafond appliqué PENDANT la copie). On
+        # accroche le nouveau point de copie ; la garantie vérifiée est la
+        # même : un arrêt posé pendant la copie ne doit pas laisser
+        # `os.replace` écraser la version en place.
+        copie_originale = surface.copier_plafonne
 
-        def copie_pendant_laquelle_on_annule(src, dst, *a, **k):
-            copie_originale(src, dst, *a, **k)
+        def copie_pendant_laquelle_on_annule(source, dest, plafond):
+            copie_originale(source, dest, plafond)
             # l'utilisateur clique Arrêter pendant la (longue) copie :
             # l'évènement du panneau est posé par l'adaptateur
             surface._arrets_de_test_p28.set()
 
         monkeypatch.setattr(
-            surface.shutil, "copyfileobj", copie_pendant_laquelle_on_annule
+            surface, "copier_plafonne", copie_pendant_laquelle_on_annule
         )
 
         # brancher l'évènement de l'enveloppe pour ce test : on passe par
