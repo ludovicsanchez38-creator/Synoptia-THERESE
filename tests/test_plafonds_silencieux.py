@@ -6,10 +6,9 @@ Un plafond sans le dire est un faux résultat : l'utilisateur croit tout voir.
 from datetime import UTC, datetime, timedelta
 
 import pytest
+from app.models.entities import Conversation, Message
 from httpx import AsyncClient
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.models.entities import Conversation, Message
 
 
 class TestF1ConversationMessagesPlusRecents:
@@ -104,9 +103,8 @@ class TestF6AgendaCollecteToutesLesPages:
 
     @pytest.mark.asyncio
     async def test_plafond_dit_lechec_plutot_que_de_rendre_un_mois_faux(self) -> None:
-        from fastapi import HTTPException
-
         from app.routers.calendar import PLAFOND_EVENEMENTS_FENETRE, _collecter_pages_evenements
+        from fastapi import HTTPException
 
         async def fetch_page(token: str | None):
             offset = int(token or "0")
