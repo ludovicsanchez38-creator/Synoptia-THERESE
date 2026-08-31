@@ -31,6 +31,7 @@ def get_email_provider(
     smtp_port: int = 587,
     use_ssl: bool = True,
     smtp_use_tls: bool = True,
+    allow_insecure_tls: bool = False,
 ) -> EmailProvider:
     """
     Create an email provider based on configuration.
@@ -75,6 +76,7 @@ def get_email_provider(
             smtp_port=smtp_port,
             use_ssl=use_ssl,
             smtp_use_tls=smtp_use_tls,
+            allow_insecure_tls=allow_insecure_tls,
         )
 
     else:

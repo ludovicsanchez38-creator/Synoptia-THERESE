@@ -134,6 +134,7 @@ class ImapSmtpProvider(EmailProvider):
         smtp_port: int = 587,
         use_ssl: bool = True,
         smtp_use_tls: bool = True,
+        allow_insecure_tls: bool = False,
     ):
         """
         Initialize IMAP/SMTP provider.
@@ -156,6 +157,13 @@ class ImapSmtpProvider(EmailProvider):
         self._smtp_port = smtp_port
         self._use_ssl = use_ssl
         self._smtp_use_tls = smtp_use_tls
+        # 31/08/2026 : toute erreur TLS declenchait un second essai SANS
+        # verification, qui rejouait l'adresse et le mot de passe. Un
+        # intermediaire presentant un certificat quelconque provoquait
+        # l'erreur et recevait les identifiants. La souplesse necessaire aux
+        # serveurs d'entreprise auto-signes reste possible, mais elle devient
+        # un choix explicite de l'utilisateur, jamais un repli automatique.
+        self._allow_insecure_tls = allow_insecure_tls
 
     @property
     def provider_name(self) -> str:
@@ -218,8 +226,18 @@ class ImapSmtpProvider(EmailProvider):
             mb = self._create_mailbox(timeout=timeout)
             return mb.login(self._email, self._password, initial_folder=initial_folder)
         except ssl.SSLError as e:
+            if not self._allow_insecure_tls:
+                logger.error(
+                    "IMAP : certificat refuse pour %s. Le mot de passe n'a PAS "
+                    "ete renvoye. Si ce serveur utilise un certificat "
+                    "auto-signe connu de toi, active explicitement la "
+                    "connexion sans verification pour ce compte. Detail : %s",
+                    self._imap_host, e,
+                )
+                raise
             logger.warning(
-                f"IMAP SSL error for {self._imap_host}, retrying with permissive SSL: {e}"
+                f"IMAP SSL error for {self._imap_host}, retrying with permissive SSL "
+                f"(consenti explicitement pour ce compte) : {e}"
             )
             mb = self._create_mailbox_permissive(timeout=timeout)
             return mb.login(self._email, self._password, initial_folder=initial_folder)
