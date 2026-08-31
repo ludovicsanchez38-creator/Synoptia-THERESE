@@ -1,0 +1,235 @@
+diff --git a/src/frontend/src/components/calendar/CalendarPanel.tsx b/src/frontend/src/components/calendar/CalendarPanel.tsx
+index 1f1008cf..1e70b735 100644
+--- a/src/frontend/src/components/calendar/CalendarPanel.tsx
++++ b/src/frontend/src/components/calendar/CalendarPanel.tsx
+@@ -25,6 +25,7 @@ import { CalendarView } from './CalendarView';
+ import { EventForm } from './EventForm';
+ import { EventDetail } from './EventDetail';
+ import { classifyCalendarError } from './calendarErrors';
++import { fenetreIsoDuMoisCivil } from '../../lib/civilDate';
+ import { Button } from '../ui/Button';
+ import * as api from '../../services/api';
+ import { useStatusStore } from '../../stores/statusStore';
+@@ -154,10 +155,6 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
+     setError(null);
+ 
+     try {
+-      // Load events for the selected month
+-      const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
+-      const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
+-
+       // L'account_id doit venir du calendrier sélectionné, pas seulement du
+       // compte email « courant » qui peut être vide (ouverture de l'agenda à
+       // froid) : un calendrier Google sans account_id renvoyait 400 (recette
+@@ -165,9 +162,10 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
+       const currentCal = calendars.find((cal) => cal.id === currentCalendarId);
+       const effectiveAccountId = currentCal?.account_id || currentAccountId || undefined;
+ 
++      const { timeMin, timeMax } = fenetreIsoDuMoisCivil(selectedDate);
+       const evts = await api.listEvents(effectiveAccountId, currentCalendarId, {
+-        time_min: startOfMonth.toISOString(),
+-        time_max: endOfMonth.toISOString(),
++        time_min: timeMin,
++        time_max: timeMax,
+         max_results: 250,
+       });
+ 
+diff --git a/src/frontend/src/components/calendar/EventForm.test.tsx b/src/frontend/src/components/calendar/EventForm.test.tsx
+index df2d0101..55d47888 100644
+--- a/src/frontend/src/components/calendar/EventForm.test.tsx
++++ b/src/frontend/src/components/calendar/EventForm.test.tsx
+@@ -4,6 +4,7 @@ import type { CalendarEvent } from '../../services/api';
+ import { PrototypeExternalActionConfirmationProvider } from '../app/ExternalActionConfirmation';
+ import { useCalendarStore } from '../../stores/calendarStore';
+ import { useEmailStore } from '../../stores/emailStore';
++import { localDateKey } from '../../lib/civilDate';
+ import { EventForm } from './EventForm';
+ 
+ const { createEventMock, updateEventMock } = vi.hoisted(() => ({
+@@ -193,3 +194,34 @@ describe('EventForm - horaires par défaut à cheval sur minuit', () => {
+     expect(fin).toBe('2026-07-16');
+   });
+ });
++
++describe('EventForm - édition à cheval sur minuit UTC', () => {
++  beforeEach(() => {
++    vi.clearAllMocks();
++    updateEventMock.mockResolvedValue(existingEvent);
++  });
++
++  it('affiche le jour civil local, pas la date UTC', () => {
++    // Revue 30/08 : en édition, `toISOString().split('T')[0]` + `toTimeString()`
++    // mélangeait UTC et local. Un RDV le 20 à 00 h 30 Paris s'affichait le 19.
++    const event: CalendarEvent = {
++      ...existingEvent,
++      start_datetime: '2026-07-20T00:30:00',
++      end_datetime: '2026-07-20T01:30:00',
++    };
++    seedCalendar(event);
++    render(
++      <PrototypeExternalActionConfirmationProvider>
++        <EventForm />
++      </PrototypeExternalActionConfirmationProvider>,
++    );
++
++    const dates = screen.getAllByDisplayValue(/^\d{4}-\d{2}-\d{2}$/);
++    const debut = (dates[0] as HTMLInputElement).value;
++    const start = new Date(event.start_datetime!);
++    expect(debut).toBe(localDateKey(start));
++    if (start.getTimezoneOffset() < 0) {
++      expect(debut).not.toBe(start.toISOString().split('T')[0]);
++    }
++  });
++});
+diff --git a/src/frontend/src/components/calendar/EventForm.tsx b/src/frontend/src/components/calendar/EventForm.tsx
+index d84a9f71..d4d1456c 100644
+--- a/src/frontend/src/components/calendar/EventForm.tsx
++++ b/src/frontend/src/components/calendar/EventForm.tsx
+@@ -69,9 +69,11 @@ export function EventForm() {
+       } else {
+         const start = new Date(event.start_datetime!);
+         const end = new Date(event.end_datetime!);
+-        setStartDate(start.toISOString().split('T')[0]);
++        // Revue 30/08 : toISOString en édition (pas à la création) décalait
++        // d'un jour un RDV à 00 h 30. La création utilisait déjà localDateKey.
++        setStartDate(localDateKey(start));
+         setStartTime(start.toTimeString().slice(0, 5));
+-        setEndDate(end.toISOString().split('T')[0]);
++        setEndDate(localDateKey(end));
+         setEndTime(end.toTimeString().slice(0, 5));
+       }
+ 
+diff --git a/src/frontend/src/components/invoices/InvoiceForm.test.tsx b/src/frontend/src/components/invoices/InvoiceForm.test.tsx
+index 38e0fdc8..feb50468 100644
+--- a/src/frontend/src/components/invoices/InvoiceForm.test.tsx
++++ b/src/frontend/src/components/invoices/InvoiceForm.test.tsx
+@@ -1,5 +1,5 @@
+ import { render, screen, waitFor, act, fireEvent } from '@testing-library/react';
+-import { beforeEach, describe, expect, it, vi } from 'vitest';
++import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+ 
+ import { InvoiceForm } from './InvoiceForm';
+ import { useBillingProfileStore } from '../../stores/billingProfileStore';
+@@ -246,3 +246,34 @@ describe('InvoiceForm - confirmations métier 0.40', () => {
+     });
+   });
+ });
++
++describe('InvoiceForm dates civiles', () => {
++  beforeEach(() => {
++    vi.clearAllMocks();
++    createInvoiceMock.mockResolvedValue({ id: 'inv-1' });
++    getBillingProfileStatusMock.mockResolvedValue({ is_complete: true, missing: [] });
++    useBillingProfileStore.setState({ missing: null });
++    useStatusStore.setState({ connectionState: 'connected' });
++  });
++
++  afterEach(() => {
++    vi.useRealTimers();
++  });
++
++  it("prend le jour civil local, pas la date UTC, à 00 h 30", async () => {
++    // Revue 30/08 : `toISOString().split('T')[0]` à 00 h 30 en France
++    // datait la facture de la veille. Le numéro, lui, prenait l'année UTC.
++    vi.useFakeTimers({ toFake: ['Date'] });
++    vi.setSystemTime(new Date(2026, 6, 18, 0, 30, 0));
++
++    render(
++      <PrototypeExternalActionConfirmationProvider>
++        <InvoiceForm invoice={null} onClose={vi.fn()} onSave={vi.fn()} />
++      </PrototypeExternalActionConfirmationProvider>,
++    );
++
++    const emission = await screen.findByLabelText(/Date d'emission/i);
++    expect(emission).toHaveValue('2026-07-18');
++    expect(screen.getByLabelText(/Date d'échéance/i)).toHaveValue('2026-08-17');
++  });
++});
+diff --git a/src/frontend/src/components/invoices/InvoiceForm.tsx b/src/frontend/src/components/invoices/InvoiceForm.tsx
+index 1e1e5e4d..cbd46147 100644
+--- a/src/frontend/src/components/invoices/InvoiceForm.tsx
++++ b/src/frontend/src/components/invoices/InvoiceForm.tsx
+@@ -12,6 +12,7 @@ import { X, Plus, Trash2, Save, FileCheck, AlertTriangle } from 'lucide-react';
+ import { createInvoice, updateInvoice, convertDevisToInvoice, updateDevisStatus, type Invoice, type InvoiceLineRequest, listContacts, type Contact, markInvoicePaid } from '../../services/api';
+ import { useStatusStore } from '../../stores/statusStore';
+ import { useBillingProfileStore } from '../../stores/billingProfileStore';
++import { localDateKey } from '../../lib/civilDate';
+ import { cn } from '../../lib/utils';
+ import { Z_LAYER } from '../../styles/z-layers';
+ import { useExternalActionConfirmation } from '../app/useExternalActionConfirmation';
+@@ -95,7 +96,9 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
+     }
+     const date = new Date();
+     date.setDate(date.getDate() + 30);
+-    return date.toISOString().split('T')[0];
++    // Revue 30/08 : toISOString à 00 h 30 en France datait l'échéance
++    // de la veille. localDateKey suit le jour civil, comme le calendrier.
++    return localDateKey(date);
+   });
+   const [status, setStatus] = useState(invoice?.status || 'draft');
+   const [notes, setNotes] = useState(invoice?.notes || '');
+diff --git a/src/frontend/src/lib/civilDate.test.ts b/src/frontend/src/lib/civilDate.test.ts
+index ed346429..1c41ef3a 100644
+--- a/src/frontend/src/lib/civilDate.test.ts
++++ b/src/frontend/src/lib/civilDate.test.ts
+@@ -1,5 +1,8 @@
++import { readFileSync } from 'node:fs';
++import path from 'node:path';
++
+ import { describe, expect, it } from 'vitest';
+-import { localDateKey } from './civilDate';
++import { fenetreIsoDuMoisCivil, localDateKey } from './civilDate';
+ 
+ describe('localDateKey - clé de jour civile', () => {
+   it('reflète la date locale, pas la date UTC', () => {
+@@ -17,3 +20,29 @@ describe('localDateKey - clé de jour civile', () => {
+     expect(localDateKey(new Date(2026, 0, 5, 12))).toBe('2026-01-05');
+   });
+ });
++
++describe('fenetreIsoDuMoisCivil - dernier jour du mois inclus', () => {
++  // Revue 30/08 : timeMax Google est exclusif. Minuit local du dernier jour
++  // via toISOString coupait tout le 31 (et le 29 février) : la case existait,
++  // les événements du jour n'y étaient pas.
++  it('inclut le midi du 29 février 2028', () => {
++    const { timeMin, timeMax } = fenetreIsoDuMoisCivil(new Date(2028, 1, 15));
++    const midi = new Date(2028, 1, 29, 12, 0, 0);
++    expect(midi.getTime()).toBeGreaterThanOrEqual(new Date(timeMin).getTime());
++    expect(midi.getTime()).toBeLessThan(new Date(timeMax).getTime());
++  });
++
++  it('l’ancienne borne (minuit du dernier jour) excluait ce midi', () => {
++    const midi = new Date(2028, 1, 29, 12, 0, 0);
++    const ancienneFin = new Date(2028, 2, 0);
++    expect(midi.getTime()).toBeGreaterThanOrEqual(ancienneFin.getTime());
++  });
++
++  it('est réellement utilisée par le panneau calendrier', () => {
++    const source = readFileSync(
++      path.join(__dirname, '..', 'components', 'calendar', 'CalendarPanel.tsx'),
++      'utf8',
++    );
++    expect(source).toContain('fenetreIsoDuMoisCivil');
++  });
++});
+diff --git a/src/frontend/src/lib/civilDate.ts b/src/frontend/src/lib/civilDate.ts
+index 508973df..8470a1a2 100644
+--- a/src/frontend/src/lib/civilDate.ts
++++ b/src/frontend/src/lib/civilDate.ts
+@@ -12,3 +12,16 @@ export function localDateKey(d: Date): string {
+   const day = String(d.getDate()).padStart(2, '0');
+   return `${d.getFullYear()}-${month}-${day}`;
+ }
++
++/**
++ * Fenêtre d'un mois civil pour un `timeMax` exclusif (Google Calendar).
++ *
++ * Revue 30/08 : minuit local du dernier jour, passé par `toISOString()`,
++ * coupait tout le 31 et le 29 février. On prend minuit local du 1er du
++ * mois suivant.
++ */
++export function fenetreIsoDuMoisCivil(d: Date): { timeMin: string; timeMax: string } {
++  const debut = new Date(d.getFullYear(), d.getMonth(), 1);
++  const finExclusive = new Date(d.getFullYear(), d.getMonth() + 1, 1);
++  return { timeMin: debut.toISOString(), timeMax: finExclusive.toISOString() };
++}

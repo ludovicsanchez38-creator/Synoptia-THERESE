@@ -1,0 +1,2124 @@
+diff --git a/src/backend/app/models/database.py b/src/backend/app/models/database.py
+index 504eda30..d59aeb98 100644
+--- a/src/backend/app/models/database.py
++++ b/src/backend/app/models/database.py
+@@ -97,6 +97,105 @@ def ensure_invoice_legacy_columns(
+     return added_columns
+ 
+ 
++def _ensure_invoice_client_snapshot(conn: sqlite3.Connection) -> list[str]:
++    """Ajoute et remplit le destinataire figé des pièces existantes.
++
++    Une facture orpheline ne permet plus de reconstruire une identité fiable :
++    dans ce cas le démarrage échoue avant toute colonne ajoutée, au lieu de
++    consacrer silencieusement un snapshot vide.
++    """
++    invoice_columns = {
++        row[1] for row in conn.execute("PRAGMA table_info(invoices)").fetchall()
++    }
++    if not invoice_columns:
++        return []
++
++    invoice_count = conn.execute("SELECT COUNT(*) FROM invoices").fetchone()[0]
++    contact_table = conn.execute(
++        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='contacts'"
++    ).fetchone()
++    if invoice_count and contact_table is None:
++        raise RuntimeError(
++            "Migration des factures impossible : la table contacts est absente"
++        )
++    definitions = {
++        "client_name": "TEXT",
++        "client_company": "TEXT",
++        "client_email": "TEXT",
++        "client_phone": "TEXT",
++        "client_address": "TEXT",
++    }
++    missing_columns = set(definitions) - invoice_columns
++    # Une pièce déjà migrée peut légitimement avoir perdu sa fiche CRM : son
++    # snapshot est justement là pour cela. L'absence du contact ne bloque que
++    # les lignes qu'il reste réellement à reconstruire.
++    needs_backfill = bool(missing_columns)
++    if not needs_backfill and invoice_count:
++        needs_backfill = conn.execute(
++            "SELECT 1 FROM invoices WHERE client_name IS NULL "
++            "OR TRIM(client_name) = '' LIMIT 1"
++        ).fetchone() is not None
++
++    if invoice_count and needs_backfill:
++        orphan_condition = (
++            ""
++            if missing_columns
++            else "AND (i.client_name IS NULL OR TRIM(i.client_name) = '')"
++        )
++        orphan = conn.execute(
++            "SELECT i.id FROM invoices i LEFT JOIN contacts c ON c.id = i.contact_id "
++            f"WHERE c.id IS NULL {orphan_condition} LIMIT 1"
++        ).fetchone()
++        if orphan is not None:
++            raise RuntimeError(
++                "Migration des factures impossible : le contact de la pièce "
++                f"{orphan[0]} est introuvable"
++            )
++
++    added: list[str] = []
++    for column_name, definition in definitions.items():
++        if column_name not in invoice_columns:
++            conn.execute(
++                f"ALTER TABLE invoices ADD COLUMN {column_name} {definition}"
++            )
++            added.append(column_name)
++
++    if invoice_count and needs_backfill:
++        where_clause = "1 = 1" if missing_columns else (
++            "client_name IS NULL OR TRIM(client_name) = ''"
++        )
++        conn.execute(
++            f"""
++            UPDATE invoices
++            SET client_name = (
++                    SELECT CASE
++                        WHEN TRIM(COALESCE(c.first_name, '') || ' ' || COALESCE(c.last_name, '')) != ''
++                        THEN TRIM(COALESCE(c.first_name, '') || ' ' || COALESCE(c.last_name, ''))
++                        WHEN COALESCE(c.company, '') != '' THEN c.company
++                        ELSE 'Sans nom'
++                    END
++                    FROM contacts c WHERE c.id = invoices.contact_id
++                ),
++                client_company = (SELECT c.company FROM contacts c WHERE c.id = invoices.contact_id),
++                client_email = (SELECT c.email FROM contacts c WHERE c.id = invoices.contact_id),
++                client_phone = (SELECT c.phone FROM contacts c WHERE c.id = invoices.contact_id),
++                client_address = (SELECT c.address FROM contacts c WHERE c.id = invoices.contact_id)
++            WHERE {where_clause}
++            """
++        )
++        missing = conn.execute(
++            "SELECT id FROM invoices WHERE client_name IS NULL "
++            "OR TRIM(client_name) = '' LIMIT 1"
++        ).fetchone()
++        if missing is not None:
++            raise RuntimeError(
++                "Migration des factures incomplète : snapshot absent pour la pièce "
++                f"{missing[0]}"
++            )
++    conn.commit()
++    return added
++
++
+ def apply_adhoc_migrations(db_path) -> None:
+     """Migrations ad-hoc idempotentes (desktop : pas d'alembic auto historique).
+ 
+@@ -117,6 +216,12 @@ def apply_adhoc_migrations(db_path) -> None:
+             conn.execute("ALTER TABLE invoices ADD COLUMN currency TEXT DEFAULT 'EUR'")
+             conn.commit()
+             logger.info("Migration auto : colonne 'currency' ajoutée à la table invoices")
++        snapshot_columns = _ensure_invoice_client_snapshot(conn)
++        if snapshot_columns:
++            logger.info(
++                "Migration auto : snapshot destinataire ajouté aux factures (%s)",
++                ", ".join(snapshot_columns),
++            )
+         # 0.56 : cloison de l'agenda par dossier. NULLABLE et SANS backfill -
+         # les evenements d'avant la 0.56 n'appartiennent a aucun dossier et
+         # restent visibles partout. Les coller au premier dossier venu ferait
+@@ -436,7 +541,7 @@ def apply_adhoc_migrations(db_path) -> None:
+ # Le test tests/test_alembic_stamp.py vérifie que cette constante suit la
+ # vraie tête de src/backend/alembic/versions (épinglée en dur pour que
+ # l'app PACKAGÉE puisse estampiller sans embarquer le dossier alembic/).
+-ALEMBIC_HEAD_REVISION = "e5f6a7b8c9d0"
++ALEMBIC_HEAD_REVISION = "f6a7b8c9d0e1"
+ 
+ 
+ def ensure_alembic_stamp(db_path) -> None:
+@@ -528,6 +633,13 @@ def ensure_alembic_stamp(db_path) -> None:
+                     )
+                     if (
+                         "validite_jours" in inv_cols
++                        and {
++                            "client_name",
++                            "client_company",
++                            "client_email",
++                            "client_phone",
++                            "client_address",
++                        } <= inv_cols
+                         and has_variables
+                         and has_board_history
+                         and has_atelier_history
+diff --git a/src/backend/app/models/entities.py b/src/backend/app/models/entities.py
+index 68ca58ad..761c467d 100644
+--- a/src/backend/app/models/entities.py
++++ b/src/backend/app/models/entities.py
+@@ -57,7 +57,15 @@ class Contact(SQLModel, table=True):
+     # Relationships
+     projects: list["Project"] = Relationship(back_populates="contact")
+     activities: list["Activity"] = Relationship(back_populates="contact", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
+-    invoices: list["Invoice"] = Relationship(back_populates="contact", cascade_delete=True)
++    # Une pièce comptable survit à la suppression de la fiche CRM. Le snapshot
++    # destinataire ci-dessous reste la source légale du document historique.
++    invoices: list["Invoice"] = Relationship(
++        back_populates="contact",
++        # SQLite garde le contact_id historique sans FK active. Sans
++        # passive_deletes="all", SQLAlchemy tente de le passer à NULL et la
++        # suppression CRM échoue malgré le snapshot complet.
++        sa_relationship_kwargs={"passive_deletes": "all"},
++    )
+ 
+     @property
+     def display_name(self) -> str:
+@@ -566,6 +574,13 @@ class Invoice(SQLModel, table=True):
+     id: str = Field(default_factory=generate_uuid, primary_key=True)
+     invoice_number: str = Field(unique=True, index=True)  # FACT-2026-001, DEV-2026-001, AV-2026-001
+     contact_id: str = Field(foreign_key="contacts.id", index=True)
++    # Copie figée du destinataire. Le lien CRM reste utile pour naviguer tant
++    # que la fiche existe, mais ne doit jamais réécrire une pièce passée.
++    client_name: str | None = None
++    client_company: str | None = None
++    client_email: str | None = None
++    client_phone: str | None = None
++    client_address: str | None = None
+     document_type: str = Field(default="facture", index=True)  # devis, facture, avoir
+     tva_applicable: bool = Field(default=True)  # Si False: "TVA non applicable, art. 293 B du CGI"
+     currency: str = Field(default="EUR")  # EUR, CHF, USD, GBP
+diff --git a/src/backend/app/routers/calendar.py b/src/backend/app/routers/calendar.py
+index 861685ba..8839e0ba 100644
+--- a/src/backend/app/routers/calendar.py
++++ b/src/backend/app/routers/calendar.py
+@@ -112,6 +112,19 @@ def _google_allday_end_exclusive(end_value: str) -> str:
+     return exclusive.isoformat()
+ 
+ 
++def _google_datetime_civile(value: str, timezone: str | None = None) -> datetime:
++    """Normalise un instant Google en heure murale Europe/Paris pour SQLite.
++
++    Le schéma historique stocke des DateTime naïfs. Conserver tantôt `Z`,
++    tantôt `+02:00`, faisait dépendre le brief du format renvoyé par Google.
++    La conversion est donc faite explicitement à la frontière fournisseur.
++    """
++    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
++    if parsed.tzinfo is None:
++        parsed = parsed.replace(tzinfo=ZoneInfo(_validate_timezone(timezone)))
++    return parsed.astimezone(ZoneInfo("Europe/Paris")).replace(tzinfo=None)
++
++
+ # ============================================================
+ # Helper Functions
+ # ============================================================
+@@ -771,11 +784,11 @@ async def _list_events_google(
+                     existing_event.start_date = start_obj.get("date")
+                     existing_event.end_date = _google_allday_end_inclusive(start_obj, end_obj)
+                 else:
+-                    existing_event.start_datetime = datetime.fromisoformat(
+-                        start_obj["dateTime"].replace("Z", "")
++                    existing_event.start_datetime = _google_datetime_civile(
++                        start_obj["dateTime"], start_obj.get("timeZone")
+                     )
+-                    existing_event.end_datetime = datetime.fromisoformat(
+-                        end_obj["dateTime"].replace("Z", "")
++                    existing_event.end_datetime = _google_datetime_civile(
++                        end_obj["dateTime"], end_obj.get("timeZone")
+                     )
+                 existing_event.all_day = all_day
+                 existing_event.attendees = json.dumps(
+@@ -796,12 +809,16 @@ async def _list_events_google(
+                     start_date=start_obj.get("date") if all_day else None,
+                     end_date=_google_allday_end_inclusive(start_obj, end_obj) if all_day else None,
+                     start_datetime=(
+-                        datetime.fromisoformat(start_obj["dateTime"].replace("Z", ""))
++                        _google_datetime_civile(
++                            start_obj["dateTime"], start_obj.get("timeZone")
++                        )
+                         if not all_day
+                         else None
+                     ),
+                     end_datetime=(
+-                        datetime.fromisoformat(end_obj["dateTime"].replace("Z", ""))
++                        _google_datetime_civile(
++                            end_obj["dateTime"], end_obj.get("timeZone")
++                        )
+                         if not all_day
+                         else None
+                     ),
+diff --git a/src/backend/app/routers/dashboard.py b/src/backend/app/routers/dashboard.py
+index 9c385cbc..aaba74a1 100644
+--- a/src/backend/app/routers/dashboard.py
++++ b/src/backend/app/routers/dashboard.py
+@@ -8,7 +8,7 @@ Données 100% locales SQLite, pas d'appel LLM.
+ import json
+ import logging
+ import os
+-from datetime import date, datetime, timedelta
++from datetime import UTC, datetime, timedelta
+ from typing import Any
+ 
+ from app.models.database import get_session
+@@ -23,9 +23,10 @@ from app.models.entities import (
+     Preference,
+     Task,
+ )
++from app.services.civil_time import date_civile_paris
+ from app.services.user_profile import get_cached_profile
+ from fastapi import APIRouter, Depends
+-from sqlalchemy import and_, func
++from sqlalchemy import and_, func, or_
+ from sqlalchemy.ext.asyncio import AsyncSession
+ from sqlalchemy.orm import selectinload
+ from sqlmodel import select
+@@ -256,12 +257,12 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
+     factures impayées > 30j et relances échues (date posée).
+     Conçu pour se charger en <500ms (SQLite local, pas d'appel réseau).
+     """
+-    today = date.today()
++    today = date_civile_paris(datetime.now(UTC))
+     today_dt = datetime.combine(today, datetime.min.time())
+     tomorrow_dt = datetime.combine(today + timedelta(days=1), datetime.min.time())
+-    thirty_days_ago = datetime.now() - timedelta(days=30)
++    thirty_days_ago = today_dt - timedelta(days=30)
+     today_str = today.isoformat()  # "YYYY-MM-DD" pour all-day events
+-    follow_up_horizon = (today + timedelta(days=2)).isoformat() + "T23:59:59"
++    follow_up_horizon = (today + timedelta(days=2)).isoformat()
+ 
+     # --- RDV du jour (CalendarEvent) ---
+     events_today = []
+@@ -277,11 +278,16 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
+         result_timed = await session.execute(stmt_timed)
+         timed_events = result_timed.scalars().all()
+ 
+-        # Events all-day (start_date == today)
++        # La fin est inclusive dans le modèle local : un événement du 29 au
++        # 31 doit rester visible le 30, pas uniquement son jour de départ.
+         stmt_allday = select(CalendarEvent).where(
+             and_(
+                 CalendarEvent.all_day == True,  # noqa: E712
+-                CalendarEvent.start_date == today_str,
++                CalendarEvent.start_date <= today_str,
++                or_(
++                    CalendarEvent.end_date == None,  # noqa: E711
++                    CalendarEvent.end_date >= today_str,
++                ),
+                 CalendarEvent.status != "cancelled",
+             )
+         )
+@@ -391,7 +397,7 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
+             await session.execute(
+                 select(EmailFollowUp)
+                 .where(EmailFollowUp.status == "pending")
+-                .where(EmailFollowUp.due_date <= follow_up_horizon)
++                .where(func.substr(EmailFollowUp.due_date, 1, 10) <= follow_up_horizon)
+                 .order_by(EmailFollowUp.due_date.asc(), EmailFollowUp.id.asc())
+             )
+         ).scalars().all()
+@@ -446,7 +452,8 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
+                 # B4 : le brief affichait « Facture FACT-2026-001 » — une
+                 # référence, pas un client. L'artisan cherche Garcia.
+                 "contact_name": (
+-                    getattr(inv.contact, "display_name", None) if inv.contact else None
++                    inv.client_name
++                    or (getattr(inv.contact, "display_name", None) if inv.contact else None)
+                 ),
+                 "total_ttc": inv.total_ttc,
+                 "currency": inv.currency,
+diff --git a/src/backend/app/routers/data.py b/src/backend/app/routers/data.py
+index c6163c3c..c1570c6c 100644
+--- a/src/backend/app/routers/data.py
++++ b/src/backend/app/routers/data.py
+@@ -38,6 +38,7 @@ from app.models.entities import (
+     Message,
+     Notification,
+     Preference,
++    Prestation,
+     Project,
+     PromptTemplate,
+     Task,
+@@ -154,6 +155,7 @@ def _assembler_export_rgpd() -> dict[str, Any]:
+         calendars = (session.execute(select(Calendar))).scalars().all()
+         calendar_events = (session.execute(select(CalendarEvent))).scalars().all()
+         tasks = (session.execute(select(Task))).scalars().all()
++        prestations = (session.execute(select(Prestation))).scalars().all()
+         invoices = (session.execute(select(Invoice))).scalars().all()
+         invoice_lines = (session.execute(select(InvoiceLine))).scalars().all()
+         activities = (session.execute(select(Activity))).scalars().all()
+@@ -173,7 +175,9 @@ def _assembler_export_rgpd() -> dict[str, Any]:
+         export_data = {
+             "exported_at": datetime.now(UTC).isoformat(),
+             "app_version": settings.app_version,
+-            "data_format_version": "1.2",  # 1.2 : couverture de toutes les tables utilisateur
++            # Lot D : l'ajout des prestations change le contrat portable. Garder
++            # 1.2 ferait croire à un export complet aux anciens consommateurs.
++            "data_format_version": "1.3",
+             "variables": [
+                 {
+                     "id": v.id,
+@@ -255,6 +259,7 @@ def _assembler_export_rgpd() -> dict[str, Any]:
+                 for item in calendar_events
+             ],
+             "tasks": [_export_row(item, json_fields=("tags",)) for item in tasks],
++            "prestations": [_export_row(item) for item in prestations],
+             "invoices": [_export_row(item) for item in invoices],
+             "invoice_lines": [_export_row(item) for item in invoice_lines],
+             "activities": [
+@@ -417,11 +422,21 @@ async def export_conversations(
+                 {
+                     "id": conv.id,
+                     "title": conv.title,
++                    "summary": conv.summary,
++                    "project_id": conv.project_id,
++                    "memory_scope": conv.memory_scope,
+                     "created_at": conv.created_at.isoformat(),
++                    "updated_at": conv.updated_at.isoformat(),
+                     "messages": [
+                         {
++                            "id": m.id,
+                             "role": m.role,
+                             "content": m.content,
++                            "tokens_in": m.tokens_in,
++                            "tokens_out": m.tokens_out,
++                            "model": m.model,
++                            "provider": m.provider,
++                            "extra_data": m.extra_data,
+                             "created_at": m.created_at.isoformat(),
+                         }
+                         for m in sorted(
+@@ -490,6 +505,9 @@ async def delete_all_data(
+     await session.execute(delete(EmailMessage))
+     await session.execute(delete(EmailAccount))
+     await session.execute(delete(Task))
++    # Une prestation contient montant et financeur : la laisser derrière une
++    # fiche effacée violerait précisément la promesse « toutes mes données ».
++    await session.execute(delete(Prestation))
+     await session.execute(delete(Deliverable))
+     await session.execute(delete(Activity))
+     await session.execute(delete(PromptTemplate))
+@@ -759,8 +777,7 @@ def _checkpoint_db() -> bool:
+ 
+ 
+ def _create_archive(archive_path) -> list[str]:
+-    """Crée une archive .tar.gz complète : DB (checkpointée) + Qdrant + images
+-    + mcp_servers.json + clé de chiffrement. Retourne la liste des éléments inclus.
++    """Crée une archive complète : DB, index, images et fichiers Office.
+ 
+     Revue adversariale US-014 : sans .encryption_key, le backup n'était PLUS
+     restaurable après perte de la machine (DB chiffrée, clé dans le Keychain
+@@ -779,6 +796,9 @@ def _create_archive(archive_path) -> list[str]:
+         (db_path, "therese.db"),
+         (Path(settings.qdrant_path) if settings.qdrant_path else None, "qdrant"),
+         (data_dir / "images", "images"),
++        # Les messages persistent leurs boutons de téléchargement. Sans le
++        # fichier associé, restaurer la DB fabrique un succès qui mène à 404.
++        (data_dir / "outputs", "outputs"),
+         (data_dir / "mcp_servers.json", "mcp_servers.json"),
+         (data_dir / "export_profile.json", "export_profile.json"),
+         (data_dir / ".encryption_key", ".encryption_key"),
+@@ -1177,8 +1197,8 @@ async def restore_backup(
+             raise HTTPException(status_code=400, detail=str(exc)) from exc
+         archive = decrypted_temp
+ 
+-    # US-011 : filet de sécurité COMPLET (DB + Qdrant + images + MCP), pas juste
+-    # la DB, pour pouvoir faire un rollback intégral si l'extraction échoue.
++    # US-011 : filet de sécurité COMPLET (DB, Qdrant, images, outputs et MCP),
++    # pour pouvoir faire un rollback intégral si l'extraction échoue.
+     # %f : deux restaurations dans la même seconde ne doivent pas se partager
+     # la même archive de sécurité.
+     current_backup_name = f"pre_restore_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S_%f')}"
+@@ -1186,17 +1206,17 @@ async def restore_backup(
+     safety_included: list[str] = []
+ 
+     def _wipe_volatile_dirs() -> None:
+-        # Restore PROPRE : on retire qdrant/ et images/ avant extraction pour ne
+-        # pas laisser d'orphelins (fichiers créés après le backup).
+-        for sub in ("qdrant", "images"):
++        # Restore PROPRE : les fichiers produits après la sauvegarde ne doivent
++        # pas se mélanger à l'état restauré ni garder des boutons fantômes.
++        for sub in ("qdrant", "images", "outputs"):
+             p = data_dir / sub
+             if p.exists():
+                 shutil.rmtree(p, ignore_errors=True)
+ 
+     def _rollback() -> None:
+         # Rollback INTÉGRAL depuis l'archive de sécurité (état d'avant restore).
+-        # _wipe_volatile_dirs() a pu détruire qdrant/ et images/ avant qu'une
+-        # erreur (corruption OU archive piégée) ne survienne : on remet tout.
++        # _wipe_volatile_dirs() a pu détruire les artefacts avant qu'une erreur
++        # (corruption OU archive piégée) ne survienne : on remet tout.
+         try:
+             _wipe_volatile_dirs()
+             with tarfile.open(safety_archive, "r:gz") as tar:
+@@ -1383,22 +1403,59 @@ async def import_conversations(
+             continue  # Skip existing
+ 
+         # Create conversation
+-        conversation = Conversation(
+-            id=conv_data.get("id"),  # Preserve ID if provided
+-            title=conv_data.get("title"),
+-            summary=conv_data.get("summary"),
+-        )
++        conversation_kwargs: dict[str, Any] = {
++            "title": conv_data.get("title"),
++            "summary": conv_data.get("summary"),
++            "project_id": conv_data.get("project_id"),
++            "memory_scope": conv_data.get("memory_scope") or "global",
++        }
++        if conv_data.get("id"):
++            conversation_kwargs["id"] = conv_data["id"]
++        for field in ("created_at", "updated_at"):
++            if conv_data.get(field):
++                try:
++                    conversation_kwargs[field] = datetime.fromisoformat(
++                        str(conv_data[field]).replace("Z", "+00:00")
++                    )
++                except ValueError as exc:
++                    raise HTTPException(
++                        status_code=400,
++                        detail=f"Date de conversation invalide ({field})",
++                    ) from exc
++        conversation = Conversation(**conversation_kwargs)
+         session.add(conversation)
+         await session.flush()
+         imported["conversations"] += 1
+ 
+         # Import messages
+         for msg_data in conv_data.get("messages", []):
+-            message = Message(
+-                conversation_id=conversation.id,
+-                role=msg_data.get("role", "user"),
+-                content=msg_data.get("content", ""),
+-            )
++            message_kwargs: dict[str, Any] = {
++                "conversation_id": conversation.id,
++                "role": msg_data.get("role", "user"),
++                "content": msg_data.get("content", ""),
++                "tokens_in": msg_data.get("tokens_in"),
++                "tokens_out": msg_data.get("tokens_out"),
++                "model": msg_data.get("model"),
++                "provider": msg_data.get("provider"),
++                "extra_data": (
++                    json.dumps(msg_data["extra_data"], ensure_ascii=False)
++                    if isinstance(msg_data.get("extra_data"), (dict, list))
++                    else msg_data.get("extra_data")
++                ),
++            }
++            if msg_data.get("id"):
++                message_kwargs["id"] = msg_data["id"]
++            if msg_data.get("created_at"):
++                try:
++                    message_kwargs["created_at"] = datetime.fromisoformat(
++                        str(msg_data["created_at"]).replace("Z", "+00:00")
++                    )
++                except ValueError as exc:
++                    raise HTTPException(
++                        status_code=400,
++                        detail="Date de message invalide (created_at)",
++                    ) from exc
++            message = Message(**message_kwargs)
+             session.add(message)
+             imported["messages"] += 1
+ 
+diff --git a/src/backend/app/routers/follow_ups.py b/src/backend/app/routers/follow_ups.py
+index 14029d10..35cc1156 100644
+--- a/src/backend/app/routers/follow_ups.py
++++ b/src/backend/app/routers/follow_ups.py
+@@ -15,7 +15,9 @@ from app.models.schemas_email import (
+     FollowUpResponse,
+     UpdateFollowUpRequest,
+ )
++from app.services.civil_time import date_civile_paris
+ from fastapi import APIRouter, Depends, HTTPException, Query
++from sqlalchemy import func
+ from sqlalchemy.ext.asyncio import AsyncSession
+ from sqlmodel import select
+ 
+@@ -128,12 +130,12 @@ async def list_due_follow_ups(
+     """
+     Liste les suivis échus ou du jour (status=pending, due_date <= aujourd'hui).
+     """
+-    today = datetime.now(UTC).strftime("%Y-%m-%d")
++    today = date_civile_paris(datetime.now(UTC)).isoformat()
+ 
+     statement = (
+         select(EmailFollowUp)
+         .where(EmailFollowUp.status == "pending")
+-        .where(EmailFollowUp.due_date <= today + "T23:59:59")
++        .where(func.substr(EmailFollowUp.due_date, 1, 10) <= today)
+         .order_by(EmailFollowUp.due_date.asc())
+     )
+ 
+diff --git a/src/backend/app/routers/invoices.py b/src/backend/app/routers/invoices.py
+index ed96d970..84a2f0c3 100644
+--- a/src/backend/app/routers/invoices.py
++++ b/src/backend/app/routers/invoices.py
+@@ -160,9 +160,9 @@ def _invoice_to_response(invoice: Invoice) -> InvoiceResponse:
+     # Le contact n'est présent que si l'appelant a chargé la relation
+     # (`selectinload`). On ne le force pas ici : un accès paresseux dans un
+     # contexte async lèverait.
+-    nom_du_client = None
++    nom_du_client = invoice.client_name
+     contact = invoice.__dict__.get("contact")
+-    if contact is not None:
++    if nom_du_client is None and contact is not None:
+         nom_du_client = (
+             getattr(contact, "display_name", None)
+             or " ".join(
+@@ -200,6 +200,36 @@ def _invoice_to_response(invoice: Invoice) -> InvoiceResponse:
+     )
+ 
+ 
++def _snapshot_du_contact(contact: Contact) -> dict[str, str | None]:
++    """Copie l'identité utilisée par une pièce, une seule fois."""
++    return {
++        "client_name": contact.display_name,
++        "client_company": contact.company,
++        "client_email": contact.email,
++        "client_phone": contact.phone,
++        "client_address": contact.address,
++    }
++
++
++def _snapshot_de_la_piece(invoice: Invoice) -> dict[str, str | None]:
++    """Refuse de fabriquer un document quand son destinataire n'est pas figé."""
++    if not invoice.client_name:
++        raise HTTPException(
++            status_code=409,
++            detail=(
++                "Destinataire historique absent : génération refusée pour ne pas "
++                "produire une pièce comptable fausse."
++            ),
++        )
++    return {
++        "name": invoice.client_name,
++        "company": invoice.client_company or "",
++        "email": invoice.client_email or "",
++        "phone": invoice.client_phone or "",
++        "address": invoice.client_address or "",
++    }
++
++
+ # Routes "collection" exposees avec ET sans slash final pour eviter la
+ # redirection 307 (le frontend appelle sans slash, les tests avec slash).
+ @router.get("", response_model=list[InvoiceResponse], include_in_schema=False)
+@@ -301,6 +331,7 @@ async def create_invoice(
+     invoice = Invoice(
+         invoice_number=invoice_number,
+         contact_id=request.contact_id,
++        **_snapshot_du_contact(contact),
+         document_type=document_type,
+         tva_applicable=request.tva_applicable,
+         currency=request.currency,
+@@ -393,6 +424,8 @@ async def update_invoice(
+         if not contact:
+             raise HTTPException(status_code=404, detail="Contact not found")
+         invoice.contact_id = request.contact_id
++        for field, value in _snapshot_du_contact(contact).items():
++            setattr(invoice, field, value)
+ 
+     if request.currency is not None:
+         invoice.currency = request.currency
+@@ -559,6 +592,11 @@ async def convert_invoice(
+         invoice_number=new_number,
+         document_type=target_type,
+         contact_id=source.contact_id,
++        client_name=source.client_name,
++        client_company=source.client_company,
++        client_email=source.client_email,
++        client_phone=source.client_phone,
++        client_address=source.client_address,
+         currency=source.currency,
+         issue_date=datetime.now(UTC),
+         due_date=source.due_date,
+@@ -637,11 +675,6 @@ async def generate_invoice_pdf(
+     if not invoice:
+         raise HTTPException(status_code=404, detail="Invoice not found")
+ 
+-    # Récupérer le contact
+-    contact = await session.get(Contact,invoice.contact_id)
+-    if not contact:
+-        raise HTTPException(status_code=404, detail="Contact not found")
+-
+     # Récupérer le profil utilisateur (dataclass → dict pour .get())
+     _profile = get_cached_profile()
+ 
+@@ -691,13 +724,7 @@ async def generate_invoice_pdf(
+         ],
+     }
+ 
+-    contact_data = {
+-        "name": contact.display_name,
+-        "company": contact.company or "",
+-        "email": contact.email or "",
+-        "phone": contact.phone or "",
+-        "address": contact.address or "",
+-    }
++    contact_data = _snapshot_de_la_piece(invoice)
+ 
+     user_profile_data = {
+         "name": user_profile.get("name", ""),
+@@ -827,6 +854,11 @@ async def convert_devis_to_invoice(
+     new_invoice = Invoice(
+         invoice_number=invoice_number,
+         contact_id=devis.contact_id,
++        client_name=devis.client_name,
++        client_company=devis.client_company,
++        client_email=devis.client_email,
++        client_phone=devis.client_phone,
++        client_address=devis.client_address,
+         document_type="facture",
+         tva_applicable=devis.tva_applicable,
+         currency=devis.currency,
+diff --git a/src/backend/app/routers/memory.py b/src/backend/app/routers/memory.py
+index ed95f2ba..39e28ee9 100644
+--- a/src/backend/app/routers/memory.py
++++ b/src/backend/app/routers/memory.py
+@@ -176,6 +176,78 @@ async def _delete_embedding(entity_id: str) -> None:
+         logger.warning(f"Failed to delete embedding {entity_id}: {e}")
+ 
+ 
++async def _nettoyer_et_supprimer_projet(
++    session: AsyncSession, project: Project
++) -> dict[str, int]:
++    """Supprime un dossier sans conserver de référence sur son identifiant.
++
++    Qdrant passe avant SQLite et ses erreurs remontent. Après l'incident du
++    30/08, supprimer la ligne tout en servant encore ses fragments serait un
++    faux succès plus grave qu'une suppression refusée.
++    """
++    from app.models.entities import CalendarEvent, Document
++    from app.services.project_sync_service import retirer_racine
++
++    project_id = project.id
++    files = (
++        await session.execute(
++            select(FileMetadata).where(
++                FileMetadata.scope == "project",
++                FileMetadata.scope_id == project_id,
++            )
++        )
++    ).scalars().all()
++
++    qdrant = get_qdrant_service()
++    for file in files:
++        await qdrant.async_delete_by_entity(file.id)
++    await qdrant.async_delete_by_entity(project_id)
++
++    # La racine vit dans une transaction dédiée avec ses propres verrous. Elle
++    # est détachée avant le commit métier pour qu'un dossier supprimé ne bloque
++    # jamais la réutilisation du même chemin après redémarrage.
++    await retirer_racine(project_id)
++
++    for file in files:
++        await session.delete(file)
++
++    conversations = (
++        await session.execute(
++            select(Conversation).where(Conversation.project_id == project_id)
++        )
++    ).scalars().all()
++    for conversation in conversations:
++        conversation.project_id = None
++        conversation.memory_scope = "global"
++        session.add(conversation)
++
++    documents = (
++        await session.execute(
++            select(Document).where(Document.project_id == project_id)
++        )
++    ).scalars().all()
++    for document in documents:
++        document.project_id = None
++        session.add(document)
++
++    events = (
++        await session.execute(
++            select(CalendarEvent).where(CalendarEvent.project_id == project_id)
++        )
++    ).scalars().all()
++    for event in events:
++        event.project_id = None
++        session.add(event)
++
++    await session.delete(project)
++    return {
++        "files": len(files),
++        "conversations_detachees": len(conversations),
++        "documents_detaches": len(documents),
++        "evenements_detaches": len(events),
++    }
++
++
+ # ============================================================
+ # Search Endpoints
+ # ============================================================
+@@ -788,8 +860,9 @@ async def delete_contact(
+         )
+         projects = projects_result.scalars().all()
+         for project in projects:
+-            await _delete_embedding(project.id)
+-            await session.delete(project)
++            counts = await _nettoyer_et_supprimer_projet(session, project)
++            for key, count in counts.items():
++                cascade_deleted[key] = cascade_deleted.get(key, 0) + count
+         cascade_deleted["projects"] = len(projects)
+ 
+         # Delete scoped files
+@@ -802,7 +875,7 @@ async def delete_contact(
+         for file in files:
+             await _delete_embedding(file.id)
+             await session.delete(file)
+-        cascade_deleted["files"] = len(files)
++        cascade_deleted["files"] = cascade_deleted.get("files", 0) + len(files)
+ 
+     contact_name = contact.display_name
+     await session.delete(contact)
+@@ -1071,61 +1144,18 @@ async def delete_project(
+         project_id: ID of the project to delete
+         cascade: If True, also delete scoped files
+     """
+-    # project.sync (0.45) : ménage explicite - les FK SQLite ne sont pas
+-    # activées, une racine orpheline bloquerait ce dossier pour toujours.
+-    from app.services.project_sync_service import retirer_racine
+-
+-    await retirer_racine(project_id)
+-
+     result = await session.execute(select(Project).where(Project.id == project_id))
+     project = result.scalar_one_or_none()
+ 
+     if not project:
+         raise HTTPException(status_code=404, detail="Project not found")
+ 
+-    cascade_deleted: dict[str, int] = {}
+-
+-    if cascade:
+-        # Delete scoped files (E3-06)
+-        files_result = await session.execute(
+-            select(FileMetadata).where(
+-                (FileMetadata.scope == "project") & (FileMetadata.scope_id == project_id)
+-            )
+-        )
+-        files = files_result.scalars().all()
+-        for file in files:
+-            await _delete_embedding(file.id)
+-            await session.delete(file)
+-        cascade_deleted["files"] = len(files)
+-
+     project_name = project.name
+-
+-    # 0.43 : détacher les conversations rattachées à ce projet.
+-    # `Conversation.project_id` n'est pas une clé étrangère : sans ce ménage,
+-    # elles resteraient cloisonnées sur un identifiant supprimé. Le backend
+-    # continuerait de filtrer dessus — donc plus aucun document — pendant que
+-    # le sélecteur, ne trouvant plus le projet dans la liste, afficherait
+-    # « Toute la mémoire ». L'écran mentirait sur la cloison réelle.
+-    conversations_liees = (
+-        await session.execute(
+-            select(Conversation).where(Conversation.project_id == project_id)
+-        )
+-    ).scalars().all()
+-    for conversation in conversations_liees:
+-        conversation.project_id = None
+-        # Sans cette remise à zéro, la ligne resterait sur `project` sans
+-        # projet : un état que rien ne peut plus décrire à l'écran.
+-        conversation.memory_scope = "global"
+-        session.add(conversation)
+-    if conversations_liees:
+-        cascade_deleted["conversations_detachees"] = len(conversations_liees)
+-
+-    await session.delete(project)
++    # `cascade` reste accepté pour compatibilité, mais le ménage n'est plus
++    # optionnel : l'interface historique ne l'envoyait jamais.
++    cascade_deleted = await _nettoyer_et_supprimer_projet(session, project)
+     await session.commit()
+ 
+-    # Remove from Qdrant
+-    await _delete_embedding(project_id)
+-
+     # Audit log (US-SEC-05) - ne doit pas bloquer la suppression
+     try:
+         await log_activity(
+diff --git a/src/backend/app/routers/rgpd.py b/src/backend/app/routers/rgpd.py
+index 176b1569..4cd0c87f 100644
+--- a/src/backend/app/routers/rgpd.py
++++ b/src/backend/app/routers/rgpd.py
+@@ -17,6 +17,7 @@ from app.models.entities import (
+     Contact,
+     Deliverable,
+     EmailMessage,
++    Prestation,
+     Project,
+     Task,
+ )
+@@ -194,6 +195,17 @@ async def anonymize_contact(
+     contact.extra_data = None
+     contact.updated_at = datetime.now(UTC)
+ 
++    # Incident du 30/08 : l'anonymisation effaçait l'identité mais conservait
++    # l'intitulé, le montant et le financeur sous la fiche [ANONYMISÉ]. Une
++    # prestation sans personne n'a pas de sens et doit disparaître ici aussi.
++    prestations = (
++        await session.execute(
++            select(Prestation).where(Prestation.contact_id == contact_id)
++        )
++    ).scalars().all()
++    for prestation in prestations:
++        await session.delete(prestation)
++
+     # Delete activities
+     result = await session.execute(
+         select(Activity).where(Activity.contact_id == contact_id)
+diff --git a/src/backend/app/services/crm_export.py b/src/backend/app/services/crm_export.py
+index 1fe41995..6bba1cb2 100644
+--- a/src/backend/app/services/crm_export.py
++++ b/src/backend/app/services/crm_export.py
+@@ -47,12 +47,22 @@ CONTACT_COLUMNS = [
+     ("company", "Entreprise"),
+     ("email", "Email"),
+     ("phone", "Telephone"),
++    ("address", "Adresse"),
+     ("stage", "Stage"),
+     ("score", "Score"),
+     ("source", "Source"),
+     ("tags", "Tags"),
+     ("notes", "Notes"),
++    ("extra_data", "Donnees supplementaires"),
+     ("last_interaction", "Derniere interaction"),
++    ("next_follow_up", "Prochaine relance"),
++    ("rgpd_base_legale", "Base legale RGPD"),
++    ("rgpd_date_collecte", "Date collecte RGPD"),
++    ("rgpd_date_expiration", "Date expiration RGPD"),
++    ("rgpd_consentement", "Consentement RGPD"),
++    ("purge_excluded", "Exclu purge RGPD"),
++    ("scope", "Perimetre"),
++    ("scope_id", "ID perimetre"),
+     ("created_at", "Date creation"),
+     ("updated_at", "Date modification"),
+ ]
+diff --git a/src/backend/app/services/crm_import.py b/src/backend/app/services/crm_import.py
+index 6157763c..d6dade5f 100644
+--- a/src/backend/app/services/crm_import.py
++++ b/src/backend/app/services/crm_import.py
+@@ -108,6 +108,10 @@ CONTACT_COLUMN_MAPPING = {
+     "Téléphone": "phone",
+     "tel": "phone",
+     "Tel": "phone",
++    # Address
++    "address": "address",
++    "adresse": "address",
++    "Adresse": "address",
+     # Stage
+     "stage": "stage",
+     "Stage": "stage",
+@@ -128,6 +132,31 @@ CONTACT_COLUMN_MAPPING = {
+     "notes": "notes",
+     "Notes": "notes",
+     "commentaires": "notes",
++    # Long-term state exported by THERESE
++    "extra_data": "extra_data",
++    "Donnees supplementaires": "extra_data",
++    "last_interaction": "last_interaction",
++    "Derniere interaction": "last_interaction",
++    "next_follow_up": "next_follow_up",
++    "Prochaine relance": "next_follow_up",
++    "rgpd_base_legale": "rgpd_base_legale",
++    "Base legale RGPD": "rgpd_base_legale",
++    "rgpd_date_collecte": "rgpd_date_collecte",
++    "Date collecte RGPD": "rgpd_date_collecte",
++    "rgpd_date_expiration": "rgpd_date_expiration",
++    "Date expiration RGPD": "rgpd_date_expiration",
++    "rgpd_consentement": "rgpd_consentement",
++    "Consentement RGPD": "rgpd_consentement",
++    "purge_excluded": "purge_excluded",
++    "Exclu purge RGPD": "purge_excluded",
++    "scope": "scope",
++    "Perimetre": "scope",
++    "scope_id": "scope_id",
++    "ID perimetre": "scope_id",
++    "created_at": "created_at",
++    "Date creation": "created_at",
++    "updated_at": "updated_at",
++    "Date modification": "updated_at",
+ }
+ 
+ PROJECT_COLUMN_MAPPING = {
+@@ -290,10 +319,15 @@ FIELD_MAX_LENGTHS: dict[str, int] = {
+     "company": 300,
+     "email": 320,
+     "phone": 50,
++    "address": 1000,
+     "stage": 50,
+     "source": 200,
+     "tags": 1000,
+     "notes": 5000,
++    "extra_data": 10000,
++    "rgpd_base_legale": 100,
++    "scope": 50,
++    "scope_id": 200,
+     "name": 500,
+     "title": 500,
+     "description": 5000,
+@@ -363,6 +397,10 @@ def _parse_value(value: Any, field_type: str) -> Any:
+         if isinstance(value, datetime):
+             return value
+         if isinstance(value, str):
++            try:
++                return datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
++            except ValueError:
++                pass
+             for fmt in [
+                 "%Y-%m-%dT%H:%M:%S.%fZ",
+                 "%Y-%m-%dT%H:%M:%SZ",
+@@ -377,6 +415,23 @@ def _parse_value(value: Any, field_type: str) -> Any:
+                     continue
+         return None
+ 
++    if field_type == "bool":
++        if isinstance(value, bool):
++            return value
++        if isinstance(value, (int, float)):
++            return bool(value)
++        normalized = str(value).strip().lower()
++        if normalized in {"1", "true", "oui", "yes", "vrai"}:
++            return True
++        if normalized in {"0", "false", "non", "no", "faux"}:
++            return False
++        return None
++
++    if field_type == "json":
++        if isinstance(value, (dict, list)):
++            return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
++        return str(value).strip()
++
+     if field_type == "tags":
+         if isinstance(value, list):
+             return json.dumps(value)
+@@ -578,29 +633,57 @@ class CRMImportService:
+                     existing = db_result.scalar_one_or_none()
+ 
+                 if existing and update_existing:
+-                    # Update existing
+-                    if mapped.get("first_name"):
+-                        existing.first_name = mapped["first_name"]
+-                    if mapped.get("last_name"):
+-                        existing.last_name = mapped["last_name"]
+-                    if mapped.get("company"):
+-                        existing.company = mapped["company"]
+-                    if mapped.get("email"):
+-                        existing.email = mapped["email"]
+-                    if mapped.get("phone"):
+-                        existing.phone = mapped["phone"]
+-                    if mapped.get("stage"):
+-                        existing.stage = mapped["stage"]
+-                    if mapped.get("score"):
+-                        existing.score = _parse_value(mapped["score"], "int") or existing.score
+-                    if mapped.get("source"):
+-                        existing.source = mapped["source"]
+-                    if mapped.get("tags"):
++                    # Un champ présent dans l'export fait foi, y compris une
++                    # valeur vide ou un score nul : sinon l'aller-retour
++                    # invente silencieusement un autre état.
++                    for field_name in (
++                        "first_name",
++                        "last_name",
++                        "company",
++                        "email",
++                        "phone",
++                        "address",
++                        "stage",
++                        "source",
++                        "notes",
++                        "rgpd_base_legale",
++                        "scope",
++                        "scope_id",
++                    ):
++                        if field_name in mapped:
++                            setattr(existing, field_name, mapped[field_name])
++                    if "score" in mapped:
++                        score = _parse_value(mapped["score"], "int")
++                        if score is not None:
++                            existing.score = score
++                    if "tags" in mapped:
+                         existing.tags = _parse_value(mapped["tags"], "tags")
+-                    if mapped.get("notes"):
+-                        existing.notes = mapped["notes"]
+-
+-                    existing.updated_at = datetime.now(UTC)
++                    if "extra_data" in mapped:
++                        existing.extra_data = _parse_value(mapped["extra_data"], "json")
++                    for field_name in (
++                        "last_interaction",
++                        "next_follow_up",
++                        "rgpd_date_collecte",
++                        "rgpd_date_expiration",
++                        "created_at",
++                    ):
++                        if field_name in mapped:
++                            setattr(
++                                existing,
++                                field_name,
++                                _parse_value(mapped[field_name], "datetime"),
++                            )
++                    for field_name in ("rgpd_consentement", "purge_excluded"):
++                        if field_name in mapped:
++                            parsed_bool = _parse_value(mapped[field_name], "bool")
++                            if parsed_bool is not None:
++                                setattr(existing, field_name, parsed_bool)
++
++                    existing.updated_at = (
++                        _parse_value(mapped["updated_at"], "datetime")
++                        if "updated_at" in mapped
++                        else datetime.now(UTC)
++                    )
+                     self.session.add(existing)
+                     result.updated += 1
+ 
+@@ -609,6 +692,9 @@ class CRMImportService:
+ 
+                 else:
+                     # Create new
++                    score = _parse_value(mapped.get("score"), "int")
++                    created_at = _parse_value(mapped.get("created_at"), "datetime")
++                    updated_at = _parse_value(mapped.get("updated_at"), "datetime")
+                     contact = Contact(
+                         id=contact_id or generate_uuid(),
+                         first_name=mapped.get("first_name"),
+@@ -616,12 +702,38 @@ class CRMImportService:
+                         company=mapped.get("company"),
+                         email=mapped.get("email"),
+                         phone=mapped.get("phone"),
+-                        stage=mapped.get("stage", "contact"),
+-                        score=_parse_value(mapped.get("score"), "int") or 50,
++                        address=mapped.get("address"),
++                        stage=mapped.get("stage") or "contact",
++                        score=score if score is not None else 50,
+                         source=mapped.get("source"),
+                         tags=_parse_value(mapped.get("tags"), "tags"),
+                         notes=mapped.get("notes"),
+-                        scope="global",
++                        extra_data=_parse_value(mapped.get("extra_data"), "json"),
++                        last_interaction=_parse_value(
++                            mapped.get("last_interaction"), "datetime"
++                        ),
++                        next_follow_up=_parse_value(
++                            mapped.get("next_follow_up"), "datetime"
++                        ),
++                        rgpd_base_legale=mapped.get("rgpd_base_legale"),
++                        rgpd_date_collecte=_parse_value(
++                            mapped.get("rgpd_date_collecte"), "datetime"
++                        ),
++                        rgpd_date_expiration=_parse_value(
++                            mapped.get("rgpd_date_expiration"), "datetime"
++                        ),
++                        rgpd_consentement=(
++                            _parse_value(mapped.get("rgpd_consentement"), "bool")
++                            or False
++                        ),
++                        purge_excluded=(
++                            _parse_value(mapped.get("purge_excluded"), "bool")
++                            or False
++                        ),
++                        scope=mapped.get("scope") or "global",
++                        scope_id=mapped.get("scope_id"),
++                        created_at=created_at or datetime.now(UTC),
++                        updated_at=updated_at or datetime.now(UTC),
+                     )
+                     self.session.add(contact)
+                     result.created += 1
+diff --git a/src/backend/app/services/relances.py b/src/backend/app/services/relances.py
+index 1e5f0f51..142c6af2 100644
+--- a/src/backend/app/services/relances.py
++++ b/src/backend/app/services/relances.py
+@@ -18,6 +18,8 @@ l'ancienne règle ne regardait même pas.
+ from datetime import UTC, datetime
+ 
+ from app.models.entities import Contact
++from app.services.civil_time import date_civile_paris
++from sqlalchemy import func
+ from sqlmodel import select
+ from sqlmodel.sql.expression import SelectOfScalar
+ 
+@@ -29,12 +31,15 @@ def contacts_a_relancer(maintenant: datetime | None = None) -> SelectOfScalar[Co
+     (`test_relance_une_seule_definition.py`) fige l'égalité des deux
+     consommateurs.
+     """
+-    seuil = maintenant or datetime.now(UTC)
++    seuil = date_civile_paris(maintenant or datetime.now(UTC)).isoformat()
+     return (
+         select(Contact)
+         .where(
+             Contact.next_follow_up != None,  # noqa: E711
+-            Contact.next_follow_up <= seuil,
++            # `next_follow_up` représente un JOUR décidé, même si le schéma
++            # historique l'a stocké dans un DateTime. Comparer les instants
++            # faisait commencer le 30 à minuit UTC au lieu de minuit à Paris.
++            func.date(Contact.next_follow_up) <= seuil,
+             # `archive` est le tombeau RGPD, pas une etape commerciale :
+             # l'anonymisation y pose la fiche et efface tout SAUF cette date.
+             # Sans cette exclusion, le brief afficherait « Relancer [ANONYMISE] ».
+diff --git a/src/backend/app/services/workspace_tools.py b/src/backend/app/services/workspace_tools.py
+index 2b11e9c2..d3e832da 100644
+--- a/src/backend/app/services/workspace_tools.py
++++ b/src/backend/app/services/workspace_tools.py
+@@ -726,9 +726,11 @@ async def _search_invoices(args: dict, session: AsyncSession) -> str:
+     pattern = f"%{escaped}%"
+     statement = (
+         select(Invoice, Contact)
+-        .join(Contact, Contact.id == Invoice.contact_id)
++        .outerjoin(Contact, Contact.id == Invoice.contact_id)
+         .where(
+             Invoice.invoice_number.ilike(pattern, escape="\\")
++            | Invoice.client_name.ilike(pattern, escape="\\")
++            | Invoice.client_company.ilike(pattern, escape="\\")
+             | Contact.first_name.ilike(pattern, escape="\\")
+             | Contact.last_name.ilike(pattern, escape="\\")
+             | Contact.company.ilike(pattern, escape="\\")
+@@ -747,7 +749,9 @@ async def _search_invoices(args: dict, session: AsyncSession) -> str:
+     types = {"facture": "Facture", "devis": "Devis", "avoir": "Avoir"}
+     lines = []
+     for invoice, contact in rows:
+-        client = contact.display_name if contact else "client inconnu"
++        client = invoice.client_name or (
++            contact.display_name if contact else "client inconnu"
++        )
+         lines.append(
+             f"- {types.get(invoice.document_type, invoice.document_type)} "
+             f"{invoice.invoice_number} : {client}, "
+diff --git a/src/frontend/src/components/prototype/prospectRelance.test.ts b/src/frontend/src/components/prototype/prospectRelance.test.ts
+index 934ea9c7..45fb0094 100644
+--- a/src/frontend/src/components/prototype/prospectRelance.test.ts
++++ b/src/frontend/src/components/prototype/prospectRelance.test.ts
+@@ -9,9 +9,9 @@ import { describe, expect, it } from 'vitest';
+ import type { TodayDashboard } from '../../services/api/dashboard';
+ import { buildTodayAttentionItems } from './prototypeReadModels';
+ 
+-function journee(prospects: TodayDashboard['stale_prospects']): TodayDashboard {
++function journee(prospects: TodayDashboard['stale_prospects'], date = '2026-08-29'): TodayDashboard {
+   return {
+-    date: '2026-08-29',
++    date,
+     events: [], urgent_tasks: [], due_follow_ups: [], overdue_invoices: [],
+     stale_prospects: prospects,
+     summary: { events_count: 0, tasks_count: 0, follow_ups_count: 0, invoices_count: 0, prospects_count: prospects.length },
+@@ -42,4 +42,14 @@ describe('La relance affichée dit sa date', () => {
+     expect(item.detail).not.toMatch(/\d{2}\/\d{2}/);
+     expect(item.urgent).toBe(false);
+   });
++
++  it('interprète un horodatage UTC selon le jour civil de Paris', () => {
++    const [item] = buildTodayAttentionItems(journee(
++      [{ ...BASE, next_follow_up: '2026-08-29T22:00:00Z' }],
++      '2026-08-30',
++    ));
++
++    expect(item.detail).toContain('30/08');
++    expect(item.urgent).toBe(false);
++  });
+ });
+diff --git a/src/frontend/src/components/prototype/prototypeReadModels.ts b/src/frontend/src/components/prototype/prototypeReadModels.ts
+index 837fa603..a127374d 100644
+--- a/src/frontend/src/components/prototype/prototypeReadModels.ts
++++ b/src/frontend/src/components/prototype/prototypeReadModels.ts
+@@ -8,6 +8,7 @@ import type {
+ } from '../../services/api/dashboard';
+ import type { Contact } from '../../services/api/memory';
+ import type { AppView } from '../../stores/navigationStore';
++import { parisDateKey } from '../../lib/civilDate';
+ 
+ export type AttentionKind = 'event' | 'task' | 'follow_up' | 'invoice' | 'prospect';
+ 
+@@ -33,12 +34,13 @@ export interface TodayAttentionItem {
+ }
+ 
+ function isOverdue(dueDate: string | null, today: string): boolean {
+-  return Boolean(dueDate && dueDate.slice(0, 10) < today);
++  return Boolean(dueDate && parisDateKey(dueDate) < today);
+ }
+ 
+ function formatCivilDate(value: string | null): string {
+   if (!value || value.length < 10) return '';
+-  return `${value.slice(8, 10)}/${value.slice(5, 7)}`;
++  const civilDate = parisDateKey(value);
++  return `${civilDate.slice(8, 10)}/${civilDate.slice(5, 7)}`;
+ }
+ 
+ function formatEventTime(event: DashboardEvent): string {
+diff --git a/src/frontend/src/lib/civilDate.ts b/src/frontend/src/lib/civilDate.ts
+index 508973df..8a841ebe 100644
+--- a/src/frontend/src/lib/civilDate.ts
++++ b/src/frontend/src/lib/civilDate.ts
+@@ -12,3 +12,24 @@ export function localDateKey(d: Date): string {
+   const day = String(d.getDate()).padStart(2, '0');
+   return `${d.getFullYear()}-${month}-${day}`;
+ }
++
++const parisFormatter = new Intl.DateTimeFormat('fr-FR', {
++  timeZone: 'Europe/Paris',
++  year: 'numeric',
++  month: '2-digit',
++  day: '2-digit',
++});
++
++/** Jour civil de Paris porté par une valeur ISO éventuellement zonée. */
++export function parisDateKey(value: string): string {
++  const literal = value.slice(0, 10);
++  const hasExplicitTimezone = /(?:Z|[+-]\d{2}:\d{2})$/i.test(value);
++  if (!hasExplicitTimezone) return literal;
++
++  const parsed = new Date(value);
++  if (Number.isNaN(parsed.getTime())) return literal;
++  const parts = Object.fromEntries(
++    parisFormatter.formatToParts(parsed).map((part) => [part.type, part.value]),
++  );
++  return `${parts.year}-${parts.month}-${parts.day}`;
++}
+diff --git a/src/frontend/src/services/api/memory.ts b/src/frontend/src/services/api/memory.ts
+index 33db982e..21bb2641 100644
+--- a/src/frontend/src/services/api/memory.ts
++++ b/src/frontend/src/services/api/memory.ts
+@@ -177,7 +177,9 @@ export async function updateProject(
+ }
+ 
+ export async function deleteProject(id: string): Promise<void> {
+-  await request<{ ok: boolean }>(`/api/memory/projects/${id}`, {
++  // Incident du 30/08 : les deux écrans appelaient la route sans cascade et
++  // laissaient les fichiers du dossier sur un identifiant mort.
++  await request<{ ok: boolean }>(`/api/memory/projects/${id}?cascade=true`, {
+     method: 'DELETE',
+   });
+ }
+diff --git a/tests/conftest.py b/tests/conftest.py
+index 53c5476d..b3308b7a 100644
+--- a/tests/conftest.py
++++ b/tests/conftest.py
+@@ -10,7 +10,7 @@ import tempfile
+ from contextlib import asynccontextmanager
+ from pathlib import Path
+ from typing import AsyncGenerator
+-from unittest.mock import MagicMock
++from unittest.mock import AsyncMock, MagicMock
+ 
+ import pytest
+ import pytest_asyncio
+@@ -72,6 +72,7 @@ _mock_qdrant.add_memory.return_value = None
+ _mock_qdrant.add_memories.return_value = 0
+ _mock_qdrant.delete_by_entity.return_value = 0
+ _mock_qdrant.delete_by_scope.return_value = 0
++_mock_qdrant.async_delete_by_entity = AsyncMock(return_value=0)
+ _mock_qdrant._initialized = True
+ _mock_qdrant.is_initialized.return_value = True
+ _qdrant_module._qdrant_service = _mock_qdrant
+diff --git a/tests/test_backup_encryption.py b/tests/test_backup_encryption.py
+index f1020c78..a05c6641 100644
+--- a/tests/test_backup_encryption.py
++++ b/tests/test_backup_encryption.py
+@@ -115,6 +115,33 @@ async def test_restore_chiffre_mauvaise_passphrase_refuse(client):
+     assert resp.status_code == 400
+ 
+ 
++@pytest.mark.asyncio
++async def test_restore_remet_les_fichiers_office_des_skills(client):
++    """Un bouton de téléchargement restauré ne doit jamais pointer vers un 404."""
++    from pathlib import Path
++
++    from app.config import settings
++
++    output = Path(settings.data_dir) / "outputs" / "propale_snapshot.docx"
++    output.parent.mkdir(parents=True, exist_ok=True)
++    output.write_bytes(b"document-office-historique")
++
++    created = await client.post(
++        "/api/data/backup", json={"password": "pw-output-solide-123"}
++    )
++    assert created.status_code == 200, created.text
++    output.unlink()
++    assert not output.exists()
++
++    restored = await client.post(
++        f"/api/data/restore/{created.json()['backup_name']}?confirm=true",
++        json={"password": "pw-output-solide-123"},
++    )
++
++    assert restored.status_code == 200, restored.text
++    assert output.read_bytes() == b"document-office-historique"
++
++
+ def test_le_sel_qui_contient_un_saut_de_ligne_survit(tmp_path, monkeypatch):
+     """Un sel contenant 0x0A ne doit pas corrompre l'archive.
+ 
+diff --git a/tests/test_invoice_currency_migration.py b/tests/test_invoice_currency_migration.py
+index 6476b827..681695e5 100644
+--- a/tests/test_invoice_currency_migration.py
++++ b/tests/test_invoice_currency_migration.py
+@@ -176,3 +176,61 @@ def test_ensure_invoice_legacy_columns_is_idempotent(tmp_path: Path):
+ 
+     assert first == []
+     assert second == []
++
++
++def test_apply_adhoc_migrations_backfill_le_snapshot_des_factures(tmp_path: Path):
++    """Une mise à jour reprend le contact actuel au lieu de poser du vide."""
++    from app.models.database import apply_adhoc_migrations
++
++    db_path = tmp_path / "legacy-snapshot.db"
++    with closing(sqlite3.connect(db_path)) as conn:
++        conn.execute(
++            """
++            CREATE TABLE contacts (
++                id TEXT PRIMARY KEY,
++                first_name TEXT,
++                last_name TEXT,
++                company TEXT,
++                email TEXT,
++                phone TEXT,
++                address TEXT
++            )
++            """
++        )
++        conn.execute(
++            """
++            CREATE TABLE invoices (
++                id TEXT PRIMARY KEY,
++                contact_id TEXT NOT NULL
++            )
++            """
++        )
++        conn.execute(
++            "INSERT INTO contacts VALUES (?, ?, ?, ?, ?, ?, ?)",
++            (
++                "contact-1",
++                "Aline",
++                "Avant",
++                "Société Ancienne",
++                "aline@example.test",
++                "+33492000000",
++                "1 rue de la Mémoire",
++            ),
++        )
++        conn.execute("INSERT INTO invoices VALUES (?, ?)", ("invoice-1", "contact-1"))
++        conn.commit()
++
++    apply_adhoc_migrations(db_path)
++
++    with closing(sqlite3.connect(db_path)) as conn:
++        snapshot = conn.execute(
++            "SELECT client_name, client_company, client_email, client_phone, "
++            "client_address FROM invoices WHERE id = 'invoice-1'"
++        ).fetchone()
++    assert snapshot == (
++        "Aline Avant",
++        "Société Ancienne",
++        "aline@example.test",
++        "+33492000000",
++        "1 rue de la Mémoire",
++    )
+diff --git a/tests/test_relance_une_seule_definition.py b/tests/test_relance_une_seule_definition.py
+index 60717df9..86feb88d 100644
+--- a/tests/test_relance_une_seule_definition.py
++++ b/tests/test_relance_une_seule_definition.py
+@@ -44,6 +44,24 @@ async def test_une_date_a_venir_n_est_pas_une_relance(db_session: AsyncSession):
+     assert trouves == []
+ 
+ 
++@pytest.mark.asyncio
++async def test_une_relance_est_due_pendant_tout_son_jour_civil_paris(
++    db_session: AsyncSession,
++):
++    """Le 30 civil commence avant le 30 UTC pendant l'heure d'été."""
++    contact = _contact(
++        id="relance-frontiere-paris",
++        next_follow_up=datetime(2026, 8, 30, 23, 59, tzinfo=UTC),
++    )
++    db_session.add(contact)
++    await db_session.commit()
++
++    instant = datetime(2026, 8, 29, 22, 30, tzinfo=UTC)
++    trouves = (await db_session.execute(contacts_a_relancer(instant))).scalars().all()
++
++    assert [item.id for item in trouves] == [contact.id]
++
++
+ @pytest.mark.asyncio
+ async def test_le_silence_n_est_pas_un_devoir(db_session: AsyncSession):
+     """Le coeur du lot : sans date, aucune relance, meme apres deux ans.
+diff --git a/tests/test_routers_crm_full.py b/tests/test_routers_crm_full.py
+index 55c4c820..663609e5 100644
+--- a/tests/test_routers_crm_full.py
++++ b/tests/test_routers_crm_full.py
+@@ -7,9 +7,11 @@ External services (Google Sheets, LLM) are mocked.
+ """
+ 
+ import json
++from datetime import UTC, datetime
+ from unittest.mock import MagicMock, patch
+ 
+ import pytest
++from app.models.entities import Contact
+ from httpx import AsyncClient
+ 
+ from tests.conftest import assert_contains_keys, assert_response_ok
+@@ -646,6 +648,69 @@ class TestCRMImport:
+         assert "detected_columns" in data
+         assert "can_import" in data
+ 
++    @pytest.mark.asyncio
++    async def test_round_trip_contact_json_preserve_tous_les_champs_exportes(
++        self, client: AsyncClient, db_session
++    ):
++        """Export puis import redonne le même état CRM utile dans la durée."""
++        contact = Contact(
++            id="contact-round-trip",
++            first_name="Aline",
++            last_name="Durable",
++            company="Mémoire SARL",
++            email="aline@example.test",
++            phone="+33492000000",
++            address="1 rue de la Mémoire",
++            notes="Conserver exactement",
++            tags='["client","prioritaire"]',
++            extra_data='{"origine":"salon"}',
++            stage="delivery",
++            score=0,
++            source="recommandation",
++            last_interaction=datetime(2026, 7, 1, 10, 0, tzinfo=UTC),
++            next_follow_up=datetime(2026, 9, 15, 0, 0, tzinfo=UTC),
++            rgpd_base_legale="contrat",
++            rgpd_date_collecte=datetime(2026, 1, 2, 12, 0, tzinfo=UTC),
++            rgpd_date_expiration=datetime(2029, 1, 2, 12, 0, tzinfo=UTC),
++            rgpd_consentement=True,
++            purge_excluded=True,
++            scope="project",
++            scope_id="project-client",
++            created_at=datetime(2026, 1, 2, 12, 0, tzinfo=UTC),
++            updated_at=datetime(2026, 8, 30, 18, 0, tzinfo=UTC),
++        )
++        db_session.add(contact)
++        await db_session.commit()
++        contact_id = contact.id
++
++        exported = await client.post("/api/crm/export/contacts?format=json")
++        assert exported.status_code == 200, exported.text
++        deleted = await client.delete(f"/api/memory/contacts/{contact_id}")
++        assert deleted.status_code == 200, deleted.text
++
++        imported = await client.post(
++            "/api/crm/import/contacts?update_existing=true",
++            files={"file": ("contacts.json", exported.content, "application/json")},
++        )
++
++        assert imported.status_code == 200, imported.text
++        db_session.expire_all()
++        restored = await db_session.get(Contact, contact_id)
++        assert restored is not None
++        assert restored.address == "1 rue de la Mémoire"
++        assert restored.next_follow_up == datetime(2026, 9, 15, 0, 0)
++        assert restored.extra_data == '{"origine":"salon"}'
++        assert restored.rgpd_base_legale == "contrat"
++        assert restored.rgpd_date_collecte == datetime(2026, 1, 2, 12, 0)
++        assert restored.rgpd_date_expiration == datetime(2029, 1, 2, 12, 0)
++        assert restored.rgpd_consentement is True
++        assert restored.purge_excluded is True
++        assert restored.scope == "project"
++        assert restored.scope_id == "project-client"
++        assert restored.score == 0
++        assert restored.created_at == datetime(2026, 1, 2, 12, 0)
++        assert restored.updated_at == datetime(2026, 8, 30, 18, 0)
++
+ 
+ # ============================================================
+ # Sync Config (Google Sheets)
+diff --git a/tests/test_routers_dashboard.py b/tests/test_routers_dashboard.py
+index 000b8c34..48294e40 100644
+--- a/tests/test_routers_dashboard.py
++++ b/tests/test_routers_dashboard.py
+@@ -1,5 +1,5 @@
+ """Tests du router dashboard (setup-status pour la vue Accueil)."""
+-from datetime import date, datetime, time, timedelta
++from datetime import UTC, date, datetime, time, timedelta
+ 
+ import pytest
+ from app.models.entities import (
+@@ -15,6 +15,53 @@ from httpx import AsyncClient
+ 
+ 
+ class TestToday:
++    @pytest.mark.asyncio
++    async def test_today_inclut_un_evenement_toute_la_journee_sur_plusieurs_jours(
++        self, client: AsyncClient, db_session
++    ):
++        """Le 30 appartient bien à un événement inclusif du 29 au 31."""
++        today = date.today()
++        calendar = Calendar(id="cal-multiday", summary="Agenda", provider="local")
++        event = CalendarEvent(
++            id="event-multiday",
++            calendar_id=calendar.id,
++            summary="Séminaire sur trois jours",
++            start_date=(today - timedelta(days=1)).isoformat(),
++            end_date=(today + timedelta(days=1)).isoformat(),
++            all_day=True,
++        )
++        db_session.add_all([calendar, event])
++        await db_session.commit()
++
++        response = await client.get("/api/dashboard/today")
++
++        assert response.status_code == 200
++        assert event.id in {item["id"] for item in response.json()["events"]}
++
++    @pytest.mark.asyncio
++    async def test_today_est_le_jour_civil_de_paris_a_la_frontiere_utc(
++        self, client: AsyncClient, monkeypatch
++    ):
++        """À 22 h 30 UTC en été, le brief doit déjà être celui du lendemain."""
++        class DateUTC(datetime):
++            @classmethod
++            def now(cls, tz=None):
++                instant = cls(2026, 8, 29, 22, 30, tzinfo=UTC)
++                return instant.astimezone(tz) if tz else instant.replace(tzinfo=None)
++
++        class JourUTC(date):
++            @classmethod
++            def today(cls):
++                return cls(2026, 8, 29)
++
++        monkeypatch.setattr("app.routers.dashboard.datetime", DateUTC)
++        monkeypatch.setattr("app.routers.dashboard.date", JourUTC, raising=False)
++
++        response = await client.get("/api/dashboard/today")
++
++        assert response.status_code == 200
++        assert response.json()["date"] == "2026-08-30"
++
+     @pytest.mark.asyncio
+     async def test_today_agrege_relances_et_enjeu_des_evenements(
+         self, client: AsyncClient, db_session
+diff --git a/tests/test_routers_data.py b/tests/test_routers_data.py
+index b6d4a940..1924c478 100644
+--- a/tests/test_routers_data.py
++++ b/tests/test_routers_data.py
+@@ -4,7 +4,10 @@ THERESE v2 - Data Router Tests
+ Tests pour les endpoints d'export, import, backup et logs (US-SEC-02, US-BAK-01 a US-BAK-05).
+ """
+ 
++from datetime import UTC, datetime
++
+ import pytest
++from app.models.entities import Conversation, Message, Project
+ from httpx import AsyncClient
+ 
+ # ============================================================
+@@ -24,6 +27,25 @@ async def _create_contact(client: AsyncClient, first_name: str = "Jean") -> str:
+     return response.json()["id"]
+ 
+ 
++async def _create_prestation(client: AsyncClient, contact_id: str) -> dict:
++    """Crée une prestation contenant les données sensibles visées par le lot D."""
++    response = await client.post(
++        "/api/prestations",
++        json={
++            "contact_id": contact_id,
++            "intitule": "Formation confidentielle",
++            "montant_ht": 2490.0,
++            "phase": "gagne",
++            "financeur": "Atlas",
++            "statut_financement": "valide",
++            "fin_le": "2026-10-15",
++            "suivi_apres_jours": 120,
++        },
++    )
++    assert response.status_code == 201, response.text
++    return response.json()
++
++
+ async def _create_document_with_section_and_piste(client: AsyncClient) -> dict:
+     """Cree un document de l'atelier documentaire avec une section redigee
+     et une piste, pour verrouiller sa presence dans export/delete RGPD."""
+@@ -102,6 +124,33 @@ class TestDataExport:
+         assert "Alice" in first_names
+         assert "Bob" in first_names
+ 
++    @pytest.mark.asyncio
++    async def test_export_all_data_contains_prestations(self, client: AsyncClient):
++        """Art. 20 : l'engagement, son montant et son financeur sont portables."""
++        contact_id = await _create_contact(client, "AlicePrestation")
++        prestation = await _create_prestation(client, contact_id)
++
++        response = await client.get("/api/data/export")
++
++        assert response.status_code == 200
++        exported = response.json()
++        assert exported["prestations"] == [
++            {
++                "id": prestation["id"],
++                "contact_id": contact_id,
++                "intitule": "Formation confidentielle",
++                "montant_ht": 2490.0,
++                "phase": "gagne",
++                "financeur": "Atlas",
++                "statut_financement": "valide",
++                "fin_le": "2026-10-15",
++                "suivi_apres_jours": 120,
++                "created_at": prestation["created_at"],
++                "updated_at": prestation["updated_at"],
++            }
++        ]
++        assert exported["data_format_version"] == "1.3"
++
+     @pytest.mark.asyncio
+     async def test_export_all_data_contains_documents_sections_pistes(self, client: AsyncClient):
+         """GET /api/data/export (RGPD Art. 20) restitue l'atelier documentaire :
+@@ -151,6 +200,65 @@ class TestDataExport:
+         assert "conversations" in data
+         assert isinstance(data["conversations"], list)
+ 
++    @pytest.mark.asyncio
++    async def test_export_conversations_preserve_tout_etat_reimportable(
++        self, client: AsyncClient, db_session
++    ):
++        """L'export dédié ne doit pas jeter les champs que l'import sait restaurer."""
++        created_at = datetime(2026, 8, 20, 9, 15, tzinfo=UTC)
++        updated_at = datetime(2026, 8, 21, 10, 30, tzinfo=UTC)
++        project = Project(id="project-export-conv", name="Projet export")
++        conversation = Conversation(
++            id="conversation-export-complete",
++            title="Historique complet",
++            summary="Résumé conservé",
++            project_id=project.id,
++            memory_scope="project",
++            created_at=created_at,
++            updated_at=updated_at,
++        )
++        message = Message(
++            id="message-export-complet",
++            conversation_id=conversation.id,
++            role="assistant",
++            content="Document généré",
++            tokens_in=12,
++            tokens_out=34,
++            model="modele-test",
++            provider="mistral",
++            extra_data='{"skill_files":[{"name":"preuve.docx"}]}',
++            created_at=datetime(2026, 8, 20, 9, 16, tzinfo=UTC),
++        )
++        db_session.add_all([project, conversation, message])
++        await db_session.commit()
++
++        response = await client.get("/api/data/export/conversations")
++
++        assert response.status_code == 200
++        exported = next(
++            item
++            for item in response.json()["conversations"]
++            if item["id"] == conversation.id
++        )
++        assert exported["summary"] == "Résumé conservé"
++        assert exported["project_id"] == project.id
++        assert exported["memory_scope"] == "project"
++        assert exported["created_at"].startswith("2026-08-20T09:15:00")
++        assert exported["updated_at"].startswith("2026-08-21T10:30:00")
++        assert exported["messages"] == [
++            {
++                "id": message.id,
++                "role": "assistant",
++                "content": "Document généré",
++                "tokens_in": 12,
++                "tokens_out": 34,
++                "model": "modele-test",
++                "provider": "mistral",
++                "extra_data": '{"skill_files":[{"name":"preuve.docx"}]}',
++                "created_at": "2026-08-20T09:16:00",
++            }
++        ]
++
+     @pytest.mark.asyncio
+     async def test_export_conversations_markdown(self, client: AsyncClient):
+         """GET /api/data/export/conversations?format=markdown retourne du Markdown."""
+@@ -197,6 +305,19 @@ class TestDataDeletion:
+         assert list_response.status_code == 200
+         assert len(list_response.json()) == 0
+ 
++    @pytest.mark.asyncio
++    async def test_delete_all_data_purges_prestations(self, client: AsyncClient):
++        """Art. 17 : aucun montant ni financeur ne survit à l'effacement global."""
++        contact_id = await _create_contact(client, "ContactPrestation")
++        await _create_prestation(client, contact_id)
++
++        response = await client.delete("/api/data/all?confirm=true")
++
++        assert response.status_code == 200
++        prestations = await client.get("/api/prestations")
++        assert prestations.status_code == 200
++        assert prestations.json() == []
++
+     @pytest.mark.asyncio
+     async def test_delete_all_purge_fichiers_disque_et_annonce_backups(self, client: AsyncClient):
+         """Revue 0.40 : la route vidait les tables et Qdrant mais laissait
+@@ -354,6 +475,68 @@ class TestDataImport:
+ 
+         assert response.status_code == 400
+ 
++    @pytest.mark.asyncio
++    async def test_import_conversations_retablit_identifiants_et_metadonnees(
++        self, client: AsyncClient
++    ):
++        """L'import dédié restaure l'état exporté, pas une conversation ressemblante."""
++        payload = {
++            "conversations": [
++                {
++                    "id": "conversation-import-complete",
++                    "title": "Conversation restaurée",
++                    "summary": "Résumé restauré",
++                    "project_id": "project-historique",
++                    "memory_scope": "project",
++                    "created_at": "2026-08-10T08:00:00+00:00",
++                    "updated_at": "2026-08-11T09:00:00+00:00",
++                    "messages": [
++                        {
++                            "id": "message-import-complet",
++                            "role": "assistant",
++                            "content": "Pièce restaurée",
++                            "tokens_in": 7,
++                            "tokens_out": 19,
++                            "model": "modele-restaure",
++                            "provider": "ollama",
++                            "extra_data": '{"skill_files":[{"name":"archive.xlsx"}]}',
++                            "created_at": "2026-08-10T08:01:00+00:00",
++                        }
++                    ],
++                }
++            ]
++        }
++
++        response = await client.post("/api/data/import/conversations", json=payload)
++
++        assert response.status_code == 200, response.text
++        conversation = await client.get(
++            "/api/chat/conversations/conversation-import-complete"
++        )
++        messages = await client.get(
++            "/api/chat/conversations/conversation-import-complete/messages"
++        )
++        assert conversation.status_code == 200
++        assert conversation.json()["summary"] == "Résumé restauré"
++        assert conversation.json()["project_id"] == "project-historique"
++        assert conversation.json()["memory_scope"] == "project"
++        assert conversation.json()["created_at"].startswith("2026-08-10T08:00:00")
++        assert conversation.json()["updated_at"].startswith("2026-08-11T09:00:00")
++        assert messages.json() == [
++            {
++                "id": "message-import-complet",
++                "conversation_id": "conversation-import-complete",
++                "role": "assistant",
++                "content": "Pièce restaurée",
++                "tokens_in": 7,
++                "tokens_out": 19,
++                "model": "modele-restaure",
++                "provider": "ollama",
++                "extra_data": '{"skill_files":[{"name":"archive.xlsx"}]}',
++                "created_at": "2026-08-10T08:01:00",
++            }
++        ]
++
+     @pytest.mark.asyncio
+     async def test_import_contacts(self, client: AsyncClient):
+         """POST /api/data/import/contacts importe des contacts JSON."""
+diff --git a/tests/test_routers_invoices.py b/tests/test_routers_invoices.py
+index 8b93dadf..67daef9e 100644
+--- a/tests/test_routers_invoices.py
++++ b/tests/test_routers_invoices.py
+@@ -207,6 +207,77 @@ class TestInvoicesCRUD:
+ 
+         assert response.status_code == 404
+ 
++    @pytest.mark.asyncio
++    async def test_invoice_conserve_le_nom_du_client_apres_modification_du_contact(
++        self, client: AsyncClient
++    ):
++        """Une pièce existante ne doit pas être réécrite par le CRM courant."""
++        contact_id = await _create_contact(client)
++        invoice = await _create_invoice(client, contact_id)
++
++        changed = await client.patch(
++            f"/api/memory/contacts/{contact_id}",
++            json={"first_name": "Jeanne", "last_name": "Modifiée"},
++        )
++        assert changed.status_code == 200, changed.text
++
++        response = await client.get(f"/api/invoices/{invoice['id']}")
++
++        assert response.status_code == 200
++        assert response.json()["contact_name"] == "Marie Martin"
++
++    @pytest.mark.asyncio
++    async def test_invoice_reste_lisible_apres_suppression_du_contact(
++        self, client: AsyncClient
++    ):
++        """La suppression CRM ne doit ni supprimer ni rendre anonyme la pièce."""
++        contact_id = await _create_contact(client)
++        invoice = await _create_invoice(client, contact_id)
++
++        deleted = await client.delete(f"/api/memory/contacts/{contact_id}")
++        assert deleted.status_code == 200, deleted.text
++
++        response = await client.get(f"/api/invoices/{invoice['id']}")
++
++        assert response.status_code == 200
++        assert response.json()["contact_name"] == "Marie Martin"
++
++    @pytest.mark.asyncio
++    async def test_pdf_utilise_le_snapshot_apres_suppression_du_contact(
++        self, client: AsyncClient
++    ):
++        """Le PDF d'une pièce survivante utilise son destinataire historique."""
++        from app.services.user_profile import UserProfile
++
++        contact_id = await _create_contact(client)
++        invoice = await _create_invoice(client, contact_id)
++        deleted = await client.delete(f"/api/memory/contacts/{contact_id}")
++        assert deleted.status_code == 200, deleted.text
++
++        complete = UserProfile(
++            name="Ludovic Sanchez",
++            company="Synoptia",
++            address="294 Montee des Genets, 04100 Manosque",
++            siret="99160678100011",
++        )
++        with (
++            patch("app.routers.invoices.get_cached_profile", return_value=complete),
++            patch(
++                "app.routers.invoices.InvoicePDFGenerator.generate_invoice_pdf",
++                return_value="/tmp/FACT-2026-001.pdf",
++            ) as generate,
++        ):
++            response = await client.get(f"/api/invoices/{invoice['id']}/pdf")
++
++        assert response.status_code == 200, response.text
++        assert generate.call_args.kwargs["contact_data"] == {
++            "name": "Marie Martin",
++            "company": "Entreprise Test",
++            "email": "marie@test.fr",
++            "phone": "+33612345678",
++            "address": "",
++        }
++
+     @pytest.mark.asyncio
+     async def test_update_invoice(self, client: AsyncClient):
+         """PUT /api/invoices/{id} met a jour les notes d'une facture."""
+diff --git a/tests/test_routers_memory.py b/tests/test_routers_memory.py
+index 57f5e1b8..439ebc91 100644
+--- a/tests/test_routers_memory.py
++++ b/tests/test_routers_memory.py
+@@ -4,10 +4,61 @@ THERESE v2 - Memory Router Tests
+ Tests for US-MEM-01 to US-MEM-05.
+ """
+ 
++from unittest.mock import AsyncMock
++
+ import pytest
++from app.models.entities import (
++    Calendar,
++    CalendarEvent,
++    Contact,
++    Conversation,
++    Document,
++    FileMetadata,
++    Project,
++)
++from app.models.entities_sync import ProjectSyncRoot
+ from httpx import AsyncClient
+ 
+ 
++async def _seed_project_references(db_session, project_id: str, contact_id: str | None = None):
++    """Pose les références durables qui ne doivent pas survivre avec un id mort."""
++    project = Project(id=project_id, name="Dossier durable", contact_id=contact_id)
++    conversation = Conversation(
++        id=f"conv-{project_id}",
++        title="Conversation du dossier",
++        project_id=project_id,
++        memory_scope="project",
++    )
++    file = FileMetadata(
++        id=f"file-{project_id}",
++        path=f"/tmp/{project_id}.pdf",
++        name=f"{project_id}.pdf",
++        extension=".pdf",
++        size=42,
++        scope="project",
++        scope_id=project_id,
++    )
++    document = Document(
++        id=f"doc-{project_id}", title="Document du dossier", project_id=project_id
++    )
++    calendar = Calendar(id=f"cal-{project_id}", summary="Agenda local", provider="local")
++    event = CalendarEvent(
++        id=f"event-{project_id}",
++        calendar_id=calendar.id,
++        project_id=project_id,
++        summary="Rendez-vous du dossier",
++    )
++    root = ProjectSyncRoot(
++        id=f"root-{project_id}",
++        project_id=project_id,
++        racine=f"/tmp/racine-{project_id}",
++        volume_id=1,
++    )
++    db_session.add_all([project, conversation, file, document, calendar, event, root])
++    await db_session.commit()
++    return conversation, file, document, event, root
++
++
+ class TestContactsCRUD:
+     """Tests for US-MEM-01 and US-MEM-02: Contact CRUD operations."""
+ 
+@@ -222,6 +273,72 @@ class TestMemoryDeleteCascade:
+ 
+         assert response.status_code == 404
+ 
++    @pytest.mark.asyncio
++    async def test_delete_project_sans_cascade_ne_laisse_aucun_identifiant_mort(
++        self, client: AsyncClient, db_session, monkeypatch
++    ):
++        """L'API par défaut doit nettoyer ce que l'interface ne sait pas demander."""
++        project_id = "project-delete-direct"
++        conversation, file, document, event, root = await _seed_project_references(
++            db_session, project_id
++        )
++        conversation_id, file_id = conversation.id, file.id
++        document_id, event_id, root_id = document.id, event.id, root.id
++        delete_vectors = AsyncMock(return_value=1)
++        monkeypatch.setattr(
++            "app.routers.memory.get_qdrant_service",
++            lambda: type("Qdrant", (), {"async_delete_by_entity": delete_vectors})(),
++        )
++
++        response = await client.delete(f"/api/memory/projects/{project_id}")
++
++        assert response.status_code == 200, response.text
++        db_session.expire_all()
++        assert await db_session.get(Project, project_id) is None
++        assert await db_session.get(FileMetadata, file_id) is None
++        assert (await db_session.get(Conversation, conversation_id)).project_id is None
++        assert (await db_session.get(Conversation, conversation_id)).memory_scope == "global"
++        assert (await db_session.get(Document, document_id)).project_id is None
++        assert (await db_session.get(CalendarEvent, event_id)).project_id is None
++        assert (await db_session.get(ProjectSyncRoot, root_id)).detachee is True
++        assert {call.args[0] for call in delete_vectors.await_args_list} >= {
++            file_id,
++            project_id,
++        }
++
++    @pytest.mark.asyncio
++    async def test_delete_contact_cascade_reutilise_le_menage_du_projet(
++        self, client: AsyncClient, db_session, monkeypatch
++    ):
++        """Le bouton Contacts ne doit pas court-circuiter le contrat dossier."""
++        contact = Contact(id="contact-cascade-durable", first_name="Client")
++        db_session.add(contact)
++        await db_session.commit()
++        project_id = "project-contact-cascade"
++        conversation, file, document, event, root = await _seed_project_references(
++            db_session, project_id, contact.id
++        )
++        conversation_id, file_id = conversation.id, file.id
++        document_id, event_id, root_id = document.id, event.id, root.id
++        delete_vectors = AsyncMock(return_value=1)
++        monkeypatch.setattr(
++            "app.routers.memory.get_qdrant_service",
++            lambda: type("Qdrant", (), {"async_delete_by_entity": delete_vectors})(),
++        )
++
++        response = await client.delete(
++            f"/api/memory/contacts/{contact.id}?cascade=true"
++        )
++
++        assert response.status_code == 200, response.text
++        db_session.expire_all()
++        assert await db_session.get(Project, project_id) is None
++        assert await db_session.get(FileMetadata, file_id) is None
++        assert (await db_session.get(Conversation, conversation_id)).project_id is None
++        assert (await db_session.get(Document, document_id)).project_id is None
++        assert (await db_session.get(CalendarEvent, event_id)).project_id is None
++        assert (await db_session.get(ProjectSyncRoot, root_id)).detachee is True
++
+ 
+ class TestMemoryScope:
+     """Tests for memory scope functionality."""
+diff --git a/tests/test_routers_rgpd.py b/tests/test_routers_rgpd.py
+index e1a35b02..b4675828 100644
+--- a/tests/test_routers_rgpd.py
++++ b/tests/test_routers_rgpd.py
+@@ -111,6 +111,32 @@ class TestRGPDAnonymize:
+         assert export_data["contact"]["email"] is None
+         assert export_data["contact"]["phone"] is None
+ 
++    @pytest.mark.asyncio
++    async def test_anonymize_contact_purge_ses_prestations(self, client: AsyncClient):
++        """Art. 17 : une prestation ne doit pas rester liée à [ANONYMISÉ]."""
++        contact_id = await _create_contact(client, "ClientAvecPrestation")
++        prestation = await client.post(
++            "/api/prestations",
++            json={
++                "contact_id": contact_id,
++                "intitule": "Accompagnement sensible",
++                "montant_ht": 5000.0,
++                "phase": "en_cours",
++                "financeur": "OPCO",
++            },
++        )
++        assert prestation.status_code == 201, prestation.text
++
++        response = await client.post(
++            f"/api/rgpd/anonymize/{contact_id}",
++            json={"reason": "demande du client"},
++        )
++
++        assert response.status_code == 200
++        prestations = await client.get(f"/api/prestations?contact_id={contact_id}")
++        assert prestations.status_code == 200
++        assert prestations.json() == []
++
+     @pytest.mark.asyncio
+     async def test_anonymize_contact_not_found(self, client: AsyncClient):
+         """POST /api/rgpd/anonymize/{contact_id} retourne 404 si le contact n'existe pas."""
+diff --git a/tests/test_workspace_search_invoices.py b/tests/test_workspace_search_invoices.py
+index 75b4b42d..7b2f20bd 100644
+--- a/tests/test_workspace_search_invoices.py
++++ b/tests/test_workspace_search_invoices.py
+@@ -72,6 +72,44 @@ class TestSearchInvoicesTool:
+         assert "FACT-2026-001" in result
+         assert "DEV-2026-007" in result
+ 
++    @pytest.mark.asyncio
++    async def test_trouve_une_facture_apres_suppression_du_contact(self, db_session):
++        """Le chat s'appuie sur le destinataire figé, pas sur un JOIN vivant."""
++        contact = Contact(
++            id="contact-supprime",
++            first_name="Claire",
++            last_name="Historique",
++            company="Archive SARL",
++        )
++        invoice = Invoice(
++            id="inv-snapshot",
++            invoice_number="FACT-2026-099",
++            contact_id=contact.id,
++            client_name="Claire Historique",
++            client_company="Archive SARL",
++            client_email="claire@example.test",
++            client_phone=None,
++            client_address="12 rue du Temps",
++            document_type="facture",
++            due_date=datetime(2026, 9, 30, tzinfo=UTC),
++            issue_date=datetime(2026, 8, 30, tzinfo=UTC),
++            status="sent",
++            subtotal_ht=100.0,
++            total_tax=20.0,
++            total_ttc=120.0,
++        )
++        db_session.add_all([contact, invoice])
++        await db_session.commit()
++        await db_session.delete(contact)
++        await db_session.commit()
++
++        result = await execute_workspace_tool(
++            "search_invoices", {"query": "FACT-2026-099"}, db_session
++        )
++
++        assert "FACT-2026-099" in result
++        assert "Claire Historique" in result
++
+     @pytest.mark.asyncio
+     async def test_aucun_resultat_message_clair(self, db_session):
+         await _seed(db_session)
