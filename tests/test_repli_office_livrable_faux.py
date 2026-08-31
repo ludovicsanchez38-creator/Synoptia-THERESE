@@ -348,3 +348,31 @@ def test_garde_refuse_un_fichier_illisible(tmp_path: Path):
     path = tmp_path / "brise.xlsx"
     path.write_bytes(b"ceci n'est pas un classeur")
     assert _validate_document_content(str(path), "xlsx") is False
+
+
+def test_pptx_une_seule_diapositive_de_fin(tmp_path: Path):
+    """31/08 : le PPTX « dauphins » sortait avec deux « Merci », la seconde vide.
+
+    Le générateur ajoute toujours sa diapositive de clôture. Quand le modèle
+    en écrit une lui aussi (`## Merci`), elle est parsée comme une diapositive
+    de contenu sans points, et on en livre deux.
+    """
+    from app.services.skills.pptx_generator import PptxSkill
+
+    skill = PptxSkill(tmp_path)
+    # Le parseur découpe sur `---`, pas sur les titres : c'est le format
+    # que le prompt impose au modèle, et celui de la sortie réelle.
+    contenu = (
+        "## Qui sont les dauphins ?\n\n"
+        "- Des cétacés à dents\n- Présents dans tous les océans\n"
+        "\n---\n"
+        "## Comment les protéger ?\n\n"
+        "- Réduire les filets dérivants\n- Limiter le bruit sous-marin\n"
+        "\n---\n"
+        "## Merci\n"
+    )
+    slides = skill._parse_content(contenu)
+    titres = [s["title"] for s in slides]
+    assert "Merci" not in titres, (
+        f"la clôture du modèle doit être retirée, le générateur pose la sienne : {titres}"
+    )

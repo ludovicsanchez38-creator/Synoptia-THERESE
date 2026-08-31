@@ -282,7 +282,26 @@ NE génère PAS de code Python. Écris directement le contenu textuel des slides
                     "points": points[:6],  # Max 6 points par slide
                 })
 
-        return self._ecraser_cycle_repete(slides)
+        return self._ecraser_cycle_repete(self._retirer_cloture_du_modele(slides))
+
+    def _retirer_cloture_du_modele(
+        self, slides: list[dict[str, Any]]
+    ) -> list[dict[str, Any]]:
+        """Retire la diapositive de fin écrite par le modèle.
+
+        31/08 : le générateur pose TOUJOURS sa propre clôture. Quand le
+        modèle écrivait aussi `## Merci`, le PPTX sortait avec deux
+        « Merci », dont une vide (constaté sur la présentation dauphins).
+        On ne retire que la dernière, et seulement si elle n'a aucun point :
+        une diapositive « Merci » qui porte du contenu reste du contenu.
+        """
+        while slides and not slides[-1]["points"] and re.match(
+            r"^(merci|remerciements|thank you)\b",
+            slides[-1]["title"].strip(),
+            re.I,
+        ):
+            slides = slides[:-1]
+        return slides
 
     def _ecraser_cycle_repete(
         self, slides: list[dict[str, Any]]
