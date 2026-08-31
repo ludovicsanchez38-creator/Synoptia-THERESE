@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any
 
 from app.services.skills.base import FileFormat, SkillParams, SkillResult
-from app.services.skills.code_executor import CodeGenSkill
+from app.services.skills.code_executor import CodeGenSkill, LivrableInexploitable
 from openpyxl import Workbook
 from openpyxl.styles import (
     Alignment,
@@ -153,21 +153,27 @@ NE génère PAS de code Python. Écris directement les tableaux de données.
         Returns:
             Résultat avec chemin vers le fichier généré
         """
-        # Créer le workbook
+        tables = self._parse_markdown_tables(params.content)
+        if not tables:
+            # Revue 30/08 : sans tableau compris, le repli inventait les
+            # colonnes A/B/C et livrait un classeur vide. Échec franc.
+            raise LivrableInexploitable(
+                "le contenu produit n'est pas exploitable (aucun tableau de données)"
+            )
+
         wb = Workbook()
-        ws = wb.active
-        ws.title = "Données"
+        noms_pris: set[str] = set()
+        for index, data in enumerate(tables):
+            nom = self._nom_onglet(str(data.get("title") or "Données"), noms_pris)
+            if index == 0:
+                ws = wb.active
+                assert ws is not None
+                ws.title = nom
+            else:
+                ws = wb.create_sheet(nom)
+            self._add_data(ws, data, params.title)
+            self._auto_fit_columns(ws)
 
-        # Parser le contenu et remplir le fichier
-        data = self._parse_content(params.content)
-
-        # Ajouter les données avec style
-        self._add_data(ws, data, params.title)
-
-        # Ajuster les largeurs de colonnes
-        self._auto_fit_columns(ws)
-
-        # Sauvegarder
         wb.save(str(output_path))
 
         # Calculer la taille
@@ -203,52 +209,93 @@ NE génère PAS de code Python. Écris directement les tableaux de données.
         except json.JSONDecodeError:
             pass
 
-        # Sinon, parser comme tableau Markdown
-        return self._parse_markdown_table(content)
+        tables = self._parse_markdown_tables(content)
+        return tables[0] if tables else {"title": "", "headers": [], "rows": [], "formulas": {}}
+
+    def _nom_onglet(self, titre: str, pris: set[str]) -> str:
+        brut = re.sub(r"[\[\]:*?/\\]", " ", titre).strip() or "Données"
+        brut = brut[:31]
+        nom = brut
+        indice = 2
+        while nom in pris:
+            suffixe = f" ({indice})"
+            nom = brut[: 31 - len(suffixe)] + suffixe
+            indice += 1
+        pris.add(nom)
+        return nom
+
+    def _parse_markdown_tables(self, content: str) -> list[dict[str, Any]]:
+        """Découpe le Markdown en un onglet par tableau (contrat du prompt).
+
+        Avant, un second `##` n'ouvrait pas d'onglet : ses en-têtes
+        devenaient des lignes du premier (Soso finding 1). Sans aucun
+        tableau, on ne fabrique plus A/B/C.
+        """
+        try:
+            json_match = re.search(r'\{[\s\S]*"headers"[\s\S]*\}', content)
+            if json_match:
+                payload = json.loads(json_match.group())
+                if payload.get("headers"):
+                    return [payload]
+        except json.JSONDecodeError:
+            pass
+
+        tables: list[dict[str, Any]] = []
+        titre = "Données"
+        headers: list[str] = []
+        rows: list[list[Any]] = []
+
+        def _flush() -> None:
+            nonlocal headers, rows, titre
+            if headers:
+                tables.append({
+                    "title": titre,
+                    "headers": headers,
+                    "rows": rows,
+                    "formulas": {},
+                })
+            headers = []
+            rows = []
+
+        for line in content.strip().split("\n"):
+            line = line.strip()
+            if line.startswith("## "):
+                _flush()
+                titre = line[3:].strip() or "Données"
+                continue
+            if not line:
+                continue
+            if line.startswith("|---") or re.match(r"^\|[\s\-:|]+\|$", line):
+                if headers and rows:
+                    _flush()
+                continue
+            if line.startswith("|"):
+                cells = [c.strip() for c in line.split("|")[1:-1]]
+                if not cells:
+                    continue
+                if not headers:
+                    headers = cells
+                else:
+                    processed: list[Any] = []
+                    for cell in cells:
+                        try:
+                            if "." in cell:
+                                processed.append(float(cell))
+                            else:
+                                processed.append(int(cell))
+                        except ValueError:
+                            processed.append(cell)
+                    rows.append(processed)
+
+        _flush()
+        return tables
 
     def _parse_markdown_table(self, content: str) -> dict[str, Any]:
-        """
-        Parse un tableau Markdown.
-
-        Args:
-            content: Contenu avec tableau Markdown
-
-        Returns:
-            Dictionnaire avec headers et rows
-        """
-        headers = []
-        rows = []
-
-        lines = content.strip().split('\n')
-        for line in lines:
-            line = line.strip()
-            if not line or line.startswith('|---') or re.match(r'^\|[\s\-:|]+\|$', line):
-                continue
-
-            if line.startswith('|'):
-                cells = [c.strip() for c in line.split('|')[1:-1]]
-                if cells:
-                    if not headers:
-                        headers = cells
-                    else:
-                        # Convertir les nombres
-                        processed_cells = []
-                        for cell in cells:
-                            try:
-                                if '.' in cell:
-                                    processed_cells.append(float(cell))
-                                else:
-                                    processed_cells.append(int(cell))
-                            except ValueError:
-                                processed_cells.append(cell)
-                        rows.append(processed_cells)
-
-        return {
-            "title": "Tableau",
-            "headers": headers or ["A", "B", "C"],
-            "rows": rows,
-            "formulas": {},
-        }
+        """Parse le premier tableau Markdown. Plus d'en-têtes A/B/C inventés."""
+        tables = self._parse_markdown_tables(content)
+        if tables:
+            return tables[0]
+        return {"title": "", "headers": [], "rows": [], "formulas": {}}
 
     def _add_data(self, ws, data: dict[str, Any], title: str) -> None:
         """

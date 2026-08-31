@@ -19,6 +19,7 @@ from app.services.skills.base import (
     SkillParams,
     SkillResult,
 )
+from app.services.skills.code_executor import LivrableInexploitable
 
 logger = logging.getLogger(__name__)
 
@@ -128,8 +129,12 @@ Le fichier doit être un document HTML valide, prêt à ouvrir dans un navigateu
         html_content = self._extract_html(params.content)
 
         if not html_content:
-            # Fallback : wrapper le contenu dans une page HTML basique
-            html_content = self._wrap_in_html(params.title, params.content)
+            # Revue 30/08 : wrapper un refus ou un HTML partiel dans un
+            # <pre> produisait une page « réussie ». Échec franc.
+            raise LivrableInexploitable(
+                "le contenu produit n'est pas exploitable "
+                "(HTML incomplet ou refus du modèle)"
+            )
 
         # Sauvegarder
         output_path.write_text(html_content, encoding="utf-8")
