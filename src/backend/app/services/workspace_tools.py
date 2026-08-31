@@ -770,6 +770,31 @@ async def _search_invoices(args: dict, session: AsyncSession) -> str:
     return f"{len(rows)} document(s) trouvé(s) :\n{listing}{guidance}"
 
 
+def _message_de_refus(erreur: str | None) -> str:
+    """Dit la cause ET la suite, au lecteur comme au modèle.
+
+    Incident du 31/08/2026 : dans le chat, le modèle posait encore ses
+    questions (« montant de ton apport ? ») et a déclenché l'outil dans le
+    même tour. L'outil a reçu les questions comme contenu et a refusé. Le
+    refus remontait tel quel : l'utilisateur lisait une panne là où il
+    manquait des chiffres, et le modèle recevait un constat sans consigne,
+    donc rien ne l'empêchait de rappeler l'outil à l'identique.
+
+    On ne raccroche la consigne QU'AU refus de contenu insuffisant : sur une
+    vraie panne technique (disque, permission), demander des chiffres à
+    l'utilisateur l'enverrait sur une fausse piste.
+    """
+    detail = (erreur or "").strip() or "cause inconnue"
+    if "exploitable" in detail.lower():
+        return (
+            f"Le document n'a pas été créé : {detail}. "
+            "Demande à l'utilisateur les informations manquantes, puis "
+            "rappelle cet outil avec le contenu complet. Ne le rappelle pas "
+            "avec le même contenu."
+        )
+    return f"Échec de génération du document : {detail}"
+
+
 async def _generate_document(
     args: dict,
     session: AsyncSession,
@@ -829,7 +854,7 @@ async def _generate_document(
             continuation.add_done_callback(_generations_en_cours.discard)
             raise
         if not resp.success:
-            return f"Échec de génération du document : {resp.error}"
+            return _message_de_refus(resp.error)
         if contexte is not None and contexte.annulation_observee():
             with contextlib.suppress(Exception):
                 if resp.file_name:
