@@ -28,6 +28,7 @@ const apiMocks = vi.hoisted(() => ({
   streamDeepResearch: vi.fn(),
   indexFile: vi.fn(),
   cancelGeneration: vi.fn(),
+  createConversation: vi.fn().mockResolvedValue({ id: 'conv-serveur', title: 'Test' }),
 }));
 
 vi.mock('../../services/api', () => ({

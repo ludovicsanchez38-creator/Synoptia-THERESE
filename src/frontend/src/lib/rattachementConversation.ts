@@ -47,12 +47,26 @@ export class ConversationEphemereError extends Error {
 
 /** L'identifiant réellement connu du serveur, en persistant la conversation si besoin. */
 export async function assurerConversationPersistee(conversationId: string): Promise<string> {
+  // Revue 30/08 : un Entrée parti pendant le rattachement (ou l'inverse)
+  // relançait createConversation : le backend posait A, le rattachement
+  // posait B+projet, le flux de A était rejeté. On attend la persistance
+  // déjà en vol et on reprend l'identité qu'elle a posée.
+  if (persistanceEnVol) {
+    await attendrePersistance();
+  }
+
   const etat = useChatStore.getState();
   const conversation = etat.conversations.find((c) => c.id === conversationId);
 
   // Conversation inconnue du store (surface isolée, test) : on la suppose déjà
   // enregistrée, et l'appel suivant dira le contraire si ce n'est pas le cas.
-  if (!conversation) return conversationId;
+  // Sauf si une persistance vient de remplacer l'id local : on reprend
+  // l'identité serveur de la conversation courante, pas l'id mort.
+  if (!conversation) {
+    const courante = etat.conversations.find((c) => c.id === etat.currentConversationId);
+    if (courante?.synced) return courante.id;
+    return conversationId;
+  }
   if (conversation.synced) return conversationId;
   if (conversation.ephemeral) throw new ConversationEphemereError();
 

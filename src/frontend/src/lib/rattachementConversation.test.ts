@@ -194,3 +194,45 @@ describe('Un envoi attend le rattachement en vol', () => {
     expect(source).toContain('attendrePersistance');
   });
 });
+
+describe('Un rattachement pendant le premier envoi', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    api.setConversationProject.mockResolvedValue({ project_id: 'projet-a', memory_scope: 'project' });
+  });
+
+  // Revue 30/08 : persistanceEnVol ne vivait que le temps de createConversation
+  // côté rattachement. Un Entrée parti avant le chunk conversation_id envoyait
+  // sans id ; le backend créait A, le rattachement créait B+projet, le flux
+  // de A était rejeté. On partage la même promesse de persistance.
+  it('ne crée pas une seconde conversation si une persistance est déjà en vol', async () => {
+    poserConversation({});
+    let liberer: (v: { id: string; title: string }) => void = () => undefined;
+    api.createConversation.mockReturnValue(
+      new Promise((resolve) => {
+        liberer = resolve;
+      })
+    );
+
+    const envoi = assurerConversationPersistee('conv-locale');
+    const rattachement = rattacherAUnProjet('conv-locale', 'projet-a', 'project');
+
+    await Promise.resolve();
+    expect(api.createConversation).toHaveBeenCalledTimes(1);
+
+    liberer({ id: 'conv-serveur', title: 'Nouvelle conversation' });
+    const [idEnvoi, idRattache] = await Promise.all([envoi, rattachement]);
+
+    expect(idEnvoi).toBe('conv-serveur');
+    expect(idRattache).toBe('conv-serveur');
+    expect(api.setConversationProject).toHaveBeenCalledWith('conv-serveur', 'projet-a', 'project');
+  });
+
+  it('est réellement persistée avant les deux chemins d’envoi', () => {
+    const source = readFileSync(
+      path.join(__dirname, '..', 'components', 'chat', 'ChatInput.tsx'),
+      'utf8',
+    );
+    expect(source.split('assurerConversationPersistee(').length - 1).toBeGreaterThanOrEqual(2);
+  });
+});
