@@ -28,6 +28,7 @@ import {
 import { useToolConfirmationStore } from '../../stores/toolConfirmationStore';
 import { doitAdopterIdentiteServeur } from '../../lib/identiteConversation';
 import { attendrePersistance, assurerConversationPersistee } from '../../lib/rattachementConversation';
+import { estUneImage } from '../../lib/pieceJointeImage';
 import { useFileDrop, type DroppedFile } from '../../hooks/useFileDrop';
 import { streamMessage, streamDeepResearch, indexFile, cancelGeneration, ApiError, getLLMConfig, setLLMConfig, type LLMProvider } from '../../services/api';
 import type { StreamChunk } from '../../services/api/chat';
@@ -293,11 +294,20 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       return true;
     });
     if (newFiles.length === 0) return;
+    // 31/08 : une image ne part pas à l'indexation. Elle est prête tout de
+    // suite, et le backend la posera sur le message pour la MONTRER au modèle.
     setAttachedFiles((current) => [
       ...current,
-      ...newFiles.map((file): AttachedFile => ({ ...file, indexStatus: 'indexing' })),
+      ...newFiles.map((file): AttachedFile => ({
+        ...file,
+        indexStatus: estUneImage(file.path) ? 'ready' : 'indexing',
+      })),
     ]);
-    await Promise.all(newFiles.map((file) => indexAttachment(file.path)));
+    await Promise.all(
+      newFiles
+        .filter((file) => !estUneImage(file.path))
+        .map((file) => indexAttachment(file.path)),
+    );
   }, [indexAttachment]);
 
   const { isDragging } = useFileDrop({

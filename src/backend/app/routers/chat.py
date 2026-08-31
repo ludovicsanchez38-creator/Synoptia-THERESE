@@ -495,6 +495,43 @@ lecture comme complète, et indique-lui que le document dépasse ce que tu peux
 recevoir d'un coup."""
 
 
+def separer_images_et_documents(
+    chemins: list[str] | None,
+) -> tuple[list[str], list[str]]:
+    """Sépare ce qui se lit de ce qui se montre.
+
+    31/08 : toute pièce jointe partait dans la chaîne d'indexation. Une
+    capture d'écran en ressortait avec « Type de fichier non autorisé pour
+    l'indexation : '.png' », que l'utilisateur lit comme un refus alors qu'il
+    voulait simplement montrer son écran.
+    """
+    from app.services.images_jointes import est_une_image
+
+    documents: list[str] = []
+    images: list[str] = []
+    for chemin in chemins or []:
+        (images if est_une_image(chemin) else documents).append(chemin)
+    return documents, images
+
+
+def _attacher_images(
+    messages: list, chemins: list[str] | None
+) -> list[str]:
+    """Pose les images sur le tour courant et rend les écarts à annoncer.
+
+    Le message porteur est le DERNIER : une image montrée maintenant ne doit
+    pas se retrouver collée à un tour précédent.
+    """
+    from app.services.images_jointes import charger_images_jointes
+
+    if not chemins or not messages:
+        return []
+    images, ecartees = charger_images_jointes(chemins)
+    if images:
+        messages[-1].images = list(images)
+    return ecartees
+
+
 def _memoriser_pieces_jointes(message: Message, chemins: list[str] | None) -> None:
     """Consigne les pièces jointes d'un tour sur le message qui les portait."""
     if not chemins:
@@ -1684,8 +1721,15 @@ async def send_message(
             logger.warning(f"File command error: {error}")
 
     # BUG-044 : Traiter les fichiers joints (drag & drop)
-    if request.file_paths:
-        for fp in request.file_paths:
+    # 31/08 : les images ne passent PAS par l'extraction de texte, elles se
+    # posent sur le message pour être montrées au modèle.
+    _documents_joints, _images_jointes = separer_images_et_documents(
+        request.file_paths
+    )
+    for _ecartee in _attacher_images(messages, _images_jointes):
+        logger.warning("Image non transmise au modèle : %s", _ecartee)
+    if _documents_joints:
+        for fp in _documents_joints:
             file_ctx, error = await _get_file_context(
                 fp, session, "analyse",
                 scope=perimetre_fichiers, scope_id=perimetre_fichiers_id,
@@ -2244,8 +2288,12 @@ async def _do_stream_response(
             logger.warning(f"File command error: {error}")
 
     # BUG-044 : Traiter les fichiers joints (drag & drop) via file_paths
-    if file_paths:
-        for fp in file_paths:
+    # 31/08 : voir le chemin non-stream, une image se montre, elle ne s'indexe pas.
+    _documents_joints, _images_jointes = separer_images_et_documents(file_paths)
+    for _ecartee in _attacher_images(messages, _images_jointes):
+        file_errors.append(f"Image non transmise au modèle : {_ecartee}")
+    if _documents_joints:
+        for fp in _documents_joints:
             file_ctx, error = await _get_file_context(
                 fp, session, "analyse",
                 scope=perimetre_fichiers, scope_id=perimetre_fichiers_id,
