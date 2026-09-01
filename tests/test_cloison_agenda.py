@@ -28,8 +28,23 @@ périmètre, pour que personne ne croie la signature suffisante.
 """
 
 import json
+from datetime import datetime, timedelta
 
 import pytest
+
+
+def _creneau(dans_heures=24, duree_heures=1):
+    """Un rendez-vous a venir, pas une date gravee.
+
+    Les trois premiers tests fixaient 2026-09-01T10:00. Le 01/09/2026 a midi,
+    `list_calendar_events` ne rend que les 30 prochains JOURS : deux tests sont
+    devenus rouges, et le troisieme — qui verifie une absence — est reste vert
+    pour la mauvaise raison. Une date absolue dans un test qui interroge
+    l avenir est une bombe a retardement.
+    """
+    debut = datetime.now() + timedelta(hours=dans_heures)
+    fin = debut + timedelta(hours=duree_heures)
+    return debut.strftime("%Y-%m-%dT%H:%M:%S"), fin.strftime("%Y-%m-%dT%H:%M:%S")
 
 
 async def _projet(client, nom):
@@ -66,8 +81,8 @@ class TestUnEvenementSuitSonDossier:
 
             await execute_workspace_tool(
                 "create_calendar_event",
-                {"summary": "Séance Martin", "start": "2026-09-01T10:00:00",
-                 "end": "2026-09-01T11:00:00"},
+                {"summary": "Séance Martin", "start": _creneau()[0],
+                 "end": _creneau()[1]},
                 session,
                 conversation_id="conv-martin",
             )
@@ -93,8 +108,8 @@ class TestUnEvenementSuitSonDossier:
             await _conversation_rattachee(session, martin, "conv-m2")
             await execute_workspace_tool(
                 "create_calendar_event",
-                {"summary": "Séance Martin", "start": "2026-09-01T10:00:00",
-                 "end": "2026-09-01T11:00:00"},
+                {"summary": "Séance Martin", "start": _creneau()[0],
+                 "end": _creneau()[1]},
                 session,
                 conversation_id="conv-m2",
             )
@@ -116,8 +131,8 @@ class TestUnEvenementSuitSonDossier:
             await _conversation_rattachee(session, martin, "conv-m3")
             await execute_workspace_tool(
                 "create_calendar_event",
-                {"summary": "Séance Martin", "start": "2026-09-01T10:00:00",
-                 "end": "2026-09-01T11:00:00"},
+                {"summary": "Séance Martin", "start": _creneau()[0],
+                 "end": _creneau()[1]},
                 session,
                 conversation_id="conv-m3",
             )
@@ -141,7 +156,7 @@ class TestUnEvenementSuitSonDossier:
             await execute_workspace_tool(
                 "create_calendar_event",
                 {"summary": "Rendez-vous d'avant la 0.56",
-                 "start": "2026-09-02T09:00:00", "end": "2026-09-02T10:00:00"},
+                 "start": _creneau(48)[0], "end": _creneau(48)[1]},
                 session,
             )
             resultat = await session.execute(
