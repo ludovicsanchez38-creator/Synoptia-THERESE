@@ -18,6 +18,7 @@ import type { CommandDefinition } from '../../types/command';
 import { cn } from '../../lib/utils';
 import { PromptLibrary } from '../prompts/PromptLibrary';
 import { Z_LAYER } from '../../styles/z-layers';
+import { jetonDePastille } from '../guided/pastilleDeCarte';
 
 interface HomeCommandsProps {
   onPromptSelect: (prompt: string) => void;
@@ -385,7 +386,7 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
                   {/* Icon container */}
                   <div
                     className="relative flex items-center justify-center w-10 h-10 rounded-sm mb-3 border-[1.5px] border-[var(--btn-ink)]"
-                    style={{ background: `var(--k${(index % 4) + 1}bg)`, color: `var(--k${(index % 4) + 1})` }}
+                    style={{ background: jetonDePastille(index).fond, color: jetonDePastille(index).teinte }}
                   >
                     <cat.icon className="w-5 h-5" />
                   </div>

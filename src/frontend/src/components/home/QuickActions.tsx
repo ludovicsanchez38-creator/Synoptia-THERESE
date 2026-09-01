@@ -16,6 +16,7 @@
 import { MessageSquarePlus, FileText, FileStack, UserPlus, Receipt } from 'lucide-react';
 import { runAction } from '../../lib/actionRegistry';
 import { useNavigationStore } from '../../stores/navigationStore';
+import { jetonDePastille } from '../guided/pastilleDeCarte';
 
 const ACTIONS: { id: string; label: string; icon: React.ElementType }[] = [
   { id: 'chat.new', label: 'Nouvelle conversation', icon: MessageSquarePlus },
@@ -39,10 +40,12 @@ export function QuickActions() {
           onClick={() => handle(id)}
           className="card-brutal flex items-center gap-2.5 p-3 rounded-md bg-surface border-[1.5px] border-border text-left"
         >
-          {/* Pastille duotone : accent catégoriel k1-k4, cerclée d'encre */}
+          {/* Pastille duotone : jeton de domaine, cerclée d'encre. Les anciens
+              accents numérotés, assemblés à l'exécution, n'avaient plus aucune
+              définition dans globals.css : ni fond ni couleur. */}
           <span
             className="w-8 h-8 rounded-sm grid place-items-center shrink-0 border-[1.5px] border-[var(--btn-ink)]"
-            style={{ background: `var(--k${(i % 4) + 1}bg)`, color: `var(--k${(i % 4) + 1})` }}
+            style={{ background: jetonDePastille(i).fond, color: jetonDePastille(i).teinte }}
           >
             <Icon className="w-4 h-4" />
           </span>

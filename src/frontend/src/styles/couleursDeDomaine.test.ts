@@ -153,7 +153,10 @@ describe('lot 5 : plus une seule couleur brute', () => {
     const fautifs: string[] = [];
     for (const f of [...SOURCES, join(RACINE, 'styles/globals.css')]) {
       const contenu = readFileSync(f, 'utf-8');
-      for (const m of contenu.matchAll(/--k[1-4](bg)?\b/g)) {
+      // Le motif litteral ne rencontrait jamais `--k${(i % 4) + 1}`, assemble
+      // a l'execution : le test restait vert en nommant un defaut vivant dans
+      // deux fichiers de son propre perimetre. Il voit desormais les deux formes.
+      for (const m of contenu.matchAll(/--k(?:[1-4]|\$\{)[\w\s%()+*-]*(bg)?/g)) {
         if (/^\s*\/[/*]|^\s*\*/.test(contenu.slice(contenu.lastIndexOf('\n', m.index) + 1, m.index))) continue;
         fautifs.push(`${court(f)} : ${m[0]}`);
       }
