@@ -34,6 +34,7 @@ from app.services.http_client import get_http_client
 from app.services.system_resources import OLLAMA_CONTEXT_MARGIN_BYTES, detect_system_memory
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -838,7 +839,22 @@ async def _mark_onboarding_completed(session: AsyncSession) -> Preference:
             updated_at=now,
         )
         session.add(pref)
-    await session.commit()
+    try:
+        await session.commit()
+    except IntegrityError:
+        # 01/09/2026 : la docstring promet l'idempotence, et elle tient pour
+        # deux appels SUCCESSIFS. Sous concurrence, deux requetes lisent
+        # « marqueur absent » en meme temps, les deux inserent, et la seconde
+        # violait la contrainte d'unicite : 500 rendu a l'appelant alors que
+        # le marqueur EST pose. Ce qui compte est l'etat final, pas d'avoir
+        # gagne la course.
+        await session.rollback()
+        result = await session.execute(
+            select(Preference).where(Preference.key == "onboarding_completed")
+        )
+        pref = result.scalar_one_or_none()
+        if pref is None:
+            raise
     return pref
 
 

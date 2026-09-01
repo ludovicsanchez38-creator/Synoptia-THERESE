@@ -9,14 +9,19 @@
 
 import { test, expect } from '@playwright/test';
 
-import { passerLaMiseEnRoute } from './helpers/surfaces';
+import { ouvrirLaSurface, passerLaMiseEnRoute } from './helpers/surfaces';
 
 test.describe('Parcours 04 - CRM', () => {
   test.beforeEach(async ({ page, request }) => {
     await passerLaMiseEnRoute(request);
-    await page.goto('/?panel=crm');
+    await page.goto('/');
     await page.waitForLoadState('networkidle', { timeout: 15000 });
     await page.waitForSelector('[data-testid="app-main"]', { timeout: 15000 });
+    // `?panel=crm` et `?panel=email` ne sont plus reconnus : le lien profond
+    // n'accepte que `board` et `atelier`. La surface s'ouvre par son action
+    // de registre, qui ne depend d'aucun parametre d'URL.
+    await ouvrirLaSurface(page, 'crm.open');
+    await expect(page.getByTestId('crm-panel')).toBeVisible({ timeout: 15000 });
   });
 
   test('US-300.HP : le panel CRM s\'ouvre en mode standalone', async ({ page }) => {

@@ -9,7 +9,7 @@
 
 import { test, expect } from '@playwright/test';
 
-import { passerLaMiseEnRoute } from './helpers/surfaces';
+import { ouvrirLaSurface, passerLaMiseEnRoute } from './helpers/surfaces';
 
 test.describe('Parcours 03 - Email', () => {
   test.beforeEach(async ({ request }) => {
@@ -19,16 +19,21 @@ test.describe('Parcours 03 - Email', () => {
   });
 
   test('US-111.HP : le panel email s\'ouvre en mode standalone via ?panel=email', async ({ page }) => {
-    await page.goto('/?panel=email');
+    await page.goto('/');
     await page.waitForLoadState('networkidle', { timeout: 15000 });
     await page.waitForSelector('[data-testid="app-main"]', { timeout: 15000 });
+    // `?panel=crm` et `?panel=email` ne sont plus reconnus : le lien profond
+    // n'accepte que `board` et `atelier`. La surface s'ouvre par son action
+    // de registre, qui ne depend d'aucun parametre d'URL.
+    await ouvrirLaSurface(page, 'email.open');
+    await expect(page.getByTestId('email-panel')).toBeVisible({ timeout: 15000 });
 
     const emailPanel = page.getByTestId('email-panel');
     await expect(emailPanel).toBeVisible({ timeout: 15000 });
   });
 
   test('US-112.HP : le wizard de configuration email apparait quand aucun compte n\'est configure', async ({ page }) => {
-    await page.goto('/?panel=email');
+    await page.goto('/');
     await page.waitForLoadState('networkidle', { timeout: 15000 });
 
     // Le wizard doit s'afficher automatiquement si aucun compte email n'est configure
@@ -38,7 +43,7 @@ test.describe('Parcours 03 - Email', () => {
   });
 
   test('US-112.HP : le wizard affiche le titre "Configuration Email"', async ({ page }) => {
-    await page.goto('/?panel=email');
+    await page.goto('/');
     await page.waitForLoadState('networkidle', { timeout: 15000 });
 
     const title = page.getByText('Configuration Email');
@@ -46,7 +51,7 @@ test.describe('Parcours 03 - Email', () => {
   });
 
   test('US-113.HP : le wizard propose l\'option Gmail OAuth', async ({ page }) => {
-    await page.goto('/?panel=email');
+    await page.goto('/');
     await page.waitForLoadState('networkidle', { timeout: 15000 });
 
     // Le wizard step 1 = ChoiceStep avec les options Gmail et SMTP
@@ -55,7 +60,7 @@ test.describe('Parcours 03 - Email', () => {
   });
 
   test('US-113.HP : le wizard propose l\'option SMTP classique', async ({ page }) => {
-    await page.goto('/?panel=email');
+    await page.goto('/');
     await page.waitForLoadState('networkidle', { timeout: 15000 });
 
     const smtpOption = page.getByText(/smtp/i).first();
@@ -63,7 +68,7 @@ test.describe('Parcours 03 - Email', () => {
   });
 
   test('US-112.HP : le wizard a un bouton de fermeture fonctionnel', async ({ page }) => {
-    await page.goto('/?panel=email');
+    await page.goto('/');
     await page.waitForLoadState('networkidle', { timeout: 15000 });
 
     // Attendre que le wizard soit visible
@@ -79,7 +84,7 @@ test.describe('Parcours 03 - Email', () => {
   });
 
   test('US-113.HP : selectionner Gmail navigate vers l\'etape suivante du wizard', async ({ page }) => {
-    await page.goto('/?panel=email');
+    await page.goto('/');
     await page.waitForLoadState('networkidle', { timeout: 15000 });
 
     // Cliquer sur l'option Gmail
@@ -93,7 +98,7 @@ test.describe('Parcours 03 - Email', () => {
   });
 
   test('US-113.HP : selectionner SMTP navigate vers l\'etape SMTP', async ({ page }) => {
-    await page.goto('/?panel=email');
+    await page.goto('/');
     await page.waitForLoadState('networkidle', { timeout: 15000 });
 
     // Cliquer sur l'option SMTP
