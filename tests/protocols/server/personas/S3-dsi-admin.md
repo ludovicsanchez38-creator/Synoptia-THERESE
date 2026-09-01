@@ -1,5 +1,35 @@
 # S3 - DSI / Admin
 
+> **Sélecteurs, à lire avant d'exécuter le moindre script de ce document.**
+>
+> Correction du 01/09/2026. Ces protocoles combinaient deux appels à
+> `document.querySelectorAll` avec un OU logique. Une NodeList vide est un
+> objet, donc une valeur vraie : **le repli n'était jamais emprunté**, et le
+> premier sélecteur l'emportait même quand il ne trouvait rien. Combiné à des
+> identifiants absents du code, cela rendait les verdicts vides : « pas de
+> doublon » et « zéro donnée restante » étaient vrais quoi qu'il arrive.
+>
+> Utiliser l'aide ci-dessous, qui parcourt réellement les sélecteurs et
+> **échoue quand aucun ne trouve rien** :
+>
+> ```js
+> function qsa(...selecteurs) {
+>   for (const s of selecteurs) {
+>     const trouves = [...document.querySelectorAll(s)];
+>     if (trouves.length) return trouves;
+>   }
+>   throw new Error(
+>     "Aucun élément pour : " + selecteurs.join(" | ") +
+>     " — le sélecteur est faux ou l'écran n'est pas celui attendu. " +
+>     "Ce pas ne prouve rien, corriger avant de conclure."
+>   );
+> }
+> ```
+>
+> Un comptage qui rend zéro parce que le sélecteur est faux n'est pas un
+> résultat, c'est une mesure ratée.
+
+
 > Persona : Thomas Renaud, DSI d'une mairie de 400 agents.
 > Role : `admin` - acces complet a la plateforme, gestion utilisateurs, audit, configuration.
 > Produit : THERESE Server (Web multi-tenant)
@@ -509,8 +539,7 @@ Thomas est DSI depuis 8 ans. Il a deploye THERESE Server sur un serveur on-premi
 - **Chrome MCP** :
   ```
   javascript_tool :
-    const conversations = document.querySelectorAll('[data-testid="conversation-item"]') ||
-                          document.querySelectorAll('.conversation-item');
+    const conversations = qsa('[data-testid="conversation-item"]', '.conversation-item');
     return { count: conversations.length };
   take_screenshot → "S3-22-conversation-history.png"
   ```

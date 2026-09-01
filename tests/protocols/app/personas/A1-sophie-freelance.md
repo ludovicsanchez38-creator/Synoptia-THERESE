@@ -1,5 +1,11 @@
 # Protocole de test - Persona A1 : Sophie Martin, graphiste freelance
 
+> **Correction du 01/09/2026, sélecteurs d'onglets.** Ce protocole visait
+> `settings-tab-ai` et `settings-tab-privacy`, deux onglets qui n'existent pas :
+> les onglets réels sont `ai` (fournisseurs et clés) et `privacy`
+> (confidentialité, où vit l'export RGPD). Les étapes concernées ne pouvaient
+> donc rien trouver, et un pas qui ne trouve rien ne prouve rien.
+
 > Version : 1.0 | Date : 2026-03-27
 > App : THERESE Desktop (Tauri 2.0, React, Python FastAPI)
 > URL dev : http://localhost:1420 | Backend : http://localhost:17293
@@ -286,8 +292,8 @@ mkdir -p /tmp/therese-tests
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `find` -> `[data-testid="settings-tab-llm"]`
-2. `click` -> `[data-testid="settings-tab-llm"]`
+1. `find` -> `[data-testid="settings-tab-ai"]`
+2. `click` -> `[data-testid="settings-tab-ai"]`
 3. `wait_for` -> contenu de l'onglet LLM visible (max 2s)
 4. `screenshot` -> `/tmp/therese-tests/A1-14_settings_llm_tab.png`
 
@@ -1001,8 +1007,8 @@ mkdir -p /tmp/therese-tests
 1. `find` -> `[data-testid="settings-btn"]`
 2. `click` -> `[data-testid="settings-btn"]`
 3. `wait_for` -> `[data-testid="settings-modal"]` visible (max 3s)
-4. `find` -> `[data-testid="settings-tab-data"]`
-5. `click` -> `[data-testid="settings-tab-data"]`
+4. `find` -> `[data-testid="settings-tab-privacy"]`
+5. `click` -> `[data-testid="settings-tab-privacy"]`
 6. `wait_for` -> contenu onglet Data visible (max 2s)
 7. `screenshot` -> `/tmp/therese-tests/A1-48_settings_data_tab.png`
 8. `find` -> bouton "Exporter" ou "Export RGPD" ou "Télécharger mes données"
@@ -1066,8 +1072,8 @@ sidebar-conversation-list
 sidebar-conversation-item
 settings-btn
 settings-modal
-settings-tab-llm
-settings-tab-data
+settings-tab-ai
+settings-tab-privacy
 settings-close-btn
 settings-save-btn
 memory-panel

@@ -426,6 +426,11 @@ class TestBUG013KeychainLazy:
                     "encrypt() doit appeler _ensure_initialized()"
                 )
                 break
+        else:
+            pytest.fail(
+                "encrypt introuvable : la boucle n'a rien trouve, donc aucune "
+                "assertion ne s'est executee et ce test ne prouve rien"
+            )
 
     def test_decrypt_calls_ensure_initialized(self):
         """decrypt() doit appeler _ensure_initialized() avant de déchiffrer."""
@@ -439,6 +444,11 @@ class TestBUG013KeychainLazy:
                     "decrypt() doit appeler _ensure_initialized()"
                 )
                 break
+        else:
+            pytest.fail(
+                "decrypt introuvable : la boucle n'a rien trouve, donc aucune "
+                "assertion ne s'est executee et ce test ne prouve rien"
+            )
 
     def test_fernet_none_after_construction(self):
         """_fernet doit être None juste après la construction (avant premier usage)."""
@@ -5269,6 +5279,11 @@ class TestBUG092_PDFErrorHandling:
                     "Le bloc except de generate_invoice_pdf doit utiliser logger.error (BUG-092)"
                 )
                 break
+        else:
+            pytest.fail(
+                "generate_invoice_pdf introuvable : la boucle n'a rien trouve, donc aucune "
+                "assertion ne s'est executee et ce test ne prouve rien"
+            )
 
     def test_pdf_except_raises_http_500(self):
         """Le bloc except doit lever une HTTPException avec status_code=500."""
@@ -5284,6 +5299,11 @@ class TestBUG092_PDFErrorHandling:
                     "Le bloc except doit utiliser HTTPException (BUG-092)"
                 )
                 break
+        else:
+            pytest.fail(
+                "generate_invoice_pdf introuvable : la boucle n'a rien trouve, donc aucune "
+                "assertion ne s'est executee et ce test ne prouve rien"
+            )
 
     def test_pdf_error_message_mentions_pdf(self):
         """Le message d'erreur doit mentionner 'PDF'."""
@@ -5296,6 +5316,11 @@ class TestBUG092_PDFErrorHandling:
                     "Le message d'erreur doit mentionner 'PDF' (BUG-092)"
                 )
                 break
+        else:
+            pytest.fail(
+                "generate_invoice_pdf introuvable : la boucle n'a rien trouve, donc aucune "
+                "assertion ne s'est executee et ce test ne prouve rien"
+            )
 
     def test_pdf_error_message_mentions_erreur(self):
         """Le message d'erreur doit contenir le mot 'Erreur' (en français)."""
@@ -5308,6 +5333,11 @@ class TestBUG092_PDFErrorHandling:
                     "Le message d'erreur doit contenir 'Erreur' (BUG-092)"
                 )
                 break
+        else:
+            pytest.fail(
+                "generate_invoice_pdf introuvable : la boucle n'a rien trouve, donc aucune "
+                "assertion ne s'est executee et ce test ne prouve rien"
+            )
 
     def test_invoice_pdf_generator_import_exists(self):
         """L'import InvoicePDFGenerator doit exister dans invoices.py."""
@@ -5325,6 +5355,11 @@ class TestBUG092_PDFErrorHandling:
             if isinstance(node, ast.AsyncFunctionDef) and node.name == "generate_invoice_pdf":
                 pdf_func_found = True
                 break
+        else:
+            pytest.fail(
+                "generate_invoice_pdf introuvable : la boucle n'a rien trouve, donc aucune "
+                "assertion ne s'est executee et ce test ne prouve rien"
+            )
         assert pdf_func_found, (
             "Le endpoint PDF doit être une fonction nommée generate_invoice_pdf (BUG-092)"
         )
@@ -5420,6 +5455,11 @@ class TestBUG094_PDFWorkingDirectory:
                         )
                         break
                 break
+        else:
+            pytest.fail(
+                "InvoicePDFGenerator introuvable : la boucle n'a rien trouve, donc aucune "
+                "assertion ne s'est executee et ce test ne prouve rien"
+            )
 
 
 # ============================================================
@@ -5490,6 +5530,11 @@ class TestCalendarGoogleSyncFix:
             if isinstance(node, ast.AsyncFunctionDef) and node.name == "_list_google_calendars":
                 func_found = True
                 break
+        else:
+            pytest.fail(
+                "_list_google_calendars introuvable : la boucle n'a rien trouve, donc aucune "
+                "assertion ne s'est executee et ce test ne prouve rien"
+            )
         assert func_found, (
             "_list_google_calendars doit exister dans calendar.py"
         )
@@ -5516,6 +5561,11 @@ class TestCalendarGoogleSyncFix:
             if isinstance(node, ast.AsyncFunctionDef) and node.name == "get_sync_status":
                 func_found = True
                 break
+        else:
+            pytest.fail(
+                "get_sync_status introuvable : la boucle n'a rien trouve, donc aucune "
+                "assertion ne s'est executee et ce test ne prouve rien"
+            )
         assert func_found, "La fonction get_sync_status doit exister"
 
 
@@ -5653,6 +5703,11 @@ class TestInvoiceCRUDRobustness:
                     "Le endpoint PDF doit retourner invoice_number"
                 )
                 break
+        else:
+            pytest.fail(
+                "generate_invoice_pdf introuvable : la boucle n'a rien trouve, donc aucune "
+                "assertion ne s'est executee et ce test ne prouve rien"
+            )
 
     def test_currency_support_eur_chf_usd_gbp(self):
         """InvoiceForm.tsx doit supporter EUR, CHF, USD et GBP."""
@@ -5685,6 +5740,11 @@ class TestInvoiceCRUDRobustness:
             if isinstance(node, ast.AsyncFunctionDef) and node.name == "mark_invoice_paid":
                 func_found = True
                 break
+        else:
+            pytest.fail(
+                "mark_invoice_paid introuvable : la boucle n'a rien trouve, donc aucune "
+                "assertion ne s'est executee et ce test ne prouve rien"
+            )
         assert func_found, "mark_invoice_paid doit exister dans invoices.py"
 
     def test_send_endpoint_returns_501(self):
@@ -5715,6 +5775,11 @@ class TestInvoiceCRUDRobustness:
                     "create_invoice doit lever 400 pour un document_type invalide"
                 )
                 break
+        else:
+            pytest.fail(
+                "create_invoice introuvable : la boucle n'a rien trouve, donc aucune "
+                "assertion ne s'est executee et ce test ne prouve rien"
+            )
 
 
 # ============================================================
@@ -5802,6 +5867,11 @@ class TestCalendarRobustness:
                     "Le message d'erreur doit mentionner 'inconnu' ou 'unknown'"
                 )
                 break
+        else:
+            pytest.fail(
+                "_get_provider_for_calendar introuvable : la boucle n'a rien trouve, donc aucune "
+                "assertion ne s'est executee et ce test ne prouve rien"
+            )
 
     def test_delete_event_endpoint_exists(self):
         """Le endpoint de suppression d'événement doit exister."""
@@ -5812,6 +5882,11 @@ class TestCalendarRobustness:
             if isinstance(node, ast.AsyncFunctionDef) and node.name == "delete_event":
                 func_found = True
                 break
+        else:
+            pytest.fail(
+                "delete_event introuvable : la boucle n'a rien trouve, donc aucune "
+                "assertion ne s'est executee et ce test ne prouve rien"
+            )
         assert func_found, "delete_event doit exister dans calendar.py"
 
     def test_calendar_has_local_provider_support(self):
