@@ -131,6 +131,11 @@ class CommandRegistry:
         self._commands.clear()
         self._register_builtin_commands()
         self._register_skill_commands()
+        # 01/09 : cette methode existait et n'etait appelee NULLE PART. Son
+        # unique occurrence dans tout le serveur etait sa propre definition,
+        # si bien que les agents actionnables n'atteignaient ni l'accueil ni
+        # le menu, alors que le code pour les brancher etait ecrit.
+        self._register_action_agents()
         await self._load_user_commands()
         logger.info(f"CommandRegistry initialisé avec {len(self._commands)} commandes")
 

@@ -461,7 +461,7 @@ export const MessageBubble = memo(function MessageBubble({
                 // `target="_blank"` et ouvrait un onglet sur rien. Sans
                 // destination, ce n'est pas un lien : on rend le texte seul.
                 if (!href) {
-                  return <span className="text-muted">{children}</span>;
+                  return <span className="text-text-muted">{children}</span>;
                 }
                 return (
                   <a
