@@ -20,6 +20,42 @@ BACKEND_URL = "http://localhost:8000"
 SANDBOX_DIR = Path.home() / ".therese-test-sandbox"
 BACKEND_DIR = Path(__file__).parent.parent.parent / "src" / "backend"
 
+# ---------------------------------------------------------------------------
+# GARDE — 01/09/2026
+#
+# Cette suite lance un backend jetable sur le port 8000, puis navigue vers un
+# frontend sur 1420 qu'elle ne lance PAS. Or un frontend lancé à la main vise
+# le port 17293 par défaut : l'instance RÉELLE. Les 125 tests créent et
+# suppriment des contacts, des factures et des tâches. Lancer cette suite avec
+# un `make dev` ouvert, c'est écrire dans les vraies données.
+#
+# La suite TypeScript de `tests/e2e/stories/` fait le même travail et s'est
+# donné cette garde en revue 0.40 (« E2E interdits sur le port 17293 ») : elle
+# lance ses DEUX serveurs, sur un port dédié, avec un dossier de données
+# temporaire détruit à la fin. C'est elle qui est maintenue — le dernier
+# changement fonctionnel ici date de février 2026.
+#
+# Tant que l'arbitrage n'est pas rendu (réparer ces 125 tests ou les retirer),
+# la suite refuse de tourner au lieu de tourner dangereusement.
+# ---------------------------------------------------------------------------
+_AUTORISATION = "THERESE_E2E_PYTHON_JE_SAIS_CE_QUE_JE_FAIS"
+
+
+def pytest_collection_modifyitems(config, items):  # noqa: ARG001
+    if os.environ.get(_AUTORISATION) == "1":
+        return
+    raison = pytest.mark.skip(
+        reason=(
+            "suite E2E Python neutralisee : elle vise un frontend qu'elle ne "
+            "lance pas, lequel pointe par defaut sur l'instance REELLE (17293). "
+            "La suite maintenue est tests/e2e/stories (Playwright TypeScript, "
+            "npm run test:e2e). Pour passer outre en connaissance de cause : "
+            f"{_AUTORISATION}=1"
+        )
+    )
+    for item in items:
+        item.add_marker(raison)
+
 
 @pytest.fixture(scope="session")
 def sandbox_env():

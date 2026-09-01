@@ -18,7 +18,9 @@
     "lint:fix": "cd src/frontend && npm run lint:fix",
     "test": "cd src/frontend && npm test",
     "version:check": "uv run --no-sync python scripts/check-app-version-sync.py",
-    "tauri": "cd src/frontend && npm run tauri"
+    "tauri": "cd src/frontend && npm run tauri",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "keywords": [
     "ai",

@@ -64,13 +64,23 @@ test-frontend:
 	@echo "🧪 Tests frontend..."
 	@cd $(FRONTEND_DIR) && npm test
 
+# 01/09/2026 : cette cible lancait la suite E2E PYTHON, qui vise un frontend
+# qu'elle ne lance pas — lequel pointe par defaut sur l'instance REELLE (17293).
+# Elle est neutralisee dans son conftest. La suite maintenue est la
+# TypeScript de tests/e2e/stories/ : elle lance ses deux serveurs sur un port
+# dedie, avec un dossier de donnees temporaire detruit a la fin.
 test-e2e:
-	@echo "🎭 Tests E2E (Playwright)..."
-	@$(VENV)/pytest tests/e2e/ -v
+	@echo "🎭 Tests E2E (Playwright, parcours de bout en bout)..."
+	@echo "   NB : 65 des 96 parcours testent la coque d'avant (B-136)."
+	@npx playwright test
+
+test-e2e-api:
+	@echo "🎭 Contrats d'API de bout en bout (30 tests, ~15 s)..."
+	@npx playwright test api-endpoints api-securite
 
 test-e2e-headed:
 	@echo "🎭 Tests E2E avec navigateur visible..."
-	@$(VENV)/pytest tests/e2e/ -v --headed --slowmo 1000
+	@npx playwright test --headed
 
 install-e2e:
 	@echo "📦 Installation dépendances E2E..."

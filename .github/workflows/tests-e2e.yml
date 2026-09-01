@@ -1,0 +1,85 @@
+# 01/09/2026 : les 192 tests Playwright de tests/e2e/stories/ etaient maintenus
+# jusqu'au 30/08 et n'avaient AUCUN lanceur — ni script npm, ni job CI. Une
+# ceinture de securite affichee et jamais bouclee.
+#
+# Workflow volontairement SEPARE de ci.yml, comme tests-windows.yml : il ne
+# conditionne pas encore la release. Une fois prouve stable sur quelques runs,
+# l'integrer au gate.
+name: Tests E2E (Playwright)
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  e2e:
+    name: Parcours de bout en bout
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    env:
+      THERESE_ENV: test
+      TRANSFORMERS_OFFLINE: "1"
+      CI: "true"
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: src/frontend/package-lock.json
+
+      - name: Installer les dependances systeme
+        run: sudo apt-get update && sudo apt-get install -y libmagic1
+
+      - name: Installer UV et le backend
+        run: pip install uv && uv sync --dev
+
+      - name: Installer les dependances frontend
+        working-directory: src/frontend
+        run: npm ci
+
+      - name: Installer les dependances racine (Playwright)
+        run: npm ci
+
+      # Le navigateur ET ses dependances systeme : sans --with-deps, chromium
+      # se lance mais echoue sur les bibliotheques manquantes du runner.
+      - name: Installer chromium
+        run: npx playwright install --with-deps chromium
+
+      # playwright.config.ts lance lui-meme ses DEUX serveurs : un backend
+      # jetable sur un port dedie avec un THERESE_DATA_DIR temporaire, et un
+      # Vite qui vise ce backend. reuseExistingServer est a false pour ne
+      # jamais retomber sur une instance reelle.
+      #
+      # PERIMETRE RESTREINT AUX TESTS D'API, et c'est mesure : la premiere
+      # execution reelle de la suite, le 01/09/2026, donne 31 passes et 65
+      # echoues. Les 30 tests d'API passent tous en 13 s ; les 65 parcours
+      # d'interface attendent settings-btn, memory-panel, crm-panel et sidebar
+      # — qui existent dans le code mais que la coque conversationnelle ne
+      # monte pas. Ils testent l'interface d'avant.
+      #
+      # Brancher les 96 rendrait la CI rouge en permanence, donc ignoree, ce
+      # qui est exactement le sort qu'a connu le cliquet mypy. On garde ce qui
+      # tient. Etendre a `npx playwright test` des que les parcours sont
+      # reecrits pour la coque actuelle (B-136).
+      - name: Contrats d'API de bout en bout
+        run: npx playwright test api-endpoints api-securite
+
+      - name: Publier le rapport
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
