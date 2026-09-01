@@ -1,4 +1,4 @@
-# Index des noms — THÉRÈSE 0.64.0
+# Index des noms — THÉRÈSE 0.65.0
 
 > **Généré depuis le code.** Ne pas modifier à la main : ce fichier est
 > réécrit par `node scripts/index-des-noms.mjs` à chaque version. Si un nom
