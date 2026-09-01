@@ -240,13 +240,27 @@ export interface MemorySearchResponse {
   search_time_ms: number;
 }
 
+/**
+ * Le serveur attend `entity_types` au SINGULIER (MemorySearchRequest).
+ * Le client parlait de `types` au pluriel : Pydantic ignore en silence un
+ * champ inconnu, donc le filtre n'etait jamais applique et la recherche
+ * restait plafonnee au defaut de 10 resultats.
+ */
+const TYPES_SERVEUR: Record<string, string> = {
+  contacts: 'contact',
+  projects: 'project',
+  conversations: 'conversation',
+  files: 'file',
+};
+
 export async function searchMemory(
   query: string,
   types: string[] = ['contacts', 'projects']
 ): Promise<MemorySearchResponse> {
+  const entity_types = types.map((type) => TYPES_SERVEUR[type] ?? type);
   return request<MemorySearchResponse>('/api/memory/search', {
     method: 'POST',
-    body: JSON.stringify({ query, types }),
+    body: JSON.stringify({ query, entity_types }),
   });
 }
 
