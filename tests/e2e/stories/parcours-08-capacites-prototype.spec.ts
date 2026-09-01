@@ -193,6 +193,11 @@ async function chooseCapability(page: Page, name: string) {
   await page.waitForTimeout(300);
 }
 
+// 01/09/2026 : dix clics « Ouvrir X » ont été retirés de ces tests. Depuis la
+// 0.49, choisir une capacité de navigation ouvre DIRECTEMENT sa destination —
+// « la destination est DÉCLARÉE dans la carte : l'ouvrir au clic, plutôt que
+// d'attendre une validation du composeur que rien n'annonce ». Le bouton
+// intermédiaire n'existe plus, et les tests l'attendaient trente secondes.
 test.describe('Prototype conversationnel - parcours unifiés des capacités', () => {
   test.beforeEach(async ({ page }) => {
     await installReadOnlyShell(page);
@@ -202,7 +207,6 @@ test.describe('Prototype conversationnel - parcours unifiés des capacités', ()
 
   test('Tâches ouvre la vraie vue dans la coquille unifiée', async ({ page }) => {
     await chooseCapability(page, 'Tâches');
-    await page.getByRole('button', { name: 'Ouvrir le parcours réel' }).click();
 
     await expect(page.getByTestId('prototype-unified-view')).toHaveAttribute('data-view', 'tasks');
     await expect(page.getByText('Relire le diagnostic', { exact: true })).toBeVisible();
@@ -211,9 +215,12 @@ test.describe('Prototype conversationnel - parcours unifiés des capacités', ()
     expect(url.searchParams.has('interface')).toBe(false);
   });
 
-  test('Modèles et providers ouvre directement les réglages IA', async ({ page }) => {
-    await chooseCapability(page, 'Modèles et variables');
-    await page.getByRole('button', { name: 'Ouvrir le parcours réel' }).click();
+  test('Services d’IA ouvre directement les réglages IA', async ({ page }) => {
+    // Le titre a change deux fois : « Modeles et providers » d'abord, puis
+    // « Services d'IA ». « Modeles et variables » est une AUTRE capacite (les
+    // gabarits de documents) : la renommer ici aurait fait passer le test
+    // pour la mauvaise raison.
+    await chooseCapability(page, 'Services d’IA');
 
     await expect(page.getByTestId('settings-tab-ai')).toBeVisible();
     const url = new URL(page.url());
@@ -225,7 +232,6 @@ test.describe('Prototype conversationnel - parcours unifiés des capacités', ()
 
   test('Personnalisation ouvre les réglages avancés réels', async ({ page }) => {
     await chooseCapability(page, 'Personnalisation');
-    await page.getByRole('button', { name: 'Ouvrir le parcours réel' }).click();
 
     await expect(page.getByTestId('settings-modal')).toHaveAttribute('data-requested-tab', 'advanced');
     await expect(page.getByTestId('settings-modal')).toHaveAttribute('data-active-tab', 'advanced');
@@ -280,8 +286,10 @@ test.describe('Prototype conversationnel - parcours unifiés des capacités', ()
 
   test('Word, PowerPoint et Excel ouvre la production guidée réelle', async ({ page }) => {
     await chooseCapability(page, 'Word, PowerPoint et Excel');
-    await expect(page.getByTestId('capability-destination-message')).toContainText('surface fonctionnelle réelle');
-    await page.getByRole('button', { name: 'Ouvrir le parcours réel' }).click();
+    // `capability-destination-message` et le bouton « Ouvrir le parcours
+    // reel » ont ete retires avec l'etape intermediaire : une capacite de
+    // type `prompt` pre-remplit directement le composeur. Ce qui compte
+    // reste verifie plus bas — la surface ouverte et le texte propose.
 
     await expect(page.getByTestId('prototype-chat-surface')).toBeVisible();
     await expect(page.getByTestId('chat-message-input')).toHaveValue('Aide-moi à produire un document (DOCX, PPTX ou XLSX) :');
@@ -289,7 +297,6 @@ test.describe('Prototype conversationnel - parcours unifiés des capacités', ()
 
   test('Calculateurs appelle le vrai moteur local et affiche son résultat', async ({ page }, testInfo) => {
     await chooseCapability(page, 'Calculateurs');
-    await page.getByRole('button', { name: 'Ouvrir les calculateurs' }).click();
     const canvas = page.getByTestId('calculator-workspace-canvas');
     await expect(canvas).toBeVisible();
     await canvas.getByLabel('Investissement').fill('10000');
@@ -308,7 +315,6 @@ test.describe('Prototype conversationnel - parcours unifiés des capacités', ()
     });
 
     await chooseCapability(page, 'Images');
-    await page.getByRole('button', { name: 'Ouvrir le studio Images' }).click();
     const canvas = page.getByTestId('images-workspace-canvas');
     await expect(canvas).toBeVisible();
     await canvas.getByLabel('Description du visuel').fill('Portrait éditorial de Thérèse');
@@ -323,7 +329,6 @@ test.describe('Prototype conversationnel - parcours unifiés des capacités', ()
 
   test('Relances et alertes ouvre les échéances réellement enregistrées', async ({ page }) => {
     await chooseCapability(page, 'Relances et alertes');
-    await page.getByRole('button', { name: 'Ouvrir les relances' }).click();
 
     const canvas = page.getByTestId('follow-ups-workspace-canvas');
     await expect(canvas).toBeVisible();
@@ -334,7 +339,6 @@ test.describe('Prototype conversationnel - parcours unifiés des capacités', ()
 
   test('Voix ouvre la transcription de fichier et la synthèse locale', async ({ page }) => {
     await chooseCapability(page, 'Voix et transcription');
-    await page.getByRole('button', { name: 'Ouvrir l’espace Voix' }).click();
 
     const canvas = page.getByTestId('voice-workspace-canvas');
     await expect(canvas).toBeVisible();
@@ -346,7 +350,6 @@ test.describe('Prototype conversationnel - parcours unifiés des capacités', ()
 
   test('Actions et relances ouvre le panneau d’exécution existant dans la coque', async ({ page }) => {
     await chooseCapability(page, 'Actions et relances');
-    await page.getByRole('button', { name: 'Ouvrir le parcours réel' }).click();
 
     const actionPanel = page.getByRole('heading', { name: 'Actions' });
     await expect(actionPanel).toBeVisible();
@@ -362,7 +365,6 @@ test.describe('Prototype conversationnel - parcours unifiés des capacités', ()
       }
     });
     await chooseCapability(page, 'Livrables et suivi client');
-    await page.getByRole('button', { name: 'Ouvrir le suivi client' }).click();
 
     const canvas = page.getByTestId('deliverables-workspace-canvas');
     await expect(canvas).toBeVisible();
