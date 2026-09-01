@@ -17,6 +17,8 @@ import asyncio
 
 import pytest
 
+from tests.aide_lecture_source import ordre_dans_le_code
+
 
 async def _attendre() -> None:
     from app.services.user_profile import _INDEXATIONS_EN_COURS
@@ -99,7 +101,9 @@ class TestUneSuppressionTient:
             "données personnelles réapparaîtraient"
         )
         # L'ordre compte : avancer la génération AVANT de prendre le verrou,
-        # sinon les tâches en attente entrent quand même.
-        assert source.index("_GENERATION_PROFIL += 1") < source.index(
-            "_VERROU_INDEXATION"
+        # sinon les tâches en attente entrent quand même. Mesuré sur le CODE :
+        # str.index rend la première occurrence, commentaires compris, donc un
+        # commentaire citant le verrou en préambule inversait la mesure.
+        assert ordre_dans_le_code(
+            source, "_GENERATION_PROFIL += 1", "_VERROU_INDEXATION"
         ), "la génération doit être avancée avant la prise du verrou"

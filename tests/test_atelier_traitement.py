@@ -185,6 +185,10 @@ class TestLInitialisationEstCouverte:
         repo = tmp_path / "repo-annule"
         repo.mkdir()
         orchestrateur_lance = {"oui": False}
+        # Sans ce temoin, l'unique assertion du test portait sur la valeur
+        # INITIALE d'orchestrateur_lance : elle etait satisfaite d'avance, y
+        # compris si la requete echouait avant meme d'atteindre le traitement.
+        demarrage_demande = {"oui": False}
 
         class SwarmSentinelle:
             def __init__(self, _source_path: str):
@@ -200,6 +204,7 @@ class TestLInitialisationEstCouverte:
             id = "mission-annulee"
 
             async def demarrer(self):
+                demarrage_demande["oui"] = True
                 raise traitements.AnnuleAvantDemarrage("annulée")
 
             async def lier_adaptateur(self, _a):
@@ -222,9 +227,17 @@ class TestLInitialisationEstCouverte:
                 await client.post(
                     "/api/agents/request", json={"message": "Mission annulée tôt"},
                 )
-            except BaseException:
-                pass  # le CancelledError peut traverser le client de test
+            except asyncio.CancelledError:
+                # SEULE exception attendue. `except BaseException: pass`
+                # avalait aussi l'AssertionError sentinelle de
+                # lier_adaptateur et n'importe quelle panne de requete : le
+                # test etait vert quelle que soit la cause.
+                pass
 
+        assert demarrage_demande["oui"] is True, (
+            "le parcours n'a pas atteint le demarrage du traitement : "
+            "ce test ne prouve rien sur l'annulation"
+        )
         assert orchestrateur_lance["oui"] is False, (
             "l'orchestrateur ne doit JAMAIS tourner pour une mission annulée "
             "avant son démarrage"

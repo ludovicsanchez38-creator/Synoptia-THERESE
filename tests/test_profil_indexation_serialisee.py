@@ -28,6 +28,8 @@ import asyncio
 
 import pytest
 
+from tests.aide_lecture_source import ordre_dans_le_code
+
 
 async def _attendre_les_indexations() -> None:
     from app.services.user_profile import _INDEXATIONS_EN_COURS
@@ -90,11 +92,11 @@ class TestLesInvariantsDeConcurrence:
         assert "generation != _GENERATION_PROFIL" in source
         # L'ordre est décisif : le contrôle doit être DANS la section critique
         # et AVANT l'appel qui écrit.
-        assert source.index("_VERROU_INDEXATION") < source.index(
-            "generation != _GENERATION_PROFIL"
+        assert ordre_dans_le_code(
+            source, "_VERROU_INDEXATION", "generation != _GENERATION_PROFIL"
         ), "le contrôle doit avoir lieu après la prise du verrou"
-        assert source.index("generation != _GENERATION_PROFIL") < source.index(
-            "_embed_profile(profile)"
+        assert ordre_dans_le_code(
+            source, "generation != _GENERATION_PROFIL", "_embed_profile(profile)"
         ), "le contrôle doit précéder l'écriture, pas la suivre"
 
     def test_aucune_tache_n_est_annulee_en_vol(self):

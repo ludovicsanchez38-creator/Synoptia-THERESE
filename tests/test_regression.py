@@ -5931,7 +5931,14 @@ class TestSecurityRegression:
         """Aucun appel à des builtins dangereux (eval, compile) dans les routers."""
         _dangerous = {"eval", "compile"}
         routers_dir = SRC / "app" / "routers"
-        for py_file in routers_dir.glob("*.py"):
+        fichiers = sorted(routers_dir.glob("*.py"))
+        # Balayage NEGATIF : ne rien trouver est le succes. Un `else: pytest.fail`
+        # serait donc faux ici. Le trou est ailleurs : si le glob ne rend aucun
+        # fichier, le test passe sans avoir rien lu. Le temoin le dit.
+        assert len(fichiers) >= 10, (
+            f"balayage a vide : {len(fichiers)} routeur(s) lu(s) dans {routers_dir}"
+        )
+        for py_file in fichiers:
             content = py_file.read_text(encoding="utf-8")
             tree = ast.parse(content)
             for node in ast.walk(tree):
