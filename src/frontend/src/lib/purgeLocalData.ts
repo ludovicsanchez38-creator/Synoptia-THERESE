@@ -17,8 +17,15 @@ import { discardAllPendingWrites } from './debouncedStorage';
 const UNPREFIXED_PERSIST_KEYS = ['crm-storage', 'calendar-storage', 'task-storage'];
 
 function isThereseKey(key: string): boolean {
-  // therese- (stores, brouillons, consentements) ET therese: (handoff classic)
-  return key.startsWith('therese-') || key.startsWith('therese:') || UNPREFIXED_PERSIST_KEYS.includes(key);
+  // therese- (stores, brouillons, consentements), therese: (handoff classic)
+  // ET therese. : une cle ecrite avec un point survivait a la purge, faute
+  // d'etre reconnue. Les trois separateurs valent le meme prefixe.
+  return (
+    key.startsWith('therese-') ||
+    key.startsWith('therese:') ||
+    key.startsWith('therese.') ||
+    UNPREFIXED_PERSIST_KEYS.includes(key)
+  );
 }
 
 function purgeStorage(storage: Storage): void {

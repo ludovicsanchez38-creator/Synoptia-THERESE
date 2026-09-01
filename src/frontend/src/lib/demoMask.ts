@@ -208,7 +208,14 @@ export function maskText(text: string, replacements: Map<string, string>): strin
   const keysSignature = keys.join('|');
   if (_cachedKeys !== keysSignature) {
     const escaped = keys.map((k) => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-    _cachedRegex = new RegExp(`\\b(${escaped.join('|')})\\b`, 'gi');
+    // Frontières UNICODE, pas \b : celui de JavaScript ne connaît que l'ASCII.
+    // Devant « É » il n'y a pas de frontière de mot, donc « Émilie Dupré »
+    // traversait le masque intact pendant qu'un « Jean Martin » du même carnet
+    // était remplacé. En démonstration, c'est le vrai nom qui restait à l'écran.
+    _cachedRegex = new RegExp(
+      `(?<![\\p{L}\\p{N}_])(${escaped.join('|')})(?![\\p{L}\\p{N}_])`,
+      'giu',
+    );
     _cachedKeys = keysSignature;
   }
 

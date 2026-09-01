@@ -109,4 +109,20 @@ describe('purgeLocalPersistence (BUG-153)', () => {
     window.dispatchEvent(new Event('pagehide'));
     expect(localStorage.getItem('therese-chat')).toBeNull();
   });
+  // Trouve le 01/09/2026 pendant la cartographie : la purge ne connaissait que
+  // les prefixes `therese-` et `therese:`. Une cle ecrite avec un POINT
+  // survivait donc a « Supprimer toutes mes donnees ». Le test ne nomme aucun
+  // module en particulier : c'est la forme du prefixe qui est en cause, et une
+  // prochaine cle a point retomberait dans le meme trou.
+  it('efface aussi les cles dont le prefixe est separe par un point', () => {
+    localStorage.setItem('therese.reglage.quelconque', 'valeur');
+    sessionStorage.setItem('therese.autre.reglage', 'valeur');
+    localStorage.setItem('autre-app.reglage', 'conservee');
+
+    purgeLocalPersistence();
+
+    expect(localStorage.getItem('therese.reglage.quelconque')).toBeNull();
+    expect(sessionStorage.getItem('therese.autre.reglage')).toBeNull();
+    expect(localStorage.getItem('autre-app.reglage')).toBe('conservee');
+  });
 });

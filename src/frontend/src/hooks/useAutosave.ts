@@ -125,6 +125,10 @@ export function useAutosave(conversationId: string | null) {
       latestValueRef.current = '';
       failedOperationRef.current = null;
       setDraftError(null);
+      // Sans cette ligne, ChatInput continue d'annoncer « Sauvegardé il y a Xs »
+      // pour un brouillon qui vient d'etre efface : l'indicateur ne lit que
+      // lastSavedAt, jamais le stockage.
+      setLastSavedAt(null);
     } catch {
       failedOperationRef.current = 'remove';
       setDraftError('Le brouillon envoyé n’a pas pu être retiré du stockage local.');

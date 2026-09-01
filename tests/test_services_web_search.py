@@ -91,14 +91,16 @@ class TestDuckDuckGoSearch:
 
         service = WebSearchService()
 
+        # Le try n enveloppe QUE l appel reseau. Il enveloppait aussi les
+        # assertions : AssertionError herite d Exception, donc une reponse
+        # fausse se rapportait en « skipped » et le test ne pouvait pas echouer.
         try:
             results = await service.search("Python programming")
+        except Exception as erreur:
+            pytest.skip(f"DuckDuckGo injoignable : {erreur}")
 
-            assert results is not None
-            assert hasattr(results, "results") or isinstance(results, list)
-        except Exception:
-            # May fail due to network issues
-            pytest.skip("DuckDuckGo search failed - network issue")
+        assert results is not None
+        assert hasattr(results, "results") or isinstance(results, list)
 
     @pytest.mark.asyncio
     async def test_search_empty_query(self):
@@ -124,13 +126,13 @@ class TestDuckDuckGoSearch:
 
         try:
             results = await service.search("AI technology", max_results=5)
+        except Exception as erreur:
+            pytest.skip(f"DuckDuckGo injoignable : {erreur}")
 
-            if hasattr(results, "results"):
-                assert len(results.results) <= 5
-            elif isinstance(results, list):
-                assert len(results) <= 5
-        except Exception:
-            pytest.skip("DuckDuckGo search failed - network issue")
+        if hasattr(results, "results"):
+            assert len(results.results) <= 5
+        elif isinstance(results, list):
+            assert len(results) <= 5
 
 
 class TestWebSearchFormatting:
@@ -192,11 +194,11 @@ class TestExecuteWebSearch:
 
         try:
             result = await execute_web_search({"query": "Python AI"})
+        except Exception as erreur:
+            pytest.skip(f"Recherche web injoignable : {erreur}")
 
-            assert result is not None
-            assert isinstance(result, (str, dict))
-        except Exception:
-            pytest.skip("Web search execution failed - network issue")
+        assert result is not None
+        assert isinstance(result, (str, dict))
 
     @pytest.mark.asyncio
     async def test_execute_web_search_missing_query(self):

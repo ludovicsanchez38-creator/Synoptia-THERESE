@@ -39,4 +39,22 @@ describe('useAutosave', () => {
     expect(result.current.draftError).toBeNull();
     expect(result.current.lastSavedAt).toBeInstanceOf(Date);
   });
+  it('cesse d’annoncer une sauvegarde quand le brouillon a été retiré', () => {
+    // ChatInput affiche « Sauvegardé il y a Xs » tant que lastSavedAt vaut une
+    // date (ChatInput.tsx:1467). clearDraft effaçait la clé de stockage sans
+    // toucher à cette date : après envoi, l’écran continuait d’annoncer la
+    // sauvegarde d’un brouillon qui n’existait plus.
+    const { result } = renderHook(() => useAutosave('conversation-1'));
+
+    act(() => {
+      result.current.saveDraft('Message parti');
+      vi.advanceTimersByTime(5000);
+    });
+    expect(result.current.lastSavedAt).toBeInstanceOf(Date);
+
+    act(() => result.current.clearDraft());
+
+    expect(localStorage.removeItem).toHaveBeenCalledWith('therese-draft-conversation-1');
+    expect(result.current.lastSavedAt).toBeNull();
+  });
 });
