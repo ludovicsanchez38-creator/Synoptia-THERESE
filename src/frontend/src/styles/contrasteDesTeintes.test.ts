@@ -57,7 +57,10 @@ describe('contraste des couleurs d’agent sur leur propre teinte', () => {
   it('chaque jeton reste lisible sur sa teinte à 10 % et à 20 %', () => {
     const fautifs: string[] = [];
     for (const [nom, couleur] of jetonsDAgent()) {
-      for (const alpha of [0.1, 0.2]) {
+      // 30 % en plus des deux autres : la mesure dans l'application a montre
+      // qu'une carte deja teintee rend le fond plus dense que le modele
+      // « /20 sur du blanc », et que trois familles restaient a 4,21:1.
+      for (const alpha of [0.1, 0.2, 0.3]) {
         const r = contraste(couleur, teinte(couleur, alpha));
         if (r < 4.5) fautifs.push(`${nom} sur sa teinte ${alpha * 100} % : ${r.toFixed(2)}:1`);
       }

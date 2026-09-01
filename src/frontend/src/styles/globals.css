@@ -62,19 +62,22 @@
      Renommés en --color-* le 30/08/2026 : Tailwind en génère alors les
      utilitaires (text-agent-green, bg-agent-cyan…), ce qui permet de retirer
      les 165 couleurs brutes qui restaient ailleurs dans l'application. */
-  /* 01/09/2026 : les six jetons avaient ete assombris en aout pour AA sur le
-     fond de PAGE, jamais sur leur PROPRE teinte. Or le motif employe partout
-     est `text-agent-X` sur `bg-agent-X/10` ou `/20` : mesures dans
-     l application lancee, ils tombaient tous entre 3,81 et 4,49:1. Teinte et
-     saturation conservees, luminosite baissee jusqu a 4,55:1 sur la teinte a
-     20 %. Le garde-fou est contrasteDesTeintes.test.ts. */
-  --color-agent-cyan: #0D6982;
+  /* 01/09/2026, deux passes. Les jetons avaient ete assombris en aout pour AA
+     sur le fond de PAGE, jamais sur leur PROPRE teinte, alors que le motif
+     employe partout est `text-agent-X` sur `bg-agent-X/10` ou `/20`.
+     La premiere passe a vise 4,55:1 sur la teinte a 20 % composee sur du
+     BLANC. La mesure dans l application a montre que ce modele est optimiste :
+     une carte deja legerement teintee rend le fond plus dense, et trois
+     familles restaient a 4,21:1. La cible est donc la teinte a 30 %, qui
+     couvre les compositions reelles. Teinte et saturation conservees,
+     luminosite seule abaissee. Garde-fou : contrasteDesTeintes.test.ts. */
+  --color-agent-cyan: #0B5C71;
   /* F8 revue : #DB2777 ~ 4.25:1 sur #F3F6FC, sous AA -> pink-700 (~5.7:1) */
-  --color-agent-magenta: #B51759;
-  --color-agent-blue: #1554DF;
-  --color-agent-green: #046E50;
-  --color-agent-purple: #8418E7;
-  --color-agent-amber: #9E4908;
+  --color-agent-magenta: #9B144C;
+  --color-agent-blue: #1248C0;
+  --color-agent-green: #046146;
+  --color-agent-purple: #7115C6;
+  --color-agent-amber: #883F07;
 
   /* Domaines de la DA (k1..k4). Deux valeurs sont assombries par rapport à
      la planche de mai : #0F8FB3 ne donne que 3,29:1 sur sa propre teinte et
@@ -90,10 +93,10 @@
 
   /* Sémantiques - assombris en CLAIR pour WCAG AA en texte (US-013 :
      #F59E0B sur #F3F6FC ≈ 2.3:1, illisible ; les vives restent en sombre) */
-  --color-success: #046E50;
-  --color-warning: #8B5506;
-  --color-error: #B91C1C;
-  --color-info: #1D4ED8;
+  --color-success: #046146;
+  --color-warning: #794A05;
+  --color-error: #9E1818;
+  --color-info: #1A47C5;
   --color-success-fill: #047857;
   --color-success-ink: #FFFFFF;
   --color-warning-fill: #A16207;
