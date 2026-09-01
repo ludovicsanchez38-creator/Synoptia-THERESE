@@ -88,11 +88,11 @@ export function DynamicSkillForm({
           className="p-2 hover:bg-surface rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Retour"
         >
-          <ArrowLeft className="w-5 h-5 text-muted" />
+          <ArrowLeft className="w-5 h-5 text-text-muted" />
         </button>
         <div>
           <h3 className="text-lg font-semibold text-text">{skillName}</h3>
-          <p className="text-sm text-muted">Remplis les champs ci-dessous</p>
+          <p className="text-sm text-text-muted">Remplis les champs ci-dessous</p>
         </div>
       </div>
 
@@ -177,7 +177,7 @@ export function DynamicSkillForm({
 
               {/* Help text */}
               {field.help_text && (
-                <p id={`help-${key}`} className="mt-1.5 text-xs text-muted">
+                <p id={`help-${key}`} className="mt-1.5 text-xs text-text-muted">
                   {field.help_text}
                 </p>
               )}

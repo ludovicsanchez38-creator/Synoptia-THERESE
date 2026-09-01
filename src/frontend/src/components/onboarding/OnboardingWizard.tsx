@@ -17,6 +17,7 @@ import { CompleteStep } from './CompleteStep';
 import type { LLMProvider } from '../../services/api';
 import { Z_LAYER } from '../../styles/z-layers';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
+import { echapPendantLaMiseEnRoute } from './echapMiseEnRoute';
 import { isMacPlatform } from '../../lib/platform';
 
 interface OnboardingWizardProps {
@@ -43,7 +44,15 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
   const handleMinimize = () => getCurrentWindow().minimize();
   const handleMaximize = () => getCurrentWindow().toggleMaximize();
   const handleClose = () => getCurrentWindow().close();
-  useDialogFocusTrap(dialogRef, { active: isOpen, onEscape: handleClose, isolateBackground: true });
+  // 01/09 : Echap etait branche sur handleClose, donc sur la fermeture de la
+  // FENETRE. Le geste reflexe de fermer une boite quittait THERESE au tout
+  // premier contact. Il recule desormais d'une etape, et ne fait rien sur la
+  // premiere.
+  useDialogFocusTrap(dialogRef, {
+    active: isOpen,
+    onEscape: () => echapPendantLaMiseEnRoute({ etape: currentStep, reculer: goBack }),
+    isolateBackground: true,
+  });
 
   // BUG-traffic-lights : afficher les traffic lights uniquement sur macOS
   // (détection centralisée dans lib/platform.ts depuis la revue 0.40)

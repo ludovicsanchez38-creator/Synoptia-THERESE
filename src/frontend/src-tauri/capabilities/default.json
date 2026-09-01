@@ -42,12 +42,24 @@
     {
       "identifier": "fs:scope",
       "deny": [
-        { "path": "$HOME/.ssh/**" },
-        { "path": "$HOME/.aws/**" },
-        { "path": "$HOME/.gnupg/**" },
-        { "path": "$HOME/.config/**" },
-        { "path": "$HOME/.therese/.encryption_key" },
-        { "path": "$HOME/.therese/.session_token" }
+        {
+          "path": "$HOME/.ssh/**"
+        },
+        {
+          "path": "$HOME/.aws/**"
+        },
+        {
+          "path": "$HOME/.gnupg/**"
+        },
+        {
+          "path": "$HOME/.config/**"
+        },
+        {
+          "path": "$HOME/.therese/.encryption_key"
+        },
+        {
+          "path": "$HOME/.therese/.session_token"
+        }
       ]
     },
     {
@@ -193,6 +205,7 @@
     "dialog:allow-ask",
     "dialog:allow-confirm",
     "mic-recorder:default",
-    "updater:default"
+    "updater:default",
+    "process:allow-restart"
   ]
 }

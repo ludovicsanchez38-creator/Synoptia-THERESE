@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '../../lib/utils';
+import { jetonDePastille } from './pastilleDeCarte';
 
 interface ActionCardProps {
   icon: LucideIcon;
@@ -51,7 +52,7 @@ export function ActionCard({ icon: Icon, title, description, onClick, index, var
           'border-[1.5px] border-[var(--btn-ink)]',
           isPersonnaliser && 'opacity-50'
         )}
-        style={{ background: `var(--k${(index % 4) + 1}bg)`, color: `var(--k${(index % 4) + 1})` }}
+        style={{ background: jetonDePastille(index).fond, color: jetonDePastille(index).teinte }}
       >
         <Icon className={cn('w-5 h-5', isPersonnaliser && 'text-text-muted')} />
       </div>
