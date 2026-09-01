@@ -142,7 +142,26 @@ async function installReadOnlyShell(page: Page) {
     if (pathname.includes('/commands')) {
       return json(route, []);
     }
-    return json(route, {});
+
+    // 01/09/2026. Le repli renvoyait `{}` a TOUTE route non prevue. Chaque
+    // route ajoutee a l'application cassait donc ce fichier : un composant qui
+    // attend une liste recevait un objet, `.filter` sur `undefined` remontait
+    // au garde-fou de React, et les treize tests voyaient l'ecran « Oups ! »
+    // au lieu de la coque. Un bouchon exhaustif est une liste a tenir a jour
+    // pour toujours : personne ne le fait.
+    //
+    // La garantie que ce fichier doit apporter n'est pas « le backend est
+    // fige », c'est « AUCUNE ECRITURE ne part ». On fige donc ce que les
+    // scenarios controlent, on REFUSE bruyamment les ecritures, et on laisse
+    // les lectures restantes atteindre le vrai backend jetable.
+    if (route.request().method() !== 'GET') {
+      return route.fulfill({
+        status: 405,
+        contentType: 'application/json',
+        body: JSON.stringify({ code: 'ECRITURE_REFUSEE', message: pathname }),
+      });
+    }
+    return route.continue();
   });
 }
 
@@ -153,11 +172,25 @@ async function chooseCapability(page: Page, name: string) {
   // un bouton disparu depuis plusieurs versions, et attendaient trente
   // secondes avant de renoncer.
   await page.getByRole('button', { name: /plus d.outils/i }).click();
-  const dialog = page.getByRole('dialog', { name: 'Capacités de Thérèse' });
+  // Le centre s'intitule « Ce que Thérèse sait mobiliser » depuis la 0.48 :
+  // le titre porte l'intention, pas la catégorie.
+  const dialog = page.getByRole('dialog', { name: 'Ce que Thérèse sait mobiliser' });
   await expect(dialog).toBeVisible();
   await dialog.getByPlaceholder(/Chercher une capacité/).fill(name);
-  await dialog.getByRole('button', { name: new RegExp(`^${name}`) }).click();
-  await expect(page.getByText(`Capacité : ${name}`)).toBeVisible();
+  // La liste se filtre après la saisie : attendre que la carte cherchée soit
+  // là AVANT de cliquer, plutôt que de laisser le clic patienter trente
+  // secondes sur une liste encore en train de se réduire.
+  const carte = dialog.getByRole('button', { name: new RegExp(`^${name}`) }).first();
+  await expect(carte).toBeVisible({ timeout: 10000 });
+  await carte.click();
+  // Le bandeau « Capacité : X » n'apparaît PLUS pour toutes les capacités.
+  // Depuis la 0.49, une capacité dont la destination est de navigation ouvre
+  // directement sa destination et remet la sélection à null : « le premier
+  // geste suffit là où il en fallait deux ». Seules les cartes de type
+  // `prompt` gardent leur étape de relecture, et donc leur bandeau. Attendre
+  // le bandeau ici, c'est attendre le comportement d'avant — chaque test
+  // vérifie ensuite ce qui le concerne : la vue ouverte, ou le composeur.
+  await page.waitForTimeout(300);
 }
 
 test.describe('Prototype conversationnel - parcours unifiés des capacités', () => {
@@ -179,7 +212,7 @@ test.describe('Prototype conversationnel - parcours unifiés des capacités', ()
   });
 
   test('Modèles et providers ouvre directement les réglages IA', async ({ page }) => {
-    await chooseCapability(page, 'Modèles et providers');
+    await chooseCapability(page, 'Modèles et variables');
     await page.getByRole('button', { name: 'Ouvrir le parcours réel' }).click();
 
     await expect(page.getByTestId('settings-tab-ai')).toBeVisible();
