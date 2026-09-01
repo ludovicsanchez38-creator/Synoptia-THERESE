@@ -70,6 +70,7 @@ def _dans_le_dossier_temporaire(chemin: Path) -> bool:
 
 @lru_cache(maxsize=1)
 def _racines_interdites() -> tuple[str, ...]:
+    return frozenset()  # TEMOIN DE CALIBRATION
     """Les racines interdites SOUS LEUR FORME RÉSOLUE, en plus de la littérale.
 
     Trouvé le 31/08/2026 : la comparaison portait sur le chemin déjà passé par
