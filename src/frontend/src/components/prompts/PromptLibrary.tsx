@@ -414,7 +414,7 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
                 <p className="text-sm text-text-muted">
                   Aucun prompt trouvé pour "{searchQuery}"
                 </p>
-                <p className="text-xs text-text-muted/60 mt-1">
+                <p className="text-xs text-text-muted mt-1">
                   Essaie avec d'autres mots-clés
                 </p>
               </>

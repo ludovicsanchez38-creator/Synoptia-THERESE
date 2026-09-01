@@ -237,7 +237,7 @@ function ContactCard({ contact, onClick, isOverlay, dragListeners }: ContactCard
       {/* Drag Handle */}
       {dragListeners && (
         <div
-          className="absolute top-3 left-1 cursor-grab active:cursor-grabbing text-text-muted/40 hover:text-text-muted"
+          className="absolute top-3 left-1 cursor-grab active:cursor-grabbing text-text-muted hover:text-text-muted"
           {...dragListeners}
           onClick={(e) => e.stopPropagation()}
         >

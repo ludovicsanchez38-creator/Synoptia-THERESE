@@ -37,7 +37,7 @@ import type { Project } from '../../services/api';
 
 const STATUS_COLUMNS = [
   { id: 'active', label: 'Actif', icon: Circle, color: 'text-success', bg: 'bg-agent-green/10', border: 'border-agent-green/20' },
-  { id: 'on_hold', label: 'En attente', icon: Clock, color: 'text-warning', bg: 'bg-agent-amber/10', border: 'border-agent-amber/20' },
+  { id: 'on_hold', label: 'En attente', icon: Clock, color: 'text-agent-amber', bg: 'bg-agent-amber/10', border: 'border-agent-amber/20' },
   { id: 'completed', label: 'Terminé', icon: CheckCircle2, color: 'text-info', bg: 'bg-agent-blue/10', border: 'border-agent-blue/20' },
   { id: 'cancelled', label: 'Annulé', icon: XCircle, color: 'text-error', bg: 'bg-error/10', border: 'border-error/20' },
 ] as const;
@@ -211,7 +211,7 @@ function DroppableStatusGroup({ column, projects, onSelect, onDelete }: Droppabl
         strategy={verticalListSortingStrategy}
       >
         {projects.length === 0 ? (
-          <div className={`flex items-center justify-center h-12 text-xs text-text-muted/50 transition-colors ${
+          <div className={`flex items-center justify-center h-12 text-xs text-text-muted transition-colors ${
             isOver ? 'bg-accent-tint text-accent-cyan-ink' : ''
           }`}>
             Glisser ici
@@ -306,7 +306,7 @@ function ProjectCard({ project, onSelect, onDelete, isOverlay, showDragHandle }:
       <div className="flex items-center gap-2">
         {/* Poignée (repère visuel : toute la carte est draggable) */}
         {showDragHandle && (
-          <div className="text-text-muted/30 group-hover:text-text-muted flex-shrink-0">
+          <div className="text-text-muted group-hover:text-text-muted flex-shrink-0">
             <GripVertical className="w-4 h-4" />
           </div>
         )}

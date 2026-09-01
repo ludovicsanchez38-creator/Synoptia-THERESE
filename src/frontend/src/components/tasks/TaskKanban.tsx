@@ -299,7 +299,7 @@ function TaskCard({ task, onClick, onStatusChange, isOverlay, showDragHandle, ma
     >
       {/* Poignée (repère visuel : toute la carte est draggable) */}
       {showDragHandle && (
-        <div className="absolute top-3 left-1 text-text-muted/40 hover:text-text-muted">
+        <div className="absolute top-3 left-1 text-text-muted hover:text-text-muted">
           <GripVertical className="w-4 h-4" />
         </div>
       )}

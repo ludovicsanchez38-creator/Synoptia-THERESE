@@ -132,7 +132,7 @@ function NotificationItem({ notification }: { notification: AppNotification }) {
           {notification.message}
         </p>
         <div className="flex items-center gap-2 mt-1.5">
-          <span className="text-xs text-text-muted/60">
+          <span className="text-xs text-text-muted">
             {timeAgo(notification.created_at)}
           </span>
           {notification.action_url && notification.action_label && (

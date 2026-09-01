@@ -62,13 +62,19 @@
      Renommés en --color-* le 30/08/2026 : Tailwind en génère alors les
      utilitaires (text-agent-green, bg-agent-cyan…), ce qui permet de retirer
      les 165 couleurs brutes qui restaient ailleurs dans l'application. */
-  --color-agent-cyan: #0E7490;
+  /* 01/09/2026 : les six jetons avaient ete assombris en aout pour AA sur le
+     fond de PAGE, jamais sur leur PROPRE teinte. Or le motif employe partout
+     est `text-agent-X` sur `bg-agent-X/10` ou `/20` : mesures dans
+     l application lancee, ils tombaient tous entre 3,81 et 4,49:1. Teinte et
+     saturation conservees, luminosite baissee jusqu a 4,55:1 sur la teinte a
+     20 %. Le garde-fou est contrasteDesTeintes.test.ts. */
+  --color-agent-cyan: #0D6982;
   /* F8 revue : #DB2777 ~ 4.25:1 sur #F3F6FC, sous AA -> pink-700 (~5.7:1) */
-  --color-agent-magenta: #BE185D;
-  --color-agent-blue: #2563EB;
-  --color-agent-green: #047857;
-  --color-agent-purple: #9333EA;
-  --color-agent-amber: #B45309;
+  --color-agent-magenta: #B51759;
+  --color-agent-blue: #1554DF;
+  --color-agent-green: #046E50;
+  --color-agent-purple: #8418E7;
+  --color-agent-amber: #9E4908;
 
   /* Domaines de la DA (k1..k4). Deux valeurs sont assombries par rapport à
      la planche de mai : #0F8FB3 ne donne que 3,29:1 sur sa propre teinte et
@@ -84,8 +90,8 @@
 
   /* Sémantiques - assombris en CLAIR pour WCAG AA en texte (US-013 :
      #F59E0B sur #F3F6FC ≈ 2.3:1, illisible ; les vives restent en sombre) */
-  --color-success: #047857;
-  --color-warning: #A16207;
+  --color-success: #046E50;
+  --color-warning: #8B5506;
   --color-error: #B91C1C;
   --color-info: #1D4ED8;
   --color-success-fill: #047857;

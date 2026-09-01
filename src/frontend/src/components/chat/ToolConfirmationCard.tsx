@@ -26,7 +26,7 @@ function value(argumentsValue: Record<string, unknown>, key: string): string {
 
 function Detail({ label, children }: { label: string; children: ReactNode }) {
   if (!children) return null;
-  return <div><dt className="inline text-text-muted/70">{label} : </dt><dd className="inline whitespace-pre-wrap text-text">{children}</dd></div>;
+  return <div><dt className="inline text-text-muted">{label} : </dt><dd className="inline whitespace-pre-wrap text-text">{children}</dd></div>;
 }
 
 function CalendarDetails({ confirmation }: { confirmation: PendingConfirmation }) {

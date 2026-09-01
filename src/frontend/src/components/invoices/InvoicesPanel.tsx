@@ -292,7 +292,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
         </div>
       ) : filteredInvoices.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-full gap-4">
-          <FileText className="w-16 h-16 text-text-muted/30" />
+          <FileText className="w-16 h-16 text-text-muted" />
           <p className="text-text-muted">Aucune facture</p>
           <button
             type="button"

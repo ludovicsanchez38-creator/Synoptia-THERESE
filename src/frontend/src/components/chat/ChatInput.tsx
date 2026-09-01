@@ -1372,7 +1372,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
               aria-hidden="true"
             >
               <span className="invisible">{input}</span>
-              <span className="text-text-muted/40">{suggestion}</span>
+              <span className="text-text-muted">{suggestion}</span>
             </div>
           )}
         </div>

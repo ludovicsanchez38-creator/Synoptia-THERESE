@@ -229,7 +229,7 @@ export function ImageGenerationPanel({
               <div className="w-full h-48 flex flex-col items-center justify-center bg-surface-2 gap-2">
                 <ImageOff className="w-12 h-12 text-text-muted" />
                 <p className="text-sm text-text-muted">Impossible de charger l'image</p>
-                <p className="text-xs text-text-muted/60 max-w-xs text-center truncate">
+                <p className="text-xs text-text-muted max-w-xs text-center truncate">
                   {imageUrl}
                 </p>
               </div>

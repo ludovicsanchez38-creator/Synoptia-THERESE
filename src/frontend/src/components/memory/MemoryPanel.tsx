@@ -701,7 +701,7 @@ function ContactsList({
                 <p className="text-xs text-text-muted truncate">{contact.company}</p>
               )}
               {contact.email && (
-                <p className="text-xs text-text-muted/70 truncate">{contact.email}</p>
+                <p className="text-xs text-text-muted truncate">{contact.email}</p>
               )}
             </div>
           </button>
@@ -776,7 +776,7 @@ function RGPDBadge({ contact }: { contact: api.Contact }) {
 
   if (!baseLegale) {
     return (
-      <span className="px-1.5 py-0.5 rounded-sm text-xs font-medium bg-agent-amber/20 text-warning" title="Base légale RGPD non définie pour ce contact">
+      <span className="px-1.5 py-0.5 rounded-sm text-xs font-medium bg-agent-amber/20 text-agent-amber" title="Base légale RGPD non définie pour ce contact">
         RGPD ?
       </span>
     );

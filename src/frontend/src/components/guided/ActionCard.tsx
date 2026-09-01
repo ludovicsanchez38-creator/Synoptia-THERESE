@@ -63,7 +63,7 @@ export function ActionCard({ icon: Icon, title, description, onClick, index, var
       </h3>
 
       {/* Description */}
-      <p className={cn('relative text-xs mt-1 line-clamp-2', isPersonnaliser ? 'text-text-muted/60' : 'text-text-muted')}>
+      <p className={cn('relative text-xs mt-1 line-clamp-2', isPersonnaliser ? 'text-text-muted' : 'text-text-muted')}>
         {description}
       </p>
     </motion.button>

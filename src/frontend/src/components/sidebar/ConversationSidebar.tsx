@@ -229,7 +229,7 @@ export function ConversationSidebar({ isOpen, onClose }: ConversationSidebarProp
                       {/* Date label */}
                       <motion.div
                         variants={staggerItem}
-                        className="px-4 py-1.5 flex items-center gap-2 text-xs text-text-muted/70"
+                        className="px-4 py-1.5 flex items-center gap-2 text-xs text-text-muted"
                       >
                         <Calendar className="w-3 h-3" />
                         {label}
@@ -435,11 +435,11 @@ function ConversationItem({
           )}
           <p className="text-xs text-text-muted truncate mt-0.5">{preview}</p>
           <div className="flex items-center gap-2 mt-1">
-            <span className="text-xs text-text-muted/60">
+            <span className="text-xs text-text-muted">
               {messageCount} message{messageCount !== 1 ? 's' : ''}
             </span>
-            <span className="text-xs text-text-muted/40">•</span>
-            <span className="text-xs text-text-muted/60">
+            <span className="text-xs text-text-muted">•</span>
+            <span className="text-xs text-text-muted">
               {formatRelativeTime(conversation.updatedAt)}
             </span>
           </div>

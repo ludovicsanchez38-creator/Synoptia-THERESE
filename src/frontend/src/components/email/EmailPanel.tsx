@@ -404,7 +404,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
             </div>
           ) : !isConnected ? (
             <div className="flex-1 flex flex-col items-center justify-center gap-4">
-              <Mail className="w-12 h-12 text-text-muted/40" />
+              <Mail className="w-12 h-12 text-text-muted" />
               <p className="text-text-muted text-sm">Aucun compte email configuré.</p>
               <Button variant="primary" size="sm" onClick={() => setShowSetupWizard(true)}>
                 Configurer un compte

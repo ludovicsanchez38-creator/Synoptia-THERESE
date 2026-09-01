@@ -96,7 +96,7 @@ export function AdvisorArcLayout({
             {' '}<span className="text-warning ml-2">&#9679;</span> 4-8 Go (16 Go RAM)
             {' '}<span className="text-error ml-2">&#9679;</span> &gt; 8 Go (32 Go+ RAM)
           </p>
-          <p className="text-xs text-text-muted/70">
+          <p className="text-xs text-text-muted">
             Choisis des modèles adaptés à ta machine pour éviter les ralentissements
           </p>
         </motion.div>

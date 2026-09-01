@@ -643,7 +643,7 @@ export const MessageBubble = memo(function MessageBubble({
                   message.uncertainty.confidence_level === 'low'
                     ? 'bg-error/10 text-error'
                     : message.uncertainty.confidence_level === 'medium'
-                    ? 'bg-agent-amber/10 text-warning'
+                    ? 'bg-agent-amber/10 text-agent-amber'
                     : 'bg-agent-green/10 text-agent-green'
                 )}
                 title={message.uncertainty.uncertainty_phrases.join(', ')}

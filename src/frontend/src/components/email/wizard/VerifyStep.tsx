@@ -162,7 +162,7 @@ export function VerifyStep({ clientId, clientSecret, onBack, onSuccess }: Verify
           <p className="text-sm text-text-muted">
             Autorise THÉRÈSE dans la fenêtre Google qui s'est ouverte dans ton navigateur.
           </p>
-          <p className="text-xs text-text-muted/70">
+          <p className="text-xs text-text-muted">
             Une fois l'autorisation accordée, cette page se mettra à jour automatiquement.
           </p>
 
@@ -190,7 +190,7 @@ export function VerifyStep({ clientId, clientSecret, onBack, onSuccess }: Verify
 
           {/* BUG-Gmail-403 : conseils si Google affiche 403 access_denied */}
           <details className="mt-2 text-left">
-            <summary className="text-xs text-text-muted/70 cursor-pointer hover:text-text-muted transition-colors">
+            <summary className="text-xs text-text-muted cursor-pointer hover:text-text-muted transition-colors">
               Google affiche une erreur 403 ?
             </summary>
             <div className="mt-2 p-3 bg-agent-amber/5 border border-agent-amber/20 rounded-md space-y-1.5 text-xs text-text-muted">

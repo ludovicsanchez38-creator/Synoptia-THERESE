@@ -321,7 +321,7 @@ export function AgentCatalog({ onSelectAgent }: Props) {
               </span>
 
               {/* Nombre d'outils */}
-              <span className="mt-auto text-xs text-text-muted/60">
+              <span className="mt-auto text-xs text-text-muted">
                 {profile.tools.length} outil{profile.tools.length > 1 ? "s" : ""}
               </span>
             </motion.button>

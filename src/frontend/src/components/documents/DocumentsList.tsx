@@ -244,7 +244,7 @@ export function DocumentsList() {
           </div>
         ) : documents.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-            <FileText className="w-8 h-8 text-text-muted/50" />
+            <FileText className="w-8 h-8 text-text-muted" />
             <p className="text-sm text-text-muted max-w-xs">
               Crée ton premier document pour démarrer une proposition, un dossier ou un rapport structuré.
             </p>

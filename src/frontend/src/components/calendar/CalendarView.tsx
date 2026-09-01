@@ -671,7 +671,7 @@ function DayView({
                 className="absolute w-full text-right pr-3"
                 style={{ top: (hour - dayStartHour) * DAY_SLOT_HEIGHT_PX + DAY_SLOT_HEIGHT_PX / 2 - 8 }}
               >
-                <span className="text-xs text-text-muted/50">
+                <span className="text-xs text-text-muted">
                   {String(hour).padStart(2, '0')}:30
                 </span>
               </div>
@@ -743,7 +743,7 @@ function DayView({
                     {formatTime(event.start_datetime!)} - {formatTime(event.end_datetime!)}
                   </div>
                   {event.location && layout.height > 50 && (
-                    <div className="text-xs text-text-muted/70 mt-0.5 truncate">
+                    <div className="text-xs text-text-muted mt-0.5 truncate">
                       {event.location}
                     </div>
                   )}

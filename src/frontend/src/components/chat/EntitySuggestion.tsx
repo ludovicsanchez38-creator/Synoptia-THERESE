@@ -77,7 +77,7 @@ function EntityItem({ type, name, subtitle, confidence, onSave, onIgnore }: Enti
       </div>
 
       <div className="flex items-center gap-1.5">
-        <span className="text-xs text-text-muted/60">{confidencePercent}%</span>
+        <span className="text-xs text-text-muted">{confidencePercent}%</span>
 
         {status === 'saving' ? (
           <Spinner taille="bouton" className="text-agent-cyan" />
@@ -186,7 +186,7 @@ export function EntitySuggestion({
           </p>
           <button
             onClick={onDismiss}
-            className="text-sm text-text-muted/60 hover:text-text-muted transition-colors"
+            className="text-sm text-text-muted hover:text-text-muted transition-colors"
           >
             Tout ignorer
           </button>

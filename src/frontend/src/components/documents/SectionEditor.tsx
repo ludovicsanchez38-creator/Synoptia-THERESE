@@ -188,7 +188,7 @@ export function SectionEditor({
     return (
       <div className="flex-1 min-h-0 flex items-center justify-center text-center px-6" data-testid="section-editor-empty">
         <div>
-          <FileEdit className="w-8 h-8 text-text-muted/40 mx-auto mb-2" />
+          <FileEdit className="w-8 h-8 text-text-muted mx-auto mb-2" />
           <p className="text-sm text-text-muted">Sélectionne une section dans la trame pour la rédiger.</p>
         </div>
       </div>

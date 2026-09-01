@@ -59,7 +59,7 @@ export function HomeHeader() {
         {provider && (
           <span className="inline-flex items-center gap-1.5 h-[30px] px-3 rounded-sm text-sm font-medium bg-surface border-[1.5px] border-border text-text-muted">
             <Cpu className="w-3.5 h-3.5" /> {provider.label}
-            <span className="text-text-muted/70">· {provider.model}</span>
+            <span className="text-text-muted">· {provider.model}</span>
           </span>
         )}
       </div>
