@@ -38,7 +38,11 @@ jobs:
         # lents que les Linux, un seuil calé sur Linux fabriquerait des flakes.
         # JUnit XML obligatoire : la sortie console est tronquée par le
         # os._exit du teardown, le résumé des échecs n'apparaît jamais.
-        run: uv run pytest tests/ --ignore=tests/e2e -q --timeout=60 -p no:cacheprovider --junit-xml=junit-windows.xml
+        # 01/09/2026 : src/backend/tests/ manquait ici alors que ci.yml et
+        # pyproject.toml l avaient recupere. 166 tests — securite des services,
+        # sauvegardes, escalade — ne tournaient donc JAMAIS sous Windows, la
+        # plateforme meme d ou viennent les sept bugs du 24/08.
+        run: uv run pytest tests/ src/backend/tests/ --ignore=tests/e2e -q --timeout=60 -p no:cacheprovider --junit-xml=junit-windows.xml
         timeout-minutes: 20
 
       - name: Bilan des échecs (lisible même quand la console est tronquée)
