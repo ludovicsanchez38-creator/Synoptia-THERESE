@@ -9,6 +9,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { buildReplacementMap } from '../lib/demoMask';
+import { useContactsStore } from './contactsStore';
 
 interface DemoState {
   /** Mode démo activé */
@@ -25,18 +26,40 @@ interface DemoState {
   clearMap: () => void;
 }
 
+/** Les contacts deja charges suffisent : les titres du brief citent leurs
+ *  noms et leurs societes. Les projets viennent en plus quand une surface
+ *  appelle buildMap avec sa propre liste. */
+function mapDepuisLesContacts(): Map<string, string> {
+  return buildReplacementMap(useContactsStore.getState().contacts, []);
+}
+
 export const useDemoStore = create<DemoState>()(
   persist(
     (set) => ({
       enabled: false,
       replacementMap: new Map(),
 
+      // La map n'est pas persistee et n'etait remplie que par CRMPanel et
+      // MemoryPanel. Tant qu'on n'avait ouvert ni l'un ni l'autre, activer le
+      // mode demo ne masquait RIEN, nulle part — constate dans l'application
+      // lancee le 01/09/2026, avec les vrais noms de clients a l'ecran. Le
+      // basculement remplit donc lui-meme la map depuis les contacts deja
+      // charges, et la vide en s'eteignant.
       toggle: () => {
-        set((state) => ({ enabled: !state.enabled }));
+        set((state) => {
+          const enabled = !state.enabled;
+          return enabled
+            ? { enabled, replacementMap: mapDepuisLesContacts() }
+            : { enabled, replacementMap: new Map() };
+        });
       },
 
       setEnabled: (enabled) => {
-        set({ enabled });
+        set(
+          enabled
+            ? { enabled, replacementMap: mapDepuisLesContacts() }
+            : { enabled, replacementMap: new Map() },
+        );
       },
 
       buildMap: (contacts, projects) => {

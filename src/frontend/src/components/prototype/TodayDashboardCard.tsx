@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react';
+
+import { useDemoMask } from '../../hooks';
 import {
   libelleDuRepli,
   lireLeReglage,
@@ -101,6 +103,11 @@ export function TodayDashboardCard({
   setup?: SetupStatus | null;
   onSetupEmail?: () => void;
 }) {
+  // Le masque du mode demo etait consomme par six surfaces et pas par
+  // celle-ci, qui est l ecran par defaut : en demonstration, les vrais
+  // noms de clients restaient a l affichage. Constate dans l application
+  // lancee le 01/09/2026.
+  const { maskText } = useDemoMask();
   const items = resource.status === 'ready' ? buildTodayAttentionItems(resource.data) : [];
   // Entrée 11b : le brief montre six éléments, le reste se déroule ici plutôt
   // que sur un autre écran. Depuis le 29/08, le seuil est réglable.
@@ -289,14 +296,14 @@ export function TodayDashboardCard({
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-semibold text-text">{item.title}</span>
+                    <span className="text-sm font-semibold text-text">{maskText(item.title)}</span>
                     <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
                       item.urgent ? 'bg-[var(--color-error-tint)] text-error' : 'bg-surface-2 text-text-muted'
                     }`}>
                       {item.badge}
                     </span>
                   </span>
-                  <span className="mt-0.5 block truncate text-xs text-text-muted">{item.detail}</span>
+                  <span className="mt-0.5 block truncate text-xs text-text-muted">{maskText(item.detail)}</span>
                 </span>
                 <ChevronRight className="h-4 w-4 shrink-0 text-text-muted" />
               </button>
