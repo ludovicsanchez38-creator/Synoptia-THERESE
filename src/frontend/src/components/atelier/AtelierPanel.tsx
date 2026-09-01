@@ -42,6 +42,12 @@ export function AtelierPanel() {
   const [activeAgentProfile, setActiveAgentProfile] = useState<string | null>(null);
   const [activeAgentModel, setActiveAgentModel] = useState<string | undefined>(undefined);
   const [pendingMessage, setPendingMessage] = useState<string | null>(null);
+  // `isStreaming` du store ne passe a vrai qu'au PREMIER CHUNK recu. Entre le
+  // lancement et ce chunk, la saisie restait ouverte et le bouton d'annulation
+  // absent : deux missions enchainees, la seconde ecrasait le jeton de la
+  // premiere, puis le `finally` de la premiere effacait celui de la seconde,
+  // devenue inarretable. Cet etat ferme la fenetre.
+  const [missionEnCours, setMissionEnCours] = useState(false);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -72,15 +78,20 @@ export function AtelierPanel() {
 
   const runMission = useCallback(
     async (message: string) => {
+      // Une mission a la fois : le jeton en cours fait foi.
+      if (abortRef.current) return;
+
       addUserMessage(message);
 
-      abortRef.current = new AbortController();
+      const controleur = new AbortController();
+      abortRef.current = controleur;
+      setMissionEnCours(true);
 
       try {
         for await (const chunk of streamAgentRequest(
           message,
           sourcePath || undefined,
-          abortRef.current.signal
+          controleur.signal
         )) {
           if (chunk.task_id) taskIdRef.current = chunk.task_id;
           processChunk(chunk);
@@ -93,8 +104,13 @@ export function AtelierPanel() {
           });
         }
       } finally {
-        abortRef.current = null;
-        taskIdRef.current = null;
+        // Ne nettoyer que SON propre jeton : sinon la fin d'une mission efface
+        // celui d'une autre, qui n'est plus annulable.
+        if (abortRef.current === controleur) {
+          abortRef.current = null;
+          taskIdRef.current = null;
+          setMissionEnCours(false);
+        }
       }
     },
     [sourcePath, processChunk, addUserMessage]
@@ -109,7 +125,14 @@ export function AtelierPanel() {
       }
     }
     abortRef.current?.abort();
+    // Liberer le jeton ICI plutot que d'attendre le `finally` du flux : si le
+    // flux n'honore pas le signal, l'Atelier resterait bloque a jamais. Le
+    // `finally` de la mission avortee verra que le jeton n'est plus le sien et
+    // ne touchera pas a celui d'une mission relancee entre-temps.
+    abortRef.current = null;
+    taskIdRef.current = null;
     setPendingMessage(null);
+    setMissionEnCours(false);
   }, []);
 
   const handleClose = useCallback(() => {
@@ -248,7 +271,7 @@ export function AtelierPanel() {
             <AgentInput
               onSend={(message) => setPendingMessage(message)}
               onCancel={() => void handleCancel()}
-              isStreaming={isStreaming}
+              isStreaming={isStreaming || missionEnCours}
               placeholder="Posez une question ou demandez une amélioration..."
             />
           </>
