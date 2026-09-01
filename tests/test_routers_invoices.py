@@ -208,6 +208,77 @@ class TestInvoicesCRUD:
         assert response.status_code == 404
 
     @pytest.mark.asyncio
+    async def test_invoice_conserve_le_nom_du_client_apres_modification_du_contact(
+        self, client: AsyncClient
+    ):
+        """Une pièce existante ne doit pas être réécrite par le CRM courant."""
+        contact_id = await _create_contact(client)
+        invoice = await _create_invoice(client, contact_id)
+
+        changed = await client.patch(
+            f"/api/memory/contacts/{contact_id}",
+            json={"first_name": "Jeanne", "last_name": "Modifiée"},
+        )
+        assert changed.status_code == 200, changed.text
+
+        response = await client.get(f"/api/invoices/{invoice['id']}")
+
+        assert response.status_code == 200
+        assert response.json()["contact_name"] == "Marie Martin"
+
+    @pytest.mark.asyncio
+    async def test_invoice_reste_lisible_apres_suppression_du_contact(
+        self, client: AsyncClient
+    ):
+        """La suppression CRM ne doit ni supprimer ni rendre anonyme la pièce."""
+        contact_id = await _create_contact(client)
+        invoice = await _create_invoice(client, contact_id)
+
+        deleted = await client.delete(f"/api/memory/contacts/{contact_id}")
+        assert deleted.status_code == 200, deleted.text
+
+        response = await client.get(f"/api/invoices/{invoice['id']}")
+
+        assert response.status_code == 200
+        assert response.json()["contact_name"] == "Marie Martin"
+
+    @pytest.mark.asyncio
+    async def test_pdf_utilise_le_snapshot_apres_suppression_du_contact(
+        self, client: AsyncClient
+    ):
+        """Le PDF d'une pièce survivante utilise son destinataire historique."""
+        from app.services.user_profile import UserProfile
+
+        contact_id = await _create_contact(client)
+        invoice = await _create_invoice(client, contact_id)
+        deleted = await client.delete(f"/api/memory/contacts/{contact_id}")
+        assert deleted.status_code == 200, deleted.text
+
+        complete = UserProfile(
+            name="Ludovic Sanchez",
+            company="Synoptia",
+            address="294 Montee des Genets, 04100 Manosque",
+            siret="99160678100011",
+        )
+        with (
+            patch("app.routers.invoices.get_cached_profile", return_value=complete),
+            patch(
+                "app.routers.invoices.InvoicePDFGenerator.generate_invoice_pdf",
+                return_value="/tmp/FACT-2026-001.pdf",
+            ) as generate,
+        ):
+            response = await client.get(f"/api/invoices/{invoice['id']}/pdf")
+
+        assert response.status_code == 200, response.text
+        assert generate.call_args.kwargs["contact_data"] == {
+            "name": "Marie Martin",
+            "company": "Entreprise Test",
+            "email": "marie@test.fr",
+            "phone": "+33612345678",
+            "address": "",
+        }
+
+    @pytest.mark.asyncio
     async def test_update_invoice(self, client: AsyncClient):
         """PUT /api/invoices/{id} met a jour les notes d'une facture."""
         contact_id = await _create_contact(client)

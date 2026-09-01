@@ -176,3 +176,88 @@ def test_ensure_invoice_legacy_columns_is_idempotent(tmp_path: Path):
 
     assert first == []
     assert second == []
+
+
+def test_apply_adhoc_migrations_backfill_le_snapshot_des_factures(tmp_path: Path):
+    """Une mise à jour reprend le contact actuel au lieu de poser du vide."""
+    from app.models.database import apply_adhoc_migrations
+
+    db_path = tmp_path / "legacy-snapshot.db"
+    with closing(sqlite3.connect(db_path)) as conn:
+        conn.execute(
+            """
+            CREATE TABLE contacts (
+                id TEXT PRIMARY KEY,
+                first_name TEXT,
+                last_name TEXT,
+                company TEXT,
+                email TEXT,
+                phone TEXT,
+                address TEXT
+            )
+            """
+        )
+        conn.execute(
+            """
+            CREATE TABLE invoices (
+                id TEXT PRIMARY KEY,
+                contact_id TEXT NOT NULL
+            )
+            """
+        )
+        conn.execute(
+            "INSERT INTO contacts VALUES (?, ?, ?, ?, ?, ?, ?)",
+            (
+                "contact-1",
+                "Aline",
+                "Avant",
+                "Société Ancienne",
+                "aline@example.test",
+                "+33492000000",
+                "1 rue de la Mémoire",
+            ),
+        )
+        conn.execute("INSERT INTO invoices VALUES (?, ?)", ("invoice-1", "contact-1"))
+        conn.commit()
+
+    apply_adhoc_migrations(db_path)
+
+    with closing(sqlite3.connect(db_path)) as conn:
+        snapshot = conn.execute(
+            "SELECT client_name, client_company, client_email, client_phone, "
+            "client_address FROM invoices WHERE id = 'invoice-1'"
+        ).fetchone()
+    assert snapshot == (
+        "Aline Avant",
+        "Société Ancienne",
+        "aline@example.test",
+        "+33492000000",
+        "1 rue de la Mémoire",
+    )
+
+
+def test_snapshot_facture_refuse_d_inventer_un_destinataire(tmp_path: Path):
+    """Une pièce sans nom ni société doit bloquer la migration, pas mentir."""
+    from app.models.database import apply_adhoc_migrations
+
+    db_path = tmp_path / "legacy-snapshot-sans-identite.db"
+    with closing(sqlite3.connect(db_path)) as conn:
+        conn.execute(
+            "CREATE TABLE contacts (id TEXT PRIMARY KEY, first_name TEXT, "
+            "last_name TEXT, company TEXT, email TEXT, phone TEXT, address TEXT)"
+        )
+        conn.execute(
+            "CREATE TABLE invoices (id TEXT PRIMARY KEY, contact_id TEXT NOT NULL)"
+        )
+        conn.execute(
+            "INSERT INTO contacts VALUES (?, ?, ?, ?, ?, ?, ?)",
+            ("contact-vide", "", "", "", None, None, None),
+        )
+        conn.execute(
+            "INSERT INTO invoices VALUES (?, ?)",
+            ("invoice-sans-destinataire", "contact-vide"),
+        )
+        conn.commit()
+
+    with pytest.raises(RuntimeError, match="snapshot absent"):
+        apply_adhoc_migrations(db_path)

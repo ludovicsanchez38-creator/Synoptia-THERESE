@@ -45,6 +45,24 @@ async def test_une_date_a_venir_n_est_pas_une_relance(db_session: AsyncSession):
 
 
 @pytest.mark.asyncio
+async def test_une_relance_est_due_pendant_tout_son_jour_civil_paris(
+    db_session: AsyncSession,
+):
+    """Le 30 civil commence avant le 30 UTC pendant l'heure d'été."""
+    contact = _contact(
+        id="relance-frontiere-paris",
+        next_follow_up=datetime(2026, 8, 30, 23, 59, tzinfo=UTC),
+    )
+    db_session.add(contact)
+    await db_session.commit()
+
+    instant = datetime(2026, 8, 29, 22, 30, tzinfo=UTC)
+    trouves = (await db_session.execute(contacts_a_relancer(instant))).scalars().all()
+
+    assert [item.id for item in trouves] == [contact.id]
+
+
+@pytest.mark.asyncio
 async def test_le_silence_n_est_pas_un_devoir(db_session: AsyncSession):
     """Le coeur du lot : sans date, aucune relance, meme apres deux ans.
 

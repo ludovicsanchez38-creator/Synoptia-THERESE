@@ -10,7 +10,7 @@ import tempfile
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import AsyncGenerator
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 import pytest_asyncio
@@ -72,6 +72,8 @@ _mock_qdrant.add_memory.return_value = None
 _mock_qdrant.add_memories.return_value = 0
 _mock_qdrant.delete_by_entity.return_value = 0
 _mock_qdrant.delete_by_scope.return_value = 0
+_mock_qdrant.async_delete_by_entity = AsyncMock(return_value=0)
+_mock_qdrant.async_delete_by_scope = AsyncMock(return_value=0)
 _mock_qdrant._initialized = True
 _mock_qdrant.is_initialized.return_value = True
 _qdrant_module._qdrant_service = _mock_qdrant

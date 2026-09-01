@@ -160,9 +160,9 @@ def _invoice_to_response(invoice: Invoice) -> InvoiceResponse:
     # Le contact n'est présent que si l'appelant a chargé la relation
     # (`selectinload`). On ne le force pas ici : un accès paresseux dans un
     # contexte async lèverait.
-    nom_du_client = None
+    nom_du_client = invoice.client_name
     contact = invoice.__dict__.get("contact")
-    if contact is not None:
+    if nom_du_client is None and contact is not None:
         nom_du_client = (
             getattr(contact, "display_name", None)
             or " ".join(
@@ -198,6 +198,36 @@ def _invoice_to_response(invoice: Invoice) -> InvoiceResponse:
         updated_at=invoice.updated_at.isoformat(),
         lines=lines,
     )
+
+
+def _snapshot_du_contact(contact: Contact) -> dict[str, str | None]:
+    """Copie l'identité utilisée par une pièce, une seule fois."""
+    return {
+        "client_name": contact.display_name,
+        "client_company": contact.company,
+        "client_email": contact.email,
+        "client_phone": contact.phone,
+        "client_address": contact.address,
+    }
+
+
+def _snapshot_de_la_piece(invoice: Invoice) -> dict[str, str | None]:
+    """Refuse de fabriquer un document quand son destinataire n'est pas figé."""
+    if not invoice.client_name:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Destinataire historique absent : génération refusée pour ne pas "
+                "produire une pièce comptable fausse."
+            ),
+        )
+    return {
+        "name": invoice.client_name,
+        "company": invoice.client_company or "",
+        "email": invoice.client_email or "",
+        "phone": invoice.client_phone or "",
+        "address": invoice.client_address or "",
+    }
 
 
 # Routes "collection" exposees avec ET sans slash final pour eviter la
@@ -301,6 +331,7 @@ async def create_invoice(
     invoice = Invoice(
         invoice_number=invoice_number,
         contact_id=request.contact_id,
+        **_snapshot_du_contact(contact),
         document_type=document_type,
         tva_applicable=request.tva_applicable,
         currency=request.currency,
@@ -393,6 +424,8 @@ async def update_invoice(
         if not contact:
             raise HTTPException(status_code=404, detail="Contact not found")
         invoice.contact_id = request.contact_id
+        for field, value in _snapshot_du_contact(contact).items():
+            setattr(invoice, field, value)
 
     if request.currency is not None:
         invoice.currency = request.currency
@@ -559,6 +592,11 @@ async def convert_invoice(
         invoice_number=new_number,
         document_type=target_type,
         contact_id=source.contact_id,
+        client_name=source.client_name,
+        client_company=source.client_company,
+        client_email=source.client_email,
+        client_phone=source.client_phone,
+        client_address=source.client_address,
         currency=source.currency,
         issue_date=datetime.now(UTC),
         due_date=source.due_date,
@@ -637,11 +675,6 @@ async def generate_invoice_pdf(
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
 
-    # Récupérer le contact
-    contact = await session.get(Contact,invoice.contact_id)
-    if not contact:
-        raise HTTPException(status_code=404, detail="Contact not found")
-
     # Récupérer le profil utilisateur (dataclass → dict pour .get())
     _profile = get_cached_profile()
 
@@ -691,13 +724,7 @@ async def generate_invoice_pdf(
         ],
     }
 
-    contact_data = {
-        "name": contact.display_name,
-        "company": contact.company or "",
-        "email": contact.email or "",
-        "phone": contact.phone or "",
-        "address": contact.address or "",
-    }
+    contact_data = _snapshot_de_la_piece(invoice)
 
     user_profile_data = {
         "name": user_profile.get("name", ""),
@@ -827,6 +854,11 @@ async def convert_devis_to_invoice(
     new_invoice = Invoice(
         invoice_number=invoice_number,
         contact_id=devis.contact_id,
+        client_name=devis.client_name,
+        client_company=devis.client_company,
+        client_email=devis.client_email,
+        client_phone=devis.client_phone,
+        client_address=devis.client_address,
         document_type="facture",
         tva_applicable=devis.tva_applicable,
         currency=devis.currency,

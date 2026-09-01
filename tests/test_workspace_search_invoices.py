@@ -73,6 +73,44 @@ class TestSearchInvoicesTool:
         assert "DEV-2026-007" in result
 
     @pytest.mark.asyncio
+    async def test_trouve_une_facture_apres_suppression_du_contact(self, db_session):
+        """Le chat s'appuie sur le destinataire figé, pas sur un JOIN vivant."""
+        contact = Contact(
+            id="contact-supprime",
+            first_name="Claire",
+            last_name="Historique",
+            company="Archive SARL",
+        )
+        invoice = Invoice(
+            id="inv-snapshot",
+            invoice_number="FACT-2026-099",
+            contact_id=contact.id,
+            client_name="Claire Historique",
+            client_company="Archive SARL",
+            client_email="claire@example.test",
+            client_phone=None,
+            client_address="12 rue du Temps",
+            document_type="facture",
+            due_date=datetime(2026, 9, 30, tzinfo=UTC),
+            issue_date=datetime(2026, 8, 30, tzinfo=UTC),
+            status="sent",
+            subtotal_ht=100.0,
+            total_tax=20.0,
+            total_ttc=120.0,
+        )
+        db_session.add_all([contact, invoice])
+        await db_session.commit()
+        await db_session.delete(contact)
+        await db_session.commit()
+
+        result = await execute_workspace_tool(
+            "search_invoices", {"query": "FACT-2026-099"}, db_session
+        )
+
+        assert "FACT-2026-099" in result
+        assert "Claire Historique" in result
+
+    @pytest.mark.asyncio
     async def test_aucun_resultat_message_clair(self, db_session):
         await _seed(db_session)
 

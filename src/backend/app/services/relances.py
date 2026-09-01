@@ -18,6 +18,8 @@ l'ancienne règle ne regardait même pas.
 from datetime import UTC, datetime
 
 from app.models.entities import Contact
+from app.services.civil_time import date_civile_paris
+from sqlalchemy import func
 from sqlmodel import select
 from sqlmodel.sql.expression import SelectOfScalar
 
@@ -29,12 +31,15 @@ def contacts_a_relancer(maintenant: datetime | None = None) -> SelectOfScalar[Co
     (`test_relance_une_seule_definition.py`) fige l'égalité des deux
     consommateurs.
     """
-    seuil = maintenant or datetime.now(UTC)
+    seuil = date_civile_paris(maintenant or datetime.now(UTC)).isoformat()
     return (
         select(Contact)
         .where(
             Contact.next_follow_up != None,  # noqa: E711
-            Contact.next_follow_up <= seuil,
+            # `next_follow_up` représente un JOUR décidé, même si le schéma
+            # historique l'a stocké dans un DateTime. Comparer les instants
+            # faisait commencer le 30 à minuit UTC au lieu de minuit à Paris.
+            func.date(Contact.next_follow_up) <= seuil,
             # `archive` est le tombeau RGPD, pas une etape commerciale :
             # l'anonymisation y pose la fiche et efface tout SAUF cette date.
             # Sans cette exclusion, le brief afficherait « Relancer [ANONYMISE] ».

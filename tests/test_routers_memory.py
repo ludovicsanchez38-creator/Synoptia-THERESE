@@ -4,8 +4,59 @@ THERESE v2 - Memory Router Tests
 Tests for US-MEM-01 to US-MEM-05.
 """
 
+from unittest.mock import AsyncMock
+
 import pytest
+from app.models.entities import (
+    Calendar,
+    CalendarEvent,
+    Contact,
+    Conversation,
+    Document,
+    FileMetadata,
+    Project,
+)
+from app.models.entities_sync import ProjectSyncRoot
 from httpx import AsyncClient
+
+
+async def _seed_project_references(db_session, project_id: str, contact_id: str | None = None):
+    """Pose les références durables qui ne doivent pas survivre avec un id mort."""
+    project = Project(id=project_id, name="Dossier durable", contact_id=contact_id)
+    conversation = Conversation(
+        id=f"conv-{project_id}",
+        title="Conversation du dossier",
+        project_id=project_id,
+        memory_scope="project",
+    )
+    file = FileMetadata(
+        id=f"file-{project_id}",
+        path=f"/tmp/{project_id}.pdf",
+        name=f"{project_id}.pdf",
+        extension=".pdf",
+        size=42,
+        scope="project",
+        scope_id=project_id,
+    )
+    document = Document(
+        id=f"doc-{project_id}", title="Document du dossier", project_id=project_id
+    )
+    calendar = Calendar(id=f"cal-{project_id}", summary="Agenda local", provider="local")
+    event = CalendarEvent(
+        id=f"event-{project_id}",
+        calendar_id=calendar.id,
+        project_id=project_id,
+        summary="Rendez-vous du dossier",
+    )
+    root = ProjectSyncRoot(
+        id=f"root-{project_id}",
+        project_id=project_id,
+        racine=f"/tmp/racine-{project_id}",
+        volume_id=1,
+    )
+    db_session.add_all([project, conversation, file, document, calendar, event, root])
+    await db_session.commit()
+    return conversation, file, document, event, root
 
 
 class TestContactsCRUD:
@@ -221,6 +272,90 @@ class TestMemoryDeleteCascade:
         response = await client.delete("/api/memory/contacts/nonexistent-id")
 
         assert response.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_delete_project_sans_cascade_ne_laisse_aucun_identifiant_mort(
+        self, client: AsyncClient, db_session, monkeypatch
+    ):
+        """L'API par défaut doit nettoyer ce que l'interface ne sait pas demander."""
+        project_id = "project-delete-direct"
+        conversation, file, document, event, root = await _seed_project_references(
+            db_session, project_id
+        )
+        conversation_id, file_id = conversation.id, file.id
+        document_id, event_id, root_id = document.id, event.id, root.id
+        delete_vectors = AsyncMock(return_value=1)
+        delete_scope = AsyncMock(return_value=1)
+        monkeypatch.setattr(
+            "app.routers.memory.get_qdrant_service",
+            lambda: type(
+                "Qdrant",
+                (),
+                {
+                    "async_delete_by_entity": delete_vectors,
+                    "async_delete_by_scope": delete_scope,
+                },
+            )(),
+        )
+
+        response = await client.delete(f"/api/memory/projects/{project_id}")
+
+        assert response.status_code == 200, response.text
+        db_session.expire_all()
+        assert await db_session.get(Project, project_id) is None
+        assert await db_session.get(FileMetadata, file_id) is None
+        assert (await db_session.get(Conversation, conversation_id)).project_id is None
+        assert (await db_session.get(Conversation, conversation_id)).memory_scope == "global"
+        assert (await db_session.get(Document, document_id)).project_id is None
+        assert (await db_session.get(CalendarEvent, event_id)).project_id is None
+        assert (await db_session.get(ProjectSyncRoot, root_id)).detachee is True
+        assert {call.args[0] for call in delete_vectors.await_args_list} >= {
+            file_id,
+            project_id,
+        }
+        delete_scope.assert_awaited_once_with("project", project_id)
+
+    @pytest.mark.asyncio
+    async def test_delete_contact_cascade_reutilise_le_menage_du_projet(
+        self, client: AsyncClient, db_session, monkeypatch
+    ):
+        """Le bouton Contacts ne doit pas court-circuiter le contrat dossier."""
+        contact = Contact(id="contact-cascade-durable", first_name="Client")
+        db_session.add(contact)
+        await db_session.commit()
+        project_id = "project-contact-cascade"
+        conversation, file, document, event, root = await _seed_project_references(
+            db_session, project_id, contact.id
+        )
+        conversation_id, file_id = conversation.id, file.id
+        document_id, event_id, root_id = document.id, event.id, root.id
+        delete_vectors = AsyncMock(return_value=1)
+        delete_scope = AsyncMock(return_value=1)
+        monkeypatch.setattr(
+            "app.routers.memory.get_qdrant_service",
+            lambda: type(
+                "Qdrant",
+                (),
+                {
+                    "async_delete_by_entity": delete_vectors,
+                    "async_delete_by_scope": delete_scope,
+                },
+            )(),
+        )
+
+        response = await client.delete(
+            f"/api/memory/contacts/{contact.id}?cascade=true"
+        )
+
+        assert response.status_code == 200, response.text
+        db_session.expire_all()
+        assert await db_session.get(Project, project_id) is None
+        assert await db_session.get(FileMetadata, file_id) is None
+        assert (await db_session.get(Conversation, conversation_id)).project_id is None
+        assert (await db_session.get(Document, document_id)).project_id is None
+        assert (await db_session.get(CalendarEvent, event_id)).project_id is None
+        assert (await db_session.get(ProjectSyncRoot, root_id)).detachee is True
+        delete_scope.assert_awaited_once_with("project", project_id)
 
 
 class TestMemoryScope:

@@ -108,6 +108,10 @@ CONTACT_COLUMN_MAPPING = {
     "Téléphone": "phone",
     "tel": "phone",
     "Tel": "phone",
+    # Address
+    "address": "address",
+    "adresse": "address",
+    "Adresse": "address",
     # Stage
     "stage": "stage",
     "Stage": "stage",
@@ -128,6 +132,31 @@ CONTACT_COLUMN_MAPPING = {
     "notes": "notes",
     "Notes": "notes",
     "commentaires": "notes",
+    # Long-term state exported by THERESE
+    "extra_data": "extra_data",
+    "Donnees supplementaires": "extra_data",
+    "last_interaction": "last_interaction",
+    "Derniere interaction": "last_interaction",
+    "next_follow_up": "next_follow_up",
+    "Prochaine relance": "next_follow_up",
+    "rgpd_base_legale": "rgpd_base_legale",
+    "Base legale RGPD": "rgpd_base_legale",
+    "rgpd_date_collecte": "rgpd_date_collecte",
+    "Date collecte RGPD": "rgpd_date_collecte",
+    "rgpd_date_expiration": "rgpd_date_expiration",
+    "Date expiration RGPD": "rgpd_date_expiration",
+    "rgpd_consentement": "rgpd_consentement",
+    "Consentement RGPD": "rgpd_consentement",
+    "purge_excluded": "purge_excluded",
+    "Exclu purge RGPD": "purge_excluded",
+    "scope": "scope",
+    "Perimetre": "scope",
+    "scope_id": "scope_id",
+    "ID perimetre": "scope_id",
+    "created_at": "created_at",
+    "Date creation": "created_at",
+    "updated_at": "updated_at",
+    "Date modification": "updated_at",
 }
 
 PROJECT_COLUMN_MAPPING = {
@@ -290,10 +319,15 @@ FIELD_MAX_LENGTHS: dict[str, int] = {
     "company": 300,
     "email": 320,
     "phone": 50,
+    "address": 1000,
     "stage": 50,
     "source": 200,
     "tags": 1000,
     "notes": 5000,
+    "extra_data": 10000,
+    "rgpd_base_legale": 100,
+    "scope": 50,
+    "scope_id": 200,
     "name": 500,
     "title": 500,
     "description": 5000,
@@ -363,6 +397,10 @@ def _parse_value(value: Any, field_type: str) -> Any:
         if isinstance(value, datetime):
             return value
         if isinstance(value, str):
+            try:
+                return datetime.fromisoformat(value.strip().replace("Z", "+00:00"))
+            except ValueError:
+                pass
             for fmt in [
                 "%Y-%m-%dT%H:%M:%S.%fZ",
                 "%Y-%m-%dT%H:%M:%SZ",
@@ -376,6 +414,23 @@ def _parse_value(value: Any, field_type: str) -> Any:
                 except ValueError:
                     continue
         return None
+
+    if field_type == "bool":
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, (int, float)):
+            return bool(value)
+        normalized = str(value).strip().lower()
+        if normalized in {"1", "true", "oui", "yes", "vrai"}:
+            return True
+        if normalized in {"0", "false", "non", "no", "faux"}:
+            return False
+        return None
+
+    if field_type == "json":
+        if isinstance(value, (dict, list)):
+            return json.dumps(value, ensure_ascii=False, separators=(",", ":"))
+        return str(value).strip()
 
     if field_type == "tags":
         if isinstance(value, list):
@@ -578,29 +633,57 @@ class CRMImportService:
                     existing = db_result.scalar_one_or_none()
 
                 if existing and update_existing:
-                    # Update existing
-                    if mapped.get("first_name"):
-                        existing.first_name = mapped["first_name"]
-                    if mapped.get("last_name"):
-                        existing.last_name = mapped["last_name"]
-                    if mapped.get("company"):
-                        existing.company = mapped["company"]
-                    if mapped.get("email"):
-                        existing.email = mapped["email"]
-                    if mapped.get("phone"):
-                        existing.phone = mapped["phone"]
-                    if mapped.get("stage"):
-                        existing.stage = mapped["stage"]
-                    if mapped.get("score"):
-                        existing.score = _parse_value(mapped["score"], "int") or existing.score
-                    if mapped.get("source"):
-                        existing.source = mapped["source"]
-                    if mapped.get("tags"):
+                    # Un champ présent dans l'export fait foi, y compris une
+                    # valeur vide ou un score nul : sinon l'aller-retour
+                    # invente silencieusement un autre état.
+                    for field_name in (
+                        "first_name",
+                        "last_name",
+                        "company",
+                        "email",
+                        "phone",
+                        "address",
+                        "stage",
+                        "source",
+                        "notes",
+                        "rgpd_base_legale",
+                        "scope",
+                        "scope_id",
+                    ):
+                        if field_name in mapped:
+                            setattr(existing, field_name, mapped[field_name])
+                    if "score" in mapped:
+                        score = _parse_value(mapped["score"], "int")
+                        if score is not None:
+                            existing.score = score
+                    if "tags" in mapped:
                         existing.tags = _parse_value(mapped["tags"], "tags")
-                    if mapped.get("notes"):
-                        existing.notes = mapped["notes"]
+                    if "extra_data" in mapped:
+                        existing.extra_data = _parse_value(mapped["extra_data"], "json")
+                    for field_name in (
+                        "last_interaction",
+                        "next_follow_up",
+                        "rgpd_date_collecte",
+                        "rgpd_date_expiration",
+                        "created_at",
+                    ):
+                        if field_name in mapped:
+                            setattr(
+                                existing,
+                                field_name,
+                                _parse_value(mapped[field_name], "datetime"),
+                            )
+                    for field_name in ("rgpd_consentement", "purge_excluded"):
+                        if field_name in mapped:
+                            parsed_bool = _parse_value(mapped[field_name], "bool")
+                            if parsed_bool is not None:
+                                setattr(existing, field_name, parsed_bool)
 
-                    existing.updated_at = datetime.now(UTC)
+                    existing.updated_at = (
+                        _parse_value(mapped["updated_at"], "datetime")
+                        if "updated_at" in mapped
+                        else datetime.now(UTC)
+                    )
                     self.session.add(existing)
                     result.updated += 1
 
@@ -609,6 +692,9 @@ class CRMImportService:
 
                 else:
                     # Create new
+                    score = _parse_value(mapped.get("score"), "int")
+                    created_at = _parse_value(mapped.get("created_at"), "datetime")
+                    updated_at = _parse_value(mapped.get("updated_at"), "datetime")
                     contact = Contact(
                         id=contact_id or generate_uuid(),
                         first_name=mapped.get("first_name"),
@@ -616,12 +702,38 @@ class CRMImportService:
                         company=mapped.get("company"),
                         email=mapped.get("email"),
                         phone=mapped.get("phone"),
-                        stage=mapped.get("stage", "contact"),
-                        score=_parse_value(mapped.get("score"), "int") or 50,
+                        address=mapped.get("address"),
+                        stage=mapped.get("stage") or "contact",
+                        score=score if score is not None else 50,
                         source=mapped.get("source"),
                         tags=_parse_value(mapped.get("tags"), "tags"),
                         notes=mapped.get("notes"),
-                        scope="global",
+                        extra_data=_parse_value(mapped.get("extra_data"), "json"),
+                        last_interaction=_parse_value(
+                            mapped.get("last_interaction"), "datetime"
+                        ),
+                        next_follow_up=_parse_value(
+                            mapped.get("next_follow_up"), "datetime"
+                        ),
+                        rgpd_base_legale=mapped.get("rgpd_base_legale"),
+                        rgpd_date_collecte=_parse_value(
+                            mapped.get("rgpd_date_collecte"), "datetime"
+                        ),
+                        rgpd_date_expiration=_parse_value(
+                            mapped.get("rgpd_date_expiration"), "datetime"
+                        ),
+                        rgpd_consentement=(
+                            _parse_value(mapped.get("rgpd_consentement"), "bool")
+                            or False
+                        ),
+                        purge_excluded=(
+                            _parse_value(mapped.get("purge_excluded"), "bool")
+                            or False
+                        ),
+                        scope=mapped.get("scope") or "global",
+                        scope_id=mapped.get("scope_id"),
+                        created_at=created_at or datetime.now(UTC),
+                        updated_at=updated_at or datetime.now(UTC),
                     )
                     self.session.add(contact)
                     result.created += 1

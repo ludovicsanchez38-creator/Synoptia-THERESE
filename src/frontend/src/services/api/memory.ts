@@ -177,7 +177,9 @@ export async function updateProject(
 }
 
 export async function deleteProject(id: string): Promise<void> {
-  await request<{ ok: boolean }>(`/api/memory/projects/${id}`, {
+  // Incident du 30/08 : les deux écrans appelaient la route sans cascade et
+  // laissaient les fichiers du dossier sur un identifiant mort.
+  await request<{ ok: boolean }>(`/api/memory/projects/${id}?cascade=true`, {
     method: 'DELETE',
   });
 }

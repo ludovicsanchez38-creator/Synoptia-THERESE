@@ -8,6 +8,7 @@ import type {
 } from '../../services/api/dashboard';
 import type { Contact } from '../../services/api/memory';
 import type { AppView } from '../../stores/navigationStore';
+import { parisDateKey } from '../../lib/civilDate';
 
 export type AttentionKind = 'event' | 'task' | 'follow_up' | 'invoice' | 'prospect';
 
@@ -33,12 +34,13 @@ export interface TodayAttentionItem {
 }
 
 function isOverdue(dueDate: string | null, today: string): boolean {
-  return Boolean(dueDate && dueDate.slice(0, 10) < today);
+  return Boolean(dueDate && parisDateKey(dueDate) < today);
 }
 
 function formatCivilDate(value: string | null): string {
   if (!value || value.length < 10) return '';
-  return `${value.slice(8, 10)}/${value.slice(5, 7)}`;
+  const civilDate = parisDateKey(value);
+  return `${civilDate.slice(8, 10)}/${civilDate.slice(5, 7)}`;
 }
 
 function formatEventTime(event: DashboardEvent): string {

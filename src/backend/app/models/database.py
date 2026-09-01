@@ -97,6 +97,105 @@ def ensure_invoice_legacy_columns(
     return added_columns
 
 
+def _ensure_invoice_client_snapshot(conn: sqlite3.Connection) -> list[str]:
+    """Ajoute et remplit le destinataire figé des pièces existantes.
+
+    Une facture orpheline ne permet plus de reconstruire une identité fiable :
+    dans ce cas le démarrage échoue avant toute colonne ajoutée, au lieu de
+    consacrer silencieusement un snapshot vide.
+    """
+    invoice_columns = {
+        row[1] for row in conn.execute("PRAGMA table_info(invoices)").fetchall()
+    }
+    if not invoice_columns:
+        return []
+
+    invoice_count = conn.execute("SELECT COUNT(*) FROM invoices").fetchone()[0]
+    contact_table = conn.execute(
+        "SELECT 1 FROM sqlite_master WHERE type='table' AND name='contacts'"
+    ).fetchone()
+    if invoice_count and contact_table is None:
+        raise RuntimeError(
+            "Migration des factures impossible : la table contacts est absente"
+        )
+    definitions = {
+        "client_name": "TEXT",
+        "client_company": "TEXT",
+        "client_email": "TEXT",
+        "client_phone": "TEXT",
+        "client_address": "TEXT",
+    }
+    missing_columns = set(definitions) - invoice_columns
+    # Une pièce déjà migrée peut légitimement avoir perdu sa fiche CRM : son
+    # snapshot est justement là pour cela. L'absence du contact ne bloque que
+    # les lignes qu'il reste réellement à reconstruire.
+    needs_backfill = bool(missing_columns)
+    if not needs_backfill and invoice_count:
+        needs_backfill = conn.execute(
+            "SELECT 1 FROM invoices WHERE client_name IS NULL "
+            "OR TRIM(client_name) = '' LIMIT 1"
+        ).fetchone() is not None
+
+    if invoice_count and needs_backfill:
+        orphan_condition = (
+            ""
+            if missing_columns
+            else "AND (i.client_name IS NULL OR TRIM(i.client_name) = '')"
+        )
+        orphan = conn.execute(
+            "SELECT i.id FROM invoices i LEFT JOIN contacts c ON c.id = i.contact_id "
+            f"WHERE c.id IS NULL {orphan_condition} LIMIT 1"
+        ).fetchone()
+        if orphan is not None:
+            raise RuntimeError(
+                "Migration des factures impossible : le contact de la pièce "
+                f"{orphan[0]} est introuvable"
+            )
+
+    added: list[str] = []
+    for column_name, definition in definitions.items():
+        if column_name not in invoice_columns:
+            conn.execute(
+                f"ALTER TABLE invoices ADD COLUMN {column_name} {definition}"
+            )
+            added.append(column_name)
+
+    if invoice_count and needs_backfill:
+        where_clause = "1 = 1" if missing_columns else (
+            "client_name IS NULL OR TRIM(client_name) = ''"
+        )
+        conn.execute(
+            f"""
+            UPDATE invoices
+            SET client_name = (
+                    SELECT CASE
+                        WHEN TRIM(COALESCE(c.first_name, '') || ' ' || COALESCE(c.last_name, '')) != ''
+                        THEN TRIM(COALESCE(c.first_name, '') || ' ' || COALESCE(c.last_name, ''))
+                        WHEN COALESCE(c.company, '') != '' THEN c.company
+                        ELSE NULL
+                    END
+                    FROM contacts c WHERE c.id = invoices.contact_id
+                ),
+                client_company = (SELECT c.company FROM contacts c WHERE c.id = invoices.contact_id),
+                client_email = (SELECT c.email FROM contacts c WHERE c.id = invoices.contact_id),
+                client_phone = (SELECT c.phone FROM contacts c WHERE c.id = invoices.contact_id),
+                client_address = (SELECT c.address FROM contacts c WHERE c.id = invoices.contact_id)
+            WHERE {where_clause}
+            """
+        )
+        missing = conn.execute(
+            "SELECT id FROM invoices WHERE client_name IS NULL "
+            "OR TRIM(client_name) = '' LIMIT 1"
+        ).fetchone()
+        if missing is not None:
+            raise RuntimeError(
+                "Migration des factures incomplète : snapshot absent pour la pièce "
+                f"{missing[0]}"
+            )
+    conn.commit()
+    return added
+
+
 def apply_adhoc_migrations(db_path) -> None:
     """Migrations ad-hoc idempotentes (desktop : pas d'alembic auto historique).
 
@@ -117,6 +216,12 @@ def apply_adhoc_migrations(db_path) -> None:
             conn.execute("ALTER TABLE invoices ADD COLUMN currency TEXT DEFAULT 'EUR'")
             conn.commit()
             logger.info("Migration auto : colonne 'currency' ajoutée à la table invoices")
+        snapshot_columns = _ensure_invoice_client_snapshot(conn)
+        if snapshot_columns:
+            logger.info(
+                "Migration auto : snapshot destinataire ajouté aux factures (%s)",
+                ", ".join(snapshot_columns),
+            )
         # 0.56 : cloison de l'agenda par dossier. NULLABLE et SANS backfill -
         # les evenements d'avant la 0.56 n'appartiennent a aucun dossier et
         # restent visibles partout. Les coller au premier dossier venu ferait
@@ -436,14 +541,14 @@ def apply_adhoc_migrations(db_path) -> None:
 # Le test tests/test_alembic_stamp.py vérifie que cette constante suit la
 # vraie tête de src/backend/alembic/versions (épinglée en dur pour que
 # l'app PACKAGÉE puisse estampiller sans embarquer le dossier alembic/).
-ALEMBIC_HEAD_REVISION = "e5f6a7b8c9d0"
+ALEMBIC_HEAD_REVISION = "f6a7b8c9d0e1"
 
 
 def ensure_alembic_stamp(db_path) -> None:
     """Estampille la DB à la tête Alembic si elle n'a pas d'alembic_version.
 
-    Idempotent. Ne touche pas une DB déjà suivie par Alembic (révision plus
-    ancienne incluse : `alembic upgrade head` la fera avancer normalement).
+    Idempotent. Une DB déjà suivie reste à son ancienne révision tant que son
+    schéma n'est pas réellement au niveau de la tête.
     Ne stamp JAMAIS une DB vide (sans tables métier) : elle doit être créée
     par les migrations ou par create_all d'abord.
     """
@@ -475,6 +580,12 @@ def ensure_alembic_stamp(db_path) -> None:
                     "SELECT version_num FROM alembic_version"
                 ).fetchone()
                 if current and current[0] != ALEMBIC_HEAD_REVISION:
+                    # Incident du 31/08 : les anciens appelants directs du
+                    # filet n'exécutaient pas tous apply_adhoc_migrations.
+                    # Compléter ce snapshot ici empêche de laisser une base à
+                    # l'ancienne tête ; une identité irrécupérable interrompt
+                    # le ré-estampillage, conformément au contrat fail-closed.
+                    _ensure_invoice_client_snapshot(conn)
                     inv_cols = {
                         row[1]
                         for row in conn.execute("PRAGMA table_info(invoices)")
@@ -528,6 +639,13 @@ def ensure_alembic_stamp(db_path) -> None:
                     )
                     if (
                         "validite_jours" in inv_cols
+                        and {
+                            "client_name",
+                            "client_company",
+                            "client_email",
+                            "client_phone",
+                            "client_address",
+                        } <= inv_cols
                         and has_variables
                         and has_board_history
                         and has_atelier_history

@@ -115,6 +115,33 @@ async def test_restore_chiffre_mauvaise_passphrase_refuse(client):
     assert resp.status_code == 400
 
 
+@pytest.mark.asyncio
+async def test_restore_remet_les_fichiers_office_des_skills(client):
+    """Un bouton de téléchargement restauré ne doit jamais pointer vers un 404."""
+    from pathlib import Path
+
+    from app.config import settings
+
+    output = Path(settings.data_dir) / "outputs" / "propale_snapshot.docx"
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_bytes(b"document-office-historique")
+
+    created = await client.post(
+        "/api/data/backup", json={"password": "pw-output-solide-123"}
+    )
+    assert created.status_code == 200, created.text
+    output.unlink()
+    assert not output.exists()
+
+    restored = await client.post(
+        f"/api/data/restore/{created.json()['backup_name']}?confirm=true",
+        json={"password": "pw-output-solide-123"},
+    )
+
+    assert restored.status_code == 200, restored.text
+    assert output.read_bytes() == b"document-office-historique"
+
+
 def test_le_sel_qui_contient_un_saut_de_ligne_survit(tmp_path, monkeypatch):
     """Un sel contenant 0x0A ne doit pas corrompre l'archive.
 

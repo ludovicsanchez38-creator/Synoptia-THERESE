@@ -4,7 +4,10 @@ THERESE v2 - Data Router Tests
 Tests pour les endpoints d'export, import, backup et logs (US-SEC-02, US-BAK-01 a US-BAK-05).
 """
 
+from datetime import UTC, datetime
+
 import pytest
+from app.models.entities import Conversation, Message, Project
 from httpx import AsyncClient
 
 # ============================================================
@@ -22,6 +25,25 @@ async def _create_contact(client: AsyncClient, first_name: str = "Jean") -> str:
     })
     assert response.status_code == 200
     return response.json()["id"]
+
+
+async def _create_prestation(client: AsyncClient, contact_id: str) -> dict:
+    """Crée une prestation contenant les données sensibles visées par le lot D."""
+    response = await client.post(
+        "/api/prestations",
+        json={
+            "contact_id": contact_id,
+            "intitule": "Formation confidentielle",
+            "montant_ht": 2490.0,
+            "phase": "gagne",
+            "financeur": "Atlas",
+            "statut_financement": "valide",
+            "fin_le": "2026-10-15",
+            "suivi_apres_jours": 120,
+        },
+    )
+    assert response.status_code == 201, response.text
+    return response.json()
 
 
 async def _create_document_with_section_and_piste(client: AsyncClient) -> dict:
@@ -103,6 +125,33 @@ class TestDataExport:
         assert "Bob" in first_names
 
     @pytest.mark.asyncio
+    async def test_export_all_data_contains_prestations(self, client: AsyncClient):
+        """Art. 20 : l'engagement, son montant et son financeur sont portables."""
+        contact_id = await _create_contact(client, "AlicePrestation")
+        prestation = await _create_prestation(client, contact_id)
+
+        response = await client.get("/api/data/export")
+
+        assert response.status_code == 200
+        exported = response.json()
+        assert exported["prestations"] == [
+            {
+                "id": prestation["id"],
+                "contact_id": contact_id,
+                "intitule": "Formation confidentielle",
+                "montant_ht": 2490.0,
+                "phase": "gagne",
+                "financeur": "Atlas",
+                "statut_financement": "valide",
+                "fin_le": "2026-10-15",
+                "suivi_apres_jours": 120,
+                "created_at": prestation["created_at"],
+                "updated_at": prestation["updated_at"],
+            }
+        ]
+        assert exported["data_format_version"] == "1.3"
+
+    @pytest.mark.asyncio
     async def test_export_all_data_contains_documents_sections_pistes(self, client: AsyncClient):
         """GET /api/data/export (RGPD Art. 20) restitue l'atelier documentaire :
         un « supprimer toutes mes donnees » sans ces 3 tables laisserait un
@@ -152,6 +201,65 @@ class TestDataExport:
         assert isinstance(data["conversations"], list)
 
     @pytest.mark.asyncio
+    async def test_export_conversations_preserve_tout_etat_reimportable(
+        self, client: AsyncClient, db_session
+    ):
+        """L'export dédié ne doit pas jeter les champs que l'import sait restaurer."""
+        created_at = datetime(2026, 8, 20, 9, 15, tzinfo=UTC)
+        updated_at = datetime(2026, 8, 21, 10, 30, tzinfo=UTC)
+        project = Project(id="project-export-conv", name="Projet export")
+        conversation = Conversation(
+            id="conversation-export-complete",
+            title="Historique complet",
+            summary="Résumé conservé",
+            project_id=project.id,
+            memory_scope="project",
+            created_at=created_at,
+            updated_at=updated_at,
+        )
+        message = Message(
+            id="message-export-complet",
+            conversation_id=conversation.id,
+            role="assistant",
+            content="Document généré",
+            tokens_in=12,
+            tokens_out=34,
+            model="modele-test",
+            provider="mistral",
+            extra_data='{"skill_files":[{"name":"preuve.docx"}]}',
+            created_at=datetime(2026, 8, 20, 9, 16, tzinfo=UTC),
+        )
+        db_session.add_all([project, conversation, message])
+        await db_session.commit()
+
+        response = await client.get("/api/data/export/conversations")
+
+        assert response.status_code == 200
+        exported = next(
+            item
+            for item in response.json()["conversations"]
+            if item["id"] == conversation.id
+        )
+        assert exported["summary"] == "Résumé conservé"
+        assert exported["project_id"] == project.id
+        assert exported["memory_scope"] == "project"
+        assert exported["created_at"].startswith("2026-08-20T09:15:00")
+        assert exported["updated_at"].startswith("2026-08-21T10:30:00")
+        assert exported["messages"] == [
+            {
+                "id": message.id,
+                "role": "assistant",
+                "content": "Document généré",
+                "tokens_in": 12,
+                "tokens_out": 34,
+                "model": "modele-test",
+                "provider": "mistral",
+                "extra_data": '{"skill_files":[{"name":"preuve.docx"}]}',
+                "created_at": "2026-08-20T09:16:00",
+            }
+        ]
+
+    @pytest.mark.asyncio
     async def test_export_conversations_markdown(self, client: AsyncClient):
         """GET /api/data/export/conversations?format=markdown retourne du Markdown."""
         response = await client.get("/api/data/export/conversations?format=markdown")
@@ -196,6 +304,19 @@ class TestDataDeletion:
         list_response = await client.get("/api/memory/contacts")
         assert list_response.status_code == 200
         assert len(list_response.json()) == 0
+
+    @pytest.mark.asyncio
+    async def test_delete_all_data_purges_prestations(self, client: AsyncClient):
+        """Art. 17 : aucun montant ni financeur ne survit à l'effacement global."""
+        contact_id = await _create_contact(client, "ContactPrestation")
+        await _create_prestation(client, contact_id)
+
+        response = await client.delete("/api/data/all?confirm=true")
+
+        assert response.status_code == 200
+        prestations = await client.get("/api/prestations")
+        assert prestations.status_code == 200
+        assert prestations.json() == []
 
     @pytest.mark.asyncio
     async def test_delete_all_purge_fichiers_disque_et_annonce_backups(self, client: AsyncClient):
@@ -353,6 +474,68 @@ class TestDataImport:
         })
 
         assert response.status_code == 400
+
+    @pytest.mark.asyncio
+    async def test_import_conversations_retablit_identifiants_et_metadonnees(
+        self, client: AsyncClient
+    ):
+        """L'import dédié restaure l'état exporté, pas une conversation ressemblante."""
+        payload = {
+            "conversations": [
+                {
+                    "id": "conversation-import-complete",
+                    "title": "Conversation restaurée",
+                    "summary": "Résumé restauré",
+                    "project_id": "project-historique",
+                    "memory_scope": "project",
+                    "created_at": "2026-08-10T08:00:00+00:00",
+                    "updated_at": "2026-08-11T09:00:00+00:00",
+                    "messages": [
+                        {
+                            "id": "message-import-complet",
+                            "role": "assistant",
+                            "content": "Pièce restaurée",
+                            "tokens_in": 7,
+                            "tokens_out": 19,
+                            "model": "modele-restaure",
+                            "provider": "ollama",
+                            "extra_data": '{"skill_files":[{"name":"archive.xlsx"}]}',
+                            "created_at": "2026-08-10T08:01:00+00:00",
+                        }
+                    ],
+                }
+            ]
+        }
+
+        response = await client.post("/api/data/import/conversations", json=payload)
+
+        assert response.status_code == 200, response.text
+        conversation = await client.get(
+            "/api/chat/conversations/conversation-import-complete"
+        )
+        messages = await client.get(
+            "/api/chat/conversations/conversation-import-complete/messages"
+        )
+        assert conversation.status_code == 200
+        assert conversation.json()["summary"] == "Résumé restauré"
+        assert conversation.json()["project_id"] == "project-historique"
+        assert conversation.json()["memory_scope"] == "project"
+        assert conversation.json()["created_at"].startswith("2026-08-10T08:00:00")
+        assert conversation.json()["updated_at"].startswith("2026-08-11T09:00:00")
+        assert messages.json() == [
+            {
+                "id": "message-import-complet",
+                "conversation_id": "conversation-import-complete",
+                "role": "assistant",
+                "content": "Pièce restaurée",
+                "tokens_in": 7,
+                "tokens_out": 19,
+                "model": "modele-restaure",
+                "provider": "ollama",
+                "extra_data": '{"skill_files":[{"name":"archive.xlsx"}]}',
+                "created_at": "2026-08-10T08:01:00",
+            }
+        ]
 
     @pytest.mark.asyncio
     async def test_import_contacts(self, client: AsyncClient):

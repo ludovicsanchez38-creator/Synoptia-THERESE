@@ -8,7 +8,7 @@ Données 100% locales SQLite, pas d'appel LLM.
 import json
 import logging
 import os
-from datetime import date, datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from app.models.database import get_session
@@ -23,9 +23,10 @@ from app.models.entities import (
     Preference,
     Task,
 )
+from app.services.civil_time import date_civile_paris
 from app.services.user_profile import get_cached_profile
 from fastapi import APIRouter, Depends
-from sqlalchemy import and_, func
+from sqlalchemy import and_, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlmodel import select
@@ -256,12 +257,12 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
     factures impayées > 30j et relances échues (date posée).
     Conçu pour se charger en <500ms (SQLite local, pas d'appel réseau).
     """
-    today = date.today()
+    today = date_civile_paris(datetime.now(UTC))
     today_dt = datetime.combine(today, datetime.min.time())
     tomorrow_dt = datetime.combine(today + timedelta(days=1), datetime.min.time())
-    thirty_days_ago = datetime.now() - timedelta(days=30)
+    thirty_days_ago = today_dt - timedelta(days=30)
     today_str = today.isoformat()  # "YYYY-MM-DD" pour all-day events
-    follow_up_horizon = (today + timedelta(days=2)).isoformat() + "T23:59:59"
+    follow_up_horizon = (today + timedelta(days=2)).isoformat()
 
     # --- RDV du jour (CalendarEvent) ---
     events_today = []
@@ -277,11 +278,16 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
         result_timed = await session.execute(stmt_timed)
         timed_events = result_timed.scalars().all()
 
-        # Events all-day (start_date == today)
+        # La fin est inclusive dans le modèle local : un événement du 29 au
+        # 31 doit rester visible le 30, pas uniquement son jour de départ.
         stmt_allday = select(CalendarEvent).where(
             and_(
                 CalendarEvent.all_day == True,  # noqa: E712
-                CalendarEvent.start_date == today_str,
+                CalendarEvent.start_date <= today_str,
+                or_(
+                    CalendarEvent.end_date == None,  # noqa: E711
+                    CalendarEvent.end_date >= today_str,
+                ),
                 CalendarEvent.status != "cancelled",
             )
         )
@@ -391,7 +397,7 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
             await session.execute(
                 select(EmailFollowUp)
                 .where(EmailFollowUp.status == "pending")
-                .where(EmailFollowUp.due_date <= follow_up_horizon)
+                .where(func.substr(EmailFollowUp.due_date, 1, 10) <= follow_up_horizon)
                 .order_by(EmailFollowUp.due_date.asc(), EmailFollowUp.id.asc())
             )
         ).scalars().all()
@@ -446,7 +452,8 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
                 # B4 : le brief affichait « Facture FACT-2026-001 » — une
                 # référence, pas un client. L'artisan cherche Garcia.
                 "contact_name": (
-                    getattr(inv.contact, "display_name", None) if inv.contact else None
+                    inv.client_name
+                    or (getattr(inv.contact, "display_name", None) if inv.contact else None)
                 ),
                 "total_ttc": inv.total_ttc,
                 "currency": inv.currency,
