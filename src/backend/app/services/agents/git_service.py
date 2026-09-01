@@ -92,12 +92,34 @@ class GitService:
             return None
         return False
 
+    #: Identite des commits produits par les agents. Ce sont EUX qui commitent,
+    #: pas l'utilisateur : elle est donc posee localement au depot, sans jamais
+    #: toucher la configuration globale de la machine.
+    IDENTITE_AGENT = ("THÉRÈSE (agent)", "agent@therese.local")
+
     async def init(self) -> bool:
-        """Initialise un nouveau dépôt git."""
+        """Initialise un nouveau dépôt git, avec une identité locale.
+
+        01/09/2026 : `init` lançait un `git init` nu et `commit` ne posait
+        aucune identité. Sur une machine où `user.email` et `user.name` ne
+        sont pas configurés globalement, le commit échoue et la méthode rend
+        None sans que rien ne le signale. Les agents commitent dans des arbres
+        de travail : sur le poste d'un utilisateur qui n'a jamais configuré
+        git, leur travail disparaissait.
+
+        Deux tests le disaient déjà, mais ils vivaient dans un dossier que
+        personne ne collectait.
+        """
         code, _, err = await self._run("init")
         if code != 0:
             logger.error(f"Git init échoué : {err}")
-        return code == 0
+            return False
+        nom, courriel = self.IDENTITE_AGENT
+        for cle, valeur in (("user.name", nom), ("user.email", courriel)):
+            code_config, _, err_config = await self._run("config", "--local", cle, valeur)
+            if code_config != 0:
+                logger.warning(f"Identité git locale non posée ({cle}) : {err_config}")
+        return True
 
     async def current_branch(self) -> str:
         """Retourne le nom de la branche courante."""
