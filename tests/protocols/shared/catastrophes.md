@@ -1,5 +1,35 @@
 # Scenarios Catastrophe - THERESE App + Server
 
+> **Sélecteurs, à lire avant d'exécuter le moindre script de ce document.**
+>
+> Correction du 01/09/2026. Ces protocoles combinaient deux appels à
+> `document.querySelectorAll` avec un OU logique. Une NodeList vide est un
+> objet, donc une valeur vraie : **le repli n'était jamais emprunté**, et le
+> premier sélecteur l'emportait même quand il ne trouvait rien. Combiné à des
+> identifiants absents du code, cela rendait les verdicts vides : « pas de
+> doublon » et « zéro donnée restante » étaient vrais quoi qu'il arrive.
+>
+> Utiliser l'aide ci-dessous, qui parcourt réellement les sélecteurs et
+> **échoue quand aucun ne trouve rien** :
+>
+> ```js
+> function qsa(...selecteurs) {
+>   for (const s of selecteurs) {
+>     const trouves = [...document.querySelectorAll(s)];
+>     if (trouves.length) return trouves;
+>   }
+>   throw new Error(
+>     "Aucun élément pour : " + selecteurs.join(" | ") +
+>     " — le sélecteur est faux ou l'écran n'est pas celui attendu. " +
+>     "Ce pas ne prouve rien, corriger avant de conclure."
+>   );
+> }
+> ```
+>
+> Un comptage qui rend zéro parce que le sélecteur est faux n'est pas un
+> résultat, c'est une mesure ratée.
+
+
 > 10 scenarios que personne ne teste jamais.
 > A executer via Chrome MCP apres les parcours personas.
 > Concu le 28 mars 2026.
@@ -64,8 +94,7 @@ L'utilisateur a configure THERESE (onboarding termine, cles API, contacts, conve
 
 12. Naviguer vers le CRM
 13. javascript_tool :
-    const contacts = document.querySelectorAll('[data-testid="crm-contact-item"]') ||
-                     document.querySelectorAll('.contact-card');
+    const contacts = qsa('[data-testid="crm-contact-item"]', '.contact-card');
     return { contactCount: contacts.length };
 
 14. take_screenshot → "CATA-01-data-preserved.png"
@@ -251,8 +280,7 @@ Un utilisateur cree une facture. Il double-clique sur le bouton de creation. Deu
 
 6. javascript_tool :
    // Compter les factures AVANT
-   const invoicesBefore = document.querySelectorAll('[data-testid="invoice-item"]') ||
-                          document.querySelectorAll('.invoice-row');
+   const invoicesBefore = qsa('[data-testid="invoice-item"]', '.invoice-row');
    const countBefore = invoicesBefore.length;
 
    // Double-cliquer tres rapidement sur le bouton de creation
@@ -270,14 +298,12 @@ Un utilisateur cree une facture. Il double-clique sur le bouton de creation. Deu
 
 9. javascript_tool :
    // Compter les factures APRES
-   const invoicesAfter = document.querySelectorAll('[data-testid="invoice-item"]') ||
-                         document.querySelectorAll('.invoice-row');
+   const invoicesAfter = qsa('[data-testid="invoice-item"]', '.invoice-row');
    return { countAfter: invoicesAfter.length };
 
 10. // Verifier s'il y a des doublons
 11. javascript_tool :
-    const invoices = document.querySelectorAll('[data-testid="invoice-item"]') ||
-                     document.querySelectorAll('.invoice-row');
+    const invoices = qsa('[data-testid="invoice-item"]', '.invoice-row');
     const texts = Array.from(invoices).map(i => i.textContent);
     const duplicates = texts.filter((t, i) => texts.indexOf(t) !== i);
     return { duplicateCount: duplicates.length, hasDuplicates: duplicates.length > 0 };
@@ -519,8 +545,7 @@ END:VCARD
 13. javascript_tool :
     // Verifier la reactivite de l'UI pendant l'import
     const elapsed = Date.now() - (window.__importStart || 0);
-    const contacts = document.querySelectorAll('[data-testid="crm-contact-item"]') ||
-                     document.querySelectorAll('.contact-card');
+    const contacts = qsa('[data-testid="crm-contact-item"]', '.contact-card');
     const progressBar = document.querySelector('[data-testid="import-progress"]') ||
                         document.querySelector('[role="progressbar"]');
     return {
@@ -535,8 +560,7 @@ END:VCARD
 16. take_screenshot → "CATA-07-after-import.png"
 
 17. javascript_tool :
-    const contacts = document.querySelectorAll('[data-testid="crm-contact-item"]') ||
-                     document.querySelectorAll('.contact-card');
+    const contacts = qsa('[data-testid="crm-contact-item"]', '.contact-card');
     return { totalContacts: contacts.length };
 ```
 
@@ -832,15 +856,13 @@ Un utilisateur demande la suppression totale de ses donnees. Dans l'App, TOUT do
 22. navigate → http://localhost:1420/?panel=crm
 23. wait 3s
 24. javascript_tool :
-    const contacts = document.querySelectorAll('[data-testid="crm-contact-item"]') ||
-                     document.querySelectorAll('.contact-card');
+    const contacts = qsa('[data-testid="crm-contact-item"]', '.contact-card');
     return { contactsAfter: contacts.length };
 
 25. navigate → http://localhost:1420/?panel=tasks
 26. wait 3s
 27. javascript_tool :
-    const tasks = document.querySelectorAll('[data-testid="task-item"]') ||
-                  document.querySelectorAll('.task-card');
+    const tasks = qsa('[data-testid="task-item"]', '.task-card');
     return { tasksAfter: tasks.length };
 ```
 
