@@ -53,12 +53,12 @@ db-history:
 # Tests
 test:
 	@echo "🧪 Lancement des tests..."
-	@$(VENV)/pytest tests/ -v
+	@$(VENV)/pytest tests/ src/backend/tests/ -v
 	@cd $(FRONTEND_DIR) && npm test
 
 test-backend:
 	@echo "🧪 Tests backend..."
-	@$(VENV)/pytest tests/ -v --ignore=tests/e2e
+	@$(VENV)/pytest tests/ src/backend/tests/ -v --ignore=tests/e2e
 
 test-frontend:
 	@echo "🧪 Tests frontend..."

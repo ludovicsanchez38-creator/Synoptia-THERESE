@@ -60,7 +60,7 @@ jobs:
       - name: Tests unitaires (pytest)
         shell: bash
         run: |
-          timeout 480 uv run pytest tests/ --ignore=tests/e2e -q --timeout=30 -p no:cacheprovider
+          timeout 480 uv run pytest tests/ src/backend/tests/ --ignore=tests/e2e -q --timeout=30 -p no:cacheprovider
           EXIT_CODE=$?
           if [ $EXIT_CODE -eq 124 ]; then
             echo "::warning::pytest tué après 8 min (possible threads orphelins)"

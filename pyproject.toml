@@ -104,7 +104,12 @@ ignore = [
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
-testpaths = ["tests"]
+# 01/09/2026 : onze fichiers vivaient dans src/backend/tests/ et n etaient
+# JAMAIS collectes, ni par pytest, ni par le Makefile, ni par la CI.
+# 166 tests, dont ceux de la securite des services, des sauvegardes et de
+# l escalade. L un d eux couvrait deja le defaut RGPD que nous corrigions
+# le meme jour : il aurait suffi de le lancer.
+testpaths = ["tests", "src/backend/tests"]
 
 [tool.mypy]
 python_version = "3.11"
