@@ -9,11 +9,11 @@
 
 import { test, expect } from '@playwright/test';
 
+import { passerLaMiseEnRoute } from './helpers/surfaces';
+
 test.describe('Parcours 04 - CRM', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('onboarding_complete', 'true');
-    });
+  test.beforeEach(async ({ page, request }) => {
+    await passerLaMiseEnRoute(request);
     await page.goto('/?panel=crm');
     await page.waitForLoadState('networkidle', { timeout: 15000 });
     await page.waitForSelector('[data-testid="app-main"]', { timeout: 15000 });

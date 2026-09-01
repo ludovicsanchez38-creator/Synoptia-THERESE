@@ -157,28 +157,41 @@ function prospectToAttention(prospect: DashboardProspect, aujourdHui: string): T
   };
 }
 
+/** Une liste absente n'est pas une liste vide, mais elle se traite pareil ici.
+ *
+ *  01/09/2026 : une réponse privée d'une seule liste faisait tomber TOUTE
+ *  l'application sur son écran « Oups ! » — `.filter` sur `undefined` remonte
+ *  jusqu'au garde-fou d'erreur de React. Un serveur d'une version antérieure,
+ *  une réponse tronquée ou un proxy suffisent. Le brief affiche ce qu'il a
+ *  reçu ; ce qui manque manque, il ne fait pas écran noir. */
+function liste<T>(valeur: T[] | undefined | null): T[] {
+  return Array.isArray(valeur) ? valeur : [];
+}
+
 export function buildTodayAttentionItems(data: TodayDashboard): TodayAttentionItem[] {
-  const overdueTasks = data.urgent_tasks.filter((task) => isOverdue(task.due_date, data.date));
-  const otherTasks = data.urgent_tasks.filter((task) => !isOverdue(task.due_date, data.date));
-  const overdueFollowUps = data.due_follow_ups.filter((followUp) => isOverdue(followUp.due_date, data.date));
-  const otherFollowUps = data.due_follow_ups.filter((followUp) => !isOverdue(followUp.due_date, data.date));
+  const taches = liste(data.urgent_tasks);
+  const relances = liste(data.due_follow_ups);
+  const overdueTasks = taches.filter((task) => isOverdue(task.due_date, data.date));
+  const otherTasks = taches.filter((task) => !isOverdue(task.due_date, data.date));
+  const overdueFollowUps = relances.filter((followUp) => isOverdue(followUp.due_date, data.date));
+  const otherFollowUps = relances.filter((followUp) => !isOverdue(followUp.due_date, data.date));
   // Décision Ludo 16/07 : le brief se limite aux vrais points d'attention.
   // Seuls les événements à enjeu (participants ou contact CRM) y figurent ;
   // tout l'agenda solo sans engagement bascule dans « Vue complète », plutôt
   // que de tenter de deviner par mots-clés ce qui est perso (risque de masquer
   // un créneau important ou de laisser passer un « casse-croûte »).
-  const engagedEvents = data.events
+  const engagedEvents = liste(data.events)
     .filter((event) => event.attendees_count > 0 || event.crm_contact_ids.length > 0)
     .sort((left, right) => eventTimestamp(left).localeCompare(eventTimestamp(right)));
 
   return [
     ...overdueTasks.map((task) => taskToAttention(task, data.date)),
     ...overdueFollowUps.map((followUp) => followUpToAttention(followUp, data.date)),
-    ...data.overdue_invoices.map(invoiceToAttention),
+    ...liste(data.overdue_invoices).map(invoiceToAttention),
     ...engagedEvents.map(eventToAttention),
     ...otherFollowUps.map((followUp) => followUpToAttention(followUp, data.date)),
     ...otherTasks.map((task) => taskToAttention(task, data.date)),
-    ...data.stale_prospects.map((p) => prospectToAttention(p, data.date)),
+    ...liste(data.stale_prospects).map((p) => prospectToAttention(p, data.date)),
   ];
 }
 

@@ -9,11 +9,13 @@
 
 import { test, expect } from '@playwright/test';
 
+import { passerLaMiseEnRoute } from './helpers/surfaces';
+
 test.describe('Parcours 03 - Email', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('onboarding_complete', 'true');
-    });
+  test.beforeEach(async ({ request }) => {
+    // App.tsx interroge le backend, pas le stockage local : sur la base
+    // jetable des E2E l'assistant de mise en route recouvrait chaque surface.
+    await passerLaMiseEnRoute(request);
   });
 
   test('US-111.HP : le panel email s\'ouvre en mode standalone via ?panel=email', async ({ page }) => {

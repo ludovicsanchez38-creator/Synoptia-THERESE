@@ -9,6 +9,8 @@
 
 import { test, expect } from '@playwright/test';
 
+import { ouvrirLApplication, ouvrirLaSurface } from './helpers/surfaces';
+
 const SETTINGS_TABS = [
   { id: 'profile', label: 'Profil' },
   { id: 'ai', label: 'IA' },
@@ -21,21 +23,15 @@ const SETTINGS_TABS = [
 ] as const;
 
 test.describe('Parcours 05 - Settings', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('onboarding_complete', 'true');
-    });
-    await page.goto('/');
-    await page.waitForLoadState('networkidle', { timeout: 15000 });
-    await page.waitForSelector('[data-testid="app-main"]', { timeout: 15000 });
+  test.beforeEach(async ({ page, request }) => {
+    await ouvrirLApplication(page, request);
 
-    // Ouvrir les settings (le bouton est dans le header, visible sur le dashboard)
-    const settingsBtn = page.getByTestId('settings-btn');
-    await expect(settingsBtn).toBeVisible({ timeout: 15000 });
-    await settingsBtn.click();
+    // `settings-btn` vivait dans l'en-tête de chat, que la coque
+    // conversationnelle ne monte plus. Les réglages s'ouvrent par leur action
+    // de registre, celle-là même que sert la palette de commandes.
+    await ouvrirLaSurface(page, 'settings.open');
 
-    const settingsModal = page.getByTestId('settings-modal');
-    await expect(settingsModal).toBeVisible({ timeout: 5000 });
+    await expect(page.getByTestId('settings-modal')).toBeVisible({ timeout: 8000 });
   });
 
   test('US-600.HP : la modale settings contient exactement 8 onglets', async ({ page }) => {

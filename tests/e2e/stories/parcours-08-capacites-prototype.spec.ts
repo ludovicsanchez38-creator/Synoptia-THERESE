@@ -44,8 +44,15 @@ async function installReadOnlyShell(page: Page) {
     }
     if (pathname === '/api/dashboard/today') {
       return json(route, {
-        date: '2026-07-13', events: [], urgent_tasks: [], overdue_invoices: [], stale_prospects: [],
-        summary: { events_count: 0, tasks_count: 0, invoices_count: 0, prospects_count: 0 },
+        // due_follow_ups manquait : le bouchon mentait sur le contrat, et
+        // l'application tombait sur son ecran d'erreur. Elle se defend
+        // desormais, mais un bouchon doit dire la verite du serveur.
+        date: '2026-07-13', events: [], urgent_tasks: [], due_follow_ups: [],
+        overdue_invoices: [], stale_prospects: [],
+        summary: {
+          events_count: 0, tasks_count: 0, follow_ups_count: 0,
+          invoices_count: 0, prospects_count: 0,
+        },
       });
     }
     if (pathname === '/api/calc/roi') {
@@ -140,7 +147,12 @@ async function installReadOnlyShell(page: Page) {
 }
 
 async function chooseCapability(page: Page, name: string) {
-  await page.getByRole('button', { name: 'Capacités' }).click();
+  // 01/09/2026 : le bouton « Capacités » du composeur a été RETIRÉ en 0.48 —
+  // « le tiroir s'ouvre par sa porte unique du rail (Plus d'outils) », dit le
+  // commentaire de la coque. Les treize tests de ce fichier cherchaient donc
+  // un bouton disparu depuis plusieurs versions, et attendaient trente
+  // secondes avant de renoncer.
+  await page.getByRole('button', { name: /plus d.outils/i }).click();
   const dialog = page.getByRole('dialog', { name: 'Capacités de Thérèse' });
   await expect(dialog).toBeVisible();
   await dialog.getByPlaceholder(/Chercher une capacité/).fill(name);

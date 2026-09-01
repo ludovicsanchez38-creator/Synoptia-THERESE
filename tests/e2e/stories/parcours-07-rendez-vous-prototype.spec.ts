@@ -60,6 +60,19 @@ async function installReadOnlyMeetingBackend(page: Page) {
   await page.addInitScript(() => {
     localStorage.setItem('onboarding_complete', 'true');
   });
+  // App.tsx lit le BACKEND, pas le stockage local. Sur la base jetable des
+  // E2E, l'assistant de mise en route recouvrait la coque.
+  await page.route(`${BACKEND_URL}/api/config/onboarding-complete`, async (route) => {
+    if (route.request().method() === 'GET') {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ completed: true, completed_at: '2026-09-01T00:00:00Z' }),
+      });
+      return;
+    }
+    await route.continue();
+  });
 
   await page.route(`${BACKEND_URL}/**`, async (route) => {
     const request = route.request();

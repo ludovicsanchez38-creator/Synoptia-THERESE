@@ -9,15 +9,11 @@
 
 import { test, expect } from '@playwright/test';
 
+import { ouvrirLApplication } from './helpers/surfaces';
+
 test.describe('Parcours 01 - Premier lancement', () => {
-  test.beforeEach(async ({ page }) => {
-    // Marquer l'onboarding comme complete via localStorage
-    await page.addInitScript(() => {
-      localStorage.setItem('onboarding_complete', 'true');
-    });
-    await page.goto('/');
-    await page.waitForLoadState('networkidle', { timeout: 15000 });
-    await page.waitForSelector('[data-testid="app-main"]', { timeout: 15000 });
+  test.beforeEach(async ({ page, request }) => {
+    await ouvrirLApplication(page, request);
   });
 
   /** Helper : depuis le dashboard, cliquer "Passer au chat" pour acceder au chat */

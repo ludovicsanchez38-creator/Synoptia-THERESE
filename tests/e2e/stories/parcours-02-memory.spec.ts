@@ -1,97 +1,76 @@
 /**
- * Parcours 02 - Memory (Contacts & Projets)
+ * Parcours 02 - Mémoire (contacts et dossiers)
  *
- * Scenario : ouvrir panel memory -> verifier bouton "Nouveau projet"
- *            -> rechercher -> filtres scope
+ * Scénario : ouvrir la mémoire, vérifier ses commandes, chercher, créer.
  *
  * User Stories : US-503, US-504, US-506
+ *
+ * Réécrit le 01/09/2026. Les tests pressaient `Control+m` — un raccourci que
+ * la coque conversationnelle ne reçoit pas quand le focus est dans le
+ * composeur, et qui n'est pas le bon modificateur sur macOS. Ils passent
+ * désormais par le registre d'actions de l'application, le même que sert la
+ * palette de commandes. Le raccourci lui-même a son test dédié dans
+ * parcours-06-navigation.
  */
 
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
 
-test.describe('Parcours 02 - Memory', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('onboarding_complete', 'true');
+import { ouvrirLApplication, ouvrirLaSurface } from './helpers/surfaces';
+
+test.describe('Parcours 02 - Mémoire', () => {
+  test.beforeEach(async ({ page, request }) => {
+    await ouvrirLApplication(page, request);
+    await ouvrirLaSurface(page, 'memory.open');
+    await expect(page.getByTestId('memory-panel')).toBeVisible({ timeout: 10000 });
+  });
+
+  test('US-503.HP : la mémoire s’ouvre et affiche son panneau', async ({ page }) => {
+    await expect(page.getByTestId('memory-panel')).toBeVisible();
+  });
+
+  test('US-504.HP : le bouton d’ajout de contact est offert', async ({ page }) => {
+    await expect(page.getByTestId('memory-add-contact-btn')).toBeVisible();
+  });
+
+  test('US-503.HP : la mémoire filtre par périmètre', async ({ page }) => {
+    // L'ancien test cherchait un bouton « Nouveau projet » qui n'a jamais
+    // existé dans cette surface : les dossiers se créent depuis leur propre
+    // vue, ou par l'action `project.new`. Ce que la mémoire offre ici, ce
+    // sont ses filtres de périmètre.
+    const panneau = page.getByTestId('memory-panel');
+    for (const filtre of ['Tout', 'Global', 'Projet']) {
+      await expect(panneau.getByRole('button', { name: filtre, exact: true })).toBeVisible();
+    }
+  });
+
+  test('US-506.HP : le champ de recherche accepte une saisie', async ({ page }) => {
+    const recherche = page.getByTestId('memory-search-input');
+    await expect(recherche).toBeVisible();
+
+    await recherche.fill('test recherche');
+    await expect(recherche).toHaveValue('test recherche');
+  });
+
+  test('US-506.HP : une recherche sans résultat le dit', async ({ page }) => {
+    // L'ancien test assertait `expect(hasNoResultsMsg || true).toBe(true)` :
+    // vrai quoi qu'il arrive. Il ne pouvait pas échouer, donc il ne prouvait
+    // rien. La garantie réelle est qu'un terme introuvable ne laisse pas la
+    // liste des contacts telle quelle.
+    const recherche = page.getByTestId('memory-search-input');
+    await recherche.fill('zzz_terme_inexistant_xyz');
+
+    const panneau = page.getByTestId('memory-panel');
+    await expect(panneau.getByText(/aucun|rien|vide/i).first()).toBeVisible({
+      timeout: 8000,
     });
-    await page.goto('/');
-    await page.waitForLoadState('networkidle', { timeout: 15000 });
-    await page.waitForSelector('[data-testid="app-main"]', { timeout: 15000 });
   });
 
-  test('US-503.HP : le panel memory est accessible et visible', async ({ page }) => {
-    // Ouvrir le panel memory via raccourci clavier ou bouton
-    // Le panel memory est dans le layout principal, accessible via Cmd+M ou bouton sidebar
-    await page.keyboard.press('Control+m');
+  test('US-504.HP : ajouter un contact ouvre son formulaire', async ({ page }) => {
+    const bouton = page.getByTestId('memory-add-contact-btn');
+    await expect(bouton).toBeVisible({ timeout: 10000 });
+    await bouton.click();
 
-    const memoryPanel = page.getByTestId('memory-panel');
-    await expect(memoryPanel).toBeVisible({ timeout: 10000 });
-  });
-
-  test('US-504.HP : le bouton "Ajouter un contact" est visible dans le panel memory', async ({ page }) => {
-    await page.keyboard.press('Control+m');
-
-    const memoryPanel = page.getByTestId('memory-panel');
-    await expect(memoryPanel).toBeVisible({ timeout: 10000 });
-
-    const addContactBtn = page.getByTestId('memory-add-contact-btn');
-    await expect(addContactBtn).toBeVisible();
-  });
-
-  test('US-503.HP : le bouton "Nouveau projet" est visible dans le panel memory', async ({ page }) => {
-    await page.keyboard.press('Control+m');
-
-    const memoryPanel = page.getByTestId('memory-panel');
-    await expect(memoryPanel).toBeVisible({ timeout: 10000 });
-
-    // Le bouton "Nouveau projet" est accessible via le texte ou role
-    const newProjectBtn = page.getByRole('button', { name: /nouveau projet/i });
-    await expect(newProjectBtn).toBeVisible();
-  });
-
-  test('US-506.HP : le champ de recherche memory est present et fonctionnel', async ({ page }) => {
-    await page.keyboard.press('Control+m');
-
-    const memoryPanel = page.getByTestId('memory-panel');
-    await expect(memoryPanel).toBeVisible({ timeout: 10000 });
-
-    const searchInput = page.getByTestId('memory-search-input');
-    await expect(searchInput).toBeVisible();
-
-    // Taper une recherche
-    await searchInput.fill('test recherche');
-    await expect(searchInput).toHaveValue('test recherche');
-  });
-
-  test('US-506.HP : la recherche memory filtre les resultats (aucun resultat sur terme inexistant)', async ({ page }) => {
-    await page.keyboard.press('Control+m');
-
-    const memoryPanel = page.getByTestId('memory-panel');
-    await expect(memoryPanel).toBeVisible({ timeout: 10000 });
-
-    const searchInput = page.getByTestId('memory-search-input');
-    await searchInput.fill('zzz_terme_inexistant_xyz');
-
-    // Attendre le debounce de recherche via un changement dans le DOM
-    await expect(async () => {
-      const noResults = page.getByText(/aucun/i);
-      const hasNoResultsMsg = await noResults.isVisible().catch(() => false);
-      // Soit un message "aucun resultat" soit le panel a filtre les contacts
-      expect(hasNoResultsMsg || true).toBe(true);
-    }).toPass({ timeout: 5000 });
-  });
-
-  test('US-504.HP : clic sur "Ajouter un contact" ouvre le formulaire de creation', async ({ page }) => {
-    await page.keyboard.press('Control+m');
-
-    const memoryPanel = page.getByTestId('memory-panel');
-    await expect(memoryPanel).toBeVisible({ timeout: 10000 });
-
-    const addContactBtn = page.getByTestId('memory-add-contact-btn');
-    await addContactBtn.click();
-
-    // Verifier qu'un dialogue ou formulaire de creation de contact apparait
-    const contactForm = page.getByRole('dialog').or(page.getByText(/nouveau contact/i));
-    await expect(contactForm.first()).toBeVisible({ timeout: 5000 });
+    const formulaire = page.getByRole('dialog').or(page.getByText(/nouveau contact/i));
+    await expect(formulaire.first()).toBeVisible({ timeout: 5000 });
   });
 });

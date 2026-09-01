@@ -1,163 +1,134 @@
 /**
- * Parcours 06 - Navigation & Sidebar
+ * Parcours 06 - Navigation
  *
- * Scenario : ouvrir la sidebar -> conversations listees -> search
- *            -> nouvelle conversation -> app-main intact
+ * Scénario : ouvrir le tiroir des conversations, chercher, en créer une,
+ *            ouvrir puis fermer les réglages, et vérifier que la coque tient.
  *
- * Depuis le 11/06/2026 la sidebar est FERMEE au lancement (l'utilisateur
- * atterrit sur l'Accueil) : le beforeEach l'ouvre via le raccourci clavier.
+ * User Stories : US-018, US-023, US-700
  *
- * User Stories : US-700, US-023, US-018
+ * Réécrit le 01/09/2026. Ces tests visaient la barre latérale de l'ancienne
+ * coque (`sidebar`, `sidebar-search-input`, `sidebar-new-conversation-btn`) et
+ * le bouton de réglages de l'en-tête de chat (`settings-btn`). La coque
+ * conversationnelle ne monte plus aucun des deux : les conversations vivent
+ * dans un tiroir (`prototype-conversation-drawer`), les réglages sont une
+ * modale ouverte par le registre d'actions.
+ *
+ * Le raccourci clavier garde son propre test : c'est la seule chose que le
+ * registre ne prouve pas.
  */
 
-import { test, expect } from '@playwright/test';
+import { expect, test } from '@playwright/test';
+
+import { fermerLaSurface, ouvrirLApplication, ouvrirLaSurface } from './helpers/surfaces';
+
+/** Le tiroir des conversations, ouvert. */
+async function ouvrirLeTiroir(page: import('@playwright/test').Page) {
+  await ouvrirLaSurface(page, 'conversations.toggle');
+  const tiroir = page.getByTestId('prototype-conversation-drawer');
+  await expect(tiroir).toBeVisible({ timeout: 10000 });
+  return tiroir;
+}
 
 test.describe('Parcours 06 - Navigation', () => {
-  test.beforeEach(async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem('onboarding_complete', 'true');
+  test.beforeEach(async ({ page, request }) => {
+    await ouvrirLApplication(page, request);
+  });
+
+  test('US-700.HP : le raccourci clavier ouvre le tiroir des conversations', async ({ page }) => {
+    // Le seul test qui éprouve le CHEMIN plutôt que la destination. Le
+    // modificateur suit la plateforme, comme le hook de l'application, et le
+    // focus doit quitter le composeur : `useKeyboardShortcuts` ignore les
+    // raccourcis pendant une saisie.
+    await page.locator('body').click({ position: { x: 5, y: 5 } });
+    const modificateur = process.platform === 'darwin' ? 'Meta' : 'Control';
+    await page.keyboard.press(`${modificateur}+b`);
+
+    await expect(page.getByTestId('prototype-conversation-drawer')).toBeVisible({
+      timeout: 10000,
     });
-    await page.goto('/');
-    await page.waitForLoadState('networkidle', { timeout: 15000 });
-    await page.waitForSelector('[data-testid="app-main"]', { timeout: 15000 });
-    // Sidebar fermee par defaut : l'ouvrir (⌘B sur macOS, Ctrl+B ailleurs)
-    const modifier = process.platform === 'darwin' ? 'Meta' : 'Control';
-    await page.keyboard.press(`${modifier}+b`);
-    await page.waitForSelector('[data-testid="sidebar"]', { timeout: 10000 });
   });
 
-  /** Helper : depuis le dashboard, cliquer "Passer au chat" pour acceder au chat */
-  async function navigateToChat(page: import('@playwright/test').Page) {
-    const passerAuChat = page.getByRole('button', { name: /passer au chat/i });
-    await expect(passerAuChat).toBeVisible({ timeout: 15000 });
-    await passerAuChat.click();
+  test('US-700.HP : le tiroir liste les conversations', async ({ page }) => {
+    await ouvrirLeTiroir(page);
+    await expect(page.getByTestId('prototype-conversation-list')).toBeVisible({
+      timeout: 10000,
+    });
+  });
+
+  test('US-023.HP : le champ de recherche du tiroir accepte une saisie', async ({ page }) => {
+    const tiroir = await ouvrirLeTiroir(page);
+    const recherche = tiroir.getByPlaceholder(/rechercher/i);
+    await expect(recherche).toBeVisible({ timeout: 10000 });
+
+    await recherche.fill('recherche test');
+    await expect(recherche).toHaveValue('recherche test');
+  });
+
+  test('US-018.HP : « Nouvelle conversation » mène au composeur', async ({ page }) => {
+    const tiroir = await ouvrirLeTiroir(page);
+    await tiroir.getByRole('button', { name: /nouvelle conversation/i }).click();
+
     await expect(page.getByTestId('chat-message-input')).toBeVisible({ timeout: 10000 });
-  }
-
-  test('US-700.HP : la sidebar s\'ouvre au raccourci clavier', async ({ page }) => {
-    const sidebar = page.getByTestId('sidebar');
-    await expect(sidebar).toBeVisible({ timeout: 15000 });
   });
 
-  test('US-700.HP : la liste des conversations est presente dans la sidebar', async ({ page }) => {
-    const conversationList = page.getByTestId('sidebar-conversation-list');
-    await expect(conversationList).toBeVisible({ timeout: 10000 });
-  });
+  test('US-023.HP : une recherche sans correspondance vide la liste', async ({ page }) => {
+    const tiroir = await ouvrirLeTiroir(page);
+    const recherche = tiroir.getByPlaceholder(/rechercher/i);
+    await recherche.fill('zzz_terme_impossible_xyz');
 
-  test('US-023.HP : le champ de recherche sidebar est visible et fonctionnel', async ({ page }) => {
-    const searchInput = page.getByTestId('sidebar-search-input');
-    await expect(searchInput).toBeVisible({ timeout: 10000 });
-
-    await searchInput.fill('recherche test');
-    await expect(searchInput).toHaveValue('recherche test');
-  });
-
-  test('US-018.HP : le bouton "Nouvelle conversation" est visible et cliquable', async ({ page }) => {
-    const newConvBtn = page.getByTestId('sidebar-new-conversation-btn');
-    await expect(newConvBtn).toBeVisible({ timeout: 10000 });
-
-    await newConvBtn.click();
-
-    // Apres clic sur nouvelle conversation, le chat doit etre visible
-    const chatInput = page.getByTestId('chat-message-input');
-    await expect(chatInput).toBeVisible({ timeout: 10000 });
-  });
-
-  test('US-018.HP : creer une nouvelle conversation vide le chat', async ({ page }) => {
-    // D'abord passer au chat depuis le dashboard
-    await navigateToChat(page);
-
-    const chatInput = page.getByTestId('chat-message-input');
-    await expect(chatInput).toBeVisible({ timeout: 10000 });
-
-    // Cliquer sur nouvelle conversation
-    await page.getByTestId('sidebar-new-conversation-btn').click();
-
-    // Attendre que le chat input soit visible (signe que la nouvelle conversation est prete)
-    await expect(chatInput).toBeVisible({ timeout: 10000 });
-
-    // Le chat doit etre reinitialise (liste de messages vide ou prompts guides visibles)
-    const messageList = page.getByTestId('chat-message-list');
-    if (await messageList.isVisible()) {
-      const messages = page.getByTestId('chat-message-item');
-      const count = await messages.count();
-      // Une nouvelle conversation ne devrait pas avoir de messages utilisateur
-      expect(count).toBeLessThanOrEqual(1); // 0 ou 1 (message systeme eventuel)
-    }
-  });
-
-  test('US-700.HP : app-main reste intact apres les navigations', async ({ page }) => {
-    const appMain = page.getByTestId('app-main');
-    await expect(appMain).toBeVisible({ timeout: 15000 });
-
-    // Ouvrir settings puis fermer
-    await page.getByTestId('settings-btn').click();
-    await expect(page.getByTestId('settings-modal')).toBeVisible({ timeout: 5000 });
-    await page.getByTestId('settings-close-btn').click();
-    await expect(page.getByTestId('settings-modal')).not.toBeVisible({ timeout: 5000 });
-
-    // app-main toujours la
-    await expect(appMain).toBeVisible();
-
-    // Nouvelle conversation
-    await page.getByTestId('sidebar-new-conversation-btn').click();
-
-    // app-main toujours la
-    await expect(appMain).toBeVisible();
-  });
-
-  test('US-023.HP : la recherche filtre les conversations dans la sidebar', async ({ page }) => {
-    const searchInput = page.getByTestId('sidebar-search-input');
-    await expect(searchInput).toBeVisible({ timeout: 10000 });
-
-    // Rechercher un terme qui ne devrait pas matcher
-    await searchInput.fill('zzz_terme_impossible_xyz');
-
-    // Attendre que le filtrage soit applique
+    // La garantie porte sur le RÉSULTAT du filtre, pas sur la présence d'un
+    // message : une liste qui ne bouge pas serait un filtre qui ne filtre pas.
     await expect(async () => {
-      const conversationItems = page.getByTestId('sidebar-conversation-item');
-      const count = await conversationItems.count();
-      expect(count).toBe(0);
-    }).toPass({ timeout: 5000 });
+      const restantes = await tiroir.getByRole('button', { name: /^Actions pour /i }).count();
+      expect(restantes).toBe(0);
+    }).toPass({ timeout: 8000 });
   });
 
-  test('US-023.HP : vider la recherche restaure les conversations', async ({ page }) => {
-    const searchInput = page.getByTestId('sidebar-search-input');
-    await expect(searchInput).toBeVisible({ timeout: 10000 });
+  test('US-023.HP : vider la recherche restaure la liste', async ({ page }) => {
+    const tiroir = await ouvrirLeTiroir(page);
+    const recherche = tiroir.getByPlaceholder(/rechercher/i);
 
-    // Rechercher puis effacer
-    await searchInput.fill('test');
-    await searchInput.fill('');
+    await recherche.fill('zzz_terme_impossible_xyz');
+    await recherche.fill('');
 
-    // La liste doit etre restauree (le composant doit etre visible)
-    const conversationList = page.getByTestId('sidebar-conversation-list');
-    await expect(conversationList).toBeVisible({ timeout: 5000 });
+    await expect(page.getByTestId('prototype-conversation-list')).toBeVisible({
+      timeout: 8000,
+    });
   });
 
-  test('US-700.HP : parcours complet navigation (sidebar -> search -> new conv -> settings -> retour)', async ({ page }) => {
-    // 1. Sidebar visible
-    await expect(page.getByTestId('sidebar')).toBeVisible({ timeout: 15000 });
+  test('US-700.HP : la coque survit à l’ouverture et à la fermeture des réglages', async ({
+    page,
+  }) => {
+    const coque = page.getByTestId('app-main');
+    await expect(coque).toBeVisible({ timeout: 15000 });
 
-    // 2. Recherche
-    const searchInput = page.getByTestId('sidebar-search-input');
-    await searchInput.fill('test');
-    await searchInput.fill('');
+    await ouvrirLaSurface(page, 'settings.open');
+    await expect(page.getByTestId('settings-modal')).toBeVisible({ timeout: 8000 });
 
-    // 3. Nouvelle conversation (depuis le dashboard, doit basculer vers le chat)
-    await page.getByTestId('sidebar-new-conversation-btn').click();
-    await expect(page.getByTestId('chat-message-input')).toBeVisible({ timeout: 10000 });
-
-    // 4. Ouvrir settings
-    await page.getByTestId('settings-btn').click();
-    await expect(page.getByTestId('settings-modal')).toBeVisible({ timeout: 5000 });
-
-    // 5. Fermer settings
     await page.getByTestId('settings-close-btn').click();
     await expect(page.getByTestId('settings-modal')).not.toBeVisible({ timeout: 5000 });
 
-    // 6. Tout est intact
+    await expect(coque).toBeVisible();
+  });
+
+  test('US-700.HP : parcours complet — tiroir, recherche, conversation, réglages', async ({
+    page,
+  }) => {
+    const tiroir = await ouvrirLeTiroir(page);
+
+    const recherche = tiroir.getByPlaceholder(/rechercher/i);
+    await recherche.fill('test');
+    await recherche.fill('');
+
+    await tiroir.getByRole('button', { name: /nouvelle conversation/i }).click();
+    await expect(page.getByTestId('chat-message-input')).toBeVisible({ timeout: 10000 });
+
+    await ouvrirLaSurface(page, 'settings.open');
+    await expect(page.getByTestId('settings-modal')).toBeVisible({ timeout: 8000 });
+    await fermerLaSurface(page);
+    await expect(page.getByTestId('settings-modal')).not.toBeVisible({ timeout: 5000 });
+
     await expect(page.getByTestId('app-main')).toBeVisible();
-    await expect(page.getByTestId('sidebar')).toBeVisible();
     await expect(page.getByTestId('chat-message-input')).toBeVisible();
   });
 });
