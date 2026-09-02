@@ -22,10 +22,10 @@ Les tests travaillent sur une copie du script et des verrous réels dans
 import json
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
-import sys
 
 pytestmark = pytest.mark.skipif(
     sys.platform == "win32",

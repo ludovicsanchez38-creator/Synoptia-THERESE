@@ -16,11 +16,11 @@ amelioration non repercutee.
 
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 
 import pytest
 import yaml
-import sys
 
 pytestmark = pytest.mark.skipif(
     sys.platform == "win32",
