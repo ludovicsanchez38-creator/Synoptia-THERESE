@@ -837,3 +837,85 @@ class TestBUG135ExportDocxComplet:
             assert lang is not None and lang.get(qn("w:val")) == "fr-FR"
         finally:
             await close_skills()
+
+
+class TestB195CaracteresDeControleExportDocx:
+    """B-195 - un caractere de controle invisible dans UNE section rendait
+    l'export Word du document impossible, definitivement.
+
+    lxml (sous python-docx) refuse les caracteres non valides en XML 1.0 :
+    « All strings must be XML compatible: Unicode or ASCII, no NULL bytes or
+    control characters ». La route sortait en 500 « reessaie » - un conseil
+    qui ne peut jamais aboutir - alors que le meme document s'exportait
+    toujours en Markdown. Un collage depuis un terminal suffit a le poser.
+    """
+
+    @pytest.mark.asyncio
+    async def test_export_docx_aboutit_malgre_un_caractere_de_controle(
+        self, client: AsyncClient
+    ):
+        import io
+
+        from app.services.skills import close_skills, init_skills
+        from docx import Document as DocxDocument
+
+        await init_skills()
+        try:
+            doc = await _create_document(client, title="Document colle")
+            section = await _create_section(client, doc["id"], "Corps", order=10.0)
+            # BEL (U+0007) au milieu du texte, invisible a l'ecran.
+            bel = chr(0x07)
+            patch_response = await client.patch(
+                f"/api/documents/sections/{section['id']}",
+                json={"content": f"debut{bel}fin"},
+            )
+            assert patch_response.status_code == 200, patch_response.text
+
+            response = await client.get(f"/api/documents/{doc['id']}/export?format=docx")
+            assert response.status_code == 200, response.text
+
+            download = await client.get(response.json()["download_url"])
+            assert download.status_code == 200
+            word = DocxDocument(io.BytesIO(download.content))
+            texte = "\n".join(p.text for p in word.paragraphs)
+            # Le caractere est neutralise, le texte utile est conserve.
+            assert bel not in texte
+            assert "debutfin" in texte
+        finally:
+            await close_skills()
+
+    def test_le_rendu_neutralise_tous_les_controles_interdits(self, tmp_path):
+        """Garde au niveau du convertisseur : il sert AUSSI l'export des
+        conversations (chat.py), qui portait le meme defaut latent."""
+        import io
+
+        from app.services.skills.markdown_docx import render_markdown_docx
+        from docx import Document as DocxDocument
+
+        interdits = "".join(
+            chr(c)
+            for c in list(range(0x00, 0x09)) + [0x0B, 0x0C] + list(range(0x0E, 0x20))
+        )
+        sortie = tmp_path / "controles.docx"
+        render_markdown_docx(f"# Titre\n\ndebut{interdits}fin\n", sortie)
+
+        word = DocxDocument(io.BytesIO(sortie.read_bytes()))
+        texte = "\n".join(p.text for p in word.paragraphs)
+        assert "debutfin" in texte
+
+    def test_le_rendu_conserve_tabulation_et_del(self, tmp_path):
+        """La tabulation (U+0009) et DEL (U+007F) SONT valides en XML 1.0 :
+        les neutraliser serait une perte gratuite."""
+        import io
+
+        from app.services.skills.markdown_docx import render_markdown_docx
+        from docx import Document as DocxDocument
+
+        sortie = tmp_path / "licites.docx"
+        licites = f"debut\tmilieu{chr(0x7F)}fin"
+        render_markdown_docx(f"# Titre\n\n{licites}\n", sortie)
+
+        word = DocxDocument(io.BytesIO(sortie.read_bytes()))
+        texte = "\n".join(p.text for p in word.paragraphs)
+        assert "\t" in texte
+        assert chr(0x7F) in texte

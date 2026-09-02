@@ -10,6 +10,7 @@ Local First - Multi-Provider
 
 import json
 import logging
+import uuid
 from collections.abc import Awaitable, Callable
 from datetime import UTC, date, datetime
 from typing import Any, TypeVar
@@ -41,7 +42,7 @@ from app.services.encryption import decrypt_value, encrypt_value, is_value_encry
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlmodel import select
+from sqlmodel import col, select
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -1608,6 +1609,22 @@ async def get_sync_status(
 # Import ICS
 # ============================================================
 
+# Espace de noms fige : l'id derive d'un evenement importe doit etre le MEME
+# a chaque re-import du meme fichier dans le meme calendrier, sinon la garde
+# anti-doublon ne peut plus le retrouver (B-196).
+_ESPACE_ICS = uuid.UUID("6f0f4a2e-8a9d-5d38-9d0b-1f2c3a4b5c6d")
+
+
+def _id_evenement_importe(calendar_id: str, uid: str) -> str:
+    """Identifiant de ligne pour un evenement .ics, propre au calendrier.
+
+    L'UID d'un fichier .ics n'est unique que dans son fichier : deux agendas
+    peuvent legitimement contenir la meme invitation. La cle primaire, elle,
+    est globale a la table - d'ou le derive par calendrier.
+    """
+    return str(uuid.uuid5(_ESPACE_ICS, f"{calendar_id}\n{uid}"))
+
+
 @router.post("/import-ics")
 async def import_ics_file(
     file: UploadFile = File(..., description="Fichier .ics (calendrier)"),
@@ -1668,19 +1685,38 @@ async def import_ics_file(
     for event_data in events:
         # Vérifier si l'événement existe déjà (par UID)
         uid = event_data.get("uid", "")
+        identifiant = uid or generate_uuid()
         if uid:
+            # B-196 : la garde anti-doublon porte sur (calendrier, UID) alors
+            # que l'UID servait de CLE PRIMAIRE GLOBALE - la contrainte etait
+            # donc plus large que la garde censee la proteger, et le meme
+            # fichier range dans un second agenda sortait en 500. L'identite
+            # d'un evenement importe est desormais le couple : un UID deja pris
+            # ailleurs recoit ici un id derive, deterministe donc rejouable.
+            derive = _id_evenement_importe(cal.id, uid)
             existing = await session.execute(
                 select(CalendarEvent).where(
                     CalendarEvent.calendar_id == cal.id,
-                    CalendarEvent.id == uid,
+                    col(CalendarEvent.id).in_([uid, derive]),
                 )
             )
-            if existing.scalar_one_or_none():
+            # `first()` et non `scalar_one_or_none()` : la recherche porte
+            # desormais sur DEUX identifiants candidats, et deux lignes
+            # trouvees feraient lever `MultipleResultsFound` a une garde dont
+            # le seul travail est de dire « ca existe deja ».
+            if existing.first() is not None:
                 skipped += 1
                 continue
 
+            # NB : cette requete-ci ne filtre PAS par calendrier - c'est tout
+            # son objet, verifier que l'UID est libre dans TOUTE la table.
+            deja_pris = await session.execute(
+                select(CalendarEvent).where(CalendarEvent.id == uid)
+            )
+            identifiant = uid if deja_pris.first() is None else derive
+
         event = CalendarEvent(
-            id=uid or generate_uuid(),
+            id=identifiant,
             calendar_id=cal.id,
             summary=event_data["summary"][:200],
             description=event_data.get("description"),

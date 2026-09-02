@@ -194,11 +194,19 @@ jobs:
       - name: mypy - BLOQUANT au-delà de la baseline
         shell: bash
         env:
-          # Recalée 999 -> 1004 le 24/08/2026 : le cliquet était rouge depuis
-          # plusieurs chantiers sans bloquer personne (aucun check requis sur
-          # les PR), la dérive de 5 erreurs est passée inaperçue. Repartir d'un
-          # compte VRAI pour que le cliquet re-signale la moindre hausse.
-          MYPY_BASELINE: "1004"
+          # B-128 : posée à 1004 le 24/08/2026 comme « compte VRAI », alors que
+          # le compte réel du runner était plus bas - l'écart devenait du mou, et
+          # la comparaison `-gt` laissait passer autant d'erreurs neuves qu'il y
+          # avait d'écart, sans un mot. Le cliquet exige désormais l'ÉGALITÉ :
+          # une amélioration force la mise à jour du chiffre, donc le mou ne peut
+          # plus se reconstituer en silence.
+          #
+          # 1001 = compte mesuré SUR CE RUNNER (ubuntu-latest), run 33664976637,
+          # commit 1b3a40fc. La mesure fraîche locale sur macOS en donne 1002 :
+          # l'écart de plateforme est réel, c'est le chiffre du runner qui vaut
+          # ici. Aucun cache mypy n'est restauré dans ce job : la mesure est
+          # fraîche par construction.
+          MYPY_BASELINE: "1001"
         run: |
           mypy_out=$(uv run mypy src/backend/app --ignore-missing-imports --no-error-summary 2>&1) || true
           if [ -z "$mypy_out" ] || printf '%s' "$mypy_out" | grep -q "INTERNAL ERROR\|Traceback"; then
@@ -211,6 +219,10 @@ jobs:
           if [ "$count" -gt "$MYPY_BASELINE" ]; then
             echo "::error::mypy a dépassé la baseline ($count > $MYPY_BASELINE) - de nouvelles erreurs de typage ont été introduites"
             printf '%s\n' "$mypy_out" | grep ' error:' | tail -20
+            exit 1
+          fi
+          if [ "$count" -lt "$MYPY_BASELINE" ]; then
+            echo "::error::mypy est descendu sous la baseline ($count < $MYPY_BASELINE) - recale le cliquet : mets MYPY_BASELINE à $count dans .github/workflows/ci.yml"
             exit 1
           fi
 

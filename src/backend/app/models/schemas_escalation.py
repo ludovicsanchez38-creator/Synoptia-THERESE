@@ -22,9 +22,13 @@ class TokenLimitsRequest(BaseModel):
 class CostEstimateRequest(BaseModel):
     """Cost estimation request."""
 
+    # B-190 : sans borne, des jetons negatifs rendaient un cout negatif en
+    # HTTP 200 - alors que la porte voisine (TokenLimitsRequest ci-dessus)
+    # refuse deja des limites negatives. ge=0 et non gt=0 : estimer une
+    # requete a zero jeton reste une question licite.
     model: str
-    input_tokens: int
-    output_tokens: int
+    input_tokens: int = Field(ge=0)
+    output_tokens: int = Field(ge=0)
 
 
 class UncertaintyCheckRequest(BaseModel):

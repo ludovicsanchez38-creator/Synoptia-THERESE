@@ -25,8 +25,27 @@ from docx.text.paragraph import Paragraph
 # Segments inline **gras**, *italique*, `code` - tout le reste (y compris les
 # * ou ` non appariés) est ajouté tel quel, jamais jeté.
 _INLINE_PATTERN = re.compile(r"(\*\*.+?\*\*|\*[^*\n]+?\*|`[^`\n]+?`)")
+# B-195 : caracteres refuses par XML 1.0 (donc par lxml, sous python-docx).
+# Tabulation, saut de ligne et retour chariot restent licites et sont
+# volontairement absents de la classe - les neutraliser serait une perte
+# gratuite, tout comme DEL (U+007F), qui est valide.
+_CONTROLES_HORS_XML = re.compile(
+    "[\x00-\x08\x0b\x0c\x0e-\x1f\ud800-\udfff\ufffe\uffff]"
+)
 _TABLE_SEPARATOR = re.compile(r"^\|?[\s\-:|]+\|?\s*$")
 _HR_PATTERN = re.compile(r"^(-{3,}|\*{3,}|_{3,})\s*$")
+
+
+def nettoyer_controles_xml(texte: str) -> str:
+    """Retire les caracteres que XML 1.0 interdit (B-195).
+
+    Un seul caractere de controle colle dans une section - un BEL venu d'un
+    terminal, invisible a l'ecran - faisait echouer TOUT l'export Word du
+    document sur un « All strings must be XML compatible » leve par lxml,
+    et la route repondait « reessaie » a un import qui ne pouvait jamais
+    aboutir. On neutralise a l'ecriture du .docx, jamais le texte utile.
+    """
+    return _CONTROLES_HORS_XML.sub("", texte)
 
 
 def render_markdown_docx(
@@ -36,6 +55,7 @@ def render_markdown_docx(
     (chantier 5) pilote langue, polices, couleurs, footer et marges - ses
     DÉFAUTS reproduisent la charte Synoptia historique (fr-FR, Calibri 11)."""
     profile = profile or ExportProfile()
+    markdown = nettoyer_controles_xml(markdown)
     doc = Document()
     _setup_styles(doc, profile)
     _set_language(doc, profile.language)

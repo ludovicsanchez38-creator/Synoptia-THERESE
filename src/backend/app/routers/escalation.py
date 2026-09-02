@@ -48,11 +48,19 @@ async def estimate_cost(request: CostEstimateRequest):
         request.output_tokens,
     )
 
+    # B-189 : le montant vient de la MEME grille que GET /prices, qui se
+    # declare deja en dollars. Un champ nomme `_eur` sur un montant en
+    # dollars n'est pas un nom historique, c'est une valeur metier fausse
+    # des qu'un affichage y accole un symbole euro.
     return {
         "model": request.model,
         "input_tokens": request.input_tokens,
         "output_tokens": request.output_tokens,
-        "estimated_cost_eur": cost,
+        "estimated_cost_usd": cost,
+        "currency": "USD",
+        # B-190 : 0.0 « parce que c'est local et gratuit » et 0.0 « parce
+        # que je ne connais pas ce modele » ne sont pas le meme montant.
+        "tarif_connu": tracker.tarif_connu(request.model),
     }
 
 

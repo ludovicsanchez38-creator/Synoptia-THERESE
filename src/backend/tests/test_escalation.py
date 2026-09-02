@@ -25,8 +25,9 @@ class TestCostEstimation:
         assert response.status_code == 200
 
         data = response.json()
-        assert "estimated_cost_eur" in data
-        assert data["estimated_cost_eur"] > 0
+        # B-189 : la route rend des dollars, sous un nom qui le dit.
+        assert "estimated_cost_usd" in data
+        assert data["estimated_cost_usd"] > 0
         assert data["input_tokens"] == 1000
         assert data["output_tokens"] == 500
 
@@ -297,3 +298,109 @@ class TestTokenTrackerUnit:
         )
         assert uncertain["is_uncertain"] is True
         assert len(uncertain["uncertainty_phrases"]) >= 2
+
+
+class TestEstimationHonnete:
+    """Regressions B-189 et B-190 sur POST /api/escalation/estimate-cost.
+
+    La route sert de garde-budget : le nom de son champ doit dire la devise
+    du montant (la route voisine /prices a deja tranche pour USD), elle doit
+    refuser des jetons negatifs comme /limits refuse des limites negatives,
+    et elle ne doit pas rendre « gratuit » un modele dont elle ignore le tarif.
+    """
+
+    @pytest.mark.asyncio
+    async def test_b189_le_champ_dit_des_dollars(self, async_client: AsyncClient):
+        """B-189 : le montant vient d'une grille en dollars, le nom doit le dire."""
+        response = await async_client.post(
+            "/api/escalation/estimate-cost",
+            json={
+                "model": "claude-opus-5",
+                "input_tokens": 1000,
+                "output_tokens": 1000,
+            },
+        )
+        assert response.status_code == 200
+        data = response.json()
+
+        assert "estimated_cost_eur" not in data, (
+            "le montant est en dollars : aucun champ ne doit l'annoncer en euros"
+        )
+        assert data["currency"] == "USD"
+        assert abs(data["estimated_cost_usd"] - 0.030) < 1e-9
+
+    @pytest.mark.asyncio
+    async def test_b190_jetons_negatifs_refuses(self, async_client: AsyncClient):
+        """B-190 : des jetons negatifs rendaient un cout negatif en HTTP 200."""
+        response = await async_client.post(
+            "/api/escalation/estimate-cost",
+            json={
+                "model": "claude-opus-5",
+                "input_tokens": -1000000,
+                "output_tokens": -1,
+            },
+        )
+        assert response.status_code == 422, response.text
+
+    @pytest.mark.asyncio
+    async def test_b190_zero_jeton_reste_accepte(self, async_client: AsyncClient):
+        """La borne est ge=0 : estimer une requete vide reste licite."""
+        response = await async_client.post(
+            "/api/escalation/estimate-cost",
+            json={"model": "claude-opus-5", "input_tokens": 0, "output_tokens": 0},
+        )
+        assert response.status_code == 200
+        assert response.json()["estimated_cost_usd"] == 0.0
+
+    @pytest.mark.asyncio
+    async def test_b190_modele_inconnu_ne_dit_pas_gratuit(
+        self, async_client: AsyncClient
+    ):
+        """B-190 : 0.0 pour un modele hors grille se lisait « gratuit »."""
+        response = await async_client.post(
+            "/api/escalation/estimate-cost",
+            json={
+                "model": "modele-invente",
+                "input_tokens": 1000,
+                "output_tokens": 1000,
+            },
+        )
+        assert response.status_code == 200
+        data = response.json()
+        assert data["tarif_connu"] is False, (
+            "un modele absent de la grille doit etre signale, pas facture 0"
+        )
+
+    @pytest.mark.asyncio
+    async def test_b190_modele_connu_est_tarife(self, async_client: AsyncClient):
+        """Le drapeau doit dire vrai quand le tarif existe reellement."""
+        response = await async_client.post(
+            "/api/escalation/estimate-cost",
+            json={
+                "model": "claude-opus-5",
+                "input_tokens": 1000,
+                "output_tokens": 1000,
+            },
+        )
+        assert response.json()["tarif_connu"] is True
+
+    @pytest.mark.asyncio
+    async def test_b190_prefixe_openrouter_reste_tarife(
+        self, async_client: AsyncClient
+    ):
+        """Le drapeau et le montant partagent la MEME recherche de tarif.
+
+        Sans quoi « anthropic/claude-opus-5 » sortirait un montant juste sous
+        un drapeau qui le declare hors grille.
+        """
+        response = await async_client.post(
+            "/api/escalation/estimate-cost",
+            json={
+                "model": "anthropic/claude-opus-5",
+                "input_tokens": 1000,
+                "output_tokens": 1000,
+            },
+        )
+        data = response.json()
+        assert data["tarif_connu"] is True
+        assert abs(data["estimated_cost_usd"] - 0.030) < 1e-9

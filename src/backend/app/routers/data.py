@@ -1462,9 +1462,42 @@ async def import_conversations(
     if "conversations" not in data:
         raise HTTPException(status_code=400, detail="Format invalide: 'conversations' manquant")
 
+    # B-191 : la forme de la valeur se verifie comme sa presence. Une chaine
+    # ou une liste de nombres sortait en 500 « reessaie » sur un AttributeError
+    # ('str' object has no attribute 'get'), alors que l'import ne pouvait
+    # jamais aboutir. Verification AVANT la boucle : rien n'est ecrit a moitie
+    # par construction, plutot que par la grace d'un rollback.
+    conversations = data["conversations"]
+    if not isinstance(conversations, list):
+        raise HTTPException(
+            status_code=400,
+            detail="Format invalide: 'conversations' doit etre une liste",
+        )
+    for index, conv_data in enumerate(conversations):
+        if not isinstance(conv_data, dict):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Format invalide: conversation #{index} n'est pas un objet",
+            )
+        messages = conv_data.get("messages")
+        if messages is not None and not isinstance(messages, list):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Format invalide: 'messages' de la conversation #{index} doit etre une liste",
+            )
+        for rang, msg_data in enumerate(messages or []):
+            if not isinstance(msg_data, dict):
+                raise HTTPException(
+                    status_code=400,
+                    detail=(
+                        f"Format invalide: message #{rang} de la conversation "
+                        f"#{index} n'est pas un objet"
+                    ),
+                )
+
     imported = {"conversations": 0, "messages": 0}
 
-    for conv_data in data["conversations"]:
+    for conv_data in conversations:
         # Check if conversation already exists (by ID)
         existing = await session.execute(
             select(Conversation).where(Conversation.id == conv_data.get("id"))

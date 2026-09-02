@@ -213,6 +213,28 @@ class TokenTracker:
             self._month_cost = 0.0
             self._current_month = month
 
+    def _prix_pour(self, model: str) -> dict[str, float] | None:
+        """Cherche le tarif d'un modele dans la grille, sinon None.
+
+        Recherche UNIQUE, partagee par `estimate_cost` et `tarif_connu`
+        (B-190) : un drapeau calcule a part finirait par contredire le
+        montant qu'il accompagne, notamment sur le prefixe OpenRouter.
+        """
+        prices = TOKEN_PRICES.get(model)
+        if prices is None and "/" in model:
+            # OpenRouter : "anthropic/claude-sonnet-4-6" → "claude-sonnet-4-6"
+            prices = TOKEN_PRICES.get(model.split("/", 1)[1])
+        return prices
+
+    def tarif_connu(self, model: str) -> bool:
+        """Dit si la grille tarife vraiment ce modele (B-190).
+
+        Sans ce drapeau, un modele absent de TOKEN_PRICES sortait a 0.0,
+        indiscernable d'un modele local reellement gratuit : le garde-budget
+        annoncait « gratuit » tout ce qu'il ignorait.
+        """
+        return self._prix_pour(model) is not None
+
     def estimate_cost(
         self,
         model: str,
@@ -226,10 +248,7 @@ class TokenTracker:
         fournisseurs - le nom `cost_eur` des champs reste historique, cf.
         revue Soso 0.48.1 finding S2-4).
         """
-        prices = TOKEN_PRICES.get(model)
-        if prices is None and "/" in model:
-            # OpenRouter : "anthropic/claude-sonnet-4-6" → "claude-sonnet-4-6"
-            prices = TOKEN_PRICES.get(model.split("/", 1)[1])
+        prices = self._prix_pour(model)
         if prices is None:
             prices = TOKEN_PRICES["default"]
         input_cost = (input_tokens / 1_000_000) * prices["input"]

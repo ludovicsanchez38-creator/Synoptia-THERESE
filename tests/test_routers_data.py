@@ -606,3 +606,79 @@ class TestDataImport:
         })
 
         assert response.status_code == 400
+
+
+class TestB191ImportConversationsFormeDeLaValeur:
+    """B-191 : POST /api/data/import/conversations sur une valeur mal formee.
+
+    La route sait deja nommer un defaut de PRESENCE ({} rend 400 « Format
+    invalide: 'conversations' manquant ») ; un defaut de FORME sortait en 500
+    « Une erreur inattendue s'est produite, reessaie » - une invitation a
+    reessayer un import qui ne peut jamais aboutir, sans dire ou ca coince.
+    """
+
+    @pytest.mark.asyncio
+    async def test_conversations_pas_une_liste(self, client: AsyncClient):
+        response = await client.post(
+            "/api/data/import/conversations",
+            json={"conversations": "pas une liste"},
+        )
+        assert response.status_code == 400, response.text
+        assert "conversations" in response.text
+
+    @pytest.mark.asyncio
+    async def test_conversations_liste_de_nombres(self, client: AsyncClient):
+        response = await client.post(
+            "/api/data/import/conversations",
+            json={"conversations": [1, 2, 3]},
+        )
+        assert response.status_code == 400, response.text
+        # Le message doit designer l'entree fautive, pas seulement le fichier.
+        assert "#0" in response.text
+
+    @pytest.mark.asyncio
+    async def test_messages_pas_une_liste(self, client: AsyncClient):
+        response = await client.post(
+            "/api/data/import/conversations",
+            json={
+                "conversations": [
+                    {"title": "Correcte", "messages": "pas une liste"}
+                ]
+            },
+        )
+        assert response.status_code == 400, response.text
+        assert "messages" in response.text
+
+    @pytest.mark.asyncio
+    async def test_rien_n_est_ecrit_a_moitie(self, client: AsyncClient):
+        """Un lot mixte (un objet valide puis une chaine) n'importe rien."""
+        response = await client.post(
+            "/api/data/import/conversations",
+            json={
+                "conversations": [
+                    {"title": "Valide", "messages": []},
+                    "pas un objet",
+                ]
+            },
+        )
+        assert response.status_code == 400, response.text
+
+        liste = await client.get("/api/chat/conversations")
+        assert liste.status_code == 200
+        assert liste.json() == []
+
+    @pytest.mark.asyncio
+    async def test_import_valide_reste_accepte(self, client: AsyncClient):
+        """La garde de forme ne doit pas fermer la porte a un export legitime."""
+        response = await client.post(
+            "/api/data/import/conversations",
+            json={
+                "conversations": [
+                    {"title": "Sans messages"},
+                    {"title": "Avec messages", "messages": [{"role": "user", "content": "salut"}]},
+                ]
+            },
+        )
+        assert response.status_code == 200, response.text
+        assert response.json()["imported"]["conversations"] == 2
+        assert response.json()["imported"]["messages"] == 1
