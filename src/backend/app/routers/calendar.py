@@ -711,7 +711,10 @@ async def list_events(
     account_id: str | None = Query(None),
     time_min: str | None = None,
     time_max: str | None = None,
-    max_results: int = Query(default=50, le=250),
+    # B-183 : le plafond haut existait seul. SQLite lit « LIMIT -1 » comme
+    # « sans limite » : max_results=-1 rendait la table entière, et le
+    # plafond de 250 se contournait par un signe moins.
+    max_results: int = Query(default=50, ge=1, le=250),
     session: AsyncSession = Depends(get_session),
 ) -> list[CalendarEventResponse]:
     """

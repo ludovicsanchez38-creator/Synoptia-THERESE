@@ -47,7 +47,7 @@ from app.services.error_handler import message_pour_ecran
 from app.services.llm import Message, get_llm_service
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import case, func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
@@ -71,7 +71,7 @@ class SectionCreate(BaseModel):
 
     title: str
     brief: str = ""
-    order: float
+    order: float = Field(..., allow_inf_nan=False)  # B-184 : ni NaN ni l'infini
     depth: int = 0
 
 

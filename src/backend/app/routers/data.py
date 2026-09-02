@@ -53,7 +53,7 @@ from app.services.audit import (
 )
 from app.services.encryption import decrypt_backup_archive, encrypt_backup_archive
 from app.services.maintenance import maintenance_mode
-from fastapi import APIRouter, Body, Depends, HTTPException
+from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
@@ -650,8 +650,10 @@ async def delete_all_data(
 async def get_activity_logs(
     action: str | None = None,
     resource_type: str | None = None,
-    limit: int = 100,
-    offset: int = 0,
+    # B-183 : déclarés nus, ces deux entiers acceptaient le négatif. Un
+    # « limit=-1 » rendait le journal entier au lieu d'une page.
+    limit: int = Query(100, ge=1),
+    offset: int = Query(0, ge=0),
     session: AsyncSession = Depends(get_session),
 ):
     """

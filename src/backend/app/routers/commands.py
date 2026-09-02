@@ -11,6 +11,7 @@ from app.models.schemas_commands import (
     CreateCommandRequest,
     UpdateCommandRequest,
 )
+from app.services.command_registry import get_command_registry
 from app.services.user_commands import UserCommandsService
 from fastapi import APIRouter, HTTPException
 
@@ -51,6 +52,10 @@ async def create_user_command(request: CreateCommandRequest):
             show_on_home=request.show_on_home,
             content=request.content,
         )
+        # B-188 : le registre V3 est chargé une fois au démarrage. Sans cette
+        # inscription, une commande créée ici n'existait pour aucune des
+        # surfaces servies par /api/v3/commands.
+        get_command_registry().enregistrer_commande_utilisateur(cmd)
         return CommandResponse(**cmd.to_dict())
     except ValueError as e:
         raise HTTPException(status_code=409, detail=str(e))
@@ -70,6 +75,7 @@ async def update_user_command(name: str, request: UpdateCommandRequest):
     )
     if not cmd:
         raise HTTPException(status_code=404, detail=f"Commande '{name}' introuvable")
+    get_command_registry().enregistrer_commande_utilisateur(cmd)  # B-188
     return CommandResponse(**cmd.to_dict())
 
 
@@ -80,4 +86,5 @@ async def delete_user_command(name: str):
     deleted = service.delete_command(name)
     if not deleted:
         raise HTTPException(status_code=404, detail=f"Commande '{name}' introuvable")
+    get_command_registry().retirer_commande_utilisateur(name)  # B-188
     return {"message": f"Commande '{name}' supprimee"}

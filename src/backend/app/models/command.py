@@ -6,7 +6,8 @@ Modèle unifié pour toutes les commandes : builtins, skills, user, MCP.
 
 from enum import Enum
 
-from pydantic import BaseModel, Field
+from app.models.schemas_commands import valider_nom_de_commande
+from pydantic import BaseModel, Field, field_validator
 
 
 class CommandSource(str, Enum):
@@ -80,6 +81,13 @@ class CreateUserCommandRequest(BaseModel):
     prompt_template: str = Field("", description="Template avec {{placeholders}}")
     show_on_home: bool = True
     show_in_slash: bool = True
+
+    # B-187 : V3 fabrique `id = f"user-{name}"` et reprend cet id en chemin.
+    # Le même nom fait donc le même trou : créé en 201, injoignable ensuite.
+    @field_validator("name")
+    @classmethod
+    def _valider_nom(cls, valeur: str) -> str:
+        return valider_nom_de_commande(valeur)
 
 
 class UpdateUserCommandRequest(BaseModel):

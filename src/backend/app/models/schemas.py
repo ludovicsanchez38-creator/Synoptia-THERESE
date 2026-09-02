@@ -9,7 +9,7 @@ from datetime import date, datetime
 from typing import Any, Literal, Self
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 # ============================================================
 # Chat Schemas
@@ -912,17 +912,38 @@ class TaskResponse(BaseModel):
     contact_id: str | None = None
 
 
+# B-185 : le domaine des tâches est déclaré partout (entité, docstring de la
+# route de liste, `VALID_TASK_STATUSES` de l'import CRM, formulaire de
+# l'écran) SAUF là où les valeurs entrent. Une tâche « nimportequoi » n'a
+# aucune colonne au tableau : elle disparaît sans message.
+TaskStatus = Literal["todo", "in_progress", "done", "cancelled"]
+TaskPriority = Literal["low", "medium", "high", "urgent"]
+
+
+def _titre_de_tache_non_vide(valeur: str) -> str:
+    """Un intitulé fait de blancs est une ligne vide dans le tableau."""
+    nettoye = valeur.strip()
+    if not nettoye:
+        raise ValueError("Le titre de la tâche ne peut pas être vide")
+    return nettoye
+
+
 class CreateTaskRequest(BaseModel):
     """Request pour créer une tâche."""
 
     title: str
     description: str | None = None
-    status: str = "todo"
-    priority: str = "medium"
+    status: TaskStatus = "todo"
+    priority: TaskPriority = "medium"
     due_date: str | None = None  # ISO datetime
     project_id: str | None = None
     tags: list[str] | None = None
     contact_id: str | None = None
+
+    @field_validator("title")
+    @classmethod
+    def _valider_titre(cls, valeur: str) -> str:
+        return _titre_de_tache_non_vide(valeur)
 
 
 class UpdateTaskRequest(BaseModel):
@@ -930,11 +951,18 @@ class UpdateTaskRequest(BaseModel):
 
     title: str | None = None
     description: str | None = None
-    status: str | None = None
-    priority: str | None = None
+    # Le même trou côté PUT : borner la seule création laisserait la porte de
+    # service ouverte sur exactement le même champ.
+    status: TaskStatus | None = None
+    priority: TaskPriority | None = None
     due_date: str | None = None
     project_id: str | None = None
     tags: list[str] | None = None
+
+    @field_validator("title")
+    @classmethod
+    def _valider_titre(cls, valeur: str | None) -> str | None:
+        return None if valeur is None else _titre_de_tache_non_vide(valeur)
 
 
 # =============================================================================

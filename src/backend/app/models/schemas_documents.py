@@ -6,7 +6,7 @@ Request/Response models pour l'atelier documentaire.
 
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class DocumentCreate(BaseModel):
@@ -56,7 +56,10 @@ class SectionUpdate(BaseModel):
     title: str | None = None
     brief: str | None = None
     content: str | None = None
-    order: float | None = None
+    # B-184 : `order` est la clé de tri de la trame, et la colonne est NOT NULL.
+    # Sans cette borne, « Infinity » passait en 200 puis se relisait `null` sur
+    # un champ déclaré `number` et requis, et « NaN » finissait en 500.
+    order: float | None = Field(default=None, allow_inf_nan=False)
     depth: int | None = None
 
 
@@ -64,7 +67,7 @@ class SectionsReorderItem(BaseModel):
     """Position cible d'une section dans une réorganisation de trame."""
 
     id: str
-    order: float
+    order: float = Field(..., allow_inf_nan=False)  # B-184 : même clé de tri
     depth: int
 
 

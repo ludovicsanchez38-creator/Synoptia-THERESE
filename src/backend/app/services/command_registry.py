@@ -15,7 +15,7 @@ from app.models.command import (
 )
 from app.services.skills.base import SkillOutputType
 from app.services.skills.registry import get_skills_registry
-from app.services.user_commands import UserCommandsService
+from app.services.user_commands import UserCommand, UserCommandsService
 
 logger = logging.getLogger(__name__)
 
@@ -362,25 +362,50 @@ class CommandRegistry:
         except Exception as e:
             logger.warning(f"Impossible de charger les action agents : {e}")
 
+    @staticmethod
+    def _definition_depuis_commande_utilisateur(user_cmd: UserCommand) -> CommandDefinition:
+        """Traduit un fichier de commande utilisateur en entrée du registre."""
+        return CommandDefinition(
+            id=f"user-{user_cmd.name}",
+            name=user_cmd.name,
+            description=user_cmd.description,
+            icon=user_cmd.icon,
+            category=user_cmd.category or "production",
+            source=CommandSource.USER,
+            action=CommandAction.PROMPT,
+            prompt_template=user_cmd.content,
+            show_on_home=user_cmd.show_on_home,
+            show_in_slash=True,
+            sort_order=200,
+            is_editable=True,
+        )
+
     async def _load_user_commands(self) -> None:
         """Charge les commandes utilisateur depuis ~/.therese/commands/user/."""
         service = UserCommandsService.get_instance()
         for user_cmd in service.list_commands():
-            cmd = CommandDefinition(
-                id=f"user-{user_cmd.name}",
-                name=user_cmd.name,
-                description=user_cmd.description,
-                icon=user_cmd.icon,
-                category=user_cmd.category or "production",
-                source=CommandSource.USER,
-                action=CommandAction.PROMPT,
-                prompt_template=user_cmd.content,
-                show_on_home=user_cmd.show_on_home,
-                show_in_slash=True,
-                sort_order=200,
-                is_editable=True,
-            )
+            cmd = self._definition_depuis_commande_utilisateur(user_cmd)
             self._commands[cmd.id] = cmd
+
+    def enregistrer_commande_utilisateur(self, user_cmd: UserCommand) -> CommandDefinition:
+        """Inscrit (ou réinscrit) au registre une commande écrite sur le disque.
+
+        B-188 : le routeur historique `/api/commands/user` écrivait le fichier
+        sans rien dire au registre, chargé une seule fois au démarrage. Une
+        commande créée par ce client n'existait donc pas pour les surfaces
+        servies par `/api/v3/commands`, alors que le chemin inverse marchait.
+        """
+        cmd = self._definition_depuis_commande_utilisateur(user_cmd)
+        self._commands[cmd.id] = cmd
+        return cmd
+
+    def retirer_commande_utilisateur(self, name: str) -> bool:
+        """Retire du registre la commande utilisateur portant ce nom (B-188)."""
+        cmd = self._commands.get(f"user-{name}")
+        if cmd is None or cmd.source != CommandSource.USER:
+            return False
+        del self._commands[f"user-{name}"]
+        return True
 
     def retirer_commandes_utilisateur(self) -> int:
         """Retire du registre en mémoire les commandes venues de l'utilisateur.

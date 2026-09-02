@@ -10,7 +10,7 @@ import logging
 from datetime import UTC, datetime
 
 from app.models.database import get_session
-from app.models.entities import Task
+from app.models.entities import Contact, Project, Task
 from app.models.schemas import CreateTaskRequest, TaskResponse, UpdateTaskRequest
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -23,6 +23,22 @@ logger = logging.getLogger(__name__)
 # =============================================================================
 # CRUD TASKS
 # =============================================================================
+
+
+async def _verifier_rattachements(
+    session: AsyncSession, project_id: str | None, contact_id: str | None
+) -> None:
+    """B-186 : une tâche ne s'accroche qu'à un dossier ou une personne qui existe.
+
+    Sans ce contrôle, `project_id="projet-fantome"` était recopié tel quel :
+    la tâche ne remontait dans aucun filtre par projet réel et survivait à la
+    suppression de tous les projets. `POST /api/files/upload` rend 404
+    « Projet non trouvé » avant d'écrire ; c'est le même devoir ici.
+    """
+    if project_id is not None and await session.get(Project, project_id) is None:
+        raise HTTPException(status_code=404, detail="Projet non trouvé")
+    if contact_id is not None and await session.get(Contact, contact_id) is None:
+        raise HTTPException(status_code=404, detail="Contact non trouvé")
 
 
 # Collection exposee avec ET sans slash final (anti-redirection 307).
@@ -124,6 +140,8 @@ async def create_task(
     session: AsyncSession = Depends(get_session),
 ) -> TaskResponse:
     """Crée une nouvelle tâche."""
+    await _verifier_rattachements(session, request.project_id, request.contact_id)
+
     # Parse due_date
     due_date = None
     if request.due_date:
@@ -176,6 +194,8 @@ async def update_task(
     task = await session.get(Task, task_id)
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
+
+    await _verifier_rattachements(session, request.project_id, None)
 
     # Update fields
     if request.title is not None:
