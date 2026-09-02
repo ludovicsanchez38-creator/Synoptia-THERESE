@@ -307,10 +307,16 @@ class TestEventsList:
 
     @pytest.mark.asyncio
     async def test_list_events_requires_account_for_google(self, client: AsyncClient):
-        """GET /api/calendar/events - should require account_id for non-local calendars."""
-        # Pass a calendar_id that doesn't exist in DB (treated as Google)
+        """GET /api/calendar/events - should require account_id for non-local calendars.
+
+        B-236 : ce test passait un identifiant ABSENT de la base et attendait
+        400 « account_id requis pour Google Calendar ». C'était le défaut : un
+        calendrier qui n'existe pas n'est pas un calendrier Google, il rend
+        désormais 404. L'alias Google `primary`, lui, réclame toujours un
+        compte - c'est ce que le test vérifie maintenant.
+        """
         response = await client.get(
-            "/api/calendar/events?calendar_id=unknown-google-cal"
+            "/api/calendar/events?calendar_id=primary"
         )
         assert response.status_code == 400
 

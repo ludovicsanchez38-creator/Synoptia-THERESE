@@ -9,7 +9,7 @@ from datetime import date, datetime
 from typing import Any, Literal, Self
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 # ============================================================
 # Chat Schemas
@@ -106,7 +106,17 @@ class EntitiesDetectedResponse(BaseModel):
 
 
 class MemorySearchRequest(BaseModel):
-    """Search request for memory system."""
+    """Search request for memory system.
+
+    B-178 : le filtre s'appelle `entity_types`. Un appelant qui écrivait
+    `types` (le nom du client avant sa correction) voyait son champ absorbé en
+    silence par Pydantic : la réponse rendait 200 avec des fiches ET des
+    dossiers, comme si la restriction avait été appliquée. Un filtre que le
+    serveur ne connaît pas doit se dire, sans quoi une recherche ouverte passe
+    pour une recherche restreinte.
+    """
+
+    model_config = ConfigDict(extra="forbid")
 
     query: str
     limit: int = Field(default=10, ge=1, le=50)

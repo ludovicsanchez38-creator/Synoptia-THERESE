@@ -9,8 +9,9 @@ chemin : la requête rendait 405 « Method Not Allowed », le `catch` du composa
 remettait l'interrupteur à sa position d'origine et affichait « La préférence
 n'a pas pu être enregistrée ». Ce réglage ne pouvait pas être changé.
 
-La route PUT `/preferences/{key}`, elle, existe mais n'accepte aucune forme
-(RB2-005, hors de ce lot) : aucune porte ne prenait le relais.
+La route PUT `/preferences/{key}`, elle, existait mais n'acceptait aucune forme
+(RB2-005 / B-176, dernière classe de ce fichier) : aucune porte ne prenait le
+relais.
 
 Le POST délègue à `set_preference`, donc les trois refus posés là (clés d'API,
 mode cabinet, adresse de fournisseur invalide) valent aussi pour lui - c'est
@@ -132,3 +133,69 @@ class TestLaNouvellePorteNeContournePasLesRefus:
         assert reponse.status_code == 400, (
             f"une adresse invalide est enregistrée : {reponse.text[:200]}"
         )
+
+
+class TestLaPortePutEstAppelable:
+    """RB2-005 (B-176) : `PUT /preferences/{key}` n'acceptait AUCUNE forme.
+
+    `value: str | int | float | bool | list | dict` déclaré en paramètre simple
+    est classé `params.File` par FastAPI (son `list` nu passe pour une séquence
+    de fichiers). L'OpenAPI annonçait donc `multipart/form-data`, et cette
+    forme partait dans `_extract_form_body`, qui appelait `.read()` sur une
+    chaîne : HTTP 500 « Une erreur inattendue s'est produite ». Toutes les
+    autres formes (sept corps JSON, le paramètre d'URL) rendaient 422
+    « value : Field required ».
+    """
+
+    @pytest.mark.asyncio
+    async def test_la_valeur_s_ecrit_par_un_corps_json(self, client):
+        reponse = await client.put(
+            "/api/config/preferences/rb2_put", json={"value": "coucou"}
+        )
+
+        assert reponse.status_code == 200, (
+            "la porte PUT annoncée par l'OpenAPI n'accepte aucune forme : "
+            f"{reponse.status_code} {reponse.text[:200]}"
+        )
+        relecture = await client.get("/api/config/preferences")
+        assert relecture.json().get("rb2_put", {}).get("value") == "coucou", (
+            f"la préférence n'a pas été écrite : {relecture.text[:300]}"
+        )
+
+    @pytest.mark.asyncio
+    async def test_le_contrat_openapi_du_corps_est_du_json(self, client):
+        schema = (await client.get("/openapi.json")).json()
+        corps = schema["paths"]["/api/config/preferences/{key}"]["put"]["requestBody"]
+
+        assert list(corps["content"]) == ["application/json"], (
+            "l'OpenAPI annonce un corps qu'aucun client ne peut produire : "
+            f"{list(corps['content'])}"
+        )
+
+    @pytest.mark.asyncio
+    async def test_un_formulaire_multipart_est_refuse_sans_rien_ecrire(self, client):
+        """La forme de la reproduction. Elle ne doit plus rendre 500, et elle
+        ne doit surtout pas écrire le corps multipart brut comme valeur."""
+        reponse = await client.put(
+            "/api/config/preferences/rb2_put_form", data={"value": "coucou"}
+        )
+
+        assert 400 <= reponse.status_code < 500, (
+            f"un formulaire multipart rend {reponse.status_code} : {reponse.text[:200]}"
+        )
+        relecture = await client.get("/api/config/preferences")
+        assert "rb2_put_form" not in relecture.json(), (
+            f"le corps du formulaire a été stocké tel quel : {relecture.text[:300]}"
+        )
+
+    @pytest.mark.asyncio
+    async def test_les_refus_de_la_porte_restent_poses(self, client):
+        cle_api = await client.put(
+            "/api/config/preferences/anthropic_api_key", json={"value": "sk-test"}
+        )
+        assert cle_api.status_code == 400, cle_api.text[:200]
+
+        adresse = await client.put(
+            "/api/config/preferences/ollama_base_url", json={"value": "pas une url"}
+        )
+        assert adresse.status_code == 400, adresse.text[:200]

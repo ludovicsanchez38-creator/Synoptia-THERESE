@@ -39,7 +39,7 @@ from app.services.calendar.provider_factory import (
 from app.services.calendar_service import CalendarService
 from app.services.encryption import decrypt_value, encrypt_value, is_value_encrypted
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -375,10 +375,19 @@ async def _list_google_calendars(
 @router.get("/calendars/{calendar_id}")
 async def get_calendar(
     calendar_id: str,
-    account_id: str = Query(...),
+    account_id: str | None = Query(None),
     session: AsyncSession = Depends(get_session),
 ) -> CalendarResponse:
-    """Récupère un calendrier spécifique."""
+    """Récupère un calendrier spécifique.
+
+    B-181 : `account_id` était OBLIGATOIRE et comparé à celui du calendrier.
+    Un calendrier local naît avec `account_id` à NULL : aucune valeur ne
+    pouvait convenir, ni une chaîne, ni la chaîne vide, ni l'omission (422).
+    La route était donc fermée à tout ce que l'application crée elle-même. Le
+    paramètre devient facultatif ; la comparaison, elle, ne bouge pas et reste
+    fermée dans les deux sens - un calendrier Google ne s'ouvre pas sans son
+    compte, un calendrier local ne s'ouvre pas avec le compte d'un autre.
+    """
     calendar = await session.get(Calendar, calendar_id)
     if not calendar or calendar.account_id != account_id:
         raise HTTPException(status_code=404, detail="Calendar not found")
@@ -391,17 +400,43 @@ async def get_calendar(
         timezone=calendar.timezone,
         primary=calendar.primary,
         provider=calendar.provider,
-        synced_at=calendar.synced_at.isoformat(),
+        # Un calendrier local naît sans date de synchronisation. Le paramètre
+        # obligatoire fermait la route avant qu'on n'atteigne cette ligne : la
+        # rouvrir sans la rendre facultative aurait remplacé un 422 par un 500.
+        synced_at=calendar.synced_at.isoformat() if calendar.synced_at else None,
     )
+
+
+class CreationCalendrier(BaseModel):
+    """Corps de `POST /calendars`.
+
+    B-182 : la route ne déclarait que des paramètres simples, donc des
+    paramètres d'URL. Un corps JSON était ignoré EN ENTIER et la route rendait
+    200 avec un calendrier nommé « Mon calendrier », comme si elle avait obéi.
+    Le client `createCalendar` (`services/api/calendar.ts`) envoie pourtant un
+    corps JSON : aucun calendrier créé par l'application ne portait le nom
+    demandé. `extra="forbid"` ferme l'autre moitié du défaut : un champ que la
+    route ne connaît pas (`provider` au lieu de `provider_type`) se dit, au
+    lieu de disparaître dans un 200.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    account_id: str | None = None
+    summary: str | None = None
+    description: str | None = None
+    timezone: str | None = None
+    provider_type: str | None = None
 
 
 @router.post("/calendars")
 async def create_calendar(
+    corps: CreationCalendrier | None = None,
     account_id: str | None = None,
-    summary: str = "Mon calendrier",
+    summary: str | None = None,
     description: str | None = None,
-    timezone: str = "Europe/Paris",
-    provider_type: str = Query("local", description="Provider: local, google, caldav"),
+    timezone: str | None = None,
+    provider_type: str | None = Query(None, description="Provider: local, google, caldav"),
     session: AsyncSession = Depends(get_session),
 ) -> CalendarResponse:
     """
@@ -410,14 +445,26 @@ async def create_calendar(
     - provider_type=local : Calendrier local SQLite (pas besoin d'account_id)
     - provider_type=google : Calendrier Google Calendar (account_id requis)
     - provider_type=caldav : Voir POST /calendars/caldav-setup
+
+    Le corps JSON prime sur les paramètres d'URL, qui restent acceptés pour les
+    appelants historiques.
     """
-    if provider_type == "local":
+    demande = corps or CreationCalendrier()
+    compte = demande.account_id if demande.account_id is not None else account_id
+    nom = (demande.summary if demande.summary is not None else summary) or "Mon calendrier"
+    detail = demande.description if demande.description is not None else description
+    fuseau = (demande.timezone if demande.timezone is not None else timezone) or "Europe/Paris"
+    type_fournisseur = (
+        demande.provider_type if demande.provider_type is not None else provider_type
+    ) or "local"
+
+    if type_fournisseur == "local":
         # Local calendar - no external account needed
         provider = get_calendar_provider(provider_type="local", session=session)
         cal_dto = await provider.create_calendar(
-            name=summary,
-            description=description,
-            timezone=timezone,
+            name=nom,
+            description=detail,
+            timezone=fuseau,
         )
         # The local provider already saved to DB
         await session.get(Calendar, cal_dto.id)
@@ -432,11 +479,11 @@ async def create_calendar(
             synced_at=datetime.now(UTC).isoformat(),
         )
 
-    elif provider_type == "google":
-        if not account_id:
+    elif type_fournisseur == "google":
+        if not compte:
             raise HTTPException(status_code=400, detail="account_id requis pour Google Calendar")
 
-        account = await session.get(EmailAccount, account_id)
+        account = await session.get(EmailAccount, compte)
         if not account:
             raise HTTPException(status_code=404, detail="Account not found")
 
@@ -448,14 +495,14 @@ async def create_calendar(
 
         try:
             calendar_service = CalendarService(access_token)
-            cal_data = await calendar_service.create_calendar(summary, description, timezone)
+            cal_data = await calendar_service.create_calendar(nom, detail, fuseau)
 
             new_cal = Calendar(
                 id=cal_data["id"],
-                account_id=account_id,
+                account_id=compte,
                 summary=cal_data["summary"],
                 description=cal_data.get("description"),
-                timezone=cal_data.get("timeZone", timezone),
+                timezone=cal_data.get("timeZone", fuseau),
                 primary=False,
                 provider="google",
                 remote_id=cal_data["id"],
@@ -487,15 +534,42 @@ async def create_calendar(
 @router.delete("/calendars/{calendar_id}")
 async def delete_calendar(
     calendar_id: str,
-    account_id: str = Query(...),
+    account_id: str | None = Query(None),
     session: AsyncSession = Depends(get_session),
 ) -> dict:
-    """Supprime un calendrier."""
+    """Supprime un calendrier.
+
+    B-181 : deux verrous se cumulaient sur un calendrier local. Le premier est
+    celui de la lecture (`account_id` obligatoire, comparé à NULL). Le second
+    est plus profond : la suite chargeait un `EmailAccount` puis appelait le
+    service Google, alors qu'un calendrier local n'a ni compte ni distant. Un
+    calendrier créé par l'application ne pouvait donc jamais être supprimé.
+    """
     calendar = await session.get(Calendar, calendar_id)
     if not calendar or calendar.account_id != account_id:
         raise HTTPException(status_code=404, detail="Calendar not found")
 
-    account = await session.get(EmailAccount, account_id)
+    if calendar.provider != "google":
+        # Un calendrier local vit dans cette base : la ligne EST le calendrier.
+        # Un calendrier CalDAV vit chez un tiers : on le DÉTACHE, on ne détruit
+        # rien chez l'hébergeur - une suppression distante non demandée serait
+        # irréversible et invisible depuis ici.
+        distant = calendar.provider == "caldav"
+        evenements = (
+            await session.execute(
+                select(CalendarEvent).where(CalendarEvent.calendar_id == calendar_id)
+            )
+        ).scalars().all()
+        for evenement in evenements:
+            await session.delete(evenement)
+        await session.delete(calendar)
+        await session.commit()
+        return {
+            "success": True,
+            "message": "Calendrier détaché" if distant else "Calendar deleted",
+        }
+
+    account = await session.get(EmailAccount, calendar.account_id)
     if not account:
         raise HTTPException(status_code=404, detail="Account not found")
 
@@ -655,6 +729,16 @@ async def list_events(
     else:
         # Google Calendar (legacy flow or explicit)
         if not account_id:
+            # B-236 : un identifiant qui ne désigne aucun calendrier connu, et
+            # sans compte pour aller le chercher ailleurs, n'est pas un
+            # calendrier Google : il n'existe pas. Répondre « account_id requis
+            # pour Google Calendar » désignait un fournisseur hors de cause sur
+            # une base 100 % locale, et l'écran affichait une panne Google.
+            if calendar is None and calendar_id != "primary":
+                raise HTTPException(
+                    status_code=404,
+                    detail=f"Calendrier introuvable : {calendar_id}",
+                )
             raise HTTPException(status_code=400, detail="account_id requis pour Google Calendar")
         return await _list_events_google(
             account_id, calendar_id, session, time_min, time_max, max_results
@@ -879,13 +963,30 @@ async def _list_events_google(
 async def get_event(
     event_id: str,
     calendar_id: str = Query(default="primary"),
-    account_id: str = Query(...),
+    account_id: str | None = Query(None),
     session: AsyncSession = Depends(get_session),
 ) -> CalendarEventResponse:
-    """Récupère un événement spécifique."""
+    """Récupère un événement spécifique.
+
+    B-180 : les deux paramètres étaient déclarés - `account_id` était même
+    obligatoire - et AUCUN n'était lu. N'importe quelle valeur donnait accès à
+    n'importe quel événement, y compris celui d'un autre compte connecté. La
+    route voisine `GET /calendars/{id}` refusait déjà ce croisement.
+    """
     event = await session.get(CalendarEvent, event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
+
+    if calendar_id != "primary" and event.calendar_id != calendar_id:
+        raise HTTPException(status_code=404, detail="Event not found")
+
+    calendrier = await session.get(Calendar, event.calendar_id)
+    if calendrier is not None and calendrier.account_id != account_id:
+        raise HTTPException(status_code=404, detail="Event not found")
+    # Un événement dont la ligne de calendrier a disparu n'est rattachable à
+    # aucun compte : il n'y a rien à comparer. Le refuser condamnerait des
+    # données déjà en base sans rien cloisonner de plus - les deux croisements
+    # du défaut (calendrier voisin, compte étranger) sont fermés au-dessus.
 
     return CalendarEventResponse(
         id=event.id,

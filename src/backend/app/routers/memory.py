@@ -185,7 +185,7 @@ async def _nettoyer_et_supprimer_projet(
     30/08, supprimer la ligne tout en servant encore ses fragments serait un
     faux succès plus grave qu'une suppression refusée.
     """
-    from app.models.entities import CalendarEvent, Document
+    from app.models.entities import CalendarEvent, Deliverable, Document, Task
     from app.services.project_sync_service import retirer_racine
 
     project_id = project.id
@@ -243,12 +243,29 @@ async def _nettoyer_et_supprimer_projet(
         event.project_id = None
         session.add(event)
 
+    # B-179 : `Project.tasks` et `Project.deliverables` portent
+    # `cascade_delete=True`. Ces deux familles disparaissent donc avec le
+    # dossier, sans que le rapport les ait jamais nommées : on lisait une liste
+    # qui se donnait pour exhaustive en perdant des tâches. Le comptage passe
+    # par une requête et JAMAIS par `project.tasks` : lire la collection ici
+    # déclencherait un chargement paresseux hors du greenlet asyncio.
+    taches = (
+        await session.execute(select(Task).where(Task.project_id == project_id))
+    ).scalars().all()
+    livrables = (
+        await session.execute(
+            select(Deliverable).where(Deliverable.project_id == project_id)
+        )
+    ).scalars().all()
+
     await session.delete(project)
     return {
         "files": len(files),
         "conversations_detachees": len(conversations),
         "documents_detaches": len(documents),
         "evenements_detaches": len(events),
+        "taches_supprimees": len(taches),
+        "livrables_supprimes": len(livrables),
     }
 
 

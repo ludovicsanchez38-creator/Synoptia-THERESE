@@ -185,8 +185,12 @@ class TestIcsAlldaySemantics:
 
     @pytest.mark.asyncio
     async def test_export_ics_ecrit_dtend_exclusif(self, client):
+        # B-182 : ce corps portait deux champs que la route ne déclare pas
+        # (`name`, `provider`). Il était ignoré en entier et le calendrier
+        # naissait sous le nom par défaut ; le test passait par accident. Le
+        # corps est désormais lu, et un champ inconnu se dit.
         cal = (await client.post("/api/calendar/calendars", json={
-            "name": "Local export", "provider": "local",
+            "summary": "Local export", "provider_type": "local",
         })).json()
         created = await client.post("/api/calendar/events", json={
             "calendar_id": cal["id"], "summary": "Salon pro",

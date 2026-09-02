@@ -8,7 +8,7 @@ import json
 import logging
 import os
 from datetime import UTC, datetime
-from typing import Any
+from typing import Annotated, Any
 
 from app.config import settings
 from app.models.database import get_session
@@ -32,7 +32,7 @@ from app.services.audit import AuditAction, log_activity
 from app.services.encryption import decrypt_value, encrypt_value, is_value_encrypted
 from app.services.http_client import get_http_client
 from app.services.system_resources import OLLAMA_CONTEXT_MARGIN_BYTES, detect_system_memory
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Body, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.exc import IntegrityError
@@ -465,10 +465,9 @@ class EcriturePreference(BaseModel):
     """Corps de `POST /preferences` : la forme que le client envoie déjà
     (`setPreference(key, value, category)` dans services/api/config.ts).
 
-    Pydantic lit ici un corps JSON. C'est ce qui distingue cette porte de la
-    route PUT, dont le paramètre `value: str | int | ... | list | dict` fait
-    dériver à FastAPI un corps multipart que l'extraction de formulaire ne
-    sait pas relire.
+    Pydantic lit ici un corps JSON, la clé comprise. La route PUT prend la même
+    valeur dans un corps `{"value": ...}` (B-176) mais lit sa clé dans le
+    chemin ; les deux portes délèguent au même corps de fonction.
     """
 
     # La clé est un nom de préférence, pas un texte libre : la porte PUT ne
@@ -505,11 +504,30 @@ async def ecrire_preference(
 @router.put("/preferences/{key}")
 async def set_preference(
     key: str,
-    value: str | int | float | bool | list | dict,
+    value: Annotated[str | int | float | bool | list | dict, Body(embed=True)],
     category: str = "general",
     session: AsyncSession = Depends(get_session),
 ):
-    """Set a preference value."""
+    """Set a preference value.
+
+    B-176 : `value` était déclaré en paramètre simple, sans annotation. Or
+    `fastapi.dependencies.utils.is_uploadfile_sequence_annotation` rend VRAI
+    sur `str | int | float | bool | list | dict` (mesuré : le `list` nu est lu
+    comme une séquence pouvant porter des `UploadFile`). `analyze_param` en
+    faisait donc un `params.File`, l'OpenAPI annonçait `multipart/form-data`,
+    et la forme ainsi annoncée partait dans `_extract_form_body`, dont la
+    branche `File` appelle `.read()` sur la valeur reçue : `'str' object has no
+    attribute 'read'`, 500. Toutes les autres formes rendaient 422 « value :
+    Field required ». Aucune porte n'était appelable.
+
+    `Body(embed=True)` fixe le corps en JSON `{"value": ...}` : la clé reste
+    dans le chemin, la catégorie dans l'URL, et `value` reste un paramètre
+    nommé pour les appels directs de la fonction.
+
+    Le corps NON embarqué a été écarté après mesure : une union qui contient
+    `str` accepte en mode permissif les octets bruts d'un corps de formulaire,
+    et la route rendait 200 en enregistrant « value=coucou » comme valeur.
+    """
     # Prevent setting API keys through this endpoint
     if "api_key" in key.lower():
         raise HTTPException(
