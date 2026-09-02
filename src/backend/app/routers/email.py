@@ -32,6 +32,7 @@ from app.models.schemas_email import (
     UpdatePriorityRequest,
     UpdateSignatureRequest,
 )
+from app.services.email.base_provider import EmailProvider
 from app.services.email.provider_factory import (
     get_email_provider,
     list_common_providers,
@@ -53,6 +54,30 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 logger = logging.getLogger(__name__)
+
+
+def _provider_imap(account: EmailAccount) -> EmailProvider:
+    """Le provider IMAP d'un compte, monté comme partout ailleurs dans ce
+    fichier. B-172 : cinq routes appelaient Gmail sans regarder
+    `account.provider` ; elles passent par ici."""
+    return get_email_provider(
+        provider_type="imap",
+        email_address=account.email,
+        password=decrypt_value(account.imap_password),
+        imap_host=account.imap_host,
+        imap_port=account.imap_port,
+        smtp_host=account.smtp_host,
+        smtp_port=account.smtp_port,
+        smtp_use_tls=account.smtp_use_tls,
+    )
+
+
+async def _compte_email(account_id: str, session: AsyncSession) -> EmailAccount:
+    """Le compte, ou 404 - comme le fait déjà `get_gmail_service_for_account`."""
+    account = await session.get(EmailAccount, account_id)
+    if not account:
+        raise HTTPException(status_code=404, detail="Email account not found")
+    return account
 
 
 def _utcnow() -> datetime:
@@ -919,6 +944,24 @@ async def _list_messages_imap(
     page_token: str | None = None,
 ) -> dict:
     """List messages via IMAP provider with proper error handling."""
+    # B-174 : côté IMAP, le jeton de pagination est un décalage entier
+    # (`imap_smtp_provider.list_messages` fait `int(page_token)`). Sans ce
+    # contrôle, « abc » traversait la route, et la ValueError Python ressortait
+    # telle quelle en 502 « Erreur IMAP » : le texte d'une exception devant
+    # l'utilisateur, et une saisie fautive présentée comme une panne de son
+    # serveur de messagerie. Le contrôle est ici et non dans la route commune :
+    # les jetons Gmail, eux, sont des chaînes opaques.
+    # `isdecimal()` et non `isdigit()` : « ² » est un chiffre pour isdigit et
+    # pas pour int(), qui lèverait la même ValueError. La longueur borne les
+    # deux autres formes du même défaut : au-delà de 4300 chiffres int() refuse
+    # aussi, et un décalage démesuré ferait chercher offset + max_results
+    # messages au serveur.
+    if page_token and not (page_token.isdecimal() and len(page_token) <= 18):
+        raise HTTPException(
+            status_code=422,
+            detail="Jeton de pagination invalide : un nombre entier est attendu.",
+        )
+
     provider = get_email_provider(
         provider_type="imap",
         email_address=account.email,
@@ -1277,13 +1320,48 @@ async def modify_message(
 
     US-EMAIL-02: Lire emails
     """
-    gmail = await get_gmail_service_for_account(account_id, session)
+    account = await _compte_email(account_id, session)
 
-    result = await gmail.modify_message(
-        message_id=message_id,
-        add_label_ids=request.add_label_ids,
-        remove_label_ids=request.remove_label_ids,
-    )
+    if account.provider == "imap":
+        # B-172 : un compte IMAP n'a pas de jeton OAuth. Les étiquettes que
+        # le serveur sait porter sont les DEUX drapeaux \\Seen et \\Flagged ;
+        # les autres n'ont pas d'équivalent et sont ignorées, comme le fait
+        # déjà la liste des messages pour les libellés Gmail.
+        provider = _provider_imap(account)
+        marquer_lu: bool | None = None
+        marquer_suivi: bool | None = None
+        for etiquette in request.add_label_ids or []:
+            if etiquette.upper() == "UNREAD":
+                marquer_lu = False
+            elif etiquette.upper() == "STARRED":
+                marquer_suivi = True
+        for etiquette in request.remove_label_ids or []:
+            if etiquette.upper() == "UNREAD":
+                marquer_lu = True
+            elif etiquette.upper() == "STARRED":
+                marquer_suivi = False
+
+        try:
+            dto = await provider.modify_message(
+                message_id,
+                add_labels=request.add_label_ids,
+                remove_labels=request.remove_label_ids,
+                mark_read=marquer_lu,
+                mark_starred=marquer_suivi,
+            )
+        except Exception as e:
+            logger.error(f"IMAP modify_message failed for {account.email}: {e}")
+            raise HTTPException(status_code=502, detail=f"Erreur IMAP: {e}")
+
+        result = {"id": dto.id, "labelIds": list(dto.labels or [])}
+    else:
+        gmail = await get_gmail_service_for_account(account_id, session)
+
+        result = await gmail.modify_message(
+            message_id=message_id,
+            add_label_ids=request.add_label_ids,
+            remove_label_ids=request.remove_label_ids,
+        )
 
     # Update cache
     cached = await session.get(EmailMessage, message_id)
@@ -1314,12 +1392,24 @@ async def delete_message(
 
     US-EMAIL-02: Lire emails
     """
-    gmail = await get_gmail_service_for_account(account_id, session)
+    account = await _compte_email(account_id, session)
 
-    if permanent:
-        await gmail.delete_message(message_id)
+    if account.provider == "imap":
+        # B-172 : le provider IMAP distingue déjà la corbeille (déplacement)
+        # de la suppression définitive.
+        provider = _provider_imap(account)
+        try:
+            await provider.delete_message(message_id, permanent=permanent)
+        except Exception as e:
+            logger.error(f"IMAP delete_message failed for {account.email}: {e}")
+            raise HTTPException(status_code=502, detail=f"Erreur IMAP: {e}")
     else:
-        await gmail.trash_message(message_id)
+        gmail = await get_gmail_service_for_account(account_id, session)
+
+        if permanent:
+            await gmail.delete_message(message_id)
+        else:
+            await gmail.trash_message(message_id)
 
     # Remove from cache
     cached = await session.get(EmailMessage, message_id)
@@ -1360,7 +1450,22 @@ async def list_labels(
             smtp_port=account.smtp_port,
             smtp_use_tls=account.smtp_use_tls,
         )
-        folders = await provider.list_folders()
+        # B-173 : cet appel était nu, quand son jumeau `_list_messages_imap`
+        # est encadré. Un serveur éteint ou mal saisi rendait donc 500 « une
+        # erreur inattendue, réessaie » sur les dossiers, et 502 « Erreur
+        # IMAP: Connection refused » sur les messages - même panne, nommée
+        # d'un seul côté.
+        try:
+            folders = await provider.list_folders()
+        except TimeoutError as e:
+            logger.error(f"IMAP timeout for account {account.email}: {e}")
+            raise HTTPException(
+                status_code=504,
+                detail=f"Délai de connexion IMAP dépassé pour {account.imap_host}",
+            )
+        except Exception as e:
+            logger.error(f"IMAP list_folders failed for {account.email}: {e}")
+            raise HTTPException(status_code=502, detail=f"Erreur IMAP: {e}")
 
         def _get_folder_counter(folder, primary_attr: str, fallback_attr: str) -> int:
             primary_value = getattr(folder, primary_attr, None)
@@ -1397,6 +1502,26 @@ async def create_label(
 
     US-EMAIL-05: Labels
     """
+    account = await _compte_email(account_id, session)
+
+    if account.provider == "imap":
+        # B-172 : un « label » IMAP est un dossier. Même forme de réponse que
+        # `list_labels`, sinon l'écran qui vient de créer le dossier ne sait
+        # pas le lire.
+        provider = _provider_imap(account)
+        try:
+            dossier = await provider.create_folder(request.name)
+        except Exception as e:
+            logger.error(f"IMAP create_folder failed for {account.email}: {e}")
+            raise HTTPException(status_code=502, detail=f"Erreur IMAP: {e}")
+        return {
+            "id": dossier.id,
+            "name": dossier.name,
+            "type": dossier.type,
+            "messagesTotal": 0,
+            "messagesUnread": 0,
+        }
+
     gmail = await get_gmail_service_for_account(account_id, session)
     label = await gmail.create_label(request.name)
     return label
@@ -1414,6 +1539,20 @@ async def update_label(
 
     US-EMAIL-05: Labels
     """
+    account = await _compte_email(account_id, session)
+
+    if account.provider == "imap":
+        # B-172 : le provider IMAP ne sait pas renommer un dossier (il crée et
+        # supprime). Le refus le dit, plutôt que de réclamer un jeton Google
+        # sur un compte qui n'en a jamais eu.
+        raise HTTPException(
+            status_code=501,
+            detail=(
+                "Renommer un dossier IMAP n'est pas encore possible depuis "
+                "THÉRÈSE. Renomme-le sur ton serveur de messagerie."
+            ),
+        )
+
     gmail = await get_gmail_service_for_account(account_id, session)
     label = await gmail.update_label(label_id, request.name)
     return label
@@ -1430,6 +1569,18 @@ async def delete_label(
 
     US-EMAIL-05: Labels
     """
+    account = await _compte_email(account_id, session)
+
+    if account.provider == "imap":
+        # B-172 : supprimer le dossier, pas réclamer un jeton Google.
+        provider = _provider_imap(account)
+        try:
+            await provider.delete_folder(label_id)
+        except Exception as e:
+            logger.error(f"IMAP delete_folder failed for {account.email}: {e}")
+            raise HTTPException(status_code=502, detail=f"Erreur IMAP: {e}")
+        return {"deleted": True, "label_id": label_id}
+
     gmail = await get_gmail_service_for_account(account_id, session)
     await gmail.delete_label(label_id)
     return {"deleted": True, "label_id": label_id}

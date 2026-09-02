@@ -143,21 +143,48 @@ class MemorySearchResponse(BaseModel):
 # ============================================================
 
 
+# B-167 : les sept étapes du pipeline, celles que l'écran sait afficher
+# (`PIPELINE_STAGES` dans PipelineView.tsx). La vue groupe les fiches en
+# parcourant CES colonnes, sans repli : une étape hors liste faisait
+# disparaître la fiche du pipeline sans un mot. Le refus vaut mieux qu'un
+# enregistrement invisible.
+EtapePipeline = Literal[
+    "contact",
+    "discovery",
+    "proposition",
+    "signature",
+    "delivery",
+    "active",
+    "archive",
+]
+
+# B-168 : bornes des champs texte d'une fiche contact. Un `first_name` de
+# 100 000 caractères était stocké entier, et la liste (sans projection) le
+# rendait ensuite à chaque affichage - 203 ko pour six fiches. Les valeurs
+# laissent large pour un usage réel (une note tient dans 10 000 signes) et
+# ferment l'abus.
+LONGUEUR_NOM = 200
+LONGUEUR_EMAIL = 320  # RFC 5321 : 64 + @ + 255
+LONGUEUR_TELEPHONE = 50
+LONGUEUR_ADRESSE = 500
+LONGUEUR_NOTES = 10_000
+
+
 class ContactCreate(BaseModel):
     """Create contact request."""
 
-    first_name: str | None = None
-    last_name: str | None = None
-    company: str | None = None
-    email: str | None = None
-    phone: str | None = None
-    address: str | None = None
-    notes: str | None = None
+    first_name: str | None = Field(default=None, max_length=LONGUEUR_NOM)
+    last_name: str | None = Field(default=None, max_length=LONGUEUR_NOM)
+    company: str | None = Field(default=None, max_length=LONGUEUR_NOM)
+    email: str | None = Field(default=None, max_length=LONGUEUR_EMAIL)
+    phone: str | None = Field(default=None, max_length=LONGUEUR_TELEPHONE)
+    address: str | None = Field(default=None, max_length=LONGUEUR_ADRESSE)
+    notes: str | None = Field(default=None, max_length=LONGUEUR_NOTES)
     tags: list[str] | None = None
 
     # CRM fields (Phase 5)
-    stage: str = "contact"
-    source: str | None = None
+    stage: EtapePipeline = "contact"
+    source: str | None = Field(default=None, max_length=LONGUEUR_NOM)
     # La prochaine relance DECIDEE. Sans ce champ en ecriture, seule une
     # importation pourrait en poser une (revue du 29/08).
     next_follow_up: datetime | None = None
@@ -170,13 +197,15 @@ class ContactCreate(BaseModel):
 class ContactUpdate(BaseModel):
     """Update contact request."""
 
-    first_name: str | None = None
-    last_name: str | None = None
-    company: str | None = None
-    email: str | None = None
-    phone: str | None = None
-    address: str | None = None
-    notes: str | None = None
+    # B-168 : mêmes bornes qu'à la création. Sans elles, la garde se
+    # contournait en deux requêtes (créer court, puis mettre à jour long).
+    first_name: str | None = Field(default=None, max_length=LONGUEUR_NOM)
+    last_name: str | None = Field(default=None, max_length=LONGUEUR_NOM)
+    company: str | None = Field(default=None, max_length=LONGUEUR_NOM)
+    email: str | None = Field(default=None, max_length=LONGUEUR_EMAIL)
+    phone: str | None = Field(default=None, max_length=LONGUEUR_TELEPHONE)
+    address: str | None = Field(default=None, max_length=LONGUEUR_ADRESSE)
+    notes: str | None = Field(default=None, max_length=LONGUEUR_NOTES)
     tags: list[str] | None = None
 
     # C2 (28/08) : le périmètre doit pouvoir CHANGER. `ContactCreate` porte un
@@ -188,8 +217,10 @@ class ContactUpdate(BaseModel):
     scope_id: str | None = None
 
     # CRM fields (Phase 5)
-    stage: str | None = None
-    source: str | None = None
+    # B-167 : même domaine qu'à la création - sinon l'étape inconnue rentre
+    # par la mise à jour.
+    stage: EtapePipeline | None = None
+    source: str | None = Field(default=None, max_length=LONGUEUR_NOM)
     # P0-PROD-1 : override manuel du score (sinon le PATCH du champ score était
     # silencieusement ignoré faute de champ sur le schéma).
     score: int | None = None
@@ -1075,7 +1106,9 @@ class UpdateDeliverableRequest(BaseModel):
 class UpdateContactStageRequest(BaseModel):
     """Request pour changer le stage d'un contact."""
 
-    stage: str  # contact, discovery, proposition, signature, delivery, active, archive
+    # B-167 : la porte de déplacement dans le pipeline partage le domaine des
+    # sept colonnes affichables.
+    stage: EtapePipeline
 
 
 class ContactScoreUpdate(BaseModel):
@@ -1177,7 +1210,9 @@ class CreateCRMContactRequest(BaseModel):
     email: str | None = None
     phone: str | None = None
     source: str | None = None
-    stage: str = "contact"
+    # B-167 : la création CRM écrit dans le MÊME pipeline que la création
+    # mémoire ; elle partage donc le domaine des sept étapes affichables.
+    stage: EtapePipeline = "contact"
     # QW1 : ces champs étaient jetés silencieusement à la création (la note métier
     # n'était ni stockée, ni cherchable). Cf. 2e passage personas (RH/santé/compta).
     notes: str | None = None

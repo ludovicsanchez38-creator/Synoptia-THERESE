@@ -34,6 +34,7 @@ from app.services.http_client import get_http_client
 from app.services.system_resources import OLLAMA_CONTEXT_MARGIN_BYTES, detect_system_memory
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
+from pydantic import BaseModel, Field
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
@@ -458,6 +459,47 @@ async def get_preferences(
         # Don't expose API keys
         if "api_key" not in pref.key
     }
+
+
+class EcriturePreference(BaseModel):
+    """Corps de `POST /preferences` : la forme que le client envoie déjà
+    (`setPreference(key, value, category)` dans services/api/config.ts).
+
+    Pydantic lit ici un corps JSON. C'est ce qui distingue cette porte de la
+    route PUT, dont le paramètre `value: str | int | ... | list | dict` fait
+    dériver à FastAPI un corps multipart que l'extraction de formulaire ne
+    sait pas relire.
+    """
+
+    # La clé est un nom de préférence, pas un texte libre : la porte PUT ne
+    # pouvait produire ni la clé vide ni la clé de 100 ko (segment de chemin),
+    # la nouvelle ne doit pas être plus lâche.
+    key: str = Field(min_length=1, max_length=200)
+    value: str | int | float | bool | list[Any] | dict[str, Any]
+    category: str = "general"
+
+
+@router.post("/preferences")
+async def ecrire_preference(
+    body: EcriturePreference,
+    session: AsyncSession = Depends(get_session),
+) -> Any:
+    """Enregistre une préférence.
+
+    B-175 : seul `GET` était monté sur ce chemin. La seule fonction d'écriture
+    de préférence exposée au client (`setPreference`) rendait donc 405, et le
+    réglage « extraction automatique » des Paramètres revenait toujours à sa
+    position d'origine en affichant « La préférence n'a pas pu être
+    enregistrée ». On délègue à `set_preference` plutôt que de recopier son
+    corps : ses trois refus (clés d'API, mode cabinet, adresse de fournisseur
+    invalide) restent posés à UN seul endroit.
+    """
+    return await set_preference(
+        key=body.key,
+        value=body.value,
+        category=body.category,
+        session=session,
+    )
 
 
 @router.put("/preferences/{key}")
