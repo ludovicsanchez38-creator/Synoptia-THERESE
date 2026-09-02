@@ -138,6 +138,66 @@ class TestRGPDAnonymize:
         assert prestations.json() == []
 
     @pytest.mark.asyncio
+    async def test_anonymize_supprime_le_dossier_par_le_chemin_canonique(
+        self, client: AsyncClient
+    ):
+        """B-140 : l'anonymisation détruisait le dossier par un chemin à elle.
+
+        rgpd.py faisait `session.delete(project)` après avoir vidé tâches et
+        livrables, là où la suppression de dossier passe par
+        `_nettoyer_et_supprimer_projet` : purge Qdrant du périmètre, des
+        fichiers indexés, détachement des conversations, documents et
+        événements. Résultat : la ligne partait, ses fragments restaient
+        interrogeables et ses fichiers pointaient un dossier disparu.
+        """
+        from app.services.qdrant import get_qdrant_service
+
+        contact_id = await _create_contact(client, "ClientAvecDossier")
+        projet = await client.post(
+            "/api/memory/projects",
+            json={"name": "Projet Robustesse", "contact_id": contact_id},
+        )
+        assert projet.status_code in (200, 201), projet.text
+        project_id = projet.json()["id"]
+
+        qdrant = get_qdrant_service()
+        qdrant.async_delete_by_scope.reset_mock()
+        qdrant.async_delete_by_entity.reset_mock()
+
+        response = await client.post(
+            f"/api/rgpd/anonymize/{contact_id}",
+            json={"reason": "demande du client"},
+        )
+        assert response.status_code == 200, response.text
+
+        perimetres = [c.args for c in qdrant.async_delete_by_scope.call_args_list]
+        assert ("project", project_id) in perimetres, perimetres
+        entites = [c.args[0] for c in qdrant.async_delete_by_entity.call_args_list]
+        assert project_id in entites, entites
+
+    @pytest.mark.asyncio
+    async def test_anonymize_annonce_les_dossiers_detruits(self, client: AsyncClient):
+        """B-140 / RB-011 : la destruction du dossier est irréversible et
+        n'était annoncée nulle part - ni dans la réponse, ni dans le libellé
+        de l'action."""
+        contact_id = await _create_contact(client, "ClientQuiPerdSonDossier")
+        projet = await client.post(
+            "/api/memory/projects",
+            json={"name": "Dossier Rousset", "contact_id": contact_id},
+        )
+        assert projet.status_code in (200, 201), projet.text
+
+        response = await client.post(
+            f"/api/rgpd/anonymize/{contact_id}",
+            json={"reason": "demande du client"},
+        )
+
+        assert response.status_code == 200
+        message = response.json()["message"]
+        assert "dossier" in message.lower(), message
+        assert "1" in message, message
+
+    @pytest.mark.asyncio
     async def test_anonymize_contact_not_found(self, client: AsyncClient):
         """POST /api/rgpd/anonymize/{contact_id} retourne 404 si le contact n'existe pas."""
         response = await client.post(

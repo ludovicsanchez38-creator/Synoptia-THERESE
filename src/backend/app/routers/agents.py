@@ -158,6 +158,28 @@ async def _save_message(session: AsyncSession, msg: AgentMessage) -> None:
     await session.commit()
 
 
+def _resoudre_depot_autorise(source_path: str, configured_source: str | None) -> Path:
+    """Résout un chemin demandé et refuse tout écart avec le dépôt autorisé.
+
+    B-099 : cette garde n'existait que sur `/request`. `/spawn` prenait
+    `request.source_path` sans jamais le comparer aux réglages, si bien que la
+    porte d'entrée dépendait de la route empruntée. Une seule fonction, pour
+    que la troisième route ne diverge pas à son tour.
+
+    Sans dépôt configuré, il n'y a rien à comparer : le chemin demandé fait
+    foi, comme avant.
+    """
+    resolved = Path(source_path).expanduser().resolve()
+    if configured_source:
+        configured_resolved = Path(configured_source).expanduser().resolve()
+        if resolved != configured_resolved:
+            raise HTTPException(
+                status_code=403,
+                detail="Le chemin demandé ne correspond pas au dépôt autorisé dans les réglages.",
+            )
+    return resolved
+
+
 # ============================================================
 # Streaming endpoint
 # ============================================================
@@ -177,14 +199,7 @@ async def agent_request(
             detail="Chemin du code source non configuré. Configure THERESE_SOURCE_PATH ou passe source_path.",
         )
 
-    resolved_source = Path(source_path).expanduser().resolve()
-    if configured_source:
-        configured_resolved = Path(configured_source).expanduser().resolve()
-        if resolved_source != configured_resolved:
-            raise HTTPException(
-                status_code=403,
-                detail="Le chemin demandé ne correspond pas au dépôt autorisé dans les réglages.",
-            )
+    resolved_source = _resoudre_depot_autorise(source_path, configured_source)
     git = GitService(resolved_source)
     if not resolved_source.exists():
         raise HTTPException(status_code=400, detail="Le dossier autorisé n'est pas un dépôt Git valide.")
@@ -487,6 +502,15 @@ async def spawn_agent(request: SpawnAgentRequest):
         AgentToolExecutor,
     )
 
+    # Determiner le source_path (pour les outils fichiers/git)
+    # B-099 : la garde du dépôt autorisé passe AVANT tout le reste, comme sur
+    # /request. Un chemin hors périmètre n'a pas à dépendre de la validité du
+    # profil demandé.
+    configured_source = _get_source_path()
+    source_path = request.source_path or configured_source
+    if source_path:
+        _resoudre_depot_autorise(source_path, configured_source)
+
     # Charger le profil
     profile = get_profile(request.profile_id)
     if not profile:
@@ -494,9 +518,6 @@ async def spawn_agent(request: SpawnAgentRequest):
             status_code=404,
             detail=f"Profil d'agent introuvable : {request.profile_id}",
         )
-
-    # Determiner le source_path (pour les outils fichiers/git)
-    source_path = request.source_path or _get_source_path()
 
     # Creer la config d'agent a partir du profil
     config = AgentConfig(

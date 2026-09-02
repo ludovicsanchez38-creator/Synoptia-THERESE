@@ -352,6 +352,41 @@ class TestDataDeletion:
         assert "sauvegarde" in result["note"].lower()
 
     @pytest.mark.asyncio
+    async def test_delete_all_purge_les_commandes_utilisateur(self, client: AsyncClient):
+        """B-193 (RB2-023) : la route annonce « toutes tes données » et nomme
+        ses deux exceptions (logs d'audit, sauvegardes). Les commandes
+        utilisateur, du texte écrit par l'utilisateur, vivaient hors des tables
+        balayées - sur le disque, dans commands/user/ - et survivaient sans
+        que rien ne l'annonce."""
+        from app.services.command_registry import get_command_registry
+        from app.services.user_commands import UserCommandsService
+
+        service = UserCommandsService.get_instance()
+        service.create_command(name="rb2cmd", description="ma recette", content="Bonjour Marc")
+        service.create_command(name="rb2v3", description="autre", content="Relance Sophie")
+        assert len(service.list_commands()) == 2
+        dossier = service._commands_dir
+
+        # Le registre est chargé une fois au démarrage : sans cette copie en
+        # mémoire, effacer les fichiers laisserait les commandes s'afficher
+        # dans le menu et la palette jusqu'au prochain lancement.
+        registre = get_command_registry()
+        await registre._load_user_commands()
+        assert registre.get("user-rb2cmd") is not None
+        assert registre.get("user-rb2v3") is not None
+
+        response = await client.delete("/api/data/all?confirm=true")
+        assert response.status_code == 200
+
+        assert service.list_commands() == []
+        assert list(dossier.glob("*.md")) == []
+        liste = await client.get("/api/commands/user")
+        assert liste.status_code == 200
+        assert liste.json() == []
+        assert registre.get("user-rb2cmd") is None
+        assert registre.get("user-rb2v3") is None
+
+    @pytest.mark.asyncio
     async def test_delete_all_data_purges_documents_sections_pistes(self, client: AsyncClient):
         """DELETE /api/data/all?confirm=true (RGPD Art. 17) purge aussi
         l'atelier documentaire - sinon le droit a l'oubli laisse des

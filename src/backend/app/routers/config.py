@@ -662,6 +662,21 @@ async def delete_preference(
     session: AsyncSession = Depends(get_session),
 ):
     """Delete a preference."""
+    # B-053 : le garde posé sur set_preference avait un jumeau resté ouvert.
+    # Effacer la clé ici coupait le cloisonnement d'un cabinet sans comptage,
+    # sans confirmation et sans trace, et laissait la base en désaccord avec
+    # le cache du processus (poser_mode_cabinet n'était jamais appelé). Le
+    # contrôle passe AVANT la recherche, sinon une clé en majuscules sortirait
+    # en 404 au lieu d'être refusée.
+    if key.lower() == "mode_cabinet":
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Le mode cabinet se coupe par POST /api/config/mode-cabinet, "
+                "qui applique la politique au processus en cours."
+            ),
+        )
+
     result = await session.execute(select(Preference).where(Preference.key == key))
     pref = result.scalar_one_or_none()
 

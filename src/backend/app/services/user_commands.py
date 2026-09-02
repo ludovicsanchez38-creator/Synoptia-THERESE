@@ -228,3 +228,27 @@ class UserCommandsService:
 
         logger.info(f"Deleted user command: {name}")
         return True
+
+    def purger_tout(self) -> int:
+        """Efface DÉFINITIVEMENT toutes les commandes utilisateur (RGPD Art. 17).
+
+        B-193 : ces fichiers contiennent du texte rédigé par l'utilisateur et
+        vivent hors des tables balayées par « supprimer toutes mes données ».
+        On ne passe pas par `delete_command`, qui ARCHIVE dans la Corbeille :
+        un effacement demandé au titre du droit à l'oubli ne doit rien laisser
+        ailleurs, repli local `.trash` compris.
+        """
+        if not self._commands_dir.exists():
+            return 0
+
+        efface = 0
+        for filepath in self._commands_dir.glob("*.md"):
+            filepath.unlink(missing_ok=True)
+            efface += 1
+
+        repli = self._commands_dir / ".trash"
+        if repli.exists():
+            shutil.rmtree(repli, ignore_errors=True)
+
+        logger.info("Purge RGPD : %d commande(s) utilisateur effacée(s)", efface)
+        return efface

@@ -354,3 +354,59 @@ class TestLaPorteDeriveeNeContournePasLeCompte:
             key="theme_preference", value="dark", session=db_session
         )
         assert resultat is not None
+
+
+class TestLaSuppressionGeneriqueNeCoupePasLeCloisonnement:
+    """B-053 (RP05) — la porte dérivée avait un jumeau resté ouvert.
+
+    `PUT /api/config/preferences/mode_cabinet` refuse (400) parce que le mode
+    a sa propre porte. `DELETE /api/config/preferences/{key}`, lui, n'avait
+    reçu aucune garde : il rendait 200, effaçait la préférence, et le
+    cloisonnement d'un cabinet tombait sans comptage, sans confirmation et
+    sans trace. Pire, `poser_mode_cabinet` n'étant pas appelé, la base disait
+    « coupé » pendant que le cache du processus disait encore « actif ».
+
+    Contrairement au PUT, cette route est ATTEIGNABLE en HTTP (aucun corps
+    requis) : le contournement était donc exploitable en l'état.
+    """
+
+    @pytest.mark.asyncio
+    async def test_la_cle_mode_cabinet_ne_se_supprime_pas_par_la_route_generique(
+        self, client
+    ):
+        active = await client.post(
+            "/api/config/mode-cabinet?enabled=true&confirme=true"
+        )
+        assert active.status_code == 200, active.text
+        assert cloisonnement.mode_cabinet_actif() is True
+
+        efface = await client.delete("/api/config/preferences/mode_cabinet")
+
+        assert efface.status_code == 400, efface.text
+        assert "mode-cabinet" in efface.json()["message"]
+
+        etat = await client.get("/api/config/mode-cabinet")
+        assert etat.json() == {"enabled": True}
+        assert cloisonnement.mode_cabinet_actif() is True
+
+    @pytest.mark.asyncio
+    async def test_le_refus_de_suppression_ne_depend_pas_de_la_casse(self, client):
+        active = await client.post(
+            "/api/config/mode-cabinet?enabled=true&confirme=true"
+        )
+        assert active.status_code == 200, active.text
+
+        efface = await client.delete("/api/config/preferences/MODE_CABINET")
+
+        assert efface.status_code == 400, efface.text
+
+    @pytest.mark.asyncio
+    async def test_une_preference_ordinaire_se_supprime_toujours(self, client):
+        """La garde vise une clé, pas la route."""
+        pose = await client.post("/api/config/web-search?enabled=true")
+        assert pose.status_code == 200, pose.text
+
+        efface = await client.delete("/api/config/preferences/web_search_enabled")
+
+        assert efface.status_code == 200, efface.text
+        assert efface.json()["deleted"] is True

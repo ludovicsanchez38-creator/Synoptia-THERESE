@@ -15,7 +15,6 @@ from app.models.database import get_session
 from app.models.entities import (
     Activity,
     Contact,
-    Deliverable,
     EmailMessage,
     Prestation,
     Project,
@@ -214,28 +213,23 @@ async def anonymize_contact(
     for activity in activities:
         await session.delete(activity)
 
-    # Delete tasks and projects linked to contact
+    # B-140 : la destruction du dossier emprunte le MÊME chemin que la route
+    # de suppression de dossier. L'anonymisation avait le sien, qui retirait
+    # la ligne SQLite sans purger les fragments Qdrant du périmètre, sans
+    # effacer les fichiers indexés, sans détacher la racine sur disque ni les
+    # conversations, documents et événements rattachés. Le dossier disparaissait
+    # de la base en restant interrogeable en recherche sémantique.
+    # Les tâches et les livrables suivent par la cascade ORM déclarée sur
+    # Project (entities.py : cascade_delete=True), comme pour la route.
+    from app.routers.memory import _nettoyer_et_supprimer_projet
+
     result = await session.execute(
         select(Project).where(Project.contact_id == contact_id)
     )
     projects = result.scalars().all()
     for project in projects:
-        # Delete tasks of this project
-        result = await session.execute(
-            select(Task).where(Task.project_id == project.id)
-        )
-        tasks = result.scalars().all()
-        for task in tasks:
-            await session.delete(task)
-        # Delete deliverables of this project
-        result = await session.execute(
-            select(Deliverable).where(Deliverable.project_id == project.id)
-        )
-        deliverables = result.scalars().all()
-        for deliv in deliverables:
-            await session.delete(deliv)
-        # Delete project
-        await session.delete(project)
+        await _nettoyer_et_supprimer_projet(session, project)
+    dossiers_supprimes = len(projects)
 
     # RGPD-1 (US-003) : effacer les emails liés au contact (art. 17). Ils
     # restaient en base avec le contact_id, contenu intégral inclus.
@@ -267,9 +261,20 @@ async def anonymize_contact(
         f"({purged} vecteur(s) purgé(s))"
     )
 
+    # RB-011 : la destruction du dossier est irréversible et n'était annoncée
+    # nulle part, ni dans la réponse ni dans le libellé de l'action.
+    message = f"Contact anonymisé avec succès. Raison: {request.reason}"
+    if dossiers_supprimes:
+        mot = "dossier" if dossiers_supprimes == 1 else "dossiers"
+        verbe = "a été supprimé" if dossiers_supprimes == 1 else "ont été supprimés"
+        message += (
+            f" {dossiers_supprimes} {mot} du contact {verbe}, avec les tâches, "
+            "livrables et fichiers rattachés. Cette suppression est irréversible."
+        )
+
     return RGPDAnonymizeResponse(
         success=True,
-        message=f"Contact anonymisé avec succès. Raison: {request.reason}",
+        message=message,
         contact_id=contact_id,
     )
 

@@ -382,6 +382,22 @@ class CommandRegistry:
             )
             self._commands[cmd.id] = cmd
 
+    def retirer_commandes_utilisateur(self) -> int:
+        """Retire du registre en mémoire les commandes venues de l'utilisateur.
+
+        B-193 : le registre est chargé une fois au démarrage. Effacer les
+        fichiers sans vider cette copie laisserait les commandes personnelles
+        s'afficher dans le menu et la palette jusqu'au prochain lancement,
+        après un « supprime toutes mes données ».
+        """
+        ids = [
+            cid for cid, cmd in self._commands.items()
+            if cmd.source == CommandSource.USER
+        ]
+        for cid in ids:
+            del self._commands[cid]
+        return len(ids)
+
     def list(
         self,
         category: str | None = None,

@@ -52,3 +52,39 @@ async def test_token_en_query_param_refuse(client, monkeypatch):
     resp = await client.get("/api/notifications/count?token=tok-test")
 
     assert resp.status_code == 401
+
+
+# ============================================================
+# B-165 : GET /api/auth/token promet « seul Tauri » sans rien vérifier
+# ============================================================
+#
+# RB-008 : la docstring de la route affirme « Protégé par CORS (seul Tauri
+# peut lire la réponse) ». CORS ne refuse rien côté serveur : une requête
+# portant Origin: http://evil.example recevait le jeton de session complet
+# en 200, le seul effet de l'origine étrangère étant un avertissement dans
+# le journal. La route doit refuser elle-même l'origine non autorisée.
+
+
+@pytest.mark.asyncio
+async def test_le_jeton_de_session_est_refuse_a_une_origine_non_autorisee(client, monkeypatch):
+    monkeypatch.setattr(app.state, "session_token", "tok-secret", raising=False)
+
+    resp = await client.get(
+        "/api/auth/token", headers={"Origin": "http://evil.example"}
+    )
+
+    assert resp.status_code == 403, resp.text
+    assert resp.json()["code"] == "ORIGINE_NON_AUTORISEE"
+    assert "tok-secret" not in resp.text
+
+
+@pytest.mark.asyncio
+async def test_le_jeton_de_session_reste_lisible_par_la_fenetre_tauri(client, monkeypatch):
+    monkeypatch.setattr(app.state, "session_token", "tok-secret", raising=False)
+
+    resp = await client.get(
+        "/api/auth/token", headers={"Origin": "tauri://localhost"}
+    )
+
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["token"] == "tok-secret"

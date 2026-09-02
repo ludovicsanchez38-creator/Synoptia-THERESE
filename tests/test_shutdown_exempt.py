@@ -36,3 +36,44 @@ async def test_endpoint_protege_reste_401_sans_token(client, monkeypatch):
     resp = await client.get("/api/notifications/count")
 
     assert resp.status_code == 401
+
+
+# ============================================================
+# B-164 : l'exemption d'auth ouvre /api/shutdown au CSRF
+# ============================================================
+#
+# RB-007 : POST /api/shutdown sans aucun en-tête rend 200 et le backend
+# s'arrête réellement. L'exemption est nécessaire (le TcpStream brut de
+# lib.rs n'a pas le jeton), mais elle laisse n'importe quelle page web
+# visitée par l'utilisateur éteindre l'application : un POST simple est
+# envoyé sans préflight, et le navigateur y met un en-tête Origin.
+
+
+@pytest.mark.asyncio
+async def test_shutdown_refuse_une_origine_de_navigateur_non_autorisee(client, monkeypatch):
+    """Une page web tierce ne doit pas pouvoir éteindre l'application."""
+    tue = []
+    monkeypatch.setattr(os, "kill", lambda *a, **k: tue.append(a))
+    monkeypatch.setattr(app.state, "session_token", "tok-test", raising=False)
+
+    resp = await client.post(
+        "/api/shutdown", headers={"Origin": "http://evil.example"}
+    )
+
+    assert resp.status_code == 403, resp.text
+    assert resp.json()["code"] == "ORIGINE_NON_AUTORISEE"
+    assert tue == []
+
+
+@pytest.mark.asyncio
+async def test_shutdown_accepte_l_origine_de_la_fenetre_tauri(client, monkeypatch):
+    """UpdateBanner appelle la route depuis la webview : elle doit passer."""
+    monkeypatch.setattr(os, "kill", lambda *a, **k: None)
+    monkeypatch.setattr(app.state, "session_token", "tok-test", raising=False)
+
+    resp = await client.post(
+        "/api/shutdown", headers={"Origin": "tauri://localhost"}
+    )
+
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["status"] == "shutting_down"

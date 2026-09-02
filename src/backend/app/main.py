@@ -533,6 +533,33 @@ if settings.therese_env != "production":
         "http://127.0.0.1:5173",  # Vite local explicite
     ]
 
+
+def _origine_refusee(request: Request) -> JSONResponse | None:
+    """Refuse une requête portant une origine de navigateur non autorisée.
+
+    B-164 / B-165 : CORS n'empêche PAS l'envoi de la requête, il empêche
+    seulement un script d'en LIRE la réponse. Une route exemptée de jeton qui
+    promet « seul Tauri » doit donc vérifier l'en-tête elle-même, sinon une
+    page web tierce visitée par l'utilisateur atteint la route pour de bon
+    (un POST simple part sans préflight, et le navigateur y met un Origin).
+
+    Une requête SANS Origin n'est pas concernée : c'est le cas du TcpStream
+    brut de `lib.rs` et de tout appel non-navigateur. Le risque « processus
+    local » reste celui déjà noté en SEC-010, et il ne se ferme pas ici : le
+    jeton de session est lisible dans `.session_token` par le même utilisateur.
+    """
+    origin = request.headers.get("Origin")
+    if origin and origin not in _cors_origins:
+        return JSONResponse(
+            status_code=403,
+            content={
+                "code": "ORIGINE_NON_AUTORISEE",
+                "message": "Origine non autorisée pour cette route.",
+            },
+        )
+    return None
+
+
 # NOTE: CORSMiddleware est ajouté APRÈS les autres middleware (voir plus bas)
 # pour être le outermost et ajouter les headers CORS à TOUTES les réponses,
 # y compris les 401 du auth middleware.
@@ -669,10 +696,22 @@ async def global_exception_handler(request: Request, exc: Exception):
 # The token is ephemeral (regenerated each launch) and the endpoint is not reachable
 # from external networks. If THERESE ever serves remote clients, this must be replaced
 # by a secure handshake (e.g. file-based token exchange or IPC channel).
+# B-165 : l'origine est désormais vérifiée PAR LA ROUTE. CORS seul ne refusait
+# rien côté serveur — il empêchait un script de lire la réponse, pas la réponse
+# de partir. Un appel sans Origin (curl, script local) obtient toujours le
+# jeton : ce processus peut de toute façon lire ~/.therese/.session_token.
 
 @app.get("/api/auth/token")
 async def get_auth_token(request: Request):
-    """Retourne le token de session. Protege par CORS (seul Tauri peut lire la reponse)."""
+    """Retourne le token de session.
+
+    Refuse toute origine de navigateur hors liste autorisée (B-165). Une
+    requête sans Origin passe : elle ne vient pas d'une page web.
+    """
+    refus = _origine_refusee(request)
+    if refus is not None:
+        logger.warning("Jeton de session refusé : origine de navigateur non autorisée")
+        return refus
     return {"token": getattr(request.app.state, "session_token", None)}
 
 
@@ -715,10 +754,12 @@ async def auth_middleware(request: Request, call_next):
     # lib.rs) et par UpdateBanner, qui n'ont pas le token de session en main ;
     # sans exemption, ces appels repartaient en 401 et le shutdown graceful ne
     # s'exécutait jamais (force-kill + verrou backend.exe à l'update Windows).
-    # Risque CSRF accepté : impact limité à fermer l'app (nuisance récupérable,
-    # pas de fuite), et atténué par Private Network Access côté navigateur.
-    # Durcissement possible : faire signer l'appel par les 2 appelants (token
-    # lu depuis ~/.therese/.session_token) — nécessite un changement Rust testé.
+    # B-164 : le risque CSRF n'est PLUS accepté ici. L'exemption de jeton
+    # reste (les deux appelants n'en ont pas), mais la route refuse elle-même
+    # toute origine de navigateur non autorisée : une page web tierce ne peut
+    # plus éteindre l'application. Reste ouvert, et non fermable côté backend :
+    # un processus local du même utilisateur, qui n'envoie pas d'Origin (et
+    # qui peut de toute façon lire ~/.therese/.session_token).
     exempt_paths = [
         "/api/health", "/api/auth/token",
         "/api/email/auth/callback-redirect",
@@ -909,14 +950,20 @@ async def root():
 
 
 @app.post("/api/shutdown")
-async def shutdown_backend():
+async def shutdown_backend(request: Request):
     """Arrêt graceful du backend (appelé par Tauri à la fermeture de l'app).
 
     Envoie un signal d'arrêt à uvicorn après un court délai pour laisser la réponse HTTP partir.
     Sur Windows : SIGINT (SIGTERM = TerminateProcess brutal, pas de cleanup).
     Sur Unix : SIGTERM (intercepté proprement par uvicorn).
-    Exempté de l'auth middleware (pas de token Tauri à la fermeture).
+    Exempté de l'auth middleware (pas de token Tauri à la fermeture), mais
+    fermé aux origines de navigateur non autorisées (B-164).
     """
+    refus = _origine_refusee(request)
+    if refus is not None:
+        logger.warning("Shutdown refusé : origine de navigateur non autorisée")
+        return refus
+
     import asyncio
     import os
     import signal

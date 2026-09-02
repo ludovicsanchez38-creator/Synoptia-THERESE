@@ -551,6 +551,16 @@ async def delete_all_data(
             shutil.rmtree(target, ignore_errors=True)
         target.mkdir(parents=True, exist_ok=True)
 
+    # B-193 : les commandes utilisateur sont du texte écrit par l'utilisateur,
+    # rangé sur le disque dans commands/user/ et non dans les tables balayées
+    # ci-dessus. Elles survivaient à « toutes tes données ont été supprimées »
+    # sans figurer dans les exceptions annoncées par la note.
+    from app.services.command_registry import get_command_registry
+    from app.services.user_commands import UserCommandsService
+
+    UserCommandsService.get_instance().purger_tout()
+    get_command_registry().retirer_commandes_utilisateur()
+
     backups_dir = data_dir / "backups"
     backups_kept = len(list(backups_dir.glob("*.json"))) if backups_dir.exists() else 0
 
