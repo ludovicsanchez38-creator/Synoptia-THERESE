@@ -24,7 +24,7 @@ describe('SecurityStep - consentement cloud conditionnel', () => {
     render(<SecurityStep provider="openai" onNext={onNext} onBack={vi.fn()} />);
 
     expect(screen.getByText(/vers OpenAI/)).toBeInTheDocument();
-    expect(screen.getByText(/messages, pièces jointes sélectionnées et contexte utile/)).toBeInTheDocument();
+    expect(screen.getByText(/messages et le contexte utile/)).toBeInTheDocument();
     const next = screen.getByTestId('onboarding-next-btn');
     expect(next).toBeDisabled();
 

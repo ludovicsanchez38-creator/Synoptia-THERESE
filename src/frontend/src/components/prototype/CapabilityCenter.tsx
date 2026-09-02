@@ -382,7 +382,7 @@ export function CapabilityCenter({
           </span>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 id="capability-center-title" data-dialog-autofocus tabIndex={-1} className="text-xl font-bold tracking-[-0.025em] text-text outline-none">Ce que Thérèse sait mobiliser</h2>
+              <h2 id="capability-center-title" tabIndex={-1} className="text-xl font-bold tracking-[-0.025em] text-text outline-none">Ce que Thérèse sait mobiliser</h2>
               <span className="rounded-full bg-bg px-2 py-1 text-xs font-semibold text-text-muted">{capabilities.length} capacités</span>
             </div>
             <p className="mt-1 text-sm text-text-muted">Tu demandes un résultat. Thérèse combine les fonctions utiles et garde les détails techniques en retrait.</p>

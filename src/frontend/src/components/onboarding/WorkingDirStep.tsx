@@ -39,20 +39,33 @@ export function WorkingDirStep({ onNext, onBack }: WorkingDirStepProps) {
   }, []);
 
   async function handleSelectDir() {
+    let selected: string | string[] | null;
     try {
-      const selected = await open({
+      selected = await open({
         directory: true,
         multiple: false,
       });
-
-      if (selected && typeof selected === 'string') {
-        setSaving(true);
-        setError(null);
-        const result = await api.setWorkingDirectory(selected);
-        setWorkingDir(result.path);
-      }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur lors de la sélection');
+      // Le pont natif n'a pas répondu. Son exception dit « Cannot read
+      // properties of undefined (reading 'invoke') » : vrai pour qui lit du
+      // JavaScript, inutile pour qui cherche son dossier.
+      console.error('Ouverture du sélecteur de dossier impossible:', err);
+      setError("La fenêtre de choix du dossier ne s’est pas ouverte. Redémarre THÉRÈSE, puis réessaie.");
+      return;
+    }
+
+    if (!selected || typeof selected !== 'string') return;
+
+    setSaving(true);
+    setError(null);
+    try {
+      const result = await api.setWorkingDirectory(selected);
+      setWorkingDir(result.path);
+    } catch (err) {
+      // Le serveur refuse en anglais (« Path does not exist ») : c'est un
+      // message de journal, pas un message d'écran.
+      console.error('Enregistrement du dossier de travail impossible:', err);
+      setError('Ce dossier n’a pas pu être retenu. Vérifie qu’il existe toujours et qu’il t’est accessible, puis réessaie.');
     } finally {
       setSaving(false);
     }
@@ -155,7 +168,7 @@ export function WorkingDirStep({ onNext, onBack }: WorkingDirStepProps) {
 
           {/* Error */}
           {error && (
-            <div className="mt-4 flex items-center gap-2 px-3 py-2 bg-[var(--color-error-tint)] border border-error/40 rounded-md">
+            <div className="mt-4 flex items-center gap-2 px-3 py-2 bg-[var(--color-error-tint)] border border-error/40 rounded-md" role="alert">
               <AlertCircle className="w-4 h-4 text-error" />
               <span className="text-sm text-error">{error}</span>
             </div>

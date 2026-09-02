@@ -105,6 +105,9 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
   const loadRequestRef = useRef(0);
+  // B-068 : le retour visuel « clé enregistrée » s'efface au bout de 3 s ; le
+  // minuteur doit mourir avec l'étape.
+  const effacerLeSauveRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const configuringRef = useRef(false);
 
   const loadState = useCallback(async () => {
@@ -153,6 +156,10 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
     return () => { loadRequestRef.current += 1; };
   }, [loadState]);
 
+  useEffect(() => () => {
+    if (effacerLeSauveRef.current) clearTimeout(effacerLeSauveRef.current);
+  }, []);
+
   const currentProviderConfig = PROVIDERS.find(p => p.id === selectedProvider);
   const hasApiKey = apiKeys[selectedProvider] === true;
   const needsApiKey = selectedProvider !== 'ollama';
@@ -200,7 +207,8 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
       // saisie réussie.
       setOrigineDesCles(prev => ({ ...prev, [selectedProvider]: 'coffre' }));
       setApiKeyInput('');
-      setTimeout(() => setSaved(false), 3000);
+      if (effacerLeSauveRef.current) clearTimeout(effacerLeSauveRef.current);
+      effacerLeSauveRef.current = setTimeout(() => setSaved(false), 3000);
     } catch (err) {
       setErreurDuChampCle(true);
       setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');

@@ -21,6 +21,9 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
+  // B-198 : distinct de `error`, qui porte aussi les échecs d'enregistrement.
+  // Un champ ne se déclare pas en faute parce que le serveur a refusé.
+  const [nomEnFaute, setNomEnFaute] = useState(false);
   const savingRef = useRef(false);
   const continueTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [profileForm, setProfileForm] = useState({
@@ -59,6 +62,10 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
         });
       }
     } catch (err) {
+      // Le bandeau est partagé : un message qui ne parle pas du nom ne doit pas
+      // rester désigné par le champ du nom (le sélecteur de fichier peut échouer
+      // avant même que l'import commence).
+      setNomEnFaute(false);
       setError(err instanceof Error ? err.message : "Erreur lors de l'import");
     } finally {
       setLoading(false);
@@ -70,8 +77,10 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
     if (!profileForm.name.trim()) {
       setError('Le nom est obligatoire');
       setSaveState('error');
+      setNomEnFaute(true);
       return;
     }
+    setNomEnFaute(false);
 
     savingRef.current = true;
     setLoading(true);
@@ -143,6 +152,9 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
             <input
               id="profile-name"
               type="text"
+              aria-required="true"
+              aria-invalid={nomEnFaute && error ? true : undefined}
+              aria-describedby={nomEnFaute && error ? 'profile-step-erreur' : undefined}
               value={profileForm.name}
               onChange={(e) => {
                 setProfileForm((prev) => ({ ...prev, name: e.target.value }));
@@ -235,7 +247,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
 
         {/* Error */}
         {error && (
-          <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-error-tint)] border border-error/40 rounded-md" role="alert">
+          <div id="profile-step-erreur" className="flex items-center gap-2 px-3 py-2 bg-[var(--color-error-tint)] border border-error/40 rounded-md" role="alert">
             <AlertCircle className="w-4 h-4 text-error" />
             <span className="text-sm text-error">{error}</span>
           </div>

@@ -296,7 +296,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
 
       {/* Error/Success messages */}
       {error && (
-        <div className="p-3 bg-[var(--color-error-tint)] border border-error/40 rounded-md">
+        <div className="p-3 bg-[var(--color-error-tint)] border border-error/40 rounded-md" role="alert">
           <div className="flex items-start gap-2">
             <AlertCircle className="w-4 h-4 text-error mt-0.5" />
             <span className="text-sm text-error whitespace-pre-line">{error}</span>

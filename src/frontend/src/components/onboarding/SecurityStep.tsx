@@ -180,7 +180,7 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
             Je consens au transfert de mes données vers {providerLabel}
           </p>
           <p className="text-text-muted mt-1">
-            J'accepte que mes messages, pièces jointes sélectionnées et contexte utile soient envoyés à {providerLabel}
+            J'accepte que mes messages et le contexte utile soient envoyés à {providerLabel}{' '}
             pour traitement. Je comprends les risques et m'engage à ne pas partager de données sensibles
             (mots de passe, données clients, informations confidentielles).
           </p>
@@ -209,7 +209,13 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
         <button
           onClick={() => {
             if (cloudEnabled && provider) {
-              grantCloudConsent('llm', provider, ['messages', 'pièces jointes sélectionnées', 'contexte utile']);
+              // B-016 : la finalité 'llm' ne couvre pas les documents
+              // (consent.ts : « envoyer le contenu d'un document au fournisseur
+              // est une finalité DISTINCTE d'une conversation »). Le composeur
+              // demande son propre accord sous 'documents' à la première pièce
+              // jointe ; l'annoncer ici serait enregistrer un accord que la clé
+              // écrite ne porte pas.
+              grantCloudConsent('llm', provider, ['messages', 'contexte utile']);
             }
             onNext();
           }}

@@ -10,6 +10,15 @@
  * liste se périme au premier écran ajouté, et c'est exactement ainsi que la
  * dérive revient. Elle ne vise que le bandeau conditionné à un état d'erreur ;
  * une variante de style rouge (un bouton) n'est pas un message.
+ *
+ * B-235 (01/09) : la règle prétendait balayer toute l'application et était
+ * indexée sur `bg-error/10`, une classe que la migration vers les jetons a
+ * remplacée par `bg-[var(--color-error-tint)]`. Elle restait donc verte
+ * pendant que la dérive revenait par la porte d'à côté : deux bandeaux muets
+ * de plus, invisibles pour elle. Second aveuglement, dans l'autre sens : le
+ * rôle était cherché sur la SEULE ligne du fond, alors qu'une balise écrite
+ * sur plusieurs lignes porte son `role="alert"` en dessous. On lit désormais
+ * la balise ouvrante entière, sinon la règle accuse un bandeau qui annonce.
  */
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
@@ -18,7 +27,8 @@ import { describe, expect, it } from 'vitest';
 
 const RACINE = path.join(__dirname, '..');
 const CONDITION = /\{\s*(error|erreur|\w*Error)\s*&&\s*\(?/;
-const FOND_ERREUR = /bg-error\/10|bg-red-500\/10/;
+const FOND_ERREUR = /bg-error\/10|bg-red-500\/10|color-error-tint/;
+const ANNONCE = /role="alert"|aria-live=/;
 
 function fichiersSources(dossier: string): string[] {
   return readdirSync(dossier).flatMap((entree) => {
@@ -30,6 +40,15 @@ function fichiersSources(dossier: string): string[] {
   });
 }
 
+/** La balise ouvrante qui porte le fond d'erreur, du `<` jusqu'à son `>`. */
+function baliseOuvrante(lignes: string[], j: number): string {
+  let debut = j;
+  while (debut > 0 && j - debut < 4 && !/<[A-Za-z]/.test(lignes[debut])) debut -= 1;
+  let fin = j;
+  while (fin < lignes.length - 1 && fin - j < 8 && !/>\s*$/.test(lignes[fin])) fin += 1;
+  return lignes.slice(debut, fin + 1).join('\n');
+}
+
 /** Les bandeaux d'erreur muets, en « chemin:ligne ». */
 function bandeauxMuets(): string[] {
   const muets: string[] = [];
@@ -39,7 +58,7 @@ function bandeauxMuets(): string[] {
       if (!CONDITION.test(ligne)) return;
       for (let j = i + 1; j < Math.min(i + 3, lignes.length); j += 1) {
         if (!FOND_ERREUR.test(lignes[j])) continue;
-        if (!/role="alert"|aria-live=/.test(lignes[j])) {
+        if (!ANNONCE.test(baliseOuvrante(lignes, j))) {
           muets.push(`${path.relative(RACINE, fichier)}:${j + 1}`);
         }
         break;

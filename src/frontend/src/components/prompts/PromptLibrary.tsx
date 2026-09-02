@@ -96,13 +96,20 @@ function PromptCard({
 }) {
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState(false);
+  const copieTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+
+  // B-068 : même règle pour le retour visuel de la copie.
+  useEffect(() => () => {
+    if (copieTimeoutRef.current) clearTimeout(copieTimeoutRef.current);
+  }, []);
 
   const handleCopy = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation();
       navigator.clipboard.writeText(prompt.prompt);
       setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      if (copieTimeoutRef.current) clearTimeout(copieTimeoutRef.current);
+      copieTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
     },
     [prompt.prompt]
   );
@@ -284,6 +291,13 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
       searchInputRef.current?.focus();
     }
   }, [loading]);
+
+  // B-068 : le minuteur de recherche meurt avec le panneau. Il n'était annulé
+  // qu'à la frappe suivante : fermer la bibliothèque entre-temps laissait
+  // l'échéance courir et searchPromptLibrary() partait pour un écran démonté.
+  useEffect(() => () => {
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+  }, []);
 
   // Recherche debounced
   const handleSearchChange = useCallback((value: string) => {
