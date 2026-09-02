@@ -84,6 +84,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
   // et les Réglages sont deux modales indépendantes qui peuvent rester montées
   // simultanément, donc compléter le profil doit se refléter ici sans remontage.
   const billingMissing = useBillingProfileStore((s) => s.missing);
+  const statutLectureProfil = useBillingProfileStore((s) => s.statutLecture);
   const refreshBillingStatus = useBillingProfileStore((s) => s.refresh);
   useEffect(() => {
     void refreshBillingStatus();
@@ -474,6 +475,24 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                 Infos de ta société incomplètes ({billingMissing.join(', ')}). Une facture sans ces
                 informations n'est pas conforme. Complète-les dans Réglages &gt; Profil avant de
                 générer le PDF.
+              </p>
+            </div>
+          )}
+
+          {/* B-001 : une lecture impossible ne se déguise pas en profil complet.
+              Le store rendait `missing: null` sur un échec comme sur un profil
+              conforme : l'écran promettait alors des mentions légales que rien
+              n'avait vérifiées. Le bandeau ne paraît que sur `illisible`, jamais
+              au montage (`jamais_lu`), pour ne pas clignoter à chaque ouverture. */}
+          {statutLectureProfil === 'illisible' && (
+            <div
+              role="alert"
+              className="flex items-start gap-3 p-3 rounded-md bg-agent-amber/10 border border-agent-amber/30"
+            >
+              <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
+              <p className="text-sm text-warning">
+                Impossible de vérifier les infos de ta société pour le moment. Elles ne sont
+                peut-être pas complètes : ouvre Réglages &gt; Profil avant de générer le PDF.
               </p>
             </div>
           )}

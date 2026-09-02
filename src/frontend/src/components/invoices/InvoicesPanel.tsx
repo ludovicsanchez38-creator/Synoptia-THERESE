@@ -21,7 +21,7 @@ import {
   ThumbsDown,
   ArrowRightLeft,
 } from 'lucide-react';
-import { useInvoiceStore } from '../../stores/invoiceStore';
+import { filtresAvecType, statutsProposesPour, useInvoiceStore } from '../../stores/invoiceStore';
 import { useStatusStore } from '../../stores/statusStore';
 import { listInvoices, deleteInvoice, generateInvoicePDF, type Invoice } from '../../services/api';
 import { InvoiceForm } from './InvoiceForm';
@@ -252,7 +252,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
           <button
             type="button"
             key={type}
-            onClick={() => setFilters({ ...filters, document_type: type === 'all' ? undefined : type })}
+            onClick={() => setFilters(filtresAvecType(filters, type === 'all' ? undefined : type))}
             className={cn(
               'px-3 py-1 rounded-md text-sm transition-colors',
               (type === 'all' && !filters.document_type) || filters.document_type === type
@@ -268,10 +268,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
       <div className="flex items-center gap-2">
       <span className="text-xs text-text-muted w-10">Statut</span>
       <div className="flex items-center gap-2 flex-wrap">
-        {(filters.document_type === 'devis'
-          ? ['all', 'draft', 'sent', 'accepted', 'refused', 'expired', 'converted'] as const
-          : ['all', 'draft', 'sent', 'paid', 'overdue', 'cancelled'] as const
-        ).map((status) => (
+        {statutsProposesPour(filters.document_type).map((status) => (
           <button
             type="button"
             key={status}

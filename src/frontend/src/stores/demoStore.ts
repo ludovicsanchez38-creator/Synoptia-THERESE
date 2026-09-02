@@ -80,3 +80,35 @@ export const useDemoStore = create<DemoState>()(
     }
   )
 );
+
+/**
+ * B-145 : le drapeau revient du stockage, la table de remplacement non.
+ *
+ * Après un rechargement, `enabled` valait de nouveau `true` et la table
+ * repartait VIDE : le badge annonçait le mode démo pendant que `maskText`
+ * redevenait l'identité et laissait les vrais noms dans le texte libre. Seuls
+ * `toggle` et `setEnabled` armaient la table ; la rehydratation, jamais.
+ *
+ * On ne reconstruit que si la table est vide : `buildMap` (Contacts, CRM,
+ * Tâches) y ajoute AUSSI les projets, et ce rattrapage ne doit pas reprendre
+ * la main sur une table plus riche.
+ */
+function armerLaTableSiVide() {
+  const etat = useDemoStore.getState();
+  if (!etat.enabled || etat.replacementMap.size > 0) return;
+  const map = mapDepuisLesContacts();
+  if (map.size > 0) useDemoStore.setState({ replacementMap: map });
+}
+
+// L'hydratation initiale est déjà faite quand ce module finit de charger.
+armerLaTableSiVide();
+
+// Les rehydratations ultérieures (un `persist.rehydrate()` explicite).
+useDemoStore.persist.onFinishHydration(armerLaTableSiVide);
+
+// Le cas réel du rechargement : la rehydratation précède le chargement des
+// contacts, donc la table serait construite vide. Elle s'arme quand le carnet
+// arrive.
+useContactsStore.subscribe((etat, precedent) => {
+  if (etat.contacts !== precedent.contacts) armerLaTableSiVide();
+});
