@@ -384,7 +384,11 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
           <CalendarIcon className="w-5 h-5 text-accent" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-text">Agenda</h2>
+          {/* B-241 : la coque `PrototypeUnifiedViewCanvas` pose déjà le titre de
+              la vue, et en fait le nom accessible de la région. Ce libellé reste
+              visible mais n'est plus un titre : deux titres de même texte, c'est
+              un plan de page qui ment. */}
+          <p className="text-lg font-semibold text-text">Agenda</p>
           {currentAccount && (
             <p className="text-sm text-text-muted">{currentAccount.email}</p>
           )}

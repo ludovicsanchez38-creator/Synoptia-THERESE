@@ -122,7 +122,11 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
           <ListTodo className="w-5 h-5 text-accent" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-text">Tâches</h2>
+          {/* B-241 : la coque `PrototypeUnifiedViewCanvas` pose déjà le titre de
+              la vue, et en fait le nom accessible de la région. Ce libellé reste
+              visible mais n'est plus un titre : deux titres de même texte, c'est
+              un plan de page qui ment. */}
+          <p className="text-lg font-semibold text-text">Tâches</p>
           <p className="text-sm text-text-muted">{tasks.length} tâche{tasks.length > 1 ? 's' : ''}</p>
         </div>
       </div>
@@ -154,16 +158,20 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
           </button>
         </div>
 
+        {/* B-209 : une commande réduite à son icône n'a aucun nom à annoncer.
+            Le libellé va sur le bouton, pas sur l'icône décorative. */}
         <Button
           variant="ghost"
           size="sm"
+          aria-label="Filtrer les tâches"
+          aria-expanded={showFilters}
           onClick={() => setShowFilters(!showFilters)}
           className={showFilters ? 'bg-accent-tint text-accent-cyan-ink' : ''}
         >
           <Filter className="w-4 h-4" />
         </Button>
 
-        <Button variant="ghost" size="sm" onClick={loadTasks}>
+        <Button variant="ghost" size="sm" aria-label="Rafraîchir les tâches" onClick={loadTasks}>
           <RefreshCw className="w-4 h-4" />
         </Button>
 
@@ -175,6 +183,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
         {!standalone && (
           <button
             onClick={onClose}
+            aria-label="Fermer les tâches"
             className="p-2 hover:bg-border/30 rounded-md transition-colors"
           >
             <X className="w-5 h-5 text-text-muted" />

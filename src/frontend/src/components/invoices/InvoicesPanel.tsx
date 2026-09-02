@@ -198,7 +198,11 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
           <FileText className="w-5 h-5 text-accent-cyan-ink" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-text">Devis et factures</h2>
+          {/* B-241 : la coque `PrototypeUnifiedViewCanvas` pose déjà le titre de
+              la vue, et en fait le nom accessible de la région. Ce libellé reste
+              visible mais n'est plus un titre : deux titres de même texte, c'est
+              un plan de page qui ment. */}
+          <p className="text-lg font-semibold text-text">Devis et factures</p>
           <p className="text-sm text-text-muted">
             {filteredInvoices.length}{listeTronquee ? '+' : ''} document{filteredInvoices.length > 1 ? 's' : ''}
           </p>

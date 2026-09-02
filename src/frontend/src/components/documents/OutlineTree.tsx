@@ -32,6 +32,7 @@ import { CSS } from '@dnd-kit/utilities';
 import { Button } from '../ui/Button';
 import type { DocumentSection, SectionCreateRequest, SectionsReorderItem } from '../../services/api/documents';
 import { computeReorderPayload } from './reorderPayload';
+import { accessibiliteGlisserDeposer } from '../../lib/accessibiliteGlisserDeposer';
 import { Spinner } from '../ui/Spinner';
 
 // =============================================================================
@@ -91,6 +92,12 @@ export function OutlineTree({
   const [newDepth, setNewDepth] = useState<0 | 1>(0);
 
   const sortedSections = useMemo(() => [...sections].sort((a, b) => a.order - b.order), [sections]);
+
+  // B-217 : une section annoncée par son identifiant ne dit rien. Les
+  // consignes anglaises de dnd-kit non plus, dans une application française.
+  const accessibilite = accessibiliteGlisserDeposer(
+    (id) => sections.find((section) => section.id === id)?.title ?? null,
+  );
   const draggingSection = useMemo(
     () => sortedSections.find((s) => s.id === draggingId) ?? null,
     [sortedSections, draggingId]
@@ -219,6 +226,7 @@ export function OutlineTree({
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
             onDragCancel={() => setDraggingId(null)}
+            accessibility={accessibilite}
           >
             <SortableContext items={sortedSections.map((s) => s.id)} strategy={verticalListSortingStrategy}>
               {sortedSections.map((section) => (

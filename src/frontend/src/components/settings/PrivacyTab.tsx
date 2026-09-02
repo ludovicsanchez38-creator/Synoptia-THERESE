@@ -613,7 +613,9 @@ export function PrivacyTab() {
         {/* Toggle */}
         <div className="flex items-center justify-between mb-4">
           <div>
-            <span className="text-sm font-medium text-text">Purge automatique</span>
+            {/* B-230 : le libellé visible sert de nom accessible à
+                l'interrupteur voisin - un <span> adjacent n'étiquette pas. */}
+            <span id="purge-automatique-libelle" className="text-sm font-medium text-text">Purge automatique</span>
             <span className="block text-xs text-text-muted">
               {purgeEnabled ? 'Activée' : 'Désactivée'}
             </span>
@@ -625,6 +627,7 @@ export function PrivacyTab() {
             }`}
             role="switch"
             aria-checked={purgeEnabled}
+            aria-labelledby="purge-automatique-libelle"
           >
             <span
               className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
@@ -680,7 +683,7 @@ export function PrivacyTab() {
             )}
           </Button>
           {error && (
-            <span className="text-xs text-error">{error}</span>
+            <span role="alert" className="text-xs text-error">{error}</span>
           )}
         </div>
       </section>

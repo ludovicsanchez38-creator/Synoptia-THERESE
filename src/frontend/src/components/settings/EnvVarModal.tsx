@@ -267,7 +267,7 @@ export function EnvVarModal({ preset, onSubmit, onCancel }: EnvVarModalProps) {
 
                 {/* Error message */}
                 {error && (
-                  <p className="text-xs text-error mt-1">{error}</p>
+                  <p role="alert" className="text-xs text-error mt-1">{error}</p>
                 )}
 
                 {/* Hint */}

@@ -180,7 +180,7 @@ export function VoiceLocalSection() {
               continue où ça s'était arrêté).
             </p>
           )}
-          {error && <p className="text-xs text-error mt-2">{error}</p>}
+          {error && <p role="alert" className="text-xs text-error mt-2">{error}</p>}
         </>
       )}
     </section>

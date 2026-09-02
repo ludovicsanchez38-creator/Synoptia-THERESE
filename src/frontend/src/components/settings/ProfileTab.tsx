@@ -176,7 +176,7 @@ export function ProfileTab({
             <div className="flex items-center justify-between px-5 py-3 border-t border-border/50">
               <div className="flex items-center gap-2">
                 {mdError && (
-                  <span className="text-sm text-error flex items-center gap-1">
+                  <span role="alert" className="text-sm text-error flex items-center gap-1">
                     <AlertCircle className="w-3 h-3" />
                     {mdError}
                   </span>
@@ -400,7 +400,7 @@ export function ProfileTab({
 
       {/* Erreur */}
       {error && (
-        <p className="text-sm text-error flex items-center gap-1">
+        <p role="alert" className="text-sm text-error flex items-center gap-1">
           <AlertCircle className="w-3 h-3" />
           {error}
         </p>

@@ -131,6 +131,9 @@ export function AdvancedTab({
 function StartupBehavior() {
   const skipDashboard = usePersonalisationStore((state) => state.skipDashboard ?? false);
   const setSkipDashboard = usePersonalisationStore((state) => state.setSkipDashboard);
+  // B-230 : le libellé visible EST le nom accessible. Un `aria-label` recopié
+  // à la main diverge du texte affiché à la première retouche (cf B-233).
+  const libelleId = useId();
 
   const handleToggle = () => {
     setSkipDashboard(!skipDashboard);
@@ -140,7 +143,7 @@ function StartupBehavior() {
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm text-text">Ouvrir sur le chat directement</p>
+          <p id={libelleId} className="text-sm text-text">Ouvrir sur le chat directement</p>
           <p className="text-xs text-text-muted mt-0.5">
             Ne pas afficher l'Accueil au lancement (aller directement au chat)
           </p>
@@ -152,6 +155,7 @@ function StartupBehavior() {
           }`}
           role="switch"
           aria-checked={skipDashboard}
+          aria-labelledby={libelleId}
         >
           <span
             className={`inline-block h-4 w-4 transform rounded-full bg-ink-on-fill transition-transform ${

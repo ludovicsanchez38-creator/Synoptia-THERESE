@@ -523,7 +523,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
             </Button>
           </div>
           {importError && (
-            <p className="text-xs text-error">{importError}</p>
+            <p role="alert" className="text-xs text-error">{importError}</p>
           )}
           <div className="space-y-2">
             <div>

@@ -310,7 +310,7 @@ export function LLMTab({
 
             {/* Erreur */}
             {error && (
-              <p className="text-sm text-error flex items-center gap-1">
+              <p role="alert" className="text-sm text-error flex items-center gap-1">
                 <AlertCircle className="w-3 h-3" />
                 {error}
               </p>

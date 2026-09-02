@@ -30,6 +30,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Project } from '../../services/api';
+import { accessibiliteGlisserDeposer } from '../../lib/accessibiliteGlisserDeposer';
 
 // =============================================================================
 // CONSTANTES
@@ -142,6 +143,14 @@ export function ProjectsKanban({ projects, onSelect, onDelete, onStatusChange }:
     );
   }
 
+  // B-217 : consignes et annonces en français, par les noms - un projet
+  // annoncé par son UUID ne désigne rien à l'oreille.
+  const accessibilite = accessibiliteGlisserDeposer((id) =>
+    projects.find((project) => project.id === id)?.name
+      ?? STATUS_COLUMNS.find((column) => column.id === id)?.label
+      ?? null,
+  );
+
   return (
     <DndContext
       sensors={sensors}
@@ -149,6 +158,7 @@ export function ProjectsKanban({ projects, onSelect, onDelete, onStatusChange }:
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onDragCancel={() => setActiveProject(null)}
+      accessibility={accessibilite}
     >
       <div className="divide-y divide-border/30">
         {STATUS_COLUMNS.map((column) => (

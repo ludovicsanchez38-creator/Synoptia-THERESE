@@ -80,8 +80,25 @@ function contactLabel(contact: Contact | undefined): string {
  * alors que le nom voyageait dans la facture. La liste reste le repli : le
  * champ est absent quand le contact a disparu côté serveur.
  */
-function nomDuClient(invoice: Invoice, contact: Contact | undefined): string {
-  return invoice.contact_name?.trim() || contactLabel(contact);
+/**
+ * B-015 : « introuvable » est une affirmation sur la donnée, pas sur nous.
+ *
+ * Quand l'appel contacts a échoué, `contacts` vaut `[]` et la recherche par
+ * `contact_id` ne rend rien - exactement comme pour un contact réellement
+ * supprimé. Les deux cas sont indiscernables côté liste, mais pas côté
+ * vérité : dire « Contact introuvable » parce qu'on n'a pas pu lire le
+ * carnet, c'est inventer une absence. On ne le dit que quand la source a
+ * répondu.
+ */
+function nomDuClient(
+  invoice: Invoice,
+  contact: Contact | undefined,
+  contactsIndisponibles: boolean,
+): string {
+  const porte = invoice.contact_name?.trim();
+  if (porte) return porte;
+  if (!contact && contactsIndisponibles) return 'Client non chargé';
+  return contactLabel(contact);
 }
 
 function formatMoney(value: number, currency: string): string {
@@ -219,7 +236,7 @@ export function InvoiceWorkspaceCard({
                     <strong className="text-sm text-text">{invoice.invoice_number}</strong>
                     <span className="rounded-full bg-bg px-2 py-0.5 text-xs font-semibold text-text-muted">{statusLabels[invoice.status] || invoice.status}</span>
                   </span>
-                  <span className="mt-0.5 block truncate text-xs text-text-muted">{nomDuClient(invoice, contact)} · {invoice.document_type}</span>
+                  <span className="mt-0.5 block truncate text-xs text-text-muted">{nomDuClient(invoice, contact, resource.data.unavailableSources.includes('contacts'))} · {invoice.document_type}</span>
                 </span>
                 <span className="shrink-0 text-sm font-bold text-text">{formatMoney(invoice.total_ttc, invoice.currency)}</span>
                 <ChevronRight className="h-4 w-4 shrink-0 text-text-muted" />
@@ -247,7 +264,7 @@ function ExistingInvoiceDetail({ data, invoice }: { data: InvoiceWorkspaceData; 
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">{invoice.document_type}</div>
             <h3 className="mt-1 text-lg font-bold text-text">{invoice.invoice_number}</h3>
-            <p className="mt-1 flex items-center gap-1.5 text-xs text-text-muted"><Users className="h-3.5 w-3.5" />{nomDuClient(invoice, contact)}</p>
+            <p className="mt-1 flex items-center gap-1.5 text-xs text-text-muted"><Users className="h-3.5 w-3.5" />{nomDuClient(invoice, contact, data.unavailableSources.includes('contacts'))}</p>
           </div>
           <div className="text-right">
             <span className="rounded-full bg-bg px-2.5 py-1 text-xs font-semibold text-text-muted">{statusLabels[invoice.status] || invoice.status}</span>

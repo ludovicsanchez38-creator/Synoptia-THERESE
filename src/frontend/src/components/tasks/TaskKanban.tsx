@@ -31,6 +31,7 @@ import { useTaskStore } from '../../stores/taskStore';
 import type { Task } from '../../services/api';
 import * as api from '../../services/api';
 import { useDemoMask } from '../../hooks';
+import { accessibiliteGlisserDeposer } from '../../lib/accessibiliteGlisserDeposer';
 
 const COLUMNS = [
   { id: 'todo', label: 'À faire', icon: Circle, color: 'text-text-muted' },
@@ -127,6 +128,15 @@ export function TaskKanban() {
     handleStatusChange(taskId, targetColumn);
   }
 
+  // B-217 : sans ce bloc, dnd-kit sert ses consignes ANGLAISES par défaut et
+  // annonce les objets par leur identifiant technique. `over.id` désigne
+  // aussi bien une carte qu'une colonne : les deux passent par ici.
+  const accessibilite = accessibiliteGlisserDeposer((id) =>
+    tasks.find((task) => task.id === id)?.title
+      ?? COLUMNS.find((column) => column.id === id)?.label
+      ?? null,
+  );
+
   return (
     <DndContext
       sensors={sensors}
@@ -134,6 +144,7 @@ export function TaskKanban() {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onDragCancel={() => setActiveTask(null)}
+      accessibility={accessibilite}
     >
       <div className="h-full flex gap-4 p-6 overflow-x-auto">
         {COLUMNS.map((column) => (
@@ -223,6 +234,11 @@ interface SortableTaskCardProps {
 }
 
 function SortableTaskCard({ task, onClick, onStatusChange, maskTextFn }: SortableTaskCardProps) {
+  // B-209 : les commandes de la carte n'existaient que pour la souris
+  // (`onMouseEnter` seul). Le focus clavier atterrit ICI - c'est ce conteneur
+  // que `useSortable` rend focalisable - et pas sur la carte : brancher la
+  // révélation plus bas ne déclencherait jamais rien.
+  const [focusDansLaCarte, setFocusDansLaCarte] = useState(false);
   const {
     attributes,
     listeners,
@@ -249,12 +265,21 @@ function SortableTaskCard({ task, onClick, onStatusChange, maskTextFn }: Sortabl
       className="cursor-grab active:cursor-grabbing"
       {...attributes}
       {...listeners}
+      onFocus={() => setFocusDansLaCarte(true)}
+      onBlur={(event) => {
+        // Passer d'une commande de la carte à l'autre ne referme rien :
+        // sans cette garde, le premier Tab ferait disparaître sa cible.
+        if (!event.currentTarget.contains(event.relatedTarget)) {
+          setFocusDansLaCarte(false);
+        }
+      }}
     >
       <TaskCard
         task={task}
         onClick={onClick}
         onStatusChange={onStatusChange}
         showDragHandle
+        commandesRevelees={focusDansLaCarte}
         maskTextFn={maskTextFn}
       />
     </div>
@@ -271,11 +296,14 @@ interface TaskCardProps {
   onStatusChange: (newStatus: string) => void;
   isOverlay?: boolean;
   showDragHandle?: boolean;
+  /** B-209 : révélation venue du clavier, en plus du survol souris. */
+  commandesRevelees?: boolean;
   maskTextFn?: (text: string) => string;
 }
 
-function TaskCard({ task, onClick, onStatusChange, isOverlay, showDragHandle, maskTextFn }: TaskCardProps) {
-  const [showActions, setShowActions] = useState(false);
+function TaskCard({ task, onClick, onStatusChange, isOverlay, showDragHandle, commandesRevelees = false, maskTextFn }: TaskCardProps) {
+  const [survol, setSurvol] = useState(false);
+  const showActions = survol || commandesRevelees;
 
   const priorityColors = {
     urgent: 'bg-error/10 text-error border-error/20',
@@ -293,8 +321,8 @@ function TaskCard({ task, onClick, onStatusChange, isOverlay, showDragHandle, ma
       data-testid={isOverlay ? undefined : 'task-item'}
       whileHover={isOverlay ? undefined : { scale: 1.02 }}
       whileTap={isOverlay ? undefined : { scale: 0.98 }}
-      onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
+      onMouseEnter={() => setSurvol(true)}
+      onMouseLeave={() => setSurvol(false)}
       className={`p-3 bg-surface-elevated/60 hover:bg-surface-elevated rounded-md border border-border/30 cursor-pointer transition-colors relative ${
         isOverlay ? 'shadow-xl ring-2 ring-ring/30' : ''
       }`}

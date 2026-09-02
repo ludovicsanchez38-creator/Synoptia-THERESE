@@ -295,7 +295,11 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                   <Users className="h-5 w-5 text-accent" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-text">Contacts</h2>
+                  {/* B-241 : la coque `PrototypeUnifiedViewCanvas` pose déjà le titre de
+                      la vue, et en fait le nom accessible de la région. Ce libellé reste
+                      visible mais n'est plus un titre : deux titres de même texte, c'est
+                      un plan de page qui ment. */}
+                  <p className="text-lg font-semibold text-text">Contacts</p>
                   {contactsTronques && (
                     <p role="alert" className="text-sm text-warning">
                       Liste incomplète : {contacts.length} contacts affichés, d'autres

@@ -137,7 +137,11 @@ export function ProjectsPanel() {
               <Briefcase className="w-5 h-5" />
             </span>
             <div>
-              <h1 className="text-lg font-bold text-text leading-tight">Projets</h1>
+              {/* B-241 : la coque `PrototypeUnifiedViewCanvas` pose déjà le titre de
+                  la vue, et en fait le nom accessible de la région. Ce libellé reste
+                  visible mais n'est plus un titre : deux titres de même texte, c'est
+                  un plan de page qui ment. */}
+              <p className="text-lg font-bold text-text leading-tight">Projets</p>
               <p className="text-xs text-text-muted">
                 {projects.length}{listeTronquee ? '+' : ''} projet{projects.length > 1 ? 's' : ''}
               </p>

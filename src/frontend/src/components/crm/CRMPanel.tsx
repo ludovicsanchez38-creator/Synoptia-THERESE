@@ -151,7 +151,11 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
           <LayoutDashboard className="w-5 h-5 text-accent" />
         </div>
         <div>
-          <h2 className="text-lg font-semibold text-text">Pipeline</h2>
+          {/* B-241 : la coque `PrototypeUnifiedViewCanvas` pose déjà le titre de
+              la vue, et en fait le nom accessible de la région. Ce libellé reste
+              visible mais n'est plus un titre : deux titres de même texte, c'est
+              un plan de page qui ment. */}
+          <p className="text-lg font-semibold text-text">Pipeline</p>
           <p className="text-sm text-text-muted">
             {contacts.length} contact{contacts.length > 1 ? 's' : ''}
             {contactsTronques ? '+' : ''} · {projects.length} projet{projects.length > 1 ? 's' : ''}

@@ -207,7 +207,7 @@ export function CredentialsStep({
           </Button>
         </div>
         {importError && (
-          <p className="text-xs text-error">{importError}</p>
+          <p role="alert" className="text-xs text-error">{importError}</p>
         )}
       </div>
 

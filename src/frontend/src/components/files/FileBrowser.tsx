@@ -379,6 +379,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
       <AnimatePresence>
         {error && (
           <motion.div
+            role="alert"
             variants={fadeIn}
             initial="initial"
             animate="animate"
