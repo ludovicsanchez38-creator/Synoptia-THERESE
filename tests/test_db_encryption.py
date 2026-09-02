@@ -136,7 +136,7 @@ class TestRuntime:
         # mode=ro : ne pas polluer la base VIVANTE avec un journal parasite
         with (
             pytest.raises(sqlite3.DatabaseError),
-            sqlite3.connect(f"file:{db_path}?mode=ro", uri=True) as raw,
+            closing(sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)) as raw,
         ):
             raw.execute("SELECT * FROM sqlite_master").fetchall()
 

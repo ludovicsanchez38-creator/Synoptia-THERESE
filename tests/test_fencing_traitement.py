@@ -30,6 +30,16 @@ import pytest
 from sqlmodel import select
 
 
+def _texte_du_resultat(resultat: object) -> str:
+    """Le résultat d'un outil, tel qu'il se LIT.
+
+    B-044 : `json.dumps` échappe les accents par défaut, si bien que
+    « succès » sort en « succ\\u00e8s ». Une garde anti-faux-succès qui
+    cherchait le mot dans cette sortie ne pouvait donc jamais rougir.
+    """
+    return json.dumps(resultat, ensure_ascii=False)
+
+
 @pytest.fixture
 def fichier_texte(tmp_path: Path) -> Path:
     fichier = tmp_path / "note-client.txt"
@@ -1103,7 +1113,24 @@ class TestLaPasse3:
             ))
 
         assert "error" in resultat, "un faux succès masquerait la panne"
-        assert "succès" not in json.dumps(resultat)
+        assert "succès" not in _texte_du_resultat(resultat)
         async with get_session_context() as session:
             lignes = (await session.execute(select(Contact))).scalars().all()
         assert lignes == []
+
+    def test_la_garde_anti_faux_succes_voit_le_mot_qu_elle_cherche(self):
+        """B-044 : la garde du test précédent ne pouvait pas rougir.
+
+        Le message de succès réel de `execute_create_contact` est
+        « Contact '...' créé avec succès. ». Si la garde ne le repère pas dans
+        un résultat fabriqué, elle ne le repérera pas davantage dans un vrai
+        faux succès : elle ne surveille rien.
+        """
+        faux_succes = {
+            "success": True,
+            "message": "Contact 'Pan Ne' créé avec succès.",
+        }
+        assert "succès" in _texte_du_resultat(faux_succes), (
+            "la garde anti-faux-succès ne voit pas le mot « succès » : "
+            f"le résultat se lit {_texte_du_resultat(faux_succes)}"
+        )

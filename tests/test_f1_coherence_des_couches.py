@@ -15,6 +15,7 @@ septième passe de `invoice_totals`, où mon test utilisait 1 000 et -200.
 """
 
 import json
+import re
 
 import pytest
 
@@ -23,7 +24,9 @@ QUANTITE = 3
 TAUX = 20.0
 
 
-async def _poser_facture(client, devise: str = "EUR") -> str:
+async def _poser_facture(
+    client, devise: str = "EUR", lignes_en_plus: list[dict] | None = None
+) -> str:
     contact = await client.post(
         "/api/memory/contacts", json={"first_name": "Client", "last_name": "F1"}
     )
@@ -39,7 +42,8 @@ async def _poser_facture(client, devise: str = "EUR") -> str:
                     "quantity": QUANTITE,
                     "unit_price_ht": MONTANT_UNITAIRE,
                     "tva_rate": TAUX,
-                }
+                },
+                *(lignes_en_plus or []),
             ],
         },
     )
@@ -55,6 +59,14 @@ async def _poser_facture(client, devise: str = "EUR") -> str:
         trouvee.scalars().one().status = "sent"
         await session.commit()
     return identifiant
+
+
+def _texte_du_pdf(chemin: str) -> str:
+    """Le texte réellement imprimé, blancs normalisés."""
+    from pypdf import PdfReader
+
+    lu = PdfReader(chemin)
+    return re.sub(r"\s+", " ", "\n".join(page.extract_text() or "" for page in lu.pages))
 
 
 class TestUnSeulMontantATraversLesCouches:
@@ -124,23 +136,53 @@ class TestUnSeulMontantATraversLesCouches:
 
     @pytest.mark.asyncio
     async def test_le_pdf_imprime_le_meme_montant(self, client):
-        identifiant = await _poser_facture(client)
-        piece = (await client.get(f"/api/invoices/{identifiant}")).json()
+        """Le PDF est GÉNÉRÉ puis LU, pas cherché dans le source.
 
-        attendu = f"{piece['total_ttc']:.2f}"
-        from app.services import invoice_pdf
+        B-046 : ce test se contentait de `"total_ttc" in <source de
+        invoice_pdf.py>`. La chaîne y figure quatre fois, dont deux hors du
+        bloc des totaux : le test restait vert alors que le PDF imprimait un
+        autre montant que celui rendu par l'API.
+        """
+        from unittest.mock import patch
 
-        source = invoice_pdf.__file__
-        from pathlib import Path
+        from app.services.user_profile import UserProfile
 
-        assert "total_ttc" in Path(source).read_text(encoding="utf-8"), (
-            "le PDF ne lit plus le même champ"
+        # Deux lignes, pour que le total du document ne coïncide avec AUCUN
+        # total de ligne. Avec une seule ligne, le montant cherché figure déjà
+        # dans le tableau des prestations et l'assertion passerait sans que le
+        # bloc des totaux soit juste.
+        identifiant = await _poser_facture(
+            client,
+            lignes_en_plus=[
+                {
+                    "description": "Forfait",
+                    "quantity": 1,
+                    "unit_price_ht": 10.0,
+                    "tva_rate": TAUX,
+                }
+            ],
         )
-        # Le PDF formate `invoice_data['total_ttc']` en .2f : c'est la même
-        # valeur, arrondie à l'affichage. On vérifie que l'arrondi d'affichage
-        # ne CHANGE pas le montant (119.988 -> 119.99 serait une divergence).
-        assert float(attendu) == piece["total_ttc"], (
-            f"le PDF imprimerait {attendu} pour un document à {piece['total_ttc']}"
+        piece = (await client.get(f"/api/invoices/{identifiant}")).json()
+        attendu = f"{piece['total_ttc']:.2f}"
+        assert attendu not in [f"{ligne['total_ttc']:.2f}" for ligne in piece["lines"]], (
+            "précondition : le total du document doit être introuvable ailleurs "
+            "dans le PDF, sinon l'assertion ne prouve rien"
+        )
+
+        emetteur = UserProfile(
+            name="Ludovic Sanchez",
+            company="Synoptia",
+            address="294 Montee des Genets, 04100 Manosque",
+            siret="99160678100011",
+        )
+        with patch("app.routers.invoices.get_cached_profile", return_value=emetteur):
+            rendu = await client.get(f"/api/invoices/{identifiant}/pdf")
+        assert rendu.status_code == 200, rendu.text
+
+        texte = _texte_du_pdf(rendu.json()["pdf_path"])
+        assert re.search(rf"Total TTC\s*{re.escape(attendu)}", texte), (
+            f"le PDF n'imprime pas {attendu} en Total TTC alors que l'API rend "
+            f"{piece['total_ttc']}. Bloc des totaux lu : ...{texte[-300:]}"
         )
 
     @pytest.mark.asyncio

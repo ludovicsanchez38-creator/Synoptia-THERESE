@@ -8,10 +8,11 @@ que l'un comptait les contacts sans aucune date et l'autre les excluait.
 Après : une relance est une DATE POSÉE et échue. Pas de date, pas de devoir.
 THÉRÈSE n'invente plus une relance à partir d'un silence.
 """
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime, time, timedelta
 
 import pytest
 from app.models.entities import Contact, Notification
+from app.services.civil_time import date_civile_paris
 from app.services.relances import contacts_a_relancer
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
@@ -35,7 +36,14 @@ async def test_une_date_echue_est_une_relance(db_session: AsyncSession):
 
 @pytest.mark.asyncio
 async def test_une_date_a_venir_n_est_pas_une_relance(db_session: AsyncSession):
-    demain = datetime.now(UTC) + timedelta(days=1)
+    # `next_follow_up` désigne un JOUR décidé, et le seuil est la date civile
+    # de Paris (cf. `contacts_a_relancer`). `now + 24 h` n'est donc pas
+    # toujours un AUTRE jour : entre 22 h et minuit UTC, l'heure d'été place
+    # l'instant obtenu sur le jour civil de Paris en cours, et le test
+    # rougissait deux heures par nuit sans qu'aucun code n'ait changé.
+    demain = datetime.combine(
+        date_civile_paris() + timedelta(days=1), time(12, 0), tzinfo=UTC
+    )
     db_session.add(_contact(next_follow_up=demain))
     await db_session.commit()
 

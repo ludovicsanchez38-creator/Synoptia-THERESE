@@ -498,7 +498,13 @@ class TestXSSEmailSanitization:
         found_sanitize = False
         found_dangerous = False
 
-        for ts_file in FRONTEND.rglob("*.tsx"):
+        composants = sorted(FRONTEND.rglob("*.tsx"))
+        # B-043 : sans ce plancher, un balayage à vide conclurait « rien de
+        # dangereux » sans avoir ouvert un fichier.
+        assert len(composants) >= 100, (
+            f"balayage à vide : {len(composants)} composant(s) .tsx lus dans {FRONTEND}"
+        )
+        for ts_file in composants:
             content = ts_file.read_text(encoding="utf-8")
             if "dangerouslySetInnerHTML" in content:
                 found_dangerous = True
@@ -2868,12 +2874,19 @@ class TestBUG031_TriDeterministeChat:
 class TestAsyncioGetRunningLoop:
     """Aucun fichier backend ne doit utiliser asyncio.get_event_loop() (déprécié Python 3.13)."""
 
-    BACKEND_DIR = Path("src/backend/app")
+    # B-043 : ancré sur __file__ (via SRC) et non sur le répertoire courant.
+    # Un chemin relatif faisait dépendre le balayage du cwd de pytest : lancé
+    # d'ailleurs, il ne lisait rien et concluait « aucune violation ».
+    BACKEND_DIR = SRC / "app"
 
     def test_no_get_event_loop_in_backend(self):
         """Scanne tout src/backend/app/ pour get_event_loop()."""
         violations = []
-        for py_file in self.BACKEND_DIR.rglob("*.py"):
+        fichiers = sorted(self.BACKEND_DIR.rglob("*.py"))
+        assert len(fichiers) >= 50, (
+            f"balayage à vide : {len(fichiers)} fichier(s) lus dans {self.BACKEND_DIR}"
+        )
+        for py_file in fichiers:
             content = py_file.read_text(encoding="utf-8")
             if "get_event_loop()" in content:
                 violations.append(str(py_file))
@@ -5907,7 +5920,11 @@ class TestSecurityRegression:
         import re
 
         routers_dir = SRC / "app" / "routers"
-        for py_file in routers_dir.glob("*.py"):
+        fichiers = sorted(routers_dir.glob("*.py"))
+        assert len(fichiers) >= 10, (
+            f"balayage à vide : {len(fichiers)} routeur(s) lu(s) dans {routers_dir}"
+        )
+        for py_file in fichiers:
             content = py_file.read_text(encoding="utf-8")
             matches = re.findall(r'["\'](?:sk-[a-zA-Z0-9]{20,}|AKIA[A-Z0-9]{16}|AIza[a-zA-Z0-9_-]{35})["\']', content)
             assert not matches, (
@@ -5979,7 +5996,11 @@ class TestFrontendRegression:
         allowed_files = {"InvoicesPanel.tsx", "InvoiceForm.tsx", "MemoryPanel.tsx", "EventDetail.tsx"}
         components_dir = FRONTEND / "components"
         violations = []
-        for tsx_file in components_dir.rglob("*.tsx"):
+        composants = sorted(components_dir.rglob("*.tsx"))
+        assert len(composants) >= 100, (
+            f"balayage à vide : {len(composants)} composant(s) lus dans {components_dir}"
+        )
+        for tsx_file in composants:
             if tsx_file.name in allowed_files:
                 continue
             content = tsx_file.read_text(encoding="utf-8")
@@ -5994,7 +6015,11 @@ class TestFrontendRegression:
         api_dir = FRONTEND / "services" / "api"
         if not api_dir.exists():
             pytest.skip("Le dossier services/api n'existe pas")
-        for ts_file in api_dir.glob("*.ts"):
+        modules = sorted(api_dir.glob("*.ts"))
+        assert len(modules) >= 10, (
+            f"balayage à vide : {len(modules)} module(s) API lus dans {api_dir}"
+        )
+        for ts_file in modules:
             if ts_file.name in ("core.ts", "index.ts", "types.ts"):
                 continue
             if ts_file.name.endswith(".test.ts"):
@@ -6015,7 +6040,11 @@ class TestFrontendRegression:
         excluded = {"core.ts", "config.ts", "vite-env.d.ts", "BoardPanel.tsx", "EmailConnect.tsx"}
         components_dir = FRONTEND / "components"
         violations = []
-        for tsx_file in components_dir.rglob("*.tsx"):
+        composants = sorted(components_dir.rglob("*.tsx"))
+        assert len(composants) >= 100, (
+            f"balayage à vide : {len(composants)} composant(s) lus dans {components_dir}"
+        )
+        for tsx_file in composants:
             # Les fichiers de TEST utilisent légitimement des URLs locales
             # factices (ex. MessageBubble.test : image générée 127.0.0.1) -
             # le garde vise le code de production.
@@ -6233,7 +6262,11 @@ class TestBUG090VCFExport:
 
         pattern = re.compile(r"\\u00[0-9a-fA-F]{2}")
         offenders: list[str] = []
-        for path in FRONTEND.rglob("*"):
+        sources = [p for p in sorted(FRONTEND.rglob("*")) if p.suffix in {".ts", ".tsx"}]
+        assert len(sources) >= 100, (
+            f"balayage à vide : {len(sources)} fichier(s) .ts/.tsx lus dans {FRONTEND}"
+        )
+        for path in sources:
             if path.suffix not in {".ts", ".tsx"}:
                 continue
             if path.name.endswith(".test.ts") or path.name.endswith(".test.tsx"):
@@ -8407,3 +8440,4 @@ class TestLaPromesseDePermissionsEstVraieSurToutesLesPlateformes:
             "La promettre sans nommer la plateforme est faux pour une partie "
             "des testeurs."
         )
+

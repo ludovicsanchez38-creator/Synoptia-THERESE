@@ -261,3 +261,72 @@ def test_snapshot_facture_refuse_d_inventer_un_destinataire(tmp_path: Path):
 
     with pytest.raises(RuntimeError, match="snapshot absent"):
         apply_adhoc_migrations(db_path)
+
+
+def test_base_legacy_facture_orpheline_bloque_le_demarrage(tmp_path: Path):
+    """B-154 : une facture dont le contact a été effacé arrête le démarrage.
+
+    Le refus est VOULU (docstring de `_ensure_invoice_client_snapshot`) :
+    mieux vaut échouer que consacrer un destinataire vide sur une pièce
+    comptable. Mais rien ne le verrouillait, alors que c'est la panne la moins
+    rattrapable de toutes - l'application ne démarre plus du tout.
+    """
+    from app.models.database import apply_adhoc_migrations
+
+    db_path = tmp_path / "legacy-facture-orpheline.db"
+    with closing(sqlite3.connect(db_path)) as conn:
+        conn.execute(
+            "CREATE TABLE contacts (id TEXT PRIMARY KEY, first_name TEXT, "
+            "last_name TEXT, company TEXT, email TEXT, phone TEXT, address TEXT)"
+        )
+        conn.execute(
+            "CREATE TABLE invoices (id TEXT PRIMARY KEY, contact_id TEXT NOT NULL)"
+        )
+        conn.execute(
+            "INSERT INTO invoices VALUES (?, ?)",
+            ("facture-orpheline", "contact-efface"),
+        )
+        conn.commit()
+
+    with pytest.raises(RuntimeError, match="introuvable") as leve:
+        apply_adhoc_migrations(db_path)
+
+    # La pièce doit être NOMMÉE : c'est la seule prise de l'utilisateur pour
+    # réparer sa base, puisque l'application refuse de démarrer.
+    assert "facture-orpheline" in str(leve.value), str(leve.value)
+
+    # « avant toute colonne ajoutée » : le refus ne laisse pas une base à
+    # moitié migrée derrière lui.
+    with closing(sqlite3.connect(db_path)) as conn:
+        colonnes = {
+            row[1] for row in conn.execute("PRAGMA table_info(invoices)").fetchall()
+        }
+    assert not colonnes & {
+        "client_name",
+        "client_company",
+        "client_email",
+        "client_phone",
+        "client_address",
+    }, f"colonnes ajoutées malgré le refus : {sorted(colonnes)}"
+
+
+def test_base_legacy_sans_table_contacts_bloque_le_demarrage(tmp_path: Path):
+    """Jumeau du précédent : des factures sans la table contacts du tout.
+
+    Même famille (impossible de reconstruire un destinataire), autre branche,
+    autre message - et elle non plus n'avait aucun test.
+    """
+    from app.models.database import apply_adhoc_migrations
+
+    db_path = tmp_path / "legacy-sans-contacts.db"
+    with closing(sqlite3.connect(db_path)) as conn:
+        conn.execute(
+            "CREATE TABLE invoices (id TEXT PRIMARY KEY, contact_id TEXT NOT NULL)"
+        )
+        conn.execute(
+            "INSERT INTO invoices VALUES (?, ?)", ("facture-sans-crm", "contact-1")
+        )
+        conn.commit()
+
+    with pytest.raises(RuntimeError, match="table contacts est absente"):
+        apply_adhoc_migrations(db_path)

@@ -14,10 +14,10 @@ from pathlib import Path
 SOURCE = Path("src/backend/app/routers/chat.py").read_text(encoding="utf-8")
 
 
-def _bloc_capacites() -> list[tuple[str, str]]:
+def _bloc_capacites(source: str = SOURCE) -> list[tuple[str, str]]:
     """(condition, ligne annoncée) pour chaque capacité du prompt."""
     paires = []
-    lignes = SOURCE.split("\n")
+    lignes = source.split("\n")
     for i, ligne in enumerate(lignes):
         if "capabilities +=" not in ligne:
             continue
@@ -28,15 +28,61 @@ def _bloc_capacites() -> list[tuple[str, str]]:
     return paires
 
 
-def test_chaque_outil_annonce_est_conditionne_a_sa_propre_presence():
+def _capacites_sans_garde(source: str = SOURCE) -> list[str]:
+    """Ce que le balayage reproche au prompt — instrument compris.
+
+    B-077 : la liste des paires pouvait tomber à zéro (source vide, verbe
+    `capabilities +=` renommé, garde `in tool_names` renommée) sans que rien ne
+    le dise. Un balayage qui ne trouve plus sa cible ne prouve pas l'absence de
+    faute : il prouve qu'il a cessé de regarder. Le défaut d'instrument est donc
+    rendu comme un défaut à part entière.
+    """
+    paires = _bloc_capacites(source)
+    verbes = [ligne for ligne in source.split("\n") if "capabilities +=" in ligne]
     manquants = []
-    for condition, annonce in _bloc_capacites():
+    if not paires:
+        manquants.append(
+            "le balayage ne trouve plus aucune capacité : le verbe "
+            "« capabilities += » ou la garde « in tool_names » a changé dans "
+            "chat.py, et ce test ne surveille plus rien"
+        )
+    elif len(verbes) - len(paires) > 1:
+        # Une seule ligne non appariée est attendue : le bloc des outils MCP,
+        # gardé par `if mcp_tools:` et annoncé « **Outils externes** ».
+        manquants.append(
+            f"{len(verbes) - len(paires)} lignes « capabilities += » ne sont "
+            "appariées à aucune garde `in tool_names` (une seule est attendue, "
+            "celle des outils MCP) : le balayage a perdu des capacités en route"
+        )
+    for condition, annonce in paires:
         annonces = set(re.findall(r"\*\*([a-z_]+)\*\*", annonce))
         gardes = set(re.findall(r'"([a-z_]+)" in tool_names', condition))
         for outil in annonces - gardes:
             manquants.append(f"{outil} annoncé sous la garde de {sorted(gardes)}")
+    return manquants
+
+
+def test_chaque_outil_annonce_est_conditionne_a_sa_propre_presence():
+    manquants = _capacites_sans_garde()
     assert not manquants, "outils promis sans vérifier leur présence : " + "; ".join(
         manquants
+    )
+
+
+def test_le_balayage_rougit_quand_il_ne_voit_plus_sa_cible():
+    """B-077 : sans plancher, un source aveugle laissait le test vert.
+
+    Trois façons de rendre le balayage aveugle, toutes atteignables par un
+    refactor légitime de chat.py. Aucune ne doit passer en silence.
+    """
+    aveugles = {
+        "source vide": "",
+        "verbe renommé": SOURCE.replace("capabilities +=", "capacites +="),
+        "garde renommée": SOURCE.replace(" in tool_names", " in outils_dispo"),
+    }
+    muets = [nom for nom, src in aveugles.items() if not _capacites_sans_garde(src)]
+    assert muets == [], (
+        "le balayage ne voit plus le bloc capacités et ne le dit pas : " + str(muets)
     )
 
 

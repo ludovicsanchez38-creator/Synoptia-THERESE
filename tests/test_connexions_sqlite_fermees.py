@@ -24,26 +24,104 @@ Ce gate empêche le motif de revenir. Il ne juge pas le code applicatif : là,
 un `with` sur une connexion peut être délibéré si la connexion est réutilisée.
 """
 
+import ast
 from pathlib import Path
 
 RACINE = Path(__file__).parent
 
 
+def _fichiers_balayes() -> list[Path]:
+    """Tous les fichiers Python de tests/, fixtures comprises.
+
+    B-049 : `rglob("test_*.py")` laissait conftest.py hors du balayage, alors
+    que c'est précisément là que vivent les fixtures de base.
+    """
+    return [
+        fichier
+        for fichier in sorted(RACINE.rglob("*.py"))
+        if fichier.name != Path(__file__).name
+    ]
+
+
+def _ouvre_une_connexion(expr: ast.expr) -> bool:
+    """`sqlite3.connect(...)` / `sqlcipher3.connect(...)` confié tel quel au `with`.
+
+    Un `closing(...)` autour rend un appel à `closing`, pas à `connect` : la
+    connexion est alors bien fermée, ce n'est pas une faute.
+    """
+    return (
+        isinstance(expr, ast.Call)
+        and isinstance(expr.func, ast.Attribute)
+        and expr.func.attr == "connect"
+        and isinstance(expr.func.value, ast.Name)
+        and expr.func.value.id in {"sqlite3", "sqlcipher3"}
+    )
+
+
+def _connexions_non_fermees(source: str, nom: str) -> list[str]:
+    """`with <sqlite>.connect(...)` non enveloppé dans `closing()`.
+
+    B-049 : la règle tenait sur UNE ligne strippée commençant par `with `. Un
+    `with (` étalé sur plusieurs lignes — la forme même que prend un `with`
+    à deux gestionnaires — passait donc au travers. L'AST voit le `with`
+    quelle que soit sa mise en page.
+    """
+    try:
+        arbre = ast.parse(source)
+    except SyntaxError:  # pragma: no cover - un fichier illisible se voit ailleurs
+        return []
+    fautes = []
+    for noeud in ast.walk(arbre):
+        if not isinstance(noeud, ast.With | ast.AsyncWith):
+            continue
+        for item in noeud.items:
+            if _ouvre_une_connexion(item.context_expr):
+                fautes.append(f"{nom}:{item.context_expr.lineno}")
+    return sorted(fautes)
+
+
 class TestAucuneConnexionSqliteNeFuit:
+    def test_le_gate_balaie_aussi_les_fixtures(self):
+        """conftest.py ouvre des bases : l'exclure, c'est ne pas les voir."""
+        noms = {fichier.name for fichier in _fichiers_balayes()}
+        assert "conftest.py" in noms, (
+            "conftest.py est hors du balayage : les fixtures de base ne sont pas "
+            f"surveillées ({len(noms)} fichiers vus)"
+        )
+
+    def test_le_gate_voit_un_with_multiligne(self):
+        """Un `with (` étalé sur plusieurs lignes est le même piège.
+
+        Le motif mono-ligne ne voyait que `with sqlite3.connect(...)` : dès que
+        le `with` et l'appel étaient sur deux lignes, la fuite passait.
+        """
+        etale = (
+            "import sqlite3\n"
+            "def essai(db_path):\n"
+            "    with (\n"
+            "        pytest.raises(sqlite3.DatabaseError),\n"
+            '        sqlite3.connect(f"file:{db_path}?mode=ro", uri=True) as raw,\n'
+            "    ):\n"
+            '        raw.execute("SELECT 1")\n'
+        )
+        assert _connexions_non_fermees(etale, "faux.py") != [], (
+            "une connexion ouverte dans un `with (` multi-lignes échappe au gate"
+        )
+
+        enveloppe = etale.replace(
+            '        sqlite3.connect(f"file:{db_path}?mode=ro", uri=True) as raw,\n',
+            '        closing(sqlite3.connect(f"file:{db_path}?mode=ro", uri=True)) as raw,\n',
+        )
+        assert _connexions_non_fermees(enveloppe, "faux.py") == [], (
+            "`closing(...)` ferme bien la connexion : ce n'est pas une faute"
+        )
+
     def test_aucun_with_connect_sans_closing(self):
         fautes = []
-        for fichier in sorted(RACINE.rglob("test_*.py")):
-            if fichier.name == Path(__file__).name:
-                continue
-            for numero, ligne in enumerate(
-                fichier.read_text(encoding="utf-8").splitlines(), 1
-            ):
-                nu = ligne.strip()
-                if nu.startswith("#"):
-                    continue
-                ouvre = "sqlite3.connect(" in nu or "sqlcipher3.connect(" in nu
-                if ouvre and nu.startswith("with ") and "closing(" not in nu:
-                    fautes.append(f"{fichier.name}:{numero}")
+        for fichier in _fichiers_balayes():
+            fautes += _connexions_non_fermees(
+                fichier.read_text(encoding="utf-8"), fichier.name
+            )
         assert fautes == [], (
             "`with sqlite3.connect(...)` ne ferme PAS la connexion (il gère la "
             "transaction). Le fichier reste ouvert, et sous Windows un "
