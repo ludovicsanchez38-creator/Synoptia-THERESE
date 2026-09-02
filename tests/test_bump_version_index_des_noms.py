@@ -27,6 +27,11 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="rejoue un script bash de CI ou de release : sur le runner Windows, bash invoque WSL sans distribution (constate le 02/09/2026, run 33674744677)",
+)
+
 RACINE = Path(__file__).resolve().parent.parent
 SCRIPT = RACINE / "scripts" / "bump-version.sh"
 
