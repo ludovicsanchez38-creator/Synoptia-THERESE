@@ -426,13 +426,14 @@ export function ProfileTab({
 }
 
 // Section Mode Démo - masque les données réelles
-function DemoModeSection() {
+// Exporté pour que le test de périmètre (B-131) puisse lire ce que la section promet.
+export function DemoModeSection() {
   const demoEnabled = useDemoStore((s) => s.enabled);
   const toggleDemo = useDemoStore((s) => s.toggle);
   const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 
   return (
-    <div className="space-y-3 pt-4 border-t border-border/30">
+    <div className="space-y-3 pt-4 border-t border-border/30" data-testid="mode-demo-section">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-sm flex items-center justify-center bg-accent-tint border-[1.5px] border-[var(--btn-ink)]">
           <Eye className="w-5 h-5 text-accent-cyan-ink" />
@@ -440,7 +441,7 @@ function DemoModeSection() {
         <div className="flex-1">
           <h3 className="font-medium text-text">Mode Démo</h3>
           <p className="text-xs text-text-muted">
-            Masque les noms et données clients par des personas fictifs
+            Remplace par des personas fictifs les noms, sociétés et e-mails de tes fiches contacts
           </p>
         </div>
         <button
@@ -456,6 +457,17 @@ function DemoModeSection() {
           />
         </button>
       </div>
+
+      {/* B-131 : le masque est bâti depuis les fiches contacts (et les projets
+          quand une vue les a chargés). Un nom propre qu'aucune fiche ne porte
+          lui est invisible, et l'utilisateur qui filme sa démonstration n'avait
+          aucun moyen de le savoir : le réglage promettait « les données
+          clients », sans dire où la promesse s'arrête. */}
+      <p className="text-xs text-text-muted">
+        Ce qui reste en clair : ce que tu as tapé toi-même ailleurs. Un nom de société
+        écrit à la main dans le titre d'une tâche ou d'une conversation n'est dans aucune
+        fiche contact, donc le masque ne le connaît pas. Relis l'écran avant de filmer.
+      </p>
 
       {demoEnabled && (
         <div className="p-3 bg-accent-cyan/10 border border-accent-cyan/20 rounded-md">

@@ -1,5 +1,11 @@
 import { useEffect, useCallback } from 'react';
 
+// B-112 : `onNewContact` et `onNewProject` ont été retirés. Ils étaient
+// déclarés ici et remplis par la coque, mais aucune branche du hook ne les
+// appelait : aucune touche ne pouvait les atteindre. La création reste
+// accessible par les actions `contact.new` et `project.new`. Ouvrir un
+// créneau ici veut dire lui donner une touche ET l'annoncer dans
+// ShortcutsModal, sans quoi la fiche d'aide se remet à mentir.
 interface ShortcutHandlers {
   onCommandPalette?: () => void;
   onNewConversation?: () => void;
@@ -12,8 +18,6 @@ interface ShortcutHandlers {
   onToggleTasksPanel?: () => void;
   onToggleInvoicesPanel?: () => void;
   onToggleCRMPanel?: () => void;
-  onNewContact?: () => void;
-  onNewProject?: () => void;
   onOpenSettings?: () => void;
   onSearch?: () => void;
   onOpenFile?: () => void;

@@ -1540,7 +1540,10 @@ class TestUploadEndpoint:
 
 CHAT_ROUTER_PY = SRC / "app" / "routers" / "chat.py"
 CHAT_TS = FRONTEND / "services" / "api" / "chat.ts"
-GUIDED_PROMPTS_TSX = FRONTEND / "components" / "guided" / "GuidedPrompts.tsx"
+# B-094 : GuidedPrompts a été retiré (aucun écran ne le montait). Les deux
+# tests qui lisaient son source gardaient un contrat sur du code mort ; le
+# contrat vivant reste couvert par test_frontend_chat_api_has_skill_id
+# (chat.ts) et par test_loading_message_in_command_executor.
 
 
 class TestSkillIdInChat:
@@ -1575,13 +1578,6 @@ class TestSkillIdInChat:
         content = CHAT_TS.read_text(encoding="utf-8")
         assert "skill_id" in content, (
             "chat.ts ChatRequest doit contenir le champ skill_id"
-        )
-
-    def test_guided_prompts_passes_skill_id(self):
-        """GuidedPrompts doit passer le skillId à onPromptSelect."""
-        content = GUIDED_PROMPTS_TSX.read_text(encoding="utf-8")
-        assert "skillId" in content, (
-            "GuidedPrompts doit passer skillId à onPromptSelect"
         )
 
 
@@ -4218,9 +4214,6 @@ class TestBUG056_ImageLoadingIndicator:
     COMMAND_EXECUTOR_TSX = Path(
         "src/frontend/src/components/home/CommandExecutor.tsx"
     )
-    GUIDED_PROMPTS_TSX = Path(
-        "src/frontend/src/components/guided/GuidedPrompts.tsx"
-    )
     CHAT_STORE_TS = Path("src/frontend/src/stores/chatStore.ts")
 
     def test_loading_message_in_command_executor(self):
@@ -4233,12 +4226,6 @@ class TestBUG056_ImageLoadingIndicator:
         content = self.COMMAND_EXECUTOR_TSX.read_text(encoding="utf-8")
         assert "updateMessage" in content, (
             "CommandExecutor doit utiliser updateMessage pour remplacer le loading (BUG-056)"
-        )
-
-    def test_loading_message_in_guided_prompts(self):
-        content = self.GUIDED_PROMPTS_TSX.read_text(encoding="utf-8")
-        assert "isStreaming: true" in content, (
-            "GuidedPrompts doit créer un message loading avec isStreaming: true (BUG-056)"
         )
 
     def test_chat_store_update_message_accepts_meta(self):

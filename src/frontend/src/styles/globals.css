@@ -106,6 +106,15 @@
   --color-info-fill: #1D4ED8;
   --color-info-ink: #FFFFFF;
 
+  /* La ligne de l'heure courante dans l'agenda. Rouge par convention, pas
+     par sémantique : ce n'est pas une erreur. Jeton dédié pour que le sens
+     reste lisible et que la couleur suive le thème.
+     B-109 : il vivait dans `:root`, d'où Tailwind 4 ne génère AUCUN
+     utilitaire. `bg-instant` ne correspondait à aucune règle et le repère
+     était invisible. Les valeurs des thèmes sombre et contraste élevé
+     redéfinissent la variable ; l'utilitaire, lui, naît ici. */
+  --color-instant: #DC2626;
+
   /* La préférence d'accessibilité « Petite » pose 14 px sur <html> : à
      l'échelle rem, text-xs tombait alors à 10,5 px, sous le plancher que ce
      projet s'est donné. La plus petite marche est plafonnée par le bas ; les
@@ -153,10 +162,6 @@
   --color-warning-tint: #FFF8E8;
   --color-error-tint: #FFF1F1;
 
-  /* La ligne de l'heure courante dans l'agenda. Rouge par convention, pas
-     par sémantique : ce n'est pas une erreur. Jeton dédié pour que le sens
-     reste lisible et que la couleur suive le thème. */
-  --color-instant: #DC2626;
   --color-info-tint: #EAF1FF;
 }
 

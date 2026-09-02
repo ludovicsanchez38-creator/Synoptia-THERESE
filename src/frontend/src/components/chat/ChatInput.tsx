@@ -32,7 +32,6 @@ import { estUneImage } from '../../lib/pieceJointeImage';
 import { useFileDrop, type DroppedFile } from '../../hooks/useFileDrop';
 import { streamMessage, streamDeepResearch, indexFile, cancelGeneration, ApiError, getLLMConfig, setLLMConfig, type LLMProvider } from '../../services/api';
 import type { StreamChunk } from '../../services/api/chat';
-import { useGhostText } from '../../hooks/useGhostText';
 import { useAutosave } from '../../hooks/useAutosave';
 import { cn } from '../../lib/utils';
 import { PLACEHOLDER_COMPOSEUR } from '../../lib/etabli';
@@ -210,12 +209,9 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     }
   }, [currentProvider, currentModel]);
 
-  // Ghost text prédictif
-  const { suggestion, accept: acceptGhost, dismiss: dismissGhost } = useGhostText(
-    input,
-    currentConversationId,
-    isStreaming,
-  );
+  // B-113 : le texte fantôme prédictif a été retiré. Le hook s'auto-désarmait
+  // par une constante depuis juillet (route /api/chat/complete inexistante) et
+  // laissait quatre branches mortes dans ce composeur.
 
   // File drop handling (with deduplication)
   // BUG-155 : une indexation en cours doit pouvoir être interrompue. Un
@@ -1017,19 +1013,6 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         }
       }
 
-      // Ghost text : Tab accepte, Escape dismiss
-      if (e.key === 'Tab' && suggestion) {
-        e.preventDefault();
-        setInput(input + suggestion);
-        acceptGhost();
-        return;
-      }
-      if (e.key === 'Escape' && suggestion) {
-        e.preventDefault();
-        dismissGhost();
-        return;
-      }
-
       // Cmd+K opens command palette
       const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
       const modKey = isMac ? e.metaKey : e.ctrlKey;
@@ -1046,7 +1029,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         sendMessage();
       }
     },
-    [sendMessage, showSlashMenu, onOpenCommandPalette, suggestion, input, acceptGhost, dismissGhost]
+    [sendMessage, showSlashMenu, onOpenCommandPalette]
   );
 
   // Focus textarea on mount
@@ -1365,16 +1348,6 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
             )}
             style={{ maxHeight: `${24 * MAX_ROWS}px` }}
           />
-          {/* Ghost text suggestion overlay */}
-          {suggestion && (
-            <div
-              className="absolute inset-0 pointer-events-none text-sm leading-6 py-1.5 whitespace-pre-wrap break-words"
-              aria-hidden="true"
-            >
-              <span className="invisible">{input}</span>
-              <span className="text-text-muted">{suggestion}</span>
-            </div>
-          )}
         </div>
 
         {/* Voice button */}
@@ -1459,11 +1432,6 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           <kbd className="px-1 rounded-sm bg-surface-elevated">{/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl'}</kbd>+
           <kbd className="px-1 rounded-sm bg-surface-elevated">K</kbd> commandes
         </p>}
-        {showKeyboardHints && suggestion && (
-          <p className="text-xs text-accent-cyan-ink">
-            <kbd className="px-1 rounded-sm bg-surface-elevated">Tab</kbd> accepter
-          </p>
-        )}
         {lastSavedAt && (
           <SavedIndicator savedAt={lastSavedAt} />
         )}

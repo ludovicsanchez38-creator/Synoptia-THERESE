@@ -35,9 +35,6 @@ vi.mock('../../services/api', () => ({
   ...apiMocks,
   ApiError: class ApiError extends Error {},
 }));
-vi.mock('../../hooks/useGhostText', () => ({
-  useGhostText: () => ({ suggestion: '', accept: vi.fn(), dismiss: vi.fn() }),
-}));
 vi.mock('../../hooks/useAutosave', () => ({
   useAutosave: () => ({ saveDraft: vi.fn(), restoreDraft: vi.fn(() => ''), clearDraft: vi.fn(), lastSavedAt: null }),
 }));

@@ -31,9 +31,6 @@ vi.mock('../../services/api', () => ({
     status = 500;
   },
 }));
-vi.mock('../../hooks/useGhostText', () => ({
-  useGhostText: () => ({ suggestion: '', accept: vi.fn(), dismiss: vi.fn() }),
-}));
 vi.mock('../../hooks/useAutosave', () => ({
   useAutosave: () => ({ saveDraft: vi.fn(), restoreDraft: vi.fn(() => ''), clearDraft: vi.fn(), lastSavedAt: null }),
 }));

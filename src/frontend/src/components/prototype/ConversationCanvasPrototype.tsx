@@ -1141,8 +1141,6 @@ export function ConversationCanvasPrototype() {
     // Entrée 6 : le gestionnaire avait sa branche, la coque ne la remplissait
     // jamais. La fiche des raccourcis annonçait un groupe Fichiers vide.
     onOpenFile: () => openEmbeddedView('files'),
-    onNewContact: () => usePanelStore.getState().openNewContact(),
-    onNewProject: () => usePanelStore.getState().openNewProject(),
     onOpenSettings: () => openSettings('profile'),
     onSearch: () => openEmbeddedView('memory'),
     onToggleDemoMode: toggleDemoMode,
