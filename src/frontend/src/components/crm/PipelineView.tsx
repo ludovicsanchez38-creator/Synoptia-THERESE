@@ -22,10 +22,12 @@ import {
 } from '@dnd-kit/core';
 import {
   SortableContext,
+  sortableKeyboardCoordinates,
   verticalListSortingStrategy,
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { pushEscapeHandler } from '../../lib/escapeStack';
 import type { ContactResponse } from '../../services/api';
 
 // Les 7 stages du pipeline. Couleurs prises aux jetons depuis le 30/08/2026 :
@@ -52,9 +54,13 @@ export function PipelineView({ contacts, onContactClick, onStageChange }: Pipeli
   const [contactsByStage, setContactsByStage] = useState<Record<string, ContactResponse[]>>({});
   const [activeContact, setActiveContact] = useState<ContactResponse | null>(null);
 
+  // B-237 : sans `coordinateGetter`, dnd-kit avance son pointeur virtuel de
+  // 25 px par flèche — dans des colonnes de 288 px (`w-72` plus bas), la carte
+  // reste au-dessus d'elle-même et aucune cible n'est jamais annoncée.
+  // `sortableKeyboardCoordinates` saute de conteneur en conteneur.
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(KeyboardSensor)
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
   );
 
   useEffect(() => {
@@ -65,6 +71,37 @@ export function PipelineView({ contacts, onContactClick, onStageChange }: Pipeli
 
     setContactsByStage(grouped);
   }, [contacts]);
+
+  // B-237 : Échap pendant un glissé descendait toute la cascade de la coque
+  // jusqu'à `collapseEmbeddedView()` — la vue CRM entière se fermait au geste
+  // qui devait seulement annuler le déplacement. dnd-kit écoute sur `document`
+  // et a déjà annulé quand la coque, qui écoute sur `window`, prend la main :
+  // il ne reste qu'à absorber la touche. Le handler se retire à l'annulation
+  // (`onDragCancel`), faute de quoi il avalerait TOUS les Échap suivants.
+  useEffect(() => {
+    if (!activeContact) return;
+    return pushEscapeHandler(() => {});
+  }, [activeContact]);
+
+  /** Colonne visée par une cible de dépôt : une colonne, ou la carte survolée. */
+  function stageDepuisCible(overId: string): string | null {
+    const stageIds = PIPELINE_STAGES.map((s) => s.id);
+    if (stageIds.includes(overId)) return overId;
+    for (const stage of stageIds) {
+      if (contactsByStage[stage]?.some((c) => c.id === overId)) return stage;
+    }
+    return null;
+  }
+
+  function nomDuContact(contactId: string): string {
+    const contact = contacts.find((c) => c.id === contactId);
+    if (!contact) return 'Contact';
+    return [contact.first_name, contact.last_name].filter(Boolean).join(' ') || 'Contact';
+  }
+
+  function libelleDuStage(stageId: string | null): string | null {
+    return PIPELINE_STAGES.find((s) => s.id === stageId)?.label ?? null;
+  }
 
   function handleDragStart(event: DragStartEvent) {
     const contactId = event.active.id as string;
@@ -80,21 +117,7 @@ export function PipelineView({ contacts, onContactClick, onStageChange }: Pipeli
 
     const contactId = active.id as string;
 
-    // Determine the target stage
-    let targetStage: string | null = null;
-
-    const stageIds = PIPELINE_STAGES.map((s) => s.id);
-    if (stageIds.includes(over.id as string)) {
-      targetStage = over.id as string;
-    } else {
-      // Dropped on a contact card - find which stage it belongs to
-      for (const stage of stageIds) {
-        if (contactsByStage[stage]?.some((c) => c.id === over.id)) {
-          targetStage = stage;
-          break;
-        }
-      }
-    }
+    const targetStage = stageDepuisCible(over.id as string);
 
     if (!targetStage) return;
 
@@ -110,6 +133,36 @@ export function PipelineView({ contacts, onContactClick, onStageChange }: Pipeli
       collisionDetection={rectIntersection}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
+      onDragCancel={() => setActiveContact(null)}
+      // B-237 : sans ce bloc, un lecteur d'écran français lisait les consignes
+      // ANGLAISES par défaut de dnd-kit, et annonçait des identifiants au lieu
+      // de noms de contacts et de colonnes.
+      accessibility={{
+        screenReaderInstructions: {
+          draggable:
+            'Pour saisir une carte, appuie sur la barre d’espace. Utilise ensuite les flèches ' +
+            'pour la déplacer d’une colonne à l’autre, la barre d’espace pour la déposer, ' +
+            'et Échap pour annuler.',
+        },
+        announcements: {
+          onDragStart: ({ active }) =>
+            `Carte de ${nomDuContact(active.id as string)} saisie.`,
+          onDragOver: ({ active, over }) => {
+            const stage = libelleDuStage(over ? stageDepuisCible(over.id as string) : null);
+            return stage
+              ? `Carte de ${nomDuContact(active.id as string)} au-dessus de la colonne ${stage}.`
+              : `Carte de ${nomDuContact(active.id as string)} hors d’une colonne.`;
+          },
+          onDragEnd: ({ active, over }) => {
+            const stage = libelleDuStage(over ? stageDepuisCible(over.id as string) : null);
+            return stage
+              ? `Carte de ${nomDuContact(active.id as string)} déposée dans la colonne ${stage}.`
+              : `Carte de ${nomDuContact(active.id as string)} reposée à sa place.`;
+          },
+          onDragCancel: ({ active }) =>
+            `Déplacement annulé, la carte de ${nomDuContact(active.id as string)} reste à sa place.`,
+        },
+      }}
     >
       <div className="flex gap-4 overflow-x-auto pb-4">
         {PIPELINE_STAGES.map((stage) => (

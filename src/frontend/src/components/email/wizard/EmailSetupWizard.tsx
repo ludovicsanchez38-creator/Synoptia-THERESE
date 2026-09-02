@@ -5,7 +5,7 @@
  * Supporte Gmail OAuth et SMTP/IMAP classique.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
@@ -17,6 +17,7 @@ import { VerifyStep } from './VerifyStep';
 import { SmtpConfigStep } from './SmtpConfigStep';
 import * as api from '../../../services/api';
 import { Z_LAYER } from '../../../styles/z-layers';
+import { useDialogFocusTrap } from '../../../hooks/useDialogFocusTrap';
 
 interface EmailSetupWizardProps {
   onComplete: () => void;
@@ -43,6 +44,14 @@ export function EmailSetupWizard({ onComplete, onCancel }: EmailSetupWizardProps
     useMcpCredentials: false,
   });
   const [mcpCredentials, setMcpCredentials] = useState<api.GoogleCredentials | null>(null);
+
+  // B-093 : le dialogue annonçait `aria-modal="true"` sans rien tenir. Le focus
+  // restait dehors à l'ouverture, trois Tab suffisaient à rejoindre un
+  // arrière-plan déclaré inerte, et Échap repliait la vue Email entière au lieu
+  // de fermer l'assistant (`onCancel` n'était jamais appelé). Le hook est la
+  // source unique de ce comportement dans l'application.
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useDialogFocusTrap(dialogRef, { active: true, onEscape: onCancel });
 
   // Load MCP credentials on mount
   useEffect(() => {
@@ -89,6 +98,7 @@ export function EmailSetupWizard({ onComplete, onCancel }: EmailSetupWizardProps
   return createPortal(
     <div className={`fixed inset-0 ${Z_LAYER.WIZARD} flex items-center justify-center bg-black/60 backdrop-blur-sm`}>
       <motion.div
+        ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label="Configuration Email"

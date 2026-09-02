@@ -5,7 +5,7 @@
  * Réutilise les composants existants (DynamicSkillForm, SkillExecutionPanel, etc.)
  */
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import type { CommandDefinition } from '../../types/command';
 import { runAction } from '../../lib/actionRegistry';
@@ -61,6 +61,17 @@ export function CommandExecutor({ command, onClose, onPromptSelect, onStartRFC }
   const [imagePromptCommand, setImagePromptCommand] = useState<CommandDefinition | null>(null);
   const [imageState, setImageState] = useState<ImageState | null>(null);
   const [isLoadingSchema, setIsLoadingSchema] = useState(false);
+
+  // B-097 : « Réessayer » effaçait l'état au lieu de rejouer la génération, et
+  // les entrées avaient déjà été jetées. On garde de quoi relancer À
+  // L'IDENTIQUE, sans repasser par le formulaire (le repasser, c'est
+  // exactement le défaut : l'écran revenait vide, la saisie perdue).
+  const derniereGenerationRef = useRef<{
+    skillId: string;
+    format: FileFormat;
+    inputs: Record<string, any>;
+    prompt: string;
+  } | null>(null);
 
   const { addMessage, updateMessage } = useChatStore();
 
@@ -162,6 +173,40 @@ export function CommandExecutor({ command, onClose, onPromptSelect, onStartRFC }
     execute(command);
   }
 
+  /**
+   * Lance (ou relance) une génération de fichier. `skillState` passe à
+   * « generating » AVANT le moindre await : le rendu ne repasse jamais par
+   * l'état nul, qui réarmerait `execute(command)` et rechargerait le schéma.
+   */
+  const lancerGenerationFichier = useCallback(async (
+    skillId: string,
+    format: FileFormat,
+    inputs: Record<string, any>,
+    prompt: string,
+  ) => {
+    derniereGenerationRef.current = { skillId, format, inputs, prompt };
+    setSkillState({ skillId, format, status: 'generating' });
+
+    try {
+      const response = await executeSkill(skillId, { prompt, inputs });
+
+      setSkillState({
+        skillId,
+        format,
+        status: response.success ? 'success' : 'error',
+        response: response.success ? response : undefined,
+        error: response.success ? undefined : (response.error || 'Erreur'),
+      });
+    } catch (err) {
+      setSkillState({
+        skillId,
+        format,
+        status: 'error',
+        error: err instanceof Error ? err.message : 'Erreur inconnue',
+      });
+    }
+  }, []);
+
   // Handler formulaire dynamique
   const handleDynamicSubmit = useCallback(async (inputs: Record<string, any>) => {
     if (!dynamicSkill) return;
@@ -183,33 +228,11 @@ export function CommandExecutor({ command, onClose, onPromptSelect, onStartRFC }
       if (skillId.startsWith('pptx')) format = 'pptx';
       else if (skillId.startsWith('xlsx')) format = 'xlsx';
       else if (skillId.startsWith('pdf')) format = 'pdf';
-      setSkillState({ skillId, format, status: 'generating' });
+      const promptParts = Object.entries(inputs).map(([k, v]) => `${k}: ${v}`);
       setDynamicSkill(null);
-
-      try {
-        const promptParts = Object.entries(inputs).map(([k, v]) => `${k}: ${v}`);
-        const response = await executeSkill(skillId, {
-          prompt: promptParts.join('\n'),
-          inputs,
-        });
-
-        setSkillState({
-          skillId,
-          format,
-          status: response.success ? 'success' : 'error',
-          response: response.success ? response : undefined,
-          error: response.success ? undefined : (response.error || 'Erreur'),
-        });
-      } catch (err) {
-        setSkillState({
-          skillId,
-          format,
-          status: 'error',
-          error: err instanceof Error ? err.message : 'Erreur inconnue',
-        });
-      }
+      await lancerGenerationFichier(skillId, format, inputs, promptParts.join('\n'));
     }
-  }, [dynamicSkill, onPromptSelect, onClose]);
+  }, [dynamicSkill, onPromptSelect, onClose, lancerGenerationFichier]);
 
   // Handlers image
   const handleImageGenerate = useCallback((customPrompt: string) => {
@@ -315,7 +338,13 @@ export function CommandExecutor({ command, onClose, onPromptSelect, onStartRFC }
               await downloadSkillFile(skillState.response.file_id, skillState.response.file_name);
             }
           }}
-          onRetry={() => setSkillState(null)}
+          onRetry={() => {
+            const derniere = derniereGenerationRef.current;
+            if (!derniere) { setSkillState(null); return; }
+            void lancerGenerationFichier(
+              derniere.skillId, derniere.format, derniere.inputs, derniere.prompt,
+            );
+          }}
           onClose={() => { setSkillState(null); onClose(); }}
         />
       )}

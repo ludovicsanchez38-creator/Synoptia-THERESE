@@ -42,6 +42,12 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
   // (prospects/pipeline). La Mémoire, elle, affiche tous les contacts.
   const contacts = allContacts.filter((c) => !!c.source);
 
+  // B-226 : le filtre reste (c'est le choix produit), mais il ne peut plus être
+  // muet. L'en-tête comptait la liste DÉJÀ filtrée : il ne pouvait pas se
+  // contredire, il contredisait la base. Le critère et le total réel sont
+  // désormais lisibles à l'écran dès qu'un contact est écarté.
+  const contactsMasques = allContacts.length - contacts.length;
+
   const hasCachedContacts = contacts.length > 0;
 
   const [loading, setLoading] = useState(!hasCachedContacts);
@@ -150,6 +156,13 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
             {contacts.length} contact{contacts.length > 1 ? 's' : ''}
             {contactsTronques ? '+' : ''} · {projects.length} projet{projects.length > 1 ? 's' : ''}
           </p>
+          {contactsMasques > 0 && (
+            <p className="text-sm text-text-muted">
+              Seuls les contacts ayant une source apparaissent dans le pipeline :{' '}
+              {contactsMasques} sur {allContacts.length} {contactsMasques > 1 ? 'n’y figurent' : 'n’y figure'} pas.
+              {contactsMasques > 1 ? ' Ils restent visibles' : ' Il reste visible'} dans Contacts.
+            </p>
+          )}
           {contactsTronques && (
             <p role="alert" className="text-sm text-warning">
               Liste incomplète : le pipeline ne montre que les 200 contacts les plus récents.

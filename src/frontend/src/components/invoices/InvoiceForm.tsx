@@ -6,7 +6,7 @@
  * US-018 : Conversion devis -> facture + conditions de paiement
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { X, Plus, Trash2, Save, FileCheck, AlertTriangle } from 'lucide-react';
 import { createInvoice, updateInvoice, convertDevisToInvoice, updateDevisStatus, type Invoice, type InvoiceLineRequest, listContacts, type Contact, markInvoicePaid } from '../../services/api';
@@ -16,6 +16,7 @@ import { useBillingProfileStore } from '../../stores/billingProfileStore';
 import { montantAvecDevise } from '../../lib/devise';
 import { cn } from '../../lib/utils';
 import { Z_LAYER } from '../../styles/z-layers';
+import { pushEscapeHandler } from '../../lib/escapeStack';
 import { useExternalActionConfirmation } from '../app/useExternalActionConfirmation';
 
 interface InvoiceFormProps {
@@ -52,6 +53,9 @@ const CURRENCY_SYMBOLS: Record<string, string> = {
   GBP: '£',
   CAD: 'CA$',
 };
+
+/** Rattache le bouton d'envoi, rendu hors du bloc défilant, à son formulaire. */
+const ID_FORMULAIRE = 'invoice-form';
 
 function formatDecimalInput(value: number) {
   return String(value);
@@ -127,6 +131,23 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
   const [showConvertDialog, setShowConvertDialog] = useState(false);
+
+  // B-228 : la modale n'était inscrite NI dans la pile Échap NI dans le
+  // panelStore. `consommeEchapUnifie` rendait donc false, la cascade de la coque
+  // tombait sur `collapseEmbeddedView()` et démontait le panneau Devis et
+  // factures AVEC son enfant — brouillon compris, en une seule pression.
+  // Le ref suit le pattern de SignatureEditorModal : sans lui, une identité de
+  // `onClose` recréée à chaque rendu réinscrirait un handler par rendu.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  useEffect(() => pushEscapeHandler(() => onCloseRef.current()), []);
+
+  // Le dialogue de conversion est une couche AU-DESSUS : la pile étant LIFO, il
+  // se ferme le premier et laisse le formulaire ouvert.
+  useEffect(() => {
+    if (!showConvertDialog) return;
+    return pushEscapeHandler(() => setShowConvertDialog(false));
+  }, [showConvertDialog]);
 
   // Charger les contacts
   useEffect(() => {
@@ -439,7 +460,12 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+        {/* B-011 : la barre d'actions vit HORS du bloc défilant, à dessein. Le
+            bouton d'envoi était donc orphelin (`.form === null`) : Entrée ne
+            soumettait rien, les six champs `required` n'étaient jamais évalués
+            et `onSubmit` était du code mort. L'attribut `form` rattache le
+            bouton sans rien déplacer à l'écran. */}
+        <form id={ID_FORMULAIRE} onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* P0-PROD-2 : garde-fou émetteur (facture non conforme sans SIRET/identité) */}
           {billingMissing && billingMissing.length > 0 && (
             <div className="flex items-start gap-3 p-3 rounded-md bg-agent-amber/10 border border-agent-amber/30">
@@ -877,7 +903,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
             </button>
             <button
               type="submit"
-              onClick={handleSubmit}
+              form={ID_FORMULAIRE}
               disabled={isSaving}
               className={cn(
                 'px-4 py-2 rounded-md font-medium transition-colors',

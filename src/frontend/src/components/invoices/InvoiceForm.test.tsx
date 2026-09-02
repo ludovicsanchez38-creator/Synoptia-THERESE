@@ -92,6 +92,16 @@ describe('InvoiceForm décimaux', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Créer/i }));
 
+    // Vide : depuis B-011 le bouton appartient au formulaire, donc la validation
+    // NATIVE du champ `required` s'interpose avant tout code applicatif. Rien
+    // ne part, et c'est le navigateur qui le dit.
+    expect(createInvoiceMock).not.toHaveBeenCalled();
+
+    // Invalide sans être vide (« . » passe `required` et le filtre de saisie) :
+    // c'est là que la garde applicative reste seule compétente.
+    fireEvent.change(screen.getByLabelText('Quantité ligne 1'), { target: { value: '.' } });
+    fireEvent.click(screen.getByRole('button', { name: /Créer/i }));
+
     expect(createInvoiceMock).not.toHaveBeenCalled();
     expect(window.alert).toHaveBeenCalled();
   });
@@ -113,7 +123,11 @@ describe('InvoiceForm - BUG-132 validation description de ligne', () => {
 
     // Contact requis (sinon on bloque avant la ligne).
     fireEvent.change(await screen.findByLabelText(/Client/i), { target: { value: 'contact-1' } });
-    // La ligne par défaut existe (quantité 1) mais sa description est vide.
+    // Description faite d'espaces : depuis B-011 la validation native du champ
+    // `required` s'interpose sur une description VIDE, et elle laisse passer les
+    // blancs. Le message ciblé de BUG-132 reste donc seul compétent ici — c'est
+    // exactement le cas qu'il doit couvrir.
+    fireEvent.change(screen.getByPlaceholderText('Description'), { target: { value: '   ' } });
     fireEvent.click(screen.getByRole('button', { name: /Créer/i }));
 
     expect(createInvoiceMock).not.toHaveBeenCalled();
