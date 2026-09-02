@@ -29,6 +29,7 @@ import {
 import { cn } from '../../lib/utils';
 import { useUXMode } from '../../hooks/useUXMode';
 import { getActions, runAction } from '../../lib/actionRegistry';
+import { replierPourRecherche } from '../../lib/replierPourRecherche';
 import { Z_LAYER } from '../../styles/z-layers';
 
 export interface Command {
@@ -112,12 +113,12 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
       : commands.filter((cmd) => !cmd.contributeurOnly);
 
     if (!query.trim()) return available;
-    const q = query.toLowerCase();
+    const q = replierPourRecherche(query);
     return available.filter(
       (cmd) =>
-        cmd.name.toLowerCase().includes(q) ||
-        cmd.description.toLowerCase().includes(q) ||
-        (cmd.keywords ?? []).some((k) => k.toLowerCase().includes(q))
+        replierPourRecherche(cmd.name).includes(q) ||
+        replierPourRecherche(cmd.description).includes(q) ||
+        (cmd.keywords ?? []).some((k) => replierPourRecherche(k).includes(q))
     );
   }, [commands, query, isContributeur]);
 

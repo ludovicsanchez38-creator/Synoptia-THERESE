@@ -82,6 +82,10 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
   // Configuration LLM
   const [selectedProvider, setSelectedProvider] = useState<api.LLMProvider>('anthropic');
   const [selectedModel, setSelectedModel] = useState('claude-sonnet-4-6');
+  // B-225 : ce que l'utilisateur a réellement choisi, fournisseur par
+  // fournisseur. Une ref et non un état : `handleSelectProvider` est asynchrone
+  // et lirait une valeur périmée dans sa fermeture.
+  const modelesParFournisseur = useRef<Partial<Record<api.LLMProvider, string>>>({});
   const [apiKeys, setApiKeys] = useState<Record<string, boolean>>({});
   const [corruptedKeys, setCorruptedKeys] = useState<string[]>([]);
   const [apiKeyInput, setApiKeyInput] = useState('');
@@ -219,6 +223,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
 
       setSelectedProvider(loadedProvider);
       setSelectedModel(resolvedModel);
+      modelesParFournisseur.current[loadedProvider] = resolvedModel;
       setStats(statsData);
       setProfile(profileData);
       setWorkingDir(workingDirData?.path || null);
@@ -425,6 +430,18 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
       defaultModel = ollamaModels[0];
     }
 
+    // B-225 : revenir sur un fournisseur déjà configuré doit rendre le modèle
+    // qui y avait été enregistré, pas le premier du catalogue. Sans cette
+    // mémoire, inspecter un fournisseur réécrivait la configuration active en
+    // silence : mistral-medium-latest devenait mistral-large-latest au retour.
+    const dejaChoisi = modelesParFournisseur.current[provider];
+    // Un modèle Ollama peut avoir disparu de la machine entre-temps ; les
+    // catalogues cloud, eux, ne bougent pas d'un clic à l'autre.
+    const toujoursPropose = provider !== 'ollama' || ollamaModels.includes(dejaChoisi ?? '');
+    if (dejaChoisi && toujoursPropose) {
+      defaultModel = dejaChoisi;
+    }
+
     if (defaultModel) {
       setSelectedModel(defaultModel);
       setError(null);
@@ -432,6 +449,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
       setRetryOperation(null);
       try {
         await api.setLLMConfig(provider, defaultModel);
+        modelesParFournisseur.current[provider] = defaultModel;
         window.dispatchEvent(new Event('therese:llm-config-changed'));
         setOperationStatus('Fournisseur IA enregistré.');
       } catch (err) {
@@ -452,6 +470,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
     setRetryOperation(null);
     try {
       await api.setLLMConfig(selectedProvider, modelId);
+      modelesParFournisseur.current[selectedProvider] = modelId;
       window.dispatchEvent(new Event('therese:llm-config-changed'));
       setOperationStatus('Modèle IA enregistré.');
     } catch (err) {

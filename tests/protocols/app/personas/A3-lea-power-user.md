@@ -1273,18 +1273,19 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 1. `javascript_tool` -> `document.dispatchEvent(new KeyboardEvent('keydown', {key: '1', ctrlKey: true, bubbles: true}))` (retour chat)
 2. `wait_for` -> `[data-testid="chat-message-input"]` visible (max 3s)
 3. `click` -> `[data-testid="chat-message-input"]`
-4. `type` -> `<img src=x onerror=alert(1)>`
-5. `click` -> `[data-testid="chat-send-btn"]`
-6. `wait_for` -> message affiché dans la liste (max 5s)
-7. `screenshot` -> `/tmp/therese-tests/A3-54_xss_test.png`
-8. `javascript_tool` -> vérifier qu'aucun `alert` n'a été déclenché : `window.__xss_triggered === undefined`
-9. `javascript_tool` -> vérifier que le message est affiché en texte brut (échappé) et non interprété comme HTML
-10. `javascript_tool` -> `document.querySelectorAll('img[src="x"]').length === 0` (pas d'image injectée)
-11. `type` -> `<script>document.title='HACKED'</script>`
-12. `click` -> `[data-testid="chat-send-btn"]`
-13. `wait_for` -> message affiché (max 5s)
-14. `screenshot` -> `/tmp/therese-tests/A3-54_xss_script_test.png`
-15. `javascript_tool` -> `document.title !== 'HACKED'` (le script n'a pas été exécuté)
+4. `javascript_tool` -> armer le témoin AVANT l'injection, sinon le contrôle 9 ne peut pas échouer : `window.__xss_triggered = undefined; window.alert = () => { window.__xss_triggered = true; };`
+5. `type` -> `<img src=x onerror=alert(1)>`
+6. `click` -> `[data-testid="chat-send-btn"]`
+7. `wait_for` -> message affiché dans la liste (max 5s)
+8. `screenshot` -> `/tmp/therese-tests/A3-54_xss_test.png`
+9. `javascript_tool` -> vérifier qu'aucun `alert` n'a été déclenché : `window.__xss_triggered === undefined` (le témoin posé à l'action 4 devient `true` dès qu'`alert` est appelé : sans lui, ce contrôle était toujours vrai)
+10. `javascript_tool` -> vérifier que le message est affiché en texte brut (échappé) et non interprété comme HTML
+11. `javascript_tool` -> `document.querySelectorAll('img[src="x"]').length === 0` (pas d'image injectée)
+12. `type` -> `<script>document.title='HACKED'</script>`
+13. `click` -> `[data-testid="chat-send-btn"]`
+14. `wait_for` -> message affiché (max 5s)
+15. `screenshot` -> `/tmp/therese-tests/A3-54_xss_script_test.png`
+16. `javascript_tool` -> `document.title !== 'HACKED'` (le script n'a pas été exécuté)
 
 **Résultat attendu** : Les deux tentatives XSS sont neutralisées. Le `<img src=x onerror=alert(1)>` est affiché en texte brut (échappé en `&lt;img...&gt;`) et non interprété comme HTML. Aucune alert() n'est déclenchée. Le `<script>` est aussi échappé. Le titre de la page reste inchangé. L'anti-injection est fonctionnel.
 **États testés** : filled (message échappé), security

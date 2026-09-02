@@ -14,11 +14,16 @@
       Disparaît automatiquement quand React remplace le contenu de #root.
     -->
     <style>
-      /* Variables alignées sur le thème THÉRÈSE (repris du CSS global) */
+      /* Variables alignées sur le thème THÉRÈSE (repris du CSS global).
+         B-063 : elles ne l'étaient pas. Le splash s'affiche avant le bundle,
+         il ne peut pas lire globals.css et doit donc en recopier les valeurs
+         exactes : fond du thème sombre, accents de marque. Toute divergence
+         se voit au montage de React, en saut de couleur.
+         Verrouillé par src/styles/splash.test.ts. */
       :root {
-        --therese-bg: #0f0f13;
-        --therese-cyan: #00d4ff;
-        --therese-magenta: #ff00aa;
+        --therese-bg: #0B1226;
+        --therese-cyan: #22D3EE;
+        --therese-magenta: #E11D8D;
         --therese-text-muted: rgba(255, 255, 255, 0.45);
       }
 

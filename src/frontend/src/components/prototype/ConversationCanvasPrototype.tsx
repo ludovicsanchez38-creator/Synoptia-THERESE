@@ -34,6 +34,7 @@ import { CharacterPortrait } from './DecisionMissionPrototype';
 import { ConnectionStatus } from '../ui/ConnectionStatus';
 import { WindowControls } from '../window/WindowControls';
 import { isMacPlatform } from '../../lib/platform';
+import { replierPourRecherche } from '../../lib/replierPourRecherche';
 import { startWindowDrag } from '../../lib/windowChrome';
 import {
   AtelierHistoryCard,
@@ -423,7 +424,7 @@ function CommandPalette({
   const isPresent = useIsPresent();
   useDialogFocusTrap(dialogRef, { active: isPresent, onEscape: onClose, isolateBackground: true });
   const visibleCapabilities = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
+    const normalized = replierPourRecherche(query.trim());
     if (!normalized) {
       // Les parcours sont listés juste au-dessus : une capacité qui mène au
       // même scénario ferait doublon dans la même palette, et deux entrées
@@ -438,12 +439,14 @@ function CommandPalette({
     }
     return capabilities
       .filter((item) =>
-        [item.title, item.description, ...item.features, ...item.keywords].join(' ').toLowerCase().includes(normalized),
+        replierPourRecherche(
+          [item.title, item.description, ...item.features, ...item.keywords].join(' '),
+        ).includes(normalized),
       )
       .slice(0, 8);
   }, [query]);
   const visibleActions = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
+    const normalized = replierPourRecherche(query.trim());
     if (!normalized) {
       // Entrée 1 : la palette rendait une liste vide tant qu'on n'avait rien
       // tapé, alors que des destinations câblées attendaient. Elle suggère
@@ -456,10 +459,9 @@ function CommandPalette({
       );
     }
     return getActions().filter((action) =>
-      [action.label, action.description || '', ...(action.keywords || [])]
-        .join(' ')
-        .toLowerCase()
-        .includes(normalized),
+      replierPourRecherche(
+        [action.label, action.description || '', ...(action.keywords || [])].join(' '),
+      ).includes(normalized),
     ).slice(0, 6);
   }, [query, visibleCapabilities]);
   const scenarioCount = query ? 0 : ACTIONS_ETABLI.length;

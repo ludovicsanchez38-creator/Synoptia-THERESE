@@ -87,7 +87,12 @@ export function CompleteStep({ onComplete, onBack }: CompleteStepProps) {
       // verte et openai/gpt-5.5 (faux succès, finding Codex 16/07).
       title: 'Service d’IA',
       value: summary.llmConfig?.available
-        ? `${summary.llmConfig.provider} / ${summary.llmConfig.model.split('-').slice(0, 2).join('-')}`
+        // B-243 : le modèle s'écrit en entier. La troncature aux deux premiers
+        // segments fabriquait un identifiant absent de toute liste
+        // (mistral-medium-latest -> « mistral-medium », claude-opus-4-8 ->
+        // « claude-opus »). Le débordement est déjà tenu par `truncate` et le
+        // `title` de la ligne, qui rendent la valeur entière au survol.
+        ? `${summary.llmConfig.provider} / ${summary.llmConfig.model}`
         : 'À configurer',
       configured: !!summary.llmConfig?.available,
       unavailable: summaryUnavailable.includes('Service d’IA'),
