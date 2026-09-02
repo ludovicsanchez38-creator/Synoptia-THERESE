@@ -225,3 +225,98 @@ class TestStarredFlaggedCriteria:
         assert "flagged" in str(criteria).lower(), (
             f"le critère IMAP doit porter le flag \\Flagged, reçu : {criteria}"
         )
+
+
+class TestB060RemplacerUnBrouillonImap:
+    """Un message IMAP ne se modifie pas sur place : il se remplace.
+
+    B-060 : la pile n'avait aucune primitive de mise à jour, et `create_draft`
+    rendait un identifiant de SYNTHÈSE (`draft_<horodatage>`) qui ne désignait
+    rien sur le serveur. Ré-enregistrer un brouillon corrigé empilait donc un
+    exemplaire de plus, sans que rien ne l'annonce.
+    """
+
+    def _provider(self):
+        return make_provider()
+
+    def _boite(self, reponse_append=("OK", [b"[APPENDUID 3 4243] Append completed."])):
+        from unittest.mock import MagicMock
+
+        mailbox = MagicMock()
+        mailbox.folder.list.return_value = [
+            MagicMock(**{"name": "INBOX"}),
+            MagicMock(**{"name": "Drafts"}),
+        ]
+        mailbox.append.return_value = reponse_append
+        cm = MagicMock()
+        cm.__enter__ = MagicMock(return_value=mailbox)
+        cm.__exit__ = MagicMock(return_value=False)
+        return mailbox, cm
+
+    @staticmethod
+    def _demande() -> SendEmailRequest:
+        return SendEmailRequest(
+            to=["client@example.org"], subject="Corrigé", body="Bonjour"
+        )
+
+    def test_l_uid_du_serveur_est_lu_dans_la_reponse_append(self):
+        assert ImapSmtpProvider._uid_appendu(("OK", [b"[APPENDUID 3 4243] done"])) == "4243"
+        assert ImapSmtpProvider._uid_appendu(("OK", ["[appenduid 3 77] done"])) == "77"
+        assert ImapSmtpProvider._uid_appendu(("OK", [b"Append completed."])) is None
+        assert ImapSmtpProvider._uid_appendu(None) is None
+
+    @pytest.mark.asyncio
+    async def test_creer_rend_l_uid_du_serveur_pas_un_horodatage(self):
+        from unittest.mock import patch
+
+        provider = self._provider()
+        _, cm = self._boite()
+        with patch.object(provider, "_connect_mailbox", return_value=cm):
+            identifiant = await provider.create_draft(self._demande())
+
+        assert identifiant == "4243", (
+            "sans l'UID du serveur, le brouillon ne peut plus être retrouvé "
+            f"pour être remplacé (reçu {identifiant!r})"
+        )
+
+    @pytest.mark.asyncio
+    async def test_creer_retombe_sur_un_identifiant_de_synthese_sans_uidplus(self):
+        from unittest.mock import patch
+
+        provider = self._provider()
+        _, cm = self._boite(reponse_append=("OK", [b"Append completed."]))
+        with patch.object(provider, "_connect_mailbox", return_value=cm):
+            identifiant = await provider.create_draft(self._demande())
+
+        assert identifiant.startswith("draft_")
+
+    @pytest.mark.asyncio
+    async def test_remplacer_depose_la_correction_puis_efface_l_ancien(self):
+        from unittest.mock import patch
+
+        provider = self._provider()
+        mailbox, cm = self._boite()
+        with patch.object(provider, "_connect_mailbox", return_value=cm):
+            identifiant = await provider.update_draft("4242", self._demande())
+
+        assert mailbox.append.call_count == 1
+        assert mailbox.append.call_args[0][1] == "Drafts"
+        mailbox.delete.assert_called_once_with(["4242"])
+        assert identifiant == "4243"
+
+    @pytest.mark.asyncio
+    async def test_un_identifiant_de_synthese_est_refuse_plutot_que_doublonne(self):
+        """Sans UID, on ne peut pas effacer l'ancien : le dire, pas empiler."""
+        from unittest.mock import patch
+
+        provider = self._provider()
+        mailbox, cm = self._boite()
+        with (
+            patch.object(provider, "_connect_mailbox", return_value=cm),
+            pytest.raises(NotImplementedError, match="remplacer"),
+        ):
+            await provider.update_draft("draft_20260902120000", self._demande())
+
+        assert mailbox.append.call_count == 0, (
+            "un brouillon a été déposé alors que l'ancien ne pouvait pas être effacé"
+        )

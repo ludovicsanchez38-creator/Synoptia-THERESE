@@ -177,3 +177,163 @@ class TestBug122RepliSilencieuxInbox:
         assert result["messages"] == []
         assert "Corbeille" in result.get("warning", "")
         fake.list_messages.assert_not_awaited()
+
+
+class TestB060UnBrouillonEnregistreDeuxFoisNeSeDedouble:
+    """B-060 — corriger un brouillon déjà enregistré en empilait un second.
+
+    L'écran garde l'identifiant rendu au premier enregistrement
+    (`savedDraftId`) mais la seule route disponible était une CRÉATION pure :
+    aucun paramètre d'identifiant côté route, aucune primitive de mise à jour
+    chez les deux fournisseurs. Chaque relecture d'un brouillon laissait donc
+    un exemplaire de plus chez le fournisseur, avec le même bandeau vert.
+
+    Le contrat servi ici est « ce brouillon-là porte désormais ce contenu, et
+    il n'en reste qu'un » : Gmail rend le MÊME identifiant (`drafts.update`),
+    IMAP en rend un nouveau et efface l'ancien - un message IMAP ne se modifie
+    pas sur place, il se remplace.
+    """
+
+    @staticmethod
+    async def _compte_imap(db_session) -> EmailAccount:
+        compte = EmailAccount(
+            id="imap-draft-remplace",
+            email="ludo@example.test",
+            provider="imap",
+            imap_host="imap.example.test",
+            imap_port=993,
+            imap_username="ludo@example.test",
+            imap_password="encrypted-password",
+            smtp_host="smtp.example.test",
+            smtp_port=587,
+            smtp_use_tls=True,
+        )
+        db_session.add(compte)
+        await db_session.commit()
+        return compte
+
+    @pytest.mark.asyncio
+    async def test_imap_remplace_le_brouillon_designe(self, client, db_session):
+        compte = await self._compte_imap(db_session)
+        provider = MagicMock()
+        provider.create_draft = AsyncMock(return_value="jamais")
+        provider.update_draft = AsyncMock(return_value="4243")
+
+        with (
+            patch("app.routers.email.get_email_provider", return_value=provider),
+            patch("app.routers.email.decrypt_value", return_value="secret"),
+        ):
+            reponse = await client.post(
+                "/api/email/messages/draft",
+                params={"account_id": compte.id, "draft_id": "4242"},
+                json={
+                    "to": ["client@example.test"],
+                    "subject": "Proposition corrigée",
+                    "body": "Bonjour, voici la version corrigée.",
+                },
+            )
+
+        assert reponse.status_code == 200, reponse.text
+        assert provider.create_draft.await_count == 0, (
+            "un second brouillon a été créé alors qu'un identifiant était fourni"
+        )
+        assert provider.update_draft.await_count == 1
+        assert provider.update_draft.await_args.args[0] == "4242"
+        assert provider.update_draft.await_args.args[1].subject == "Proposition corrigée"
+        assert reponse.json() == {"id": "4243", "labelIds": ["DRAFT"]}
+
+    @pytest.mark.asyncio
+    async def test_gmail_remplace_et_rend_le_meme_identifiant(self, client, db_session):
+        compte = EmailAccount(
+            id="gmail-draft-remplace",
+            email="ludo@gmail.test",
+            provider="gmail",
+            access_token="encrypted-token",
+        )
+        db_session.add(compte)
+        await db_session.commit()
+
+        gmail = MagicMock()
+        gmail.create_draft = AsyncMock(return_value={"id": "jamais"})
+        gmail.update_draft = AsyncMock(return_value={"id": "r-99", "message": {}})
+
+        with patch(
+            "app.routers.email.get_gmail_service_for_account",
+            new=AsyncMock(return_value=gmail),
+        ):
+            reponse = await client.post(
+                "/api/email/messages/draft",
+                params={"account_id": compte.id, "draft_id": "r-99"},
+                json={
+                    "to": ["client@example.test"],
+                    "subject": "Proposition corrigée",
+                    "body": "Bonjour",
+                },
+            )
+
+        assert reponse.status_code == 200, reponse.text
+        assert gmail.create_draft.await_count == 0, (
+            "un second brouillon a été créé chez Gmail alors qu'un identifiant "
+            "était fourni"
+        )
+        assert gmail.update_draft.await_count == 1
+        assert gmail.update_draft.await_args.args[0] == "r-99"
+        assert reponse.json()["id"] == "r-99"
+
+    @pytest.mark.asyncio
+    async def test_un_serveur_qui_ne_sait_pas_remplacer_le_dit_en_501(
+        self, client, db_session
+    ):
+        """Une limite de capacité n'est pas une panne du serveur.
+
+        Un serveur IMAP sans UIDPLUS ne donne aucun identifiant exploitable :
+        le brouillon précédent ne peut pas être effacé. Le refus le dit (501),
+        plutôt qu'un 502 « Erreur IMAP » qui accuserait le serveur, et surtout
+        plutôt qu'un second brouillon déposé en silence.
+        """
+        compte = await self._compte_imap(db_session)
+        provider = MagicMock()
+        provider.create_draft = AsyncMock(return_value="jamais")
+        provider.update_draft = AsyncMock(
+            side_effect=NotImplementedError("impossible de remplacer ce brouillon")
+        )
+
+        with (
+            patch("app.routers.email.get_email_provider", return_value=provider),
+            patch("app.routers.email.decrypt_value", return_value="secret"),
+        ):
+            reponse = await client.post(
+                "/api/email/messages/draft",
+                params={"account_id": compte.id, "draft_id": "draft_20260902120000"},
+                json={"to": ["c@example.test"], "subject": "S", "body": "B"},
+            )
+
+        assert reponse.status_code == 501, reponse.text
+        assert "remplacer" in reponse.text
+        assert provider.create_draft.await_count == 0, (
+            "un second brouillon a été créé alors que le remplacement était refusé"
+        )
+
+    @pytest.mark.asyncio
+    async def test_sans_identifiant_le_premier_enregistrement_cree(
+        self, client, db_session
+    ):
+        """Contrôle de l'instrument : la création reste la voie par défaut."""
+        compte = await self._compte_imap(db_session)
+        provider = MagicMock()
+        provider.create_draft = AsyncMock(return_value="4242")
+        provider.update_draft = AsyncMock(return_value="jamais")
+
+        with (
+            patch("app.routers.email.get_email_provider", return_value=provider),
+            patch("app.routers.email.decrypt_value", return_value="secret"),
+        ):
+            reponse = await client.post(
+                "/api/email/messages/draft",
+                params={"account_id": compte.id},
+                json={"to": ["c@example.test"], "subject": "S", "body": "B"},
+            )
+
+        assert reponse.status_code == 200, reponse.text
+        assert provider.update_draft.await_count == 0
+        assert reponse.json() == {"id": "4242", "labelIds": ["DRAFT"]}

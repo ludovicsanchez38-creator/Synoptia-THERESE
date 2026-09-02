@@ -9,6 +9,7 @@ BUG-095: Robust timeout and error handling matching test_connection's approach.
 
 import asyncio
 import logging
+import re
 import ssl
 from datetime import UTC, datetime
 from email import encoders
@@ -470,43 +471,119 @@ class ImapSmtpProvider(EmailProvider):
         # Return a generated ID (SMTP doesn't return one)
         return f"sent_{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}"
 
+    def _message_du_brouillon(self, request: SendEmailRequest) -> MIMEMultipart:
+        """MIME d'un brouillon, identique qu'on le crée ou qu'on le remplace."""
+        if request.is_html:
+            msg = MIMEMultipart("alternative")
+            msg.attach(MIMEText(request.body, "html", "utf-8"))
+        else:
+            msg = MIMEMultipart()
+            msg.attach(MIMEText(request.body, "plain", "utf-8"))
+
+        msg["From"] = self._email
+        msg["To"] = ", ".join(request.to)
+        msg["Subject"] = request.subject
+
+        if request.cc:
+            msg["Cc"] = ", ".join(request.cc)
+
+        return msg
+
+    @staticmethod
+    def _dossier_brouillons(mailbox: MailBox) -> str:
+        """Nom du dossier Brouillons du serveur, « Drafts » à défaut."""
+        for folder in mailbox.folder.list():
+            if "draft" in folder.name.lower():
+                return folder.name
+        return "Drafts"
+
+    @staticmethod
+    def _uid_appendu(resultat: object) -> str | None:
+        """UID rendu par un serveur UIDPLUS (RFC 4315), sinon None.
+
+        B-060 : sans cet identifiant, un brouillon appendu ne peut plus être
+        retrouvé pour être remplacé, et chaque correction en laisserait un de
+        plus. L'ancien identifiant de synthèse (`draft_<horodatage>`) ne
+        désignait rien sur le serveur.
+        """
+        try:
+            donnees = resultat[1]  # type: ignore[index]
+        except (IndexError, KeyError, TypeError):
+            return None
+        for element in donnees or []:
+            texte = (
+                element.decode("utf-8", "replace")
+                if isinstance(element, bytes)
+                else str(element)
+            )
+            trouve = re.search(r"APPENDUID\s+\d+\s+(\d+)", texte, re.IGNORECASE)
+            if trouve:
+                return trouve.group(1)
+        return None
+
     async def create_draft(self, request: SendEmailRequest) -> str:
         """Create a draft in IMAP Drafts folder with timeout."""
+        msg = self._message_du_brouillon(request)
 
         def _sync_create():
-            # Create message
-            if request.is_html:
-                msg = MIMEMultipart("alternative")
-                msg.attach(MIMEText(request.body, "html", "utf-8"))
-            else:
-                msg = MIMEMultipart()
-                msg.attach(MIMEText(request.body, "plain", "utf-8"))
-
-            msg["From"] = self._email
-            msg["To"] = ", ".join(request.to)
-            msg["Subject"] = request.subject
-
-            if request.cc:
-                msg["Cc"] = ", ".join(request.cc)
-
             with self._connect_mailbox(timeout=IMAP_CONNECT_TIMEOUT) as mailbox:
-                # Find Drafts folder
-                drafts_folder = "Drafts"
-                for folder in mailbox.folder.list():
-                    if "draft" in folder.name.lower():
-                        drafts_folder = folder.name
-                        break
+                resultat = mailbox.append(
+                    msg.as_bytes(), self._dossier_brouillons(mailbox), dt=datetime.now()
+                )
 
-                # Append to Drafts
-                mailbox.append(msg.as_bytes(), drafts_folder, dt=datetime.now())
-
-            return f"draft_{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}"
+            # L'UID du serveur quand il le donne : c'est lui qui permettra de
+            # REMPLACER ce brouillon plus tard plutôt que d'en empiler un autre.
+            return self._uid_appendu(resultat) or (
+                f"draft_{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}"
+            )
 
         return await self._run_imap_operation(
             _sync_create,
             timeout=IMAP_OPERATION_TIMEOUT,
             operation_name="IMAP create_draft",
         )
+
+    async def update_draft(self, draft_id: str, request: SendEmailRequest) -> str:
+        """Replace an already saved IMAP draft (B-060).
+
+        Un message IMAP ne se modifie pas sur place : on dépose la version
+        corrigée PUIS on efface l'ancienne. Cet ordre est délibéré - si
+        l'effacement échoue, il reste un doublon (le défaut d'avant), jamais
+        un brouillon perdu.
+        """
+        if not draft_id.isdigit():
+            # Identifiant de synthèse d'un serveur sans UIDPLUS : il ne
+            # désigne aucun message. Le dire, plutôt que créer en silence un
+            # second brouillon en laissant croire au remplacement.
+            # `NotImplementedError` et non `RuntimeError` : la route la traduit
+            # en 501, comme le refus de renommer un dossier IMAP (B-172). Un
+            # 502 « Erreur IMAP » accuserait le serveur d'une panne qu'il n'a
+            # pas - c'est une limite de ce qu'il sait faire, pas un incident.
+            raise NotImplementedError(
+                "Ton serveur IMAP n'a pas donné d'identifiant pour le brouillon "
+                "précédent : THÉRÈSE ne peut pas le remplacer. Supprime-le "
+                "depuis ta messagerie après avoir enregistré la correction."
+            )
+
+        msg = self._message_du_brouillon(request)
+
+        def _sync_update() -> str:
+            with self._connect_mailbox(timeout=IMAP_CONNECT_TIMEOUT) as mailbox:
+                dossier = self._dossier_brouillons(mailbox)
+                resultat = mailbox.append(msg.as_bytes(), dossier, dt=datetime.now())
+                mailbox.folder.set(dossier)
+                mailbox.delete([draft_id])
+
+            return self._uid_appendu(resultat) or (
+                f"draft_{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}"
+            )
+
+        identifiant: str = await self._run_imap_operation(
+            _sync_update,
+            timeout=IMAP_OPERATION_TIMEOUT,
+            operation_name="IMAP update_draft",
+        )
+        return identifiant
 
     async def modify_message(
         self,

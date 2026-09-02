@@ -1003,6 +1003,12 @@ class UpdateTaskRequest(BaseModel):
     due_date: str | None = None
     project_id: str | None = None
     tags: list[str] | None = None
+    # B-032 : ce champ vivait APRÈS le bandeau « INVOICE SCHEMAS » ci-dessous.
+    # Trois commentaires en colonne 0 ne dédentent rien, il appartenait donc
+    # bien à cette classe - mais plus personne ne le voyait, et le routeur
+    # avait cessé de l'écrire. Remis à sa place, à côté de son jumeau
+    # `project_id`.
+    contact_id: str | None = None
 
     @field_validator("title")
     @classmethod
@@ -1013,7 +1019,6 @@ class UpdateTaskRequest(BaseModel):
 # =============================================================================
 # INVOICE SCHEMAS (Phase 4)
 # =============================================================================
-    contact_id: str | None = None
 
 
 class InvoiceLineResponse(BaseModel):
@@ -1138,7 +1143,10 @@ class ActivityResponse(BaseModel):
     title: str
     description: str | None
     extra_data: str | None  # JSON extra data
-    created_at: str  # ISO datetime
+    # B-206 : instant d'horloge serveur, donc daté (cf. `HorodatageUTC`). Sans
+    # fuseau, le navigateur lisait cette heure UTC comme la sienne et une
+    # activité de trois minutes s'affichait « Il y a 2h ».
+    created_at: HorodatageUTC
     statut: str = "en_vigueur"
     remplace_id: str | None = None
 
@@ -1161,10 +1169,13 @@ class DeliverableResponse(BaseModel):
     title: str
     description: str | None
     status: str  # a_faire, en_cours, en_revision, valide
+    # `due_date` reste une heure de mur : c'est un JOUR décidé par quelqu'un
+    # (`<input type="date">`), et le dater le ferait basculer d'un jour.
     due_date: str | None  # ISO datetime
-    completed_at: str | None  # ISO datetime
-    created_at: str  # ISO datetime
-    updated_at: str  # ISO datetime
+    # B-206 : les trois autres sont écrits par l'horloge du serveur.
+    completed_at: HorodatageUTC | None
+    created_at: HorodatageUTC
+    updated_at: HorodatageUTC
 
 
 class CreateDeliverableRequest(BaseModel):

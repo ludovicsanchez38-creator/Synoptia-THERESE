@@ -264,6 +264,13 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
     today_str = today.isoformat()  # "YYYY-MM-DD" pour all-day events
     follow_up_horizon = (today + timedelta(days=2)).isoformat()
 
+    # B-051 : ce que l'écran n'a PAS PU lire, nommément. Les cinq blocs
+    # ci-dessous dégradent en liste vide sur exception ; sans cette liste, une
+    # base verrouillée, une migration en cours ou une corruption se
+    # présentaient comme une journée sans rien à faire. Même doctrine, même
+    # forme et même vocabulaire que `get_setup_status`, dans ce fichier.
+    indisponibles: list[str] = []
+
     # --- RDV du jour (CalendarEvent) ---
     events_today = []
     try:
@@ -354,6 +361,7 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
             })
     except Exception as e:
         logger.warning(f"Erreur lecture événements calendrier: {e}")
+        indisponibles.append("calendrier")
 
     # --- Tâches urgentes (en retard ou dues aujourd'hui) ---
     urgent_tasks = []
@@ -389,6 +397,7 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
             })
     except Exception as e:
         logger.warning(f"Erreur lecture tâches: {e}")
+        indisponibles.append("taches")
 
     # --- Relances email échues ou proches (J+2 maximum) ---
     due_follow_ups = []
@@ -431,6 +440,7 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
             })
     except Exception as e:
         logger.warning(f"Erreur lecture relances email: {e}")
+        indisponibles.append("relances_email")
 
     # --- Factures impayées > 30 jours ---
     overdue_invoices = []
@@ -462,6 +472,7 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
             })
     except Exception as e:
         logger.warning(f"Erreur lecture factures: {e}")
+        indisponibles.append("factures")
 
     # --- Relances dues : une DATE POSÉE et échue, jamais une déduction ---
     stale_prospects = []
@@ -469,6 +480,7 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
         stale_prospects = await prospects_a_relancer(session)
     except Exception as e:
         logger.warning(f"Erreur lecture prospects: {e}")
+        indisponibles.append("prospects")
 
     return {
         "date": today.isoformat(),
@@ -477,6 +489,8 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
         "due_follow_ups": due_follow_ups,
         "overdue_invoices": overdue_invoices,
         "stale_prospects": stale_prospects,
+        # « Rien à faire » et « on n'a pas pu savoir » sont deux réponses.
+        "indisponibles": indisponibles,
         "summary": {
             "events_count": len(events_today),
             "tasks_count": len(urgent_tasks),

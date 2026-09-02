@@ -198,6 +198,30 @@ class EmailProvider(ABC):
         """
         pass
 
+    async def update_draft(self, draft_id: str, request: SendEmailRequest) -> str:
+        """
+        Replace an already saved draft with a new content.
+
+        B-060 : sans cette primitive, ré-enregistrer un brouillon corrigé
+        empilait un exemplaire de plus chez le fournisseur - l'identifiant
+        rendu au premier enregistrement n'avait aucune route pour revenir.
+
+        Concrete (not abstract) on purpose : a provider that cannot replace a
+        draft says so instead of silently creating a second one.
+
+        Args:
+            draft_id: Identifier returned by a previous create/update
+            request: SendEmailRequest with the corrected message
+
+        Returns:
+            Identifier of the draft that now holds the content. Gmail returns
+            the SAME id ; IMAP returns a new one, a message is replaced there,
+            never edited in place.
+        """
+        raise NotImplementedError(
+            "Ce fournisseur ne sait pas remplacer un brouillon déjà enregistré."
+        )
+
     @abstractmethod
     async def modify_message(
         self,

@@ -12,6 +12,7 @@ import logging
 from datetime import UTC, datetime
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from typing import Any
 
 import httpx
 from app.services.html_sanitizer import sanitize_html
@@ -261,17 +262,16 @@ class GmailService:
 
         return await self._request('POST', 'users/me/messages/send', json_data={'raw': raw})
 
-    async def create_draft(
-        self,
+    @staticmethod
+    def _encode_draft(
         to: list[str],
         subject: str,
         body: str,
         cc: list[str] | None = None,
         bcc: list[str] | None = None,
         html: bool = False,
-    ) -> dict:
-        """Create a draft email."""
-        # Create message (same as send)
+    ) -> str:
+        """MIME du brouillon, encodé pour l'API (créé comme remplacé)."""
         message = MIMEMultipart() if html else MIMEText(body)
         message['To'] = ', '.join(to)
         message['Subject'] = subject
@@ -284,12 +284,48 @@ class GmailService:
         if html:
             message.attach(MIMEText(body, 'html'))
 
-        raw = base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
+        return base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
+
+    async def create_draft(
+        self,
+        to: list[str],
+        subject: str,
+        body: str,
+        cc: list[str] | None = None,
+        bcc: list[str] | None = None,
+        html: bool = False,
+    ) -> dict:
+        """Create a draft email."""
+        raw = self._encode_draft(to, subject, body, cc, bcc, html)
 
         return await self._request(
             'POST',
             'users/me/drafts',
             json_data={'message': {'raw': raw}}
+        )
+
+    async def update_draft(
+        self,
+        draft_id: str,
+        to: list[str],
+        subject: str,
+        body: str,
+        cc: list[str] | None = None,
+        bcc: list[str] | None = None,
+        html: bool = False,
+    ) -> dict[str, Any]:
+        """Replace the content of an existing draft (B-060).
+
+        `drafts.update` remplace le message porté par le brouillon et garde
+        son identifiant : ré-enregistrer une correction ne laisse donc pas un
+        second exemplaire dans la boîte.
+        """
+        raw = self._encode_draft(to, subject, body, cc, bcc, html)
+
+        return await self._request(
+            'PUT',
+            f'users/me/drafts/{draft_id}',
+            json_data={'id': draft_id, 'message': {'raw': raw}}
         )
 
     async def modify_message(

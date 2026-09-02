@@ -135,6 +135,19 @@ class GmailProvider(EmailProvider):
         )
         return result.get("id", "")
 
+    async def update_draft(self, draft_id: str, request: SendEmailRequest) -> str:
+        """Replace an existing Gmail draft, keeping its id (B-060)."""
+        result = await self._service.update_draft(
+            draft_id,
+            to=request.to,
+            subject=request.subject,
+            body=request.body,
+            cc=request.cc if request.cc else None,
+            bcc=request.bcc if request.bcc else None,
+            html=request.is_html,
+        )
+        return str(result.get("id", draft_id))
+
     async def modify_message(
         self,
         message_id: str,

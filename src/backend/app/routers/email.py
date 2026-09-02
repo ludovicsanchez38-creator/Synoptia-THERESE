@@ -1261,43 +1261,65 @@ async def send_email(
 async def create_draft(
     request: SendEmailRequest,
     account_id: str = Query(...),
+    draft_id: str | None = Query(
+        None,
+        description=(
+            "Brouillon déjà enregistré à REMPLACER. Sans lui, un brouillon est "
+            "créé."
+        ),
+    ),
     session: AsyncSession = Depends(get_session),
 ) -> dict:
     """
-    Create a draft email.
+    Create a draft email, or replace one already saved.
 
     US-EMAIL-04: Brouillons
+
+    B-060 : la route ne savait que créer. L'écran gardait pourtant
+    l'identifiant rendu au premier enregistrement, sans aucune porte pour le
+    renvoyer : chaque correction ré-enregistrée laissait un exemplaire de plus
+    chez le fournisseur, sous le même bandeau « Brouillon enregistré ».
     """
-    account = await session.get(EmailAccount, account_id)
-    if not account:
-        raise HTTPException(status_code=404, detail="Email account not found")
+    account = await _compte_email(account_id, session)
 
     if account.provider == "imap":
-        provider = get_email_provider(
-            provider_type="imap",
-            email_address=account.email,
-            password=decrypt_value(account.imap_password),
-            imap_host=account.imap_host,
-            imap_port=account.imap_port,
-            smtp_host=account.smtp_host,
-            smtp_port=account.smtp_port,
-            smtp_use_tls=account.smtp_use_tls,
-        )
+        provider = _provider_imap(account)
         from app.services.email.base_provider import SendEmailRequest as ProviderSendRequest
 
-        draft_id = await provider.create_draft(
-            ProviderSendRequest(
-                to=request.to,
-                subject=request.subject,
-                body=request.body,
-                cc=request.cc or [],
-                bcc=request.bcc or [],
-                is_html=request.html,
-            )
+        demande = ProviderSendRequest(
+            to=request.to,
+            subject=request.subject,
+            body=request.body,
+            cc=request.cc or [],
+            bcc=request.bcc or [],
+            is_html=request.html,
         )
-        return {"id": draft_id, "labelIds": ["DRAFT"]}
+        try:
+            if draft_id:
+                identifiant = await provider.update_draft(draft_id, demande)
+            else:
+                identifiant = await provider.create_draft(demande)
+        except NotImplementedError as e:
+            raise HTTPException(status_code=501, detail=str(e))
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"IMAP draft failed for {account.email}: {e}")
+            raise HTTPException(status_code=502, detail=f"Erreur IMAP: {e}")
+        return {"id": identifiant, "labelIds": ["DRAFT"]}
 
     gmail = await get_gmail_service_for_account(account_id, session)
+    if draft_id:
+        remplace: dict[str, Any] = await gmail.update_draft(
+            draft_id,
+            to=request.to,
+            subject=request.subject,
+            body=request.body,
+            cc=request.cc,
+            bcc=request.bcc,
+            html=request.html,
+        )
+        return remplace
     return await gmail.create_draft(
         to=request.to,
         subject=request.subject,

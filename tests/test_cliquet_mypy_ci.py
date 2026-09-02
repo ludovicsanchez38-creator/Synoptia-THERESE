@@ -100,9 +100,23 @@ class TestCliquetMypy:
 
     def test_la_baseline_est_celle_mesuree_sur_le_runner(self):
         """Le compte est mesure sur ubuntu-latest, pas sur un poste de dev :
-        run CI 33664976637 (commit 1b3a40fc) affiche « mypy : 1001 erreurs »
-        la ou la mesure fraiche locale macOS en donne 1002."""
-        assert _etape_mypy()["env"]["MYPY_BASELINE"] == "1001"
+        la mesure fraiche locale macOS a toujours donne UNE erreur de plus que
+        le runner (1002 contre 1001 avant le lot RE23).
+
+        ATTENTION : 986 est DEDUIT de ce decalage d'une unite (mesure locale
+        fresh 987 le 02/09/2026), il n'a pas encore ete confirme par un run
+        ubuntu-latest. Si le prochain run affiche 985 ou 987, c'est CE chiffre
+        qui fait foi, ici comme dans ci.yml.
+
+        Recale le 02/09/2026 avec le lot RE23 : le correctif B-100/B-139 a
+        retire quinze erreurs (`db_event` n'est plus `CalendarEvent | None` a
+        la construction de la reponse), et le cliquet exigeant l'EGALITE, la
+        baisse impose de recaler. Le commit 22fb9f8b a bien porte
+        `MYPY_BASELINE` de 1001 a 986 dans le workflow, mais a laisse cette
+        garde sur l'ancien chiffre : la suite backend est rouge sur `main`
+        depuis. Les deux chiffres se recalent ENSEMBLE, c'est tout l'objet de
+        ce test."""
+        assert _etape_mypy()["env"]["MYPY_BASELINE"] == "986"
 
 
 @pytest.mark.skipif(shutil.which("bash") is None, reason="bash requis")

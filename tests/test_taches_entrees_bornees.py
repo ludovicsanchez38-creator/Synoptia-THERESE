@@ -153,3 +153,115 @@ class TestB186RattachementsExistants:
         )
         relue = await client.get(f"/api/tasks/{tache_id}")
         assert relue.json()["project_id"] is None
+
+
+class TestB032LeContactDUneTacheNEstPasJete:
+    """Le champ était accepté, validé, puis jeté sans un mot.
+
+    `UpdateTaskRequest` déclare `contact_id`, la requête rend 200 et
+    `updated_at` avance — la mise à jour a bien tourné —, mais `update_task`
+    ne recopie que `project_id` et `tags` : la réponse ET la relecture
+    rendent l'ANCIEN contact. Un contrôle déclaré qu'aucune ligne n'écrit est
+    un contrôle mort ; l'utilisateur croit avoir rattaché sa tâche.
+    """
+
+    @staticmethod
+    async def _contact(client: AsyncClient, prenom: str) -> str:
+        reponse = await client.post(
+            "/api/memory/contacts", json={"first_name": prenom, "last_name": "Tache"}
+        )
+        assert reponse.status_code == 200, reponse.text
+        return reponse.json()["id"]
+
+    @pytest.mark.asyncio
+    async def test_la_mise_a_jour_rattache_bien_le_contact(
+        self, client: AsyncClient
+    ) -> None:
+        contact_a = await self._contact(client, "Amandine")
+        contact_b = await self._contact(client, "Bertrand")
+
+        creee = await client.post(
+            "/api/tasks/", json={"title": "Rappeler", "contact_id": contact_a}
+        )
+        assert creee.status_code == 200, creee.text
+        tache_id = creee.json()["id"]
+
+        modifiee = await client.put(
+            f"/api/tasks/{tache_id}", json={"contact_id": contact_b}
+        )
+        assert modifiee.status_code == 200, modifiee.text
+        assert modifiee.json()["contact_id"] == contact_b, (
+            "la réponse rend encore l'ancien contact : le champ a été accepté puis jeté"
+        )
+
+        relue = await client.get(f"/api/tasks/{tache_id}")
+        assert relue.status_code == 200, relue.text
+        assert relue.json()["contact_id"] == contact_b, (
+            "la relecture rend l'ancien contact : rien n'a été écrit en base"
+        )
+
+    @pytest.mark.asyncio
+    async def test_un_contact_inconnu_est_refuse_a_la_mise_a_jour(
+        self, client: AsyncClient
+    ) -> None:
+        """Même devoir qu'à la création (B-186) : on n'accroche pas au vide."""
+        creee = await client.post("/api/tasks/", json={"title": "Rappeler"})
+        tache_id = creee.json()["id"]
+
+        refus = await client.put(
+            f"/api/tasks/{tache_id}", json={"contact_id": "contact-fantome"}
+        )
+
+        assert refus.status_code == 404, (
+            f"contact inconnu accepté : {refus.status_code} -> {refus.text[:200]}"
+        )
+        relue = await client.get(f"/api/tasks/{tache_id}")
+        assert relue.json()["contact_id"] is None
+
+    @pytest.mark.asyncio
+    async def test_aucun_champ_declare_n_est_muet(self, client: AsyncClient) -> None:
+        """Garde qui balaie le schéma, pour que le trou ne se rouvre pas ailleurs.
+
+        Chaque champ de `UpdateTaskRequest` reçoit une valeur ; on exige
+        qu'elle atterrisse sur l'entité relue. Un champ ajouté au schéma sans
+        ligne d'écriture dans le routeur fait rougir ce test.
+        """
+        from app.models.schemas import UpdateTaskRequest
+
+        projet = await client.post("/api/memory/projects", json={"name": "Dossier tache"})
+        assert projet.status_code == 200, projet.text
+        contact = await self._contact(client, "Cyprien")
+
+        envoye = {
+            "title": "Titre modifié",
+            "description": "Description modifiée",
+            "status": "in_progress",
+            "priority": "urgent",
+            "due_date": "2026-12-24T10:00:00",
+            "project_id": projet.json()["id"],
+            "tags": ["alpha", "beta"],
+            "contact_id": contact,
+        }
+        assert set(envoye) == set(UpdateTaskRequest.model_fields), (
+            "un champ du schéma n'est pas couvert par cette garde : "
+            f"{set(UpdateTaskRequest.model_fields) ^ set(envoye)}"
+        )
+
+        creee = await client.post("/api/tasks/", json={"title": "Avant"})
+        tache_id = creee.json()["id"]
+
+        modifiee = await client.put(f"/api/tasks/{tache_id}", json=envoye)
+        assert modifiee.status_code == 200, modifiee.text
+
+        relue = (await client.get(f"/api/tasks/{tache_id}")).json()
+        for champ, valeur in envoye.items():
+            obtenu = relue[champ]
+            if champ == "due_date":
+                assert obtenu is not None and obtenu.startswith("2026-12-24"), (
+                    f"{champ} : envoyé {valeur!r}, relu {obtenu!r}"
+                )
+            else:
+                assert obtenu == valeur, (
+                    f"{champ} : envoyé {valeur!r}, relu {obtenu!r} — champ déclaré, "
+                    "accepté, puis jeté"
+                )

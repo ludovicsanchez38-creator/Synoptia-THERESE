@@ -195,7 +195,9 @@ async def update_task(
     if not task:
         raise HTTPException(status_code=404, detail="Task not found")
 
-    await _verifier_rattachements(session, request.project_id, None)
+    # B-032 : le contact était contrôlé à la création et ignoré ici. Même
+    # devoir des deux côtés, sinon la porte de service reste ouverte.
+    await _verifier_rattachements(session, request.project_id, request.contact_id)
 
     # Update fields
     if request.title is not None:
@@ -218,6 +220,10 @@ async def update_task(
             raise HTTPException(status_code=400, detail="Invalid due_date format")
     if request.project_id is not None:
         task.project_id = request.project_id
+    # B-032 : champ déclaré au schéma, accepté en 200, puis jeté - la réponse
+    # comme la relecture rendaient l'ancien contact, sans un avertissement.
+    if request.contact_id is not None:
+        task.contact_id = request.contact_id
     if request.tags is not None:
         task.tags = json.dumps(request.tags)
 

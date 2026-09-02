@@ -86,7 +86,9 @@ def _activity_to_response(activity: Activity) -> ActivityResponse:
         extra_data=activity.extra_data,
         statut=activity.statut,
         remplace_id=activity.remplace_id,
-        created_at=activity.created_at.isoformat(),
+        # B-206 : passer le datetime, pas sa forme naïve. Le sérialiseur
+        # `HorodatageUTC` lui rattache son fuseau (cf. schemas.py).
+        created_at=activity.created_at,
     )
 
 
@@ -244,9 +246,11 @@ def _deliverable_to_response(deliverable: Deliverable) -> DeliverableResponse:
         description=deliverable.description,
         status=deliverable.status,
         due_date=deliverable.due_date.isoformat() if deliverable.due_date else None,
-        completed_at=deliverable.completed_at.isoformat() if deliverable.completed_at else None,
-        created_at=deliverable.created_at.isoformat(),
-        updated_at=deliverable.updated_at.isoformat(),
+        # B-206 : mêmes instants d'horloge, même sérialiseur ; l'échéance
+        # reste littérale, c'est un jour, pas un instant.
+        completed_at=deliverable.completed_at,
+        created_at=deliverable.created_at,
+        updated_at=deliverable.updated_at,
     )
 
 

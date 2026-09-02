@@ -214,3 +214,110 @@ class TestLEtatDeFacturationEstConnuDesLAccueil:
 
         corps = (await client.get("/api/dashboard/setup-status")).json()
         assert "facturation_pieces" in corps["indisponibles"]
+
+
+class TestLAccueilNeDeguisePasNonPlusSesPannes:
+    """B-051 — la même règle, sur l'écran d'ouverture lui-même.
+
+    `get_setup_status` nomme ses lectures en échec depuis la 0.49 ; son
+    voisin `get_today_dashboard`, dans le MÊME fichier, ne l'a jamais reçu.
+    Ses cinq blocs attrapent `Exception`, écrivent un `logger.warning` et
+    laissent la liste vide : sous panne, la réponse est identique octet pour
+    octet à celle d'une journée réellement vide. Une base verrouillée, une
+    migration en cours ou une corruption se présentent alors comme « rien à
+    faire aujourd'hui ».
+
+    Le correctif est additif, exactement comme celui du jumeau : les champs
+    existants ne bougent pas, la panne est NOMMÉE en plus.
+    """
+
+    @staticmethod
+    def _casser_les_lectures_de(monkeypatch: pytest.MonkeyPatch, modele) -> None:
+        """Fait échouer les seules requêtes portant sur `modele`.
+
+        Les cinq blocs construisent leur `select()` en ligne : c'est le seul
+        point de couture qui isole un bloc sans remanier la route pour les
+        besoins du test.
+        """
+        from app.routers import dashboard
+
+        vrai_select = dashboard.select
+
+        def select_qui_echoue(*entites, **kwargs):
+            if modele in entites:
+                raise RuntimeError("database is locked")
+            return vrai_select(*entites, **kwargs)
+
+        monkeypatch.setattr(dashboard, "select", select_qui_echoue)
+
+    @pytest.mark.asyncio
+    async def test_le_cas_nominal_ne_signale_rien_d_indisponible(
+        self, client: AsyncClient
+    ) -> None:
+        reponse = await client.get("/api/dashboard/today")
+
+        assert reponse.status_code == 200, reponse.text
+        assert reponse.json()["indisponibles"] == []
+
+    @pytest.mark.parametrize(
+        ("modele", "nom"),
+        [
+            ("CalendarEvent", "calendrier"),
+            ("Task", "taches"),
+            ("EmailFollowUp", "relances_email"),
+            ("Invoice", "factures"),
+        ],
+    )
+    @pytest.mark.asyncio
+    async def test_chaque_source_en_panne_est_nommee(
+        self,
+        client: AsyncClient,
+        monkeypatch: pytest.MonkeyPatch,
+        modele: str,
+        nom: str,
+    ) -> None:
+        from app.routers import dashboard
+
+        self._casser_les_lectures_de(monkeypatch, getattr(dashboard, modele))
+
+        reponse = await client.get("/api/dashboard/today")
+
+        assert reponse.status_code == 200, reponse.text
+        corps = reponse.json()
+        assert nom in corps["indisponibles"], (
+            f"la lecture « {nom} » a échoué et la réponse ne le dit pas : "
+            f"{corps['indisponibles']}"
+        )
+
+    @pytest.mark.asyncio
+    async def test_la_panne_des_prospects_est_nommee(
+        self, client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from app.routers import dashboard
+
+        async def lecture_en_panne(*a, **k):
+            raise RuntimeError("database is locked")
+
+        monkeypatch.setattr(dashboard, "prospects_a_relancer", lecture_en_panne)
+
+        corps = (await client.get("/api/dashboard/today")).json()
+
+        assert "prospects" in corps["indisponibles"]
+        assert corps["stale_prospects"] == []
+
+    @pytest.mark.asyncio
+    async def test_une_panne_isolee_laisse_vivre_les_autres_sources(
+        self, client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        """Le reste de l'écran doit rester servi, et la liste rester juste."""
+        from app.routers import dashboard
+
+        self._casser_les_lectures_de(monkeypatch, dashboard.Task)
+
+        corps = (await client.get("/api/dashboard/today")).json()
+
+        assert corps["indisponibles"] == ["taches"]
+        assert corps["urgent_tasks"] == []
+        for champ in ("events", "due_follow_ups", "overdue_invoices", "stale_prospects"):
+            assert champ in corps
+        assert corps["summary"]["tasks_count"] == 0
