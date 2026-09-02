@@ -203,6 +203,23 @@ export function EmailMessageCanvas({
   const [previousDraft, setPreviousDraft] = useState<string | null>(null);
 
   useEffect(() => {
+    // B-061 : en rédaction libre, aucun message d'origine ne prête ses champs.
+    // Ne PAS se contenter de sauter le préremplissage : le composant n'est pas
+    // remonté quand le verbe « Écrire » bascule `nouvelleRedaction` (même
+    // instance dans le canevas de contexte), donc l'adresse et le « Re: ... »
+    // d'une lecture précédente resteraient dans l'état. On les efface.
+    if (nouvelleRedaction) {
+      setRecipient('');
+      setSubject('');
+      setDraft('');
+      setError(null);
+      setConfirmSave(false);
+      setConfirmReplace(false);
+      setPreviousDraft(null);
+      setErrorField(null);
+      setSavedDraftId(null);
+      return;
+    }
     if (resource?.status !== 'ready') return;
     setRecipient(resource.data.from_email || '');
     setSubject(`Re: ${resource.data.subject || ''}`);
@@ -213,7 +230,7 @@ export function EmailMessageCanvas({
     setPreviousDraft(null);
     setErrorField(null);
     setSavedDraftId(null);
-  }, [messageId, resource]);
+  }, [messageId, resource, nouvelleRedaction]);
 
   function markDraftDirty() {
     setSavedDraftId(null);
@@ -334,8 +351,12 @@ export function EmailMessageCanvas({
       ) : (
         <div className="min-h-0 flex-1 overflow-y-auto p-5">
           {/* En rédaction libre, il n'y a pas de message d'origine à relire :
-              seulement le brouillon à écrire. */}
-          {resource?.status === 'ready' && (
+              seulement le brouillon à écrire. B-061 : la garde ne disait que
+              `ready` et laissait donc reparaître le dernier message lu, que
+              rien ne décharge (`usePrototypeEmailData` ne remet jamais la
+              ressource à null). Le commentaire promettait ce que le code ne
+              faisait pas. */}
+          {!nouvelleRedaction && resource?.status === 'ready' && (
           <article className="rounded-md border border-border bg-surface p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>

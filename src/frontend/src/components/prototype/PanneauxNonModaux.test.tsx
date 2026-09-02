@@ -499,3 +499,131 @@ describe('Auto-contrôle - le z-order suit les règles du navigateur', () => {
     });
   });
 });
+
+/**
+ * B-204 - le tiroir Conversations avait échappé aux deux gardes ci-dessus.
+ *
+ * Constat du 02/09/2026 (reproduction RP13c) : à 1280 px, où la propre règle
+ * de l'application dit « côte à côte, ne pas recouvrir »
+ * (`usePanneauCouvrant.ts` : SEUIL_COTE_A_COTE = 1280), ouvrir le tiroir
+ * posait `inert` ET `aria-hidden="true"` sur `<main id="main-content">`, et le
+ * tiroir se déclarait `role="dialog"` + `aria-modal="true"` - exactement ce
+ * que le hotfix 0.48.1 avait proscrit.
+ *
+ * Cause de la NON-DÉTECTION : les deux gardes énumèrent des fichiers PAR NOM
+ * (six `*Canvas.tsx` plus un cas spécial). `*Drawer.tsx` n'y figurait pas.
+ * C'est le mode d'échec que `RolesDesPanneaux.test.ts` décrit lui-même pour le
+ * canevas de contexte : « la liste ne pouvait pas le voir ». D'où la garde de
+ * STRUCTURE qui suit, qui ne nomme personne.
+ */
+describe('B-204 - le tiroir Conversations est un panneau, pas une modale', () => {
+  beforeEach(reinitialiser);
+
+  async function ouvrirLeTiroir() {
+    render(<ConversationCanvasPrototype />);
+    await act(async () => { runAction('conversations.toggle'); });
+    return waitFor(() => screen.getByTestId('prototype-conversation-drawer'));
+  }
+
+  it('grand écran : la colonne principale reste vivante', async () => {
+    poserLargeurEcran(true);
+    await ouvrirLeTiroir();
+
+    const principale = document.getElementById('main-content');
+    expect(principale, 'la colonne principale est introuvable').toBeTruthy();
+    expect(principale!.hasAttribute('inert')).toBe(false);
+    expect(principale!.getAttribute('aria-hidden')).not.toBe('true');
+  });
+
+  it('il ne se déclare jamais modal, à aucune largeur', async () => {
+    poserLargeurEcran(false);
+    const tiroir = await ouvrirLeTiroir();
+
+    expect(tiroir.getAttribute('aria-modal')).not.toBe('true');
+    expect(tiroir.getAttribute('role')).not.toBe('dialog');
+  });
+
+  it('petit écran : là, il isole bien la colonne qu’il recouvre', async () => {
+    // Témoin : sans lui, retirer l'isolation partout passerait au vert.
+    poserLargeurEcran(false);
+    await ouvrirLeTiroir();
+
+    const principale = document.getElementById('main-content');
+    expect(principale!.hasAttribute('inert')).toBe(true);
+  });
+
+  it('il n’entre pas dans la pile des pièges clavier (S1-3)', async () => {
+    const { trapStackTaille } = await import('../../hooks/useDialogFocusTrap');
+    poserLargeurEcran(true);
+    await ouvrirLeTiroir();
+
+    expect(trapStackTaille()).toBe(0);
+  });
+
+  it('une modale ouverte PAR-DESSUS garde Échap (S1-3)', async () => {
+    // Le piège du tiroir sortait de la pile des pièges : sa cascade Échap doit
+    // donc passer ailleurs. Si elle se plaçait devant TOUT dans la cascade de
+    // la coque, le tiroir volerait Échap aux Réglages ouverts au-dessus - le
+    // défaut même que S1-3 décrit. Les Réglages piègent le focus mais ne
+    // traitent pas Échap : c'est la cascade qui les ferme.
+    poserLargeurEcran(true);
+    await ouvrirLeTiroir();
+
+    await act(async () => { usePanelStore.getState().openSettings(); });
+    await waitFor(() => expect(usePanelStore.getState().showSettings).toBe(true));
+
+    await act(async () => { fireEvent.keyDown(window, { key: 'Escape' }); });
+
+    expect(usePanelStore.getState().showSettings).toBe(false);
+    expect(screen.queryByTestId('prototype-conversation-drawer')).not.toBeNull();
+  });
+
+  it('Échap le ferme toujours, par le vrai chemin clavier de la coque', async () => {
+    // Le piège de focus consommait Échap ; il ne le fait plus. C'est la pile
+    // d'Échap de l'application qui porte la cascade, et la coque l'appelle en
+    // premier. Mesuré sur une VRAIE frappe, dans la coque montée.
+    poserLargeurEcran(true);
+    await ouvrirLeTiroir();
+
+    await act(async () => {
+      fireEvent.keyDown(window, { key: 'Escape' });
+    });
+
+    await waitFor(() =>
+      expect(screen.queryByTestId('prototype-conversation-drawer')).toBeNull(),
+    );
+  });
+});
+
+/**
+ * La garde qui ne nomme personne : un panneau latéral n'isole jamais sans condition.
+ *
+ * Les listes par NOM ont laissé passer le canevas de contexte (0.49) puis le
+ * tiroir Conversations (B-204). On balaie donc TOUS les composants du dossier
+ * `prototype/` : la géométrie de leur conteneur dit ce qu'ils sont. Une vraie
+ * modale couvre l'écran entier (`inset-0` plus un voile) et peut isoler sans
+ * condition ; un panneau latéral (`inset-y-0`, collé à un bord) ne le peut pas,
+ * puisque la colonne qu'il laisse visible reste utilisable au-dessus du seuil.
+ */
+describe('Garde de structure : aucun panneau latéral n’isole sans condition', () => {
+  it('balaie le dossier prototype/ sans citer un seul nom de fichier', async () => {
+    const modules = import.meta.glob('./*.tsx', { query: '?raw', import: 'default', eager: true });
+
+    const fautifs: string[] = [];
+    for (const [chemin, source] of Object.entries(modules)) {
+      if (chemin.includes('.test.')) continue;
+      // Un composant à la fois : `isolateBackground: true` d'une modale ne
+      // doit pas être imputé au panneau latéral rendu dans le même fichier.
+      const composants = (source as string).split(/\n(?=(?:export )?function )/);
+      for (const composant of composants) {
+        if (!composant.includes('useDialogFocusTrap(')) continue;
+        if (!composant.includes('isolateBackground: true')) continue;
+        // `inset-y-0` sans `inset-0` : la signature d'un panneau de bord.
+        if (!/className="[^"]*\binset-y-0\b/.test(composant)) continue;
+        fautifs.push(`${chemin} : ${composant.split('\n')[0].trim()}`);
+      }
+    }
+
+    expect(fautifs, 'panneau(x) latéral(aux) isolant la page sans condition de largeur').toEqual([]);
+  });
+});

@@ -70,6 +70,20 @@ function contactLabel(contact: Contact | undefined): string {
   return [contact.first_name, contact.last_name].filter(Boolean).join(' ') || contact.company || contact.email || 'Contact sans nom';
 }
 
+/**
+ * B-014 : le nom du client tel que le document le porte.
+ *
+ * L'API remplit `contact_name` sur chaque devis et facture. Résoudre le nom
+ * en cherchant le contact dans la fenêtre de cent chargée par
+ * `listContacts(0, 100)` faisait dire « Contact introuvable » pour un client
+ * simplement plus loin dans le carnet, ou quand l'appel contacts échouait -
+ * alors que le nom voyageait dans la facture. La liste reste le repli : le
+ * champ est absent quand le contact a disparu côté serveur.
+ */
+function nomDuClient(invoice: Invoice, contact: Contact | undefined): string {
+  return invoice.contact_name?.trim() || contactLabel(contact);
+}
+
 function formatMoney(value: number, currency: string): string {
   try {
     return new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(value);
@@ -94,6 +108,18 @@ function dueDateIso(): string {
   dueDate.setDate(dueDate.getDate() + 30);
   const offset = dueDate.getTimezoneOffset() * 60_000;
   return new Date(dueDate.getTime() - offset).toISOString().slice(0, 10);
+}
+
+/**
+ * Arrondi au centime, l'unité réelle de l'argent.
+ *
+ * Pendant de `round(..., 2)` côté serveur. Nuance connue et LAISSÉE telle
+ * quelle : Python arrondit au pair le plus proche, `Math.round` arrondit vers
+ * le haut. L'écart ne se manifeste que sur un demi-centime exact, que la
+ * saisie à deux décimales du formulaire ne produit pas ici.
+ */
+function arrondirCentimes(value: number): number {
+  return Math.round(value * 100) / 100;
 }
 
 function parseDecimal(value: string): number | null {
@@ -193,7 +219,7 @@ export function InvoiceWorkspaceCard({
                     <strong className="text-sm text-text">{invoice.invoice_number}</strong>
                     <span className="rounded-full bg-bg px-2 py-0.5 text-xs font-semibold text-text-muted">{statusLabels[invoice.status] || invoice.status}</span>
                   </span>
-                  <span className="mt-0.5 block truncate text-xs text-text-muted">{contactLabel(contact)} · {invoice.document_type}</span>
+                  <span className="mt-0.5 block truncate text-xs text-text-muted">{nomDuClient(invoice, contact)} · {invoice.document_type}</span>
                 </span>
                 <span className="shrink-0 text-sm font-bold text-text">{formatMoney(invoice.total_ttc, invoice.currency)}</span>
                 <ChevronRight className="h-4 w-4 shrink-0 text-text-muted" />
@@ -221,7 +247,7 @@ function ExistingInvoiceDetail({ data, invoice }: { data: InvoiceWorkspaceData; 
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">{invoice.document_type}</div>
             <h3 className="mt-1 text-lg font-bold text-text">{invoice.invoice_number}</h3>
-            <p className="mt-1 flex items-center gap-1.5 text-xs text-text-muted"><Users className="h-3.5 w-3.5" />{contactLabel(contact)}</p>
+            <p className="mt-1 flex items-center gap-1.5 text-xs text-text-muted"><Users className="h-3.5 w-3.5" />{nomDuClient(invoice, contact)}</p>
           </div>
           <div className="text-right">
             <span className="rounded-full bg-bg px-2.5 py-1 text-xs font-semibold text-text-muted">{statusLabels[invoice.status] || invoice.status}</span>
@@ -305,15 +331,26 @@ function DevisDraftForm({
   const contactSavingRef = useRef(false);
   const [contactError, setContactError] = useState<string | null>(null);
 
-  const totals = useMemo(() => lines.reduce((result, line) => {
-    const quantity = parseDecimal(line.quantity) || 0;
-    const unitPrice = parseDecimal(line.unitPrice) || 0;
-    const subtotal = quantity * unitPrice;
-    return {
-      ht: result.ht + subtotal,
-      tax: result.tax + subtotal * line.tvaRate / 100,
-    };
-  }, { ht: 0, tax: 0 }), [lines]);
+  const totals = useMemo(() => {
+    // B-017 : miroir exact de `routers/invoices.py::_montants_de_ligne` puis
+    // `_calculate_invoice_totals`. L'argent n'a pas de troisième décimale : on
+    // arrondit LÀ OÙ LE MONTANT NAÎT (la ligne), puis on somme des lignes déjà
+    // arrondies. Sommer des montants bruts et n'arrondir qu'à l'affichage
+    // faisait confirmer « Montant TTC : 119,99 € » pour un document que le
+    // serveur créait à 120,00 € - trois lignes de 33,33 € à 20 %.
+    const cumul = lines.reduce((result, line) => {
+      const quantity = parseDecimal(line.quantity) || 0;
+      const unitPrice = parseDecimal(line.unitPrice) || 0;
+      const ligneHt = arrondirCentimes(quantity * unitPrice);
+      const ligneTtc = arrondirCentimes(ligneHt * (1 + line.tvaRate / 100));
+      return { ht: result.ht + ligneHt, ttc: result.ttc + ligneTtc };
+    }, { ht: 0, ttc: 0 });
+    const ht = arrondirCentimes(cumul.ht);
+    const ttc = arrondirCentimes(cumul.ttc);
+    // La TVA se DÉDUIT du TTC et du HT, comme côté serveur : la somme des
+    // parts égale ainsi toujours le tout affiché.
+    return { ht, tax: arrondirCentimes(ttc - ht), ttc };
+  }, [lines]);
 
   function invalidateDraft() {
     setConfirmationSnapshot(null);
@@ -373,7 +410,7 @@ function DevisDraftForm({
     setConfirmationSnapshot({
       request: buildRequest(),
       recipient: contactLabel(data.contacts.find((contact) => contact.id === contactId)),
-      totalTtc: totals.ht + totals.tax,
+      totalTtc: totals.ttc,
     });
   }
 
@@ -565,7 +602,7 @@ function DevisDraftForm({
         </label>
         <div className="mt-3 rounded-md bg-bg p-3 text-right text-xs text-text-muted">
           HT {formatMoney(totals.ht, currency)} · TVA {formatMoney(totals.tax, currency)}
-          <strong className="ml-3 text-sm text-text">TTC {formatMoney(totals.ht + totals.tax, currency)}</strong>
+          <strong className="ml-3 text-sm text-text">TTC {formatMoney(totals.ttc, currency)}</strong>
         </div>
         </fieldset>
 

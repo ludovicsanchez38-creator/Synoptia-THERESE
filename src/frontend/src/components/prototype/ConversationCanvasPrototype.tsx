@@ -569,7 +569,15 @@ function CommandPalette({
             </>
           )}
 
-          <SectionLabel>{query ? `${visibleCapabilities.length} résultat${visibleCapabilities.length > 1 ? 's' : ''}` : 'Capacités fréquentes'}</SectionLabel>
+          {/* B-244 : ce slot portait un COMPTEUR sous requête, rendu par le même
+              SectionLabel que « Commandes de l'application » — une catégorie et un
+              compte de résultats se lisaient pareil. Et son N ne comptait que les
+              capacités, quand l'annonce sr-only porte optionCount (capacités PLUS
+              commandes) : deux chiffres divergents pour un même écran. L'en-tête
+              redevient un nom ; le compte reste au seul endroit qui l'annonce
+              justement. « fréquentes » ne vaut qu'au repos : sous filtre, la
+              section liste toutes les capacités qui correspondent. */}
+          <SectionLabel>{query ? 'Capacités' : 'Capacités fréquentes'}</SectionLabel>
           {visibleCapabilities.map((capability, capabilityIndex) => {
             const Icon = capability.icon;
             const optionIndex = scenarioCount + capabilityIndex;
@@ -617,7 +625,12 @@ function CommandPalette({
                 return <button key={action.id} id={`prototype-command-option-${optionIndex}`} role="option" aria-selected={activeOption === optionIndex} tabIndex={-1} type="button" onMouseEnter={() => setActiveOption(optionIndex)} onClick={() => { onAction(action.id); onClose(); }} className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left hover:bg-bg">
                   <span className="grid h-8 w-8 place-items-center rounded-sm bg-accent-tint text-accent"><Sparkles className="h-4 w-4" /></span>
                   <span className="min-w-0 flex-1"><span className="block text-sm font-semibold text-text">{action.label}</span><span className="block truncate text-xs text-text-muted">{action.description}</span></span>
-                  {action.shortcut && <kbd className="rounded-sm bg-bg px-1.5 py-0.5 text-xs text-text-muted">{action.shortcut}</kbd>}
+                  {/* B-229 : le registre stocke la lettre SEULE ('I', '⇧C', ','),
+                      qui ne déclenche rien sans modificateur (useKeyboardShortcuts
+                      sort par `if (!modKey) return`). On préfixe au RENDU, comme
+                      components/chat/CommandPalette.tsx, plutôt que dans le
+                      registre : ShortcutsModal y compose sa propre forme. */}
+                  {action.shortcut && <kbd className="rounded-sm bg-bg px-1.5 py-0.5 text-xs text-text-muted">{`${isMac ? '⌘' : 'Ctrl+'}${action.shortcut}`}</kbd>}
                 </button>;
               })}
             </>
@@ -1637,6 +1650,13 @@ export function ConversationCanvasPrototype() {
                       resource={emailInboxResource}
                       onRetry={() => void refreshEmailInbox()}
                       onOpenMessage={(messageId) => {
+                        // B-061 : ouvrir un message, c'est QUITTER la rédaction
+                        // libre. `chooseScenario('email')` pose redactionLibre et
+                        // rien ne le retirait : tant que la garde d'affichage ne
+                        // testait que `ready`, le message reparaissait par
+                        // accident ; la garde juste l'aurait masqué à vie après un
+                        // seul « Écrire ».
+                        setRedactionLibre(false);
                         setCanvasOpen(true);
                         void openEmailMessage(messageId);
                       }}

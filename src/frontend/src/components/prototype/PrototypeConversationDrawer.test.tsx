@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { PrototypeConversationDrawer } from './PrototypeConversationDrawer';
+import { _clearEscapeHandlers, runTopEscapeHandler } from '../../lib/escapeStack';
 import { useChatStore } from '../../stores/chatStore';
 
 vi.mock('../../hooks/useConversationSync', () => ({
@@ -22,6 +23,7 @@ vi.mock('../../services/api/chat', () => ({
 describe('PrototypeConversationDrawer', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    _clearEscapeHandlers();
     renameRemote.mockResolvedValue({});
     deleteRemote.mockResolvedValue(undefined);
     exportRemote.mockResolvedValue(undefined);
@@ -152,6 +154,15 @@ describe('PrototypeConversationDrawer', () => {
   });
 
   it('ferme le menu avant le tiroir avec Échap et expose le pattern menu', () => {
+    // B-204 : un panneau latéral ne pilote pas le clavier, sa cascade Échap
+    // ne passe donc plus par le piège de focus. Les overlays INTERNES du
+    // tiroir (menu, renommage, suppression) passent par la pile d'Échap de
+    // l'application ; la fermeture du tiroir, elle, revient à la coque, APRÈS
+    // les modales - sinon le tiroir volerait Échap aux Réglages ouverts
+    // par-dessus. Le contrat mesuré est le même : le menu d'abord, et rien
+    // d'interne à fermer ensuite. Que la coque ferme alors le tiroir sur une
+    // vraie frappe est mesuré dans PanneauxNonModaux.test.tsx (« Échap le
+    // ferme toujours, par le vrai chemin clavier de la coque »).
     const onClose = vi.fn();
     render(<PrototypeConversationDrawer onClose={onClose} onOpenChat={vi.fn()} />);
 
@@ -160,12 +171,14 @@ describe('PrototypeConversationDrawer', () => {
     expect(trigger).toHaveAttribute('aria-expanded', 'true');
     expect(screen.getByRole('menuitem', { name: 'Renommer' })).toHaveFocus();
 
-    fireEvent.keyDown(document, { key: 'Escape' });
+    act(() => { expect(runTopEscapeHandler()).toBe(true); });
     expect(screen.queryByRole('menu')).not.toBeInTheDocument();
     expect(onClose).not.toHaveBeenCalled();
     expect(trigger).toHaveFocus();
 
-    fireEvent.keyDown(document, { key: 'Escape' });
-    expect(onClose).toHaveBeenCalledTimes(1);
+    // Plus aucun overlay interne : la pile rend la main, et personne n'a
+    // fermé le tiroir dans le dos de la coque.
+    act(() => { expect(runTopEscapeHandler()).toBe(false); });
+    expect(onClose).not.toHaveBeenCalled();
   });
 });

@@ -8,6 +8,8 @@ import {
   renameConversation as renameConversationRemote,
 } from '../../services/api/chat';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
+import { usePanneauCouvrant } from '../../hooks/usePanneauCouvrant';
+import { pushEscapeHandler } from '../../lib/escapeStack';
 
 interface PrototypeConversationDrawerProps {
   onClose: () => void;
@@ -78,18 +80,47 @@ export function PrototypeConversationDrawer({
   const renameConversation = useChatStore((state) => state.renameConversation);
   const deleteConversation = useChatStore((state) => state.deleteConversation);
   const isPresent = useIsPresent();
+  // B-204 : ce tiroir isolait la colonne principale À TOUTE LARGEUR et se
+  // déclarait modal, alors que la règle de l'application dit « côte à côte,
+  // ne pas recouvrir » au-dessus du seuil xl. Il avait échappé aux deux gardes
+  // du hotfix 0.48.1 parce qu'elles énumèrent des fichiers `*Canvas.tsx` PAR
+  // NOM. Aligné sur ses six frères : isolation seulement quand il recouvre,
+  // aucun piège clavier (le rail et l'en-tête restent joignables).
+  const estCouvrant = usePanneauCouvrant();
   useDialogFocusTrap(drawerRef, {
     active: isPresent,
-    isolateBackground: true,
-    onEscape: () => {
-      if (editingId) setEditingId(null);
-      else if (deleteConfirmationId) setDeleteConfirmationId(null);
-      else if (menuId) {
-        menuTriggerRef.current?.focus();
-        setMenuId(null);
-      } else onClose();
-    },
+    isolateBackground: estCouvrant,
+    piegeClavier: false,
   });
+
+  // `piegeClavier: false` retire aussi Échap au piège (S1-3 : un panneau ne
+  // s'inscrit jamais dans la pile des pièges, sinon il vole Échap à une modale
+  // ouverte par-dessus). Il faut donc replacer la cascade AILLEURS, et au bon
+  // rang - ce qui se joue en deux temps.
+  //
+  // 1. Les overlays INTERNES du tiroir (renommage, confirmation de
+  //    suppression, menu contextuel) passent par `escapeStack`, exactement ce
+  //    pour quoi elle a été écrite. Elle n'est peuplée que TANT QU'UN de ces
+  //    overlays est ouvert : y laisser un handler en permanence ferait fermer
+  //    le tiroir au lieu des Réglages ouverts par-dessus - la faute que S1-3
+  //    décrit, mesurée par « une modale ouverte PAR-DESSUS garde Échap ».
+  // 2. La fermeture du tiroir lui-même reste à la coque, qui la traite APRÈS
+  //    les modales dans sa cascade (`else if (drawerOpen)`), c'est-à-dire au
+  //    rang qui était déjà le sien.
+  const overlayInterne = editingId ?? deleteConfirmationId ?? menuId;
+  const fermerOverlayInterneRef = useRef<() => void>(() => {});
+  fermerOverlayInterneRef.current = () => {
+    if (editingId) setEditingId(null);
+    else if (deleteConfirmationId) setDeleteConfirmationId(null);
+    else if (menuId) {
+      menuTriggerRef.current?.focus();
+      setMenuId(null);
+    }
+  };
+  useEffect(() => {
+    if (!overlayInterne) return;
+    return pushEscapeHandler(() => fermerOverlayInterneRef.current());
+  }, [overlayInterne]);
 
   const filtered = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase('fr-FR');
@@ -176,15 +207,22 @@ export function PrototypeConversationDrawer({
   return (
     <motion.aside
       ref={drawerRef}
-      role="dialog"
-      aria-modal="true"
+      // B-204 : `role="dialog"` + `aria-modal` promettaient un focus contenu et
+      // une page neutralisée que ce panneau ne tient pas - le rail et l'en-tête
+      // restent volontairement actifs. Forme des six frères : une région nommée.
+      role="region"
       aria-labelledby="prototype-conversation-drawer-title"
       tabIndex={-1}
       initial={{ x: -24, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: -24, opacity: 0 }}
       transition={{ duration: 0.18 }}
-      className="absolute inset-y-0 left-16 z-30 flex w-[306px] flex-col border-r border-border bg-surface shadow-[12px_0_40px_rgba(16,28,54,0.10)]"
+      // Au-dessus du seuil xl il devient un vrai voisin de la colonne (comme les
+      // six panneaux : `xl:relative`), sinon retirer l'isolation laisserait des
+      // contrôles tabulables SOUS un panneau opaque - le finding S1-2 du hotfix.
+      // `xl:left-0` annule le décalage du rail, qui n'a plus lieu d'être une fois
+      // le tiroir placé dans le flux.
+      className="absolute inset-y-0 left-16 z-30 flex w-[306px] flex-col border-r border-border bg-surface shadow-[12px_0_40px_rgba(16,28,54,0.10)] xl:relative xl:left-0 xl:shrink-0 xl:shadow-none"
       data-testid="prototype-conversation-drawer"
     >
       <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
