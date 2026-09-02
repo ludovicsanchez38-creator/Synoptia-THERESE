@@ -2,6 +2,10 @@ import { useEffect, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Virtuoso, type VirtuosoHandle } from 'react-virtuoso';
 import { useChatStore } from '../../stores/chatStore';
+import {
+  ANCRE_CALQUE_CONFIRMATION_PX,
+  useToolConfirmationStore,
+} from '../../stores/toolConfirmationStore';
 import { useAccessibilityStore } from '../../stores/accessibilityStore';
 import { announceToScreenReader } from '../../lib/accessibility';
 import { MessageBubble } from './MessageBubble';
@@ -73,6 +77,11 @@ export function MessageList({ onPromptSelect, onSaveAsCommand, onGuidedPanelChan
   const isStreaming = useChatStore((state) => state.isStreaming);
   const clearMessageEntities = useChatStore((state) => state.clearMessageEntities);
   const { enabled: demoEnabled, maskText } = useDemoMask();
+  // B-248 : le calque de confirmation est fixe, à la racine de l'application,
+  // et recouvrait la fin du dernier message. Le fil réserve la bande qu'il
+  // occupe tant qu'une action attend.
+  const confirmationsEnAttente = useToolConfirmationStore((state) => state.pending.length);
+  const hauteurCalqueConfirmation = useToolConfirmationStore((state) => state.hauteurCalque);
   const announceMessages = useAccessibilityStore((s) => s.announceMessages);
   const prevMsgCountRef = useRef(0);
 
@@ -183,28 +192,42 @@ export function MessageList({ onPromptSelect, onSaveAsCommand, onGuidedPanelChan
     // -> le lecteur d'écran les annoncerait comme nouveaux). Les nouveaux
     // messages sont annoncés via announceToScreenReader (canal dédié).
     <div
-      className="h-full"
+      className="flex h-full flex-col"
       aria-label="Messages de la conversation"
       data-testid="chat-message-list"
     >
-      {/* US-010 : virtualisation - seuls les messages visibles sont montés,
-          les longues conversations restent fluides.
-          key={conversation.id} : changer de conversation REMONTE la liste,
-          donc initialTopMostItemIndex repositionne en bas (sinon on héritait
-          d'un offset en pixels arbitraire de la conversation précédente). */}
-      <Virtuoso
-        ref={virtuosoRef}
-        key={conversation.id}
-        style={{ height: '100%' }}
-        data={displayMessages}
-        computeItemKey={(index, message) => message.id || String(index)}
-        itemContent={itemContent}
-        followOutput={followOutput}
-        atBottomThreshold={120}
-        initialTopMostItemIndex={Math.max(0, displayMessages.length - 1)}
-        increaseViewportBy={{ top: 400, bottom: 400 }}
-        components={{ Header: ListHeader, Footer: ListFooter }}
-      />
+      <div className="min-h-0 flex-1">
+        {/* US-010 : virtualisation - seuls les messages visibles sont montés,
+            les longues conversations restent fluides.
+            key={conversation.id} : changer de conversation REMONTE la liste,
+            donc initialTopMostItemIndex repositionne en bas (sinon on héritait
+            d'un offset en pixels arbitraire de la conversation précédente). */}
+        <Virtuoso
+          ref={virtuosoRef}
+          key={conversation.id}
+          style={{ height: '100%' }}
+          data={displayMessages}
+          computeItemKey={(index, message) => message.id || String(index)}
+          itemContent={itemContent}
+          followOutput={followOutput}
+          atBottomThreshold={120}
+          initialTopMostItemIndex={Math.max(0, displayMessages.length - 1)}
+          increaseViewportBy={{ top: 400, bottom: 400 }}
+          components={{ Header: ListHeader, Footer: ListFooter }}
+        />
+      </div>
+      {/* Réserve d'espace, pas un déplacement : la carte doit rester visible
+          quand un canevas remplace le contenu principal. La borne est haute par
+          construction (ancrage + hauteur mesurée, sans retrancher la hauteur du
+          composeur) : mieux vaut une bande vide de trop qu'un message masqué. */}
+      {confirmationsEnAttente > 0 && (
+        <div
+          data-testid="reserve-confirmation"
+          aria-hidden="true"
+          className="shrink-0"
+          style={{ height: `${hauteurCalqueConfirmation + ANCRE_CALQUE_CONFIRMATION_PX}px` }}
+        />
+      )}
     </div>
   );
 }

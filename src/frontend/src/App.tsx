@@ -148,6 +148,12 @@ function ApplicationBootstrap() {
   function handleOnboardingComplete() {
     setShowOnboarding(false);
     localStorage.setItem('therese-onboarding-done', 'true');
+    // B-214 : le canevas d'accueil est monté À CÔTÉ de l'assistant, pas à sa
+    // place. Il ne se remonte donc pas quand l'assistant se ferme, et sa seule
+    // porte de rafraîchissement est cet évènement (écouteur du 27/07, F6).
+    // Sans lui, l'écran qui suit la configuration saluait « Bonjour. » avec le
+    // profil d'avant — vide — jusqu'au prochain rechargement de la fenêtre.
+    window.dispatchEvent(new CustomEvent('therese:profile-updated'));
   }
 
   // Fallback de chargement pour les composants lazy

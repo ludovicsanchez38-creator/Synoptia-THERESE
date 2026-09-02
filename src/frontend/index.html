@@ -115,6 +115,21 @@
       @keyframes therese-spin {
         to { transform: rotate(360deg); }
       }
+
+      /* B-065 : le splash s'affiche AVANT tout JS et avant globals.css (au
+         moment mesuré, document.styleSheets.length vaut 1). Sa règle
+         universelle de mouvement réduit n'est donc pas encore là : le garde
+         doit être ici. Écrit APRÈS les règles animées — à spécificité égale,
+         c'est la dernière déclaration qui l'emporte. Même choix que le splash
+         React, qui pose déjà animation 'none' (SplashScreen.tsx:243). */
+      @media (prefers-reduced-motion: reduce) {
+        #therese-splash h1 {
+          animation: none;
+        }
+        #therese-splash .therese-spinner {
+          animation: none;
+        }
+      }
     </style>
   </head>
   <body>

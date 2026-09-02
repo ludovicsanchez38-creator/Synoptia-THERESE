@@ -87,7 +87,14 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
 
   const hasCachedCalendars = calendars.length > 0;
   const hasCachedEvents = events.length > 0;
-  const [calendarsReady, setCalendarsReady] = useState(hasCachedCalendars);
+  // B-236 : semé depuis le cache, ce drapeau lançait le chargement des
+  // événements AVANT la réponse de loadCalendars, avec l'identifiant rehydraté
+  // de « calendar-storage » — donc potentiellement celui d'une base morte. La
+  // réconciliation (`currentStillExists`, plus bas) existe, mais elle arrivait
+  // après : la requête prenait un 400 que le rechargement suivant effaçait
+  // aussitôt. On attend désormais la liste du serveur, ou son échec — le `catch`
+  // de loadCalendars relève le drapeau quand il reste du cache à afficher.
+  const [calendarsReady, setCalendarsReady] = useState(false);
 
   // Load calendars on mount (séquentiel : events se chargent APRÈS)
   useEffect(() => {
@@ -332,7 +339,14 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
           return;
         }
         try {
-          await api.listCalendars(currentAccountId);
+          const cals = await api.listCalendars(currentAccountId);
+          // B-057 : le succès était déduit de l'absence d'exception. Une liste
+          // vide, ou qui ne contient que des agendas locaux, éteignait la
+          // bannière et arrêtait le sondage sans que Google ait jamais répondu.
+          // Même garde qu'aux deux autres sites qui écrivent ce drapeau
+          // (BUG-162) : seul un calendrier GOOGLE réellement rendu prouve que le
+          // jeton fonctionne.
+          if (!cals.some((cal) => cal.provider === 'google')) return;
           clearInterval(poll);
           setNeedsReauth(false);
           setReauthing(false);

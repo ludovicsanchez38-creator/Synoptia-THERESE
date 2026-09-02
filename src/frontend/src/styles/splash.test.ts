@@ -57,3 +57,55 @@ describe('B-063 - l’écran de démarrage est aux couleurs de la charte', () =>
     );
   });
 });
+
+/**
+ * B-065 — le splash d'amorçage animait en boucle malgré `prefers-reduced-motion`.
+ *
+ * Mesure du 01/09/2026 (Playwright, `emulateMedia({reducedMotion:'reduce'})`,
+ * lecture immédiate) : `animation-iteration-count` valait `infinite` pour
+ * `therese-pulse` (titre) et `therese-spin` (roue), alors que le splash React
+ * coupe déjà l'animation dans ce cas (SplashScreen.tsx:243). Au moment mesuré,
+ * `document.styleSheets.length` valait 1 : seule la feuille inline s'applique,
+ * `globals.css` et sa règle universelle ne sont pas encore là. Le garde devait
+ * donc vivre dans le `<style>` de la page, pas ailleurs.
+ *
+ * Le test porte aussi sur la POSITION du bloc : à spécificité égale, c'est la
+ * dernière déclaration qui l'emporte. Un `@media` écrit au-dessus des règles
+ * animées passerait un test de contenu naïf sans rien neutraliser.
+ */
+describe('B-065 — le splash respecte le mouvement réduit', () => {
+  const style = (() => {
+    const debut = indexHtml.indexOf('<style>');
+    const fin = indexHtml.indexOf('</style>', debut);
+    expect(debut, '<style> inline introuvable dans index.html').toBeGreaterThanOrEqual(0);
+    expect(fin, '</style> introuvable dans index.html').toBeGreaterThan(debut);
+    return indexHtml.slice(debut, fin);
+  })();
+
+  it('le style inline porte un bloc prefers-reduced-motion', () => {
+    expect(/@media\s*\(prefers-reduced-motion:\s*reduce\)/.test(style)).toBe(true);
+  });
+
+  it('le bloc neutralise les deux animations en boucle du splash', () => {
+    const debut = style.search(/@media\s*\(prefers-reduced-motion:\s*reduce\)/);
+    const bloc = style.slice(debut);
+    for (const selecteur of ['#therese-splash h1', '#therese-splash .therese-spinner']) {
+      const position = bloc.indexOf(selecteur);
+      expect(position, `${selecteur} absent du bloc mouvement réduit`).toBeGreaterThanOrEqual(0);
+      const regle = bloc.slice(position, bloc.indexOf('}', position));
+      expect(/animation:\s*none/.test(regle), `${selecteur} n’annule pas son animation`).toBe(true);
+    }
+  });
+
+  it('le bloc est écrit APRÈS les règles animées, sinon la cascade l’ignore', () => {
+    const garde = style.search(/@media\s*\(prefers-reduced-motion:\s*reduce\)/);
+    for (const animation of ['therese-pulse', 'therese-spin']) {
+      const declaration = style.indexOf(`animation: ${animation}`);
+      expect(declaration, `animation ${animation} introuvable`).toBeGreaterThanOrEqual(0);
+      expect(
+        garde,
+        `le garde de mouvement réduit précède « animation: ${animation} » : la cascade le neutralise`,
+      ).toBeGreaterThan(declaration);
+    }
+  });
+});
