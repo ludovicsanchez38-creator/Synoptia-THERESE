@@ -1,18 +1,18 @@
 # Fonctionnalites
 
-- **?** A propos et verification des mises a jour :  _(rapport WP-067-c2-D06)_
 - **?** Abstraction des fournisseurs de messagerie :  _(rapport WP-052)_
 - **?** Accueil de conversation vide (commandes V3) :  _(rapport WP-064)_
 - **?** Accueil et mise en route :  _(rapport WP-079)_
-- **?** Accueil moins charge du prototype :  _(rapport WP-065-c2-D06)_
+- **?** Accueil moins chargé du prototype :  _(rapport WP-065-c2-D06)_
 - **?** Action gardée par préconditions :  _(rapport WP-070)_
 - **?** Actions RGPD par contact :  _(rapport WP-064)_
 - **?** Actions RGPD sur un contact :  _(rapport WP-064-c2-M09)_
-- **?** Actions de navigation deterministes :  _(rapport WP-070-c2-D06)_
+- **?** Actions de navigation déterministes :  _(rapport WP-070-c2-D06)_
 - **?** Actions deterministes du chat :  _(rapport WP-078)_
 - **?** Actions deterministes du chat et variables :  _(rapport WP-051)_
 - **?** Actions et commandes exécutées sans modèle :  _(rapport WP-049-c2-M02)_
 - **?** Activites CRM :  _(rapport WP-072)_
+- **?** Affichage du coût des appels de modèles :  _(rapport WP-071-c2-D09)_
 - **?** Agenda :  _(rapport WP-073)_
 - **?** Agenda (panneau modal et pleine page) :  _(rapport WP-061)_
 - **?** Agenda : détail et suppression d'un événement :  _(rapport WP-061-c2-M03)_
@@ -45,10 +45,12 @@
 - **?** Arret gracieux exempte d'authentification :  _(rapport WP-084)_
 - **?** Arrêt d'une génération :  _(rapport WP-049-c2-M02)_
 - **?** Arrêt d'une génération en cours :  _(rapport WP-061-c2-D07)_
+- **?** Arrêt gracieux du backend :  _(rapport WP-084-c2-D09)_
 - **?** Artefacts de mise a jour automatique en CI :  _(rapport WP-C-026)_
 - **?** Artefacts updater signés :  _(rapport WP-C-004-c2-D08)_
 - **?** Assainissement HTML :  _(rapport WP-052)_
 - **?** Assistant RFC de création de commande :  _(rapport WP-067)_
+- **?** Assistant de configuration d'un compte email :  _(rapport WP-063-c2-D09)_
 - **?** Assistant de configuration e-mail :  _(rapport WP-073)_
 - **?** Assistant de configuration email :  _(rapport WP-050)_
 - **?** Assistant de configuration email :  _(rapport WP-052)_
@@ -65,7 +67,7 @@
 - **?** Atelier : liste des sessions OpenClaw :  _(rapport WP-C-026-c2-D01)_
 - **?** Atelier : session de chat avec un agent spawné :  _(rapport WP-C-026-c2-D01)_
 - **?** Atelier : une mission a la fois :  _(rapport WP-DIFF-003-c2-M14)_
-- **?** Atelier Katia et Zezette :  _(rapport WP-067-c2-D06)_
+- **?** Atelier Katia et Zézette :  _(rapport WP-067-c2-D06)_
 - **?** Atelier d'agents - couche git :  _(rapport WP-051-c2-M12)_
 - **?** Atelier d'agents OpenClaw :  _(rapport WP-060-c2-D08)_
 - **?** Atelier d'agents de code :  _(rapport WP-048)_
@@ -110,6 +112,7 @@
 - **?** Board de decision a cinq conseillers :  _(rapport WP-065)_
 - **?** Board de decision multi-conseillers :  _(rapport WP-051)_
 - **?** Board de décision - les cinq conseillers :  _(rapport WP-060-c2-M11)_
+- **?** Board de décision à cinq conseillers :  _(rapport WP-047-c2-D09)_
 - **?** Boite de reception :  _(rapport WP-073)_
 - **?** Boîte e-mail du prototype :  _(rapport WP-067)_
 - **?** Boîte à outils d'accessibilité :  _(rapport WP-070)_
@@ -157,7 +160,7 @@
 - **?** Catalogue de serveurs MCP :  _(rapport WP-073)_
 - **?** Catalogue de skills :  _(rapport WP-073)_
 - **?** Catalogue des agents metier :  _(rapport WP-060)_
-- **?** Catalogue des capacites par intention :  _(rapport WP-065-c2-D06)_
+- **?** Catalogue des capacités par intention :  _(rapport WP-065-c2-D06)_
 - **?** Catalogue des modèles proposés :  _(rapport WP-080-c2-D08)_
 - **?** Catalogue des modèles servi au frontend :  _(rapport WP-049-c2-M02)_
 - **?** Catalogue documentaire du modèle (search_files et read_file) :  _(rapport WP-078-c2-D07)_
@@ -211,6 +214,8 @@
 - **?** Commande d'aide locale :  _(rapport WP-079)_
 - **?** Commandes d'accueil personnalisables :  _(rapport WP-064-c2-M09)_
 - **?** Commandes deterministes et commandes utilisateur :  _(rapport WP-054)_
+- **?** Commandes déterministes du chat et directives inline :  _(rapport WP-054-c2-D09)_
+- **?** Commandes déterministes du chat et directives inline :  _(rapport WP-084-c2-D09)_
 - **?** Commandes slash et directives inline :  _(rapport WP-084)_
 - **?** Commandes unifiees :  _(rapport WP-073)_
 - **?** Commandes unifiees (v3) :  _(rapport WP-049)_
@@ -236,6 +241,7 @@
 - **?** Confirmation des outils sensibles :  _(rapport WP-074)_
 - **?** Confirmation des outils sensibles :  _(rapport WP-078)_
 - **?** Confirmation humaine des actions sensibles :  _(rapport WP-062)_
+- **?** Confirmation humaine des actions sensibles :  _(rapport WP-062-c2-D09)_
 - **?** Confirmation humaine des outils sensibles :  _(rapport WP-062-c2-M12)_
 - **?** Conformite RGPD des contacts :  _(rapport WP-047)_
 - **?** Conformité RGPD par contact :  _(rapport WP-050-c2-M04)_
@@ -264,9 +270,9 @@
 - **?** Contrat des outils de memoire :  _(rapport WP-079)_
 - **?** Contrat responsive de la coque :  _(rapport WP-066)_
 - **?** Controle d'acces IPC (capacites Tauri) :  _(rapport WP-059)_
-- **?** Controle de generation du manifeste :  _(rapport WP-070-c2-D06)_
 - **?** Controles de fenetre par plateforme :  _(rapport WP-069)_
 - **?** Contrôle de génération du manifeste :  _(rapport WP-070)_
+- **?** Contrôle de génération du manifeste :  _(rapport WP-070-c2-D06)_
 - **?** Conversation streamee avec outils :  _(rapport WP-049)_
 - **?** Conversations :  _(rapport WP-072)_
 - **?** Conversations :  _(rapport WP-073)_
@@ -305,10 +311,10 @@
 - **?** Devise du document :  _(rapport WP-C-025)_
 - **?** Dictee :  _(rapport WP-073)_
 - **?** Dictee vocale :  _(rapport WP-057)_
-- **?** Dictee vocale et messages de micro :  _(rapport WP-070-c2-D06)_
 - **?** Dictée par Groq Whisper :  _(rapport WP-051-c2-D08)_
 - **?** Dictée vocale :  _(rapport WP-070)_
 - **?** Dictée vocale avec consentement cloud :  _(rapport WP-062)_
+- **?** Dictée vocale et messages de micro :  _(rapport WP-070-c2-D06)_
 - **?** Dictée vocale locale ou cloud :  _(rapport WP-073-c2-D07)_
 - **?** Dix scenarios catastrophe transverses :  _(rapport WP-086)_
 - **?** Dossier synchronisé d'un projet :  _(rapport WP-064)_
@@ -317,6 +323,7 @@
 - **?** Dépôt d'une pièce jointe dans un projet :  _(rapport WP-050)_
 - **?** Dépôt de fichiers dans le chat :  _(rapport WP-070)_
 - **?** Dépôt de pièces jointes dans le composeur :  _(rapport WP-061-c2-D07)_
+- **?** Détection d'un fil de conversation tronqué :  _(rapport WP-062-c2-D09)_
 - **?** Détection du statut réseau :  _(rapport WP-070)_
 - **?** Echap pendant la mise en route :  _(rapport WP-065-c2-M14)_
 - **?** Echap pendant la mise en route :  _(rapport WP-DIFF-003-c2-M14)_
@@ -406,6 +413,7 @@
 - **?** Frontière d'erreurs utilisateur :  _(rapport WP-052)_
 - **?** Gabarit de pull request :  _(rapport WP-C-002-c2-D10)_
 - **?** Gabarits d'issues GitHub (bug et suggestion) :  _(rapport WP-C-003-c2-D10)_
+- **?** Garantie transverse : un bandeau d'erreur est annoncé :  _(rapport WP-071-c2-D09)_
 - **?** Garde d'authentification locale fail-closed :  _(rapport WP-C-029)_
 - **?** Garde de confirmation des actions metier sensibles :  _(rapport WP-C-026)_
 - **?** Garde de la recherche web :  _(rapport WP-081)_
@@ -424,7 +432,7 @@
 - **?** Generation de template de commande :  _(rapport WP-049)_
 - **?** Gestion des erreurs reseau (US-ERR) :  _(rapport WP-071)_
 - **?** Gestion des serveurs MCP (API) :  _(rapport WP-083-c2-D04)_
-- **?** Ghost text predictif du composeur :  _(rapport WP-070-c2-D06)_
+- **?** Ghost text prédictif du composeur :  _(rapport WP-070-c2-D06)_
 - **?** Glisser-deposer de fichiers :  _(rapport WP-063)_
 - **?** Génération d'images :  _(rapport WP-050)_
 - **?** Génération d'images :  _(rapport WP-052)_
@@ -441,6 +449,7 @@
 - **?** Identite d'une conversation :  _(rapport WP-071)_
 - **?** Identite du proprietaire :  _(rapport WP-055)_
 - **?** Identite visuelle de l'application de bureau :  _(rapport WP-056)_
+- **?** Identité d'une conversation entre rattachement et envoi :  _(rapport WP-071-c2-D09)_
 - **?** Image jointe au chat :  _(rapport WP-084)_
 - **?** Images jointes au message de chat :  _(rapport WP-052)_
 - **?** Implémentations de fournisseurs :  _(rapport WP-053)_
@@ -524,6 +533,7 @@
 - **?** Migrations ad-hoc de la table invoices :  _(rapport WP-C-029-c2-M11)_
 - **?** Migrations ad-hoc du desktop et estampille Alembic (US-015) :  _(rapport WP-C-025-c2-M06)_
 - **?** Migrations ad-hoc et estampillage Alembic :  _(rapport WP-C-025)_
+- **?** Migrations de schéma Alembic :  _(rapport WP-047-c2-D09)_
 - **?** Migrations legacy des factures (côté tests) :  _(rapport WP-C-029-c2-R1)_
 - **?** Mise a jour automatique :  _(rapport WP-069)_
 - **?** Mise a jour automatique et redemarrage :  _(rapport WP-057)_
@@ -552,6 +562,7 @@
 - **?** Modèles de lecture du brief :  _(rapport WP-067)_
 - **?** Ménage de suppression d'un dossier :  _(rapport WP-083-c2-M05)_
 - **?** Navigation clavier roving tabindex :  _(rapport WP-072)_
+- **?** Navigation dans l'arborescence de fichiers :  _(rapport WP-063-c2-D09)_
 - **?** Navigation déterministe demandée par le backend :  _(rapport WP-070)_
 - **?** Navigation par vues :  _(rapport WP-074)_
 - **?** Navigation web automatisee :  _(rapport WP-048)_
@@ -565,6 +576,7 @@
 - **?** Notifications dans l'application :  _(rapport WP-073)_
 - **?** Notifications in-app :  _(rapport WP-050)_
 - **?** Notifications push in-app :  _(rapport WP-074)_
+- **?** Notifications éphémères et annonce aux lecteurs d'écran :  _(rapport WP-069-c2-D09)_
 - **?** OAuth 2.0 PKCE Gmail et rafraîchissement anticipé :  _(rapport WP-C-029-c2-D03)_
 - **?** Outil chat search_invoices :  _(rapport WP-C-029-c2-R1)_
 - **?** Outil de conversation search_invoices :  _(rapport WP-C-029-c2-M11)_
@@ -592,6 +604,7 @@
 - **?** Panneau des agents actionnables :  _(rapport WP-060)_
 - **?** Panneau des traitements longs :  _(rapport WP-050)_
 - **?** Panneau des traitements longs :  _(rapport WP-074)_
+- **?** Panneau des travaux (traitements de fond) :  _(rapport WP-069-c2-D09)_
 - **?** Panneau devis et factures :  _(rapport WP-C-026-c2-M14)_
 - **?** Panneaux et modales de la coque :  _(rapport WP-074)_
 - **?** Panneaux non modaux :  _(rapport WP-066)_
@@ -663,7 +676,7 @@
 - **?** Projets CRM :  _(rapport WP-050)_
 - **?** Prompt système du générateur de réponses email :  _(rapport WP-079-c2-D05)_
 - **?** Protocole persona S3 - DSI / Admin (THERESE Server) :  _(rapport WP-C-031)_
-- **?** Protocole persona S3 - DSI / Admin (THERESE Server) :  _(rapport WP-C-031-c2-D06)_
+- **?** Protocole persona S3 - DSI / Admin (THÉRÈSE Server) :  _(rapport WP-C-031-c2-D06)_
 - **?** Protocoles de tests manuels par persona (Chrome MCP) :  _(rapport WP-086-c2-D05)_
 - **?** Prototypes conversationnels en lecture seule :  _(rapport WP-085-c2-M10)_
 - **?** Préférence de mouvement réduit :  _(rapport WP-070)_
@@ -771,13 +784,13 @@
 - **?** Skills Office : échec franc plutôt que livrable faux :  _(rapport WP-083-c2-D04)_
 - **?** Skills de generation de documents :  _(rapport WP-054)_
 - **?** Snapshot du destinataire sur les pieces de facturation :  _(rapport WP-DIFF-002-c2-M16)_
-- **?** Socle d'accessibilite :  _(rapport WP-070-c2-D06)_
+- **?** Socle d'accessibilité :  _(rapport WP-070-c2-D06)_
 - **?** Socle de la suite pytest backend :  _(rapport WP-078-c2-M12)_
 - **?** Socle des appels HTTP :  _(rapport WP-072)_
 - **?** Sonde de santé du backend :  _(rapport WP-070)_
 - **?** Sondes de santé /health et /health/services :  _(rapport WP-080-c2-D08)_
 - **?** Sortie et isolation des panneaux :  _(rapport WP-067)_
-- **?** Sortie nommee du panneau de travail :  _(rapport WP-065-c2-D06)_
+- **?** Sortie nommée du panneau de travail :  _(rapport WP-065-c2-D06)_
 - **?** Statut de completude du profil emetteur :  _(rapport WP-C-028-b)_
 - **?** Statut des modeles Ollama :  _(rapport WP-078)_
 - **?** Statut du depot de l'Atelier :  _(rapport WP-078)_
@@ -898,6 +911,7 @@
 - **?** Vérité d'exécution des outils :  _(rapport WP-052)_
 - **?** Vérité des libellés de cloisonnement :  _(rapport WP-062)_
 - **?** Widgets de l'accueil v2 (bandeau, actions rapides, conversations récentes) :  _(rapport WP-064)_
+- **?** À propos et vérification des mises à jour :  _(rapport WP-067-c2-D06)_
 - **?** Échéance de suivi après prestation :  _(rapport WP-052)_
 - **?** Établi : « Écrire » ouvre un brouillon :  _(rapport WP-066-c2-D04)_
 - **?** État d'Ollama et ressources machine :  _(rapport WP-049-c2-M02)_

@@ -7,82 +7,35 @@
 ## Fichiers non lus (0)
 
 
-## Doubles lectures manquantes (66)
+## Doubles lectures manquantes (12)
 
-- .github/ISSUE_TEMPLATE/bug_report.md
-- .github/ISSUE_TEMPLATE/feature_request.md
-- .github/PULL_REQUEST_TEMPLATE.md
-- .github/workflows/release.yml
-- src/backend/alembic/script.py.mako
-- src/backend/app/models/board.py
 - src/backend/app/models/entities.py
-- src/backend/app/routers/voice.py
 - src/backend/app/services/agents/git_service.py
-- src/backend/app/services/calculators.py
-- src/backend/app/services/document_orchestrator.py
-- src/backend/app/services/providers/minimax.py
 - src/backend/app/services/relances.py
-- src/backend/app/services/slash_commands.py
 - src/frontend/src-tauri/capabilities/default.json
-- src/frontend/src-tauri/gen/schemas/capabilities.json
-- src/frontend/src/components/atelier/AgentChat.tsx
-- src/frontend/src/components/atelier/index.ts
-- src/frontend/src/components/board/annulerDeliberation.ts
-- src/frontend/src/components/board/index.ts
-- src/frontend/src/components/chat/ToolConfirmationCard.test.tsx
-- src/frontend/src/components/chat/conversationTronquee.test.ts
-- src/frontend/src/components/email/EmailPanel.test.tsx
-- src/frontend/src/components/email/wizard/index.ts
-- src/frontend/src/components/files/fileBrowserPaths.test.ts
-- src/frontend/src/components/guided/GuidedPrompts.tsx
-- src/frontend/src/components/guided/index.ts
-- src/frontend/src/components/home/SetupChecklist.indisponible.test.tsx
-- src/frontend/src/components/memory/MemoryPanel.test.tsx
 - src/frontend/src/components/prompts/PromptLibrary.tsx
-- src/frontend/src/components/prototype/AccueilMoinsCharge.test.tsx
-- src/frontend/src/components/prototype/BoutonFermerLePanneau.tsx
-- src/frontend/src/components/prototype/CapabilityCenter.tsx
-- src/frontend/src/components/prototype/VoiceWorkspaceCanvas.tsx
-- src/frontend/src/components/prototype/usePrototypeAtelierData.test.tsx
-- src/frontend/src/components/prototype/usePrototypeDeliverablesData.ts
-- src/frontend/src/components/settings/AboutTab.tsx
-- src/frontend/src/components/settings/LimitsTab.tsx
-- src/frontend/src/components/sidebar/ConversationSidebar.tronquee.test.tsx
-- src/frontend/src/components/traitements/TraitementsPanel.test.tsx
-- src/frontend/src/components/ui/Notifications.tsx
 - src/frontend/src/hooks/useAutosave.ts
-- src/frontend/src/lib/coutAffiche.test.ts
-- src/frontend/src/lib/erreursAnnoncees.test.ts
-- src/frontend/src/lib/identiteConversation.test.ts
-- src/frontend/src/services/api/memory.test.ts
-- src/frontend/src/services/api/voice.ts
-- src/frontend/src/services/index.ts
-- src/frontend/src/stores/chatStore.ts
 - src/frontend/src/styles/couleursDeDomaine.test.ts
 - src/frontend/src/styles/opaciteSurLeTexte.test.ts
-- tests/e2e/stories/helpers/backend.ts
 - tests/e2e/stories/parcours-04-crm.spec.ts
 - tests/e2e/stories/parcours-06-navigation.spec.ts
-- tests/protocols/server/personas/S3-dsi-admin.md
-- tests/test_calendar_allday_semantics.py
-- tests/test_catalogue_fichiers.py
-- tests/test_health_db.py
-- tests/test_index_des_noms.py
-- tests/test_modeles_disponibles.py
 - tests/test_onboarding_concurrent.py
-- tests/test_perimetre_annonce_au_modele.py
 - tests/test_profil_generation.py
-- tests/test_providers_asie.py
-- tests/test_shutdown_exempt.py
-- tests/test_slash_commands.py
 
-## Invariants divergents, a arbitrer (5)
+## Invariants divergents, a arbitrer (12)
 
 - .github/workflows/ci.yml: aucun mot commun entre les invariants de lecteur-M15:c2-M15-WP-C-004, lecteur-R1 (seconde lecture indépendante des fichiers critiques):c2-R1 (seconde lecture indépendante des fichiers critiques)-WP-C-004, orchestrateur:wpc004-orchestrateur
+- src/backend/app/models/board.py: aucun mot commun entre les invariants de lecteur-D09:c2-D09-WP-047, wp047-lecteur1:wp047-lecteur1
+- src/backend/app/routers/voice.py: aucun mot commun entre les invariants de lecteur-D08:c2-D08-WP-051, wp051-lecteur1:wp051-lecteur1
 - src/backend/app/skills_config/pptx/SKILL.md: aucun mot commun entre les invariants de lecteur-D02:c2-D02-WP-055, lecteur-cartographie-wp055:wp055-lecteur1
+- src/frontend/src-tauri/gen/schemas/capabilities.json: aucun mot commun entre les invariants de lecteur-D10:c2-D10-WP-057, lecteur-wp057:wp057-lecteur1
 - src/frontend/src/components/calendar/calendarErrors.ts: aucun mot commun entre les invariants de lecteur-D07:c2-D07-WP-061, lecteur-cartographie-wp061:wp061-lecteur1
 - src/frontend/src/components/invoices/InvoicesPanel.test.tsx: aucun mot commun entre les invariants de lecteur-D01:c2-D01-WP-C-026, lecteur-cartographie-wpc026:wpc026-lecteur1-20260831
+- src/frontend/src/components/memory/MemoryPanel.test.tsx: aucun mot commun entre les invariants de lecteur-D07:c2-D07-WP-064, lecteur-cartographie-wp064:wp064-lecteur1
+- src/frontend/src/components/prototype/AccueilMoinsCharge.test.tsx: aucun mot commun entre les invariants de lecteur-D06:c2-D06-WP-065, wp065-lecteur1:wp065-lecteur1
 - src/frontend/src/components/prototype/MeetingConversationCard.tsx: aucun mot commun entre les invariants de lecteur-D04:c2-D04-WP-066, lecteur-cartographie-wp066:wp066-lecteur1
+- tests/test_modeles_disponibles.py: aucun mot commun entre les invariants de lecteur-D08:c2-D08-WP-080, wp080-lecteur1:wp080-lecteur1
+- tests/test_slash_commands.py: aucun mot commun entre les invariants de lecteur-D09:c2-D09-WP-084, wp084-lecteur1:wp084-lecteur1
 
 ## Disparus depuis l'inventaire (0)
 
