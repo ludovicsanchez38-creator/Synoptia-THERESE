@@ -22,6 +22,7 @@ from .base import (
     ToolCall,
     ToolResult,
     ToolTurn,
+    message_erreur_http,
 )
 
 logger = logging.getLogger(__name__)
@@ -217,7 +218,12 @@ class MistralProvider(BaseProvider):
 
         except httpx.HTTPStatusError as e:
             logger.error(f"Mistral API error: {e.response.status_code}")
-            yield StreamEvent(type="error", content=f"API error: {e.response.status_code}")
+            yield StreamEvent(
+                type="error",
+                content=message_erreur_http(
+                    self.config.provider, e.response.status_code
+                ),
+            )
         except Exception as e:
             logger.error(f"Mistral streaming error: {e}")
             # Revue 0.48 p2 (F1) : jamais str(e) brut dans un évènement

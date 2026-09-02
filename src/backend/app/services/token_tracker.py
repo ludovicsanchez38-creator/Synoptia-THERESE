@@ -307,6 +307,7 @@ class TokenTracker:
         self,
         input_tokens: int,
         output_tokens: int | None = None,
+        model: str | None = None,
     ) -> dict:
         """
         Check if a request would exceed limits (US-ESC-03).
@@ -348,22 +349,33 @@ class TokenTracker:
             )
 
         # Check monthly budget
-        if output_tokens:
-            estimated_cost = self.estimate_cost("default", input_tokens, output_tokens)
-            projected_month_cost = self._month_cost + estimated_cost
-            budget_pct = (projected_month_cost / self._limits.monthly_budget_eur * 100) if self._limits.monthly_budget_eur > 0 else 0.0
+        # B-007 : le plafond ne pouvait jamais se declencher. Deux verrous
+        # tenaient ici. (1) La projection etait calculee avec le modele
+        # « default », dont TOKEN_PRICES dit 0,00 USD en entree comme en
+        # sortie : elle valait TOUJOURS le cumul deja consomme, le cout de la
+        # requete examinee ne pesait jamais rien. Le modele employe est
+        # desormais celui que l'appelant annonce ; sans annonce on retombe
+        # sur « default », c'est-a-dire sur l'ancien comportement, jamais sur
+        # un tarif suppose. (2) Le bloc entier vivait sous `if output_tokens:`
+        # et sautait des que la sortie etait absente ou nulle, alors que les
+        # tokens d'ENTREE sont deja factures.
+        estimated_cost = self.estimate_cost(
+            model or "default", input_tokens, output_tokens or 0
+        )
+        projected_month_cost = self._month_cost + estimated_cost
+        budget_pct = (projected_month_cost / self._limits.monthly_budget_eur * 100) if self._limits.monthly_budget_eur > 0 else 0.0
 
-            if budget_pct >= 100:
-                result["errors"].append(
-                    f"Budget mensuel atteint: {projected_month_cost:.2f} USD "
-                    f"(budget: {self._limits.monthly_budget_eur:.2f} USD)"
-                )
-                result["allowed"] = False
-            elif budget_pct >= self._limits.warn_at_percentage:
-                result["warnings"].append(
-                    f"Budget mensuel: {budget_pct:.0f}% "
-                    f"({projected_month_cost:.2f} / {self._limits.monthly_budget_eur:.2f} USD)"
-                )
+        if budget_pct >= 100:
+            result["errors"].append(
+                f"Budget mensuel atteint: {projected_month_cost:.2f} USD "
+                f"(budget: {self._limits.monthly_budget_eur:.2f} USD)"
+            )
+            result["allowed"] = False
+        elif budget_pct >= self._limits.warn_at_percentage:
+            result["warnings"].append(
+                f"Budget mensuel: {budget_pct:.0f}% "
+                f"({projected_month_cost:.2f} / {self._limits.monthly_budget_eur:.2f} USD)"
+            )
 
         return result
 

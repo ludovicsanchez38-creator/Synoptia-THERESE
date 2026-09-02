@@ -164,14 +164,20 @@ async def set_token_limits(
 async def check_limits(
     input_tokens: int = Query(..., description="Number of input tokens"),
     output_tokens: int | None = Query(None, description="Estimated output tokens"),
+    model: str | None = Query(None, description="Modele reellement employe"),
 ):
     """
     Check if a request would exceed limits.
 
     Returns allowed status and any warnings/errors.
+
+    B-007 : sans `model`, le plafond mensuel projetait le cout de la requete
+    au tarif « default » (0,00 USD) et ne pouvait donc jamais se declencher.
+    Le parametre reste facultatif - l'absence retombe sur l'ancien tarif nul
+    plutot que sur un tarif suppose.
     """
     tracker = get_token_tracker()
-    result = tracker.check_limits(input_tokens, output_tokens)
+    result = tracker.check_limits(input_tokens, output_tokens, model=model)
     return result
 
 

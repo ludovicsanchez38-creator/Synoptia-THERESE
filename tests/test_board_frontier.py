@@ -504,18 +504,137 @@ class TestRevueSosoS2:
         assert erreur is not None
         assert "L'Analyste" in str(erreur)
 
-    def test_s2_2_le_message_metier_part_meme_si_le_suivi_echoue(self):
+    @pytest.mark.asyncio
+    async def test_s2_2_le_message_metier_part_meme_si_le_suivi_echoue(
+        self, monkeypatch
+    ):
         """handle.terminer() commite et peut lever : il ne doit jamais
-        empêcher l'émission du chunk d'erreur destiné à l'utilisateur."""
-        import inspect
+        empêcher l'émission du chunk d'erreur destiné à l'utilisateur.
+
+        B-078 : cette garantie était « prouvée » par `inspect.getsource()` et
+        un `assert "_terminer_sans_masquer" in source`. Or la DÉFINITION du
+        helper (`async def _terminer_sans_masquer(`, board.py:41) contient déjà
+        cette chaîne : retirer les huit appels réels laissait l'assertion
+        vraie. On exécute donc le chemin, avec un suivi qui lève.
+        """
+        from app.models.board import AdvisorRole, BoardMode, BoardRequest
+        from app.routers import board as board_router
+        from app.services import traitements
+
+        class SuiviQuiLeveALaCloture:
+            id = "traitement-de-test"
+            annulation_demandee = None
+
+            async def demarrer(self):
+                return None
+
+            async def lier_adaptateur(self, adaptateur):
+                return None
+
+            async def progresser(self, progress=None):
+                return None
+
+            async def terminer(self, etat, error=None):
+                raise RuntimeError("base verrouillée pendant le commit du suivi")
+
+        async def _creer_traitement(**kwargs):
+            return SuiviQuiLeveALaCloture()
+
+        class BoardEnPanne:
+            _persistance_en_cours = None
+
+            def __init__(self, session):
+                self.session = session
+
+            async def deliberate(self, request, **kwargs):
+                raise RuntimeError("le fournisseur a coupé")
+                yield  # pragma: no cover - fait de deliberate un générateur
+
+        class SessionSansDecision:
+            async def execute(self, requete):
+                class Resultat:
+                    def scalars(self):
+                        return self
+
+                    def first(self):
+                        return None
+
+                return Resultat()
+
+        class ContexteDeSession:
+            async def __aenter__(self):
+                return SessionSansDecision()
+
+            async def __aexit__(self, *args):
+                return None
+
+        monkeypatch.setattr(traitements, "creer_traitement", _creer_traitement)
+        monkeypatch.setattr(board_router, "BoardService", BoardEnPanne)
+        monkeypatch.setattr(
+            board_router, "get_session_context", lambda: ContexteDeSession()
+        )
+
+        reponse = await board_router.deliberate(
+            BoardRequest(
+                question="Faut-il lancer ce pilote maintenant ?",
+                mode=BoardMode.CLOUD,
+                advisors=[AdvisorRole.ANALYST],
+            )
+        )
+        morceaux = [m async for m in reponse.body_iterator]
+
+        evenements = [
+            json.loads(m.split("data: ", 1)[1])
+            for m in morceaux
+            if m.startswith("data: ")
+        ]
+        erreurs = [e for e in evenements if e.get("type") == "error"]
+        assert erreurs, (
+            "l'échec du SUIVI a emporté le message métier : le client ne voit "
+            f"jamais la cause. Évènements émis : {evenements}"
+        )
+        assert erreurs[0]["content"].strip(), (
+            "un chunk d'erreur vide ne dit rien à l'utilisateur"
+        )
+
+    def test_s2_2_aucun_terminer_nu_hors_du_helper(self):
+        """Ceinture structurelle : un seul site exécuté sur les huit.
+
+        Le test ci-dessus ne traverse qu'UN des huit appels. Ce verrou couvre
+        les sept autres, et il compte des APPELS dans l'arbre syntaxique - la
+        ligne `async def _terminer_sans_masquer(` n'en est pas un.
+        """
+        import ast
+        from pathlib import Path
 
         from app.routers import board as board_router
 
-        source = inspect.getsource(board_router)
-        # Chaque terminer() d'un chemin d'échec est protégé
-        assert "_terminer_sans_masquer" in source, (
-            "les terminer() des chemins d'échec doivent passer par un helper "
-            "qui absorbe l'échec du suivi"
+        source = Path(board_router.__file__).read_text(encoding="utf-8")
+        arbre = ast.parse(source)
+
+        helper = next(
+            n for n in ast.walk(arbre)
+            if isinstance(n, ast.AsyncFunctionDef)
+            and n.name == "_terminer_sans_masquer"
+        )
+        dedans, dehors = [], []
+        for noeud in ast.walk(arbre):
+            if not isinstance(noeud, ast.Call):
+                continue
+            cible = noeud.func
+            if not isinstance(cible, ast.Attribute) or cible.attr != "terminer":
+                continue
+            if not isinstance(cible.value, ast.Name) or cible.value.id != "handle":
+                continue
+            if helper.lineno <= noeud.lineno <= (helper.end_lineno or helper.lineno):
+                dedans.append(noeud.lineno)
+            else:
+                dehors.append(noeud.lineno)
+
+        assert dedans, "le helper n'appelle plus terminer() : il ne sert plus à rien"
+        assert dehors == [], (
+            "des terminer() appellent le suivi SANS filet, lignes "
+            f"{dehors} : un échec du suivi y emporterait le message métier"
         )
 
     @pytest.mark.asyncio

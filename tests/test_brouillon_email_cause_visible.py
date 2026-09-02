@@ -47,19 +47,50 @@ class TestUnEchecNeProduitPasUnFauxBrouillon:
                 body="Bonjour, pouvez-vous me faire un devis ?",
             )
 
+    @pytest.mark.parametrize(
+        "panne",
+        [
+            RuntimeError("connection refused"),
+            TimeoutError("Read timed out after 30s"),
+            ValueError("does not support tools"),
+        ],
+        ids=["reseau", "timeout", "modele"],
+    )
     @pytest.mark.asyncio
-    async def test_le_texte_de_repli_a_disparu(self):
-        """Verrou : la phrase fabriquée ne doit plus exister dans le code."""
-        import inspect
+    async def test_aucune_panne_ne_produit_de_texte(self, monkeypatch, panne):
+        """Verrou : QUELLE QUE SOIT la panne, rien qui ressemble à un brouillon.
 
+        B-078 : ce verrou cherchait la chaîne « Je reviens vers vous
+        rapidement » dans `inspect.getsource(module)`. Toute AUTRE phrase
+        fabriquée serait passée, et le source d'un seul module ne dit rien du
+        reste du chemin. On exécute donc les trois familles de pannes et on
+        exige l'exception, jamais une chaîne.
+        """
         from app.services import email_response_generator as module
 
-        source = inspect.getsource(module)
+        class ServiceEnPanne:
+            config = type(
+                "C", (), {"provider": type("P", (), {"value": "ollama"})(), "model": "x"}
+            )()
 
-        assert "Je reviens vers vous rapidement" not in source, (
-            "le brouillon fabriqué est toujours là : un échec du modèle peut "
-            "encore être envoyé à un client comme s'il avait été rédigé"
+            async def generate_content(self, *args, **kwargs):
+                raise panne
+
+        monkeypatch.setattr(
+            module, "get_llm_service", lambda: ServiceEnPanne(), raising=False
         )
+
+        with pytest.raises(module.GenerationImpossible):
+            resultat = await module.EmailResponseGenerator.generate_response(
+                subject="Devis",
+                from_name="Client",
+                from_email="client@exemple.fr",
+                body="Bonjour, pouvez-vous me faire un devis ?",
+            )
+            raise AssertionError(
+                "un brouillon a été FABRIQUÉ malgré la panne : "
+                f"{resultat!r} - il peut partir tel quel chez un client"
+            )
 
 
 class TestLaCauseEstDiteSansExposerLaTechnique:

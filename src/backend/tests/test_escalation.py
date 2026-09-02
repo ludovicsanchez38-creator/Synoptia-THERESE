@@ -404,3 +404,122 @@ class TestEstimationHonnete:
         data = response.json()
         assert data["tarif_connu"] is True
         assert abs(data["estimated_cost_usd"] - 0.030) < 1e-9
+
+
+class TestB007LePlafondMensuelComptleCoutReel:
+    """B-007 : le plafond mensuel de depense ne pouvait jamais se declencher.
+
+    Trois verrous avaient ete reperes en reproduction ; deux vivent ici.
+
+    1. La projection utilisait `estimate_cost("default", ...)` alors que
+       TOKEN_PRICES["default"] vaut 0,00 USD en entree comme en sortie : le
+       cout de la requete examinee ne pesait JAMAIS rien, la projection valait
+       toujours le cumul deja consomme.
+    2. Tout le bloc budget vivait sous `if output_tokens:` : il sautait des que
+       la sortie etait absente ou nulle, alors que les tokens d'entree sont
+       deja factures.
+
+    Le troisieme (aucun appelant dans le pipeline de chat) n'est PAS traite
+    ici : brancher une garde avant l'appel au fournisseur est une
+    fonctionnalite, pas un correctif de cause racine.
+    """
+
+    @staticmethod
+    def _tracker_isole():
+        """Un tracker a soi : `TokenTracker()` rend le singleton du processus."""
+        from app.services.token_tracker import TokenTracker
+
+        tracker = object.__new__(TokenTracker)
+        tracker._initialized = False
+        tracker.__init__()
+        return tracker
+
+    @staticmethod
+    def _limites(**kwargs):
+        from app.services.token_tracker import TokenLimits
+
+        defauts = dict(
+            max_input_tokens=10_000_000,
+            max_output_tokens=10_000_000,
+            daily_input_limit=100_000_000,
+            daily_output_limit=100_000_000,
+            monthly_budget_eur=0.01,
+            warn_at_percentage=80,
+        )
+        defauts.update(kwargs)
+        return TokenLimits(**defauts)
+
+    def test_le_plafond_compte_le_cout_reel_du_modele_employe(self):
+        """0,01 USD de budget contre une requete a 2,50 USD : refus attendu."""
+        tracker = self._tracker_isole()
+        tracker.set_limits(self._limites())
+
+        # claude-opus-5 : 5,00 USD/M en entree, 25,00 USD/M en sortie.
+        cout = tracker.estimate_cost("claude-opus-5", 1000, 100_000)
+        assert cout > 2.0, cout
+
+        resultat = tracker.check_limits(
+            input_tokens=1000, output_tokens=100_000, model="claude-opus-5"
+        )
+
+        assert resultat["allowed"] is False, resultat
+        assert any("Budget mensuel" in e for e in resultat["errors"]), resultat
+
+    def test_le_plafond_pese_aussi_une_requete_sans_sortie_estimee(self):
+        """Les tokens d'ENTREE sont factures : le budget ne saute pas."""
+        tracker = self._tracker_isole()
+        tracker.set_limits(self._limites())
+
+        resultat = tracker.check_limits(
+            input_tokens=1_000_000, model="claude-opus-5"
+        )
+
+        assert resultat["allowed"] is False, resultat
+        assert any("Budget mensuel" in e for e in resultat["errors"]), resultat
+
+    def test_un_modele_gratuit_ne_declenche_pas_le_plafond(self):
+        """Contre-epreuve : Ollama ne coute rien, la garde ne mord pas."""
+        tracker = self._tracker_isole()
+        tracker.set_limits(self._limites())
+
+        resultat = tracker.check_limits(
+            input_tokens=1_000_000, output_tokens=100_000, model="mistral-nemo"
+        )
+
+        assert resultat["allowed"] is True, resultat
+        assert resultat["errors"] == [], resultat
+
+    @pytest.mark.asyncio
+    async def test_la_route_check_limits_transmet_le_modele(
+        self, async_client: AsyncClient
+    ):
+        """Le defaut a ete observe PAR LA ROUTE : elle doit porter le fix."""
+        from app.main import app
+        from app.services.token_tracker import get_token_tracker
+
+        tracker = get_token_tracker()
+        limites_avant = tracker._limits
+        # Le lifespan de test pose ce drapeau ; il n'a pas tourne quand ce
+        # fichier est joue seul (la garde fail-closed rend alors 503).
+        auth_avant = getattr(app.state, "auth_disabled", False)
+        app.state.auth_disabled = True
+        try:
+            await async_client.post(
+                "/api/escalation/limits",
+                json=self._limites().to_dict(),
+            )
+            response = await async_client.post(
+                "/api/escalation/check-limits",
+                params={
+                    "input_tokens": 1000,
+                    "output_tokens": 100000,
+                    "model": "claude-opus-5",
+                },
+            )
+            assert response.status_code == 200
+            data = response.json()
+            assert data["allowed"] is False, data
+            assert any("Budget mensuel" in e for e in data["errors"]), data
+        finally:
+            tracker.set_limits(limites_avant)
+            app.state.auth_disabled = auth_avant

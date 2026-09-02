@@ -183,6 +183,73 @@ class StreamEvent:
     assistant_content_brut: Any | None = None
 
 
+NOMS_FOURNISSEURS: dict[LLMProvider, str] = {
+    LLMProvider.ANTHROPIC: "Anthropic",
+    LLMProvider.MISTRAL: "Mistral",
+    LLMProvider.OLLAMA: "Ollama",
+    LLMProvider.OPENAI: "OpenAI",
+    LLMProvider.GEMINI: "Gemini",
+    LLMProvider.GROK: "Grok",
+    LLMProvider.OPENROUTER: "OpenRouter",
+    LLMProvider.PERPLEXITY: "Perplexity",
+    LLMProvider.DEEPSEEK: "DeepSeek",
+    LLMProvider.INFOMANIAK: "Infomaniak",
+    LLMProvider.GLM: "GLM",
+    LLMProvider.KIMI: "Kimi",
+    LLMProvider.QWEN: "Qwen",
+    LLMProvider.MINIMAX: "MiniMax",
+}
+
+
+def nom_fournisseur(provider: LLMProvider | None) -> str:
+    """Le nom du fournisseur tel qu'on l'écrit à l'utilisateur.
+
+    Dérivé de la CONFIGURATION, jamais de la classe : Grok, GLM, Kimi, Qwen et
+    MiniMax héritent d'OpenAIProvider, et un message codé en dur y annoncerait
+    « OpenAI » à qui a saisi une clé xAI.
+    """
+    if provider is None:
+        return "le service d'IA"
+    return NOMS_FOURNISSEURS.get(provider, provider.value)
+
+
+def message_erreur_http(provider: LLMProvider | None, status_code: int) -> str:
+    """B-203/B-215 : traduit un code HTTP d'échec en phrase pour l'écran.
+
+    Reprend mot pour mot la forme déjà tenue par `gemini._message_erreur_http`
+    et `openrouter._message_erreur_sse`, pour que les six fournisseurs qui
+    passaient par `raise_for_status()` cessent d'être les seuls à rendre le
+    code nu (« API error: 401 »).
+
+    Deux contraintes opposées, toutes deux obligatoires :
+
+    - le CORPS de la réponse ne traverse jamais cette fonction : il peut
+      porter un chemin local ou un fragment de clé (frontière 0.48) ;
+    - la CLASSE de l'erreur doit rester lisible par `_is_provider_outage`
+      (llm.py) : « API error: {code} » est la forme que son expression
+      régulière relit pour compter une panne, d'où sa conservation stricte
+      sur les 5xx.
+    """
+    nom = nom_fournisseur(provider)
+    if status_code == 401:
+        return f"Clé API {nom} invalide ou expirée. Vérifie tes paramètres."
+    if status_code == 403:
+        return (
+            f"Ton accès à ce modèle {nom} est restreint. "
+            "Vérifie tes droits ou choisis un autre modèle."
+        )
+    if status_code == 404:
+        return (
+            "Le modèle demandé est introuvable chez le fournisseur. "
+            "Choisis-en un autre dans les Paramètres."
+        )
+    if status_code == 429:
+        return "Trop de requêtes envoyées. Attends quelques instants avant de réessayer."
+    if status_code >= 500:
+        return f"API error: {status_code}"
+    return f"Requête refusée par le service d'IA ({status_code})."
+
+
 class BaseProvider(ABC):
     """Abstract base class for LLM providers."""
 

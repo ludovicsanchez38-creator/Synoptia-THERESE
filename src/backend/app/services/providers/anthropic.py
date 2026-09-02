@@ -17,6 +17,7 @@ from .base import (
     ToolCall,
     ToolResult,
     ToolTurn,
+    message_erreur_http,
 )
 
 logger = logging.getLogger(__name__)
@@ -194,7 +195,12 @@ class AnthropicProvider(BaseProvider):
                 logger.debug("Impossible de lire le body erreur Anthropic: %s", body_err)
                 error_text = str(e)
             logger.error(f"Anthropic API error: {e.response.status_code} - {error_text}")
-            yield StreamEvent(type="error", content=f"API error: {e.response.status_code}")
+            yield StreamEvent(
+                type="error",
+                content=message_erreur_http(
+                    self.config.provider, e.response.status_code
+                ),
+            )
         except Exception as e:
             logger.error(f"Anthropic streaming error: {e}")
             # Revue 0.48 p2 (F1) : jamais str(e) brut dans un évènement
