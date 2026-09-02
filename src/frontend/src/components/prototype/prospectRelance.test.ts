@@ -14,6 +14,7 @@ function journee(prospects: TodayDashboard['stale_prospects'], date = '2026-08-2
     date,
     events: [], urgent_tasks: [], due_follow_ups: [], overdue_invoices: [],
     stale_prospects: prospects,
+    indisponibles: [],
     summary: { events_count: 0, tasks_count: 0, follow_ups_count: 0, invoices_count: 0, prospects_count: prospects.length },
   };
 }

@@ -184,7 +184,7 @@ export function EmailMessageCanvas({
   nouvelleRedaction?: boolean;
   onRetry: () => void;
   onGenerateDraft: (messageId: string, tone: EmailTone, length: EmailLength) => Promise<string>;
-  onSaveDraft: (request: SendEmailRequest) => Promise<{ id: string }>;
+  onSaveDraft: (request: SendEmailRequest, draftId?: string | null) => Promise<{ id: string }>;
   onOpenClassic: () => void;
 }) {
   const messageId = resource?.status === 'ready' ? resource.data.id : null;
@@ -198,7 +198,25 @@ export function EmailMessageCanvas({
   const [confirmSave, setConfirmSave] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errorField, setErrorField] = useState<'recipient' | 'subject' | 'draft' | null>(null);
+  /**
+   * B-060 : deux etats, parce qu'ils ne meurent pas au meme moment.
+   *
+   * `savedDraftId` designe le brouillon qui EXISTE chez le fournisseur ; il
+   * survit a la frappe suivante, sans quoi le prochain enregistrement
+   * n'aurait plus rien a remplacer et en creerait un second.
+   *
+   * Ce qui l'efface : tout ce qui VIDE le composeur, c'est-a-dire l'effet de
+   * reinitialisation ci-dessous - changement de message, passage en redaction
+   * libre, et re-ouverture du meme message (« Reessayer » rend un nouvel
+   * objet `resource`). Frontiere volontaire : le composeur repart vide, le
+   * lier au brouillon deja pose reviendrait a ECRASER ce brouillon avec un
+   * texte qui n'a plus rien a voir.
+   *
+   * `brouillonAJour` dit si le texte a l'ecran est celui qui a ete enregistre.
+   * C'est lui, et lui seul, qui allume le bandeau vert.
+   */
   const [savedDraftId, setSavedDraftId] = useState<string | null>(null);
+  const [brouillonAJour, setBrouillonAJour] = useState(false);
   const [confirmReplace, setConfirmReplace] = useState(false);
   const [previousDraft, setPreviousDraft] = useState<string | null>(null);
 
@@ -218,6 +236,7 @@ export function EmailMessageCanvas({
       setPreviousDraft(null);
       setErrorField(null);
       setSavedDraftId(null);
+      setBrouillonAJour(false);
       return;
     }
     if (resource?.status !== 'ready') return;
@@ -230,10 +249,14 @@ export function EmailMessageCanvas({
     setPreviousDraft(null);
     setErrorField(null);
     setSavedDraftId(null);
+    setBrouillonAJour(false);
   }, [messageId, resource, nouvelleRedaction]);
 
   function markDraftDirty() {
-    setSavedDraftId(null);
+    // Le texte a change : le bandeau ne peut plus promettre qu'il est
+    // enregistre. L'identifiant du brouillon deja pose, lui, reste : c'est
+    // celui-la qu'il faudra remplacer.
+    setBrouillonAJour(false);
     setConfirmSave(false);
   }
 
@@ -303,13 +326,21 @@ export function EmailMessageCanvas({
     setError(null);
     setErrorField(null);
     try {
-      const result = await onSaveDraft({
+      const demande = {
         to: [recipient.trim()],
         subject: subject.trim(),
         body: draft,
         html: false,
-      });
+      };
+      // Sans brouillon deja pose, c'est une creation - et on n'invente pas un
+      // identifiant a remplacer.
+      const result = savedDraftId
+        ? await onSaveDraft(demande, savedDraftId)
+        : await onSaveDraft(demande);
+      // L'identifiant rendu prend la place du precedent : remplacer un
+      // brouillon IMAP le re-depose sous un UID neuf.
       setSavedDraftId(result.id);
+      setBrouillonAJour(true);
       setConfirmSave(false);
     } catch {
       setError('Impossible d’enregistrer le brouillon chez le fournisseur email.');
@@ -461,7 +492,7 @@ export function EmailMessageCanvas({
             {previousDraft !== null && (
               <button type="button" onClick={() => { setDraft(previousDraft); setPreviousDraft(null); markDraftDirty(); }} className="mt-2 rounded-sm border border-border px-3 py-2 text-sm font-semibold text-text">Annuler le remplacement IA</button>
             )}
-            {savedDraftId && (
+            {brouillonAJour && (
               <div role="status" className="mt-3 flex items-start gap-2 rounded-md border border-success/40 bg-[var(--color-success-tint)] p-3 text-sm text-success" data-testid="email-draft-saved">
                 <CheckCircle2 className="h-4 w-4 shrink-0" />
                 <span><strong>Brouillon enregistré.</strong> Aucun message n’a été envoyé.</span>
@@ -476,7 +507,11 @@ export function EmailMessageCanvas({
                     <strong>Confirmer l’enregistrement chez le fournisseur email</strong>
                     <p className="mt-1">Destinataire : {recipient}</p>
                     <p>Objet : {subject}</p>
-                    <p className="mt-1 font-semibold">Cette action crée un brouillon. Elle n’envoie rien.</p>
+                    <p className="mt-1 font-semibold">
+                      {savedDraftId
+                        ? 'Cette action remplace le brouillon déjà enregistré. Elle n’envoie rien.'
+                        : 'Cette action crée un brouillon. Elle n’envoie rien.'}
+                    </p>
                   </div>
                 </div>
                 <div className="mt-3 flex justify-end gap-2">

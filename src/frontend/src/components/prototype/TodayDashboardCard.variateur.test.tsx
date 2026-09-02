@@ -41,6 +41,7 @@ function dashboard(total: number, nbRetards: number, date = JOUR): TodayDashboar
     due_follow_ups: [],
     overdue_invoices: [],
     stale_prospects: [],
+    indisponibles: [],
     summary: {
       events_count: 0, tasks_count: total, follow_ups_count: 0,
       invoices_count: 0, prospects_count: 0,

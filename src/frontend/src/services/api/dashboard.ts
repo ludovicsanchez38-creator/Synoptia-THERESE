@@ -83,6 +83,17 @@ export interface TodayDashboard {
   due_follow_ups: DashboardFollowUp[];
   overdue_invoices: DashboardInvoice[];
   stale_prospects: DashboardProspect[];
+  /**
+   * Ce que le serveur n'a PAS PU lire, nommément (« calendrier », « taches »,
+   * « relances_email », « factures », « prospects »).
+   *
+   * B-051 : sans cette liste, les cinq lectures de /today dégradaient en
+   * listes vides. Une base verrouillée, une migration en cours ou une
+   * corruption arrivaient à l'écran sous la forme d'une journée calme, sur le
+   * premier écran de l'application. « Rien à faire » et « on n'a pas pu
+   * savoir » sont deux réponses.
+   */
+  indisponibles: string[];
   summary: DashboardSummary;
 }
 

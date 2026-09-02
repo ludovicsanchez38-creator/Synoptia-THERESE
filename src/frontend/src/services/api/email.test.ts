@@ -74,4 +74,28 @@ describe('Signature email API (quick win testeur)', () => {
       }),
     );
   });
+
+  /**
+   * B-060 (reliquat frontend). Le backend sait remplacer un brouillon depuis
+   * le lot RE25 : la route accepte `draft_id`. Tant que le client n'a aucune
+   * porte pour le transmettre, chaque correction re-enregistree laisse un
+   * exemplaire de plus chez le fournisseur, sous le meme bandeau vert.
+   */
+  it('createDraft remplace le brouillon designe quand un identifiant est fourni', async () => {
+    mockApiFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ id: 'draft-1', labelIds: ['DRAFT'] }),
+    });
+
+    await createDraft(
+      'acc-1',
+      { to: ['client@example.test'], subject: 'Proposition', body: 'Bonjour corrige', html: false },
+      'draft-1',
+    );
+
+    expect(mockApiFetch).toHaveBeenCalledWith(
+      'http://127.0.0.1:17293/api/email/messages/draft?account_id=acc-1&draft_id=draft-1',
+      expect.objectContaining({ method: 'POST' }),
+    );
+  });
 });

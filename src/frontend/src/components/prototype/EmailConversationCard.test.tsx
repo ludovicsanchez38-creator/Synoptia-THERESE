@@ -165,6 +165,99 @@ describe('EmailMessageCanvas', () => {
     expect(screen.queryByTestId('email-draft-saved')).not.toBeInTheDocument();
   });
 
+  /**
+   * B-060 (reliquat frontend). L'ecran garde depuis toujours l'identifiant
+   * rendu par le premier enregistrement, et ne s'en sert que pour peindre un
+   * bandeau vert. Chaque correction re-enregistree creait donc un brouillon
+   * de PLUS chez le fournisseur, sans que rien ne le dise.
+   *
+   * Deux exigences, car la premiere seule ne suffit pas : l'identifiant doit
+   * etre transmis au deuxieme enregistrement, et celui rendu par ce
+   * deuxieme doit prendre la place du premier (chez IMAP, remplacer un
+   * brouillon le re-APPEND sous un UID neuf : reutiliser l'ancien
+   * ressusciterait le doublon des le troisieme enregistrement).
+   */
+  it('re-enregistrer transmet l’identifiant du brouillon deja pose, puis le suivant', async () => {
+    const onSaveDraft = vi
+      .fn()
+      .mockResolvedValueOnce({ id: 'draft-1' })
+      .mockResolvedValueOnce({ id: 'draft-9' })
+      .mockResolvedValue({ id: 'draft-9' });
+    render(
+      <EmailMessageCanvas
+        resource={{ status: 'ready', data: message(), error: null }}
+        onRetry={vi.fn()}
+        onGenerateDraft={vi.fn()}
+        onSaveDraft={onSaveDraft}
+        onOpenClassic={vi.fn()}
+      />,
+    );
+
+    const body = await screen.findByLabelText('Corps du brouillon');
+    const enregistrer = async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Enregistrer comme brouillon' }));
+      fireEvent.click(screen.getByRole('button', { name: 'Confirmer le brouillon' }));
+    };
+
+    fireEvent.change(body, { target: { value: 'Premiere version' } });
+    await enregistrer();
+    await waitFor(() => expect(onSaveDraft).toHaveBeenCalledTimes(1));
+    // Rien a remplacer encore : c'est bien une creation.
+    expect(onSaveDraft.mock.calls[0][1]).toBeUndefined();
+
+    fireEvent.change(body, { target: { value: 'Version corrigee' } });
+    await enregistrer();
+    await waitFor(() => expect(onSaveDraft).toHaveBeenCalledTimes(2));
+    expect(onSaveDraft.mock.calls[1][1]).toBe('draft-1');
+
+    fireEvent.change(body, { target: { value: 'Troisieme jet' } });
+    await enregistrer();
+    await waitFor(() => expect(onSaveDraft).toHaveBeenCalledTimes(3));
+    expect(onSaveDraft.mock.calls[2][1]).toBe('draft-9');
+  });
+
+  /**
+   * La frontiere du correctif B-060, epinglee pour qu'elle reste une decision.
+   *
+   * Re-ouvrir le meme message (« Reessayer ») rend un nouvel objet `resource` :
+   * l'effet de reinitialisation VIDE le composeur. L'identifiant du brouillon
+   * part avec lui, a dessein - garder le lien ferait ecraser le brouillon
+   * enregistre par un texte qui n'a plus rien a voir. Le prochain
+   * enregistrement est donc bien une creation.
+   */
+  it('re-ouvrir le message vide le composeur, donc repart sur une création', async () => {
+    const onSaveDraft = vi.fn().mockResolvedValue({ id: 'draft-1' });
+    const props = {
+      onRetry: vi.fn(),
+      onGenerateDraft: vi.fn(),
+      onSaveDraft,
+      onOpenClassic: vi.fn(),
+    };
+    const { rerender } = render(
+      <EmailMessageCanvas resource={{ status: 'ready', data: message(), error: null }} {...props} />,
+    );
+
+    const body = await screen.findByLabelText('Corps du brouillon');
+    fireEvent.change(body, { target: { value: 'Premiere version' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer comme brouillon' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmer le brouillon' }));
+    await waitFor(() => expect(onSaveDraft).toHaveBeenCalledTimes(1));
+
+    // Nouvel objet `resource`, meme message : ce que produit openMessage.
+    rerender(
+      <EmailMessageCanvas resource={{ status: 'ready', data: message(), error: null }} {...props} />,
+    );
+
+    const rouvert = screen.getByLabelText('Corps du brouillon');
+    expect(rouvert).toHaveValue('');
+
+    fireEvent.change(rouvert, { target: { value: 'Tout autre reponse' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer comme brouillon' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmer le brouillon' }));
+    await waitFor(() => expect(onSaveDraft).toHaveBeenCalledTimes(2));
+    expect(onSaveDraft.mock.calls[1][1]).toBeUndefined();
+  });
+
   it('lie l’erreur au premier champ fautif et le focalise', async () => {
     render(
       <EmailMessageCanvas

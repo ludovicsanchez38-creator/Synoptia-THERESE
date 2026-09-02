@@ -44,8 +44,13 @@ function bloc(marqueur: string): Record<string, string> {
   // Ancré en début de ligne : cf. le même défaut corrigé dans a11y.test.tsx.
   const ancre = new RegExp(`^${marqueur.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{`, 'm');
   const trouve = ancre.exec(CSS);
-  const debut = trouve ? trouve.index : -1;
-  const ouvre = CSS.indexOf('{', debut);
+  // B-146 : sans cette garde, la sentinelle -1 partait dans `indexOf`, dont la
+  // spécification ramène tout indice négatif à 0 : un marqueur introuvable
+  // rendait silencieusement le PREMIER bloc du fichier, `@theme`. Le bloc
+  // sombre renommé, `SOMBRE` devenait `CLAIR` et toute la suite mesurait la
+  // palette claire en croyant lire la sombre.
+  if (!trouve) throw new Error(`Marqueur CSS introuvable dans globals.css : ${marqueur}`);
+  const ouvre = CSS.indexOf('{', trouve.index);
   let profondeur = 0;
   let fin = ouvre;
   for (let i = ouvre; i < CSS.length; i++) {
@@ -216,5 +221,35 @@ describe('lot 5 : plus une seule couleur brute', () => {
     // #2451FF est le bleu de la marque Synoptïa.
     const fautifs = SOURCES.filter((f) => /2451FF/i.test(readFileSync(f, 'utf-8')));
     expect(fautifs.map(court)).toEqual([]);
+  });
+});
+
+/**
+ * B-146 : l'instrument lui-même.
+ *
+ * `bloc()` gardait la sentinelle -1 de `exec` introuvable et la passait telle
+ * quelle à `CSS.indexOf('{', -1)`, dont la spécification ramène tout indice
+ * négatif à 0. Un marqueur inexistant ne jetait donc pas : il rendait le
+ * PREMIER bloc du fichier, c'est-à-dire `@theme`. Le jour où le bloc sombre
+ * est renommé, `SOMBRE` devient identique à `CLAIR` et toutes les mesures de
+ * contraste ci-dessus continuent de passer, sur la mauvaise palette.
+ *
+ * Un instrument qui ne trouve pas sa cible doit le dire, pas rendre ce qu'il
+ * a sous la main.
+ */
+describe('B-146 : bloc() signale un marqueur introuvable', () => {
+  it('un marqueur absent du CSS fait échouer bruyamment, en se nommant', () => {
+    expect(() => bloc('@marqueur-inexistant')).toThrow(/@marqueur-inexistant/);
+  });
+
+  it('les deux marqueurs réels rendent toujours des palettes distinctes et pleines', () => {
+    const clair = bloc('@theme');
+    const sombre = bloc('[data-theme="dark"]');
+
+    expect(Object.keys(clair).length).toBeGreaterThan(20);
+    expect(Object.keys(sombre).length).toBeGreaterThan(20);
+    // Si celui-ci passait à `true`, la suite entière mesurerait le thème clair
+    // en croyant lire le sombre.
+    expect(sombre).not.toEqual(clair);
   });
 });

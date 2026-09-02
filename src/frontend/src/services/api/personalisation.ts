@@ -39,7 +39,8 @@ export interface FeatureVisibilitySettings {
   show_voice_input: boolean;
   show_file_browser: boolean;
   show_mcp_tools: boolean;
-  show_guided_prompts: boolean;
+  /* B-095 : `show_guided_prompts` retiré. Le serveur le sert encore, avec une
+     valeur par défaut, mais plus aucune surface ne l'écoute côté écran. */
   show_entity_suggestions: boolean;
 }
 

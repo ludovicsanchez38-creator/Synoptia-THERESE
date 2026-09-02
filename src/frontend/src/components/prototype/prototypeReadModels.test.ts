@@ -34,6 +34,7 @@ function dashboard(): TodayDashboard {
       id: 'p1', name: 'Camille Martin', company: 'Cérès', stage: 'discovery', email: null,
       last_interaction: null, next_follow_up: null,
     }],
+    indisponibles: [],
     summary: { events_count: 1, tasks_count: 2, follow_ups_count: 1, invoices_count: 1, prospects_count: 1 },
   };
 }

@@ -83,6 +83,12 @@ const DEFAULT_LLM_BEHAVIOR: LLMBehavior = {
 // US-PERS-05: Feature Visibility
 // ============================================================
 
+/**
+ * B-095 : `showGuidedPrompts` a été retiré d'ici. Les invites guidées ont
+ * disparu avec `GuidedPrompts` (B-094) ; le réglage qui les commandait est
+ * resté déclaré, sans plus aucun lecteur. Un interrupteur dont le fil a été
+ * coupé vaut moins que pas d'interrupteur du tout.
+ */
 export interface FeatureVisibility {
   showBoard: boolean;
   showCalculators: boolean;
@@ -90,7 +96,6 @@ export interface FeatureVisibility {
   showVoiceInput: boolean;
   showFileBrowser: boolean;
   showMCPTools: boolean;
-  showGuidedPrompts: boolean;
   showEntitySuggestions: boolean;
 }
 
@@ -101,7 +106,6 @@ const DEFAULT_FEATURE_VISIBILITY: FeatureVisibility = {
   showVoiceInput: true,
   showFileBrowser: true,
   showMCPTools: true,
-  showGuidedPrompts: true,
   showEntitySuggestions: true,
 };
 

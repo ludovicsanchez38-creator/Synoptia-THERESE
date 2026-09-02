@@ -263,7 +263,7 @@ function ContextCanvas({
   onRetryContacts: () => void;
   onRetryEmailMessage: () => void;
   onGenerateEmailDraft: (messageId: string, tone: EmailTone, length: EmailLength) => Promise<string>;
-  onSaveEmailDraft: (request: SendEmailRequest) => Promise<{ id: string }>;
+  onSaveEmailDraft: (request: SendEmailRequest, draftId?: string | null) => Promise<{ id: string }>;
   onRetryMeeting: () => void;
   onRetryMeetingEvent: () => void;
   onCreateMeetingEvent: (request: CreateEventRequest) => Promise<CalendarEvent>;

@@ -67,6 +67,25 @@ const COULEUR_DE_DOMAINE: Record<string, string> = {
   CRM: 'bg-domaine-prospects-tint text-domaine-prospects',
 };
 
+/**
+ * B-051 : le serveur nomme ses sources en propre (« calendrier », « taches »,
+ * ...). L'écran, lui, parle Agenda / Tâches / Relances. Une clé inconnue
+ * ressort telle quelle plutôt que de disparaître : mieux vaut un mot brut
+ * qu'une panne muette.
+ */
+const NOM_DE_SOURCE: Record<string, string> = {
+  calendrier: 'Agenda',
+  taches: 'Tâches',
+  relances_email: 'Relances',
+  factures: 'Factures',
+  prospects: 'CRM',
+};
+
+function nommerLesSources(cles: string[] | undefined | null): string[] {
+  if (!Array.isArray(cles)) return [];
+  return cles.map((cle) => NOM_DE_SOURCE[cle] ?? cle);
+}
+
 function SourcePill({ label }: { label: string }) {
   const couleur = COULEUR_DE_DOMAINE[label] ?? 'bg-surface-2 text-text-muted';
   return (
@@ -109,6 +128,10 @@ export function TodayDashboardCard({
   // lancee le 01/09/2026.
   const { maskText } = useDemoMask();
   const items = resource.status === 'ready' ? buildTodayAttentionItems(resource.data) : [];
+  // Une lecture qui a échoué ne dit RIEN de l'état réel : compter ses données
+  // pour zéro, c'est annoncer une journée calme qu'on n'a pas constatée.
+  const sourcesEnPanne =
+    resource.status === 'ready' ? nommerLesSources(resource.data.indisponibles) : [];
   // Entrée 11b : le brief montre six éléments, le reste se déroule ici plutôt
   // que sur un autre écran. Depuis le 29/08, le seuil est réglable.
   const [toutAfficher, setToutAfficher] = useState(false);
@@ -215,6 +238,23 @@ export function TodayDashboardCard({
         </div>
       )}
 
+      {/* Nommer la panne AU-DESSUS du corps, et une seule fois. Le mettre dans
+          l'une des branches d'état la laissait perdre contre l'invitation à
+          brancher les mails : une base verrouillée chez un nouvel utilisateur
+          n'aurait jamais été dite. */}
+      {resource.status === 'ready' && sourcesEnPanne.length > 0 && (
+        <div
+          className="flex items-start gap-2 border-b border-border bg-[var(--color-warning-tint)] px-4 py-2.5 text-xs leading-5 text-warning"
+          data-testid="today-dashboard-indisponible"
+        >
+          <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <span>
+            Je n’ai pas pu lire {sourcesEnPanne.join(', ')}. Ce qui en vient manque
+            ici : ce n’est pas forcément une journée calme.
+          </span>
+        </div>
+      )}
+
       {resource.status === 'loading' ? (
         <StateShell>
           <div className="flex items-center gap-2 text-sm text-text-muted" role="status">
@@ -255,6 +295,25 @@ export function TodayDashboardCard({
                 className="mt-4 rounded-md bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink"
               >
                 Brancher mes mails
+              </button>
+            </div>
+          ) : sourcesEnPanne.length > 0 ? (
+            /* Le vide n'est pas constaté : il n'a pas pu être lu. Surtout, il ne
+               prend pas la coche verte « rien d'urgent ». */
+            <div className="text-center" data-testid="today-dashboard-incomplet">
+              <AlertCircle className="mx-auto h-6 w-6 text-warning" />
+              <p className="mt-2 text-sm font-semibold text-text">Ta journée est incomplète</p>
+              <p className="mt-1 text-xs leading-5 text-text-muted">
+                Rien ne remonte, mais la lecture n’a pas abouti : ce n’est pas une
+                journée calme constatée.
+              </p>
+              <button
+                type="button"
+                onClick={onRetry}
+                className="mt-4 inline-flex items-center gap-1.5 rounded-md border border-accent-fill bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                Réessayer
               </button>
             </div>
           ) : (

@@ -307,15 +307,29 @@ export async function sendEmail(accountId: string, req: SendEmailRequest): Promi
   return response.json();
 }
 
+/**
+ * Enregistre un brouillon chez le fournisseur.
+ *
+ * B-060 : sans `draftId`, la route CREE. Avec lui, elle REMPLACE le brouillon
+ * designe (le fournisseur rend alors l'identifiant du brouillon vivant, qui
+ * n'est pas forcement l'ancien : chez IMAP, remplacer, c'est re-deposer).
+ * Tant que ce parametre n'existait pas, corriger un brouillon deja enregistre
+ * en empilait un second.
+ */
 export async function createDraft(
   accountId: string,
   req: SendEmailRequest,
+  draftId?: string | null,
 ): Promise<{ id: string; labelIds?: string[] }> {
-  const response = await apiFetch(`${API_BASE}/api/email/messages/draft?account_id=${accountId}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(req),
-  });
+  const remplace = draftId ? `&draft_id=${encodeURIComponent(draftId)}` : '';
+  const response = await apiFetch(
+    `${API_BASE}/api/email/messages/draft?account_id=${accountId}${remplace}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(req),
+    },
+  );
   if (!response.ok) throw new Error('Failed to create draft');
   return response.json();
 }

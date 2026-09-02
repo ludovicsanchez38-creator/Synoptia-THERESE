@@ -126,10 +126,14 @@ export function usePrototypeEmailData(enabled = true) {
     return result.draft;
   }, []);
 
-  const saveDraft = useCallback(async (request: SendEmailRequest) => {
+  // B-060 : `draftId` porte le brouillon deja pose chez le fournisseur. Sans
+  // lui on cree, avec lui on remplace. Il n'est transmis que lorsqu'il existe,
+  // pour que la creation reste une creation et non un remplacement de rien.
+  const saveDraft = useCallback(async (request: SendEmailRequest, draftId?: string | null) => {
     const accountId = useEmailStore.getState().currentAccountId;
     if (!accountId) throw new Error('Aucun compte email actif.');
-    return createDraft(accountId, request);
+    if (!draftId) return createDraft(accountId, request);
+    return createDraft(accountId, request, draftId);
   }, []);
 
   useEffect(() => {

@@ -21,6 +21,7 @@ describe('buildTodayAttentionItems face à une réponse incomplète', () => {
     due_follow_ups: [],
     overdue_invoices: [],
     stale_prospects: [],
+    indisponibles: [],
     summary: {
       events_count: 0,
       tasks_count: 0,
