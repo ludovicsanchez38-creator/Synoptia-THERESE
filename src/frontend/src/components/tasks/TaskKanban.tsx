@@ -331,9 +331,9 @@ function TaskCard({ task, onClick, onStatusChange, isOverlay, showDragHandle, ma
         {/* Title */}
         <h4 className="text-sm font-medium text-text mb-1">{maskTextFn ? maskTextFn(task.title) : task.title}</h4>
 
-        {/* Description */}
+        {/* Description. B-134 : corps de la carte, pas une métadonnée - cf TaskList. */}
         {task.description && (
-          <p className="text-xs text-text-muted line-clamp-2 mb-2">{maskTextFn ? maskTextFn(task.description) : task.description}</p>
+          <p className="text-sm text-text-muted line-clamp-2 mb-2">{maskTextFn ? maskTextFn(task.description) : task.description}</p>
         )}
 
         {/* Due Date */}

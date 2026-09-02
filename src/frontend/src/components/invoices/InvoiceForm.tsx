@@ -681,7 +681,13 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                   <div key={index} className="p-4 rounded-md bg-bg border border-border/50 space-y-3">
                     <div className="flex items-start gap-3">
                       <div className="flex-1">
-                        <input aria-label="Description de la ligne"
+                        {/* B-234 : le rang est disponible sur la même
+                            itération que ses champs voisins, déjà numérotés ;
+                            sans lui, trois champs portaient le même nom
+                            accessible. NB : ne pas nommer ici les libellés
+                            voisins, `TestBUG091_DecimalSeparator` lit ce
+                            fichier en cherchant leur PREMIÈRE occurrence. */}
+                        <input aria-label={`Description ligne ${index + 1}`}
                           type="text"
                           placeholder="Description"
                           value={line.description}

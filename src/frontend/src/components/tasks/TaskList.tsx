@@ -168,9 +168,12 @@ export function TaskList() {
                     </div>
                   </div>
 
-                  {/* Description */}
+                  {/* Description. B-134 : c'est le CORPS de la carte, pas une
+                      métadonnée. À 12 px comme la priorité et l'échéance,
+                      l'écran n'avait plus de hiérarchie : 387 textes à 12 px
+                      contre 85 à 14 px sur le seul écran des tâches. */}
                   {task.description && (
-                    <p className="text-xs text-text-muted line-clamp-1 mb-2">
+                    <p className="text-sm text-text-muted line-clamp-1 mb-2">
                       {maskText(task.description)}
                     </p>
                   )}

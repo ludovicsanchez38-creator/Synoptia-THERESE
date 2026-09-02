@@ -59,13 +59,13 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
     setFilters,
     removeInvoice,
     updateInvoiceInStore,
+    listeTronquee,
   } = useInvoiceStore();
 
   const addNotification = useStatusStore((s) => s.addNotification);
 
   const [isLoading, setIsLoading] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
-  const [listeTronquee, setListeTronquee] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [deletingInvoice, setDeletingInvoice] = useState<Invoice | null>(null);
@@ -94,10 +94,15 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
         document_type: courants.document_type,
         contact_id: courants.contact_id,
       });
-      setInvoices(data);
-      setListeTronquee(data.length >= PLAFOND_FACTURES);
+      setInvoices(data, data.length >= PLAFOND_FACTURES);
     } catch (error) {
       console.error('Failed to load invoices:', error);
+      // B-009 : sans cette ligne, l'échec s'ajoutait aux affirmations du
+      // chargement précédent au lieu de les remplacer - « 0+ document », le
+      // bandeau de troncature et le message d'échec ensemble à l'écran. La
+      // liste et son drapeau tombent d'un seul geste : rien ne peut plus
+      // décrire des données qui ne sont plus là.
+      setInvoices([], false);
       setLoadError('Impossible de charger les factures pour le moment.');
     } finally {
       setIsLoading(false);
@@ -315,7 +320,11 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
       ) : (
         <div className="space-y-2">
           {filteredInvoices.map((invoice) => {
-            const StatusIcon = STATUS_CONFIG[invoice.status].icon;
+            // B-010 : les trois lectures de la même entrée, plus bas, ont
+            // toujours eu leur `?.` et leur repli ; celle-ci non. Un statut
+            // hors catalogue (une base alpha antérieure à la 0.55 en contient)
+            // faisait tomber l'application entière sur l'écran « Oups ! ».
+            const StatusIcon = STATUS_CONFIG[invoice.status]?.icon ?? FileText;
 
             return (
               <motion.div

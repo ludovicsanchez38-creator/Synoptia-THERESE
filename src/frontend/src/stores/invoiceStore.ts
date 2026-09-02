@@ -18,6 +18,15 @@ interface InvoiceFilters {
 interface InvoiceStore {
   // State
   invoices: Invoice[];
+  /**
+   * B-003 : la liste ci-dessus a DEUX écrivains (le panneau Factures et le
+   * hook du parcours prototype). Le drapeau de troncature vivait dans le
+   * panneau, il ne décrivait donc que le dernier chargement du panneau :
+   * après une écriture de l'autre écrivain, l'en-tête annonçait « 1+
+   * document » et gardait son bandeau au-dessus d'une liste d'un élément.
+   * Il vit ici, posé par la MÊME action que la liste qu'il décrit.
+   */
+  listeTronquee: boolean;
   currentInvoiceId: string | null;
   filters: InvoiceFilters;
   isInvoicePanelOpen: boolean;
@@ -32,7 +41,9 @@ interface InvoiceStore {
   } | null;
 
   // Actions
-  setInvoices: (invoices: Invoice[]) => void;
+  /** `tronquee` par défaut à faux : un écrivain sans notion de plafond
+   *  n'hérite jamais de l'avertissement d'un autre. */
+  setInvoices: (invoices: Invoice[], tronquee?: boolean) => void;
   addInvoice: (invoice: Invoice) => void;
   updateInvoiceInStore: (invoice: Invoice) => void;
   removeInvoice: (invoiceId: string) => void;
@@ -56,13 +67,14 @@ export const useInvoiceStore = create<InvoiceStore>()(
     (set, get) => ({
       // Initial state
       invoices: [],
+      listeTronquee: false,
       currentInvoiceId: null,
       filters: { status: 'all' },
       isInvoicePanelOpen: false,
       draftInvoice: null,
 
       // Actions
-      setInvoices: (invoices) => set({ invoices }),
+      setInvoices: (invoices, tronquee = false) => set({ invoices, listeTronquee: tronquee }),
 
       addInvoice: (invoice) =>
         set((state) => ({ invoices: [invoice, ...state.invoices] })),
