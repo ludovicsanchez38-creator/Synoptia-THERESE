@@ -52,8 +52,10 @@
 - `src/backend/app/models/database.py` → `src/backend/alembic/versions/d4e5f6a7b8c9_add_currency_field_to_invoices.py` : 
 - `src/backend/app/models/database.py` → `src/backend/app/models/entities_sync.py` : 
 - `src/backend/app/models/database.py` → `src/backend/app/services/encryption.py` : 
+- `src/backend/app/models/entities.py` → `json` : 
 - `src/backend/app/models/entities.py` → `sqlmodel` : 
 - `src/backend/app/models/entities.py` → `src/backend/alembic/versions/977c5c3cff46_phase_5_crm_add_stage_score_source_last_.py` : 
+- `src/backend/app/models/entities.py` → `uuid` : 
 - `src/backend/app/models/entities_sync.py` → `src/backend/app/models/entities.py` : 
 - `src/backend/app/routers/actions.py` → `src/backend/app/models/processing.py` : 
 - `src/backend/app/routers/agents.py` → `src/backend/app/models/processing.py` : 
@@ -157,6 +159,9 @@
 - `src/backend/app/routers/voice.py` → `app.services.voice_local` : 
 - `src/backend/app/routers/voice.py` → `src/backend/app/services/voice_local.py` : 
 - `src/backend/app/services/action_agents.py` → `src/backend/app/services/calendar_service.py` : 
+- `src/backend/app/services/agents/git_service.py` → `asyncio.subprocess` : 
+- `src/backend/app/services/agents/git_service.py` → `git (binaire externe)` : 
+- `src/backend/app/services/agents/git_service.py` → `signal` : 
 - `src/backend/app/services/agents/runtime.py` → `src/backend/app/services/agents/tools.py` : 
 - `src/backend/app/services/agents/swarm.py` → `src/backend/app/services/agents/git_service.py` : 
 - `src/backend/app/services/agents/tools.py` → `src/backend/app/services/agents/git_service.py` : 
@@ -231,6 +236,8 @@
 - `src/backend/app/services/providers/glm.py` → `src/backend/app/services/providers/openai.py` : 
 - `src/backend/app/services/providers/minimax.py` → `src/backend/app/services/providers/openai.py` : 
 - `src/backend/app/services/providers/qwen.py` → `src/backend/app/services/providers/openai.py` : 
+- `src/backend/app/services/relances.py` → `app.services.civil_time` : 
+- `src/backend/app/services/relances.py` → `sqlalchemy.func` : 
 - `src/backend/app/services/relances.py` → `src/backend/app/models/entities.py` : 
 - `src/backend/app/services/relances.py` → `src/backend/app/services/civil_time.py` : 
 - `src/backend/app/services/retrait_index.py` → `src/backend/app/services/indexation.py` : 
@@ -288,6 +295,9 @@
 - `src/frontend/src-tauri/Info.plist` → `src/frontend/src-tauri/tauri.conf.json` : 
 - `src/frontend/src-tauri/build.rs` → `src/frontend/src-tauri/gen/schemas/acl-manifests.json` : 
 - `src/frontend/src-tauri/build.rs` → `src/frontend/src-tauri/gen/schemas/capabilities.json` : 
+- `src/frontend/src-tauri/capabilities/default.json` → `plugin fs` : 
+- `src/frontend/src-tauri/capabilities/default.json` → `plugin updater` : 
+- `src/frontend/src-tauri/capabilities/default.json` → `sidecar backend` : 
 - `src/frontend/src-tauri/capabilities/default.json` → `src/frontend/src-tauri/Cargo.toml` : 
 - `src/frontend/src-tauri/capabilities/default.json` → `src/frontend/src-tauri/gen/schemas/acl-manifests.json` : 
 - `src/frontend/src-tauri/capabilities/default.json` → `src/frontend/src-tauri/gen/schemas/capabilities.json` : 
@@ -490,6 +500,8 @@
 - `src/frontend/src/components/onboarding/SecurityStep.tsx` → `src/frontend/src/lib/consent.ts` : 
 - `src/frontend/src/components/onboarding/WelcomeStep.tsx` → `src/frontend/src/components/prototype/DecisionMissionPrototype.tsx` : 
 - `src/frontend/src/components/onboarding/echapMiseEnRoute.ts` → `src/frontend/src/components/onboarding/OnboardingWizard.tsx` : 
+- `src/frontend/src/components/prompts/PromptLibrary.tsx` → `framer-motion` : 
+- `src/frontend/src/components/prompts/PromptLibrary.tsx` → `src/frontend/src/components/ui/Button` : 
 - `src/frontend/src/components/prompts/PromptLibrary.tsx` → `src/frontend/src/services/api` : 
 - `src/frontend/src/components/prototype/AccueilMoinsCharge.test.tsx` → `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` : 
 - `src/frontend/src/components/prototype/AccueilMoinsCharge.test.tsx` → `src/frontend/src/lib/escapeStack.ts` : 
@@ -619,6 +631,8 @@
 - `src/frontend/src/hooks/index.ts` → `src/frontend/src/hooks/useMotionConfig.ts` : 
 - `src/frontend/src/hooks/index.ts` → `src/frontend/src/hooks/useOnlineStatus.ts` : 
 - `src/frontend/src/hooks/useAutosave.test.ts` → `src/frontend/src/hooks/useAutosave.ts` : 
+- `src/frontend/src/hooks/useAutosave.ts` → `localStorage` : 
+- `src/frontend/src/hooks/useAutosave.ts` → `react` : 
 - `src/frontend/src/hooks/useAutosave.ts` → `src/frontend/src/components/chat/ChatInput.tsx` : 
 - `src/frontend/src/hooks/useBackend.ts` → `src/frontend/src/services/api` : 
 - `src/frontend/src/hooks/useConversationSync.ts` → `src/frontend/src/stores/chatStore.ts` : 
@@ -803,8 +817,12 @@
 - `src/frontend/src/stores/processingTasksStore.ts` → `src/frontend/src/services/api` : 
 - `src/frontend/src/styles/accentDAction.test.ts` → `src/frontend/src/styles/globals.css` : 
 - `src/frontend/src/styles/contrasteDesTeintes.test.ts` → `src/frontend/src/styles/globals.css` : 
+- `src/frontend/src/styles/couleursDeDomaine.test.ts` → `src/frontend/src/**/*.tsx` : 
 - `src/frontend/src/styles/couleursDeDomaine.test.ts` → `src/frontend/src/styles/globals.css` : 
+- `src/frontend/src/styles/couleursDeDomaine.test.ts` → `vitest` : 
 - `src/frontend/src/styles/globals.css` → `tailwindcss` : 
+- `src/frontend/src/styles/opaciteSurLeTexte.test.ts` → `src/frontend/src (arborescence)` : 
+- `src/frontend/src/styles/opaciteSurLeTexte.test.ts` → `vitest` : 
 - `src/frontend/src/styles/polices.test.ts` → `src/frontend/node_modules/@fontsource` : 
 - `src/frontend/src/styles/polices.test.ts` → `src/frontend/package.json` : 
 - `src/frontend/src/styles/rayons.test.ts` → `src/frontend/src/styles/globals.css` : 
@@ -833,9 +851,12 @@
 - `tests/e2e/stories/parcours-01-premier-lancement.spec.ts` → `tests/e2e/stories/helpers/surfaces.ts` : 
 - `tests/e2e/stories/parcours-02-memory.spec.ts` → `tests/e2e/stories/helpers/surfaces.ts` : 
 - `tests/e2e/stories/parcours-03-email.spec.ts` → `tests/e2e/stories/helpers/surfaces.ts` : 
+- `tests/e2e/stories/parcours-04-crm.spec.ts` → `tests/e2e/stories/helpers/surfaces` : 
 - `tests/e2e/stories/parcours-04-crm.spec.ts` → `tests/e2e/stories/helpers/surfaces.ts` : 
 - `tests/e2e/stories/parcours-05-settings.spec.ts` → `src/frontend/src/components/settings/SettingsModal.tsx` : 
 - `tests/e2e/stories/parcours-05-settings.spec.ts` → `tests/e2e/stories/helpers/surfaces.ts` : 
+- `tests/e2e/stories/parcours-06-navigation.spec.ts` → `@playwright/test` : 
+- `tests/e2e/stories/parcours-06-navigation.spec.ts` → `tests/e2e/stories/helpers/surfaces` : 
 - `tests/e2e/stories/parcours-06-navigation.spec.ts` → `tests/e2e/stories/helpers/surfaces.ts` : 
 - `tests/e2e/stories/parcours-07-rendez-vous-prototype.spec.ts` → `tests/e2e/stories/helpers/backend.ts` : 
 - `tests/e2e/stories/parcours-08-capacites-prototype.spec.ts` → `src/backend/app/routers (routes bouchonnees)` : 
@@ -1048,6 +1069,8 @@
 - `tests/test_modeles_disponibles.py` → `app.services.ollama_capabilites` : 
 - `tests/test_modeles_sync.py` → `src/backend/app/models/database.py` : 
 - `tests/test_ollama_erreur_http.py` → `tests/test_provider_tools.py` : 
+- `tests/test_onboarding_concurrent.py` → `fixture client` : 
+- `tests/test_onboarding_concurrent.py` → `sqlalchemy.exc.IntegrityError` : 
 - `tests/test_onboarding_concurrent.py` → `src/backend/app/routers/config.py` : 
 - `tests/test_openrouter_erreur_sse.py` → `tests/test_provider_tools.py` : 
 - `tests/test_perf_us016.py` → `src/backend/app/main.py` : 
@@ -1058,6 +1081,7 @@
 - `tests/test_piece_jointe_persiste_entre_tours.py` → `src/backend/app/routers/chat.py` : 
 - `tests/test_pluriel_agenda_chat.py` → `src/backend/app/services/workspace_tools.py` : 
 - `tests/test_pluriel_fournisseur.py` → `src/backend/app/routers/config.py` : 
+- `tests/test_profil_generation.py` → `inspect` : 
 - `tests/test_profil_generation.py` → `src/backend/app/services/user_profile.py` : 
 - `tests/test_profil_generation.py` → `tests/aide_lecture_source.py` : 
 - `tests/test_profil_indexation_serialisee.py` → `src/backend/app/services/user_profile.py` : 

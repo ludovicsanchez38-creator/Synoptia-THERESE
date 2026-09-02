@@ -2,27 +2,15 @@
 
 - Couverture validee : 100.0 %
 - Fichiers attendus : 1047
-- Validation `passed` : False
+- Validation `passed` : True
 
 ## Fichiers non lus (0)
 
 
-## Doubles lectures manquantes (12)
+## Doubles lectures manquantes (0)
 
-- src/backend/app/models/entities.py
-- src/backend/app/services/agents/git_service.py
-- src/backend/app/services/relances.py
-- src/frontend/src-tauri/capabilities/default.json
-- src/frontend/src/components/prompts/PromptLibrary.tsx
-- src/frontend/src/hooks/useAutosave.ts
-- src/frontend/src/styles/couleursDeDomaine.test.ts
-- src/frontend/src/styles/opaciteSurLeTexte.test.ts
-- tests/e2e/stories/parcours-04-crm.spec.ts
-- tests/e2e/stories/parcours-06-navigation.spec.ts
-- tests/test_onboarding_concurrent.py
-- tests/test_profil_generation.py
 
-## Invariants divergents, a arbitrer (12)
+## Invariants divergents, a arbitrer (14)
 
 - .github/workflows/ci.yml: aucun mot commun entre les invariants de lecteur-M15:c2-M15-WP-C-004, lecteur-R1 (seconde lecture indépendante des fichiers critiques):c2-R1 (seconde lecture indépendante des fichiers critiques)-WP-C-004, orchestrateur:wpc004-orchestrateur
 - src/backend/app/models/board.py: aucun mot commun entre les invariants de lecteur-D09:c2-D09-WP-047, wp047-lecteur1:wp047-lecteur1
@@ -34,6 +22,8 @@
 - src/frontend/src/components/memory/MemoryPanel.test.tsx: aucun mot commun entre les invariants de lecteur-D07:c2-D07-WP-064, lecteur-cartographie-wp064:wp064-lecteur1
 - src/frontend/src/components/prototype/AccueilMoinsCharge.test.tsx: aucun mot commun entre les invariants de lecteur-D06:c2-D06-WP-065, wp065-lecteur1:wp065-lecteur1
 - src/frontend/src/components/prototype/MeetingConversationCard.tsx: aucun mot commun entre les invariants de lecteur-D04:c2-D04-WP-066, lecteur-cartographie-wp066:wp066-lecteur1
+- tests/e2e/stories/parcours-04-crm.spec.ts: aucun mot commun entre les invariants de lecteur-D11:c2-D11-WP-085, lecteur-M10:c2-M10-WP-085
+- tests/e2e/stories/parcours-06-navigation.spec.ts: aucun mot commun entre les invariants de lecteur-D11:c2-D11-WP-085, lecteur-M10:c2-M10-WP-085
 - tests/test_modeles_disponibles.py: aucun mot commun entre les invariants de lecteur-D08:c2-D08-WP-080, wp080-lecteur1:wp080-lecteur1
 - tests/test_slash_commands.py: aucun mot commun entre les invariants de lecteur-D09:c2-D09-WP-084, wp084-lecteur1:wp084-lecteur1
 
