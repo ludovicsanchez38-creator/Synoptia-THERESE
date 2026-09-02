@@ -157,7 +157,17 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
       setDeletingInvoice(null);
     } catch (error) {
       console.error('Failed to delete invoice:', error);
-      addNotification({ type: 'error', title: 'Erreur', message: 'Impossible de supprimer la facture' });
+      // B-207 : second site du motif fermé en B-218 sur le PDF. Le serveur dit
+      // POURQUOI il refuse - la frontière d'erreurs 0.48 lui impose une phrase
+      // française - et `invoices.ts` porte cette phrase dans l'Error. La
+      // remplacer par un générique laissait l'utilisatrice devant un refus sans
+      // issue. Le générique ne sert plus que de repli quand l'échec est muet.
+      const cause = error instanceof Error ? error.message.trim() : '';
+      addNotification({
+        type: 'error',
+        title: 'Erreur',
+        message: cause || 'Impossible de supprimer la facture',
+      });
     } finally {
       setIsDeleting(false);
     }
