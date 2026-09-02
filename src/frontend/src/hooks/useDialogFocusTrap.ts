@@ -201,21 +201,50 @@ export function useDialogFocusTrap(
     const dialog = ref.current;
     if (!dialog) return;
 
-    const { isoles, restaurer } = isolateOutsideDialog(dialog);
     // Passe 4 (F1) : si le focus se trouvait dans la zone qu'on vient d'isoler
     // (l'utilisateur écrivait quand la fenêtre est passée sous le seuil), il
     // DOIT suivre - sinon le champ paraît actif mais la frappe se perd.
     // Passe 5 (F2) : SEULEMENT dans ce cas - le rail et l'en-tête restent
     // utilisables (data-dialog-allow), une modale au-dessus garde son focus.
-    const focusDansUneZoneIsolee = isoles.some((element) =>
-      element.contains(document.activeElement),
-    );
-    if (focusDansUneZoneIsolee) {
-      const prefere = dialog.querySelector<HTMLElement>('[data-dialog-autofocus]');
-      const premier = dialog.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
-      (prefere ?? premier ?? dialog).focus();
+    const isoler = () => {
+      const etat = isolateOutsideDialog(dialog);
+      const focusDansUneZoneIsolee = etat.isoles.some((element) =>
+        element.contains(document.activeElement),
+      );
+      if (focusDansUneZoneIsolee) {
+        const prefere = dialog.querySelector<HTMLElement>('[data-dialog-autofocus]');
+        const premier = dialog.querySelector<HTMLElement>(FOCUSABLE_SELECTOR);
+        (prefere ?? premier ?? dialog).focus();
+      }
+      return etat;
+    };
+
+    let etat = isoler();
+
+    // B-197 : l'isolation ne peut pas être un INSTANTANÉ. App.tsx monte le
+    // canevas et l'assistant d'installation dans le même commit, tous deux en
+    // `lazy` : le chunk qui arrive en second remplace un fallback DÉJÀ isolé
+    // par un élément neuf, que plus rien n'isole - et le rail redevient
+    // focalisable derrière un dialogue `aria-modal`. On observe donc les
+    // parents que `isolateOutsideDialog` parcourt, et on rejoue l'isolation
+    // quand leur descendance change. `childList` seulement : isoler écrit des
+    // attributs, les observer bouclerait.
+    const observateur = new MutationObserver(() => {
+      etat.restaurer();
+      etat = isoler();
+    });
+    for (
+      let noeud: HTMLElement | null = dialog.parentElement;
+      noeud && noeud !== document.body;
+      noeud = noeud.parentElement
+    ) {
+      observateur.observe(noeud, { childList: true });
     }
-    return restaurer;
+
+    return () => {
+      observateur.disconnect();
+      etat.restaurer();
+    };
   }, [active, isolateBackground, ref]);
 
   // 3. Restauration du focus - DÉCLARÉE APRÈS l'isolation, donc nettoyée
@@ -273,10 +302,24 @@ export function useDialogFocusTrap(
         return;
       }
 
-      if (e.shiftKey && document.activeElement === first) {
+      // B-213 : `activeElement === first / last` laissait un angle mort. La
+      // cible `data-dialog-autofocus` est souvent un titre `tabindex="-1"`,
+      // exclu de FOCUSABLE_SELECTOR : depuis lui, aucune des deux branches ne
+      // s'appliquait et Maj+Tab sortait du dialogue en natif. Ce qui compte
+      // n'est pas l'identite du noeud actif mais sa POSITION : reste-t-il un
+      // focusable avant (Maj+Tab) ou apres (Tab) lui dans le dialogue ?
+      const actif = document.activeElement as HTMLElement;
+      const existe = (position: number): boolean =>
+        Array.from(focusables).some(
+          (candidat) =>
+            candidat !== actif &&
+            Boolean(actif.compareDocumentPosition(candidat) & position),
+        );
+
+      if (e.shiftKey && !existe(Node.DOCUMENT_POSITION_PRECEDING)) {
         e.preventDefault();
         last.focus();
-      } else if (!e.shiftKey && document.activeElement === last) {
+      } else if (!e.shiftKey && !existe(Node.DOCUMENT_POSITION_FOLLOWING)) {
         e.preventDefault();
         first.focus();
       }

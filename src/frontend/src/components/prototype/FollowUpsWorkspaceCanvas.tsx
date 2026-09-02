@@ -19,6 +19,7 @@ import {
 } from '../../services/api/follow-ups';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { usePanneauCouvrant } from '../../hooks/usePanneauCouvrant';
+import { parisDateKey } from '../../lib/civilDate';
 import { handleRovingFocus } from '../../lib/rovingFocus';
 import { Spinner } from '../ui/Spinner';
 
@@ -29,10 +30,27 @@ const FILTERS: Array<{ id: 'all' | FollowUpStatus; label: string }> = [
   { id: 'cancelled', label: 'Annulées' },
 ];
 
+/**
+ * B-062 : une echeance de relance est un JOUR CIVIL, jamais un instant.
+ *
+ * `timeStyle: 'short'` affichait la constante de remplissage `T09:00:00`
+ * (civil_time.HEURE_DE_RELANCE) comme si l'utilisateur l'avait choisie. Il n'y
+ * a pas d'heure a montrer : l'ecran ne collecte qu'une date.
+ */
 function formatDueDate(value: string): string {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return date.toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' });
+  return date.toLocaleDateString('fr-FR', { dateStyle: 'medium' });
+}
+
+/**
+ * Une relance est-elle en retard ? Comparaison de JOURS CIVILS de Paris,
+ * comme `list_due_follow_ups` cote serveur (follow_ups.py:133, qui tronque a
+ * dix caracteres apres `date_civile_paris`). Comparer des instants faisait
+ * basculer l'echeance du jour meme a 09 h 01.
+ */
+function estEnRetard(dueDate: string, maintenant: Date): boolean {
+  return parisDateKey(dueDate) < parisDateKey(maintenant.toISOString());
 }
 
 function dateInputValue(value: string): string {
@@ -154,7 +172,7 @@ export function FollowUpsWorkspaceCanvas({
         <div className="mt-4 min-h-0 flex-1 overflow-y-auto">
           {loading ? <div className="grid min-h-56 place-items-center text-sm text-text-muted" role="status"><div><Spinner taille="zone" className="mx-auto mb-2" />Chargement des relances…</div></div> : visibleItems.length === 0 ? <div className="grid min-h-56 place-items-center rounded-md border border-dashed border-border bg-surface text-center text-sm text-text-muted"><div><CheckCircle2 className="mx-auto mb-2 h-8 w-8 opacity-50" />Aucune relance dans cette catégorie.</div></div> : <div className="space-y-2">{visibleItems.map((item) => {
             const busy = pendingId === item.id;
-            const overdue = item.status === 'pending' && new Date(item.due_date).getTime() < Date.now();
+            const overdue = item.status === 'pending' && estEnRetard(item.due_date, new Date());
             return <article key={item.id} className="rounded-md border border-border bg-surface p-4" data-testid="follow-up-row">
               {editingId === item.id ? <div><div className="grid gap-3 sm:grid-cols-[180px_1fr]"><label className="text-sm font-semibold text-text">Nouvelle échéance<input aria-label="Nouvelle échéance" aria-invalid={Boolean(error)} aria-describedby={error ? "follow-ups-error" : undefined} type="date" value={editingDate} onChange={(event) => setEditingDate(event.target.value)} className="mt-1.5 w-full rounded-sm border border-border px-3 py-2 font-normal" /></label><label className="text-sm font-semibold text-text">Note<input aria-label="Note de relance" aria-invalid={Boolean(error)} aria-describedby={error ? "follow-ups-error" : undefined} value={editingNote} onChange={(event) => setEditingNote(event.target.value)} className="mt-1.5 w-full rounded-sm border border-border px-3 py-2 font-normal" /></label></div><div className="mt-3 flex justify-end gap-2"><button type="button" onClick={() => setEditingId(null)} className="rounded-sm px-3 py-2 text-sm font-semibold text-text-muted">Annuler</button><button type="button" onClick={() => void saveEdit(item)} disabled={!editingDate || busy} className="rounded-sm bg-text px-3 py-2 text-sm font-semibold text-error-ink">Enregistrer</button></div></div> : deleteConfirmation === item.id ? <div className="text-sm text-error"><strong>Supprimer définitivement cette relance ?</strong><div className="mt-3 flex justify-end gap-2"><button type="button" onClick={() => setDeleteConfirmation(null)} className="rounded-sm border border-border px-3 py-2 font-semibold">Annuler</button><button type="button" onClick={() => void confirmDelete(item.id)} disabled={busy} className="rounded-sm bg-error-fill px-3 py-2 font-semibold text-error-ink">Confirmer</button></div></div> : <div className="flex items-start gap-3"><span className={`mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-md ${item.status === 'done' ? 'bg-[var(--color-success-tint)] text-success' : overdue ? 'bg-[var(--color-warning-tint)] text-warning' : 'bg-accent-tint text-accent'}`}>{item.status === 'done' ? <CheckCircle2 className="h-4 w-4" /> : <CalendarClock className="h-4 w-4" />}</span><div className="min-w-0 flex-1"><h3 className="truncate text-sm font-semibold text-text">{item.email_subject || 'Email sans objet'}</h3><p className="mt-0.5 text-sm text-text-muted">{item.contact_name || item.email_from || 'Expéditeur non disponible'}</p>{item.note && <p className="mt-2 text-sm leading-5 text-text-muted">{item.note}</p>}<div className={`mt-2 text-sm font-semibold ${overdue ? 'text-warning' : 'text-text-muted'}`}>{overdue ? 'En retard · ' : 'Échéance · '}{formatDueDate(item.due_date)}</div></div><div className="flex shrink-0 gap-1"><button type="button" aria-label={`Modifier ${item.email_subject || 'la relance'}`} onClick={() => { setError(null); setEditingId(item.id); setEditingDate(dateInputValue(item.due_date)); setEditingNote(item.note || ''); }} className="grid h-8 w-8 place-items-center rounded-sm text-text-muted hover:bg-bg"><Pencil className="h-3.5 w-3.5" /></button>{item.status === 'pending' ? <button type="button" aria-label={`Terminer ${item.email_subject || 'la relance'}`} onClick={() => void mutate(item.id, () => updateFollowUp(item.id, { status: 'done' }))} disabled={busy} className="grid h-8 w-8 place-items-center rounded-sm text-success hover:bg-[var(--color-success-tint)]"><CheckCircle2 className="h-3.5 w-3.5" /></button> : <button type="button" aria-label={`Réouvrir ${item.email_subject || 'la relance'}`} onClick={() => void mutate(item.id, () => updateFollowUp(item.id, { status: 'pending' }))} disabled={busy} className="grid h-8 w-8 place-items-center rounded-sm text-accent hover:bg-accent-tint"><RefreshCw className="h-3.5 w-3.5" /></button>}<button type="button" aria-label={`Supprimer ${item.email_subject || 'la relance'}`} onClick={() => setDeleteConfirmation(item.id)} className="grid h-8 w-8 place-items-center rounded-sm text-error hover:bg-[var(--color-error-tint)]"><Trash2 className="h-3.5 w-3.5" /></button></div></div>}
             </article>;

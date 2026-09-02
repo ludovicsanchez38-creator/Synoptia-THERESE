@@ -56,8 +56,24 @@ const ONGLETS_REGLAGES = new Set<SettingsTab>([
 
 const CLE_PROMPT = 'therese:prompt-handoff';
 
+/**
+ * B-072 : `?panel=` etait LE mode d'ouverture d'une surface tant que chaque
+ * panneau vivait dans sa propre fenetre Tauri (`index.html?panel=xxx`). Le
+ * retrait du mode classic (J0b) en a fait des VUES, sans repondre aux anciens
+ * liens : 90 des 96 occurrences relevees dans `tests/protocols/` designaient
+ * une valeur qu'aucun resolveur ne reconnaissait plus, et l'application
+ * ouvrait son accueil SANS RIEN DIRE. Alias de compatibilite, donc, plutot
+ * qu'une grammaire de plus : la valeur n'est lue que si `view` est absent.
+ */
+function aliasDePanneau(search: string): string | null {
+  const parametres = new URLSearchParams(search);
+  if (parametres.get('view')) return null;
+  return parametres.get('panel');
+}
+
 export function resolveDeepLinkView(search: string): AppView | null {
-  const valeur = new URLSearchParams(search).get('view') as AppView | null;
+  const valeur = (new URLSearchParams(search).get('view') ??
+    aliasDePanneau(search)) as AppView | null;
   return valeur && VUES.has(valeur) ? valeur : null;
 }
 
@@ -67,7 +83,15 @@ export function resolveDeepLinkPanel(search: string): DeepLinkPanel | null {
 }
 
 export function resolveDeepLinkAction(search: string): DeepLinkAction | null {
-  const valeur = new URLSearchParams(search).get('action') as DeepLinkAction | null;
+  const parametres = new URLSearchParams(search);
+  // `?panel=settings` designait la fenetre des Reglages : elle est aujourd'hui
+  // une action, pas une vue. Meme alias, meme regle de priorite.
+  const alias = parametres.get('action')
+    ? null
+    : parametres.get('panel') === 'settings'
+      ? 'settings.open'
+      : null;
+  const valeur = (parametres.get('action') ?? alias) as DeepLinkAction | null;
   return valeur && ACTIONS.has(valeur) ? valeur : null;
 }
 

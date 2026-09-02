@@ -66,4 +66,27 @@ describe('B-209 - aucun bouton anonyme sur l’écran Tâches', () => {
 
     expect(screen.getAllByRole('button').length).toBeGreaterThan(4);
   });
+
+  /**
+   * B-231, reliquat : `title` n'est qu'un DERNIER recours du calcul de nom
+   * accessible. Il est visible à la souris, absent de plusieurs technologies
+   * d'assistance, et jamais annoncé sur un mobile tactile. Les bascules
+   * Kanban / Liste ne tenaient que par lui - la règle ci-dessus, qui interroge
+   * le nom calculé, ne pouvait donc pas les voir.
+   */
+  it('aucun bouton ne tient son nom du seul attribut title', () => {
+    render(<TasksPanel standalone />);
+
+    const surTitreSeul = screen
+      .getAllByRole('button')
+      .filter(
+        (bouton) =>
+          !bouton.getAttribute('aria-label') &&
+          !bouton.getAttribute('aria-labelledby') &&
+          !(bouton.textContent ?? '').trim(),
+      )
+      .map((bouton) => bouton.getAttribute('title') ?? bouton.innerHTML.slice(0, 40));
+
+    expect(surTitreSeul).toEqual([]);
+  });
 });

@@ -141,6 +141,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
                 ? 'bg-accent-tint text-accent-cyan-ink'
                 : 'text-text-muted hover:text-text'
             }`}
+            aria-label="Afficher les tâches en kanban"
             title="Kanban"
           >
             <LayoutGrid className="w-4 h-4" />
@@ -152,6 +153,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
                 ? 'bg-accent-tint text-accent-cyan-ink'
                 : 'text-text-muted hover:text-text'
             }`}
+            aria-label="Afficher les tâches en liste"
             title="Liste"
           >
             <ListTodo className="w-4 h-4" />
