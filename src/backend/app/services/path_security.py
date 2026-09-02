@@ -6,9 +6,11 @@ et l'acces aux fichiers sensibles.
 """
 
 import logging
+import os
 import tempfile
+from collections.abc import Iterable, Mapping
 from functools import lru_cache
-from pathlib import Path
+from pathlib import Path, PurePath
 
 logger = logging.getLogger(__name__)
 
@@ -42,8 +44,8 @@ DENIED_PATTERNS = [
     "token.json",
 ]
 
-# Repertoires systeme interdits (chemins absolus)
-DENIED_ABSOLUTE_PATHS = [
+# Repertoires systeme interdits (chemins absolus), famille POSIX.
+DENIED_ABSOLUTE_PATHS_POSIX = [
     "/etc",
     "/var",
     "/usr",
@@ -51,6 +53,83 @@ DENIED_ABSOLUTE_PATHS = [
     "/proc",
     "/dev",
 ]
+
+# B-255 : la liste n'existait que sous sa forme POSIX, et huit tests de la
+# liste noire etaient rouges sur windows-latest (run 33668043946). Sous Windows,
+# `Path("/etc/hosts").resolve()` donne `C:\etc\hosts` : un chemin qui ne
+# designe aucun repertoire systeme, donc une garde qui ne garde rien. Les
+# racines sont CHOISIES par plateforme et non cumulees : ajouter `/etc` a un
+# Windows n'y protegerait rien tout en donnant l'illusion d'une couverture.
+# Ces valeurs sont les defauts ; l'environnement les complete a l'execution,
+# une installation pouvant vivre ailleurs que sur C:.
+DENIED_ABSOLUTE_PATHS_WINDOWS = [
+    r"C:\Windows",
+    r"C:\Windows\System32",
+    r"C:\ProgramData",
+]
+
+# Variables d'environnement qui designent une racine systeme Windows.
+# `SystemRoot` et `windir` pointent le dossier Windows lui-meme (d'ou l'on
+# derive System32), `ProgramData` les donnees d'application de la machine.
+_VARIABLES_RACINES_WINDOWS = ("SystemRoot", "windir", "ProgramData")
+
+
+def _racines_systeme(nom_os: str, environnement: Mapping[str, str]) -> tuple[str, ...]:
+    """Les racines interdites de la plateforme, avant resolution.
+
+    `os.name` et l'environnement sont recus en PARAMETRES plutot que lus :
+    c'est ce qui rend la branche Windows verifiable depuis un Mac, ou aucun
+    `C:\\Windows` n'existe et ou l'on ne peut meme pas instancier un
+    `WindowsPath`.
+    """
+    if nom_os != "nt":
+        return tuple(DENIED_ABSOLUTE_PATHS_POSIX)
+
+    candidates = list(DENIED_ABSOLUTE_PATHS_WINDOWS)
+    for variable in _VARIABLES_RACINES_WINDOWS:
+        racine = (environnement.get(variable) or "").strip().rstrip("\\/")
+        # `SystemRoot=C:\` donnerait la racine `C:`, soit le disque entier :
+        # une garde qui refuse tout n'est plus une garde, c'est une panne.
+        if not racine or racine.endswith(":"):
+            continue
+        candidates.append(racine)
+        if variable != "ProgramData":
+            candidates.append(racine + "\\System32")
+
+    vues: set[str] = set()
+    racines: list[str] = []
+    for candidate in candidates:
+        # La casse ne distingue pas deux chemins sous Windows : `C:\Windows`
+        # et `C:\WINDOWS` sont la meme racine, inutile de la garder deux fois.
+        cle = candidate.casefold()
+        if cle in vues:
+            continue
+        vues.add(cle)
+        racines.append(candidate)
+    return tuple(racines)
+
+
+def _sous_une_racine(chemin: PurePath, racines: Iterable[PurePath]) -> bool:
+    """L'appartenance se juge en COMPOSANTS de chemin, pas en prefixe de chaine.
+
+    B-255, seconde cause du rouge Windows : la comparaison etait
+    `chemin_str.startswith(racine + "/")`. Le separateur POSIX y est ecrit en
+    dur, si bien que sous Windows aucun FICHIER sous une racine interdite ne
+    pouvait correspondre - seule la racine elle-meme, par egalite. C'est
+    pourquoi le test des racines passait pendant que ses enfants echouaient,
+    et ajouter des racines Windows sans corriger ce point les aurait laissees
+    inertes. `is_relative_to` compare des composants : `/etcetera` ne tombe
+    donc pas sous `/etc`, ni `C:\\WindowsApps` sous `C:\\Windows`, et la casse
+    suit la regle de la plateforme du chemin.
+    """
+    return any(chemin.is_relative_to(racine) for racine in racines)
+
+
+# Instantane pris a l'import pour la plateforme courante : c'est la liste que
+# lisent les appelants et les tests. La verite d'execution reste
+# `_racines_interdites()`, qui redemande `_racines_systeme(os.name, os.environ)`
+# a chaque recalcul.
+DENIED_ABSOLUTE_PATHS = list(_racines_systeme(os.name, os.environ))
 
 
 def _dans_le_dossier_temporaire(chemin: Path) -> bool:
@@ -83,7 +162,7 @@ def _racines_interdites() -> tuple[str, ...]:
     ces répertoires ne sont pas des liens, la résolue vaut partout ailleurs.
     """
     racines: set[str] = set()
-    for brut in DENIED_ABSOLUTE_PATHS:
+    for brut in _racines_systeme(os.name, os.environ):
         racines.add(brut)
         try:
             racines.add(str(Path(brut).resolve()))
@@ -114,7 +193,6 @@ def validate_file_path(file_path: str | Path, allowed_base: Path | None = None) 
     home = Path.home()
 
     # Verifier les repertoires systeme interdits
-    path_str = str(path)
     # 31/08 : sur macOS le dossier temporaire de l'utilisateur vit sous
     # /var/folders, donc sous /private/var une fois resolu. Refuser toute la
     # branche fermait la faille ET les fichiers temporaires legitimes. Le
@@ -123,12 +201,11 @@ def validate_file_path(file_path: str | Path, allowed_base: Path | None = None) 
     if _dans_le_dossier_temporaire(path):
         pass
     else:
-      for denied in _racines_interdites():
-          if path_str.startswith(denied + "/") or path_str == denied:
-              logger.warning(f"Acces refuse (repertoire systeme) : {path}")
-              raise PermissionError(
-                  "Acces interdit : les fichiers systeme ne sont pas accessibles"
-              )
+      if _sous_une_racine(path, [Path(racine) for racine in _racines_interdites()]):
+          logger.warning(f"Acces refuse (repertoire systeme) : {path}")
+          raise PermissionError(
+              "Acces interdit : les fichiers systeme ne sont pas accessibles"
+          )
 
     # Verifier les repertoires sensibles dans le home
     try:
