@@ -313,7 +313,7 @@ ordre d'imports, après que tous les autres soient passés.
 2. `uv run pytest tests/test_regression.py -v`
 3. `OLLAMA_BASE_URL=http://127.0.0.1:9 uv run pytest tests/ --ignore=tests/e2e --junit-xml=/tmp/g.xml -q` (lire le XML : la console est tronquée par `os._exit`)
 4. `cd src/frontend && npx vitest run && npx tsc --noEmit && npx eslint src --max-warnings 27`
-5. `rm -rf .mypy_cache && uv run mypy src/backend/app --ignore-missing-imports --no-error-summary | grep -c " error:"` (baseline 1002, mesuree fresh le 01/09/2026 ; MYPY_BASELINE de ci.yml vaut 1004)
+5. `rm -rf .mypy_cache && uv run mypy src/backend/app --ignore-missing-imports --no-error-summary | grep -c " error:"` (baseline 987, mesuree fresh le 01/09/2026 ; MYPY_BASELINE de ci.yml vaut 1004)
 6. Si un gate echoue, NE PAS taguer
 
 Chaque fix critique = un test de regression.

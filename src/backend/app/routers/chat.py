@@ -2206,6 +2206,33 @@ async def _do_stream_response(
         start_generated_files_collection,
     )
     start_generated_files_collection()
+
+    def _cartes_des_fichiers_outils() -> tuple[list[str], list[dict[str, Any]]]:
+        """B-147 : draine la collecte, rend (événements SSE, charges utiles).
+
+        Le drain ne vivait que sur le chemin nominal, alors que le fichier,
+        lui, est DÉJÀ écrit sur le disque quand un outil l'a produit. Un tour
+        qui finit mal ensuite laissait la carte dans le seau : l'utilisateur
+        restait devant une erreur, sans aucun moyen de récupérer un document
+        qui existe. Les sorties précoces appellent ce drain avant leur
+        événement terminal, le client cessant de lire au premier.
+        """
+        charges = drain_generated_files()
+        evenements = [
+            "data: "
+            + json.dumps(
+                {
+                    "type": "skill_file",
+                    "content": f"Fichier {charge.get('file_name')} généré",
+                    "conversation_id": conversation_id,
+                    "skill_file": charge,
+                }
+            )
+            + "\n\n"
+            for charge in charges
+        ]
+        return evenements, charges
+
     # BUG-093 : Détection automatique de skill + syntaxe {{action: ...}}.
     # Tranche 3 Variables V4 (finding Codex 3 VÉRIFIÉ) : la détection porte
     # sur le texte PRÉ-substitution (detection_message) - une valeur de
@@ -2560,6 +2587,11 @@ async def _do_stream_response(
 
             elif event.type == "error":
                 error_content = event.content or "Erreur inattendue du fournisseur LLM"
+                # B-147 : les fichiers déjà écrits par les outils de ce tour
+                # AVANT l'événement terminal - ce `return` sautait le drain.
+                cartes_outils, fichiers_outils = _cartes_des_fichiers_outils()
+                for carte in cartes_outils:
+                    yield carte
                 error_data = StreamChunk(
                     type="error",
                     content=error_content,
@@ -2576,6 +2608,10 @@ async def _do_stream_response(
                         content=saved_content,
                         model=llm_service.config.model,
                     )
+                    if fichiers_outils:
+                        # Sinon la carte vit le temps du flux et disparaît au
+                        # rechargement (motif BUG-130), fichier toujours là.
+                        err_msg.extra_data = json.dumps({"skill_files": fichiers_outils})
                     session.add(err_msg)
                     await session.commit()
                 except Exception as db_err:
@@ -2595,6 +2631,11 @@ async def _do_stream_response(
         # Revue 0.48 (F4) : jamais str(e) brut dans un chunk SSE destiné à
         # l'écran - le détail vit dans les logs ci-dessus.
         message_erreur = message_pour_ecran(e, ou="pendant la génération")
+        # B-147 : ce handler se terminait par `return`, hors du drain. Un
+        # fichier écrit par un outil avant la chute n'était jamais annoncé.
+        cartes_outils, fichiers_outils = _cartes_des_fichiers_outils()
+        for carte in cartes_outils:
+            yield carte
         error_data = StreamChunk(
             type="error",
             content=message_erreur,
@@ -2609,6 +2650,10 @@ async def _do_stream_response(
                 content=full_content or f"⚠️ {message_erreur}",
                 model=llm_service.config.model if llm_service else "unknown",
             )
+            if fichiers_outils:
+                # Sinon la carte vit le temps du flux et disparaît au
+                # rechargement (motif BUG-130), fichier toujours là.
+                err_msg.extra_data = json.dumps({"skill_files": fichiers_outils})
             session.add(err_msg)
             await session.commit()
         except Exception as db_err:
@@ -2717,16 +2762,9 @@ async def _do_stream_response(
         )
     # BUG-136 : une carte par fichier créé via l'outil generate_document
     # pendant ce tour (chronologiquement AVANT l'éventuel auto-exec).
-    skill_files_payloads: list[dict[str, Any]] = []
-    for tool_file in drain_generated_files():
-        skill_files_payloads.append(tool_file)
-        tool_file_event = {
-            "type": "skill_file",
-            "content": f"Fichier {tool_file.get('file_name')} généré",
-            "conversation_id": conversation_id,
-            "skill_file": tool_file,
-        }
-        yield f"data: {json.dumps(tool_file_event)}\n\n"
+    cartes_outils, skill_files_payloads = _cartes_des_fichiers_outils()
+    for carte in cartes_outils:
+        yield carte
 
     if skill_id and full_content:
         try:
@@ -3720,6 +3758,11 @@ async def delete_conversation(
 
     await session.delete(conversation)
     await session.commit()
+
+    # B-055 : la création inscrit la conversation dans l'index de recherche
+    # (create_conversation) ; sans la contrepartie ici, elle continuait d'en
+    # sortir avec son titre en clair alors que la base ne la connaît plus.
+    get_search_index().remove_conversation(conversation_id)
 
     return {"deleted": True, "id": conversation_id}
 

@@ -394,6 +394,14 @@ async def delete_api_key(
     import app.services.llm as _llm_mod
     _llm_mod._llm_service = None
 
+    # B-052 : contrepartie de la pose (voir set_api_key). La clé Brave ne vit
+    # pas dans le cache LLM : sans cet appel, le cache module de web_search la
+    # gardait et get_web_search_service() rendait encore un BraveSearchService,
+    # donc les recherches partaient toujours chez Brave avec la clé effacée.
+    if provider == "brave":
+        from app.services.web_search import set_brave_api_key
+        set_brave_api_key(None)
+
     # Audit log (US-SEC-05)
     await log_activity(
         session,

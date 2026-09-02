@@ -1379,6 +1379,54 @@ async def update_event(
             await session.commit()
             await session.refresh(db_event)
 
+        if db_event is None:
+            # B-139 / B-100 : Google a DÉJÀ accepté l'écriture distante. Sans
+            # ligne miroir en base (événement jamais synchronisé, ou ligne
+            # rattachée à un autre agenda et remise à None ci-dessus), lire
+            # `db_event.id` levait un AttributeError converti en 500 : l'écran
+            # annonçait un échec alors que l'agenda distant était bien modifié.
+            # La réponse se construit donc depuis ce que Google a renvoyé,
+            # sans rien écrire en base. `delete_event` traite déjà son cas
+            # jumeau de cette façon.
+            distant_start = event_data.get("start", {})
+            distant_end = event_data.get("end", {})
+            distant_all_day = "date" in distant_start
+            return CalendarEventResponse(
+                id=str(event_data.get("id", event_id)),
+                calendar_id=calendar_id,
+                summary=event_data.get("summary", ""),
+                description=event_data.get("description"),
+                location=event_data.get("location"),
+                start_datetime=(
+                    datetime.fromisoformat(
+                        distant_start["dateTime"].replace("Z", "")
+                    ).isoformat()
+                    if not distant_all_day and distant_start.get("dateTime")
+                    else None
+                ),
+                end_datetime=(
+                    datetime.fromisoformat(
+                        distant_end["dateTime"].replace("Z", "")
+                    ).isoformat()
+                    if not distant_all_day and distant_end.get("dateTime")
+                    else None
+                ),
+                start_date=distant_start.get("date") if distant_all_day else None,
+                end_date=(
+                    _google_allday_end_inclusive(distant_start, distant_end)
+                    if distant_all_day
+                    else None
+                ),
+                all_day=distant_all_day,
+                attendees=[a["email"] for a in event_data.get("attendees") or []],
+                # `or []` et non `get(..., [])` : un `recurrence: null` explicite
+                # relèverait le 500 que cette branche vient de fermer.
+                recurrence=list(event_data.get("recurrence") or []),
+                status=event_data.get("status", "confirmed"),
+                blocage=None,  # notion locale : sans ligne en base, rien à refléter
+                synced_at=datetime.now(UTC).isoformat(),
+            )
+
         return CalendarEventResponse(
             id=db_event.id,
             calendar_id=db_event.calendar_id,

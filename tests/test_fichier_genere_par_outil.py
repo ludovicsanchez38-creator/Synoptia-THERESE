@@ -379,3 +379,141 @@ class TestLeCablageEntreLeCollecteurEtLeTexte:
             f"collecteur et le texte est coupé. Retour : {hors_collecte!r}"
         )
         assert workspace_tools.record_generated_file({"x": 1}) is False
+
+
+# B-147 — un fichier déjà écrit doit être annoncé même si le tour finit mal
+class _LLMQuiTombeApresLOutil:
+    """L'outil écrit son fichier, PUIS le fournisseur lève pendant la suite.
+
+    C'est le chemin d'exception générique de `_do_stream_response` : il se
+    termine par `return`, hors du drain qui émet les cartes.
+    """
+
+    config = _Config()
+
+    def prepare_context(self, messages, memory_context=None):
+        from app.services.context import ContextWindow
+
+        return ContextWindow(messages=[], system_prompt="")
+
+    async def stream_response_with_tools(self, context, tools=None):
+        yield StreamEvent(type="tool_call", tool_call=_ToolCall("list_calendar_events", {}))
+        yield StreamEvent(type="done", stop_reason="tool_calls")
+
+    async def continue_with_tool_results(self, *a, **k):
+        raise RuntimeError("le fournisseur tombe pendant la continuation")
+        yield  # pragma: no cover - garde la fonction génératrice
+
+
+class _LLMQuiRendUneErreurApresLOutil:
+    """Même écriture, mais le fournisseur rend un événement `error`.
+
+    C'est l'autre sortie précoce : la branche `event.type == "error"` de la
+    boucle, qui se termine elle aussi par `return`.
+    """
+
+    config = _Config()
+
+    def prepare_context(self, messages, memory_context=None):
+        from app.services.context import ContextWindow
+
+        return ContextWindow(messages=[], system_prompt="")
+
+    async def stream_response_with_tools(self, context, tools=None):
+        yield StreamEvent(type="tool_call", tool_call=_ToolCall("list_calendar_events", {}))
+        yield StreamEvent(type="done", stop_reason="tool_calls")
+        yield StreamEvent(type="error", content="le fournisseur coupe après l'outil")
+
+    async def continue_with_tool_results(self, *a, **k):
+        yield StreamEvent(type="text", content="Voilà tes créneaux.")
+        yield StreamEvent(type="done", stop_reason="end_turn")
+
+
+def _outil_qui_ecrit(file_id: str, file_name: str):
+    from app.services import workspace_tools
+
+    async def _faux_outil(nom, arguments, session, contexte=None, conversation_id=None):
+        workspace_tools.record_generated_file({
+            "skill_id": None,
+            "file_id": file_id,
+            "file_name": file_name,
+            "file_size": 4096,
+            "download_url": f"/api/skills/files/{file_id}",
+            "format": "xlsx",
+            "local_dir": "/tmp",
+        })
+        return "Document XLSX généré."
+
+    return _faux_outil
+
+
+class TestUnFichierEcritSurvitAUnTourQuiFinitMal:
+    """Le fichier est sur le disque : la carte ne doit pas dépendre du fait
+    que la suite du tour se passe bien.
+
+    Sans cela l'utilisateur reste devant une erreur, sans aucun moyen de
+    récupérer un document qui EXISTE - le symptôme exact de Léa, atteint ici
+    sans fournisseur réel.
+    """
+
+    @pytest.mark.asyncio
+    async def test_un_fichier_ecrit_survit_a_l_echec_du_tour(self, db_session):
+        with patch(
+            "app.routers.chat.execute_workspace_tool",
+            _outil_qui_ecrit("f-b147-1", "planning-echec.xlsx"),
+        ), patch("app.routers.chat.WORKSPACE_TOOL_NAMES", {"list_calendar_events"}):
+            evenements = await _evenements(
+                db_session, _LLMQuiTombeApresLOutil(), conv_id="conv-b147-echec"
+            )
+
+        types = [e.get("type") for e in evenements]
+        assert "error" in types, f"le tour doit bien finir mal : {types}"
+        cartes = [e for e in evenements if e.get("type") == "skill_file"]
+        assert cartes, (
+            "le fichier est écrit, le tour échoue, et aucune carte n'atteint "
+            f"l'écran : {types}"
+        )
+        assert cartes[0]["skill_file"]["file_name"] == "planning-echec.xlsx"
+        assert types.index("skill_file") < types.index("error"), (
+            f"la carte arrive après l'événement terminal : {types}"
+        )
+
+        # La carte doit aussi survivre au rechargement : sans extra_data elle
+        # ne vit que le temps du flux, et le fichier redevient introuvable
+        # (motif BUG-130).
+        from app.models.entities import Message
+        from sqlmodel import select
+
+        lignes = (
+            await db_session.execute(
+                select(Message).where(Message.conversation_id == "conv-b147-echec")
+            )
+        ).scalars().all()
+        persistes = [json.loads(m.extra_data) for m in lignes if m.extra_data]
+        assert persistes, (
+            "le message d'erreur ne garde aucune trace du fichier : au "
+            "rechargement la carte a disparu"
+        )
+        assert persistes[0]["skill_files"][0]["file_name"] == "planning-echec.xlsx"
+
+    @pytest.mark.asyncio
+    async def test_un_fichier_ecrit_survit_a_une_erreur_du_fournisseur(self, db_session):
+        with patch(
+            "app.routers.chat.execute_workspace_tool",
+            _outil_qui_ecrit("f-b147-2", "planning-erreur.xlsx"),
+        ), patch("app.routers.chat.WORKSPACE_TOOL_NAMES", {"list_calendar_events"}):
+            evenements = await _evenements(
+                db_session, _LLMQuiRendUneErreurApresLOutil(), conv_id="conv-b147-erreur"
+            )
+
+        types = [e.get("type") for e in evenements]
+        assert "error" in types, f"le tour doit bien finir mal : {types}"
+        cartes = [e for e in evenements if e.get("type") == "skill_file"]
+        assert cartes, (
+            "le fournisseur rend une erreur après l'écriture du fichier, et la "
+            f"carte n'est jamais émise : {types}"
+        )
+        assert cartes[0]["skill_file"]["file_name"] == "planning-erreur.xlsx"
+        assert types.index("skill_file") < types.index("error"), (
+            f"la carte arrive après l'événement terminal : {types}"
+        )

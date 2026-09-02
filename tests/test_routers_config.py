@@ -457,3 +457,48 @@ class TestOrigineDesClesApi:
         for cle in ("openai_image", "gemini_image", "fal", "brave", "anthropic", "openai"):
             assert cle in sources, f"origine manquante pour {cle}"
             assert sources[cle] in {"absente", "environnement", "coffre", "corrompue"}
+
+
+# B-052 — effacer la clé Brave doit la retirer du cache, pas seulement de la base
+class TestSuppressionCleBraveVideLeCache:
+    """`POST /api/config/api-key` pose la clé Brave dans le cache module de
+    `web_search` ; le `DELETE` doit faire la contrepartie.
+
+    Sans elle, la ligne `Preference` disparaît, l'écran annonce « pas de clé
+    Brave », et `get_web_search_service()` rend pourtant encore un
+    `BraveSearchService` : les recherches web continuent de partir chez Brave
+    avec une clé que l'utilisateur croit supprimée.
+    """
+
+    @pytest.mark.asyncio
+    async def test_supprimer_la_cle_brave_vide_le_cache(
+        self, client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+    ):
+        from app.services import web_search
+
+        # L'environnement prime sur le cache dans `_get_brave_api_key` : sans
+        # ce nettoyage le test mesurerait la variable d'environnement.
+        monkeypatch.delenv("BRAVE_API_KEY", raising=False)
+        # setattr (et non set_brave_api_key) : monkeypatch restaure l'état
+        # module d'origine au teardown, sans le léguer aux tests voisins.
+        monkeypatch.setattr(web_search, "_brave_api_key_cache", None)
+        monkeypatch.setattr(web_search, "_brave_search_service", None)
+
+        pose = await client.post(
+            "/api/config/api-key",
+            json={"provider": "brave", "api_key": "BSA-cle-de-test-b052"},
+        )
+        assert pose.status_code == 200, pose.text[:200]
+        assert web_search._get_brave_api_key() == "BSA-cle-de-test-b052"
+        assert type(web_search.get_web_search_service()).__name__ == "BraveSearchService"
+
+        efface = await client.delete("/api/config/api-key/brave")
+        assert efface.status_code == 200, efface.text[:200]
+        assert efface.json()["deleted"] is True
+
+        assert web_search._get_brave_api_key() is None, (
+            "la clé effacée est toujours dans le cache module de web_search"
+        )
+        assert type(web_search.get_web_search_service()).__name__ != "BraveSearchService", (
+            "les recherches web partent encore chez Brave avec la clé effacée"
+        )

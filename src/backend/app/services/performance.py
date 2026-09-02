@@ -373,6 +373,15 @@ class SearchIndex:
         self._titles[conversation_id] = title
         self._updated[conversation_id] = time.time()
 
+    def remove_conversation(self, conversation_id: str) -> None:
+        """Retire une conversation de l'index (B-055).
+
+        La primitive existait déjà, mais privée et appelée par la seule
+        réindexation : une conversation supprimée restait indexée, titre en
+        clair, et continuait de sortir de la recherche.
+        """
+        self._remove_conversation(conversation_id)
+
     def _remove_conversation(self, conversation_id: str) -> None:
         """Remove a conversation from the index."""
         for word_set in self._index.values():

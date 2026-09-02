@@ -216,7 +216,7 @@ jobs:
           # l'écart de plateforme est réel, c'est le chiffre du runner qui vaut
           # ici. Aucun cache mypy n'est restauré dans ce job : la mesure est
           # fraîche par construction.
-          MYPY_BASELINE: "1001"
+          MYPY_BASELINE: "986"
         run: |
           mypy_out=$(uv run mypy src/backend/app --ignore-missing-imports --no-error-summary 2>&1) || true
           if [ -z "$mypy_out" ] || printf '%s' "$mypy_out" | grep -q "INTERNAL ERROR\|Traceback"; then

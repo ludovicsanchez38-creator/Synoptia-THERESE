@@ -377,3 +377,46 @@ class TestChatErrors:
 
         # Should either accept or reject gracefully
         assert response.status_code in [200, 400, 401, 404, 422, 503]
+
+
+# B-055 — une conversation supprimée ne doit pas survivre dans l'index
+class TestSuppressionEtIndexDeRecherche:
+    """`POST /conversations` inscrit le titre dans l'index de recherche ; la
+    suppression doit l'en retirer.
+
+    Sans ce retrait, `GET /api/perf/conversations/search` continue de rendre la
+    conversation avec `source: "index"` : un fantôme que la base ne connaît
+    plus, dont le titre reste lisible en clair.
+    """
+
+    @pytest.mark.asyncio
+    async def test_supprimer_une_conversation_la_retire_de_l_index(self, client: AsyncClient):
+        import uuid
+
+        # Titre unique : l'index est un singleton de process, un voisin ne doit
+        # ni peupler ni vider ce mot à notre place.
+        titre = f"zorglub-{uuid.uuid4().hex[:12]}"
+
+        creation = await client.post("/api/chat/conversations", json={"title": titre})
+        assert creation.status_code == 200, creation.text[:200]
+        conversation_id = creation.json()["id"]
+
+        avant = await client.get(f"/api/perf/conversations/search?q={titre}")
+        assert avant.status_code == 200, avant.text[:200]
+        corps_avant = avant.json()
+        assert corps_avant["source"] == "index", corps_avant
+        assert conversation_id in [r["id"] for r in corps_avant["results"]]
+
+        suppression = await client.delete(f"/api/chat/conversations/{conversation_id}")
+        assert suppression.status_code == 200, suppression.text[:200]
+        assert suppression.json()["deleted"] is True
+
+        apres = await client.get(f"/api/perf/conversations/search?q={titre}")
+        assert apres.status_code == 200, apres.text[:200]
+        corps_apres = apres.json()
+        assert conversation_id not in [r["id"] for r in corps_apres["results"]], (
+            "la conversation supprimée sort encore de la recherche "
+            f"(source={corps_apres['source']}) : {corps_apres}"
+        )
+        # Le titre lui-même ne doit plus être consultable via l'index.
+        assert titre not in [r["title"] for r in corps_apres["results"]], corps_apres

@@ -1016,3 +1016,99 @@ class TestB223AgendaInconnuNeParlePasDeGoogle:
 
         suppression = await client.delete("/api/calendar/events/evt-b223?calendar_id=primary")
         assert suppression.status_code == 400, suppression.text
+
+
+# B-100 / B-139 — Google a accepté, la base locale n'a pas de miroir
+class TestUpdateEventGoogleSansMiroirLocal:
+    """La réponse de `PUT /events/{id}` (chemin Google) ne doit pas dépendre
+    d'une ligne locale qui peut ne pas exister.
+
+    `db_event` vaut None quand l'événement n'a jamais été synchronisé, et il
+    est REMIS à None quand la ligne trouvée appartient à un autre agenda. Dans
+    les deux cas Google a déjà accepté l'écriture distante : rendre 500 fait
+    croire à un échec alors que l'agenda de l'utilisateur EST modifié.
+    """
+
+    @staticmethod
+    def _faux_service(capture: dict):
+        class FakeCalendarService:
+            def __init__(self, _token):
+                pass
+
+            async def update_event(self, **kwargs):
+                capture["appele"] = True
+                return {
+                    "id": "evt-1",
+                    "summary": kwargs["summary"],
+                    "start": kwargs["start"],
+                    "end": kwargs["end"],
+                    "status": "confirmed",
+                }
+
+        return FakeCalendarService
+
+    async def _appeler(self, db_event):
+        from unittest.mock import AsyncMock, MagicMock
+
+        from app.models.entities import EmailAccount
+        from app.models.schemas import UpdateEventRequest
+        from app.routers.calendar import update_event
+
+        request = UpdateEventRequest(
+            summary="Réunion",
+            start_datetime="2026-09-10T09:30:00",
+            end_datetime="2026-09-10T10:00:00",
+            timezone="Europe/Paris",
+        )
+        account = EmailAccount(
+            id="acc-1", email="test@example.com", provider="gmail", access_token="tok"
+        )
+        session = MagicMock()
+        # session.get : Calendar (None -> Google), puis EmailAccount, puis CalendarEvent.
+        session.get = AsyncMock(side_effect=[None, account, db_event])
+        session.add = MagicMock()
+        session.commit = AsyncMock()
+        session.refresh = AsyncMock()
+
+        capture: dict = {"appele": False}
+        with patch("app.routers.calendar.CalendarService", self._faux_service(capture)), patch(
+            "app.routers.calendar.ensure_valid_access_token", AsyncMock(return_value="tok")
+        ):
+            reponse = await update_event(
+                event_id="evt-1",
+                request=request,
+                calendar_id="primary",
+                account_id="acc-1",
+                session=session,
+            )
+        return capture, reponse, session
+
+    @pytest.mark.asyncio
+    async def test_update_google_event_sans_ligne_locale_ne_leve_pas(self):
+        capture, reponse, _session = await self._appeler(db_event=None)
+
+        assert capture["appele"] is True, "Google doit avoir accepté l'écriture distante"
+        assert reponse.id == "evt-1"
+        assert reponse.calendar_id == "primary"
+        assert reponse.summary == "Réunion"
+        assert reponse.status == "confirmed"
+        assert reponse.all_day is False
+        assert reponse.start_datetime is not None
+        assert reponse.start_datetime.startswith("2026-09-10T09:30:00")
+        assert reponse.end_datetime is not None
+        assert reponse.end_datetime.startswith("2026-09-10T10:00:00")
+
+    @pytest.mark.asyncio
+    async def test_update_google_event_ligne_locale_dun_autre_calendrier(self):
+        from app.models.entities import CalendarEvent
+
+        autre = CalendarEvent(id="evt-1", calendar_id="un-autre-calendrier", summary="X")
+        capture, reponse, session = await self._appeler(db_event=autre)
+
+        assert capture["appele"] is True
+        assert reponse.id == "evt-1"
+        assert reponse.calendar_id == "primary"
+        assert reponse.summary == "Réunion"
+        # La ligne d'un AUTRE agenda ne doit pas être écrasée au passage.
+        assert session.commit.await_count == 0
+        assert autre.summary == "X"
