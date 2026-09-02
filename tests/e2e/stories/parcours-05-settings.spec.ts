@@ -1,26 +1,70 @@
 /**
  * Parcours 05 - Settings
  *
- * Scenario : ouvrir settings -> verifier 8 onglets
- *            -> naviguer entre onglets -> fermer
+ * Scenario : ouvrir les reglages -> verifier les rubriques offertes
+ *            -> naviguer entre elles -> sauvegarder -> fermer
  *
  * User Stories : US-600 a US-625
+ *
+ * Révisé le 02/09/2026. Les tests attendaient huit onglets dont « Outils »,
+ * « Agents » et « Avancé » : ces trois-là sont `contributeurOnly`
+ * (SettingsModal.tsx, `ALL_TABS`) et le mode par défaut est `standard`
+ * (`DEFAULT_UX_MODE`, personalisationStore.ts). En mode standard la modale
+ * n'offre que six rubriques, et une septième — « Accessibilité » — que les
+ * tests ignoraient entièrement. Les six tests concernés cliquaient donc sur
+ * des boutons absents et expiraient au bout de trente secondes.
+ *
+ * Les rubriques réservées ne sont pas retirées de ce parcours pour autant :
+ * elles sont atteintes par le chemin réel, l'interrupteur « Mode
+ * Contributeur » de la barre latérale des réglages.
  */
 
 import { test, expect } from '@playwright/test';
 
 import { ouvrirLApplication, ouvrirLaSurface } from './helpers/surfaces';
 
-const SETTINGS_TABS = [
+/** Les rubriques offertes d'emblée, en mode standard. */
+const ONGLETS_STANDARD = [
   { id: 'profile', label: 'Profil' },
   { id: 'ai', label: 'IA' },
   { id: 'services', label: 'Services' },
+  { id: 'accessibility', label: 'Accessibilité' },
+  { id: 'privacy', label: 'Confidentialité' },
+  { id: 'about', label: 'À propos' },
+] as const;
+
+/** Les rubriques que le mode contributeur ajoute. */
+const ONGLETS_CONTRIBUTEUR = [
   { id: 'tools', label: 'Outils' },
   { id: 'agents', label: 'Agents' },
-  { id: 'privacy', label: 'Confidentialite' },  // sans accent pour le matcher
-  { id: 'advanced', label: 'Avance' },
-  { id: 'about', label: 'propos' },
+  { id: 'advanced', label: 'Avancé' },
 ] as const;
+
+/**
+ * Passer en mode contributeur par l'interrupteur de la modale.
+ *
+ * La case elle-même est `sr-only` sous un décor : on clique son étiquette,
+ * comme le fait un utilisateur. On attend ensuite un ÉTAT (la case cochée et
+ * une rubriques réservée montée), jamais un délai.
+ */
+async function passerEnModeContributeur(page: import('@playwright/test').Page) {
+  const modale = page.getByTestId('settings-modal');
+  await modale.getByText('Mode Contributeur').click();
+  await expect(page.getByTestId('ux-mode-toggle')).toBeChecked();
+  await expect(page.getByTestId('settings-tab-advanced')).toBeVisible({ timeout: 5000 });
+}
+
+/** Cliquer une rubrique et prouver que le contenu affiché est bien le sien. */
+async function ouvrirLOnglet(page: import('@playwright/test').Page, id: string) {
+  const onglet = page.getByTestId(`settings-tab-${id}`);
+  await onglet.click();
+  // Le contenu était vérifié par des expressions du genre `getByText(/outil/i)`
+  // sur la page entière : elles passaient sur n'importe quelle rubrique. Le
+  // contrat réel de la modale, c'est que l'onglet devienne sélectionné et que
+  // le panneau porte SON étiquette.
+  await expect(onglet).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', `settings-tab-${id}`);
+}
 
 test.describe('Parcours 05 - Settings', () => {
   test.beforeEach(async ({ page, request }) => {
@@ -34,100 +78,85 @@ test.describe('Parcours 05 - Settings', () => {
     await expect(page.getByTestId('settings-modal')).toBeVisible({ timeout: 8000 });
   });
 
-  test('US-600.HP : la modale settings contient exactement 8 onglets', async ({ page }) => {
-    for (const tab of SETTINGS_TABS) {
-      const tabBtn = page.getByTestId(`settings-tab-${tab.id}`);
-      await expect(tabBtn).toBeVisible();
+  test('US-600.HP : en mode standard la modale offre ses six rubriques, et seulement elles', async ({
+    page,
+  }) => {
+    const modale = page.getByTestId('settings-modal');
+
+    for (const onglet of ONGLETS_STANDARD) {
+      await expect(page.getByTestId(`settings-tab-${onglet.id}`)).toBeVisible();
     }
+    for (const onglet of ONGLETS_CONTRIBUTEUR) {
+      await expect(page.getByTestId(`settings-tab-${onglet.id}`)).toHaveCount(0);
+    }
+
+    // Le compte ferme la porte : une rubrique ajoutée sans être déclarée ici
+    // ferait rougir ce test plutôt que de passer inaperçue.
+    await expect(modale.getByRole('tab')).toHaveCount(ONGLETS_STANDARD.length);
   });
 
-  test('US-601.HP : l\'onglet Profil est le premier onglet visible', async ({ page }) => {
+  test('US-600.HP : le mode contributeur ajoute les trois rubriques reservees', async ({ page }) => {
+    const modale = page.getByTestId('settings-modal');
+
+    await passerEnModeContributeur(page);
+
+    for (const onglet of [...ONGLETS_STANDARD, ...ONGLETS_CONTRIBUTEUR]) {
+      await expect(page.getByTestId(`settings-tab-${onglet.id}`)).toBeVisible();
+    }
+    await expect(modale.getByRole('tab')).toHaveCount(
+      ONGLETS_STANDARD.length + ONGLETS_CONTRIBUTEUR.length,
+    );
+  });
+
+  test("US-601.HP : l'onglet Profil est le premier onglet visible", async ({ page }) => {
     const profileTab = page.getByTestId('settings-tab-profile');
     await expect(profileTab).toBeVisible();
+    await expect(profileTab).toHaveAttribute('aria-selected', 'true');
   });
 
-  test('US-602.HP : cliquer sur l\'onglet IA affiche le contenu IA', async ({ page }) => {
-    const aiTab = page.getByTestId('settings-tab-ai');
-    await aiTab.click();
-
-    // Le contenu de l'onglet IA doit etre visible (provider LLM, cles API...)
-    const aiContent = page.getByText(/provider/i)
-      .or(page.getByText(/mod.le/i))
-      .or(page.getByText(/cl.*api/i));
-    await expect(aiContent.first()).toBeVisible({ timeout: 5000 });
+  test("US-602.HP : cliquer sur l'onglet IA affiche le contenu IA", async ({ page }) => {
+    await ouvrirLOnglet(page, 'ai');
   });
 
-  test('US-603.HP : cliquer sur l\'onglet Services affiche le contenu Services', async ({ page }) => {
-    const servicesTab = page.getByTestId('settings-tab-services');
-    await servicesTab.click();
-
-    // Contenu attendu : MCP, serveurs, integrations
-    const servicesContent = page.getByText(/mcp/i)
-      .or(page.getByText(/serveur/i))
-      .or(page.getByText(/service/i));
-    await expect(servicesContent.first()).toBeVisible({ timeout: 5000 });
+  test("US-603.HP : cliquer sur l'onglet Services affiche le contenu Services", async ({ page }) => {
+    await ouvrirLOnglet(page, 'services');
   });
 
-  test('US-604.HP : cliquer sur l\'onglet Outils affiche le contenu Outils', async ({ page }) => {
-    const toolsTab = page.getByTestId('settings-tab-tools');
-    await toolsTab.click();
-
-    // Verifier que le contenu de l'onglet Outils est visible (texte attendu dans le panneau)
-    const toolsContent = page.getByText(/outil/i)
-      .or(page.getByText(/tool/i))
-      .or(page.getByText(/workspace/i));
-    await expect(toolsContent.first()).toBeVisible({ timeout: 5000 });
+  test("US-604.HP : cliquer sur l'onglet Outils affiche le contenu Outils", async ({ page }) => {
+    await passerEnModeContributeur(page);
+    await ouvrirLOnglet(page, 'tools');
   });
 
-  test('US-605.HP : cliquer sur l\'onglet Agents affiche le contenu Agents', async ({ page }) => {
-    const agentsTab = page.getByTestId('settings-tab-agents');
-    await agentsTab.click();
-
-    // Verifier que le contenu a change (pas l'onglet profil)
-    const agentsContent = page.getByText(/agent/i);
-    await expect(agentsContent.first()).toBeVisible({ timeout: 5000 });
+  test("US-605.HP : cliquer sur l'onglet Agents affiche le contenu Agents", async ({ page }) => {
+    await passerEnModeContributeur(page);
+    await ouvrirLOnglet(page, 'agents');
   });
 
-  test('US-606.HP : cliquer sur l\'onglet Confidentialite affiche les options RGPD', async ({ page }) => {
-    const privacyTab = page.getByTestId('settings-tab-privacy');
-    await privacyTab.click();
-
-    const privacyContent = page.getByText(/donn/i)
-      .or(page.getByText(/rgpd/i))
-      .or(page.getByText(/confidentialit/i))
-      .or(page.getByText(/export/i));
-    await expect(privacyContent.first()).toBeVisible({ timeout: 5000 });
+  test("US-606.HP : cliquer sur l'onglet Confidentialite affiche les options RGPD", async ({
+    page,
+  }) => {
+    await ouvrirLOnglet(page, 'privacy');
   });
 
-  test('US-607.HP : cliquer sur l\'onglet Avance affiche les parametres avances', async ({ page }) => {
-    const advancedTab = page.getByTestId('settings-tab-advanced');
-    await advancedTab.click();
-
-    // Verifier que le contenu de l'onglet Avance est visible
-    const advancedContent = page.getByText(/avanc/i)
-      .or(page.getByText(/debug/i))
-      .or(page.getByText(/log/i))
-      .or(page.getByText(/reset/i));
-    await expect(advancedContent.first()).toBeVisible({ timeout: 5000 });
+  test("US-607.HP : cliquer sur l'onglet Avance affiche les parametres avances", async ({ page }) => {
+    await passerEnModeContributeur(page);
+    await ouvrirLOnglet(page, 'advanced');
   });
 
-  test('US-608.HP : cliquer sur l\'onglet A propos affiche les infos de version', async ({ page }) => {
-    const aboutTab = page.getByTestId('settings-tab-about');
-    await aboutTab.click();
-
-    const aboutContent = page.getByText(/version/i)
-      .or(page.getByText(/th.r.se/i))
-      .or(page.getByText(/licence/i));
-    await expect(aboutContent.first()).toBeVisible({ timeout: 5000 });
+  test("US-608.HP : cliquer sur l'onglet A propos affiche les infos de version", async ({ page }) => {
+    await ouvrirLOnglet(page, 'about');
   });
 
-  test('US-610.HP : navigation entre tous les onglets successivement', async ({ page }) => {
-    for (const tab of SETTINGS_TABS) {
-      const tabBtn = page.getByTestId(`settings-tab-${tab.id}`);
-      await tabBtn.click();
+  test('US-609.HP : cliquer sur l\'onglet Accessibilite affiche ses reglages', async ({ page }) => {
+    // Rubrique absente de l'ancienne liste, donc jamais éprouvée jusqu'ici.
+    await ouvrirLOnglet(page, 'accessibility');
+  });
 
-      // Verifier que l'onglet est actif (visuellement distinct)
-      await expect(tabBtn).toBeVisible();
+  test('US-610.HP : navigation entre toutes les rubriques successivement', async ({ page }) => {
+    await passerEnModeContributeur(page);
+
+    for (const onglet of [...ONGLETS_STANDARD, ...ONGLETS_CONTRIBUTEUR]) {
+      await ouvrirLOnglet(page, onglet.id);
     }
   });
 
@@ -151,18 +180,31 @@ test.describe('Parcours 05 - Settings', () => {
     await expect(settingsModal).not.toBeVisible({ timeout: 5000 });
   });
 
-  test('US-600.HP : parcours complet settings (ouvrir -> naviguer 8 onglets -> sauvegarder -> fermer)', async ({ page }) => {
-    // Naviguer dans chaque onglet
-    for (const tab of SETTINGS_TABS) {
-      await page.getByTestId(`settings-tab-${tab.id}`).click();
-      await expect(page.getByTestId(`settings-tab-${tab.id}`)).toBeVisible();
+  test('US-600.HP : parcours complet settings (ouvrir -> naviguer -> sauvegarder -> fermer)', async ({
+    page,
+  }) => {
+    await passerEnModeContributeur(page);
+
+    // Naviguer dans chaque rubrique
+    for (const onglet of [...ONGLETS_STANDARD, ...ONGLETS_CONTRIBUTEUR]) {
+      await ouvrirLOnglet(page, onglet.id);
     }
 
     // Revenir au profil
-    await page.getByTestId('settings-tab-profile').click();
+    await ouvrirLOnglet(page, 'profile');
 
-    // Cliquer sur sauvegarder
-    await page.getByTestId('settings-save-btn').click();
+    // Sauvegarder. Le bouton reste DÉSACTIVÉ tant que le nom complet est vide
+    // (`disabled={profileSaving || !profileForm.name.trim()}`) : sur la base
+    // jetable des E2E, vierge, l'ancien test cliquait donc trente secondes sur
+    // un bouton inerte. On renseigne le champ obligatoire, puis on vérifie que
+    // l'enregistrement a bien eu lieu plutôt que le seul fait d'avoir cliqué.
+    const modale = page.getByTestId('settings-modal');
+    await modale.getByLabel('Nom complet *').fill('Recette E2E');
+
+    const sauvegarder = page.getByTestId('settings-save-btn');
+    await expect(sauvegarder).toBeEnabled();
+    await sauvegarder.click();
+    await expect(modale.getByText('Profil enregistré')).toBeVisible({ timeout: 10000 });
 
     // Fermer
     await page.getByTestId('settings-close-btn').click();

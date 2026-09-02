@@ -91,6 +91,32 @@ export async function fermerLaSurface(page: Page): Promise<void> {
 }
 
 /**
+ * Relire une fois une lecture qui a échoué AU TRANSPORT, jamais sur un statut.
+ *
+ * 02/09/2026. Sur une exécution complète de contrôle, un seul test des
+ * quatre-vingt-dix-huit est tombé en `apiRequestContext.get: read ECONNRESET`
+ * sur `GET /api/auth/token` — l'amorçage, pas une assertion. Cinq workers
+ * ouvrent leurs connexions vers un uvicorn qui vient de démarrer, et une
+ * connexion gardée en vie peut être fermée par le serveur à l'instant même où
+ * le client la réutilise. Relancé seul, le parcours repasse en entier.
+ *
+ * On tolère donc UNE reprise, et seulement quand l'appel LÈVE : une réponse
+ * arrivée, fût-elle en 401 ou en 500, est une réponse et remonte telle quelle.
+ * Rien ici ne masque un échec de l'application, seulement un hoquet de socket.
+ */
+async function lireUneFoisDePlusSiLaConnexionLache(
+  requete: APIRequestContext,
+  url: string,
+): Promise<import('@playwright/test').APIResponse> {
+  try {
+    return await requete.get(url);
+  } catch {
+    await new Promise((resoudre) => setTimeout(resoudre, 500));
+    return requete.get(url);
+  }
+}
+
+/**
  * Passer la mise en route CÔTÉ BACKEND.
  *
  * Les parcours posaient `localStorage.setItem('onboarding_complete', 'true')`
@@ -102,7 +128,7 @@ export async function fermerLaSurface(page: Page): Promise<void> {
  * recouvert. Diagnostiqué le 01/09/2026 en lisant la capture d'échec.
  */
 export async function passerLaMiseEnRoute(requete: APIRequestContext): Promise<void> {
-  const jeton = await requete.get(`${BACKEND_URL}/api/auth/token`);
+  const jeton = await lireUneFoisDePlusSiLaConnexionLache(requete, `${BACKEND_URL}/api/auth/token`);
   const { token } = (await jeton.json()) as { token: string };
   const entetes = { 'X-Therese-Token': token };
 

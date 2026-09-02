@@ -1,113 +1,95 @@
 /**
  * Parcours 03 - Email
  *
- * Scenario : ouvrir panel email -> wizard setup visible
- *            -> options OAuth et SMTP disponibles
+ * Scénario : ouvrir la surface email -> l'assistant de configuration s'affiche
+ *            -> les options Gmail OAuth et SMTP mènent chacune à leur étape.
  *
  * User Stories : US-111, US-112, US-113
+ *
+ * Réécrit le 02/09/2026. Sept des huit tests faisaient `page.goto('/')` puis
+ * attendaient quinze secondes l'assistant « Configuration Email » SANS jamais
+ * ouvrir la surface email : cet assistant vit à l'intérieur du panneau
+ * (`EmailPanel`), il ne s'affiche pas sur la coque d'accueil. Seul le premier
+ * test ouvrait la surface, et lui seul passait. Les sélecteurs sont désormais
+ * ancrés au dialogue de l'assistant plutôt qu'à la page entière : sur la coque,
+ * « gmail », « smtp » ou « fermer » se trouvent à plusieurs endroits.
  */
 
 import { test, expect } from '@playwright/test';
 
-import { ouvrirLaSurface, passerLaMiseEnRoute } from './helpers/surfaces';
+import { ouvrirLApplication, ouvrirLaSurface } from './helpers/surfaces';
+
+/** L'assistant de configuration, tel que le panneau email le monte. */
+function assistant(page: import('@playwright/test').Page) {
+  return page.getByRole('dialog', { name: /configuration email/i });
+}
 
 test.describe('Parcours 03 - Email', () => {
-  test.beforeEach(async ({ request }) => {
+  test.beforeEach(async ({ page, request }) => {
     // App.tsx interroge le backend, pas le stockage local : sur la base
     // jetable des E2E l'assistant de mise en route recouvrait chaque surface.
-    await passerLaMiseEnRoute(request);
-  });
-
-  test('US-111.HP : le panel email s\'ouvre en mode standalone via ?panel=email', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle', { timeout: 15000 });
-    await page.waitForSelector('[data-testid="app-main"]', { timeout: 15000 });
+    await ouvrirLApplication(page, request);
     // `?panel=crm` et `?panel=email` ne sont plus reconnus : le lien profond
     // n'accepte que `board` et `atelier`. La surface s'ouvre par son action
     // de registre, qui ne depend d'aucun parametre d'URL.
     await ouvrirLaSurface(page, 'email.open');
     await expect(page.getByTestId('email-panel')).toBeVisible({ timeout: 15000 });
-
-    const emailPanel = page.getByTestId('email-panel');
-    await expect(emailPanel).toBeVisible({ timeout: 15000 });
   });
 
-  test('US-112.HP : le wizard de configuration email apparait quand aucun compte n\'est configure', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle', { timeout: 15000 });
-
-    // Le wizard doit s'afficher automatiquement si aucun compte email n'est configure
-    // Il est rendu via createPortal donc dans document.body
-    const wizardDialog = page.getByRole('dialog', { name: /configuration email/i });
-    await expect(wizardDialog).toBeVisible({ timeout: 15000 });
+  test("US-111.HP : la surface email s'ouvre par son action de registre", async ({ page }) => {
+    await expect(page.getByTestId('email-panel')).toBeVisible();
   });
 
-  test('US-112.HP : le wizard affiche le titre "Configuration Email"', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle', { timeout: 15000 });
-
-    const title = page.getByText('Configuration Email');
-    await expect(title.first()).toBeVisible({ timeout: 15000 });
+  test("US-112.HP : l'assistant de configuration apparait quand aucun compte n'est configure", async ({
+    page,
+  }) => {
+    // La base jetable des E2E est vierge : `isConnected` est faux et
+    // `showSetupWizard` vaut vrai par défaut, donc l'assistant s'ouvre seul.
+    await expect(assistant(page)).toBeVisible({ timeout: 15000 });
   });
 
-  test('US-113.HP : le wizard propose l\'option Gmail OAuth', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle', { timeout: 15000 });
-
-    // Le wizard step 1 = ChoiceStep avec les options Gmail et SMTP
-    const gmailOption = page.getByText(/gmail/i).first();
-    await expect(gmailOption).toBeVisible({ timeout: 15000 });
+  test('US-112.HP : l\'assistant affiche le titre "Configuration Email"', async ({ page }) => {
+    await expect(
+      assistant(page).getByRole('heading', { name: 'Configuration Email' }),
+    ).toBeVisible({ timeout: 15000 });
   });
 
-  test('US-113.HP : le wizard propose l\'option SMTP classique', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle', { timeout: 15000 });
-
-    const smtpOption = page.getByText(/smtp/i).first();
-    await expect(smtpOption).toBeVisible({ timeout: 15000 });
+  test("US-113.HP : l'assistant propose l'option Gmail OAuth", async ({ page }) => {
+    await expect(assistant(page).getByRole('button', { name: /Gmail OAuth/ })).toBeVisible({
+      timeout: 15000,
+    });
   });
 
-  test('US-112.HP : le wizard a un bouton de fermeture fonctionnel', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle', { timeout: 15000 });
-
-    // Attendre que le wizard soit visible
-    const wizardDialog = page.getByRole('dialog', { name: /configuration email/i });
-    await expect(wizardDialog).toBeVisible({ timeout: 15000 });
-
-    // Cliquer sur le bouton Fermer (X)
-    const closeBtn = page.getByRole('button', { name: /fermer/i });
-    await closeBtn.click();
-
-    // Le wizard doit disparaitre
-    await expect(wizardDialog).not.toBeVisible({ timeout: 5000 });
+  test("US-113.HP : l'assistant propose l'option SMTP classique", async ({ page }) => {
+    await expect(
+      assistant(page).getByRole('button', { name: /SMTP \/ IMAP classique/ }),
+    ).toBeVisible({ timeout: 15000 });
   });
 
-  test('US-113.HP : selectionner Gmail navigate vers l\'etape suivante du wizard', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle', { timeout: 15000 });
+  test("US-112.HP : l'assistant a un bouton de fermeture fonctionnel", async ({ page }) => {
+    const dialogue = assistant(page);
+    await expect(dialogue).toBeVisible({ timeout: 15000 });
 
-    // Cliquer sur l'option Gmail
-    const gmailCard = page.getByText(/gmail oauth/i);
-    await expect(gmailCard).toBeVisible({ timeout: 15000 });
-    await gmailCard.click();
+    await dialogue.getByRole('button', { name: 'Fermer', exact: true }).click();
 
-    // Verifier qu'on passe a l'etape 2 (le texte "Etape 2" ou le contenu change)
-    const step2Indicator = page.getByText(/tape 2/i).or(page.getByText(/tape 4/i));
-    await expect(step2Indicator.first()).toBeVisible({ timeout: 5000 });
+    await expect(dialogue).not.toBeVisible({ timeout: 5000 });
   });
 
-  test('US-113.HP : selectionner SMTP navigate vers l\'etape SMTP', async ({ page }) => {
-    await page.goto('/');
-    await page.waitForLoadState('networkidle', { timeout: 15000 });
+  test("US-113.HP : selectionner Gmail mene a l'etape suivante de l'assistant", async ({ page }) => {
+    const dialogue = assistant(page);
+    await dialogue.getByRole('button', { name: /Gmail OAuth/ }).click();
 
-    // Cliquer sur l'option SMTP
-    const smtpCard = page.getByText(/smtp/i).first();
-    await expect(smtpCard).toBeVisible({ timeout: 15000 });
-    await smtpCard.click();
+    // Le parcours Gmail compte quatre étapes. Avec des identifiants repris du
+    // serveur MCP Google Workspace il saute directement à la quatrième : les
+    // deux sont des « étapes suivantes » valides, l'étape 1 ne l'est pas.
+    await expect(dialogue.getByText(/Étape (2|4) sur 4/)).toBeVisible({ timeout: 5000 });
+  });
 
-    // Le wizard avance (etape 2 pour SMTP = formulaire config SMTP)
-    const step2Indicator = page.getByText(/tape 2/i);
-    await expect(step2Indicator.first()).toBeVisible({ timeout: 5000 });
+  test("US-113.HP : selectionner SMTP mene a l'etape de configuration SMTP", async ({ page }) => {
+    const dialogue = assistant(page);
+    await dialogue.getByRole('button', { name: /SMTP \/ IMAP classique/ }).click();
+
+    // Le parcours SMTP n'en compte que deux : le compteur le dit lui-même.
+    await expect(dialogue.getByText('Étape 2 sur 2')).toBeVisible({ timeout: 5000 });
   });
 });

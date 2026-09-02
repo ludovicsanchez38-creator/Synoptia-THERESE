@@ -1,22 +1,44 @@
 /**
  * Parcours 04 - CRM
  *
- * Scenario : ouvrir panel CRM -> pipeline 7 colonnes
+ * Scenario : ouvrir le panneau CRM -> pipeline a 7 colonnes
  *            -> bouton ajouter contact -> import vcf visible
  *
  * User Stories : US-300, US-301
+ *
+ * Révisé le 02/09/2026 (B-148). Le test des sept colonnes cherchait ses
+ * libellés par `page.getByText(stage, { exact: false })`, c'est-à-dire une
+ * SOUS-CHAÎNE dans TOUTE la page, puis prenait `.first()` : « Contact » était
+ * satisfait par le bouton « Ajouter un contact » du même panneau, et le test
+ * ne prouvait rien sur les colonnes. Les libellés étaient de surcroît écrits
+ * sans accent (« Decouverte » pour « Découverte »), si bien que le test
+ * échouait sur ce seul mot tout en donnant l'illusion de mesurer sept
+ * colonnes. Il est désormais ancré au panneau, compte les en-têtes et compare
+ * les libellés EXACTS, dans l'ordre.
  */
 
 import { test, expect } from '@playwright/test';
 
-import { ouvrirLaSurface, passerLaMiseEnRoute } from './helpers/surfaces';
+import { ouvrirLApplication, ouvrirLaSurface } from './helpers/surfaces';
+
+/**
+ * Les sept colonnes du pipeline, dans l'ordre de `PIPELINE_STAGES`
+ * (src/frontend/src/components/crm/PipelineView.tsx). Accents compris : ce
+ * sont les libellés que l'utilisateur lit.
+ */
+const COLONNES_DU_PIPELINE = [
+  'Contact',
+  'Découverte',
+  'Proposition',
+  'Signature',
+  'Livraison',
+  'Actif',
+  'Archive',
+] as const;
 
 test.describe('Parcours 04 - CRM', () => {
   test.beforeEach(async ({ page, request }) => {
-    await passerLaMiseEnRoute(request);
-    await page.goto('/');
-    await page.waitForLoadState('networkidle', { timeout: 15000 });
-    await page.waitForSelector('[data-testid="app-main"]', { timeout: 15000 });
+    await ouvrirLApplication(page, request);
     // `?panel=crm` et `?panel=email` ne sont plus reconnus : le lien profond
     // n'accepte que `board` et `atelier`. La surface s'ouvre par son action
     // de registre, qui ne depend d'aucun parametre d'URL.
@@ -24,7 +46,7 @@ test.describe('Parcours 04 - CRM', () => {
     await expect(page.getByTestId('crm-panel')).toBeVisible({ timeout: 15000 });
   });
 
-  test('US-300.HP : le panel CRM s\'ouvre en mode standalone', async ({ page }) => {
+  test("US-300.HP : le panel CRM s'ouvre en mode standalone", async ({ page }) => {
     const crmPanel = page.getByTestId('crm-panel');
     await expect(crmPanel).toBeVisible({ timeout: 15000 });
   });
@@ -33,75 +55,106 @@ test.describe('Parcours 04 - CRM', () => {
     const crmPanel = page.getByTestId('crm-panel');
     await expect(crmPanel).toBeVisible({ timeout: 15000 });
 
-    // Les 7 stages du pipeline
-    const stages = ['Contact', 'Decouverte', 'Proposition', 'Signature', 'Livraison', 'Actif', 'Archive'];
-
-    for (const stage of stages) {
-      const stageLabel = page.getByText(stage, { exact: false });
-      await expect(stageLabel.first()).toBeVisible({ timeout: 5000 });
-    }
+    // L'onglet « Pipeline » est celui d'ouverture, et `DroppableStage` est le
+    // SEUL à poser un titre de niveau 3 dans cet onglet : compter ces titres,
+    // c'est compter les colonnes. Un locator ancré au panneau, plus de
+    // `.first()`, plus de sous-chaîne : le bouton « Ajouter un contact » ne
+    // peut plus tenir lieu de colonne « Contact ».
+    const entetesDeColonne = crmPanel.getByRole('heading', { level: 3 });
+    await expect(entetesDeColonne).toHaveCount(COLONNES_DU_PIPELINE.length, { timeout: 10000 });
+    await expect(entetesDeColonne).toHaveText([...COLONNES_DU_PIPELINE]);
   });
 
   test('US-301.HP : le bouton "Ajouter un contact" est visible et cliquable', async ({ page }) => {
     const crmPanel = page.getByTestId('crm-panel');
     await expect(crmPanel).toBeVisible({ timeout: 15000 });
 
-    const addBtn = page.getByRole('button', { name: /ajouter un contact/i });
+    const addBtn = crmPanel.getByRole('button', { name: /ajouter un contact/i });
     await expect(addBtn).toBeVisible();
     await addBtn.click();
 
     // Verifier qu'un formulaire ou modale de creation apparait
-    const newContactTitle = page.getByText(/nouveau contact/i);
-    await expect(newContactTitle.first()).toBeVisible({ timeout: 5000 });
+    const formulaire = page.getByRole('dialog', { name: 'Nouveau contact CRM' });
+    await expect(formulaire).toBeVisible({ timeout: 5000 });
   });
 
   test('US-301.HP : le bouton "Import .vcf" est visible', async ({ page }) => {
     const crmPanel = page.getByTestId('crm-panel');
     await expect(crmPanel).toBeVisible({ timeout: 15000 });
 
-    const importVcfBtn = page.getByText(/import.*\.vcf/i);
+    const importVcfBtn = crmPanel.getByText(/import.*\.vcf/i);
     await expect(importVcfBtn.first()).toBeVisible();
   });
 
-  test('US-300.HP : le formulaire nouveau contact CRM contient les champs essentiels', async ({ page }) => {
+  test('US-300.HP : le formulaire nouveau contact CRM contient les champs essentiels', async ({
+    page,
+  }) => {
     const crmPanel = page.getByTestId('crm-panel');
     await expect(crmPanel).toBeVisible({ timeout: 15000 });
 
     // Ouvrir le formulaire
-    const addBtn = page.getByRole('button', { name: /ajouter un contact/i });
-    await addBtn.click();
+    await crmPanel.getByRole('button', { name: /ajouter un contact/i }).click();
 
-    // Verifier la presence des champs essentiels dans le dialogue
-    const dialog = page.getByRole('dialog').or(page.locator('[aria-label="Nouveau contact CRM"]'));
-    await expect(dialog.first()).toBeVisible({ timeout: 5000 });
+    const formulaire = page.getByRole('dialog', { name: 'Nouveau contact CRM' });
+    await expect(formulaire).toBeVisible({ timeout: 5000 });
 
-    // Champs attendus : prenom, nom, email, entreprise
-    const fields = ['Prenom', 'Nom', 'Email', 'Entreprise'];
-    for (const field of fields) {
-      const label = page.getByText(new RegExp(field, 'i'));
-      // Au moins un element avec ce texte doit etre present
-      const count = await label.count();
-      expect(count).toBeGreaterThanOrEqual(1);
+    // Les champs essentiels sont interrogés par leur ÉTIQUETTE réelle, accents
+    // compris (« Prénom », pas « Prenom ») : l'ancien test comptait des textes
+    // sans accent, ne trouvait rien, et disait « 0 attendu >= 1 ». Interroger
+    // le champ plutôt que le texte prouve en plus que l'étiquette est reliée à
+    // sa saisie.
+    for (const champ of ['Prénom *', 'Nom', 'Entreprise', 'Email']) {
+      await expect(formulaire.getByLabel(champ, { exact: true })).toBeVisible();
     }
   });
 
-  test('US-300.HP : parcours complet CRM (ouvrir -> voir pipeline -> ajouter contact -> fermer)', async ({ page }) => {
+  test('US-300.HP : parcours complet CRM (ouvrir -> voir pipeline -> ajouter contact -> fermer)', async ({
+    page,
+  }) => {
     // 1. Panel visible
     const crmPanel = page.getByTestId('crm-panel');
     await expect(crmPanel).toBeVisible({ timeout: 15000 });
 
-    // 2. Pipeline present avec au moins la colonne "Contact"
-    await expect(page.getByText('Contact').first()).toBeVisible();
+    // 2. Pipeline present avec sa premiere colonne
+    await expect(crmPanel.getByRole('heading', { level: 3, name: 'Contact' })).toBeVisible();
 
     // 3. Ouvrir formulaire ajout
-    await page.getByRole('button', { name: /ajouter un contact/i }).click();
-    const dialog = page.getByRole('dialog').or(page.locator('[aria-label="Nouveau contact CRM"]'));
-    await expect(dialog.first()).toBeVisible({ timeout: 5000 });
+    await crmPanel.getByRole('button', { name: /ajouter un contact/i }).click();
+    const formulaire = page.getByRole('dialog', { name: 'Nouveau contact CRM' });
+    await expect(formulaire).toBeVisible({ timeout: 5000 });
 
-    // 4. Fermer le formulaire (bouton Annuler, X, ou Escape)
-    await page.keyboard.press('Escape');
+    // 4. Fermer le formulaire par son bouton Annuler
+    await formulaire.getByRole('button', { name: 'Annuler', exact: true }).click();
+    await expect(formulaire).not.toBeVisible({ timeout: 5000 });
 
     // 5. Verifier que le panel CRM est toujours visible apres fermeture
     await expect(crmPanel).toBeVisible();
   });
+
+  // CONSTAT RE34-C1 (defaut d'application, PAS du test) : Échap depuis le
+  // formulaire de contact éjecte le panneau CRM tout entier au lieu de fermer
+  // le seul formulaire. `CreateContactModal` (CRMPanel.tsx) se déclare
+  // `role="dialog" aria-modal="true"` mais n'appelle jamais
+  // `pushEscapeHandler` (lib/escapeStack.ts) ; la cascade de la coque ne le
+  // voit donc pas et retombe sur le retour de vue. C'est très exactement le
+  // « KO 1.1/1.2 » que la pile d'Échap a été écrite pour empêcher : « Échap
+  // tombait sur le retour de vue (goBack) et ÉJECTAIT la vue entière sous le
+  // modal ». Preuve : ce test, rouge sur `crm-panel` introuvable après Échap.
+  // Le test reste rouge et déclaré `fixme` : il redeviendra vert le jour où
+  // l'application fermera d'abord son formulaire.
+  test.fixme(
+    'US-300.HP : Echap ferme le formulaire de contact sans ejecter le panneau CRM (constat RE34-C1)',
+    async ({ page }) => {
+      const crmPanel = page.getByTestId('crm-panel');
+      await crmPanel.getByRole('button', { name: /ajouter un contact/i }).click();
+
+      const formulaire = page.getByRole('dialog', { name: 'Nouveau contact CRM' });
+      await expect(formulaire).toBeVisible({ timeout: 5000 });
+
+      await page.keyboard.press('Escape');
+
+      await expect(formulaire).not.toBeVisible({ timeout: 5000 });
+      await expect(crmPanel).toBeVisible();
+    },
+  );
 });

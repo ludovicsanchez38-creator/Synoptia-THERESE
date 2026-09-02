@@ -1,5 +1,6 @@
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { BACKEND_URL } from './helpers/backend';
+import { passerLaMiseEnRoute } from './helpers/surfaces';
 
 async function json(route: Route, body: unknown) {
   await route.fulfill({
@@ -12,11 +13,12 @@ async function json(route: Route, body: unknown) {
 async function installReadOnlyShell(page: Page) {
   await page.route(`${BACKEND_URL}/**`, async (route) => {
     const pathname = new URL(route.request().url()).pathname;
-    if (pathname === '/api/auth/token') return json(route, { token: 'test-session-token' });
-    if (pathname === '/api/config/onboarding-complete') {
-      return json(route, { completed: true, completed_at: '2026-07-13T08:00:00Z' });
-    }
-    if (pathname === '/health') return json(route, { status: 'ok', version: '0.32.1' });
+    // 02/09/2026 : `/api/auth/token` n'est PLUS bouchonne. Un faux jeton etait
+    // sans consequence tant que le repli repondait a tout, mais depuis que les
+    // lectures non prevues atteignent le vrai backend jetable, celui-ci les
+    // verifie (main.py, en-tete X-Therese-Token, compare_digest) : chacune
+    // repartait en 401. La mise en route se pose desormais sur le vrai backend,
+    // par `passerLaMiseEnRoute`, plutot que d'etre mimee ici.
     if (pathname === '/api/config/stats') {
       return json(route, {
         entities: { contacts: 1, projects: 1, conversations: 0, messages: 0, files: 0 },
@@ -190,7 +192,10 @@ async function chooseCapability(page: Page, name: string) {
   // `prompt` gardent leur étape de relecture, et donc leur bandeau. Attendre
   // le bandeau ici, c'est attendre le comportement d'avant — chaque test
   // vérifie ensuite ce qui le concerne : la vue ouverte, ou le composeur.
-  await page.waitForTimeout(300);
+  //
+  // 02/09/2026 : le `waitForTimeout(300)` qui suivait a ete retire. On attend
+  // un ETAT — que le centre des capacites se soit refermé — jamais un delai.
+  await expect(dialog).toBeHidden({ timeout: 10000 });
 }
 
 // 01/09/2026 : dix clics « Ouvrir X » ont été retirés de ces tests. Depuis la
@@ -199,7 +204,8 @@ async function chooseCapability(page: Page, name: string) {
 // d'attendre une validation du composeur que rien n'annonce ». Le bouton
 // intermédiaire n'existe plus, et les tests l'attendaient trente secondes.
 test.describe('Prototype conversationnel - parcours unifiés des capacités', () => {
-  test.beforeEach(async ({ page }) => {
+  test.beforeEach(async ({ page, request }) => {
+    await passerLaMiseEnRoute(request);
     await installReadOnlyShell(page);
     await page.goto('/?prototype=conversation-canvas&scenario=today');
     await expect(page.getByTestId('conversation-canvas-prototype')).toBeVisible();

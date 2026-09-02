@@ -1,5 +1,6 @@
-import { expect, test, type Page, type Route } from '@playwright/test';
+import { expect, test, type APIRequestContext, type Page, type Route } from '@playwright/test';
 import { BACKEND_URL } from './helpers/backend';
+import { passerLaMiseEnRoute } from './helpers/surfaces';
 
 const calendar = {
   id: 'calendar-local',
@@ -54,40 +55,42 @@ async function json(route: Route, body: unknown, status = 200) {
   });
 }
 
-async function installReadOnlyMeetingBackend(page: Page) {
+/**
+ * Le bouchon du scénario « rendez-vous ».
+ *
+ * 02/09/2026. Il répondait `{}` à TOUTE route non prévue et les deux tests
+ * voyaient l'écran « Oups ! Cannot read properties of undefined (reading
+ * 'filter') » : un composant attendait une liste et recevait un objet. C'est
+ * exactement le défaut fermé la veille dans parcours-08 (B-136) — un bouchon
+ * exhaustif est une liste à tenir à jour pour toujours, et personne ne le fait.
+ *
+ * La garantie que ce fichier doit apporter n'est pas « le backend est figé »,
+ * c'est « AUCUNE ÉCRITURE ne part ». On fige donc les seules lectures dont le
+ * scénario contrôle le contenu, on REFUSE bruyamment les écritures en les
+ * consignant, et on laisse les lectures restantes atteindre le vrai backend
+ * jetable.
+ *
+ * Corollaire : `/api/auth/token` n'est plus bouchonné. Un faux jeton était
+ * sans conséquence tant que rien ne passait, mais le backend le vérifie
+ * (`main.py`, en-tête `X-Therese-Token`, `compare_digest`) : chaque lecture
+ * laissée passer serait repartie en 401. La mise en route est posée sur le
+ * vrai backend, par `passerLaMiseEnRoute`, plutôt que mimée dans le bouchon.
+ */
+async function installerLeBackendDeControle(page: Page) {
   const writes: string[] = [];
-
-  await page.addInitScript(() => {
-    localStorage.setItem('onboarding_complete', 'true');
-  });
-  // App.tsx lit le BACKEND, pas le stockage local. Sur la base jetable des
-  // E2E, l'assistant de mise en route recouvrait la coque.
-  await page.route(`${BACKEND_URL}/api/config/onboarding-complete`, async (route) => {
-    if (route.request().method() === 'GET') {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({ completed: true, completed_at: '2026-09-01T00:00:00Z' }),
-      });
-      return;
-    }
-    await route.continue();
-  });
 
   await page.route(`${BACKEND_URL}/**`, async (route) => {
     const request = route.request();
-    const url = new URL(request.url());
-    const { pathname } = url;
+    const { pathname } = new URL(request.url());
 
     if (request.method() !== 'GET') {
       writes.push(`${request.method()} ${pathname}`);
       await json(route, { detail: 'Écriture non autorisée par ce scénario de contrôle.' }, 409);
       return;
     }
-    if (pathname === '/api/auth/token') return json(route, { token: 'test-session-token' });
-    if (pathname === '/api/config/onboarding-complete') {
-      return json(route, { completed: true, completed_at: '2026-07-13T08:00:00Z' });
-    }
+
+    // Les seules lectures que le scénario contrôle : ce sont elles que les
+    // assertions nomment.
     if (pathname === '/api/email/auth/status') return json(route, { connected: false, accounts: [] });
     if (pathname === '/api/memory/contacts') return json(route, [contact]);
     if (pathname === '/api/calendar/calendars') return json(route, [calendar]);
@@ -103,17 +106,26 @@ async function installReadOnlyMeetingBackend(page: Page) {
         created_at: '2026-07-10T12:00:00Z',
       }]);
     }
-    if (pathname === '/health') return json(route, { status: 'ok', version: '0.32.1' });
-    return json(route, {});
+
+    return route.continue();
   });
 
   return writes;
 }
 
+async function ouvrirLeScenarioRendezVous(page: Page, requete: APIRequestContext) {
+  await passerLaMiseEnRoute(requete);
+  const writes = await installerLeBackendDeControle(page);
+  await page.goto('/?prototype=conversation-canvas&scenario=meeting');
+  return writes;
+}
+
 test.describe('Prototype conversationnel - Rendez-vous', () => {
-  test('affiche uniquement le contexte réel relié sans aucune écriture', async ({ page }) => {
-    const writes = await installReadOnlyMeetingBackend(page);
-    await page.goto('/?prototype=conversation-canvas&scenario=meeting');
+  test('affiche uniquement le contexte réel relié sans aucune écriture', async ({
+    page,
+    request,
+  }) => {
+    const writes = await ouvrirLeScenarioRendezVous(page, request);
 
     await expect(page.getByTestId('meeting-agenda-card')).toBeVisible();
     await expect(page.getByText('Point PROPULSER avec Camille Martin').first()).toBeVisible();
@@ -123,16 +135,24 @@ test.describe('Prototype conversationnel - Rendez-vous', () => {
     expect(writes).toEqual([]);
   });
 
-  test('prépare la confirmation de création sans appeler le backend', async ({ page }, testInfo) => {
-    const writes = await installReadOnlyMeetingBackend(page);
-    await page.goto('/?prototype=conversation-canvas&scenario=meeting');
+  test('prépare la confirmation de création sans appeler le backend', async ({
+    page,
+    request,
+  }, testInfo) => {
+    const writes = await ouvrirLeScenarioRendezVous(page, request);
     await expect(page.getByTestId('meeting-agenda-card')).toBeVisible();
 
     await page.getByRole('button', { name: 'Nouvel événement' }).click();
     const form = page.getByTestId('meeting-new-event-form');
     await expect(form).toBeVisible();
     await form.getByLabel('Titre').fill('Revue offre PROPULSER');
-    await form.getByLabel('Lieu ou lien').fill('Visioconférence');
+    // CONSTAT RE34-C2 : le champ du lieu s'affiche « Lieu ou lien » mais porte
+    // un `aria-label="Lieu du rendez-vous"` qui ÉCRASE ce texte. Le test le
+    // désigne donc par son nom accessible réel. Ce n'est pas un défaut du test :
+    // un nom accessible qui ne contient pas le libellé visible casse la
+    // commande vocale (WCAG 2.5.3 « Label in Name »). Consigné pour
+    // l'orchestrateur, pas corrigé ici — l'application n'est pas mon périmètre.
+    await form.getByLabel('Lieu du rendez-vous').fill('Visioconférence');
     await form.getByLabel(/Participants/).fill('camille@example.fr');
     await form.getByRole('button', { name: 'Vérifier avant création' }).click();
 
