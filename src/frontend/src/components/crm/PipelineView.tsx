@@ -225,6 +225,9 @@ interface ContactCardProps {
 function ContactCard({ contact, onClick, isOverlay, dragListeners }: ContactCardProps) {
   return (
     <motion.div
+      /* B-151 : repère par élément pour les protocoles (`qsa`). Pas sur la
+         carte de survol du drag, qui doublerait le comptage. */
+      data-testid={isOverlay ? undefined : 'crm-contact-item'}
       layout={!isOverlay}
       initial={isOverlay ? undefined : { opacity: 0, y: 10 }}
       animate={isOverlay ? undefined : { opacity: 1, y: 0 }}

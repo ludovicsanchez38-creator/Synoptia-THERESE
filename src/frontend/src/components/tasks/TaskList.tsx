@@ -116,6 +116,8 @@ export function TaskList() {
           return (
             <motion.div
               key={task.id}
+              /* B-151 : repère par élément pour les protocoles (`qsa`). */
+              data-testid="task-item"
               whileHover={{ scale: 1.005 }}
               whileTap={{ scale: 0.995 }}
               onClick={() => handleTaskClick(task.id)}

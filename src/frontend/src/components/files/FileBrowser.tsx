@@ -423,26 +423,40 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
                   key={entry.path}
                   variants={staggerItem}
                   className={cn(
-                    'flex items-center gap-2 px-3 py-2 hover:bg-background/40 transition-colors cursor-pointer group',
+                    'flex items-center gap-2 px-3 py-2 hover:bg-background/40 transition-colors group',
                     isIndexing && 'opacity-50'
                   )}
-                  onClick={() => handleEntryClick(entry)}
                 >
-                  {/* Icon */}
-                  <div className={cn(
-                    'flex-shrink-0',
-                    entry.isDirectory ? 'text-accent-cyan-ink' : 'text-text-muted'
-                  )}>
-                    <Icon className="w-4 h-4" />
-                  </div>
+                  {/* B-092 : la ligne entière était une <div> animée, sans rôle
+                      ni tabIndex — ni entrer dans un dossier ni choisir un
+                      fichier au clavier. Le nom porte désormais un vrai bouton
+                      (le survol de la ligne reste possible à la souris). */}
+                  <button
+                    type="button"
+                    onClick={() => handleEntryClick(entry)}
+                    className="flex min-w-0 flex-1 items-center gap-2 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    aria-label={
+                      entry.isDirectory
+                        ? `Ouvrir le dossier ${entry.name}`
+                        : `Choisir le fichier ${entry.name}`
+                    }
+                  >
+                    {/* Icon */}
+                    <div className={cn(
+                      'flex-shrink-0',
+                      entry.isDirectory ? 'text-accent-cyan-ink' : 'text-text-muted'
+                    )}>
+                      <Icon className="w-4 h-4" />
+                    </div>
 
-                  {/* Name */}
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-text truncate">{entry.name}</p>
-                    {entry.isFile && entry.size !== undefined && (
-                      <p className="text-xs text-text-muted">{formatSize(entry.size)}</p>
-                    )}
-                  </div>
+                    {/* Name */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-text truncate">{entry.name}</p>
+                      {entry.isFile && entry.size !== undefined && (
+                        <p className="text-xs text-text-muted">{formatSize(entry.size)}</p>
+                      )}
+                    </div>
+                  </button>
 
                   {/* Index button */}
                   {canIndex && (

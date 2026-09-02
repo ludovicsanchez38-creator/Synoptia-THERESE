@@ -356,12 +356,19 @@ export function EmailList({ accountId }: EmailListProps) {
               const isUnread = !message.is_read;
 
               return (
-                <button
+                // B-092 : la corbeille était un <span role="button"> sans
+                // tabIndex, IMBRIQUÉ dans le bouton de la ligne — imbrication
+                // interdite et hors de tout ordre de tabulation. Les deux
+                // commandes sont désormais deux boutons frères.
+                <div
                   key={message.id}
+                  className={`group relative ${isActive ? 'bg-accent-cyan/5' : ''} ${
+                    isUnread ? 'bg-background/40' : ''
+                  }`}
+                >
+                <button
                   onClick={() => setCurrentMessage(message.id)}
-                  className={`group w-full text-left px-4 py-3 hover:bg-border/10 transition-colors ${
-                    isActive ? 'bg-accent-cyan/5' : ''
-                  } ${isUnread ? 'bg-background/40' : ''}`}
+                  className="w-full text-left px-4 py-3 hover:bg-border/10 transition-colors"
                 >
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -384,17 +391,9 @@ export function EmailList({ accountId }: EmailListProps) {
                     </div>
                     {/* Bouton supprimer (visible au hover, remplace la date) */}
                     <span
-                      className="text-xs text-text-muted shrink-0 group-hover:hidden"
+                      className="text-xs text-text-muted shrink-0 group-hover:invisible group-focus-within:invisible"
                     >
                       {formatDate(message.date)}
-                    </span>
-                    <span
-                      className="shrink-0 hidden group-hover:inline-flex"
-                      onClick={(e) => handleTrash(e, message.id)}
-                      role="button"
-                      title="Supprimer"
-                    >
-                      <Trash2 className="w-3.5 h-3.5 text-text-muted hover:text-error transition-colors" />
                     </span>
                   </div>
 
@@ -413,6 +412,19 @@ export function EmailList({ accountId }: EmailListProps) {
 
                   <p className="text-xs text-text-muted line-clamp-2">{message.snippet}</p>
                 </button>
+                {/* Frère du bouton de ligne : atteignable au clavier (l'opacité
+                    le montre au survol comme au focus ; `hidden` l'aurait
+                    retiré de l'ordre de tabulation). */}
+                <button
+                  type="button"
+                  onClick={(e) => handleTrash(e, message.id)}
+                  className="absolute right-4 top-3 inline-flex shrink-0 rounded-sm p-0.5 opacity-0 pointer-events-none transition-opacity group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto focus-visible:opacity-100 focus-visible:pointer-events-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  title="Supprimer"
+                  aria-label={`Supprimer le message « ${message.subject || '(Sans objet)'} »`}
+                >
+                  <Trash2 className="w-3.5 h-3.5 text-text-muted hover:text-error transition-colors" />
+                </button>
+                </div>
               );
             })}
             {hasMore && (

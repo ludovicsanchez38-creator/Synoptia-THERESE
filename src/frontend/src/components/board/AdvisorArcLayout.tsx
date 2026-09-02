@@ -6,6 +6,7 @@
  * Responsive : fallback grille 3+2 sur petits écrans.
  */
 
+import { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   BarChart3,
@@ -81,6 +82,18 @@ export function AdvisorArcLayout({
   onModelChange,
 }: AdvisorArcLayoutProps) {
   const defaultModel = ollamaModels[0]?.name || 'mistral-nemo';
+
+  // B-110 : le sélecteur AFFICHAIT ce défaut sans que personne ne le déclare.
+  // `selectedModels` restait vide tant qu'aucun menu n'était touché, le Board
+  // envoyait alors `ollama_models: {}`, et le serveur retombait sur son propre
+  // calcul (préférence LLM puis modèle détecté) : l'écran annonçait un modèle,
+  // un autre répondait. On déclare donc ce qui est affiché.
+  useEffect(() => {
+    if (mode !== 'sovereign' || ollamaModels.length === 0) return;
+    for (const role of ROLES) {
+      if (!selectedModels[role]) onModelChange(role, defaultModel);
+    }
+  }, [mode, ollamaModels, selectedModels, onModelChange, defaultModel]);
 
   return (
     <div className="relative py-4">

@@ -68,6 +68,53 @@ export interface CalendarSyncResponse {
   synced_at: string;
 }
 
+// CalDAV — brancher un serveur souverain (Nextcloud, iCloud, Fastmail,
+// Radicale, Baikal…). B-129 : les deux routes existaient côté serveur sans
+// aucune surface cliente ; le 400 de la création de calendrier renvoyait même
+// vers une porte qui n'existait pas dans l'application.
+export interface CalDAVCredentials {
+  url: string;
+  username: string;
+  password: string;
+}
+
+export interface CalDAVTestResult {
+  success: boolean;
+  message: string;
+  calendars: Array<{ id: string; name: string }>;
+}
+
+export async function testCaldavConnection(
+  credentials: CalDAVCredentials,
+): Promise<CalDAVTestResult> {
+  const response = await apiFetch(`${API_BASE}/api/calendar/calendars/caldav-test`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(credentials),
+  });
+  if (!response.ok) {
+    const d = await response.json().catch(() => ({}));
+    throw new Error(d.detail || d.message || `Erreur ${response.status}`);
+  }
+  const data = await response.json();
+  return { calendars: [], ...data };
+}
+
+export async function setupCaldavCalendars(
+  credentials: CalDAVCredentials,
+): Promise<Calendar[]> {
+  const response = await apiFetch(`${API_BASE}/api/calendar/calendars/caldav-setup`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(credentials),
+  });
+  if (!response.ok) {
+    const d = await response.json().catch(() => ({}));
+    throw new Error(d.detail || d.message || `Erreur ${response.status}`);
+  }
+  return response.json();
+}
+
 // Calendars
 export async function listCalendars(
   accountId?: string,

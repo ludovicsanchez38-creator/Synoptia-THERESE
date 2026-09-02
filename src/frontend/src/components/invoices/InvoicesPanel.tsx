@@ -310,6 +310,8 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
             return (
               <motion.div
                 key={invoice.id}
+                /* B-151 : repère par élément pour les protocoles (`qsa`). */
+                data-testid="invoice-item"
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 className={cn(

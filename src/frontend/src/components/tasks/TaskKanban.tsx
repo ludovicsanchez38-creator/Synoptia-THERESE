@@ -288,6 +288,9 @@ function TaskCard({ task, onClick, onStatusChange, isOverlay, showDragHandle, ma
 
   return (
     <motion.div
+      /* B-151 : repère par élément pour les protocoles (`qsa`). Pas sur la
+         carte de survol du drag, qui doublerait le comptage. */
+      data-testid={isOverlay ? undefined : 'task-item'}
       whileHover={isOverlay ? undefined : { scale: 1.02 }}
       whileTap={isOverlay ? undefined : { scale: 0.98 }}
       onMouseEnter={() => setShowActions(true)}

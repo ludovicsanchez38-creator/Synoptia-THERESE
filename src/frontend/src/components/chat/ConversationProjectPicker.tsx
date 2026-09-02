@@ -56,6 +56,10 @@ export function ConversationProjectPicker({
     projectId ?? (memoryScope === 'all' ? TOUS_LES_PROJETS : '');
   const [selection, setSelection] = useState<string>(valeurInitiale);
   const [enCours, setEnCours] = useState(false);
+  // B-056 : une liste vide affirmait « aucun dossier où se rattacher ». Une
+  // panne de lecture n'est pas une absence de dossiers, et l'utilisateur ne
+  // pouvait pas faire la différence.
+  const [listeIndisponible, setListeIndisponible] = useState(false);
 
   useEffect(() => {
     setSelection(projectId ?? (memoryScope === 'all' ? TOUS_LES_PROJETS : ''));
@@ -69,10 +73,14 @@ export function ConversationProjectPicker({
       .then((liste) => {
         if (vivant && Array.isArray(liste)) {
           setProjets(liste.map((p: ProjetAffichable) => ({ id: p.id, name: p.name })));
+          setListeIndisponible(false);
         }
       })
       .catch(() => {
-        if (vivant) setProjets([]);
+        if (vivant) {
+          setProjets([]);
+          setListeIndisponible(true);
+        }
       });
     return () => {
       vivant = false;
@@ -163,6 +171,15 @@ export function ConversationProjectPicker({
         })}
         <option value={TOUS_LES_PROJETS}>Tous les projets</option>
       </select>
+      {listeIndisponible && (
+        <span
+          role="alert"
+          className="shrink-0 text-xs text-warning"
+          title="La liste des dossiers n’a pas pu être lue : ce menu est incomplet. Réessaie dans un instant."
+        >
+          Dossiers non lus
+        </span>
+      )}
     </label>
   );
 }

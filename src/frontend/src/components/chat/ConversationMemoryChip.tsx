@@ -17,6 +17,10 @@ export function ConversationMemoryChip() {
   const conversationId = useChatStore((s) => s.currentConversationId);
   const contacts = useContactsStore((s) => s.contacts);
   const fetchContacts = useContactsStore((s) => s.fetchContacts);
+  // B-056 : le store POSE une erreur de lecture, la pastille la jetait. Sans
+  // elle, « aucun contact lié » et « contacts non lus » s'affichaient pareil,
+  // c'est-à-dire pas du tout.
+  const erreurLecture = useContactsStore((s) => s.error);
 
   // Chargement paresseux : si le store n'a pas encore les contacts (l'utilisateur
   // n'a ouvert ni Mémoire ni CRM), on les charge une fois pour alimenter la pastille.
@@ -36,7 +40,23 @@ export function ConversationMemoryChip() {
     [contacts, conversationId]
   );
 
-  if (!conversationId || linked.length === 0) return null;
+  if (!conversationId) return null;
+
+  if (linked.length === 0) {
+    if (!erreurLecture) return null;
+    // Ne rien dire ici, c'est affirmer qu'aucun contact n'est lié.
+    return (
+      <div className="px-4 py-1.5">
+        <span
+          role="alert"
+          className="inline-flex items-center gap-1.5 rounded-sm border border-warning/40 bg-warning/10 px-2.5 py-1 text-sm text-warning"
+        >
+          <Users className="h-3.5 w-3.5" />
+          Contacts non lus : le lien avec cette conversation est inconnu.
+        </span>
+      </div>
+    );
+  }
 
   const n = linked.length;
   const label = `${n} contact${n > 1 ? 's' : ''} lié${n > 1 ? 's' : ''} à cette conversation`;

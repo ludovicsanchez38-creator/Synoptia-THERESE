@@ -9,6 +9,7 @@ import { ExportProfileSection } from './ExportProfileSection';
 import { VariablesSection } from './VariablesSection';
 import { handleRovingFocus } from '../../lib/rovingFocus';
 import { EmailAccountsSection } from './EmailAccountsSection';
+import { CalDAVSection } from './CalDAVSection';
 import { Spinner } from '../ui/Spinner';
 
 export interface ServicesTabProps {
@@ -93,6 +94,9 @@ export function ServicesTab({
 
       {/* Génération d'images */}
       <EmailAccountsSection />
+
+      {/* B-129 : la seule porte cliente vers caldav-test / caldav-setup. */}
+      <CalDAVSection />
 
       <div className="space-y-3">
         <div className="flex items-center gap-3">

@@ -219,7 +219,14 @@ export const MessageBubble = memo(function MessageBubble({
     try {
       await downloadGeneratedImage(message.imageId);
     } catch (err) {
+      // B-056 : le clic restait sans effet visible, alors que le MÊME composant
+      // notifie déjà l'utilisateur quand un fichier de skill est introuvable.
       console.error('Download failed:', err);
+      useStatusStore.getState().addNotification({
+        type: 'error',
+        title: 'Enregistrement impossible',
+        message: "L'image n'a pas pu être enregistrée. Réessaie dans un instant.",
+      });
     } finally {
       setDownloading(false);
     }

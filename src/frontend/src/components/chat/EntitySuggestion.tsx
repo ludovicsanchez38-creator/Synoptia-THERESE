@@ -31,7 +31,7 @@ interface EntityItemProps {
 }
 
 function EntityItem({ type, name, subtitle, confidence, onSave, onIgnore }: EntityItemProps) {
-  const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'ignored'>('idle');
+  const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'ignored' | 'error'>('idle');
 
   const handleSave = async () => {
     setStatus('saving');
@@ -39,8 +39,10 @@ function EntityItem({ type, name, subtitle, confidence, onSave, onIgnore }: Enti
       await onSave();
       setStatus('saved');
     } catch (error) {
+      // B-056 : revenir à 'idle' rendait l'échec indiscernable d'un clic jamais
+      // fait. On le dit, et la carte reste actionnable pour réessayer.
       console.error('Failed to save entity:', error);
-      setStatus('idle');
+      setStatus('error');
     }
   };
 
@@ -61,7 +63,7 @@ function EntityItem({ type, name, subtitle, confidence, onSave, onIgnore }: Enti
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 10 }}
-      className="flex items-center gap-3 px-3 py-2 rounded-md bg-surface-elevated border border-border"
+      className="flex flex-wrap items-center gap-3 px-3 py-2 rounded-md bg-surface-elevated border border-border"
     >
       <div className="flex-shrink-0">
         <div className={`p-1.5 rounded-md ${type === 'contact' ? 'bg-agent-cyan/20' : 'bg-magenta-500/20'}`}>
@@ -100,6 +102,13 @@ function EntityItem({ type, name, subtitle, confidence, onSave, onIgnore }: Enti
           </>
         )}
       </div>
+
+      {status === 'error' && (
+        <p role="alert" className="w-full text-xs text-error">
+          Enregistrement impossible : {type === 'contact' ? 'ce contact' : 'ce projet'}
+          {' '}n’a pas été ajouté à la mémoire. Réessaie.
+        </p>
+      )}
     </motion.div>
   );
 }
