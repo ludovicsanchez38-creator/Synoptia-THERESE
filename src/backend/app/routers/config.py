@@ -136,6 +136,27 @@ async def get_config(session: AsyncSession = Depends(get_session)):
         [f"{p}_api_key" for p in fournisseurs_llm] + [f"{c}_api_key" for c in autres_cles],
     )
 
+    api_keys_source: dict[str, str] = {}
+
+    def _origine(nom: str, env_ok: bool) -> str:
+        """D'où vient la clé que le runtime utilisera réellement (B-239).
+
+        `llm.py` lit la base AVANT l'environnement (`_get_api_key_from_db(...)
+        or os.getenv(...)`) : l'ordre ci-dessous est celui de la résolution
+        réelle, pas l'inverse. Un booléen ne pouvait pas distinguer une clé
+        confiée à l'application, chiffrée localement, d'une variable
+        d'environnement que l'application n'a jamais vue passer — et l'écran
+        affirmait le chiffrement dans les deux cas.
+        """
+        has_db, is_corrupted = verdicts[f"{nom}_api_key"]
+        if has_db:
+            return "coffre"
+        if env_ok:
+            return "environnement"
+        if is_corrupted:
+            return "corrompue"
+        return "absente"
+
     def _statut(nom: str, env_ok: bool) -> bool:
         if env_ok:
             return True
@@ -154,12 +175,21 @@ async def get_config(session: AsyncSession = Depends(get_session)):
         elif fournisseur == "gemini":
             env_ok = env_ok or bool(os.environ.get("GOOGLE_API_KEY"))
         api_keys[fournisseur] = _statut(fournisseur, env_ok)
+        api_keys_source[fournisseur] = _origine(fournisseur, env_ok)
 
     # Clés hors LLM (images, recherche web) : même flux groupé.
-    has_openai_image = _statut("openai_image", bool(os.environ.get("OPENAI_IMAGE_API_KEY")))
-    has_gemini_image = _statut("gemini_image", bool(os.environ.get("GEMINI_IMAGE_API_KEY")))
-    has_fal = _statut("fal", bool(os.environ.get("FAL_API_KEY")))
-    has_brave = _statut("brave", bool(os.environ.get("BRAVE_API_KEY")))
+    def _statut_hors_llm(nom: str, env_ok: bool) -> bool:
+        api_keys_source[nom] = _origine(nom, env_ok)
+        return _statut(nom, env_ok)
+
+    has_openai_image = _statut_hors_llm(
+        "openai_image", bool(os.environ.get("OPENAI_IMAGE_API_KEY"))
+    )
+    has_gemini_image = _statut_hors_llm(
+        "gemini_image", bool(os.environ.get("GEMINI_IMAGE_API_KEY"))
+    )
+    has_fal = _statut_hors_llm("fal", bool(os.environ.get("FAL_API_KEY")))
+    has_brave = _statut_hors_llm("brave", bool(os.environ.get("BRAVE_API_KEY")))
 
     # Champs historiques, servis depuis la carte (compatibilité).
     has_anthropic = api_keys["anthropic"]
@@ -199,6 +229,7 @@ async def get_config(session: AsyncSession = Depends(get_session)):
         web_search_enabled=web_search_enabled,
         corrupted_keys=corrupted_keys,
         api_keys=api_keys,
+        api_keys_source=api_keys_source,
     )
 
 

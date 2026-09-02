@@ -478,6 +478,12 @@ class ConfigResponse(BaseModel):
     # Cette carte couvre TOUS les fournisseurs LLM ; les champs historiques
     # restent pour compatibilite.
     api_keys: dict[str, bool] = {}
+    # B-239 : le booléen ci-dessus dit qu'une clé existe, jamais d'où elle
+    # vient. L'écran en déduisait « chiffrée localement » pour une variable
+    # d'environnement que l'application n'a ni reçue ni stockée. Cette carte
+    # jumelle donne l'origine réelle : coffre, environnement, corrompue,
+    # absente — dans l'ordre de résolution du runtime (base avant env).
+    api_keys_source: dict[str, str] = {}
     ollama_available: bool
     # Web search settings
     web_search_enabled: bool = True

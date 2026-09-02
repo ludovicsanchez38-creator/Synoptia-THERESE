@@ -21,10 +21,49 @@ class ValidationResult:
 
 @dataclass
 class GoogleCredentials:
-    """Credentials Google OAuth (depuis MCP ou saisie manuelle)."""
+    """Credentials Google OAuth (depuis MCP ou saisie manuelle).
+
+    B-034 : `client_secret` reste dans le contrat, mais TOUJOURS vide. Le
+    secret ne traverse aucune réponse HTTP ; l'écran sait seulement qu'il
+    existe (`has_client_secret`), et l'autorisation le retrouve côté serveur.
+    Le champ n'est pas retiré à dessein : le supprimer ferait partir un corps
+    sans `client_secret` vers /api/email/auth/initiate, donc un 422.
+    """
     client_id: str
-    client_secret: str
-    source: str  # 'mcp' ou 'manual'
+    client_secret: str = ""
+    source: str = "mcp"  # 'mcp' ou 'manual'
+    has_client_secret: bool = False
+
+
+def identifiants_google_mcp() -> tuple[str, str] | None:
+    """Les identifiants OAuth Google rangés dans un serveur MCP, déchiffrés.
+
+    Reste côté serveur : c'est le pendant, pour la mise en route e-mail, de ce
+    que fait déjà la synchronisation Google Sheets (routers/crm.py).
+    """
+    from app.services.encryption import decrypt_value, is_value_encrypted
+
+    try:
+        from app.services.mcp_service import get_mcp_service
+
+        mcp_service = get_mcp_service()
+        for server_id, server in mcp_service.servers.items():
+            if 'google' in server.name.lower() or 'google-workspace' in server_id:
+                env = server.env or {}
+                client_id = env.get('GOOGLE_OAUTH_CLIENT_ID', '')
+                client_secret = env.get('GOOGLE_OAUTH_CLIENT_SECRET', '')
+
+                if client_id and is_value_encrypted(client_id):
+                    client_id = decrypt_value(client_id)
+                if client_secret and is_value_encrypted(client_secret):
+                    client_secret = decrypt_value(client_secret)
+
+                if client_id and client_secret:
+                    return client_id, client_secret
+    except Exception:
+        # MCP service not available or no Google server configured
+        pass
+    return None
 
 
 @dataclass
@@ -60,7 +99,6 @@ class EmailSetupAssistant:
     async def detect_existing_credentials(session: AsyncSession) -> SetupStatus:
         """Détecte si des credentials email existent déjà."""
         from app.models.entities import EmailAccount
-        from app.services.encryption import decrypt_value, is_value_encrypted
 
         # Check Gmail OAuth
         stmt = select(EmailAccount)
@@ -70,35 +108,19 @@ class EmailSetupAssistant:
         gmail_account = next((acc for acc in accounts if acc.provider == 'gmail'), None)
         smtp_account = next((acc for acc in accounts if acc.provider == 'smtp'), None)
 
-        # Check if Google OAuth credentials exist in MCP servers
+        # Check if Google OAuth credentials exist in MCP servers.
+        # B-034 : le client_id n'est pas un secret (il voyage dans l'URL
+        # d'autorisation Google) ; le client_secret, si, et il reste ici.
         google_creds = None
-        try:
-            from app.services.mcp_service import get_mcp_service
-            mcp_service = get_mcp_service()
-
-            # Look for Google Workspace MCP server
-            for server_id, server in mcp_service.servers.items():
-                if 'google' in server.name.lower() or 'google-workspace' in server_id:
-                    env = server.env or {}
-                    client_id = env.get('GOOGLE_OAUTH_CLIENT_ID', '')
-                    client_secret = env.get('GOOGLE_OAUTH_CLIENT_SECRET', '')
-
-                    # Decrypt if encrypted
-                    if client_id and is_value_encrypted(client_id):
-                        client_id = decrypt_value(client_id)
-                    if client_secret and is_value_encrypted(client_secret):
-                        client_secret = decrypt_value(client_secret)
-
-                    if client_id and client_secret:
-                        google_creds = GoogleCredentials(
-                            client_id=client_id,
-                            client_secret=client_secret,
-                            source='mcp'
-                        )
-                        break
-        except Exception:
-            # MCP service not available or no Google server configured
-            pass
+        identifiants = identifiants_google_mcp()
+        if identifiants is not None:
+            client_id, _ = identifiants
+            google_creds = GoogleCredentials(
+                client_id=client_id,
+                client_secret="",
+                source='mcp',
+                has_client_secret=True,
+            )
 
         return SetupStatus(
             has_gmail=gmail_account is not None,

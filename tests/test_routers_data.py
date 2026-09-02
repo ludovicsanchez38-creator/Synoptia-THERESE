@@ -149,7 +149,7 @@ class TestDataExport:
                 "updated_at": prestation["updated_at"],
             }
         ]
-        assert exported["data_format_version"] == "1.3"
+        assert exported["data_format_version"] == "1.4"
 
     @pytest.mark.asyncio
     async def test_export_all_data_contains_documents_sections_pistes(self, client: AsyncClient):

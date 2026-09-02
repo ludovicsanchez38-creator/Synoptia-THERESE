@@ -401,3 +401,59 @@ class TestOllamaStatus:
         assert response.status_code == 200
         status = response.json()
         assert "available" in status
+
+
+class TestOrigineDesClesApi:
+    """B-239 : une clé lue dans l'environnement n'est pas une clé chiffrée localement.
+
+    L'écran d'accueil affirmait « Clé API configurée (chiffrée localement) »
+    pour une variable d'environnement : rien n'avait été saisi, rien n'avait
+    été stocké, rien n'avait été chiffré. Le contrat ne transportait qu'un
+    booléen, il n'y avait pas de place pour dire d'où venait la clé.
+    """
+
+    @pytest.mark.asyncio
+    async def test_origine_de_la_cle_distingue_environnement_et_coffre(
+        self, client: AsyncClient, monkeypatch
+    ):
+        """L'origine est explicite : absente, environnement, puis coffre.
+
+        `groq` est choisi à dessein : contrairement à anthropic et mistral, il
+        n'a pas de repli sur `settings`, dont les valeurs sont figées à
+        l'import et insensibles à monkeypatch.
+        """
+        monkeypatch.delenv("GROQ_API_KEY", raising=False)
+
+        # 1. Rien nulle part.
+        config = (await client.get("/api/config/")).json()
+        assert config["api_keys"]["groq"] is False
+        assert config["api_keys_source"]["groq"] == "absente"
+
+        # 2. Uniquement dans l'environnement : jamais saisie, jamais chiffrée.
+        monkeypatch.setenv("GROQ_API_KEY", "gsk_temoin_environnement")
+        config = (await client.get("/api/config/")).json()
+        assert config["api_keys"]["groq"] is True
+        assert config["api_keys_source"]["groq"] == "environnement", (
+            "une variable d'environnement ne doit jamais se présenter comme "
+            "une clé confiée à l'application"
+        )
+
+        # 3. Confiée à l'application : chiffrée en base, et c'est elle que le
+        #    runtime utilise (llm.py lit la base AVANT l'environnement).
+        reponse = await client.post(
+            "/api/config/api-key",
+            json={"provider": "groq", "api_key": "gsk_temoin_coffre"},
+        )
+        assert reponse.status_code == 200, reponse.text
+        config = (await client.get("/api/config/")).json()
+        assert config["api_keys"]["groq"] is True
+        assert config["api_keys_source"]["groq"] == "coffre"
+
+    @pytest.mark.asyncio
+    async def test_origine_couvre_les_cles_hors_llm(self, client: AsyncClient):
+        """Les 4 clés hors LLM passent par le même verdict que les 14 fournisseurs."""
+        config = (await client.get("/api/config/")).json()
+        sources = config["api_keys_source"]
+        for cle in ("openai_image", "gemini_image", "fal", "brave", "anthropic", "openai"):
+            assert cle in sources, f"origine manquante pour {cle}"
+            assert sources[cle] in {"absente", "environnement", "coffre", "corrompue"}

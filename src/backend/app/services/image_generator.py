@@ -7,6 +7,7 @@ Supports GPT Image 2 (OpenAI) and Nano Banana 2 (Google Gemini).
 import base64
 import logging
 import os
+import re
 import uuid
 from dataclasses import dataclass
 from datetime import datetime
@@ -17,6 +18,10 @@ from typing import Literal
 from app.services.error_handler import ErrorCode, TheresError
 
 logger = logging.getLogger(__name__)
+
+# B-036 : forme d'un identifiant d'image, telle que `_save_image` la produit
+# (`str(uuid.uuid4())[:8]`). Tout le reste est refusé AVANT le moindre glob.
+IMAGE_ID_PATTERN = re.compile(r"^[0-9a-f]{8}$")
 
 
 def _get_api_key_from_db(provider: str) -> str | None:
@@ -401,7 +406,16 @@ class ImageGeneratorService:
 
     def get_image(self, image_id: str) -> GeneratedImage | None:
         """Get a previously generated image by ID."""
-        for file_path in self.output_dir.glob(f"*_{image_id}.*"):
+        # B-036 : l'identifiant vient d'un paramètre de chemin et partait tel
+        # quel dans un motif glob. Un joker désignait alors des fichiers que
+        # l'appelant n'avait pas nommés — DELETE /api/images/* supprimait une
+        # image au hasard, GET /api/images/download/prive rendait un fichier
+        # hors nomenclature. La forme réelle d'un identifiant est celle que
+        # `generate` produit : un uuid4 tronqué à 8 caractères hexadécimaux.
+        if not IMAGE_ID_PATTERN.match(image_id):
+            logger.warning("Identifiant d'image refusé (forme invalide)")
+            return None
+        for file_path in self.output_dir.glob(f"therese_*_{image_id}.*"):
             if file_path.is_file():
                 return GeneratedImage(
                     id=image_id,

@@ -155,19 +155,35 @@ class EmailResponseGenerator:
             user_name, user_role, user_company, tone, length
         )
 
+        # B-035. Le corps d'un e-mail reçu, son sujet et son expéditeur sont
+        # des données TIERCES : elles entrent dans le prompt encadrées par
+        # [Source: email]...[End email], et les marqueurs qu'elles portent
+        # sont neutralisés — exactement ce que fait déjà _summarize_emails sur
+        # le même contenu. Sans cette enveloppe, un faux [End email] placé
+        # dans le corps sortait de l'encadrement et le reste du message était
+        # lu comme une consigne.
+        from app.services.prompt_security import get_prompt_security
+
+        securite = get_prompt_security()
+        message_recu = securite.sanitize_for_context(
+            f"De : {from_name} ({from_email})\nSujet : {subject}\n\n{body}",
+            source="email",
+        )
+
         # Contexte additionnel
         additional_context = ""
         if contact_context:
+            # Le CRM vient de la base de l'utilisateur, pas d'un tiers.
             additional_context += f"\n\nContexte CRM du contact :\n{contact_context}"
         if thread_context:
-            additional_context += f"\n\nHistorique de la conversation :\n{thread_context}"
+            # Même origine non fiable que le corps : même enveloppe.
+            historique = securite.sanitize_for_context(thread_context, source="email")
+            additional_context += f"\n\nHistorique de la conversation :\n{historique}"
 
         # Prompt utilisateur
-        user_prompt = f"""Email reçu de {from_name} ({from_email}) :
+        user_prompt = f"""Email reçu :
 
-Sujet : {subject}
-
-{body}
+{message_recu}
 {additional_context}
 
 Rédige une réponse appropriée en français."""

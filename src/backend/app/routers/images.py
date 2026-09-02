@@ -267,7 +267,9 @@ async def delete_image(image_id: str) -> dict:
 
     try:
         image.file_path.unlink()
-        return {"deleted": True, "id": image_id}
+        # B-036 : dire quel fichier a réellement été supprimé, pas seulement
+        # l'identifiant demandé.
+        return {"deleted": True, "id": image_id, "file_name": image.file_name}
     except Exception as e:
         logger.error(f"Failed to delete image {image_id}: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to delete image: {e}")

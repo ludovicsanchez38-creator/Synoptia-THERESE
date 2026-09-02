@@ -297,9 +297,27 @@ async def initiate_oauth(
 
     US-EMAIL-01: OAuth Gmail
     SEC-008: Credentials transmis dans le body POST (pas en query params).
+    B-034: le secret peut rester côté serveur. Quand le corps ne le porte pas,
+    on le retrouve dans le serveur MCP google qui porte le même client_id,
+    au lieu d'exiger que la route de statut l'ait rendu en clair à l'écran.
     """
+    from app.services.email_setup_assistant import identifiants_google_mcp
+
+    client_secret = request.client_secret
+    if not client_secret.strip():
+        identifiants = identifiants_google_mcp()
+        if identifiants is None or identifiants[0] != request.client_id:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "Aucun code secret client enregistré pour cet ID client. "
+                    "Saisis-le, ou importe ton fichier credentials.json."
+                ),
+            )
+        client_secret = identifiants[1]
+
     oauth_service = get_oauth_service()
-    config = get_gmail_oauth_config(request.client_id, request.client_secret)
+    config = get_gmail_oauth_config(request.client_id, client_secret)
 
     flow_data = oauth_service.initiate_flow('gmail', config)
 

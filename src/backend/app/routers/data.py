@@ -95,6 +95,59 @@ def _export_row(
 # ============================================================
 
 
+def _valeur_de_preference_exportable(pref: Preference) -> str:
+    """La valeur d'une préférence, telle qu'elle peut sortir de l'export."""
+    from app.services.user_profile import PROFILE_KEY
+
+    if "api_key" in pref.key.lower():
+        return "[REDACTED]"
+    if pref.key == PROFILE_KEY:
+        return "[voir la section profil]"
+    valeur: str = pref.value
+    return valeur
+
+
+def _profil_pour_export() -> dict[str, Any] | None:
+    """Le profil de l'utilisateur, en clair, pour l'export RGPD (B-212).
+
+    L'export ne restituait le profil que par la préférence `user_profile`,
+    dont la valeur est un jeton chiffré : le nom, la société, le métier,
+    l'e-mail et la ville en sortaient illisibles, et aucune section ne portait
+    l'identité. Un droit à la portabilité qui rend un blob ne restitue rien.
+
+    Lecture SYNCHRONE : `_assembler_export_rgpd` tourne hors boucle asyncio.
+    Un profil illisible ne fait jamais échouer l'export : il rend None.
+    """
+    from app.models.database import get_sync_session
+    from app.services.encryption import decrypt_value, is_value_encrypted
+    from app.services.user_profile import (
+        PROFILE_CATEGORY,
+        PROFILE_KEY,
+        UserProfile,
+    )
+
+    session = get_sync_session()
+    try:
+        pref = session.execute(
+            select(Preference).where(
+                Preference.key == PROFILE_KEY,
+                Preference.category == PROFILE_CATEGORY,
+            )
+        ).scalars().first()
+        if pref is None or not pref.value:
+            return None
+        valeur = pref.value
+        if is_value_encrypted(valeur):
+            valeur = decrypt_value(valeur)
+        profil: dict[str, Any] = UserProfile.from_dict(json.loads(valeur)).to_dict()
+        return profil
+    except Exception as e:
+        logger.error("Profil illisible a l'export RGPD: %s", e)
+        return None
+    finally:
+        session.close()
+
+
 def _assembler_export_rgpd() -> dict[str, Any]:
     """Construit le JSON RGPD hors de la boucle asyncio (lot F)."""
     from app.models.database import get_sync_session
@@ -177,7 +230,9 @@ def _assembler_export_rgpd() -> dict[str, Any]:
             "app_version": settings.app_version,
             # Lot D : l'ajout des prestations change le contrat portable. Garder
             # 1.2 ferait croire à un export complet aux anciens consommateurs.
-            "data_format_version": "1.3",
+            # B-212 : la section profil suit la même règle, d'où 1.4.
+            "data_format_version": "1.4",
+            "profil": _profil_pour_export(),
             "variables": [
                 {
                     "id": v.id,
@@ -216,7 +271,10 @@ def _assembler_export_rgpd() -> dict[str, Any]:
                 {
                     "id": p.id,
                     "key": p.key,
-                    "value": p.value if "api_key" not in p.key.lower() else "[REDACTED]",
+                    # B-212 : le profil est restitué en clair dans la section
+                    # "profil" ; recopier ici son jeton chiffré n'apportait
+                    # qu'un blob illisible dans un export de portabilité.
+                    "value": _valeur_de_preference_exportable(p),
                     "category": p.category,
                     "created_at": p.created_at.isoformat(),
                     "updated_at": p.updated_at.isoformat(),

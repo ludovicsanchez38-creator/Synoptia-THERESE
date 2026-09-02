@@ -9,6 +9,7 @@ from datetime import UTC
 
 import vobject
 from app.services.calendar.base_provider import allday_end_from_wire
+from app.services.crm_import import _sanitize_field
 from icalendar import Calendar
 
 logger = logging.getLogger(__name__)
@@ -149,6 +150,16 @@ def parse_vcf(content: bytes) -> list[dict]:
         # Notes
         if hasattr(vcard, "note"):
             contact["notes"] = vcard.note.value
+
+        # B-054 : la VCard est un fichier tiers, au même titre qu'un CSV. Les
+        # deux routes qui appellent parse_vcf posaient ces valeurs directement
+        # dans Contact(...) sans jamais passer par la neutralisation SEC-017
+        # qu'applique le chemin CSV/Excel/JSON. Un `=HYPERLINK(...)` importé
+        # ici redevenait une formule active au premier export tableur.
+        # Neutraliser à la sortie du parseur ferme les DEUX routes d'un coup.
+        contact = {
+            champ: _sanitize_field(valeur, champ) for champ, valeur in contact.items()
+        }
 
         # Ne garder que les contacts avec au moins un nom
         if contact.get("first_name") or contact.get("last_name"):
