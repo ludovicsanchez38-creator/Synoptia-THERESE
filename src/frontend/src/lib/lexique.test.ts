@@ -142,6 +142,60 @@ describe('Aucun terme technique dans les registres de textes', () => {
   });
 });
 
+/**
+ * B-245 : le groupe central de la fenêtre « Raccourcis clavier » s'intitulait
+ * « Core Features », en anglais, au milieu de quatre titres français, et une
+ * description écrivait « tache » sans accent circonflexe.
+ *
+ * Le garde-fou ci-dessus ne voyait rien : il contrôle le VOCABULAIRE interdit
+ * (Calendrier -> Agenda, provider, MCP...), ni la langue ni les accents. Il est
+ * donc étendu ici, sur le même registre exporté.
+ */
+const MOTS_ANGLAIS: RegExp[] = [
+  /\bcore\b/i,
+  /\bfeatures?\b/i,
+  /\bsettings\b/i,
+  /\bshortcuts?\b/i,
+  /\bsidebar\b/i,
+  /\bfiles?\b/i,
+  /\bsearch\b/i,
+  /\bcalendar\b/i,
+  /\bboard\b/i,
+  /\bview\b/i,
+  /\bhome\b/i,
+  /\bhelp\b/i,
+  /\bnew\b/i,
+  /\bopen\b/i,
+  /\bclose\b/i,
+];
+
+describe('B-245 : la fenêtre des raccourcis est écrite en français', () => {
+  const textes: [string, string][] = SHORTCUT_GROUPS.flatMap((g) => [
+    [`groupe ${g.title}`, g.title] as [string, string],
+    ...g.shortcuts.map(
+      (s): [string, string] => [`raccourci ${g.title}`, s.description],
+    ),
+  ]);
+
+  it('aucun intitulé ni description ne porte de mot anglais', () => {
+    // Sans cette borne, un registre vidé rendrait le test vert sans rien lire.
+    expect(textes.length).toBeGreaterThanOrEqual(20);
+    const fautifs = textes
+      .filter(([, texte]) => MOTS_ANGLAIS.some((motif) => motif.test(texte)))
+      .map(([origine, texte]) => `${origine} : « ${texte} »`);
+    expect(fautifs).toEqual([]);
+  });
+
+  it('les tâches s’écrivent avec leur accent circonflexe', () => {
+    const sansAccent = textes
+      .filter(([, texte]) => /\btaches?\b/i.test(texte))
+      .map(([origine, texte]) => `${origine} : « ${texte} »`);
+    expect(sansAccent).toEqual([]);
+    // Contre-épreuve : la fenêtre parle bien de tâches quelque part.
+    expect(textes.some(([, texte]) => /tâches?/i.test(texte))).toBe(true);
+  });
+});
+
 describe('Le lexique impose un mot par chose (table RULES-DESIGN.md)', () => {
   it('un seul mot pour les réglages : « Paramètres »', () => {
     const reglages = CAPACITES.find((c) => c.id === 'reglages');

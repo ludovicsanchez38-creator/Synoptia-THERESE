@@ -13,6 +13,17 @@ import type { CalendarEvent } from '../../services/api';
 import { getVisibleHourRange } from './calendarHours';
 import { getTimedEventLayout } from './calendarEventLayout';
 
+/** B-247 : la semaine française commence le LUNDI. Une seule liste pour les
+ *  deux vues — le Mois et la Semaine tenaient chacun la leur, et le Mois avait
+ *  gardé la convention américaine (dimanche d'abord). */
+const ETIQUETTES_JOURS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+
+/** Index de la colonne d'un jour dans une semaine qui commence au lundi
+ *  (`getDay()` rend 0 pour dimanche). */
+function colonneLundiDabord(date: Date): number {
+  return (date.getDay() + 6) % 7;
+}
+
 export function CalendarView() {
   const { events, viewMode, selectedDate, showCancelled, searchQuery, setCurrentEvent } =
     useCalendarStore();
@@ -157,7 +168,7 @@ function MonthView({
     const month = selectedDate.getMonth();
     const monthStart = new Date(year, month, 1);
     const monthEnd = new Date(year, month + 1, 0);
-    const startDay = monthStart.getDay(); // 0 = Sunday
+    const startDay = colonneLundiDabord(monthStart); // 0 = lundi (B-247)
     const daysInMonth = monthEnd.getDate();
 
     // Build calendar grid (6 weeks max)
@@ -201,7 +212,7 @@ function MonthView({
     return map;
   }, [events]);
 
-  const weekDays = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+  const weekDays = ETIQUETTES_JOURS;
   const currentMonth = monthStart.getMonth();
   const today = new Date();
   const todayStr = localDateKey(today);
@@ -285,16 +296,21 @@ function WeekView({
     const allDayByDate: Record<string, CalendarEvent[]> = {};
     const timedByDate: Record<string, CalendarEvent[]> = {};
 
+    // B-144 : les bornes se comparent en CLÉS CIVILES, jamais en objets Date.
+    // `new Date('2026-09-06')` vaut minuit UTC (spécification ECMAScript)
+    // tandis que `new Date(2026, 8, 6)` vaut minuit LOCAL : à Paris le dernier
+    // jour de la semaine dépassait la borne haute et sa colonne se rendait
+    // vide (en UTC- c'était le premier jour). Deux chaînes « YYYY-MM-DD » se
+    // comparent dans l'ordre chronologique, sans fuseau.
+    const debutSemaine = localDateKey(weekDates[0]);
+    const finSemaine = localDateKey(weekDates[6]);
+
     events.forEach((event) => {
       const dateKey = event.start_date || event.start_datetime?.split('T')[0] || '';
       if (!dateKey) return;
 
       // Vérifier si l'événement est dans la semaine visible
-      const eventDate = new Date(dateKey);
-      const weekStart = weekDates[0];
-      const weekEnd = weekDates[6];
-      if (eventDate < new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate()) ||
-          eventDate > new Date(weekEnd.getFullYear(), weekEnd.getMonth(), weekEnd.getDate())) {
+      if (dateKey < debutSemaine || dateKey > finSemaine) {
         return;
       }
 
@@ -363,7 +379,7 @@ function WeekView({
 
   const hasAnyAllDay = Object.keys(allDayByDate).length > 0;
 
-  const weekDayLabels = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+  const weekDayLabels = ETIQUETTES_JOURS;
 
   return (
     <motion.div

@@ -314,7 +314,12 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
           )}
 
           {activeTab === 'activities' && !selectedContact && (
-            <GlobalActivityView contacts={contacts} />
+            // B-205 : le fil charge les activités de TOUS les contacts
+            // (`listActivities` sans filtre) ; il doit donc les nommer depuis le
+            // magasin COMPLET, jamais depuis la vue filtrée du pipeline (filtre
+            // délibéré, plus haut) — sinon la vue affiche une ligne qu'elle
+            // s'interdit ensuite de nommer (« Contact inconnu »).
+            <GlobalActivityView annuaire={allContacts} />
           )}
         </AnimatePresence>
       )}
@@ -579,7 +584,7 @@ const GLOBAL_ACTIVITY_COLORS: Record<string, string> = {
   note: 'text-warning',
 };
 
-function GlobalActivityView({ contacts }: { contacts: ContactResponse[] }) {
+function GlobalActivityView({ annuaire }: { annuaire: ContactResponse[] }) {
   const [activities, setActivities] = useState<ActivityResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -605,7 +610,7 @@ function GlobalActivityView({ contacts }: { contacts: ContactResponse[] }) {
     : activities.filter(a => a.type === filter);
 
   const getContactName = (contactId: string) => {
-    const contact = contacts.find(c => c.id === contactId);
+    const contact = annuaire.find(c => c.id === contactId);
     if (!contact) return 'Contact inconnu';
     return `${contact.first_name} ${contact.last_name || ''}`.trim();
   };

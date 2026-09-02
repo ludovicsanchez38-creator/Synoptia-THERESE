@@ -289,6 +289,18 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
     setSelectedDate(new Date());
   }
 
+  /** B-238 : choisir une vue est un geste qui RANGE la surface, pas seulement
+   *  un changement de `viewMode`. La cascade de rendu donne la priorité à
+   *  `currentEventId` (la fiche) : après une création, `EventForm` la pose, et
+   *  les quatre boutons ne ramenaient donc jamais la grille — seul l'intitulé
+   *  de période changeait. Le formulaire, lui, n'est PAS fermé ici : il porte
+   *  une saisie non enregistrée que son propre « Annuler » ne jette qu'après
+   *  confirmation. */
+  function choisirVue(mode: 'month' | 'week' | 'day' | 'list') {
+    setViewMode(mode);
+    setCurrentEvent(null);
+  }
+
   /** Libellé de navigation adapté au mode de vue */
   function getNavLabel(): string {
     if (viewMode === 'day') {
@@ -385,7 +397,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
           {(['month', 'week', 'day', 'list'] as const).map((mode) => (
             <button
               key={mode}
-              onClick={() => setViewMode(mode)}
+              onClick={() => choisirVue(mode)}
               className={`px-3 py-1 text-sm rounded-sm transition-colors ${
                 viewMode === mode
                   ? 'bg-accent-tint text-accent-cyan-ink'

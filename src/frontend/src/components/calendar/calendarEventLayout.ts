@@ -1,4 +1,15 @@
 import type { CalendarEvent } from '../../services/api';
+import { localDateKey } from '../../lib/civilDate';
+
+const MINUTES_PAR_JOUR = 24 * 60;
+
+/** B-058 : la fin d'un rendez-vous à cheval sur minuit appartient au JOUR
+ *  SUIVANT. Comptée en minutes dans la journée, elle retombe avant son début
+ *  (23:00 -> 01:00 donne 1380 -> 60) : la colonne du jour de début la borne
+ *  donc à 24:00, minuit pile compris (22:30 -> 00:00). */
+function finitApresLeJourDeDebut(start: Date, end: Date): boolean {
+  return localDateKey(end) !== localDateKey(start) && end.getTime() > start.getTime();
+}
 
 export interface TimedEventLayout {
   top: number;
@@ -87,7 +98,9 @@ function getPositionedEvent(
   }
 
   const startMinutes = start.getHours() * 60 + start.getMinutes();
-  const endMinutes = end.getHours() * 60 + end.getMinutes();
+  const endMinutes = finitApresLeJourDeDebut(start, end)
+    ? MINUTES_PAR_JOUR
+    : end.getHours() * 60 + end.getMinutes();
   const gridStartMinutes = startHour * 60;
   const gridEndMinutes = endHour * 60;
   const clampedStart = Math.max(startMinutes, gridStartMinutes);

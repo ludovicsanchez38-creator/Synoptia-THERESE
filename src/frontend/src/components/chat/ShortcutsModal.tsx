@@ -31,14 +31,14 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
     shortcuts: [
       { keys: '⌘ + K', description: 'Palette de commandes' },
       { keys: '⌘ + /', description: 'Raccourcis clavier' },
-      { keys: '⌘ + B', description: 'Sidebar conversations' },
+      { keys: '⌘ + B', description: 'Liste des conversations' },
       { keys: '⌘ + M', description: 'Contacts' },
       { keys: '⌘ + ,', description: 'Paramètres' },
       { keys: 'Échap', description: 'Fermer le panneau actif' },
     ],
   },
   {
-    title: 'Core Features',
+    title: 'Fonctions principales',
     shortcuts: [
       { keys: '⌘ + D', description: 'Décision' },
       { keys: '⌘ + E', description: 'Email (Gmail)' },
@@ -51,7 +51,7 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
     title: 'Outils',
     shortcuts: [
       { keys: '⌘ + ⇧ + A', description: 'Améliorer THÉRÈSE' },
-      { keys: '⌘ + ⇧ + K', description: 'Katia - nouvelle tache' },
+      { keys: '⌘ + ⇧ + K', description: 'Katia - nouvelle tâche' },
       { keys: '⌘ + ⇧ + C', description: 'Agenda' },
       { keys: '⌘ + ⇧ + F', description: 'Rechercher dans les Contacts' },
       { keys: '⌘ + ⇧ + D', description: 'Mode démonstration' },

@@ -74,4 +74,48 @@ describe('getTimedEventLayout', () => {
     expect(layouts['evt-b'].widthPercent).toBe(50);
     expect(layouts['evt-c'].widthPercent).toBe(50);
   });
+  /**
+   * B-058 : un rendez-vous à cheval sur minuit recevait `null` — les minutes
+   * étaient comptées DANS LA JOURNÉE, donc la fin (01:00 = 60) tombait avant
+   * le début (23:00 = 1380) et le garde `clampedStart >= clampedEnd` le
+   * supprimait de la grille, même sur une grille 0h-24h.
+   */
+  it('borne à la fin de journée un événement dont la fin tombe le lendemain', () => {
+    const layouts = getTimedEventLayout(
+      [buildEvent('evt-nuit', '2026-07-02T23:00:00', '2026-07-03T01:00:00')],
+      8,
+      24,
+      60
+    );
+
+    expect(layouts['evt-nuit']).toBeDefined();
+    // 23:00 sur une grille qui commence à 8h : 15 heures plus bas.
+    expect(layouts['evt-nuit'].top).toBe(15 * 60);
+    // Bornée à 24:00, il reste une heure de hauteur.
+    expect(layouts['evt-nuit'].height).toBe(60);
+  });
+
+  it('traite une fin à minuit pile comme la fin de la journée', () => {
+    const layouts = getTimedEventLayout(
+      [buildEvent('evt-minuit', '2026-07-02T22:30:00', '2026-07-03T00:00:00')],
+      8,
+      24,
+      60
+    );
+
+    expect(layouts['evt-minuit']).toBeDefined();
+    expect(layouts['evt-minuit'].height).toBe(90);
+  });
+
+  it('laisse intact un événement qui finit le jour même', () => {
+    const layouts = getTimedEventLayout(
+      [buildEvent('evt-jour', '2026-07-02T09:00:00', '2026-07-02T10:00:00')],
+      8,
+      20,
+      60
+    );
+
+    expect(layouts['evt-jour'].top).toBe(60);
+    expect(layouts['evt-jour'].height).toBe(60);
+  });
 });

@@ -49,4 +49,19 @@ describe('getVisibleHourRange', () => {
     expect(r.startHour).toBe(0);
     expect(r.endHour).toBe(24);
   });
+  /**
+   * B-058 : la grille ne s'élargissait pas pour un rendez-vous qui finit le
+   * lendemain — `end.getHours()` rendait 1 pour une fin à 01:00, donc une
+   * borne haute PLUS BASSE que le début du rendez-vous, et la grille restait
+   * à 20 h.
+   */
+  it('élargit jusqu à minuit un événement dont la fin tombe le lendemain', () => {
+    const events = [{ start_datetime: '2026-06-18T23:00:00', end_datetime: '2026-06-19T01:00:00' }];
+    expect(getVisibleHourRange(events, 8, 20)).toEqual({ startHour: 8, endHour: 24 });
+  });
+
+  it('traite une fin à minuit pile comme la fin de la journée', () => {
+    const events = [{ start_datetime: '2026-06-18T22:30:00', end_datetime: '2026-06-19T00:00:00' }];
+    expect(getVisibleHourRange(events, 8, 20)).toEqual({ startHour: 8, endHour: 24 });
+  });
 });
