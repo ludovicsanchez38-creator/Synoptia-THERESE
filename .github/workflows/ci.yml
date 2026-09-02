@@ -67,7 +67,7 @@ jobs:
           # threads orphelins ne pouvait pas s afficher. Verifie le
           # 01/09/2026 en rejouant le script sous bash --noprofile -eo pipefail.
           set +e
-          timeout 480 uv run pytest tests/ src/backend/tests/ --ignore=tests/e2e -q --timeout=30 -p no:cacheprovider
+          timeout 480 uv run pytest tests/ src/backend/tests/ --ignore=tests/e2e -q --timeout=30 -p no:cacheprovider --junitxml=pytest-ci.xml
           EXIT_CODE=$?
           set -e
           if [ $EXIT_CODE -eq 124 ]; then
@@ -76,6 +76,32 @@ jobs:
           fi
           exit $EXIT_CODE
         timeout-minutes: 12
+
+      - name: Nommer les tests rouges (le junit, pas la console tronquee)
+        if: failure()
+        run: |
+          python3 - <<'EOF'
+          import xml.etree.ElementTree as E, pathlib
+          f = pathlib.Path("pytest-ci.xml")
+          if not f.exists():
+              print("pas de pytest-ci.xml : pytest n a pas atteint la fin de session"); raise SystemExit(0)
+          r = E.parse(f).getroot(); s = r if r.tag == "testsuite" else r[0]
+          print(f"tests={s.get('tests')} failures={s.get('failures')} errors={s.get('errors')} skipped={s.get('skipped')}")
+          for tc in r.iter("testcase"):
+              for k in ("failure", "error"):
+                  n = tc.find(k)
+                  if n is not None:
+                      print(f"::error::{k} {tc.get('classname')}::{tc.get('name')} : {(n.get('message') or '')[:300]}")
+          EOF
+
+      - name: Archiver le junit
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-junit-${{ github.sha }}
+          path: pytest-ci.xml
+          if-no-files-found: ignore
+          retention-days: 7
 
   frontend:
     name: Frontend (Node.js)
