@@ -97,6 +97,113 @@ const APPELS = PROTOCOLES_APP.flatMap((chemin) =>
   appelsQsa(chemin.slice(RACINE.length + 1), readFileSync(chemin, 'utf-8')),
 );
 
+/* ------------------------------------------------------------------ B-152 */
+
+/**
+ * `qsa` échoue quand rien n'est trouvé ; `document.querySelector` rend `null`.
+ * Les pas restés en appel brut transforment donc un sélecteur inventé en
+ * verdict silencieux : « l'onboarding ne s'affiche pas » était vrai par
+ * construction, quel que soit l'écran réel.
+ *
+ * Deux bornes tiennent cette garde à sa taille utile :
+ *
+ * 1. On ne juge qu'un groupe dont TOUS les sélecteurs citent un `data-testid`.
+ *    Un repli `textarea`, `[role="alert"]` ou `.une-classe` peut trouver
+ *    quelque chose : on ne sait pas le décider, on ne condamne pas.
+ * 2. On saute les sections que les fichiers déclarent eux-mêmes piloter le
+ *    SERVEUR (colonne « Produit » de l'index, ou titre de rubrique nommant
+ *    Server) : ces identifiants appartiennent à une autre application.
+ */
+function texteCotéApplication(texte: string): string {
+  const lignes = texte.split('\n');
+  const scenariosServeur = new Set<string>();
+  for (const ligne of lignes) {
+    const rangee = /^\|\s*(\d+)\s*\|[^|]*\|\s*Server\s*\|/.exec(ligne);
+    if (rangee) scenariosServeur.add(rangee[1]);
+  }
+
+  // Un scénario Server masque TOUTES ses rubriques ; une rubrique Server ne
+  // masque qu'elle-même. Les deux mémoires sont donc distinctes.
+  let scenarioMasque = false;
+  let rubriqueMasquee = false;
+  // Les blocs de code contiennent des commentaires shell qui commencent par
+  // « # » : les prendre pour des titres démasquait la section suivante.
+  let dansUnBlocDeCode = false;
+
+  return lignes
+    .map((ligne) => {
+      if (/^\s*>?\s*```/.test(ligne)) dansUnBlocDeCode = !dansUnBlocDeCode;
+      const titre = dansUnBlocDeCode ? null : /^(#{1,6})\s+(.*)$/.exec(ligne);
+      if (titre) {
+        const niveau = titre[1].length;
+        if (niveau <= 2) {
+          const scenario = /^Scenario\s+(\d+)\b/.exec(titre[2]);
+          scenarioMasque = scenario ? scenariosServeur.has(scenario[1]) : false;
+          rubriqueMasquee = false;
+        } else {
+          rubriqueMasquee = /\bServer\b/.test(titre[2]);
+        }
+      }
+      // La ligne masquée est vidée, jamais supprimée : les numéros de ligne
+      // rapportés doivent rester ceux du fichier.
+      return scenarioMasque || rubriqueMasquee ? '' : ligne;
+    })
+    .join('\n');
+}
+
+/** Un groupe = des `document.querySelector(...)` enchaînés par `||`, c'est-à-dire
+ *  « le premier qui trouve », la même sémantique que `qsa`. */
+const GROUPE_BRUT =
+  /(?:document\.querySelector(?:All)?\(\s*(?:['"`])(?:[\s\S]*?)(?:['"`])\s*\)\s*(?:\|\|\s*)?)+/g;
+const SELECTEUR_BRUT = /document\.querySelector(?:All)?\(\s*(['"`])([\s\S]*?)\1\s*\)/g;
+
+interface GroupeBrut {
+  fichier: string;
+  ligne: number;
+  selecteurs: string[];
+}
+
+function groupesBruts(chemin: string, texte: string): GroupeBrut[] {
+  const utile = texteCotéApplication(texte);
+  const groupes: GroupeBrut[] = [];
+  for (const groupe of utile.matchAll(GROUPE_BRUT)) {
+    const selecteurs = [...groupe[0].matchAll(SELECTEUR_BRUT)].map((m) => m[2]);
+    if (!selecteurs.length) continue;
+    // Un seul repli non décidable suffit à sortir le groupe du périmètre.
+    if (!selecteurs.every((s) => /\[data-testid=/.test(s))) continue;
+    groupes.push({
+      fichier: chemin,
+      ligne: utile.slice(0, groupe.index).split('\n').length,
+      selecteurs,
+    });
+  }
+  return groupes;
+}
+
+const GROUPES_BRUTS = PROTOCOLES_APP.flatMap((chemin) =>
+  groupesBruts(chemin.slice(RACINE.length + 1), readFileSync(chemin, 'utf-8')),
+);
+
+describe('B-152 : un verdict ne se décide pas par un sélecteur inventé', () => {
+  it('la garde voit bien des appels bruts à analyser', () => {
+    // Sans ce garde-fou, une expression régulière cassée rendrait zéro groupe
+    // et le test suivant serait vert sans avoir rien lu.
+    expect(GROUPES_BRUTS.length).toBeGreaterThan(0);
+  });
+
+  it('chaque groupe de data-testid a au moins un sélecteur présent dans le code', () => {
+    const orphelins = GROUPES_BRUTS.filter(
+      (groupe) => !groupe.selecteurs.some(selecteurExiste),
+    ).map(
+      (groupe) => `${groupe.fichier}:${groupe.ligne} → ${groupe.selecteurs.join(' | ')}`,
+    );
+    expect(
+      orphelins,
+      `ces pas rendent leur verdict sans rien mesurer :\n${orphelins.join('\n')}`,
+    ).toEqual([]);
+  });
+});
+
 describe('B-151 : les sélecteurs des protocoles désignent des éléments réels', () => {
   it('les protocoles de cette application contiennent bien des appels qsa', () => {
     expect(APPELS.length).toBeGreaterThan(0);

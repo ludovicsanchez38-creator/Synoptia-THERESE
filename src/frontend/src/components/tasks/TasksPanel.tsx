@@ -123,7 +123,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
         </div>
         <div>
           <h2 className="text-lg font-semibold text-text">Tâches</h2>
-          <p className="text-sm text-text-muted">{tasks.length} tache{tasks.length > 1 ? 's' : ''}</p>
+          <p className="text-sm text-text-muted">{tasks.length} tâche{tasks.length > 1 ? 's' : ''}</p>
         </div>
       </div>
 

@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LLMStep } from './LLMStep';
 
 const apiMocks = vi.hoisted(() => ({
-  getApiKeys: vi.fn(),
+  getApiKeysWithCorrupted: vi.fn(),
   getOllamaStatus: vi.fn(),
   getSystemResources: vi.fn(),
   setApiKey: vi.fn(),
@@ -31,7 +31,7 @@ describe('LLMStep', () => {
     vi.useFakeTimers();
     vi.clearAllMocks();
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    apiMocks.getApiKeys.mockReturnValue(new Promise(() => {}));
+    apiMocks.getApiKeysWithCorrupted.mockReturnValue(new Promise(() => {}));
     apiMocks.getOllamaStatus.mockReturnValue(new Promise(() => {}));
     apiMocks.getSystemResources.mockReturnValue(new Promise(() => {}));
   });
@@ -55,7 +55,7 @@ describe('LLMStep', () => {
 
   it('affiche la faisabilité RAM du modèle Ollama sélectionné sans bloquer la suite', async () => {
     const gib = 1024 ** 3;
-    apiMocks.getApiKeys.mockResolvedValue({});
+    apiMocks.getApiKeysWithCorrupted.mockResolvedValue({ keys: {}, corrupted: [], sources: {} });
     apiMocks.getOllamaStatus.mockResolvedValue({
       available: true,
       base_url: 'http://ollama.test',
@@ -84,7 +84,9 @@ describe('LLMStep - dette 0.43.4, le parcours des nouveaux fournisseurs', () => 
     vi.useFakeTimers();
     vi.clearAllMocks();
     vi.spyOn(console, 'error').mockImplementation(() => undefined);
-    apiMocks.getApiKeys.mockResolvedValue({ qwen: true });
+    apiMocks.getApiKeysWithCorrupted.mockResolvedValue({
+      keys: { qwen: true }, corrupted: [], sources: { qwen: 'coffre' },
+    });
     apiMocks.getOllamaStatus.mockResolvedValue({
       available: false, base_url: '', models: [], error: null,
     });

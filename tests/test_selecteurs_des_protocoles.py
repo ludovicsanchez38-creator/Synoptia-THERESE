@@ -30,8 +30,14 @@ ORPHELINS_CONNUS = {
     "error-message",
     "import-progress",
     "invoice-create-btn",
-    "llm-provider-select",
-    "onboarding-step",
+    # B-152 (02/09/2026) : deux entrees retirees d'ici, dans catastrophes.md.
+    # « onboarding-step » : les scenarios 1 et 3 visent desormais
+    # « onboarding-wizard » et « chat-message-input », qui existent. Un
+    # selecteur d'attribut est une egalite, pas un prefixe : avec l'identifiant
+    # nu, « l'onboarding ne s'affiche pas » et « l'app ne demarre pas » etaient
+    # acquis d'avance. « llm-provider-select » : le pas 3 du scenario 6 ne cite
+    # plus d'identifiant - il ne lisait rien avec `?.value`, et aucun selecteur
+    # de fournisseur ne porte de data-testid a viser.
     "rgpd-delete-all-btn",
 }
 

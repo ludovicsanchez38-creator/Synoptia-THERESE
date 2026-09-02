@@ -191,7 +191,7 @@ describe('InvoiceForm - confirmations métier 0.40', () => {
 
     const preview = screen.getByTestId('external-action-confirmation');
     expect(preview).toHaveTextContent('FAC-2026-001');
-    expect(preview).toHaveTextContent('120.00 €');
+    expect(preview).toHaveTextContent('120,00');
     expect(markInvoicePaidMock).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Confirmer le paiement' }));

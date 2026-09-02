@@ -46,6 +46,23 @@ function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
   });
 }
 
+/**
+ * Ce que l'écran a le droit d'affirmer sur une clé déjà en place (B-239).
+ *
+ * « Chiffrée localement » est un FAIT sur un objet stocké : il ne vaut que pour
+ * une clé confiée à l'application. Une clé lue dans l'environnement n'a jamais
+ * été reçue ni chiffrée, et l'utilisatrice qui lit l'ancienne phrase en déduit
+ * qu'elle peut retirer la variable de son shell. Origine inconnue (serveur plus
+ * ancien) : on constate la présence, on n'invente pas la provenance.
+ */
+function mentionOrigineCle(origine: string | undefined): string {
+  if (origine === 'coffre') return 'Clé API configurée (chiffrée localement)';
+  if (origine === 'environnement') {
+    return "Clé API lue dans une variable d'environnement (ni stockée ni chiffrée par Thérèse)";
+  }
+  return 'Clé API configurée';
+}
+
 export function LLMStep({ onNext, onBack }: LLMStepProps) {
   const [selectedProvider, setSelectedProvider] = useState<api.LLMProvider>('anthropic');
   // La LISTE des modèles cloud vient du backend ; le repli statique ne sert
@@ -63,6 +80,10 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [showApiKey, setShowApiKey] = useState(false);
   const [apiKeys, setApiKeys] = useState<Record<string, boolean>>({});
+  // B-239 : d'où sort la clé. Le booléen ci-dessus dit qu'elle existe, jamais
+  // si elle a été confiée à l'application (coffre, chiffrée) ou simplement lue
+  // dans l'environnement - l'écran affirmait le chiffrement dans les deux cas.
+  const [origineDesCles, setOrigineDesCles] = useState<Record<string, string>>({});
   const [ollamaStatus, setOllamaStatus] = useState<api.OllamaStatus | null>(null);
   // BUG-169 : on garde la CAPACITÉ du modèle, pas seulement son nom. Un modèle
   // sans appel d'outils ne peut ni créer un contact, ni poser un rendez-vous.
@@ -86,13 +107,16 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
     setLoading(true);
     setLoadError(null);
     try {
-      const [keys, ollamaStatusData, systemResourcesData] = await withTimeout(Promise.all([
-        api.getApiKeys(),
+      // La forme complète (clés + origines) vient de la MÊME requête que le
+      // booléen : lire l'origine ne coûte pas un aller-retour de plus.
+      const [cles, ollamaStatusData, systemResourcesData] = await withTimeout(Promise.all([
+        api.getApiKeysWithCorrupted(),
         api.getOllamaStatus(),
         api.getSystemResources().catch(() => null),
       ]), LLM_SETUP_TIMEOUT_MS);
       if (activeRequest !== loadRequestRef.current) return;
-      setApiKeys(keys);
+      setApiKeys(cles.keys);
+      setOrigineDesCles(cles.sources ?? {});
       setOllamaStatus(ollamaStatusData);
       setSystemResources(systemResourcesData);
       setOllamaModels(
@@ -163,6 +187,10 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
       await api.setApiKey(selectedProvider, apiKeyInput);
       setSaved(true);
       setApiKeys(prev => ({ ...prev, [selectedProvider]: true }));
+      // Une clé qu'on vient d'enregistrer EST passée par le coffre : sans cette
+      // ligne, l'écran retomberait sur la formule prudente juste après une
+      // saisie réussie.
+      setOrigineDesCles(prev => ({ ...prev, [selectedProvider]: 'coffre' }));
       setApiKeyInput('');
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
@@ -338,7 +366,9 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
           {hasApiKey ? (
             <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-success-tint)] border border-success/40 rounded-md">
               <Check className="w-4 h-4 text-success" />
-              <span className="text-sm text-success">Clé API configurée (chiffrée localement)</span>
+              <span className="text-sm text-success" data-testid="llm-origine-cle">
+                {mentionOrigineCle(origineDesCles[selectedProvider])}
+              </span>
             </div>
           ) : (
             <>

@@ -386,11 +386,11 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
           ))}
         </div>
 
-        <Button variant="ghost" size="sm" onClick={handleSync} disabled={syncing}>
+        <Button variant="ghost" size="sm" onClick={handleSync} disabled={syncing} aria-label="Synchroniser l'agenda" title="Synchroniser l'agenda">
           <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
         </Button>
 
-        <Button variant="ghost" size="sm" onClick={() => icsInputRef.current?.click()}>
+        <Button variant="ghost" size="sm" onClick={() => icsInputRef.current?.click()} aria-label="Importer un fichier .ics" title="Importer un fichier .ics">
           <Upload className="w-4 h-4" />
         </Button>
         <input
@@ -425,10 +425,10 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
   const calendarNav = (
     <div className="px-6 py-3 border-b border-border/30 flex items-center justify-between">
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" onClick={handlePrevious}>
+        <Button variant="ghost" size="sm" onClick={handlePrevious} aria-label="Période précédente" title="Période précédente">
           <ChevronLeft className="w-4 h-4" />
         </Button>
-        <Button variant="ghost" size="sm" onClick={handleNext}>
+        <Button variant="ghost" size="sm" onClick={handleNext} aria-label="Période suivante" title="Période suivante">
           <ChevronRight className="w-4 h-4" />
         </Button>
         <Button variant="ghost" size="sm" onClick={handleToday}>

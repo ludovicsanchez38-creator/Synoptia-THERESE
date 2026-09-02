@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2/capability",
   "identifier": "default",
-  "description": "Default capabilities for THERESE - filesystem scoped to $HOME/.therese and $APPDATA",
+  "description": "Default capabilities for THERESE | filesystem read: $HOME, $APPDATA - the whole home directory is readable, the file browser explores it | filesystem write: $HOME/.therese, $APPDATA, $DOWNLOAD | denied: $HOME/.ssh, $HOME/.aws, $HOME/.gnupg, $HOME/.config, $HOME/.therese/.encryption_key, $HOME/.therese/.session_token",
   "windows": [
     "main",
     "panel-*"

@@ -84,7 +84,12 @@ L'utilisateur a configure THERESE (onboarding termine, cles API, contacts, conve
 
 10. javascript_tool :
     // Verifier : est-on redirige vers l'onboarding ?
-    const onboarding = document.querySelector('[data-testid="onboarding-step"]');
+    // Le repere est le wizard lui-meme : les pas portent des identifiants
+    // suffixes (onboarding-step-0 .. -5) et un selecteur d'attribut est une
+    // egalite, pas un prefixe. Avec 'onboarding-step' nu, ce pas rendait
+    // toujours false, c'est-a-dire exactement le resultat attendu : il ne
+    // pouvait que confirmer.
+    const onboarding = document.querySelector('[data-testid="onboarding-wizard"]');
     return { onboardingVisible: !!onboarding };
 
 11. Si onboarding visible :
@@ -232,8 +237,11 @@ L'utilisateur change de Mac ou reinstalle macOS. La cle Fernet dans le Keychain 
    const errorElements = document.querySelectorAll('[class*="error"], [role="alert"]');
    return {
      errors: Array.from(errorElements).map(e => e.textContent),
-     pageLoaded: !!document.querySelector('[data-testid="chat-page"]') ||
-                 !!document.querySelector('[data-testid="onboarding-step"]')
+     // Meme piege qu'au scenario 1 : 'chat-page' n'existe nulle part et
+     // 'onboarding-step' est un prefixe. pageLoaded valait false quoi qu'il
+     // arrive, donc « l'app ne demarre pas » etait acquis d'avance.
+     pageLoaded: !!document.querySelector('[data-testid="chat-message-input"]') ||
+                 !!document.querySelector('[data-testid="onboarding-wizard"]')
    };
 
 10. Si l'app demarre : tenter d'envoyer un message (qui necessite une cle API)
@@ -428,13 +436,13 @@ L'utilisateur n'a pas configure de provider LLM (ou sa cle API est invalide). Il
 1. navigate → http://localhost:1420/?panel=settings
 2. wait 3s
 
-3. javascript_tool :
-   // Sauvegarder le provider actuel puis le desactiver
-   // (ou vider la cle API)
-   // Note : adapter selon l'implementation exacte des settings
-   const providerSelect = document.querySelector('[data-testid="llm-provider-select"]');
-   const savedValue = providerSelect?.value;
-   return { currentProvider: savedValue };
+3. Ouvrir la rubrique IA des Reglages, noter le fournisseur actif A LA MAIN,
+   puis vider sa cle API.
+   take_screenshot → "CATA-06-provider-avant.png"
+   // Le pas visait auparavant un identifiant de selecteur de fournisseur, un
+   // identifiant qui n'existe pas : `?.value` rendait undefined en silence et
+   // le fournisseur n'etait jamais reellement releve. Le choix du fournisseur
+   // ne passe pas par un <select> identifie, d'ou le releve visuel.
 
 4. // Naviguer vers le Board sans provider valide
 5. navigate → http://localhost:1420/?panel=board

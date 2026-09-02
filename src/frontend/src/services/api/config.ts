@@ -62,6 +62,14 @@ export async function setPreference(
 export interface ApiKeysResult {
   keys: Record<string, boolean>;
   corrupted: string[];
+  /**
+   * B-239 : d'où vient la clé que le runtime utilisera réellement — « coffre »
+   * (saisie puis chiffrée localement), « environnement » (variable du shell,
+   * que Thérèse n'a ni reçue ni stockée), « corrompue », « absente ». Le
+   * booléen de `keys` dit qu'une clé existe, jamais d'où elle sort : l'écran en
+   * déduisait un chiffrement qui n'avait pas eu lieu.
+   */
+  sources: Record<string, string>;
 }
 
 export async function getApiKeys(): Promise<Record<string, boolean>> {
@@ -84,6 +92,7 @@ export async function getApiKeysWithCorrupted(): Promise<ApiKeysResult> {
     has_brave_key: boolean;
     corrupted_keys: string[];
     api_keys?: Record<string, boolean>;
+    api_keys_source?: Record<string, string>;
   }>('/api/config/');
   return {
     keys: {
@@ -104,6 +113,9 @@ export async function getApiKeysWithCorrupted(): Promise<ApiKeysResult> {
       ...(config.api_keys ?? {}),
     },
     corrupted: config.corrupted_keys || [],
+    // Une origine absente reste absente : mieux vaut un écran qui n'affirme
+    // rien qu'un écran qui suppose le coffre.
+    sources: config.api_keys_source ?? {},
   };
 }
 

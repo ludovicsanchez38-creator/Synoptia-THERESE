@@ -124,7 +124,17 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
       }
     } catch (error) {
       console.error('Failed to generate PDF:', error);
-      addNotification({ type: 'error', title: 'Erreur', message: 'Impossible de générer le PDF' });
+      // B-218 : le serveur dit POURQUOI (« profil émetteur incomplet :
+      // renseigne SIRET, adresse dans Réglages > Profil ») et `invoices.ts`
+      // porte cette phrase dans l'Error. La remplacer par un générique laissait
+      // l'utilisatrice devant un refus sans issue. Le générique ne sert plus
+      // que de repli quand l'échec n'a pas de message.
+      const cause = error instanceof Error ? error.message.trim() : '';
+      addNotification({
+        type: 'error',
+        title: 'Erreur',
+        message: cause || 'Impossible de générer le PDF',
+      });
     }
   }
 

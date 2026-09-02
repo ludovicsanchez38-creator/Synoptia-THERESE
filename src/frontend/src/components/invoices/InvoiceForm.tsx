@@ -13,6 +13,7 @@ import { createInvoice, updateInvoice, convertDevisToInvoice, updateDevisStatus,
 import { PLAFOND_CONTACTS } from '../../stores/contactsStore';
 import { useStatusStore } from '../../stores/statusStore';
 import { useBillingProfileStore } from '../../stores/billingProfileStore';
+import { montantAvecDevise } from '../../lib/devise';
 import { cn } from '../../lib/utils';
 import { Z_LAYER } from '../../styles/z-layers';
 import { useExternalActionConfirmation } from '../app/useExternalActionConfirmation';
@@ -30,10 +31,10 @@ interface InvoiceLineInputState {
 
 const TVA_RATES = [
   { value: 20.0, label: '20% (normale)' },
-  { value: 10.0, label: '10% (intermediaire)' },
-  { value: 5.5, label: '5,5% (reduite)' },
-  { value: 2.1, label: '2,1% (super reduite)' },
-  { value: 0.0, label: '0% (exonere)' },
+  { value: 10.0, label: '10% (intermédiaire)' },
+  { value: 5.5, label: '5,5% (réduite)' },
+  { value: 2.1, label: '2,1% (super réduite)' },
+  { value: 0.0, label: '0% (exonéré)' },
 ];
 
 const CURRENCIES = [
@@ -300,7 +301,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
           { label: 'Document', value: invoice.invoice_number },
           { label: 'Statut actuel', value: invoice.status },
           { label: 'Nouveau statut', value: statusLabel },
-          { label: 'Montant TTC', value: `${totalTTC.toFixed(2)} ${CURRENCY_SYMBOLS[currency] || currency}` },
+          { label: 'Montant TTC', value: montantAvecDevise(totalTTC, currency) },
         ],
       }, persistInvoice);
       return;
@@ -318,7 +319,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
       confirmLabel: 'Confirmer le paiement',
       details: [
         { label: 'Facture', value: invoice.invoice_number },
-        { label: 'Montant TTC', value: `${invoice.total_ttc.toFixed(2)} ${CURRENCY_SYMBOLS[invoice.currency] || invoice.currency}` },
+        { label: 'Montant TTC', value: montantAvecDevise(invoice.total_ttc, invoice.currency) },
         { label: 'Nouveau statut', value: 'Payée' },
       ],
     }, async () => {
@@ -343,7 +344,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
       confirmLabel: accepted ? 'Confirmer l’acceptation' : 'Confirmer le refus',
       details: [
         { label: 'Devis', value: invoice.invoice_number },
-        { label: 'Montant TTC', value: `${invoice.total_ttc.toFixed(2)} ${CURRENCY_SYMBOLS[invoice.currency] || invoice.currency}` },
+        { label: 'Montant TTC', value: montantAvecDevise(invoice.total_ttc, invoice.currency) },
         { label: 'Nouveau statut', value: accepted ? 'Accepté' : 'Refusé' },
       ],
     }, async () => {
@@ -493,7 +494,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                 )}
                 required
               >
-                <option value="">Selectionner un contact</option>
+                <option value="">Sélectionner un contact</option>
                 {contacts.map((contact) => (
                   <option key={contact.id} value={contact.id}>
                     {[contact.first_name, contact.last_name].filter(Boolean).join(' ') || contact.company || contact.email || contact.id}
@@ -571,7 +572,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
 
             <div>
               <label htmlFor="issueDate" className="block text-sm font-medium text-text mb-2">
-                Date d'emission *
+                Date d'émission *
               </label>
               <input
                 type="date"
@@ -680,7 +681,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
 
                     <div className="grid grid-cols-4 gap-3">
                       <div>
-                        <label htmlFor={`invoiceform-quantite-${index}`} className="block text-xs text-text-muted mb-1">Quantite</label>
+                        <label htmlFor={`invoiceform-quantite-${index}`} className="block text-xs text-text-muted mb-1">Quantité</label>
                         <input id={`invoiceform-quantite-${index}`}
                           aria-label={`Quantité ligne ${index + 1}`}
                           type="text"
@@ -738,7 +739,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
                       <div>
                         <label className="block text-xs text-text-muted mb-1">Total HT</label>
                         <div className="px-3 py-2 rounded-md bg-surface-elevated text-text font-medium">
-                          {totalHT.toFixed(2)} {CURRENCY_SYMBOLS[currency] || currency}
+                          {montantAvecDevise(totalHT, currency)}
                         </div>
                       </div>
                     </div>
@@ -801,16 +802,16 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
           <div className="p-4 rounded-md bg-surface-elevated/50 border border-border/50 space-y-2">
             <div className="flex items-center justify-between text-sm">
               <span className="text-text-muted">Total HT</span>
-              <span className="font-medium text-text">{subtotalHT.toFixed(2)} {CURRENCY_SYMBOLS[currency] || currency}</span>
+              <span className="font-medium text-text">{montantAvecDevise(subtotalHT, currency)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
               <span className="text-text-muted">Total TVA</span>
-              <span className="font-medium text-text">{totalTax.toFixed(2)} {CURRENCY_SYMBOLS[currency] || currency}</span>
+              <span className="font-medium text-text">{montantAvecDevise(totalTax, currency)}</span>
             </div>
             <div className="h-px bg-border/50" />
             <div className="flex items-center justify-between">
               <span className="font-semibold text-text">Total TTC</span>
-              <span className="text-2xl font-bold text-accent-cyan-ink">{totalTTC.toFixed(2)} {CURRENCY_SYMBOLS[currency] || currency}</span>
+              <span className="text-2xl font-bold text-accent-cyan-ink">{montantAvecDevise(totalTTC, currency)}</span>
             </div>
           </div>
         </form>

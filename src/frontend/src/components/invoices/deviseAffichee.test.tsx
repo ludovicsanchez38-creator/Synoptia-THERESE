@@ -52,15 +52,15 @@ describe('Le panneau Facturation affiche la bonne devise', () => {
     vi.mocked(api.listInvoices).mockResolvedValue([facture('CHF')] as never);
     render(<InvoicesPanel standalone />);
 
-    await waitFor(() => expect(screen.getByText(/1200\.00/)).toBeInTheDocument());
-    expect(screen.getByText(/1200\.00 CHF/)).toBeInTheDocument();
-    expect(screen.queryByText(/1200\.00 €/)).not.toBeInTheDocument();
+    await waitFor(() => expect(screen.getByText(/1[\s\u202f]200,00/)).toBeInTheDocument());
+    expect(screen.getByText(/1[\s\u202f]200,00[\s\u00a0]CHF/)).toBeInTheDocument();
+    expect(screen.queryByText(/1[\s\u202f]200,00[\s\u00a0]€/)).not.toBeInTheDocument();
   });
 
   it('une facture en euros garde son symbole', async () => {
     vi.mocked(api.listInvoices).mockResolvedValue([facture('EUR')] as never);
     render(<InvoicesPanel standalone />);
 
-    await waitFor(() => expect(screen.getByText(/1200\.00 €/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/1[\s\u202f]200,00[\s\u00a0]€/)).toBeInTheDocument());
   });
 });

@@ -19,6 +19,7 @@ import { createCRMContact, importVCFContacts, type CreateCRMContactRequest } fro
 import { useDemoMask } from '../../hooks';
 import { useStatusStore } from '../../stores/statusStore';
 import { Z_LAYER } from '../../styles/z-layers';
+import { handleRovingFocus } from '../../lib/rovingFocus';
 
 interface CRMPanelProps {
   isOpen?: boolean;
@@ -185,7 +186,11 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
   );
 
   const crmTabs = (
-    <div className="flex gap-2 px-6 pt-4 border-b border-surface">
+    // B-219 : deux boutons nus, l'état actif porté par la seule couleur. Le
+    // motif de référence est celui des Paramètres, dans la même application :
+    // tablist / tab / aria-selected, plus les flèches pour changer d'onglet -
+    // sans elles, le `tabIndex={-1}` de l'onglet inactif l'enfermerait.
+    <div role="tablist" aria-label="Vues du CRM" className="flex gap-2 px-6 pt-4 border-b border-surface">
       {tabs.map(tab => {
         const Icon = tab.icon;
         const isActive = activeTab === tab.id;
@@ -193,6 +198,12 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
         return (
           <button
             key={tab.id}
+            id={`crm-tab-${tab.id}`}
+            role="tab"
+            aria-selected={isActive}
+            aria-controls={`crm-panel-${tab.id}`}
+            tabIndex={isActive ? 0 : -1}
+            onKeyDown={(event) => handleRovingFocus(event, '[role="tab"]', 'horizontal')}
             onClick={() => setActiveTab(tab.id)}
             className={`
               flex items-center gap-2 px-4 py-2 rounded-t-md transition-colors relative
@@ -219,7 +230,13 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
   );
 
   const crmContent = (
-    <div className="flex-1 overflow-auto p-6">
+    <div
+      id={`crm-panel-${activeTab}`}
+      role="tabpanel"
+      aria-labelledby={`crm-tab-${activeTab}`}
+      tabIndex={0}
+      className="flex-1 overflow-auto p-6 outline-none"
+    >
       {error && (
         <div role="alert" className="mb-4 px-3 py-2 bg-error/10 border border-error/20 rounded-md">
           <p className="text-sm text-error">{error}</p>

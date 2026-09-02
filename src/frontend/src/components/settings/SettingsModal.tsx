@@ -176,7 +176,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
     setLoading(true);
     setLoadWarnings([]);
     const [keysState, llmState, preferencesState, statsState, profileState, workingDirState, ollamaState, resourcesState, groqState, webSearchState] = await Promise.all([
-      loadSetting('clés API', api.getApiKeysWithCorrupted(), { keys: {} as Record<string, boolean>, corrupted: [] }),
+      loadSetting('clés API', api.getApiKeysWithCorrupted(), { keys: {} as Record<string, boolean>, corrupted: [], sources: {} as Record<string, string> }),
       loadSetting('configuration IA', api.getLLMConfig(), { provider: 'anthropic', model: 'claude-sonnet-4-6', available_models: [] }),
       loadSetting('préférences', api.getPreferences(), {}),
       loadSetting('statistiques', api.getStats(), null),
