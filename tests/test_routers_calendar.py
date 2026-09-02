@@ -414,8 +414,15 @@ class TestEventsCreate:
 
     @pytest.mark.asyncio
     async def test_create_event_google_requires_account(self, client: AsyncClient, sample_event_datetime):
-        """POST /api/calendar/events - should require account_id for Google calendar."""
-        event_data = {**sample_event_datetime, "calendar_id": "nonexistent"}
+        """POST /api/calendar/events - should require account_id for Google calendar.
+
+        B-223 : ce test passait un identifiant ABSENT de la base et attendait
+        400 « account_id requis ». C'était le défaut (même correction que
+        B-236 sur GET /events) : un agenda qui n'existe pas rend 404. L'alias
+        Google `primary` réclame toujours un compte — c'est l'intention
+        d'origine du test, et c'est ce qu'il vérifie maintenant.
+        """
+        event_data = {**sample_event_datetime, "calendar_id": "primary"}
         response = await client.post("/api/calendar/events", json=event_data)
         assert response.status_code == 400
 
@@ -492,9 +499,12 @@ class TestEventsUpdate:
 
     @pytest.mark.asyncio
     async def test_update_event_google_requires_account(self, client: AsyncClient):
-        """PUT /api/calendar/events/{id} - should require account_id for Google."""
+        """PUT /api/calendar/events/{id} - should require account_id for Google.
+
+        B-223 : passe par `primary` (voir la note du test de création).
+        """
         response = await client.put(
-            "/api/calendar/events/evt-001?calendar_id=nonexistent",
+            "/api/calendar/events/evt-001?calendar_id=primary",
             json={"summary": "Updated"},
         )
         assert response.status_code == 400
@@ -524,9 +534,12 @@ class TestEventsDelete:
 
     @pytest.mark.asyncio
     async def test_delete_event_google_requires_account(self, client: AsyncClient):
-        """DELETE /api/calendar/events/{id} - should require account_id for Google."""
+        """DELETE /api/calendar/events/{id} - should require account_id for Google.
+
+        B-223 : passe par `primary` (voir la note du test de création).
+        """
         response = await client.delete(
-            "/api/calendar/events/evt-001?calendar_id=nonexistent"
+            "/api/calendar/events/evt-001?calendar_id=primary"
         )
         assert response.status_code == 400
 
@@ -921,3 +934,85 @@ class TestGoogle403Actionnable:
         # jeton expiré, masque ce message actionnable et déclenche une boucle de
         # reconnexion infinie. Un 403 = config serveur Google, pas une expiration.
         assert "reconnect" not in exc.value.detail.lower()
+
+
+# ============================================================
+# B-223 — un agenda inconnu n'est pas un agenda Google
+# ============================================================
+
+
+class TestB223AgendaInconnuNeParlePasDeGoogle:
+    """Un `calendar_id` absent de la table, sans compte pour aller le chercher
+    ailleurs, n'est pas un calendrier Google : c'est un calendrier qui n'existe
+    pas. Répondre « account_id requis pour Google Calendar » accuse un
+    fournisseur hors de cause, sur une base 100 % locale sans aucun compte
+    Google. B-236 a fermé `GET /events` ; restent la création, la mise à jour
+    et la suppression, qui portaient la même confusion.
+
+    Le test discrimine sur la PRÉSENCE d'un account_id, pas sur la seule
+    absence en base : l'alias historique `primary` n'est pas en table et doit
+    continuer de réclamer un compte.
+    """
+
+    IDENTIFIANT_ABSENT = "d2dc0094-0000-0000-0000-000000000000"
+
+    @pytest.mark.asyncio
+    async def test_creation_sur_un_agenda_inconnu(
+        self, client: AsyncClient, sample_event_datetime
+    ):
+        reponse = await client.post(
+            "/api/calendar/events",
+            json={**sample_event_datetime, "calendar_id": self.IDENTIFIANT_ABSENT},
+        )
+        assert reponse.status_code == 404, reponse.text
+        detail = reponse.json()["message"]
+        assert self.IDENTIFIANT_ABSENT in detail
+        assert "Google" not in detail
+        assert "account_id" not in detail
+
+    @pytest.mark.asyncio
+    async def test_mise_a_jour_sur_un_agenda_inconnu(self, client: AsyncClient):
+        reponse = await client.put(
+            f"/api/calendar/events/evt-b223?calendar_id={self.IDENTIFIANT_ABSENT}",
+            json={"summary": "Modifie"},
+        )
+        assert reponse.status_code == 404, reponse.text
+        detail = reponse.json()["message"]
+        assert self.IDENTIFIANT_ABSENT in detail
+        assert "Google" not in detail
+        assert "account_id" not in detail
+
+    @pytest.mark.asyncio
+    async def test_suppression_sur_un_agenda_inconnu(self, client: AsyncClient):
+        reponse = await client.delete(
+            f"/api/calendar/events/evt-b223?calendar_id={self.IDENTIFIANT_ABSENT}"
+        )
+        assert reponse.status_code == 404, reponse.text
+        detail = reponse.json()["message"]
+        assert self.IDENTIFIANT_ABSENT in detail
+        assert "Google" not in detail
+        assert "account_id" not in detail
+
+    @pytest.mark.asyncio
+    async def test_alias_primary_reclame_toujours_un_compte(
+        self, client: AsyncClient, sample_event_datetime
+    ):
+        """Contrôle négatif : le flux Google historique n'est pas fermé.
+
+        `primary` n'est pas en table non plus ; c'est l'alias de l'agenda
+        principal Google. Il doit continuer de rendre 400 « account_id requis ».
+        """
+        creation = await client.post(
+            "/api/calendar/events",
+            json={**sample_event_datetime, "calendar_id": "primary"},
+        )
+        assert creation.status_code == 400, creation.text
+        assert "account_id" in creation.json()["message"]
+
+        mise_a_jour = await client.put(
+            "/api/calendar/events/evt-b223?calendar_id=primary", json={"summary": "M"}
+        )
+        assert mise_a_jour.status_code == 400, mise_a_jour.text
+
+        suppression = await client.delete("/api/calendar/events/evt-b223?calendar_id=primary")
+        assert suppression.status_code == 400, suppression.text

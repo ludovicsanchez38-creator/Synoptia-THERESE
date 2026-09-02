@@ -1063,6 +1063,15 @@ async def create_event(
     if calendar and calendar.provider in ("local", "caldav"):
         return await _create_event_provider(calendar, request, session)
     else:
+        # B-223 : même règle qu'à la lecture (B-236). Un identifiant absent
+        # de la base ET sans compte pour aller le chercher ailleurs n'est pas
+        # un agenda Google : il n'existe pas. L'alias `primary`, lui, réclame
+        # bien un compte.
+        if not account_id and calendar is None and request.calendar_id != "primary":
+            raise HTTPException(
+                status_code=404,
+                detail=f"Calendrier introuvable : {request.calendar_id}",
+            )
         return await _create_event_google(account_id, request, session)
 
 
@@ -1289,6 +1298,15 @@ async def update_event(
 
     # Google Calendar
     if not account_id:
+        # B-223 : même règle qu'à la lecture (B-236). Un identifiant absent
+        # de la base ET sans compte pour aller le chercher ailleurs n'est pas
+        # un agenda Google : il n'existe pas. L'alias `primary`, lui, réclame
+        # bien un compte.
+        if calendar is None and calendar_id != "primary":
+            raise HTTPException(
+                status_code=404,
+                detail=f"Calendrier introuvable : {calendar_id}",
+            )
         raise HTTPException(status_code=400, detail="account_id requis pour Google Calendar")
 
     account = await session.get(EmailAccount, account_id)
@@ -1404,6 +1422,15 @@ async def delete_event(
 
     # Google Calendar
     if not account_id:
+        # B-223 : même règle qu'à la lecture (B-236). Un identifiant absent
+        # de la base ET sans compte pour aller le chercher ailleurs n'est pas
+        # un agenda Google : il n'existe pas. L'alias `primary`, lui, réclame
+        # bien un compte.
+        if calendar is None and calendar_id != "primary":
+            raise HTTPException(
+                status_code=404,
+                detail=f"Calendrier introuvable : {calendar_id}",
+            )
         raise HTTPException(status_code=400, detail="account_id requis pour Google Calendar")
 
     account = await session.get(EmailAccount, account_id)

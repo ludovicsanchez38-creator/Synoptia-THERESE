@@ -1002,6 +1002,31 @@ async def _check_database_available() -> bool:
         return False
 
 
+async def _check_qdrant_available() -> bool:
+    """B-086 : sonde Qdrant réelle, partagée par les deux routes de santé.
+
+    `get_stats()` est un appel réseau SYNCHRONE : lancé tel quel depuis une
+    route async, il bloque la boucle d'événements le temps du timeout d'un
+    Qdrant injoignable (le défaut de BUG-155). `/health` étant la route la plus
+    sollicitée, la mesure passe par un thread.
+    """
+    import asyncio
+
+    def _sonder() -> bool:
+        # L'import reste DANS le try, comme dans /health/services avant ce
+        # partage : un module Qdrant qui ne s'importe pas est un Qdrant
+        # indisponible, pas un 500 sur la sonde de vie de l'application.
+        try:
+            from app.services.qdrant import get_qdrant_service
+
+            get_qdrant_service().get_stats()
+            return True
+        except Exception:
+            return False
+
+    return await asyncio.to_thread(_sonder)
+
+
 @app.get("/health")
 async def health():
     """Health check endpoint for monitoring."""
@@ -1011,6 +1036,10 @@ async def health():
 
     # US-008 (RES2) : tester réellement la DB, pas lire un statut singleton stale.
     status.set_available("database", await _check_database_available())
+    # B-086 : même exigence pour Qdrant. Le verdict healthy/degraded reposait
+    # sur un état mémorisé qui pouvait dater de n'importe quand, ou n'avoir
+    # jamais été écrit - alors que /health/services sondait, elle, en direct.
+    status.set_available("qdrant", await _check_qdrant_available())
     services = status.get_all_statuses()
 
     # Check critical services
@@ -1030,15 +1059,8 @@ async def service_status():
 
     status = get_service_status()
 
-    # Check Qdrant
-    qdrant_available = True
-    try:
-        from app.services.qdrant import get_qdrant_service
-
-        service = get_qdrant_service()
-        service.get_stats()
-    except Exception:
-        qdrant_available = False
+    # Check Qdrant (B-086 : via le helper partagé, même mesure que /health)
+    qdrant_available = await _check_qdrant_available()
 
     status.set_available("qdrant", qdrant_available)
 

@@ -6,7 +6,8 @@ Request/Response models pour les opérations email (OAuth, IMAP, messages, label
 
 from datetime import datetime
 
-from pydantic import BaseModel
+from app.services.civil_time import echeance_de_relance
+from pydantic import BaseModel, field_validator
 
 # ============================================================
 # OAuth
@@ -212,17 +213,31 @@ class CreateFollowUpRequest(BaseModel):
 
     email_message_id: str
     contact_id: str | None = None
-    due_date: str  # ISO 8601
+    due_date: str  # jour civil Europe/Paris, normalisé (B-062)
     note: str | None = None
+
+    @field_validator("due_date")
+    @classmethod
+    def _jour_civil(cls, valeur: str) -> str:
+        jour: str = echeance_de_relance(valeur)
+        return jour
 
 
 class UpdateFollowUpRequest(BaseModel):
     """Update follow-up request."""
 
-    due_date: str | None = None
+    due_date: str | None = None  # jour civil Europe/Paris, normalisé (B-062)
     note: str | None = None
     status: str | None = None  # pending, done, cancelled
     contact_id: str | None = None
+
+    @field_validator("due_date")
+    @classmethod
+    def _jour_civil(cls, valeur: str | None) -> str | None:
+        if valeur is None:
+            return None
+        jour: str = echeance_de_relance(valeur)
+        return jour
 
 
 class FollowUpResponse(BaseModel):

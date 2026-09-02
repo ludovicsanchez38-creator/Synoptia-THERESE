@@ -91,15 +91,29 @@ class CreateUserCommandRequest(BaseModel):
 
 
 class UpdateUserCommandRequest(BaseModel):
-    """Requête de mise à jour de commande utilisateur V3."""
+    """Requête de mise à jour de commande utilisateur V3.
 
-    name: str | None = None
-    description: str | None = None
-    icon: str | None = None
-    category: str | None = None
+    B-087 : les bornes de la création tiennent ici aussi. Sans elles, un PUT
+    posait un nom vide en 200, et la commande devenait injoignable — le
+    registre retrouve son fichier par le NOM courant, donc plus aucun PUT ni
+    DELETE ne la désignait. `None` reste « ne pas toucher à ce champ ».
+    """
+
+    name: str | None = Field(None, min_length=1, max_length=50)
+    description: str | None = Field(None, max_length=200)
+    icon: str | None = Field(None, max_length=10)
+    category: str | None = Field(None, max_length=50)
     prompt_template: str | None = None
     show_on_home: bool | None = None
     show_in_slash: bool | None = None
+
+    @field_validator("name")
+    @classmethod
+    def _valider_nom(cls, valeur: str | None) -> str | None:
+        if valeur is None:
+            return None
+        nom: str = valider_nom_de_commande(valeur)
+        return nom
 
 
 class GenerateTemplateRequest(BaseModel):

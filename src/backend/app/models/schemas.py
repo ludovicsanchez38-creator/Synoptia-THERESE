@@ -5,11 +5,56 @@ Request/Response models for API endpoints.
 """
 
 import re
-from datetime import date, datetime
-from typing import Any, Literal, Self
+from datetime import UTC, date, datetime
+from typing import Annotated, Any, Literal, Self
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PlainSerializer,
+    field_validator,
+    model_validator,
+)
+
+# ============================================================
+# Horodatages (B-216)
+# ============================================================
+
+
+def _iso_utc(instant: datetime) -> str:
+    """Rend un instant ABSOLU, jamais une heure de mur.
+
+    B-216 : les entités écrivent `datetime.now(UTC)`, mais SQLite les relit
+    sans tzinfo et la réponse partait sans « Z » ni décalage. ECMAScript parse
+    une date-heure sans offset comme HEURE LOCALE : le poste affichait donc
+    l'heure UTC comme si c'était la sienne (deux heures de retard à Paris en
+    septembre). Un datetime naïf venu de la base est de l'UTC — c'est ce que
+    les `default_factory` y ont écrit — donc on le rattache à UTC ; un
+    datetime déjà conscient est converti, jamais réinterprété.
+    """
+    if instant.tzinfo is None:
+        return instant.replace(tzinfo=UTC).isoformat()
+    return instant.astimezone(UTC).isoformat()
+
+
+#: Horodatage de réponse qui porte toujours son fuseau en JSON.
+#: `when_used="json"` : le mode python de `model_dump()` continue de rendre un
+#: `datetime`, ce dont dépend le code interne qui consomme ces schémas.
+#:
+#: RÉSERVÉ AUX INSTANTS ÉCRITS PAR L'HORLOGE DU SERVEUR (`created_at`,
+#: `updated_at`, `last_interaction`, `indexed_at`, `exported_at`). NE JAMAIS
+#: l'appliquer à un JOUR décidé par quelqu'un — échéance de relance, date
+#: RGPD, début/fin d'événement d'agenda, date de facture, tout ce qui vient
+#: d'un `<input type="date">`. Coller « +00:00 » sur une date civile ne la
+#: date pas : elle DEVIENT minuit UTC, et l'écran qui la convertit affiche un
+#: autre jour. C'est le défaut inverse de B-216, et `lib/civilDate.ts`
+#: le dit déjà en creux : `parisDateKey` ne convertit QUE si la chaîne porte
+#: un fuseau, sinon il garde le jour littéral.
+HorodatageUTC = Annotated[
+    datetime, PlainSerializer(_iso_utc, return_type=str, when_used="json")
+]
 
 # ============================================================
 # Chat Schemas
@@ -53,7 +98,7 @@ class ChatResponse(BaseModel):
     provider: str | None = None  # P0-IA-3 : badge local/cloud par message
     client_action: dict[str, str] | None = None  # Actions déterministes : action à exécuter côté client
     confirmations: list[dict[str, Any]] | None = None  # Mutations préparées, encore non exécutées
-    created_at: datetime
+    created_at: HorodatageUTC
 
 
 class StreamChunk(BaseModel):
@@ -260,7 +305,7 @@ class ContactResponse(BaseModel):
     stage: str
     score: int
     source: str | None
-    last_interaction: datetime | None
+    last_interaction: HorodatageUTC | None
 
     # Scope (L6 revue produit) : expose le rattachement pour les filtres et la pastille.
     scope: str = "global"
@@ -272,8 +317,8 @@ class ContactResponse(BaseModel):
     rgpd_date_expiration: datetime | None = None
     rgpd_consentement: bool = False
 
-    created_at: datetime
-    updated_at: datetime
+    created_at: HorodatageUTC
+    updated_at: HorodatageUTC
 
 
 # ============================================================
@@ -289,7 +334,7 @@ class RGPDExportResponse(BaseModel):
     activities: list[dict]
     projects: list[dict]
     tasks: list[dict]
-    exported_at: datetime
+    exported_at: HorodatageUTC
 
 
 class RGPDAnonymizeRequest(BaseModel):
@@ -389,8 +434,8 @@ class ProjectResponse(BaseModel):
     budget: float | None
     notes: str | None
     tags: list[str] | None
-    created_at: datetime
-    updated_at: datetime
+    created_at: HorodatageUTC
+    updated_at: HorodatageUTC
 
 
 # ============================================================
@@ -411,8 +456,8 @@ class ConversationResponse(BaseModel):
     title: str | None
     summary: str | None
     message_count: int = 0
-    created_at: datetime
-    updated_at: datetime
+    created_at: HorodatageUTC
+    updated_at: HorodatageUTC
     # 0.43 : rattachement à un projet. Exposé pour que l'interface puisse dire
     # à l'utilisateur quels documents cette conversation consultera — une
     # cloison invisible serait pire que pas de cloison du tout.
@@ -445,7 +490,7 @@ class MessageResponse(BaseModel):
     model: str | None
     provider: str | None = None  # P0-IA-3 : badge local/cloud par message
     extra_data: str | None = None  # BUG-130 : JSON {skill_file: {...}} pour restaurer le fichier généré
-    created_at: datetime
+    created_at: HorodatageUTC
 
 
 # ============================================================
@@ -481,8 +526,8 @@ class FileResponse(BaseModel):
     size: int
     mime_type: str | None
     chunk_count: int
-    indexed_at: datetime | None
-    created_at: datetime
+    indexed_at: HorodatageUTC | None
+    created_at: HorodatageUTC
     # J2 : le rattachement d'un document doit être lisible par l'interface.
     # Sans lui, l'utilisateur ne peut pas savoir ce que la machine consultera
     # dans quelle conversation.

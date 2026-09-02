@@ -568,7 +568,12 @@ class TestDataImport:
                 "model": "modele-restaure",
                 "provider": "ollama",
                 "extra_data": '{"skill_files":[{"name":"archive.xlsx"}]}',
-                "created_at": "2026-08-10T08:01:00",
+                # B-216 : l'aller-retour rendait « 2026-08-10T08:01:00 », sans
+                # le « +00:00 » pourtant importé. Un horodatage servi sans
+                # fuseau est lu comme une heure LOCALE par le navigateur : la
+                # restauration se décalait de l'offset du poste. La réponse
+                # rend désormais l'instant qu'on lui a donné.
+                "created_at": "2026-08-10T08:01:00+00:00",
             }
         ]
 

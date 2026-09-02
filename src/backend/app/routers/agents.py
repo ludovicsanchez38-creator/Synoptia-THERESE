@@ -687,13 +687,17 @@ async def list_tasks(
 ) -> AgentTaskListResponse:
     """Liste les tâches agents."""
     query = select(AgentTask).order_by(AgentTask.created_at.desc()).limit(limit)
+    # B-102 : le compte porte le MEME filtre que les lignes. Sans lui, une
+    # liste filtree annoncait un total que la liste ne montrait pas.
+    count_query = select(func.count(AgentTask.id))
     if status:
         query = query.where(AgentTask.status == status)
+        count_query = count_query.where(AgentTask.status == status)
 
     result = await session.execute(query)
     tasks = result.scalars().all()
 
-    count_result = await session.execute(select(func.count(AgentTask.id)))
+    count_result = await session.execute(count_query)
     total = count_result.scalar() or 0
 
     return AgentTaskListResponse(
@@ -1267,13 +1271,16 @@ async def list_openclaw_sessions(
     """Liste les sessions OpenClaw."""
 
     query = select(AgentSession).order_by(AgentSession.created_at.desc()).limit(limit)
+    # B-102 : meme invariant que /tasks - le total suit le filtre de statut.
+    count_query = select(func.count(AgentSession.id))
     if status:
         query = query.where(AgentSession.status == status)
+        count_query = count_query.where(AgentSession.status == status)
 
     result = await session.execute(query)
     sessions_list = result.scalars().all()
 
-    count_result = await session.execute(select(func.count(AgentSession.id)))
+    count_result = await session.execute(count_query)
     total = count_result.scalar() or 0
 
     return AgentSessionListResponse(
