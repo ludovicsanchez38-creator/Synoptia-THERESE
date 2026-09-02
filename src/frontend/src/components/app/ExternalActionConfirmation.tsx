@@ -6,6 +6,7 @@ import {
 } from 'react';
 import { ShieldCheck } from 'lucide-react';
 import { Z_LAYER } from '../../styles/z-layers';
+import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import {
   ExternalActionConfirmationContext,
   type ExternalActionPreview,
@@ -41,6 +42,24 @@ export function PrototypeExternalActionConfirmationProvider({ children }: { chil
     setPending(next);
   }, []);
 
+  // B-251 : la carte annonçait `role="dialog" aria-modal="true"` sans rien
+  // tenir de ce que `useDialogFocusTrap` déclare être la « source unique de
+  // vérité du comportement modal clavier » — focus initial, Tab bouclé, Échap,
+  // retour du focus au déclencheur. Un utilisateur au clavier s'entendait
+  // annoncer une boîte de dialogue tout en tabulant dans la page qui la porte.
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  // Échap ABANDONNE l'action, comme le bouton « Annuler » — et comme lui, il
+  // se tait pendant que l'effet externe est en vol : offrir une sortie que
+  // l'écran refuse escamoterait la carte au-dessus d'une action déjà partie.
+  // Le rappel reste STABLE : le hook lit `onEscape` par un ref, mais une
+  // identité qui change à chaque rendu réarmerait quand même le piège.
+  const abandonnerSiPossible = useCallback(() => {
+    if (busyRef.current) return;
+    clearPending();
+  }, [clearPending]);
+
+  useDialogFocusTrap(dialogRef, { active: pending !== null, onEscape: abandonnerSiPossible });
+
   const confirm = useCallback(async () => {
     const action = pendingRef.current;
     if (!action || busyRef.current) return;
@@ -64,6 +83,7 @@ export function PrototypeExternalActionConfirmationProvider({ children }: { chil
         >
           <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
           <div
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-labelledby="external-action-confirmation-title"

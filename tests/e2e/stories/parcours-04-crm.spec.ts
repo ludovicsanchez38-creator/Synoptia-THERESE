@@ -131,19 +131,16 @@ test.describe('Parcours 04 - CRM', () => {
     await expect(crmPanel).toBeVisible();
   });
 
-  // CONSTAT RE34-C1 (defaut d'application, PAS du test) : Échap depuis le
-  // formulaire de contact éjecte le panneau CRM tout entier au lieu de fermer
-  // le seul formulaire. `CreateContactModal` (CRMPanel.tsx) se déclare
-  // `role="dialog" aria-modal="true"` mais n'appelle jamais
-  // `pushEscapeHandler` (lib/escapeStack.ts) ; la cascade de la coque ne le
-  // voit donc pas et retombe sur le retour de vue. C'est très exactement le
-  // « KO 1.1/1.2 » que la pile d'Échap a été écrite pour empêcher : « Échap
-  // tombait sur le retour de vue (goBack) et ÉJECTAIT la vue entière sous le
-  // modal ». Preuve : ce test, rouge sur `crm-panel` introuvable après Échap.
-  // Le test reste rouge et déclaré `fixme` : il redeviendra vert le jour où
-  // l'application fermera d'abord son formulaire.
-  test.fixme(
-    'US-300.HP : Echap ferme le formulaire de contact sans ejecter le panneau CRM (constat RE34-C1)',
+  // B-262 (ex-constat RE34-C1), corrigé le 03/09/2026 : `CreateContactModal`
+  // (CRMPanel.tsx) se déclarait `role="dialog" aria-modal="true"` sans jamais
+  // appeler `pushEscapeHandler` (lib/escapeStack.ts) ; la cascade de la coque
+  // ne le voyait donc pas et retombait sur le retour de vue, éjectant le
+  // panneau CRM entier. C'était très exactement le « KO 1.1/1.2 » que la pile
+  // d'Échap a été écrite pour empêcher : « Échap tombait sur le retour de vue
+  // (goBack) et ÉJECTAIT la vue entière sous le modal ». Le `fixme` est levé :
+  // l'application ferme désormais son formulaire d'abord.
+  test(
+    'US-300.HP : Echap ferme le formulaire de contact sans ejecter le panneau CRM (B-262)',
     async ({ page }) => {
       const crmPanel = page.getByTestId('crm-panel');
       await crmPanel.getByRole('button', { name: /ajouter un contact/i }).click();

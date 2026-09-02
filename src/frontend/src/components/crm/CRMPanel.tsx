@@ -6,7 +6,7 @@
  * Utilise crmStore avec persistance pour affichage instantané.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, LayoutDashboard, Users, Activity, UserPlus, Upload, Mail, Phone, FileText, Plus, Clock } from 'lucide-react';
 import { PipelineView } from './PipelineView';
@@ -20,6 +20,7 @@ import { useDemoMask } from '../../hooks';
 import { useStatusStore } from '../../stores/statusStore';
 import { Z_LAYER } from '../../styles/z-layers';
 import { handleRovingFocus } from '../../lib/rovingFocus';
+import { pushEscapeHandler } from '../../lib/escapeStack';
 
 interface CRMPanelProps {
   isOpen?: boolean;
@@ -433,6 +434,18 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
   });
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+
+  // B-262 : le formulaire se déclare `aria-modal` mais n'était inscrit NI dans
+  // la pile Échap NI dans le panelStore. `consommeEchapUnifie` rendait donc
+  // false, la cascade de la coque tombait sur `collapseEmbeddedView()` et
+  // éjectait la vue CRM entière — saisie en cours comprise — en une seule
+  // pression. Même défaut et même correctif que B-228 (InvoiceForm).
+  // Le ref suit le pattern de SignatureEditorModal : sans lui, l'identité de
+  // `onClose`, recréée à chaque rendu du parent, réinscrirait un handler par
+  // rendu.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  useEffect(() => pushEscapeHandler(() => onCloseRef.current()), []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
