@@ -81,7 +81,7 @@ from app.services.workspace_tools import (
     execute_workspace_tool,
     poser_ecran,
 )
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 from sqlalchemy import func
@@ -3458,8 +3458,12 @@ class ConversationRename(BaseModel):
 
 @router.get("/conversations", response_model=list[ConversationResponse])
 async def list_conversations(
-    limit: int = 50,
-    offset: int = 0,
+    # B-166 (02/09/2026) : bornes alignees sur `/api/memory/contacts`. Sans
+    # elles, `?limit=-1` rendait la table ENTIERE (SQLite lit `LIMIT -1` comme
+    # « sans limite ») et `?offset=-1` passait pour 0 : la pagination se
+    # contournait d'un signe moins. Le client pagine par 50.
+    limit: int = Query(default=50, ge=1, le=200),
+    offset: int = Query(default=0, ge=0),
     session: AsyncSession = Depends(get_session),
 ):
     """

@@ -22,6 +22,7 @@ from app.models.schemas import (
 from app.services.invoice_pdf import InvoicePDFGenerator
 from app.services.user_profile import get_cached_profile
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlmodel import select
@@ -29,6 +30,10 @@ from sqlmodel import select
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["invoices"])
+
+# B-160 : nombre de numéros essayés avant de rendre la main (409). Large
+# devant le nombre de créations qu'un poste unique lance en parallèle.
+_REPRISES_DE_NUMERO = 10
 
 
 async def _get_invoice_output_dir(session: AsyncSession) -> str:
@@ -77,10 +82,17 @@ async def _generate_invoice_number(session: AsyncSession, document_type: str = "
     - facture : FACT-YYYY-NNN
     - avoir : AV-YYYY-NNN
 
-    Utilise MAX() pour éviter les race conditions (BUG-073).
-    """
-    from sqlalchemy import func
+    B-159 (02/09/2026) : le rang se compare en NOMBRE, pas en texte.
+    `invoice_number` est une colonne texte, et `MAX()` y range
+    « DEV-2026-1000 » AVANT « DEV-2026-999 ». Passé le millième document de
+    l'année, le maximum restait donc bloqué sur 999, le numéro calculé valait
+    toujours 1000 — déjà pris — et la création tombait en erreur
+    définitivement. Les suffixes sont désormais relus et comparés en entier.
 
+    Ce numéro reste une LECTURE : deux requêtes simultanées peuvent calculer
+    le même (B-160). C'est l'insertion qui tranche, par la contrainte
+    d'unicité et la reprise de `create_invoice`.
+    """
     prefix_map = {
         "devis": "DEV",
         "facture": "FACT",
@@ -89,22 +101,20 @@ async def _generate_invoice_number(session: AsyncSession, document_type: str = "
     prefix = prefix_map.get(document_type, "FACT")
     current_year = datetime.now(UTC).year
 
-    # Utiliser MAX pour trouver le numéro le plus élevé (plus fiable que order_by created_at)
-    statement = (
-        select(func.max(Invoice.invoice_number))
-        .where(Invoice.invoice_number.like(f"{prefix}-{current_year}-%"))
+    statement = select(Invoice.invoice_number).where(
+        Invoice.invoice_number.like(f"{prefix}-{current_year}-%")
     )
     result = await session.execute(statement)
-    max_number = result.scalar_one_or_none()
 
-    if max_number:
+    next_number = 1
+    for numero in result.scalars().all():
         try:
-            last_number = int(max_number.split("-")[-1])
-            next_number = last_number + 1
-        except ValueError:
-            next_number = 1
-    else:
-        next_number = 1
+            rang = int(numero.rsplit("-", 1)[-1])
+        except (ValueError, AttributeError):
+            # Numéro d'une autre convention (import, saisie manuelle) : ignoré
+            # plutôt que de faire échouer toute la série.
+            continue
+        next_number = max(next_number, rang + 1)
 
     return f"{prefix}-{current_year}-{next_number:03d}"
 
@@ -315,9 +325,6 @@ async def create_invoice(
     if document_type not in ("devis", "facture", "avoir"):
         raise HTTPException(status_code=400, detail="document_type doit être : devis, facture ou avoir")
 
-    # Générer le numéro selon le type de document
-    invoice_number = await _generate_invoice_number(session, document_type)
-
     # Dates par défaut
     issue_date = datetime.fromisoformat(request.issue_date.replace("Z", "")) if request.issue_date else datetime.now(UTC)
     due_date = datetime.fromisoformat(request.due_date.replace("Z", "")) if request.due_date else issue_date + timedelta(days=30)
@@ -327,23 +334,51 @@ async def create_invoice(
     if document_type == "devis" and validite_jours is None:
         validite_jours = 30
 
-    # Créer la facture
-    invoice = Invoice(
-        invoice_number=invoice_number,
-        contact_id=request.contact_id,
-        **_snapshot_du_contact(contact),
-        document_type=document_type,
-        tva_applicable=request.tva_applicable,
-        currency=request.currency,
-        issue_date=issue_date,
-        due_date=due_date,
-        status="draft",
-        notes=request.notes,
-        validite_jours=validite_jours,
-    )
+    # Le rollback d'une reprise expire les objets chargés : le contact serait
+    # relu paresseusement au tour suivant, ce qu'une session async interdit.
+    snapshot_client = _snapshot_du_contact(contact)
 
-    session.add(invoice)
-    await session.flush()  # Pour avoir l'ID de la facture
+    # B-160 (02/09/2026) : le numéro se LIT puis s'INSÈRE, sans transaction
+    # verrouillante entre les deux. Huit créations simultanées lisaient le même
+    # maximum, calculaient le même numéro, et six sur huit finissaient en 500
+    # « erreur inattendue » sur la contrainte d'unicité. La lecture ne peut pas
+    # trancher ; l'insertion, elle, tranche pour de bon. On la reprend donc
+    # avec un numéro frais tant qu'un concurrent nous double.
+    invoice = None
+    for _ in range(_REPRISES_DE_NUMERO):
+        invoice_number = await _generate_invoice_number(session, document_type)
+        candidat = Invoice(
+            invoice_number=invoice_number,
+            contact_id=request.contact_id,
+            **snapshot_client,
+            document_type=document_type,
+            tva_applicable=request.tva_applicable,
+            currency=request.currency,
+            issue_date=issue_date,
+            due_date=due_date,
+            status="draft",
+            notes=request.notes,
+            validite_jours=validite_jours,
+        )
+        session.add(candidat)
+        try:
+            await session.flush()  # Pour avoir l'ID de la facture
+        except IntegrityError as collision:
+            await session.rollback()
+            if "invoice_number" not in str(collision.orig):
+                # Une autre contrainte : ce n'est pas la course au numéro, et
+                # la reprise n'y changerait rien.
+                raise
+            logger.warning("Numéro %s pris par un concurrent, reprise", invoice_number)
+            continue
+        invoice = candidat
+        break
+
+    if invoice is None:
+        raise HTTPException(
+            status_code=409,
+            detail="Numérotation occupée par d'autres créations simultanées, réessaie.",
+        )
 
     # Créer les lignes
     db_lines = []
@@ -542,6 +577,24 @@ async def mark_invoice_paid(
 
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
+
+    # B-162 (02/09/2026) : la porte generique `PUT` refuse « paid » sur un
+    # devis depuis la 0.55 ; cette porte laterale posait le meme statut sans
+    # jamais regarder le type de document. Un devis marque paye sortait des
+    # filtres de devis par statut tout en restant compte dans la liste des
+    # devis. Meme garde, meme table de reference.
+    autorises = (
+        STATUTS_DE_DEVIS if invoice.document_type == "devis" else STATUTS_DE_FACTURE
+    )
+    if "paid" not in autorises:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"Statut « paid » invalide pour un document de type "
+                f"« {invoice.document_type} ». Valeurs acceptées : "
+                f"{', '.join(sorted(autorises))}"
+            ),
+        )
 
     # Date de paiement
     payment_date = datetime.fromisoformat(request.payment_date.replace("Z", "")) if request.payment_date else datetime.now(UTC)

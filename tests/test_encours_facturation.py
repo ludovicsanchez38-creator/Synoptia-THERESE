@@ -284,9 +284,10 @@ class TestLesAvoirsEtLaDevise:
 
         identifiant = await _poser_facture(client, 100.0, "sent")
 
-        # L'erreur remonte telle que la pose le pilote (sqlcipher3), pas
-        # enveloppée par SQLAlchemy : viser `IntegrityError` de sqlalchemy.exc
-        # laisserait le test échouer alors que la contrainte a bien tenu.
+        # Le message porte le nom de la contrainte, quelle que soit la
+        # couche qui l'enveloppe. (Jusqu'au 02/09/2026 l'erreur remontait
+        # BRUTE du pilote sqlcipher3, faute d'alignement du dialecte async -
+        # c'était B-161 ; elle est désormais classée comme partout ailleurs.)
         with pytest.raises(Exception, match="invoices.currency"):
             async with get_session_context() as session:
                 trouvee = await session.execute(

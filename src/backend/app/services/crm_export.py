@@ -9,6 +9,7 @@ import csv
 import io
 import json
 import logging
+import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any, Literal
@@ -98,6 +99,25 @@ DELIVERABLE_COLUMNS = [
 # ============================================================
 
 
+# B-163 (02/09/2026) : les octets que le XML d'un classeur n'accepte pas.
+# Meme jeu que `openpyxl.cell.cell.ILLEGAL_CHARACTERS_RE`, mais pose ici pour
+# ne pas dependre d'un detail interne d'openpyxl. Tabulation (\t), retour a la
+# ligne (\n) et retour chariot (\r) en sont EXCLUS : ils sont legitimes dans
+# une note et Excel les accepte.
+_CARACTERES_INTERDITS = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f]")
+
+
+def _sans_caracteres_interdits(texte: str) -> str:
+    """Retire les caracteres de controle qu'un classeur ne peut pas porter.
+
+    Une fiche contenant `\\x07` (la sonnerie ASCII) faisait tomber l'export
+    XLSX entier en 500, sans produire de fichier : un seul contact empoisonne
+    - par un import, un copier-coller ou une saisie hostile - emportait tous
+    les autres, les projets et les livrables avec lui.
+    """
+    return _CARACTERES_INTERDITS.sub("", texte)
+
+
 def _format_value(value: Any) -> str:
     """Format a value for export."""
     if value is None:
@@ -107,8 +127,8 @@ def _format_value(value: Any) -> str:
     if isinstance(value, bool):
         return "Oui" if value else "Non"
     if isinstance(value, (list, dict)):
-        return json.dumps(value, ensure_ascii=False)
-    return str(value)
+        return _sans_caracteres_interdits(json.dumps(value, ensure_ascii=False))
+    return _sans_caracteres_interdits(str(value))
 
 
 def _parse_tags(tags_json: str | None) -> str:

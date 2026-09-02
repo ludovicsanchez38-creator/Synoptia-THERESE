@@ -117,3 +117,63 @@ class TestUnStatutDeDevisNeSePosePasSurUneFacture:
             "un statut inventé se retrouve en base et sort la pièce de tous les "
             "filtres - c'est ce que THÉRÈSE a elle-même halluciné en 0.53"
         )
+
+
+class TestUnDevisNeSeMarquePasPaye:
+    """B-162 (02/09/2026) : la porte generique `PUT` etait fermee en 0.55, la
+    porte laterale `PATCH /{id}/mark-paid` ne l'a jamais ete.
+
+    `paid` n'appartient pas a STATUTS_DE_DEVIS - un devis s'accepte ou se
+    refuse, il ne se paie pas. La route posait pourtant `status='paid'` et une
+    date de paiement sur n'importe quelle piece, sans regarder son type. Le
+    devis sortait alors des filtres de devis par statut tout en restant compte
+    dans la liste des devis : deux ecrans qui se contredisent sur la meme
+    piece.
+    """
+
+    async def _devis(self, client) -> str:
+        contact = await client.post(
+            "/api/memory/contacts", json={"first_name": "Client", "last_name": "Paye"}
+        )
+        devis = await client.post(
+            "/api/invoices/",
+            json={
+                "contact_id": contact.json()["id"],
+                "document_type": "devis",
+                "lines": [{"description": "Prestation", "quantity": 1,
+                           "unit_price_ht": 1200.0, "tva_rate": 0.0}],
+            },
+        )
+        assert devis.status_code == 200, devis.text
+        return devis.json()["id"]
+
+    @pytest.mark.asyncio
+    async def test_marquer_paye_est_refuse_sur_un_devis(self, client):
+        identifiant = await self._devis(client)
+
+        reponse = await client.patch(f"/api/invoices/{identifiant}/mark-paid", json={})
+
+        assert reponse.status_code == 400, (
+            f"« paid » n'est pas un statut de devis, la porte PUT le refuse "
+            f"deja : {reponse.status_code} {reponse.text[:200]}"
+        )
+
+    @pytest.mark.asyncio
+    async def test_le_devis_refuse_garde_son_statut_et_reste_sans_date(self, client):
+        identifiant = await self._devis(client)
+
+        await client.patch(f"/api/invoices/{identifiant}/mark-paid", json={})
+
+        relecture = await client.get(f"/api/invoices/{identifiant}")
+        piece = relecture.json()
+        assert piece["status"] == "draft", piece["status"]
+        assert piece["payment_date"] is None, piece["payment_date"]
+
+    @pytest.mark.asyncio
+    async def test_une_facture_se_marque_toujours_payee(self, client):
+        identifiant = await _facture(client, 1200.0)
+
+        reponse = await client.patch(f"/api/invoices/{identifiant}/mark-paid", json={})
+
+        assert reponse.status_code == 200, reponse.text
+        assert reponse.json()["status"] == "paid"

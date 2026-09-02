@@ -7,7 +7,7 @@ SQLite database setup with SQLModel.
 import logging
 import sqlite3
 from pathlib import Path
-from typing import AsyncGenerator
+from typing import Any, AsyncGenerator
 
 from app.config import settings
 from sqlalchemy import event
@@ -793,6 +793,48 @@ def ensure_db_encrypted(db_path) -> None:
     logger.info("US-014 : base migrée vers SQLCipher (chiffrement au repos actif)")
 
 
+# Noms de la PEP 249. SQLAlchemy interroge ces attributs du pilote pour
+# décider si une exception vient de la base, et de quelle famille elle est.
+_EXCEPTIONS_DBAPI = (
+    "Error",
+    "Warning",
+    "InterfaceError",
+    "DatabaseError",
+    "DataError",
+    "OperationalError",
+    "IntegrityError",
+    "InternalError",
+    "ProgrammingError",
+    "NotSupportedError",
+)
+
+
+def _aligner_erreurs_du_pilote(engine: Any, module: Any) -> list[str]:
+    """Fait pointer les classes d'exception du dialecte sur celles du pilote réel.
+
+    Le dialecte aiosqlite annonce les exceptions de `sqlite3`. Quand la base
+    est chiffrée, elles viennent en réalité de `sqlcipher3`, dont la hiérarchie
+    est SÉPARÉE (`sqlcipher3.dbapi2.Error` n'hérite pas de `sqlite3.Error`).
+    Sans cet alignement, `_handle_dbapi_exception` ne reconnaît pas l'erreur,
+    ne la traduit pas en `sqlalchemy.exc.*`, et l'exception brute du pilote
+    remonte jusqu'au gestionnaire d'erreurs générique.
+
+    Retourne les noms effectivement alignés (pour les tests).
+    """
+    pilote = getattr(engine, "dialect", None)
+    pilote = getattr(pilote, "loaded_dbapi", None)
+    if pilote is None:
+        return []
+    alignes = []
+    for nom in _EXCEPTIONS_DBAPI:
+        remplacement = getattr(module, nom, None)
+        if remplacement is None:
+            continue
+        setattr(pilote, nom, remplacement)
+        alignes.append(nom)
+    return alignes
+
+
 def get_database_url(async_mode: bool = True) -> str:
     """Get database URL for SQLite."""
     db_path = settings.db_path
@@ -893,6 +935,20 @@ async def init_db() -> None:
         pool_pre_ping=True,
         pool_recycle=1800,
     )
+
+    # B-160/B-161 (02/09/2026) : les erreurs SQLCipher doivent être CLASSÉES.
+    # Le moteur sync reçoit `module=sqlcipher3.dbapi2` (engine_kwargs), le
+    # moteur async non : son dialecte est celui d'aiosqlite, dont les classes
+    # d'exception sont celles de `sqlite3`. Or `sqlcipher3.dbapi2.Error`
+    # n'hérite PAS de `sqlite3.Error` : SQLAlchemy ne reconnaissait donc aucune
+    # erreur de la base, ne les traduisait pas, et l'exception BRUTE du pilote
+    # traversait tout `except IntegrityError` de l'application pour finir en
+    # 500 « erreur inattendue ». La garde d'idempotence de la mise en route en
+    # était la première victime : elle était juste, elle n'attrapait rien.
+    if _db_cipher_active:
+        import sqlcipher3 as _sqlcipher3
+
+        _aligner_erreurs_du_pilote(async_engine, _sqlcipher3.dbapi2)
 
     # Appliquer les memes PRAGMAs sur le moteur async
     @event.listens_for(async_engine.sync_engine, "connect")

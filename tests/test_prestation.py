@@ -186,11 +186,18 @@ async def test_aucun_chemin_ne_repose_piste_en_silence(db_session: AsyncSession)
     `default="piste"` : un import, un script ou un test la reposait en
     silence. Une prestation sans phase ne doit pas pouvoir naître.
     """
-    import sqlcipher3
+    from sqlalchemy.exc import IntegrityError
 
     c = await _client(db_session, nom="SansPhase")
-    # La contrainte NOT NULL remonte du pilote, pas de la couche ORM.
-    with pytest.raises(sqlcipher3.dbapi2.IntegrityError):
+    # La contrainte NOT NULL remonte de la base. Elle arrivait ici en
+    # exception BRUTE du pilote (`sqlcipher3.dbapi2.IntegrityError`), ce que ce
+    # test figeait : c'etait le symptome de B-161 - le dialecte async annoncait
+    # les exceptions de `sqlite3` alors que la base chiffree leve celles de
+    # `sqlcipher3`, si bien que SQLAlchemy ne les classait pas. Depuis
+    # l'alignement (02/09/2026), l'erreur est traduite comme partout ailleurs ;
+    # le pilote reste identifiable par `.orig`.
+    with pytest.raises(IntegrityError) as leve:
         db_session.add(Prestation(contact_id=c.id, intitule="Depannage"))
         await db_session.commit()
+    assert "NOT NULL constraint failed: prestations.phase" in str(leve.value.orig)
     await db_session.rollback()
