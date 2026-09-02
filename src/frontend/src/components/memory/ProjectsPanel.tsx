@@ -18,8 +18,17 @@ import { ProjectsKanban } from './ProjectsKanban';
 import { ProjectModal } from './ProjectModal';
 import { Spinner } from '../ui/Spinner';
 
+/**
+ * B-098 : plafond DUR du GET projets (`limit` borné à 200 côté serveur, 201
+ * est refusé en 422). Atteint, l'écran ne peut pas connaître le nombre réel :
+ * il le dit, au lieu de présenter 200 comme un total. Même motif que
+ * PLAFOND_CONTACTS et que les fichiers de projet.
+ */
+const PLAFOND_PROJETS = 200;
+
 export function ProjectsPanel() {
   const [projects, setProjects] = useState<Project[]>([]);
+  const [listeTronquee, setListeTronquee] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -29,11 +38,15 @@ export function ProjectsPanel() {
   const load = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await api.listProjects(0, 200);
+      const data = await api.listProjects(0, PLAFOND_PROJETS);
       setProjects(data);
+      setListeTronquee(data.length >= PLAFOND_PROJETS);
       setError(null);
     } catch (err) {
       console.error('Failed to load projects:', err);
+      // Le drapeau tombe avec la liste : rien ne doit survivre pour décrire
+      // des données qui ne sont plus là (leçon B-009 côté factures).
+      setListeTronquee(false);
       setError('Impossible de charger les projets.');
     } finally {
       setLoading(false);
@@ -126,8 +139,14 @@ export function ProjectsPanel() {
             <div>
               <h1 className="text-lg font-bold text-text leading-tight">Projets</h1>
               <p className="text-xs text-text-muted">
-                {projects.length} projet{projects.length > 1 ? 's' : ''}
+                {projects.length}{listeTronquee ? '+' : ''} projet{projects.length > 1 ? 's' : ''}
               </p>
+              {listeTronquee && (
+                <p role="alert" className="text-xs text-warning">
+                  Liste incomplète : seuls les {PLAFOND_PROJETS} premiers projets
+                  sont affichés, d'autres existent.
+                </p>
+              )}
             </div>
           </div>
           <Button variant="primary" size="sm" onClick={handleNew}>

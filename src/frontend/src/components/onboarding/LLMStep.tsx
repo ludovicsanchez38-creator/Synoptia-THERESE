@@ -96,6 +96,11 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
   const [saving, setSaving] = useState(false);
   const [configuring, setConfiguring] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // B-246 : toutes les erreurs de cette étape ne parlent pas du champ de
+  // clé. Celles qui viennent de « Continuer » surviennent même quand le
+  // champ n'est plus affiché (clé déjà enregistrée) : elles gardent le
+  // bandeau général, les autres sont signalées SUR le champ fautif.
+  const [erreurDuChampCle, setErreurDuChampCle] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -170,17 +175,20 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
 
   async function handleSaveApiKey() {
     if (!apiKeyInput.trim()) {
+      setErreurDuChampCle(true);
       setError('Entre une clé API');
       return;
     }
 
     const providerConfig = PROVIDERS.find(p => p.id === selectedProvider);
     if (providerConfig?.keyPrefix && !apiKeyInput.startsWith(providerConfig.keyPrefix)) {
+      setErreurDuChampCle(true);
       setError(`La clé API doit commencer par "${providerConfig.keyPrefix}"`);
       return;
     }
 
     setSaving(true);
+    setErreurDuChampCle(false);
     setError(null);
 
     try {
@@ -194,6 +202,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
       setApiKeyInput('');
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
+      setErreurDuChampCle(true);
       setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
     } finally {
       setSaving(false);
@@ -217,6 +226,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
   async function handleSelectProvider(provider: api.LLMProvider) {
     setSelectedProvider(provider);
     modeleChoisiParLUtilisateur.current = false;
+    setErreurDuChampCle(false);
     setError(null);
     setSaved(false);
 
@@ -239,6 +249,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
     if (configuringRef.current) return;
     configuringRef.current = true;
     setConfiguring(true);
+    setErreurDuChampCle(false);
     setError(null);
     try {
       await api.setLLMConfig(
@@ -377,10 +388,13 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
                   <label htmlFor="llm-api-key" className="sr-only">Clé API {currentProviderConfig?.name}</label>
                   <input
                     id="llm-api-key"
+                    aria-invalid={erreurDuChampCle && error ? true : undefined}
+                    aria-describedby={erreurDuChampCle && error ? 'llm-api-key-erreur' : undefined}
                     type={showApiKey ? 'text' : 'password'}
                     value={apiKeyInput}
                     onChange={(e) => {
                       setApiKeyInput(e.target.value);
+                      setErreurDuChampCle(false);
                       setError(null);
                     }}
                     onKeyDown={(e) => {
@@ -409,6 +423,17 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
                   {saving ? <Spinner taille="bouton" /> : 'Sauver'}
                 </Button>
               </div>
+
+              {erreurDuChampCle && error && (
+                <p
+                  id="llm-api-key-erreur"
+                  role="alert"
+                  className="flex items-center gap-2 text-sm text-error"
+                >
+                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  {error}
+                </p>
+              )}
 
               {currentProviderConfig?.consoleUrl && (
                 <p className="text-xs text-text-muted">
@@ -534,7 +559,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
           </button>
         </div>
       )}
-      {error && (
+      {error && !erreurDuChampCle && (
         <div className="flex items-center gap-2 px-3 py-2 mb-6 bg-[var(--color-error-tint)] border border-error/40 rounded-md" role="alert">
           <AlertCircle className="w-4 h-4 text-error" />
           <span className="text-sm text-error">{error}</span>

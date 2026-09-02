@@ -346,8 +346,25 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
                       {/* B4 : l'artisan cherchait Moreau, la liste ne montrait
                           que DEV-2026-001. Le client d'abord, la référence
                           ensuite — et la référence seule quand le nom manque. */}
+                      {/* B-208 : ouvrir un document n'existait qu'au clic sur
+                          la carte, un conteneur sans rôle ni tabIndex. La
+                          commande d'ouverture est ici, nommée par le client
+                          (la référence à défaut) : atteignable à la
+                          tabulation, annoncée comme bouton, et distincte des
+                          deux boutons de la ligne pour qu'Entrée sur
+                          « Supprimer » n'ouvre pas aussi le formulaire. */}
                       <h3 className="font-medium text-text">
-                        {invoice.contact_name || invoice.invoice_number}
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            handleEdit(invoice);
+                          }}
+                          className="rounded-sm text-left hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        >
+                          {invoice.contact_name || invoice.invoice_number}
+                        </button>
                       </h3>
                       {invoice.contact_name && (
                         <span className="text-xs text-text-muted">{invoice.invoice_number}</span>

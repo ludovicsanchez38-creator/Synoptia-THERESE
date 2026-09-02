@@ -8,20 +8,66 @@
  * ne le lisait. Verdict de la relecture : « Un champ JSON que l'UI n'affiche
  * pas, c'est POST qui jetait l'adresse : même geste. » Le finding était intact.
  *
- * Ces tests portent donc sur ce qui s'affiche.
+ * B-018 : les trois derniers tests de ce fichier prétendaient fermer la porte
+ * en lisant le TEXTE SOURCE des fichiers et en y cherchant `contact_name`. Ils
+ * restaient verts sur un écran qui n'affichait plus rien du client : une
+ * déclaration de type, un import mort ou une variable inutilisée leur
+ * suffisait. Ils sont remplacés par un rendu réel, qui regarde ce qui est
+ * effectivement écrit à l'écran. Le typage des jeux d'essai ci-dessous tient
+ * l'autre moitié de la promesse : si `Invoice` perdait `contact_name`, tsc
+ * refuserait ce fichier.
  */
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { buildTodayAttentionItems } from '../prototype/prototypeReadModels';
+import type { Invoice } from '../../services/api';
+import { useInvoiceStore } from '../../stores/invoiceStore';
+import { useStatusStore } from '../../stores/statusStore';
 
-const RACINE = join(__dirname, '..', '..');
-const source = (chemin: string) =>
-  readFileSync(join(RACINE, chemin), 'utf-8')
-    .replace(/\{\/\*[\s\S]*?\*\/\}/g, '')
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/^\s*\/\/.*$/gm, '');
+const mockListInvoices = vi.fn();
+
+vi.mock('../../services/api', async () => {
+  const reel = await vi.importActual<typeof import('../../services/api')>('../../services/api');
+  return {
+    ...reel,
+    listInvoices: (...args: unknown[]) => mockListInvoices(...args),
+    generateInvoicePDF: vi.fn(),
+    deleteInvoice: vi.fn(),
+    sendInvoiceByEmail: vi.fn(),
+  };
+});
+
+vi.mock('./InvoiceForm', () => ({ InvoiceForm: () => <div data-testid="invoice-form" /> }));
+
+import { InvoicesPanel } from './InvoicesPanel';
+
+const facture: Invoice = {
+  id: 'inv-1',
+  invoice_number: 'FACT-2026-001',
+  contact_id: 'c1',
+  contact_name: 'Sophie Garcia',
+  document_type: 'facture',
+  tva_applicable: true,
+  currency: 'EUR',
+  issue_date: '2026-07-01T00:00:00Z',
+  due_date: '2026-07-15T00:00:00Z',
+  status: 'overdue',
+  subtotal_ht: 165,
+  total_tax: 33,
+  total_ttc: 198,
+  notes: null,
+  payment_terms: null,
+  payment_method: null,
+  late_penalty_rate: null,
+  legal_mentions: null,
+  converted_from_id: null,
+  validite_jours: null,
+  payment_date: null,
+  created_at: '2026-07-01T00:00:00Z',
+  updated_at: '2026-07-01T00:00:00Z',
+  lines: [],
+};
 
 describe('B4 — l’écran nomme le client', () => {
   it('le brief du jour titre avec le client, pas la référence', () => {
@@ -76,17 +122,33 @@ describe('B4 — l’écran nomme le client', () => {
     const facture = items.find((i) => i.kind === 'invoice');
     expect(facture!.title).toContain('FACT-2026-002');
   });
+});
 
-  it('le type DashboardInvoice porte le nom', () => {
-    expect(source('services/api/dashboard.ts')).toMatch(/contact_name/);
+describe('B-018 : la liste Devis et factures affiche vraiment le client', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    useInvoiceStore.setState({
+      invoices: [],
+      currentInvoiceId: null,
+      filters: { status: 'all' },
+      isInvoicePanelOpen: true,
+      draftInvoice: null,
+    });
+    useStatusStore.setState({ notifications: [] });
   });
 
-  it('la liste Devis et factures affiche le client', () => {
-    // Sans cela, l'écran que l'artisan ouvre reste identique au finding.
-    expect(source('components/invoices/InvoicesPanel.tsx')).toMatch(/contact_name/);
+  it('écrit le nom du client dans la ligne du document', async () => {
+    mockListInvoices.mockResolvedValue([facture]);
+    render(<InvoicesPanel standalone />);
+
+    expect(await screen.findByText(/Garcia/)).toBeInTheDocument();
   });
 
-  it('le type Invoice du frontend porte le nom', () => {
-    expect(source('services/api/invoices.ts')).toMatch(/contact_name/);
+  it('écrit la référence quand le client est inconnu', async () => {
+    mockListInvoices.mockResolvedValue([{ ...facture, id: 'inv-2', contact_name: null }]);
+    render(<InvoicesPanel standalone />);
+
+    expect(await screen.findByText('FACT-2026-001')).toBeInTheDocument();
+    expect(screen.queryByText(/Garcia/)).not.toBeInTheDocument();
   });
 });

@@ -11,6 +11,52 @@ import { useContactsStore } from '../../stores/contactsStore';
 import { pushEscapeHandler } from '../../lib/escapeStack';
 import { Z_LAYER } from '../../styles/z-layers';
 
+const LIBELLES_PERIMETRE: Record<MemoryScope, string> = {
+  global: 'Global',
+  project: 'Projet',
+  conversation: 'Conv.',
+};
+
+interface EtatVideContacts {
+  message: string;
+  /** Absent quand il n'y a aucun filtre à lever : le carnet est vraiment vide. */
+  actionLabel?: string;
+}
+
+/**
+ * B-240 : trois situations rendaient la même phrase, « Aucun contact ». Avec
+ * deux cents fiches et une faute de frappe, l'écran affirmait que le carnet
+ * était vide. La recherche et le périmètre sont maintenant nommés, et le
+ * moyen de les lever est proposé là où l'utilisateur constate le vide.
+ */
+function decrireEtatVideContacts(
+  recherche: string,
+  perimetre: MemoryScope | 'all',
+): EtatVideContacts {
+  const terme = recherche.trim();
+  const nomPerimetre = perimetre === 'all' ? null : LIBELLES_PERIMETRE[perimetre];
+
+  if (terme && nomPerimetre) {
+    return {
+      message: `Aucun contact ne correspond à « ${terme} » dans le périmètre « ${nomPerimetre} ».`,
+      actionLabel: 'Effacer les filtres',
+    };
+  }
+  if (terme) {
+    return {
+      message: `Aucun contact ne correspond à « ${terme} ».`,
+      actionLabel: 'Effacer la recherche',
+    };
+  }
+  if (nomPerimetre) {
+    return {
+      message: `Aucun contact dans le périmètre « ${nomPerimetre} ».`,
+      actionLabel: 'Voir tous les périmètres',
+    };
+  }
+  return { message: 'Aucun contact' };
+}
+
 interface MemoryPanelProps {
   isOpen?: boolean;
   onClose?: () => void;
@@ -222,6 +268,15 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
   // Mode démo : masquer les contacts affichés
   const displayContacts = demoEnabled ? scopedContacts.map(c => maskContact(c)) : scopedContacts;
 
+  // B-240 : la liste ne savait pas POURQUOI elle était vide. Les deux causes
+  // possibles vivent ici ; on les descend au lieu de laisser l'écran affirmer
+  // que le carnet est vide.
+  const etatVideContacts = decrireEtatVideContacts(searchQuery, scopeFilter);
+  function leverLesFiltresContacts() {
+    setSearchQuery('');
+    setScopeFilter('all');
+  }
+
   const panelBody = (
     <>
             <input
@@ -344,6 +399,8 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
               ) : (
                 <ContactsList
                   contacts={displayContacts}
+                  etatVide={etatVideContacts}
+                  onLeverLesFiltres={leverLesFiltresContacts}
                   onSelect={(c) => onEditContact?.(c)}
                   onDelete={(c) => {
                     setDeleteError(null);
@@ -652,11 +709,15 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
 // Contacts list component
 function ContactsList({
   contacts,
+  etatVide,
+  onLeverLesFiltres,
   onSelect,
   onDelete,
   onRGPDAction,
 }: {
   contacts: api.Contact[];
+  etatVide: EtatVideContacts;
+  onLeverLesFiltres: () => void;
   onSelect: (contact: api.Contact) => void;
   onDelete: (contact: api.Contact) => void;
   onRGPDAction: (type: 'export' | 'anonymize' | 'renew', contact: api.Contact) => void;
@@ -665,9 +726,17 @@ function ContactsList({
 
   if (contacts.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-32 text-text-muted">
-        <Users className="w-8 h-8 mb-2 opacity-50" />
-        <p className="text-sm">Aucun contact</p>
+      <div
+        data-testid="contacts-etat-vide"
+        className="flex flex-col items-center justify-center h-32 gap-2 px-4 text-center text-text-muted"
+      >
+        <Users className="w-8 h-8 opacity-50" />
+        <p className="text-sm">{etatVide.message}</p>
+        {etatVide.actionLabel && (
+          <Button variant="ghost" size="sm" onClick={onLeverLesFiltres}>
+            {etatVide.actionLabel}
+          </Button>
+        )}
       </div>
     );
   }
