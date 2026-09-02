@@ -22,6 +22,7 @@ import logging
 import os
 import sys
 from typing import Any
+from urllib.parse import quote
 
 import httpx
 
@@ -329,12 +330,18 @@ async def execute_tool(tool_name: str, arguments: dict[str, Any]) -> dict[str, A
     method, path_template = route
 
     # Résoudre les paramètres de chemin ({contact_id}, {project_id}, etc.)
+    # B-022 : la valeur est ENCODÉE avant d'être collée. Sans quote(), un
+    # `contact_id` valant `../../config/llm?x=` sortait de la route déclarée :
+    # le `?` avalait le suffixe `/fiche` du gabarit et httpx normalisait les
+    # `../`. Le garde-fou de lecture, qui ne juge que le nom de l'outil,
+    # laissait alors l'agent atteindre n'importe quelle route GET de l'API.
+    # `safe=""` : aucun séparateur ne survit, pas même `/`.
     path = path_template
     path_params: list[str] = []
     for key, value in list(arguments.items()):
         placeholder = "{" + key + "}"
         if placeholder in path:
-            path = path.replace(placeholder, str(value))
+            path = path.replace(placeholder, quote(str(value), safe=""))
             path_params.append(key)
 
     # Séparer query params et body

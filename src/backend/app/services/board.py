@@ -77,8 +77,11 @@ _SONDES: dict[str, tuple[str, str]] = {
     "grok": ("https://api.x.ai/v1/models", "bearer"),
     "mistral": ("https://api.mistral.ai/v1/models", "bearer"),
     "anthropic": ("https://api.anthropic.com/v1/models", "x-api-key"),
+    # B-019 : la clé Gemini part dans l'en-tête documenté par Google, plus
+    # dans la chaîne de requête (l'ancien mode s'appelait « query-key »).
     "gemini": (
-        "https://generativelanguage.googleapis.com/v1beta/models", "query-key"
+        "https://generativelanguage.googleapis.com/v1beta/models",
+        "x-goog-api-key",
     ),
 }
 
@@ -129,9 +132,12 @@ async def _sonder_un(fournisseur: str, cle: str, client: Any) -> None:
                 params={"limit": 1000},
                 timeout=5.0,
             )
-        else:  # query-key (Gemini)
+        else:  # x-goog-api-key (Gemini)
             reponse = await client.get(
-                url, params={"key": cle, "pageSize": 1000}, timeout=5.0
+                url,
+                headers={"x-goog-api-key": cle},
+                params={"pageSize": 1000},
+                timeout=5.0,
             )
         reponse.raise_for_status()
         ids = _ids_de_la_reponse(fournisseur, reponse.json())

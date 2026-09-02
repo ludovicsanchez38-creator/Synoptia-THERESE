@@ -98,3 +98,80 @@ def test_la_limite_de_pagination_est_ecrite_dans_l_outil():
     assert any(mot in description for mot in ("tronqu", "partiel", "tout")), (
         "la description doit avertir que la liste peut être incomplète"
     )
+
+
+# ============================================================
+# B-022 : le garde-fou de lecture ne jugeait que le NOM de l'outil
+# ============================================================
+
+
+@pytest.mark.asyncio
+async def test_le_parametre_de_chemin_ne_sort_pas_de_la_route(monkeypatch):
+    """Un identifiant hostile ne doit pas atteindre une autre route de l'API.
+
+    Trouvé le 02/09/2026 : le paramètre de chemin était collé par un
+    `str.replace` sans encodage. Un `contact_id` valant `../../config/llm?x=`
+    faisait deux choses à la fois : le `?` avalait le suffixe `/fiche` du
+    gabarit, et httpx normalisait les `../` - l'agent atteignait n'importe
+    quelle route GET de THÉRÈSE, liste blanche contournée.
+
+    On intercepte l'appel HTTP : le test doit prouver la forme du chemin,
+    jamais joindre un backend.
+    """
+    import app.services.mcp_therese_server as serveur
+
+    captures: list[tuple[str, str]] = []
+
+    async def _faux_appel(method, path, params=None, body=None):
+        captures.append((method, path))
+        return {}
+
+    monkeypatch.setattr(serveur, "_call_therese_api", _faux_appel)
+
+    evasions = [
+        "../../config/llm?x=",
+        "..%2f..%2fconfig/llm",
+        "42?x=1",
+        "../../data/backups#",
+        "a/b",
+    ]
+    for outil, cle in (("get_contact", "contact_id"), ("get_project", "project_id")):
+        _, gabarit = TOOL_ROUTES[outil]
+        prefixe, suffixe = gabarit.split("{" + cle + "}")
+        for valeur in evasions:
+            captures.clear()
+            await serveur.execute_tool(outil, {cle: valeur})
+            assert len(captures) == 1
+            methode, chemin = captures[0]
+            assert methode == "GET"
+            assert chemin.startswith(prefixe), (
+                f"{outil}({valeur!r}) est sorti de la route : {chemin}"
+            )
+            assert chemin.endswith(suffixe), (
+                f"{outil}({valeur!r}) a perdu le suffixe du gabarit : {chemin}"
+            )
+            segment = chemin[len(prefixe): len(chemin) - len(suffixe) or None]
+            assert not any(caractere in segment for caractere in "/?#"), (
+                f"{outil}({valeur!r}) a laissé un séparateur brut : {segment!r}"
+            )
+
+
+@pytest.mark.asyncio
+async def test_le_parametre_de_chemin_ordinaire_reste_lisible(monkeypatch):
+    """Aucun sur-blocage : un identifiant normal traverse tel quel."""
+    import app.services.mcp_therese_server as serveur
+
+    captures: list[str] = []
+
+    async def _faux_appel(method, path, params=None, body=None):
+        captures.append(path)
+        return {}
+
+    monkeypatch.setattr(serveur, "_call_therese_api", _faux_appel)
+
+    await serveur.execute_tool(
+        "get_contact", {"contact_id": "8a03f8ea-9679-49b1-86be-4802be6ed95e"}
+    )
+    assert captures == [
+        "/api/memory/contacts/8a03f8ea-9679-49b1-86be-4802be6ed95e/fiche"
+    ]

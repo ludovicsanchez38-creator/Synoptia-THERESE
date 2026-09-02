@@ -148,13 +148,22 @@ class TestDataExportAPI:
         assert "activity_logs" in data
 
     @pytest.mark.asyncio
-    @pytest.mark.xfail(strict=True, reason="01/09 : ECHEC REEL. L export RGPD ne remplit pas toutes les sections attendues. Ce test couvrait deja le defaut du lot D, il n avait jamais ete lance. Doit repasser au vert quand ce lot sera fusionne.")
     async def test_export_and_delete_cover_every_user_table(
         self,
         async_client: AsyncClient,
         db_session,
     ):
-        """Verrouille la parité entre les tables métier, l'export et l'effacement."""
+        """Verrouille la parité entre les tables métier, l'export et l'effacement.
+
+        B-153 : ce test portait un `xfail(strict=True)` dont le motif était
+        faux. L'export de production remplit bien ses sections ; c'est le
+        harnais qui écrivait dans une base et lisait dans une autre (le moteur
+        synchrone de l'application n'était pas branché sur la base de test).
+        Tant que l'assertion de complétude tombait, les assertions de purge
+        qui la suivent n'ont JAMAIS été évaluées : la purge globale n'était
+        prouvée sur aucun modèle. Le harnais est corrigé dans
+        `src/backend/tests/conftest.py`, le marqueur est donc retiré.
+        """
         from datetime import UTC, datetime, timedelta
 
         from app.models.entities import (
@@ -284,6 +293,68 @@ class TestDataExportAPI:
         for model in models_to_purge:
             result = await db_session.execute(select(model))
             assert result.scalars().first() is None, f"{model.__name__} n'a pas été purgé"
+
+    @pytest.mark.asyncio
+    async def test_export_rgpd_ne_contient_aucun_secret_de_connexion(
+        self,
+        async_client: AsyncClient,
+        db_session,
+    ):
+        """B-155 : l'exclusion des secrets de connexion doit etre gardee par un
+        test qui s'execute vraiment.
+
+        Les trois seules assertions du depot qui verifiaient cette exclusion
+        vivaient APRES une assertion qui echouait, dans un test
+        `xfail(strict=True)` : elles n'ont jamais ete evaluees, et le rapport
+        de suite restait vert. Ce test est autonome et sans xfail.
+
+        Deux gardes, car la seconde seule ne prouve rien : on exige d'abord que
+        le compte et l'agenda SOIENT exportes (un export vide passerait sinon
+        le controle des secrets sans rien demontrer), puis on cherche les
+        sentinelles dans le DOCUMENT ENTIER - pas seulement dans la premiere
+        ligne d'une section, ce qui laisserait passer une fuite recopiee
+        ailleurs.
+        """
+        from app.models.entities import Calendar, EmailAccount
+
+        compte = EmailAccount(
+            email="secrets@example.test",
+            client_secret="SENTINELLE-CLIENT-SECRET",
+            access_token="SENTINELLE-ACCESS-TOKEN",
+            refresh_token="SENTINELLE-REFRESH-TOKEN",
+            imap_password="SENTINELLE-IMAP-PASSWORD",
+        )
+        agenda = Calendar(
+            summary="Agenda export",
+            account_id=compte.id,
+            caldav_password="SENTINELLE-CALDAV-PASSWORD",
+        )
+        db_session.add_all([compte, agenda])
+        await db_session.commit()
+
+        response = await async_client.get("/api/data/export")
+        assert response.status_code == 200, response.text
+        exported = response.json()
+
+        assert any(
+            item.get("email") == "secrets@example.test"
+            for item in exported["email_accounts"]
+        ), "le compte e-mail n'est pas dans l'export : le controle ne prouverait rien"
+        assert any(
+            item.get("summary") == "Agenda export" for item in exported["calendars"]
+        ), "l'agenda n'est pas dans l'export : le controle ne prouverait rien"
+
+        document = json.dumps(exported, ensure_ascii=False)
+        for sentinelle in (
+            "SENTINELLE-CLIENT-SECRET",
+            "SENTINELLE-ACCESS-TOKEN",
+            "SENTINELLE-REFRESH-TOKEN",
+            "SENTINELLE-IMAP-PASSWORD",
+            "SENTINELLE-CALDAV-PASSWORD",
+        ):
+            assert sentinelle not in document, (
+                f"secret de connexion {sentinelle} present dans l'export RGPD"
+            )
 
     @pytest.mark.asyncio
     async def test_export_conversations_json(self, async_client: AsyncClient):

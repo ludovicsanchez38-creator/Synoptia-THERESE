@@ -113,10 +113,6 @@ def validate_file_path(file_path: str | Path, allowed_base: Path | None = None) 
     path = Path(file_path).expanduser().resolve()
     home = Path.home()
 
-    # Verifier que le fichier existe
-    if not path.exists():
-        raise FileNotFoundError(f"Fichier non trouvé : {path}")
-
     # Verifier les repertoires systeme interdits
     path_str = str(path)
     # 31/08 : sur macOS le dossier temporaire de l'utilisateur vit sous
@@ -160,6 +156,17 @@ def validate_file_path(file_path: str | Path, allowed_base: Path | None = None) 
         except ValueError:
             logger.warning(f"Acces refuse (hors repertoire autorise) : {path} n'est pas sous {allowed_base}")
             raise PermissionError(f"Acces interdit : le fichier doit etre dans {allowed_base}")
+
+    # B-037 : l'existence se verifie EN DERNIER, apres toutes les gardes.
+    # Placee en tete, elle rendait FileNotFoundError pour un chemin interdit
+    # absent et PermissionError pour un chemin interdit present : la
+    # difference des deux messages est un oracle d'existence, qui permet
+    # d'enumerer ~/.ssh sans jamais lire un fichier. Le message de cette
+    # branche divulgue en outre le chemin absolu resolu, donc le nom du
+    # dossier personnel - il ne doit donc etre atteint que sur un chemin
+    # deja declare autorise.
+    if not path.exists():
+        raise FileNotFoundError(f"Fichier non trouvé : {path}")
 
     return path
 

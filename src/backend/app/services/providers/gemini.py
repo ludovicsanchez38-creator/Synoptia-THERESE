@@ -287,8 +287,16 @@ class GeminiProvider(BaseProvider):
             async with self.client.stream(
                 "POST",
                 url,
-                params={"key": self.config.api_key, "alt": "sse"},
-                headers={"Content-Type": "application/json"},
+                # B-019 : la clé part dans l'en-tête documenté par Google
+                # (`x-goog-api-key`), jamais en paramètre d'URL. Gemini était
+                # le seul fournisseur dont le secret voyageait dans la chaîne
+                # de requête : les journaux de THÉRÈSE la masquaient, pas les
+                # proxys, terminaisons TLS ni outillages HTTP traversés.
+                params={"alt": "sse"},
+                headers={
+                    "Content-Type": "application/json",
+                    "x-goog-api-key": self.config.api_key or "",
+                },
                 json=request_body,
             ) as response:
                 if response.status_code != 200:

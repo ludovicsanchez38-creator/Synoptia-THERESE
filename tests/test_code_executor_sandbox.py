@@ -69,7 +69,18 @@ async def test_execute_sandboxed_rejette_evasion_dunder(tmp_path):
 @pytest.mark.asyncio
 async def test_execute_sandboxed_passe_par_un_sous_process_spawn(monkeypatch, tmp_path):
     """L'exécution doit transiter par un Process spawn isolé, pas par le thread
-    du backend (sinon une évasion accéderait aux secrets en mémoire)."""
+    du backend (sinon une évasion accéderait aux secrets en mémoire).
+
+    B-048 : ce test ne comparait que le `__name__` de la cible capturée, et le
+    faux `Process` jetait `args` et `daemon`. Un leurre portant le même nom et
+    lisant les secrets satisfaisait l'assertion. On compare désormais
+    l'IDENTITÉ de la fonction, et on conserve les arguments et le drapeau
+    `daemon` pour les éprouver.
+
+    Il éprouve la FORME de l'appel, ce qui reste utile mais ne prouve aucun
+    isolement : la preuve d'isolement est le test qui suit, qui lance un vrai
+    sous-processus.
+    """
     import multiprocessing as mp
 
     captured: dict = {}
@@ -82,6 +93,8 @@ async def test_execute_sandboxed_passe_par_un_sous_process_spawn(monkeypatch, tm
     class _P:
         def __init__(self, target, args, daemon=False):
             captured["target"] = target
+            captured["args"] = args
+            captured["daemon"] = daemon
 
         def start(self):
             pass
@@ -106,8 +119,68 @@ async def test_execute_sandboxed_passe_par_un_sous_process_spawn(monkeypatch, tm
         mp, "get_context", lambda m: _Ctx() if m == "spawn" else real_get_context(m)
     )
 
-    await execute_sandboxed(XLSX_OK, str(tmp_path / "x.xlsx"), "T", "xlsx")
-    assert captured["target"].__name__ == "_run_generation_in_subprocess"
+    sortie = str(tmp_path / "x.xlsx")
+    await execute_sandboxed(XLSX_OK, sortie, "T", "xlsx", nb_slides=7)
+
+    assert captured["target"] is _run_generation_in_subprocess, (
+        "un leurre portant le même nom ne doit pas satisfaire ce test"
+    )
+    assert captured["daemon"] is True, (
+        "le sous-processus doit être daemon : sinon un backend qui s'arrête "
+        "attend un enfant échappé au lieu de le tuer"
+    )
+    code, chemin, titre, format_type, nb_slides, _queue = captured["args"]
+    assert (code, chemin, titre, format_type, nb_slides) == (
+        XLSX_OK,
+        sortie,
+        "T",
+        "xlsx",
+        7,
+    )
+
+
+@pytest.mark.asyncio
+async def test_le_sous_processus_n_herite_pas_de_la_memoire_du_backend(
+    monkeypatch, tmp_path
+):
+    """La promesse en tête de fichier, éprouvée sur un VRAI sous-processus.
+
+    B-048 : aucun test du fichier n'observait l'enfant. Les quatre autres
+    appels à `_run_generation_in_subprocess` l'appellent comme une fonction
+    ordinaire - donc dans le processus de test - et le seul qui parlait de
+    spawn le remplaçait par un faux qui n'exécute rien.
+
+    Le témoin est posé dans la MÉMOIRE du parent (on détourne
+    `_build_namespace` pour injecter un titre témoin). Un interpréteur `spawn`
+    réimporte le module à neuf : le détournement n'existe pas chez lui, et le
+    fichier produit porte le vrai titre. Une exécution en processus (appel
+    direct, ou contexte `fork`) porterait le témoin.
+
+    Le témoin transite par le FICHIER produit, pas par une variable du parent :
+    il reste donc observable même si le sabotage est un `fork`, où une liste
+    partagée serait, elle, invisible.
+    """
+    import app.services.skills.code_executor as ce
+    from openpyxl import load_workbook
+
+    vrai_build_namespace = ce._build_namespace
+
+    def _build_namespace_temoin(output_path, title, format_type, nb_slides=10):
+        namespace = vrai_build_namespace(output_path, title, format_type, nb_slides)
+        namespace["title"] = "TEMOIN-MEMOIRE-DU-PARENT"
+        return namespace
+
+    monkeypatch.setattr(ce, "_build_namespace", _build_namespace_temoin)
+
+    sortie = tmp_path / "isolement.xlsx"
+    await execute_sandboxed(XLSX_OK, str(sortie), "TITRE-ATTENDU", "xlsx")
+
+    assert sortie.exists(), "le sous-processus n'a rien produit"
+    valeur = load_workbook(str(sortie)).active["A1"].value
+    assert valeur == "TITRE-ATTENDU", (
+        "le code a été exécuté dans un interpréteur qui voyait la mémoire du "
+        f"parent (A1 = {valeur!r})"
+    )
 
 
 def test_pandas_est_un_import_interdit():
