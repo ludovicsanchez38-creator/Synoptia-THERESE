@@ -614,6 +614,22 @@ def web_tools() -> list[dict[str, Any]]:
     return tools
 
 
+def _envelopper_page_web(texte: str) -> str:
+    """B-104 : titre et texte d'une page web arrivaient nus au modèle.
+
+    `formater_resultats_pour_llm` encadre déjà les résultats de recherche ;
+    la navigation, qui rapporte la page ENTIÈRE - donc la donnée la moins
+    fiable de l'application - ne le faisait sur aucun de ses deux retours.
+    """
+    from app.services.prompt_security import get_prompt_security
+
+    try:
+        return str(get_prompt_security().sanitize_for_context(texte, source="web"))
+    except Exception:
+        logger.warning("Enveloppe de la page web impossible, fragment non injecté")
+        return ""
+
+
 async def execute_browser_action(arguments: dict[str, Any]) -> str:
     """Exécute une action browser via le browser agent."""
     # La navigation sort sur le réseau comme la recherche : même interrupteur.
@@ -646,7 +662,9 @@ async def execute_browser_action(arguments: dict[str, Any]) -> str:
         if not result.success:
             return f"Erreur navigation : {result.error}"
         if action == "navigate":
-            return f"Page chargée : {result.title}\n\nContenu :\n{result.content}"
+            return _envelopper_page_web(
+                f"Page chargée : {result.title}\n\nContenu :\n{result.content}"
+            )
 
     # Ensuite exécuter l'action demandée
     result = await agent.execute_action(action, {
@@ -657,4 +675,10 @@ async def execute_browser_action(arguments: dict[str, Any]) -> str:
     if not result.success:
         return f"Erreur {action} : {result.error}"
 
-    return result.content or f"Action {action} exécutée avec succès"
+    # Jumeau du retour de navigation : le contenu d'une page repart par ici
+    # aussi. Le message de repli, lui, est notre phrase.
+    return (
+        _envelopper_page_web(result.content)
+        if result.content
+        else f"Action {action} exécutée avec succès"
+    )

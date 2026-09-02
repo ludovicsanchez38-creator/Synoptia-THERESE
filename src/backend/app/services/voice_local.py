@@ -80,6 +80,8 @@ def stt_model_downloaded(size: str) -> bool:
 def tts_voice_downloaded(voice: str = "") -> bool:
     """La voix Piper est-elle déjà téléchargée ?"""
     name = voice or DEFAULT_PIPER_VOICE
+    if name not in _PIPER_VOICE_URLS:
+        return False
     return (voices_dir() / f"{name}.onnx").exists()
 
 
@@ -91,6 +93,20 @@ _PIPER_VOICE_URLS = {
 }
 
 
+def _voix_du_catalogue(voice: str) -> str:
+    """Valide un nom de voix contre la liste blanche, ou lève.
+
+    B-105 : `voice` vient d'une requête HTTP (`TTSRequest.voice`) et servait
+    à construire `voices_dir() / f"{voice}.onnx"` sans contrôle. Un nom
+    porteur de `../` désignait alors n'importe quel `.onnx` de la machine,
+    chargé par le moteur d'inférence. `download_piper_voice` appliquait déjà
+    cette liste blanche : un seul point de vérité, appliqué partout.
+    """
+    if voice not in _PIPER_VOICE_URLS:
+        raise RuntimeError(f"Voix Piper inconnue : {voice}")
+    return voice
+
+
 def download_piper_voice(voice: str = DEFAULT_PIPER_VOICE) -> Path:
     """Télécharge une voix Piper (.onnx + .onnx.json) dans voices_dir().
 
@@ -99,9 +115,7 @@ def download_piper_voice(voice: str = DEFAULT_PIPER_VOICE) -> Path:
     """
     import httpx
 
-    base_url = _PIPER_VOICE_URLS.get(voice)
-    if not base_url:
-        raise RuntimeError(f"Voix Piper inconnue : {voice}")
+    base_url = _PIPER_VOICE_URLS[_voix_du_catalogue(voice)]
 
     target_dir = voices_dir()
     target_dir.mkdir(parents=True, exist_ok=True)
@@ -249,6 +263,10 @@ def synthesize_local(text: str, out_path: str, voice: str = DEFAULT_PIPER_VOICE)
     """
     if not tts_available():
         raise RuntimeError("TTS local indisponible : Piper non installé. " + INSTALL_HINT)
+
+    # B-105 : `voice` vient de la requête. Liste blanche AVANT toute
+    # construction de chemin et avant le chargement du moteur.
+    voice = _voix_du_catalogue(voice)
 
     import wave
 

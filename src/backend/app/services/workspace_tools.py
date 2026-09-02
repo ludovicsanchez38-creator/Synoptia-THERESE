@@ -1541,7 +1541,21 @@ async def _list_calendar_events(
                 f"- **{date_str} {time_str}** — {event.summary}{location_str}{attendees_str}"
             )
 
-        return "\n".join(lines)
+        # B-104 : titre, lieu et participants d'un evenement sont ecrits par un
+        # TIERS (une invitation vient de l'exterieur). Meme traitement que les
+        # quatre voisins : enveloppe + neutralisation des marqueurs forges. Les
+        # messages d'absence et d'erreur restent hors enveloppe : nos phrases.
+        from app.services.prompt_security import get_prompt_security
+
+        try:
+            return str(
+                get_prompt_security().sanitize_for_context(
+                    "\n".join(lines), source="agenda"
+                )
+            )
+        except Exception:
+            logger.warning("Enveloppe de l'agenda impossible, fragment non injecte")
+            return "Erreur lors de la lecture du calendrier."
     except Exception as e:
         logger.exception("Erreur lecture calendrier")
         return f"Erreur lors de la lecture du calendrier : {e}"

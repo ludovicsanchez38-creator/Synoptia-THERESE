@@ -31,15 +31,29 @@ tests/protocols/
 
 ## Personas
 
-| Persona | Produit | Etapes | Tests | Duree Chrome MCP |
-|---------|---------|--------|-------|-----------------|
-| A1 Sophie (freelance) | App | 48 | ~180 | 2h30-3h |
-| A2 Marc (consultant) | App | 42 | ~160 | 2h-2h30 |
-| A3 Lea (power user) | App | 55 | ~220 | 3h-3h30 |
-| S1 Agent Municipal | Server | 35 | ~130 | 1h30-2h |
-| S2 Chef de Service | Server | 38 | ~140 | 1h30-2h |
-| S3 DSI Admin | Server | 42 | ~170 | 2h-2h30 |
-| **TOTAL** | | **260** | **~1000** | **13-16h** |
+> **Deux durees, deux choses differentes.** « Duree fiche » est le temps
+> d'execution A LA MAIN annonce par la fiche elle-meme ; « Duree Chrome MCP »
+> est le temps d'une campagne pilotee par un agent, avec ses captures. Elles
+> etaient jusqu'au 02/09/2026 melangees sous un seul en-tete, ce qui les
+> faisait paraitre contradictoires d'un facteur 3 a 5. Seule S3 declare la
+> seconde dans sa fiche ; les cinq autres valeurs de cette colonne ne viennent
+> que d'ici et restent sans garde automatique.
+>
+> **« Complements »** compte les etapes suffixees (MT, CH, TP, RBAC, VIS, PER)
+> qui suivent le parcours numerote : isolation multi-tenant, separation des
+> privileges, persistance. Elles etaient absentes de ce tableau, donc invisibles
+> a qui prepare une campagne. `tests/test_protocoles_readme_coherent.py` tient
+> desormais les colonnes Etapes, Complements et Duree fiche sur les fiches.
+
+| Persona | Produit | Etapes | Complements | Tests | Duree fiche | Duree Chrome MCP |
+|---------|---------|--------|-------------|-------|-------------|------------------|
+| A1 Sophie (freelance) | App | 48 | - | ~180 | 25-35 min | 2h30-3h |
+| A2 Marc (consultant) | App | 42 | - | ~160 | 25-35 min | 2h-2h30 |
+| A3 Lea (power user) | App | 55 | - | ~220 | 40-55 min | 3h-3h30 |
+| S1 Agent Municipal | Server | 35 | 7 | ~130 | 25-35 min | 1h30-2h |
+| S2 Chef de Service | Server | 38 | 8 | ~140 | 35-50 min | 1h30-2h |
+| S3 DSI Admin | Server | 42 | - | ~170 | non renseignee | 2h-2h30 |
+| **TOTAL** | | **260** | **15** | **~1000** | **~2h30-3h30 (hors S3)** | **13-16h** |
 
 ## Comment lancer
 

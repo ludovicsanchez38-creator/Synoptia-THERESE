@@ -13,6 +13,16 @@ import logging
 import pytest
 
 
+class _EvenementFini:
+    """Double minimal de StreamEvent : clôt la continuation du fournisseur."""
+
+    type = "done"
+    content = ""
+    tool_call = None
+    stop_reason = "end_turn"
+    assistant_content_brut = None
+
+
 def _journaliser_avec_secret(formatter: logging.Formatter) -> str:
     """Provoque une vraie exception porteuse d'un secret, et la formate."""
     from app.core.logging_config import SecretMaskingFilter
@@ -124,12 +134,83 @@ class TestLeJournalNePortePasCeQueLudoEcrit:
         assert jeton not in _mask_secrets(f"Authorization: {jeton}")
         assert "***MASKED***" in _mask_secrets(jeton)
 
-    def test_la_boucle_d_outils_ne_journalise_pas_les_arguments(self):
-        """Un journal collé dans un rapport de bug ne doit pas contenir
-        le destinataire, l'objet ni le corps, y compris d'un e-mail
-        que Ludo a ensuite annulé."""
-        from pathlib import Path
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize(
+        "outil, arguments, canaris",
+        [
+            # Chemin « outil sensible mis en attente » (chat.py, log de la carte).
+            (
+                "send_email",
+                {
+                    "to": "marie.dupont@exemple.fr",
+                    "subject": "Objet CANARI-OBJET du dossier",
+                    "body": "Corps CANARI-CORPS : le mot de passe IMAP de Marie",
+                },
+                ["marie.dupont@exemple.fr", "CANARI-OBJET", "CANARI-CORPS"],
+            ),
+            # Chemin « outil exécuté » (log Executing tool), classé lecture seule
+            # donc sans carte : c'est l'autre site, et il fuyait de la même façon.
+            (
+                "search_emails",
+                {"query": "CANARI-REQUETE dossier Martin", "limit": 5},
+                ["CANARI-REQUETE"],
+            ),
+        ],
+    )
+    async def test_la_boucle_d_outils_ne_journalise_pas_la_valeur_des_arguments(
+        self, monkeypatch, caplog, outil, arguments, canaris
+    ):
+        """B-013 : garde de COMPORTEMENT, pas de texte source.
 
-        source = Path("src/backend/app/routers/chat.py").read_text(encoding="utf-8")
-        assert "args: {tc.arguments}" not in source
-        assert "with args: {tc.arguments}" not in source
+        L'ancienne version lisait `chat.py` et exigeait l'absence de deux
+        chaînes littérales. Un code qui fuit réellement sous une autre forme
+        (`logger.info("... %s", tc.arguments)`, f-string, repr) passait, et un
+        fichier VIDE passait aussi. On exécute donc la vraie boucle d'outils
+        avec des valeurs témoins et on exige leur absence du journal, quelle
+        que soit la forme d'écriture du log.
+
+        Le NOM de l'outil doit rester : masquer ne doit pas rendre le
+        diagnostic impossible.
+        """
+        import logging
+        from unittest.mock import MagicMock
+
+        import app.routers.chat as chat_mod
+        from app.routers.chat import _execute_tools_and_continue
+        from app.services.llm import ToolCall
+
+        async def _execute_muet(*args, **kwargs):
+            return "OK"
+
+        monkeypatch.setattr(chat_mod, "execute_workspace_tool", _execute_muet)
+
+        class _LLMMuet:
+            async def continue_with_tool_results(
+                self, context, assistant_content, tool_calls, tool_results, tools,
+                prior_turns=None, assistant_content_brut=None,
+            ):
+                yield _EvenementFini()
+
+        tc = ToolCall(id="t-canari", name=outil, arguments=arguments)
+
+        with caplog.at_level(logging.DEBUG):
+            _ = [
+                chunk
+                async for chunk in _execute_tools_and_continue(
+                    _LLMMuet(), None, None, "", [tc], [], "conv-canari", 3,
+                    session=MagicMock(),
+                )
+            ]
+
+        # Ni le message formaté, ni les arguments bruts du LogRecord.
+        journal = "\n".join(
+            f"{record.getMessage()} || {record.args!r}" for record in caplog.records
+        )
+        for canari in canaris:
+            assert canari not in journal, (
+                f"la valeur d'argument « {canari} » atterrit dans le journal : "
+                "un rapport de bug collé sur Discord l'emporte"
+            )
+        assert outil in journal, (
+            "le nom de l'outil a disparu du journal : plus rien de diagnosticable"
+        )
