@@ -74,7 +74,7 @@ jobs:
       # tient. Etendre a `npx playwright test` des que les parcours sont
       # reecrits pour la coque actuelle (B-136).
       - name: Contrats d'API de bout en bout
-        run: npx playwright test api-endpoints api-securite
+        run: npx playwright test --project=desktop
 
       - name: Publier le rapport
         if: always()
