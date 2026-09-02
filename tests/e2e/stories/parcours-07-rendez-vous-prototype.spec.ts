@@ -146,13 +146,13 @@ test.describe('Prototype conversationnel - Rendez-vous', () => {
     const form = page.getByTestId('meeting-new-event-form');
     await expect(form).toBeVisible();
     await form.getByLabel('Titre').fill('Revue offre PROPULSER');
-    // CONSTAT RE34-C2 : le champ du lieu s'affiche « Lieu ou lien » mais porte
-    // un `aria-label="Lieu du rendez-vous"` qui ÉCRASE ce texte. Le test le
-    // désigne donc par son nom accessible réel. Ce n'est pas un défaut du test :
-    // un nom accessible qui ne contient pas le libellé visible casse la
-    // commande vocale (WCAG 2.5.3 « Label in Name »). Consigné pour
-    // l'orchestrateur, pas corrigé ici — l'application n'est pas mon périmètre.
-    await form.getByLabel('Lieu du rendez-vous').fill('Visioconférence');
+    // Le champ du lieu portait un `aria-label="Lieu du rendez-vous"` qui
+    // ÉCRASAIT son libellé visible « Lieu ou lien » : un nom accessible qui ne
+    // contient pas le texte affiché casse la commande vocale (WCAG 2.5.3
+    // « Label in Name »). Constat RE34-C2, corrigé côté application par le lot
+    // RE35 (B-263, commit 0a1b181b) — le champ se désigne désormais par ce que
+    // l'utilisateur lit.
+    await form.getByLabel('Lieu ou lien').fill('Visioconférence');
     await form.getByLabel(/Participants/).fill('camille@example.fr');
     await form.getByRole('button', { name: 'Vérifier avant création' }).click();
 

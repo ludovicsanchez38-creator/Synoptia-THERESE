@@ -127,10 +127,17 @@ async function lireUneFoisDePlusSiLaConnexionLache(
  * Le test échouait alors sur un élément « introuvable » qui était simplement
  * recouvert. Diagnostiqué le 01/09/2026 en lisant la capture d'échec.
  */
-export async function passerLaMiseEnRoute(requete: APIRequestContext): Promise<void> {
+/** En-têtes d'appel du backend jetable, jeton de session compris. */
+async function entetesAuthentifies(
+  requete: APIRequestContext,
+): Promise<Record<string, string>> {
   const jeton = await lireUneFoisDePlusSiLaConnexionLache(requete, `${BACKEND_URL}/api/auth/token`);
   const { token } = (await jeton.json()) as { token: string };
-  const entetes = { 'X-Therese-Token': token };
+  return { 'X-Therese-Token': token };
+}
+
+export async function passerLaMiseEnRoute(requete: APIRequestContext): Promise<void> {
+  const entetes = await entetesAuthentifies(requete);
 
   const deja = await requete.get(`${BACKEND_URL}/api/config/onboarding-complete`, {
     headers: entetes,
@@ -155,11 +162,130 @@ export async function passerLaMiseEnRoute(requete: APIRequestContext): Promise<v
 }
 
 /**
- * Préparer une page prête à l'emploi : mise en route passée, coque montée,
- * registre publié.
+ * Clé factice du fournisseur posé par la suite.
+ *
+ * Le backend ne fait AUCUN appel réseau à l'enregistrement : `POST
+ * /api/config/api-key` vérifie le préfixe (`sk-ant-` pour Anthropic), chiffre
+ * la valeur en Fernet dans la préférence `anthropic_api_key`, recharge son
+ * cache de clés et remet le service LLM à zéro. C'est tout. Aucun parcours
+ * n'envoie de message, donc cette chaîne ne part jamais chez un fournisseur ;
+ * elle est écrite en clair ici pour qu'on ne la confonde pas avec une vraie.
+ */
+const CLE_FACTICE = 'sk-ant-e2e-cle-factice-aucun-appel-reseau';
+
+/** Ce que le backend répond sur l'état du modèle courant. */
+type EtatDuModele = { available?: boolean; model?: string };
+
+async function lireLEtatDuModele(
+  requete: APIRequestContext,
+  entetes: Record<string, string>,
+): Promise<EtatDuModele> {
+  const reponse = await requete
+    .get(`${BACKEND_URL}/api/config/llm`, { headers: entetes })
+    .catch(() => undefined);
+  if (!reponse || !reponse.ok()) return {};
+  return (await reponse.json()) as EtatDuModele;
+}
+
+/**
+ * Vrai une fois que CE travailleur a vu un modèle actif.
+ *
+ * Le backend jetable est unique et le modèle qu'on y pose ne s'en va pas. Un
+ * travailleur vérifie donc une fois, puis passe son chemin, au lieu de
+ * réinterroger le backend avant chacun de ses parcours.
+ */
+let modeleDejaPose = false;
+
+/**
+ * Poser un modèle ACTIF sur le backend jetable (B-265, 03/09/2026).
+ *
+ * Deux parcours du premier lancement tapaient dans le composeur. Sur le runner
+ * GitHub, sans clé de fournisseur ni Ollama, `GET /api/config/llm` répond
+ * `available: false` : `ChatInput` désactive alors le `<textarea>` et affiche
+ * « Choisis d'abord un modèle ». `click()` et `fill()` attendaient trente
+ * secondes un champ qui ne s'activerait jamais. En local, la même suite passait
+ * parce que la machine, elle, avait de quoi répondre — le test mesurait le
+ * poste de travail, pas l'application.
+ *
+ * Le backend est désormais aveugle à la machine (run-e2e-backend.sh), donc la
+ * suite pose elle-même ce qu'elle exige : un fournisseur, une clé factice, un
+ * modèle du catalogue. Rien n'est deviné — le modèle est celui que le backend
+ * annonce en tête de sa propre liste.
+ *
+ * Idempotente et tolérante à la course : quatre-vingt-dix-huit parcours
+ * partagent un seul backend et cinq travailleurs les lancent en parallèle. On
+ * ne croit donc aucun code de retour, on RELIT l'état final — comme le fait
+ * déjà `passerLaMiseEnRoute` pour la mise en route.
+ */
+export async function poserUnModeleActif(requete: APIRequestContext): Promise<void> {
+  if (modeleDejaPose) return;
+  const entetes = await entetesAuthentifies(requete);
+  if ((await lireLEtatDuModele(requete, entetes)).available === true) {
+    modeleDejaPose = true;
+    return;
+  }
+
+  const catalogue = await requete
+    .get(`${BACKEND_URL}/api/config/llm/models/anthropic`, { headers: entetes })
+    .catch(() => undefined);
+  const modeles = catalogue?.ok()
+    ? ((await catalogue.json()) as { models?: string[] }).models ?? []
+    : [];
+  if (modeles.length === 0) {
+    throw new Error(
+      'catalogue Anthropic vide : GET /api/config/llm/models/anthropic ne sert plus de modèle',
+    );
+  }
+  const modele = modeles[0];
+
+  const poser = async () => {
+    // Un 500 ici n'est PAS un échec : deux parcours peuvent écrire la même
+    // préférence au même instant sur une base SQLite mono-écrivain.
+    await requete
+      .post(`${BACKEND_URL}/api/config/api-key`, {
+        headers: entetes,
+        data: { provider: 'anthropic', api_key: CLE_FACTICE },
+      })
+      .catch(() => undefined);
+    await requete
+      .post(`${BACKEND_URL}/api/config/llm`, {
+        headers: entetes,
+        data: { provider: 'anthropic', model: modele },
+      })
+      .catch(() => undefined);
+  };
+
+  await poser();
+  if ((await lireLEtatDuModele(requete, entetes)).available === true) {
+    modeleDejaPose = true;
+    return;
+  }
+
+  // Une seule reprise : `POST /api-key` remet le service LLM à zéro, si bien
+  // qu'un enregistrement de clé arrivé APRÈS le choix du modèle pouvait laisser
+  // la lecture suivante sur un service reconstruit entre les deux écritures.
+  await poser();
+  const final = await lireLEtatDuModele(requete, entetes);
+  if (final.available !== true) {
+    throw new Error(
+      `aucun modèle actif après pose (provider anthropic, modèle ${modele}) : ` +
+        'le composeur restera désactivé et les parcours du chat expireront',
+    );
+  }
+  modeleDejaPose = true;
+}
+
+/**
+ * Préparer une page prête à l'emploi : mise en route passée, modèle actif posé,
+ * coque montée, registre publié.
+ *
+ * La pose du modèle est un appel DISTINCT, jamais glissé dans
+ * `passerLaMiseEnRoute` : celle-ci sort tôt dès que la mise en route est déjà
+ * faite, et emporterait la pose avec elle à partir du deuxième parcours.
  */
 export async function ouvrirLApplication(page: Page, requete: APIRequestContext): Promise<void> {
   await passerLaMiseEnRoute(requete);
+  await poserUnModeleActif(requete);
   await page.goto('/');
   await page.waitForLoadState('networkidle', { timeout: 15000 });
   await page.waitForSelector('[data-testid="app-main"]', { timeout: 15000 });
