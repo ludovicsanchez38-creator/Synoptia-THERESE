@@ -34,10 +34,17 @@ class TestValidateMCPCommand:
             validate_mcp_command(cmd)
 
     def test_validate_mcp_command_allowed_with_path(self):
-        """Les commandes whitelist avec chemin doivent passer."""
-        validate_mcp_command("/usr/bin/npx")
-        validate_mcp_command("./node")
-        validate_mcp_command("/opt/python3")
+        """B-142 : une commande whitelist DONNEE PAR CHEMIN est refusee.
+
+        Cette assertion disait l'inverse jusqu'au 02/09/2026, et c'est
+        exactement la faille : la liste blanche ne comparait que le nom de
+        base, donc n'importe quel binaire depose sous le nom « npx » passait
+        des lors qu'on donnait son chemin. Le nom seul est desormais exige, la
+        resolution se faisant sur le PATH enrichi de THERESE.
+        """
+        for chemin in ("/usr/bin/npx", "./node", "/opt/python3"):
+            with pytest.raises(ValueError, match="Commande MCP non autorisée"):
+                validate_mcp_command(chemin)
 
     def test_validate_mcp_command_blocked(self):
         """Les commandes bloquées doivent lever ValueError."""

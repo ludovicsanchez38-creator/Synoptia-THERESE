@@ -9,21 +9,25 @@
 > identifiants absents du code, cela rendait les verdicts vides : « pas de
 > doublon » et « zéro donnée restante » étaient vrais quoi qu'il arrive.
 >
-> Utiliser l'aide ci-dessous, qui parcourt réellement les sélecteurs et
-> **échoue quand aucun ne trouve rien** :
+> L'aide `qsa` parcourt réellement les sélecteurs et **échoue quand aucun ne
+> trouve rien**. Correction du 02/09/2026 (B-150) : elle ne vivait ici, dans
+> cette prose, et **aucune étape ne l'exécutait jamais** - le premier pas qui
+> l'appelait levait `ReferenceError: qsa is not defined`. Chaque étape
+> `javascript_tool` est une évaluation séparée dans la page, et un `navigate →`
+> remet `window` à zéro : l'aide est donc **redéposée par l'étape qui s'en
+> sert**, sous cette forme, et ce document n'a plus rien à injecter d'avance.
 >
 > ```js
-> function qsa(...selecteurs) {
->   for (const s of selecteurs) {
+> window.qsa ||= (...sels) => {
+>   for (const s of sels) {
 >     const trouves = [...document.querySelectorAll(s)];
 >     if (trouves.length) return trouves;
 >   }
 >   throw new Error(
->     "Aucun élément pour : " + selecteurs.join(" | ") +
->     " — le sélecteur est faux ou l'écran n'est pas celui attendu. " +
->     "Ce pas ne prouve rien, corriger avant de conclure."
+>     "Aucun element pour : " + sels.join(" | ") +
+>     " - selecteur faux ou ecran inattendu, ce pas ne prouve rien."
 >   );
-> }
+> };
 > ```
 >
 > Un comptage qui rend zéro parce que le sélecteur est faux n'est pas un
@@ -539,6 +543,9 @@ Thomas est DSI depuis 8 ans. Il a deploye THERESE Server sur un serveur on-premi
 - **Chrome MCP** :
   ```
   javascript_tool :
+    // Aide qsa redeposee ici : chaque javascript_tool est une evaluation separee,
+    // et un navigate remet la page a zero (voir l'en-tete du document).
+    window.qsa ||= (...sels) => { for (const s of sels) { const t = [...document.querySelectorAll(s)]; if (t.length) return t; } throw new Error("Aucun element pour : " + sels.join(" | ") + " - selecteur faux ou ecran inattendu, ce pas ne prouve rien."); };
     const conversations = qsa('[data-testid="conversation-item"]', '.conversation-item');
     return { count: conversations.length };
   take_screenshot → "S3-22-conversation-history.png"

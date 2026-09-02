@@ -9,21 +9,25 @@
 > identifiants absents du code, cela rendait les verdicts vides : « pas de
 > doublon » et « zéro donnée restante » étaient vrais quoi qu'il arrive.
 >
-> Utiliser l'aide ci-dessous, qui parcourt réellement les sélecteurs et
-> **échoue quand aucun ne trouve rien** :
+> L'aide `qsa` parcourt réellement les sélecteurs et **échoue quand aucun ne
+> trouve rien**. Correction du 02/09/2026 (B-150) : elle ne vivait ici, dans
+> cette prose, et **aucune étape ne l'exécutait jamais** - le premier pas qui
+> l'appelait levait `ReferenceError: qsa is not defined`. Chaque étape
+> `javascript_tool` est une évaluation séparée dans la page, et un `navigate →`
+> remet `window` à zéro : l'aide est donc **redéposée par l'étape qui s'en
+> sert**, sous cette forme, et ce document n'a plus rien à injecter d'avance.
 >
 > ```js
-> function qsa(...selecteurs) {
->   for (const s of selecteurs) {
+> window.qsa ||= (...sels) => {
+>   for (const s of sels) {
 >     const trouves = [...document.querySelectorAll(s)];
 >     if (trouves.length) return trouves;
 >   }
 >   throw new Error(
->     "Aucun élément pour : " + selecteurs.join(" | ") +
->     " — le sélecteur est faux ou l'écran n'est pas celui attendu. " +
->     "Ce pas ne prouve rien, corriger avant de conclure."
+>     "Aucun element pour : " + sels.join(" | ") +
+>     " - selecteur faux ou ecran inattendu, ce pas ne prouve rien."
 >   );
-> }
+> };
 > ```
 >
 > Un comptage qui rend zéro parce que le sélecteur est faux n'est pas un
@@ -99,6 +103,9 @@ L'utilisateur a configure THERESE (onboarding termine, cles API, contacts, conve
 
 12. Naviguer vers le CRM
 13. javascript_tool :
+    // Aide qsa redeposee ici : chaque javascript_tool est une evaluation separee,
+    // et un navigate remet la page a zero (voir l'en-tete du document).
+    window.qsa ||= (...sels) => { for (const s of sels) { const t = [...document.querySelectorAll(s)]; if (t.length) return t; } throw new Error("Aucun element pour : " + sels.join(" | ") + " - selecteur faux ou ecran inattendu, ce pas ne prouve rien."); };
     const contacts = qsa('[data-testid="crm-contact-item"]', '.contact-card');
     return { contactCount: contacts.length };
 
@@ -288,6 +295,9 @@ Un utilisateur cree une facture. Il double-clique sur le bouton de creation. Deu
 
 6. javascript_tool :
    // Compter les factures AVANT
+   // Aide qsa redeposee ici : chaque javascript_tool est une evaluation separee,
+   // et un navigate remet la page a zero (voir l'en-tete du document).
+   window.qsa ||= (...sels) => { for (const s of sels) { const t = [...document.querySelectorAll(s)]; if (t.length) return t; } throw new Error("Aucun element pour : " + sels.join(" | ") + " - selecteur faux ou ecran inattendu, ce pas ne prouve rien."); };
    const invoicesBefore = qsa('[data-testid="invoice-item"]', '.invoice-row');
    const countBefore = invoicesBefore.length;
 
@@ -306,11 +316,17 @@ Un utilisateur cree une facture. Il double-clique sur le bouton de creation. Deu
 
 9. javascript_tool :
    // Compter les factures APRES
+   // Aide qsa redeposee ici : chaque javascript_tool est une evaluation separee,
+   // et un navigate remet la page a zero (voir l'en-tete du document).
+   window.qsa ||= (...sels) => { for (const s of sels) { const t = [...document.querySelectorAll(s)]; if (t.length) return t; } throw new Error("Aucun element pour : " + sels.join(" | ") + " - selecteur faux ou ecran inattendu, ce pas ne prouve rien."); };
    const invoicesAfter = qsa('[data-testid="invoice-item"]', '.invoice-row');
    return { countAfter: invoicesAfter.length };
 
 10. // Verifier s'il y a des doublons
 11. javascript_tool :
+    // Aide qsa redeposee ici : chaque javascript_tool est une evaluation separee,
+    // et un navigate remet la page a zero (voir l'en-tete du document).
+    window.qsa ||= (...sels) => { for (const s of sels) { const t = [...document.querySelectorAll(s)]; if (t.length) return t; } throw new Error("Aucun element pour : " + sels.join(" | ") + " - selecteur faux ou ecran inattendu, ce pas ne prouve rien."); };
     const invoices = qsa('[data-testid="invoice-item"]', '.invoice-row');
     const texts = Array.from(invoices).map(i => i.textContent);
     const duplicates = texts.filter((t, i) => texts.indexOf(t) !== i);
@@ -553,6 +569,9 @@ END:VCARD
 13. javascript_tool :
     // Verifier la reactivite de l'UI pendant l'import
     const elapsed = Date.now() - (window.__importStart || 0);
+    // Aide qsa redeposee ici : chaque javascript_tool est une evaluation separee,
+    // et un navigate remet la page a zero (voir l'en-tete du document).
+    window.qsa ||= (...sels) => { for (const s of sels) { const t = [...document.querySelectorAll(s)]; if (t.length) return t; } throw new Error("Aucun element pour : " + sels.join(" | ") + " - selecteur faux ou ecran inattendu, ce pas ne prouve rien."); };
     const contacts = qsa('[data-testid="crm-contact-item"]', '.contact-card');
     const progressBar = document.querySelector('[data-testid="import-progress"]') ||
                         document.querySelector('[role="progressbar"]');
@@ -568,6 +587,9 @@ END:VCARD
 16. take_screenshot → "CATA-07-after-import.png"
 
 17. javascript_tool :
+    // Aide qsa redeposee ici : chaque javascript_tool est une evaluation separee,
+    // et un navigate remet la page a zero (voir l'en-tete du document).
+    window.qsa ||= (...sels) => { for (const s of sels) { const t = [...document.querySelectorAll(s)]; if (t.length) return t; } throw new Error("Aucun element pour : " + sels.join(" | ") + " - selecteur faux ou ecran inattendu, ce pas ne prouve rien."); };
     const contacts = qsa('[data-testid="crm-contact-item"]', '.contact-card');
     return { totalContacts: contacts.length };
 ```
@@ -864,12 +886,18 @@ Un utilisateur demande la suppression totale de ses donnees. Dans l'App, TOUT do
 22. navigate → http://localhost:1420/?panel=crm
 23. wait 3s
 24. javascript_tool :
+    // Aide qsa redeposee ici : chaque javascript_tool est une evaluation separee,
+    // et un navigate remet la page a zero (voir l'en-tete du document).
+    window.qsa ||= (...sels) => { for (const s of sels) { const t = [...document.querySelectorAll(s)]; if (t.length) return t; } throw new Error("Aucun element pour : " + sels.join(" | ") + " - selecteur faux ou ecran inattendu, ce pas ne prouve rien."); };
     const contacts = qsa('[data-testid="crm-contact-item"]', '.contact-card');
     return { contactsAfter: contacts.length };
 
 25. navigate → http://localhost:1420/?panel=tasks
 26. wait 3s
 27. javascript_tool :
+    // Aide qsa redeposee ici : chaque javascript_tool est une evaluation separee,
+    // et un navigate remet la page a zero (voir l'en-tete du document).
+    window.qsa ||= (...sels) => { for (const s of sels) { const t = [...document.querySelectorAll(s)]; if (t.length) return t; } throw new Error("Aucun element pour : " + sels.join(" | ") + " - selecteur faux ou ecran inattendu, ce pas ne prouve rien."); };
     const tasks = qsa('[data-testid="task-item"]', '.task-card');
     return { tasksAfter: tasks.length };
 ```

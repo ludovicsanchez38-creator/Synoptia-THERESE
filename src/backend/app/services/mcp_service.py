@@ -126,6 +126,19 @@ def validate_mcp_command(command: str, args: list[str] | None = None) -> None:
             f"Commandes autorisées : {', '.join(sorted(ALLOWED_MCP_COMMANDS))}"
         )
 
+    # B-142 : les deux controles ci-dessus ne portent que sur le NOM DE BASE.
+    # Un binaire arbitraire depose sous le nom « npx » et designe par son chemin
+    # les satisfaisait donc tous les deux, et etait demarre. La commande se donne
+    # par son nom seul : c'est le PATH enrichi de THERESE (build_mcp_enriched_path,
+    # consomme par start_server) qui designe le binaire reellement lance.
+    if "/" in command or "\\" in command:
+        logger.warning(f"Commande MCP donnee par chemin, refusee : '{command}'")
+        raise ValueError(
+            f"Commande MCP non autorisée : '{command}' est un chemin. "
+            f"Indiquer le nom seul (ex. 'npx') : la résolution se fait sur le "
+            f"PATH de THÉRÈSE, un chemin explicite contournerait la liste blanche."
+        )
+
     # Valider les arguments contre les operateurs shell (SEC-001)
     if args:
         for arg in args:

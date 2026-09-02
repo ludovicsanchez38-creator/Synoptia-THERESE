@@ -24,8 +24,11 @@ check_pair() {
   local npm_pkg="$2"
 
   # Version Rust depuis Cargo.lock
+  # B-118 : sans le « || true », un crate absent fait echouer l affectation sous
+  # « set -euo pipefail » et tue le script AVANT le message ci-dessous, qui etait
+  # donc du code mort : le controle s arretait muet au milieu de sa liste.
   local rust_ver
-  rust_ver=$(grep -A1 "name = \"$crate\"" "$CARGO_LOCK" | grep 'version' | head -1 | sed 's/.*"\(.*\)"/\1/')
+  rust_ver=$(grep -A1 "name = \"$crate\"" "$CARGO_LOCK" | grep 'version' | head -1 | sed 's/.*"\(.*\)"/\1/') || true
   local rust_mm
   rust_mm=$(echo "$rust_ver" | cut -d. -f1-2)
 
@@ -35,13 +38,18 @@ check_pair() {
   local npm_mm
   npm_mm=$(echo "$npm_ver" | cut -d. -f1-2)
 
+  # B-118 : une paire attendue et introuvable est un ECHEC du controle, pas un
+  # SKIP. Un renommage cote npm sortait en 0 sur « Toutes les versions Tauri
+  # sont alignées » alors que la paire n avait jamais ete comparee.
   if [ -z "$rust_ver" ]; then
-    echo "SKIP: $crate non trouvé dans Cargo.lock"
+    echo "ERREUR: $crate non trouvé dans Cargo.lock (crate renommé ou retiré ?)"
+    errors=$((errors + 1))
     return
   fi
 
   if [ "$npm_ver" = "N/A" ] || [ -z "$npm_ver" ]; then
-    echo "SKIP: $npm_pkg non trouvé dans package-lock.json"
+    echo "ERREUR: $npm_pkg non trouvé dans package-lock.json (paquet renommé ou retiré ?)"
+    errors=$((errors + 1))
     return
   fi
 
@@ -63,8 +71,9 @@ check_pair "tauri-plugin-mic-recorder" "tauri-plugin-mic-recorder-api"
 
 echo ""
 if [ $errors -gt 0 ]; then
-  echo "ERREUR: $errors mismatch(es) Tauri détecté(s)"
+  echo "ERREUR: $errors anomalie(s) Tauri détectée(s) (écart de version ou paire introuvable)"
   echo "Corriger avec: cargo update -p <crate> --precise <version>"
+  echo "Si une paire a été renommée, mettre à jour la liste check_pair de ce script."
   exit 1
 fi
 

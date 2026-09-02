@@ -466,7 +466,8 @@ class CRMExportService:
         Export all CRM data to a single file.
 
         For Excel: Creates multiple sheets (Contacts, Projets, Livrables)
-        For CSV/JSON: Creates a combined structure
+        For JSON: Creates a combined structure
+        For CSV: contacts only (flat file, contact columns) - row_count follows
 
         Args:
             format: Export format (csv, xlsx, json)
@@ -553,10 +554,12 @@ class CRMExportService:
                 row_count=total_count,
             )
 
-        else:  # csv - combine all with type column
+        else:  # csv - contacts uniquement, avec une colonne de type
             output = io.StringIO()
 
-            # Combined CSV with entity type
+            # B-141 : ce CSV plat ne porte que les colonnes des contacts, donc
+            # seuls les contacts y sont ecrits (documente dans la docstring de
+            # la route : les projets et livrables ont leurs propres endpoints).
             all_columns = [("_type", "Type")] + CONTACT_COLUMNS
             headers = [col[1] for col in all_columns]
 
@@ -574,7 +577,10 @@ class CRMExportService:
                 data=("\ufeff" + csv_content).encode("utf-8"),
                 filename=f"crm_export_{timestamp}.csv",
                 content_type="text/csv; charset=utf-8",
-                row_count=total_count,
+                # B-141 : c'est le compte des lignes REELLEMENT ecrites. Annoncer
+                # total_count ici promettait des projets et des livrables absents
+                # du fichier - l'en-tete X-Row-Count disait 8 pour 7 lignes.
+                row_count=len(contacts),
             )
 
 

@@ -127,13 +127,20 @@ fi
 # verifie que le fichier commite est bien celui que le code produit. Sans cette
 # regeneration, tout bump casse la CI backend une fois le tag deja pousse
 # (constate a la release 0.57.0).
-if [ -f scripts/index-des-noms.mjs ]; then
-    if node scripts/index-des-noms.mjs > docs/INDEX-DES-NOMS.md 2>/dev/null; then
+# B-117 : ce bloc etait le seul du script a travailler en chemin RELATIF. Lance
+# d ailleurs que la racine, la condition etait fausse, la regeneration sautee EN
+# SILENCE et le script sortait en succes - c est-a-dire le defaut meme que le
+# commentaire ci-dessus dit avoir corrige. Comme le reste du script : $ROOT.
+if [ -f "$ROOT/scripts/index-des-noms.mjs" ]; then
+    if node "$ROOT/scripts/index-des-noms.mjs" > "$ROOT/docs/INDEX-DES-NOMS.md" 2>/dev/null; then
         echo "  OK  docs/INDEX-DES-NOMS.md regenere"
     else
         echo "  ERREUR  regeneration de docs/INDEX-DES-NOMS.md impossible"
         exit 1
     fi
+else
+    echo "  ERREUR  $ROOT/scripts/index-des-noms.mjs introuvable : index des noms NON regenere"
+    exit 1
 fi
 
 echo ""
