@@ -274,6 +274,12 @@ class LocalCalendarProvider(CalendarProvider):
             import json
             event.attendees = json.dumps(request.attendees)
 
+        # B-026 : le rappel etait le SEUL champ de la requete a n'etre jamais
+        # lu. `[]` est serialise comme les autres valeurs - une absence de
+        # rappel voulue ne doit pas se relire comme « jamais renseigne ».
+        import json as _json
+        event.reminders = _json.dumps(list(request.reminders))
+
         self._session.add(event)
         await self._session.commit()
         await self._session.refresh(event)
@@ -328,6 +334,11 @@ class LocalCalendarProvider(CalendarProvider):
         if request.attendees is not None:
             import json
             event.attendees = json.dumps(request.attendees) if request.attendees else None
+
+        if request.reminders is not None:
+            # `None` = « je n'y touche pas » ; `[]` = « plus de rappel ».
+            import json
+            event.reminders = json.dumps(list(request.reminders))
 
         event.synced_at = datetime.now(UTC)
 
@@ -388,6 +399,17 @@ class LocalCalendarProvider(CalendarProvider):
             except json.JSONDecodeError:
                 pass
 
+        # Parse reminders (B-026). `None` en base = evenement anterieur a la
+        # colonne : aucun rappel connu, donc aucun rappel annonce.
+        reminders: list[int] = []
+        if event.reminders:
+            try:
+                lus = json.loads(event.reminders)
+                if isinstance(lus, list):
+                    reminders = [int(m) for m in lus]
+            except (json.JSONDecodeError, TypeError, ValueError):
+                pass
+
         # Determine start/end
         if event.all_day:
             start = datetime.strptime(event.start_date, "%Y-%m-%d").date() if event.start_date else None
@@ -407,6 +429,7 @@ class LocalCalendarProvider(CalendarProvider):
             all_day=event.all_day,
             attendees=attendees,
             recurrence=recurrence,
+            reminders=reminders,
             status=event.status,
             created_at=event.synced_at,
             updated_at=event.synced_at,

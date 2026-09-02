@@ -282,6 +282,27 @@ async def list_calendars(
     ]
 
 
+def _raise_if_google_412(e: Exception) -> None:
+    """412 = la précondition `If-Match` a échoué : l'événement a bougé ailleurs.
+
+    B-029 : un conflit d'écriture concurrente sortait en 500 « 412 Precondition
+    Failed ». L'écran ne pouvait ni le distinguer d'une panne, ni proposer le
+    seul geste utile : relire avant de réécrire.
+    """
+    import httpx
+
+    if isinstance(e, httpx.HTTPStatusError) and e.response.status_code == 412:
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "L'événement a été modifié ailleurs depuis sa lecture "
+                "(téléphone, autre appareil). Recharge l'agenda avant "
+                "d'enregistrer, sans quoi cette modification en écraserait "
+                "une autre."
+            ),
+        ) from e
+
+
 def _raise_if_google_403(e: Exception) -> None:
     """403 Google = API Calendar non activée dans le projet GCP ou scope refusé.
 
@@ -1447,8 +1468,12 @@ async def update_event(
             synced_at=db_event.synced_at.isoformat() if db_event.synced_at else None,
         )
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Failed to update event: {e}")
+        _raise_if_google_412(e)
+        _raise_if_google_403(e)
         raise HTTPException(status_code=500, detail=str(e))
 
 

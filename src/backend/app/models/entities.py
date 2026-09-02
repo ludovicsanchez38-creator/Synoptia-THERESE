@@ -520,6 +520,11 @@ class CalendarEvent(SQLModel, table=True):
     all_day: bool = False
     attendees: str | None = None  # JSON array d'emails
     recurrence: str | None = None  # JSON array de règles RRULE
+    # B-026 : minutes avant l'evenement, JSON array. NULL = jamais renseigne
+    # (evenement d'avant la colonne), `[]` = absence de rappel VOULUE. La
+    # distinction compte : sans elle, un rappel retire reviendrait au defaut
+    # de 30 minutes a chaque relecture.
+    reminders: str | None = None  # JSON array de minutes
     status: str = "confirmed"  # confirmed, tentative, cancelled
     # « Bloque » n'est PAS « annule ». Annule : ca n'aura pas lieu. Bloque :
     # ca ne peut pas avoir lieu en l'etat, et il y a quelque chose a faire.

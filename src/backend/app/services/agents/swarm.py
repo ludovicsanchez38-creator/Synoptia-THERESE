@@ -191,7 +191,23 @@ class SwarmOrchestrator:
         # Le dépôt utilisateur reste sur sa branche courante. Les écritures et
         # commandes de l'agent s'exécutent dans un worktree temporaire dédié.
         original_branch = await self.git.current_branch()
-        if not await self.git.ensure_clean():
+        propre = await self.git.ensure_clean()
+        if original_branch is None or propre is None:
+            # B-027 : `None` = git n'a pas répondu. Accuser l'utilisateur
+            # d'avoir des modifications en cours serait une affirmation de
+            # plus que ce qu'on sait — et le repli `"main"` de la branche
+            # repartait comme base du worktree.
+            yield AgentStreamChunk(
+                type="error",
+                agent="zezette",
+                content=(
+                    "Git n'a pas répondu : impossible de lire l'état du dépôt. "
+                    "Réessaie dans un instant."
+                ),
+                task_id=task_id,
+            )
+            return
+        if not propre:
             yield AgentStreamChunk(
                 type="error",
                 agent="zezette",

@@ -141,9 +141,27 @@ def _base_url_configuree(provider: str) -> str | None:
 
 
 def _get_api_key_from_db(provider: str) -> str | None:
-    """Load API key from database or cache."""
+    """La clé d'un fournisseur, cache d'abord, base ensuite.
+
+    B-023 : `return _api_key_cache.get(...)` dès que le cache était chargé
+    rendait le bloc de repli ci-dessous INATTEIGNABLE, contrairement à ce que
+    dit son commentaire. Une clé arrivée en base après le chargement - une
+    sauvegarde restaurée remplace la table `preferences` entière sans passer
+    par POST /api-key - restait invisible jusqu'au redémarrage.
+
+    Le cache reste un cache : une valeur présente est servie sans toucher la
+    base. Seul un DÉFAUT retombe sur la lecture, dont le résultat non vide est
+    mémorisé pour que la traversée ne devienne pas permanente.
+
+    Non couvert, et dit tel quel : une clé SUPPRIMÉE en base après le
+    chargement continue d'être servie par le cache. Fermer ce sens-là
+    demanderait de ne plus rien mémoriser.
+    """
+    cle_cache = f"{provider}_api_key"
     if _api_key_cache_loaded:
-        return _api_key_cache.get(f"{provider}_api_key")
+        valeur_en_cache = _api_key_cache.get(cle_cache)
+        if valeur_en_cache:
+            return valeur_en_cache
 
     # Fallback: direct DB read via asyncio.to_thread pour ne pas bloquer l'event loop
     try:
@@ -169,6 +187,10 @@ def _get_api_key_from_db(provider: str) -> str | None:
                         except Exception as dec_err:
                             logger.error(f"Failed to decrypt {provider} API key: {dec_err}")
                             return None
+                    if value:
+                        # La traversée alimente le cache : sans cela, chaque
+                        # appel repartirait en base pour la même clé.
+                        _api_key_cache[cle_cache] = value
                     return value
             return None
 

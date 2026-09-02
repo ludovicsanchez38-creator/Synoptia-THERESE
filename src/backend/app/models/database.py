@@ -234,6 +234,15 @@ def apply_adhoc_migrations(db_path) -> None:
             logger.info(
                 "Migration auto : colonne 'project_id' ajoutee a calendar_events"
             )
+        # B-026 : rappels de l'evenement (JSON array de minutes). NULLABLE et
+        # SANS backfill - un evenement d'avant cette colonne n'a jamais porte
+        # de rappel, lui en inventer un ferait sonner tout l'agenda.
+        if cal_columns and "reminders" not in cal_columns:
+            conn.execute("ALTER TABLE calendar_events ADD COLUMN reminders TEXT")
+            conn.commit()
+            logger.info(
+                "Migration auto : colonne 'reminders' ajoutee a calendar_events"
+            )
 
         # P0-IA-3 : provider LLM par message (badge local/cloud)
         cursor = conn.execute("PRAGMA table_info(messages)")

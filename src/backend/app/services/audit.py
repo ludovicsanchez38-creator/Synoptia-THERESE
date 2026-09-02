@@ -119,8 +119,22 @@ class AuditService:
             user_agent=user_agent,
         )
 
-        self.session.add(log_entry)
-        await self.session.commit()
+        # B-028 : le commit portait sur la session RECUE au constructeur. Tout
+        # ce que l'appelant avait en attente devenait durable au passage, et
+        # son rollback n'annulait plus rien. Une SAVEPOINT ecrit et rend
+        # visible l'entree de journal sans jamais decider du sort de la
+        # transaction qui l'entoure.
+        #
+        # Contrat exact, MESURE et fige par test (voir
+        # tests/test_audit_frontiere_transactionnelle.py) : pysqlite n'emet
+        # `BEGIN` que devant un DML. Sans travail en attente - le cas de tous
+        # les appelants recenses, qui commitent avant - la savepoint vaut
+        # `BEGIN` et son `RELEASE` vaut `COMMIT` : l'entree est durable tout
+        # de suite, comme avant. Des que l'appelant a du travail en cours,
+        # elle devient solidaire de sa transaction : un « contact cree »
+        # journalise pour un contact annule serait une entree fausse.
+        async with self.session.begin_nested():
+            self.session.add(log_entry)
         await self.session.refresh(log_entry)
 
         logger.debug(f"Audit: {action.value} - {resource_type}:{resource_id}")

@@ -79,6 +79,14 @@ class BranchGuard:
     async def check(self) -> None:
         """Lève une erreur si on n'est pas sur une branche agent/."""
         branch = await self._git.current_branch()
+        if branch is None:
+            # B-027 : `None` = git n'a pas répondu. Une garde d'écriture qui
+            # ne sait pas où elle écrit refuse ; elle ne lève pas un
+            # AttributeError nu sur `None.startswith`.
+            raise PermissionError(
+                "Écriture interdite : Git n'a pas répondu, la branche courante "
+                "n'a pas pu être lue."
+            )
         if not branch.startswith("agent/"):
             raise PermissionError(
                 f"Écriture interdite : branche actuelle '{branch}' "
@@ -309,7 +317,12 @@ class AgentToolExecutor:
         """Affiche le statut git."""
         if not self._git:
             return "Erreur : service git non disponible"
-        return await self._git.status() or "Aucun changement"
+        statut = await self._git.status()
+        if statut is None:
+            # B-027 : « Aucun changement » sur un git muet est un faux vert
+            # servi directement au modèle, qui bâtit dessus.
+            return "Erreur : Git n'a pas répondu, statut du dépôt inconnu"
+        return statut or "Aucun changement"
 
     async def git_diff(self) -> str:
         """Affiche le diff des changements en cours."""

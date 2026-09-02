@@ -121,10 +121,17 @@ class GitService:
                 logger.warning(f"Identité git locale non posée ({cle}) : {err_config}")
         return True
 
-    async def current_branch(self) -> str:
-        """Retourne le nom de la branche courante."""
+    async def current_branch(self) -> str | None:
+        """Le nom de la branche courante. `None` = git n'a pas répondu.
+
+        B-027 : le repli `"main"` était une branche INVENTÉE. Elle repartait
+        comme base de `create_worktree` (swarm.py) et satisfaisait la
+        comparaison `!= "main"` qui autorise merge et rollback. Même tri-état
+        que `is_repo` (BUG-163) : ne jamais confondre « je n'ai pas pu lire »
+        avec un constat.
+        """
         code, out, _ = await self._run("branch", "--show-current")
-        return out if code == 0 else "main"
+        return out if code == 0 else None
 
     async def create_branch(self, name: str) -> bool:
         """Crée et checkout une nouvelle branche."""
@@ -257,10 +264,15 @@ class GitService:
         code, _, _ = await self._run("stash", "pop")
         return code == 0
 
-    async def status(self) -> str:
-        """Retourne le statut git."""
+    async def status(self) -> str | None:
+        """Le statut court. `None` = git n'a pas répondu, `""` = rien à signaler.
+
+        B-027 : `""` sur échec était indiscernable d'un dépôt réellement
+        propre. `git status --short` sort 0 même sur un arbre sale : un code
+        non nul n'est donc jamais un constat de propreté.
+        """
         code, out, _ = await self._run("status", "--short")
-        return out if code == 0 else ""
+        return out if code == 0 else None
 
     async def log(self, limit: int = 10) -> list[dict[str, str]]:
         """Retourne les derniers commits."""
@@ -294,9 +306,16 @@ class GitService:
         )
         return out if code == 0 and out else None
 
-    async def ensure_clean(self) -> bool:
-        """Vérifie qu'il n'y a pas de changements non commités."""
+    async def ensure_clean(self) -> bool | None:
+        """L'arbre est-il propre ? `None` = le contrôle n'a pas abouti.
+
+        B-027 : `not "".strip()` rendait `True` sur un git muet, et l'Atelier
+        lançait la mission sur les modifications non enregistrées de
+        l'utilisateur.
+        """
         status = await self.status()
+        if status is None:
+            return None
         return not status.strip()
 
     async def count_changes(

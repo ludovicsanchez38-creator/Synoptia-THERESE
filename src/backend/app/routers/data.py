@@ -1365,6 +1365,14 @@ async def restore_backup(
         if decrypted_temp is not None:
             decrypted_temp.unlink(missing_ok=True)
 
+    # B-023 : la restauration a remplacé la table `preferences` ENTIÈRE, clés
+    # API comprises, sans passer par POST/DELETE /api-key - les deux seules
+    # portes qui invalidaient. Le cache mémoire servait donc encore les clés
+    # d'avant la restauration.
+    from app.services.llm import invalidate_api_key_cache
+
+    invalidate_api_key_cache()
+
     # Revue 0.40/0.40.1 : l'archive de sécurité devient une sauvegarde chiffrée
     # visible, ou disparaît si le chiffrement est impossible (US-003 : jamais
     # de clair persistant, l'archive contient la clé de chiffrement).

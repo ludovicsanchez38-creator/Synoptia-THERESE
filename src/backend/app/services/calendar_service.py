@@ -311,10 +311,22 @@ class CalendarService:
         if recurrence is not None:
             current_event["recurrence"] = recurrence
 
+        # B-029 : lecture-modification-écriture SANS précondition. L'ETag lu
+        # à t0 repartait dans le CORPS, où il n'a aucun effet, et le PUT
+        # renvoyait le document ENTIER : une modification faite ailleurs entre
+        # la lecture et l'écriture (le téléphone de l'utilisateur) était
+        # écrasée en silence. `If-Match` fait échouer le serveur en 412 plutôt
+        # que d'écraser. Sans ETag connu, on n'invente pas de précondition :
+        # l'événement resterait immodifiable.
+        entetes = dict(self.headers)
+        etag = current_event.get("etag")
+        if etag:
+            entetes["If-Match"] = etag
+
         client = await get_http_client()
         response = await client.put(
             f"{self.BASE_URL}/calendars/{_enc(calendar_id)}/events/{_enc(event_id)}",
-            headers=self.headers,
+            headers=entetes,
             json=current_event,
             timeout=30.0,
         )

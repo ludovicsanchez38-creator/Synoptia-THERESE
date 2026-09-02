@@ -7,6 +7,7 @@ Endpoints for memory management (contacts, projects, search).
 import json
 import logging
 import time
+from pathlib import Path
 from typing import Any, Literal
 
 from app.models.database import get_session
@@ -174,6 +175,61 @@ async def _delete_embedding(entity_id: str) -> None:
         logger.debug(f"Deleted embedding for {entity_id}")
     except Exception as e:
         logger.warning(f"Failed to delete embedding {entity_id}: {e}")
+
+
+async def _purger_le_depot_du_dossier(project_id: str) -> None:
+    """Retire du DISQUE le dépôt THÉRÈSE d'un dossier supprimé.
+
+    B-021 : la suppression comptait ses fichiers (`cascade_deleted["files"]`)
+    en ne retirant que les lignes SQLite. Les octets restaient dans
+    `<data_dir>/projects/<id>/files/`, invisibles de l'interface et
+    indéracinables.
+
+    Périmètre STRICT, et c'est tout le correctif : seul le dossier de dépôt de
+    THÉRÈSE part. `FileMetadata.scope == "project"` couvre aussi les fichiers
+    indexés SUR PLACE depuis la racine de synchronisation de l'utilisateur -
+    effacer d'après la table détruirait ses propres documents. On efface donc
+    d'après un chemin que l'application a elle-même construit, jamais d'après
+    un chemin qu'elle a seulement lu.
+
+    Best-effort et journalisé : la base est déjà commitée quand on arrive ici,
+    et une purge en échec ne doit pas transformer une suppression réussie en
+    erreur. L'inverse - effacer avant le commit - laisserait une ligne
+    promettant un contenu introuvable.
+    """
+    import asyncio
+    import shutil
+
+    from app.config import settings
+
+    try:
+        racine = Path(settings.data_dir).resolve() / "projects"
+        # Un identifiant qui contient un séparateur n'est pas un identifiant :
+        # `a/../b` se RÉSOUT dans la racine, sur le dépôt d'un autre dossier.
+        # Le contrôle porte donc sur la forme AVANT la résolution, et le
+        # `is_relative_to` qui suit ferme le reste (chaîne vide, « .. » nu).
+        if "/" in project_id or "\\" in project_id:
+            logger.warning(
+                "Purge disque refusée : identifiant de dossier porteur d'un "
+                "séparateur de chemin (%r)",
+                project_id,
+            )
+            return
+        depot = (racine / project_id).resolve()
+        if depot == racine or not depot.is_relative_to(racine):
+            logger.warning(
+                "Purge disque refusée pour un identifiant de dossier suspect : %r",
+                project_id,
+            )
+            return
+        if depot.exists():
+            # Leçon D5 (27/08) : le travail DISQUE ne reste pas sur la boucle
+            # d'événements. Un dépôt volumineux, ou une racine sur un volume
+            # réseau qui se réveille, gèlerait toute l'application.
+            await asyncio.to_thread(shutil.rmtree, depot, ignore_errors=True)
+            logger.info("Dépôt disque du dossier %s retiré : %s", project_id, depot)
+    except Exception:
+        logger.exception("Purge disque du dossier %s en échec", project_id)
 
 
 async def _nettoyer_et_supprimer_projet(
@@ -1176,6 +1232,11 @@ async def delete_project(
     # optionnel : l'interface historique ne l'envoyait jamais.
     cascade_deleted = await _nettoyer_et_supprimer_projet(session, project)
     await session.commit()
+
+    # B-021 : après le commit, jamais avant. Les lignes ont disparu pour de
+    # bon ; le dépôt disque peut suivre sans risquer de promettre un contenu
+    # introuvable si la transaction avait échoué.
+    await _purger_le_depot_du_dossier(project_id)
 
     # Audit log (US-SEC-05) - ne doit pas bloquer la suppression
     try:

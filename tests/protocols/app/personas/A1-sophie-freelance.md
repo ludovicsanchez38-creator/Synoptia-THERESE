@@ -981,7 +981,7 @@ mkdir -p /tmp/therese-tests
 **Actions Chrome MCP** :
 1. `navigate` -> `http://localhost:1420`
 2. `wait_for` -> `[data-testid="chat-message-input"]` visible (max 5s)
-3. `javascript_tool` -> `document.dispatchEvent(new KeyboardEvent('keydown', {key: 'k', ctrlKey: true, bubbles: true}))`
+3. `javascript_tool` -> `const mod = navigator.platform.toUpperCase().indexOf('MAC') >= 0 ? 'metaKey' : 'ctrlKey'; document.dispatchEvent(new KeyboardEvent('keydown', {key: 'k', [mod]: true, bubbles: true}))`  <!-- Cmd sur macOS, Ctrl ailleurs : useKeyboardShortcuts.ts:40 lit `event.metaKey` des que navigator.platform contient MAC -->
 4. `wait_for` -> Command Palette visible (max 2s)
 5. `screenshot` -> `/tmp/therese-tests/A1-47_command_palette.png`
 6. `javascript_tool` -> vérifier que la palette contient des commandes (Nouvelle conversation, Paramètres, Board, Email, etc.)
@@ -992,7 +992,7 @@ mkdir -p /tmp/therese-tests
 11. `javascript_tool` -> `document.dispatchEvent(new KeyboardEvent('keydown', {key: 'Escape', bubbles: true}))`
 12. `wait_for` -> palette fermée (max 1s)
 
-**Résultat attendu** : Le raccourci Ctrl+K ouvre la Command Palette (modal de commandes rapides). La palette liste les actions disponibles : Nouvelle conversation, Ouvrir paramètres, Board, Email, Calendrier, Tâches, CRM, Factures. La recherche filtre en temps réel. Escape ferme la palette. Nota : en mode Vitest jsdom, utiliser `ctrlKey` (pas `metaKey`).
+**Résultat attendu** : Le raccourci d'ouverture de la Command Palette (Cmd+K sur macOS, Ctrl+K ailleurs) ouvre la palette de commandes rapides. La palette liste les actions disponibles : Nouvelle conversation, Ouvrir paramètres, Board, Email, Calendrier, Tâches, CRM, Factures. La recherche filtre en temps réel. Escape ferme la palette. Nota : le modificateur est dérivé de `navigator.platform` à l'action 3, comme le fait le hook - sous jsdom `navigator.platform` est vide, l'expression retombe donc sur `ctrlKey` sans rien changer au protocole.
 **États testés** : loaded, filled (filtré), hover
 **Si FAIL** : Screenshot `/tmp/therese-tests/A1-47_command_palette.png`
 

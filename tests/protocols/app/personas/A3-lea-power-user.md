@@ -120,7 +120,7 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 
 **Actions Chrome MCP** :
 1. `javascript_tool` -> `document.querySelectorAll('[data-testid="sidebar-conversation-item"]').length` (compter les conversations avant)
-2. `javascript_tool` -> `document.dispatchEvent(new KeyboardEvent('keydown', {key: 'n', ctrlKey: true, bubbles: true}))`
+2. `javascript_tool` -> `const mod = navigator.platform.toUpperCase().indexOf('MAC') >= 0 ? 'metaKey' : 'ctrlKey'; document.dispatchEvent(new KeyboardEvent('keydown', {key: 'n', [mod]: true, bubbles: true}))`  <!-- Cmd sur macOS, Ctrl ailleurs : useKeyboardShortcuts.ts:40 lit `event.metaKey` des que navigator.platform contient MAC -->
 3. `wait_for` -> nouvelle conversation créée (max 3s)
 4. `screenshot` -> `/tmp/therese-tests/A3-04_ctrl_n_new_conv.png`
 5. `javascript_tool` -> vérifier que l'input chat est vide et focusé
@@ -228,7 +228,7 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `javascript_tool` -> `document.dispatchEvent(new KeyboardEvent('keydown', {key: 'k', ctrlKey: true, bubbles: true}))`
+1. `javascript_tool` -> `const mod = navigator.platform.toUpperCase().indexOf('MAC') >= 0 ? 'metaKey' : 'ctrlKey'; document.dispatchEvent(new KeyboardEvent('keydown', {key: 'k', [mod]: true, bubbles: true}))`  <!-- Cmd sur macOS, Ctrl ailleurs : useKeyboardShortcuts.ts:40 lit `event.metaKey` des que navigator.platform contient MAC -->
 2. `wait_for` -> Command Palette visible (max 2s)
 3. `screenshot` -> `/tmp/therese-tests/A3-09_command_palette_open.png`
 4. `javascript_tool` -> vérifier que la palette contient des commandes listées
@@ -272,7 +272,7 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `javascript_tool` -> `document.dispatchEvent(new KeyboardEvent('keydown', {key: ',', ctrlKey: true, bubbles: true}))`
+1. `javascript_tool` -> `const mod = navigator.platform.toUpperCase().indexOf('MAC') >= 0 ? 'metaKey' : 'ctrlKey'; document.dispatchEvent(new KeyboardEvent('keydown', {key: ',', [mod]: true, bubbles: true}))`  <!-- Cmd sur macOS, Ctrl ailleurs : useKeyboardShortcuts.ts:40 lit `event.metaKey` des que navigator.platform contient MAC -->
 2. `wait_for` -> `[data-testid="settings-modal"]` visible (max 3s)
 3. `screenshot` -> `/tmp/therese-tests/A3-11_settings_open.png`
 4. `javascript_tool` -> `document.querySelector('[data-testid="settings-modal"]') !== null`
@@ -1203,11 +1203,19 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 
 ---
 
-## Phase 12 : Raccourcis clavier avancés (étapes 51-53)
+## Phase 12 : Navigation directe entre surfaces (étapes 51-53)
+
+> B-074 (02/09/2026) : ces trois étapes dispatchaient Ctrl+1, Ctrl+2 et
+> Ctrl+3. `useKeyboardShortcuts.ts` ne traite ces touches sur AUCUNE
+> plateforme (il énumère k, n, `/`, `,`, m, b, d, e, t, i, p, o et les
+> combos Shift, lignes 56-183) : l'étape exigeait une fonctionnalité
+> absente et ne pouvait donc pas échouer pour la bonne raison. Le geste
+> réellement câblé est le lien profond (`lib/deepLinks.ts`). Si un jour
+> Ctrl+1/2/3 est implémenté, ces étapes redeviendront des raccourcis.
 
 ---
 
-### Étape 51 : Raccourci Ctrl+1 - panel Chat
+### Étape 51 : Retour direct au chat depuis un autre panneau
 
 **Priorité** : P0
 **URL** : http://localhost:1420/?panel=tasks
@@ -1215,46 +1223,46 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 **Actions Chrome MCP** :
 1. `navigate` -> `http://localhost:1420/?panel=tasks`
 2. `wait_for` -> `[data-testid="tasks-panel"]` visible (max 5s)
-3. `javascript_tool` -> `document.dispatchEvent(new KeyboardEvent('keydown', {key: '1', ctrlKey: true, bubbles: true}))`
+3. `navigate` -> `http://localhost:1420/?view=chat`
 4. `wait_for` -> `[data-testid="chat-message-input"]` visible (max 3s)
 5. `screenshot` -> `/tmp/therese-tests/A3-51_ctrl_1_chat.png`
 6. `javascript_tool` -> vérifier que le panel actif est le chat (input visible, tasks masqué)
 
-**Résultat attendu** : Depuis n'importe quel panel, le raccourci Ctrl+1 ramène au chat. La transition est instantanée. L'input de chat est focusé. Le panel précédent (Tâches) n'est plus visible.
+**Résultat attendu** : Depuis n'importe quel panneau, le lien profond `?view=chat` ramène au chat. L'input de chat est visible. Le panneau précédent (Tâches) ne l'est plus.
 **États testés** : loaded (chat via raccourci)
 **Si FAIL** : Screenshot `/tmp/therese-tests/A3-51_ctrl_1_chat.png`
 
 ---
 
-### Étape 52 : Raccourci Ctrl+2 - panel Mémoire
+### Étape 52 : Ouverture directe du panneau Mémoire
 
 **Priorité** : P0
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `javascript_tool` -> `document.dispatchEvent(new KeyboardEvent('keydown', {key: '2', ctrlKey: true, bubbles: true}))`
+1. `navigate` -> `http://localhost:1420/?view=memory`
 2. `wait_for` -> `[data-testid="memory-panel"]` visible (max 3s)
 3. `screenshot` -> `/tmp/therese-tests/A3-52_ctrl_2_memory.png`
 4. `javascript_tool` -> `document.querySelector('[data-testid="memory-panel"]') !== null`
 
-**Résultat attendu** : Le raccourci Ctrl+2 ouvre le panneau Mémoire. Les contacts existants sont visibles. Le champ de recherche est prêt. La transition depuis le chat est fluide.
+**Résultat attendu** : Le lien profond `?view=memory` ouvre le panneau Mémoire. Les contacts existants sont visibles. Le champ de recherche est prêt. La transition depuis le chat est fluide.
 **États testés** : loaded, filled (contacts)
 **Si FAIL** : Screenshot `/tmp/therese-tests/A3-52_ctrl_2_memory.png`
 
 ---
 
-### Étape 53 : Raccourci Ctrl+3 - panel Board (si existe)
+### Étape 53 : Ouverture directe du panneau Board
 
 **Priorité** : P1
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `javascript_tool` -> `document.dispatchEvent(new KeyboardEvent('keydown', {key: '3', ctrlKey: true, bubbles: true}))`
+1. `navigate` -> `http://localhost:1420/?panel=board`
 2. `wait_for` -> `[data-testid="board-panel"]` visible (max 3s)
 3. `screenshot` -> `/tmp/therese-tests/A3-53_ctrl_3_board.png`
 4. `javascript_tool` -> `document.querySelector('[data-testid="board-panel"]') !== null`
 
-**Résultat attendu** : Le raccourci Ctrl+3 ouvre le panneau Board IA. Les résultats précédents (question pricing) sont potentiellement visibles. Si le raccourci n'est pas implémenté, noter comme fonctionnalité manquante.
+**Résultat attendu** : Le lien profond `?panel=board` ouvre le panneau Board IA. Les résultats précédents (question pricing) sont potentiellement visibles.
 **États testés** : loaded (board via raccourci)
 **Si FAIL** : Screenshot `/tmp/therese-tests/A3-53_ctrl_3_board.png`
 
@@ -1270,7 +1278,7 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `javascript_tool` -> `document.dispatchEvent(new KeyboardEvent('keydown', {key: '1', ctrlKey: true, bubbles: true}))` (retour chat)
+1. `navigate` -> `http://localhost:1420/?view=chat` (retour chat)
 2. `wait_for` -> `[data-testid="chat-message-input"]` visible (max 3s)
 3. `click` -> `[data-testid="chat-message-input"]`
 4. `javascript_tool` -> armer le témoin AVANT l'injection, sinon le contrôle 9 ne peut pas échouer : `window.__xss_triggered = undefined; window.alert = () => { window.__xss_triggered = true; };`

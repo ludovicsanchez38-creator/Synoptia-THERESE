@@ -214,12 +214,21 @@ async def agent_request(
     if not depot:
         raise HTTPException(status_code=400, detail="Le dossier autorisé n'est pas un dépôt Git valide.")
     current_branch = await git.current_branch()
+    propre = await git.ensure_clean()
+    if current_branch is None or propre is None:
+        # B-027 : `None` = git n'a pas répondu. Sans ce tri-état, un git muet
+        # sortait en 409 « tu n'es pas sur main » ou passait pour un dépôt
+        # propre, et la mission partait sur le travail non enregistré.
+        raise HTTPException(
+            status_code=503,
+            detail="Git n'a pas répondu : impossible de lire l'état du dépôt. Réessaie dans un instant.",
+        )
     if current_branch != "main":
         raise HTTPException(
             status_code=409,
             detail=f"L'Atelier exige la branche main, branche actuelle : {current_branch}.",
         )
-    if not await git.ensure_clean():
+    if not propre:
         raise HTTPException(
             status_code=409,
             detail="Le dépôt contient des changements non enregistrés. Termine-les avant de lancer une mission.",
@@ -803,12 +812,16 @@ async def approve_task(
         raise HTTPException(status_code=400, detail="Branche Atelier invalide")
 
     git = GitService(task.source_path)
-    if await git.current_branch() != "main":
+    branche = await git.current_branch()
+    propre = await git.ensure_clean()
+    if branche is None or propre is None:
+        raise HTTPException(status_code=503, detail="Git n'a pas répondu : impossible de lire l'état du dépôt. Réessaie dans un instant.")
+    if branche != "main":
         raise HTTPException(
             status_code=409,
             detail="Reviens sur la branche main avant d'appliquer les changements.",
         )
-    if not await git.ensure_clean():
+    if not propre:
         raise HTTPException(
             status_code=409,
             detail="Le dépôt contient des changements non enregistrés.",
@@ -876,12 +889,16 @@ async def rollback_task(
         raise HTTPException(status_code=400, detail="Chemin source manquant")
 
     git = GitService(task.source_path)
-    if await git.current_branch() != "main":
+    branche = await git.current_branch()
+    propre = await git.ensure_clean()
+    if branche is None or propre is None:
+        raise HTTPException(status_code=503, detail="Git n'a pas répondu : impossible de lire l'état du dépôt. Réessaie dans un instant.")
+    if branche != "main":
         raise HTTPException(
             status_code=409,
             detail="Reviens sur la branche main avant d'annuler les changements.",
         )
-    if not await git.ensure_clean():
+    if not propre:
         raise HTTPException(
             status_code=409,
             detail="Le dépôt contient des changements non enregistrés.",
@@ -1048,6 +1065,15 @@ async def get_status(
         if repo_detected:
             current_branch = await git.current_branch()
             working_tree_clean = await git.ensure_clean()
+            if current_branch is None or working_tree_clean is None:
+                # B-027 : le dépôt existe, mais son état n'a pas été lu. Le
+                # schéma accepte `None` depuis BUG-163 ; encore faut-il que
+                # l'écran sache pourquoi les deux champs sont vides.
+                repo_error = (
+                    "Le dépôt est bien là, mais son état n'a pas pu être lu : "
+                    "Git n'a pas répondu dans le temps imparti. Réessaie dans "
+                    "un instant."
+                )
         elif repo_detected is None:
             # BUG-163 : git n'a pas répondu. On ne sait rien, donc on n'affirme
             # rien. La version précédente servait ici le message qui prescrit un
