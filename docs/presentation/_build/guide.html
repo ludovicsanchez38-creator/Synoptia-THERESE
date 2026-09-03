@@ -94,10 +94,10 @@ table.tb.compact td, table.tb.compact th { padding: 4px 6px; }
 .flow svg { width: 100%; height: auto; display: block; }
 
 /* Sommaire */
-.sommaire .row { display: grid; grid-template-columns: 34px 1fr 30px; align-items: baseline; padding: 5px 0; border-bottom: 1px solid var(--hairline); }
-.sommaire .num { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 900; font-size: 14px; color: var(--blue); }
-.sommaire .ttl { font-size: 11.5px; font-weight: 600; color: var(--ink); }
-.sommaire .ttl small { display: block; font-weight: 400; color: var(--ink-muted); font-size: 9.8px; }
+.sommaire .row { display: grid; grid-template-columns: 34px 1fr 30px; align-items: baseline; padding: 2.5px 0; border-bottom: 1px solid var(--hairline); }
+.sommaire .num { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 900; font-size: 12.5px; color: var(--blue); }
+.sommaire .ttl { font-size: 11px; font-weight: 600; color: var(--ink); line-height: 1.25; }
+.sommaire .ttl small { display: block; font-weight: 400; color: var(--ink-muted); font-size: 9.2px; line-height: 1.25; }
 .sommaire .pg { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 11px; color: var(--ink-muted); text-align: right; }
 
 /* Pictos légende */
@@ -236,7 +236,7 @@ table.tb.compact td, table.tb.compact th { padding: 4px 6px; }
 
 <!-- ===================== PAGE 2 : SOMMAIRE ===================== -->
 <section class="page">
-  <div class="pgn"><span class="cur">02</span> / 20</div>
+  <div class="pgn"><span class="cur">02</span> / 30</div>
   <div class="title-wrap"><h2>Sommaire</h2><div class="bar"></div></div>
   <div class="two-narrow">
     <div class="sommaire">
@@ -244,23 +244,28 @@ table.tb.compact td, table.tb.compact th { padding: 4px 6px; }
       <div class="row"><span class="num">02</span><span class="ttl">Installer et mettre en route<small>Les six étapes du premier lancement</small></span><span class="pg">4</span></div>
       <div class="row"><span class="num">03</span><span class="ttl">Le tour de l'écran<small>Le rail, la barre du haut, le brief du jour, le composeur</small></span><span class="pg">5</span></div>
       <div class="row"><span class="num">04</span><span class="ttl">Trouver et lancer<small>La palette de commandes et le catalogue des capacités</small></span><span class="pg">6</span></div>
-      <div class="row"><span class="num">05</span><span class="ttl">Les cinq parcours<small>Écrire, Retrouver, Préparer, Facturer, Décider</small></span><span class="pg">7</span></div>
-      <div class="row"><span class="num">06</span><span class="ttl">Contacts et pipeline<small>Fiches, RGPD, étapes commerciales, activités</small></span><span class="pg">9</span></div>
-      <div class="row"><span class="num">07</span><span class="ttl">Devis et factures<small>Documents, statuts, formulaire, PDF</small></span><span class="pg">10</span></div>
-      <div class="row"><span class="num">08</span><span class="ttl">Projets, tâches, relances<small>Trois tableaux pour ne rien laisser filer</small></span><span class="pg">11</span></div>
-      <div class="row"><span class="num">09</span><span class="ttl">Décider avec le Board<small>Cinq conseillers, une question, une délibération</small></span><span class="pg">12</span></div>
-      <div class="row"><span class="num">10</span><span class="ttl">Fichiers et créations<small>Documents indexés, Office, images, voix, modèles</small></span><span class="pg">13</span></div>
-      <div class="row"><span class="num">11</span><span class="ttl">Automatiser et déléguer<small>Actions, connecteurs, skills, Katia et Zézette</small></span><span class="pg">14</span></div>
-      <div class="row"><span class="num">12</span><span class="ttl">Paramètres, première partie<small>Profil, IA, Services, Accessibilité</small></span><span class="pg">15</span></div>
-      <div class="row"><span class="num">13</span><span class="ttl">Paramètres, seconde partie<small>Outils, Agents, Confidentialité, Avancé, À propos</small></span><span class="pg">16</span></div>
-      <div class="row"><span class="num">14</span><span class="ttl">Confiance, sécurité, données<small>Ce qui reste sur ta machine, ce qui part, et quand</small></span><span class="pg">17</span></div>
-      <div class="row"><span class="num">15</span><span class="ttl">Thème sombre et apparence<small>Signature, Équilibre, taille de police, contraste</small></span><span class="pg">18</span></div>
-      <div class="row"><span class="num">16</span><span class="ttl">Ce qui est nouveau en 0.66<small>Et ce qui arrive ensuite</small></span><span class="pg">19</span></div>
-      <div class="row"><span class="num">17</span><span class="ttl">Questions, aide-mémoire, lexique<small>Les situations courantes et les mots de l'application</small></span><span class="pg">20</span></div>
+      <div class="row"><span class="num">05</span><span class="ttl">Les cinq parcours<small>Écrire, Retrouver, Préparer, Facturer, Décider, et la conversation</small></span><span class="pg">7</span></div>
+      <div class="row"><span class="num">06</span><span class="ttl">Contacts et pipeline<small>Fiches, RGPD, étapes commerciales, activités</small></span><span class="pg">10</span></div>
+      <div class="row"><span class="num">07</span><span class="ttl">Devis et factures<small>Liste, formulaire, nouveau devis, PDF, détail</small></span><span class="pg">11</span></div>
+      <div class="row"><span class="num">08</span><span class="ttl">Livrables et suivi client<small>Promis, livré, facturé, reste à faire</small></span><span class="pg">13</span></div>
+      <div class="row"><span class="num">09</span><span class="ttl">Projets, tâches, relances<small>Trois tableaux, les fiches, les formulaires</small></span><span class="pg">14</span></div>
+      <div class="row"><span class="num">10</span><span class="ttl">Brancher sa boîte mail<small>Gmail OAuth ou SMTP / IMAP, en deux étapes</small></span><span class="pg">16</span></div>
+      <div class="row"><span class="num">11</span><span class="ttl">Décider avec le Board<small>Cinq conseillers, une question, une délibération</small></span><span class="pg">17</span></div>
+      <div class="row"><span class="num">12</span><span class="ttl">Calculer, chercher, vérifier<small>Calculateurs, recherche web, références juridiques</small></span><span class="pg">18</span></div>
+      <div class="row"><span class="num">13</span><span class="ttl">Fichiers indexés<small>L'explorateur, l'indexation, la recherche par le sens</small></span><span class="pg">19</span></div>
+      <div class="row"><span class="num">14</span><span class="ttl">L'atelier documentaire<small>Trame, rédaction par section, pistes, export</small></span><span class="pg">20</span></div>
+      <div class="row"><span class="num">15</span><span class="ttl">Images, voix, modèles<small>Studio Images, Whisper et Piper, bibliothèque de prompts</small></span><span class="pg">21</span></div>
+      <div class="row"><span class="num">16</span><span class="ttl">Automatiser et déléguer<small>Actions, connecteurs, skills, Katia et Zézette</small></span><span class="pg">22</span></div>
+      <div class="row"><span class="num">17</span><span class="ttl">Paramètres<small>Les neuf onglets, en deux pages</small></span><span class="pg">24</span></div>
+      <div class="row"><span class="num">18</span><span class="ttl">Coûts, performance, mise à jour<small>Consommation, temps de réponse, export et sauvegarde</small></span><span class="pg">26</span></div>
+      <div class="row"><span class="num">19</span><span class="ttl">Confiance, sécurité, données<small>Ce qui reste sur ta machine, ce qui part, et quand</small></span><span class="pg">27</span></div>
+      <div class="row"><span class="num">20</span><span class="ttl">Thème sombre et apparence<small>Signature, Équilibre, taille de police, contraste</small></span><span class="pg">28</span></div>
+      <div class="row"><span class="num">21</span><span class="ttl">Ce qui est nouveau en 0.66<small>Et ce qui arrive ensuite, défauts connus</small></span><span class="pg">29</span></div>
+      <div class="row"><span class="num">22</span><span class="ttl">Questions, aide-mémoire, lexique<small>Les situations courantes et les mots de l'application</small></span><span class="pg">30</span></div>
     </div>
     <div>
       <div class="title-wrap small"><h3>Comment lire ce guide</h3><div class="bar"></div></div>
-      <p class="txt">Chaque rubrique tient sur une page : une ou deux captures d'écran, les zones importantes, puis les gestes dans l'ordre. Les captures viennent de l'application installée, version 0.66.0, avec un profil de démonstration (Marie Exemple, Atelier Exemple) et des contacts, projets, factures et tâches inventés.</p>
+      <p class="txt">Chaque rubrique tient sur une page : une ou deux captures d'écran, les zones importantes, puis les gestes dans l'ordre. Les captures viennent de l'application installée, version 0.66.0, avec un profil de démonstration (Marie Exemple, Atelier Exemple) et des contacts, projets, factures et tâches inventés. Chaque écran a été ouvert et manipulé pour ce guide, sauf la grille de l'Agenda et la boîte mail pleine, laissées de côté pour ne montrer aucune donnée réelle.</p>
       <div class="pictos" style="grid-template-columns:1fr">
         <div class="picto"><svg style="color:var(--blue)"><use href="#i-step"/></svg><span><strong>Étapes numérotées</strong>À suivre dans l'ordre. Les libellés entre guillemets sont ceux de l'écran.</span></div>
         <div class="picto"><svg style="color:var(--green)"><use href="#i-tip"/></svg><span><strong>Astuce</strong>Un raccourci ou une bonne habitude.</span></div>
@@ -276,7 +281,7 @@ table.tb.compact td, table.tb.compact th { padding: 4px 6px; }
 
 <!-- ===================== PAGE 3 : COUP D'ŒIL ===================== -->
 <section class="page">
-  <div class="pgn"><span class="cur">03</span> / 20</div>
+  <div class="pgn"><span class="cur">03</span> / 30</div>
   <div class="sec-head"><div class="sec-num">01<span class="accent">.</span></div><div class="meta"><div class="label">Vue d'ensemble</div><h2>THÉRÈSE en un coup d'œil</h2></div></div>
   <hr class="divider-strong">
   <p class="intro">THÉRÈSE est une application de bureau. Tu lui parles comme à une assistante, elle lit <strong>tes contacts, ton agenda, tes documents, tes factures</strong>, et elle prépare ce que tu lui demandes. Tout ce qu'elle sait est rangé sur ta machine. L'intelligence artificielle qui répond est celle que tu choisis, y compris un modèle local qui ne sort jamais de l'ordinateur.</p>
@@ -308,7 +313,7 @@ table.tb.compact td, table.tb.compact th { padding: 4px 6px; }
 
 <!-- ===================== PAGE 4 : MISE EN ROUTE ===================== -->
 <section class="page">
-  <div class="pgn"><span class="cur">04</span> / 20</div>
+  <div class="pgn"><span class="cur">04</span> / 30</div>
   <div class="sec-head"><div class="sec-num">02<span class="accent">.</span></div><div class="meta"><div class="label">Premiers pas</div><h2>Installer et mettre en route</h2></div></div>
   <hr class="divider-strong">
   <p class="intro">THÉRÈSE s'installe comme n'importe quelle application : un fichier <strong>.dmg</strong> sur Mac, un installeur <strong>.exe</strong> sur Windows, un paquet <strong>.deb</strong> sur Linux, tous téléchargeables sur <strong>synoptia.fr/therese/alpha</strong>. Au premier lancement, six étapes préparent ton espace de travail. Aucune ne demande de compte en ligne.</p>
@@ -341,7 +346,7 @@ table.tb.compact td, table.tb.compact th { padding: 4px 6px; }
 
 <!-- ===================== PAGE 5 : TOUR DE L'ÉCRAN ===================== -->
 <section class="page">
-  <div class="pgn"><span class="cur">05</span> / 20</div>
+  <div class="pgn"><span class="cur">05</span> / 30</div>
   <div class="sec-head"><div class="sec-num">03<span class="accent">.</span></div><div class="meta"><div class="label">Repères</div><h2>Le tour de l'écran</h2></div></div>
   <hr class="divider-strong">
   <p class="intro">Tout part de l'accueil. Thérèse te salue, regroupe ce qui mérite ton attention, et te laisse agir depuis un seul champ de saisie. Le reste de l'application s'ouvre par-dessus, et « Retour » ramène ici.</p>
@@ -377,7 +382,7 @@ table.tb.compact td, table.tb.compact th { padding: 4px 6px; }
 
 <!-- ===================== PAGE 6 : PALETTE ET CATALOGUE ===================== -->
 <section class="page">
-  <div class="pgn"><span class="cur">06</span> / 20</div>
+  <div class="pgn"><span class="cur">06</span> / 30</div>
   <div class="sec-head"><div class="sec-num">04<span class="accent">.</span></div><div class="meta"><div class="label">Navigation</div><h2>Trouver et lancer</h2></div></div>
   <hr class="divider-strong">
   <p class="intro">Deux portes mènent à tout : la <strong>palette de commandes</strong>, au clavier, et le <strong>catalogue des capacités</strong>, à la souris. Les deux indexent les mêmes trente capacités et les cinq parcours.</p>
@@ -411,7 +416,7 @@ table.tb.compact td, table.tb.compact th { padding: 4px 6px; }
 
 <!-- ===================== PAGE 7 : PARCOURS 1/2 ===================== -->
 <section class="page">
-  <div class="pgn"><span class="cur">07</span> / 20</div>
+  <div class="pgn"><span class="cur">07</span> / 30</div>
   <div class="sec-head"><div class="sec-num">05<span class="accent">.</span></div><div class="meta"><div class="label">L'établi · 1/2</div><h2>Les cinq parcours</h2></div></div>
   <hr class="divider-strong">
   <p class="intro">Sous le brief, cinq verbes : <strong>Écrire, Retrouver, Préparer, Facturer, Décider</strong>. Chacun ouvre un parcours dans la conversation, alimenté par tes données réelles, avec ses sources affichées et un bouton vers la vue complète. C'est la façon la plus rapide de faire quelque chose d'utile dès la première minute.</p>
@@ -443,7 +448,7 @@ table.tb.compact td, table.tb.compact th { padding: 4px 6px; }
 
 <!-- ===================== PAGE 8 : PARCOURS 2/2 ===================== -->
 <section class="page">
-  <div class="pgn"><span class="cur">08</span> / 20</div>
+  <div class="pgn"><span class="cur">08</span> / 30</div>
   <div class="sec-head"><div class="sec-num">05<span class="accent">.</span></div><div class="meta"><div class="label">L'établi · 2/2</div><h2>Retrouver, Décider, et la conversation</h2></div></div>
   <hr class="divider-strong">
   <div class="two">
@@ -475,9 +480,33 @@ table.tb.compact td, table.tb.compact th { padding: 4px 6px; }
   <div class="foot"><span>THÉRÈSE · Guide de présentation</span><span>Synoptïa · <span class="y">2026</span></span></div>
 </section>
 
+<!-- ===================== PAGE X : ÉCRIRE, ET CE QUE REND LA CONVERSATION ===================== -->
+<section class="page">
+  <div class="pgn"><span class="cur">09</span> / 30</div>
+  <div class="sec-head"><div class="sec-num">05<span class="accent">.</span></div><div class="meta"><div class="label">L'établi · la conversation en action</div><h2>Écrire, et ce que rend la conversation</h2></div></div>
+  <hr class="divider-strong">
+
+  <p class="intro">Le parcours <strong>Écrire</strong> ouvre un brouillon qui ne quitte jamais l'application tant que tu ne l'envoies pas depuis ta messagerie. Et quand une action tourne en fond, son résultat vient se poser dans la conversation, mis en forme, avec ses sources.</p>
+  <div class="two">
+    <div>
+      <div class="shot crop" style="height:62mm"><img src="shots-web/83-parcours-ecrire-brouillon.jpg" alt="Écrire · le brouillon de réponse" style="height:62mm;object-position:right top"><div class="cap">Écrire · le brouillon de réponse</div></div>
+      <div class="title-wrap small"><h3>Écrire un message</h3><div class="bar"></div></div>
+      <p class="txt">Le panneau « Rédaction » annonce la règle en une phrase : « Ton brouillon reste ici : rien ne part tant que tu ne l'envoies pas depuis ta messagerie. » Destinataire, objet, corps, un ton (Formel, Moyen), puis <span class="btnlike ghost">Générer une proposition</span> pour que Thérèse rédige, ou <span class="btnlike">Enregistrer comme brouillon</span>. Sans adresse valide, le bouton refuse et le dit.</p>
+    </div>
+    <div>
+      <div class="shot crop" style="height:62mm"><img src="shots-web/85-parcours-ecrire-carte-messages.jpg" alt="Écrire · sans boîte mail branchée" style="height:62mm;object-position:center 20%"><div class="cap">Écrire · sans boîte mail branchée</div></div>
+      <div class="title-wrap small"><h3>Sans boîte mail</h3><div class="bar"></div></div>
+      <p class="txt">Tant qu'aucun compte n'est branché, la carte « Messages reçus » le dit simplement, et propose de configurer Gmail ou une boîte IMAP (page suivante). Rien n'est simulé : pas de messages inventés, pas de brouillon envoyé nulle part.</p>
+    </div>
+  </div>
+  <div class="shot crop" style="height:58mm"><img src="shots-web/52-action-resultat-dans-le-chat.jpg" alt="Le résultat d'une action, inséré dans la conversation et lisible" style="height:58mm;object-position:center 30%"><div class="cap">Le résultat d'une action, inséré dans la conversation et lisible</div></div>
+  <p class="txt">Ici, l'action « Relance clients » vient de se terminer (panneau à droite) : son compte rendu est <strong>inséré dans la conversation</strong>, titres et listes mis en forme, avec le badge du moteur qui l'a produit (ici un modèle local). C'est le même endroit où arrivent les réponses à tes questions et les cartes d'action à confirmer.</p>
+  <div class="foot"><span>THÉRÈSE · Guide de présentation</span><span>Synoptïa · <span class="y">2026</span></span></div>
+</section>
+
 <!-- ===================== PAGE 9 : CONTACTS ET PIPELINE ===================== -->
 <section class="page">
-  <div class="pgn"><span class="cur">09</span> / 20</div>
+  <div class="pgn"><span class="cur">10</span> / 30</div>
   <div class="sec-head"><div class="sec-num">06<span class="accent">.</span></div><div class="meta"><div class="label">Développer mon activité</div><h2>Contacts et pipeline</h2></div></div>
   <hr class="divider-strong">
   <p class="intro">Le carnet d'adresses et le suivi commercial sont deux vues d'un même fichier. <strong>Contacts</strong> administre les fiches, <strong>Pipeline</strong> suit l'avancée de chaque relation, de la prise de contact à la signature.</p>
@@ -507,7 +536,7 @@ table.tb.compact td, table.tb.compact th { padding: 4px 6px; }
 
 <!-- ===================== PAGE 10 : DEVIS ET FACTURES ===================== -->
 <section class="page">
-  <div class="pgn"><span class="cur">10</span> / 20</div>
+  <div class="pgn"><span class="cur">11</span> / 30</div>
   <div class="sec-head"><div class="sec-num">07<span class="accent">.</span></div><div class="meta"><div class="label">Développer mon activité</div><h2>Devis et factures</h2></div></div>
   <hr class="divider-strong">
   <p class="intro">Trois types de documents, <strong>devis, factures et avoirs</strong>, numérotés en série, avec un PDF prêt à envoyer. Les montants s'écrivent à la française, la TVA se choisit ligne par ligne, et le profil de facturation (SIRET, adresse, TVA intracommunautaire) alimente l'en-tête.</p>
@@ -540,10 +569,67 @@ table.tb.compact td, table.tb.compact th { padding: 4px 6px; }
   <div class="foot"><span>THÉRÈSE · Guide de présentation</span><span>Synoptïa · <span class="y">2026</span></span></div>
 </section>
 
+<!-- ===================== PAGE X : UN DEVIS, UNE FACTURE, UN PDF ===================== -->
+<section class="page">
+  <div class="pgn"><span class="cur">12</span> / 30</div>
+  <div class="sec-head"><div class="sec-num">07<span class="accent">.</span></div><div class="meta"><div class="label">Développer mon activité · de près</div><h2>Un devis, une facture, un PDF</h2></div></div>
+  <hr class="divider-strong">
+
+  <div class="two-wide">
+    <div>
+      <div class="shot crop" style="height:118mm"><img src="shots-web/79-facture-pdf-produit.jpg" alt="Le PDF produit par Thérèse pour FACT-2026-003" style="height:118mm;object-position:top center"><div class="cap">Le PDF produit par Thérèse pour FACT-2026-003</div></div>
+    </div>
+    <div>
+      <div class="shot crop" style="height:52mm"><img src="shots-web/80-nouveau-devis-brouillon.jpg" alt="« Nouveau devis brouillon » depuis le parcours Facturer" style="height:52mm;object-position:right top"><div class="cap">« Nouveau devis brouillon » depuis le parcours Facturer</div></div>
+      <div class="shot crop" style="height:52mm"><img src="shots-web/82-detail-document-lecture-seule.jpg" alt="Le détail d'un document, en lecture seule" style="height:52mm;object-position:right top"><div class="cap">Le détail d'un document, en lecture seule</div></div>
+      <div class="title-wrap small"><h3>Le PDF</h3><div class="bar"></div></div>
+      <p class="txt">Émetteur avec SIRET, code APE et TVA intracommunautaire venus du profil, destinataire, numéro, dates, lignes avec TVA, totaux, notes, conditions de paiement et mentions légales. Le fichier est écrit dans ton dossier de travail, sous <span class="mono">factures/</span>.</p>
+      <div class="note warn"><svg><use href="#i-warn"/></svg><div><strong>Défaut connu en 0.66 :</strong> les libellés fixes du PDF ont perdu leurs accents et le statut s'imprime en anglais (« SENT »). Corrigé dans la version suivante.</div></div>
+    </div>
+  </div>
+  <div class="two">
+    <div>
+      <div class="title-wrap small"><h3>Nouveau devis, sans quitter la conversation</h3><div class="bar"></div></div>
+      <p class="txt">Le parcours Facturer ouvre un brouillon : client (dans tes contacts), dates d'émission et d'échéance (trente jours par défaut), devise, validité, lignes, notes, totaux calculés. « Enregistrer le brouillon » refuse tant qu'aucun client n'est choisi. Le brouillon rejoint ensuite Devis et factures pour être complété ou converti.</p>
+    </div>
+    <div>
+      <div class="title-wrap small"><h3>Le détail d'un document</h3><div class="bar"></div></div>
+      <p class="txt">Depuis la liste du parcours, un clic ouvre le document en lecture seule : statut, montant, dates, lignes, totaux, et la phrase qui compte : « L'envoi de facture n'est pas disponible et aucune action n'a été exécutée ». Modifier, marquer payée ou produire le PDF se fait dans la vue complète.</p>
+    </div>
+  </div>
+  <div class="foot"><span>THÉRÈSE · Guide de présentation</span><span>Synoptïa · <span class="y">2026</span></span></div>
+</section>
+
+<!-- ===================== PAGE X : LIVRABLES ET SUIVI CLIENT ===================== -->
+<section class="page">
+  <div class="pgn"><span class="cur">13</span> / 30</div>
+  <div class="sec-head"><div class="sec-num">08<span class="accent">.</span></div><div class="meta"><div class="label">Développer mon activité</div><h2>Livrables et suivi client</h2></div></div>
+  <hr class="divider-strong">
+
+  <p class="intro">Ce que tu as promis, ce que tu as livré, ce qui est facturé et ce qui reste à faire, pour un client donné : c'est le rôle de <strong>Livrables et suivi client</strong>, en lecture seule, construit depuis Projets, CRM, Tâches et Facturation.</p>
+  <div class="shot crop" style="height:120mm"><img src="shots-web/77-livrables-et-suivi-client.jpg" alt="Le panneau, ouvert sur le projet « Bilan Petit Paysage »" style="height:120mm;object-position:right top"><div class="cap">Le panneau, ouvert sur le projet « Bilan Petit Paysage »</div></div>
+  <div class="two">
+    <div>
+      <div class="legend one">
+        <div class="li"><span class="n">1</span><span><strong>Projet suivi</strong> : le projet dont on veut l'état, avec son contact et son statut.</span></div>
+        <div class="li"><span class="n">2</span><span><strong>Trois compteurs</strong> : livrables, validés, tâches ouvertes.</span></div>
+        <div class="li"><span class="n">3</span><span><strong>Filtres</strong> : Tous, À faire, En cours, Révision, Validés.</span></div>
+        <div class="li"><span class="n">4</span><span><strong>Reste à faire</strong> : les tâches ouvertes reliées au projet.</span></div>
+        <div class="li"><span class="n">5</span><span><strong>Facturation du contact</strong> : les documents émis pour ce client, avec statut et montant.</span></div>
+      </div>
+    </div>
+    <div>
+      <div class="note"><svg><use href="#i-step"/></svg><div><strong>Lecture seule.</strong> « Aucune validation, suppression ou synchronisation n'est déclenchée ici. » Pour agir, on passe par Projets, Tâches ou Devis et factures.</div></div>
+      <div class="note tip"><svg><use href="#i-tip"/></svg><div><strong>Dans la conversation :</strong> « résume les livrables, factures et prochaines actions de ce client » ouvre ce même panneau, sur le projet du client cité.</div></div>
+    </div>
+  </div>
+  <div class="foot"><span>THÉRÈSE · Guide de présentation</span><span>Synoptïa · <span class="y">2026</span></span></div>
+</section>
+
 <!-- ===================== PAGE 11 : PROJETS, TÂCHES, RELANCES ===================== -->
 <section class="page">
-  <div class="pgn"><span class="cur">11</span> / 20</div>
-  <div class="sec-head"><div class="sec-num">08<span class="accent">.</span></div><div class="meta"><div class="label">Organiser mon quotidien</div><h2>Projets, tâches, relances</h2></div></div>
+  <div class="pgn"><span class="cur">14</span> / 30</div>
+  <div class="sec-head"><div class="sec-num">09<span class="accent">.</span></div><div class="meta"><div class="label">Organiser mon quotidien</div><h2>Projets, tâches, relances</h2></div></div>
   <hr class="divider-strong">
   <p class="intro">Trois tableaux à colonnes, tous à glisser-déposer, pour ne rien laisser filer : les <strong>projets</strong> pour le cadre, les <strong>tâches</strong> pour le concret, les <strong>relances</strong> pour ce qui a une échéance.</p>
   <div class="two">
@@ -572,10 +658,76 @@ table.tb.compact td, table.tb.compact th { padding: 4px 6px; }
   <div class="foot"><span>THÉRÈSE · Guide de présentation</span><span>Synoptïa · <span class="y">2026</span></span></div>
 </section>
 
+<!-- ===================== PAGE X : CRÉER UN PROJET, TENIR SES TÂCHES ===================== -->
+<section class="page">
+  <div class="pgn"><span class="cur">15</span> / 30</div>
+  <div class="sec-head"><div class="sec-num">09<span class="accent">.</span></div><div class="meta"><div class="label">Organiser mon quotidien · de près</div><h2>Créer un projet, tenir ses tâches</h2></div></div>
+  <hr class="divider-strong">
+
+  <div class="two">
+    <div>
+      <div class="shot crop" style="height:60mm"><img src="shots-web/53-projet-modale.jpg" alt="Un projet ouvert : description, statut, contact, budget, dossier synchronisé, tags" style="height:60mm;object-position:center 30%"><div class="cap">Un projet ouvert : description, statut, contact, budget, dossier synchronisé, tags</div></div>
+      <div class="title-wrap small"><h3>La fiche d'un projet</h3><div class="bar"></div></div>
+      <p class="txt">Nom, description, statut (Actif, En attente, Terminé, Annulé), contact associé, budget, notes, un <strong>dossier à synchroniser</strong> (« Attacher » : Thérèse indexe ce qu'il contient, dans le périmètre du projet) et des tags. « Supprimer » demande confirmation.</p>
+    </div>
+    <div>
+      <div class="shot crop" style="height:60mm"><img src="shots-web/54-projet-nouveau.jpg" alt="Nouveau projet" style="height:60mm;object-position:center 30%"><div class="cap">Nouveau projet</div></div>
+      <div class="title-wrap small"><h3>Nouveau projet</h3><div class="bar"></div></div>
+      <p class="txt">Le même formulaire, vide, avec un budget par défaut et la liste de tes contacts pour l'associer. « Créer » le pose dans la colonne Actif.</p>
+    </div>
+  </div>
+  <div class="two">
+    <div>
+      <div class="shot crop" style="height:44mm"><img src="shots-web/55-tache-nouvelle.jpg" alt="Nouvelle tâche" style="height:44mm;object-position:center 30%"><div class="cap">Nouvelle tâche</div></div>
+      <div class="shot crop" style="height:30mm"><img src="shots-web/56-tache-validation-titre.jpg" alt="Sans titre : « Ajoute un titre »" style="height:30mm;object-position:center 22%"><div class="cap">Sans titre : « Ajoute un titre »</div></div>
+    </div>
+    <div>
+      <div class="shot crop" style="height:44mm"><img src="shots-web/58-taches-liste.jpg" alt="Vue liste, priorités et échéances" style="height:44mm;object-position:center 25%"><div class="cap">Vue liste, priorités et échéances</div></div>
+      <div class="shot crop" style="height:30mm"><img src="shots-web/59-tache-terminee.jpg" alt="Un clic sur le cercle : terminée, barrée" style="height:30mm;object-position:center 40%"><div class="cap">Un clic sur le cercle : terminée, barrée</div></div>
+    </div>
+  </div>
+  <p class="txt"><strong>Une tâche</strong> tient en un titre, une description, un statut, une priorité, une date limite et des étiquettes. Le formulaire refuse un titre vide et le dit en clair. La vue liste et la vue en colonnes montrent les mêmes tâches ; le cercle à gauche termine, la corbeille supprime. Les tâches nées d'une conversation (« note que je dois rappeler Paul jeudi ») arrivent ici, et celles à échéance remontent dans le brief.</p>
+  <div class="foot"><span>THÉRÈSE · Guide de présentation</span><span>Synoptïa · <span class="y">2026</span></span></div>
+</section>
+
+<!-- ===================== PAGE X : BRANCHER SA BOÎTE MAIL ===================== -->
+<section class="page">
+  <div class="pgn"><span class="cur">16</span> / 30</div>
+  <div class="sec-head"><div class="sec-num">10<span class="accent">.</span></div><div class="meta"><div class="label">Organiser mon quotidien</div><h2>Brancher sa boîte mail</h2></div></div>
+  <hr class="divider-strong">
+
+  <p class="intro">Thérèse lit et prépare tes e-mails à condition d'avoir une boîte branchée. Deux voies : <strong>Gmail par OAuth</strong> (connexion sécurisée, révocable, sans mot de passe stocké) ou <strong>SMTP / IMAP classique</strong> (Gmail avec mot de passe d'application, OVH, Gandi, Infomaniak et les autres). Rien de tout cela n'est fait à ta place.</p>
+  <div class="two">
+    <div>
+      <div class="shot crop" style="height:66mm"><img src="shots-web/60-email-configuration-etape1.jpg" alt="Étape 1 · choisir la méthode" style="height:66mm;object-position:center 35%"><div class="cap">Étape 1 · choisir la méthode</div></div>
+    </div>
+    <div>
+      <div class="shot crop" style="height:66mm"><img src="shots-web/61-email-configuration-smtp-imap.jpg" alt="Étape 2 · le formulaire SMTP / IMAP" style="height:66mm;object-position:center 35%"><div class="cap">Étape 2 · le formulaire SMTP / IMAP</div></div>
+    </div>
+  </div>
+  <div class="two">
+    <div>
+      <div class="steps">
+        <div class="step"><span class="n">1</span><span class="t">Depuis l'accueil (« Brancher mes mails »), le parcours Écrire, ou Relances (« Créer depuis un email ») : l'assistant « Configuration Email » s'ouvre.</span></div>
+        <div class="step"><span class="n">2</span><span class="t"><strong>SMTP / IMAP classique</strong> est la voie recommandée : « prêt en 2 minutes, sans projet Google Cloud ». Un fournisseur dans la liste préremplit serveurs et ports ; sinon, saisis-les.</span></div>
+        <div class="step"><span class="n">3</span><span class="t">Adresse, <strong>mot de passe d'application</strong> (pas ton mot de passe principal), puis « Tester » avant « Enregistrer ». Le mot de passe est chiffré localement.</span></div>
+        <div class="step"><span class="n">4</span><span class="t"><strong>Gmail OAuth</strong> demande un projet Google Cloud avec l'API Gmail activée : réservé à ceux qui savent le faire. La note en bas de l'écran l'explique.</span></div>
+      </div>
+    </div>
+    <div>
+      <div class="title-wrap small"><h3>Une fois branchée</h3><div class="bar"></div></div>
+      <p class="txt">La vue <strong>Email</strong> liste les messages par dossier, avec favoris, lu ou non lu, et un panneau de lecture. Depuis un message : répondre avec une proposition de Thérèse, créer une relance à date, ou demander dans la conversation « résume mes messages prioritaires ». Un compte IMAP dispose des mêmes actions qu'un compte Gmail.</p>
+      <div class="note tip"><svg><use href="#i-tip"/></svg><div><strong>Gmail sans prise de tête :</strong> choisis « SMTP / IMAP classique », sélectionne le preset Gmail et utilise un mot de passe d'application créé sur myaccount.google.com/apppasswords (validation en deux étapes requise).</div></div>
+      <div class="note warn"><svg><use href="#i-warn"/></svg><div><strong>Aucune capture de boîte pleine dans ce guide.</strong> Les écrans de messages ont été laissés de côté pour ne montrer aucune donnée réelle. Le brief du jour et le parcours Écrire s'appuient sur cette même boîte une fois branchée.</div></div>
+    </div>
+  </div>
+  <div class="foot"><span>THÉRÈSE · Guide de présentation</span><span>Synoptïa · <span class="y">2026</span></span></div>
+</section>
+
 <!-- ===================== PAGE 12 : LE BOARD ===================== -->
 <section class="page">
-  <div class="pgn"><span class="cur">12</span> / 20</div>
-  <div class="sec-head"><div class="sec-num">09<span class="accent">.</span></div><div class="meta"><div class="label">Comprendre et décider</div><h2>Décider avec le Board</h2></div></div>
+  <div class="pgn"><span class="cur">17</span> / 30</div>
+  <div class="sec-head"><div class="sec-num">11<span class="accent">.</span></div><div class="meta"><div class="label">Comprendre et décider</div><h2>Décider avec le Board</h2></div></div>
   <hr class="divider-strong">
   <p class="intro">Pour une décision qui compte, Thérèse convoque <strong>cinq conseillers</strong> qui ne sont pas d'accord entre eux, et c'est le but. Chacun lit ta question avec son angle, puis une synthèse rapproche les avis. Tu gardes la décision.</p>
   <div class="shot crop" style="height:78mm"><img src="shots-web/41-board-de-decision.jpg" alt="Fenêtre Décision, convoquer le Board" style="height:78mm;object-position:center 30%"><div class="cap">« Convoque ton Board » · les cinq conseillers et la question</div></div>
@@ -604,41 +756,122 @@ table.tb.compact td, table.tb.compact th { padding: 4px 6px; }
   <div class="foot"><span>THÉRÈSE · Guide de présentation</span><span>Synoptïa · <span class="y">2026</span></span></div>
 </section>
 
-<!-- ===================== PAGE 13 : FICHIERS ET CRÉATIONS ===================== -->
+<!-- ===================== PAGE X : CALCULER, CHERCHER, VÉRIFIER ===================== -->
 <section class="page">
-  <div class="pgn"><span class="cur">13</span> / 20</div>
-  <div class="sec-head"><div class="sec-num">10<span class="accent">.</span></div><div class="meta"><div class="label">Créer et produire</div><h2>Fichiers et créations</h2></div></div>
+  <div class="pgn"><span class="cur">18</span> / 30</div>
+  <div class="sec-head"><div class="sec-num">12<span class="accent">.</span></div><div class="meta"><div class="label">Comprendre et décider</div><h2>Calculer, chercher, vérifier</h2></div></div>
   <hr class="divider-strong">
-  <p class="intro">Thérèse lit tes documents et en produit de nouveaux. Le pont entre les deux est le <strong>dossier de travail</strong>, choisi à la mise en route.</p>
+
   <div class="two">
     <div>
-      <div class="shot crop" style="height:52mm"><img src="shots-web/44-fichiers-dossier-travail.jpg" alt="Vue Fichiers" style="height:52mm;object-position:center 12%"><div class="cap">Fichiers · l'explorateur ouvert sur le dossier de travail</div></div>
-      <div class="title-wrap small"><h3>Fichiers : lire et interroger</h3><div class="bar"></div></div>
-      <p class="txt">L'explorateur (famille Décision, carte « Fichiers ») s'ouvre sur ton dossier de travail. Les icônes du haut : maison, dossier parent, rafraîchir, choisir un dossier. Le fil d'Ariane remonte d'un clic. Sur chaque fichier, l'icône à droite <strong>l'indexe</strong> : Thérèse le découpe, le comprend et pourra le citer.</p>
-      <p class="txt">Une fois indexé, un document se retrouve de deux façons : par son <strong>nom</strong> (« ouvre le compte-rendu de visite ») et par le <strong>sens</strong> (« qu'avait-on dit sur le rangement de l'atelier ? »). Formats lus : texte, Markdown, PDF, Word, Excel, CSV.</p>
-      <div class="note warn"><svg><use href="#i-warn"/></svg><div><strong>Indexer, c'est un choix par fichier.</strong> Rien n'est lu sans ton geste. Un fichier joint à un projet n'est visible que dans ce projet.</div></div>
+      <div class="shot crop" style="height:66mm"><img src="shots-web/70-calculateurs-verifiables.jpg" alt="Calculateurs vérifiables · ROI, ICE, RICE, VAN, seuil" style="height:66mm;object-position:right top"><div class="cap">Calculateurs vérifiables · ROI, ICE, RICE, VAN, seuil</div></div>
     </div>
     <div>
-      <div class="shot crop" style="height:52mm"><img src="shots-web/42-catalogue-creation.jpg" alt="Catalogue, famille Création" style="height:52mm;object-position:center 40%"><div class="cap">Catalogue · famille « Créer et produire »</div></div>
-      <div class="title-wrap small"><h3>Créer et produire</h3><div class="bar"></div></div>
-      <table class="tb compact">
-        <tr><th style="width:34%">Capacité</th><th>Ce qu'elle fait</th></tr>
-        <tr><td><strong>Rédiger un document</strong></td><td>L'atelier documentaire : une trame par sections, une rédaction guidée section par section, des pistes, un export en Markdown ou Word.</td></tr>
-        <tr><td><strong>Word, PowerPoint et Excel</strong></td><td>Un fichier Office prêt à ouvrir, produit depuis une demande. Le bouton de téléchargement apparaît dans la réponse.</td></tr>
-        <tr><td><strong>Images</strong></td><td>Génère un visuel avec le moteur choisi (GPT Image 2, Nano Banana 2, Fal Flux Pro) et garde l'historique des créations.</td></tr>
-        <tr><td><strong>Voix et transcription</strong></td><td>Dicte une demande, ou transforme un enregistrement en texte. Voix locale possible.</td></tr>
-        <tr><td><strong>Modèles et variables</strong></td><td>Tes formulations qui reviennent, et des variables comme <span class="mono">{signature}</span> remplacées dans le chat.</td></tr>
-      </table>
-      <div class="note tip"><svg><use href="#i-tip"/></svg><div><strong>Une commande sans IA :</strong> <span class="mono">{action: produire xlsx "suivi des missions"}</span> fabrique directement le fichier. Le menu <span class="mono">/</span> du composeur les propose.</div></div>
+      <div class="shot crop" style="height:66mm"><img src="shots-web/71-capacite-recherche-web-composeur.jpg" alt="Une capacité de conversation : le bandeau au-dessus du composeur" style="height:66mm;object-position:center 60%"><div class="cap">Une capacité de conversation : le bandeau au-dessus du composeur</div></div>
+    </div>
+  </div>
+  <div class="two">
+    <div>
+      <div class="title-wrap small"><h3>Calculateurs</h3><div class="bar"></div></div>
+      <p class="txt">Cinq calculs qui reviennent dans une décision : <strong>ROI</strong> d'un investissement, priorisation <strong>ICE</strong> et <strong>RICE</strong>, <strong>VAN</strong> (valeur actuelle nette) et <strong>seuil de rentabilité</strong>. La formule est affichée, les valeurs partent au « moteur local », jamais au modèle : « le résultat vient de la formule affichée et de l'API locale, il n'est ni mémorisé ni transmis à un modèle IA ».</p>
+    </div>
+    <div>
+      <div class="title-wrap small"><h3>Recherche web, références juridiques, skills</h3><div class="bar"></div></div>
+      <p class="txt">Trois capacités passent par la conversation. Cliquer leur carte pose un <strong>bandeau « Capacité : … »</strong> au-dessus du composeur et une demande préremplie que tu peux modifier ou retirer d'une croix. La recherche web cite ses sources ; les références juridiques signalent ce qui reste à vérifier ; une commande réutilisable naît d'un processus que tu décris.</p>
+      <div class="note tip"><svg><use href="#i-tip"/></svg><div><strong>Rien ne part sans toi.</strong> Le bandeau prépare, la flèche envoie. Une recherche web transmet ta requête au moteur de recherche configuré, et Thérèse le rappelle dans le Centre de confiance.</div></div>
     </div>
   </div>
   <div class="foot"><span>THÉRÈSE · Guide de présentation</span><span>Synoptïa · <span class="y">2026</span></span></div>
 </section>
 
+<!-- ===================== PAGE 13 : FICHIERS ET CRÉATIONS ===================== -->
+<section class="page">
+  <div class="pgn"><span class="cur">19</span> / 30</div>
+  <div class="sec-head"><div class="sec-num">13<span class="accent">.</span></div><div class="meta"><div class="label">Comprendre et décider</div><h2>Fichiers indexés</h2></div></div>
+  <hr class="divider-strong">
+  <p class="intro">Thérèse lit tes documents et en produit de nouveaux. Le pont entre les deux est le <strong>dossier de travail</strong>, choisi à la mise en route.</p>
+  <div class="two">
+    <div>
+      <div class="shot crop" style="height:60mm"><img src="shots-web/44-fichiers-dossier-travail.jpg" alt="Fichiers · l'explorateur ouvert sur le dossier de travail" style="height:60mm;object-position:center 12%"><div class="cap">Fichiers · l'explorateur ouvert sur le dossier de travail</div></div>
+    </div>
+    <div>
+      <div class="shot crop" style="height:60mm"><img src="shots-web/45-fichiers-sous-dossier-indexer.jpg" alt="Un sous-dossier : l'icône à droite indexe le fichier" style="height:60mm;object-position:center 12%"><div class="cap">Un sous-dossier : l'icône à droite indexe le fichier</div></div>
+    </div>
+  </div>
+  <div class="two">
+    <div>
+      <div class="title-wrap small"><h3>Lire et interroger tes documents</h3><div class="bar"></div></div>
+      <p class="txt">L'explorateur s'ouvre sur ton dossier de travail. Les icônes du haut : maison, dossier parent, rafraîchir, choisir un dossier. Le fil d'Ariane remonte d'un clic. Sur chaque fichier, l'icône à droite <strong>l'indexe</strong> : Thérèse le découpe, le comprend et pourra le citer.</p>
+      <p class="txt">Une fois indexé, un document se retrouve de deux façons : par son <strong>nom</strong> (« ouvre le compte-rendu de visite ») et par le <strong>sens</strong> (« qu'avait-on dit sur le rangement de l'atelier ? »). Formats lus : texte, Markdown, PDF, Word, Excel, CSV.</p>
+    </div>
+    <div>
+      <div class="note warn"><svg><use href="#i-warn"/></svg><div><strong>Indexer, c'est un choix par fichier.</strong> Rien n'est lu sans ton geste. Un fichier joint à un projet n'est visible que dans ce projet.</div></div>
+      <div class="note"><svg><use href="#i-step"/></svg><div><strong>Défauts connus en 0.66 :</strong> si le dossier de travail est hors du périmètre autorisé, l'explorateur revient au dossier personnel en gardant un bandeau d'erreur ; et l'indexation ne donne pas encore de retour visible, bien qu'elle ait eu lieu.</div></div>
+      <div class="note tip"><svg><use href="#i-tip"/></svg><div><strong>Le périmètre projet est une cloison.</strong> Dans une conversation rattachée au projet Martin, Thérèse ne voit que les fichiers et contacts de Martin.</div></div>
+    </div>
+  </div>
+  </section>
+
+<!-- ===================== PAGE X : L'ATELIER DOCUMENTAIRE ===================== -->
+<section class="page">
+  <div class="pgn"><span class="cur">20</span> / 30</div>
+  <div class="sec-head"><div class="sec-num">14<span class="accent">.</span></div><div class="meta"><div class="label">Créer et produire</div><h2>L'atelier documentaire</h2></div></div>
+  <hr class="divider-strong">
+
+  <p class="intro">Pour une proposition, un dossier ou un rapport, l'<strong>atelier documentaire</strong> travaille par trame : Thérèse propose un plan en sections, tu rédiges chaque section avec elle, tu valides, et tu exportes en Markdown ou en Word.</p>
+  <div class="two">
+    <div>
+      <div class="shot crop" style="height:44mm"><img src="shots-web/62-documents-liste.jpg" alt="Documents · la liste, avec l'avancement" style="height:44mm;object-position:center 18%"><div class="cap">Documents · la liste, avec l'avancement</div></div>
+    </div>
+    <div>
+      <div class="shot crop" style="height:44mm"><img src="shots-web/63-atelier-document-trame.jpg" alt="La trame de douze sections, générée depuis le brief" style="height:44mm;object-position:center 25%"><div class="cap">La trame de douze sections, générée depuis le brief</div></div>
+    </div>
+  </div>
+  <div class="shot crop" style="height:62mm"><img src="shots-web/64-atelier-section-editeur.jpg" alt="Une section ouverte : brief, contenu, Rédiger, Retoucher, Valider, et les pistes à droite" style="height:62mm;object-position:center 25%"><div class="cap">Une section ouverte : brief, contenu, Rédiger, Retoucher, Valider, et les pistes à droite</div></div>
+  <div class="steps">
+    <div class="step"><span class="n">1</span><span class="t"><span class="btnlike">+ Nouveau document</span> : un titre et un <strong>brief</strong> (ce que le document doit dire, pour qui, dans quel ton). Thérèse génère la trame : titres, sous-titres, et pour chaque section un objectif.</span></div>
+    <div class="step"><span class="n">2</span><span class="t">Clique une section. <strong>« Rédiger »</strong> écrit un premier jet en direct, à partir du brief et de tes sources ; « Instruction de retouche » puis « Retoucher » corrigent ce que tu veux.</span></div>
+    <div class="step"><span class="n">3</span><span class="t">Les <strong>pistes</strong> (à droite) sont les idées que Thérèse relève en rédigeant, à reprendre ou à ignorer. « Valider » fige la section ; la liste affiche « 3/12 sections validées ».</span></div>
+    <div class="step"><span class="n">4</span><span class="t"><span class="btnlike ghost">Exporter .md</span> ou <span class="btnlike ghost">Exporter .docx</span>. Un document sans contenu ne s'exporte pas, et le dit.</span></div>
+  </div>
+  <div class="foot"><span>THÉRÈSE · Guide de présentation</span><span>Synoptïa · <span class="y">2026</span></span></div>
+</section>
+
+<!-- ===================== PAGE X : IMAGES, VOIX, MODÈLES ===================== -->
+<section class="page">
+  <div class="pgn"><span class="cur">21</span> / 30</div>
+  <div class="sec-head"><div class="sec-num">15<span class="accent">.</span></div><div class="meta"><div class="label">Créer et produire</div><h2>Images, voix, modèles</h2></div></div>
+  <hr class="divider-strong">
+
+  <div class="two">
+    <div>
+      <div class="shot crop" style="height:56mm"><img src="shots-web/65-studio-images.jpg" alt="Studio Images" style="height:56mm;object-position:center 20%"><div class="cap">Studio Images</div></div>
+      <div class="title-wrap small"><h3>Studio Images</h3><div class="bar"></div></div>
+      <p class="txt">Une description, un moteur (GPT Image 2, Nano Banana, Fal Flux Pro, chacun avec sa clé), un format, une qualité, puis « Préparer la génération ». La demande est transmise au moteur choisi seulement après confirmation. L'historique garde les cinquante dernières images. Sans description suffisante, le studio refuse et le dit.</p>
+    </div>
+    <div>
+      <div class="shot crop" style="height:56mm"><img src="shots-web/67-voix-et-transcription.jpg" alt="Voix et transcription" style="height:56mm;object-position:center 20%"><div class="cap">Voix et transcription</div></div>
+      <div class="title-wrap small"><h3>Voix et transcription</h3><div class="bar"></div></div>
+      <p class="txt">À gauche, <strong>transcrire un enregistrement</strong> (MP3, M4A, WAV, WebM) avec Whisper, en local : « l'audio reste sur cette machine ». À droite, <strong>lire un texte à voix haute</strong> avec Piper, une synthèse locale à activer dans Confidentialité. Le micro du composeur dicte avec le même moteur.</p>
+    </div>
+  </div>
+  <div class="two">
+    <div>
+      <div class="shot crop" style="height:50mm"><img src="shots-web/68-bibliotheque-de-prompts.jpg" alt="La bibliothèque de prompts" style="height:50mm;object-position:center 25%"><div class="cap">La bibliothèque de prompts</div></div>
+    </div>
+    <div>
+      <div class="shot crop" style="height:50mm"><img src="shots-web/69-composeur-prompt-avec-variables.jpg" alt="Un modèle inséré dans le composeur, avec ses variables" style="height:50mm;object-position:center 100%"><div class="cap">Un modèle inséré dans le composeur, avec ses variables</div></div>
+    </div>
+  </div>
+  <div class="title-wrap small"><h3>Modèles et variables</h3><div class="bar"></div></div>
+  <p class="txt">Trente-quatre modèles prêts à l'emploi, rangés par usage (e-mail, prospection, rendez-vous, LinkedIn, conditions générales). « Utiliser » insère le texte dans le composeur, avec ses variables entre accolades : <span class="mono">{nom_prospect}</span>, <span class="mono">{signature}</span>. Chaque variable enregistrée dans Paramètres, Services est remplacée à l'envoi ; les autres restent à compléter à la main. Tes propres modèles s'ajoutent à la bibliothèque.</p>
+  <div class="foot"><span>THÉRÈSE · Guide de présentation</span><span>Synoptïa · <span class="y">2026</span></span></div>
+</section>
+
 <!-- ===================== PAGE 14 : AUTOMATISER ===================== -->
 <section class="page">
-  <div class="pgn"><span class="cur">14</span> / 20</div>
-  <div class="sec-head"><div class="sec-num">11<span class="accent">.</span></div><div class="meta"><div class="label">Automatiser et déléguer</div><h2>Automatiser et déléguer</h2></div></div>
+  <div class="pgn"><span class="cur">22</span> / 30</div>
+  <div class="sec-head"><div class="sec-num">16<span class="accent">.</span></div><div class="meta"><div class="label">Automatiser et déléguer</div><h2>Automatiser et déléguer</h2></div></div>
   <hr class="divider-strong">
   <p class="intro">Quatre capacités pour confier à Thérèse ce qui se répète : des <strong>actions</strong> en plusieurs étapes, des <strong>connecteurs</strong> vers des outils extérieurs, des <strong>skills</strong> pour tes processus, et deux agents, <strong>Katia et Zézette</strong>, qui améliorent l'application elle-même.</p>
   <div class="two">
@@ -664,10 +897,37 @@ table.tb.compact td, table.tb.compact th { padding: 4px 6px; }
   <div class="foot"><span>THÉRÈSE · Guide de présentation</span><span>Synoptïa · <span class="y">2026</span></span></div>
 </section>
 
+<!-- ===================== PAGE X : KATIA, ZÉZETTE ET LES CONNECTEURS ===================== -->
+<section class="page">
+  <div class="pgn"><span class="cur">23</span> / 30</div>
+  <div class="sec-head"><div class="sec-num">16<span class="accent">.</span></div><div class="meta"><div class="label">Automatiser et déléguer · de près</div><h2>Katia, Zézette et les connecteurs</h2></div></div>
+  <hr class="divider-strong">
+
+  <div class="two">
+    <div>
+      <div class="shot crop" style="height:56mm"><img src="shots-web/78-parcours-ameliorer-therese.jpg" alt="Le parcours « Améliorer THÉRÈSE » dans la conversation" style="height:56mm;object-position:center 30%"><div class="cap">Le parcours « Améliorer THÉRÈSE » dans la conversation</div></div>
+    </div>
+    <div>
+      <div class="shot crop" style="height:56mm"><img src="shots-web/72b-atelier-mission-recadree.jpg" alt="Le panneau « Mission de changement » : ce qui sera autorisé après confirmation" style="height:56mm;object-position:right top"><div class="cap">Le panneau « Mission de changement » : ce qui sera autorisé après confirmation</div></div>
+    </div>
+  </div>
+  <div class="two">
+    <div>
+      <div class="title-wrap small"><h3>Confier une mission</h3><div class="bar"></div></div>
+      <p class="txt">Le parcours liste les missions enregistrées, « Préparer une mission » ouvre le panneau : le <strong>périmètre réel</strong> (dépôt autorisé, branche, modèles de Katia et de Zézette), un champ « Mission à confier », puis la liste de ce qui sera autorisé <strong>après confirmation</strong> : lire le dépôt, écrire uniquement dans un worktree isolé, lancer test, lint et build, préparer un diff avant de l'appliquer. Rien ne touche la branche principale sans une seconde confirmation.</p>
+    </div>
+    <div>
+      <div class="shot crop" style="height:50mm"><img src="shots-web/75-connecteurs-presets.jpg" alt="Paramètres › Outils › Presets : dix-huit connecteurs prêts" style="height:50mm;object-position:center 30%"><div class="cap">Paramètres › Outils › Presets : dix-huit connecteurs prêts</div></div>
+      <p class="txt"><strong>Connecteurs.</strong> Dix-huit presets, par familles : Essentiels (Filesystem, Fetch, Time), Productivité (Google Workspace, Notion, Airtable, Todoist…). Chaque carte dit ce que le connecteur apporte, son niveau de risque et les clés qu'il requiert. « Ajouter » déclare un serveur MCP à toi.</p>
+    </div>
+  </div>
+  <div class="foot"><span>THÉRÈSE · Guide de présentation</span><span>Synoptïa · <span class="y">2026</span></span></div>
+</section>
+
 <!-- ===================== PAGE 15 : PARAMÈTRES 1/2 ===================== -->
 <section class="page">
-  <div class="pgn"><span class="cur">15</span> / 20</div>
-  <div class="sec-head"><div class="sec-num">12<span class="accent">.</span></div><div class="meta"><div class="label">Maîtriser Thérèse · 1/2</div><h2>Paramètres, première partie</h2></div></div>
+  <div class="pgn"><span class="cur">24</span> / 30</div>
+  <div class="sec-head"><div class="sec-num">17<span class="accent">.</span></div><div class="meta"><div class="label">Maîtriser Thérèse · 1/2</div><h2>Paramètres, première partie</h2></div></div>
   <hr class="divider-strong">
   <p class="intro">Icône engrenage du rail, ou <span class="kbd">⌘</span> + <span class="kbd">,</span>. Neuf onglets, et en haut de la colonne un interrupteur <strong>Mode Contributeur</strong> qui dévoile les fonctions avancées (Outils, Agents). Les réglages s'enregistrent onglet par onglet.</p>
   <div class="two">
@@ -692,8 +952,8 @@ table.tb.compact td, table.tb.compact th { padding: 4px 6px; }
 
 <!-- ===================== PAGE 16 : PARAMÈTRES 2/2 ===================== -->
 <section class="page">
-  <div class="pgn"><span class="cur">16</span> / 20</div>
-  <div class="sec-head"><div class="sec-num">13<span class="accent">.</span></div><div class="meta"><div class="label">Maîtriser Thérèse · 2/2</div><h2>Paramètres, seconde partie</h2></div></div>
+  <div class="pgn"><span class="cur">25</span> / 30</div>
+  <div class="sec-head"><div class="sec-num">17<span class="accent">.</span></div><div class="meta"><div class="label">Maîtriser Thérèse · 2/2</div><h2>Paramètres, seconde partie</h2></div></div>
   <hr class="divider-strong">
   <div class="two">
     <div class="shot crop" style="height:46mm"><img src="shots-web/25-parametres-outils-connecteurs.jpg" alt="Onglet Outils" style="height:46mm;object-position:center 22%"><div class="cap">Outils · connecteurs MCP</div></div>
@@ -717,10 +977,34 @@ table.tb.compact td, table.tb.compact th { padding: 4px 6px; }
   <div class="foot"><span>THÉRÈSE · Guide de présentation</span><span>Synoptïa · <span class="y">2026</span></span></div>
 </section>
 
+<!-- ===================== PAGE X : COÛTS, PERFORMANCE, MISE À JOUR ===================== -->
+<section class="page">
+  <div class="pgn"><span class="cur">26</span> / 30</div>
+  <div class="sec-head"><div class="sec-num">18<span class="accent">.</span></div><div class="meta"><div class="label">Maîtriser Thérèse · de près</div><h2>Coûts, performance, mise à jour</h2></div></div>
+  <hr class="divider-strong">
+
+  <div class="two">
+    <div>
+      <div class="shot crop" style="height:60mm"><img src="shots-web/73-parametres-limites-consommation.jpg" alt="Avancé › Limites & Consommation" style="height:60mm;object-position:center 40%"><div class="cap">Avancé › Limites & Consommation</div></div>
+      <div class="title-wrap small"><h3>Ce que ça coûte</h3><div class="bar"></div></div>
+      <p class="txt">Tokens entrés, tokens sortis, coût estimé du jour et du mois, et une limite quotidienne que tu fixes. Avec un modèle local, les tokens sont comptés et le coût reste à zéro. Les tarifs des services en ligne sont ceux publiés par chaque fournisseur, en dollars.</p>
+    </div>
+    <div>
+      <div class="shot crop" style="height:60mm"><img src="shots-web/74-parametres-performance.jpg" alt="Avancé › Performance" style="height:60mm;object-position:center 40%"><div class="cap">Avancé › Performance</div></div>
+      <div class="title-wrap small"><h3>Ce que ça prend</h3><div class="bar"></div></div>
+      <p class="txt">Temps jusqu'au premier mot (moyenne et P95), nombre de requêtes, tokens mesurés. Un mode économie d'énergie existe pour les portables. Ces compteurs portent sur la conversation.</p>
+    </div>
+  </div>
+  <div class="shot crop" style="height:62mm"><img src="shots-web/76-a-propos-mise-a-jour-a-jour.jpg" alt="À propos › « Vérifier les mises à jour » : à jour" style="height:62mm;object-position:center 82%"><div class="cap">À propos › « Vérifier les mises à jour » : à jour</div></div>
+  <p class="txt"><strong>Mise à jour.</strong> L'application vérifie d'elle-même les nouvelles versions au lancement et propose de les installer ; le bouton force la vérification et répond en clair (« THÉRÈSE est à jour (v0.66.0) »). Une version installée redémarre l'application ; si le redémarrage automatique échoue, un bouton « Réessayer » reste affiché, sans rien perdre.</p>
+  <div class="note"><svg><use href="#i-step"/></svg><div><strong>Export et sauvegarde</strong> (Confidentialité) : l'export produit un fichier JSON de toutes tes données ; la sauvegarde, une archive chiffrée par ta phrase de passe, qui contient la base, l'index des documents, les images et les fichiers produits. Restaurer une sauvegarde crée d'abord une copie de l'état courant.</div></div>
+  <div class="foot"><span>THÉRÈSE · Guide de présentation</span><span>Synoptïa · <span class="y">2026</span></span></div>
+</section>
+
 <!-- ===================== PAGE 17 : CONFIANCE ===================== -->
 <section class="page">
-  <div class="pgn"><span class="cur">17</span> / 20</div>
-  <div class="sec-head"><div class="sec-num">14<span class="accent">.</span></div><div class="meta"><div class="label">Maîtriser Thérèse</div><h2>Confiance, sécurité, données</h2></div></div>
+  <div class="pgn"><span class="cur">27</span> / 30</div>
+  <div class="sec-head"><div class="sec-num">19<span class="accent">.</span></div><div class="meta"><div class="label">Maîtriser Thérèse</div><h2>Confiance, sécurité, données</h2></div></div>
   <hr class="divider-strong">
   <p class="intro">Le bouton <strong>« Contrôle des données »</strong>, en haut de chaque écran, ouvre le Centre de confiance. Il dit en cinq lignes ce que Thérèse utilise avant d'agir. Cette page détaille ce qui se cache derrière.</p>
   <div class="two-wide">
@@ -758,8 +1042,8 @@ table.tb.compact td, table.tb.compact th { padding: 4px 6px; }
 
 <!-- ===================== PAGE 18 : THÈME SOMBRE ===================== -->
 <section class="page">
-  <div class="pgn"><span class="cur">18</span> / 20</div>
-  <div class="sec-head"><div class="sec-num">15<span class="accent">.</span></div><div class="meta"><div class="label">Personnalisation</div><h2>Thème sombre et apparence</h2></div></div>
+  <div class="pgn"><span class="cur">28</span> / 30</div>
+  <div class="sec-head"><div class="sec-num">20<span class="accent">.</span></div><div class="meta"><div class="label">Personnalisation</div><h2>Thème sombre et apparence</h2></div></div>
   <hr class="divider-strong">
   <p class="intro">Deux apparences, <strong>Clair (Équilibre)</strong> par défaut et <strong>Sombre (Signature)</strong>, la palette d'origine de THÉRÈSE. Le choix se fait dans Paramètres, onglet Accessibilité, et s'applique à tous les écrans.</p>
   <div class="shot crop" style="height:70mm"><img src="shots-web/32-theme-sombre-accueil-facturation.jpg" alt="Accueil en thème sombre" style="height:70mm;object-position:center 20%"><div class="cap">Signature · l'accueil et le parcours Facturer</div></div>
@@ -787,8 +1071,8 @@ table.tb.compact td, table.tb.compact th { padding: 4px 6px; }
 
 <!-- ===================== PAGE 19 : NOUVEAUTÉS ===================== -->
 <section class="page">
-  <div class="pgn"><span class="cur">19</span> / 20</div>
-  <div class="sec-head"><div class="sec-num">16<span class="accent">.</span></div><div class="meta"><div class="label">Version 0.66.0-alpha</div><h2>Ce qui est nouveau, ce qui arrive</h2></div></div>
+  <div class="pgn"><span class="cur">29</span> / 30</div>
+  <div class="sec-head"><div class="sec-num">21<span class="accent">.</span></div><div class="meta"><div class="label">Version 0.66.0-alpha</div><h2>Ce qui est nouveau, ce qui arrive</h2></div></div>
   <hr class="divider-strong">
   <p class="intro">La 0.66 est une version <strong>d'assainissement</strong> : une boucle d'audit a lu l'intégralité du code, joué des dizaines de parcours d'utilisateurs et fermé <strong>171 défauts visibles à l'usage</strong>, chacun verrouillé par un test de non-régression (environ 370 ajoutés). Le détail complet est sur Discord, dans #changelog. Voici l'essentiel.</p>
   <div class="changes">
@@ -829,6 +1113,8 @@ table.tb.compact td, table.tb.compact th { padding: 4px 6px; }
         <div>• L'action « Relance clients » ne reçoit ni étapes du pipeline, ni devis, ni factures : elle répond qu'elle ne peut rien identifier.</div>
         <div>• Le résultat d'une action s'affiche en Markdown brut.</div>
         <div>• Une tâche due aujourd'hui est annoncée « en retard » ; une facture échue ne passe pas d'elle-même « en retard ».</div>
+        <div>• Le PDF d'une facture perd les accents de ses libellés fixes et imprime le statut en anglais.</div>
+        <div>• L'assistant e-mail annonce « étape 1 sur 4 » puis « étape 2 sur 2 ».</div>
       </div>
       <div class="note"><svg><use href="#i-step"/></svg><div><strong>Tu en vois d'autres ?</strong> #bugs sur Discord, avec la version, ce que tu faisais, ce que tu attendais, ce qui s'est passé, et une capture.</div></div>
     </div>
@@ -838,8 +1124,8 @@ table.tb.compact td, table.tb.compact th { padding: 4px 6px; }
 
 <!-- ===================== PAGE 20 : FAQ ET AIDE-MÉMOIRE ===================== -->
 <section class="page">
-  <div class="pgn"><span class="cur">20</span> / 20</div>
-  <div class="sec-head"><div class="sec-num">17<span class="accent">.</span></div><div class="meta"><div class="label">À garder sous la main</div><h2>Questions, aide-mémoire, lexique</h2></div></div>
+  <div class="pgn"><span class="cur">30</span> / 30</div>
+  <div class="sec-head"><div class="sec-num">22<span class="accent">.</span></div><div class="meta"><div class="label">À garder sous la main</div><h2>Questions, aide-mémoire, lexique</h2></div></div>
   <hr class="divider-strong">
   <div class="two">
     <div>
