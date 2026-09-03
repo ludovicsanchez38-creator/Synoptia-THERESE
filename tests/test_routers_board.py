@@ -170,3 +170,65 @@ class TestBoardSynthesis:
 
         assert response.status_code == 200
         # Empty list is valid, structure is defined in schema
+
+
+class TestFicheEtListeDisentLaMemeChose:
+    """B-302 : la fiche d'un conseiller omettait `modele_deprecie`.
+
+    `None` y signifie « non sondé », pas « tout va bien » (models/board.py) :
+    ouvrir la fiche faisait donc disparaître un avertissement que la liste
+    affichait, sur le même conseiller au même instant.
+
+    La sonde est forcée à trois valeurs DIFFÉRENTES selon le fournisseur :
+    un correctif qui recopierait bêtement `True` partout, ou un helper partagé
+    qui perdrait le champ des deux côtés à la fois, ne passerait pas.
+    """
+
+    @pytest.fixture
+    def sonde_forcee(self, monkeypatch):
+        from app.services import board as board_module
+
+        # anthropic = L'Analyste (dérive), openai = Le Stratège (vérifié
+        # présent), les trois autres restent non sondés.
+        monkeypatch.setattr(
+            board_module, "_etat_catalogue", {"anthropic": True, "openai": False}
+        )
+        return {
+            "analyst": True,
+            "strategist": False,
+            "devil": None,
+            "pragmatic": None,
+            "visionary": None,
+        }
+
+    @pytest.mark.asyncio
+    async def test_la_liste_porte_bien_l_etat_de_la_sonde(
+        self, client: AsyncClient, sonde_forcee
+    ):
+        """Témoin : sans lui, une sonde muette rendrait le test suivant vert."""
+        reponse = await client.get("/api/board/advisors")
+
+        assert reponse.status_code == 200
+        etats = {a["role"]: a["modele_deprecie"] for a in reponse.json()}
+        assert etats == sonde_forcee
+
+    @pytest.mark.asyncio
+    async def test_fiche_conseiller_dit_la_meme_chose_que_la_liste(
+        self, client: AsyncClient, sonde_forcee
+    ):
+        liste = await client.get("/api/board/advisors")
+        assert liste.status_code == 200
+        par_role = {a["role"]: a for a in liste.json()}
+
+        for role, attendu in sonde_forcee.items():
+            fiche = await client.get(f"/api/board/advisors/{role}")
+            assert fiche.status_code == 200
+            detail = fiche.json()
+
+            # Valeur absolue : la fiche doit dire ce que la sonde sait.
+            assert detail["modele_deprecie"] is attendu, (
+                f"{role} : la fiche dit {detail['modele_deprecie']!r}, "
+                f"la sonde dit {attendu!r}"
+            )
+            # Et rien d'autre ne doit diverger entre les deux surfaces.
+            assert detail == par_role[role]

@@ -24,6 +24,21 @@ def _ensure_finite_result(*values: float) -> None:
         )
 
 
+# B-298 : les interprétations partent à l'écran telles quelles, dans la même
+# carte que des montants formatés par le frontend en fr-FR. Même convention
+# que `Intl.NumberFormat('fr-FR', {style:'currency', currency:'EUR'})` :
+# espace insécable étroite pour les milliers, virgule décimale, espace
+# insécable devant le symbole.
+_MILLIERS = "\u202f"  # espace insécable étroite
+_AVANT_SYMBOLE = "\u00a0"  # espace insécable
+
+
+def _montant_fr(valeur: float) -> str:
+    """Rend un montant au format français : 1234.5 -> « 1 234,50 € »."""
+    entier, _, decimales = f"{valeur:,.2f}".partition(".")
+    return f"{entier.replace(',', _MILLIERS)},{decimales}{_AVANT_SYMBOLE}€"
+
+
 @dataclass
 class ROIResult:
     """Résultat d'un calcul de ROI."""
@@ -113,7 +128,7 @@ class CalculatorService:
         elif roi_percent >= 0:
             interpretation = f"⚠️ ROI faible de {roi_percent:.1f}%. Rentable mais marginal."
         else:
-            interpretation = f"❌ ROI négatif de {roi_percent:.1f}%. Perte de {abs(profit):.2f}€"
+            interpretation = f"❌ ROI négatif de {roi_percent:.1f}%. Perte de {_montant_fr(abs(profit))}"
 
         return ROIResult(
             investment=investment,
@@ -257,11 +272,11 @@ class CalculatorService:
 
         # Interprétation
         if npv > 0:
-            interpretation = f"✅ NPV positive ({npv:,.2f}€). L'investissement crée de la valeur."
+            interpretation = f"✅ NPV positive ({_montant_fr(npv)}). L'investissement crée de la valeur."
         elif npv == 0:
             interpretation = "⚠️ NPV nulle. L'investissement atteint juste le seuil de rentabilité."
         else:
-            interpretation = f"❌ NPV négative ({npv:,.2f}€). L'investissement détruit de la valeur."
+            interpretation = f"❌ NPV négative ({_montant_fr(npv)}). L'investissement détruit de la valeur."
 
         return NPVResult(
             initial_investment=initial_investment,
@@ -302,8 +317,8 @@ class CalculatorService:
 
         interpretation = (
             f"📊 Seuil de rentabilité : {break_even_units:.0f} unités\n"
-            f"💰 CA minimum : {break_even_revenue:,.2f}€\n"
-            f"📈 Marge par unité : {margin_per_unit:.2f}€"
+            f"💰 CA minimum : {_montant_fr(break_even_revenue)}\n"
+            f"📈 Marge par unité : {_montant_fr(margin_per_unit)}"
         )
 
         return BreakEvenResult(

@@ -62,6 +62,27 @@ async def _terminer_sans_masquer(
 
 
 
+def _fiche_conseiller(role: AdvisorRole, config: dict[str, str]) -> AdvisorInfo:
+    """Source unique des deux surfaces : la liste et la fiche d'un conseiller.
+
+    B-302 : la fiche construisait son `AdvisorInfo` sans `modele_deprecie` et
+    retombait donc sur `None`, qui signifie « non sondé » et NON « tout va
+    bien » (cf models/board.py). Ouvrir la fiche faisait disparaître un
+    avertissement que la liste affichait, sur le même conseiller au même
+    instant.
+    """
+    from app.services.board import etat_catalogue
+
+    return AdvisorInfo(
+        role=role,
+        name=config["name"],
+        emoji=config["emoji"],
+        color=config["color"],
+        personality=config["personality"],
+        modele_deprecie=etat_catalogue(config.get("preferred_provider")),
+    )
+
+
 @router.get("/advisors", response_model=list[AdvisorInfo])
 async def list_advisors():
     """
@@ -70,18 +91,8 @@ async def list_advisors():
     Returns:
         Liste des conseillers avec leurs métadonnées
     """
-    from app.services.board import etat_catalogue
-
     return [
-        AdvisorInfo(
-            role=role,
-            name=config["name"],
-            emoji=config["emoji"],
-            color=config["color"],
-            personality=config["personality"],
-            modele_deprecie=etat_catalogue(config.get("preferred_provider")),
-        )
-        for role, config in ADVISOR_CONFIG.items()
+        _fiche_conseiller(role, config) for role, config in ADVISOR_CONFIG.items()
     ]
 
 
@@ -99,14 +110,7 @@ async def get_advisor(role: AdvisorRole):
     if role not in ADVISOR_CONFIG:
         raise HTTPException(status_code=404, detail="Advisor not found")
 
-    config = ADVISOR_CONFIG[role]
-    return AdvisorInfo(
-        role=role,
-        name=config["name"],
-        emoji=config["emoji"],
-        color=config["color"],
-        personality=config["personality"],
-    )
+    return _fiche_conseiller(role, ADVISOR_CONFIG[role])
 
 
 async def _clore_apres_deconnexion(

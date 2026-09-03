@@ -36,7 +36,7 @@ Texte détaillé...
 
 ## Charte Synoptïa
 
-- **Police** : Outfit (titres), Inter (corps)
+- **Police** : Outfit (titres), Calibri (corps)
 - **Couleurs** :
   - Fond : #FFFFFF
   - Texte : #0B1226

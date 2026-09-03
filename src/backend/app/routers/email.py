@@ -494,7 +494,7 @@ async def handle_oauth_redirect(
                   → Bibliothèque → chercher "Gmail API" → Activer. Même chose pour "Google Calendar API".</li>
               <li><strong>Client OAuth révoqué</strong> : les identifiants ont changé ou l'app a été supprimée.</li>
             </ul>
-            <p style="font-size:0.85rem;color:#6B7BA4">Erreur Google : <code>{}</code></p>
+            <p style="font-size:0.85rem">Erreur Google : <code>{}</code></p>
             """.format(html.escape(error))
         else:
             error_detail = f"<p>{html.escape(error)}</p>"
