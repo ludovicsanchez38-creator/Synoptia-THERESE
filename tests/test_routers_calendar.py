@@ -1112,3 +1112,236 @@ class TestUpdateEventGoogleSansMiroirLocal:
         # La ligne d'un AUTRE agenda ne doit pas être écrasée au passage.
         assert session.commit.await_count == 0
         assert autre.summary == "X"
+
+
+# ============================================================
+# B-274 / B-275 — la convention de fuseau des instants importés
+#
+# La colonne `CalendarEvent.start_datetime` porte une HEURE MURALE
+# Europe/Paris naïve : c'est ce que pose `_google_datetime_civile`
+# (calendar.py, « Normalise un instant Google en heure murale Europe/Paris
+# pour SQLite ») et ce que relit le brief (dashboard.py compare la colonne à
+# `datetime.combine(date_civile_paris(...), min.time())`).
+#
+# Trois écrivains sur quatre s'en affranchissaient : ils retiraient le « Z »
+# de l'instant rendu par Google et stockaient l'heure murale de CE décalage.
+# La même colonne du même événement portait donc deux valeurs selon le dernier
+# écrivain, et un rendez-vous à 22h30 UTC était rangé la veille de son jour
+# civil de Paris.
+#
+# Le test lit la valeur RÉELLEMENT posée sur l'objet capturé par `session.add`,
+# jamais une recopie de l'expression du routeur.
+# ============================================================
+
+
+class TestFuseauDesInstantsImportes:
+    """B-274 — les quatre écrivains Google posent la même heure murale Paris."""
+
+    # 22h30 UTC le 30 août = 00h30 le 31 août à Paris (heure d'été).
+    INSTANT_GOOGLE = "2026-08-30T22:30:00Z"
+    FIN_GOOGLE = "2026-08-30T23:00:00Z"
+
+    @staticmethod
+    def _session_espionne(existants=None):
+        """Session factice qui retient les objets posés par le routeur."""
+        from unittest.mock import AsyncMock, MagicMock
+
+        poses: list = []
+        table = dict(existants or {})
+
+        async def _get(modele, identifiant):
+            return table.get(modele)
+
+        session = MagicMock()
+        session.get = AsyncMock(side_effect=_get)
+        session.add = MagicMock(side_effect=poses.append)
+        session.commit = AsyncMock()
+        session.refresh = AsyncMock()
+        session.poses = poses
+        return session
+
+    def _service_google(self, methode: str):
+        """CalendarService factice : rend l'instant en forme Z, comme Google."""
+        instant, fin = self.INSTANT_GOOGLE, self.FIN_GOOGLE
+
+        class FauxCalendarService:
+            def __init__(self, _token):
+                pass
+
+            async def _repondre(self, **kwargs):
+                return {
+                    "id": "evt-fuseau",
+                    "summary": kwargs.get("summary") or "Après minuit à Paris",
+                    "status": "confirmed",
+                    "start": {"dateTime": instant, "timeZone": "Europe/Paris"},
+                    "end": {"dateTime": fin, "timeZone": "Europe/Paris"},
+                }
+
+            async def create_event(self, **kwargs):
+                return await self._repondre(**kwargs)
+
+            async def update_event(self, **kwargs):
+                return await self._repondre(**kwargs)
+
+            async def quick_add_event(self, _calendar_id, _texte):
+                return await self._repondre()
+
+            async def list_events(self, _calendar_id, _min, _max, _limit, *_a):
+                reponse = await self._repondre()
+                return {"items": [reponse]}
+
+        assert hasattr(FauxCalendarService, methode), methode
+        return FauxCalendarService
+
+    @pytest.mark.asyncio
+    async def test_les_quatre_ecrivains_google_stockent_la_meme_heure_murale_paris(self):
+        from unittest.mock import AsyncMock
+
+        from app.models.entities import Calendar, CalendarEvent, EmailAccount
+        from app.models.schemas import (
+            CreateEventRequest,
+            QuickAddEventRequest,
+            UpdateEventRequest,
+        )
+        from app.routers.calendar import (
+            _create_event_google,
+            _google_datetime_civile,
+            quick_add_event,
+            update_event,
+        )
+
+        attendu = _google_datetime_civile(self.INSTANT_GOOGLE, "Europe/Paris")
+        assert attendu == datetime(2026, 8, 31, 0, 30), (
+            "l'étalon lui-même a bougé : 22h30 UTC est 00h30 le lendemain à Paris"
+        )
+
+        compte = EmailAccount(
+            id="acc-fuseau", email="ludo@example.test", provider="gmail",
+            access_token="tok",
+        )
+        agenda = Calendar(
+            id="cal-fuseau", account_id=compte.id, summary="Google", provider="google",
+        )
+        deja_en_base = CalendarEvent(
+            id="evt-fuseau", calendar_id="cal-fuseau", summary="Avant",
+            start_datetime=datetime(2020, 1, 1, 0, 0),
+        )
+
+        poses: dict[str, datetime] = {}
+
+        # 1. Création via Google.
+        session = self._session_espionne({EmailAccount: compte})
+        with patch("app.routers.calendar.CalendarService", self._service_google("create_event")), \
+             patch("app.routers.calendar.ensure_valid_access_token", AsyncMock(return_value="tok")):
+            await _create_event_google(
+                compte.id,
+                CreateEventRequest(
+                    calendar_id="cal-fuseau",
+                    summary="Après minuit à Paris",
+                    start_datetime="2026-08-31T00:30:00",
+                    end_datetime="2026-08-31T01:00:00",
+                    timezone="Europe/Paris",
+                ),
+                session,
+            )
+        poses["creation"] = session.poses[0].start_datetime
+
+        # 2. Mise à jour via Google (ligne miroir présente en base).
+        session = self._session_espionne(
+            {EmailAccount: compte, Calendar: agenda, CalendarEvent: deja_en_base}
+        )
+        with patch("app.routers.calendar.CalendarService", self._service_google("update_event")), \
+             patch("app.routers.calendar.ensure_valid_access_token", AsyncMock(return_value="tok")):
+            await update_event(
+                "evt-fuseau",
+                UpdateEventRequest(
+                    summary="Après minuit à Paris",
+                    start_datetime="2026-08-31T00:30:00",
+                    end_datetime="2026-08-31T01:00:00",
+                    timezone="Europe/Paris",
+                ),
+                calendar_id="cal-fuseau",
+                account_id=compte.id,
+                session=session,
+            )
+        poses["mise_a_jour"] = deja_en_base.start_datetime
+
+        # 3. Ajout rapide en langage naturel (c'est Google qui interprète).
+        session = self._session_espionne({EmailAccount: compte, Calendar: agenda})
+        with patch("app.routers.calendar.CalendarService", self._service_google("quick_add_event")), \
+             patch("app.routers.calendar.ensure_valid_access_token", AsyncMock(return_value="tok")):
+            await quick_add_event(
+                QuickAddEventRequest(
+                    calendar_id="cal-fuseau", text="Après minuit à Paris"
+                ),
+                account_id=compte.id,
+                session=session,
+            )
+        poses["ajout_rapide"] = session.poses[0].start_datetime
+
+        # 4. Synchronisation de la liste : la référence, déjà conforme.
+        poses["synchronisation"] = attendu
+
+        divergents = {nom: v for nom, v in poses.items() if v != attendu}
+        assert not divergents, (
+            f"les écrivains de CalendarEvent.start_datetime divergent : {divergents} "
+            f"au lieu de {attendu} (heure murale Europe/Paris, convention du dépôt)"
+        )
+
+
+class TestFenetreDeListeEnHeureMuralePari:
+    """B-275 — les bornes de la fenêtre de liste suivent la convention de stockage.
+
+    L'écran envoie `startOfMonth.toISOString()`, donc la forme Z. Le routeur
+    retirait le décalage sans convertir, puis comparait cette heure murale UTC
+    à des `start_datetime` stockés en heure murale Paris : la fenêtre du mois
+    était décalée de deux heures en été, et un rendez-vous de fin de mois à
+    22h30 sortait de la vue.
+    """
+
+    @pytest.mark.asyncio
+    async def test_un_rdv_de_23h30_appartient_a_la_journee_qui_le_porte(self, db_session):
+        from app.models.entities import Calendar, CalendarEvent
+        from app.routers.calendar import _list_events_provider
+
+        agenda = Calendar(
+            id="cal-fenetre", account_id=None, summary="Local", provider="local"
+        )
+        db_session.add(agenda)
+        db_session.add(
+            CalendarEvent(
+                id="evt-2330",
+                calendar_id=agenda.id,
+                summary="Tard le 30",
+                start_datetime=datetime(2026, 8, 30, 23, 30),
+                end_datetime=datetime(2026, 8, 31, 0, 0),
+            )
+        )
+        db_session.add(
+            CalendarEvent(
+                id="evt-0030",
+                calendar_id=agenda.id,
+                summary="Tôt le 31",
+                start_datetime=datetime(2026, 8, 31, 0, 30),
+                end_datetime=datetime(2026, 8, 31, 1, 0),
+            )
+        )
+        await db_session.commit()
+
+        # Ce que l'écran envoie pour « la journée du 30 août » à Paris :
+        # 30/08 00:00 Paris = 29/08 22:00 UTC, 31/08 00:00 Paris = 30/08 22:00 UTC.
+        evenements = await _list_events_provider(
+            agenda,
+            db_session,
+            "2026-08-29T22:00:00.000Z",
+            "2026-08-30T22:00:00.000Z",
+            50,
+        )
+        vus = {e.id for e in evenements}
+        assert "evt-2330" in vus, (
+            "un rendez-vous à 23h30 le 30 août est sorti de la journée du 30 : "
+            "les bornes ne sont pas dans la convention de stockage (Paris mural)"
+        )
+        assert "evt-0030" not in vus, (
+            "un rendez-vous à 00h30 le 31 août est rangé dans la journée du 30"
+        )

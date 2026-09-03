@@ -784,17 +784,29 @@ async def _list_events_provider(
     """List events via abstract CalendarProvider (local or CalDAV)."""
     provider = await _get_provider_for_calendar(calendar, session)
 
-    def _parse_dt_naive(s: str) -> datetime:
-        """Parse ISO datetime string to naive UTC datetime."""
+    def _parse_borne_instant(s: str) -> datetime:
+        """Borne de fenêtre, rendue comme un INSTANT (datetime aware).
+
+        B-275 : la docstring annonçait « naive UTC » et le corps se contentait
+        de retirer le décalage. Or l'écran envoie la forme Z
+        (`startOfMonth.toISOString()`) et le stockage local est en heure murale
+        Europe/Paris : la fenêtre du mois était décalée de deux heures en été,
+        et un rendez-vous du dernier jour à 22h30 sortait de la vue.
+
+        On rend donc l'instant, sans le mutiler ; c'est chaque fournisseur qui
+        le ramène à SA convention (le local en heure murale Paris, CalDAV le
+        cherche tel quel). Une borne déjà naïve est du Paris mural, comme
+        partout ailleurs (services/civil_time).
+        """
         # URL query params decode '+' as space, so restore it
         s = s.replace(" 00:00", "+00:00").replace("Z", "+00:00")
         dt = datetime.fromisoformat(s)
-        if dt.tzinfo is not None:
-            dt = dt.replace(tzinfo=None)
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=ZoneInfo("Europe/Paris"))
         return dt
 
-    dt_min = _parse_dt_naive(time_min) if time_min else None
-    dt_max = _parse_dt_naive(time_max) if time_max else None
+    dt_min = _parse_borne_instant(time_min) if time_min else None
+    dt_max = _parse_borne_instant(time_max) if time_max else None
 
     if dt_min is not None and dt_max is not None:
         # Fenêtre bornée (mois de l'agenda) : tout ramener ou avouer.
@@ -1211,13 +1223,17 @@ async def _create_event_google(
             location=event_data.get("location"),
             start_date=start_obj.get("date") if all_day else None,
             end_date=_google_allday_end_inclusive(start_obj, end_obj) if all_day else None,
+            # B-274 : retirer le « Z » stockait l'heure murale du décalage rendu
+            # par Google, pas celle de Paris. La colonne est en heure murale
+            # Europe/Paris (cf. _google_datetime_civile et le brief) : un
+            # instant à 22h30 UTC se range le lendemain, pas la veille.
             start_datetime=(
-                datetime.fromisoformat(start_obj["dateTime"].replace("Z", ""))
+                _google_datetime_civile(start_obj["dateTime"], start_obj.get("timeZone"))
                 if not all_day
                 else None
             ),
             end_datetime=(
-                datetime.fromisoformat(end_obj["dateTime"].replace("Z", ""))
+                _google_datetime_civile(end_obj["dateTime"], end_obj.get("timeZone"))
                 if not all_day
                 else None
             ),
@@ -1403,11 +1419,13 @@ async def update_event(
                 db_event.start_date = start_obj.get("date")
                 db_event.end_date = _google_allday_end_inclusive(start_obj, end_obj)
             else:
-                db_event.start_datetime = datetime.fromisoformat(
-                    start_obj["dateTime"].replace("Z", "")
+                # B-274 : même colonne, même convention que le sync et la
+                # création — heure murale Europe/Paris.
+                db_event.start_datetime = _google_datetime_civile(
+                    start_obj["dateTime"], start_obj.get("timeZone")
                 )
-                db_event.end_datetime = datetime.fromisoformat(
-                    end_obj["dateTime"].replace("Z", "")
+                db_event.end_datetime = _google_datetime_civile(
+                    end_obj["dateTime"], end_obj.get("timeZone")
                 )
             db_event.all_day = all_day_flag
             db_event.attendees = json.dumps(
@@ -1599,13 +1617,15 @@ async def quick_add_event(
             location=event_data.get("location"),
             start_date=start_obj.get("date") if all_day else None,
             end_date=_google_allday_end_inclusive(start_obj, end_obj) if all_day else None,
+            # B-274 : c'est Google qui interprète le texte et rend l'instant ;
+            # il se range en heure murale Europe/Paris comme les autres.
             start_datetime=(
-                datetime.fromisoformat(start_obj["dateTime"].replace("Z", ""))
+                _google_datetime_civile(start_obj["dateTime"], start_obj.get("timeZone"))
                 if not all_day
                 else None
             ),
             end_datetime=(
-                datetime.fromisoformat(end_obj["dateTime"].replace("Z", ""))
+                _google_datetime_civile(end_obj["dateTime"], end_obj.get("timeZone"))
                 if not all_day
                 else None
             ),

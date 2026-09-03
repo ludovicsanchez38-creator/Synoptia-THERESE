@@ -49,6 +49,43 @@ def requires_confirmation(tool_name: str) -> bool:
     return bool(classe_de(tool_name) != LECTURE_SEULE)
 
 
+def bloc_outils_sous_confirmation(tool_names: list[str]) -> str:
+    """Ce que le modèle doit savoir des outils qu'il ne peut pas déclencher seul.
+
+    B-224 : le portillon fonctionne, l'action est mise en file et rien ne
+    s'exécute — mais AUCUN texte du prompt ne l'apprenait au modèle. Il
+    appelait `generate_document`, se croyait exaucé, écrivait au passé composé
+    et fabriquait un lien de téléchargement mort. La carte de confirmation
+    contredisait alors la phrase juste au-dessus d'elle.
+
+    Le bloc est DÉRIVÉ du classement (`requires_confirmation`) et de la liste
+    d'outils réellement transmise au modèle : un tour sans outil sensible
+    n'annonce rien, et un outil retiré de la liste disparaît de l'annonce.
+    Une promesse qui survit au retrait de l'outil est ce qui produit la
+    seconde carte (cf. tests/test_chat_capacites_annoncees.py).
+
+    Il maintient l'ordre d'APPELER l'outil : dire seulement « ça ne s'exécute
+    pas » ferait rédiger le document en clair dans le chat, ce que BUG-130 a
+    déjà coûté.
+    """
+    sensibles = sorted({nom for nom in tool_names if nom and requires_confirmation(nom)})
+    if not sensibles:
+        return ""
+    return (
+        "\n## Actions soumises a la validation de l'utilisateur\n"
+        "Ces outils ne s'executent PAS au moment ou tu les appelles : "
+        f"{', '.join(sensibles)}.\n"
+        "L'application met l'action en attente et affiche une carte que "
+        "l'utilisateur doit valider lui-meme.\n"
+        "Appelle-les normalement quand c'est pertinent - c'est ainsi que la "
+        "carte apparait, et ne redige jamais a la place de l'outil.\n"
+        "Mais tant que la validation n'a pas eu lieu, tu n'as RIEN fait : "
+        "annonce au futur ce que tu vas faire et demande la validation. "
+        "N'ecris jamais que c'est fait, envoye ou cree, et ne fabrique aucun "
+        "lien ni aucun nom de fichier telechargeable.\n"
+    )
+
+
 def register_pending(
     tool_name: str, arguments: dict[str, Any], conversation_id: str | None = None
 ) -> str:

@@ -420,3 +420,139 @@ class TestSuppressionEtIndexDeRecherche:
         )
         # Le titre lui-même ne doit plus être consultable via l'index.
         assert titre not in [r["title"] for r in corps_apres["results"]], corps_apres
+
+
+# ---------------------------------------------------------------------------
+# B-224 : le modèle ignore qu'un outil sensible n'est que MIS EN FILE.
+#
+# Le portillon de confirmation fonctionne (`requires_confirmation`) : l'action
+# est enregistrée, une carte s'affiche, rien ne s'exécute. Mais RIEN, dans le
+# prompt système, n'apprend cela au modèle : il appelle `generate_document`,
+# croit avoir agi, et écrit au passé composé en fabriquant un lien de
+# téléchargement mort. Le bloc « capacités » (chat.py) ne mentionne la
+# confirmation nulle part.
+#
+# La garde ci-dessous ne cherche pas une phrase : elle exige que le prompt
+# réellement transmis au fournisseur porte l'annonce DÉRIVÉE de la
+# classification des outils du tour. Un texte constant appendu sans condition
+# échoue au second test.
+# ---------------------------------------------------------------------------
+
+
+class TestPromptOutilsSousConfirmation:
+    """B-224 — le prompt annonce les outils qui attendent une validation."""
+
+    @staticmethod
+    async def _prompt_transmis(db_session):
+        """Le system prompt VU par le fournisseur, et les outils du tour."""
+        from types import SimpleNamespace
+        from unittest.mock import AsyncMock, patch
+
+        from app.models.entities import Conversation
+        from app.routers.chat import _do_stream_response
+        from app.services.providers.base import StreamEvent
+
+        capture: dict = {}
+
+        class _FauxLLM:
+            config = SimpleNamespace(
+                provider=SimpleNamespace(value="anthropic"), model="faux"
+            )
+
+            def prepare_context(self, messages, memory_context=None):
+                return SimpleNamespace(messages=[], system_prompt="")
+
+            async def stream_response_with_tools(self, context, tools=None):
+                capture["system_prompt"] = context.system_prompt
+                capture["tool_names"] = [
+                    t.get("function", {}).get("name", "")
+                    for t in (tools or [])
+                    if t.get("type") == "function"
+                ]
+                yield StreamEvent(type="text", content="D'accord.")
+                yield StreamEvent(type="done", stop_reason="end_turn")
+
+        conv = Conversation(id="conv-b224", title="B-224")
+        db_session.add(conv)
+        await db_session.commit()
+
+        with patch("app.routers.chat.get_llm_service", return_value=_FauxLLM()), patch(
+            "app.routers.chat._get_memory_context", AsyncMock(return_value="")
+        ):
+            async for _ in _do_stream_response(
+                conv.id, "Génère un document Word listant mes tâches.", db_session
+            ):
+                pass
+
+        assert "system_prompt" in capture, (
+            "le fournisseur n'a jamais été appelé : la capture ne prouve rien"
+        )
+        assert capture["tool_names"], (
+            "aucun outil n'a été proposé au modèle : le bloc de capacités n'a "
+            "même pas été construit, ce test ne surveille rien"
+        )
+        return capture["system_prompt"], capture["tool_names"]
+
+    @pytest.mark.asyncio
+    async def test_prompt_annonce_les_outils_en_attente_de_confirmation(
+        self, client, db_session
+    ):
+        """Le prompt transmis porte l'annonce, dérivée des outils du tour.
+
+        Sabotage de référence : retirer la ligne qui ajoute le bloc au
+        system_prompt dans chat.py doit rougir ce test.
+        """
+        from app.services.tool_confirmations import (
+            bloc_outils_sous_confirmation,
+            requires_confirmation,
+        )
+
+        prompt, noms = await self._prompt_transmis(db_session)
+
+        attendus = sorted(n for n in noms if requires_confirmation(n))
+        assert attendus, (
+            "aucun outil sensible dans ce tour : le cas testé n'existe pas"
+        )
+        bloc = bloc_outils_sous_confirmation(noms)
+        assert bloc, "le bloc dérivé des outils du tour est vide"
+        assert bloc in prompt, (
+            "le prompt transmis au fournisseur n'annonce pas les outils mis en "
+            f"attente de validation ({attendus}) : le modèle croit avoir agi"
+        )
+
+    @pytest.mark.asyncio
+    async def test_le_bloc_ne_nomme_que_les_outils_soumis_a_validation(self):
+        """Le contenu suit la classification, il n'est pas un texte figé."""
+        from app.services.contexte_execution import LECTURE_SEULE, classe_de
+        from app.services.tool_confirmations import bloc_outils_sous_confirmation
+
+        outils = ["read_contact", "search_files", "generate_document", "send_email"]
+        bloc = bloc_outils_sous_confirmation(outils)
+        nommes = {o for o in outils if o in bloc}
+        assert nommes == {"generate_document", "send_email"}, (
+            f"le bloc nomme {sorted(nommes)} au lieu des seuls outils sensibles"
+        )
+        lectures = [o for o in outils if classe_de(o) == LECTURE_SEULE]
+        assert bloc_outils_sous_confirmation(lectures) == "", (
+            "un tour sans aucun outil sensible ne doit rien annoncer : sinon "
+            "le bloc est un texte constant, pas une conséquence du classement"
+        )
+
+    @pytest.mark.asyncio
+    async def test_le_bloc_interdit_de_promettre_le_resultat_sans_interdire_l_appel(
+        self,
+    ):
+        """Deux erreurs symétriques à éviter, la seconde a déjà coûté BUG-130.
+
+        Dire « ce n'est pas exécuté » sans dire « appelle quand même » pousse
+        le modèle à rédiger le document en clair dans le chat au lieu
+        d'appeler l'outil.
+        """
+        from app.services.tool_confirmations import bloc_outils_sous_confirmation
+
+        bloc = bloc_outils_sous_confirmation(["generate_document"]).lower()
+        assert "appelle" in bloc, "le bloc doit maintenir l'ordre d'appeler l'outil"
+        assert "lien" in bloc, "le bloc doit interdire de fabriquer un lien"
+        assert "valid" in bloc or "confirm" in bloc, (
+            "le bloc doit dire que l'action attend une validation de l'utilisateur"
+        )

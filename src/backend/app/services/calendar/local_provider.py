@@ -18,10 +18,27 @@ from app.services.calendar.base_provider import (
     CreateEventRequest,
     UpdateEventRequest,
 )
+from app.services.civil_time import PARIS
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 logger = logging.getLogger(__name__)
+
+
+def _borne_murale_paris(borne: datetime) -> datetime:
+    """Ramène une borne de fenêtre à la convention de la colonne interrogée.
+
+    B-275 : `CalendarEvent.start_datetime` porte une heure murale Europe/Paris
+    naïve. Les appelants, eux, tiennent un INSTANT : la fenêtre du mois arrive
+    en forme Z depuis l'écran, et les outils du chat passent
+    `datetime.now(UTC)`. Comparer l'un à l'autre décalait la fenêtre de deux
+    heures en été - un rendez-vous à 22h30 le dernier jour du mois sortait de
+    la vue. Une borne déjà naïve est du Paris mural, comme partout ailleurs
+    (services/civil_time).
+    """
+    if borne.tzinfo is None:
+        return borne
+    return borne.astimezone(PARIS).replace(tzinfo=None)
 
 
 class LocalCalendarProvider(CalendarProvider):
@@ -192,16 +209,20 @@ class LocalCalendarProvider(CalendarProvider):
                 | (CalendarEvent.project_id.is_(None))
             )
 
-        # Time filtering
+        # Time filtering. B-275 : la borne est un instant, la colonne une heure
+        # murale de Paris - la conversion appartient à ce fournisseur, seul à
+        # connaître la convention de SA table.
         if time_min:
+            borne_min = _borne_murale_paris(time_min)
             statement = statement.where(
-                (CalendarEvent.start_datetime >= time_min) |
-                (CalendarEvent.start_date >= time_min.strftime("%Y-%m-%d"))
+                (CalendarEvent.start_datetime >= borne_min) |
+                (CalendarEvent.start_date >= borne_min.strftime("%Y-%m-%d"))
             )
         if time_max:
+            borne_max = _borne_murale_paris(time_max)
             statement = statement.where(
-                (CalendarEvent.start_datetime <= time_max) |
-                (CalendarEvent.start_date <= time_max.strftime("%Y-%m-%d"))
+                (CalendarEvent.start_datetime <= borne_max) |
+                (CalendarEvent.start_date <= borne_max.strftime("%Y-%m-%d"))
             )
 
         # Order by start time

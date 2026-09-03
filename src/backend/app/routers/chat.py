@@ -64,6 +64,7 @@ from app.services.slash_commands import (
 from app.services.token_tracker import detect_uncertainty, get_token_tracker
 from app.services.tool_confirmations import (
     _base_tool_name,
+    bloc_outils_sous_confirmation,
     canoniser_arguments,
     empreinte_action,
     pop_pending,
@@ -2496,6 +2497,11 @@ async def _do_stream_response(
         if mcp_tools:
             capabilities += f"- **Outils externes** : {', '.join(mcp_tools[:10])}{'...' if len(mcp_tools) > 10 else ''}\n"
         context.system_prompt += capabilities
+        # B-224 : le portillon de confirmation met l'action en file et
+        # n'exécute rien, mais aucun texte ne l'apprenait au modèle. Il se
+        # croyait exaucé, écrivait au passé composé et fabriquait un lien de
+        # téléchargement mort — juste au-dessus de la carte qui le contredit.
+        context.system_prompt += bloc_outils_sous_confirmation(tool_names)
 
     # BUG-160 : le modèle n'a aucun outil qui lise un fichier local, et la
     # consigne « ne dis jamais que tu ne peux pas SI un outil le permet »

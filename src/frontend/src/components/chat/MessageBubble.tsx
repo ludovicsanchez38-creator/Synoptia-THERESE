@@ -106,6 +106,28 @@ function formatFileSize(bytes: number): string {
   return `${value.toLocaleString('fr-FR', { maximumFractionDigits: 1 })} ${unit}`;
 }
 
+/**
+ * B-224 : rend analysable une destination de lien qui porte des espaces.
+ *
+ * `[Télécharger x y.docx](sandbox:/x y.docx)` n'est pas un lien CommonMark :
+ * une destination non encadrée ne peut pas contenir d'espace. remark émet
+ * alors le texte littéral, et l'utilisateur lit la syntaxe brute. Encadrée de
+ * chevrons, la destination est reconnue : ReactMarkdown écarte le schéma
+ * inconnu, le href est vidé, et le repli « texte seul » du rendu de lien
+ * affiche le libellé nu.
+ *
+ * On ne touche qu'aux destinations réellement inanalysables : celles sans
+ * espace sont déjà valides, et `](url "titre")` EST une syntaxe correcte
+ * qu'encadrer casserait.
+ */
+function encadrerDestinationsAEspaces(texte: string): string {
+  return texte.replace(/\]\(([^()<>\n]+)\)/g, (brut, destination: string) => {
+    if (!/\s/.test(destination)) return brut;
+    if (/^\S+\s+(?:"[^"]*"|'[^']*')$/.test(destination.trim())) return brut;
+    return `](<${destination.trim()}>)`;
+  });
+}
+
 function CodeBlock({
   language,
   children,
@@ -293,6 +315,21 @@ export const MessageBubble = memo(function MessageBubble({
       .trim();
     return stripped || 'Voici ton fichier.';
   }, [message.content, skillFilesList, message.isStreaming]);
+
+  // B-224 : le modèle fabrique parfois un lien dont la destination porte des
+  // espaces (« sandbox:/Tâches en cours - Léa Moreau.docx »). Hors chevrons,
+  // ce n'est pas une destination CommonMark : remark n'analyse aucun lien et
+  // émet le texte littéral - crochets, parenthèses et « sandbox: » à l'écran.
+  // Le repli « texte seul » du rendu de lien ne s'applique pas, puisqu'il
+  // suppose un lien reconnu dont ReactMarkdown a vidé le href.
+  // On rend donc la destination analysable ; le schéma inconnu est alors
+  // écarté par ReactMarkdown et le repli existant rend le libellé seul.
+  // Uniquement sur le chemin markdown : pendant le streaming la bulle affiche
+  // du texte brut, où des chevrons ajoutés se verraient.
+  const markdownAffiche = useMemo(
+    () => encadrerDestinationsAEspaces(displayContent),
+    [displayContent]
+  );
 
 
   return (
@@ -559,7 +596,7 @@ export const MessageBubble = memo(function MessageBubble({
               },
             }}
           >
-            {displayContent}
+            {markdownAffiche}
           </ReactMarkdown>
           )}
         </div>
