@@ -83,15 +83,32 @@ if __name__ == "__main__":
 # de l'interpréteur frozen ne correspondent pas aux flags -B -S -I.
 # On intercepte manuellement AVANT argparse.
 # Réf : https://github.com/pyinstaller/pyinstaller/issues/7920
-if getattr(sys, "frozen", False) and len(sys.argv) >= 3:
-    if sys.argv[-2] == "-c" and sys.argv[-1].startswith(
-        (
-            "from multiprocessing.resource_tracker import main",
-            "from multiprocessing.forkserver import main",
+# B-081 : la décision vit dans une fonction, pour qu'un test puisse
+# l'exécuter. Recopiée dans quatre listes littérales de test, elle n'était
+# gardée par personne : retirer le garde ci-dessous ne faisait rougir aucun
+# test. Aucun import lourd ici, l'ordre du démarrage sidecar en dépend.
+def _est_relais_multiprocessing(argv: list[str]) -> bool:
+    """L'interpréteur est-il relancé par CPython comme relais multiprocessing ?
+
+    PyInstaller relance l'exécutable avec `-c "from multiprocessing... import
+    main;main(...)"`. Sans interception, argparse reçoit ces arguments et
+    échoue en « unrecognized arguments » (BUG-008).
+    """
+    return (
+        len(argv) >= 3
+        and argv[-2] == "-c"
+        and argv[-1].startswith(
+            (
+                "from multiprocessing.resource_tracker import main",
+                "from multiprocessing.forkserver import main",
+            )
         )
-    ):
-        exec(sys.argv[-1])  # noqa: S102 - Code généré par CPython, sûr
-        sys.exit(0)
+    )
+
+
+if getattr(sys, "frozen", False) and _est_relais_multiprocessing(sys.argv):
+    exec(sys.argv[-1])  # noqa: S102 - Code généré par CPython, sûr
+    sys.exit(0)
 
 import argparse  # noqa: E402
 

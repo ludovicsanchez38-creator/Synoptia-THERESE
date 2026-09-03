@@ -52,49 +52,87 @@ class TestFreezeSupport:
 
 
 class TestResourceTrackerPatch:
-    """Vérifier que le patch resource_tracker intercepte les arguments PyInstaller."""
+    """Vérifier que le patch resource_tracker intercepte les arguments PyInstaller.
+
+    B-081 : les quatre tests de cette classe écrivaient une liste littérale
+    puis vérifiaient la forme de leur propre littéral. Aucun module de
+    l'application n'était touché : supprimer le garde de `main.py` les
+    laissait verts. Ils appellent désormais la décision réelle,
+    `main._est_relais_multiprocessing`, qui est aussi celle que le garde
+    exécute au démarrage du sidecar.
+    """
+
+    @staticmethod
+    def _decision():
+        from main import _est_relais_multiprocessing
+
+        return _est_relais_multiprocessing
 
     def test_resource_tracker_pattern_detection(self):
         """Le code doit détecter les arguments resource_tracker de CPython."""
-        # Simuler les arguments que PyInstaller passe au resource_tracker
-        test_args = [
+        argv = [
             "backend", "-B", "-S", "-I",
             "-c", "from multiprocessing.resource_tracker import main;main(5)",
         ]
-        # Le pattern détecte si argv[-2] == "-c" et argv[-1] commence par le bon préfixe
-        assert test_args[-2] == "-c"
-        assert test_args[-1].startswith("from multiprocessing.resource_tracker import main")
+        assert self._decision()(argv) is True
 
     def test_forkserver_pattern_detection(self):
         """Le code doit aussi détecter les arguments forkserver."""
-        test_args = [
+        argv = [
             "backend", "-B", "-S",
             "-c", "from multiprocessing.forkserver import main;main()",
         ]
-        assert test_args[-2] == "-c"
-        assert test_args[-1].startswith("from multiprocessing.forkserver import main")
+        assert self._decision()(argv) is True
 
     def test_normal_args_not_intercepted(self):
         """Les arguments normaux (--host, --port) ne doivent PAS être interceptés."""
-        test_args = ["backend", "--host", "127.0.0.1", "--port", "8000"]
-        # Le guard exige len >= 3 et argv[-2] == "-c"
-        should_intercept = (
-            len(test_args) >= 3
-            and test_args[-2] == "-c"
-            and test_args[-1].startswith(
-                (
-                    "from multiprocessing.resource_tracker import main",
-                    "from multiprocessing.forkserver import main",
-                )
-            )
+        argv = ["backend", "--host", "127.0.0.1", "--port", "8000"]
+        assert self._decision()(argv) is False, (
+            "les arguments normaux ne doivent pas être interceptés"
         )
-        assert not should_intercept, "Les arguments normaux ne doivent pas être interceptés"
 
     def test_short_args_not_intercepted(self):
         """Un argv trop court ne doit pas déclencher l'interception."""
-        test_args = ["backend"]
-        should_intercept = len(test_args) >= 3
-        assert not should_intercept
+        assert self._decision()(["backend"]) is False
+
+    def test_un_c_sans_relais_multiprocessing_n_est_pas_intercepte(self):
+        """Cas négatif : `-c` seul ne suffit pas.
+
+        Sans lui, un garde qui ne regarderait plus que `argv[-2] == "-c"`
+        détournerait le démarrage sur n'importe quel `-c` et resterait vert.
+        """
+        argv = ["backend", "-c", "print('bonjour')"]
+        assert self._decision()(argv) is False
+
+    def test_le_garde_de_demarrage_utilise_cette_decision(self):
+        """Le garde du module doit APPELER la décision, pas la recopier.
+
+        Une copie posée sur place se désynchroniserait en silence : les tests
+        garderaient une fonction que le démarrage n'utilise plus. On cherche
+        l'appel lui-même dans l'arbre syntaxique, pas une chaîne dans le
+        texte — un commentaire ou une chaîne de caractères ne peut pas le
+        simuler.
+        """
+        import ast
+        import inspect
+
+        import main as module_demarrage
+
+        arbre = ast.parse(inspect.getsource(module_demarrage))
+        appels_dans_un_garde = [
+            noeud
+            for branche in arbre.body
+            if isinstance(branche, ast.If)
+            for noeud in ast.walk(branche.test)
+            if isinstance(noeud, ast.Call)
+            and isinstance(noeud.func, ast.Name)
+            and noeud.func.id == "_est_relais_multiprocessing"
+        ]
+        assert appels_dans_un_garde, (
+            "aucun `if ... _est_relais_multiprocessing(...)` au niveau du "
+            "module : le garde d'interception ne délègue pas à la décision "
+            "que ces tests exercent"
+        )
 
 
 # ============================================================

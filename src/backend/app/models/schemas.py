@@ -225,6 +225,27 @@ LONGUEUR_ADRESSE = 500
 LONGUEUR_NOTES = 10_000
 
 
+
+def _jour_civil_de_relance(valeur: Any) -> Any:
+    """Ramène une échéance de relance au JOUR CIVIL de Paris, avant stockage.
+
+    `contacts_a_relancer` lit `next_follow_up` comme un jour décidé
+    (`func.date(...)`), mais l'API l'acceptait en instant absolu. Or SQLite
+    JETTE le décalage à l'écriture : `2026-08-30T23:30:00Z` est enregistré
+    `2026-08-30 23:30`, dont la date est le 30 alors que le jour civil de Paris
+    est le 31 — la relance tombait due un jour trop tôt, et l'information qui
+    aurait permis de rattraper le coup à la lecture n'existait plus. On
+    normalise donc à l'écriture, comme `EmailFollowUp.due_date` depuis B-062.
+
+    `None` traverse intact : effacer une échéance doit rester possible.
+    """
+    if valeur is None:
+        return None
+    from app.services.civil_time import echeance_de_relance
+
+    return echeance_de_relance(valeur if isinstance(valeur, str) else str(valeur))
+
+
 class ContactCreate(BaseModel):
     """Create contact request."""
 
@@ -243,6 +264,11 @@ class ContactCreate(BaseModel):
     # La prochaine relance DECIDEE. Sans ce champ en ecriture, seule une
     # importation pourrait en poser une (revue du 29/08).
     next_follow_up: datetime | None = None
+
+    @field_validator("next_follow_up", mode="before")
+    @classmethod
+    def _relance_au_jour_civil_paris(cls, valeur: Any) -> Any:
+        return _jour_civil_de_relance(valeur)
 
     # Scope (L6 revue produit) : rattacher un contact à une conversation/projet.
     scope: str | None = None  # global | project | conversation (defaut global cote modele)
@@ -286,6 +312,11 @@ class ContactUpdate(BaseModel):
     rgpd_date_expiration: datetime | None = None
     rgpd_consentement: bool | None = None
     next_follow_up: datetime | None = None
+
+    @field_validator("next_follow_up", mode="before")
+    @classmethod
+    def _relance_au_jour_civil_paris(cls, valeur: Any) -> Any:
+        return _jour_civil_de_relance(valeur)
 
 
 class ContactResponse(BaseModel):

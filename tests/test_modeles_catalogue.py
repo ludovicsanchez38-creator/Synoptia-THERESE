@@ -34,13 +34,41 @@ class TestLesFrontiers:
             assert cat.modeles_ordonnes(fournisseur)[0] == frontier
 
     def test_le_catalogue_n_importe_pas_llm(self):
+        """Le cycle est interdit, et c'est le graphe d'IMPORT qui l'atteste.
+
+        B-083 : la garde lisait `cat.__dict__["__depends__"]`, un attribut qui
+        n'existe nulle part — `getattr(..., "")` rendait toujours la chaîne
+        vide et l'assertion était donc vraie quoi qu'il arrive. Le scan du
+        source, lui, ne voit que les imports ÉCRITS dans ce fichier : un
+        module intermédiaire qui tirerait llm.py passait au travers. On
+        importe le catalogue SEUL, dans un interpréteur neuf, et on regarde
+        ce qui a réellement été chargé.
+        """
+        import subprocess
+        import sys
+        from pathlib import Path
+
         import app.services.modeles_catalogue as cat
 
-        assert "app.services.llm" not in getattr(cat, "__dict__", {}).get(
-            "__depends__", ""
+        racine_backend = Path(cat.__file__).resolve().parents[3]
+        acheve = subprocess.run(
+            [
+                sys.executable,
+                "-c",
+                "import sys, app.services.modeles_catalogue as _c;"
+                "print('app.services.llm' in sys.modules)",
+            ],
+            cwd=str(racine_backend),
+            capture_output=True,
+            text=True,
+            timeout=120,
+            check=False,
         )
-
-        from pathlib import Path
+        assert acheve.returncode == 0, acheve.stderr[-800:]
+        assert acheve.stdout.strip() == "False", (
+            "importer le catalogue charge app.services.llm : le cycle est "
+            f"revenu par un intermediaire. sortie={acheve.stdout.strip()!r}"
+        )
 
         source = Path(cat.__file__).read_text(encoding="utf-8")
         assert "from app.services.llm" not in source

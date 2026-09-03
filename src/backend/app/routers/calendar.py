@@ -31,7 +31,11 @@ from app.models.schemas_calendar import (
     CalDAVTestRequest,
 )
 from app.routers.email import ensure_valid_access_token
-from app.services.calendar.base_provider import allday_end_from_wire, allday_end_to_wire
+from app.services.calendar.base_provider import (
+    ConflitDeVersion,
+    allday_end_from_wire,
+    allday_end_to_wire,
+)
 from app.services.calendar.provider_factory import (
     get_calendar_provider,
     list_caldav_presets,
@@ -1297,7 +1301,23 @@ async def update_event(
             recurrence=request.recurrence,
         )
 
-        evt = await provider.update_event(calendar_id, event_id, provider_req)
+        # B-260 : un conflit d'ecriture CalDAV est un CONFLIT, pas une panne.
+        # Sans ce mapping, `ConflitDeVersion` sortait en 500 generique et
+        # l'ecran ne pouvait ni le distinguer d'une panne, ni proposer le seul
+        # geste utile : relire avant de reecrire. Meme reponse que l'ecrivain
+        # Google depuis B-029.
+        try:
+            evt = await provider.update_event(calendar_id, event_id, provider_req)
+        except ConflitDeVersion as e:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "L'événement a été modifié ailleurs depuis sa lecture "
+                    "(téléphone, autre appareil). Recharge l'agenda avant "
+                    "d'enregistrer, sans quoi cette modification en écraserait "
+                    "une autre."
+                ),
+            ) from e
 
         return CalendarEventResponse(
             id=evt.id,

@@ -11,6 +11,9 @@ from datetime import date, datetime, time
 import pytest
 from app.models.entities import Calendar, CalendarEvent, EmailAccount
 
+#: Jour du brief posé par le test, jamais lu sur le runner (B-261).
+JOUR_DU_BRIEF = date(2026, 6, 15)
+
 
 async def _gmail_et_local(session):
     compte = EmailAccount(
@@ -149,8 +152,19 @@ async def test_liste_gmail_n_efface_pas_le_calendrier_local(client, db_session, 
 
 
 @pytest.mark.asyncio
-async def test_brief_du_jour_nomme_l_agenda(client, db_session):
-    """L'accueil mélangeait tous les événements sans dire de quel agenda."""
+async def test_brief_du_jour_nomme_l_agenda(client, db_session, monkeypatch):
+    """L'accueil mélangeait tous les événements sans dire de quel agenda.
+
+    B-261 : le jour du brief est le jour civil de PARIS, celui du runner
+    n'existe pas pour le serveur. `date.today()` posait l'événement sur la
+    date locale du runner ; sous `TZ=UTC` après 22 h, ce n'est plus le même
+    jour et le brief revenait vide. On POSE l'horloge du brief au lieu de la
+    lire, et l'événement se cale dessus : le test dit la même chose à toute
+    heure et sous tout fuseau.
+    """
+    monkeypatch.setattr(
+        "app.routers.dashboard.date_civile_paris", lambda *_a, **_k: JOUR_DU_BRIEF
+    )
     local = Calendar(
         id="cal-local-brief",
         summary="Cabinet",
@@ -163,8 +177,8 @@ async def test_brief_du_jour_nomme_l_agenda(client, db_session):
             id="evt-brief",
             calendar_id="cal-local-brief",
             summary="Point client",
-            start_datetime=datetime.combine(date.today(), time(10, 0)),
-            end_datetime=datetime.combine(date.today(), time(11, 0)),
+            start_datetime=datetime.combine(JOUR_DU_BRIEF, time(10, 0)),
+            end_datetime=datetime.combine(JOUR_DU_BRIEF, time(11, 0)),
             status="confirmed",
         )
     )
@@ -172,6 +186,7 @@ async def test_brief_du_jour_nomme_l_agenda(client, db_session):
 
     reponse = await client.get("/api/dashboard/today")
     assert reponse.status_code == 200
+    assert reponse.json()["date"] == JOUR_DU_BRIEF.isoformat()
     evenements = reponse.json()["events"]
     assert evenements
     point = next(e for e in evenements if e["id"] == "evt-brief")

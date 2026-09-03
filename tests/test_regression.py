@@ -4328,9 +4328,17 @@ class TestF17_BoardSovereignMode:
         )
 
     def test_entities_has_mode(self):
-        content = self.ENTITIES_PY.read_text(encoding="utf-8")
-        assert "mode" in content, (
-            "BoardDecisionDB doit avoir un champ mode (F-17)"
+        """B-042 : la garde cherchait « mode » dans TOUT entities.py.
+
+        Retirer la seule déclaration du champ laissait l'assertion vraie,
+        satisfaite par « model: », « sqlmodel » et « models » — six
+        occurrences pour une seule qui compte. On interroge le modèle.
+        """
+        from app.models.entities import BoardDecisionDB
+
+        assert "mode" in BoardDecisionDB.model_fields, (
+            "BoardDecisionDB doit avoir un champ mode (F-17). "
+            f"champs={sorted(BoardDecisionDB.model_fields)}"
         )
 
 
@@ -4863,19 +4871,48 @@ class TestBUGOpenRouterStrftimeWindows:
             "(ValueError: Invalid format string)"
         )
 
-    def test_current_date_cross_platform_format(self):
-        """La date générée est une chaîne non vide et ne contient pas de placeholder."""
+    def test_current_date_vient_du_prompt_reel(self, monkeypatch):
+        """La date lue par le modèle vient de llm.py, et sans zéro de tête.
+
+        B-041 : l'ancien test refabriquait `current_date` par f-string dans
+        son propre corps, sans jamais importer llm.py — il ne pouvait donc
+        rien détecter. Pire, son assertion `not current_date.startswith("0")`
+        était vacante : `str(now.day)` ne commence JAMAIS par un zéro. On fige
+        l'horloge au 5 du mois, le seul jour où un `%d` réintroduit se voit,
+        et on lit le prompt réellement construit.
+        """
         from datetime import UTC, datetime
-        now = datetime.now(UTC)
-        day = str(now.day)
-        current_date = f"{day} {now.strftime('%B %Y, %H:%M')} UTC"
-        current_date_example = f"{day} {now.strftime('%B %Y')}"
-        assert current_date  # non vide
-        assert "{" not in current_date  # pas de placeholder non substitué
-        assert current_date_example
-        # Pas de zéro de tête sur le jour (ex: "5 mars" pas "05 mars")
-        assert not current_date.startswith("0"), (
-            f"Le jour ne doit pas avoir de zéro de tête : {current_date!r}"
+        from unittest.mock import MagicMock, patch
+
+        from app.services import llm as module
+        from app.services.llm import LLMConfig, LLMProvider, LLMService
+
+        class _Horloge(datetime):
+            @classmethod
+            def now(cls, tz=None):
+                instant = cls(2026, 6, 5, 8, 30, tzinfo=UTC)
+                return instant.astimezone(tz) if tz else instant.replace(tzinfo=None)
+
+        monkeypatch.setattr(module, "datetime", _Horloge)
+
+        config = LLMConfig(provider=LLMProvider.ANTHROPIC, model="claude-3-haiku-20240307")
+        svc = LLMService(config)
+
+        profil = MagicMock()
+        profil.name = "Jérôme"
+        profil.format_for_llm.return_value = "Prénom : Jérôme"
+
+        with patch("app.services.llm.load_therese_md", return_value=""), patch(
+            "app.services.user_profile.get_cached_profile", return_value=profil
+        ):
+            prompt = svc._get_system_prompt_with_identity()
+
+        assert "{current_date}" not in prompt
+        assert "5 juin 2026" in prompt, (
+            "la date du prompt doit venir de llm.py, sans zéro de tête"
+        )
+        assert "05 juin" not in prompt, (
+            "zéro de tête : un %d est revenu là où str(now.day) était requis"
         )
 
     def test_get_system_prompt_no_valueerror(self):
@@ -6154,13 +6191,56 @@ class TestBUG73GoogleCalendarTZ:
         assert "astimezone(_UTC)" in src, "conversion UTC requise pour tz-aware"
         assert "replace(tzinfo=None)" in src, "retrait tzinfo requis avant isoformat"
 
-    def test_to_rfc3339_z_handles_naive(self):
-        """Un datetime naif est deja considere UTC - on ajoute juste Z."""
-        from datetime import datetime
+    @pytest.mark.asyncio
+    async def test_to_rfc3339_z_convertit_vraiment(self, monkeypatch):
+        """La conversion doit être FAITE, pas récitée.
 
-        dt = datetime(2026, 4, 22, 10, 0, 0)
-        expected = "2026-04-22T10:00:00Z"
-        assert dt.isoformat() + "Z" == expected
+        B-041 : l'ancien test n'importait rien de l'application. Il écrivait
+        `datetime(2026, 4, 22, 10, 0).isoformat() + "Z"` et le comparait à la
+        chaîne attendue : il testait la bibliothèque standard. Supprimer
+        `_to_rfc3339_z` de calendar_service.py le laissait vert. Le helper est
+        une fonction imbriquée dans `list_events` : on l'exerce donc par le
+        seul chemin qui existe, l'appel, en regardant ce qui part chez Google.
+        """
+        from datetime import datetime
+        from zoneinfo import ZoneInfo
+
+        from app.services import calendar_service as module
+
+        captures: dict = {}
+
+        class _Reponse:
+            status_code = 200
+
+            def raise_for_status(self):
+                return None
+
+            def json(self):
+                return {"items": []}
+
+        class _Client:
+            async def get(self, url, headers=None, params=None, timeout=None):
+                captures["params"] = dict(params or {})
+                return _Reponse()
+
+        async def _faux_client():
+            return _Client()
+
+        monkeypatch.setattr(module, "get_http_client", _faux_client)
+
+        service = module.CalendarService("jeton-bidon")
+        await service.list_events(
+            "primary",
+            time_min=datetime(2026, 4, 22, 10, 0, 0),
+            time_max=datetime(2026, 4, 22, 12, 0, 0, tzinfo=ZoneInfo("Europe/Paris")),
+        )
+
+        # Naïf : déjà considéré UTC, on ajoute seulement le Z.
+        assert captures["params"]["timeMin"] == "2026-04-22T10:00:00Z", captures["params"]
+        # Aware Paris (été, UTC+2) : ramené en UTC AVANT le Z, jamais
+        # « 12:00:00+02:00Z », la forme que Google refuse (issue #73).
+        assert captures["params"]["timeMax"] == "2026-04-22T10:00:00Z", captures["params"]
+        assert "+" not in captures["params"]["timeMax"]
 
 
 class TestBUG69OllamaFallbackRespectsProvider:
@@ -8132,17 +8212,24 @@ class TestBUGB_CrmSyncChoixFeuille:
     La solution : proposer de choisir une feuille existante AVANT toute création.
     """
 
-    def test_backend_api_lister_feuilles_google_disponible(self):
-        """Le backend doit exposer un endpoint pour lister les feuilles Google de l'utilisateur."""
-        from app.main import app
-        from fastapi.testclient import TestClient
+    @pytest.mark.asyncio
+    async def test_backend_api_lister_feuilles_google_disponible(self, client):
+        """Le backend doit exposer un endpoint pour lister les feuilles Google.
 
-        client = TestClient(app)
-
-        # L'endpoint doit exister (même si non authentifié, il doit renvoyer 401 ou 403, pas 404)
-        response = client.get("/api/crm/google-sheets/list")
-        assert response.status_code != 404, (
-            "L'endpoint /api/crm/google-sheets/list doit exister pour lister les feuilles existantes"
+        B-042, deux défauts sur la même ligne. (1) `!= 404` n'avait aucune
+        borne haute : un endpoint entièrement cassé, rendu en 500, passait la
+        garde qui prétend vérifier qu'il RÉPOND. La plage est désormais
+        FERMÉE. (2) Le `TestClient(app)` construit ici n'entre pas dans le
+        lifespan : lancé seul, ce test échouait en « Database not initialized »
+        et n'était vert que grâce à l'`init_db` laissé par un autre test de la
+        suite. On passe par la fixture `client`, qui démarre l'application.
+        """
+        # Sans compte Google connecté, la réponse attendue est un refus
+        # d'authentification, jamais une absence de route ni une panne.
+        response = await client.get("/api/crm/google-sheets/list")
+        assert response.status_code in (200, 401, 403), (
+            "L'endpoint /api/crm/google-sheets/list doit exister ET répondre "
+            f"(reçu {response.status_code}) : 404 = absent, 5xx = cassé"
         )
 
     def test_frontend_interface_choix_feuille_existante(self):

@@ -17,6 +17,7 @@ from app.services.calendar.base_provider import (
     CalendarDTO,
     CalendarEventDTO,
     CalendarProvider,
+    ConflitDeVersion,
     CreateEventRequest,
     UpdateEventRequest,
     allday_end_from_wire,
@@ -372,6 +373,21 @@ class CalDAVProvider(CalendarProvider):
             if not event:
                 raise ValueError(f"Event {event_id} not found")
 
+            # B-260 : relire le contenu ET son jeton de version dans la MEME
+            # reponse. `load()` fait un GET et pose `data` et l'en-tete `Etag`
+            # ensemble : la precondition porte alors sur ce qu'on a REELLEMENT
+            # lu. Lire l'ETag apres coup (PROPFIND separe) ne protegerait que
+            # les millisecondes entre ce PROPFIND et le PUT, en laissant grande
+            # ouverte la vraie fenetre, celle de la lecture a l'ecriture.
+            # Un serveur qui refuse le GET retombe sans jeton, donc sur le
+            # chemin inconditionnel d'avant : jamais moins bien qu'avant.
+            try:
+                event.load()
+            except Exception as e:
+                logger.debug(
+                    "CalDAV : relecture impossible, ecriture sans jeton de version: %s", e
+                )
+
             # Parse existing iCalendar
             ical = ICalendar.from_ical(event.data)
             vevent = None
@@ -414,8 +430,9 @@ class CalDAVProvider(CalendarProvider):
                     vevent["dtend"] = vDatetime(end_dt)
 
             # Update and save
-            event.data = ical.to_ical().decode("utf-8")
-            event.save()
+            donnees = ical.to_ical().decode("utf-8")
+            event.data = donnees
+            self._enregistrer_avec_precondition(event, donnees)
 
             return self._caldav_event_to_dto(event, calendar_id)
 
@@ -461,6 +478,69 @@ class CalDAVProvider(CalendarProvider):
     # ============================================================
     # Private Helpers
     # ============================================================
+
+    def _lire_jeton_de_version(self, event: caldav.CalendarObjectResource) -> str | None:
+        """L'ETag posé par la RELECTURE de l'événement, jamais un autre.
+
+        On ne va pas le rechercher ailleurs : un ETag obtenu après coup ne
+        correspondrait plus forcément au contenu qu'on s'apprête à réécrire,
+        et la précondition mentirait. Absent : on ne l'invente pas — sans
+        jeton, poser une précondition rendrait l'événement immodifiable,
+        c'est le verrou déjà tenu par l'écrivain Google.
+        """
+        try:
+            from caldav.elements import dav
+
+            proprietes = getattr(event, "props", None) or {}
+            jeton = proprietes.get(dav.GetEtag().tag)
+        except Exception as e:
+            logger.debug("CalDAV : ETag illisible, ecriture sans precondition: %s", e)
+            return None
+        return str(jeton) if jeton else None
+
+    def _enregistrer_avec_precondition(
+        self, event: caldav.CalendarObjectResource, donnees: str
+    ) -> None:
+        """Écrit l'événement sous `If-Match`, et nomme le conflit.
+
+        B-260 : `event.save()` est un PUT inconditionnel, et la bibliothèque
+        caldav n'accepte aucune précondition — elle code ses en-têtes en dur
+        dans `_put`. Une modification faite ailleurs entre la lecture et
+        l'écriture (le téléphone de l'utilisateur) était donc écrasée sans que
+        rien ne le signale. On passe sous la bibliothèque : PUT direct par le
+        client DAV, avec `If-Match` sur l'ETag lu.
+
+        Un statut autre que 412 n'est PAS un signal de conflit : on rend alors
+        la main à `save()`, qui porte le rattrapage vobject de la bibliothèque
+        pour les serveurs pointilleux. Le repli est tracé, jamais silencieux,
+        et ne fait pas pire que l'écriture inconditionnelle d'avant.
+        """
+        jeton = self._lire_jeton_de_version(event)
+        client = getattr(event, "client", None)
+        url = getattr(event, "url", None)
+        if not jeton or client is None or url is None:
+            event.save()
+            return
+
+        reponse = client.put(
+            str(url),
+            donnees,
+            {"Content-Type": 'text/calendar; charset="utf-8"', "If-Match": jeton},
+        )
+        statut = getattr(reponse, "status", None)
+        if statut == 412:
+            raise ConflitDeVersion(
+                "L'evenement a ete modifie ailleurs depuis sa lecture "
+                "(telephone, autre appareil)."
+            )
+        if statut in (200, 201, 204, 302):
+            return
+        logger.warning(
+            "CalDAV : ecriture conditionnelle refusee (HTTP %s), repli sans "
+            "precondition sur save()",
+            statut,
+        )
+        event.save()
 
     def _caldav_cal_to_dto(self, cal: caldav.Calendar) -> CalendarDTO:
         """Convert CalDAV calendar to CalendarDTO."""

@@ -11,6 +11,9 @@ from datetime import date, datetime, time
 import pytest
 from app.models.entities import Calendar, CalendarEvent, Contact
 
+#: Jour du brief posé par le test, jamais lu sur le runner (B-261).
+JOUR_DU_BRIEF = date(2026, 6, 15)
+
 
 @pytest.mark.asyncio
 async def test_deux_fiches_meme_email_n_en_prend_aucune(db_session):
@@ -38,7 +41,17 @@ async def test_une_fiche_est_retrouvee(db_session):
 
 
 @pytest.mark.asyncio
-async def test_brief_n_attache_pas_un_contact_ambigu(client, db_session):
+async def test_brief_n_attache_pas_un_contact_ambigu(client, db_session, monkeypatch):
+    """B-261 : le brief compte en jour civil de PARIS, pas en jour du runner.
+
+    `date.today()` posait le rendez-vous sur la date locale du runner ; sous
+    `TZ=UTC` après 22 h, le brief ne le voyait plus et `next(...)` levait une
+    StopIteration, que la boucle asyncio rendait en RuntimeError illisible.
+    On pose l'horloge du brief, et l'absence est nommée.
+    """
+    monkeypatch.setattr(
+        "app.routers.dashboard.date_civile_paris", lambda *_a, **_k: JOUR_DU_BRIEF
+    )
     db_session.add_all([
         Contact(id="c-a", first_name="Jean", last_name="A", email="jean@x.fr"),
         Contact(id="c-b", first_name="Jean", last_name="B", email="jean@x.fr"),
@@ -47,8 +60,8 @@ async def test_brief_n_attache_pas_un_contact_ambigu(client, db_session):
             id="evt-amb",
             calendar_id="cal-amb",
             summary="Point",
-            start_datetime=datetime.combine(date.today(), time(10, 0)),
-            end_datetime=datetime.combine(date.today(), time(11, 0)),
+            start_datetime=datetime.combine(JOUR_DU_BRIEF, time(10, 0)),
+            end_datetime=datetime.combine(JOUR_DU_BRIEF, time(11, 0)),
             attendees='[{"email":"jean@x.fr"}]',
         ),
     ])
@@ -56,5 +69,8 @@ async def test_brief_n_attache_pas_un_contact_ambigu(client, db_session):
 
     reponse = await client.get("/api/dashboard/today")
     assert reponse.status_code == 200
-    point = next(e for e in reponse.json()["events"] if e["id"] == "evt-amb")
+    point = next(
+        (e for e in reponse.json()["events"] if e["id"] == "evt-amb"), None
+    )
+    assert point is not None, "le rendez-vous du jour doit être au brief"
     assert point["crm_contact_ids"] == []

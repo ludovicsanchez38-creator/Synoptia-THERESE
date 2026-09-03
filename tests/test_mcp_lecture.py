@@ -83,6 +83,20 @@ async def test_la_route_du_contrat_refuse_un_contact_inconnu(client):
     assert (await client.get("/api/memory/contacts/inconnu-42/fiche")).status_code == 404
 
 
+#: Ce qui vaut AVERTISSEMENT de troncature dans une description d'outil.
+#: B-083 : le critère contenait « tout », satisfait par « toutes » — donc par
+#: « renvoie toutes les colonnes », qui promet l'EXHAUSTIVITÉ, le contraire
+#: exact de l'avertissement recherché. Il ne reste que des racines dont
+#: aucune ne s'obtient par un mot de sens inverse.
+_RACINES_D_AVERTISSEMENT = ("tronqu", "partiel", "incomplet", "peut manquer")
+
+
+def _avertit_de_la_troncature(description: str) -> bool:
+    """La description prévient-elle que la liste peut être incomplète ?"""
+    minuscules = description.lower()
+    return any(racine in minuscules for racine in _RACINES_D_AVERTISSEMENT)
+
+
 def test_la_limite_de_pagination_est_ecrite_dans_l_outil():
     """Une troncature silencieuse fait dire à l'agent « tu as N contacts »
     avec N faux. C'est le piège déjà documenté côté Twenty : un `limit=300`
@@ -94,9 +108,26 @@ def test_la_limite_de_pagination_est_ecrite_dans_l_outil():
     outil = next(t for t in TOOLS if t["name"] == "list_contacts")
 
     description = outil["description"].lower()
-    assert "limit" in description or "limite" in description
-    assert any(mot in description for mot in ("tronqu", "partiel", "tout")), (
+    # « limite » contient déjà « limit » : la seconde branche du `or` d'avant
+    # était morte, et une branche morte ne garde rien.
+    assert "limit" in description
+    assert _avertit_de_la_troncature(description), (
         "la description doit avertir que la liste peut être incomplète"
+    )
+
+
+@pytest.mark.parametrize(
+    "description",
+    [
+        # Le contre-exemple de B-083 : passait l'ancien critère par « toutes ».
+        "Liste les contacts. Utilise limit pour paginer. Renvoie toutes les colonnes.",
+        "Liste les contacts avec un paramètre limit.",
+    ],
+)
+def test_une_description_sans_avertissement_est_refusee(description):
+    """Le critère doit pouvoir dire NON, sinon il ne garde rien."""
+    assert not _avertit_de_la_troncature(description), (
+        "une description qui n'avertit pas de la troncature doit être refusée"
     )
 
 

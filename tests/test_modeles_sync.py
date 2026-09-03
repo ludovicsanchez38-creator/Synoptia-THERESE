@@ -44,7 +44,11 @@ class TestLesTablesExistent:
         with get_sync_connection() as conn:
             presentes = set(inspect(conn).get_table_names())
 
-        assert presentes >= TABLES_SYNC, TABLES_SYNC - presentes
+        # B-082 : `processing_tasks` etait surveillee par une chaine, jamais
+        # par une execution. Le contrat REEL est qu'elle existe apres le
+        # demarrage, comme les quatre tables sync.
+        attendues = TABLES_SYNC | {"processing_tasks"}
+        assert presentes >= attendues, attendues - presentes
 
     def test_env_alembic_importe_tous_les_modeles(self):
         """Un bootstrap neuf par Alembic doit voir TOUTES les tables - env.py
@@ -56,11 +60,44 @@ class TestLesTablesExistent:
 
     def test_database_importe_les_modeles_avant_create_all(self):
         """create_all ne crée que ce que la métadonnée connaît : les modules
-        doivent être importés par database.py, pas par hasard d'un routeur."""
-        source = (RACINE / "src/backend/app/models/database.py").read_text(encoding="utf-8")
+        doivent être importés par `init_db`, pas par hasard d'un routeur.
 
-        assert "entities_sync" in source
-        assert "processing" in source
+        B-082 : la garde cherchait les chaînes « entities_sync » et
+        « processing » dans TOUT le source de database.py. Or le fichier les
+        contient déjà ailleurs — « processing » dans le SQL de l'index
+        `ix_processing_tasks_created_at`, « entities_sync » dans un import
+        local d'une autre fonction. Retirer l'import surveillé laissait donc
+        les deux assertions vraies : le test survivait à la disparition exacte
+        de ce qu'il protège. On lit maintenant l'INSTRUCTION d'import, dans la
+        fonction qui appelle `create_all` ; ni un commentaire ni une chaîne
+        SQL ne peuvent la simuler.
+        """
+        import ast
+
+        source = (RACINE / "src/backend/app/models/database.py").read_text(encoding="utf-8")
+        arbre = ast.parse(source)
+
+        init_db = next(
+            (
+                noeud
+                for noeud in ast.walk(arbre)
+                if isinstance(noeud, ast.AsyncFunctionDef | ast.FunctionDef)
+                and noeud.name == "init_db"
+            ),
+            None,
+        )
+        assert init_db is not None, "init_db a disparu de database.py"
+
+        importes = {
+            alias.name
+            for noeud in ast.walk(init_db)
+            if isinstance(noeud, ast.ImportFrom) and noeud.module == "app.models"
+            for alias in noeud.names
+        }
+        assert {"entities_sync", "processing"} <= importes, (
+            "init_db doit importer les modules avant create_all, sinon "
+            f"leurs tables manquent au démarrage. importés={sorted(importes)}"
+        )
 
 
 class TestLeContratDesColonnes:

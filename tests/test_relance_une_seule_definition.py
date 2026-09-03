@@ -337,3 +337,48 @@ async def test_un_geste_vers_la_personne_solde_bien(db_session: AsyncSession):
         )
         await db_session.refresh(c)
         assert c.next_follow_up is None, f"{type_de_geste} doit solder la relance"
+
+
+@pytest.mark.asyncio
+async def test_une_echeance_posee_en_instant_utc_garde_son_jour_civil_paris(
+    client, db_session: AsyncSession
+):
+    """Une échéance envoyée en instant absolu ne doit pas avancer d'un jour.
+
+    `next_follow_up` est lu comme un JOUR décidé (`func.date` dans
+    `contacts_a_relancer`), mais l'API l'acceptait en instant brut. Or SQLite
+    JETTE le décalage à l'écriture : `2026-08-30T23:30:00Z` devenait
+    `2026-08-30 23:30`, dont la date lue est le 30 alors que le jour civil de
+    Paris est le 31. La relance tombait due le 30, un jour trop tôt, et
+    l'information nécessaire pour le rattraper à la lecture n'existait plus.
+    """
+    reponse = await client.post(
+        "/api/memory/contacts",
+        json={
+            "first_name": "Nadia",
+            "last_name": "Frontiere",
+            # 23 h 30 UTC = 1 h 30 le lendemain à Paris (heure d'été).
+            "next_follow_up": "2026-08-30T23:30:00Z",
+        },
+    )
+    assert reponse.status_code == 200, reponse.text
+    identifiant = reponse.json()["id"]
+
+    enregistre = await db_session.get(Contact, identifiant)
+    await db_session.refresh(enregistre)
+    assert enregistre is not None
+    assert enregistre.next_follow_up is not None
+    assert enregistre.next_follow_up.date().isoformat() == "2026-08-31", (
+        "le jour retenu doit être le jour civil de Paris, pas la date UTC"
+    )
+
+    # Le 30 à 22 h UTC, il est minuit passé de rien à Paris : on est le 30
+    # civil, et une échéance du 31 n'est pas encore due.
+    veille = datetime(2026, 8, 30, 20, 0, tzinfo=UTC)
+    trouves = (await db_session.execute(contacts_a_relancer(veille))).scalars().all()
+    assert trouves == [], "une échéance du 31 ne doit pas être due le 30"
+
+    # ... et elle l'est bien dès le 31 civil, qui commence à 22 h UTC le 30.
+    lendemain = datetime(2026, 8, 30, 22, 30, tzinfo=UTC)
+    dues = (await db_session.execute(contacts_a_relancer(lendemain))).scalars().all()
+    assert [c.id for c in dues] == [identifiant]

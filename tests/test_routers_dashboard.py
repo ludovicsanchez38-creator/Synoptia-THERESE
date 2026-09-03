@@ -13,6 +13,9 @@ from app.models.entities import (
 )
 from httpx import AsyncClient
 
+#: Jour du brief posé par les tests, jamais lu sur le runner (B-261).
+JOUR_DU_BRIEF = date(2026, 6, 15)
+
 
 class TestToday:
     @pytest.mark.asyncio
@@ -64,9 +67,18 @@ class TestToday:
 
     @pytest.mark.asyncio
     async def test_today_agrege_relances_et_enjeu_des_evenements(
-        self, client: AsyncClient, db_session
+        self, client: AsyncClient, db_session, monkeypatch
     ):
-        now = datetime.now()
+        """B-261 : le brief compte en jour civil de PARIS, pas en jour du runner.
+
+        `date.today()` posait le rendez-vous et la relance sur la date locale
+        du runner ; sous `TZ=UTC` après 22 h ce n'est plus le jour du brief, et
+        `data["events"][0]` levait un IndexError. On POSE l'horloge du brief.
+        """
+        monkeypatch.setattr(
+            "app.routers.dashboard.date_civile_paris", lambda *_a, **_k: JOUR_DU_BRIEF
+        )
+        now = datetime.combine(JOUR_DU_BRIEF, time(9, 0))
         contact = Contact(
             id="ct-brief-client",
             first_name="Camille",
@@ -92,15 +104,15 @@ class TestToday:
             id="event-brief",
             calendar_id=calendar.id,
             summary="Point client",
-            start_datetime=datetime.combine(date.today(), time(10, 0)),
-            end_datetime=datetime.combine(date.today(), time(11, 0)),
+            start_datetime=datetime.combine(JOUR_DU_BRIEF, time(10, 0)),
+            end_datetime=datetime.combine(JOUR_DU_BRIEF, time(11, 0)),
             attendees='[{"email":"Camille@Example.Test"}]',
         )
         follow_up = EmailFollowUp(
             id="follow-up-brief",
             email_message_id=message.id,
             contact_id=contact.id,
-            due_date=date.today().isoformat() + "T12:00:00",
+            due_date=JOUR_DU_BRIEF.isoformat() + "T12:00:00",
             note="Rappeler après lecture",
         )
         db_session.add_all([contact, account, message, calendar, meeting, follow_up])
@@ -160,12 +172,20 @@ class TestToday:
 
     @pytest.mark.asyncio
     async def test_today_tache_due_demain_minuit_pas_urgente(
-        self, client: AsyncClient, db_session
+        self, client: AsyncClient, db_session, monkeypatch
     ):
         """BUG-125 (revue) : off-by-one - une tâche due DEMAIN à 00:00 pile
         n'est pas urgente aujourd'hui. Le filtre `due_date <= demain minuit`
-        l'incluait à tort ; il faut une borne stricte `< demain minuit`."""
-        tomorrow_midnight = datetime.combine(date.today() + timedelta(days=1), time(0, 0))
+        l'incluait à tort ; il faut une borne stricte `< demain minuit`.
+
+        B-261 : « demain » se compte depuis le jour civil de PARIS. Lu sur le
+        runner en `TZ=UTC` après 22 h, `date.today() + 1` désignait le jour
+        MÊME du brief, et la tâche était urgente à bon droit : le test
+        rougissait sans qu'aucune borne n'ait bougé. On pose l'horloge."""
+        monkeypatch.setattr(
+            "app.routers.dashboard.date_civile_paris", lambda *_a, **_k: JOUR_DU_BRIEF
+        )
+        tomorrow_midnight = datetime.combine(JOUR_DU_BRIEF + timedelta(days=1), time(0, 0))
         db_session.add(
             Task(id="tk-tomorrow", title="Tâche de demain", status="todo",
                  due_date=tomorrow_midnight)

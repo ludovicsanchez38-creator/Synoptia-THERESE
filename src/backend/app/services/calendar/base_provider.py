@@ -31,6 +31,17 @@ def allday_end_from_wire(start: date, end: date) -> date:
     return max(start, end - timedelta(days=1))
 
 
+class ConflitDeVersion(Exception):
+    """L'événement a changé côté serveur entre sa lecture et son écriture.
+
+    B-029 puis B-260 : une lecture-modification-écriture sans précondition
+    écrase en silence ce qu'un autre écrivain a fait entre-temps (le téléphone
+    de l'utilisateur, typiquement). Le serveur refuse alors le PUT en 412 ;
+    l'appelant a besoin de NOMMER ce refus pour proposer le seul geste utile,
+    recharger avant d'enregistrer, au lieu d'afficher une panne.
+    """
+
+
 @dataclass
 class CalendarDTO:
     """Data Transfer Object for calendars."""

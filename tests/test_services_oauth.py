@@ -298,6 +298,22 @@ async def test_handle_callback_success(oauth_service, oauth_config):
     # Le flow doit être supprimé après utilisation
     assert state not in oauth_service._pending_flows
 
+    # B-012 : les assertions ci-dessus comparent le retour à la valeur que le
+    # test a lui-même écrite dans le mock. Elles restaient vertes sur une
+    # implémentation qui n'envoie PLUS `code_verifier` — PKCE cassé, donc
+    # `invalid_grant` garanti chez Google. On regarde maintenant ce qui PART.
+    assert mock_post.await_count == 1, mock_post.await_count
+    assert mock_post.call_args.args[0] == oauth_config.token_url, mock_post.call_args
+    envoye = mock_post.call_args.kwargs["data"]
+    assert envoye["code"] == "4/0AX4XfWh..."
+    assert envoye["code_verifier"] == verifier, (
+        "le vérifieur PKCE doit partir tel quel : sans lui, le serveur de "
+        "jetons refuse l'échange (invalid_grant)"
+    )
+    assert envoye["grant_type"] == "authorization_code"
+    assert envoye["redirect_uri"] == oauth_config.redirect_uri
+    assert envoye["client_id"] == oauth_config.client_id
+
 
 # ============================================================
 # Tests : Refresh token
@@ -331,6 +347,16 @@ async def test_refresh_access_token_success(oauth_config):
     assert result["access_token"] == "ya29.a0AfH6SMBx_new..."
     assert result["expires_in"] == 3600
     assert result["token_type"] == "Bearer"
+
+    # B-012 : même angle mort côté rafraîchissement. Un jeton de
+    # rafraîchissement parti VIDE laissait ce test vert, alors que la
+    # reconnexion échoue à chaque expiration d'accès.
+    assert mock_post.await_count == 1, mock_post.await_count
+    assert mock_post.call_args.args[0] == oauth_config.token_url, mock_post.call_args
+    envoye = mock_post.call_args.kwargs["data"]
+    assert envoye["refresh_token"] == refresh_token
+    assert envoye["grant_type"] == "refresh_token"
+    assert envoye["client_id"] == oauth_config.client_id
 
 
 @pytest.mark.asyncio
