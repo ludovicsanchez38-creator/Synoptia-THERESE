@@ -1,0 +1,1037 @@
+/* ============================================================
+   V7 SOFT EDITORIAL (handoff Mac 27/05/2026)
+   Rigueur editoriale du brutaliste + palette + rainbow Synoptia.
+   Le jaune fluo est remplace par le gradient rainbow PROPULSER.
+   ============================================================ */
+
+@font-face { font-family:'Inter'; font-style:normal; font-weight:400; src:url('fonts/Inter-Regular.woff2') format('woff2'); }
+@font-face { font-family:'Inter'; font-style:normal; font-weight:500; src:url('fonts/Inter-Medium.woff2') format('woff2'); }
+@font-face { font-family:'Inter'; font-style:normal; font-weight:600; src:url('fonts/Inter-SemiBold.woff2') format('woff2'); }
+@font-face { font-family:'Inter'; font-style:normal; font-weight:700; src:url('fonts/Inter-Bold.woff2') format('woff2'); }
+@font-face { font-family:'Inter'; font-style:normal; font-weight:900; src:url('fonts/Inter-Black.woff2') format('woff2'); }
+
+/* Plus Jakarta Sans (Synoptia display) via Google Fonts pour preview.
+   Chrome headless --headless=new charge bien les Google Fonts (avec reseau dispo). */
+@font-face { font-family:'Plus Jakarta Sans'; font-style:normal; font-weight:200 800; src:url('fonts/plusjakartasans-latin-wghtOnly-normal.woff2') format('woff2'); }
+
+:root {
+  --ink: #0F172A;
+  --ink-muted: #475569;
+  --paper: #FAFAF7;
+  --rule: #0F172A;
+  --hairline: rgba(15,23,42,.14);
+
+  --blue: #2451FF;
+  --cyan: #0891B2;
+  --magenta: #DB2777;
+  --rb-1: #FF6B6B;  --rb-2: #FFA94D;  --rb-3: #FFE066;
+  --rb-4: #69DB7C;  --rb-5: #22D3EE;  --rb-6: #748FFC;
+  --rb-7: #B197FC;  --rb-8: #F06595;
+
+  --grad-rainbow: linear-gradient(90deg,
+    #FF6B6B 0%, #FFA94D 14%, #FFE066 28%, #69DB7C 42%,
+    #22D3EE 56%, #748FFC 70%, #B197FC 84%, #F06595 100%);
+  --grad-hero: linear-gradient(90deg, #2451FF 0%, #E11D8D 55%, #22D3EE 100%);
+}
+
+@page { size: A4 portrait; margin: 0; }
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+html, body {
+  font-family: 'Inter', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 16px; line-height: 1.6; font-weight: 400;
+  color: var(--ink);
+  background: #ddd;
+  -webkit-font-smoothing: antialiased;
+}
+
+.page {
+  width: 210mm; min-height: 297mm;
+  background: var(--paper);
+  padding: 16mm 16mm 14mm 16mm;
+  position: relative;
+  margin: 0 auto;
+  overflow: hidden;
+  page-break-after: always;
+}
+.page:last-child { page-break-after: auto; }
+
+/* ============================================================
+   COVER page 1
+   ============================================================ */
+.page.cover { padding: 0; }
+
+.cover-hero {
+  padding: 22mm 16mm 14mm 16mm;
+  position: relative;
+  background:
+    radial-gradient(120% 80% at 0% 0%, rgba(34,211,238,.10) 0%, transparent 55%),
+    radial-gradient(110% 90% at 100% 100%, rgba(225,29,141,.06) 0%, transparent 60%),
+    var(--paper);
+  border-bottom: 1px solid var(--hairline);
+}
+
+.eyebrow {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 4px; text-transform: uppercase;
+  color: var(--cyan);
+  margin-bottom: 18px;
+}
+.eyebrow.ink { color: var(--ink-muted); }
+
+.cover-propulser {
+  display: block;
+  width: 130mm; max-width: 100%;
+  height: auto;
+  margin: 0 0 6mm 0;
+  filter: drop-shadow(0 6px 18px rgba(15,23,42,.10));
+}
+
+.cover-tagline {
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-size: 13px; font-weight: 600;
+  letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.cover-h1 {
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-size: 28px; font-weight: 500;
+  color: var(--ink-muted); margin-top: 22mm; margin-bottom: 6px;
+  letter-spacing: -.01em;
+}
+
+.cover-h2 {
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-size: clamp(40px, 9vw, 80px); font-weight: 900;
+  letter-spacing: -3px; line-height: .95;
+  color: var(--ink);
+  margin-bottom: 14px;
+}
+.cover-h2 .rb-dot {
+  display: inline-block;
+  width: .55em; height: .55em; border-radius: 50%;
+  background: var(--grad-rainbow);
+  vertical-align: baseline;
+  margin-left: 4px;
+}
+
+.cover-sub {
+  font-size: 16px; font-weight: 500; line-height: 1.5;
+  color: var(--ink); opacity: .8;
+  max-width: 130mm;
+}
+
+.cover-meta {
+  margin-top: 14mm;
+  padding-top: 14px;
+  border-top: 1.5px solid var(--ink);
+  display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px;
+}
+.cover-meta .key {
+  display: block;
+  font-size: 9.5px; font-weight: 700;
+  letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--cyan); margin-bottom: 4px;
+}
+.cover-meta .val {
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-size: 14px; font-weight: 700;
+  color: var(--ink); line-height: 1.3;
+}
+
+.rainbow-bar {
+  height: 6px;
+  background: var(--grad-rainbow);
+  width: 100%;
+}
+
+.cover-identity {
+  padding: 14mm 16mm 0 16mm;
+  display: grid; grid-template-columns: 1fr 1fr; gap: 28px;
+}
+.cover-identity .col h4 {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 4px; text-transform: uppercase;
+  color: var(--blue);
+  margin-bottom: 10px;
+}
+.cover-identity .col p {
+  font-size: 14px; font-weight: 600; line-height: 1.55;
+  color: var(--ink);
+}
+
+/* ============================================================
+   SECTION HEADER (pages 2+)
+   ============================================================ */
+.sec-head {
+  display: flex; align-items: flex-end; gap: 22px;
+  margin-bottom: 4px;
+}
+.sec-num {
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-size: 76px; font-weight: 900;
+  letter-spacing: -4px; line-height: .85;
+  color: var(--ink);
+}
+.sec-num .accent {
+  /* iPhone PDFKit safe: solid color (le "." est purement decoratif - magenta brand) */
+  color: var(--magenta);
+}
+.sec-head .meta { padding-bottom: 10px; }
+.sec-head .label {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 4px; text-transform: uppercase;
+  color: var(--cyan); margin-bottom: 6px;
+}
+.sec-head h2 {
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-size: 22px; font-weight: 800;
+  letter-spacing: -.5px; line-height: 1.1;
+  color: var(--ink);
+}
+
+.divider-strong {
+  border: 0;
+  height: 3px;
+  background: var(--grad-rainbow);
+  margin: 10px 0 14px 0;
+}
+.divider-rainbow {
+  border: 0;
+  height: 4px;
+  background: var(--grad-rainbow);
+  margin: 10px 0 14px 0;
+}
+
+/* ============================================================
+   CARDS / BOXES
+   ============================================================ */
+.box {
+  background: #FFFFFF;
+  border: 1.5px solid var(--ink);
+  border-radius: 4px;
+  padding: 16px 22px;
+  margin: 10px 0;
+}
+.box.elev { box-shadow: 0 3px 0 var(--ink); }
+
+.box-row {
+  display: grid; grid-template-columns: 38% 62%;
+  gap: 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--hairline);
+}
+.box-row:last-child { border-bottom: none; }
+.box-row .k {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 1.5px; text-transform: uppercase;
+  color: var(--cyan);
+}
+.box-row .v {
+  font-size: 13.5px; line-height: 1.5;
+}
+.box-row .v strong { font-weight: 700; }
+
+.box-rainbow {
+  position: relative;
+  background: #FFFFFF;
+  border: 1.5px solid var(--ink);
+  border-radius: 4px;
+  padding: 18px 22px 16px 22px;
+  margin: 14px 0;
+  overflow: hidden;
+}
+.box-rainbow::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0;
+  height: 5px; background: var(--grad-rainbow);
+}
+.box-rainbow .rb-label {
+  font-size: 11px; font-weight: 800;
+  letter-spacing: 4px; text-transform: uppercase;
+  color: var(--magenta);
+  margin-bottom: 10px;
+  margin-top: 4px;
+}
+.box-rainbow .rb-body {
+  font-size: 14px; line-height: 1.55; font-weight: 500;
+  color: var(--ink);
+}
+.box-rainbow .rb-body strong { font-weight: 700; }
+
+.box-price {
+  background: #0B1226;
+  color: #FFFFFF;
+  border-radius: 4px;
+  padding: 22px 26px 20px 26px;
+  margin: 12px 0;
+  position: relative;
+  overflow: hidden;
+}
+.box-price::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0;
+  height: 5px; background: var(--grad-rainbow);
+}
+.box-price .label {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 5px; text-transform: uppercase;
+  color: #B6C7DA;
+  margin-bottom: 8px;
+}
+.box-price .amount {
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-size: 64px; font-weight: 900;
+  letter-spacing: -3px; line-height: 1;
+  /* iPhone PDFKit safe: pas de gradient background sur du texte (risque bloc opaque).
+     Couleur solide cyan brand qui contraste avec le fond navy (#0B1226). */
+  color: #22D3EE;
+}
+.box-price .amount-suffix {
+  font-family: 'Inter', sans-serif;
+  font-size: 22px; font-weight: 700; color: #E6EDF7;
+  margin-left: 4px;
+  -webkit-text-fill-color: #E6EDF7;
+}
+.box-price .sub {
+  font-size: 13.5px; font-weight: 500; color: #E6EDF7;
+  margin-top: 10px;
+  opacity: .9;
+}
+.box-price .sub .promo {
+  background: rgba(34,211,238,.18);
+  border: 1px solid rgba(34,211,238,.4);
+  padding: 2px 8px; border-radius: 3px;
+  color: #67E8F9; font-weight: 700;
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  letter-spacing: .5px;
+}
+
+.price-row {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 14px;
+  margin-top: 14px;
+}
+.price-card {
+  background: #FFFFFF;
+  border: 1.5px solid var(--ink);
+  border-top: 4px solid var(--blue);
+  border-radius: 4px;
+  padding: 16px 18px;
+}
+.price-card.b { border-top-color: var(--magenta); }
+.price-card .tag {
+  font-size: 10px; font-weight: 800;
+  letter-spacing: 3px; text-transform: uppercase;
+  color: var(--blue); margin-bottom: 6px;
+}
+.price-card.b .tag { color: var(--magenta); }
+.price-card .amt {
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-size: 30px; font-weight: 900;
+  letter-spacing: -1.5px; line-height: 1; color: var(--ink);
+}
+.price-card .detail {
+  font-size: 12px; line-height: 1.5; margin-top: 8px;
+  color: var(--ink);
+}
+.price-card .detail .strike {
+  color: var(--ink-muted); text-decoration: line-through;
+}
+.price-card .detail strong { font-weight: 700; }
+
+/* ============================================================
+   TYPOGRAPHY (body)
+   ============================================================ */
+.lead {
+  font-size: 16px; line-height: 1.55; font-weight: 500;
+  color: var(--ink); margin: 14px 0 18px 0;
+}
+.lead strong { font-weight: 700; }
+.body {
+  font-size: 13.5px; line-height: 1.6;
+  color: var(--ink); margin-bottom: 12px;
+}
+.body strong { font-weight: 700; }
+
+.hl, .highlight-text {
+  /* iPhone PDFKit safe: couleur solide magenta brand (anciennement gradient rainbow) */
+  color: var(--magenta);
+  font-weight: 800;
+}
+
+.hl-bar {
+  /* iPhone PDFKit safe: bordure inferieure solide au lieu de gradient stops (bloc jaune fluo risque) */
+  border-bottom: 2.5px solid var(--magenta);
+  padding: 0 1px 1px 1px;
+  font-weight: 700;
+}
+
+.tag-blue {
+  display: inline-block;
+  font-size: 10px; font-weight: 800;
+  letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--blue);
+  border: 1px solid var(--blue);
+  padding: 3px 8px; border-radius: 999px;
+}
+.tag-cyan {
+  display: inline-block;
+  font-size: 10px; font-weight: 800;
+  letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--cyan);
+  border: 1px solid var(--cyan);
+  padding: 3px 8px; border-radius: 999px;
+}
+.tag-magenta {
+  display: inline-block;
+  font-size: 10px; font-weight: 800;
+  letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--magenta);
+  border: 1px solid var(--magenta);
+  padding: 3px 8px; border-radius: 999px;
+}
+
+/* ============================================================
+   3-COL BESOINS TABLE
+   ============================================================ */
+.table-3 {
+  border-top: 2px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
+  margin: 14px 0;
+}
+.table-3 .row {
+  display: grid; grid-template-columns: 26% 37% 37%;
+  border-bottom: 1px solid var(--hairline);
+}
+.table-3 .row.head {
+  background: var(--ink);
+  color: #FFFFFF;
+}
+.table-3 .row.head > div {
+  font-size: 10px; letter-spacing: 3px; text-transform: uppercase;
+  font-weight: 800;
+  padding: 10px 12px;
+  color: #FFFFFF;
+}
+.table-3 .row > div {
+  padding: 12px;
+  font-size: 12.5px; line-height: 1.5;
+}
+.table-3 .col-num {
+  font-weight: 800; font-size: 13px;
+  display: flex; align-items: center; gap: 10px;
+}
+.table-3 .col-num .num {
+  display: inline-flex;
+  width: 26px; height: 26px;
+  background: var(--grad-rainbow);
+  color: #FFFFFF;
+  border-radius: 50%;
+  align-items: center; justify-content: center;
+  font-weight: 900; font-size: 12px;
+  flex-shrink: 0;
+}
+.table-3 .col-today { color: var(--ink-muted); }
+.table-3 .col-goal { font-weight: 500; }
+.table-3 .col-goal .h {
+  /* iPhone PDFKit safe: bordure inferieure cyan au lieu de gradient stops */
+  border-bottom: 2px solid var(--cyan);
+  padding: 0 2px 1px 2px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* Footer */
+.foot {
+  position: absolute; bottom: 0; left: 0; right: 0;
+  background: #0B1226;
+  color: #B6C7DA;
+  padding: 12px 20px;
+  font-size: 8.5px; font-weight: 500;
+  letter-spacing: 1.4px; text-transform: uppercase;
+  line-height: 1.7;
+}
+.foot .y { color: #67E8F9; font-weight: 700; }
+
+/* Page number */
+.pgn {
+  position: absolute; top: 14mm; right: 16mm;
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 3px; text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.pgn .cur {
+  /* iPhone PDFKit safe: bleu solide brand */
+  color: var(--blue);
+  font-weight: 900;
+  font-size: 12px;
+}
+
+/* Bullets */
+ul.bullets { list-style: none; padding: 0; margin: 8px 0 14px 0; }
+ul.bullets li {
+  position: relative;
+  padding: 4px 0 4px 22px;
+  font-size: 13px; line-height: 1.5; font-weight: 500;
+}
+ul.bullets li::before {
+  content: "";
+  position: absolute;
+  left: 0; top: 11px;
+  width: 12px; height: 3px;
+  background: var(--grad-rainbow);
+  border-radius: 2px;
+}
+
+/* ============================================================
+   ACTES GRID (page 4 programme)
+   ============================================================ */
+.actes-grid {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  margin: 10px 0;
+}
+.acte-card {
+  background: #FFFFFF;
+  border: 1.5px solid var(--ink);
+  padding: 12px 12px 10px 12px;
+  position: relative;
+  display: flex; flex-direction: column;
+}
+.acte-card::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0;
+  height: 4px; background: var(--grad-rainbow);
+}
+.acte-num {
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-size: 38px; font-weight: 900;
+  letter-spacing: -2px; line-height: .85;
+  color: var(--ink);
+  margin-top: 4px;
+}
+.acte-num .dot {
+  /* iPhone PDFKit safe: magenta solide brand (purement decoratif - le ".") */
+  color: var(--magenta);
+}
+.acte-title {
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-size: 13.5px; font-weight: 800;
+  letter-spacing: -.3px; line-height: 1.2;
+  margin-top: 8px; margin-bottom: 6px;
+  color: var(--ink);
+}
+.acte-desc {
+  font-size: 10.5px; line-height: 1.4;
+  color: var(--ink);
+  margin-bottom: 8px;
+  flex: 1;
+}
+.acte-skills {
+  border-top: 1px solid var(--hairline);
+  padding-top: 8px;
+}
+.skill-label {
+  font-size: 9px; letter-spacing: 2px;
+  text-transform: uppercase; font-weight: 700;
+  color: var(--cyan); margin-bottom: 5px;
+}
+.skill-chip {
+  display: inline-block;
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-size: 10.5px; font-weight: 600;
+  background: var(--ink); color: #FFFFFF;
+  padding: 2px 7px;
+  margin: 2px 3px 2px 0;
+  letter-spacing: .2px;
+  border-radius: 2px;
+}
+
+/* ============================================================
+   LIVRABLES (page 4)
+   ============================================================ */
+.livrables-list {
+  margin: 10px 0 0 0;
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 0 22px;
+  border-top: 2px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
+}
+.livrable-row {
+  display: grid; grid-template-columns: 28px 1fr;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px solid var(--hairline);
+  align-items: baseline;
+}
+.livrable-row:nth-last-child(-n+2) { border-bottom: none; }
+.livrable-num {
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-size: 16px; font-weight: 900;
+  letter-spacing: -.5px;
+  line-height: 1;
+  color: var(--blue);
+}
+.livrable-content .name {
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-weight: 800; font-size: 11px;
+  line-height: 1.2;
+  margin-bottom: 2px;
+}
+.livrable-content .desc {
+  font-size: 10px; font-weight: 400;
+  line-height: 1.4;
+  color: var(--ink);
+}
+
+/* ============================================================
+   PUNCHLINE BLOCK (page 6)
+   ============================================================ */
+.box-quote {
+  background: #0B1226;
+  color: #FFFFFF;
+  padding: 18px 32px;
+  margin: 8px 0 12px 0;
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+}
+.box-quote::before {
+  content: ""; position: absolute; top: 0; left: 0; right: 0;
+  height: 6px; background: var(--grad-rainbow);
+}
+.box-quote-text {
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-size: 26px; font-weight: 900;
+  letter-spacing: -1.2px; line-height: 1.05;
+  color: #FFFFFF;
+}
+.box-quote-text .accent {
+  /* iPhone PDFKit safe: cyan solide qui contraste sur fond navy de la box-quote */
+  color: #22D3EE;
+}
+
+/* ============================================================
+   CONDITIONS B2B TABLE (page 6)
+   ============================================================ */
+.conditions-table {
+  border-top: 2px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
+  margin: 12px 0;
+}
+.conditions-table .row {
+  display: grid; grid-template-columns: 30% 70%;
+  border-bottom: 1px solid var(--hairline);
+}
+.conditions-table .row:last-child { border-bottom: none; }
+.conditions-table .k {
+  padding: 5px 14px 5px 0;
+  font-size: 9.5px; font-weight: 700;
+  letter-spacing: 1.2px; text-transform: uppercase;
+  color: var(--cyan);
+  line-height: 1.35;
+}
+.conditions-table .v {
+  padding: 5px 0 5px 14px;
+  font-size: 10px; line-height: 1.45;
+  color: var(--ink);
+  border-left: 1px solid var(--hairline);
+}
+.conditions-table .v strong { font-weight: 700; }
+
+/* ============================================================
+   SIGNATURE BLOCK (page 7)
+   ============================================================ */
+.sig-intro {
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-size: 26px; font-weight: 700;
+  line-height: 1.2; letter-spacing: -.5px;
+  margin-bottom: 22px;
+  color: var(--ink);
+}
+.sig-intro .accent {
+  /* iPhone PDFKit safe: magenta solide brand (anciennement rainbow - risque bloc jaune fluo sur iOS) */
+  color: var(--magenta);
+  font-weight: 900;
+}
+.sig-block-wrap {
+  margin-top: 6mm;
+}
+.sig-block-wrap .sig-pre {
+  font-size: 11px; font-weight: 700;
+  letter-spacing: 3px; text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 12px;
+}
+.sig-mega {
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-size: 72px; font-weight: 900;
+  letter-spacing: -4px; line-height: .9;
+  color: var(--ink);
+}
+.sig-mega .dot {
+  display: inline-block;
+  width: .12em; height: .12em;
+  border-radius: 50%;
+  background: var(--grad-rainbow);
+  vertical-align: baseline;
+  margin-left: 6px;
+}
+.sig-role {
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-size: 13px; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-top: 10px;
+}
+.sig-contact {
+  font-size: 13px; font-weight: 500;
+  margin-top: 16px; line-height: 1.7;
+  color: var(--ink);
+}
+.sig-contact .mail {
+  background: var(--ink); color: #FFFFFF;
+  padding: 3px 8px;
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-weight: 700; font-size: 12px;
+}
+.sig-contact .phone { font-weight: 700; }
+.sig-contact .web {
+  /* iPhone PDFKit safe: bleu solide brand + soulignement subtil (lien/reference) */
+  color: var(--blue);
+  font-weight: 800;
+  border-bottom: 2px solid currentColor;
+}
+
+/* ============================================================
+   SIDE NOTE
+   ============================================================ */
+.side-note {
+  font-size: 10.5px; font-style: italic;
+  color: var(--ink-muted);
+  line-height: 1.5;
+  margin-top: 10px;
+}
+.side-note strong { color: var(--ink); font-style: normal; }
+
+/* ============================================================
+   ANNEXE
+   ============================================================ */
+.annexe-cover-wrap {
+  padding: 14mm 16mm 8mm 16mm;
+  background:
+    radial-gradient(120% 80% at 0% 0%, rgba(34,211,238,.10) 0%, transparent 55%),
+    radial-gradient(110% 90% at 100% 100%, rgba(225,29,141,.06) 0%, transparent 60%),
+    var(--paper);
+  border-bottom: 1px solid var(--hairline);
+  position: relative;
+}
+.annexe-cover-propulser {
+  display: block;
+  width: 80mm; max-width: 100%;
+  height: auto;
+  margin: 0 0 4mm 0;
+  filter: drop-shadow(0 6px 18px rgba(15,23,42,.10));
+}
+.annexe-cover-pill {
+  display: inline-block;
+  background: var(--ink);
+  color: #FFFFFF;
+  padding: 4px 10px;
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-size: 10px; font-weight: 800;
+  letter-spacing: 5px; text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.annexe-cover-h1 {
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-size: 48px; font-weight: 900;
+  letter-spacing: -2px; line-height: .92;
+  color: var(--ink);
+}
+.annexe-cover-h1 .dot {
+  display: inline-block;
+  width: .14em; height: .14em;
+  border-radius: 50%;
+  background: var(--grad-rainbow);
+  vertical-align: baseline;
+  margin-left: 6px;
+}
+.annexe-cover-sub {
+  font-size: 13px; font-weight: 500; line-height: 1.5;
+  color: var(--ink); opacity: .85;
+  margin-top: 3mm;
+  max-width: 150mm;
+}
+.annexe-meta-grid {
+  margin: 6mm 0 4mm 0;
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 0;
+  background: #0B1226;
+  color: #FFFFFF;
+  overflow: hidden;
+}
+.annexe-meta-grid .cell {
+  padding: 8px 14px;
+  border-bottom: 1px solid rgba(255,255,255,.10);
+  border-right: 1px solid rgba(255,255,255,.10);
+}
+.annexe-meta-grid .cell:nth-child(2n) { border-right: none; }
+.annexe-meta-grid .cell:nth-last-child(-n+2) { border-bottom: none; }
+.annexe-meta-grid .key {
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 2.5px; text-transform: uppercase;
+  color: #22D3EE;
+  margin-bottom: 4px;
+  display: block;
+}
+.annexe-meta-grid .val {
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-size: 12.5px; font-weight: 700;
+  color: #FFFFFF;
+}
+
+.sommaire {
+  margin: 8px 0;
+  border-top: 2px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
+}
+.sommaire .row {
+  display: grid; grid-template-columns: 50px 1fr 30px;
+  gap: 12px; align-items: baseline;
+  padding: 5px 0;
+  border-bottom: 1px solid var(--hairline);
+}
+.sommaire .row:last-child { border-bottom: none; }
+.sommaire .num {
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-size: 20px; font-weight: 900;
+  letter-spacing: -1px;
+  color: var(--ink);
+  line-height: 1;
+}
+.sommaire .ttl {
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-size: 12px; font-weight: 700;
+  letter-spacing: .1px;
+  color: var(--ink);
+}
+.sommaire .pg {
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 1.5px;
+  color: var(--cyan);
+  text-align: right;
+}
+
+.temoignage {
+  background: #FFFFFF;
+  border: 1.5px solid var(--ink);
+  padding: 10px 18px 9px 18px;
+  margin: 8px 0;
+  position: relative;
+}
+.temoignage::before {
+  content: ""; position: absolute; top: 0; left: 0; bottom: 0;
+  width: 4px; background: var(--grad-rainbow);
+}
+.temoignage-author {
+  font-size: 9.5px; font-weight: 800;
+  letter-spacing: 2.5px; text-transform: uppercase;
+  color: var(--magenta);
+  margin-bottom: 5px;
+}
+.temoignage-text {
+  font-size: 11px; line-height: 1.45;
+  font-weight: 500; color: var(--ink);
+  font-style: italic;
+}
+
+.faq-item {
+  margin: 5px 0;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--hairline);
+}
+.faq-item:last-child { border-bottom: none; }
+.faq-q {
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+  font-size: 11.5px; font-weight: 800;
+  letter-spacing: -.2px;
+  margin-bottom: 3px;
+  display: flex; gap: 8px;
+  align-items: flex-start;
+}
+.faq-q-num {
+  background: var(--ink); color: #FFFFFF;
+  padding: 1px 7px;
+  font-weight: 800; font-size: 9.5px;
+  letter-spacing: 1px;
+  flex-shrink: 0; margin-top: 1px;
+  font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+}
+.faq-a {
+  font-size: 10.5px; line-height: 1.45;
+  font-weight: 400; color: var(--ink);
+  padding-left: 28px;
+}
+.faq-a strong { font-weight: 700; }
+.faq-a .hl, .faq-a .highlight-text {
+  /* iPhone PDFKit safe: magenta solide brand */
+  color: var(--magenta);
+  font-weight: 800;
+}
+.faq-a .hl-mark {
+  /* iPhone PDFKit safe: bordure inferieure cyan au lieu de gradient stops */
+  border-bottom: 2px solid var(--cyan);
+  padding: 0 1px 1px 1px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.prudence {
+  font-size: 10.5px; font-style: italic;
+  color: var(--ink-muted);
+  line-height: 1.5;
+  margin-top: 12px;
+  padding: 10px 14px;
+  background: rgba(15,23,42,.03);
+  border-left: 3px solid var(--cyan);
+}
+.prudence strong { color: var(--ink); font-style: normal; }
+
+.data-grid {
+  border-top: 2px solid var(--ink);
+  border-bottom: 2px solid var(--ink);
+  margin: 12px 0;
+}
+.data-grid .row {
+  display: grid; grid-template-columns: 32% 68%;
+  border-bottom: 1px solid var(--hairline);
+}
+.data-grid .row:last-child { border-bottom: none; }
+.data-grid .k {
+  padding: 8px 14px 8px 0;
+  font-size: 10.5px; font-weight: 700;
+  letter-spacing: 1.4px; text-transform: uppercase;
+  color: var(--cyan);
+  line-height: 1.4;
+}
+.data-grid .v {
+  padding: 8px 0 8px 14px;
+  font-size: 12px; line-height: 1.5;
+  color: var(--ink);
+  border-left: 1px solid var(--hairline);
+}
+.data-grid .v strong { font-weight: 700; }
+.data-grid .v .hl-mark {
+  /* iPhone PDFKit safe: bordure inferieure magenta brand (anti-bloc-jaune-fluo iOS) */
+  border-bottom: 2px solid var(--magenta);
+  padding: 0 1px 1px 1px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.data-grid .v .hl-pink {
+  /* iPhone PDFKit safe: couleur solide magenta brand */
+  color: var(--magenta);
+  font-weight: 700;
+}
+
+.data-grid.dark .row.head {
+  background: var(--ink); color: #FFFFFF;
+}
+.data-grid.dark .row.head .k {
+  color: #22D3EE;
+  padding: 10px 12px;
+  font-weight: 800;
+  letter-spacing: 2.5px;
+}
+.data-grid.dark .row.head .v {
+  color: #FFFFFF;
+  padding: 10px 12px;
+  border-left: none;
+  font-weight: 700;
+}
+</content>
+</invoke>
+/* ============================================================
+   RAYONNER — composants additionnels (iPhone PDFKit safe)
+   ============================================================ */
+.wordmark {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 30px; font-weight: 900;
+  letter-spacing: -1.5px; color: var(--ink);
+  line-height: 1; margin-bottom: 6px;
+}
+.wordmark.sm { font-size: 26px; letter-spacing: -1.3px; }
+.wordmark .dot {
+  display: inline-block; width: .15em; height: .15em;
+  border-radius: 50%; background: var(--magenta);
+  vertical-align: baseline; margin-left: 3px;
+}
+
+/* Bandeau total reste à charge dans un data-grid */
+.calc-total .k { background: #0B1226; color: #22D3EE !important; }
+.calc-total .v { background: #0B1226; color: #FFFFFF !important; border-left-color: rgba(255,255,255,.15) !important; }
+.calc-total .v strong { font-size: 15px; color: #22D3EE; }
+
+/* Grille de formules (1 à 3 paliers) */
+.tier-grid { display: grid; gap: 11px; margin: 14px 0; }
+.tier-grid.n1 { grid-template-columns: 1fr; }
+.tier-grid.n2 { grid-template-columns: 1fr 1fr; }
+.tier-grid.n3 { grid-template-columns: 1fr 1fr 1fr; }
+.tier-card {
+  background: #FFFFFF; border: 1.5px solid var(--ink);
+  border-top: 4px solid var(--cyan); border-radius: 4px;
+  padding: 13px 13px 11px 13px; display: flex; flex-direction: column;
+}
+.tier-card.blue { border-top-color: var(--blue); }
+.tier-card.reco { border: 2px solid var(--magenta); border-top: 5px solid var(--magenta); box-shadow: 0 3px 0 var(--magenta); }
+.tier-card .tier-tag {
+  font-size: 9px; font-weight: 800; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--cyan); margin-bottom: 7px;
+}
+.tier-card.blue .tier-tag { color: var(--blue); }
+.tier-card.reco .tier-tag { color: var(--magenta); }
+.tier-card .tier-amt {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 29px; font-weight: 900; letter-spacing: -1.5px;
+  line-height: 1; color: var(--ink);
+}
+.tier-card .tier-amt span { font-size: 13px; font-weight: 700; }
+.tier-card .tier-amt .strike { font-size: 13px; font-weight: 600; color: var(--ink-muted); text-decoration: line-through; margin-right: 6px; }
+.tier-card .tier-dur {
+  font-size: 10px; font-weight: 700; color: var(--ink-muted);
+  margin: 6px 0 8px 0; letter-spacing: .2px; line-height: 1.35;
+}
+.tier-card ul {
+  list-style: none; padding: 0; margin: 0;
+  border-top: 1px solid var(--hairline); padding-top: 8px; flex: 1;
+}
+.tier-card li {
+  font-size: 10px; line-height: 1.4; padding: 3px 0 3px 12px;
+  position: relative; color: var(--ink); font-weight: 500;
+}
+.tier-card li::before {
+  content: ""; position: absolute; left: 0; top: 7px;
+  width: 7px; height: 2.5px; background: var(--cyan); border-radius: 2px;
+}
+.tier-card.blue li::before { background: var(--blue); }
+.tier-card.reco li::before { background: var(--magenta); }
+.tier-card .tier-rac {
+  margin-top: 9px; font-size: 9px; font-weight: 800; letter-spacing: .6px;
+  text-transform: uppercase; color: var(--ink);
+  border-top: 1px solid var(--hairline); padding-top: 7px;
+}
+.tier-card.reco .tier-rac { color: var(--magenta); }
+
+/* Étapes numérotées */
+.steps { margin: 12px 0; }
+.step {
+  display: grid; grid-template-columns: 34px 1fr; gap: 12px;
+  padding: 9px 0; border-bottom: 1px solid var(--hairline); align-items: baseline;
+}
+.step:last-child { border-bottom: none; }
+.step .n {
+  font-family: 'Plus Jakarta Sans', sans-serif;
+  font-size: 18px; font-weight: 900; color: var(--blue); line-height: 1;
+}
+.step .t { font-size: 13px; line-height: 1.5; color: var(--ink); }
+.step .t strong { font-weight: 700; }
