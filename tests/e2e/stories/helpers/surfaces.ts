@@ -282,12 +282,23 @@ export async function poserUnModeleActif(requete: APIRequestContext): Promise<vo
  * La pose du modèle est un appel DISTINCT, jamais glissé dans
  * `passerLaMiseEnRoute` : celle-ci sort tôt dès que la mise en route est déjà
  * faite, et emporterait la pose avec elle à partir du deuxième parcours.
+ *
+ * AUCUNE attente sur le réseau ici (B-269, 03/09/2026). `waitForLoadState(
+ * 'networkidle')` réclame une demi-seconde sans la moindre requête en vol :
+ * c'est une propriété de la MACHINE, pas de l'application, et un poste chargé
+ * ne l'offre pas dans le budget imparti alors même que la coque est montée
+ * depuis longtemps. Mesuré sur ce dépôt à cinq travailleurs, charge 62 : douze
+ * parcours sur quatre-vingt-dix-huit tombaient là, tous à l'AMORÇAGE, aucun
+ * sur une assertion. Les deux attentes qui suivent disent mieux la même chose
+ * et ne dépendent que de l'application : `app-main` prouve que la coque est
+ * rendue, le registre d'actions qu'elle a fini de se déclarer. Si un jour un
+ * parcours exige une requête terminée, on attendra CET état précis, jamais un
+ * délai.
  */
 export async function ouvrirLApplication(page: Page, requete: APIRequestContext): Promise<void> {
   await passerLaMiseEnRoute(requete);
   await poserUnModeleActif(requete);
   await page.goto('/');
-  await page.waitForLoadState('networkidle', { timeout: 15000 });
   await page.waitForSelector('[data-testid="app-main"]', { timeout: 15000 });
   await attendreLeRegistre(page);
 }
