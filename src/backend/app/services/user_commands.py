@@ -27,6 +27,7 @@ class UserCommand:
         category: str = "production",
         icon: str = "",
         show_on_home: bool = True,
+        show_in_slash: bool = True,
         content: str = "",
         created_at: str | None = None,
         updated_at: str | None = None,
@@ -36,6 +37,10 @@ class UserCommand:
         self.category = category
         self.icon = icon
         self.show_on_home = show_on_home
+        # B-254 : le drapeau ne vivait qu'en memoire ; un redemarrage le
+        # remettait a True. Il suit desormais `show_on_home`, de la creation au
+        # frontmatter et retour.
+        self.show_in_slash = show_in_slash
         self.content = content
         self.created_at = created_at or datetime.now().isoformat()
         self.updated_at = updated_at or self.created_at
@@ -47,6 +52,7 @@ class UserCommand:
             "category": self.category,
             "icon": self.icon,
             "show_on_home": self.show_on_home,
+            "show_in_slash": self.show_in_slash,
             "content": self.content,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
@@ -60,6 +66,7 @@ class UserCommand:
             "category": self.category,
             "icon": self.icon,
             "show_on_home": self.show_on_home,
+            "show_in_slash": self.show_in_slash,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
         }
@@ -91,6 +98,7 @@ class UserCommand:
             category=frontmatter.get("category", "production"),
             icon=frontmatter.get("icon", ""),
             show_on_home=frontmatter.get("show_on_home", True),
+            show_in_slash=frontmatter.get("show_in_slash", True),
             content=content,
             created_at=frontmatter.get("created_at"),
             updated_at=frontmatter.get("updated_at"),
@@ -149,6 +157,7 @@ class UserCommandsService:
         category: str = "production",
         icon: str = "",
         show_on_home: bool = True,
+        show_in_slash: bool = True,
         content: str = "",
     ) -> UserCommand:
         """Cree une nouvelle commande."""
@@ -162,6 +171,7 @@ class UserCommandsService:
             category=category,
             icon=icon,
             show_on_home=show_on_home,
+            show_in_slash=show_in_slash,
             content=content,
         )
 
@@ -176,6 +186,7 @@ class UserCommandsService:
         category: str | None = None,
         icon: str | None = None,
         show_on_home: bool | None = None,
+        show_in_slash: bool | None = None,
         content: str | None = None,
     ) -> UserCommand | None:
         """Met a jour une commande existante."""
@@ -191,6 +202,8 @@ class UserCommandsService:
             cmd.icon = icon
         if show_on_home is not None:
             cmd.show_on_home = show_on_home
+        if show_in_slash is not None:
+            cmd.show_in_slash = show_in_slash
         if content is not None:
             cmd.content = content
 

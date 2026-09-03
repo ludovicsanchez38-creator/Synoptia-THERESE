@@ -172,6 +172,38 @@ def _make_header_footer(
 # =====================================================================
 
 
+def _montant_fr(valeur: float) -> str:
+    """Un montant a la francaise : deux decimales, separateur virgule.
+
+    B-267 : le document imprimait « 22.00 EUR » a cote de « TVA reduite 5,5% »
+    et d'un « 0,00 » ecrit a la main. Deux signes decimaux dans une meme piece
+    comptable, et le lecteur ne sait plus lequel separe les decimales.
+    """
+    return f"{valeur:.2f}".replace(".", ",")
+
+
+def _taux_fr(valeur: float) -> str:
+    """Un taux a la francaise : une decimale, separateur virgule."""
+    return f"{valeur:.1f}".replace(".", ",")
+
+
+def _quantite_fr(valeur: Any) -> str:
+    """Une quantite : entiere quand elle l'est, virgule sinon.
+
+    `str(3.0)` imprimait « 3.0 » - un point decimal de plus dans la meme page,
+    et une quantite entiere ecrite comme une mesure.
+    """
+    try:
+        nombre = float(valeur)
+    except (TypeError, ValueError):
+        return str(valeur)
+    if nombre.is_integer():
+        return str(int(nombre))
+    # `:g` arrondirait a six chiffres significatifs (12345.75 -> 12345,8) ;
+    # `str()` rend le plus court aller-retour exact.
+    return str(nombre).replace(".", ",")
+
+
 class InvoicePDFGenerator:
     """Generateur de factures PDF conformes France avec theming Synoptia."""
 
@@ -427,18 +459,18 @@ class InvoicePDFGenerator:
 
         for line in lines:
             if tva_applicable:
-                tva_display = f"{line['tva_rate']:.1f}%"
-                ttc_display = f"{line['total_ttc']:.2f} {currency_symbol}"
+                tva_display = f"{_taux_fr(line['tva_rate'])}%"
+                ttc_display = f"{_montant_fr(line['total_ttc'])} {currency_symbol}"
             else:
                 tva_display = "0,0%"
-                ttc_display = f"{line['total_ht']:.2f} {currency_symbol}"
+                ttc_display = f"{_montant_fr(line['total_ht'])} {currency_symbol}"
 
             row = [
                 Paragraph(line["description"], s["cell"]),
-                Paragraph(str(line["quantity"]), s["cell"]),
-                Paragraph(f"{line['unit_price_ht']:.2f} {currency_symbol}", s["cell"]),
+                Paragraph(_quantite_fr(line["quantity"]), s["cell"]),
+                Paragraph(f"{_montant_fr(line['unit_price_ht'])} {currency_symbol}", s["cell"]),
                 Paragraph(tva_display, s["cell"]),
-                Paragraph(f"{line['total_ht']:.2f} {currency_symbol}", s["cell"]),
+                Paragraph(f"{_montant_fr(line['total_ht'])} {currency_symbol}", s["cell"]),
                 Paragraph(ttc_display, s["cell_bold"]),
             ]
             table_data.append(row)
@@ -482,15 +514,15 @@ class InvoicePDFGenerator:
 
         if tva_applicable:
             rows_data = [
-                ("Total HT", f"{invoice_data['subtotal_ht']:.2f} {currency_symbol}"),
-                ("Total TVA", f"{invoice_data['total_tax']:.2f} {currency_symbol}"),
-                ("Total TTC", f"{invoice_data['total_ttc']:.2f} {currency_symbol}"),
+                ("Total HT", f"{_montant_fr(invoice_data['subtotal_ht'])} {currency_symbol}"),
+                ("Total TVA", f"{_montant_fr(invoice_data['total_tax'])} {currency_symbol}"),
+                ("Total TTC", f"{_montant_fr(invoice_data['total_ttc'])} {currency_symbol}"),
             ]
         else:
             rows_data = [
-                ("Total HT", f"{invoice_data['subtotal_ht']:.2f} {currency_symbol}"),
-                ("Total TVA", f"0,00 {currency_symbol}"),
-                ("Total TTC", f"{invoice_data['subtotal_ht']:.2f} {currency_symbol}"),
+                ("Total HT", f"{_montant_fr(invoice_data['subtotal_ht'])} {currency_symbol}"),
+                ("Total TVA", f"{_montant_fr(0.0)} {currency_symbol}"),
+                ("Total TTC", f"{_montant_fr(invoice_data['subtotal_ht'])} {currency_symbol}"),
             ]
 
         table_rows = []

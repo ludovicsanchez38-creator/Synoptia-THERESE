@@ -442,6 +442,42 @@ async def reset_export_profile_route() -> dict[str, bool]:
     return {"success": True}
 
 
+# B-252 : les valeurs ecrites AVANT le correctif portent le `repr` Python
+# produit par `str()`. Sans cette table, l'interrupteur d'une installation
+# existante resterait casse apres la mise a jour.
+_LITTERAUX_HERITES: dict[str, Any] = {"True": True, "False": False, "None": None}
+
+
+def _valeur_de_preference(brut: str) -> Any:
+    """La valeur d'une preference, dans le type ou elle a ete ecrite.
+
+    B-252 : `set_preference` serialisait par `str(value)` hors liste et dict, et
+    la relecture ne faisait `json.loads` que si la chaine commencait par `[` ou
+    `{`. Une preference ecrite en booleen revenait donc en chaine « False », que
+    l'ecran ne sait pas lire (`SettingsModal` n'accepte qu'un vrai booleen) et
+    qui vaut VRAI en JavaScript.
+
+    Deux reserves, tenues a dessein :
+
+    - les chaines restent stockees telles quelles, sans guillemets JSON : le
+      backend a des lecteurs DIRECTS de `pref.value` qui ne passent pas par
+      cette route (`main.py` pour la recherche web et le mode cabinet,
+      `rgpd.py`, `crm.py`, `voice.py`). Une chaine qui ressemble a un litteral
+      JSON (« 42 », « true ») revient donc typee : c'est l'ambiguite que le
+      stockage en texte a creee, pas une regression.
+    - `True` / `False` / `None` sont relus comme des litteraux, pour les bases
+      qui existent deja.
+    """
+    if brut in _LITTERAUX_HERITES:
+        return _LITTERAUX_HERITES[brut]
+    try:
+        valeur = json.loads(brut)
+    except (ValueError, TypeError):
+        return brut
+    # Une chaine JSON relue reste rendue telle qu'elle est stockee.
+    return brut if isinstance(valeur, str) else valeur
+
+
 @router.get("/preferences")
 async def get_preferences(
     category: str | None = None,
@@ -457,9 +493,7 @@ async def get_preferences(
 
     return {
         pref.key: {
-            "value": json.loads(pref.value)
-            if pref.value.startswith("[") or pref.value.startswith("{")
-            else pref.value,
+            "value": _valeur_de_preference(pref.value),
             "category": pref.category,
             "updated_at": pref.updated_at.isoformat(),
         }
@@ -566,10 +600,11 @@ async def set_preference(
             )
 
     # Serialize value
-    if isinstance(value, (list, dict)):
-        value_str = json.dumps(value)
-    else:
-        value_str = str(value)
+    # B-252 : `str(value)` rendait « True » pour un booleen et « 42 » pour un
+    # entier, indistinguables d'une chaine a la relecture. Tout ce qui n'est pas
+    # une chaine part en JSON ; les chaines restent stockees telles quelles,
+    # pour les lecteurs directs de `pref.value` cites par `_valeur_de_preference`.
+    value_str = value if isinstance(value, str) else json.dumps(value)
 
     # Get or create preference
     result = await session.execute(select(Preference).where(Preference.key == key))
@@ -587,7 +622,27 @@ async def set_preference(
         )
         session.add(pref)
 
-    await session.commit()
+    try:
+        await session.commit()
+    except IntegrityError:
+        # B-273 : `preferences.key` est UNIQUE, et cette porte ne l'assumait
+        # pas. Deux requetes qui s'entrelacent sur l'await du SELECT lisent
+        # toutes deux « cle absente » et inserent toutes deux : la seconde
+        # violait la contrainte, rendait 500, et l'exception TRAVERSAIT
+        # l'application ASGI. Meme geste que `_mark_onboarding_completed`
+        # (01/09/2026) : ce qui compte est l'etat final, pas d'avoir gagne la
+        # course. La ligne existe maintenant, on y ecrit la valeur demandee.
+        await session.rollback()
+        result = await session.execute(
+            select(Preference).where(Preference.key == key)
+        )
+        pref = result.scalar_one_or_none()
+        if pref is None:
+            raise
+        pref.value = value_str
+        pref.category = category
+        pref.updated_at = datetime.now(UTC)
+        await session.commit()
 
     return {"success": True, "key": key, "value": value}
 

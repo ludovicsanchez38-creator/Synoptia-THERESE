@@ -38,6 +38,7 @@ from app.services.email.provider_factory import (
     list_common_providers,
 )
 from app.services.encryption import decrypt_value, encrypt_value, is_value_encrypted
+from app.services.error_handler import message_pour_ecran
 from app.services.gmail_service import GmailService, format_message_for_storage
 from app.services.http_client import get_http_client
 from app.services.oauth import (
@@ -69,6 +70,42 @@ def _provider_imap(account: EmailAccount) -> EmailProvider:
         smtp_host=account.smtp_host,
         smtp_port=account.smtp_port,
         smtp_use_tls=account.smtp_use_tls,
+    )
+
+
+def _message_cache_depuis_dto(dto: Any, account_id: str) -> EmailMessage:
+    """Un message IMAP mis en cache local, dans la forme que `EmailMessage`
+    attend - l'equivalent de `format_message_for_storage` cote Gmail.
+
+    B-259 : la colonne `date` est un DateTime SQLite, donc naif (cf `_utcnow`) ;
+    un DTO horodate avec fuseau y entrerait sous une autre forme que ses
+    voisins et fausserait les comparaisons de fil.
+    """
+    horodatage = dto.date or _utcnow()
+    if horodatage.tzinfo is not None:
+        horodatage = horodatage.astimezone(timezone.utc).replace(tzinfo=None)
+    return EmailMessage(
+        id=dto.id,
+        thread_id=dto.thread_id or dto.id,
+        account_id=account_id,
+        subject=dto.subject,
+        snippet=dto.snippet,
+        from_email=dto.from_email,
+        from_name=dto.from_name,
+        to_emails=json.dumps(dto.to_emails or []),
+        cc_emails=json.dumps(dto.cc_emails or []),
+        bcc_emails=json.dumps(dto.bcc_emails or []),
+        date=horodatage,
+        internal_date=horodatage,
+        labels=json.dumps(dto.labels or []),
+        is_read=dto.is_read,
+        is_starred=dto.is_starred,
+        is_important=dto.is_important,
+        is_draft=dto.is_draft,
+        has_attachments=dto.has_attachments,
+        attachment_count=dto.attachment_count,
+        body_plain=dto.body_plain,
+        body_html=dto.body_html,
     )
 
 
@@ -1034,7 +1071,7 @@ async def _list_messages_imap(
         logger.error(f"IMAP list_messages failed for {account.email}: {e}")
         raise HTTPException(
             status_code=502,
-            detail=f"Erreur IMAP: {e}",
+            detail=message_pour_ecran(e, ou="avec le serveur IMAP"),
         )
 
     # Convert DTOs to same format as Gmail endpoint
@@ -1160,7 +1197,10 @@ async def get_message(
             dto = await provider.get_message(message_id)
         except Exception as e:
             logger.error(f"IMAP get_message failed for {account.email}: {e}")
-            raise HTTPException(status_code=502, detail=f"Erreur IMAP: {e}")
+            raise HTTPException(
+                status_code=502,
+                detail=message_pour_ecran(e, ou="avec le serveur IMAP"),
+            )
         # body_html est déjà assaini au niveau du provider IMAP (_imap_to_dto).
         return {
             'id': dto.id,
@@ -1305,7 +1345,10 @@ async def create_draft(
             raise
         except Exception as e:
             logger.error(f"IMAP draft failed for {account.email}: {e}")
-            raise HTTPException(status_code=502, detail=f"Erreur IMAP: {e}")
+            raise HTTPException(
+                status_code=502,
+                detail=message_pour_ecran(e, ou="avec le serveur IMAP"),
+            )
         return {"id": identifiant, "labelIds": ["DRAFT"]}
 
     gmail = await get_gmail_service_for_account(account_id, session)
@@ -1373,7 +1416,10 @@ async def modify_message(
             )
         except Exception as e:
             logger.error(f"IMAP modify_message failed for {account.email}: {e}")
-            raise HTTPException(status_code=502, detail=f"Erreur IMAP: {e}")
+            raise HTTPException(
+                status_code=502,
+                detail=message_pour_ecran(e, ou="avec le serveur IMAP"),
+            )
 
         result = {"id": dto.id, "labelIds": list(dto.labels or [])}
     else:
@@ -1424,7 +1470,10 @@ async def delete_message(
             await provider.delete_message(message_id, permanent=permanent)
         except Exception as e:
             logger.error(f"IMAP delete_message failed for {account.email}: {e}")
-            raise HTTPException(status_code=502, detail=f"Erreur IMAP: {e}")
+            raise HTTPException(
+                status_code=502,
+                detail=message_pour_ecran(e, ou="avec le serveur IMAP"),
+            )
     else:
         gmail = await get_gmail_service_for_account(account_id, session)
 
@@ -1487,7 +1536,10 @@ async def list_labels(
             )
         except Exception as e:
             logger.error(f"IMAP list_folders failed for {account.email}: {e}")
-            raise HTTPException(status_code=502, detail=f"Erreur IMAP: {e}")
+            raise HTTPException(
+                status_code=502,
+                detail=message_pour_ecran(e, ou="avec le serveur IMAP"),
+            )
 
         def _get_folder_counter(folder, primary_attr: str, fallback_attr: str) -> int:
             primary_value = getattr(folder, primary_attr, None)
@@ -1535,7 +1587,10 @@ async def create_label(
             dossier = await provider.create_folder(request.name)
         except Exception as e:
             logger.error(f"IMAP create_folder failed for {account.email}: {e}")
-            raise HTTPException(status_code=502, detail=f"Erreur IMAP: {e}")
+            raise HTTPException(
+                status_code=502,
+                detail=message_pour_ecran(e, ou="avec le serveur IMAP"),
+            )
         return {
             "id": dossier.id,
             "name": dossier.name,
@@ -1600,7 +1655,10 @@ async def delete_label(
             await provider.delete_folder(label_id)
         except Exception as e:
             logger.error(f"IMAP delete_folder failed for {account.email}: {e}")
-            raise HTTPException(status_code=502, detail=f"Erreur IMAP: {e}")
+            raise HTTPException(
+                status_code=502,
+                detail=message_pour_ecran(e, ou="avec le serveur IMAP"),
+            )
         return {"deleted": True, "label_id": label_id}
 
     gmail = await get_gmail_service_for_account(account_id, session)
@@ -1632,14 +1690,32 @@ async def classify_email(
     message = await session.get(EmailMessage, message_id)
 
     if not message:
-        # Message not in DB, fetch from Gmail
-        gmail = await get_gmail_service_for_account(account_id, session)
-        gmail_msg = await gmail.get_message(message_id)
+        # B-259 : sixieme route de la famille B-172. Cette branche reclamait un
+        # jeton Google a un compte qui n'en a jamais eu ; le cache la masquait
+        # des qu'un message avait ete stocke une fois. `ImapSmtpProvider` sait
+        # lire un message : c'est une branche, pas une fonctionnalite.
+        account = await _compte_email(account_id, session)
 
-        # Store in cache
-        formatted = format_message_for_storage(gmail_msg)
-        formatted['account_id'] = account_id
-        message = EmailMessage(**formatted)
+        if account.provider == "imap":
+            provider = _provider_imap(account)
+            try:
+                dto = await provider.get_message(message_id)
+            except Exception as e:
+                logger.error(f"IMAP get_message failed for {account.email}: {e}")
+                raise HTTPException(
+                    status_code=502,
+                    detail=message_pour_ecran(e, ou="avec le serveur IMAP"),
+                )
+            message = _message_cache_depuis_dto(dto, account_id)
+        else:
+            gmail = await get_gmail_service_for_account(account_id, session)
+            gmail_msg = await gmail.get_message(message_id)
+
+            # Store in cache
+            formatted = format_message_for_storage(gmail_msg)
+            formatted['account_id'] = account_id
+            message = EmailMessage(**formatted)
+
         session.add(message)
         await session.commit()
         await session.refresh(message)

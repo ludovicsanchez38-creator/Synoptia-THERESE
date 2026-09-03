@@ -163,8 +163,11 @@ class TestUnSeulMontantATraversLesCouches:
             ],
         )
         piece = (await client.get(f"/api/invoices/{identifiant}")).json()
-        attendu = f"{piece['total_ttc']:.2f}"
-        assert attendu not in [f"{ligne['total_ttc']:.2f}" for ligne in piece["lines"]], (
+        # B-267 : le document imprime ses montants à la française.
+        attendu = f"{piece['total_ttc']:.2f}".replace(".", ",")
+        assert attendu not in [
+            f"{ligne['total_ttc']:.2f}".replace(".", ",") for ligne in piece["lines"]
+        ], (
             "précondition : le total du document doit être introuvable ailleurs "
             "dans le PDF, sinon l'assertion ne prouve rien"
         )
@@ -294,3 +297,64 @@ class TestLesCasQueMonPremierMontantNExposaitPas:
 
         assert corps["subtotal_ht"] == 0.30, f"HT traîné : {corps['subtotal_ht']!r}"
         assert corps["total_ttc"] == 0.30, f"TTC traîné : {corps['total_ttc']!r}"
+
+
+class TestUnSeulSeparateurDecimalDansLeDocument:
+    """B-267 — le PDF mélangeait le point et la virgule.
+
+    Les montants partaient en `f"{valeur:.2f}"` (« 22.00 EUR ») alors que le
+    même document imprime « TVA reduite 5,5% », « 0,0% » et un « 0,00 » écrit à
+    la main quand la TVA n'est pas applicable. Une pièce comptable française
+    qui écrit ses totaux au point et ses taux à la virgule n'est pas lisible :
+    le lecteur ne sait plus lequel des deux signes sépare les décimales.
+
+    Le contrôle se fait sur le document réellement produit, lu par pypdf,
+    depuis la route que l'écran appelle.
+    """
+
+    @staticmethod
+    async def _texte_rendu(client) -> tuple[str, dict]:
+        from unittest.mock import patch
+
+        from app.services.user_profile import UserProfile
+
+        identifiant = await _poser_facture(client)
+        piece = (await client.get(f"/api/invoices/{identifiant}")).json()
+
+        emetteur = UserProfile(
+            name="Ludovic Sanchez",
+            company="Synoptia",
+            address="294 Montee des Genets, 04100 Manosque",
+            siret="99160678100011",
+        )
+        with patch("app.routers.invoices.get_cached_profile", return_value=emetteur):
+            rendu = await client.get(f"/api/invoices/{identifiant}/pdf")
+        assert rendu.status_code == 200, rendu.text
+        return _texte_du_pdf(rendu.json()["pdf_path"]), piece
+
+    @pytest.mark.asyncio
+    async def test_aucun_montant_n_est_imprime_au_point_decimal(self, client):
+        texte, _ = await self._texte_rendu(client)
+
+        au_point = re.findall(r"\d+\.\d{2}\b", texte)
+        assert not au_point, (
+            "des montants sont imprimés au point décimal alors que le même "
+            f"document écrit ses taux à la virgule : {au_point}"
+        )
+
+    @pytest.mark.asyncio
+    async def test_les_totaux_impriment_bien_la_valeur_de_l_api(self, client):
+        """La contrepartie : changer de séparateur ne doit pas changer le
+        montant. On relit les trois totaux dans le document."""
+        texte, piece = await self._texte_rendu(client)
+
+        for libelle, valeur in (
+            ("Total HT", piece["subtotal_ht"]),
+            ("Total TVA", piece["total_tax"]),
+            ("Total TTC", piece["total_ttc"]),
+        ):
+            attendu = f"{valeur:.2f}".replace(".", ",")
+            assert re.search(rf"{libelle}\s*{re.escape(attendu)}", texte), (
+                f"{libelle} : le PDF n'imprime pas {attendu} alors que l'API "
+                f"rend {valeur}. Lu : ...{texte[-400:]}"
+            )

@@ -100,9 +100,17 @@ def ensure_invoice_legacy_columns(
 def _ensure_invoice_client_snapshot(conn: sqlite3.Connection) -> list[str]:
     """Ajoute et remplit le destinataire figé des pièces existantes.
 
-    Une facture orpheline ne permet plus de reconstruire une identité fiable :
-    dans ce cas le démarrage échoue avant toute colonne ajoutée, au lieu de
-    consacrer silencieusement un snapshot vide.
+    Une facture orpheline ne permet plus de reconstruire une identité fiable.
+    B-154 refusait alors GLOBALEMENT : une seule pièce arrêtait le démarrage de
+    toute l'application, sans aucun geste de réparation, là où le commentaire du
+    remplissage annonçait déjà un traitement PAR LIGNE.
+
+    B-266 garde la promesse qui compte - aucun destinataire n'est inventé - et
+    abandonne celle qui coûtait trop cher : les pièces réparables sont migrées,
+    l'orpheline reste sans destinataire figé, et elle est NOMMÉE dans les
+    journaux avec le geste qui la répare. Elle n'est pas pour autant utilisable
+    en silence : `_snapshot_de_la_piece` (routers/invoices.py) refuse déjà de
+    produire un document dont le destinataire n'est pas figé.
     """
     invoice_columns = {
         row[1] for row in conn.execute("PRAGMA table_info(invoices)").fetchall()
@@ -136,22 +144,6 @@ def _ensure_invoice_client_snapshot(conn: sqlite3.Connection) -> list[str]:
             "OR TRIM(client_name) = '' LIMIT 1"
         ).fetchone() is not None
 
-    if invoice_count and needs_backfill:
-        orphan_condition = (
-            ""
-            if missing_columns
-            else "AND (i.client_name IS NULL OR TRIM(i.client_name) = '')"
-        )
-        orphan = conn.execute(
-            "SELECT i.id FROM invoices i LEFT JOIN contacts c ON c.id = i.contact_id "
-            f"WHERE c.id IS NULL {orphan_condition} LIMIT 1"
-        ).fetchone()
-        if orphan is not None:
-            raise RuntimeError(
-                "Migration des factures impossible : le contact de la pièce "
-                f"{orphan[0]} est introuvable"
-            )
-
     added: list[str] = []
     for column_name, definition in definitions.items():
         if column_name not in invoice_columns:
@@ -183,14 +175,27 @@ def _ensure_invoice_client_snapshot(conn: sqlite3.Connection) -> list[str]:
             WHERE {where_clause}
             """
         )
-        missing = conn.execute(
-            "SELECT id FROM invoices WHERE client_name IS NULL "
-            "OR TRIM(client_name) = '' LIMIT 1"
-        ).fetchone()
-        if missing is not None:
-            raise RuntimeError(
-                "Migration des factures incomplète : snapshot absent pour la pièce "
-                f"{missing[0]}"
+        # B-266 : par ligne. Les pièces restées sans destinataire figé sont
+        # celles dont la fiche CRM a disparu (ou n'a jamais porté de nom) ;
+        # elles sont nommées, avec le geste qui les répare, et n'empêchent pas
+        # les autres d'être migrées ni l'application de démarrer.
+        colonne_numero = (
+            "invoice_number" if "invoice_number" in invoice_columns else "id"
+        )
+        sans_destinataire = conn.execute(
+            f"SELECT {colonne_numero} FROM invoices "
+            "WHERE client_name IS NULL OR TRIM(client_name) = ''"
+        ).fetchall()
+        if sans_destinataire:
+            pieces = ", ".join(str(ligne[0]) for ligne in sans_destinataire)
+            logger.warning(
+                "Destinataire historique introuvable pour %d pièce(s) : %s. "
+                "Leur fiche client a disparu de la base. Rattache un client à "
+                "chacune depuis Facturation, ou supprime-la : tant qu'elle n'a "
+                "pas de destinataire figé, sa génération de document est "
+                "refusée (aucun destinataire n'est inventé à sa place).",
+                len(sans_destinataire),
+                pieces,
             )
     conn.commit()
     return added

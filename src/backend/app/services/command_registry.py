@@ -375,7 +375,7 @@ class CommandRegistry:
             action=CommandAction.PROMPT,
             prompt_template=user_cmd.content,
             show_on_home=user_cmd.show_on_home,
-            show_in_slash=True,
+            show_in_slash=user_cmd.show_in_slash,
             sort_order=200,
             is_editable=True,
         )
@@ -466,6 +466,7 @@ class CommandRegistry:
             icon=icon,
             category=category,
             show_on_home=show_on_home,
+            show_in_slash=show_in_slash,
             content=prompt_template,
         )
 
@@ -513,6 +514,7 @@ class CommandRegistry:
             category=category,
             icon=icon,
             show_on_home=show_on_home,
+            show_in_slash=show_in_slash,
             content=prompt_template,
         )
         if not updated:

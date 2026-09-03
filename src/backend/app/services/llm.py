@@ -283,7 +283,7 @@ def _is_ollama_chat_model(name: str) -> bool:
 
 
 def detect_default_ollama_model(
-    base_url: str = "http://localhost:11434",
+    base_url: str | None = None,
     fallback: str = "mistral-nemo",
 ) -> str:
     """Retourne le premier modèle Ollama conversationnel réellement installé.
@@ -293,11 +293,21 @@ def detect_default_ollama_model(
 
     Si Ollama est injoignable ou qu'aucun modèle de chat n'est installé, retourne
     `fallback` (une suggestion de modèle à installer).
+
+    B-268 : l'adresse était `http://localhost:11434` EN DUR par défaut, et les
+    quatre appelants appellent sans argument. Un backend configuré sur un autre
+    serveur - ou volontairement sourd à Ollama - lisait quand même les modèles
+    du poste, et `GET /api/config/llm` rendait le nom de l'un d'eux. Le défaut
+    vient désormais du réglage ; passer `base_url` reste possible pour sonder un
+    serveur donné sans toucher aux réglages.
     """
+    from app.config import settings
+
+    adresse = (base_url or settings.ollama_base_url).rstrip("/")
     try:
         import httpx
 
-        resp = httpx.get(f"{base_url}/api/tags", timeout=2.0)
+        resp = httpx.get(f"{adresse}/api/tags", timeout=2.0)
         if resp.status_code == 200:
             for model in resp.json().get("models", []):
                 name = model.get("name", "")

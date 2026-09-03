@@ -9,7 +9,9 @@ import os
 import sys
 import tempfile
 from collections.abc import AsyncGenerator, Generator
+from contextlib import asynccontextmanager
 from pathlib import Path
+from unittest.mock import AsyncMock, MagicMock
 
 import pytest
 import pytest_asyncio
@@ -20,12 +22,85 @@ from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import sessionmaker
 from sqlmodel import SQLModel
 
+# B-249 / B-258 : ce dossier est une racine de collecte a part entiere
+# (`testpaths = ["tests", "src/backend/tests"]`), mais il ne portait aucune des
+# preparations que `tests/conftest.py` pose pour l'autre racine. Lance seul, un
+# fichier d'ici mourait donc a la collecte (`app` introuvable), puis rendait 503
+# AUTH_NOT_READY sur toute route HTTP. Le minimum est repris ici pour que le
+# harnais se suffise, sans dependre de ce que l'autre racine a bien voulu poser.
+_backend_dir = str(Path(__file__).resolve().parent.parent)
+if _backend_dir not in sys.path:
+    sys.path.insert(0, _backend_dir)
+
 # Set test environment before importing app
 os.environ["THERESE_ENV"] = "test"
 os.environ["THERESE_DB_PATH"] = ":memory:"
+os.environ["THERESE_SKIP_SERVICES"] = "1"
+os.environ["THERESE_SONDE_CATALOGUE"] = "off"
+# Isolation des donnees : ne JAMAIS toucher la base reelle de l'utilisateur.
+# `setdefault` respecte l'override de la suite complete et de la CI.
+os.environ.setdefault("THERESE_DATA_DIR", tempfile.mkdtemp(prefix="therese-backend-test-"))
+# Cle SQLCipher fixe : deterministe, et sans aller interroger le trousseau de
+# la machine (absent en CI, invite a saisir un mot de passe en dev).
+os.environ.setdefault("THERESE_DB_KEY", "ad" * 32)
+os.environ.setdefault("THERESE_BACKUP_KDF_ITERATIONS", "1000")
 
-from app.main import app
-from app.models.database import get_session
+from app.main import app  # noqa: E402  (apres le setup os.environ ci-dessus)
+from app.models.database import get_session  # noqa: E402
+
+# US-001 : le middleware d'auth est fail-closed (503 tant qu'aucun token de
+# session n'existe). Le lifespan de test n'en genere pas ; on coupe donc l'auth
+# AU NIVEAU MODULE - `sync_client` monte un TestClient qui n'entre pas toujours
+# dans le contexte de lifespan et se prenait sinon un 503 generique.
+app.state.auth_disabled = True
+
+
+@asynccontextmanager
+async def _test_lifespan(_app):
+    """Lifespan minimal : init DB seulement, ni Qdrant ni embeddings ni MCP."""
+    from app.models.database import close_db, init_db
+
+    _app.state.auth_disabled = True
+    await init_db()
+    yield
+    await close_db()
+
+
+app.router.lifespan_context = _test_lifespan
+
+
+# Mock Qdrant : meme geste que `tests/conftest.py`. Sans lui, un fichier lance
+# seul part chercher un Qdrant reel et attend ses reessais (mesure : 71 s pour
+# le seul `test_conversations_persisted`).
+import app.services.qdrant as _qdrant_module  # noqa: E402
+
+_mock_qdrant = MagicMock()
+_mock_qdrant.search.return_value = []
+_mock_qdrant.add_memory.return_value = None
+_mock_qdrant.add_memories.return_value = 0
+_mock_qdrant.delete_by_entity.return_value = 0
+_mock_qdrant.delete_by_scope.return_value = 0
+_mock_qdrant.async_delete_by_entity = AsyncMock(return_value=0)
+_mock_qdrant.async_delete_by_scope = AsyncMock(return_value=0)
+_mock_qdrant._initialized = True
+_mock_qdrant.is_initialized.return_value = True
+_qdrant_module._qdrant_service = _mock_qdrant
+_qdrant_module.get_qdrant_service = lambda: _mock_qdrant
+
+
+@pytest_asyncio.fixture(autouse=True)
+async def _base_de_donnees_initialisee():
+    """B-249 : les routes qui ouvrent leur PROPRE session (`get_session_context`,
+    `get_sync_session`) exigent un `init_db()` prealable. En suite complete il
+    avait lieu par accident, dans le lifespan d'un TestClient monte par un autre
+    fichier ; lance seul, ce dossier n'avait personne pour le faire et
+    `POST /api/chat/cancel/...` rendait « Database not initialized ».
+    """
+    import app.models.database as database_module
+
+    if database_module.AsyncSessionLocal is None:
+        await database_module.init_db()
+    yield
 
 # Test database setup
 #

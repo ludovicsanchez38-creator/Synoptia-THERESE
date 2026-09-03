@@ -278,3 +278,101 @@ class TestPiperVoiceDownload:
 
         assert not list(tmp_path.glob("*.onnx")), "un .onnx partiel est visible"
         assert list(tmp_path.glob("*.part")), "le fichier temporaire devrait rester en .part"
+
+
+class TestTTSNettoyageFichierTemporaire:
+    """B-270 — la synthèse vocale laissait un WAV par phrase sur le disque.
+
+    Les deux routes de transcription effacent le leur dans un `finally`
+    (voice.py). La synthèse, elle, ouvrait `NamedTemporaryFile(delete=False)`,
+    rendait le chemin dans une `FileResponse` et n'y revenait jamais : ni
+    `unlink`, ni `BackgroundTask`, et rien ailleurs dans le backend ne ramasse
+    ces fichiers. Fuite silencieuse et non bornée dans le répertoire temporaire
+    du système, sur le chemin nominal ET sur le chemin d'erreur (où le fichier
+    laissé fait zéro octet).
+
+    Le correctif ne peut PAS recopier le `finally` des transcriptions : un
+    `os.unlink` y supprimerait le fichier avant que Starlette ne le lise, et la
+    réponse partirait vide. D'où l'assertion sur le CORPS de la réponse : sans
+    elle, un correctif qui efface trop tôt passerait au vert en servant du vide.
+    """
+
+    @staticmethod
+    def _wavs(dossier):
+        return sorted(chemin.name for chemin in dossier.glob("*.wav"))
+
+    @pytest.mark.asyncio
+    async def test_le_wav_est_efface_apres_l_envoi(
+        self, client: AsyncClient, tmp_path, monkeypatch
+    ):
+        import tempfile
+
+        from app.services import voice_local
+
+        octets = b"RIFF----WAVEfmt B270"
+
+        def _synthese(text, out_path, voice=None):
+            from pathlib import Path as _Path
+
+            _Path(out_path).write_bytes(octets)
+
+        monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))
+        monkeypatch.setattr(voice_local, "tts_available", lambda: True)
+        monkeypatch.setattr(voice_local, "synthesize_local", _synthese)
+
+        reponse = await client.post("/api/voice/tts", json={"text": "bonjour"})
+
+        assert reponse.status_code == 200, reponse.text[:200]
+        assert reponse.content == octets, (
+            "le fichier a été effacé avant d'être servi : la réponse ne porte "
+            f"pas les octets synthétisés ({reponse.content[:40]!r})"
+        )
+        assert self._wavs(tmp_path) == [], (
+            f"WAV temporaires laissés sur disque : {self._wavs(tmp_path)}"
+        )
+
+    @pytest.mark.asyncio
+    async def test_le_wav_est_efface_quand_la_synthese_echoue(
+        self, client: AsyncClient, tmp_path, monkeypatch
+    ):
+        import tempfile
+
+        from app.services import voice_local
+
+        def _echoue(text, out_path, voice=None):
+            raise ValueError("piper KO")
+
+        monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))
+        monkeypatch.setattr(voice_local, "tts_available", lambda: True)
+        monkeypatch.setattr(voice_local, "synthesize_local", _echoue)
+
+        reponse = await client.post("/api/voice/tts", json={"text": "bonjour"})
+
+        assert reponse.status_code == 500, reponse.text[:200]
+        assert self._wavs(tmp_path) == [], (
+            "WAV vide laissé sur disque après échec : " f"{self._wavs(tmp_path)}"
+        )
+
+    @pytest.mark.asyncio
+    async def test_le_wav_est_efface_quand_la_voix_manque(
+        self, client: AsyncClient, tmp_path, monkeypatch
+    ):
+        """La branche 503 : `synthesize_local` lève un `RuntimeError` quand la
+        voix n'est pas téléchargée. Elle non plus ne rend pas de fichier."""
+        import tempfile
+
+        from app.services import voice_local
+
+        def _manque(text, out_path, voice=None):
+            raise RuntimeError("voix absente")
+
+        monkeypatch.setattr(tempfile, "tempdir", str(tmp_path))
+        monkeypatch.setattr(voice_local, "tts_available", lambda: True)
+        monkeypatch.setattr(voice_local, "synthesize_local", _manque)
+
+        reponse = await client.post("/api/voice/tts", json={"text": "bonjour"})
+
+        assert reponse.status_code == 503, reponse.text[:200]
+        assert self._wavs(tmp_path) == [], (
+            f"WAV laissé sur disque après un 503 : {self._wavs(tmp_path)}"
+        )

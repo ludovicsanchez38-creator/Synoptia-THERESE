@@ -117,3 +117,101 @@ class TestB188LesDeuxRegistresSAccordent:
         )
         detail = await client.get("/api/v3/commands/user-rb2cmd")
         assert detail.status_code == 404, detail.text
+
+
+class TestB254LeDrapeauSlashEstPersiste:
+    """B-254 — `show_in_slash` ne vivait qu'en mémoire.
+
+    Le registre est repeuplé au démarrage depuis `~/.therese/commands/user/*.md`.
+    Le drapeau n'existait ni dans le modèle de disque `UserCommand`, ni dans le
+    frontmatter YAML écrit, ni dans le parseur ;
+    `_definition_depuis_commande_utilisateur` le posait à `True` en dur. Une
+    commande masquée du menu « / » y revenait donc au redémarrage suivant, par
+    les DEUX chemins d'écriture (création V3 et mise à jour).
+
+    `show_on_home`, persisté depuis toujours, sert de modèle exact.
+    """
+
+    @staticmethod
+    async def _registre_neuf(command_id: str):
+        """Le redémarrage : un registre neuf qui relit le disque."""
+        from app.services.command_registry import CommandRegistry
+
+        neuf = CommandRegistry()
+        await neuf.init()
+        return neuf.get(command_id)
+
+    @pytest.mark.asyncio
+    async def test_le_drapeau_show_in_slash_survit_au_redemarrage(
+        self, client: AsyncClient, dossier_de_commandes
+    ) -> None:
+        creee = await client.post(
+            "/api/v3/commands/user",
+            json={
+                "name": "b254-cachee",
+                "description": "commande hors du menu slash",
+                "icon": "",
+                "category": "production",
+                "prompt_template": "p",
+                "show_on_home": True,
+                "show_in_slash": False,
+            },
+        )
+        assert creee.status_code == 201, creee.text
+        assert creee.json()["show_in_slash"] is False, creee.text
+
+        relue = await self._registre_neuf("user-b254-cachee")
+        assert relue is not None, "la commande n'est pas relue du disque"
+        assert relue.show_in_slash is False, (
+            f"drapeau perdu au redémarrage : show_in_slash={relue.show_in_slash}"
+        )
+        assert relue.show_on_home is True, (
+            "le drapeau voisin, lui, doit rester ce qu'il était"
+        )
+
+    @pytest.mark.asyncio
+    async def test_le_drapeau_retire_par_une_mise_a_jour_survit_aussi(
+        self, client: AsyncClient, dossier_de_commandes
+    ) -> None:
+        creee = await client.post(
+            "/api/v3/commands/user",
+            json={
+                "name": "b254-visible",
+                "description": "commande visible puis masquée",
+                "icon": "",
+                "category": "production",
+                "prompt_template": "p",
+                "show_on_home": True,
+                "show_in_slash": True,
+            },
+        )
+        assert creee.status_code == 201, creee.text
+
+        modifiee = await client.put(
+            "/api/v3/commands/user/user-b254-visible",
+            json={"show_in_slash": False},
+        )
+        assert modifiee.status_code == 200, modifiee.text
+        assert modifiee.json()["show_in_slash"] is False, modifiee.text
+
+        relue = await self._registre_neuf("user-b254-visible")
+        assert relue is not None, "la commande n'est pas relue du disque"
+        assert relue.show_in_slash is False, (
+            "la mise à jour n'a rien écrit sur le disque : "
+            f"show_in_slash={relue.show_in_slash} après redémarrage"
+        )
+
+    @pytest.mark.asyncio
+    async def test_un_fichier_ancien_sans_le_drapeau_reste_visible(
+        self, dossier_de_commandes
+    ) -> None:
+        """Les `.md` déjà sur le disque n'ont pas la clé : leur comportement ne
+        doit pas changer."""
+        from app.services.user_commands import UserCommand
+
+        ancien = (
+            "---\nname: b254-ancienne\ndescription: d\ncategory: production\n"
+            "icon: ''\nshow_on_home: true\n---\ncorps"
+        )
+        commande = UserCommand.from_markdown(ancien, "b254-ancienne.md")
+        assert commande.show_in_slash is True

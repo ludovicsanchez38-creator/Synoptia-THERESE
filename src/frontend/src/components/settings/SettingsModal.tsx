@@ -259,8 +259,14 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
 
       if (preferences && typeof preferences === 'object') {
         const prefs = preferences as Record<string, unknown>;
-        if ('auto_extract_entities' in prefs && typeof prefs.auto_extract_entities === 'boolean') {
-          setAutoExtractEntities(prefs.auto_extract_entities);
+        // B-252 : `getPreferences` rend l'enveloppe du serveur
+        // (`{ auto_extract_entities: { value, category, updated_at } }`), pas la
+        // valeur. Le test portait donc sur un OBJET, toujours faux : l'interrupteur
+        // reprenait son défaut à chaque ouverture, même quand la préférence
+        // enregistrée disait l'inverse.
+        const extractionAuto = (prefs.auto_extract_entities as { value?: unknown } | undefined)?.value;
+        if (typeof extractionAuto === 'boolean') {
+          setAutoExtractEntities(extractionAuto);
         }
       }
     } catch (err) {

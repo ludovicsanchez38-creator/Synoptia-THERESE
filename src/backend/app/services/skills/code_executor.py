@@ -972,6 +972,80 @@ def _installer_garde_reseau() -> Any:
     return restaurer
 
 
+# B-250 : ce qui reste dans l'environnement du bac à sable. Liste BLANCHE et
+# non liste noire : une variable ajoutée demain au backend (une clé de
+# fournisseur de plus, un jeton de session) est écartée sans qu'on ait à y
+# penser, ce qui est précisément la défense en profondeur promise.
+_ENV_CONSERVE = frozenset({
+    # De quoi trouver l'interpréteur et ses bibliothèques
+    "PATH",
+    "PYTHONPATH",
+    "PYTHONHOME",
+    "PYTHONIOENCODING",
+    "PYTHONUTF8",
+    "VIRTUAL_ENV",
+    # Dossiers de travail (la garde FS réécrit TMPDIR juste après)
+    "HOME",
+    "TMPDIR",
+    "TEMP",
+    "TMP",
+    # Locale et fuseau : sans eux les dates et l'encodage changent de forme
+    "LANG",
+    "LANGUAGE",
+    "TZ",
+    # Windows : sans ces variables, os.path et les bibliothèques standard
+    # perdent pied
+    "SYSTEMROOT",
+    "SYSTEMDRIVE",
+    "WINDIR",
+    "COMSPEC",
+    "PATHEXT",
+    "USERPROFILE",
+    "APPDATA",
+    "LOCALAPPDATA",
+    "PROGRAMFILES",
+    "PROGRAMDATA",
+    "NUMBER_OF_PROCESSORS",
+    "PROCESSOR_ARCHITECTURE",
+    "OS",
+})
+_ENV_PREFIXES_CONSERVES = ("LC_",)
+
+
+def _epurer_environnement() -> Any:
+    """Retire de `os.environ` tout ce qui n'est pas nécessaire à la génération.
+
+    B-250 : `spawn` donne à l'enfant un interpréteur neuf, donc rien de la
+    MÉMOIRE du backend - mais l'ENVIRONNEMENT, lui, était hérité en entier.
+    `encryption.get_db_key_hex()` lit `THERESE_DB_KEY` dans `os.environ`, et
+    le backend s'y replie aussi pour les clés de fournisseurs posées par
+    l'utilisateur (ANTHROPIC_API_KEY, OPENAI_API_KEY, GEMINI_API_KEY,
+    GROQ_API_KEY, BRAVE_API_KEY, FAL_API_KEY, OPENROUTER_API_KEY). La promesse
+    « une évasion ne donne pas accès aux secrets du process principal » ne
+    tenait donc qu'à moitié.
+
+    `multiprocessing` n'accepte pas d'environnement pour l'enfant : l'épuration
+    se fait dans l'enfant, première instruction de la cible.
+
+    Renvoie un restaurateur, pour la même raison que les gardes FS et réseau :
+    les tests appellent le worker dans le process pytest, il ne faut pas y
+    laisser un environnement amputé.
+    """
+    import os
+
+    sauvegarde = dict(os.environ)
+    for nom in list(os.environ):
+        if nom in _ENV_CONSERVE or nom.startswith(_ENV_PREFIXES_CONSERVES):
+            continue
+        os.environ.pop(nom, None)
+
+    def restaurer() -> None:
+        os.environ.clear()
+        os.environ.update(sauvegarde)
+
+    return restaurer
+
+
 def _run_generation_in_subprocess(
     code: str,
     output_path: str,
@@ -995,7 +1069,9 @@ def _run_generation_in_subprocess(
     """
     restaurer_reseau = None
     restaurer_fs = None
+    restaurer_env = None
     try:
+        restaurer_env = _epurer_environnement()
         restaurer_reseau = _installer_garde_reseau()
         namespace = _build_namespace(output_path, title, format_type, nb_slides)
         restaurer_fs = _installer_garde_fs(output_path)
@@ -1010,6 +1086,8 @@ def _run_generation_in_subprocess(
             restaurer_fs()
         if restaurer_reseau is not None:
             restaurer_reseau()
+        if restaurer_env is not None:
+            restaurer_env()
 
 
 async def execute_sandboxed(

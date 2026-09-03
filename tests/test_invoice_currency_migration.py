@@ -236,8 +236,16 @@ def test_apply_adhoc_migrations_backfill_le_snapshot_des_factures(tmp_path: Path
     )
 
 
-def test_snapshot_facture_refuse_d_inventer_un_destinataire(tmp_path: Path):
-    """Une pièce sans nom ni société doit bloquer la migration, pas mentir."""
+def test_snapshot_facture_refuse_d_inventer_un_destinataire(tmp_path: Path, caplog):
+    """Une pièce dont le contact n'a ni nom ni société ne doit pas mentir.
+
+    B-266 : la promesse nommée par ce test - ne pas inventer un destinataire -
+    est intacte. Ce qui change, c'est le prix qu'on y met : la migration va au
+    bout et l'application démarre, la pièce reste sans destinataire figé (et
+    donc refusée à la génération de document), et elle est nommée dans les
+    journaux. Le contact existe ici mais n'apprend rien sur le client : le
+    résultat est le même que pour une fiche disparue.
+    """
     from app.models.database import apply_adhoc_migrations
 
     db_path = tmp_path / "legacy-snapshot-sans-identite.db"
@@ -259,17 +267,34 @@ def test_snapshot_facture_refuse_d_inventer_un_destinataire(tmp_path: Path):
         )
         conn.commit()
 
-    with pytest.raises(RuntimeError, match="snapshot absent"):
+    with caplog.at_level("WARNING", logger="app.models.database"):
         apply_adhoc_migrations(db_path)
 
+    with closing(sqlite3.connect(db_path)) as conn:
+        nom = conn.execute(
+            "SELECT client_name FROM invoices WHERE id = ?",
+            ("invoice-sans-destinataire",),
+        ).fetchone()[0]
 
-def test_base_legacy_facture_orpheline_bloque_le_demarrage(tmp_path: Path):
-    """B-154 : une facture dont le contact a été effacé arrête le démarrage.
+    assert not nom, f"un destinataire a été inventé : {nom!r}"
+    assert "invoice-sans-destinataire" in caplog.text, caplog.text[-500:]
 
-    Le refus est VOULU (docstring de `_ensure_invoice_client_snapshot`) :
-    mieux vaut échouer que consacrer un destinataire vide sur une pièce
-    comptable. Mais rien ne le verrouillait, alors que c'est la panne la moins
-    rattrapable de toutes - l'application ne démarre plus du tout.
+
+def test_base_legacy_facture_orpheline_ne_bloque_plus_le_demarrage(
+    tmp_path: Path, caplog
+):
+    """B-266 (suite de B-154) : une seule pièce orpheline arrêtait TOUT.
+
+    Le refus global était voulu par le docstring - mieux vaut échouer que
+    consacrer un destinataire vide sur une pièce comptable - mais il rendait
+    l'application entière indémarrable, sans aucun geste de réparation, alors
+    que le commentaire de la fonction annonçait un traitement PAR LIGNE.
+
+    Le nouveau contrat garde la promesse qui compte (aucun destinataire
+    inventé) et abandonne celle qui coûtait trop cher (l'arrêt) : la migration
+    va au bout, les pièces réparables sont migrées, l'orpheline reste sans
+    destinataire figé et est NOMMÉE dans les journaux. Sa pièce reste refusée à
+    la génération par `_snapshot_de_la_piece` (409), qui n'a pas bougé.
     """
     from app.models.database import apply_adhoc_migrations
 
@@ -280,34 +305,85 @@ def test_base_legacy_facture_orpheline_bloque_le_demarrage(tmp_path: Path):
             "last_name TEXT, company TEXT, email TEXT, phone TEXT, address TEXT)"
         )
         conn.execute(
-            "CREATE TABLE invoices (id TEXT PRIMARY KEY, contact_id TEXT NOT NULL)"
+            "INSERT INTO contacts VALUES (?, ?, ?, ?, ?, ?, ?)",
+            ("contact-vivant", "Marc", "Durand", "ACME", "marc@acme.test", "", ""),
         )
         conn.execute(
-            "INSERT INTO invoices VALUES (?, ?)",
-            ("facture-orpheline", "contact-efface"),
+            "CREATE TABLE invoices (id TEXT PRIMARY KEY, invoice_number TEXT, "
+            "contact_id TEXT NOT NULL)"
+        )
+        conn.execute(
+            "INSERT INTO invoices VALUES (?, ?, ?)",
+            ("piece-saine", "FACT-2026-001", "contact-vivant"),
+        )
+        conn.execute(
+            "INSERT INTO invoices VALUES (?, ?, ?)",
+            ("facture-orpheline", "FACT-2026-002", "contact-efface"),
         )
         conn.commit()
 
-    with pytest.raises(RuntimeError, match="introuvable") as leve:
+    with caplog.at_level("WARNING", logger="app.models.database"):
         apply_adhoc_migrations(db_path)
 
-    # La pièce doit être NOMMÉE : c'est la seule prise de l'utilisateur pour
-    # réparer sa base, puisque l'application refuse de démarrer.
-    assert "facture-orpheline" in str(leve.value), str(leve.value)
-
-    # « avant toute colonne ajoutée » : le refus ne laisse pas une base à
-    # moitié migrée derrière lui.
     with closing(sqlite3.connect(db_path)) as conn:
         colonnes = {
             row[1] for row in conn.execute("PRAGMA table_info(invoices)").fetchall()
         }
-    assert not colonnes & {
+        lignes = dict(
+            conn.execute("SELECT id, client_name FROM invoices").fetchall()
+        )
+
+    assert {
         "client_name",
         "client_company",
         "client_email",
         "client_phone",
         "client_address",
-    }, f"colonnes ajoutées malgré le refus : {sorted(colonnes)}"
+    } <= colonnes, f"la migration ne s'est pas faite : {sorted(colonnes)}"
+
+    assert lignes["piece-saine"] == "Marc Durand", (
+        "la pièce réparable n'a pas été migrée : une seule orpheline emportait "
+        f"toutes les autres ({lignes})"
+    )
+    assert not lignes["facture-orpheline"], (
+        "un destinataire a été inventé pour la pièce orpheline : "
+        f"{lignes['facture-orpheline']!r}"
+    )
+
+    # La pièce doit être NOMMÉE : c'est la seule prise de l'utilisateur pour
+    # réparer sa base, maintenant que le démarrage ne s'arrête plus.
+    assert "FACT-2026-002" in caplog.text, caplog.text[-500:]
+    assert "FACT-2026-001" not in caplog.text, (
+        "une pièce saine est signalée comme à réparer : " + caplog.text[-500:]
+    )
+
+
+def test_migration_orpheline_relancee_ne_reclame_rien_de_plus(tmp_path: Path):
+    """Le second démarrage doit être aussi calme que le premier.
+
+    Idempotence : les colonnes existent déjà, l'orpheline est toujours là, et
+    rien ne doit lever pour autant.
+    """
+    from app.models.database import apply_adhoc_migrations
+
+    db_path = tmp_path / "legacy-orpheline-deux-fois.db"
+    with closing(sqlite3.connect(db_path)) as conn:
+        conn.execute(
+            "CREATE TABLE contacts (id TEXT PRIMARY KEY, first_name TEXT, "
+            "last_name TEXT, company TEXT, email TEXT, phone TEXT, address TEXT)"
+        )
+        conn.execute(
+            "CREATE TABLE invoices (id TEXT PRIMARY KEY, invoice_number TEXT, "
+            "contact_id TEXT NOT NULL)"
+        )
+        conn.execute(
+            "INSERT INTO invoices VALUES (?, ?, ?)",
+            ("facture-orpheline", "FACT-2026-002", "contact-efface"),
+        )
+        conn.commit()
+
+    apply_adhoc_migrations(db_path)
+    apply_adhoc_migrations(db_path)
 
 
 def test_base_legacy_sans_table_contacts_bloque_le_demarrage(tmp_path: Path):

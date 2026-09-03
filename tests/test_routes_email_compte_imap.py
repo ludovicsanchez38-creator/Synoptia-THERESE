@@ -314,3 +314,84 @@ class TestLeJetonDePaginationEstUneSaisieCliente:
 
         assert reponse.status_code == 200, reponse.text[:250]
         assert provider.list_messages.await_args.kwargs["page_token"] == "50"
+
+
+class TestLaClassificationEmprunteLaBrancheImap:
+    """B-259 — sixième membre de la famille B-172.
+
+    `POST /api/email/messages/{id}/classify` a deux chemins : le message est
+    déjà en cache local, ou il faut aller le chercher. Le second appelait
+    `get_gmail_service_for_account` sans regarder `account.provider` : sur un
+    compte IMAP, la classification rendait 401 « Access token expired or
+    invalid », mot pour mot la sortie de B-172. Le cache masquait le défaut -
+    la route est verte dès qu'un message a été stocké une fois.
+
+    `ImapSmtpProvider` sait lire un message : la réparation est une branche,
+    pas une fonctionnalité.
+    """
+
+    @pytest.mark.asyncio
+    async def test_classifier_un_message_absent_du_cache(self, client):
+        from datetime import datetime
+
+        from app.services.email.base_provider import EmailMessageDTO
+
+        compte = await _poser_compte_imap(client)
+        provider = MagicMock()
+        provider.get_message = AsyncMock(
+            return_value=EmailMessageDTO(
+                id="msg-b259",
+                thread_id="fil-b259",
+                subject="Relance devis",
+                snippet="Bonjour, où en est le devis ?",
+                from_email="client@example.invalid",
+                from_name="Client",
+                to_emails=["rb2@example.invalid"],
+                date=datetime(2026, 9, 1, 10, 30),
+                body_plain="Bonjour, où en est le devis ?",
+                labels=["INBOX"],
+            )
+        )
+
+        with (
+            patch("app.routers.email.get_email_provider", return_value=provider),
+            patch("app.routers.email.decrypt_value", return_value="secret"),
+        ):
+            reponse = await client.post(
+                f"/api/email/messages/msg-b259/classify?account_id={compte}",
+                json={"force_reclassify": False},
+            )
+
+        assert "Access token" not in reponse.text, (
+            "un compte IMAP reçoit le message d'un jeton OAuth Google : "
+            f"{reponse.status_code} {reponse.text[:200]}"
+        )
+        assert reponse.status_code == 200, reponse.text
+        provider.get_message.assert_awaited_once_with("msg-b259")
+
+        corps = reponse.json()
+        assert corps["message_id"] == "msg-b259"
+        assert corps["priority"], corps
+
+    @pytest.mark.asyncio
+    async def test_un_serveur_imap_injoignable_reste_nomme(self, client):
+        """La nouvelle branche ne réintroduit pas le recopiage de l'exception
+        fermé par B-253."""
+        compte = await _poser_compte_imap(client)
+        provider = MagicMock()
+        provider.get_message = AsyncMock(
+            side_effect=RuntimeError("/Users/ludo/.therese/imap.log : TEMOIN-B259")
+        )
+
+        with (
+            patch("app.routers.email.get_email_provider", return_value=provider),
+            patch("app.routers.email.decrypt_value", return_value="secret"),
+        ):
+            reponse = await client.post(
+                f"/api/email/messages/inconnu/classify?account_id={compte}",
+                json={"force_reclassify": False},
+            )
+
+        assert reponse.status_code == 502, reponse.text
+        assert "TEMOIN-B259" not in reponse.text, reponse.text[:200]
+        assert "IMAP" in reponse.json().get("message", ""), reponse.text[:200]

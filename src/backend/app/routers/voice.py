@@ -17,6 +17,7 @@ from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
+from starlette.background import BackgroundTask
 
 logger = logging.getLogger(__name__)
 
@@ -273,6 +274,20 @@ async def transcribe_audio_local(
             logger.debug("Echec nettoyage fichier temp: %s", e)
 
 
+def _effacer_fichier_temporaire(chemin: str) -> None:
+    """Efface un fichier temporaire sans jamais faire echouer l'appelant.
+
+    Meme geste que le `finally` des deux routes de transcription, extrait pour
+    servir aussi la synthese (B-270), qui ne peut pas l'utiliser dans un
+    `finally` : le fichier doit survivre au `return` le temps que Starlette le
+    lise.
+    """
+    try:
+        os.unlink(chemin)
+    except OSError as e:
+        logger.debug("Echec nettoyage fichier temp: %s", e)
+
+
 @router.post("/tts")
 async def text_to_speech_local(payload: TTSRequest) -> FileResponse:
     """Synthèse vocale 100% locale et souveraine (Piper) -> audio WAV.
@@ -295,9 +310,20 @@ async def text_to_speech_local(payload: TTSRequest) -> FileResponse:
 
     try:
         synthesize_local(text, out_path, voice=payload.voice or DEFAULT_PIPER_VOICE)
-        return FileResponse(out_path, media_type="audio/wav", filename="therese-tts.wav")
+        # B-270 : le WAV restait sur disque, un fichier par phrase synthétisée,
+        # que rien ne réclamait jamais. Un `finally` l'effacerait AVANT que
+        # Starlette ne le lise et la réponse partirait vide : la tâche de fond
+        # s'exécute, elle, une fois le corps envoyé.
+        return FileResponse(
+            out_path,
+            media_type="audio/wav",
+            filename="therese-tts.wav",
+            background=BackgroundTask(_effacer_fichier_temporaire, out_path),
+        )
     except RuntimeError as e:
+        _effacer_fichier_temporaire(out_path)
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
+        _effacer_fichier_temporaire(out_path)
         logger.exception("Erreur synthèse vocale locale")
         raise HTTPException(status_code=500, detail=f"Erreur synthèse vocale locale : {e}")

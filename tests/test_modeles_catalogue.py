@@ -50,7 +50,14 @@ class TestLesFrontiers:
 
         import app.services.modeles_catalogue as cat
 
-        racine_backend = Path(cat.__file__).resolve().parents[3]
+        # `parents[3]` désignait `src/`, où `app` n'est PAS un paquet : le
+        # sous-processus ne trouvait `app` que par l'installation éditable du
+        # venv. Le 03/09/2026 les `.pth` de ce venv se sont retrouvés marqués
+        # « hidden » par le système de fichiers, et Python 3.13 les ignore
+        # (`site.addpackage`) : le contrôle est devenu rouge sans qu'une ligne
+        # de code ait bougé. `parents[2]` est le dossier où `app` vit vraiment,
+        # et le sous-processus n'a plus besoin de rien d'ambiant.
+        racine_backend = Path(cat.__file__).resolve().parents[2]
         acheve = subprocess.run(
             [
                 sys.executable,

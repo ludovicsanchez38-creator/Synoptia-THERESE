@@ -7,9 +7,11 @@ Deux protections :
    pas de la mémoire du backend (token de session, clé Fernet), donc une
    éventuelle évasion ne donne pas accès aux secrets du process principal.
 """
+import os
 import queue
 
 import pytest
+from app.services.skills import code_executor
 from app.services.skills.code_executor import (
     CodeExecutionError,
     _run_generation_in_subprocess,
@@ -47,6 +49,60 @@ def test_worker_genere_le_fichier_et_signale_ok(tmp_path):
     status, _ = rq.get_nowait()
     assert status == "ok"
     assert out.exists()
+
+
+def test_le_sous_processus_ne_voit_pas_les_secrets_d_environnement(tmp_path, monkeypatch):
+    """B-250 : l'isolement promis porte aussi sur l'ENVIRONNEMENT.
+
+    Le commentaire d'`execute_sandboxed` et le docstring du worker promettent
+    sans condition qu'une évasion du namespace restreint « ne donne pas accès
+    aux secrets du process principal ». `spawn` tient cette promesse pour la
+    MÉMOIRE seulement : l'enfant héritait d'`os.environ` en entier, donc de la
+    clé SQLCipher lue par `encryption.get_db_key_hex()` et de toute clé de
+    fournisseur posée par l'utilisateur (ANTHROPIC_API_KEY, OPENAI_API_KEY,
+    GROQ_API_KEY, BRAVE_API_KEY, FAL_API_KEY...).
+
+    On photographie l'environnement au moment exact où le bac à sable est
+    monté - donc avant la première ligne de code généré - et on exige les deux
+    moitiés : les secrets ont disparu, et il reste de quoi travailler.
+    """
+    monkeypatch.setenv("THERESE_DB_KEY", "ab" * 32)
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "sk-ant-TEMOIN-B250")
+
+    vu: dict[str, str] = {}
+    reel_build = code_executor._build_namespace
+
+    def _espion(*args, **kwargs):
+        vu.update(os.environ)
+        return reel_build(*args, **kwargs)
+
+    monkeypatch.setattr(code_executor, "_build_namespace", _espion)
+
+    sortie = tmp_path / "b250.xlsx"
+    rq: queue.Queue = queue.Queue()
+    _run_generation_in_subprocess(XLSX_OK, str(sortie), "T", "xlsx", 10, rq)
+
+    statut, detail = rq.get_nowait()
+    assert statut == "ok", detail
+    assert sortie.exists(), "épurer l'environnement ne doit pas casser la génération"
+
+    assert vu, "l'espion n'a rien vu : le bac à sable n'a pas été monté"
+    assert "THERESE_DB_KEY" not in vu, (
+        "la clé SQLCipher du backend est lisible depuis le bac à sable"
+    )
+    assert "ANTHROPIC_API_KEY" not in vu, (
+        "une clé de fournisseur posée par l'utilisateur est lisible depuis le "
+        "bac à sable"
+    )
+    assert vu.get("PATH"), (
+        "l'épuration a emporté PATH : le bac à sable n'a plus de quoi tourner"
+    )
+
+    # Le worker est aussi appelé dans le process pytest (cf `_installer_garde_fs`) :
+    # il rend l'environnement comme il rend open() et socket.socket.
+    assert os.environ["THERESE_DB_KEY"] == "ab" * 32, (
+        "l'environnement du process appelant n'a pas été rendu"
+    )
 
 
 def test_worker_signale_erreur_sur_code_qui_leve(tmp_path):
