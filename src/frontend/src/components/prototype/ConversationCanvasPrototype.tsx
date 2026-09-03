@@ -511,8 +511,15 @@ function CommandPalette({
       >
         <div className="flex items-center gap-3 border-b border-border px-4 py-3.5">
           <Search className="h-5 w-5 text-text-muted" />
+          {/* B-278 : PAS d'`autoFocus` ici. React le pose pendant le commit,
+              donc avant les effets passifs de `useDialogFocusTrap` : quand
+              l'effet de capture s'exécute, le focus est déjà dans le dialogue,
+              sa garde `!dialog.contains(document.activeElement)` saute, et le
+              déclencheur n'est jamais mémorisé - Échap laissait alors le focus
+              sur BODY, et toute surface ouverte depuis la palette héritait du
+              trou. `data-dialog-autofocus` désigne déjà ce champ au hook : le
+              focus initial arrive au même endroit, un cran plus tard. */}
           <input
-            autoFocus
             data-dialog-autofocus
             role="combobox"
             aria-label="Rechercher une commande, un parcours ou une capacité"
