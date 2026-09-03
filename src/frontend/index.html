@@ -25,14 +25,31 @@
         --therese-cyan: #22D3EE;
         --therese-magenta: #E11D8D;
         --therese-text-muted: rgba(255, 255, 255, 0.45);
+        /* B-297 : copie de --radius-md (globals.css). La fenêtre Tauri est
+           déclarée transparent:true et decorations:false : sa FORME ne vient
+           que du CSS. */
+        --therese-radius: 0.875rem;
       }
 
-      /* Reset minimal pour le splash */
-      html, body {
+      /* Reset minimal pour le splash.
+         B-297 : ces règles décrivent la MÊME fenêtre que globals.css (html
+         transparent, body arrondi et opaque). Écrites en `html, body` avec un
+         fond opaque et sans rayon, elles donnaient au démarrage une fenêtre à
+         angles vifs qui s'arrondissait au montage de React. */
+      html {
+        margin: 0;
+        padding: 0;
+        background: transparent;
+        height: 100%;
+      }
+
+      body {
         margin: 0;
         padding: 0;
         background: var(--therese-bg);
         height: 100%;
+        border-radius: var(--therese-radius);
+        overflow: hidden;
       }
 
       /* Conteneur du splash inline */
@@ -44,6 +61,9 @@
         align-items: center;
         justify-content: center;
         background: var(--therese-bg);
+        /* Le calque est en position fixed : l'overflow de body ne le rogne
+           pas, il porte donc son rayon lui-même. */
+        border-radius: var(--therese-radius);
         z-index: 9999;
         /* -webkit-app-region requis pour le drag macOS sans barre de titre */
         -webkit-app-region: drag;

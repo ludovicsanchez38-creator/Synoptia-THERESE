@@ -34,7 +34,7 @@
  * lire l'état courant sans dépendre de `instruction` dans les deps de l'effet
  * (qui ne doit se déclencher qu'au changement de `instructionPrefill`).
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { AlertCircle, CheckCircle2, FileEdit, RotateCcw, Sparkles } from 'lucide-react';
@@ -157,6 +157,28 @@ export function SectionEditor({
   const [briefDraft, setBriefDraft] = useState('');
   const [instruction, setInstruction] = useState('');
   const [lastInstruction, setLastInstruction] = useState<string | undefined>(undefined);
+  const zoneContenuRef = useRef<HTMLDivElement>(null);
+  const commandeFocalisee = useRef<HTMLElement | null>(null);
+
+  // B-288 : au démarrage de la rédaction, toutes les commandes de la barre
+  // passent en `disabled` - y compris celle qui vient d'être actionnée. Les
+  // navigateurs rendent alors le focus au corps du document (jsdom, lui, le
+  // laisse sur l'élément désactivé) et la tabulation suivante repart du haut
+  // de la page (RULES-DESIGN §9.2, WCAG 2.4.3). Les deux formes sont traitées
+  // ici, et le focus n'est déplacé que si la commande qui le portait est
+  // devenue injoignable.
+  useEffect(() => {
+    if (!isStreaming) return;
+    const precedent = commandeFocalisee.current;
+    if (!precedent) return;
+    const injoignable =
+      !precedent.isConnected || (precedent as HTMLButtonElement).disabled === true;
+    if (!injoignable) return;
+    const actif = document.activeElement;
+    if (actif !== precedent && actif !== null && actif !== document.body) return;
+    commandeFocalisee.current = null;
+    zoneContenuRef.current?.focus();
+  }, [isStreaming]);
 
   // Reset des buffers locaux uniquement quand la SECTION ACTIVE change (pas
   // à chaque re-render pendant le stream, sinon un titre en cours de frappe
@@ -242,7 +264,13 @@ export function SectionEditor({
   }
 
   return (
-    <div className="flex-1 min-h-0 flex flex-col overflow-y-auto" data-testid="section-editor">
+    <div
+      className="flex-1 min-h-0 flex flex-col overflow-y-auto"
+      data-testid="section-editor"
+      onFocus={(e) => {
+        commandeFocalisee.current = e.target as HTMLElement;
+      }}
+    >
       {/* Titre + consigne (PATCH au blur) */}
       <div className="px-5 py-4 border-b border-border/40 space-y-3 shrink-0">
         <div className="flex items-center gap-2">
@@ -287,7 +315,12 @@ export function SectionEditor({
 
       {/* Contenu : texte brut pendant le stream, markdown rendu sinon */}
       <div className="flex-1 px-5 py-4">
-        <div className="prose prose-invert prose-sm max-w-none" data-testid="section-content">
+        <div
+          className="prose prose-invert prose-sm max-w-none"
+          data-testid="section-content"
+          ref={zoneContenuRef}
+          tabIndex={-1}
+        >
           {isStreaming ? (
             <div className="whitespace-pre-wrap break-words leading-relaxed">
               {section.content}

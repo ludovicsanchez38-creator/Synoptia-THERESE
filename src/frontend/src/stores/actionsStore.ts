@@ -23,6 +23,23 @@ import { useNavigationStore } from './navigationStore';
 const insertedTaskIds = new Set<string>();
 
 /**
+ * B-304 : echecs consecutifs du SUIVI d'une tache, par identifiant.
+ *
+ * Le sondage avalait l'erreur et se reprogrammait toutes les 1,5 s tant que le
+ * statut n'etait pas final ; comme l'echec ne changeait pas le statut, la
+ * condition restait vraie pour toujours et l'utilisateur voyait une tache
+ * tourner sans fin. On borne desormais la serie, et le compteur est remis a
+ * zero au premier succes pour qu'une coupure passagere ne tue pas un suivi qui
+ * allait aboutir.
+ */
+const ECHECS_DE_SUIVI_AVANT_ABANDON = 3;
+const echecsDeSuivi = new Map<string, number>();
+
+/** Message d'ecran : c'est le SUIVI qui a lache, pas forcement la tache. */
+const MESSAGE_SUIVI_PERDU =
+  'Suivi interrompu : le service ne répond plus. La tâche a peut-être continué de son côté.';
+
+/**
  * Insere le resultat d'une action terminee dans le chat actif.
  * BUG-097 (Smileshoot) : l'UI annoncait "Resultat insere dans le chat"
  * mais aucun code ne realisait l'insertion.
@@ -165,8 +182,12 @@ export const useActionsStore = create<ActionsState>((set, get) => ({
       if (becameFinal) {
         insertResultInChat(updated);
       }
+      // B-304 : une lecture reussie efface la serie d'echecs en cours.
+      echecsDeSuivi.delete(taskId);
     } catch {
-      // Silencieux en cas d'erreur de polling
+      // Toujours pas d'erreur a l'ecran ici (un echec isole ne dit rien), mais
+      // la serie est comptee : c'est le sondage qui decide d'abandonner.
+      echecsDeSuivi.set(taskId, (echecsDeSuivi.get(taskId) ?? 0) + 1);
     }
   },
 
@@ -199,6 +220,25 @@ export const useActionsStore = create<ActionsState>((set, get) => ({
       }
 
       await state.refreshTask(taskId);
+
+      // B-304 : au-dela de la serie toleree, on arrete le sondage et on le
+      // DIT - sinon la tache reste affichee « en cours » indefiniment.
+      if ((echecsDeSuivi.get(taskId) ?? 0) >= ECHECS_DE_SUIVI_AVANT_ABANDON) {
+        echecsDeSuivi.delete(taskId);
+        set((s) => ({
+          error: MESSAGE_SUIVI_PERDU,
+          tasks: s.tasks.map((t) =>
+            t.task_id === taskId
+              ? { ...t, status: 'error' as const, error: MESSAGE_SUIVI_PERDU }
+              : t,
+          ),
+          activeTask:
+            s.activeTask?.task_id === taskId
+              ? { ...s.activeTask, status: 'error' as const, error: MESSAGE_SUIVI_PERDU }
+              : s.activeTask,
+        }));
+        return;
+      }
 
       // Re-verifier apres refresh
       const updated = get().tasks.find((t) => t.task_id === taskId);

@@ -4,7 +4,7 @@
  * Guide interactif avec agent conversationnel.
  */
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { HelpCircle, ExternalLink, ChevronLeft } from 'lucide-react';
 import { Button } from '../../ui/Button';
@@ -21,6 +21,18 @@ export function GuideStep({ provider, onHasProjectChange, onBack }: GuideStepPro
   const [selected, setSelected] = useState<boolean | null>(null);
   const [guideMessage, setGuideMessage] = useState<string>('');
   const [loading, setLoading] = useState(false);
+  const blocGuideRef = useRef<HTMLDivElement>(null);
+
+  // B-288 : les deux boutons Oui/Non sont démontés dès le choix, et le focus
+  // retombait sur <body> - la tabulation suivante repartait du haut de la
+  // page (RULES-DESIGN §9.2, WCAG 2.4.3). Le bloc qui les remplace le
+  // recueille, et la tabulation reprend sur Retour puis Continuer.
+  useEffect(() => {
+    if (selected === null) return;
+    const actif = document.activeElement;
+    if (actif && actif !== document.body) return;
+    blocGuideRef.current?.focus();
+  }, [selected]);
 
   const handleSelect = async (hasProject: boolean) => {
     setSelected(hasProject);
@@ -88,6 +100,9 @@ export function GuideStep({ provider, onHasProjectChange, onBack }: GuideStepPro
       {/* Guide message */}
       {selected !== null && (
         <motion.div
+          ref={blocGuideRef}
+          tabIndex={-1}
+          data-testid="guide-message"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="space-y-4"

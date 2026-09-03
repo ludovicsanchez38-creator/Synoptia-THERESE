@@ -177,7 +177,7 @@ export function SessionList() {
                   onClick={() => selectSession(session.id)}
                   className={`w-full border-b border-border px-3 py-2.5 text-left transition ${
                     isActive
-                      ? "bg-agent-purple/10 border-l-2 border-l-purple-400"
+                      ? "bg-agent-purple/10 border-l border-l-agent-purple"
                       : "hover:bg-surface-2"
                   }`}
                 >

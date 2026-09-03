@@ -50,8 +50,13 @@ export function Notifications() {
   return (
     <div
       className={`fixed bottom-4 right-4 ${Z_LAYER.TOAST} flex flex-col gap-2 max-w-sm`}
-      role="status"
-      aria-live="polite"
+      // B-280 : ce conteneur n'est PAS une région live. Il l'était (role=status
+      // + aria-live=polite) en plus de l'annonce explicite de l'effet ci-dessus,
+      // et chaque notification partait donc deux fois au lecteur d'écran. Des
+      // deux mécanismes, `announceToScreenReader` est le seul qui sait passer en
+      // `assertive` sur une erreur : c'est celui qu'on garde. Le rôle `region`
+      // conserve le repère de navigation et le nom du groupe.
+      role="region"
       aria-label="Notifications"
     >
       <AnimatePresence>
@@ -83,6 +88,9 @@ export function Notifications() {
               <button
                 onClick={() => dismissNotification(notification.id)}
                 className="p-1 hover:bg-surface rounded-sm transition-colors"
+                // B-285 : sans ce nom, le bouton n'avait que le <svg> de lucide
+                // pour contenu et s'annonçait « bouton », rien de plus.
+                aria-label={`Fermer la notification : ${notification.title}`}
               >
                 <X className="w-4 h-4 text-text-muted" />
               </button>

@@ -20,7 +20,7 @@
  * une sous-liste repliée par défaut « Pistes traitées » pour ne pas polluer
  * la liste active.
  */
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, ChevronRight, Compass, Lightbulb, PanelRightClose, PanelRightOpen, X } from 'lucide-react';
 import { Button } from '../ui/Button';
 import type { DocumentPiste, PisteStatus } from '../../services/api/documents';
@@ -75,6 +75,24 @@ export interface PistesPanelProps {
 export function PistesPanel({ pistes, onExplore, onIgnore }: PistesPanelProps) {
   const [collapsed, setCollapsed] = useState(false);
   const [showTraitees, setShowTraitees] = useState(false);
+  const boutonDeplierRef = useRef<HTMLButtonElement>(null);
+  const boutonReplierRef = useRef<HTMLButtonElement>(null);
+  const premierRendu = useRef(true);
+
+  // B-288 : le bouton qui bascule le volet se démonte avec lui. Sans ce
+  // transfert, le focus retombait sur <body> et la tabulation suivante
+  // repartait du haut de la page (RULES-DESIGN §9.2, WCAG 2.4.3). On ne
+  // reprend le focus que s'il a été PERDU - jamais s'il est déjà posé
+  // ailleurs par l'utilisateur.
+  useEffect(() => {
+    if (premierRendu.current) {
+      premierRendu.current = false;
+      return;
+    }
+    const actif = document.activeElement;
+    if (actif && actif !== document.body) return;
+    (collapsed ? boutonDeplierRef : boutonReplierRef).current?.focus();
+  }, [collapsed]);
 
   const nouvelles = pistes.filter((p) => p.status === 'nouvelle');
   const traitees = pistes.filter((p) => p.status !== 'nouvelle');
@@ -87,6 +105,7 @@ export function PistesPanel({ pistes, onExplore, onIgnore }: PistesPanelProps) {
       >
         <button
           type="button"
+          ref={boutonDeplierRef}
           onClick={() => setCollapsed(false)}
           className="relative w-8 h-8 grid place-items-center rounded-sm hover:bg-surface-elevated/60 transition-colors"
           aria-label="Déplier le volet Pistes"
@@ -111,6 +130,7 @@ export function PistesPanel({ pistes, onExplore, onIgnore }: PistesPanelProps) {
         </div>
         <button
           type="button"
+          ref={boutonReplierRef}
           onClick={() => setCollapsed(true)}
           className="p-1 rounded-sm hover:bg-surface-elevated/60 text-text-muted transition-colors"
           aria-label="Replier le volet Pistes"

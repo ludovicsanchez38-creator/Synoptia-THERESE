@@ -203,6 +203,16 @@ export function NotificationCenter() {
         onClick={toggle}
         className="relative w-8 h-8 flex items-center justify-center rounded-md hover:bg-surface-elevated/80 transition-colors"
         title="Notifications"
+        // B-282 : `title` seul ne nommait ce bouton que par la voie de dernier
+        // recours du calcul de nom, et il ne s'affiche jamais au clavier. Le
+        // compte est repris ici parce que, sans aria-label, le nom du bouton
+        // devenait celui du badge dès la première non-lue - « Notifications »
+        // disparaissait alors du nom.
+        aria-label={
+          unreadCount > 0
+            ? `Notifications, ${unreadCount} non lue${unreadCount > 1 ? 's' : ''}`
+            : 'Notifications'
+        }
       >
         <Bell className="w-4.5 h-4.5 text-text-muted" />
         {unreadCount > 0 && (

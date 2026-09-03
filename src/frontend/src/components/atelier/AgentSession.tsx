@@ -36,17 +36,61 @@ interface AgentSessionMessage {
   isStreaming?: boolean;
 }
 
-/** Couleurs par profil */
-const COLOR_MAP: Record<string, { accent: string; bg: string }> = {
-  cyan: { accent: "text-agent-cyan", bg: "bg-agent-cyan/10" },
-  magenta: { accent: "text-agent-magenta", bg: "bg-agent-magenta/10" },
-  blue: { accent: "text-agent-blue", bg: "bg-agent-blue/10" },
-  green: { accent: "text-agent-green", bg: "bg-agent-green/10" },
-  purple: { accent: "text-agent-purple", bg: "bg-agent-purple/10" },
-  amber: { accent: "text-agent-amber", bg: "bg-agent-amber/10" },
+/**
+ * Couleurs par profil.
+ *
+ * B-296 : `accent` et `bordure` sont ECRITS EN TOUTES LETTRES, jamais composes
+ * a l'execution. Tailwind 4 ne genere que les classes qu'il lit litteralement
+ * dans les sources : `${colors.accent}/80`, assemble au rendu, n'apparaissait
+ * nulle part et cinq profils sur six affichaient la mention « <nom> reflechit »
+ * dans la couleur de texte par defaut au lieu de leur accent.
+ *
+ * L'attenuation a 80 % n'a PAS ete retablie en classe litterale : composee sur
+ * le fond clair (#F3F6FC) elle donne 4,42:1 pour le cyan comme pour le vert,
+ * sous les 4,5:1 qu'exige RULES-DESIGN section 1.2 pour du texte de 12 px ; et
+ * pour le profil inconnu, une opacite sur le jeton de texte secondaire tombe
+ * sous une regle deja testee par opaciteSurLeTexte.test.ts. La mention porte
+ * donc l'accent plein, comme le nom du profil juste au-dessus : de 6,9:1 a
+ * 11,1:1 selon le profil et le theme.
+ */
+const COLOR_MAP: Record<string, { accent: string; bordure: string; bg: string }> = {
+  cyan: {
+    accent: "text-agent-cyan",
+    bordure: "border-l-agent-cyan",
+    bg: "bg-agent-cyan/10",
+  },
+  magenta: {
+    accent: "text-agent-magenta",
+    bordure: "border-l-agent-magenta",
+    bg: "bg-agent-magenta/10",
+  },
+  blue: {
+    accent: "text-agent-blue",
+    bordure: "border-l-agent-blue",
+    bg: "bg-agent-blue/10",
+  },
+  green: {
+    accent: "text-agent-green",
+    bordure: "border-l-agent-green",
+    bg: "bg-agent-green/10",
+  },
+  purple: {
+    accent: "text-agent-purple",
+    bordure: "border-l-agent-purple",
+    bg: "bg-agent-purple/10",
+  },
+  amber: {
+    accent: "text-agent-amber",
+    bordure: "border-l-agent-amber",
+    bg: "bg-agent-amber/10",
+  },
 };
 
-const DEFAULT_COLOR = { accent: "text-text-muted", bg: "bg-surface-2" };
+const DEFAULT_COLOR = {
+  accent: "text-text-muted",
+  bordure: "border-l-border",
+  bg: "bg-surface-2",
+};
 
 /** Profils par defaut (identiques a AgentCatalog) */
 const PROFILE_MAP: Record<string, AgentProfile> = {
@@ -490,16 +534,18 @@ export function AgentSession({ profileId, model, onBack }: Props) {
                         {profile?.name || profileId}
                       </div>
                     )}
+                    {/* B-294 : surfaces prises dans les jetons du theme (le
+                        rgba litteral rendait la bulle d'agent invisible en
+                        theme clair). B-290 : le lisere porte une couleur
+                        DECLAREE - « 2px solid » sans borderLeftColor retombait
+                        sur currentColor, donc sur l'encre du texte - et tient
+                        en 1 px (RULES-DESIGN section 12). */}
                     <div
-                      className="rounded-md px-3 py-2 text-sm leading-relaxed"
-                      style={{
-                        backgroundColor: isUser
-                          ? "rgba(34, 211, 238, 0.1)"
-                          : "rgba(255, 255, 255, 0.03)",
-                        borderLeft: isUser ? "none" : "2px solid",
-                        borderLeftColor: isUser ? "transparent" : undefined,
-                        color: "var(--color-text)",
-                      }}
+                      className={`rounded-md px-3 py-2 text-sm leading-relaxed text-text ${
+                        isUser
+                          ? "bg-agent-cyan/10"
+                          : `bg-surface-2 border-l ${colors.bordure}`
+                      }`}
                     >
                       <span style={{ whiteSpace: "pre-wrap" }}>
                         {msg.content}
@@ -523,7 +569,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
               <div className={`flex h-7 w-7 items-center justify-center rounded-full ${colors.bg} text-sm`}>
                 {profile?.icon || "🤖"}
               </div>
-              <span className={`text-xs ${colors.accent}/80`}>
+              <span className={`text-xs ${colors.accent}`}>
                 {profile?.name || "Agent"} reflechit
               </span>
               <ThinkingDots color={colors.accent} />

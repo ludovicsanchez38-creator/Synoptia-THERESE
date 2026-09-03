@@ -376,22 +376,6 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
         </div>
       )}
 
-      {showFollowUpForm && (
-        <div className="mx-6 mb-3 shrink-0 rounded-md border border-border/40 bg-surface-elevated/30 p-3" data-testid="email-follow-up-form">
-          <div className="grid gap-3 sm:grid-cols-[180px_1fr]">
-            <label className="text-xs font-medium text-text-muted">
-              Échéance
-              <input aria-label="Échéance de la relance" type="date" value={followUpDate} onChange={(event) => setFollowUpDate(event.target.value)} className="mt-1.5 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text" />
-            </label>
-            <label className="text-xs font-medium text-text-muted">
-              Note
-              <input aria-label="Note de la relance" value={followUpNote} onChange={(event) => setFollowUpNote(event.target.value)} placeholder="Ce qu’il faudra vérifier ou demander…" className="mt-1.5 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text" />
-            </label>
-          </div>
-          <div className="mt-3 flex justify-end gap-2"><Button variant="ghost" size="sm" onClick={() => setShowFollowUpForm(false)}>Annuler</Button><Button variant="primary" size="sm" onClick={() => void handleCreateFollowUp()} disabled={!followUpDate || followUpSaving}>{followUpSaving ? <Spinner taille="ligne" className="mr-1.5" /> : <CalendarClock className="mr-1.5 h-3.5 w-3.5" />}Créer la relance</Button></div>
-        </div>
-      )}
-
       {/* Actions — shrink-0 : la barre ne doit jamais être compressée ni poussée
           hors du cadre par le corps du mail (sinon « Générer une réponse » se
           retrouve coupé en bas). flex-wrap : sur un volet étroit, les boutons
@@ -418,6 +402,27 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
           Créer une relance
         </Button>
       </div>
+
+      {/* B-286 : le formulaire est rendu APRÈS la barre qui l'ouvre. Placé
+          avant, il mettait le champ d'échéance en 3e position de tabulation
+          et le déclencheur en dernière : depuis « Créer une relance », Tab
+          sortait du volet au lieu d'entrer dans le formulaire (RULES-DESIGN
+          §9.2, WCAG 2.4.3). */}
+      {showFollowUpForm && (
+        <div className="mx-6 mb-3 mt-1 shrink-0 rounded-md border border-border/40 bg-surface-elevated/30 p-3" data-testid="email-follow-up-form">
+          <div className="grid gap-3 sm:grid-cols-[180px_1fr]">
+            <label className="text-xs font-medium text-text-muted">
+              Échéance
+              <input aria-label="Échéance de la relance" type="date" value={followUpDate} onChange={(event) => setFollowUpDate(event.target.value)} className="mt-1.5 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text" />
+            </label>
+            <label className="text-xs font-medium text-text-muted">
+              Note
+              <input aria-label="Note de la relance" value={followUpNote} onChange={(event) => setFollowUpNote(event.target.value)} placeholder="Ce qu’il faudra vérifier ou demander…" className="mt-1.5 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text" />
+            </label>
+          </div>
+          <div className="mt-3 flex justify-end gap-2"><Button variant="ghost" size="sm" onClick={() => setShowFollowUpForm(false)}>Annuler</Button><Button variant="primary" size="sm" onClick={() => void handleCreateFollowUp()} disabled={!followUpDate || followUpSaving}>{followUpSaving ? <Spinner taille="ligne" className="mr-1.5" /> : <CalendarClock className="mr-1.5 h-3.5 w-3.5" />}Créer la relance</Button></div>
+        </div>
+      )}
 
       {/* Response Generator Modal */}
       <ResponseGeneratorModal

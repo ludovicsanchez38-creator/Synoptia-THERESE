@@ -85,12 +85,18 @@ describe('lot 5 : plus une seule couleur brute', () => {
     // anneaux bruts sont restés, tous en nuances 400/500/600 pensées pour un
     // fond sombre. Un survol qui passe de green-500/20 à /30 faisait tomber
     // une action sous le seuil, et rien ne le voyait.
+    //
+    // B-299 : le motif ne connaissait que la forme axiale nue (`border-*`) et
+    // ne rencontrait donc JAMAIS les variantes DIRECTIONNELLES. Une seule
+    // couleur brute avait survécu au lot 5 du 30/08 dans tout le frontend -
+    // `border-l-purple-400` - et c'est précisément la forme que ce garde ne
+    // regardait pas. Les préfixes qui acceptent un côté ou un axe le déclarent
+    // désormais.
     const familles =
       'red|orange|amber|yellow|lime|green|emerald|teal|cyan|sky|blue|indigo|violet|purple|fuchsia|pink|rose';
-    const motif = new RegExp(
-      `\\b(?:text|bg|border|ring|from|to|via|placeholder|divide|outline|shadow|decoration|accent|caret)-(?:${familles})-\\d{2,3}\\b`,
-      'g',
-    );
+    const prefixes =
+      'text|bg|ring|from|to|via|placeholder|outline|shadow|decoration|accent|caret|(?:border|divide)(?:-[trblxyse]|-[se]{1,2})?';
+    const motif = new RegExp(`\\b(?:${prefixes})-(?:${familles})-\\d{2,3}\\b`, 'g');
     const fautifs: string[] = [];
     for (const f of SOURCES) {
       for (const m of readFileSync(f, 'utf-8').matchAll(motif)) fautifs.push(`${court(f)} : ${m[0]}`);
@@ -214,6 +220,58 @@ describe('lot 5 : plus une seule couleur brute', () => {
       }
     }
     expect(fautifs, `${fautifs.length} couleurs inline : ${fautifs.slice(0, 4).join(' | ')}`).toEqual([]);
+  });
+
+  it("aucune couleur littérale rgb() ou rgba() dans un style inline", () => {
+    // B-294 : le garde ci-dessus ne voyait que les #hex, et seulement quand la
+    // valeur suivait immédiatement le deux-points. Les bulles de la session
+    // d'agent écrivaient leurs deux surfaces en rgba() littéral, réparties sur
+    // trois lignes d'un ternaire : aucune règle ne pouvait les voir. En thème
+    // clair, le blanc à 3 % rendait exactement la couleur de la page.
+    //
+    // DETTE_INLINE liste ce qui reste, fichier par fichier et déclaration par
+    // déclaration : la liste est comparée à l'identique, donc une NOUVELLE
+    // couleur littérale fait rougir, et une réparation aussi (il faut alors
+    // retirer sa ligne d'ici).
+    const DETTE_INLINE = [
+      'components/atelier/AgentChat.tsx : backgroundColor: isUser ? "rgba(34, 211, 238, 0.1)"',
+      "components/atelier/AgentMessageBubble.tsx : backgroundColor: isUser ? 'rgba(34, 211, 238, 0.1)'",
+      "components/atelier/CodeReviewPanel.tsx : backgroundColor: line.startsWith('+') && !line.startsWith('+++') ? 'rgba(34, 1",
+      "components/atelier/MissionStepper.tsx : backgroundColor: isActive ? 'rgba(168, 85, 247, 0.2)'",
+      "components/atelier/MissionStepper.tsx : backgroundColor: isDone ? '#A855F7' : 'rgba(255,255,255,0.1)'",
+      "components/ui/UpdateBanner.tsx : background: 'rgba(34, 211, 238, 0.2)'",
+      "components/ui/UpdateBanner.tsx : background: 'rgba(34, 211, 238, 0.2)'",
+      "components/ui/UpdateBanner.tsx : background: 'rgba(34, 211, 238, 0.2)'",
+      "components/ui/UpdateBanner.tsx : background: state.phase === 'error' ? 'rgba(225, 29, 141, 0.15)'",
+      "components/ui/UpdateBanner.tsx : borderColor: state.phase === 'error' ? 'rgba(225, 29, 141, 0.3)'",
+    ];
+    const motif =
+      /\b(?:color|backgroundColor|background|borderColor|border(?:Left|Right|Top|Bottom)Color|fill|stroke)\s*:[^,;}]*?['"`]rgba?\([^)]*\)['"`]/g;
+    const fautifs: string[] = [];
+    for (const f of SOURCES) {
+      for (const m of readFileSync(f, 'utf-8').matchAll(motif)) {
+        fautifs.push(`${court(f)} : ${m[0].replace(/\s+/g, ' ').slice(0, 78)}`);
+      }
+    }
+    expect(fautifs.sort()).toEqual([...DETTE_INLINE].sort());
+  });
+
+  it("aucun modificateur de classe n’est assemblé à l’exécution", () => {
+    // B-296 : `className={`text-xs ${colors.accent}/80`}` ne produit AUCUNE
+    // règle. Tailwind 4 ne génère que ce qu'il lit littéralement dans les
+    // sources ; la chaîne finale, assemblée au rendu, n'y figure pas. Cinq des
+    // six profils d'agent affichaient donc « <nom> réfléchit » dans la couleur
+    // de texte par défaut. La forme sûre est de porter le modificateur DANS la
+    // table de classes, en toutes lettres.
+    const motif = /className=\{`[^`]*\$\{[^{}]*\}[/-]\d/g;
+    const fautifs: string[] = [];
+    for (const f of SOURCES) {
+      const contenu = readFileSync(f, 'utf-8');
+      for (const m of contenu.matchAll(motif)) {
+        fautifs.push(`${court(f)}:${contenu.slice(0, m.index).split('\n').length}`);
+      }
+    }
+    expect(fautifs, fautifs.join(' | ')).toEqual([]);
   });
 
   it("la charte Synoptïa ne déborde pas sur THÉRÈSE", () => {

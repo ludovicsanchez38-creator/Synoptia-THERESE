@@ -109,3 +109,52 @@ describe('B-065 — le splash respecte le mouvement réduit', () => {
     }
   });
 });
+
+/**
+ * B-297 - le splash et l'application ne décrivaient pas la même fenêtre.
+ *
+ * `tauri.conf.json` déclare la fenêtre `transparent: true` et
+ * `decorations: false` : sa forme ne vient que du CSS. La feuille globale rend
+ * `html` transparent et arrondit `body` et `#root` de `--radius-md` ; le splash
+ * inline, lui, peignait `html` ET `body` d'une couleur opaque, à angles vifs.
+ * Au montage de React la fenêtre changeait donc de FORME en même temps que de
+ * couleur. Le test des teintes (B-063) ne verrouillait que les couleurs.
+ *
+ * Le rayon doit être posé sur `#therese-splash` lui-même : il est en
+ * `position: fixed`, donc l'`overflow: hidden` de `body` ne le rogne pas.
+ */
+describe('B-297 - le splash a la même forme que la fenêtre de l’application', () => {
+  const style = (() => {
+    const debut = indexHtml.indexOf('<style>');
+    return indexHtml.slice(debut, indexHtml.indexOf('</style>', debut));
+  })();
+
+  /** Corps de la règle CSS d'un sélecteur, dans le <style> inline. */
+  function regle(selecteur: string): string {
+    const ancre = new RegExp(`(^|\\n)\\s*${selecteur.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\s*\\{`);
+    const trouve = ancre.exec(style);
+    expect(trouve, `règle « ${selecteur} » introuvable dans le <style> d’index.html`).not.toBeNull();
+    const debut = style.indexOf('{', (trouve as RegExpExecArray).index);
+    return style.slice(debut, style.indexOf('}', debut));
+  }
+
+  it('le rayon du splash n’est pas inventé : c’est --radius-md de la charte', () => {
+    expect(variable(indexHtml, ':root {', '--therese-radius')).toBe(
+      variable(globals, '@theme {', '--radius-md'),
+    );
+  });
+
+  it('html est transparent, comme dans la feuille globale', () => {
+    expect(regle('html')).toMatch(/background:\s*transparent\s*;/);
+  });
+
+  it('body porte le fond et le rayon, comme dans la feuille globale', () => {
+    const corps = regle('body');
+    expect(corps).toMatch(/background:\s*var\(--therese-bg\)\s*;/);
+    expect(corps).toMatch(/border-radius:\s*var\(--therese-radius\)\s*;/);
+  });
+
+  it('le calque du splash est arrondi lui aussi (il est en position fixed)', () => {
+    expect(regle('#therese-splash')).toMatch(/border-radius:\s*var\(--therese-radius\)\s*;/);
+  });
+});

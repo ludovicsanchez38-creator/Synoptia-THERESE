@@ -236,3 +236,36 @@ describe('BUG-151 - images distantes opt-in', () => {
     expect(container.querySelector('img[src^="https:"]')).toBeNull();
   });
 });
+
+/**
+ * B-286 - le formulaire de relance était rendu AVANT la barre d'actions qui
+ * l'ouvre. L'ordre de tabulation suit l'ordre du DOM (aucun tabindex positif
+ * ici) : depuis « Créer une relance », dernier élément du composant, Tab
+ * sortait du volet et il fallait huit Maj+Tab pour atteindre le champ
+ * d'échéance qu'on venait de faire apparaître. RULES-DESIGN §9.2, « ordre de
+ * tabulation logique et prévisible » (WCAG 2.1 A, critère 2.4.3).
+ */
+describe('B-286 - ouvrir la relance mène au formulaire, pas hors du volet', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockCreateFollowUp.mockResolvedValue({});
+  });
+
+  it("le champ d'échéance suit immédiatement le déclencheur dans l'ordre de tabulation", async () => {
+    storeMessages = [makeMessage({ body_plain: 'déjà chargé' })];
+    const { EmailDetail } = await import('./EmailDetail');
+    render(<EmailDetail accountId="acc1" messageId="m1" />);
+
+    const declencheur = screen.getByRole('button', { name: 'Créer une relance' });
+    fireEvent.click(declencheur);
+
+    const champ = screen.getByLabelText('Échéance de la relance');
+    const focalisables = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        'button, input, textarea, select, a[href], [tabindex]:not([tabindex="-1"])',
+      ),
+    ).filter((e) => !(e as HTMLButtonElement).disabled);
+
+    expect(focalisables.indexOf(champ)).toBe(focalisables.indexOf(declencheur) + 1);
+  });
+});
