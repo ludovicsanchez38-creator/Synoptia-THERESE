@@ -596,6 +596,74 @@ describe('B-204 - le tiroir Conversations est un panneau, pas une modale', () =>
 });
 
 /**
+ * B-277 - isoler sans le dire : le tiroir posait `inert` sans monter le voile.
+ *
+ * Constat du 03/09/2026 (ronde de plateau B, 1279 px) : ouvrir le tiroir des
+ * conversations passait `<main id="main-content">` à `inert` - le fond ne
+ * répondait plus - alors qu'aucun voile ne le signalait. Le fond restait à
+ * pleine luminosité : une application figée, pas une surface mise de côté.
+ *
+ * B-204 avait aligné le tiroir sur ses six frères pour la MOITIÉ isolation
+ * (`usePanneauCouvrant`), mais la seconde moitié du contrat 0.48.1 - « si le
+ * fond est isolé, il doit se VOIR » - passe par une liste de panneaux
+ * ÉNUMÉRÉS PAR NOM dans la coque (`panneauLateralOuvert`), où le tiroir ne
+ * figurait pas. Même mode d'échec que B-204, sur l'autre versant.
+ *
+ * L'invariant testé ici est donc le lien, pas l'un des deux bouts :
+ * isolement et voile montent et tombent ENSEMBLE.
+ */
+describe('B-277 - le tiroir qui isole monte aussi le voile', () => {
+  beforeEach(reinitialiser);
+
+  async function ouvrirLeTiroir() {
+    render(<ConversationCanvasPrototype />);
+    await act(async () => { runAction('conversations.toggle'); });
+    return waitFor(() => screen.getByTestId('prototype-conversation-drawer'));
+  }
+
+  it('1279 px : la colonne est isolée, donc le voile est monté', async () => {
+    poserLargeurEcran(false);
+    await ouvrirLeTiroir();
+
+    const principale = document.getElementById('main-content');
+    expect(principale, 'la colonne principale est introuvable').toBeTruthy();
+    // Témoin : si le tiroir n'isolait plus rien, exiger un voile ne voudrait
+    // rien dire. C'est bien un fond MORT qu'on demande de rendre visible.
+    expect(principale!.hasAttribute('inert')).toBe(true);
+    expect(
+      screen.queryByTestId('panneau-voile'),
+      'la colonne est inerte mais rien ne le montre : fond mort à pleine luminosité',
+    ).not.toBeNull();
+  });
+
+  it('1280 px : ni isolement ni voile - le tiroir est côte à côte', async () => {
+    poserLargeurEcran(true);
+    await ouvrirLeTiroir();
+
+    const principale = document.getElementById('main-content');
+    expect(principale!.hasAttribute('inert')).toBe(false);
+    expect(
+      screen.queryByTestId('panneau-voile'),
+      'un panneau côte à côte n’assombrit pas la conversation restée visible',
+    ).toBeNull();
+  });
+
+  it('refermer le tiroir retire le voile avec l’isolement', async () => {
+    poserLargeurEcran(false);
+    await ouvrirLeTiroir();
+    expect(screen.queryByTestId('panneau-voile')).not.toBeNull();
+
+    await act(async () => { runAction('conversations.toggle'); });
+
+    await waitFor(() =>
+      expect(screen.queryByTestId('prototype-conversation-drawer')).toBeNull(),
+    );
+    expect(document.getElementById('main-content')!.hasAttribute('inert')).toBe(false);
+    expect(screen.queryByTestId('panneau-voile')).toBeNull();
+  });
+});
+
+/**
  * La garde qui ne nomme personne : un panneau latéral n'isole jamais sans condition.
  *
  * Les listes par NOM ont laissé passer le canevas de contexte (0.49) puis le

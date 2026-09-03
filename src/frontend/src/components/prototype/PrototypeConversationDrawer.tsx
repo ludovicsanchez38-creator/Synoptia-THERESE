@@ -86,6 +86,9 @@ export function PrototypeConversationDrawer({
   // du hotfix 0.48.1 parce qu'elles énumèrent des fichiers `*Canvas.tsx` PAR
   // NOM. Aligné sur ses six frères : isolation seulement quand il recouvre,
   // aucun piège clavier (le rail et l'en-tête restent joignables).
+  // B-277 : l'alignement n'avait porté que sur cette moitié-ci. Le VOILE, la
+  // seconde moitié du contrat 0.48.1, se décide dans la coque à partir d'une
+  // autre liste par nom (`panneauLateralOuvert`), où le tiroir manquait aussi.
   const estCouvrant = usePanneauCouvrant();
   useDialogFocusTrap(drawerRef, {
     active: isPresent,

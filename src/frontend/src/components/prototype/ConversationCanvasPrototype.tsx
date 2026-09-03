@@ -1163,8 +1163,12 @@ export function ConversationCanvasPrototype() {
 
   // Hotfix 0.48.1 : un panneau latéral est ouvert ET recouvre la zone ?
   const panneauCouvrant = usePanneauCouvrant();
+  // B-277 : cette liste ÉNUMÈRE les panneaux par nom, et le tiroir des
+  // conversations n'y figurait pas. Il isolait pourtant `main` sous le seuil
+  // (B-204, `usePanneauCouvrant`) : le fond ne répondait plus, à pleine
+  // luminosité, sans rien pour le dire. Isolement et voile vont ensemble.
   const panneauLateralOuvert =
-    calculatorOpen || deliverablesOpen || imagesOpen || followUpsOpen || voiceOpen
+    drawerOpen || calculatorOpen || deliverablesOpen || imagesOpen || followUpsOpen || voiceOpen
     || (canvasOpen && scenario !== 'today');
 
   // Relecture Grok, objection 2 : `openChat` lit la largeur UNE FOIS, alors que
