@@ -25,18 +25,18 @@ logger = logging.getLogger(__name__)
 class UserProfile:
     """User profile data structure."""
 
-    name: str                      # "Ludovic Sanchez"
-    nickname: str = ""             # "Ludo"
-    company: str = ""              # "Synoptïa"
+    name: str                      # "Marie Exemple"
+    nickname: str = ""             # "Marie"
+    company: str = ""              # "Exemple SARL"
     role: str = ""                 # "Entrepreneur IA"
     context: str = ""              # Extended context from THERESE.md
     email: str = ""                # Contact email
     location: str = ""             # "Manosque, France"
-    address: str = ""              # "294 Montee des Genets, 04100 Manosque"
-    siren: str = ""                # "991 606 781"
-    tva_intra: str = ""            # "FR 08 991 606 781"
-    siret: str = ""                # "991 606 781 00011" (identite emetteur facture)
-    code_ape: str = ""             # "6202A" (code NAF)
+    address: str = ""              # "12 rue de l'Exemple, 04100 Manosque"
+    siren: str = ""                # "123 456 789"
+    tva_intra: str = ""            # "FR 00 123 456 789"
+    siret: str = ""                # "123 456 789 00010" (identite emetteur facture)
+    code_ape: str = ""             # "0000Z" (code NAF)
     nda: str = ""                  # Numero declaration activite (organisme de formation)
 
     def to_dict(self) -> dict:
@@ -493,7 +493,7 @@ def parse_claude_md(content: str) -> UserProfile:
     # Extract Owner name
     owner_match = re.search(r'\*\*Owner\*\*\s*:\s*(.+?)(?:\n|$)', content)
     if owner_match:
-        # Format: "Ludovic "Ludo" Sanchez"
+        # Format: "Marie "Mimi" Exemple"
         owner_text = owner_match.group(1).strip()
 
         # Check for nickname in quotes

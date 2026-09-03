@@ -237,7 +237,7 @@ export function ProfileTab({
                 setProfileForm((prev) => ({ ...prev, name: e.target.value }));
                 setError(null);
               }}
-              placeholder="Ludovic Sanchez"
+              placeholder="Marie Exemple"
               className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
@@ -248,7 +248,7 @@ export function ProfileTab({
               type="text"
               value={profileForm.nickname}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, nickname: e.target.value }))}
-              placeholder="Ludo"
+              placeholder="Marie"
               className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
@@ -262,7 +262,7 @@ export function ProfileTab({
               type="text"
               value={profileForm.company}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, company: e.target.value }))}
-              placeholder="Synoptïa"
+              placeholder="Exemple SARL"
               className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
@@ -287,7 +287,7 @@ export function ProfileTab({
               type="email"
               value={profileForm.email}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, email: e.target.value }))}
-              placeholder="ludo@synoptia.fr"
+              placeholder="marie@exemple.fr"
               className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
@@ -312,7 +312,7 @@ export function ProfileTab({
             type="text"
             value={profileForm.address}
             onChange={(e) => setProfileForm((prev) => ({ ...prev, address: e.target.value }))}
-            placeholder="294 Montée des Genêts, 04100 Manosque"
+            placeholder="12 rue de l'Exemple, 04100 Manosque"
             className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring"
           />
         </div>
@@ -325,7 +325,7 @@ export function ProfileTab({
               type="text"
               value={profileForm.siren}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, siren: e.target.value }))}
-              placeholder="991 606 781"
+              placeholder="123 456 789"
               className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
@@ -336,7 +336,7 @@ export function ProfileTab({
               type="text"
               value={profileForm.tva_intra}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, tva_intra: e.target.value }))}
-              placeholder="FR 08 991 606 781"
+              placeholder="FR 00 123 456 789"
               className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50"
             />
           </div>
@@ -351,7 +351,7 @@ export function ProfileTab({
               type="text"
               value={profileForm.siret}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, siret: e.target.value }))}
-              placeholder="991 606 781 00011"
+              placeholder="123 456 789 00010"
               className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring"
             />
           </div>
@@ -362,7 +362,7 @@ export function ProfileTab({
               type="text"
               value={profileForm.code_ape}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, code_ape: e.target.value }))}
-              placeholder="6202A"
+              placeholder="0000Z"
               className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50"
             />
           </div>
@@ -375,7 +375,7 @@ export function ProfileTab({
             type="text"
             value={profileForm.nda}
             onChange={(e) => setProfileForm((prev) => ({ ...prev, nda: e.target.value }))}
-            placeholder="93 04 01236 04"
+            placeholder="00 00 00000 00"
             className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50"
           />
         </div>

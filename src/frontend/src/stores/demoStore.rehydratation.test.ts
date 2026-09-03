@@ -4,9 +4,10 @@
  * `partialize` ne rend que le drapeau `enabled` ; la table de remplacement,
  * elle, repart vide à la construction du store. Après un rechargement de
  * l'application, le badge affichait donc « mode démo » pendant que
- * « Point avec Ludovic Sanchez de Synoptïa » ressortait tel quel dans le texte
- * libre — `maskText` est l'identité tant que la table est vide. Le correctif du
- * 01/09 n'avait armé que `toggle` et `setEnabled`, jamais la rehydratation.
+ * « Point avec Marie Exemple chez Fictif Conseil » ressortait tel quel dans le
+ * texte libre — `maskText` est l'identité tant que la table est vide. Le
+ * correctif du 01/09 n'avait armé que `toggle` et `setEnabled`, jamais la
+ * rehydratation.
  *
  * Deux ordres doivent être couverts, et c'est tout l'enjeu : à un vrai
  * rechargement, la rehydratation précède le chargement des contacts, si bien
@@ -20,10 +21,10 @@ import { useDemoMask } from '../hooks/useDemoMask';
 import { useContactsStore } from './contactsStore';
 import { useDemoStore } from './demoStore';
 
-const PHRASE = 'Point avec Ludovic Sanchez de Synoptia';
+const PHRASE = 'Point avec Marie Exemple chez Fictif Conseil';
 
 const CARNET = [
-  { id: 'c1', first_name: 'Ludovic', last_name: 'Sanchez', company: 'Synoptia' },
+  { id: 'c1', first_name: 'Marie', last_name: 'Exemple', company: 'Fictif Conseil' },
 ] as never;
 
 /** Ce que le stockage porte après une session en mode démo : le drapeau seul. */
@@ -53,8 +54,8 @@ describe('B-145 : le mode démo relu du stockage masque vraiment', () => {
       useContactsStore.setState({ contacts: CARNET });
     });
 
-    expect(result.current.maskText(PHRASE)).not.toContain('Ludovic Sanchez');
-    expect(result.current.maskText(PHRASE)).not.toContain('Synoptia');
+    expect(result.current.maskText(PHRASE)).not.toContain('Marie Exemple');
+    expect(result.current.maskText(PHRASE)).not.toContain('Fictif Conseil');
   });
 
   it('masque le texte libre quand les contacts étaient déjà là', async () => {
@@ -64,7 +65,7 @@ describe('B-145 : le mode démo relu du stockage masque vraiment', () => {
     await useDemoStore.persist.rehydrate();
 
     const { result } = renderHook(() => useDemoMask());
-    expect(result.current.maskText(PHRASE)).not.toContain('Ludovic Sanchez');
+    expect(result.current.maskText(PHRASE)).not.toContain('Marie Exemple');
   });
 
   it("ne masque rien si le stockage dit que le mode démo est éteint", async () => {

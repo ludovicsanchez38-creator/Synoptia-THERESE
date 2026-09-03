@@ -190,8 +190,8 @@ class BaseSkill(ABC):
 
         Example:
             {
-                'sender_name': 'Ludo Sanchez',
-                'sender_company': 'Synoptïa',
+                'sender_name': 'Marie Exemple',
+                'sender_company': 'Exemple SARL',
                 'sender_role': 'Consultant IA',
                 'recipient_context': 'Client actif depuis 2 mois'
             }

@@ -168,7 +168,7 @@ export function SignatureEditorModal({ accountId, accountEmail, onClose }: Signa
                     ref={textareaRef}
                     value={html}
                     onChange={(e) => setHtml(e.target.value)}
-                    placeholder={'<p>Ludovic Sanchez<br/>Synoptïa</p>'}
+                    placeholder={'<p>Marie Exemple<br/>Exemple SARL</p>'}
                     className="w-full h-64 px-4 py-3 bg-background border border-text-muted/20 rounded-md text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring resize-none font-mono text-sm"
                   />
                 </div>

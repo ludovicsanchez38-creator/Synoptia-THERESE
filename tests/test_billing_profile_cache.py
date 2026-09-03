@@ -35,10 +35,10 @@ class TestCacheAutoRepare:
         pref = SimpleNamespace(
             value=json.dumps(
                 {
-                    "name": "Ludovic Sanchez",
-                    "company": "Synoptïa",
-                    "address": "294 Montée des Genêts 04100 Manosque",
-                    "siret": "99160678100011",
+                    "name": "Camille Exemple",
+                    "company": "Exemple SARL",
+                    "address": "12 rue de l'Exemple 04100 Manosque",
+                    "siret": "12345678900010",
                 }
             )
         )
@@ -51,7 +51,7 @@ class TestCacheAutoRepare:
         assert profile is not None
         assert profile.is_billing_complete()
         assert get_cached_profile() is not None
-        assert get_cached_profile().siret == "99160678100011"
+        assert get_cached_profile().siret == "12345678900010"
 
 
 class TestFallbackSessionDansLesStatuts:

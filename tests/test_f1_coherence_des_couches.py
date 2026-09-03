@@ -173,10 +173,10 @@ class TestUnSeulMontantATraversLesCouches:
         )
 
         emetteur = UserProfile(
-            name="Ludovic Sanchez",
-            company="Synoptia",
-            address="294 Montee des Genets, 04100 Manosque",
-            siret="99160678100011",
+            name="Camille Exemple",
+            company="Exemple SARL",
+            address="12 rue de l'Exemple, 04100 Manosque",
+            siret="12345678900010",
         )
         with patch("app.routers.invoices.get_cached_profile", return_value=emetteur):
             rendu = await client.get(f"/api/invoices/{identifiant}/pdf")
@@ -322,10 +322,10 @@ class TestUnSeulSeparateurDecimalDansLeDocument:
         piece = (await client.get(f"/api/invoices/{identifiant}")).json()
 
         emetteur = UserProfile(
-            name="Ludovic Sanchez",
-            company="Synoptia",
-            address="294 Montee des Genets, 04100 Manosque",
-            siret="99160678100011",
+            name="Camille Exemple",
+            company="Exemple SARL",
+            address="12 rue de l'Exemple, 04100 Manosque",
+            siret="12345678900010",
         )
         with patch("app.routers.invoices.get_cached_profile", return_value=emetteur):
             rendu = await client.get(f"/api/invoices/{identifiant}/pdf")

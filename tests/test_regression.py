@@ -6911,19 +6911,19 @@ class TestP0PROD2_BillingProfile:
         resp = await client.post(
             "/api/config/profile",
             json={
-                "name": "Ludovic Sanchez",
-                "company": "Synoptia",
-                "address": "294 Montee des Genets, 04100 Manosque",
-                "siret": "99160678100011",
-                "code_ape": "6202A",
-                "nda": "93040123604",
+                "name": "Camille Exemple",
+                "company": "Exemple SARL",
+                "address": "12 rue de l'Exemple, 04100 Manosque",
+                "siret": "12345678900010",
+                "code_ape": "0000Z",
+                "nda": "11223344556",
             },
         )
         assert resp.status_code == 200, resp.text
         data = resp.json()
-        assert data["siret"] == "99160678100011"
-        assert data["code_ape"] == "6202A"
-        assert data["nda"] == "93040123604"
+        assert data["siret"] == "12345678900010"
+        assert data["code_ape"] == "0000Z"
+        assert data["nda"] == "11223344556"
 
     @pytest.mark.asyncio
     async def test_billing_status_complete_after_profile(self, client):
@@ -6931,10 +6931,10 @@ class TestP0PROD2_BillingProfile:
         await client.post(
             "/api/config/profile",
             json={
-                "name": "Ludo",
-                "company": "Synoptia",
-                "address": "294 Montee des Genets",
-                "siret": "99160678100011",
+                "name": "Camille",
+                "company": "Exemple SARL",
+                "address": "12 rue de l'Exemple",
+                "siret": "12345678900010",
             },
         )
         resp = await client.get("/api/invoices/billing/profile-status")
@@ -6945,7 +6945,7 @@ class TestP0PROD2_BillingProfile:
     async def test_pdf_generation_blocked_without_emitter(self, client):
         """La génération PDF est bloquée (400) si le profil émetteur est incomplet."""
         # Profil sans SIRET ni adresse -> incomplet
-        await client.post("/api/config/profile", json={"name": "Ludo"})
+        await client.post("/api/config/profile", json={"name": "Camille"})
 
         c = await client.post("/api/memory/contacts", json={"first_name": "Client"})
         cid = c.json()["id"]
@@ -6977,10 +6977,10 @@ class TestP0PROD2_BillingProfile:
         """format_for_llm doit injecter SIRET/NDA pour que le chat ne les invente pas."""
         from app.services.user_profile import UserProfile
 
-        p = UserProfile(name="Ludo", siret="99160678100011", nda="93040123604")
+        p = UserProfile(name="Camille", siret="12345678900010", nda="11223344556")
         out = p.format_for_llm()
-        assert "99160678100011" in out
-        assert "93040123604" in out
+        assert "12345678900010" in out
+        assert "11223344556" in out
         assert "ne jamais inventer" in out.lower()
 
     def test_profile_tab_has_siret_field(self):
@@ -7492,8 +7492,8 @@ class TestGlobal_Fixes:
         }
         contact_data = {"name": "Client QC", "company": "", "email": "", "phone": "", "address": ""}
         profile = {
-            "name": "Ludovic Sanchez", "company": "Synoptia",
-            "address": "Manosque", "siren": "", "siret": "99160678100011",
+            "name": "Camille Exemple", "company": "Exemple SARL",
+            "address": "Manosque", "siren": "", "siret": "12345678900010",
             "code_ape": "", "tva_intra": "",
         }
         path = gen.generate_invoice_pdf(
@@ -7543,13 +7543,13 @@ class TestGlobal_Fixes:
             name="Claire Fontaine",
             role="consultante-formatrice",
             siret="123 456 789 00010",
-            nda="93040123604",
+            nda="11223344556",
             tva_intra="FR00123456789",
         )
         brief = profile.format_brief()
         assert "Claire Fontaine" in brief
         assert "123 456 789 00010" not in brief
-        assert "93040123604" not in brief
+        assert "11223344556" not in brief
         # Le format complet, lui, doit toujours porter l'identité légale (anti-hallu chat).
         assert "123 456 789 00010" in profile.format_for_llm()
 
