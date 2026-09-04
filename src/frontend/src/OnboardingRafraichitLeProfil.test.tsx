@@ -35,12 +35,16 @@ vi.mock('./hooks/useHealthCheck', () => ({ useHealthCheck: vi.fn() }));
 vi.mock('./lib/capacites/generation', () => ({
   controlerGenerationAuDemarrage: vi.fn().mockResolvedValue(undefined),
 }));
+vi.mock('./lib/profileStorageIsolation', () => ({
+  isolateDataProfilePersistence: vi.fn().mockReturnValue('unchanged'),
+}));
 
 vi.mock('./services/api', async (importOriginal) => {
   const original = await importOriginal<typeof import('./services/api')>();
   return {
     ...original,
     initializeAuth: vi.fn().mockResolvedValue(undefined),
+    getStats: vi.fn().mockResolvedValue({ data_dir: '/Users/test/.therese' }),
     getOnboardingStatus: vi.fn().mockResolvedValue({ completed: false }),
   };
 });
@@ -123,6 +127,7 @@ describe('B-214 — la fin de l’assistant rafraîchit le profil', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     profil.courant = null;
+    localStorage.clear();
     window.history.replaceState({}, '', '/?interface=conversation-canvas');
     useChatStore.setState({ conversations: [], currentConversationId: null, isStreaming: false });
     useAccessibilityStore.setState({ theme: 'light', highContrast: false });
