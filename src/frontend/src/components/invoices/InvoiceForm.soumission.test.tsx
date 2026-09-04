@@ -35,7 +35,13 @@ vi.mock('../../services/api', async () => {
 });
 
 async function remplirLeFormulaire() {
-  fireEvent.change(await screen.findByLabelText(/Client/i), { target: { value: 'contact-1' } });
+  // B-307 : le <select> existe avant que listContacts ait livré ses options.
+  // Attendre seulement son label laissait fireEvent viser une valeur encore
+  // absente, course visible uniquement dans la suite complète sous charge.
+  await screen.findByRole('option', { name: 'Jean Dupont' });
+  const client = screen.getByLabelText(/Client/i);
+  fireEvent.change(client, { target: { value: 'contact-1' } });
+  expect(client).toHaveValue('contact-1');
   fireEvent.change(screen.getByPlaceholderText('Description'), { target: { value: 'Prestation' } });
   fireEvent.change(screen.getByLabelText('Prix HT ligne 1'), { target: { value: '100' } });
 }

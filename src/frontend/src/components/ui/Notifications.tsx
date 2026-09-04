@@ -50,6 +50,10 @@ export function Notifications() {
   return (
     <div
       className={`fixed bottom-4 right-4 ${Z_LAYER.TOAST} flex flex-col gap-2 max-w-sm`}
+      // B-308 : une modale isole ses frères DOM avec `inert`. Les toasts sont
+      // rendus au niveau de la coque et doivent rester fermables au-dessus de
+      // cette modale ; le focus trap reconnaît explicitement cet attribut.
+      data-dialog-allow
       // B-280 : ce conteneur n'est PAS une région live. Il l'était (role=status
       // + aria-live=polite) en plus de l'annonce explicite de l'effet ci-dessus,
       // et chaque notification partait donc deux fois au lecteur d'écran. Des

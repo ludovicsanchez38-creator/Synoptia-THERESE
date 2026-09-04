@@ -6,10 +6,25 @@
  * qu'une longue chaîne sans espace ne déborde jamais du toast.
  */
 
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { useRef } from 'react';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { Notifications } from './Notifications';
 import { useStatusStore } from '../../stores/statusStore';
+import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
+
+function ModalAvecNotification() {
+  const ref = useRef<HTMLDivElement>(null);
+  useDialogFocusTrap(ref, { active: true, isolateBackground: true });
+  return (
+    <div>
+      <div ref={ref} role="dialog" aria-modal="true" aria-label="Formulaire">
+        <button>Enregistrer</button>
+      </div>
+      <Notifications />
+    </div>
+  );
+}
 
 describe('BUG-134 - toast lisible', () => {
   beforeEach(() => {
@@ -51,5 +66,20 @@ describe('BUG-134 - toast lisible', () => {
 
     const message = screen.getByText(/tres\/long\/chemin/);
     expect(message.className).toContain('break-words');
+  });
+
+  it('reste fermable quand une modale isole le reste de la coque', async () => {
+    useStatusStore.setState({
+      notifications: [
+        { id: 'n3', type: 'error', title: 'Échec du formulaire', timestamp: new Date() },
+      ],
+    });
+    render(<ModalAvecNotification />);
+
+    const fermer = screen.getByRole('button', { name: /Fermer la notification/ });
+    await waitFor(() => expect(fermer.closest('[inert]')).toBeNull());
+    fireEvent.click(fermer);
+
+    await waitFor(() => expect(screen.queryByText('Échec du formulaire')).toBeNull());
   });
 });

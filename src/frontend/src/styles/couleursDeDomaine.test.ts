@@ -115,6 +115,10 @@ describe('lot 5 : plus une seule couleur brute', () => {
     }
   });
 
+  it('distingue Signature et Livraison dans le Pipeline sombre', () => {
+    expect(SOMBRE['agent-amber']).not.toBe(SOMBRE['domaine-taches']);
+  });
+
   it('les couleurs de domaine sont réellement portées par une surface', () => {
     // Un jeton défini que personne n'utilise, c'est la maladie qu'on soigne.
     const porteurs = SOURCES.filter((f) => /domaine-(agenda|taches|factures|prospects)/.test(readFileSync(f, 'utf-8')));

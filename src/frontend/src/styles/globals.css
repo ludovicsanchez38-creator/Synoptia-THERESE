@@ -206,10 +206,11 @@
      laisse passer la couche du dessous et rend le contraste imprévisible. */
   --color-domaine-agenda: #22D3EE;
   --color-domaine-agenda-tint: #15334D;
-  /* #FBBF24 et non #F59E0B : en sombre, --color-warning vaut déjà #F59E0B.
-     Un badge « en retard » et une puce de domaine Tâches étaient
-     indiscernables. */
-  --color-domaine-taches: #FBBF24;
+  /* B-309 : #FBBF24 était aussi --color-agent-amber. Dans le Pipeline,
+     Signature et Livraison devenaient donc deux colonnes adjacentes de même
+     couleur. L'orange garde le contraste sur l'encre sombre tout en séparant
+     clairement les étapes. */
+  --color-domaine-taches: #FB923C;
   --color-domaine-taches-tint: #313033;
   /* #F0509F ne donnait que 4,43:1 sur sa propre teinte opaque. */
   --color-domaine-factures: #F472B6;
