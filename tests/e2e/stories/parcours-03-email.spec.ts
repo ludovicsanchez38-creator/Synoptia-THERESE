@@ -52,6 +52,8 @@ test.describe('Parcours 03 - Email', () => {
     await expect(
       assistant(page).getByRole('heading', { name: 'Configuration Email' }),
     ).toBeVisible({ timeout: 15000 });
+    await expect(assistant(page).getByText('Choix du mode de connexion')).toBeVisible();
+    await expect(assistant(page).getByText(/Étape 1 sur 4/)).toHaveCount(0);
   });
 
   test("US-113.HP : l'assistant propose l'option Gmail OAuth", async ({ page }) => {

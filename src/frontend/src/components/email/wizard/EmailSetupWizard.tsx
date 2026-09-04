@@ -91,6 +91,7 @@ export function EmailSetupWizard({ onComplete, onCancel }: EmailSetupWizardProps
   // Nombre d'étapes selon le provider
   const totalSteps = wizardState.provider === 'smtp' ? 2 : 4;
   const currentStep = wizardState.provider === 'smtp' ? Math.min(step, 2) : step;
+  const progressPercent = wizardState.provider ? (currentStep / totalSteps) * 100 : 0;
 
   // createPortal : rendu au niveau document.body pour éviter que Framer Motion
   // (transform CSS sur les parents animés) ne crée un containing block CSS
@@ -111,7 +112,11 @@ export function EmailSetupWizard({ onComplete, onCancel }: EmailSetupWizardProps
         <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
           <div>
             <h2 className="text-xl font-semibold text-text">Configuration Email</h2>
-            <p className="text-sm text-text-muted">Étape {currentStep} sur {totalSteps}</p>
+            <p className="text-sm text-text-muted">
+              {wizardState.provider
+                ? `Étape ${currentStep} sur ${totalSteps}`
+                : 'Choix du mode de connexion'}
+            </p>
           </div>
           <button
             onClick={onCancel}
@@ -123,11 +128,23 @@ export function EmailSetupWizard({ onComplete, onCancel }: EmailSetupWizardProps
         </div>
 
         {/* Progress bar */}
-        <div className="h-1 bg-background/60">
+        <div
+          className="h-1 bg-background/60"
+          role="progressbar"
+          aria-label="Progression de la configuration Email"
+          aria-valuemin={0}
+          aria-valuemax={totalSteps}
+          aria-valuenow={wizardState.provider ? currentStep : 0}
+          aria-valuetext={
+            wizardState.provider
+              ? `Étape ${currentStep} sur ${totalSteps}`
+              : 'Choix du mode de connexion'
+          }
+        >
           <motion.div
             className="h-full bg-gradient-to-r from-accent-cyan to-accent-magenta"
             initial={{ width: '0%' }}
-            animate={{ width: `${(currentStep / totalSteps) * 100}%` }}
+            animate={{ width: `${progressPercent}%` }}
             transition={{ duration: 0.3 }}
           />
         </div>

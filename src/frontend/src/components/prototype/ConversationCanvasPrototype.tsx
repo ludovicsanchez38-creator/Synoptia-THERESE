@@ -820,6 +820,8 @@ export function ConversationCanvasPrototype() {
   const [userSlashCommands, setUserSlashCommands] = useState<SlashCommand[]>([]);
   const conversationScrollRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
+  const composerBackdropRef = useRef<HTMLDivElement>(null);
+  const [composerClearance, setComposerClearance] = useState(224);
   const createConversation = useChatStore((state) => state.createConversation);
   const isStreaming = useChatStore((state) => state.isStreaming);
   const openSettings = usePanelStore((state) => state.openSettings);
@@ -831,6 +833,25 @@ export function ConversationCanvasPrototype() {
   const toggleAtelierPanel = useAtelierStore((state) => state.togglePanel);
   const toggleDemoMode = useDemoStore((state) => state.toggle);
   useConversationSync();
+
+  // B-320 : le composeur flotte au-dessus du fil et peut grandir (capacité,
+  // erreur de dictée, destination). Le bas du fil doit suivre sa hauteur
+  // réelle, sinon la dernière rangée de parcours reste dessous et ne peut pas
+  // être lue. 224 px sert de garde avant la première mesure.
+  useEffect(() => {
+    const composer = composerBackdropRef.current;
+    if (!composer) return;
+
+    const reserveComposer = () => {
+      const height = Math.ceil(composer.getBoundingClientRect().height);
+      if (height > 0) setComposerClearance(height + 24);
+    };
+    reserveComposer();
+    if (typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(reserveComposer);
+    observer.observe(composer);
+    return () => observer.disconnect();
+  }, []);
 
   const blockStreamingNavigation = useCallback(() => {
     // BUG-139 : lire l'état VIVANT du store, pas la valeur capturée au dernier
@@ -1595,7 +1616,12 @@ export function ConversationCanvasPrototype() {
               <PrototypeUnifiedViewCanvas view={embeddedView} onClose={collapseEmbeddedView} />
             ) : (
             <section data-testid="coque-colonne-principale" className="relative flex min-w-0 flex-1 flex-col bg-bg">
-              <div ref={conversationScrollRef} className="flex-1 overflow-y-auto px-5 pb-44 pt-7 sm:px-8">
+              <div
+                ref={conversationScrollRef}
+                data-testid="prototype-conversation-scroll"
+                className="flex-1 overflow-y-auto px-5 pt-7 sm:px-8"
+                style={{ paddingBottom: composerClearance }}
+              >
                 <div className={`mx-auto transition-[max-width] duration-200 ${canvasOpen ? 'max-w-[760px]' : 'max-w-[860px]'}`}>
                   {(boardRun.status === 'running' || atelierRun.status === 'running') && (
                     <div className="mb-4 flex flex-wrap gap-2" data-testid="shell-background-activities" role="status">
@@ -1838,6 +1864,7 @@ export function ConversationCanvasPrototype() {
               </div>
 
               <div
+                ref={composerBackdropRef}
                 className="pointer-events-none absolute inset-x-0 bottom-0 bg-[linear-gradient(to_top,var(--color-bg)_70%,transparent)] px-5 pb-5 pt-12 sm:px-8"
                 data-testid="prototype-composer-backdrop"
               >

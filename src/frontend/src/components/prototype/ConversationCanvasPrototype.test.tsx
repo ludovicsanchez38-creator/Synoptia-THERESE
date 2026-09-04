@@ -198,6 +198,9 @@ describe('ConversationCanvasPrototype - recette UI 16/07', () => {
     expect(shell).toHaveAttribute('data-theme', 'dark');
     expect(shell).toHaveAttribute('data-high-contrast', 'true');
     expect(screen.getByTestId('prototype-composer-backdrop').className).toContain('var(--color-bg)');
+    expect(
+      Number.parseInt(screen.getByTestId('prototype-conversation-scroll').style.paddingBottom, 10),
+    ).toBeGreaterThanOrEqual(224);
 
     act(() => useAccessibilityStore.setState({ theme: 'light', highContrast: false }));
     expect(shell).toHaveAttribute('data-theme', 'light');
