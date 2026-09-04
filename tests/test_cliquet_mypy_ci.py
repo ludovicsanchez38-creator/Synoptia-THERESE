@@ -40,6 +40,15 @@ def _etape_mypy() -> dict:
     raise AssertionError("etape mypy introuvable dans ci.yml")
 
 
+def _etape_installation_mypy() -> dict:
+    contenu = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
+    etapes = contenu["jobs"]["mypy"]["steps"]
+    for etape in etapes:
+        if "dépendances de typage sans CUDA" in etape.get("name", ""):
+            return etape
+    raise AssertionError("étape d'installation mypy introuvable dans ci.yml")
+
+
 def _lancer(tmp_path: Path, nombre_d_erreurs: int, baseline: str) -> subprocess.CompletedProcess:
     """Rejoue le `run:` du workflow avec un faux `uv` qui rend K erreurs."""
     faux_bin = tmp_path / "bin"
@@ -125,3 +134,21 @@ def test_le_workflow_ne_compare_plus_avec_le_seul_gt():
     run = _etape_mypy()["run"]
     assert '-lt "$MYPY_BASELINE"' in run
     assert '-gt "$MYPY_BASELINE"' in run
+
+
+def test_le_job_mypy_n_installe_pas_les_dependances_cuda_du_projet():
+    """Le typage ne doit pas télécharger torch/CUDA avant de démarrer.
+
+    L'export conserve les dépendances métier qui influencent le cliquet mais
+    élague torch et son sous-arbre CUDA. La roue CPU rétablit les types de
+    torch. Puis `uv run --no-sync` empêche une resynchronisation complète.
+    """
+    installation = _etape_installation_mypy()["run"]
+    assert "uv export --dev --locked --prune torch" in installation
+    assert "uv pip install --no-deps --requirements" in installation
+    assert "torch==2.9.1" in installation
+    assert "download.pytorch.org/whl/cpu" in installation
+    assert "uv sync --dev" not in installation
+
+    analyse = _etape_mypy()["run"]
+    assert "uv run --no-sync mypy" in analyse

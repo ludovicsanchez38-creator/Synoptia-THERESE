@@ -502,7 +502,7 @@ async def handle_oauth_redirect(
         <!DOCTYPE html>
         <html><head><title>THERESE - Erreur OAuth</title>
         <style>body{{background:#0B1226;color:#E6EDF7;font-family:system-ui;display:flex;align-items:center;justify-content:center;height:100vh;margin:0}}
-        .card{{padding:2rem;border:1px solid #22D3EE33;border-radius:1rem;max-width:500px}}
+        .card{{text-align:center;padding:2rem;border:1px solid #22D3EE33;border-radius:1rem;max-width:500px}}
         h1{{color:#E11D8D;font-size:1.5rem}}p{{color:#B6C7DA;margin:1rem 0}}
         strong{{color:#E6EDF7}}code{{color:#22D3EE;font-size:0.8rem}}</style></head>
         <body><div class="card"><h1>Erreur d'autorisation</h1>{error_detail}<p>Tu peux fermer cette fenêtre et réessayer.</p></div></body></html>

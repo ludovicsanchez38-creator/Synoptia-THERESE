@@ -56,6 +56,11 @@ describe('VoiceWorkspaceCanvas', () => {
     expect(await screen.findByText('Audio généré localement')).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText('Texte à lire'), { target: { value: 'Texte modifié' } });
     expect(screen.queryByText('Audio généré localement')).not.toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'L’audio correspondait au texte précédent. Génère-le à nouveau pour entendre la nouvelle version.'
+    );
+    fireEvent.change(screen.getByLabelText('Texte à lire'), { target: { value: 'Texte encore modifié' } });
+    expect(screen.getByRole('status')).toHaveTextContent('L’audio correspondait au texte précédent.');
   });
 
   it('affiche une erreur de synthèse dans le panneau concerné avec Réessayer', async () => {

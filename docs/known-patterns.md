@@ -268,6 +268,15 @@ Ne pas classer ce cas comme un échec de typage sans lire les étapes et les log
 À corriger : limiter ce job aux dépendances nécessaires à mypy ou installer la
 variante CPU de Torch, puis dimensionner le timeout sur l'installation réelle.
 
+Correction retenue le 04/09/2026 après la release : le job exporte le lockfile
+avec `--prune torch`, installe cette liste sans résoudre à nouveau les
+dépendances, puis ajoute la roue `torch==2.9.1` CPU déjà utilisée par le build.
+L'export Linux ne contient ainsi aucun paquet `nvidia-*` ni `triton`.
+Les dépendances métier restent présentes car leur suppression change réellement
+le cliquet : 987 erreurs avec les paquets installés contre 1 595 avec
+`--no-site-packages` sur macOS. `uv run --no-sync` empêche enfin la commande
+mypy de resynchroniser le projet complet.
+
 ## Windows : le harnais B-306 peut dépasser 300 s au teardown (04/09/2026)
 
 Le test `test_le_dossier_src_backend_tests_tient_seul` lance tout
@@ -282,3 +291,11 @@ caractère intermittent, mais il ne remplace pas le traitement de la cause :
 identifier le teardown qui retient le processus Windows et mesurer séparément
 le temps d'exécution et le temps de sortie. Ne pas relever le timeout par
 réflexe, car B-306 doit justement empêcher un blocage sans fin.
+
+Correction retenue le 04/09/2026 après la release : le workflow Windows lance
+`src/backend/tests/` directement dans une première étape, ce qui prouve son
+autonomie sans `tests/conftest.py`. La suite principale lance ensuite `tests/`
+en excluant uniquement `test_le_dossier_src_backend_tests_tient_seul`, devenu
+redondant ; les collectes autonomes fichier par fichier restent actives. Chaque
+racine est donc exécutée une seule fois et produit son propre rapport JUnit,
+sans masquer un blocage derrière un délai plus large.

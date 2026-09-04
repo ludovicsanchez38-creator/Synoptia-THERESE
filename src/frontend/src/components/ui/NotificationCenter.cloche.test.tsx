@@ -41,4 +41,12 @@ describe('B-282 - la cloche porte un nom accessible', () => {
     const cloche = screen.getByRole('button', { name: /^Notifications/ });
     expect(cloche).toHaveAccessibleName('Notifications, 3 non lues');
   });
+
+  it('au-delà de 99, le badge reste compact mais le compte exact est annoncé', () => {
+    useNotificationStore.setState({ unreadCount: 128 });
+    render(<NotificationCenter />);
+
+    expect(screen.getByText('99+')).toHaveAccessibleName('128 notifications non lues');
+    expect(screen.getByRole('button', { name: 'Notifications, 128 non lues' })).toBeInTheDocument();
+  });
 });

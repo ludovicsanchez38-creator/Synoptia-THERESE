@@ -32,7 +32,15 @@ jobs:
       - name: Installer UV et dépendances
         run: pip install uv && uv sync --dev
 
-      - name: Tests unitaires (pytest)
+      - name: Tests backend autonomes (pytest)
+        shell: bash
+        # B-306 : exécuter directement cette racine prouve qu'elle tient sans
+        # charger tests/conftest.py. Le même dossier ne sera donc plus relancé
+        # dans un sous-processus imbriqué à 99 % de la suite principale.
+        run: uv run pytest src/backend/tests/ -q --timeout=60 -p no:cacheprovider --junit-xml=junit-windows-backend.xml
+        timeout-minutes: 8
+
+      - name: Tests unitaires principaux (pytest)
         shell: bash
         # --timeout par test relevé à 60 s : les runners Windows sont plus
         # lents que les Linux, un seuil calé sur Linux fabriquerait des flakes.
@@ -43,9 +51,11 @@ jobs:
         # sauvegardes, escalade — ne tournaient donc JAMAIS sous Windows, la
         # plateforme meme d ou viennent les sept bugs du 24/08.
         # 04/09/2026 : la suite complete depasse desormais 20 min sur le runner
-        # Windows. Le plafond passe a 30 min sans relacher le timeout par test.
-        run: uv run pytest tests/ src/backend/tests/ --ignore=tests/e2e -q --timeout=60 -p no:cacheprovider --junit-xml=junit-windows.xml
-        timeout-minutes: 30
+        # Windows. Le cas B-306 qui relance tout src/backend/tests est exclu :
+        # la racine vient d'être exécutée directement, une seule fois. Ses cas
+        # de collecte fichier par fichier restent actifs dans cette passe.
+        run: uv run pytest tests/ --ignore=tests/e2e -q --timeout=60 -p no:cacheprovider -k "not test_le_dossier_src_backend_tests_tient_seul" --junit-xml=junit-windows.xml
+        timeout-minutes: 26
 
       - name: Bilan des échecs (lisible même quand la console est tronquée)
         if: always()
@@ -53,20 +63,27 @@ jobs:
         run: |
           python - <<'PYEOF'
           import xml.etree.ElementTree as ET
-          try:
-              r = ET.parse("junit-windows.xml").getroot()
-          except Exception as e:
-              print(f"::warning::junit-windows.xml illisible : {e}")
+          from pathlib import Path
+
+          rapports = sorted(Path(".").glob("junit-windows*.xml"))
+          if not rapports:
+              print("::warning::aucun rapport junit-windows trouvé")
               raise SystemExit(0)
-          s = r.find("testsuite") if r.tag == "testsuites" else r
-          print(f"tests={s.get('tests')} echecs={s.get('failures')} erreurs={s.get('errors')} skip={s.get('skipped')}")
-          for tc in s.iter("testcase"):
-              probleme = tc.find("failure")
-              if probleme is None:
-                  probleme = tc.find("error")
-              if probleme is not None:
-                  print(f"::error::ECHEC {tc.get('classname')}::{tc.get('name')}")
-                  print((probleme.text or "")[:800])
+          for rapport in rapports:
+              try:
+                  r = ET.parse(rapport).getroot()
+              except Exception as e:
+                  print(f"::warning::{rapport} illisible : {e}")
+                  continue
+              s = r.find("testsuite") if r.tag == "testsuites" else r
+              print(f"{rapport}: tests={s.get('tests')} echecs={s.get('failures')} erreurs={s.get('errors')} skip={s.get('skipped')}")
+              for tc in s.iter("testcase"):
+                  probleme = tc.find("failure")
+                  if probleme is None:
+                      probleme = tc.find("error")
+                  if probleme is not None:
+                      print(f"::error::ECHEC {tc.get('classname')}::{tc.get('name')}")
+                      print((probleme.text or "")[:800])
           PYEOF
 
       - name: Publier le rapport JUnit
@@ -74,5 +91,5 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: junit-windows
-          path: junit-windows.xml
+          path: junit-windows*.xml
           retention-days: 14

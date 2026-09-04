@@ -131,6 +131,22 @@ class TestContrasteDeLaPageOAuth:
         assert _defauts_de_contraste(reponse.text) == []
 
 
+class TestAlignementDeLaPageOAuth:
+    """P-034 : la carte garde un axe commun, la liste reste lisible à gauche."""
+
+    @pytest.mark.asyncio
+    async def test_refus_google_centre_la_carte_et_garde_la_liste_a_gauche(
+        self, client
+    ):
+        reponse = await client.get(
+            "/api/email/auth/callback-redirect", params={"error": "access_denied"}
+        )
+
+        assert reponse.status_code == 400
+        assert ".card{text-align:center" in reponse.text
+        assert '<ul style="text-align:left' in reponse.text
+
+
 class TestLInstrumentMesureBien:
     """Un test de contraste qui ne sait pas mesurer rendrait toute page verte."""
 

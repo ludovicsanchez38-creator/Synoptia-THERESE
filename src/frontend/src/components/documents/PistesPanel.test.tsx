@@ -43,6 +43,15 @@ describe('PistesPanel', () => {
     expect(screen.getByLabelText('2 nouvelles pistes')).toHaveTextContent('2');
   });
 
+  it('au-delà de 99, le badge reste compact mais annonce le compte exact', () => {
+    const pistes = Array.from({ length: 128 }, (_, index) =>
+      makePiste({ id: `p${index}` })
+    );
+    render(<PistesPanel pistes={pistes} onExplore={vi.fn()} onIgnore={vi.fn()} />);
+
+    expect(screen.getByLabelText('128 nouvelles pistes')).toHaveTextContent('99+');
+  });
+
   it('piste explorée disparaît du badge (compteur décrémente) - re-rendu avec le statut mis à jour', () => {
     const { rerender } = render(
       <PistesPanel

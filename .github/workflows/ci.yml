@@ -219,8 +219,20 @@ jobs:
           python-version: "3.13"
           cache: pip
 
-      - name: Installer UV et dépendances
-        run: pip install uv && uv sync --dev
+      - name: Installer UV et les dépendances de typage sans CUDA
+        # Le 04/09/2026, `uv sync --dev` a consommé tout le budget de 10 min
+        # en téléchargeant les roues NVIDIA de torch, avant même de lancer
+        # mypy. On garde ici les dépendances métier : les omettre change le
+        # nombre d'erreurs du cliquet (987 -> 1595 mesuré sur macOS).
+        # `--prune torch` retire torch ET ses dépendances CUDA de l'export ;
+        # la roue CPU épinglée, déjà utilisée par la release, rétablit ensuite
+        # le même environnement de types sans plusieurs gigaoctets inutiles.
+        run: |
+          pip install uv
+          uv venv --python 3.13
+          uv export --dev --locked --prune torch --no-emit-project --no-hashes --output-file /tmp/requirements-mypy.txt
+          uv pip install --no-deps --requirements /tmp/requirements-mypy.txt
+          uv pip install 'torch==2.9.1' --index-url https://download.pytorch.org/whl/cpu --no-deps
 
       # US-018 (graduel) : la dette mypy existante est figée en BASELINE.
       # Une PR qui AJOUTE des erreurs de typage passe au rouge ; faire
@@ -247,7 +259,10 @@ jobs:
           # fraîche par construction.
           MYPY_BASELINE: "986"
         run: |
-          mypy_out=$(uv run mypy src/backend/app --ignore-missing-imports --no-error-summary 2>&1) || true
+          # `--no-sync` est indispensable : sans lui, `uv run` resynchronise
+          # le projet complet et réintroduit les dépendances CUDA évitées à
+          # l'étape précédente.
+          mypy_out=$(uv run --no-sync mypy src/backend/app --ignore-missing-imports --no-error-summary 2>&1) || true
           if [ -z "$mypy_out" ] || printf '%s' "$mypy_out" | grep -q "INTERNAL ERROR\|Traceback"; then
             echo "::error::mypy n'a pas produit de sortie exploitable (crash ?)"
             printf '%s\n' "$mypy_out" | head -20

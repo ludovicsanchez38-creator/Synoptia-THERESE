@@ -20,6 +20,9 @@ import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { usePanneauCouvrant } from '../../hooks/usePanneauCouvrant';
 import { Spinner } from '../ui/Spinner';
 
+const AUDIO_PERIME_MESSAGE =
+  'L’audio correspondait au texte précédent. Génère-le à nouveau pour entendre la nouvelle version.';
+
 function readableSize(bytes: number): string {
   if (bytes < 1_048_576) return `${Math.max(1, Math.round(bytes / 1024))} Ko`;
   return `${(bytes / 1_048_576).toFixed(1)} Mo`;
@@ -129,6 +132,15 @@ export function VoiceWorkspaceCanvas({
     }
   }
 
+  function updateSpeechText(value: string) {
+    if (speechUrl) {
+      setSpeechUrl(null);
+      setSpeechStatus(AUDIO_PERIME_MESSAGE);
+    }
+    setSpeechError(null);
+    setSpeechText(value);
+  }
+
   return (
     <aside ref={dialogRef} role="region" aria-labelledby="voice-workspace-title" tabIndex={-1} className="absolute inset-y-0 right-0 z-20 flex h-full w-full flex-col border-l border-border bg-surface-2 shadow-[-18px_0_45px_rgba(16,28,54,0.12)] sm:w-[calc(100%-48px)] xl:relative xl:w-[62%] xl:min-w-[720px] xl:shadow-none" data-testid="voice-workspace-canvas">
       <header className="relative shrink-0 border-b border-border bg-surface px-5 py-4 pr-16">
@@ -161,7 +173,7 @@ export function VoiceWorkspaceCanvas({
         <section className="overflow-y-auto p-5">
           <h3 className="text-sm font-bold text-text">Lire un texte à voix haute</h3>
           <p className="mt-1 text-xs leading-5 text-text-muted">Synthèse locale Piper. Aucun texte n’est envoyé vers un service externe.</p>
-          <label className="mt-4 block text-sm font-semibold text-text">Texte à lire<textarea aria-label="Texte à lire" rows={9} value={speechText} onChange={(event) => { setSpeechUrl(null); setSpeechStatus(null); setSpeechError(null); setSpeechText(event.target.value); }} placeholder="Colle ici le texte à convertir en audio…" className="mt-2 w-full rounded-md border border-border bg-surface p-3 text-sm font-normal leading-6 text-text" /></label>
+          <label className="mt-4 block text-sm font-semibold text-text">Texte à lire<textarea aria-label="Texte à lire" rows={9} value={speechText} onChange={(event) => updateSpeechText(event.target.value)} placeholder="Colle ici le texte à convertir en audio…" className="mt-2 w-full rounded-md border border-border bg-surface p-3 text-sm font-normal leading-6 text-text" /></label>
           {!ttsReady && <div className="mt-3 rounded-md border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-xs leading-5 text-warning">La voix locale doit être activée dans Paramètres → Confidentialité avant d’utiliser la synthèse.</div>}
           <button type="button" onClick={() => void createSpeech()} disabled={!speechText.trim() || !ttsReady || speechLoading} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-md bg-accent-fill px-4 py-3 text-sm font-semibold text-accent-ink disabled:opacity-50">{speechLoading ? <Spinner taille="bouton" /> : <Volume2 className="h-4 w-4" />}{speechLoading ? 'Création de l’audio…' : 'Générer l’audio local'}</button>
           {speechStatus && <p role="status" className="mt-3 rounded-md border border-info/40 bg-[var(--color-info-tint)] p-3 text-sm text-info">{speechStatus}</p>}
