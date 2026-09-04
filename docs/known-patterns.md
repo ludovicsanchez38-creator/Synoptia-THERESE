@@ -293,9 +293,15 @@ le temps d'exécution et le temps de sortie. Ne pas relever le timeout par
 réflexe, car B-306 doit justement empêcher un blocage sans fin.
 
 Correction retenue le 04/09/2026 après la release : le workflow Windows lance
-`src/backend/tests/` directement dans une première étape, ce qui prouve son
-autonomie sans `tests/conftest.py`. La suite principale lance ensuite `tests/`
-en excluant uniquement `test_le_dossier_src_backend_tests_tient_seul`, devenu
-redondant ; les collectes autonomes fichier par fichier restent actives. Chaque
-racine est donc exécutée une seule fois et produit son propre rapport JUnit,
-sans masquer un blocage derrière un délai plus large.
+`src/backend/tests/` directement dans un job autonome, ce qui prouve son
+autonomie sans `tests/conftest.py`. La suite principale lance en parallèle
+`tests/` en excluant uniquement `test_le_dossier_src_backend_tests_tient_seul`,
+devenu redondant ; les collectes autonomes fichier par fichier restent actives.
+Chaque racine est donc exécutée une seule fois et produit son propre rapport
+JUnit.
+
+Le premier essai de ce découpage, run `33900470184`, a affiché les 175 tests à
+100 % en 8 min 03, puis GitHub a coupé l'étape exactement à sa limite de huit
+minutes avant le résumé JUnit. Le budget du job autonome passe à dix minutes,
+avec un plafond de 60 secondes par test. Il reste ainsi borné et ne consomme
+plus le budget de la suite principale grâce à l'exécution parallèle.

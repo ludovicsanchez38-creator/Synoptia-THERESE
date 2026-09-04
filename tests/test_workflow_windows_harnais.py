@@ -16,7 +16,11 @@ WORKFLOW = RACINE / ".github" / "workflows" / "tests-windows.yml"
 
 def _commandes_pytest() -> list[str]:
     contenu = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
-    etapes = contenu["jobs"]["backend-tests-windows"]["steps"]
+    etapes = [
+        etape
+        for job in contenu["jobs"].values()
+        for etape in job["steps"]
+    ]
     return [etape["run"] for etape in etapes if "pytest" in etape.get("name", "").lower()]
 
 
@@ -38,9 +42,31 @@ def test_la_suite_principale_ecarte_seulement_la_reexecution_runtime():
 
 def test_les_deux_rapports_junit_sont_publies():
     contenu = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
-    etapes = contenu["jobs"]["backend-tests-windows"]["steps"]
-    publication = next(
-        etape for etape in etapes if etape.get("uses") == "actions/upload-artifact@v4"
-    )
+    publications = [
+        etape
+        for job in contenu["jobs"].values()
+        for etape in job["steps"]
+        if etape.get("uses") == "actions/upload-artifact@v4"
+    ]
 
-    assert publication["with"]["path"] == "junit-windows*.xml"
+    assert {publication["with"]["path"] for publication in publications} == {
+        "junit-windows-backend.xml",
+        "junit-windows.xml",
+    }
+
+
+def test_les_deux_racines_tournent_dans_des_jobs_paralleles_et_bornes():
+    contenu = yaml.safe_load(WORKFLOW.read_text(encoding="utf-8"))
+    jobs = contenu["jobs"]
+
+    assert set(jobs) == {"backend-autonomous-windows", "backend-tests-windows"}
+    assert "needs" not in jobs["backend-autonomous-windows"]
+    assert "needs" not in jobs["backend-tests-windows"]
+
+    etape_autonome = next(
+        etape
+        for etape in jobs["backend-autonomous-windows"]["steps"]
+        if etape.get("name") == "Tests backend autonomes (pytest)"
+    )
+    assert etape_autonome["timeout-minutes"] == 10
+    assert "--timeout=60" in etape_autonome["run"]
