@@ -267,3 +267,18 @@ les mêmes sources avaient passé le CI `33869741967` et le gate de release
 Ne pas classer ce cas comme un échec de typage sans lire les étapes et les logs.
 À corriger : limiter ce job aux dépendances nécessaires à mypy ou installer la
 variante CPU de Torch, puis dimensionner le timeout sur l'installation réelle.
+
+## Windows : le harnais B-306 peut dépasser 300 s au teardown (04/09/2026)
+
+Le test `test_le_dossier_src_backend_tests_tient_seul` lance tout
+`src/backend/tests` dans un sous-processus borné à 300 secondes. Sur le premier
+essai du run `33878695584`, la sortie avait atteint 99 % mais le sous-processus
+n'avait pas rendu la main avant le plafond : un seul échec sur 3 387 tests,
+aucune erreur. La seconde tentative du même run est verte avec les mêmes 3 387
+tests, zéro échec, zéro erreur et 22 tests ignorés.
+
+Lire le JUnit avant de parler de régression. Un rerun unique peut confirmer le
+caractère intermittent, mais il ne remplace pas le traitement de la cause :
+identifier le teardown qui retient le processus Windows et mesurer séparément
+le temps d'exécution et le temps de sortie. Ne pas relever le timeout par
+réflexe, car B-306 doit justement empêcher un blocage sans fin.
