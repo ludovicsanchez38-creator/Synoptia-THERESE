@@ -37,7 +37,7 @@ jobs:
   backend-tests:
     name: Tests Backend (Python)
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     env:
       THERESE_ENV: test
@@ -67,15 +67,18 @@ jobs:
           # threads orphelins ne pouvait pas s afficher. Verifie le
           # 01/09/2026 en rejouant le script sous bash --noprofile -eo pipefail.
           set +e
-          timeout 480 uv run pytest tests/ src/backend/tests/ --ignore=tests/e2e -q --timeout=30 -p no:cacheprovider --junitxml=pytest-ci.xml
+          # 04/09/2026 : la suite a atteint 97 % avant d etre coupee au
+          # plafond historique de 8 min. Le seuil de session passe a 12 min ;
+          # le timeout de 30 s par test continue de detecter les vrais blocages.
+          timeout 720 uv run pytest tests/ src/backend/tests/ --ignore=tests/e2e -q --timeout=30 -p no:cacheprovider --junitxml=pytest-ci.xml
           EXIT_CODE=$?
           set -e
           if [ $EXIT_CODE -eq 124 ]; then
-            echo "::warning::pytest tué après 8 min (possible threads orphelins)"
+            echo "::warning::pytest tué après 12 min (possible threads orphelins)"
             exit 1
           fi
           exit $EXIT_CODE
-        timeout-minutes: 12
+        timeout-minutes: 14
 
       - name: Nommer les tests rouges (le junit, pas la console tronquee)
         if: failure()

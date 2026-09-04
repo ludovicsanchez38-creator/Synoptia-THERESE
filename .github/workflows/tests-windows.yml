@@ -15,7 +15,7 @@ jobs:
   backend-tests-windows:
     name: Tests Backend (Windows)
     runs-on: windows-latest
-    timeout-minutes: 25
+    timeout-minutes: 35
 
     env:
       THERESE_ENV: test
@@ -42,8 +42,10 @@ jobs:
         # pyproject.toml l avaient recupere. 166 tests — securite des services,
         # sauvegardes, escalade — ne tournaient donc JAMAIS sous Windows, la
         # plateforme meme d ou viennent les sept bugs du 24/08.
+        # 04/09/2026 : la suite complete depasse desormais 20 min sur le runner
+        # Windows. Le plafond passe a 30 min sans relacher le timeout par test.
         run: uv run pytest tests/ src/backend/tests/ --ignore=tests/e2e -q --timeout=60 -p no:cacheprovider --junit-xml=junit-windows.xml
-        timeout-minutes: 20
+        timeout-minutes: 30
 
       - name: Bilan des échecs (lisible même quand la console est tronquée)
         if: always()
