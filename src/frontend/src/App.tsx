@@ -13,6 +13,7 @@ import { prefersReducedMotion, onReducedMotionChange } from './lib/accessibility
 import * as api from './services/api';
 import { Z_LAYER } from './styles/z-layers';
 import { useAccessibilityRoot } from './hooks/useAccessibilityRoot';
+import { isolateDataProfilePersistence } from './lib/profileStorageIsolation';
 
 // Lazy-loaded : ecrans non-critiques (UltraJury perf)
 const OnboardingWizard = lazy(() => import('./components/onboarding').then(m => ({ default: m.OnboardingWizard })));
@@ -113,6 +114,16 @@ function ApplicationBootstrap() {
         try {
           // Récupérer le token de session
           await api.initializeAuth();
+
+          // B-311/B-312 : le webview Tauri partage son localStorage entre les
+          // lancements, meme quand THERESE_DATA_DIR change. Identifier le
+          // profil backend avant de monter l'interface ; si le dossier a
+          // change, purger les caches metier puis recharger des stores vierges.
+          const stats = await api.getStats();
+          const isolation = isolateDataProfilePersistence(stats.data_dir, {
+            reload: () => window.location.reload(),
+          });
+          if (isolation === 'switched') return;
 
           // Vérifier le statut onboarding
           const status = await api.getOnboardingStatus();
