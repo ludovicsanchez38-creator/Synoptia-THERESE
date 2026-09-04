@@ -345,7 +345,13 @@ export async function modifyEmailMessage(
   const response = await apiFetch(`${API_BASE}/api/email/messages/${messageId}?account_id=${accountId}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(params),
+    // B-310 : le schema FastAPI attend du snake_case. Envoyer directement les
+    // noms TypeScript produisait un corps ignore, puis un messages.modify vide
+    // que Gmail refusait en 400.
+    body: JSON.stringify({
+      add_label_ids: params.addLabelIds,
+      remove_label_ids: params.removeLabelIds,
+    }),
   });
   if (!response.ok) {
     const data = await response.json().catch(() => ({}));

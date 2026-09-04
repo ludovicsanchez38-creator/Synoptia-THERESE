@@ -840,6 +840,11 @@ async def update_contact(
 
     # Update fields
     update_data = request.model_dump(exclude_unset=True)
+    # B-313 : `stage` est NOT NULL en base. Un client qui envoie explicitement
+    # null exprime l'absence de changement, comme lorsque le champ est omis ;
+    # laisser None atteindre SQLite transformait une saisie tolerable en 500.
+    if update_data.get("stage") is None:
+        update_data.pop("stage", None)
     if "tags" in update_data:
         update_data["tags"] = json.dumps(update_data["tags"]) if update_data["tags"] else None
 

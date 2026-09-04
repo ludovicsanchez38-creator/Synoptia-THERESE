@@ -351,6 +351,13 @@ class GmailService:
         if remove_label_ids:
             data['removeLabelIds'] = remove_label_ids
 
+        # B-310 : Gmail refuse `messages.modify` sans aucune modification
+        # (400 "No label or Classification Label updates provided"). Le
+        # service reste defensif meme si un client ancien envoie deux listes
+        # vides : une absence de changement est un no-op, pas un appel reseau.
+        if not data:
+            return {'id': message_id}
+
         return await self._request('POST', f'users/me/messages/{message_id}/modify', json_data=data)
 
     async def trash_message(self, message_id: str) -> dict:

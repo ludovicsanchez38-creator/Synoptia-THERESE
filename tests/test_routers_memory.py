@@ -141,6 +141,22 @@ class TestContactsCRUD:
         contact = response.json()
         assert contact["company"] == "Synoptia SARL"
 
+    @pytest.mark.asyncio
+    async def test_update_contact_ignore_stage_null(self, client: AsyncClient, sample_contact_data):
+        """B-313 : stage:null ne doit jamais violer le NOT NULL SQL."""
+        create_response = await client.post("/api/memory/contacts", json=sample_contact_data)
+        contact_id = create_response.json()["id"]
+
+        response = await client.patch(
+            f"/api/memory/contacts/{contact_id}",
+            json={"source": "guide", "stage": None},
+        )
+
+        assert response.status_code == 200, response.text
+        contact = response.json()
+        assert contact["stage"] == sample_contact_data.get("stage", "contact")
+        assert contact["source"] == "guide"
+
 
 class TestMemorySearch:
     """Tests for US-MEM-03: Search by keywords."""

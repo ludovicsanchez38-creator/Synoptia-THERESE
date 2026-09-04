@@ -1,17 +1,4 @@
-/**
- * B-226 : un contact sans source disparaissait du Pipeline SANS RIEN DIRE.
- *
- * Le CRM est une vue filtrée du store unique : `allContacts.filter(c => !!c.source)`.
- * Le filtre est un choix produit assumé (éviter les doublons avec la Mémoire) et
- * n'est pas en cause ici. Ce qui l'est : la règle n'existait que dans un
- * commentaire de code, et l'en-tête comptait la liste DÉJÀ filtrée. Un contact
- * créé depuis Contacts (le formulaire n'offre aucun champ « source ») ressort de
- * l'API avec source=null et stage="contact" : il n'apparaît nulle part, et
- * l'écran annonce « 0 contact » face à une base qui en détient un.
- *
- * Le contrat fermé ici est la DIVULGATION : quand des contacts sont écartés, le
- * critère et le total réel doivent être lisibles à l'écran.
- */
+/** B-314 : l'étape, pas la source facultative, détermine le Pipeline. */
 import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -52,17 +39,14 @@ function contact(patch: Partial<ContactResponse>): ContactResponse {
   } as ContactResponse;
 }
 
-describe("B-226 : le Pipeline dit ce qu'il ne montre pas", () => {
+describe("B-314 : le Pipeline montre chaque contact", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useCRMStore.setState({ projects: [], activeTab: 'pipeline' });
     useContactsStore.setState({ contacts: [], selectedContactId: null, truncated: false });
   });
 
-  it('un contact sans source ne disparaît pas en silence : le critère et le total réel sont à l’écran', async () => {
-    // Deux contacts, dont UN SEUL est masqué : sans cela, masqués et total
-    // vaudraient tous deux 1 et une phrase n'affichant que le nombre masqué
-    // passerait le test sans jamais dire le total.
+  it('inclut un contact sans source et annonce le total réel', async () => {
     useContactsStore.setState({
       contacts: [
         contact({ id: 'ct-1', source: null }),
@@ -72,17 +56,12 @@ describe("B-226 : le Pipeline dit ce qu'il ne montre pas", () => {
 
     render(<CRMPanel standalone />);
 
-    // Le critère doit être NOMMÉ à l'écran, pas seulement dans un commentaire.
-    const mention = await screen.findByText(/source/i);
-    expect(mention).toBeInTheDocument();
-
-    // Et le total réel de la base doit y figurer : « 1 contact » seul contredit
-    // une base qui en détient deux, sans jamais pouvoir se contredire lui-même
-    // (le compteur compte la vue déjà filtrée).
-    expect(mention.textContent ?? '').toMatch(/\b2\b/);
+    expect(await screen.findByText(/2 contacts/)).toBeInTheDocument();
+    expect(screen.getByText('Marie Lefèvre')).toBeInTheDocument();
+    expect(screen.getByText('Paul Girard')).toBeInTheDocument();
   });
 
-  it("aucune mention parasite quand tous les contacts sont dans le pipeline", async () => {
+  it("n'affiche plus l'ancienne explication par la source", async () => {
     useContactsStore.setState({ contacts: [contact({ source: 'site-web' })] });
 
     render(<CRMPanel standalone />);

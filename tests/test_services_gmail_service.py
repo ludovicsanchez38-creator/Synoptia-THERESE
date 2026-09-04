@@ -9,8 +9,10 @@ par lui.
 """
 
 import base64
+from unittest.mock import AsyncMock
 
-from app.services.gmail_service import format_message_for_storage
+import pytest
+from app.services.gmail_service import GmailService, format_message_for_storage
 
 
 def _b64(text: str) -> str:
@@ -57,3 +59,15 @@ class TestFormatMessageForStorageSanitizesHtml:
         formatted = format_message_for_storage(message)
 
         assert formatted["body_html"] is None
+
+
+@pytest.mark.asyncio
+async def test_modify_message_sans_etiquette_est_un_noop():
+    """B-310 : ne jamais appeler Gmail avec un corps modify vide."""
+    service = GmailService("token")
+    service._request = AsyncMock()
+
+    result = await service.modify_message("msg-1", add_label_ids=[], remove_label_ids=[])
+
+    assert result == {"id": "msg-1"}
+    service._request.assert_not_awaited()

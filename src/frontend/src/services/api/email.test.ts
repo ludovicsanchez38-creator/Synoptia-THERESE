@@ -11,7 +11,7 @@ vi.mock('./core', async () => {
   };
 });
 
-import { createDraft, getEmailSignature, updateEmailSignature } from './email';
+import { createDraft, getEmailSignature, modifyEmailMessage, updateEmailSignature } from './email';
 
 describe('Signature email API (quick win testeur)', () => {
   beforeEach(() => vi.clearAllMocks());
@@ -96,6 +96,29 @@ describe('Signature email API (quick win testeur)', () => {
     expect(mockApiFetch).toHaveBeenCalledWith(
       'http://127.0.0.1:17293/api/email/messages/draft?account_id=acc-1&draft_id=draft-1',
       expect.objectContaining({ method: 'POST' }),
+    );
+  });
+
+  it('modifyEmailMessage traduit les noms TypeScript vers le schema FastAPI', async () => {
+    mockApiFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ id: 'msg-1', labelIds: ['STARRED'] }),
+    });
+
+    await modifyEmailMessage('acc-1', 'msg-1', {
+      addLabelIds: ['STARRED'],
+      removeLabelIds: ['UNREAD'],
+    });
+
+    expect(mockApiFetch).toHaveBeenCalledWith(
+      'http://127.0.0.1:17293/api/email/messages/msg-1?account_id=acc-1',
+      expect.objectContaining({
+        method: 'PUT',
+        body: JSON.stringify({
+          add_label_ids: ['STARRED'],
+          remove_label_ids: ['UNREAD'],
+        }),
+      }),
     );
   });
 });

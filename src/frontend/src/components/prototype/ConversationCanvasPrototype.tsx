@@ -1256,6 +1256,7 @@ export function ConversationCanvasPrototype() {
     setRedactionLibre(false);
     setScenario('today');
     setComposerValue('');
+    void refreshToday();
   }
 
   function chooseScenario(next: Scenario) {
@@ -1278,6 +1279,7 @@ export function ConversationCanvasPrototype() {
     setCanvasOpen(next !== 'today' && next !== 'invoice' && next !== 'board');
     setComposerValue('');
     setSelectedCapability(null);
+    if (next === 'today') void refreshToday();
     if (typeof conversationScrollRef.current?.scrollTo === 'function') {
       conversationScrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }

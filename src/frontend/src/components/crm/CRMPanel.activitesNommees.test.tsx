@@ -2,15 +2,8 @@
  * B-205 : le fil d'activités du Pipeline affichait « Contact inconnu ».
  *
  * Le fil charge les activités de TOUS les contacts (`listActivities` sans
- * filtre) tandis que l'annuaire qui sert à les nommer, lui, recevait la vue
- * filtrée du pipeline (`allContacts.filter((c) => !!c.source)`). Une activité
- * d'un contact créé par le chemin Contacts (source = null) s'affichait donc
- * sans jamais pouvoir être nommée : la vue montre une ligne qu'elle s'interdit
- * ensuite de nommer.
- *
- * Le filtre du pipeline lui-même est délibéré et documenté : il n'est pas en
- * cause, et le test ne le remet pas en question — il n'exige QUE la cohérence
- * entre ce qui est affiché et ce qui est nommé.
+ * filtre). Le magasin complet permet de les nommer, y compris lorsque la
+ * source facultative du contact n'est pas renseignée.
  */
 import { render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -34,9 +27,9 @@ const { CONTACTS, ACTIVITES } = vi.hoisted(() => {
   };
   return {
     CONTACTS: [
-      // Chemin Contacts : aucune source, donc absent de la vue pipeline.
+      // Chemin Contacts : aucune source, mais une étape de pipeline valide.
       { ...base, id: 'c-memoire', first_name: 'Jean', last_name: 'Dupont', source: null },
-      // Chemin pipeline : une source, donc présent dans la vue.
+      // Contact dont la source est renseignée.
       { ...base, id: 'c-pipeline', first_name: 'Alice', last_name: 'Martin', source: 'prospect' },
     ] as never[],
     ACTIVITES: [
@@ -100,12 +93,10 @@ describe('B-205 : une activité affichée nomme toujours son contact', () => {
     expect(screen.queryByText('Contact inconnu')).toBeNull();
   });
 
-  it('le pipeline reste filtré sur les contacts à source', async () => {
-    // Contre-épreuve : nommer depuis le magasin complet ne doit PAS élargir la
-    // liste du pipeline, filtre délibéré (CRMPanel.tsx:41-42).
+  it('le pipeline utilise le même magasin complet', async () => {
     useCRMStore.setState({ activeTab: 'pipeline' });
     render(<CRMPanel standalone />);
 
-    await waitFor(() => expect(screen.getByText(/1 contact/)).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText(/2 contacts/)).toBeInTheDocument());
   });
 });

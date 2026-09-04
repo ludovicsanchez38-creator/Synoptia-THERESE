@@ -2,6 +2,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { fetchTodayDashboard, type TodayDashboard } from '../../services/api/dashboard';
 import { useContactsStore } from '../../stores/contactsStore';
 
+export const TODAY_REFRESH_INTERVAL_MS = 5 * 60_000;
+
 export type ReadResource<T> =
   | { status: 'loading'; data: null; error: null }
   | { status: 'ready'; data: T; error: null }
@@ -30,6 +32,23 @@ export function useTodayDashboardResource() {
 
   useEffect(() => {
     void refresh();
+    // B-317 : la coque reste montée quand on quitte puis rouvre l'accueil.
+    // Le brief ne pouvait donc plus se relire après son premier chargement et
+    // gardait « 0 élément » malgré des créations métier ultérieures. Le focus,
+    // le retour de visibilité et une cadence bornée couvrent aussi le cas où
+    // l'utilisateur laisse l'accueil ouvert.
+    const onFocus = () => void refresh();
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') void refresh();
+    };
+    const interval = window.setInterval(() => void refresh(), TODAY_REFRESH_INTERVAL_MS);
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
   }, [refresh]);
 
   return { resource, refresh };

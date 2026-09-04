@@ -2,7 +2,6 @@
  * THÉRÈSE v2 - CRM Panel (Phase 6)
  *
  * Panel principal CRM avec Pipeline et Activités.
- * Filtre par source pour éviter les doublons.
  * Utilise crmStore avec persistance pour affichage instantané.
  */
 
@@ -39,15 +38,12 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
     truncated: contactsTronques,
   } = useContactsStore();
 
-  // Le CRM est une VUE filtrée du store unique : contacts ayant une source
-  // (prospects/pipeline). La Mémoire, elle, affiche tous les contacts.
-  const contacts = allContacts.filter((c) => !!c.source);
-
-  // B-226 : le filtre reste (c'est le choix produit), mais il ne peut plus être
-  // muet. L'en-tête comptait la liste DÉJÀ filtrée : il ne pouvait pas se
-  // contredire, il contredisait la base. Le critère et le total réel sont
-  // désormais lisibles à l'écran dès qu'un contact est écarté.
-  const contactsMasques = allContacts.length - contacts.length;
+  // B-314 : `stage` est l'appartenance au pipeline ; `source` n'est qu'une
+  // information facultative sur l'origine du contact. Filtrer sur cette
+  // dernière cachait des fiches pourtant placées en Découverte, Livraison ou
+  // Actif et produisait un compteur faux. Le store unique est la source de
+  // vérité de la vue, sans duplication.
+  const contacts = allContacts;
 
   const hasCachedContacts = contacts.length > 0;
 
@@ -161,13 +157,6 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
             {contacts.length} contact{contacts.length > 1 ? 's' : ''}
             {contactsTronques ? '+' : ''} · {projects.length} projet{projects.length > 1 ? 's' : ''}
           </p>
-          {contactsMasques > 0 && (
-            <p className="text-sm text-text-muted">
-              Seuls les contacts ayant une source apparaissent dans le pipeline :{' '}
-              {contactsMasques} sur {allContacts.length} {contactsMasques > 1 ? 'n’y figurent' : 'n’y figure'} pas.
-              {contactsMasques > 1 ? ' Ils restent visibles' : ' Il reste visible'} dans Contacts.
-            </p>
-          )}
           {contactsTronques && (
             <p role="alert" className="text-sm text-warning">
               Liste incomplète : le pipeline ne montre que les 200 contacts les plus récents.
