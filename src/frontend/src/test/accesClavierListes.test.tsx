@@ -37,6 +37,7 @@ vi.mock('../services/api', async () => {
     classifyEmail: vi.fn(),
     getWorkingDirectory: getWorkingDirectoryMock,
     indexFile: vi.fn(),
+    listFiles: vi.fn().mockResolvedValue([]),
   };
 });
 

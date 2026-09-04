@@ -29,7 +29,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { cn, isTauri } from '../../lib/utils';
-import { indexFile, getWorkingDirectory, type FileMetadata } from '../../services/api';
+import { indexFile, getWorkingDirectory, listFiles, type FileMetadata } from '../../services/api';
 import { staggerContainer, staggerItem, fadeIn } from '../../lib/animations';
 import { buildBrowserPathFromParts, getParentBrowserPath, isWindowsPath, normalizeBrowserPath } from './fileBrowserPaths';
 import { estIndexable } from '../../lib/formatsIndexables';
@@ -107,6 +107,9 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [indexingFile, setIndexingFile] = useState<string | null>(null);
+  const [indexedFiles, setIndexedFiles] = useState<Record<string, FileMetadata>>({});
+  const [indexStatus, setIndexStatus] = useState<string | null>(null);
+  const [pathToAuthorize, setPathToAuthorize] = useState<string | null>(null);
   const [expandedFolders] = useState<Set<string>>(new Set());
 
   // Load directory contents
@@ -157,36 +160,27 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
       const visibleEntries = mappedEntries.filter(e => !e.name.startsWith('.'));
 
       setEntries(visibleEntries);
+      setPathToAuthorize(null);
     } catch (err) {
       console.error('Failed to read directory:', err);
-      setError('Impossible de lire ce répertoire');
+      setError(
+        `Le dossier « ${path} » n’est pas accessible. Autorise-le à nouveau pour l’ouvrir.`,
+      );
+      setPathToAuthorize(path);
       setEntries([]);
-      // Fallback : revenir au répertoire home
-      try {
-        const home = await homeDir();
-        if (path !== home) {
-          setCurrentPath(home);
-          const fallbackEntries = await readDir(home);
-          const mapped: FileEntry[] = await Promise.all(
-            fallbackEntries.map(async (entry) => {
-              const fullPath = await resolve(home, entry.name);
-              const extension = entry.isDirectory ? undefined : '.' + (entry.name.split('.').pop() || '');
-              return { name: entry.name, path: fullPath, isDirectory: entry.isDirectory || false, isFile: !entry.isDirectory, extension };
-            })
-          );
-          mapped.sort((a, b) => {
-            if (a.isDirectory && !b.isDirectory) return -1;
-            if (!a.isDirectory && b.isDirectory) return 1;
-            return a.name.localeCompare(b.name);
-          });
-          setEntries(mapped.filter(e => !e.name.startsWith('.')));
-        }
-      } catch {
-        // Impossible de charger le home non plus
-      }
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  // L'état d'indexation survit au spinner et à la réouverture de la vue.
+  useEffect(() => {
+    if (!isTauri()) return;
+    void listFiles(200)
+      .then((files) => {
+        setIndexedFiles(Object.fromEntries(files.map((file) => [file.path, file])));
+      })
+      .catch((err) => console.error('Failed to load indexed files:', err));
   }, []);
 
   // Initialize with working directory (from settings) or home directory
@@ -248,6 +242,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
       const selected = await open({
         directory: true,
         multiple: false,
+        ...(currentPath ? { defaultPath: currentPath } : {}),
       });
 
       if (selected && typeof selected === 'string') {
@@ -256,7 +251,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
     } catch (err) {
       console.error('Folder picker error:', err);
     }
-  }, [navigateTo]);
+  }, [currentPath, navigateTo]);
 
   // Handle file click
   const handleEntryClick = useCallback(async (entry: FileEntry) => {
@@ -272,8 +267,17 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
     if (!entry.isFile) return;
 
     setIndexingFile(entry.path);
+    setIndexStatus(null);
+    setError(null);
     try {
       const metadata = await indexFile(entry.path);
+      setIndexedFiles((current) => ({ ...current, [entry.path]: metadata }));
+      const fragments = metadata.chunk_count;
+      setIndexStatus(
+        fragments == null
+          ? `« ${entry.name} » est indexé.`
+          : `« ${entry.name} » est indexé · ${fragments} fragment${fragments > 1 ? 's' : ''}.`,
+      );
       onFileIndex?.(metadata);
     } catch (err) {
       console.error('Failed to index file:', err);
@@ -388,9 +392,25 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
           >
             <AlertCircle className="w-4 h-4 text-error flex-shrink-0" />
             <p className="text-xs text-error">{error}</p>
+            {pathToAuthorize && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="ml-auto shrink-0"
+                onClick={openFolderPicker}
+              >
+                Autoriser ce dossier
+              </Button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
+
+      {indexStatus && (
+        <p role="status" className="mx-3 mt-2 text-xs font-medium text-success">
+          {indexStatus}
+        </p>
+      )}
 
       {/* File list */}
       <div className="flex-1 overflow-y-auto">
@@ -418,6 +438,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
                 : getFileIcon(entry.extension);
               const canIndex = entry.isFile && isIndexable(entry.extension);
               const isIndexing = indexingFile === entry.path;
+              const indexed = indexedFiles[entry.path];
 
               return (
                 <motion.div
@@ -456,6 +477,14 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
                       {entry.isFile && entry.size !== undefined && (
                         <p className="text-xs text-text-muted">{formatSize(entry.size)}</p>
                       )}
+                      {indexed && (
+                        <p className="text-xs font-medium text-success">
+                          Indexé
+                          {indexed.chunk_count != null
+                            ? ` · ${indexed.chunk_count} fragment${indexed.chunk_count > 1 ? 's' : ''}`
+                            : ''}
+                        </p>
+                      )}
                     </div>
                   </button>
 
@@ -473,7 +502,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
                         handleIndexFile(entry);
                       }}
                       disabled={isIndexing}
-                      title="Indexer ce fichier"
+                      title={indexed ? "Réindexer ce fichier" : "Indexer ce fichier"}
                     >
                       {isIndexing ? (
                         <Spinner taille="ligne" />

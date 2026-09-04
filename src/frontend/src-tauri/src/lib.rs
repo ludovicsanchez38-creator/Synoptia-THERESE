@@ -450,6 +450,10 @@ pub fn run() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_fs::init())
+        // Les dossiers choisis via le dialogue natif entrent dans la portée
+        // fs. Sans persistance, cette autorisation disparaissait au prochain
+        // démarrage et l'explorateur revenait silencieusement au home (B-318).
+        .plugin(tauri_plugin_persisted_scope::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_mic_recorder::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
