@@ -13,6 +13,7 @@ import {
 import { cn } from '../../lib/utils';
 import type { AdvisorRole } from '../../services/api';
 import { Spinner } from '../ui/Spinner';
+import { CompactMarkdown } from '../ui/CompactMarkdown';
 
 // Icons for each advisor role
 const ADVISOR_ICONS: Record<AdvisorRole, LucideIcon> = {
@@ -134,8 +135,12 @@ export function AdvisorCard({
       </div>
 
       {/* Content */}
-      <div className="text-sm text-text-muted leading-relaxed whitespace-pre-wrap">
-        {displayContent || (
+      <div className="text-sm text-text-muted leading-relaxed">
+        {displayContent ? (
+          isLoading
+            ? <span className="whitespace-pre-wrap">{displayContent}</span>
+            : <CompactMarkdown>{displayContent}</CompactMarkdown>
+        ) : (
           <span className="italic text-text">En attente de réponse...</span>
         )}
         {isLoading && content && (

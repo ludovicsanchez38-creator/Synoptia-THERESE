@@ -17,6 +17,7 @@ import { cn } from '../../lib/utils';
 import { useActionsStore } from '../../stores/actionsStore';
 import type { ActionAgent, TaskState, TaskStep } from '../../services/api/actions';
 import { Spinner } from '../ui/Spinner';
+import { CompactMarkdown } from '../ui/CompactMarkdown';
 
 /** Mapping icone -> composant Lucide */
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -384,15 +385,15 @@ function StepItem({ step, index: _index }: { step: TaskStep; index: number }) {
             className="overflow-hidden"
           >
             <div className="px-3 pb-3 pt-0">
-              <div
+              <CompactMarkdown
                 className={cn(
-                  'text-xs text-text-muted whitespace-pre-wrap',
+                  'text-xs leading-5 text-text-muted',
                   'max-h-40 overflow-y-auto',
                   'bg-bg/50 rounded-md p-2',
                 )}
               >
                 {step.content}
-              </div>
+              </CompactMarkdown>
             </div>
           </motion.div>
         )}

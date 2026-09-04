@@ -30,6 +30,7 @@ import type { ReadResource } from './usePrototypeReadData';
 import { grantCloudConsent } from '../../lib/consent';
 import { handleRovingFocus } from '../../lib/rovingFocus';
 import { Spinner } from '../ui/Spinner';
+import { CompactMarkdown } from '../ui/CompactMarkdown';
 
 export type BoardTarget = string | 'new-board' | 'current' | null;
 
@@ -153,7 +154,11 @@ function AdvisorOpinionCard({ advisor, info }: { advisor?: PrototypeAdvisorState
   return (
     <section className="rounded-md border border-border bg-surface p-3">
       <div className="flex items-center gap-2.5"><CharacterPortrait index={advisorPortraits[info.role]} className="h-8 w-8 rounded-sm border border-text" /><div className="min-w-0 flex-1"><h4 className="text-xs font-bold text-text">{info.name}</h4><p className="truncate text-xs text-text-muted">{advisor?.provider || info.personality}</p></div>{advisor?.isRunning ? <Spinner taille="ligne" className="text-domaine-prospects" /> : advisor?.isComplete ? <CheckCircle2 className="h-3.5 w-3.5 text-success" /> : <span className="h-2 w-2 rounded-full bg-border" />}</div>
-      {advisor?.content && <p className="mt-3 whitespace-pre-wrap text-xs leading-5 text-text">{advisor.content}</p>}
+      {advisor?.content && (
+        advisor.isRunning
+          ? <p className="mt-3 whitespace-pre-wrap text-xs leading-5 text-text">{advisor.content}</p>
+          : <CompactMarkdown className="mt-3 text-xs leading-5 text-text">{advisor.content}</CompactMarkdown>
+      )}
     </section>
   );
 }
@@ -267,7 +272,9 @@ function DecisionDetail({ decision }: { decision: BoardDecisionDetail }) {
               <CharacterPortrait index={advisorPortraits[opinion.role]} className="h-8 w-8 rounded-sm border border-text" />
               <div className="min-w-0 flex-1"><strong className="block text-xs text-text">{opinion.name}</strong>{(opinion.provider || opinion.model) && <span className="block truncate text-xs text-text-muted">{opinion.provider || 'provider inconnu'} · {opinion.model || 'modèle non mesuré'}{typeof opinion.cost_eur === 'number' ? ` · ${formaterCout(opinion.cost_eur, 4)}` : ''}</span>}</div>
             </div>
-            <p className="mt-3 whitespace-pre-wrap text-xs leading-5 text-text">{opinion.content}</p>
+            <CompactMarkdown className="mt-3 text-xs leading-5 text-text">
+              {opinion.content}
+            </CompactMarkdown>
           </section>
         ))}
       </div>

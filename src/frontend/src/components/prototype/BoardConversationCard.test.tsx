@@ -1,4 +1,4 @@
-import { fireEvent, render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { AdvisorInfo, BoardDecisionDetail } from '../../services/api/board';
 import { BoardHistoryCard, BoardWorkspaceCanvas } from './BoardConversationCard';
@@ -114,6 +114,31 @@ describe('Board 0.40 conversationnel', () => {
     expect(screen.getByTestId('board-decision-detail')).toHaveTextContent('Mesurer avant extension.');
     expect(screen.getByTestId('board-decision-detail')).toHaveTextContent('Lancer un pilote réel.');
     expect(screen.queryByText(/anthropic|openai|gemini/i)).not.toBeInTheDocument();
+  });
+
+  it('rend le Markdown des avis sauvegardés au lieu de ses marqueurs', () => {
+    const markdownDecision: BoardDecisionDetail = {
+      ...decision,
+      opinions: [{
+        ...decision.opinions[0],
+        content: '### Points de vigilance\n\n- **Budget** à borner\n- Délai à confirmer',
+      }],
+    };
+    render(<BoardWorkspaceCanvas
+      resource={{ status: 'ready', data: workspace, error: null }}
+      decisionResource={{ status: 'ready', data: markdownDecision, error: null }}
+      run={idleRun} target={decision.id} onRetry={vi.fn()} onRetryDecision={vi.fn()}
+      onStart={vi.fn()} onCancel={vi.fn()} onReset={vi.fn()} onOpenClassic={vi.fn()}
+    />);
+
+    const titreAvis = screen.getByRole('heading', { name: 'Points de vigilance' });
+    expect(titreAvis).toBeInTheDocument();
+    const carteAvis = titreAvis.closest('section');
+    expect(carteAvis).not.toBeNull();
+    expect(within(carteAvis as HTMLElement).getByText('Budget').tagName).toBe('STRONG');
+    expect(carteAvis?.querySelectorAll('li')).toHaveLength(2);
+    expect(screen.getByTestId('board-decision-detail')).not.toHaveTextContent('###');
+    expect(screen.getByTestId('board-decision-detail')).not.toHaveTextContent('**');
   });
 
   it('qualifie le consensus, pas une fiabilité factuelle', () => {
