@@ -130,7 +130,9 @@ def test_le_balayage_a_bien_lu_le_perimetre():
         "couvre plus le périmètre, il ne prouve donc plus rien"
     )
 
-    relatifs = {str(chemin.relative_to(RACINE)) for chemin in fichiers}
+    # Les témoins sont des chemins Git, donc toujours écrits avec `/`, y
+    # compris quand la garde tourne sur Windows.
+    relatifs = {chemin.relative_to(RACINE).as_posix() for chemin in fichiers}
     for temoin in (
         "src/frontend/src/components/settings/ProfileTab.tsx",
         "src/backend/app/services/user_profile.py",

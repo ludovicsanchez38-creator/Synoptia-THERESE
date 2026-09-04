@@ -91,10 +91,12 @@ REGLAGES_HERITES = (
     "THERESE_DB_PATH",
 )
 
-# B-306 : bornes du sous-processus, tenues SOUS la marque de délai du cas
-# (180 s) pour que ce soit `subprocess.run` qui tue l'enfant et rende un
-# message lisible, plutôt que pytest-timeout qui laisserait un pytest orphelin.
-DELAI_EXECUTION_SECONDES = 170
+# B-306 : bornes du sous-processus, tenues SOUS la marque de délai du cas pour
+# que ce soit `subprocess.run` qui tue l'enfant et rende un message lisible,
+# plutôt que pytest-timeout qui laisserait un pytest orphelin. Le dossier tient
+# sous 170 s sur Linux/macOS ; le runner Windows observé le 04/09/2026 demande
+# davantage, sans qu'aucun test individuel puisse dépasser ses propres 60 s.
+DELAI_EXECUTION_SECONDES = 300 if sys.platform == "win32" else 170
 # La collecte tourne en ~2,1 s ; ce délai n'est qu'un filet pour le lancement
 # en local, où aucun `--timeout` global ne s'applique.
 DELAI_COLLECTE_SECONDES = 90
@@ -124,10 +126,13 @@ def _lancer_pytest(
             timeout=delai,
         )
     except subprocess.TimeoutExpired as expiration:
+        sortie = expiration.stdout or ""
+        if isinstance(sortie, bytes):
+            sortie = sortie.decode(errors="replace")
         pytest.fail(
             f"{' '.join(arguments)} n'a pas rendu la main en {delai} s "
             f"(B-306 : le harnais doit rester borné) :\n"
-            f"{(expiration.stdout or b'').decode(errors='replace')[-2000:]}"
+            f"{sortie[-2000:]}"
         )
 
 
@@ -137,7 +142,7 @@ def test_le_dossier_backend_a_bien_ses_fichiers_de_test():
     assert len(FICHIERS) >= 11, FICHIERS
 
 
-@pytest.mark.timeout(180)
+@pytest.mark.timeout(DELAI_EXECUTION_SECONDES + 10)
 def test_le_dossier_src_backend_tests_tient_seul(tmp_path):
     """Volet RUNTIME de B-249, en UN seul sous-processus (B-306).
 
