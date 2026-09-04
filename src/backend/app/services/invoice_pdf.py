@@ -33,10 +33,10 @@ logger = logging.getLogger(__name__)
 # Taux TVA francais
 TVA_RATES = {
     20.0: "TVA normale 20%",
-    10.0: "TVA intermediaire 10%",
-    5.5: "TVA reduite 5,5%",
-    2.1: "TVA super reduite 2,1%",
-    0.0: "TVA a 0%",
+    10.0: "TVA intermédiaire 10%",
+    5.5: "TVA réduite 5,5%",
+    2.1: "TVA super réduite 2,1%",
+    0.0: "TVA à 0%",
 }
 
 # Mapping devise vers symbole d'affichage
@@ -50,6 +50,41 @@ CURRENCY_SYMBOLS: dict[str, str] = {
 
 # Fallback par defaut (utilise uniquement si aucun dossier de travail configure)
 _DEFAULT_INVOICE_DIR = "~/.therese/invoices"
+
+
+STATUTS_PDF: dict[str, dict[str, str]] = {
+    "facture": {
+        "draft": "Brouillon",
+        "sent": "Envoyée",
+        "paid": "Payée",
+        "overdue": "En retard",
+        "cancelled": "Annulée",
+    },
+    "devis": {
+        "draft": "Brouillon",
+        "sent": "Envoyé",
+        "accepted": "Accepté",
+        "refused": "Refusé",
+        "expired": "Expiré",
+        "converted": "Converti",
+        "cancelled": "Annulé",
+    },
+    "avoir": {
+        "draft": "Brouillon",
+        "sent": "Émis",
+        "paid": "Remboursé",
+        "cancelled": "Annulé",
+    },
+}
+
+
+def libelle_statut_pdf(statut: str, type_document: str) -> str:
+    """Traduit un statut technique sans inventer un état métier inconnu."""
+    cle = (statut or "").strip().lower()
+    libelle = STATUTS_PDF.get(type_document, {}).get(cle)
+    if libelle:
+        return libelle
+    return cle.replace("_", " ").capitalize() or "Non renseigné"
 
 
 def resolve_invoice_output_dir() -> str:
@@ -237,7 +272,7 @@ class InvoicePDFGenerator:
         document_type: str,
         invoice_number: str,
     ) -> list[Any]:
-        """Construit le bloc titre du document (dans la bande sombre du header)."""
+        """Construit le bloc titre du document, sous la bande d'en-tête."""
         title_map = {
             "devis": "DEVIS",
             "facture": "FACTURE",
@@ -245,12 +280,13 @@ class InvoicePDFGenerator:
         }
         doc_title = title_map.get(document_type, "FACTURE")
 
-        # Le titre est affiche en blanc sur fond sombre via la bande header
+        # Le flowable vit sous la bande dessinée par le canvas. En blanc, il
+        # était donc blanc sur blanc et « FACTURE » disparaissait du PDF.
         title_style = ParagraphStyle(
             "DocTitle",
             fontName=self.theme.font_bold,
             fontSize=22,
-            textColor=colors.white,
+            textColor=self.theme.c_primary_dark,
             leading=26,
         )
         number_style = ParagraphStyle(
@@ -329,7 +365,7 @@ class InvoicePDFGenerator:
 
         header_data = [
             [
-                Paragraph("EMETTEUR", label_style),
+                Paragraph("ÉMETTEUR", label_style),
                 Paragraph("DESTINATAIRE", label_style),
             ],
             [
@@ -374,19 +410,19 @@ class InvoicePDFGenerator:
             invoice_data["due_date"].replace("Z", "")
         ).strftime("%d/%m/%Y")
 
-        status_raw = invoice_data["status"].upper()
+        status_label = libelle_statut_pdf(invoice_data["status"], document_type)
 
         info_data = [
             [numero_label, invoice_data["invoice_number"]],
-            ["Date d'emission", issue_date],
-            ["Date d'echeance", due_date],
-            ["Statut", status_raw],
+            ["Date d’émission", issue_date],
+            ["Date d’échéance", due_date],
+            ["Statut", status_label],
         ]
 
         # Ajouter la duree de validite pour les devis
         validite = invoice_data.get("validite_jours")
         if document_type == "devis" and validite:
-            info_data.insert(3, ["Validite", f"{validite} jours"])
+            info_data.insert(3, ["Validité", f"{validite} jours"])
 
         cell_label = ParagraphStyle(
             "InfoLabel",
@@ -440,7 +476,7 @@ class InvoicePDFGenerator:
 
         # Section heading
         heading = Paragraph(
-            "DETAIL DES PRESTATIONS",
+            "DÉTAIL DES PRESTATIONS",
             ParagraphStyle(
                 "LinesHeading",
                 fontName=theme.font_bold,
@@ -452,7 +488,7 @@ class InvoicePDFGenerator:
         )
 
         # Header row
-        headers = ["Description", "Qte", "Prix unit. HT", "TVA", "Total HT", "Total TTC"]
+        headers = ["Description", "Qté", "Prix unit. HT", "TVA", "Total HT", "Total TTC"]
         header_cells = [Paragraph(h, s["cell_header"]) for h in headers]
 
         table_data = [header_cells]
@@ -630,20 +666,20 @@ class InvoicePDFGenerator:
 
         if currency == "EUR":
             penalty_lines = (
-                "En cas de retard de paiement, application d'interets de retard au taux legal.<br/>"
-                f"Indemnite forfaitaire pour frais de recouvrement : 40 {currency_symbol}.<br/>"
+                "En cas de retard de paiement, application d’intérêts de retard au taux légal.<br/>"
+                f"Indemnité forfaitaire pour frais de recouvrement : 40 {currency_symbol}.<br/>"
             )
         else:
             penalty_lines = (
-                "En cas de retard de paiement, des penalites pourront etre appliquees "
+                "En cas de retard de paiement, des pénalités pourront être appliquées "
                 "selon les conditions convenues entre les parties.<br/>"
             )
 
         conditions_text = (
-            f"Paiement a reception de facture, net a 30 jours.<br/>"
+            f"Paiement à réception de facture, net à 30 jours.<br/>"
             f"{penalty_lines}"
             f"<br/>"
-            f"<b>Mentions legales :</b> {tva_mention}"
+            f"<b>Mentions légales :</b> {tva_mention}"
         )
         body = Paragraph(conditions_text, s["small"])
 
@@ -687,7 +723,7 @@ class InvoicePDFGenerator:
         tva_intra = user_profile.get("tva_intra", "")
         footer_parts = [p for p in [company, f"SIRET {siret}" if siret else "", f"TVA {tva_intra}" if tva_intra else ""] if p]
         footer_lines = [" - ".join(footer_parts)] if footer_parts else []
-        footer_lines.append(f"Document genere par THERESE - {datetime.now().strftime('%d/%m/%Y')}")
+        footer_lines.append(f"Document généré par THÉRÈSE - {datetime.now().strftime('%d/%m/%Y')}")
 
         on_first, on_later = _make_header_footer(theme, footer_lines)
 
@@ -707,7 +743,7 @@ class InvoicePDFGenerator:
         # Story
         story: list[Any] = []
 
-        # 1. Titre du document (dans l'espace sous la bande header)
+        # 1. Titre du document (dans l'espace sous la bande d'en-tête)
         story.extend(self._build_doc_title_block(document_type, invoice_number))
 
         # 2. Emetteur / Destinataire
