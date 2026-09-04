@@ -31,6 +31,7 @@ import { useTaskStore } from '../../stores/taskStore';
 import type { Task } from '../../services/api';
 import * as api from '../../services/api';
 import { useDemoMask } from '../../hooks';
+import { isPastParisCivilDate } from '../../lib/civilDate';
 import { accessibiliteGlisserDeposer } from '../../lib/accessibiliteGlisserDeposer';
 
 const COLUMNS = [
@@ -312,7 +313,11 @@ function TaskCard({ task, onClick, onStatusChange, isOverlay, showDragHandle, co
     low: 'bg-gray-500/10 text-text-muted border-gray-500/20',
   };
 
-  const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done';
+  const isOverdue = Boolean(
+    task.due_date
+      && isPastParisCivilDate(task.due_date)
+      && !['done', 'cancelled'].includes(task.status),
+  );
 
   return (
     <motion.div

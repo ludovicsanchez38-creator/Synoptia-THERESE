@@ -24,6 +24,7 @@ from app.models.entities import (
     Task,
 )
 from app.services.civil_time import date_civile_paris
+from app.services.invoice_status import statut_effectif_facture
 from app.services.user_profile import get_cached_profile
 from fastapi import APIRouter, Depends
 from sqlalchemy import and_, func, or_
@@ -254,13 +255,12 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
     """Retourne les données du jour pour le tableau de bord.
 
     Agrège : RDV du jour, tâches urgentes, relances email proches,
-    factures impayées > 30j et relances échues (date posée).
+    factures impayées échues et relances échues (date posée).
     Conçu pour se charger en <500ms (SQLite local, pas d'appel réseau).
     """
     today = date_civile_paris(datetime.now(UTC))
     today_dt = datetime.combine(today, datetime.min.time())
     tomorrow_dt = datetime.combine(today + timedelta(days=1), datetime.min.time())
-    thirty_days_ago = today_dt - timedelta(days=30)
     today_str = today.isoformat()  # "YYYY-MM-DD" pour all-day events
     follow_up_horizon = (today + timedelta(days=2)).isoformat()
 
@@ -442,14 +442,15 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
         logger.warning(f"Erreur lecture relances email: {e}")
         indisponibles.append("relances_email")
 
-    # --- Factures impayées > 30 jours ---
+    # --- Factures impayées dont l'échéance est dépassée ---
     overdue_invoices = []
     try:
         stmt_invoices = select(Invoice).options(selectinload(Invoice.contact)).where(
-            and_(
-                Invoice.status.in_(["sent", "overdue"]),
-                Invoice.due_date <= thirty_days_ago,
-            )
+            Invoice.document_type == "facture",
+            or_(
+                Invoice.status == "overdue",
+                and_(Invoice.status == "sent", Invoice.due_date < today_dt),
+            ),
         )
         result_invoices = await session.execute(stmt_invoices)
         invoices = result_invoices.scalars().all()
@@ -468,7 +469,9 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
                 "total_ttc": inv.total_ttc,
                 "currency": inv.currency,
                 "due_date": inv.due_date.isoformat() if inv.due_date else None,
-                "status": inv.status,
+                "status": statut_effectif_facture(
+                    inv.status, inv.document_type, inv.due_date, aujourd_hui=today
+                ),
             })
     except Exception as e:
         logger.warning(f"Erreur lecture factures: {e}")

@@ -19,9 +19,12 @@ from app.models.schemas import (
     MarkPaidRequest,
     UpdateInvoiceRequest,
 )
+from app.services.civil_time import date_civile_paris
 from app.services.invoice_pdf import InvoicePDFGenerator
+from app.services.invoice_status import statut_effectif_facture
 from app.services.user_profile import get_cached_profile
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import and_, or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -192,7 +195,9 @@ def _invoice_to_response(invoice: Invoice) -> InvoiceResponse:
         currency=invoice.currency,
         issue_date=invoice.issue_date.isoformat(),
         due_date=invoice.due_date.isoformat(),
-        status=invoice.status,
+        status=statut_effectif_facture(
+            invoice.status, invoice.document_type, invoice.due_date
+        ),
         subtotal_ht=invoice.subtotal_ht,
         total_tax=invoice.total_tax,
         total_ttc=invoice.total_ttc,
@@ -259,7 +264,28 @@ async def list_invoices(
 
     # Filtres
     if status:
-        statement = statement.where(Invoice.status == status)
+        # B-315 : « en retard » est un état calendaire, pas seulement une
+        # valeur qu'un scheduler aurait eu le temps d'écrire en base.
+        aujourd_hui = date_civile_paris(datetime.now(UTC))
+        debut_du_jour = datetime.combine(aujourd_hui, datetime.min.time())
+        if status == "overdue":
+            statement = statement.where(
+                Invoice.document_type == "facture",
+                or_(
+                    Invoice.status == "overdue",
+                    and_(Invoice.status == "sent", Invoice.due_date < debut_du_jour),
+                ),
+            )
+        elif status == "sent":
+            statement = statement.where(
+                Invoice.status == "sent",
+                or_(
+                    Invoice.document_type != "facture",
+                    Invoice.due_date >= debut_du_jour,
+                ),
+            )
+        else:
+            statement = statement.where(Invoice.status == status)
     if contact_id:
         statement = statement.where(Invoice.contact_id == contact_id)
     if document_type:

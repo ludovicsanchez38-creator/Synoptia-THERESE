@@ -13,6 +13,7 @@ import type { Task } from '../../services/api';
 import * as api from '../../services/api';
 import { useDemoMask } from '../../hooks';
 import { Button } from '../ui/Button';
+import { isPastParisCivilDate } from '../../lib/civilDate';
 
 export function TaskList() {
   const { tasks, searchQuery, setCurrentTask, setIsTaskFormOpen, updateTask, removeTask } =
@@ -109,8 +110,11 @@ export function TaskList() {
     <div className="h-full overflow-y-auto px-6 py-4">
       <div className="space-y-2">
         {filteredTasks.map((task) => {
-          const isOverdue =
-            task.due_date && new Date(task.due_date) < new Date() && task.status !== 'done';
+          const isOverdue = Boolean(
+            task.due_date
+              && isPastParisCivilDate(task.due_date)
+              && !['done', 'cancelled'].includes(task.status),
+          );
           const isDone = task.status === 'done';
 
           return (

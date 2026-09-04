@@ -33,3 +33,8 @@ export function parisDateKey(value: string): string {
   );
   return `${parts.year}-${parts.month}-${parts.day}`;
 }
+
+/** Une échéance est dépassée seulement si son JOUR civil est antérieur. */
+export function isPastParisCivilDate(value: string, now: Date = new Date()): boolean {
+  return parisDateKey(value) < parisDateKey(now.toISOString());
+}

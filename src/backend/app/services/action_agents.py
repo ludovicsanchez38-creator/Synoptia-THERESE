@@ -290,9 +290,11 @@ async def _gather_local_context(tools: list[str]) -> str:
     if "crm" in tools:
         try:
             from app.models.database import get_session_context
-            from app.models.entities import Contact
+            from app.models.entities import Activity, Contact, Invoice
 
             async with get_session_context() as session:
+                from collections import defaultdict
+
                 from sqlalchemy import func, select
 
                 count_stmt = select(func.count()).select_from(Contact)
@@ -305,11 +307,62 @@ async def _gather_local_context(tools: list[str]) -> str:
                 result = await session.execute(stmt)
                 contacts = result.scalars().all()
                 if contacts:
+                    contact_ids = [contact.id for contact in contacts]
+                    activites = (
+                        await session.execute(
+                            select(Activity)
+                            .where(
+                                Activity.contact_id.in_(contact_ids),
+                                Activity.statut == "en_vigueur",
+                            )
+                            .order_by(Activity.created_at.desc())
+                        )
+                    ).scalars().all()
+                    pieces = (
+                        await session.execute(
+                            select(Invoice)
+                            .where(Invoice.contact_id.in_(contact_ids))
+                            .order_by(Invoice.created_at.desc())
+                        )
+                    ).scalars().all()
+                    activites_par_contact: dict[str, list[Activity]] = defaultdict(list)
+                    pieces_par_contact: dict[str, list[Invoice]] = defaultdict(list)
+                    for activite in activites:
+                        if len(activites_par_contact[activite.contact_id]) < 3:
+                            activites_par_contact[activite.contact_id].append(activite)
+                    for piece in pieces:
+                        if len(pieces_par_contact[piece.contact_id]) < 5:
+                            pieces_par_contact[piece.contact_id].append(piece)
+
                     lines = [f"Total contacts : {total}"]
                     for c in contacts:
                         name = f"{c.first_name or ''} {c.last_name or ''}".strip() or c.email or "?"
                         company = f" ({c.company})" if c.company else ""
-                        lines.append(f"- {name}{company}")
+                        derniere_interaction = (
+                            c.last_interaction.strftime("%d/%m/%Y")
+                            if c.last_interaction else "non renseignée"
+                        )
+                        prochaine_relance = (
+                            c.next_follow_up.strftime("%d/%m/%Y")
+                            if c.next_follow_up else "aucune"
+                        )
+                        lines.append(
+                            f"- {name}{company} | étape : {c.stage} | "
+                            f"dernière interaction : {derniere_interaction} | "
+                            f"prochaine relance : {prochaine_relance}"
+                        )
+                        for activite in activites_par_contact[c.id]:
+                            date_activite = activite.created_at.strftime("%d/%m/%Y")
+                            lines.append(
+                                f"  - activité [{date_activite}] {activite.type} : "
+                                f"{activite.title}"
+                            )
+                        for piece in pieces_par_contact[c.id]:
+                            lines.append(
+                                f"  - {piece.document_type} {piece.invoice_number} | "
+                                f"{piece.status} | {piece.total_ttc} {piece.currency} | "
+                                f"échéance {piece.due_date.strftime('%d/%m/%Y')}"
+                            )
                     context_parts.append(
                         "## CRM - Contacts recents\n" + "\n".join(lines)
                     )

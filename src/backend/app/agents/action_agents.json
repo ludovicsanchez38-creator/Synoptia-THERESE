@@ -64,7 +64,8 @@
     ],
     "tools": [
       "crm",
-      "email"
+      "email",
+      "invoices"
     ]
   },
   {
