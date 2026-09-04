@@ -211,6 +211,34 @@ test.describe('Prototype conversationnel - parcours unifiés des capacités', ()
     await expect(page.getByTestId('conversation-canvas-prototype')).toBeVisible();
   });
 
+  test('B-320 : les autres parcours restent entièrement visibles au-dessus du composeur', async ({ page }, testInfo) => {
+    for (const viewport of [
+      { width: 1181, height: 820 },
+      { width: 1063, height: 739 },
+    ]) {
+      await page.setViewportSize(viewport);
+
+      const parcours = page.getByText('Essayer un autre parcours', { exact: true }).locator('..');
+      const fil = page.getByTestId('prototype-conversation-scroll');
+      const saisieDuComposeur = page.getByPlaceholder(/Demande à Thérèse/);
+      await fil.evaluate((element) => {
+        element.scrollTop = element.scrollHeight;
+      });
+
+      const [parcoursBox, saisieBox] = await Promise.all([
+        parcours.boundingBox(),
+        saisieDuComposeur.boundingBox(),
+      ]);
+      expect(parcoursBox).not.toBeNull();
+      expect(saisieBox).not.toBeNull();
+      expect(parcoursBox!.y + parcoursBox!.height).toBeLessThanOrEqual(saisieBox!.y);
+
+      await page.screenshot({
+        path: testInfo.outputPath(`b-320-${viewport.width}x${viewport.height}.png`),
+      });
+    }
+  });
+
   test('Tâches ouvre la vraie vue dans la coquille unifiée', async ({ page }) => {
     await chooseCapability(page, 'Tâches');
 
