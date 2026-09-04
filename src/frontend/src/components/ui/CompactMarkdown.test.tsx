@@ -19,7 +19,7 @@ describe('CompactMarkdown', () => {
   it('neutralise les URL dangereuses, le HTML brut et les images distantes', () => {
     const { container } = render(
       <CompactMarkdown>
-        {'[ouvrir](javascript:alert(1)) <script>alert(2)</script> ![pixel](https://tracker.test/x.gif)'}
+        {'[ouvrir](javascript:prompt(1)) <script>contenu indésirable</script> ![pixel](https://tracker.test/x.gif)'}
       </CompactMarkdown>,
     );
 
