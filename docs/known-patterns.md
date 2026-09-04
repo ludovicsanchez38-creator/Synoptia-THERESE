@@ -253,3 +253,17 @@ dit rien de l'etat d'apres.
 
 Corrige a la 0.57.0 : `scripts/bump-version.sh` regenere l'index. Si un autre
 fichier genere venait a porter la version, l'ajouter au meme endroit.
+
+## CI mypy : `uv sync --dev` peut épuiser le timeout en téléchargeant CUDA (04/09/2026)
+
+Le job `Typage (mypy, baseline)` installe tout le groupe de développement avec
+`uv sync --dev`. Sur un runner Linux sans cache UV chaud, cette commande peut
+télécharger Torch et plusieurs gigaoctets de paquets NVIDIA/CUDA sans rapport
+avec le contrôle de types. Le run `33878695650` a ainsi été annulé au bout de
+dix minutes pendant l'installation, avant même le démarrage de mypy, alors que
+les mêmes sources avaient passé le CI `33869741967` et le gate de release
+`33873778753`.
+
+Ne pas classer ce cas comme un échec de typage sans lire les étapes et les logs.
+À corriger : limiter ce job aux dépendances nécessaires à mypy ou installer la
+variante CPU de Torch, puis dimensionner le timeout sur l'installation réelle.
