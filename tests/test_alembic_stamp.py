@@ -73,6 +73,28 @@ def _creer_tables_sync_reelles(db_path: Path) -> None:
     ])
     engine.dispose()
 
+
+def _creer_tables_planning_reelles(db_path: Path) -> None:
+    """La preuve de tête P-039 couvre les cinq tables et toutes leurs colonnes."""
+    from sqlalchemy import create_engine
+    from sqlmodel import SQLModel
+
+    engine = create_engine(f"sqlite:///{db_path}")
+    SQLModel.metadata.create_all(
+        engine,
+        tables=[
+            SQLModel.metadata.tables[table]
+            for table in (
+                "task_schedules",
+                "task_dependencies",
+                "planning_resources",
+                "task_allocations",
+                "planning_snapshots",
+            )
+        ],
+    )
+    engine.dispose()
+
 def _make_patched_tracked_db(db_path: Path, missing_column: str | None = None) -> None:
     """Construit une DB ancienne dont les patches ad-hoc simulent le schéma head."""
     board_columns = [
@@ -106,6 +128,7 @@ def _make_patched_tracked_db(db_path: Path, missing_column: str | None = None) -
         conn.execute("INSERT INTO alembic_version VALUES ('c3d4e5f6a7b8')")
         conn.commit()
     _creer_tables_sync_reelles(db_path)
+    _creer_tables_planning_reelles(db_path)
 
 
 def test_constante_epinglee_suit_la_vraie_tete():
@@ -174,6 +197,20 @@ def test_make_db_migrate_sur_db_legacy(tmp_path):
     result = _run_upgrade_head(data_dir)
     assert result.returncode == 0, result.stderr[-800:]
     assert _read_stamp(data_dir / "therese.db") == ALEMBIC_HEAD_REVISION
+    with closing(sqlite3.connect(str(data_dir / "therese.db"))) as conn:
+        tables = {
+            row[0]
+            for row in conn.execute(
+                "SELECT name FROM sqlite_master WHERE type='table'"
+            ).fetchall()
+        }
+    assert {
+        "task_schedules",
+        "task_dependencies",
+        "planning_resources",
+        "task_allocations",
+        "planning_snapshots",
+    } <= tables
 
 
 @pytest.mark.slow

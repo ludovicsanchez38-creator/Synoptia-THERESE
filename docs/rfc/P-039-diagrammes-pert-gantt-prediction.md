@@ -1,12 +1,12 @@
 # RFC P-039 - Diagrammes PERT, Gantt et prévision de planning
 
-Statut : à arbitrer
+Statut : validé - lot A implémenté
 
 Date : 4 septembre 2026
 
 Source produit : suggestion Discord « Diagrammes & prédiction », triée en P-039
 
-Portée proposée : prototype local en lecture seule
+Portée validée : prototype local en lecture seule
 
 ## Décision proposée
 
@@ -196,7 +196,7 @@ indique par exemple : « 4 tâches sur 11 n'ont pas d'estimation de durée ».
 
 ## Découpage recommandé
 
-### Lot A - Socle calculable
+### Lot A - Socle calculable (implémenté)
 
 - migrations et schémas ;
 - validation du graphe ;
@@ -237,17 +237,25 @@ indique par exemple : « 4 tâches sur 11 n'ont pas d'estimation de durée ».
 - le calcul de 1 000 tâches et 5 000 dépendances reste inférieur à une seconde
   sur la machine de référence, hors rendu.
 
-## Arbitrages demandés
+## Arbitrages validés
 
-1. Valider le prototype en lecture seule avant toute écriture par l'IA.
-2. Valider le calendrier par défaut proposé ou choisir des journées sans pause.
-3. Garder les jalons de facturation informatifs en V1, sans déclenchement.
-4. Reporter le nivellement automatique des ressources après le prototype.
-5. Autoriser ou non la prévision Monte-Carlo dans le lot D.
+Ludo a validé les cinq choix le 4 septembre 2026 :
 
-Recommandation : valider les cinq choix proposés. Ils livrent une première
-valeur visible tout en gardant les dates explicables et les actions sous le
-contrôle de l'utilisateur.
+1. prototype en lecture seule avant toute écriture par l'IA ;
+2. calendrier Europe/Paris, lundi-vendredi, 09:00-12:00 et 14:00-18:00 ;
+3. jalons de facturation informatifs en V1, sans déclenchement ;
+4. nivellement automatique des ressources reporté après le prototype ;
+5. prévision Monte-Carlo autorisée uniquement dans le lot D.
+
+## Résultat du lot A
+
+- cinq tables dédiées avec contraintes et migration Alembic ;
+- moteur pur `pert-cpm-1`, sans accès base ni LLM ;
+- quatre types de dépendances, décalages, jalons et contraintes fixes ;
+- états `complete`, `incomplete` et `invalid`, avec champs ou cycles nommés ;
+- cache immuable par empreinte SHA-256 des entrées ;
+- routes de calcul, dernier snapshot et snapshot précis ;
+- aucune route de mutation de planning exposée dans ce lot.
 
 ## Références internes
 

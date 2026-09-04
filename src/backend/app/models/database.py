@@ -555,7 +555,7 @@ def apply_adhoc_migrations(db_path) -> None:
 # Le test tests/test_alembic_stamp.py vérifie que cette constante suit la
 # vraie tête de src/backend/alembic/versions (épinglée en dur pour que
 # l'app PACKAGÉE puisse estampiller sans embarquer le dossier alembic/).
-ALEMBIC_HEAD_REVISION = "f6a7b8c9d0e1"
+ALEMBIC_HEAD_REVISION = "a7b8c9d0e1f2"
 
 
 def ensure_alembic_stamp(db_path) -> None:
@@ -651,6 +651,23 @@ def ensure_alembic_stamp(db_path) -> None:
                             "sync_plans", "sync_operations",
                         )
                     )
+                    # P-039 : les cinq tables de planning sont créées par
+                    # create_all au boot desktop avant cette preuve. Exiger
+                    # toutes leurs colonnes empêche de sauter la migration sur
+                    # une base Alembic ancienne partiellement patchée.
+                    planning_tables = (
+                        "task_schedules",
+                        "task_dependencies",
+                        "planning_resources",
+                        "task_allocations",
+                        "planning_snapshots",
+                    )
+                    has_planning_tables = all(
+                        table in _SQLModel.metadata.tables
+                        and set(_SQLModel.metadata.tables[table].columns.keys())
+                        <= _colonnes(table)
+                        for table in planning_tables
+                    )
                     if (
                         "validite_jours" in inv_cols
                         and {
@@ -664,6 +681,7 @@ def ensure_alembic_stamp(db_path) -> None:
                         and has_board_history
                         and has_atelier_history
                         and has_sync_tables
+                        and has_planning_tables
                     ):
                         conn.execute(
                             "UPDATE alembic_version SET version_num = ?",

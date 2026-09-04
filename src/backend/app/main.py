@@ -63,6 +63,7 @@ from app.routers import (
     notifications_router,  # US-004 - Notifications push in-app
     perf_router,
     personalisation_router,
+    planning_router,
     prestations_router,
     prompts_router,  # Bibliothèque de prompts
     rgpd_router,  # Phase 6 - RGPD Compliance
@@ -871,6 +872,7 @@ app.include_router(memory_router, prefix="/api/memory", tags=["Memory"])
 from app.routers.project_sync import router as project_sync_router  # noqa: E402
 
 app.include_router(project_sync_router, prefix="/api/projects", tags=["ProjectSync"])
+app.include_router(planning_router, prefix="/api/projects", tags=["Planning"])
 from app.routers.processing_tasks import router as processing_tasks_router  # noqa: E402
 
 app.include_router(

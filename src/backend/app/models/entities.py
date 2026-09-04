@@ -8,6 +8,7 @@ from datetime import UTC, date, datetime
 from typing import Optional
 from uuid import uuid4
 
+from sqlalchemy import CheckConstraint, UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
 
 
@@ -101,6 +102,12 @@ class Project(SQLModel, table=True):
     contact: Contact | None = Relationship(back_populates="projects")
     tasks: list["Task"] = Relationship(back_populates="project", cascade_delete=True)
     deliverables: list["Deliverable"] = Relationship(back_populates="project", cascade_delete=True)
+    planning_resources: list["PlanningResource"] = Relationship(
+        back_populates="project", cascade_delete=True
+    )
+    planning_snapshots: list["PlanningSnapshot"] = Relationship(
+        back_populates="project", cascade_delete=True
+    )
 
 
 # piste -> proposition -> gagne / perdue, puis en_cours -> terminee.
@@ -564,6 +571,217 @@ class Task(SQLModel, table=True):
 
     # Relationships
     project: Optional["Project"] = Relationship(back_populates="tasks")
+    planning_schedule: Optional["TaskSchedule"] = Relationship(
+        back_populates="task", cascade_delete=True
+    )
+    planning_allocations: list["TaskAllocation"] = Relationship(
+        back_populates="task", cascade_delete=True
+    )
+    planning_dependencies_before: list["TaskDependency"] = Relationship(
+        back_populates="predecessor",
+        sa_relationship_kwargs={
+            "foreign_keys": "TaskDependency.predecessor_task_id",
+            "cascade": "all, delete",
+        },
+    )
+    planning_dependencies_after: list["TaskDependency"] = Relationship(
+        back_populates="successor",
+        sa_relationship_kwargs={
+            "foreign_keys": "TaskDependency.successor_task_id",
+            "cascade": "all, delete",
+        },
+    )
+
+
+# =============================================================================
+# PLANNING MODELS (P-039, lot A)
+# =============================================================================
+
+
+class TaskSchedule(SQLModel, table=True):
+    """Données de calcul optionnelles d'une tâche existante."""
+
+    __tablename__ = "task_schedules"
+    __table_args__ = (
+        CheckConstraint(
+            "duration_optimistic_minutes IS NULL OR duration_optimistic_minutes > 0",
+            name="ck_task_schedule_duration_optimistic_positive",
+        ),
+        CheckConstraint(
+            "duration_likely_minutes IS NULL OR duration_likely_minutes > 0",
+            name="ck_task_schedule_duration_likely_positive",
+        ),
+        CheckConstraint(
+            "duration_pessimistic_minutes IS NULL OR duration_pessimistic_minutes > 0",
+            name="ck_task_schedule_duration_pessimistic_positive",
+        ),
+        CheckConstraint(
+            "duration_optimistic_minutes IS NULL OR duration_likely_minutes IS NULL "
+            "OR duration_optimistic_minutes <= duration_likely_minutes",
+            name="ck_task_schedule_duration_optimistic_likely_order",
+        ),
+        CheckConstraint(
+            "duration_likely_minutes IS NULL OR duration_pessimistic_minutes IS NULL "
+            "OR duration_likely_minutes <= duration_pessimistic_minutes",
+            name="ck_task_schedule_duration_likely_pessimistic_order",
+        ),
+        CheckConstraint(
+            "constraint_type IS NULL OR constraint_type IN "
+            "('start_no_earlier', 'finish_no_later', 'fixed_start', 'fixed_finish')",
+            name="ck_task_schedule_constraint_type",
+        ),
+        CheckConstraint(
+            "(constraint_type IS NULL AND constraint_at IS NULL) OR "
+            "(constraint_type IS NOT NULL AND constraint_at IS NOT NULL)",
+            name="ck_task_schedule_constraint_pair",
+        ),
+        CheckConstraint(
+            "progress_percent BETWEEN 0 AND 100",
+            name="ck_task_schedule_progress",
+        ),
+    )
+
+    task_id: str = Field(primary_key=True, foreign_key="tasks.id")
+    duration_optimistic_minutes: int | None = None
+    duration_likely_minutes: int | None = None
+    duration_pessimistic_minutes: int | None = None
+    constraint_type: str | None = None
+    constraint_at: datetime | None = None
+    progress_percent: int = 0
+    is_milestone: bool = False
+    billing_milestone: bool = False
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+    task: Task = Relationship(back_populates="planning_schedule")
+
+
+class TaskDependency(SQLModel, table=True):
+    """Contrainte d'ordre entre deux tâches."""
+
+    __tablename__ = "task_dependencies"
+    __table_args__ = (
+        UniqueConstraint(
+            "predecessor_task_id",
+            "successor_task_id",
+            "kind",
+            name="uq_task_dependency_edge",
+        ),
+        CheckConstraint(
+            "predecessor_task_id <> successor_task_id",
+            name="ck_task_dependency_distinct_tasks",
+        ),
+        CheckConstraint(
+            "kind IN ('finish_start', 'start_start', 'finish_finish', 'start_finish')",
+            name="ck_task_dependency_kind",
+        ),
+        CheckConstraint(
+            "lag_minutes BETWEEN -525600 AND 525600",
+            name="ck_task_dependency_lag",
+        ),
+    )
+
+    id: str = Field(default_factory=generate_uuid, primary_key=True)
+    predecessor_task_id: str = Field(foreign_key="tasks.id", index=True)
+    successor_task_id: str = Field(foreign_key="tasks.id", index=True)
+    kind: str = "finish_start"
+    lag_minutes: int = 0
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+    predecessor: Task = Relationship(
+        back_populates="planning_dependencies_before",
+        sa_relationship_kwargs={"foreign_keys": "TaskDependency.predecessor_task_id"},
+    )
+    successor: Task = Relationship(
+        back_populates="planning_dependencies_after",
+        sa_relationship_kwargs={"foreign_keys": "TaskDependency.successor_task_id"},
+    )
+
+
+class PlanningResource(SQLModel, table=True):
+    """Ressource déclarée d'un projet, sans nivellement automatique en V1."""
+
+    __tablename__ = "planning_resources"
+    __table_args__ = (
+        UniqueConstraint("project_id", "name", name="uq_planning_resource_name"),
+        CheckConstraint(
+            "capacity_percent BETWEEN 1 AND 100",
+            name="ck_planning_resource_capacity",
+        ),
+    )
+
+    id: str = Field(default_factory=generate_uuid, primary_key=True)
+    project_id: str = Field(foreign_key="projects.id", index=True)
+    name: str
+    kind: str = "person"
+    capacity_percent: int = 100
+    timezone: str = "Europe/Paris"
+    working_hours_json: str = (
+        '{"monday":[["09:00","12:00"],["14:00","18:00"]],'
+        '"tuesday":[["09:00","12:00"],["14:00","18:00"]],'
+        '"wednesday":[["09:00","12:00"],["14:00","18:00"]],'
+        '"thursday":[["09:00","12:00"],["14:00","18:00"]],'
+        '"friday":[["09:00","12:00"],["14:00","18:00"]]}'
+    )
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+    project: Project = Relationship(back_populates="planning_resources")
+    allocations: list["TaskAllocation"] = Relationship(
+        back_populates="resource", cascade_delete=True
+    )
+
+
+class TaskAllocation(SQLModel, table=True):
+    """Occupation informative d'une ressource par une tâche."""
+
+    __tablename__ = "task_allocations"
+    __table_args__ = (
+        UniqueConstraint("task_id", "resource_id", name="uq_task_allocation"),
+        CheckConstraint(
+            "allocation_percent BETWEEN 1 AND 100",
+            name="ck_task_allocation_percent",
+        ),
+    )
+
+    id: str = Field(default_factory=generate_uuid, primary_key=True)
+    task_id: str = Field(foreign_key="tasks.id", index=True)
+    resource_id: str = Field(foreign_key="planning_resources.id", index=True)
+    allocation_percent: int = 100
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+
+    task: Task = Relationship(back_populates="planning_allocations")
+    resource: PlanningResource = Relationship(back_populates="allocations")
+
+
+class PlanningSnapshot(SQLModel, table=True):
+    """Résultat immuable d'un calcul de planning."""
+
+    __tablename__ = "planning_snapshots"
+    __table_args__ = (
+        CheckConstraint(
+            "state IN ('complete', 'incomplete', 'invalid')",
+            name="ck_planning_snapshot_state",
+        ),
+        UniqueConstraint(
+            "project_id",
+            "engine_version",
+            "input_hash",
+            name="uq_planning_snapshot_input",
+        ),
+    )
+
+    id: str = Field(default_factory=generate_uuid, primary_key=True)
+    project_id: str = Field(foreign_key="projects.id", index=True)
+    engine_version: str
+    input_hash: str = Field(index=True)
+    calculated_at: datetime = Field(default_factory=lambda: datetime.now(UTC), index=True)
+    state: str
+    warnings_json: str = "[]"
+    missing_fields_json: str = "[]"
+    result_json: str
+
+    project: Project = Relationship(back_populates="planning_snapshots")
 
 
 # =============================================================================

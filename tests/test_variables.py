@@ -224,6 +224,7 @@ class TestRGPD:
 
 
 def _creer_tables_sync_depuis_modeles(db_path):
+    """Crée les tables dont la preuve de tête dérive directement des modèles."""
     import app.models.entities_sync  # noqa: F401
     from sqlalchemy import create_engine
     from sqlmodel import SQLModel
@@ -234,6 +235,8 @@ def _creer_tables_sync_depuis_modeles(db_path):
         for t in (
             "project_sync_roots", "project_sync_entries",
             "sync_plans", "sync_operations",
+            "task_schedules", "task_dependencies",
+            "planning_resources", "task_allocations", "planning_snapshots",
         )
     ])
     engine.dispose()

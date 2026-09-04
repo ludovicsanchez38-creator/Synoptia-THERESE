@@ -130,13 +130,16 @@ def _make_engine(**kwargs):
     return engine
 
 
-def _bootstrap_if_new() -> None:
-    from sqlalchemy import inspect
+def _bootstrap_missing_tables() -> None:
+    """Crée les tables absentes avant la preuve de schéma embarquée.
 
+    `create_all` ne modifie jamais une table existante. L'appel est donc sûr
+    pour une base suivie et indispensable aux nouvelles tables P-039 sur une
+    base legacy sans stamp, que le pré-vol estampille ensuite au schéma réel.
+    """
     engine = _make_engine()
     try:
-        if "contacts" not in inspect(engine).get_table_names():
-            SQLModel.metadata.create_all(engine)
+        SQLModel.metadata.create_all(engine)
     finally:
         engine.dispose()
 
@@ -144,7 +147,7 @@ def _bootstrap_if_new() -> None:
 # Pas d'effet de bord en mode offline (génération SQL) : ni création de
 # fichier DB, ni estampille.
 if not context.is_offline_mode():
-    _bootstrap_if_new()
+    _bootstrap_missing_tables()
     # Revue adversariale US-015 : les migrations ad-hoc AVANT l'estampille,
     # sinon une DB legacy serait marquée head sans le schéma de head.
     from app.models.database import apply_adhoc_migrations  # noqa: E402

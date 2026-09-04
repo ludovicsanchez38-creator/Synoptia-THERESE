@@ -52,6 +52,7 @@ from app.routers.memory import router as memory_router
 from app.routers.notifications import router as notifications_router
 from app.routers.performance import router as perf_router
 from app.routers.personalisation import router as personalisation_router
+from app.routers.planning import router as planning_router
 from app.routers.prestations import router as prestations_router
 
 # Bibliothèque de prompts prêts à l'emploi
@@ -82,6 +83,7 @@ __all__ = [
     "variables_router",
     "perf_router",
     "personalisation_router",
+    "planning_router",  # P-039 - calcul PERT/CPM en lecture seule
     "escalation_router",
     "email_router",  # Phase 1 - ACTIVATED
     "calendar_router",  # Phase 2 - ACTIVATED

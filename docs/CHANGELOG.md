@@ -12,6 +12,7 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 - **Voix locale** : modifier un texte après sa synthèse masque l'audio périmé et explique maintenant qu'il faut le générer à nouveau.
 - **OAuth Google** : la page de refus aligne son titre et ses explications avec les autres pages de retour, tout en gardant la liste des causes lisible à gauche.
 - **CI** : le contrôle mypy utilise Torch CPU sans télécharger les paquets CUDA ; sous Windows, les deux racines de tests s'exécutent une seule fois et produisent deux rapports JUnit.
+- **Planning projet (socle PERT/CPM)** : ajoute un moteur déterministe, cinq tables dédiées, des snapshots par empreinte et une API locale de calcul en lecture seule. Les données manquantes, cycles et contraintes incompatibles sont signalés sans inventer de date.
 - **Atelier documentaire (nouveau)** : rédige des documents longs (proposition, dossier, rapport) directement dans THÉRÈSE - trame générée par l'IA (sections/sous-sections), rédaction guidée section par section en streaming, capture de « pistes » (idées annexes pendant la rédaction) explorables ou ignorables, export en Markdown ou Word (.docx).
 - **RGPD** : l'export complet de données et le droit à l'oubli couvrent désormais les documents de l'atelier (documents, sections, pistes), qui en étaient absents.
 - **Correctif export de conversation** : le téléchargement d'un export de conversation (Markdown/Word) utilisait une adresse incomplète et pouvait échouer selon le mode de lancement de l'app - corrigé.
