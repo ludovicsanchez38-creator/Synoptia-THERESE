@@ -208,7 +208,7 @@ Tu as déjà un projet Google Cloud. Voici ce qu'il te faut :
 1. Va sur [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
 2. Sélectionne ton projet
 3. Clique sur "Créer des identifiants" → "ID client OAuth 2.0"
-4. Type d'application : **Application de bureau**
+4. Type d'application : **Application Web**, avec l'URI de redirection http://localhost:8080/oauth/callback
 5. Copie le **Client ID** et le **Client Secret**
 
 Entre-les dans l'étape suivante !"""
@@ -220,10 +220,10 @@ Je vais te guider pour créer un projet Google Cloud :
 1. Va sur [Google Cloud Console](https://console.cloud.google.com/)
 2. Crée un nouveau projet (bouton en haut à gauche)
 3. Nom du projet : "THÉRÈSE Email" (ou autre)
-4. Active l'API Gmail (Bibliothèque → Gmail API → Activer)
+4. Active les API Gmail et Google Calendar (Bibliothèque → Gmail API et Google Calendar API → Activer)
 5. Va dans "Identifiants" → "Créer des identifiants"
 6. Choisis "ID client OAuth 2.0"
-7. Type : **Application de bureau**
+7. Type : **Application Web**, avec l'URI de redirection http://localhost:8080/oauth/callback
 8. Copie le Client ID et Client Secret
 
 ⏱️ Environ 5 minutes. Prends ton temps !"""
