@@ -480,18 +480,33 @@ UNCERTAINTY_PHRASES = [
 ]
 
 
+def _sans_accents(texte: str) -> str:
+    """Replie les accents (« sûr » -> « sur ») pour une comparaison lexicale."""
+    import unicodedata
+
+    return "".join(
+        c for c in unicodedata.normalize("NFKD", texte) if not unicodedata.combining(c)
+    )
+
+
 def detect_uncertainty(response: str) -> dict:
     """
     Detect if the LLM response indicates uncertainty (US-ESC-01).
 
     Returns dict with uncertainty indicators.
+
+    B-496 (05/09/2026) : le vocabulaire est écrit sans accents et la
+    comparaison était un simple `in` sur la réponse en minuscules. « je ne
+    suis pas sûr » ne rencontrait jamais « je ne suis pas sur » : une réponse
+    en français correct passait pour une certitude absolue. Les deux côtés
+    sont repliés sur les accents avant comparaison.
     """
-    lower_response = response.lower()
+    lower_response = _sans_accents(response.lower())
 
     # Check for uncertainty phrases
     detected_phrases = []
     for phrase in UNCERTAINTY_PHRASES:
-        if phrase in lower_response:
+        if _sans_accents(phrase) in lower_response:
             detected_phrases.append(phrase)
 
     # Calculate confidence score (inverse of uncertainty)
