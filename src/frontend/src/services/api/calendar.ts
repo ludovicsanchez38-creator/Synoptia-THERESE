@@ -133,7 +133,7 @@ export async function listCalendars(
 }
 
 export async function getCalendar(calendarId: string, accountId: string): Promise<Calendar> {
-  const response = await apiFetch(`${API_BASE}/api/calendar/calendars/${calendarId}?account_id=${accountId}`);
+  const response = await apiFetch(`${API_BASE}/api/calendar/calendars/${encodeURIComponent(calendarId)}?account_id=${encodeURIComponent(accountId)}`);
   if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
@@ -154,7 +154,7 @@ export async function createCalendar(
 }
 
 export async function deleteCalendar(calendarId: string, accountId: string): Promise<any> {
-  const response = await apiFetch(`${API_BASE}/api/calendar/calendars/${calendarId}?account_id=${accountId}`, {
+  const response = await apiFetch(`${API_BASE}/api/calendar/calendars/${encodeURIComponent(calendarId)}?account_id=${encodeURIComponent(accountId)}`, {
     method: 'DELETE',
   });
   if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
@@ -186,7 +186,7 @@ export async function listEvents(
 }
 
 export async function getEvent(eventId: string, calendarId: string, accountId: string): Promise<CalendarEvent> {
-  const response = await apiFetch(`${API_BASE}/api/calendar/events/${eventId}?calendar_id=${calendarId}&account_id=${accountId}`);
+  const response = await apiFetch(`${API_BASE}/api/calendar/events/${encodeURIComponent(eventId)}?calendar_id=${encodeURIComponent(calendarId)}&account_id=${encodeURIComponent(accountId)}`);
   if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
@@ -212,7 +212,7 @@ export async function updateEvent(
 ): Promise<CalendarEvent> {
   const params = new URLSearchParams({ calendar_id: calendarId });
   if (accountId) params.set('account_id', accountId);
-  const response = await apiFetch(`${API_BASE}/api/calendar/events/${eventId}?${params}`, {
+  const response = await apiFetch(`${API_BASE}/api/calendar/events/${encodeURIComponent(eventId)}?${params}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(req),
@@ -224,7 +224,7 @@ export async function updateEvent(
 export async function deleteEvent(eventId: string, calendarId: string, accountId?: string): Promise<any> {
   const params = new URLSearchParams({ calendar_id: calendarId });
   if (accountId) params.set('account_id', accountId);
-  const response = await apiFetch(`${API_BASE}/api/calendar/events/${eventId}?${params}`, {
+  const response = await apiFetch(`${API_BASE}/api/calendar/events/${encodeURIComponent(eventId)}?${params}`, {
     method: 'DELETE',
   });
   if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
@@ -232,7 +232,7 @@ export async function deleteEvent(eventId: string, calendarId: string, accountId
 }
 
 export async function quickAddEvent(text: string, calendarId: string, accountId: string): Promise<CalendarEvent> {
-  const response = await apiFetch(`${API_BASE}/api/calendar/events/quick-add?account_id=${accountId}`, {
+  const response = await apiFetch(`${API_BASE}/api/calendar/events/quick-add?account_id=${encodeURIComponent(accountId)}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ calendar_id: calendarId, text }),
@@ -257,7 +257,7 @@ export async function syncCalendar(accountId?: string): Promise<CalendarSyncResp
 }
 
 export async function getCalendarSyncStatus(accountId: string): Promise<any> {
-  const response = await apiFetch(`${API_BASE}/api/calendar/sync/status?account_id=${accountId}`);
+  const response = await apiFetch(`${API_BASE}/api/calendar/sync/status?account_id=${encodeURIComponent(accountId)}`);
   if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
@@ -265,7 +265,7 @@ export async function getCalendarSyncStatus(accountId: string): Promise<any> {
 export async function importICSFile(file: File, calendarId?: string): Promise<{ imported: number; skipped: number; message: string }> {
   const formData = new FormData();
   formData.append('file', file);
-  const params = calendarId ? `?calendar_id=${calendarId}` : '';
+  const params = calendarId ? `?calendar_id=${encodeURIComponent(calendarId)}` : '';
   const response = await apiFetch(`${API_BASE}/api/calendar/import-ics${params}`, {
     method: 'POST',
     body: formData,
@@ -276,7 +276,7 @@ export async function importICSFile(file: File, calendarId?: string): Promise<{ 
 
 // Export ICS
 export async function exportICSFile(calendarId?: string): Promise<Blob> {
-  const params = calendarId ? `?calendar_id=${calendarId}` : '';
+  const params = calendarId ? `?calendar_id=${encodeURIComponent(calendarId)}` : '';
   const response = await apiFetch(`${API_BASE}/api/calendar/export-ics${params}`);
   if (!response.ok) {
     const d = await response.json().catch(() => ({}));

@@ -4,10 +4,13 @@ import { useContactsStore } from '../../stores/contactsStore';
 
 export const TODAY_REFRESH_INTERVAL_MS = 5 * 60_000;
 
+// B-426 : pendant une revalidation (ou après un échec de revalidation), les
+// données déjà affichées restent portées par la ressource au lieu de
+// disparaître ; `data` n'est garanti non nul que sur `ready`.
 export type ReadResource<T> =
-  | { status: 'loading'; data: null; error: null }
+  | { status: 'loading'; data: T | null; error: null }
   | { status: 'ready'; data: T; error: null }
-  | { status: 'error'; data: null; error: string };
+  | { status: 'error'; data: T | null; error: string };
 
 export function useTodayDashboardResource() {
   const [resource, setResource] = useState<ReadResource<TodayDashboard>>({
@@ -17,16 +20,17 @@ export function useTodayDashboardResource() {
   });
 
   const refresh = useCallback(async () => {
-    setResource({ status: 'loading', data: null, error: null });
+    // B-426 : on garde les données affichées le temps de la revalidation.
+    setResource((prev) => ({ status: 'loading', data: prev.data, error: null }));
     try {
       const data = await fetchTodayDashboard();
       setResource({ status: 'ready', data, error: null });
     } catch {
-      setResource({
+      setResource((prev) => ({
         status: 'error',
-        data: null,
+        data: prev.data,
         error: 'Le brief du jour est indisponible pour le moment.',
-      });
+      }));
     }
   }, []);
 

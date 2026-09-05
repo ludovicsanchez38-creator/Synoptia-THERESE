@@ -25,7 +25,8 @@ const components: Components = {
   ),
   a: ({ href, children }) => {
     if (!href) return <span>{children}</span>;
-    const external = /^https?:/i.test(href);
+    // B-435 : tout lien qui sort de la page (absolu ou relatif) s'ouvre isolé.
+    const external = !href.startsWith('#');
     return (
       <a
         href={href}
