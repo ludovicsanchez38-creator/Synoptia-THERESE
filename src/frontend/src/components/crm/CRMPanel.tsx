@@ -609,6 +609,8 @@ function GlobalActivityView({ annuaire }: { annuaire: ContactResponse[] }) {
   const [filter, setFilter] = useState('all');
   // B-442 : en démonstration, titres et descriptions citent des vrais noms.
   const { maskText } = useDemoMask();
+  // B-527 : une panne n'est pas un fil vide.
+  const [erreurActivites, setErreurActivites] = useState<string | null>(null);
 
   useEffect(() => {
     loadAllActivities();
@@ -619,8 +621,10 @@ function GlobalActivityView({ annuaire }: { annuaire: ContactResponse[] }) {
       setLoading(true);
       const data = await listActivities({ limit: 100 });
       setActivities(data);
+      setErreurActivites(null);
     } catch (error) {
       console.error('Failed to load global activities:', error);
+      setErreurActivites('Les activités n’ont pas pu être lues. Réessaie dans un instant.');
     } finally {
       setLoading(false);
     }
@@ -692,8 +696,15 @@ function GlobalActivityView({ annuaire }: { annuaire: ContactResponse[] }) {
         </div>
       )}
 
+      {!loading && erreurActivites && (
+        <div role="alert" className="mx-auto my-8 max-w-md rounded-md border border-error/40 bg-[var(--color-error-tint)] p-4 text-center text-sm text-error">
+          <p>{erreurActivites}</p>
+          <button type="button" onClick={() => void loadAllActivities()} className="mt-2 rounded-md border border-error px-3 py-1.5 font-semibold">Réessayer</button>
+        </div>
+      )}
+
       {/* Empty state */}
-      {!loading && filteredActivities.length === 0 && (
+      {!loading && !erreurActivites && filteredActivities.length === 0 && (
         <div className="flex items-center justify-center py-12 text-text-muted">
           <div className="text-center">
             <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
@@ -801,6 +812,8 @@ function AddActivityModal({ contactId, onClose, onCreated }: AddActivityModalPro
       onCreated();
     } catch (error) {
       console.error('Failed to create activity:', error);
+      // B-528 : l'échec serveur passe par le même bandeau que la validation locale.
+      setActivityError('L’activité n’a pas été enregistrée. Réessaie dans un instant.');
     } finally {
       setSubmitting(false);
     }
