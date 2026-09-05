@@ -636,6 +636,7 @@ class InvoicePDFGenerator:
         tva_applicable: bool,
         currency_symbol: str,
         currency: str = "EUR",
+        invoice_data: dict[str, Any] | None = None,
     ) -> list[Any]:
         """Construit le bloc conditions de paiement et mentions legales.
 
@@ -675,8 +676,26 @@ class InvoicePDFGenerator:
                 "selon les conditions convenues entre les parties.<br/>"
             )
 
+        # B-339 (05/09/2026) : « net à 30 jours » était écrit en dur, sous une
+        # échéance à 90 jours négociée à la conversion du devis. Les conditions
+        # de la pièce, quand elle en porte, remplacent le texte par défaut ; les
+        # mentions calculées à la conversion remplacent les pénalités génériques.
+        donnees = invoice_data or {}
+        payment_terms = (donnees.get("payment_terms") or "").strip()
+        payment_method = (donnees.get("payment_method") or "").strip()
+        legal_mentions = (donnees.get("legal_mentions") or "").strip()
+        if payment_terms:
+            reglement = f"Paiement à {payment_terms}"
+            if payment_method:
+                reglement += f", par {payment_method}"
+            reglement += ".<br/>"
+        else:
+            reglement = "Paiement à réception de facture, net à 30 jours.<br/>"
+        if legal_mentions:
+            penalty_lines = legal_mentions.replace("\n", "<br/>") + "<br/>"
+
         conditions_text = (
-            f"Paiement à réception de facture, net à 30 jours.<br/>"
+            f"{reglement}"
             f"{penalty_lines}"
             f"<br/>"
             f"<b>Mentions légales :</b> {tva_mention}"
@@ -770,7 +789,9 @@ class InvoicePDFGenerator:
         story.extend(self._build_notes_block(invoice_data.get("notes", "")))
 
         # 7. Conditions de paiement
-        story.extend(self._build_conditions_block(tva_applicable, currency_symbol, currency))
+        story.extend(
+            self._build_conditions_block(tva_applicable, currency_symbol, currency, invoice_data)
+        )
 
         # Build PDF
         doc.build(story, onFirstPage=on_first, onLaterPages=on_later)

@@ -826,6 +826,12 @@ async def generate_invoice_pdf(
         "total_tax": invoice.total_tax,
         "total_ttc": invoice.total_ttc,
         "notes": invoice.notes or "",
+        # B-339 : les conditions négociées à la conversion d'un devis (échéance,
+        # mode de règlement, mentions calculées) n'arrivaient jamais au PDF, qui
+        # imprimait « net à 30 jours » sous une échéance à 90 jours.
+        "payment_terms": invoice.payment_terms,
+        "payment_method": invoice.payment_method,
+        "legal_mentions": invoice.legal_mentions,
         "lines": [
             {
                 "description": line.description,
