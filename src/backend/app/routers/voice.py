@@ -12,6 +12,7 @@ from pathlib import Path
 from app.models.database import get_session
 from app.models.entities import Preference
 from app.models.schemas_voice import TranscriptionResponse, TTSRequest
+from app.services.error_handler import message_pour_ecran
 from app.services.http_client import get_http_client
 from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from fastapi.responses import FileResponse
@@ -123,7 +124,7 @@ async def transcribe_audio(
             else:
                 raise HTTPException(
                     status_code=500,
-                    detail=f"Erreur transcription: {error_msg}",
+                    detail="La transcription a échoué chez le fournisseur. Réessaie dans un instant.",
                 )
 
         result = response.json()
@@ -266,7 +267,7 @@ async def transcribe_audio_local(
         raise HTTPException(status_code=503, detail=str(e))
     except Exception as e:
         logger.exception("Erreur transcription locale")
-        raise HTTPException(status_code=500, detail=f"Erreur transcription locale : {e}")
+        raise HTTPException(status_code=500, detail=message_pour_ecran(e, ou="pendant la transcription locale")) from e
     finally:
         try:
             os.unlink(tmp_path)
@@ -326,4 +327,4 @@ async def text_to_speech_local(payload: TTSRequest) -> FileResponse:
     except Exception as e:
         _effacer_fichier_temporaire(out_path)
         logger.exception("Erreur synthèse vocale locale")
-        raise HTTPException(status_code=500, detail=f"Erreur synthèse vocale locale : {e}")
+        raise HTTPException(status_code=500, detail=message_pour_ecran(e, ou="pendant la synthèse vocale")) from e
