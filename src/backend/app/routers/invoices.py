@@ -166,8 +166,16 @@ async def _inserer_avec_numero_frais(
     )
 
 
-def _montants_de_ligne(ligne: InvoiceLineRequest) -> tuple[float, float]:
+def _montants_de_ligne(
+    ligne: InvoiceLineRequest, tva_applicable: bool = True
+) -> tuple[float, float]:
     """Le HT et le TTC d'une ligne, arrondis au centime a la SOURCE.
+
+    B-345 (05/09/2026) : l'exonération (art. 293 B du CGI) est un attribut de
+    la PIÈCE. Le taux de la ligne était appliqué sans la regarder : une facture
+    en franchise valait 120 en base, dans la liste et dans l'encours, pendant
+    que le PDF remis au client imprimait 100. Le PDF est la pièce juridique :
+    c'est la base qui mentait. En franchise, le TTC d'une ligne EST son HT.
 
     F1 (0.55) : `total_ttc` etait stocke non arrondi. Trois lignes de 33,33 EUR
     a 20 % donnaient 119.98799999999999 en base, pendant que le PDF imprimait
@@ -180,6 +188,8 @@ def _montants_de_ligne(ligne: InvoiceLineRequest) -> tuple[float, float]:
     deja arrondies, donc la somme des parts egale toujours le tout.
     """
     total_ht = round(ligne.quantity * ligne.unit_price_ht, 2)
+    if not tva_applicable:
+        return total_ht, total_ht
     total_ttc = round(total_ht * (1 + ligne.tva_rate / 100), 2)
     return total_ht, total_ttc
 
@@ -442,7 +452,7 @@ async def create_invoice(
     # Créer les lignes
     db_lines = []
     for line_req in request.lines:
-        total_ht, total_ttc = _montants_de_ligne(line_req)
+        total_ht, total_ttc = _montants_de_ligne(line_req, invoice.tva_applicable)
 
         line = InvoiceLine(
             invoice_id=invoice.id,
@@ -555,7 +565,7 @@ async def update_invoice(
         # Créer les nouvelles lignes
         db_lines = []
         for line_req in request.lines:
-            total_ht, total_ttc = _montants_de_ligne(line_req)
+            total_ht, total_ttc = _montants_de_ligne(line_req, invoice.tva_applicable)
 
             line = InvoiceLine(
                 invoice_id=invoice.id,
