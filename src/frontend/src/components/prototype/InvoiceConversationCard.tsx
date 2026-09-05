@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react';
+import { montantAvecDevise } from '../../lib/devise';
 import { BoutonOuvrirLaVue } from './BoutonOuvrirLaVue';
 import {
   AlertCircle,
@@ -102,11 +103,8 @@ function nomDuClient(
 }
 
 function formatMoney(value: number, currency: string): string {
-  try {
-    return new Intl.NumberFormat('fr-FR', { style: 'currency', currency }).format(value);
-  } catch {
-    return `${value.toFixed(2)} ${currency}`;
-  }
+  // B-328 : même formateur que le reste de l'application (lib/devise).
+  return montantAvecDevise(value, currency);
 }
 
 function formatDate(value: string): string {
@@ -561,7 +559,7 @@ function DevisDraftForm({
       <fieldset
         disabled={confirmationSnapshot !== null}
         onChangeCapture={() => setConfirmationSnapshot(null)}
-        className="contents disabled:opacity-70"
+        className="contents [&:disabled>*]:opacity-70"
         data-testid="devis-recipient-fields"
       >
       <section className="rounded-md border border-border bg-surface p-4">
@@ -594,7 +592,7 @@ function DevisDraftForm({
         <fieldset
           disabled={confirmationSnapshot !== null}
           onChangeCapture={() => setConfirmationSnapshot(null)}
-          className="contents disabled:opacity-70"
+          className="contents [&:disabled>*]:opacity-70"
           data-testid="devis-line-fields"
         >
         <div className="flex items-center justify-between">
