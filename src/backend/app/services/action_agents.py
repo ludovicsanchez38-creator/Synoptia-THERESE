@@ -454,14 +454,30 @@ async def _gather_local_context(
                 from sqlalchemy import select
                 from sqlalchemy.orm import selectinload
 
-                stmt = (
+                # B-572 (05/09/2026) : les quinze pièces les plus récemment
+                # CRÉÉES pouvaient exclure une facture en retard plus ancienne,
+                # que « Relance clients » ne voyait alors jamais. Les créances
+                # ouvertes passent d'abord, par échéance ; les pièces récentes
+                # complètent, sans doublon.
+                creances = (
+                    select(Invoice)
+                    .options(selectinload(Invoice.contact))
+                    .where(Invoice.status.in_(("overdue", "sent")))
+                    .order_by(Invoice.due_date.asc())
+                    .limit(30)
+                )
+                recentes = (
                     select(Invoice)
                     .options(selectinload(Invoice.contact))
                     .order_by(Invoice.created_at.desc())
                     .limit(15)
                 )
-                result = await session.execute(stmt)
-                invoices = result.scalars().all()
+                invoices = list((await session.execute(creances)).scalars().all())
+                vus = {inv.id for inv in invoices}
+                for inv in (await session.execute(recentes)).scalars().all():
+                    if inv.id not in vus:
+                        invoices.append(inv)
+                        vus.add(inv.id)
                 if invoices:
                     lines = []
                     for inv in invoices:
@@ -474,8 +490,11 @@ async def _gather_local_context(
                         numero = getattr(inv, "invoice_number", None) or "?"
                         fiche = getattr(inv, "contact", None)
                         client = fiche.display_name if fiche is not None else "?"
+                        echeance = getattr(inv, "due_date", None)
+                        quand = echeance.strftime("%d/%m/%Y") if echeance else "?"
                         lines.append(
                             f"- {numero} | {client} | {amount} {devise} | {status}"
+                            f" | échéance {quand}"
                         )
                     context_parts.append(
                         "## Factures\n" + "\n".join(lines)
@@ -857,7 +876,7 @@ class ActionRunner:
             if completed_steps:
                 result_parts = [
                     f"# {agent_def.name}\n",
-                    f"*Execute le {datetime.now(UTC).strftime('%d/%m/%Y a %H:%M')} UTC*\n",
+                    f"*Exécuté le {datetime.now(UTC).strftime('%d/%m/%Y à %H:%M')} UTC*\n",
                 ]
                 for s in completed_steps:
                     result_parts.append(f"## {s.label}\n\n{s.content}\n")
