@@ -245,7 +245,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => handleChange('phone', e.target.value)}
-                  placeholder="+33 6 12 34 56 78"
+                  placeholder="Numéro de téléphone"
                   className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
                 />
               </div>
@@ -259,7 +259,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
                   type="text"
                   value={formData.address}
                   onChange={(e) => handleChange('address', e.target.value)}
-                  placeholder="14 chemin des Oliviers, 04300 Mane"
+                  placeholder="Numéro et rue, code postal, ville"
                   className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
                 />
               </div>

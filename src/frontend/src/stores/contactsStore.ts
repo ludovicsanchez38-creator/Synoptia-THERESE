@@ -152,6 +152,11 @@ export const useContactsStore = create<ContactsStore>((set, get) => ({
         contacts: exists
           ? state.contacts.map((c) => (c.id === contact.id ? contact : c))
           : [contact, ...state.contacts],
+        // B-565 : pendant une recherche active, l'écran lit searchResults ;
+        // un instantané périmé y renvoyait l'ancienne valeur au serveur.
+        searchResults: state.searchResults
+          ? state.searchResults.map((c) => (c.id === contact.id ? contact : c))
+          : state.searchResults,
       };
     }),
 
