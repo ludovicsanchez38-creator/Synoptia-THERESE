@@ -489,6 +489,12 @@ Thomas est DSI depuis 8 ans. Il a deploye THERESE Server sur un serveur on-premi
 - **Chrome MCP** :
   ```
   javascript_tool :
+    // B-389/B-392 (05/09/2026) : armer le temoin AVANT l'injection, comme A3.
+    // Sans lui, le controle « aucun alert » etait vrai par construction, et un
+    // <script> insere par innerHTML ne s'execute jamais : seul `onerror`
+    // d'une image injectee revele une vraie XSS.
+    window.__xss_triggered = undefined;
+    window.alert = () => { window.__xss_triggered = true; };
     const input = document.querySelector('[data-testid="chat-message-input"]');
     const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set;
     setter.call(input, '<script>alert("xss")</script><img src=x onerror=alert(1)>');
@@ -496,16 +502,26 @@ Thomas est DSI depuis 8 ans. Il a deploye THERESE Server sur un serveur on-premi
   click [data-testid="chat-send-btn"]
   wait 3s
   javascript_tool :
+    const imagesInjectees = document.querySelectorAll('img[src="x"]').length;
     const dangerousScripts = document.querySelectorAll('script:not([src])');
     const hasInjected = Array.from(dangerousScripts).some(s => s.textContent.includes('alert'));
-    return { injected: hasInjected, safe: !hasInjected };
+    const texteBrut = Array.from(document.querySelectorAll('[data-testid="chat-message"]'))
+      .some(m => m.textContent.includes('<img src=x onerror=alert(1)>'));
+    return {
+      alertDeclenche: window.__xss_triggered === true,
+      imagesInjectees,
+      injected: hasInjected,
+      texteEchappeVisible: texteBrut,
+      safe: window.__xss_triggered !== true && imagesInjectees === 0 && !hasInjected,
+    };
   take_screenshot → "S3-19-xss-test.png"
   ```
-- **Attendu** : Le texte est echappe, aucun script execute
+- **Attendu** : `safe === true` : le texte est echappe, aucun `alert` declenche (temoin arme), aucune `img[src="x"]` dans le DOM
 - **Tests supplementaires** :
+  - `[P0]` `alertDeclenche === false` (temoin arme a l'action 1, sinon le controle ne peut pas rougir)
+  - `[P0]` `imagesInjectees === 0` (une image injectee par innerHTML s'execute sans creer de `<script>`)
   - `[P0]` Pas de `<script>` injecte dans le DOM
-  - `[P0]` Pas de dialog/alert bloquant
-  - `[P1]` Le texte brut `<script>...` est visible echappe
+  - `[P1]` Le texte brut `<img src=x onerror=alert(1)>` est visible echappe
 - **Priorite** : P0
 
 #### Etape 20 : Creer une nouvelle conversation
@@ -680,17 +696,20 @@ Thomas est DSI depuis 8 ans. Il a deploye THERESE Server sur un serveur on-premi
 
 #### Etape 31 : Tester l'isolation multi-tenant
 - **Action** : Verifier que l'admin ne voit que les contacts de son organisation
+- **Precondition (fixture, B-333/B-384 du 05/09/2026)** : un contact TEMOIN existe dans une
+  AUTRE organisation, cree avant la campagne par un compte de l'organisation B :
+  `POST /api/crm/contacts` avec `first_name: "Temoin"`, `last_name: "OrgB-ISOLATION"`.
+  Sans ce temoin, l'etape ne fait que compter et ne peut jamais rougir.
 - **Chrome MCP** :
   ```
   javascript_tool :
-    // Verifier les requetes reseau pour s'assurer qu'un filtre org_id est present
-    const contacts = document.querySelectorAll('[data-testid="crm-contact-item"]');
-    return {
-      contactCount: contacts.length,
-      note: 'Verifier manuellement que seuls les contacts de l org admin sont visibles'
-    };
+    const contacts = Array.from(document.querySelectorAll('[data-testid="crm-contact-item"]'));
+    const temoinVisible = contacts.some(c => c.textContent.includes('OrgB-ISOLATION'));
+    return { contactCount: contacts.length, temoinVisible, safe: !temoinVisible };
   ```
-- **Attendu** : Pas de fuite de donnees cross-organisation
+- **Verdict API** : `GET /api/crm/contacts` (jeton admin de l'org A) ne contient aucun
+  contact dont `organisation_id` differe de celle de l'admin, et aucun `OrgB-ISOLATION`.
+- **Attendu** : `safe === true` et verdict API vide de l'org B : pas de fuite cross-organisation
 - **Priorite** : P0
 
 #### Etape 32 : Verifier la visibilite etendue admin sur le CRM
@@ -764,10 +783,17 @@ Thomas est DSI depuis 8 ans. Il a deploye THERESE Server sur un serveur on-premi
 - **Chrome MCP** :
   ```
   javascript_tool :
-    const result = document.querySelector('[data-testid="board-result"]')?.textContent;
-    return { resultLength: result?.length, result: result?.substring(0, 300) };
+    // B-384 (05/09/2026) : `board-result` n'existe pas cote Server, les avis
+    // vivent dans `board-advisor-card` ; et sans temoin de l'org B (etape 31),
+    // aucune fuite ne pouvait etre constatee.
+    const cartes = Array.from(document.querySelectorAll('[data-testid="board-advisor-card"]'));
+    const texte = cartes.map(c => c.textContent).join(' ');
+    const fuite = texte.includes('OrgB-ISOLATION');
+    return { cartes: cartes.length, extrait: texte.substring(0, 300), fuite, safe: cartes.length > 0 && !fuite };
   ```
-- **Attendu** : La reponse est contextualisee a l'organisation de l'admin, pas de fuite
+- **Precondition** : le temoin `OrgB-ISOLATION` de l'etape 31 existe, et la question posee a
+  l'etape 34 demande explicitement « liste mes contacts et leurs societes ».
+- **Attendu** : `safe === true` : des avis sont rendus et aucun ne cite le temoin de l'org B
 - **Priorite** : P1
 
 ---
