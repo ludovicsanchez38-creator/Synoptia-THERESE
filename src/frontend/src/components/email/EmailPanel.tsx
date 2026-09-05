@@ -242,7 +242,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
 
   // System labels
   const systemLabels = [
-    { id: 'INBOX', name: 'Boite de réception', icon: Inbox },
+    { id: 'INBOX', name: 'Boîte de réception', icon: Inbox },
     { id: 'SENT', name: 'Envoyés', icon: Send },
     { id: 'DRAFT', name: 'Brouillons', icon: FileText },
     { id: 'STARRED', name: 'Favoris', icon: Star },
