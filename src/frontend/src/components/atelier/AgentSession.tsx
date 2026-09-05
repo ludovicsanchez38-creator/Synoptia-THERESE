@@ -514,6 +514,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
                 return (
                   <motion.div
                     key={msg.id}
+                    role="alert"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     className="mx-3 my-1.5 rounded-md border border-error/20 bg-error/5 px-3 py-2 text-xs text-error"

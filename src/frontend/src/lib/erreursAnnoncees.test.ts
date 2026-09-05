@@ -37,7 +37,8 @@ import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 const RACINE = path.join(__dirname, '..');
-const CONDITION = /\{\s*(error|erreur|\w*Error)\s*&&\s*\(?/;
+// B-361 : une branche de liste `if (msg.role === "error")` est une condition d'erreur aussi.
+const CONDITION = /\{\s*(error|erreur|\w*Error)\s*&&\s*\(?|\.role === "error"\)\s*\{/;
 const FOND_ERREUR = /bg-error\/10|bg-red-500\/10|color-error-tint/;
 const ANNONCE = /role="alert"|aria-live=/;
 
