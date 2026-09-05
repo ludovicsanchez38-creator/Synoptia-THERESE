@@ -172,7 +172,12 @@ export function CalDAVSection() {
         </div>
       )}
 
-      {importes !== null && (
+      {importes === 0 && (
+        <p className="mt-2 text-xs text-warning" role="status">
+          Connexion établie, mais aucun calendrier n’a été importé : ce serveur n’en expose aucun.
+        </p>
+      )}
+      {importes !== null && importes > 0 && (
         <p className="mt-2 text-xs text-success">
           {importes} calendrier{importes > 1 ? 's' : ''} importé{importes > 1 ? 's' : ''}.
           {importes > 1 ? ' Ils apparaîtront' : ' Il apparaîtra'} à la prochaine
