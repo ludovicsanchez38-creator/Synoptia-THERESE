@@ -297,7 +297,9 @@ async def set_api_key(
     key_name = f"{request.provider}_api_key"
 
     # Encrypt the API key before storing (US-SEC-01)
-    encrypted_key = encrypt_value(request.api_key)
+    # B-510 : la clé VALIDÉE (nettoyée) est celle qu'on chiffre ; la brute
+    # gardait espaces et retour chariot en base et dans le cache LLM.
+    encrypted_key = encrypt_value(key)
 
     # Get or create preference
     result = await session.execute(
