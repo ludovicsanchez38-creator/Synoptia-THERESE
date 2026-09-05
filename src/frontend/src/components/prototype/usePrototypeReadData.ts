@@ -74,9 +74,24 @@ export function useContactsResource() {
   }, [fetchContacts]);
 
   useEffect(() => {
-    if (!loaded && !loading && !error) {
+    if (loaded || loading) return;
+    if (!error) {
       void refresh();
+      return;
     }
+    // B-546 : une panne au premier montage figeait la liste en erreur pour
+    // toute la session. Comme le brief (B-317), on retente au focus et au
+    // retour de visibilité.
+    const onFocus = () => void refresh();
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') void refresh();
+    };
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
   }, [error, loaded, loading, refresh]);
 
   const resource: ReadResource<typeof contacts> = loading

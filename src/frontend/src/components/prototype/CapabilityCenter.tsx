@@ -583,7 +583,7 @@ export function TrustCenter({
         <div className="p-2">
           <TrustRow icon={<Database className="h-3.5 w-3.5" />} title="Données" value="Données métier conservées localement ; secrets protégés par le trousseau système." />
           <TrustRow icon={<SlidersHorizontal className="h-3.5 w-3.5" />} title="Modèles" value="Service d’IA et modèle configurés dans les Paramètres, avec option locale via Ollama." />
-          <TrustRow icon={<Globe className="h-3.5 w-3.5" />} title="Traitement externe" value="Dans le chat, une mutation (envoi, rendez-vous, recherche web, contact, document, outil MCP) demande une confirmation. Le Board, la recherche approfondie et l’Atelier cherchent encore sans carte ; l’interrupteur de Réglages > Services les coupe." />
+          <TrustRow icon={<Globe className="h-3.5 w-3.5" />} title="Traitement externe" value="Dans le chat, une mutation (envoi, rendez-vous, recherche web, contact, document, outil MCP) demande une confirmation. Le Board, la recherche approfondie et l’Atelier cherchent encore sans carte ; l’interrupteur de Paramètres > Services les coupe." />
           <TrustRow icon={<Gauge className="h-3.5 w-3.5" />} title="Coûts et limites" value="Seules les consommations réellement mesurées sont présentées comme telles." />
           <TrustRow icon={<ShieldCheck className="h-3.5 w-3.5" />} title="RGPD" value="Export global et droits par contact accessibles depuis Confidentialité et le CRM." />
         </div>

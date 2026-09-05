@@ -67,7 +67,7 @@ describe('Board 0.40 conversationnel', () => {
       target: { value: 'Faut-il lancer un pilote maintenant ?' },
     });
     fireEvent.click(screen.getByRole('button', { name: 'Préparer la délibération' }));
-    expect(screen.getByTestId('board-confirmation')).toHaveTextContent('Jusqu’à six appels LLM');
+    expect(screen.getByTestId('board-confirmation')).toHaveTextContent('Jusqu’à six appels au service d’IA');
     expect(screen.getByTestId('board-confirmation')).toHaveTextContent('Faut-il lancer un pilote maintenant ?');
     expect(screen.getByLabelText('Question stratégique')).toBeDisabled();
     expect(screen.getByLabelText('Contexte du Board')).toBeDisabled();
