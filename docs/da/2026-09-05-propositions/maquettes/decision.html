@@ -1,0 +1,103 @@
+<!doctype html><html lang="fr" data-d="2"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Décision · maquette THÉRÈSE</title>
+<link rel="stylesheet" href="da/tokens.css"><link rel="stylesheet" href="da/base.css"><link rel="stylesheet" href="da/d1.css"><link rel="stylesheet" href="da/d2.css"><link rel="stylesheet" href="da/d3.css">
+<script src="da/moteur.js"></script>
+<style>
+.question{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);padding:var(--espace-3) var(--espace-4);display:grid;gap:.35rem}
+.question h1{font-size:1.25rem}
+.question .ligne-meta{display:flex;gap:.6rem;align-items:center;flex-wrap:wrap}
+.synthese{border-left:3px solid var(--color-accent-fill)}
+.synthese h2{display:flex;align-items:center;gap:.5rem}
+.synthese .texte-synthese{padding:0 var(--espace-3) var(--espace-3);font-size:.9375rem;line-height:1.6}
+.synthese .texte-synthese p{margin:0 0 .6rem}
+.synthese .texte-synthese ul{margin:.25rem 0 .6rem 1.1rem;padding:0}
+.recommandation{display:flex;gap:.75rem;align-items:flex-start;background:var(--color-accent-tint);border-radius:var(--radius-sm);padding:.75rem var(--espace-3);margin:.5rem 0 .75rem}
+.recommandation b{color:var(--color-accent)}
+.avis{display:grid;grid-template-columns:repeat(auto-fill,minmax(16rem,1fr));gap:.75rem;margin-top:var(--espace-3)}
+.avis .carte{padding:var(--espace-3);display:grid;gap:.5rem;align-content:start}
+.avis .qui{display:flex;align-items:center;gap:.6rem}
+.avis .qui .pastille{width:2rem;height:2rem;border-radius:999px;display:grid;place-items:center;font:700 .75rem var(--font-family-display)}
+.avis .qui b{display:block}.avis .qui .meta{display:block}
+.avis .texte{font-size:.875rem;line-height:1.55}
+.avis .texte p{margin:0 0 .4rem}.avis .texte ul{margin:0 0 .4rem 1rem;padding:0}
+.avis .position{display:inline-flex;gap:.35rem;align-items:center;justify-self:start}
+.a-strat .pastille{background:var(--color-domaine-prospects-tint);color:var(--color-domaine-prospects)}
+.a-fin .pastille{background:var(--color-domaine-factures-tint);color:var(--color-domaine-factures)}
+.a-ops .pastille{background:var(--color-domaine-taches-tint);color:var(--color-domaine-taches)}
+.a-client .pastille{background:var(--color-domaine-agenda-tint);color:var(--color-domaine-agenda)}
+.a-contra .pastille{background:var(--color-surface-2);color:var(--color-text)}
+.divergences{margin-top:var(--espace-3)}
+.divergences li{margin:.25rem 0}
+.attente{display:grid;gap:.5rem}
+.attente .chargement{width:80%}
+.attente .chargement:nth-child(2){width:60%}
+.pied-decision{display:flex;gap:.5rem;align-items:center;margin-top:var(--espace-4);flex-wrap:wrap}
+.pied-decision .meta{margin-right:auto}
+</style></head>
+<body><div class="app">
+ <header class="barre">
+  <div class="marque"><i aria-hidden="true"></i>THÉRÈSE</div>
+  <span class="etat"><b>Atelier Exemple</b></span>
+  <span class="etat secondaire">Moteur local actif <b class="num">14 ms</b></span>
+  <div class="droite">
+   <button class="btn btn-discret" type="button"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/></svg>Contrôle des données</button>
+   <button class="recherche" type="button"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><span>Rechercher</span><kbd>⌘K</kbd></button>
+  </div>
+ </header>
+ <div class="corps">
+  <nav class="rail" aria-label="Navigation principale">
+   <button type="button"  aria-label="Accueil"><svg class="ic" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></button>
+   <button type="button" aria-label="Nouvelle conversation"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+   <button type="button" aria-current="page" aria-label="Conversations"><svg class="ic" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg></button>
+   <button type="button" aria-label="Fichiers"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></button>
+   <div class="bas">
+    <button type="button" aria-label="Paramètres"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+    <button type="button" aria-label="Aide"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/></svg></button>
+    <div class="avatar" aria-label="Marie Exemple">MA</div>
+   </div>
+  </nav>
+  <main class="contenu" id="contenu">
+ <div class="colonne" style="--colonne:66rem;padding-bottom:var(--espace-4)">
+  <p class="meta" style="margin-bottom:.5rem"><a href="#" style="color:var(--color-accent)">Décisions</a> › Décision du <span class="num">4 septembre</span></p>
+  <section class="question">
+   <h1>Faut-il accepter la mission du Garage Benali à 840 € avec un délai de trois semaines ?</h1>
+   <div class="ligne-meta"><span class="etiquette e-succes" id="statut-normal">Décision enregistrée</span><span class="etiquette e-info" id="statut-encours" hidden>Délibération en cours · <span class="num">2</span>/<span class="num">5</span> avis</span><span class="etiquette e-attention" id="statut-partiel" hidden>Délibération partielle · <span class="num">4</span>/<span class="num">5</span> avis</span><span class="meta">Mode souverain · modèle local · <span class="num">5</span> conseillers · <span class="num">1 min 42 s</span></span><span class="meta" style="margin-left:auto">Contexte lu : contact, 2 devis, agenda</span></div>
+  </section>
+
+  <section class="monde-therese" style="margin-top:var(--espace-3)">
+   <article class="carte synthese" id="synthese">
+    <div class="carte-tete"><div class="icone" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M5 16l7 5 7-5"/></svg></div><div><h2>Synthèse</h2><p class="meta">Ce que les cinq avis ont en commun, et ce qui les sépare</p></div><div class="actions"><button class="btn btn-secondaire" type="button">Copier</button><button class="btn btn-primaire" type="button">Créer les tâches</button></div></div>
+    <div class="texte-synthese">
+     <div class="recommandation"><svg class="ic" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg><div><b>Recommandation : accepter, à deux conditions.</b> Un acompte de 30 % à la commande, et une date de livraison écrite au <span class="num">26 septembre</span> plutôt qu'un « délai de trois semaines ».</div></div>
+     <p>Le montant couvre la conception et deux journées de pose ; il laisse peu de marge si le chantier déborde. Quatre conseillers sur cinq acceptent, le contradicteur pointe le calendrier : deux séances du Garage Benali et la relance de Claire Roux tombent la même semaine.</p>
+     <ul><li>Confirmer l'acompte avant de bloquer l'agenda.</li><li>Déplacer la séance 2 au <span class="num">10 septembre</span> pour dégager la semaine du <span class="num">22</span>.</li><li>Prévoir une ligne « imprévus » de <span class="num">80 €</span> dans le devis suivant.</li></ul>
+    </div>
+   </article>
+   <div class="attente" id="attente" hidden style="padding:var(--espace-3)"><p class="meta">Synthèse en préparation, elle arrive après le dernier avis.</p><div class="chargement"></div><div class="chargement"></div></div>
+
+   <div class="avis" id="avis">
+    <article class="carte a-strat"><div class="qui"><div class="pastille">S</div><div><b>La Stratège</b><span class="meta">Vision et positionnement</span></div></div><span class="position etiquette e-succes">Accepte</span><div class="texte"><p>Le Garage Benali est un client récurrent : deux missions en six mois. Accepter renforce une relation qui rapporte plus que la mission seule.</p><ul><li>Proposer un forfait annuel après ce chantier.</li></ul></div></article>
+    <article class="carte a-fin"><div class="qui"><div class="pastille">F</div><div><b>Le Financier</b><span class="meta">Marge et trésorerie</span></div></div><span class="position etiquette e-attention">Accepte sous condition</span><div class="texte"><p>À <span class="num">840 €</span>, la marge est de <span class="num">31 %</span> si la pose tient en deux jours. Un acompte de <span class="num">30 %</span> sécurise la trésorerie pendant que Claire Roux tarde à payer.</p></div></article>
+    <article class="carte a-ops"><div class="qui"><div class="pastille">O</div><div><b>L'Opérationnel</b><span class="meta">Charge et calendrier</span></div></div><span class="position etiquette e-attention">Accepte si l'agenda bouge</span><div class="texte"><p>Trois semaines passent, à condition de déplacer la séance 2 : la semaine du <span class="num">22</span> est déjà pleine.</p></div></article>
+    <article class="carte a-client"><div class="qui"><div class="pastille">C</div><div><b>La Voix du client</b><span class="meta">Attentes et relation</span></div></div><span class="position etiquette e-succes">Accepte</span><div class="texte"><p>Nadia Benali attend une date, pas un délai. Écrire « livré le 26 septembre » lui donne ce qu'elle demande.</p></div></article>
+    <article class="carte a-contra" id="avis-contra"><div class="qui"><div class="pastille">?</div><div><b>Le Contradicteur</b><span class="meta">Ce qui peut mal tourner</span></div></div><span class="position etiquette e-erreur">Refuse en l'état</span><div class="texte"><p>Sans acompte ni date écrite, ce chantier peut glisser d'un mois et bloquer une mission mieux payée. Refuser tant que les deux conditions ne sont pas posées.</p></div></article>
+    <article class="carte a-contra" id="avis-echec" hidden><div class="qui"><div class="pastille">?</div><div><b>Le Contradicteur</b><span class="meta">Ce qui peut mal tourner</span></div></div><span class="position etiquette e-erreur">Avis non rendu</span><div class="texte"><p>Le modèle local n'a pas répondu dans le délai (<span class="num">120 s</span>). La synthèse repose sur quatre avis.</p><p><button class="btn btn-secondaire" type="button" style="min-height:1.9rem;padding:0 .7rem">Redemander cet avis</button></p></div></article>
+   </div>
+
+   <section class="divergences" id="divergences"><h3>Où les avis divergent</h3><ul><li><b>Le délai</b> : accepté tel quel par la Stratège et la Voix du client, conditionné par l'Opérationnel, refusé par le Contradicteur.</li><li><b>Le prix</b> : suffisant pour trois conseillers, juste pour le Financier.</li></ul></section>
+  </section>
+
+  <div class="pied-decision"><span class="meta">Enregistrée le <span class="num">4 septembre à 17:12</span> · modifiable tant qu'aucune tâche n'est créée</span><button class="btn btn-secondaire" type="button">Poser une autre question</button><button class="btn btn-secondaire" type="button">Exporter en Markdown</button></div>
+ </div>
+</main>
+<script>
+(function(){const e=new URLSearchParams(location.search).get('etat')||'normal';
+ const S=id=>document.getElementById(id);
+ if(e==='encours'){S('statut-normal').hidden=true;S('statut-encours').hidden=false;S('synthese').hidden=true;S('attente').hidden=false;S('divergences').hidden=true;
+   const cartes=document.querySelectorAll('#avis .carte');cartes.forEach((c,i)=>{if(i>=2&&i<5){c.querySelector('.texte').innerHTML='<div class="attente"><div class="chargement"></div><div class="chargement"></div></div>';c.querySelector('.position').className='position etiquette e-neutre';c.querySelector('.position').textContent='Réfléchit…';}});}
+ if(e==='partiel'){S('statut-normal').hidden=true;S('statut-partiel').hidden=false;S('avis-contra').hidden=true;S('avis-echec').hidden=false;}
+})();
+</script>
+
+ </div>
+</div>
+</body></html>

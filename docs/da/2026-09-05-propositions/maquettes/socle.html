@@ -1,0 +1,113 @@
+<!doctype html><html lang="fr" data-d="2"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Socle commun · maquette THÉRÈSE</title>
+<link rel="stylesheet" href="da/tokens.css"><link rel="stylesheet" href="da/base.css"><link rel="stylesheet" href="da/d1.css"><link rel="stylesheet" href="da/d2.css"><link rel="stylesheet" href="da/d3.css">
+<script src="da/moteur.js"></script>
+<style>
+.socle{display:grid;gap:var(--espace-4)}
+.socle .carte{padding:var(--espace-3) var(--espace-4)}
+.socle h2{margin-bottom:.25rem}
+.echelle{display:grid;grid-template-columns:11rem 1fr;gap:.5rem 1rem;align-items:baseline}
+.echelle .meta{font-family:var(--font-family-mono);font-size:.75rem}
+.nuancier{display:grid;grid-template-columns:repeat(6,1fr);gap:.6rem;margin-top:.5rem}
+.nuance{border:1px solid var(--color-border);border-radius:var(--radius-sm);overflow:hidden;font-size:.75rem}
+.nuance i{display:block;height:2.6rem}
+.nuance div{padding:.4rem .5rem}
+.nuance b{display:block;font-weight:600;font-size:.8125rem}
+.nuance .ratio{font-variant-numeric:tabular-nums;color:var(--color-text-muted)}
+.rangee{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center;margin-top:.5rem}
+.exemple-domaines{display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;margin-top:.5rem}
+.exemple-domaines .bloc-dom{border-radius:var(--radius-md);padding:.75rem;display:grid;gap:.35rem}
+.exemple-domaines b{font-weight:700}
+.exemple-domaines .bloc-dom .etiquette{justify-self:start}
+.deux-rythmes{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:.5rem}
+.deux-rythmes .carte{padding:0}
+.deux-rythmes h4{padding:.6rem var(--espace-3);margin:0;font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);border-bottom:1px solid var(--color-border)}
+.piste{display:grid;grid-template-columns:1fr 1fr;gap:.75rem;margin-top:.5rem}
+.piste .carte{padding:var(--espace-3)}
+.piste b{display:block;margin-bottom:.25rem}
+.couture-demo{height:3px;border-radius:999px;background:linear-gradient(90deg,#2451FF 0%,#22D3EE 22%,#10B981 42%,#F59E0B 62%,#E11D8D 82%,#8B5CF6 100%);margin:.5rem 0}
+[data-high-contrast="true"] .couture-demo{display:none}
+@media (max-width:1023px){.nuancier{grid-template-columns:repeat(3,1fr)}.exemple-domaines{grid-template-columns:1fr 1fr}.deux-rythmes,.piste{grid-template-columns:1fr}}
+</style></head>
+<body><div class="app">
+ <header class="barre">
+  <div class="marque"><i aria-hidden="true"></i>THÉRÈSE</div>
+  <span class="etat"><b>Atelier Exemple</b></span>
+  <span class="etat secondaire">Moteur local actif <b class="num">14 ms</b></span>
+  <div class="droite">
+   <button class="btn btn-discret" type="button"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/></svg>Contrôle des données</button>
+   <button class="recherche" type="button"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><span>Rechercher</span><kbd>⌘K</kbd></button>
+  </div>
+ </header>
+ <div class="corps">
+  <nav class="rail" aria-label="Navigation principale">
+   <button type="button"  aria-label="Accueil"><svg class="ic" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></button>
+   <button type="button" aria-label="Nouvelle conversation"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+   <button type="button" aria-label="Conversations"><svg class="ic" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg></button>
+   <button type="button" aria-label="Fichiers"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></button>
+   <div class="bas">
+    <button type="button" aria-label="Paramètres"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+    <button type="button" aria-label="Aide"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/></svg></button>
+    <div class="avatar" aria-label="Marie Exemple">MA</div>
+   </div>
+  </nav>
+  <main class="contenu" id="contenu">
+ <div class="colonne socle" style="--colonne:72rem;padding-bottom:var(--espace-4)">
+  <div><h1 class="editorial">Socle <em>commun</em></h1><p class="sous">Ce que toute l'application partage dans cette direction : polices, encres et fonds, geste principal, étiquettes, rythmes, coque. Les écrans en héritent.</p></div>
+
+  <article class="carte"><h2>Typographie de registre</h2><p class="sous">Jakarta pour les titres, Inter pour les lignes, chiffres tabulaires pour montants, dates et compteurs. Rien d'important sous 14 px.</p>
+   <div class="echelle" style="margin-top:.75rem">
+    <span class="meta">Titre éditorial</span><span class="editorial" style="font-size:1.625rem;font-weight:800;line-height:1.1">Bonjour Marie.</span>
+    <span class="meta">Titre de page · 26 / 800</span><span style="font:800 1.625rem var(--font-family-display)">Devis et factures</span>
+    <span class="meta">Titre de carte · 19 / 700</span><span style="font:700 1.1875rem var(--font-family-display)">Ton attention aujourd'hui</span>
+    <span class="meta">Sous-titre · 16 / 700</span><span style="font:700 1rem var(--font-family-display)">Synthèse</span>
+    <span class="meta">Action, élément · 14 / 600</span><span style="font-weight:600">Envoyer la facture de juillet à Claire Roux</span>
+    <span class="meta">Courant · 14 / 400</span><span>Le montant couvre la conception et deux journées de pose ; il laisse peu de marge si le chantier déborde.</span>
+    <span class="meta">Métadonnée · 12 / 500</span><span class="meta" style="font-family:var(--font-family-sans)">Tâche · échéance <span class="num">03/09</span> · rafraîchi à <span class="num">11:58</span></span>
+    <span class="meta">Chiffres tabulaires</span><span class="num" style="font-weight:600">1 440,00 € · 3 240,00 € · 828,00 € · 25/08 · 14:30</span>
+   </div>
+  </article>
+
+  <article class="carte"><h2>Encres et fonds</h2><p class="sous">Les encres restent celles de THÉRÈSE : chaque paire ci-dessous passe 4,5:1 sur son fond (calcul dans <code>recette/contrastes.md</code>). Le cyan de marque ne sert qu'au remplissage.</p>
+   <div class="nuancier">
+    <div class="nuance"><i style="background:var(--color-bg)"></i><div><b>Fond</b><span class="ratio">bg</span></div></div>
+    <div class="nuance"><i style="background:var(--color-surface);border-bottom:1px solid var(--color-border)"></i><div><b>Surface</b><span class="ratio">cartes, panneaux</span></div></div>
+    <div class="nuance"><i style="background:var(--color-text)"></i><div><b>Texte</b><span class="ratio">encre principale</span></div></div>
+    <div class="nuance"><i style="background:var(--color-text-muted)"></i><div><b>Atténué</b><span class="ratio">métadonnées</span></div></div>
+    <div class="nuance"><i style="background:var(--color-accent)"></i><div><b>Accent encre</b><span class="ratio">liens, actions discrètes</span></div></div>
+    <div class="nuance"><i style="background:var(--color-accent-fill)"></i><div><b>Accent remplissage</b><span class="ratio">geste principal</span></div></div>
+   </div>
+   <div class="exemple-domaines">
+    <div class="bloc-dom" style="background:var(--color-domaine-agenda-tint)"><b style="color:var(--color-domaine-agenda)">Agenda</b><span class="etiquette d-agenda">14 h · Dupont</span></div>
+    <div class="bloc-dom" style="background:var(--color-domaine-taches-tint)"><b style="color:var(--color-domaine-taches)">Tâches</b><span class="etiquette d-taches">3 en retard</span></div>
+    <div class="bloc-dom" style="background:var(--color-domaine-factures-tint)"><b style="color:var(--color-domaine-factures)">Devis et factures</b><span class="etiquette d-factures">1 impayée</span></div>
+    <div class="bloc-dom" style="background:var(--color-domaine-prospects-tint)"><b style="color:var(--color-domaine-prospects)">Prospects</b><span class="etiquette d-prospects">2 à relancer</span></div>
+   </div>
+  </article>
+
+  <article class="carte"><h2>Le geste principal et les autres</h2><p class="sous">Une pilule de remplissage cyan par écran, jamais deux. Les autres actions restent visibles, en secondaire ou discret. Le focus clavier est un anneau de 3 px, visible partout.</p>
+   <div class="rangee"><button class="btn btn-primaire" type="button">Enregistrer</button><button class="btn btn-secondaire" type="button">Annuler</button><button class="btn btn-discret" type="button">Tout voir</button><button class="btn btn-danger" type="button">Supprimer</button><button class="btn btn-primaire" type="button" disabled>Inactif</button><button class="btn btn-primaire" type="button" style="outline:3px solid var(--color-ring);outline-offset:2px">Focus clavier</button></div>
+   <div class="rangee"><span class="etiquette e-erreur">En retard</span><span class="etiquette e-attention">À relancer</span><span class="etiquette e-succes">Payée</span><span class="etiquette e-info">Envoyée</span><span class="etiquette e-neutre">Brouillon</span><span class="segments" role="tablist"><button role="tab" aria-selected="true">l'essentiel</button><button role="tab" aria-selected="false">tout</button></span></div>
+   <div class="rangee"><div class="champ" style="margin:0;min-width:16rem"><label for="ex-champ">Champ</label><input id="ex-champ" placeholder="Nom, société, e-mail…"></div><div class="champ" style="margin:0;min-width:16rem"><label for="ex-erreur">Champ en erreur</label><input id="ex-erreur" aria-invalid="true" value="" placeholder="Décris la prestation" style="border-color:var(--color-error);box-shadow:0 0 0 3px color-mix(in srgb,var(--color-error) 20%,transparent)"><p class="erreur-champ" style="color:var(--color-error);font-size:.8125rem;font-weight:500;margin:.2rem 0 0">Renseigne la description, ou supprime la ligne.</p></div></div>
+  </article>
+
+  <article class="carte"><h2>Deux rythmes, un seul système</h2><p class="sous">Lecture confortable pour une synthèse, densité maîtrisée pour les listes : mêmes jetons, deux espacements.</p>
+   <div class="deux-rythmes">
+    <div class="carte"><h4>Lecture · brief, synthèse</h4><div class="ligne"><div class="puce d-factures"></div><div><div class="titre">Claire Roux, facture FACT-2026-002</div><div class="detail">1 440,00 € · échue le 25/08</div></div><div class="droite"><span class="etiquette e-attention">À relancer</span></div></div><div class="ligne"><div class="puce d-taches"></div><div><div class="titre">Relancer Paul Durand</div><div class="detail">Tâche · échéance 04/09</div></div><div class="droite"><span class="etiquette e-erreur">En retard</span></div></div></div>
+    <div class="carte dense"><h4>Densité · listes, tableaux</h4><div class="ligne"><div class="puce d-factures"></div><div><div class="titre">FACT-2026-002 · Claire Roux</div></div><div class="droite"><span class="num">1 440,00 €</span></div></div><div class="ligne"><div class="puce d-prospects"></div><div><div class="titre">DEV-2026-003 · Paul Durand</div></div><div class="droite"><span class="num">1 260,00 €</span></div></div><div class="ligne"><div class="puce d-prospects"></div><div><div class="titre">DEV-2026-004 · Garage Benali</div></div><div class="droite"><span class="num">840,00 €</span></div></div><div class="ligne"><div class="puce d-factures"></div><div><div class="titre">FACT-2026-001 · Claire Roux</div></div><div class="droite"><span class="num">3 240,00 €</span></div></div></div>
+   </div>
+  </article>
+
+  <article class="carte"><h2>Ce que la direction ajoute</h2>
+   <div class="piste">
+    <div class="carte"><b>Direction 1 · Continuité</b><span class="meta">Papier <span class="num">#FAFAF7</span>, encre <span class="num">#0F172A</span>, Instrument Serif sur « Bonjour Marie » et les grands titres éditoriaux (jeton distinct), couture de 3 px sous la barre, bord cyan sur la carte principale. Rien ne change dans les listes.</span><div class="couture-demo"></div></div>
+    <div class="carte"><b>Direction 2 · Application affinée</b><span class="meta">Ce socle tel quel : jetons de mai, hiérarchie et deux rythmes, établi dans le composeur, statuts distincts, états vides et erreurs dessinés. La base de toute maquette.</span></div>
+    <div class="carte"><b>Direction 3 · Deux mondes</b><span class="meta">Ce que dit THÉRÈSE (brief, synthèse, réponses) sur navy <span class="num">#0B1226</span> avec lueur, couture verticale de 4 px, contexte de couleur complet redéfini dans la région ; l'humain et les vues d'administration restent sur la surface claire.</span></div>
+    <div class="carte"><b>Dans les trois</b><span class="meta">Thème sombre « Signature » et contraste élevé au même niveau que le clair ; réduction de mouvement respectée (système et préférence de l'application) ; largeurs 800, 1024 et 1280 ; trois tailles de texte.</span></div>
+   </div>
+  </article>
+ </div>
+</main>
+
+ </div>
+</div>
+</body></html>

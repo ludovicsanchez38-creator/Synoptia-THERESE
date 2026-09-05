@@ -1,0 +1,150 @@
+/* Socle des maquettes : consomme tokens.css (jetons réels). Direction 2 = ce fichier seul. */
+@font-face{font-family:'Inter';font-weight:400;src:url(fonts/Inter-Regular.woff2) format('woff2');font-display:swap}
+@font-face{font-family:'Inter';font-weight:500;src:url(fonts/Inter-Medium.woff2) format('woff2');font-display:swap}
+@font-face{font-family:'Inter';font-weight:600;src:url(fonts/Inter-SemiBold.woff2) format('woff2');font-display:swap}
+@font-face{font-family:'Inter';font-weight:700;src:url(fonts/Inter-Bold.woff2) format('woff2');font-display:swap}
+@font-face{font-family:'Plus Jakarta Sans';font-weight:200 800;src:url(fonts/plusjakartasans-latin-wghtOnly-normal.woff2) format('woff2');font-display:swap}
+@font-face{font-family:'Instrument Serif';font-weight:400;src:url(fonts/InstrumentSerif-Regular.woff2) format('woff2');font-display:swap}
+@font-face{font-family:'Instrument Serif';font-weight:400;font-style:italic;src:url(fonts/InstrumentSerif-Italic.woff2) format('woff2');font-display:swap}
+
+:root{
+  --font-family-editorial: 'Plus Jakarta Sans','Inter',system-ui,sans-serif; /* direction 1 : Instrument Serif */
+  --shadow-card: var(--shadow-sm);
+  --espace-1: .5rem; --espace-2: .75rem; --espace-3: 1rem; --espace-4: 1.5rem; --espace-5: 2rem;
+  --rail: 3.5rem; --colonne: 56rem;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html{font-size:16px}
+body{margin:0;background:var(--color-bg);color:var(--color-text);font:400 .875rem/1.5 var(--font-family-sans);-webkit-font-smoothing:antialiased;min-height:100vh}
+[data-reduced-motion="true"] *,[data-reduced-motion="true"] *::before,[data-reduced-motion="true"] *::after{transition:none!important;animation:none!important}
+@media (prefers-reduced-motion: reduce){*,*::before,*::after{transition:none!important;animation:none!important}}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--color-ring);outline-offset:2px;border-radius:var(--radius-sm)}
+.sr{position:absolute;left:-9999px}
+
+/* Coque : barre, rail, contenu, composeur */
+.app{display:grid;grid-template-rows:auto 1fr;height:100vh;overflow:hidden}
+.barre{display:flex;align-items:center;gap:var(--espace-2);padding:0 var(--espace-3);height:3.25rem;background:var(--color-surface);border-bottom:1px solid var(--color-border)}
+.marque{display:flex;align-items:center;gap:.5rem;font:700 .95rem var(--font-family-display);letter-spacing:.02em}
+.marque i{width:.6rem;height:.6rem;border-radius:999px;background:var(--color-accent-fill);display:inline-block}
+.barre .etat{display:inline-flex;align-items:center;gap:.4rem;font-size:.8125rem;color:var(--color-text-muted);padding:.35rem .7rem;border:1px solid var(--color-border);border-radius:999px;background:var(--color-surface-2)}
+.barre .etat b{color:var(--color-text);font-weight:500}
+.barre .droite{margin-left:auto;display:flex;gap:.5rem;align-items:center}
+.recherche{display:inline-flex;align-items:center;gap:.5rem;padding:.45rem .8rem;border:1px solid var(--color-border);border-radius:999px;background:var(--color-surface);color:var(--color-text-muted);font-size:.875rem;min-width:12rem}
+.recherche kbd{font:500 .7rem var(--font-family-sans);border:1px solid var(--color-border);border-radius:.3rem;padding:.05rem .3rem;color:var(--color-text-muted)}
+.corps{display:grid;grid-template-columns:var(--rail) 1fr;min-height:0}
+.rail{display:flex;flex-direction:column;align-items:center;gap:.25rem;padding:var(--espace-3) 0;background:var(--color-surface);border-right:1px solid var(--color-border)}
+.rail button{width:2.5rem;height:2.5rem;border:0;background:transparent;border-radius:var(--radius-sm);display:grid;place-items:center;color:var(--color-text-muted);cursor:pointer}
+.rail button[aria-current="page"]{background:var(--color-accent-tint);color:var(--color-accent)}
+.rail button:hover{background:var(--color-surface-2);color:var(--color-text)}
+.rail .bas{margin-top:auto;display:flex;flex-direction:column;align-items:center;gap:.25rem}
+.avatar{width:2.5rem;height:2.5rem;border-radius:999px;background:var(--color-accent-fill);color:var(--color-accent-ink);display:grid;place-items:center;font:700 .8rem var(--font-family-display)}
+.contenu{position:relative;overflow:auto;min-height:0}
+.colonne{max-width:var(--colonne);margin:0 auto;padding:var(--espace-4) var(--espace-4) 11rem}
+svg.ic{width:1.125rem;height:1.125rem;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+
+/* Typographie de registre */
+h1,h2,h3{margin:0;font-family:var(--font-family-display);letter-spacing:-.01em;line-height:1.2}
+h1{font-size:1.625rem;font-weight:800}
+h2{font-size:1.1875rem;font-weight:700}
+h3{font-size:1rem;font-weight:700}
+.editorial{font-family:var(--font-family-editorial)}
+h1.editorial em{font-style:normal}
+.sous{color:var(--color-text-muted);margin:.25rem 0 0}
+.meta{font-size:.75rem;font-weight:500;color:var(--color-text-muted)}
+.num{font-variant-numeric:tabular-nums}
+p{margin:0}
+
+/* Boutons : un rôle principal par écran, en pilule cyan (DA de mai) */
+.btn{display:inline-flex;align-items:center;gap:.45rem;min-height:2.25rem;padding:0 1rem;border-radius:var(--radius-md);border:1px solid transparent;font-weight:600;font-size:.875rem;cursor:pointer;background:var(--color-surface);color:var(--color-text);transition:background-color .15s ease,transform .15s ease}
+.btn:hover{background:var(--color-surface-2)}
+.btn-primaire{background:var(--color-accent-fill);color:var(--color-accent-ink);border-color:transparent}
+.btn-primaire:hover{filter:brightness(.96)}
+.btn-secondaire{border-color:var(--color-border)}
+.btn-discret{color:var(--color-accent);background:transparent}
+.btn-discret:hover{background:var(--color-accent-tint)}
+.btn-danger{background:color-mix(in srgb,var(--color-error-fill) 12%,transparent);color:var(--color-error)}
+.btn-icone{padding:0;width:2.25rem;justify-content:center}
+.btn[disabled]{opacity:.5;cursor:default}
+
+/* Cartes, listes, lignes */
+.carte{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);box-shadow:var(--shadow-card)}
+.carte-tete{display:flex;align-items:center;gap:.75rem;padding:var(--espace-3) var(--espace-3) var(--espace-2)}
+.carte-tete .icone{width:2rem;height:2rem;border-radius:999px;display:grid;place-items:center;background:var(--color-accent-tint);color:var(--color-accent)}
+.carte-tete .actions{margin-left:auto;display:flex;gap:.5rem}
+.ligne{display:grid;grid-template-columns:2rem 1fr auto;gap:.75rem;align-items:center;padding:.7rem var(--espace-3);border-top:1px solid var(--color-border);cursor:pointer}
+.ligne:hover{background:var(--color-surface-2)}
+.ligne:focus-visible{outline-offset:-3px}
+.ligne .puce{width:2rem;height:2rem;border-radius:var(--radius-sm);display:grid;place-items:center}
+.ligne .titre{font-weight:600;color:var(--color-text)}
+.ligne .detail{font-size:.8125rem;color:var(--color-text-muted)}
+.ligne .droite{display:flex;align-items:center;gap:.6rem;color:var(--color-text-muted)}
+.dense .ligne{padding:.45rem var(--espace-3)}
+
+/* Étiquettes : sémantiques et domaines (encre sur teinte, testées) */
+.etiquette{display:inline-flex;align-items:center;gap:.3em;font-size:.75rem;font-weight:600;padding:.15rem .5rem;border-radius:999px;white-space:nowrap}
+.e-erreur{background:color-mix(in srgb,var(--color-error) 12%,transparent);color:var(--color-error)}
+.e-attention{background:color-mix(in srgb,var(--color-warning) 14%,transparent);color:var(--color-warning)}
+.e-succes{background:color-mix(in srgb,var(--color-success) 12%,transparent);color:var(--color-success)}
+.e-info{background:color-mix(in srgb,var(--color-info) 12%,transparent);color:var(--color-info)}
+.e-neutre{background:var(--color-surface-2);color:var(--color-text-muted)}
+.d-agenda{background:var(--color-domaine-agenda-tint);color:var(--color-domaine-agenda)}
+.d-taches{background:var(--color-domaine-taches-tint);color:var(--color-domaine-taches)}
+.d-factures{background:var(--color-domaine-factures-tint);color:var(--color-domaine-factures)}
+.d-prospects{background:var(--color-domaine-prospects-tint);color:var(--color-domaine-prospects)}
+/* Contraste élevé : les étiquettes abandonnent la teinte pour l'encre pleine sur surface (7:1 exigé) */
+[data-high-contrast="true"] .etiquette{background:transparent;border:1px solid currentColor}
+
+/* Onglets et segments */
+.segments{display:inline-flex;gap:.25rem;padding:.2rem;background:var(--color-surface-2);border-radius:999px}
+.segments button{border:0;background:transparent;border-radius:999px;padding:.3rem .75rem;font-weight:500;color:var(--color-text-muted);cursor:pointer}
+.segments button[aria-selected="true"]{background:var(--color-surface);color:var(--color-text);box-shadow:var(--shadow-sm)}
+
+/* Composeur */
+.composeur{position:absolute;left:50%;bottom:var(--espace-3);transform:translateX(-50%);width:min(var(--colonne),calc(100% - 2*var(--espace-4)));background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);box-shadow:var(--shadow-lg);padding:var(--espace-2) var(--espace-3)}
+/* L'établi (cinq verbes) vit au bord du composeur : toujours visible, jamais recouvert (cause du candidat B-320). */
+.composeur .etabli{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;margin:0 0 .5rem}
+.composeur .etabli span{font-size:.75rem;color:var(--color-text-muted);margin-right:.2rem}
+.composeur .etabli button{display:inline-flex;align-items:center;gap:.3rem;border:1px solid var(--color-border);background:var(--color-surface);border-radius:999px;padding:.25rem .6rem;font-size:.8125rem;font-weight:500;cursor:pointer;color:var(--color-text);white-space:nowrap}
+.composeur .etabli button:hover{border-color:var(--color-accent);color:var(--color-accent)}
+.composeur .etabli .plus{color:var(--color-text-muted);border-style:dashed}
+.composeur textarea{width:100%;border:0;resize:none;background:transparent;min-height:2rem;font-size:.9375rem;padding:.2rem 0;outline:none}
+.composeur .pied{display:flex;align-items:center;gap:.5rem}
+.composeur .pied .meta{margin-right:auto}
+.composeur .envoyer{width:2.25rem;height:2.25rem;border-radius:var(--radius-sm);border:0;background:var(--color-accent-fill);color:var(--color-accent-ink);display:grid;place-items:center;cursor:pointer}
+.composeur .envoyer[disabled]{background:var(--color-surface-2);color:var(--color-text-muted);opacity:1}
+
+/* Message de THÉRÈSE et de l'humain */
+.message{display:grid;grid-template-columns:2rem 1fr;gap:.75rem;margin-bottom:var(--espace-4)}
+.message .qui{width:2rem;height:2rem;border-radius:999px;background:var(--color-surface-2);display:grid;place-items:center;color:var(--color-text-muted);font:700 .7rem var(--font-family-display)}
+.message .qui.therese{background:var(--color-accent-tint);color:var(--color-accent)}
+.message .entete{display:flex;gap:.5rem;align-items:baseline;margin-bottom:.35rem}
+.message .entete b{font-weight:600}
+.humain{margin-left:auto;max-width:75%;background:var(--color-accent-tint);color:var(--color-text);padding:.6rem .9rem;border-radius:var(--radius-md);border-bottom-right-radius:var(--radius-sm)}
+
+/* États : vide, erreur, chargement */
+.vide{padding:var(--espace-5) var(--espace-3);text-align:center;color:var(--color-text-muted)}
+.vide h3{color:var(--color-text);margin-bottom:.35rem}
+.alerte{display:flex;gap:.75rem;align-items:flex-start;padding:.75rem var(--espace-3);border-radius:var(--radius-sm);background:color-mix(in srgb,var(--color-error) 8%,transparent);color:var(--color-text);border:1px solid color-mix(in srgb,var(--color-error) 30%,transparent)}
+.alerte b{color:var(--color-error)}
+.chargement{height:.75rem;border-radius:999px;background:linear-gradient(90deg,var(--color-surface-2),var(--color-border),var(--color-surface-2));background-size:200% 100%;animation:glisse 1.2s linear infinite}
+@keyframes glisse{to{background-position:-200% 0}}
+
+/* Grille de formulaire */
+.champ{display:grid;gap:.3rem;margin-bottom:var(--espace-3)}
+.champ label{font-weight:600;font-size:.8125rem}
+.champ input,.champ select,.champ textarea{border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:.55rem .75rem;background:var(--color-surface);min-height:2.25rem}
+.champ input:focus,.champ select:focus,.champ textarea:focus{border-color:var(--color-accent);outline:none;box-shadow:0 0 0 3px color-mix(in srgb,var(--color-ring) 30%,transparent)}
+.aide{font-size:.75rem;color:var(--color-text-muted)}
+.grille-2{display:grid;grid-template-columns:1fr 1fr;gap:0 var(--espace-3)}
+@media (max-width:1023px){.grille-2{grid-template-columns:1fr}.colonne{padding-left:var(--espace-3);padding-right:var(--espace-3)}}
+@media (max-width:840px){.barre .etat.secondaire,.recherche span{display:none}.recherche{min-width:0}}
+
+/* Tableau de lignes (devis, factures) */
+.tableau{width:100%;border-collapse:collapse}
+.tableau th{text-align:left;font-size:.75rem;font-weight:600;color:var(--color-text-muted);padding:.5rem var(--espace-3);border-bottom:1px solid var(--color-border);letter-spacing:.02em}
+.tableau td{padding:.65rem var(--espace-3);border-bottom:1px solid var(--color-border);vertical-align:middle}
+.tableau tr:hover td{background:var(--color-surface-2)}
+.tableau .montant{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+.tableau .ref{font-family:var(--font-family-mono);font-size:.8125rem;white-space:nowrap}

@@ -1,0 +1,115 @@
+<!doctype html><html lang="fr" data-d="2"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Agenda · maquette THÉRÈSE</title>
+<link rel="stylesheet" href="da/tokens.css"><link rel="stylesheet" href="da/base.css"><link rel="stylesheet" href="da/d1.css"><link rel="stylesheet" href="da/d2.css"><link rel="stylesheet" href="da/d3.css">
+<script src="da/moteur.js"></script>
+<style>
+.vue-tete{display:flex;align-items:center;gap:var(--espace-3);flex-wrap:wrap;margin-bottom:var(--espace-3)}
+.vue-tete .nav{display:inline-flex;gap:.25rem;align-items:center}
+.vue-tete .actions{margin-left:auto;display:flex;gap:.5rem;align-items:center}
+.semaine{display:grid;grid-template-columns:3.5rem repeat(5,1fr);border:1px solid var(--color-border);border-radius:var(--radius-md);overflow:hidden;background:var(--color-surface)}
+.semaine .entete{display:contents}
+.semaine .jour-tete{padding:.5rem .6rem;border-bottom:1px solid var(--color-border);border-left:1px solid var(--color-border);font-size:.8125rem;color:var(--color-text-muted)}
+.semaine .jour-tete b{display:block;font-size:1rem;color:var(--color-text);font-variant-numeric:tabular-nums}
+.semaine .jour-tete.aujourdhui b{color:var(--color-accent)}
+.semaine .heures{display:grid;grid-template-rows:repeat(10,3rem);font-size:.75rem;color:var(--color-text-muted);text-align:right;padding-right:.4rem;font-variant-numeric:tabular-nums}
+.semaine .heures span{transform:translateY(-.5em)}
+.semaine .jour{position:relative;border-left:1px solid var(--color-border);display:grid;grid-template-rows:repeat(10,3rem);background:repeating-linear-gradient(to bottom,transparent 0 calc(3rem - 1px),var(--color-border) calc(3rem - 1px) 3rem)}
+.semaine .jour.aujourdhui{background-color:color-mix(in srgb,var(--color-accent-tint) 40%,transparent)}
+.evt{position:absolute;left:.3rem;right:.3rem;border-radius:var(--radius-sm);padding:.35rem .5rem;font-size:.75rem;line-height:1.3;overflow:hidden;border-left:3px solid;cursor:pointer}
+.evt b{display:block;font-size:.8125rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.evt.agenda{background:var(--color-domaine-agenda-tint);color:var(--color-domaine-agenda);border-color:var(--color-domaine-agenda)}
+.evt.prospect{background:var(--color-domaine-prospects-tint);color:var(--color-domaine-prospects);border-color:var(--color-domaine-prospects)}
+.evt.tache{background:var(--color-domaine-taches-tint);color:var(--color-domaine-taches);border-color:var(--color-domaine-taches)}
+.evt.chevauche{left:50%}
+.instant{position:absolute;left:0;right:0;height:2px;background:var(--color-instant);z-index:1}
+.instant::before{content:"";position:absolute;left:-4px;top:-3px;width:8px;height:8px;border-radius:999px;background:var(--color-instant)}
+.mois{display:grid;grid-template-columns:repeat(7,1fr);border:1px solid var(--color-border);border-radius:var(--radius-md);overflow:hidden;background:var(--color-surface)}
+.mois .jt{padding:.4rem .5rem;font-size:.75rem;color:var(--color-text-muted);border-bottom:1px solid var(--color-border);text-transform:uppercase;letter-spacing:.04em}
+.mois .case{min-height:5.5rem;border-top:1px solid var(--color-border);border-left:1px solid var(--color-border);padding:.35rem .4rem;font-size:.75rem;display:grid;gap:.2rem;align-content:start}
+.mois .case:nth-child(7n+1){border-left:0}
+.mois .case .n{font-variant-numeric:tabular-nums;color:var(--color-text-muted);font-weight:500}
+.mois .case.aujourdhui .n{color:var(--color-accent-ink);background:var(--color-accent-fill);border-radius:999px;width:1.4rem;height:1.4rem;display:grid;place-items:center}
+.mois .case.hors .n{opacity:.5}
+.mois .puce{border-radius:.3rem;padding:.1rem .35rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-left:2px solid}
+.legende-agenda{display:flex;gap:.75rem;align-items:center;margin-top:.6rem;font-size:.75rem;color:var(--color-text-muted)}
+.legende-agenda i{width:.6rem;height:.6rem;border-radius:2px;display:inline-block;margin-right:.3rem}
+/* Nouveau rendez-vous : panneau latéral, jamais une modale imbriquée */
+.panneau{position:absolute;top:0;right:0;bottom:0;width:26rem;background:var(--color-surface);border-left:1px solid var(--color-border);box-shadow:var(--shadow-lg);padding:var(--espace-3) var(--espace-4);overflow:auto}
+.panneau h2{margin-bottom:var(--espace-3)}
+.panneau .pied{display:flex;gap:.5rem;justify-content:flex-end;margin-top:var(--espace-3)}
+.alerte-inline{margin-bottom:var(--espace-3)}
+</style></head>
+<body><div class="app">
+ <header class="barre">
+  <div class="marque"><i aria-hidden="true"></i>THÉRÈSE</div>
+  <span class="etat"><b>Atelier Exemple</b></span>
+  <span class="etat secondaire">Moteur local actif <b class="num">14 ms</b></span>
+  <div class="droite">
+   <button class="btn btn-discret" type="button"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/></svg>Contrôle des données</button>
+   <button class="recherche" type="button"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><span>Rechercher</span><kbd>⌘K</kbd></button>
+  </div>
+ </header>
+ <div class="corps">
+  <nav class="rail" aria-label="Navigation principale">
+   <button type="button"  aria-label="Accueil"><svg class="ic" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></button>
+   <button type="button" aria-label="Nouvelle conversation"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+   <button type="button" aria-label="Conversations"><svg class="ic" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg></button>
+   <button type="button" aria-current="page" aria-label="Fichiers"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></button>
+   <div class="bas">
+    <button type="button" aria-label="Paramètres"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+    <button type="button" aria-label="Aide"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/></svg></button>
+    <div class="avatar" aria-label="Marie Exemple">MA</div>
+   </div>
+  </nav>
+  <main class="contenu" id="contenu">
+ <div class="colonne" style="--colonne:74rem;padding-bottom:var(--espace-4)">
+  <div class="vue-tete"><h1>Agenda</h1>
+   <div class="nav"><button class="btn btn-icone btn-secondaire" type="button" aria-label="Semaine précédente"><svg class="ic" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button><button class="btn btn-secondaire" type="button">Aujourd'hui</button><button class="btn btn-icone btn-secondaire" type="button" aria-label="Semaine suivante"><svg class="ic" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button></div>
+   <h2 id="periode" style="font-weight:600">Semaine du <span class="num">1er</span> au <span class="num">5 septembre</span></h2>
+   <div class="actions"><div class="segments" role="tablist"><button role="tab" aria-selected="false">Jour</button><button role="tab" aria-selected="true" id="tab-semaine">Semaine</button><button role="tab" aria-selected="false" id="tab-mois">Mois</button><button role="tab" aria-selected="false">Liste</button></div><button class="btn btn-primaire" type="button" id="btn-nouveau"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Nouveau rendez-vous</button></div></div>
+
+  <div class="alerte alerte-inline" id="alerte" hidden role="alert"><svg class="ic" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9L2.5 18a2 2 0 0 0 1.7 3h15.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg><div><b>L'agenda local est affiché tel qu'il était à 11:20.</b> Le rafraîchissement de 11:50 a échoué ; rien n'a été perdu. <button class="btn btn-discret" type="button" style="min-height:1.75rem;padding:0 .5rem">Réessayer</button></div></div>
+
+  <section class="semaine" id="vue-semaine" aria-label="Semaine du 1er au 5 septembre">
+   <div class="entete"><div></div>
+    <div class="jour-tete">lun.<b>1</b></div><div class="jour-tete">mar.<b>2</b></div><div class="jour-tete">mer.<b>3</b></div><div class="jour-tete">jeu.<b>4</b></div><div class="jour-tete aujourdhui">ven.<b>5</b></div></div>
+   <div class="heures"><span>08:00</span><span>09:00</span><span>10:00</span><span>11:00</span><span>12:00</span><span>13:00</span><span>14:00</span><span>15:00</span><span>16:00</span><span>17:00</span></div>
+   <div class="jour"><div class="evt prospect" style="top:6rem;height:3rem"><b>Devis Paul Durand</b>10:00 · envoi et appel</div></div>
+   <div class="jour"><div class="evt agenda" style="top:3rem;height:4.5rem"><b>Séance 1 · Garage Benali</b>09:00 à 10:30 · sur place</div></div>
+   <div class="jour"><div class="evt tache" style="top:9rem;height:1.5rem"><b>Facture de juillet à Claire Roux</b></div></div>
+   <div class="jour"><div class="evt agenda" style="top:18rem;height:3rem"><b>Point chantier Roux</b>14:00 · visio</div><div class="evt prospect chevauche" style="top:19.5rem;height:3rem"><b>Lucie Fabre, découverte</b>14:30 · téléphone</div></div>
+   <div class="jour aujourdhui"><div class="instant" style="top:11.4rem" aria-label="Il est 11:48"></div><div class="evt agenda" style="top:6rem;height:6rem"><b>Séance 2 · Garage Benali</b>10:00 à 12:00 · atelier · à préparer</div><div class="evt tache" style="top:22.5rem;height:1.5rem"><b>Relancer Paul Durand</b></div></div>
+  </section>
+
+  <section class="mois" id="vue-mois" hidden aria-label="Septembre 2026">
+   <div class="jt">lun.</div><div class="jt">mar.</div><div class="jt">mer.</div><div class="jt">jeu.</div><div class="jt">ven.</div><div class="jt">sam.</div><div class="jt">dim.</div>
+   <div class="case hors"><span class="n">31</span></div><div class="case"><span class="n">1</span><span class="puce evt prospect">Devis Paul Durand</span></div><div class="case"><span class="n">2</span><span class="puce evt agenda">Séance 1 · Benali</span></div><div class="case"><span class="n">3</span><span class="puce evt tache">Facture Claire Roux</span></div><div class="case"><span class="n">4</span><span class="puce evt agenda">Point chantier Roux</span><span class="puce evt prospect">Lucie Fabre</span></div><div class="case aujourdhui"><span class="n">5</span><span class="puce evt agenda">Séance 2 · Benali</span><span class="puce evt tache">Relancer Durand</span></div><div class="case"><span class="n">6</span></div>
+   <div class="case"><span class="n">7</span><span class="puce evt prospect">Relance Durand</span></div><div class="case"><span class="n">8</span><span class="puce evt prospect">Relance Fabre</span></div><div class="case"><span class="n">9</span></div><div class="case"><span class="n">10</span><span class="puce evt agenda">Séance 2 déplacée ?</span></div><div class="case"><span class="n">11</span></div><div class="case"><span class="n">12</span><span class="puce evt tache">Plans v2</span></div><div class="case"><span class="n">13</span></div>
+   <div class="case"><span class="n">14</span></div><div class="case"><span class="n">15</span></div><div class="case"><span class="n">16</span></div><div class="case"><span class="n">17</span></div><div class="case"><span class="n">18</span></div><div class="case"><span class="n">19</span></div><div class="case"><span class="n">20</span></div>
+   <div class="case"><span class="n">21</span></div><div class="case"><span class="n">22</span><span class="puce evt agenda">Semaine chargée</span></div><div class="case"><span class="n">23</span></div><div class="case"><span class="n">24</span></div><div class="case"><span class="n">25</span></div><div class="case"><span class="n">26</span><span class="puce evt agenda">Livraison Benali</span></div><div class="case"><span class="n">27</span></div>
+   <div class="case"><span class="n">28</span></div><div class="case"><span class="n">29</span></div><div class="case"><span class="n">30</span></div><div class="case hors"><span class="n">1</span></div><div class="case hors"><span class="n">2</span></div><div class="case hors"><span class="n">3</span></div><div class="case hors"><span class="n">4</span></div>
+  </section>
+  <p class="legende-agenda"><span><i style="background:var(--color-domaine-agenda)"></i>Rendez-vous</span><span><i style="background:var(--color-domaine-prospects)"></i>Prospects</span><span><i style="background:var(--color-domaine-taches)"></i>Tâches à échéance</span><span style="margin-left:auto">Agenda local « Agenda Atelier Exemple » · aucun agenda en ligne branché</span></p>
+ </div>
+ <aside class="panneau" id="panneau" hidden aria-label="Nouveau rendez-vous">
+  <h2>Nouveau rendez-vous</h2>
+  <form onsubmit="return false">
+   <div class="champ"><label for="titre">Titre</label><input id="titre" value="Point d'avancement Garage Benali"></div>
+   <div class="grille-2"><div class="champ"><label for="date">Date</label><input id="date" value="Lundi 7 septembre"></div><div class="champ"><label for="heure">Heure</label><input id="heure" value="10:00 à 11:00"></div></div>
+   <div class="champ"><label for="avec">Avec</label><input id="avec" value="Nadia Benali (Garage Benali)"><p class="aide">Un participant absent de tes contacts sera proposé à la création après l'enregistrement.</p></div>
+   <div class="champ"><label for="lieu">Lieu ou visio</label><input id="lieu" placeholder="Atelier, adresse ou lien"></div>
+   <div class="champ"><label for="agenda">Agenda</label><input id="agenda" value="Agenda Atelier Exemple (local)"></div>
+   <div class="pied"><button class="btn btn-secondaire" type="button">Annuler</button><button class="btn btn-primaire" type="button">Enregistrer</button></div>
+  </form>
+ </aside>
+</main>
+<script>
+(function(){const e=new URLSearchParams(location.search).get('etat')||'normal';
+ if(e==='mois'){document.getElementById('vue-semaine').hidden=true;document.getElementById('vue-mois').hidden=false;document.getElementById('periode').textContent='Septembre 2026';document.getElementById('tab-semaine').setAttribute('aria-selected','false');document.getElementById('tab-mois').setAttribute('aria-selected','true');}
+ if(e==='nouveau'){document.getElementById('panneau').hidden=false;}
+ if(e==='erreur'){document.getElementById('alerte').hidden=false;}
+})();
+</script>
+
+ </div>
+</div>
+</body></html>

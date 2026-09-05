@@ -1,0 +1,84 @@
+<style>
+.tiroir{position:absolute;top:0;left:0;bottom:0;width:22rem;background:var(--color-surface);border-right:1px solid var(--color-border);box-shadow:var(--shadow-lg);display:grid;grid-template-rows:auto auto 1fr auto;z-index:2}
+.tiroir .tete{display:flex;align-items:center;gap:.5rem;padding:.9rem var(--espace-3) .5rem}
+.tiroir .tete h2{font-size:1rem}
+.tiroir .tete .fermer{margin-left:auto}
+.tiroir .onglets{display:flex;gap:.25rem;padding:0 var(--espace-3) .5rem;border-bottom:1px solid var(--color-border)}
+.tiroir .onglets button{border:0;background:transparent;padding:.4rem .6rem;border-radius:var(--radius-sm);font-weight:500;color:var(--color-text-muted);cursor:pointer}
+.tiroir .onglets button[aria-selected="true"]{background:var(--color-accent-tint);color:var(--color-accent)}
+.tiroir .liste{overflow:auto;padding:.5rem}
+.tiroir .groupe{font-size:.6875rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--color-text-muted);padding:.6rem .5rem .25rem}
+.conv{display:grid;grid-template-columns:1fr auto;gap:.15rem .5rem;padding:.5rem .6rem;border-radius:var(--radius-sm);cursor:pointer}
+.conv:hover{background:var(--color-surface-2)}
+.conv[aria-current="true"]{background:var(--color-accent-tint)}
+.conv b{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.conv .quand{font-size:.75rem;color:var(--color-text-muted);font-variant-numeric:tabular-nums}
+.conv .apercu{grid-column:1/-1;font-size:.8125rem;color:var(--color-text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.conv .apercu .etiquette{margin-right:.3rem;vertical-align:middle}
+.tiroir .pied{padding:.6rem var(--espace-3);border-top:1px solid var(--color-border);display:flex;gap:.5rem}
+.tiroir .recherche-tiroir{margin:.5rem var(--espace-3) 0}
+.tiroir .recherche-tiroir input{width:100%;border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:.45rem .7rem;background:var(--color-surface-2)}
+/* Catalogue : six intentions, cartes ouvertes sur demande */
+.catalogue{padding:.5rem}
+.intention{margin-bottom:.5rem;border:1px solid var(--color-border);border-radius:var(--radius-sm);overflow:hidden}
+.intention summary{list-style:none;display:flex;align-items:center;gap:.5rem;padding:.55rem .7rem;cursor:pointer;font-weight:600}
+.intention summary::-webkit-details-marker{display:none}
+.intention summary .compte{margin-left:auto;font-weight:500;color:var(--color-text-muted);font-size:.75rem}
+.intention summary .icone{width:1.6rem;height:1.6rem;border-radius:999px;display:grid;place-items:center;background:var(--color-accent-tint);color:var(--color-accent)}
+.intention[open] summary{border-bottom:1px solid var(--color-border);background:var(--color-surface-2)}
+.capacite{display:grid;grid-template-columns:1fr auto;gap:.1rem .5rem;padding:.5rem .7rem;border-top:1px solid var(--color-border);cursor:pointer}
+.capacite:first-of-type{border-top:0}
+.capacite:hover{background:var(--color-surface-2)}
+.capacite b{font-weight:600;font-size:.875rem}
+.capacite .quoi{grid-column:1/-1;font-size:.8125rem;color:var(--color-text-muted)}
+.capacite .type{font-size:.6875rem;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--color-text-muted)}
+.capacite .type.prompt{color:var(--color-accent)}
+.voile{position:absolute;inset:0;background:color-mix(in srgb,var(--color-text) 20%,transparent);z-index:1}
+.fond-dim{filter:none}
+</style>
+<main class="contenu" id="contenu">
+ <div class="voile" aria-hidden="true"></div>
+ <aside class="tiroir" id="tiroir" role="region" aria-label="Conversations">
+  <div class="tete"><h2 id="titre-tiroir">Conversations</h2><button class="btn btn-icone btn-discret fermer" type="button" aria-label="Fermer (Échap)"><svg class="ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+  <div class="onglets" role="tablist"><button role="tab" aria-selected="true" id="tab-conv">Conversations</button><button role="tab" aria-selected="false" id="tab-cata">Capacités <span class="meta">30</span></button></div>
+  <div class="liste" id="liste-conv">
+   <div class="recherche-tiroir"><label class="sr" for="rech-conv">Rechercher une conversation</label><input id="rech-conv" type="search" placeholder="Rechercher dans les conversations"></div>
+   <div class="groupe">Aujourd'hui</div>
+   <div class="conv" aria-current="true" tabindex="0"><b>Relance clients</b><span class="quand">11:42</span><span class="apercu"><span class="etiquette e-succes">Action</span>2 relances préparées, aucune envoyée</span></div>
+   <div class="conv" tabindex="0"><b>Quelles sont mes tâches ?</b><span class="quand">09:15</span><span class="apercu">Cinq tâches ouvertes, deux en retard…</span></div>
+   <div class="groupe">Hier</div>
+   <div class="conv" tabindex="0"><b>Accepter la mission Benali ?</b><span class="quand">17:12</span><span class="apercu"><span class="etiquette d-prospects">Décision</span>Recommandation : accepter, à deux conditions</span></div>
+   <div class="conv" tabindex="0"><b>Brouillon pour Claire Roux</b><span class="quand">16:40</span><span class="apercu"><span class="etiquette e-info">Brouillon</span>Bonjour Claire, je me permets de revenir…</span></div>
+   <div class="groupe">Cette semaine</div>
+   <div class="conv" tabindex="0"><b>Proposition Garage Benali</b><span class="quand">mar.</span><span class="apercu"><span class="etiquette d-agenda">Document</span>Trame de 12 sections, 3 rédigées</span></div>
+   <div class="conv" tabindex="0"><b>Préparer le rendez-vous avec Paul Durand</b><span class="quand">lun.</span><span class="apercu">Deux participants, un inconnu de tes contacts</span></div>
+   <div class="vide" id="conv-vide" hidden><h3>Aucune conversation</h3><p>Ta première demande à Thérèse apparaîtra ici, avec ce qu'elle a produit.</p></div>
+  </div>
+  <div class="catalogue liste" id="liste-cata" hidden>
+   <details class="intention" open><summary><span class="icone"><svg class="ic" viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16z"/></svg></span>Écrire et répondre<span class="compte">5</span></summary>
+    <div class="capacite" tabindex="0"><b>Écrire un e-mail</b><span class="type">Parcours</span><span class="quoi">Brouillon relu avant envoi, jamais expédié sans toi.</span></div>
+    <div class="capacite" tabindex="0"><b>Répondre à un e-mail</b><span class="type">Vue</span><span class="quoi">Ta boîte, tes brouillons, tes réponses proposées.</span></div>
+    <div class="capacite" tabindex="0"><b>Rédiger un document long</b><span class="type">Vue</span><span class="quoi">Trame, sections, pistes, export Word.</span></div>
+    <div class="capacite" tabindex="0"><b>Recherche sur le web</b><span class="type prompt">Demande relue</span><span class="quoi">Prépare une question, tu la relis avant l'envoi.</span></div>
+    <div class="capacite" tabindex="0"><b>Bibliothèque de prompts</b><span class="type">Vue</span><span class="quoi">34 modèles avec variables.</span></div>
+   </details>
+   <details class="intention"><summary><span class="icone"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg></span>Retrouver et comprendre<span class="compte">6</span></summary><div class="capacite" tabindex="0"><b>Contacts et pipeline</b><span class="type">Vue</span></div><div class="capacite" tabindex="0"><b>Fichiers indexés</b><span class="type">Vue</span></div><div class="capacite" tabindex="0"><b>Projets</b><span class="type">Vue</span></div><div class="capacite" tabindex="0"><b>Mémoire et recherche</b><span class="type">Vue</span></div><div class="capacite" tabindex="0"><b>Calculateurs</b><span class="type">Vue</span></div><div class="capacite" tabindex="0"><b>Question juridique</b><span class="type prompt">Demande relue</span></div></details>
+   <details class="intention"><summary><span class="icone"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></span>Préparer et organiser<span class="compte">5</span></summary><div class="capacite" tabindex="0"><b>Préparer un rendez-vous</b><span class="type">Parcours</span></div><div class="capacite" tabindex="0"><b>Agenda</b><span class="type">Vue</span></div><div class="capacite" tabindex="0"><b>Tâches</b><span class="type">Vue</span></div><div class="capacite" tabindex="0"><b>Brief du jour</b><span class="type">Vue</span></div><div class="capacite" tabindex="0"><b>Relances et alertes</b><span class="type">Action</span></div></details>
+   <details class="intention"><summary><span class="icone"><svg class="ic" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/></svg></span>Facturer et livrer<span class="compte">4</span></summary><div class="capacite" tabindex="0"><b>Facturer un client</b><span class="type">Parcours</span></div><div class="capacite" tabindex="0"><b>Devis et factures</b><span class="type">Vue</span></div><div class="capacite" tabindex="0"><b>Livrables et suivi client</b><span class="type">Vue</span></div><div class="capacite" tabindex="0"><b>Documents Office</b><span class="type">Action</span></div></details>
+   <details class="intention"><summary><span class="icone"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v18M5 8l7-5 7 5M5 16l7 5 7-5"/></svg></span>Décider et automatiser<span class="compte">5</span></summary><div class="capacite" tabindex="0"><b>Décider</b><span class="type">Parcours</span></div><div class="capacite" tabindex="0"><b>Actions</b><span class="type">Vue</span></div><div class="capacite" tabindex="0"><b>Automatisation</b><span class="type">Vue</span></div><div class="capacite" tabindex="0"><b>Améliorer THÉRÈSE</b><span class="type">Parcours</span></div><div class="capacite" tabindex="0"><b>Skills et commandes</b><span class="type prompt">Demande relue</span></div></details>
+   <details class="intention"><summary><span class="icone"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg></span>Régler et protéger<span class="compte">5</span></summary><div class="capacite" tabindex="0"><b>Images et voix</b><span class="type">Vue</span></div><div class="capacite" tabindex="0"><b>Connecteurs</b><span class="type">Vue</span></div><div class="capacite" tabindex="0"><b>Katia et Zézette</b><span class="type">Vue</span></div><div class="capacite" tabindex="0"><b>Confidentialité et contrôle des données</b><span class="type">Vue</span></div><div class="capacite" tabindex="0"><b>Paramètres</b><span class="type">Vue</span></div></details>
+   <p class="meta" style="padding:.5rem .7rem">Une capacité <b>Vue</b> ou <b>Parcours</b> s'ouvre au clic. Une <b>Demande relue</b> pose une phrase dans le composeur, que tu relis avant l'envoi.</p>
+  </div>
+  <div class="pied"><button class="btn btn-primaire" type="button" style="flex:1"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Nouvelle conversation</button></div>
+ </aside>
+ <div class="colonne" style="opacity:.55;pointer-events:none" aria-hidden="true">
+  <div class="message"><div class="qui therese">T</div><div><h1 class="editorial">Bonjour Marie.</h1><p class="sous">Quatre choses méritent ton attention.</p></div></div>
+  <article class="carte"><div class="carte-tete"><div><h2>Ton attention aujourd'hui</h2><p class="meta">4 éléments, dont 2 en retard</p></div></div><div class="ligne"><div class="puce d-taches"></div><div><div class="titre">Envoyer la facture de juillet à Claire Roux</div><div class="detail">Tâche · échéance 03/09</div></div></div><div class="ligne"><div class="puce d-taches"></div><div><div class="titre">Relancer Paul Durand pour le devis</div><div class="detail">Tâche · échéance 04/09</div></div></div></article>
+ </div>
+</main>
+<script>
+(function(){const e=new URLSearchParams(location.search).get('etat')||'normal';
+ if(e==='catalogue'){document.getElementById('liste-conv').hidden=true;document.getElementById('liste-cata').hidden=false;document.getElementById('tab-conv').setAttribute('aria-selected','false');document.getElementById('tab-cata').setAttribute('aria-selected','true');document.getElementById('titre-tiroir').textContent='Capacités';}
+ if(e==='vide'){document.querySelectorAll('#liste-conv .conv, #liste-conv .groupe').forEach(n=>n.hidden=true);document.getElementById('conv-vide').hidden=false;}
+})();
+</script>

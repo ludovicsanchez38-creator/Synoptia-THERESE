@@ -1,0 +1,118 @@
+<!doctype html><html lang="fr" data-d="2"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Devis et factures · maquette THÉRÈSE</title>
+<link rel="stylesheet" href="da/tokens.css"><link rel="stylesheet" href="da/base.css"><link rel="stylesheet" href="da/d1.css"><link rel="stylesheet" href="da/d2.css"><link rel="stylesheet" href="da/d3.css">
+<script src="da/moteur.js"></script>
+<style>
+.vue-tete{display:flex;align-items:flex-end;gap:var(--espace-3);flex-wrap:wrap;margin-bottom:var(--espace-3)}
+.vue-tete .actions{margin-left:auto;display:flex;gap:.5rem}
+.filtres{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:var(--espace-3)}
+.filtres .champ{margin:0}
+.filtres input{min-width:14rem}
+.statuts{display:inline-flex;gap:.35rem;flex-wrap:wrap}
+.resume{display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;margin-bottom:var(--espace-3)}
+.resume .carte{padding:.75rem var(--espace-3)}
+.resume .valeur{font:700 1.25rem var(--font-family-display);font-variant-numeric:tabular-nums;margin-top:.15rem}
+.resume .meta{display:block}
+.tableau td .client{font-weight:600}
+.tableau td .sous{font-size:.75rem;margin:0}
+.vide-liste{padding:var(--espace-5) var(--espace-3);text-align:center;color:var(--color-text-muted)}
+.formulaire{max-width:52rem}
+.lignes{width:100%;border-collapse:collapse;margin-top:.25rem}
+.lignes th{font-size:.75rem;color:var(--color-text-muted);text-align:left;padding:.4rem .5rem;border-bottom:1px solid var(--color-border)}
+.lignes td{padding:.35rem .5rem;vertical-align:top}
+.lignes input{width:100%;border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:.45rem .6rem;background:var(--color-surface);min-height:2.25rem}
+.lignes input[aria-invalid="true"]{border-color:var(--color-error);box-shadow:0 0 0 3px color-mix(in srgb,var(--color-error) 20%,transparent)}
+.lignes .num input{text-align:right;font-variant-numeric:tabular-nums}
+.totaux{display:grid;grid-template-columns:1fr auto;gap:.25rem 1.5rem;justify-content:end;margin-top:var(--espace-3);font-variant-numeric:tabular-nums}
+.totaux .total{font:700 1.125rem var(--font-family-display)}
+.erreur-champ{color:var(--color-error);font-size:.8125rem;font-weight:500;margin:.25rem 0 0}
+.pied-form{display:flex;gap:.5rem;justify-content:flex-end;margin-top:var(--espace-4);align-items:center}
+.pied-form .meta{margin-right:auto}
+@media (max-width:1023px){.resume{grid-template-columns:repeat(2,1fr)}}
+</style></head>
+<body><div class="app">
+ <header class="barre">
+  <div class="marque"><i aria-hidden="true"></i>THÉRÈSE</div>
+  <span class="etat"><b>Atelier Exemple</b></span>
+  <span class="etat secondaire">Moteur local actif <b class="num">14 ms</b></span>
+  <div class="droite">
+   <button class="btn btn-discret" type="button"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/></svg>Contrôle des données</button>
+   <button class="recherche" type="button"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><span>Rechercher</span><kbd>⌘K</kbd></button>
+  </div>
+ </header>
+ <div class="corps">
+  <nav class="rail" aria-label="Navigation principale">
+   <button type="button"  aria-label="Accueil"><svg class="ic" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></button>
+   <button type="button" aria-label="Nouvelle conversation"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+   <button type="button" aria-label="Conversations"><svg class="ic" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg></button>
+   <button type="button" aria-current="page" aria-label="Fichiers"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></button>
+   <div class="bas">
+    <button type="button" aria-label="Paramètres"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+    <button type="button" aria-label="Aide"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/></svg></button>
+    <div class="avatar" aria-label="Marie Exemple">MA</div>
+   </div>
+  </nav>
+  <main class="contenu" id="contenu">
+ <div class="colonne" style="--colonne:64rem;padding-bottom:var(--espace-4)">
+  <section id="vue-liste">
+   <div class="vue-tete"><div><h1>Devis et factures</h1><p class="sous">Atelier Exemple · <span class="num">4</span> pièces, dont <span class="num">1</span> facture échue</p></div>
+    <div class="actions"><button class="btn btn-secondaire" type="button">Exporter</button><button class="btn btn-primaire" type="button" id="vers-nouveau"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Nouveau devis</button></div></div>
+   <div class="resume">
+    <div class="carte"><span class="meta">Encaissé cette année</span><div class="valeur">3 240,00 €</div></div>
+    <div class="carte"><span class="meta">En attente de paiement</span><div class="valeur">1 440,00 €</div></div>
+    <div class="carte" style="border-color:color-mix(in srgb,var(--color-error) 40%,transparent)"><span class="meta">Échu, à relancer</span><div class="valeur" style="color:var(--color-error)">1 440,00 €</div></div>
+    <div class="carte"><span class="meta">Devis en cours</span><div class="valeur">2 100,00 €</div></div>
+   </div>
+   <div class="filtres">
+    <div class="segments" role="tablist"><button role="tab" aria-selected="true">Tout</button><button role="tab" aria-selected="false">Devis</button><button role="tab" aria-selected="false">Factures</button><button role="tab" aria-selected="false">En retard <span class="num">1</span></button></div>
+    <div class="champ"><label class="sr" for="filtre">Filtrer par client ou référence</label><input id="filtre" type="search" placeholder="Client, référence…"></div>
+    <span class="meta">Tri : échéance</span>
+   </div>
+   <div class="carte dense">
+    <table class="tableau">
+     <thead><tr><th>Pièce</th><th>Client</th><th>Envoi</th><th>Paiement</th><th>Échéance</th><th style="text-align:right">Montant TTC</th><th class="sr">Actions</th></tr></thead>
+     <tbody>
+      <tr tabindex="0"><td><span class="ref">FACT-2026-002</span><p class="sous">Facture · juillet</p></td><td><span class="client">Claire Roux</span><p class="sous">Roux Rénovation</p></td><td><span class="etiquette e-info">Envoyée le <span class="num">28/07</span></span></td><td><span class="etiquette e-erreur">Impayée</span></td><td class="num" style="color:var(--color-error);font-weight:600">25/08 · échue</td><td class="montant">1 440,00 €</td><td><button class="btn btn-discret" type="button" style="min-height:1.9rem;padding:0 .6rem">Relancer</button></td></tr>
+      <tr tabindex="0"><td><span class="ref">DEV-2026-003</span><p class="sous">Devis</p></td><td><span class="client">Paul Durand</span><p class="sous">Durand Menuiserie</p></td><td><span class="etiquette e-info">Envoyé le <span class="num">01/09</span></span></td><td><span class="etiquette e-neutre">En attente d'accord</span></td><td class="num">Valable jusqu'au 01/10</td><td class="montant">1 260,00 €</td><td><button class="btn btn-discret" type="button" style="min-height:1.9rem;padding:0 .6rem">Convertir</button></td></tr>
+      <tr tabindex="0"><td><span class="ref">DEV-2026-004</span><p class="sous">Devis</p></td><td><span class="client">Garage Benali</span><p class="sous">Nadia Benali</p></td><td><span class="etiquette e-neutre">Brouillon</span></td><td><span class="meta">Sans objet</span></td><td class="num meta">Non envoyé</td><td class="montant">840,00 €</td><td><button class="btn btn-discret" type="button" style="min-height:1.9rem;padding:0 .6rem">Modifier</button></td></tr>
+      <tr tabindex="0"><td><span class="ref">FACT-2026-001</span><p class="sous">Facture · juin</p></td><td><span class="client">Claire Roux</span><p class="sous">Roux Rénovation</p></td><td><span class="etiquette e-info">Envoyée le <span class="num">30/06</span></span></td><td><span class="etiquette e-succes">Payée le <span class="num">12/07</span></span></td><td class="num meta">30/07</td><td class="montant">3 240,00 €</td><td><button class="btn btn-discret" type="button" style="min-height:1.9rem;padding:0 .6rem">PDF</button></td></tr>
+     </tbody>
+    </table>
+    <div class="vide-liste" id="liste-vide" hidden><h3>Aucune pièce en retard</h3><p>Les factures échues et impayées apparaîtront ici avec un bouton pour relancer.</p></div>
+   </div>
+   <p class="meta" style="margin-top:.75rem">Les PDF sont produits par THÉRÈSE, mentions légales et numérotation continues. La facturation électronique (Factur-X) est prévue.</p>
+  </section>
+
+  <section id="vue-nouveau" hidden>
+   <div class="vue-tete"><div><p class="meta"><a href="#" style="color:var(--color-accent)">Devis et factures</a> › Nouveau devis</p><h1>Nouveau devis</h1><p class="sous">Brouillon <span class="ref">DEV-2026-005</span>, numéroté à l'envoi</p></div></div>
+   <form class="formulaire carte" style="padding:var(--espace-4)" onsubmit="return false">
+    <div class="grille-2">
+     <div class="champ"><label for="client">Client</label><input id="client" value="Garage Benali · Nadia Benali"><p class="aide">Un client absent de tes contacts se crée depuis ce champ.</p></div>
+     <div class="champ"><label for="objet">Objet</label><input id="objet" placeholder="Ex. Aménagement de l'accueil"></div>
+     <div class="champ"><label for="validite">Valable jusqu'au</label><input id="validite" value="05/10/2026" inputmode="numeric"></div>
+     <div class="champ"><label for="conditions">Conditions de paiement</label><input id="conditions" value="30 % à la commande, solde à la livraison"></div>
+    </div>
+    <h2 style="margin:.5rem 0 .25rem">Lignes</h2>
+    <table class="lignes">
+     <thead><tr><th style="width:52%">Description</th><th>Qté</th><th>Prix HT</th><th>TVA</th><th style="text-align:right">Total HT</th></tr></thead>
+     <tbody>
+      <tr><td><input aria-label="Description ligne 1" value="Conception et plans de l'espace d'accueil"></td><td class="num"><input aria-label="Quantité ligne 1" value="1"></td><td class="num"><input aria-label="Prix ligne 1" value="450,00"></td><td class="num"><input aria-label="TVA ligne 1" value="20 %"></td><td class="num" style="text-align:right;padding-top:.8rem;font-weight:600;white-space:nowrap">450,00 €</td></tr>
+      <tr><td><input aria-label="Description ligne 2" aria-invalid="true" aria-describedby="err-l2" placeholder="Décris la prestation"><p class="erreur-champ" id="err-l2">Renseigne la description de cette ligne, ou supprime-la.</p></td><td class="num"><input aria-label="Quantité ligne 2" value="2"></td><td class="num"><input aria-label="Prix ligne 2" value="120,00"></td><td class="num"><input aria-label="TVA ligne 2" value="20 %"></td><td class="num" style="text-align:right;padding-top:.8rem;font-weight:600;white-space:nowrap">240,00 €</td></tr>
+     </tbody>
+    </table>
+    <p style="margin-top:.5rem"><button class="btn btn-discret" type="button"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Ajouter une ligne</button></p>
+    <div class="totaux"><span class="meta">Total HT</span><span class="num">690,00 €</span><span class="meta">TVA 20 %</span><span class="num">138,00 €</span><span class="total">Total TTC</span><span class="total num">828,00 €</span></div>
+    <div class="pied-form"><span class="meta">Enregistré comme brouillon il y a <span class="num">12</span> s</span><button class="btn btn-secondaire" type="button">Aperçu PDF</button><button class="btn btn-primaire" type="button">Valider le devis</button></div>
+   </form>
+  </section>
+ </div>
+</main>
+<script>
+(function(){const e=new URLSearchParams(location.search).get('etat')||'normal';
+ document.getElementById('vue-nouveau').hidden=(e!=='nouveau');document.getElementById('vue-liste').hidden=(e==='nouveau');
+ if(e==='vide'){document.querySelector('.tableau tbody').hidden=true;document.getElementById('liste-vide').hidden=false;document.querySelectorAll('[role=tab]').forEach((b,i)=>b.setAttribute('aria-selected',i===3));}
+})();
+</script>
+
+ </div>
+</div>
+</body></html>

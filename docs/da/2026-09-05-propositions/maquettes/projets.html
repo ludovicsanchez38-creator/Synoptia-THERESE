@@ -1,0 +1,106 @@
+<!doctype html><html lang="fr" data-d="2"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Projets et tâches · maquette THÉRÈSE</title>
+<link rel="stylesheet" href="da/tokens.css"><link rel="stylesheet" href="da/base.css"><link rel="stylesheet" href="da/d1.css"><link rel="stylesheet" href="da/d2.css"><link rel="stylesheet" href="da/d3.css">
+<script src="da/moteur.js"></script>
+<style>
+.vue-tete{display:flex;align-items:flex-end;gap:var(--espace-3);flex-wrap:wrap;margin-bottom:var(--espace-3)}
+.vue-tete .actions{margin-left:auto;display:flex;gap:.5rem}
+.barre-outils{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:var(--espace-3)}
+.barre-outils .champ{margin:0}
+.colonnes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.75rem}
+.col{background:var(--color-surface-2);border-radius:var(--radius-md);padding:.5rem;display:grid;gap:.5rem;align-content:start;min-height:20rem}
+.col h3{display:flex;align-items:center;gap:.5rem;font-size:.875rem;padding:.25rem .5rem}
+.col h3 .compte{margin-left:auto;font-weight:500;color:var(--color-text-muted);font-variant-numeric:tabular-nums}
+.tache{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:.6rem .75rem;display:grid;gap:.35rem}
+.tache b{font-weight:600}
+.tache .pied{display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;font-size:.75rem;color:var(--color-text-muted)}
+.tache .projet{display:inline-flex;align-items:center;gap:.3rem}
+.tache .projet i{width:.5rem;height:.5rem;border-radius:999px;display:inline-block;background:var(--color-domaine-prospects)}
+.tache.faite b{text-decoration:line-through;color:var(--color-text-muted)}
+.col .ajout{border:1px dashed var(--color-border);border-radius:var(--radius-sm);padding:.6rem;font-size:.8125rem;color:var(--color-text-muted);text-align:left;background:transparent;cursor:pointer;display:flex;gap:.4rem;align-items:center}
+.col .ajout:hover{border-color:var(--color-accent);color:var(--color-accent)}
+.priorite{width:.4rem;height:1.1rem;border-radius:2px;background:var(--color-border)}
+.priorite.haute{background:var(--color-error-fill)}.priorite.moyenne{background:var(--color-warning-fill)}
+.saisie-rapide{display:flex;gap:.5rem;align-items:center;background:var(--color-surface);border:1px solid var(--color-accent);border-radius:var(--radius-md);padding:.5rem .75rem;box-shadow:0 0 0 3px color-mix(in srgb,var(--color-ring) 25%,transparent);margin-bottom:var(--espace-3)}
+.saisie-rapide input{flex:1;border:0;outline:none;background:transparent;font-size:.9375rem}
+.saisie-rapide .meta kbd{font:500 .7rem var(--font-family-sans);border:1px solid var(--color-border);border-radius:.3rem;padding:.05rem .3rem}
+.erreur-champ{color:var(--color-error);font-size:.8125rem;font-weight:500;margin:-.5rem 0 var(--espace-3)}
+.projets-liste{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem;margin-top:var(--espace-4)}
+.projets-liste .carte{padding:var(--espace-3);display:grid;gap:.4rem}
+.projets-liste .carte b{display:flex;align-items:center;gap:.4rem}
+.barre-prog{height:.4rem;border-radius:999px;background:var(--color-surface-2);overflow:hidden}
+.barre-prog i{display:block;height:100%;background:var(--color-accent-fill)}
+@media (max-width:1023px){.colonnes{grid-template-columns:1fr 1fr}.projets-liste{grid-template-columns:1fr 1fr}}
+</style></head>
+<body><div class="app">
+ <header class="barre">
+  <div class="marque"><i aria-hidden="true"></i>THÉRÈSE</div>
+  <span class="etat"><b>Atelier Exemple</b></span>
+  <span class="etat secondaire">Moteur local actif <b class="num">14 ms</b></span>
+  <div class="droite">
+   <button class="btn btn-discret" type="button"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/></svg>Contrôle des données</button>
+   <button class="recherche" type="button"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><span>Rechercher</span><kbd>⌘K</kbd></button>
+  </div>
+ </header>
+ <div class="corps">
+  <nav class="rail" aria-label="Navigation principale">
+   <button type="button"  aria-label="Accueil"><svg class="ic" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></button>
+   <button type="button" aria-label="Nouvelle conversation"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+   <button type="button" aria-label="Conversations"><svg class="ic" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg></button>
+   <button type="button" aria-current="page" aria-label="Fichiers"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></button>
+   <div class="bas">
+    <button type="button" aria-label="Paramètres"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+    <button type="button" aria-label="Aide"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/></svg></button>
+    <div class="avatar" aria-label="Marie Exemple">MA</div>
+   </div>
+  </nav>
+  <main class="contenu" id="contenu">
+ <div class="colonne" style="--colonne:72rem;padding-bottom:var(--espace-4)">
+  <div class="vue-tete"><div><h1>Tâches</h1><p class="sous"><span class="num">5</span> tâches ouvertes · <span class="num">2</span> en retard · <span class="num">3</span> projets actifs</p></div>
+   <div class="actions"><button class="btn btn-secondaire" type="button">Filtrer</button><button class="btn btn-primaire" type="button" id="btn-nouvelle"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Nouvelle tâche</button></div></div>
+  <div class="barre-outils"><div class="segments" role="tablist"><button role="tab" aria-selected="true" id="tab-colonnes">Colonnes</button><button role="tab" aria-selected="false" id="tab-liste">Liste</button></div><span class="meta">Projet : tous · Échéance : toutes · Tri : échéance</span></div>
+
+  <form class="saisie-rapide" id="saisie" hidden onsubmit="return false"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><label class="sr" for="nouvelle">Titre de la tâche</label><input id="nouvelle" placeholder="Titre de la tâche, puis Entrée. Ex. « Rappeler Lucie Fabre mardi »" aria-invalid="true" aria-describedby="err-titre"><span class="meta">Projet : <b>Garage Benali</b> · <kbd>Entrée</kbd> crée · <kbd>Échap</kbd> annule</span></form>
+  <p class="erreur-champ" id="err-titre" hidden>Ajoute un titre : c'est la seule chose obligatoire.</p>
+
+  <section class="colonnes" id="vue-colonnes" aria-label="Tâches par état">
+   <div class="col"><h3><span class="etiquette e-neutre">À faire</span><span class="compte">3</span></h3>
+    <article class="tache" tabindex="0"><b><span class="priorite haute" aria-label="Priorité haute"></span> Envoyer la facture de juillet à Claire Roux</b><div class="pied"><span class="etiquette e-erreur">En retard de 2 jours</span><span class="projet"><i style="background:var(--color-domaine-factures)"></i>Roux Rénovation</span></div></article>
+    <article class="tache" tabindex="0"><b><span class="priorite haute" aria-label="Priorité haute"></span> Relancer Paul Durand pour le devis</b><div class="pied"><span class="etiquette e-erreur">En retard d'un jour</span><span class="projet"><i></i>Durand Menuiserie</span></div></article>
+    <article class="tache" tabindex="0"><b><span class="priorite moyenne" aria-label="Priorité moyenne"></span> Préparer la séance 2 du Garage Benali</b><div class="pied"><span>Aujourd'hui</span><span class="projet"><i style="background:var(--color-domaine-agenda)"></i>Garage Benali</span></div></article>
+    <button class="ajout" type="button"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Ajouter une tâche</button>
+   </div>
+   <div class="col"><h3><span class="etiquette e-info">En cours</span><span class="compte">1</span></h3>
+    <article class="tache" tabindex="0"><b><span class="priorite" aria-label="Priorité normale"></span> Plans de l'accueil, version 2</b><div class="pied"><span>Échéance <span class="num">12/09</span></span><span class="projet"><i style="background:var(--color-domaine-agenda)"></i>Garage Benali</span></div></article>
+    <button class="ajout" type="button"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Ajouter une tâche</button>
+   </div>
+   <div class="col"><h3><span class="etiquette e-succes">Terminé</span><span class="compte">1</span></h3>
+    <article class="tache faite" tabindex="0"><b>Prise de mesures chez Paul Durand</b><div class="pied"><span>Terminée le <span class="num">28/08</span></span></div></article>
+   </div>
+  </section>
+
+  <section class="carte dense" id="vue-liste" hidden aria-label="Tâches en liste">
+   <div class="ligne" tabindex="0" role="button"><div class="priorite haute" style="margin:auto"></div><div><div class="titre">Envoyer la facture de juillet à Claire Roux</div><div class="detail">Roux Rénovation · à faire</div></div><div class="droite"><span class="etiquette e-erreur">03/09 · en retard</span></div></div>
+   <div class="ligne" tabindex="0" role="button"><div class="priorite haute" style="margin:auto"></div><div><div class="titre">Relancer Paul Durand pour le devis</div><div class="detail">Durand Menuiserie · à faire</div></div><div class="droite"><span class="etiquette e-erreur">04/09 · en retard</span></div></div>
+   <div class="ligne" tabindex="0" role="button"><div class="priorite moyenne" style="margin:auto"></div><div><div class="titre">Préparer la séance 2 du Garage Benali</div><div class="detail">Garage Benali · à faire</div></div><div class="droite"><span class="etiquette e-neutre">Aujourd'hui</span></div></div>
+   <div class="ligne" tabindex="0" role="button"><div class="priorite" style="margin:auto"></div><div><div class="titre">Plans de l'accueil, version 2</div><div class="detail">Garage Benali · en cours</div></div><div class="droite"><span class="etiquette e-info">12/09</span></div></div>
+   <div class="ligne" tabindex="0" role="button" style="color:var(--color-text-muted)"><div class="priorite" style="margin:auto"></div><div><div class="titre" style="text-decoration:line-through;color:var(--color-text-muted)">Prise de mesures chez Paul Durand</div><div class="detail">Durand Menuiserie · terminée le 28/08</div></div><div class="droite"><span class="etiquette e-succes">Terminée</span></div></div>
+  </section>
+
+  <h2 style="margin-top:var(--espace-4)">Projets</h2>
+  <div class="projets-liste">
+   <article class="carte"><b><i style="width:.6rem;height:.6rem;border-radius:999px;background:var(--color-domaine-agenda);display:inline-block"></i>Garage Benali</b><span class="meta">Aménagement de l'accueil · 2 tâches · devis brouillon 840 €</span><div class="barre-prog"><i style="width:35%"></i></div><span class="meta">Séance 2 aujourd'hui · livraison visée <span class="num">26/09</span></span></article>
+   <article class="carte"><b><i style="width:.6rem;height:.6rem;border-radius:999px;background:var(--color-domaine-factures);display:inline-block"></i>Roux Rénovation</b><span class="meta">Chantier livré · 1 tâche · facture échue 1 440 €</span><div class="barre-prog"><i style="width:90%"></i></div><span class="meta">Reste : encaisser</span></article>
+   <article class="carte"><b><i style="width:.6rem;height:.6rem;border-radius:999px;background:var(--color-domaine-prospects);display:inline-block"></i>Durand Menuiserie</b><span class="meta">Comptoir d'atelier · 1 tâche · devis envoyé 1 260 €</span><div class="barre-prog"><i style="width:15%"></i></div><span class="meta">En attente d'accord</span></article>
+  </div>
+ </div>
+</main>
+<script>
+(function(){const e=new URLSearchParams(location.search).get('etat')||'normal';
+ if(e==='liste'){document.getElementById('vue-colonnes').hidden=true;document.getElementById('vue-liste').hidden=false;document.getElementById('tab-colonnes').setAttribute('aria-selected','false');document.getElementById('tab-liste').setAttribute('aria-selected','true');}
+ if(e==='nouvelle'){document.getElementById('saisie').hidden=false;document.getElementById('err-titre').hidden=false;}
+})();
+</script>
+
+ </div>
+</div>
+</body></html>

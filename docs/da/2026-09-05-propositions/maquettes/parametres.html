@@ -1,0 +1,112 @@
+<!doctype html><html lang="fr" data-d="2"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Paramètres · maquette THÉRÈSE</title>
+<link rel="stylesheet" href="da/tokens.css"><link rel="stylesheet" href="da/base.css"><link rel="stylesheet" href="da/d1.css"><link rel="stylesheet" href="da/d2.css"><link rel="stylesheet" href="da/d3.css">
+<script src="da/moteur.js"></script>
+<style>
+.reglages{display:grid;grid-template-columns:15rem 1fr;gap:var(--espace-4);align-items:start}
+.rubriques{display:grid;gap:.15rem;position:sticky;top:0}
+.rubriques button{display:flex;align-items:center;gap:.6rem;text-align:left;border:0;background:transparent;padding:.55rem .75rem;border-radius:var(--radius-sm);cursor:pointer;color:var(--color-text);font-weight:500}
+.rubriques button[aria-current="page"]{background:var(--color-accent-tint);color:var(--color-accent);font-weight:600}
+.rubriques button:hover{background:var(--color-surface-2)}
+.rubriques .sep{height:1px;background:var(--color-border);margin:.4rem .5rem}
+.section{display:grid;gap:var(--espace-3)}
+.section .carte{padding:var(--espace-3) var(--espace-4)}
+.section h2{margin-bottom:.25rem}
+.fournisseurs{display:grid;grid-template-columns:repeat(2,1fr);gap:.6rem;margin-top:.75rem}
+.fournisseur{display:grid;grid-template-columns:1fr auto;gap:.1rem .6rem;padding:.65rem .8rem;border:1px solid var(--color-border);border-radius:var(--radius-sm);cursor:pointer}
+.fournisseur[aria-pressed="true"]{border-color:var(--color-accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--color-ring) 30%,transparent)}
+.fournisseur b{font-weight:600}
+.fournisseur .quoi{grid-column:1/-1;font-size:.75rem;color:var(--color-text-muted)}
+.cle{display:flex;gap:.5rem;align-items:center}
+.cle input{flex:1;font-family:var(--font-family-mono);letter-spacing:.08em}
+.ligne-reglage{display:grid;grid-template-columns:1fr auto;gap:.25rem 1rem;align-items:center;padding:.6rem 0;border-top:1px solid var(--color-border)}
+.ligne-reglage:first-of-type{border-top:0}
+.ligne-reglage b{font-weight:600}.ligne-reglage .aide{grid-column:1}
+.interrupteur{width:2.6rem;height:1.5rem;border-radius:999px;background:var(--color-border);position:relative;border:0;cursor:pointer}
+.interrupteur[aria-checked="true"]{background:var(--color-accent-fill)}
+.interrupteur::after{content:"";position:absolute;top:.15rem;left:.15rem;width:1.2rem;height:1.2rem;border-radius:999px;background:#fff;box-shadow:var(--shadow-sm);transition:transform .15s ease}
+.interrupteur[aria-checked="true"]::after{transform:translateX(1.1rem)}
+.jauge{height:.5rem;border-radius:999px;background:var(--color-surface-2);overflow:hidden;margin:.4rem 0}
+.jauge i{display:block;height:100%;background:var(--color-accent-fill)}
+@media (max-width:1023px){.reglages{grid-template-columns:1fr}.rubriques{position:static;grid-template-columns:repeat(3,1fr)}}
+</style></head>
+<body><div class="app">
+ <header class="barre">
+  <div class="marque"><i aria-hidden="true"></i>THÉRÈSE</div>
+  <span class="etat"><b>Atelier Exemple</b></span>
+  <span class="etat secondaire">Moteur local actif <b class="num">14 ms</b></span>
+  <div class="droite">
+   <button class="btn btn-discret" type="button"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/></svg>Contrôle des données</button>
+   <button class="recherche" type="button"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><span>Rechercher</span><kbd>⌘K</kbd></button>
+  </div>
+ </header>
+ <div class="corps">
+  <nav class="rail" aria-label="Navigation principale">
+   <button type="button"  aria-label="Accueil"><svg class="ic" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></button>
+   <button type="button" aria-label="Nouvelle conversation"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
+   <button type="button" aria-label="Conversations"><svg class="ic" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg></button>
+   <button type="button" aria-label="Fichiers"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></button>
+   <div class="bas">
+    <button type="button" aria-current="page" aria-label="Paramètres"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
+    <button type="button" aria-label="Aide"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/></svg></button>
+    <div class="avatar" aria-label="Marie Exemple">MA</div>
+   </div>
+  </nav>
+  <main class="contenu" id="contenu">
+ <div class="colonne" style="--colonne:72rem;padding-bottom:var(--espace-4)">
+  <h1 style="margin-bottom:var(--espace-3)">Paramètres</h1>
+  <div class="reglages">
+   <nav class="rubriques" aria-label="Rubriques des paramètres">
+    <button type="button" id="rub-profil"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg>Profil</button>
+    <button type="button" aria-current="page" id="rub-ia"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l1.8 4.6L18 9l-4.2 1.4L12 15l-1.8-4.6L6 9l4.2-1.4z"/></svg>Service d'IA</button>
+    <button type="button"><svg class="ic" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg>Services et connecteurs</button>
+    <button type="button"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/></svg>Sécurité et confidentialité</button>
+    <button type="button"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4l3 2"/></svg>Accessibilité et affichage</button>
+    <button type="button"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M3 11h18"/></svg>Coûts et limites</button>
+    <button type="button"><svg class="ic" viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8v8H8z"/></svg>Stockage et sauvegardes</button>
+    <button type="button"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>À propos et mise à jour</button>
+    <div class="sep"></div>
+    <button type="button" style="color:var(--color-text-muted)"><svg class="ic" viewBox="0 0 24 24"><path d="M4 12h16M12 4l8 8-8 8"/></svg>Katia et Zézette</button>
+   </nav>
+
+   <section class="section" id="sec-ia">
+    <article class="carte"><h2>Service d'IA</h2><p class="sous">Le modèle qui répond. En local, rien ne quitte ton ordinateur. En ligne, chaque fournisseur demande ton accord une fois.</p>
+     <div class="fournisseurs">
+      <div class="fournisseur" role="button" tabindex="0" aria-pressed="true"><b>Local, Ollama</b><span class="etiquette e-succes">Actif</span><span class="quoi">gemma4-tia · <span class="num">2</span> modèles installés · outils pris en charge</span></div>
+      <div class="fournisseur" role="button" tabindex="0" aria-pressed="false"><b>OpenAI</b><span class="etiquette e-info" id="etat-openai">Clé enregistrée</span><span class="quoi">gpt-5.6-luna · vérifiée le <span class="num">03/09</span></span></div>
+      <div class="fournisseur" role="button" tabindex="0" aria-pressed="false"><b>Anthropic</b><span class="etiquette e-neutre">Sans clé</span><span class="quoi">Claude Fable 5 · demande un accord cloud</span></div>
+      <div class="fournisseur" role="button" tabindex="0" aria-pressed="false"><b>Mistral</b><span class="etiquette e-neutre">Sans clé</span><span class="quoi">mistral-medium · hébergé en France</span></div>
+      <div class="fournisseur" role="button" tabindex="0" aria-pressed="false"><b>Google</b><span class="etiquette e-attention" id="etat-google" hidden>Indisponible</span><span class="quoi">Gemini 3.7 · <span id="quoi-google">sans clé</span></span></div>
+      <div class="fournisseur" role="button" tabindex="0" aria-pressed="false"><b>Autres</b><span class="meta">+ 6</span><span class="quoi">Grok, OpenRouter, DeepSeek, Perplexity, Infomaniak, Groq</span></div>
+     </div>
+    </article>
+    <article class="carte" id="carte-cle"><h3>OpenAI</h3><p class="sous">La clé est chiffrée sur ton ordinateur et n'est jamais affichée en entier.</p>
+     <div class="champ" style="margin-top:.75rem"><label for="cle">Clé d'API</label><div class="cle"><input id="cle" value="sk-••••••••••••••••••••••••••••••••7Q2f" aria-describedby="aide-cle"><button class="btn btn-secondaire" type="button">Remplacer</button><button class="btn btn-secondaire" type="button">Tester</button></div><p class="aide" id="aide-cle">Vérifiée le <span class="num">03/09</span> à <span class="num">21:08</span> : le fournisseur l'accepte. Les quatre derniers caractères servent à la reconnaître.</p></div>
+     <div class="alerte" id="alerte-cle" hidden role="alert"><svg class="ic" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9L2.5 18a2 2 0 0 0 1.7 3h15.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg><div><b>Clé refusée par OpenAI (401).</b> Elle n'a pas été enregistrée : rien ne change tant qu'une clé acceptée n'est pas saisie. Vérifie qu'elle n'a pas expiré ou copie-la de nouveau.</div></div>
+     <div class="ligne-reglage" style="margin-top:.75rem"><b>Modèle</b><span class="num">gpt-5.6-luna</span><span class="aide">Le plus économe des trois ; « sol » pour le Board.</span></div>
+     <div class="ligne-reglage"><b>Effort de raisonnement</b><span>Auto</span><span class="aide">Envoyé seulement aux modèles qui le prennent en charge.</span></div>
+     <div class="ligne-reglage"><b>Accord pour l'envoi de données à OpenAI</b><button class="interrupteur" type="button" role="switch" aria-checked="true" aria-label="Accord cloud OpenAI"></button><span class="aide">Donné le <span class="num">03/09</span>. Retirable à tout moment ; le Board a son propre accord.</span></div>
+    </article>
+    <article class="carte"><h3>Ce mois-ci</h3><div class="ligne-reglage"><b>Consommation OpenAI</b><span class="num">4,12 $ / 20 $</span><span class="aide">Plafond mensuel en dollars, tarifs du fournisseur ; l'application ne convertit pas.</span></div><div class="jauge"><i style="width:21%"></i></div></article>
+   </section>
+
+   <section class="section" id="sec-profil" hidden>
+    <article class="carte"><h2>Profil</h2><p class="sous">Ce que Thérèse sait de toi pour te répondre juste. Modifiable à tout moment, exportable, effaçable.</p>
+     <div class="grille-2" style="margin-top:.75rem"><div class="champ"><label for="prenom">Prénom</label><input id="prenom" value="Marie"></div><div class="champ"><label for="nom">Nom</label><input id="nom" value="Exemple"></div><div class="champ"><label for="entreprise">Entreprise</label><input id="entreprise" value="Atelier Exemple"></div><div class="champ"><label for="metier">Métier</label><input id="metier" value="Décoratrice d'intérieur"></div></div>
+     <div class="champ"><label for="contexte">Ce que Thérèse doit savoir</label><textarea id="contexte" rows="3">Je travaille seule, surtout avec des artisans et des commerces de Manosque. Je facture à la livraison, avec un acompte de 30 %.</textarea></div>
+     <div class="pied-form" style="display:flex;gap:.5rem;justify-content:flex-end"><button class="btn btn-secondaire" type="button">Importer THERESE.md</button><button class="btn btn-primaire" type="button">Enregistrer</button></div>
+    </article>
+    <article class="carte"><h3>Profil émetteur des factures</h3><p class="sous">SIRET, TVA, adresse et mentions légales : complet. Utilisé sur chaque devis et facture.</p><div class="ligne-reglage" style="margin-top:.5rem"><b>Atelier Exemple, SARL</b><span class="etiquette e-succes">Complet</span><span class="aide">SIRET <span class="num">123 456 789 00012</span> · TVA <span class="num">FR 12 123456789</span> · 04100 Manosque</span></div></article>
+   </section>
+  </div>
+ </div>
+</main>
+<script>
+(function(){const e=new URLSearchParams(location.search).get('etat')||'normal';const S=id=>document.getElementById(id);
+ if(e==='profil'){S('sec-ia').hidden=true;S('sec-profil').hidden=false;S('rub-ia').removeAttribute('aria-current');S('rub-profil').setAttribute('aria-current','page');}
+ if(e==='invalide'){S('alerte-cle').hidden=false;S('etat-openai').className='etiquette e-erreur';S('etat-openai').textContent='Clé refusée';S('cle').value='sk-••••••••••••••••••••••••••••••••Zx9k';S('cle').setAttribute('aria-invalid','true');S('aide-cle').textContent='Test du 05/09 à 12:20 : refusée (401). La clé précédente reste en place.';S('etat-google').hidden=false;S('quoi-google').textContent='service indisponible depuis 10:40 (503)';}
+})();
+</script>
+
+ </div>
+</div>
+</body></html>

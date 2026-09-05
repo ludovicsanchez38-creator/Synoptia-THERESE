@@ -1,0 +1,9 @@
+/* Direction 1, Continuité : papier, serif éditorial, couture rare. Encres de THÉRÈSE conservées (4,5:1). */
+[data-d="1"]:not([data-theme="dark"]){--color-bg:#FAFAF7;--color-surface:#FFFFFF;--color-surface-2:#F3F3EE;--color-border:#E2E4E9;--color-text:#0F172A;--color-text-muted:#475569;--color-background:#FAFAF7;--color-text-primary:#0F172A}
+[data-d="1"]{--font-family-editorial:'Instrument Serif',Georgia,'Times New Roman',serif}
+[data-d="1"] h1.editorial{font-weight:400;font-size:2rem;letter-spacing:-.012em;line-height:1.05}
+[data-d="1"] h1.editorial em{font-style:italic}
+[data-d="1"] .barre{position:relative}
+[data-d="1"] .barre::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:3px;background:linear-gradient(90deg,#2451FF 0%,#22D3EE 22%,#10B981 42%,#F59E0B 62%,#E11D8D 82%,#8B5CF6 100%);pointer-events:none}
+[data-d="1"][data-high-contrast="true"] .barre::after{display:none}
+[data-d="1"] .carte-principale{border-left:3px solid var(--color-accent-fill)}

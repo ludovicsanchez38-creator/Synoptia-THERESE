@@ -1,0 +1,97 @@
+<style>
+.vue-tete{display:flex;align-items:flex-end;gap:var(--espace-3);flex-wrap:wrap;margin-bottom:var(--espace-3)}
+.vue-tete .actions{margin-left:auto;display:flex;gap:.5rem}
+.barre-outils{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin-bottom:var(--espace-3)}
+.barre-outils .champ{margin:0}
+.pipeline{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(15rem,1fr);gap:.75rem;overflow-x:auto;padding-bottom:.5rem;scroll-snap-type:x proximity}
+.etape{background:var(--color-surface-2);border-radius:var(--radius-md);padding:.5rem;display:grid;gap:.5rem;align-content:start;scroll-snap-align:start;min-height:22rem}
+.etape h3{display:flex;align-items:center;gap:.5rem;font-size:.875rem;padding:.25rem .5rem}
+.etape h3 .compte{margin-left:auto;font-weight:500;color:var(--color-text-muted);font-variant-numeric:tabular-nums}
+.etape h3 .total{font-size:.75rem;font-weight:500;color:var(--color-text-muted)}
+.fiche{background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:.6rem .75rem;display:grid;gap:.3rem;cursor:grab}
+.fiche:focus-visible{outline-offset:1px}
+.fiche b{font-weight:600}
+.fiche .societe{font-size:.8125rem;color:var(--color-text-muted)}
+.fiche .pied{display:flex;gap:.4rem;align-items:center;flex-wrap:wrap;font-size:.75rem;color:var(--color-text-muted)}
+.fiche .pied .num{font-weight:600;color:var(--color-text)}
+.fiche.deplace{outline:2px dashed var(--color-accent);outline-offset:2px;background:var(--color-accent-tint)}
+.etape .vide-etape{border:1px dashed var(--color-border);border-radius:var(--radius-sm);padding:.75rem;font-size:.8125rem;color:var(--color-text-muted);text-align:center}
+.hors-pipeline{margin-top:var(--espace-3)}
+.hors-pipeline .ligne{grid-template-columns:2rem 1fr auto}
+.aide-clavier{font-size:.75rem;color:var(--color-text-muted);margin-top:.5rem}
+.aide-clavier kbd{font:500 .7rem var(--font-family-sans);border:1px solid var(--color-border);border-radius:.3rem;padding:.05rem .3rem}
+/* Fiche contact (état fiche) */
+.fiche-contact{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:var(--espace-3)}
+.fiche-contact .carte{padding:var(--espace-3)}
+.identite{display:flex;gap:.75rem;align-items:center;margin-bottom:var(--espace-3)}
+.identite .avatar{width:3rem;height:3rem;font-size:1rem;background:var(--color-domaine-prospects-tint);color:var(--color-domaine-prospects)}
+.identite h2{font-size:1.25rem}
+.coordonnees{display:grid;grid-template-columns:auto 1fr;gap:.35rem .75rem;font-size:.875rem}
+.coordonnees dt{color:var(--color-text-muted)}.coordonnees dd{margin:0;color:var(--color-text)}
+.coordonnees dd a{color:var(--color-accent);text-decoration:none}
+.chrono li{list-style:none;display:grid;grid-template-columns:5.5rem 1fr;gap:.5rem;padding:.4rem 0;border-top:1px solid var(--color-border);font-size:.875rem}
+.chrono ul{padding:0;margin:0}.chrono .date{color:var(--color-text-muted);font-variant-numeric:tabular-nums}
+.relance{display:flex;gap:.75rem;align-items:center;background:var(--color-domaine-prospects-tint);border-radius:var(--radius-sm);padding:.6rem .75rem;margin-bottom:var(--espace-3)}
+.relance b{color:var(--color-domaine-prospects)}
+.rgpd{font-size:.75rem;color:var(--color-text-muted);margin-top:var(--espace-3);padding-top:.5rem;border-top:1px solid var(--color-border)}
+@media (max-width:1023px){.fiche-contact{grid-template-columns:1fr}}
+</style>
+<main class="contenu" id="contenu">
+ <div class="colonne" style="--colonne:72rem;padding-bottom:var(--espace-4)">
+  <section id="vue-pipeline">
+   <div class="vue-tete"><div><h1>Contacts et pipeline</h1><p class="sous"><span class="num">6</span> contacts · <span class="num">4</span> dans le pipeline · <span class="num">2</span> à relancer cette semaine</p></div>
+    <div class="actions"><button class="btn btn-secondaire" type="button">Importer (.vcf)</button><button class="btn btn-primaire" type="button"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Nouveau contact</button></div></div>
+   <div class="barre-outils">
+    <div class="segments" role="tablist"><button role="tab" aria-selected="true">Pipeline</button><button role="tab" aria-selected="false">Liste</button><button role="tab" aria-selected="false">Activités</button></div>
+    <div class="champ"><label class="sr" for="rech">Retrouver un contact</label><input id="rech" type="search" placeholder="Nom, société, e-mail…" style="min-width:16rem"></div>
+    <span class="meta">Tri : prochaine relance</span>
+   </div>
+   <div class="pipeline" role="list" aria-label="Étapes du pipeline">
+    <section class="etape" role="listitem"><h3><span class="etiquette d-prospects">Découverte</span><span class="compte">1</span></h3>
+     <article class="fiche" tabindex="0"><b>Lucie Fabre</b><span class="societe">Fabre Traiteur</span><div class="pied"><span>Relance <span class="num">08/09</span></span><span aria-hidden="true">·</span><span>Potentiel <span class="num">62</span></span></div></article>
+    </section>
+    <section class="etape" role="listitem"><h3><span class="etiquette d-prospects">Devis envoyé</span><span class="compte">2</span><span class="total num">2 100 €</span></h3>
+     <article class="fiche deplace" tabindex="0" aria-grabbed="true"><b>Paul Durand</b><span class="societe">Durand Menuiserie</span><div class="pied"><span class="num">1 260 €</span><span aria-hidden="true">·</span><span>Relance <span class="num">07/09</span></span></div></article>
+     <article class="fiche" tabindex="0"><b>Garage Benali</b><span class="societe">Nadia Benali</span><div class="pied"><span class="num">840 €</span><span aria-hidden="true">·</span><span>Brouillon, non envoyé</span></div></article>
+    </section>
+    <section class="etape" role="listitem"><h3><span class="etiquette d-prospects">Signature</span><span class="compte">0</span></h3><div class="vide-etape">Dépose ici un contact dont le devis est accepté</div></section>
+    <section class="etape" role="listitem"><h3><span class="etiquette d-agenda">Livraison</span><span class="compte">1</span><span class="total num">1 440 €</span></h3>
+     <article class="fiche" tabindex="0"><b>Claire Roux</b><span class="societe">Roux Rénovation</span><div class="pied"><span class="etiquette e-erreur">Facture échue</span></div></article>
+    </section>
+   </div>
+   <p class="aide-clavier">Déplacer une fiche : <kbd>Espace</kbd> pour saisir, <kbd>←</kbd> <kbd>→</kbd> pour changer d'étape, <kbd>Espace</kbd> pour déposer, <kbd>Échap</kbd> pour annuler. La fiche s'ouvre avec <kbd>Entrée</kbd>.</p>
+   <section class="hors-pipeline carte dense">
+    <div class="carte-tete"><div><h3>Hors pipeline</h3><p class="meta"><span class="num">2</span> contacts sans étape, toujours joignables</p></div></div>
+    <div class="ligne" tabindex="0" role="button"><div class="avatar" style="width:2rem;height:2rem;font-size:.7rem;background:var(--color-surface-2);color:var(--color-text-muted)">JM</div><div><div class="titre">Jean Martin</div><div class="detail">Expert-comptable · dernier échange <span class="num">12/06</span></div></div><div class="droite"><span class="etiquette e-neutre">Partenaire</span></div></div>
+    <div class="ligne" tabindex="0" role="button"><div class="avatar" style="width:2rem;height:2rem;font-size:.7rem;background:var(--color-surface-2);color:var(--color-text-muted)">SL</div><div><div class="titre">Sophie Leroy</div><div class="detail">Formatrice · aucun échange enregistré</div></div><div class="droite"><span class="etiquette e-neutre">Sans source</span></div></div>
+   </section>
+  </section>
+
+  <section id="vue-fiche" hidden>
+   <p class="meta" style="margin-bottom:.5rem"><a href="#" style="color:var(--color-accent)">Contacts et pipeline</a> › Paul Durand</p>
+   <div class="fiche-contact">
+    <article class="carte">
+     <div class="identite"><div class="avatar">PD</div><div><h2>Paul Durand</h2><p class="sous">Durand Menuiserie · <span class="etiquette d-prospects">Devis envoyé</span></p></div><div style="margin-left:auto;display:flex;gap:.5rem"><button class="btn btn-secondaire" type="button">Modifier</button><button class="btn btn-primaire" type="button">Relancer</button></div></div>
+     <div class="relance"><svg class="ic" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg><div><b>Prochaine relance : lundi <span class="num">7 septembre</span>.</b> Devis <span class="num">DEV-2026-003</span> envoyé le <span class="num">1er septembre</span>, sans réponse.</div></div>
+     <dl class="coordonnees"><dt>E-mail</dt><dd><a href="#">paul.durand@exemple.fr</a></dd><dt>Téléphone</dt><dd class="num">06 12 34 56 78</dd><dt>Adresse</dt><dd>12 rue des Artisans, 04100 Manosque</dd><dt>Source</dt><dd>Recommandé par Claire Roux</dd><dt>Potentiel</dt><dd><span class="num">74</span> / 100 <span class="meta">(profil et activité)</span></dd></dl>
+     <p class="rgpd">Base légale : intérêt légitime (relation commerciale) · collecté le <span class="num">14/05/2026</span> · conservation jusqu'au <span class="num">14/05/2029</span></p>
+    </article>
+    <article class="carte chrono">
+     <div class="carte-tete" style="padding-left:0;padding-top:0"><div><h3>Activités</h3><p class="meta">Les échanges enregistrés, du plus récent au plus ancien</p></div><div class="actions"><button class="btn btn-discret" type="button">Ajouter</button></div></div>
+     <ul>
+      <li><span class="date">01/09</span><span><b>Devis envoyé</b> DEV-2026-003, <span class="num">1 260 €</span>, pose d'un comptoir.</span></li>
+      <li><span class="date">28/08</span><span><b>Rendez-vous</b> sur place, prise de mesures, 45 min.</span></li>
+      <li><span class="date">20/08</span><span><b>Appel</b> entrant : demande de devis pour l'atelier.</span></li>
+      <li><span class="date">14/05</span><span><b>Contact créé</b> depuis la recommandation de Claire Roux.</span></li>
+     </ul>
+    </article>
+   </div>
+  </section>
+ </div>
+</main>
+<script>
+(function(){const e=new URLSearchParams(location.search).get('etat')||'normal';
+ document.getElementById('vue-fiche').hidden=(e!=='fiche');document.getElementById('vue-pipeline').hidden=(e==='fiche');
+ if(e!=='deplace'){const d=document.querySelector('.fiche.deplace');if(d){d.classList.remove('deplace');d.removeAttribute('aria-grabbed');}}
+})();
+</script>
