@@ -671,6 +671,50 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
             if provider_class:
                 self._provider = provider_class(self.config, client)
 
+    async def _provider_pour(self, config: "LLMConfig"):
+        """Un fournisseur pour une config donnée, SANS toucher au fournisseur
+        partagé (B-488 : la bascule du disjoncteur est locale à l'appel)."""
+        from app.services.http_client import get_http_client
+
+        client = await get_http_client()
+        from app.services.providers import (
+            AnthropicProvider,
+            DeepSeekProvider,
+            GeminiProvider,
+            GLMProvider,
+            GrokProvider,
+            InfomaniakProvider,
+            KimiProvider,
+            MiniMaxProvider,
+            MistralProvider,
+            OllamaProvider,
+            OpenAIProvider,
+            OpenRouterProvider,
+            PerplexityProvider,
+            QwenProvider,
+        )
+
+        provider_map = {
+            LLMProvider.ANTHROPIC: AnthropicProvider,
+            LLMProvider.OPENAI: OpenAIProvider,
+            LLMProvider.GEMINI: GeminiProvider,
+            LLMProvider.MISTRAL: MistralProvider,
+            LLMProvider.GROK: GrokProvider,
+            LLMProvider.OPENROUTER: OpenRouterProvider,
+            LLMProvider.PERPLEXITY: PerplexityProvider,
+            LLMProvider.DEEPSEEK: DeepSeekProvider,
+            LLMProvider.GLM: GLMProvider,
+            LLMProvider.KIMI: KimiProvider,
+            LLMProvider.QWEN: QwenProvider,
+            LLMProvider.MINIMAX: MiniMaxProvider,
+            LLMProvider.INFOMANIAK: InfomaniakProvider,
+            LLMProvider.OLLAMA: OllamaProvider,
+        }
+        provider_class = provider_map.get(config.provider)
+        if provider_class is None:
+            raise ValueError(f"Fournisseur inconnu : {config.provider}")
+        return provider_class(config, client)
+
     # -----------------------------------------------------------------
     # US-006 : Circuit breaker - résolution provider avec fallback
     # -----------------------------------------------------------------
@@ -882,27 +926,32 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         context: ContextWindow,
         tools: list[dict] | None = None,
         enable_grounding: bool = True,
+        config: "LLMConfig | None" = None,
     ) -> AsyncGenerator[StreamEvent, None]:
         """Stream response with tool support.
 
         US-006 : Intègre le circuit breaker pour bascule automatique.
         """
-        # US-006 : Résoudre le provider via le circuit breaker
-        effective_config = self._resolve_with_circuit_breaker()
-        original_config = self.config
+        # B-488 (05/09/2026) : la bascule du disjoncteur MUTAIT self.config et
+        # self._provider du singleton, puis les restaurait en finally ; un flux
+        # démarré entre les deux lisait la config de repli. La config effective
+        # et son fournisseur sont LOCAUX à l'appel ; `config` permet une
+        # variante (max_tokens) sans écrire dans l'état partagé.
+        effective_config = config or self._resolve_with_circuit_breaker()
         provider_switched = effective_config is not self.config
 
-        if provider_switched:
-            self.config = effective_config
-            self._provider = None  # Forcer la recréation du provider
-
-        # Posé AVANT le restore du finally : chat.py lit après la boucle.
+        # Étiquette « effectif » : renseignée par appel, lue après coup par
+        # le chat. Elle reste un attribut partagé (dernier appel gagnant).
         self.fournisseur_effectif = effective_config.provider.value
         self.modele_effectif = effective_config.model
 
-        await self._ensure_provider()
+        if provider_switched:
+            provider = await self._provider_pour(effective_config)
+        else:
+            await self._ensure_provider()
+            provider = self._provider
 
-        provider_name = self.config.provider.value
+        provider_name = effective_config.provider.value
         cb = get_circuit_breaker()
         had_content = False
         # US-008 (RES4) : les providers convertissent les 429/5xx en
@@ -921,17 +970,17 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
             context.system_prompt = self._avec_consigne_de_langue(context.system_prompt)
 
             # Convert context to provider format
-            if self.config.provider == LLMProvider.ANTHROPIC:
+            if effective_config.provider == LLMProvider.ANTHROPIC:
                 system_prompt, messages = context.to_anthropic_format()
-            elif self.config.provider == LLMProvider.GEMINI:
+            elif effective_config.provider == LLMProvider.GEMINI:
                 system_prompt, messages = context.to_gemini_format()
             else:
                 messages = context.to_openai_format()
                 system_prompt = context.system_prompt
 
             # Pass enable_grounding to Gemini provider
-            if self.config.provider == LLMProvider.GEMINI:
-                async for event in self._provider.stream(system_prompt, messages, tools, enable_grounding=enable_grounding):
+            if effective_config.provider == LLMProvider.GEMINI:
+                async for event in provider.stream(system_prompt, messages, tools, enable_grounding=enable_grounding):
                     if event.type == "text" and event.content:
                         had_content = True
                     elif event.type == "error" and _is_provider_outage(event.content):
@@ -939,7 +988,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
                         error_detail = event.content or "stream error"
                     yield event
             else:
-                async for event in self._provider.stream(system_prompt, messages, tools):
+                async for event in provider.stream(system_prompt, messages, tools):
                     if event.type == "text" and event.content:
                         had_content = True
                     elif event.type == "error" and _is_provider_outage(event.content):
@@ -962,11 +1011,6 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
             )
             # Propager l'erreur (le retry est géré par le caller)
             raise
-        finally:
-            # Restaurer la config originale si on avait basculé
-            if provider_switched:
-                self.config = original_config
-                self._provider = None
 
     async def continue_with_tool_results(
         self,
@@ -1044,12 +1088,12 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
             context_str = "\n".join(f"- {k}: {v}" for k, v in context.items())
             effective_system += f"\n\n## Contexte:\n{context_str}"
 
-        # Thread-safety : copier la config si on doit overrider max_tokens
-        # pour ne pas muter l'état partagé entre requêtes concurrentes.
-        original_config = self.config
+        # B-488 : l'override de max_tokens est passé au flux, jamais écrit
+        # dans la config partagée (le commentaire l'interdisait, le code le faisait).
+        config_locale = None
         if max_tokens and max_tokens > self.config.max_tokens:
             from dataclasses import replace
-            self.config = replace(self.config, max_tokens=max_tokens)
+            config_locale = replace(self.config, max_tokens=max_tokens)
 
         ctx = self.prepare_context(messages=messages, system_prompt=effective_system)
         content_parts = []
@@ -1057,7 +1101,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         cb = get_circuit_breaker()
         provider_name = self.config.provider.value
         try:
-            async for event in self.stream_response_with_tools(ctx, enable_grounding=False):
+            async for event in self.stream_response_with_tools(ctx, enable_grounding=False, config=config_locale):
                 if event.type == "text" and event.content:
                     content_parts.append(event.content)
                 elif event.type == "error":
@@ -1065,8 +1109,6 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         except Exception as exc:
             cb.record_failure(provider_name, str(exc)[:200])
             raise
-        finally:
-            self.config = original_config
 
         if not content_parts and errors:
             cb.record_failure(provider_name, errors[0][:200])
