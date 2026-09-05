@@ -5,7 +5,7 @@
  * Phase 2 - Calendar
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -61,6 +61,12 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
   const [syncing, setSyncing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [reauthing, setReauthing] = useState(false);
+  // B-491 : le sondage de réautorisation meurt avec le panneau et DIT quand
+  // il abandonne, au lieu de s'éteindre après cinq minutes sans un mot.
+  const sondageReauthRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => () => {
+    if (sondageReauthRef.current) clearInterval(sondageReauthRef.current);
+  }, []);
   const icsInputRef = { current: null as HTMLInputElement | null };
 
   const currentAccount = accounts.find((acc) => acc.id === currentAccountId);
@@ -342,12 +348,15 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
       }
 
       // Poller le status pour détecter quand le token est renouvelé
+      if (sondageReauthRef.current) clearInterval(sondageReauthRef.current);
       let attempts = 0;
       const poll = setInterval(async () => {
         attempts++;
         if (attempts > 100) {
           clearInterval(poll);
+          sondageReauthRef.current = null;
           setReauthing(false);
+          setError('La réautorisation Google n’a pas abouti en cinq minutes. Relance-la depuis la bannière.');
           return;
         }
         try {
@@ -360,6 +369,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
           // jeton fonctionne.
           if (!cals.some((cal) => cal.provider === 'google')) return;
           clearInterval(poll);
+          sondageReauthRef.current = null;
           setNeedsReauth(false);
           setReauthing(false);
           setError(null);
@@ -368,6 +378,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
           // Pas encore réautorisé
         }
       }, 3000);
+      sondageReauthRef.current = poll;
     } catch (err) {
       console.error('Reauthorize failed:', err);
       setReauthing(false);

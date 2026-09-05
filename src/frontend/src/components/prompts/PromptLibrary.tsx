@@ -272,18 +272,23 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
 
-  // Chargement initial
-  useEffect(() => {
-    getPromptLibrary()
-      .then((data) => {
-        setCategories(data.categories);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setError(err.message || 'Impossible de charger la bibliothèque');
-        setLoading(false);
-      });
+  // Chargement initial. B-474 : relançable depuis « Réessayer », qui
+  // rechargeait toute la fenêtre.
+  const chargerLaBibliotheque = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const data = await getPromptLibrary();
+      setCategories(data.categories);
+    } catch (err) {
+      setError((err as Error).message || 'Impossible de charger la bibliothèque');
+    } finally {
+      setLoading(false);
+    }
   }, []);
+  useEffect(() => {
+    void chargerLaBibliotheque();
+  }, [chargerLaBibliotheque]);
 
   // Focus automatique sur la recherche
   useEffect(() => {
@@ -416,7 +421,7 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
               variant="secondary"
               size="sm"
               className="mt-4"
-              onClick={() => window.location.reload()}
+              onClick={() => void chargerLaBibliotheque()}
             >
               Réessayer
             </Button>

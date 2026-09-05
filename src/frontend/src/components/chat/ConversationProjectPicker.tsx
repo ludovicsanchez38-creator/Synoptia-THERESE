@@ -141,6 +141,9 @@ export function ConversationProjectPicker({
     [conversationId, onProjectChange, selection]
   );
 
+  const dossierNonRelu =
+    projectId && !projets.some((p) => p.id === projectId) ? projectId : null;
+
   return (
     <label className="flex min-w-0 items-center gap-1.5 text-xs text-text-muted">
       <FolderTree className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
@@ -161,6 +164,11 @@ export function ConversationProjectPicker({
             « Toute la mémoire » par défaut aurait menti — le défaut est
             désormais le moindre privilège. */}
         <option value="">Documents généraux</option>
+        {/* B-494 : un dossier rattaché mais absent de la liste (liste non lue)
+            restait affiché comme « Documents généraux », ce qui est faux. */}
+        {dossierNonRelu && (
+          <option value={dossierNonRelu}>Dossier rattaché (nom non lu)</option>
+        )}
         {projets.map((projet) => {
           const homonymes = projets.filter((p) => p.name === projet.name).length > 1;
           return (
