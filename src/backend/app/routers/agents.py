@@ -476,7 +476,8 @@ async def list_profiles() -> list[AgentProfileResponse]:
         if svc and svc.config:
             user_model = svc.config.model
     except Exception:
-        pass
+        # B-436 : rattrapage journalisé, plus muet.
+        logger.warning("Modèle de l'utilisateur illisible, modèle par défaut servi", exc_info=True)
 
     default_model = user_model or "claude-sonnet-4-6"
 
@@ -596,7 +597,9 @@ async def spawn_agent(request: SpawnAgentRequest):
             if svc and svc.config:
                 agent_model = svc.config.model
         except Exception:
-            pass
+            # B-436 : un rattrapage muet cachait la préférence illisible ; le
+            # modèle par défaut est servi, et on le dit au journal.
+            logger.warning("Modèle de l'utilisateur illisible, modèle par défaut servi", exc_info=True)
 
     # Creer le runtime
     runtime = AgentRuntime(
