@@ -115,6 +115,7 @@ class AnthropicProvider(BaseProvider):
                 # message_start, output_tokens (cumulatif) dans chaque message_delta.
                 input_tokens: int | None = None
                 output_tokens: int | None = None
+                done_emitted = False
 
                 async for line in response.aiter_lines():
                     if line.startswith("data: "):
@@ -176,6 +177,7 @@ class AnthropicProvider(BaseProvider):
                                     output_tokens = usage_out
 
                             elif event_type == "message_stop":
+                                done_emitted = True
                                 yield StreamEvent(
                                     type="done",
                                     stop_reason=stop_reason or "end_turn",
@@ -185,6 +187,19 @@ class AnthropicProvider(BaseProvider):
 
                         except json.JSONDecodeError:
                             continue
+
+                # B-480 (05/09/2026) : filet post-boucle, comme les
+                # fournisseurs OpenAI-compatibles. Un flux coupé après
+                # message_delta(stop_reason=tool_use) sans message_stop
+                # émettait le tool_call et jamais de done : le chat attendait
+                # indéfiniment.
+                if not done_emitted:
+                    yield StreamEvent(
+                        type="done",
+                        stop_reason=stop_reason or "end_turn",
+                        input_tokens=input_tokens,
+                        output_tokens=output_tokens,
+                    )
 
         except httpx.HTTPStatusError as e:
             error_text = ""

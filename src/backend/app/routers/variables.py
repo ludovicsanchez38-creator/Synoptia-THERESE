@@ -13,6 +13,8 @@ from app.models.database import get_session
 from app.models.entities import Variable
 from app.services.variables_service import (
     VariableError,
+    VariableExistante,
+    VariableIntrouvable,
     create_variable,
     delete_variable,
     get_variable,
@@ -72,9 +74,11 @@ async def create(
         variable = await create_variable(
             session, body.name, body.kind, body.value, body.description
         )
+    except VariableExistante as e:
+        raise HTTPException(status_code=409, detail=str(e)) from e
     except VariableError as e:
-        status = 409 if "existe déjà" in str(e) else 422
-        raise HTTPException(status_code=status, detail=str(e)) from e
+        # B-477 : le statut suit le TYPE de l'erreur, plus son texte français.
+        raise HTTPException(status_code=422, detail=str(e)) from e
     return _to_response(variable)
 
 
@@ -86,9 +90,10 @@ async def replace(
 ) -> VariableResponse:
     try:
         variable = await replace_variable(session, name, body.value)
+    except VariableIntrouvable as e:
+        raise HTTPException(status_code=404, detail=str(e)) from e
     except VariableError as e:
-        status = 404 if "existe pas" in str(e) else 422
-        raise HTTPException(status_code=status, detail=str(e)) from e
+        raise HTTPException(status_code=422, detail=str(e)) from e
     return _to_response(variable)
 
 

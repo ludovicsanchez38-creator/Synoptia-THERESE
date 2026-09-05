@@ -250,7 +250,9 @@ def reload_agent_definitions() -> None:
 # ---------------------------------------------------------------------------
 
 
-async def _gather_local_context(tools: list[str]) -> str:
+async def _gather_local_context(
+    tools: list[str], params: dict[str, str] | None = None
+) -> str:
     """
     Rassemble le contexte local disponible selon les outils declares.
 
@@ -261,15 +263,18 @@ async def _gather_local_context(tools: list[str]) -> str:
 
     if "email" in tools:
         try:
+            # B-342 (05/09/2026) : l'entité s'appelle EmailMessage ; l'import
+            # d'un `Email` inexistant tombait dans le rattrapage ci-dessous,
+            # journalisé en debug, et l'agent raisonnait sans courriels.
             from app.models.database import get_session_context
-            from app.models.entities import Email
+            from app.models.entities import EmailMessage
 
             async with get_session_context() as session:
                 from sqlalchemy import select
 
                 stmt = (
-                    select(Email)
-                    .order_by(Email.date.desc())
+                    select(EmailMessage)
+                    .order_by(EmailMessage.date.desc())
                     .limit(20)
                 )
                 result = await session.execute(stmt)
@@ -278,8 +283,9 @@ async def _gather_local_context(tools: list[str]) -> str:
                     lines = []
                     for e in emails:
                         date_str = e.date.strftime("%d/%m") if e.date else "?"
+                        expediteur = e.from_name or e.from_email or "?"
                         lines.append(
-                            f"- [{date_str}] {e.sender or '?'} -> {e.subject or '(sans objet)'}"
+                            f"- [{date_str}] {expediteur} -> {e.subject or '(sans objet)'}"
                         )
                     context_parts.append(
                         "## Emails recents\n" + "\n".join(lines)
@@ -371,16 +377,39 @@ async def _gather_local_context(tools: list[str]) -> str:
 
     if "calendar" in tools:
         try:
-            from app.services.calendar_service import CalendarService
+            # B-343 (05/09/2026) : CalendarService exige un jeton Google et
+            # n'a jamais eu de get_upcoming_events ; la branche échouait en
+            # silence. L'agenda local est en base : on le lit là.
+            from app.models.database import get_session_context
+            from app.models.entities import CalendarEvent
 
-            cal_svc = CalendarService()
-            events = await cal_svc.get_upcoming_events(limit=10)
+            async with get_session_context() as session:
+                from sqlalchemy import or_, select
+
+                maintenant = datetime.now(UTC)
+                aujourd_hui = maintenant.date().isoformat()
+                stmt = (
+                    select(CalendarEvent)
+                    .where(
+                        or_(
+                            CalendarEvent.start_datetime >= maintenant,
+                            CalendarEvent.start_date >= aujourd_hui,
+                        )
+                    )
+                    .order_by(CalendarEvent.start_datetime.asc(), CalendarEvent.start_date.asc())
+                    .limit(10)
+                )
+                result = await session.execute(stmt)
+                events = result.scalars().all()
             if events:
                 lines = []
                 for ev in events:
-                    lines.append(
-                        f"- {ev.get('start', '?')} : {ev.get('summary', '(sans titre)')}"
+                    debut = (
+                        ev.start_datetime.strftime("%d/%m %H:%M")
+                        if ev.start_datetime
+                        else (ev.start_date or "?")
                     )
+                    lines.append(f"- {debut} : {ev.summary or '(sans titre)'}")
                 context_parts.append(
                     "## Calendrier - Evenements a venir\n" + "\n".join(lines)
                 )
@@ -453,6 +482,39 @@ async def _gather_local_context(tools: list[str]) -> str:
                     )
         except Exception as e:
             logger.debug("Contexte factures indisponible : %s", e)
+
+    if "web_search" in tools:
+        # B-331 (05/09/2026) : l'outil était déclaré côté données sans être
+        # servi côté exécution. On cherche avec les paramètres de l'action
+        # quand la recherche est autorisée ; sinon on le dit, pour que le
+        # modèle ne comble pas le vide.
+        try:
+            from app.services.web_search import (
+                formater_resultats_pour_llm,
+                get_web_search_service,
+                recherche_web_autorisee,
+            )
+
+            requete = " ".join(
+                v.strip() for v in (params or {}).values() if isinstance(v, str) and v.strip()
+            )[:200]
+            if not recherche_web_autorisee():
+                context_parts.append(
+                    "## Recherche web\n(non autorisée dans les réglages : aucune recherche "
+                    "effectuée, ne rien inventer à ce sujet)"
+                )
+            elif not requete:
+                context_parts.append(
+                    "## Recherche web\n(aucun sujet fourni : aucune recherche effectuée)"
+                )
+            else:
+                reponse = await get_web_search_service().search(requete, max_results=5)
+                context_parts.append("## Recherche web\n" + formater_resultats_pour_llm(reponse))
+        except Exception as e:
+            logger.warning("Contexte recherche web indisponible : %s", e)
+            context_parts.append(
+                "## Recherche web\n(indisponible : aucune recherche effectuée, ne rien inventer)"
+            )
 
     if not context_parts:
         return "(Aucune donnee locale disponible pour cette action.)"
@@ -673,7 +735,7 @@ class ActionRunner:
             on_progress(task)
 
         # Rassembler le contexte local
-        local_context = await _gather_local_context(agent_def.tools)
+        local_context = await _gather_local_context(agent_def.tools, params)
 
         # Obtenir le service LLM
         try:

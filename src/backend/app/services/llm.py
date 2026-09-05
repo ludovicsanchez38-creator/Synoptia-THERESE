@@ -571,7 +571,10 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
                 # modèle réellement installé plutôt que "mistral-nemo" codé en dur.
                 model = selected_model or detect_default_ollama_model()
                 logger.info(f"Ollama config: model={model} (selected={selected_model})")
-                return LLMConfig(provider_enum, model, base_url="http://localhost:11434", context_window=ctx_window, effort=selected_effort)
+                # B-330 : l'adresse vient du réglage, comme la détection (B-268).
+                from app.config import settings
+
+                return LLMConfig(provider_enum, model, base_url=settings.ollama_base_url, context_window=ctx_window, effort=selected_effort)
 
             api_key = _get_api_key_from_db(selected_provider)
             if not api_key:
@@ -628,7 +631,9 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
             return LLMConfig(provider_enum, model, api_key=None, context_window=ctx_window)
         fallback_model = selected_model or detect_default_ollama_model()
         logger.warning(f"No API key configured, falling back to Ollama: model={fallback_model}")
-        return LLMConfig(LLMProvider.OLLAMA, fallback_model, base_url="http://localhost:11434", context_window=32000)
+        from app.config import settings
+
+        return LLMConfig(LLMProvider.OLLAMA, fallback_model, base_url=settings.ollama_base_url, context_window=32000)
 
     async def _get_client(self):
         """Get shared HTTP client from global pool."""
@@ -724,11 +729,13 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
 
         # Ollama en dernier recours (pas besoin de clé API)
         # BUG-098 : détecter le modèle installé au lieu de "mistral-nemo" en dur.
+        from app.config import settings
+
         fallbacks.append(
             LLMConfig(
                 provider=LLMProvider.OLLAMA,
                 model=detect_default_ollama_model(),
-                base_url="http://localhost:11434",
+                base_url=settings.ollama_base_url,
                 context_window=32000,
             )
         )
@@ -1180,7 +1187,9 @@ def get_llm_service_for_provider(
     # chat principal, les agents repartaient sur le défaut inutilisable.
     base_url: str | None
     if provider_name == "ollama":
-        base_url = "http://localhost:11434"
+        from app.config import settings
+
+        base_url = settings.ollama_base_url
     else:
         base_url = _base_url_configuree(provider_name)
 

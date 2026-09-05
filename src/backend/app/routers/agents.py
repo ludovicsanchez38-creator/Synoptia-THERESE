@@ -71,6 +71,10 @@ _MAX_OPENCLAW_AGENTS = 3
 def _get_source_path() -> str | None:
     """Récupère le chemin du source configuré.
 
+    B-536 (05/09/2026) : SQLite puis jusqu'à neuf .exists() en synchrone ;
+    appelé depuis quatre routes async, il gelait la boucle 1,3 s. Les appelants
+    passent par asyncio.to_thread.
+
     Priorité : DB > env var > auto-détection.
     """
     import os
@@ -191,7 +195,7 @@ async def agent_request(
     session: AsyncSession = Depends(get_session),
 ):
     """Soumet une demande au swarm d'agents. Retourne un stream SSE."""
-    configured_source = _get_source_path()
+    configured_source = await asyncio.to_thread(_get_source_path)
     source_path = request.source_path or configured_source
     if not source_path:
         raise HTTPException(
@@ -367,14 +371,17 @@ async def agent_request(
             raise
         except Exception as e:
             logger.error(f"Erreur swarm: {e}", exc_info=True)
+            # B-344 (05/09/2026) : str(e) partait dans l'évènement SSE et se
+            # persistait dans task.error ; le garde cherchait une autre chaîne.
+            message = message_pour_ecran(e, ou="pendant la mission")
             error_chunk = AgentStreamChunk(
                 type="error",
-                content=f"Erreur inattendue : {e}",
+                content=message,
                 task_id=task.id,
             )
             yield f"data: {json.dumps(error_chunk.model_dump(exclude_none=True), ensure_ascii=False)}\n\n"
             final_status = "error"
-            final_error = str(e)
+            final_error = message
         finally:
             persistance_agent_task_ok = False
             if _running_agent_tasks.get(task.id) is current_async_task:
@@ -473,7 +480,8 @@ async def list_profiles() -> list[AgentProfileResponse]:
         if svc and svc.config:
             user_model = svc.config.model
     except Exception:
-        pass
+        # B-436 : rattrapage journalisé, plus muet.
+        logger.warning("Modèle de l'utilisateur illisible, modèle par défaut servi", exc_info=True)
 
     default_model = user_model or "claude-sonnet-4-6"
 
@@ -515,10 +523,13 @@ async def spawn_agent(request: SpawnAgentRequest):
     # B-099 : la garde du dépôt autorisé passe AVANT tout le reste, comme sur
     # /request. Un chemin hors périmètre n'a pas à dépendre de la validité du
     # profil demandé.
-    configured_source = _get_source_path()
+    configured_source = await asyncio.to_thread(_get_source_path)
     source_path = request.source_path or configured_source
     if source_path:
-        _resoudre_depot_autorise(source_path, configured_source)
+        # B-519 (05/09/2026) : le résultat de la garde était jeté ; l'exécuteur
+        # d'outils recevait la chaîne brute (« ~/… », « ./ ») et ne trouvait
+        # plus les fichiers. Même geste que /request : le chemin RÉSOLU.
+        source_path = str(_resoudre_depot_autorise(source_path, configured_source))
 
     # Charger le profil
     profile = get_profile(request.profile_id)
@@ -593,7 +604,9 @@ async def spawn_agent(request: SpawnAgentRequest):
             if svc and svc.config:
                 agent_model = svc.config.model
         except Exception:
-            pass
+            # B-436 : un rattrapage muet cachait la préférence illisible ; le
+            # modèle par défaut est servi, et on le dit au journal.
+            logger.warning("Modèle de l'utilisateur illisible, modèle par défaut servi", exc_info=True)
 
     # Creer le runtime
     runtime = AgentRuntime(
@@ -938,7 +951,7 @@ async def get_config(
     from app.models.schemas_agents import AgentModelInfo
     from app.services.agents.config import AVAILABLE_MODELS
 
-    source_path = _get_source_path()
+    source_path = await asyncio.to_thread(_get_source_path)
 
     # Lire les modèles choisis en DB. BUG-149 : la clé LEGACY
     # agent_therese_model est lue EN PREMIER pour ne servir que de repli -
@@ -1047,7 +1060,7 @@ async def get_status(
     import shutil
 
     git_available = shutil.which("git") is not None
-    source_path = _get_source_path()
+    source_path = await asyncio.to_thread(_get_source_path)
     # BUG-163, contre-vérification : `False` affirmait l'absence de dépôt
     # AVANT même que le contrôle ait tourné. Quand git est introuvable ou
     # qu'aucun chemin n'est résolu, le bloc de vérification n'est pas exécuté

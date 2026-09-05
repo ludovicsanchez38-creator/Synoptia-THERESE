@@ -6,9 +6,13 @@ US-EMAIL-09
 """
 
 import logging
+from typing import TYPE_CHECKING
 
 from app.services.llm import get_llm_service
 from app.services.user_profile import get_cached_profile
+
+if TYPE_CHECKING:
+    from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 
@@ -126,6 +130,7 @@ class EmailResponseGenerator:
         length: str = 'medium',  # short | medium | detailed
         contact_context: str | None = None,
         thread_context: str | None = None,
+        session: "AsyncSession | None" = None,
     ) -> str:
         """
         Génère un brouillon de réponse.
@@ -145,6 +150,17 @@ class EmailResponseGenerator:
         """
         # Récupérer profil utilisateur
         profile = get_cached_profile()
+        if profile is None and session is not None:
+            # B-394 (05/09/2026) : le préchargement au démarrage ne déchiffre
+            # pas le profil (pas de prompt trousseau bloquant), donc sur un
+            # poste au profil chiffré le cache reste vide jusqu'à la première
+            # sauvegarde, et le brouillon partait signé « Ludo / Synoptïa »
+            # chez une utilisatrice qui s'appelle Marie. Lecture de secours en
+            # session, qui répare le cache au passage (même remède que le
+            # statut de facturation en juillet).
+            from app.services.user_profile import get_user_profile
+
+            profile = await get_user_profile(session)
 
         user_name = (profile.name if profile else None) or 'Ludo'
         user_company = (profile.company if profile else None) or 'Synoptïa'
@@ -198,7 +214,14 @@ Rédige une réponse appropriée en français."""
             )
 
             # Nettoyer la réponse (retirer signatures multiples, etc.)
-            response_text = response.strip()
+            response_text = (response or "").strip()
+            if not response_text:
+                # B-461 (05/09/2026) : un flux vide (coupure, filtre de
+                # contenu silencieux, modèle qui ne rend que du raisonnement)
+                # devenait un brouillon réduit à « Cordialement, Marie ».
+                raise GenerationImpossible(
+                    "Le modèle n'a rendu aucun texte : réessaie, ou change de modèle dans les réglages."
+                )
 
             # S'assurer qu'il y a une signature
             if f'{user_name}' not in response_text:
@@ -206,6 +229,8 @@ Rédige une réponse appropriée en français."""
 
             return response_text
 
+        except GenerationImpossible:
+            raise
         except Exception as e:
             # BUG-171. Ce bloc renvoyait un brouillon FABRIQUE (« Je reviens
             # vers vous rapidement ») avec un HTTP 200. L'utilisateur recevait

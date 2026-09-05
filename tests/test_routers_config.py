@@ -113,17 +113,18 @@ class TestImportClaudeMd:
 
     @pytest.mark.asyncio
     async def test_import_claude_md_no_file(self, client: AsyncClient):
-        """Test import when file doesn't exist."""
-        # FileNotFoundError from the service propagates through middleware.
-        # In Python 3.13 + Starlette, unhandled exceptions may become ExceptionGroup.
-        try:
-            response = await client.post("/api/config/profile/import-claude-md", json={
-                "file_path": "/nonexistent/CLAUDE.md",
-            })
-            assert response.status_code in [400, 404, 422]
-        except Exception:
-            # ExceptionGroup wrapping FileNotFoundError through Starlette middleware
-            pass
+        """Un fichier absent est un 404 explicite, pas un 500 générique.
+
+        B-353 (05/09/2026) : ce test enveloppait son unique assertion dans un
+        `except Exception` censé n'attraper que l'ExceptionGroup de Starlette ;
+        il avalait aussi l'AssertionError, et la route rendait 500 sans que
+        personne ne le voie.
+        """
+        response = await client.post("/api/config/profile/import-claude-md", json={
+            "file_path": "/nonexistent/CLAUDE.md",
+        })
+        assert response.status_code == 404, response.text[:200]
+        assert "nonexistent" not in response.text or "introuvable" in response.text.lower()
 
 
 class TestLLMConfiguration:

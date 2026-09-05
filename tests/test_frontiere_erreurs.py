@@ -286,7 +286,12 @@ class TestLesProvidersNEmettentPasLeBrut:
 
         assert "s'est produite: {str(e)}" not in inspect.getsource(chat_router)
         source_agents = inspect.getsource(agents_router)
+        # B-344 (05/09/2026) : le garde cherchait « Erreur : {e} » alors que
+        # le routeur écrit « Erreur inattendue : {e} » : vrai par construction,
+        # le str(e) partait quand même dans l'évènement SSE et dans task.error.
         assert 'content=f"Erreur : {e}"' not in source_agents
+        assert 'content=f"Erreur inattendue : {e}"' not in source_agents
+        assert "final_error = str(e)" not in source_agents
 
 
 class TestLeBoardNAvalePlusLesErreursDeFlux:

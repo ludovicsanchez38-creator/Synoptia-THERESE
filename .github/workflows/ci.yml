@@ -252,11 +252,12 @@ jobs:
           # une amélioration force la mise à jour du chiffre, donc le mou ne peut
           # plus se reconstituer en silence.
           #
-          # 1001 = compte mesuré SUR CE RUNNER (ubuntu-latest), run 33664976637,
-          # commit 1b3a40fc. La mesure fraîche locale sur macOS en donne 1002 :
+          # 986 = compte mesuré SUR CE RUNNER (ubuntu-latest) au dernier
+          # recalage. La mesure locale sur macOS diffère de quelques unités :
           # l'écart de plateforme est réel, c'est le chiffre du runner qui vaut
           # ici. Aucun cache mypy n'est restauré dans ce job : la mesure est
-          # fraîche par construction.
+          # fraîche par construction. (B-470 : ce commentaire disait encore
+          # 1001 après quatre recalages successifs.)
           MYPY_BASELINE: "986"
         run: |
           # `--no-sync` est indispensable : sans lui, `uv run` resynchronise

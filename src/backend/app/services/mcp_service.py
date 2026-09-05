@@ -261,6 +261,9 @@ class MCPService:
         self._request_id = 0
         self._pending_requests: dict[int, asyncio.Future] = {}
         self._pending_timestamps: dict[int, float] = {}  # Sprint 2 - PERF-2.14
+        # B-350 : échéance PAR REQUÊTE (délai demandé par l'appelant), sinon le
+        # ménage tuait à 60 s un appel d'outil autorisé jusqu'à 120 s.
+        self._pending_deadlines: dict[int, float] = {}
         self._reader_tasks: dict[str, asyncio.Task] = {}
         self._stderr_reader_tasks: dict[str, asyncio.Task] = {}  # Sprint 2 - PERF-2.8
         self._cleanup_task: asyncio.Task | None = None  # Sprint 2 - PERF-2.14
@@ -280,6 +283,7 @@ class MCPService:
             logger.info("No MCP config found, starting fresh")
             return
 
+        a_rechiffrer = False
         try:
             with open(self.config_path) as f:
                 data = json.load(f)
@@ -290,18 +294,49 @@ class MCPService:
                     name=server_data["name"],
                     command=server_data["command"],
                     args=server_data.get("args", []),
-                    env=server_data.get("env", {}),
+                    # B-508 : un fichier d'avant le 31/08 porte ses clés en clair ; elles
+                    # sont chiffrées au chargement et le fichier est réécrit chiffré.
+                    env=_chiffrer_variables(server_data.get("env", {})),
                     enabled=server_data.get("enabled", True),
                     created_at=datetime.fromisoformat(server_data.get("created_at", datetime.now(UTC).isoformat())),
                 )
                 self.servers[server.id] = server
                 logger.info(f"Loaded MCP server config: {server.name}")
+                brut = server_data.get("env") or {}
+                if any(brut.get(k) != v for k, v in server.env.items()):
+                    a_rechiffrer = True
 
+            if a_rechiffrer:
+                self._ecrire_config()
+                logger.info("Configuration MCP réécrite avec ses variables chiffrées (B-508)")
         except Exception as e:
+            # B-457 (05/09/2026) : une corruption disparaissait dans une ligne
+            # de journal et tous les connecteurs avec elle. Le fichier fautif
+            # est conservé à côté pour diagnostic.
             logger.error(f"Failed to load MCP config: {e}")
+            try:
+                if self.config_path.exists():
+                    horodatage = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
+                    copie = self.config_path.with_name(
+                        f"{self.config_path.name}.corrompu-{horodatage}"
+                    )
+                    copie.write_bytes(self.config_path.read_bytes())
+                    logger.error("Configuration MCP corrompue conservée dans %s", copie)
+            except Exception as copie_err:
+                logger.warning("Copie de la configuration corrompue impossible : %s", copie_err)
 
     async def _save_config(self):
-        """Save server configurations to disk."""
+        """Save server configurations to disk (voir _ecrire_config)."""
+        self._ecrire_config()
+
+    def _ecrire_config(self) -> None:
+        """Écrit la configuration de façon ATOMIQUE.
+
+        B-457 (05/09/2026) : le fichier était ouvert en 'w' AVANT json.dump,
+        donc tronqué ; une panne pendant l'écriture laissait 25 octets et
+        tous les connecteurs disparaissaient au rechargement. On écrit dans
+        un fichier temporaire du même dossier puis on le substitue.
+        """
         self.config_path.parent.mkdir(parents=True, exist_ok=True)
 
         data = {
@@ -319,8 +354,14 @@ class MCPService:
             ]
         }
 
-        with open(self.config_path, "w") as f:
-            json.dump(data, f, indent=2)
+        temporaire = self.config_path.with_name(self.config_path.name + ".tmp")
+        try:
+            with open(temporaire, "w") as f:
+                json.dump(data, f, indent=2)
+            os.replace(temporaire, self.config_path)
+        finally:
+            if temporaire.exists():
+                temporaire.unlink(missing_ok=True)
 
     def add_server(
         self,
@@ -349,7 +390,14 @@ class MCPService:
             enabled=enabled,
         )
         self.servers[server_id] = server
-        asyncio.create_task(self._save_config())
+        # B-457 : sauvegarde SYNCHRONE et attendue. Détachée dans une tâche,
+        # elle n'existait pas encore au retour et son échec n'était jamais
+        # rendu (« Task exception was never retrieved »).
+        try:
+            self._ecrire_config()
+        except Exception:
+            self.servers.pop(server_id, None)
+            raise
         logger.info(f"Added MCP server: {name} ({server_id})")
         return server
 
@@ -573,29 +621,12 @@ class MCPService:
         """
         import time
         CLEANUP_INTERVAL = 30  # Check every 30 seconds
-        REQUEST_TIMEOUT = 60  # Cancel requests older than 60 seconds
 
         try:
             while True:
                 await asyncio.sleep(CLEANUP_INTERVAL)
 
-                now = time.time()
-                stale_ids = []
-
-                for request_id, timestamp in list(self._pending_timestamps.items()):
-                    if now - timestamp > REQUEST_TIMEOUT:
-                        stale_ids.append(request_id)
-
-                for request_id in stale_ids:
-                    if request_id in self._pending_requests:
-                        future = self._pending_requests.pop(request_id)
-                        self._pending_timestamps.pop(request_id, None)
-                        if not future.done():
-                            future.set_exception(
-                                asyncio.TimeoutError(f"Request {request_id} timed out after {REQUEST_TIMEOUT}s")
-                            )
-                        logger.warning(f"Cleaned up stale pending request: {request_id}")
-
+                stale_ids = self._purger_les_requetes_echues(time.time())
                 if stale_ids:
                     logger.info(f"Cleaned up {len(stale_ids)} stale MCP pending requests")
 
@@ -603,6 +634,25 @@ class MCPService:
             pass
         except Exception as e:
             logger.error(f"Error in pending requests cleanup: {e}")
+
+    def _purger_les_requetes_echues(self, now: float) -> list[int]:
+        """Tue les requêtes dont l'échéance PROPRE est dépassée (B-350)."""
+        REQUEST_TIMEOUT = 60
+        stale_ids = []
+        for request_id, timestamp in list(self._pending_timestamps.items()):
+            echeance = self._pending_deadlines.get(request_id, timestamp + REQUEST_TIMEOUT)
+            if now > echeance:
+                stale_ids.append(request_id)
+        for request_id in stale_ids:
+            self._pending_timestamps.pop(request_id, None)
+            self._pending_deadlines.pop(request_id, None)
+            future = self._pending_requests.pop(request_id, None)
+            if future is not None and not future.done():
+                future.set_exception(
+                    asyncio.TimeoutError(f"Request {request_id} timed out (échéance dépassée)")
+                )
+            logger.warning(f"Cleaned up stale pending request: {request_id}")
+        return stale_ids
 
     async def _handle_server_message(self, server_id: str, message: dict):
         """Handle a message from an MCP server."""
@@ -612,6 +662,7 @@ class MCPService:
             # This is a response to a request
             future = self._pending_requests.pop(msg_id)
             self._pending_timestamps.pop(msg_id, None)  # Sprint 2 - PERF-2.14
+            self._pending_deadlines.pop(msg_id, None)
             if "error" in message:
                 future.set_exception(Exception(message["error"].get("message", "Unknown error")))
             else:
@@ -645,6 +696,7 @@ class MCPService:
         future: asyncio.Future = asyncio.Future()
         self._pending_requests[request_id] = future
         self._pending_timestamps[request_id] = time.time()  # Sprint 2 - PERF-2.14
+        self._pending_deadlines[request_id] = time.time() + timeout + 5.0  # B-350
 
         # Send request
         request_line = json.dumps(request) + "\n"
@@ -658,6 +710,7 @@ class MCPService:
         except asyncio.TimeoutError:
             self._pending_requests.pop(request_id, None)
             self._pending_timestamps.pop(request_id, None)  # Sprint 2 - PERF-2.14
+            self._pending_deadlines.pop(request_id, None)
             raise RuntimeError(f"Request timeout: {method}")
 
     async def _initialize_server(self, server_id: str):
@@ -840,6 +893,7 @@ class MCPService:
                 future.cancel()
         self._pending_requests.clear()
         self._pending_timestamps.clear()
+        self._pending_deadlines.clear()
 
         logger.info("MCP service shut down")
 

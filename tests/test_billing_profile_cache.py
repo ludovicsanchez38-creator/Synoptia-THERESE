@@ -55,14 +55,35 @@ class TestCacheAutoRepare:
 
 
 class TestFallbackSessionDansLesStatuts:
-    def test_dashboard_setup_status_a_la_lecture_de_secours(self):
-        code = (BACKEND / "routers" / "dashboard.py").read_text(encoding="utf-8")
-        assert "get_user_profile(session)" in code, (
-            "setup-status doit lire le profil en session quand le cache est vide"
-        )
+    """B-387 / B-411 (05/09/2026) : ces deux verrous cherchaient la chaîne
+    « get_user_profile(session) » dans le source. Un appel commenté ou placé
+    sous `if False:` les laissait verts. Ils exercent désormais les routes,
+    cache vidé, comme le fait tests/test_lot7_mecaniques.py."""
 
-    def test_billing_profile_status_a_la_lecture_de_secours(self):
-        code = (BACKEND / "routers" / "invoices.py").read_text(encoding="utf-8")
-        assert "get_user_profile(session)" in code, (
-            "billing/profile-status doit lire le profil en session quand le cache est vide"
-        )
+    @pytest.mark.asyncio
+    async def test_dashboard_setup_status_a_la_lecture_de_secours(self, client):
+        from app.models import database as db_module
+        from app.services.user_profile import UserProfile, set_cached_profile, set_user_profile
+
+        async with db_module.AsyncSessionLocal() as session:
+            await set_user_profile(
+                session, UserProfile(name="Marie", company="Atelier", address="Manosque", siret="12345678900011")
+            )
+        set_cached_profile(None)
+        reponse = await client.get("/api/dashboard/setup-status")
+        assert reponse.status_code == 200, reponse.text
+        assert reponse.json()["billing_complete"] is True
+
+    @pytest.mark.asyncio
+    async def test_billing_profile_status_a_la_lecture_de_secours(self, client):
+        from app.models import database as db_module
+        from app.services.user_profile import UserProfile, set_cached_profile, set_user_profile
+
+        async with db_module.AsyncSessionLocal() as session:
+            await set_user_profile(
+                session, UserProfile(name="Marie", company="Atelier", address="Manosque", siret="12345678900011")
+            )
+        set_cached_profile(None)
+        reponse = await client.get("/api/invoices/billing/profile-status")
+        assert reponse.status_code == 200, reponse.text
+        assert reponse.json()["is_complete"] is True

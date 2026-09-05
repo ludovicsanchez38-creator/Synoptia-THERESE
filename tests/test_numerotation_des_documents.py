@@ -146,3 +146,72 @@ class TestLaCourseAuNumero:
         corps = reponse.json()
         assert len(corps["lines"]) == 1, f"lignes perdues a la reprise : {corps['lines']}"
         assert corps["total_ttc"] == 12.0
+
+
+class TestLesAutresCheminsDInsertion:
+    """B-338 (05/09/2026) : la reprise de numéro posée en B-160 ne couvrait que
+    `create_invoice`. Les deux autres chemins qui insèrent une pièce numérotée,
+    la conversion de type (`POST /{id}/convert`) et la conversion d'un devis en
+    facture (`POST /{id}/convert-to-invoice`), lisaient le numéro puis
+    inséraient sans reprise : six conversions simultanées sur huit finissaient
+    en 500 « UNIQUE constraint failed: invoices.invoice_number ». Même
+    provocation qu'au-dessus : un concurrent pose le numéro entre la lecture
+    et l'insertion.
+    """
+
+    async def _devis_cree(self, client, contact_id: str) -> str:
+        reponse = await client.post("/api/invoices/", json=_corps_de_devis(contact_id))
+        assert reponse.status_code == 200, reponse.text[:200]
+        return reponse.json()["id"]
+
+    def _double_le_prochain_numero(self, monkeypatch, contact_id: str) -> dict:
+        from app.routers import invoices as module
+
+        original = module._generate_invoice_number
+        course = {"doublee": False}
+
+        async def numero_puis_double(session, document_type="facture"):
+            numero = await original(session, document_type)
+            if not course["doublee"]:
+                course["doublee"] = True
+                await _pose_document(numero, contact_id)
+            return numero
+
+        monkeypatch.setattr(module, "_generate_invoice_number", numero_puis_double)
+        return course
+
+    @pytest.mark.asyncio
+    async def test_la_conversion_de_type_reprend_un_numero_double(self, client, monkeypatch):
+        annee = datetime.now(UTC).year
+        contact_id = await _cree_contact(client)
+        devis_id = await self._devis_cree(client, contact_id)
+        course = self._double_le_prochain_numero(monkeypatch, contact_id)
+
+        reponse = await client.post(
+            f"/api/invoices/{devis_id}/convert", json={"target_type": "facture"}
+        )
+
+        assert course["doublee"], "la collision n'a pas ete provoquee"
+        assert reponse.status_code == 200, (
+            f"la conversion de type doit reprendre un numero double, pas rendre "
+            f"{reponse.status_code} {reponse.text[:200]}"
+        )
+        assert reponse.json()["invoice_number"] == f"FACT-{annee}-002"
+
+    @pytest.mark.asyncio
+    async def test_la_conversion_du_devis_en_facture_reprend_un_numero_double(
+        self, client, monkeypatch
+    ):
+        annee = datetime.now(UTC).year
+        contact_id = await _cree_contact(client)
+        devis_id = await self._devis_cree(client, contact_id)
+        course = self._double_le_prochain_numero(monkeypatch, contact_id)
+
+        reponse = await client.post(f"/api/invoices/{devis_id}/convert-to-invoice", json={})
+
+        assert course["doublee"], "la collision n'a pas ete provoquee"
+        assert reponse.status_code == 200, (
+            f"la conversion du devis doit reprendre un numero double, pas rendre "
+            f"{reponse.status_code} {reponse.text[:200]}"
+        )
+        assert reponse.json()["invoice_number"] == f"FACT-{annee}-002"

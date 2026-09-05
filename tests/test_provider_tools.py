@@ -939,3 +939,47 @@ async def test_mistral_tool_turn_content_vide_pas_de_400_bug108():
         assert not (m.get("content") or "").strip(), "content non vide + tool_calls = 400 Mistral"
     tool_msgs = [m for m in sent if m.get("role") == "tool"]
     assert [t["tool_call_id"] for t in tool_msgs] == ["call_1", "call_2"]
+
+
+# ---------------------------------------------------------------------------
+# B-489 (05/09/2026) : l'identifiant d'un appel d'outil arrivant dans un
+# fragment ULTÉRIEUR au premier était perdu (id figé à "" à la création de
+# l'index). Le message role="tool" de la continuation ne se corrélait plus.
+# Mistral corrigeait ce cas ; les cinq accumulateurs OpenAI-compatibles, non.
+# ---------------------------------------------------------------------------
+
+
+def _provider_openai_compatible(nom: str, client):
+    from app.services.providers.deepseek import DeepSeekProvider
+    from app.services.providers.infomaniak import InfomaniakProvider
+    from app.services.providers.openai import OpenAIProvider
+    from app.services.providers.openrouter import OpenRouterProvider
+    from app.services.providers.perplexity import PerplexityProvider
+
+    table = {
+        "openai": (OpenAIProvider, LLMProvider.OPENAI, "gpt-5.6-sol"),
+        "perplexity": (PerplexityProvider, LLMProvider.PERPLEXITY, "sonar"),
+        "deepseek": (DeepSeekProvider, LLMProvider.DEEPSEEK, "deepseek-chat"),
+        "infomaniak": (InfomaniakProvider, LLMProvider.INFOMANIAK, "llama3"),
+        "openrouter": (OpenRouterProvider, LLMProvider.OPENROUTER, "openai/gpt-5.6-sol"),
+    }
+    classe, enum, modele = table[nom]
+    return classe(LLMConfig(provider=enum, model=modele, api_key="k"), client=client)
+
+
+@pytest.mark.parametrize("nom", ["openai", "perplexity", "deepseek", "infomaniak", "openrouter"])
+@pytest.mark.asyncio
+async def test_l_id_d_appel_d_outil_arrive_au_second_fragment(nom: str):
+    premier = {"choices": [{"delta": {"tool_calls": [{"index": 0, "function": {"name": "create_contact"}}]}, "finish_reason": None}]}
+    second = {"choices": [{"delta": {"tool_calls": [{"index": 0, "id": "call_abc", "function": {"arguments": '{"name": "Marie"}'}}]}, "finish_reason": None}]}
+    finish = {"choices": [{"delta": {}, "finish_reason": "tool_calls"}]}
+    client = _FakeClient([f"data: {json.dumps(premier)}", f"data: {json.dumps(second)}", f"data: {json.dumps(finish)}", "data: [DONE]"])
+
+    events = await _collect(
+        _provider_openai_compatible(nom, client).stream(None, [{"role": "user", "content": "crée Marie"}], tools=OPENAI_TOOLS)
+    )
+
+    tool_events = [e for e in events if e.type == "tool_call"]
+    assert len(tool_events) == 1, [e.type for e in events]
+    assert tool_events[0].tool_call.id == "call_abc", f"{nom} : id perdu -> {tool_events[0].tool_call.id!r}"
+    assert tool_events[0].tool_call.name == "create_contact"

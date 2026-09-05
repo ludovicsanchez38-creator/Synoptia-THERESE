@@ -304,9 +304,19 @@ async def _call_therese_api(
             return {"error": f"Méthode HTTP non supportée: {method}"}
 
         try:
-            return resp.json()
+            charge = resp.json()
         except Exception:
-            return {"status": resp.status_code, "text": resp.text}
+            charge = {"text": resp.text}
+        if not resp.is_success:
+            # B-487 (05/09/2026) : un 401 « Jeton absent » arrivait à l'agent
+            # comme s'il s'agissait du résultat demandé.
+            message = charge.get("message") if isinstance(charge, dict) else None
+            return {
+                "error": message or f"THÉRÈSE a refusé la requête ({resp.status_code}).",
+                "status": resp.status_code,
+                "code": charge.get("code") if isinstance(charge, dict) else None,
+            }
+        return charge
 
 
 async def execute_tool(tool_name: str, arguments: dict[str, Any]) -> dict[str, Any]:
@@ -407,17 +417,21 @@ async def handle_request(request: dict[str, Any]) -> dict[str, Any]:
 
         try:
             result = await execute_tool(tool_name, arguments)
+            resultat_mcp: dict[str, Any] = {
+                "content": [
+                    {
+                        "type": "text",
+                        "text": json.dumps(result, ensure_ascii=False, default=str),
+                    }
+                ],
+            }
+            if isinstance(result, dict) and result.get("error"):
+                # B-487 : un refus de l'API est une erreur pour l'agent aussi.
+                resultat_mcp["isError"] = True
             return {
                 "jsonrpc": "2.0",
                 "id": req_id,
-                "result": {
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": json.dumps(result, ensure_ascii=False, default=str),
-                        }
-                    ],
-                },
+                "result": resultat_mcp,
             }
         except Exception as e:
             logger.error("Erreur execute_tool %s: %s", tool_name, e)

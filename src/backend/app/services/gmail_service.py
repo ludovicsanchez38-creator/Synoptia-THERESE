@@ -434,6 +434,18 @@ class GmailService:
 # ============================================================
 
 
+def _compter_pieces_jointes(payload: dict) -> int:
+    """Compte les parts porteuses d'un nom de fichier, à toute profondeur
+    (même descente que GmailProvider._extract_attachments)."""
+    total = 0
+    for part in payload.get('parts', []) or []:
+        if part.get('parts'):
+            total += _compter_pieces_jointes(part)
+        elif part.get('filename'):
+            total += 1
+    return total
+
+
 def format_message_for_storage(gmail_message: dict) -> dict:
     """
     Format Gmail API message for storage in database.
@@ -487,10 +499,12 @@ def format_message_for_storage(gmail_message: dict) -> dict:
         'is_starred': 'STARRED' in gmail_message.get('labelIds', []),
         'is_important': 'IMPORTANT' in gmail_message.get('labelIds', []),
         'is_draft': 'DRAFT' in gmail_message.get('labelIds', []),
-        'has_attachments': 'parts' in gmail_message.get('payload', {}) and any(
-            p.get('filename') for p in gmail_message['payload'].get('parts', [])
-        ),
-        'attachment_count': sum(1 for p in gmail_message.get('payload', {}).get('parts', []) if p.get('filename')),
+        # B-478 (05/09/2026) : les pièces jointes d'un transfert vivent dans
+        # des parts imbriquées (message/rfc822 > multipart/mixed) ; le
+        # comptage de premier niveau disait « sans pièce jointe » quand le
+        # détail en montrait une.
+        'has_attachments': _compter_pieces_jointes(gmail_message.get('payload', {})) > 0,
+        'attachment_count': _compter_pieces_jointes(gmail_message.get('payload', {})),
         'body_plain': body_plain,
         'body_html': body_html,
         'size_bytes': gmail_message.get('sizeEstimate', 0),

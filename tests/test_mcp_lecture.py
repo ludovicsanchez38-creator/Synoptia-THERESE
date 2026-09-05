@@ -13,6 +13,8 @@ Deux défauts mesurés avant ce lot :
 L'écriture reste refusée. Piloter, c'est écrire ; écrire, c'est décider qui de
 Twenty ou de THÉRÈSE fait foi. Ce n'est pas une route, c'est une décision.
 """
+import json
+
 import pytest
 from app.services.mcp_therese_server import (
     MUTATING_TOOLS,
@@ -206,3 +208,53 @@ async def test_le_parametre_de_chemin_ordinaire_reste_lisible(monkeypatch):
     assert captures == [
         "/api/memory/contacts/8a03f8ea-9679-49b1-86be-4802be6ed95e/fiche"
     ]
+
+
+# ============================================================
+# B-487 (05/09/2026) : un refus de l'API passait pour un résultat
+# ============================================================
+
+
+class _ReponseHTTP:
+    def __init__(self, status: int, corps: dict):
+        self.status_code = status
+        self.is_success = 200 <= status < 300
+        self._corps = corps
+        self.text = json.dumps(corps)
+
+    def json(self):
+        return self._corps
+
+
+class _ClientQuiRefuse:
+    def __init__(self, *a, **k):
+        pass
+
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, *a):
+        return False
+
+    async def get(self, url, params=None, headers=None):
+        return _ReponseHTTP(401, {"code": "UNAUTHORIZED", "message": "Jeton absent"})
+
+
+@pytest.mark.asyncio
+async def test_un_refus_de_l_api_est_rendu_comme_une_erreur(monkeypatch):
+    """_call_therese_api rendait resp.json() sans regarder le code HTTP :
+    un 401 « Jeton absent » arrivait à l'agent comme s'il s'agissait de la
+    liste des contacts, et handle_request ne posait isError que sur une
+    exception Python."""
+    import app.services.mcp_therese_server as serveur
+
+    monkeypatch.setattr(serveur.httpx, "AsyncClient", _ClientQuiRefuse)
+
+    resultat = await serveur._call_therese_api("GET", "/api/memory/contacts")
+    assert resultat.get("status") == 401
+    assert "error" in resultat, resultat
+
+    reponse = await serveur.handle_request(
+        {"jsonrpc": "2.0", "id": 7, "method": "tools/call", "params": {"name": "list_contacts", "arguments": {}}}
+    )
+    assert reponse["result"].get("isError") is True, reponse

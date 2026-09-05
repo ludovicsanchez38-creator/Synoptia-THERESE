@@ -97,9 +97,32 @@ INJECTION_PATTERNS = [
     (r"r[eé]ponds?\s+sans\s+(censure|filtre|restriction|limite)", ThreatLevel.HIGH, "jailbreak"),
 
     # Data exfiltration (FR)
-    (r"(envoie|transmets?|transf[eè]re)[sz]?\s+(les?\s+)?(donn[eé]es?|informations?|fichiers?)\s+[aà]", ThreatLevel.HIGH, "data_exfiltration"),
-    (r"(copie|exporte)[sz]?\s+(les?\s+)?(donn[eé]es?|base|contacts?)\s+(vers|sur|[aà])", ThreatLevel.MEDIUM, "data_exfiltration"),
+    # B-432 (05/09/2026) : ces motifs reconnaissaient le vocabulaire courant
+    # d'un envoi à une PERSONNE (« envoie les fichiers à Marc ») et bloquaient
+    # une solopreneuse dans son métier. Comme l'équivalent anglais, ils
+    # exigent désormais une destination TECHNIQUE (adresse web, webhook,
+    # serveur, adresse IP).
+    (r"(envoie|transmets?|transf[eè]re|exporte|copie)[sz]?\s+(les?\s+|la\s+|toutes?\s+les\s+)?(donn[eé]es?|informations?|fichiers?|base|contacts?)\s+(vers|sur|[aà])\s+(ce\s+|cette\s+|cet\s+|un\s+|une\s+|l['’]|le\s+|la\s+|mon\s+|ma\s+)?(https?://|http\b|url\b|webhook|serveur\s+(externe|distant)|adresse\s+ip|\d{1,3}(\.\d{1,3}){3})", ThreatLevel.HIGH, "data_exfiltration"),
+    (r"(envoie|transmets?|transf[eè]re|exporte|copie)[sz]?\s+(les?\s+|la\s+)?(donn[eé]es?|informations?|fichiers?|base|contacts?)\s+(vers|sur|[aà])\s+\S*\.(com|net|org|io|fr)\b", ThreatLevel.MEDIUM, "data_exfiltration"),
 ]
+
+
+MOTIFS_DE_BLOCAGE_LISIBLES = {
+    "instruction_override": "tentative de contourner les consignes de l'assistante",
+    "role_manipulation": "demande de changer le rôle de l'assistante",
+    "prompt_extraction": "demande de révéler les instructions internes",
+    "jailbreak": "demande de désactiver les protections",
+    "code_injection": "demande d'exécuter du code ou une commande",
+    "data_exfiltration": "envoi de données vers une destination externe",
+}
+
+
+def motif_de_blocage(check: "SecurityCheck") -> str:
+    """Le motif d'un blocage, en français, pour l'écran (B-432) : un message
+    « bloqué pour raison de sécurité » sans raison laissait l'utilisatrice
+    devant un mur."""
+    libelle = MOTIFS_DE_BLOCAGE_LISIBLES.get(check.threat_type or "", "contenu jugé dangereux")
+    return f"Message bloqué pour raison de sécurité : {libelle}. Reformule ta demande."
 
 # Characters to sanitize (potential encoding attacks)
 DANGEROUS_CHARS = {

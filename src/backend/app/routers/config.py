@@ -297,7 +297,9 @@ async def set_api_key(
     key_name = f"{request.provider}_api_key"
 
     # Encrypt the API key before storing (US-SEC-01)
-    encrypted_key = encrypt_value(request.api_key)
+    # B-510 : la clé VALIDÉE (nettoyée) est celle qu'on chiffre ; la brute
+    # gardait espaces et retour chariot en base et dans le cache LLM.
+    encrypted_key = encrypt_value(key)
 
     # Get or create preference
     result = await session.execute(
@@ -1139,18 +1141,26 @@ async def get_therese_md() -> dict[str, str | bool]:
     md_path = Path(settings.data_dir) / "THERESE.md"
     if not md_path.exists():
         return {"content": "", "path": str(md_path), "exists": False}
-    content = md_path.read_text(encoding="utf-8")
+    # B-512 : un fichier mal encodé (édité ailleurs) rendait 500 ; les octets
+    # illisibles sont remplacés plutôt que de cacher tout le profil.
+    content = md_path.read_text(encoding="utf-8", errors="replace")
     return {"content": content, "path": str(md_path), "exists": True}
 
 
+class ThereseMdRequest(BaseModel):
+    """B-512 : le corps était un dict libre, sans type ni borne."""
+
+    content: str = Field(max_length=200_000)
+
+
 @router.post("/therese-md")
-async def save_therese_md(request: dict) -> dict[str, str | bool]:  # type: ignore[type-arg]
+async def save_therese_md(request: ThereseMdRequest) -> dict[str, str | bool]:
     """Sauvegarde le contenu de THERESE.md."""
     from pathlib import Path
 
     md_path = Path(settings.data_dir) / "THERESE.md"
     md_path.parent.mkdir(parents=True, exist_ok=True)
-    md_path.write_text(request.get("content", ""), encoding="utf-8")
+    md_path.write_text(request.content, encoding="utf-8")
     return {"success": True, "path": str(md_path)}
 
 
@@ -1170,7 +1180,14 @@ async def import_claude_md(
         set_cached_profile,
     )
 
-    profile = await import_from_claude_md(session, request.file_path)
+    try:
+        profile = await import_from_claude_md(session, request.file_path)
+    except FileNotFoundError as e:
+        # B-353 (05/09/2026) : un chemin absent remontait en 500 générique.
+        raise HTTPException(
+            status_code=404,
+            detail="Fichier THERESE.md introuvable à ce chemin, vérifie-le.",
+        ) from e
 
     # Update cache
     set_cached_profile(profile)

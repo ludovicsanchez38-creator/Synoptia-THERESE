@@ -86,7 +86,7 @@ export function EmailConnect({ onSuccess }: EmailConnectProps) {
                 <ExternalLink className="w-3 h-3" />
               </a>
             </li>
-            <li>Type d'application : "Application de bureau"</li>
+            <li>Type d'application : "Application Web"</li>
             <li>Ajouter l'URI de redirection : http://localhost:8080/oauth/callback</li>
             <li>Copier l'ID client et le Code secret du client ci-dessous</li>
           </ol>

@@ -528,3 +528,59 @@ class TestMCPServiceConfiguration:
         assert len(data["servers"]) == 1
         assert data["servers"][0]["name"] == "Test Server"
         assert data["servers"][0]["command"] == "npx"
+
+
+class TestB457LaConfigurationMCPSurvitAUnePanneDEcriture:
+    """B-457 (05/09/2026) : _save_config ouvrait le fichier en 'w' AVANT
+    json.dump : une panne pendant l'écriture laissait un fichier tronqué et
+    tous les connecteurs disparaissaient au rechargement. add_server lançait
+    la sauvegarde en tâche détachée : au retour, rien n'était écrit et un
+    échec n'était ni levé ni rendu. _load_config transformait toute corruption
+    en simple ligne de journal.
+    """
+
+    @pytest.fixture
+    def service(self, tmp_path):
+        return MCPService(config_path=tmp_path / "mcp_servers.json")
+
+    def test_add_server_a_ecrit_le_fichier_au_retour(self, service, tmp_path):
+        service.add_server(name="Fichiers", command="npx", args=["@mcp/fs"])
+
+        fichier = tmp_path / "mcp_servers.json"
+        assert fichier.exists(), "add_server rend la main avant d'avoir écrit"
+        assert "Fichiers" in fichier.read_text(encoding="utf-8")
+
+    def test_une_panne_pendant_l_ecriture_garde_l_ancienne_configuration(
+        self, service, tmp_path, monkeypatch
+    ):
+        import json as json_module
+
+        from app.services import mcp_service as module
+
+        service.add_server(name="Ancien", command="npx", args=[])
+        fichier = tmp_path / "mcp_servers.json"
+        avant = fichier.read_text(encoding="utf-8")
+        assert "Ancien" in avant
+
+        def dump_qui_tombe(*a, **k):
+            raise OSError("disque plein")
+
+        monkeypatch.setattr(module.json, "dump", dump_qui_tombe)
+        with pytest.raises(OSError):
+            service.add_server(name="Nouveau", command="uvx", args=[])
+
+        assert fichier.read_text(encoding="utf-8") == avant, "le fichier a été tronqué par la panne"
+        monkeypatch.setattr(module.json, "dump", json_module.dump)
+
+        assert [s["name"] for s in json_module.loads(fichier.read_text(encoding="utf-8"))["servers"]] == ["Ancien"]
+
+    @pytest.mark.asyncio
+    async def test_un_fichier_corrompu_est_conserve_a_cote(self, tmp_path):
+        fichier = tmp_path / "mcp_servers.json"
+        fichier.write_text('{"servers": [{"id": "abc", "na')
+
+        await MCPService(config_path=fichier)._load_config()
+
+        copies = list(tmp_path.glob("mcp_servers.json.corrompu*"))
+        assert copies, "le fichier fautif doit être conservé pour diagnostic"
+        assert copies[0].read_text(encoding="utf-8").startswith('{"servers"')

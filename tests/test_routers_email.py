@@ -337,3 +337,72 @@ class TestB060UnBrouillonEnregistreDeuxFoisNeSeDedouble:
         assert reponse.status_code == 200, reponse.text
         assert provider.update_draft.await_count == 0
         assert reponse.json() == {"id": "4242", "labelIds": ["DRAFT"]}
+
+
+class TestB429UnMessageEnCacheSansCorpsSeComplete:
+    """B-429 (05/09/2026) : ouvrir un message dont la ligne en cache n'a pas
+    de corps rendait HTTP 500 (IntegrityError UNIQUE email_messages.id).
+
+    BUG-081 laisse passer la ligne sans corps pour aller chercher le message
+    chez le fournisseur, puis la route construisait un SECOND EmailMessage de
+    même clé et l'insérait. Il faut compléter la ligne existante.
+    """
+
+    @pytest.mark.asyncio
+    async def test_la_ligne_existante_est_completee_pas_doublee(self, client, monkeypatch):
+        from datetime import UTC, datetime
+
+        from app.models import database as db_module
+        from app.models.entities import EmailAccount, EmailMessage
+        from app.routers import email as module
+
+        async with db_module.AsyncSessionLocal() as session:
+            compte = EmailAccount(email="marie@atelier.test", provider="gmail")
+            session.add(compte)
+            await session.flush()
+            account_id = compte.id
+            session.add(
+                EmailMessage(
+                    id="msg-sans-corps",
+                    thread_id="thr-1",
+                    account_id=account_id,
+                    subject="Aperçu seulement",
+                    snippet="aperçu",
+                    from_email="paul@durand.test",
+                    to_emails="[]",
+                    labels="[]",
+                    date=datetime.now(UTC),
+                    internal_date=datetime.now(UTC),
+                )
+            )
+            await session.commit()
+
+        class FauxGmail:
+            async def get_message(self, message_id):
+                return {
+                    "id": message_id,
+                    "threadId": "thr-1",
+                    "labelIds": ["INBOX"],
+                    "sizeEstimate": 100,
+                    "internalDate": "1757000000000",
+                    "payload": {
+                        "mimeType": "text/plain",
+                        "headers": [
+                            {"name": "From", "value": "Paul Durand <paul@durand.test>"},
+                            {"name": "To", "value": "marie@atelier.test"},
+                            {"name": "Subject", "value": "Aperçu seulement"},
+                            {"name": "Date", "value": "Fri, 05 Sep 2026 10:00:00 +0200"},
+                        ],
+                        "body": {"data": "Q29ycHMgY29tcGxldCBkdSBtZXNzYWdl"},
+                    },
+                }
+
+        async def faux_service(account_id, session):
+            return FauxGmail()
+
+        monkeypatch.setattr(module, "get_gmail_service_for_account", faux_service)
+
+        reponse = await client.get(f"/api/email/messages/msg-sans-corps?account_id={account_id}")
+
+        assert reponse.status_code == 200, reponse.text[:300]
+        assert "Corps complet du message" in (reponse.json().get("body_plain") or "")

@@ -96,7 +96,6 @@ class TestBoardDeliberation:
     """Tests for US-BOARD-01: Submit question to board."""
 
     @pytest.mark.asyncio
-    @pytest.mark.xfail(reason="SSE streaming test requires full DB init - known infra issue")
     async def test_deliberate_returns_sse_stream(self, client: AsyncClient, sample_board_request):
         """Test deliberation returns SSE stream."""
         # Note: This is a streaming endpoint, we test the response format

@@ -1225,7 +1225,15 @@ async def get_message(
     formatted = format_message_for_storage(message)
     formatted['account_id'] = account_id
 
-    db_message = EmailMessage(**formatted)
+    if cached is not None and cached.account_id == account_id:
+        # B-429 (05/09/2026) : la ligne en cache sans corps (BUG-081) est
+        # COMPLÉTÉE ; en insérer une seconde de même clé rendait un 500
+        # IntegrityError UNIQUE email_messages.id.
+        for champ, valeur in formatted.items():
+            setattr(cached, champ, valeur)
+        db_message = cached
+    else:
+        db_message = EmailMessage(**formatted)
     session.add(db_message)
     await session.commit()
     await session.refresh(db_message)
@@ -1851,6 +1859,7 @@ async def generate_email_response(
             length=request.length,
             contact_context=contact_context,
             thread_context=thread_context,
+            session=session,
         )
     except GenerationImpossible as e:
         # 502 plutôt que 500 : la panne vient du fournisseur de modèle, pas de

@@ -1271,7 +1271,7 @@ async def list_google_sheets(
 
     try:
         # Utiliser l'API Google Drive pour lister les spreadsheets
-        async with httpx.AsyncClient(timeout=httpx.Timeout(connect=5.0, read=30.0)) as client:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(30.0, connect=5.0)) as client:
             response = await client.get(
                 "https://www.googleapis.com/drive/v3/files",
                 headers={"Authorization": f"Bearer {access_token}"},
@@ -1317,6 +1317,10 @@ async def list_google_sheets(
             status_code=503,
             detail="Impossible de contacter Google Drive. Vérifiez votre connexion."
         )
+    except HTTPException:
+        # B-430 (05/09/2026) : les 401/403 levés dans le try étaient rattrapés
+        # par le except Exception ci-dessous et rendus en 500 générique.
+        raise
     except Exception as e:
         logger.error(f"Erreur interne lors de la liste des feuilles Google : {e}")
         raise HTTPException(

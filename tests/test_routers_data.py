@@ -306,6 +306,30 @@ class TestDataDeletion:
         assert len(list_response.json()) == 0
 
     @pytest.mark.asyncio
+    async def test_delete_all_vide_aussi_le_cache_profil_du_processus(self, client: AsyncClient):
+        """B-340 (05/09/2026) : « toutes tes données ont été supprimées » rendait 200
+        pendant que `get_cached_profile()` servait encore nom et SIRET au prompt
+        système du chat (llm.py) et au générateur de réponses e-mail. La purge
+        effaçait la ligne Preference sans invalider le cache de processus.
+        """
+        from app.services.user_profile import get_cached_profile
+
+        reponse = await client.post(
+            "/api/config/profile",
+            json={"name": "Marie Purge", "company": "Atelier Purge", "siret": "12345678900011"},
+        )
+        assert reponse.status_code == 200, reponse.text
+        assert get_cached_profile() is not None
+        assert get_cached_profile().name == "Marie Purge"
+
+        response = await client.delete("/api/data/all?confirm=true")
+        assert response.status_code == 200
+
+        assert get_cached_profile() is None, (
+            "le cache de processus sert encore le profil après la purge RGPD"
+        )
+
+    @pytest.mark.asyncio
     async def test_delete_all_data_purges_prestations(self, client: AsyncClient):
         """Art. 17 : aucun montant ni financeur ne survit à l'effacement global."""
         contact_id = await _create_contact(client, "ContactPrestation")

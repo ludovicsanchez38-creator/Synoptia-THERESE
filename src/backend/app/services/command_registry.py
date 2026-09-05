@@ -516,13 +516,14 @@ class CommandRegistry:
             show_on_home=show_on_home,
             show_in_slash=show_in_slash,
             content=prompt_template,
+            new_name=name,
         )
         if not updated:
             return None
 
-        # Mettre à jour le registre
+        # Mettre à jour le registre (B-515 : le nom vient du fichier renommé)
         if name is not None:
-            cmd.name = name
+            cmd.name = updated.name
         if description is not None:
             cmd.description = description
         if icon is not None:

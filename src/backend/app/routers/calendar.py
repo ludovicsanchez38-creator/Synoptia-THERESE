@@ -10,6 +10,7 @@ Local First - Multi-Provider
 
 import json
 import logging
+import re
 import uuid
 from collections.abc import Awaitable, Callable
 from datetime import UTC, date, datetime
@@ -43,6 +44,7 @@ from app.services.calendar.provider_factory import (
 )
 from app.services.calendar_service import CalendarService
 from app.services.encryption import decrypt_value, encrypt_value, is_value_encrypted
+from app.services.error_handler import message_pour_ecran
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -395,7 +397,7 @@ async def _list_google_calendars(
     except Exception as e:
         logger.error(f"Failed to list Google calendars: {e}")
         _raise_if_google_403(e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=message_pour_ecran(e))
 
 
 @router.get("/calendars/{calendar_id}")
@@ -551,7 +553,7 @@ async def create_calendar(
 
         except Exception as e:
             logger.error(f"Failed to create Google calendar: {e}")
-            raise HTTPException(status_code=500, detail=str(e))
+            raise HTTPException(status_code=500, detail=message_pour_ecran(e))
 
     else:
         raise HTTPException(status_code=400, detail="Pour CalDAV, utilisez POST /calendars/caldav-setup")
@@ -617,7 +619,7 @@ async def delete_calendar(
 
     except Exception as e:
         logger.error(f"Failed to delete calendar: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=message_pour_ecran(e))
 
 
 # =============================================================================
@@ -997,7 +999,7 @@ async def _list_events_google(
                 f"Calendrier Google introuvable (404), ignoré : {calendar_id}"
             )
             return []
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=message_pour_ecran(e))
 
 
 @router.get("/events/{event_id}")
@@ -1269,7 +1271,7 @@ async def _create_event_google(
 
     except Exception as e:
         logger.error(f"Failed to create event: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=message_pour_ecran(e))
 
 
 @router.put("/events/{event_id}")
@@ -1305,6 +1307,23 @@ async def update_event(
         elif request.end_date:
             end = datetime.strptime(request.end_date, "%Y-%m-%d").date()
             all_day = True
+
+        # B-455 (05/09/2026) : aucune garde de cohérence à la mise à jour. Une
+        # fin avant le début ou un participant sans adresse passaient en 200 et
+        # se retrouvaient en base. La fenêtre se vérifie au point de fusion,
+        # contre l'événement STOCKÉ quand un seul bord est envoyé.
+        stocke = await session.get(CalendarEvent, event_id)
+        debut_effectif = start if start is not None else (stocke.start_datetime if stocke else None)
+        fin_effective = end if end is not None else (stocke.end_datetime if stocke else None)
+        if (
+            isinstance(debut_effectif, datetime)
+            and isinstance(fin_effective, datetime)
+            and fin_effective.replace(tzinfo=None) <= debut_effectif.replace(tzinfo=None)
+        ):
+            raise HTTPException(status_code=400, detail="La fin de l'événement doit être après son début.")
+        for participant in request.attendees or []:
+            if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", (participant or "").strip()):
+                raise HTTPException(status_code=400, detail=f"Adresse de participant invalide : {participant}")
 
         provider_req = ProviderUpdateRequest(
             summary=request.summary,
@@ -1512,7 +1531,7 @@ async def update_event(
         logger.error(f"Failed to update event: {e}")
         _raise_if_google_412(e)
         _raise_if_google_403(e)
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=message_pour_ecran(e))
 
 
 @router.delete("/events/{event_id}")
@@ -1563,7 +1582,7 @@ async def delete_event(
 
     except Exception as e:
         logger.error(f"Failed to delete event: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=message_pour_ecran(e))
 
 
 @router.post("/events/quick-add")
@@ -1661,7 +1680,7 @@ async def quick_add_event(
 
     except Exception as e:
         logger.error(f"Failed to quick add event: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=message_pour_ecran(e))
 
 
 # =============================================================================
@@ -1708,7 +1727,7 @@ async def sync_calendar(
         raise
     except Exception as e:
         logger.error(f"Failed to sync calendar: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail=message_pour_ecran(e))
 
 
 @router.get("/sync/status")
@@ -1792,7 +1811,7 @@ async def import_ics_file(
         events = parse_ics(content)
     except Exception as e:
         logger.error(f"Erreur parsing ICS: {e}")
-        raise HTTPException(status_code=400, detail=f"Fichier ICS invalide : {e}")
+        raise HTTPException(status_code=400, detail="Fichier ICS invalide, impossible de le lire.") from e
 
     if not events:
         return {"imported": 0, "message": "Aucun événement trouvé dans le fichier"}

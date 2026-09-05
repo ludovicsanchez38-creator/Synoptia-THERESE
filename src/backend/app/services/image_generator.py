@@ -4,6 +4,7 @@ THÉRÈSE v2 - Image Generation Service
 Supports GPT Image 2 (OpenAI) and Nano Banana 2 (Google Gemini).
 """
 
+import asyncio
 import base64
 import logging
 import os
@@ -175,22 +176,27 @@ class ImageGeneratorService:
             if reference_image_path and Path(reference_image_path).exists():
                 # Edit mode with reference image
                 with open(reference_image_path, "rb") as ref_file:
-                    result = client.images.edit(
-                        model="gpt-image-2",
-                        image=ref_file,
-                        prompt=prompt,
-                        size=config.size,
-                        quality=config.quality,
-                        input_fidelity="high",  # Crucial for face preservation
+                    # B-497 : appel SDK bloquant, hors de la boucle d'événements.
+                    result = await asyncio.to_thread(
+                        lambda: client.images.edit(
+                            model="gpt-image-2",
+                            image=ref_file,
+                            prompt=prompt,
+                            size=config.size,
+                            quality=config.quality,
+                            input_fidelity="high",  # Crucial for face preservation
+                        )
                     )
             else:
                 # Generation mode without reference
                 # Note: gpt-image-2 n'accepte plus response_format, retourne URL par défaut
-                result = client.images.generate(
-                    model="gpt-image-2",
-                    prompt=prompt,
-                    size=config.size,
-                    quality=config.quality,
+                result = await asyncio.to_thread(
+                    lambda: client.images.generate(
+                        model="gpt-image-2",
+                        prompt=prompt,
+                        size=config.size,
+                        quality=config.quality,
+                    )
                 )
 
             # Get image data
@@ -259,16 +265,18 @@ class ImageGeneratorService:
                 contents.append(ref_image)
 
             # Generate image
-            response = client.models.generate_content(
-                model="gemini-3.1-flash-image-preview",
-                contents=contents,
-                config=types.GenerateContentConfig(
-                    response_modalities=["TEXT", "IMAGE"],
-                    image_config=types.ImageConfig(
-                        aspect_ratio=config.aspect_ratio,
-                        image_size=config.image_size,
+            response = await asyncio.to_thread(
+                lambda: client.models.generate_content(
+                    model="gemini-3.1-flash-image-preview",
+                    contents=contents,
+                    config=types.GenerateContentConfig(
+                        response_modalities=["TEXT", "IMAGE"],
+                        image_config=types.ImageConfig(
+                            aspect_ratio=config.aspect_ratio,
+                            image_size=config.image_size,
+                        ),
                     ),
-                ),
+                )
             )
 
             # Extract image from response (BUG-085 : supporter plusieurs formats de réponse)

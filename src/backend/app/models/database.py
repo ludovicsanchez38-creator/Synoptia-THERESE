@@ -201,6 +201,51 @@ def _ensure_invoice_client_snapshot(conn: sqlite3.Connection) -> list[str]:
     return added
 
 
+def reparer_totaux_tva_non_applicable(conn: sqlite3.Connection) -> int:
+    """B-345 (05/09/2026) : une pièce en franchise de TVA (art. 293 B) stockait
+    une TVA fantôme.
+
+    `_montants_de_ligne` appliquait le taux de la ligne sans regarder
+    l'exonération, attribut de la PIÈCE que seul le PDF consultait : la base,
+    la liste et l'encours disaient 120, le PDF remis au client 100. Corriger la
+    source ne répare pas l'historique : les pièces déjà émises gardent leur
+    TVA fantôme tant qu'on n'y touche pas. Réparation idempotente, limitée aux
+    pièces `tva_applicable = 0` dont les montants diffèrent.
+
+    Retourne le nombre de pièces réparées.
+    """
+    tables = {
+        row[0] for row in conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
+    }
+    if "invoices" not in tables:
+        return 0
+    colonnes = {row[1] for row in conn.execute("PRAGMA table_info(invoices)").fetchall()}
+    if "tva_applicable" not in colonnes:
+        return 0
+    a_reparer = [
+        row[0]
+        for row in conn.execute(
+            "SELECT id FROM invoices WHERE tva_applicable = 0"
+            " AND (total_tax != 0 OR total_ttc != subtotal_ht)"
+        ).fetchall()
+    ]
+    if not a_reparer:
+        return 0
+    marques = ",".join("?" * len(a_reparer))
+    if "invoice_lines" in tables:
+        conn.execute(
+            f"UPDATE invoice_lines SET total_ttc = total_ht WHERE invoice_id IN ({marques})"
+            " AND total_ttc != total_ht",
+            a_reparer,
+        )
+    conn.execute(
+        f"UPDATE invoices SET total_tax = 0, total_ttc = subtotal_ht WHERE id IN ({marques})",
+        a_reparer,
+    )
+    conn.commit()
+    return len(a_reparer)
+
+
 def apply_adhoc_migrations(db_path) -> None:
     """Migrations ad-hoc idempotentes (desktop : pas d'alembic auto historique).
 
@@ -222,6 +267,11 @@ def apply_adhoc_migrations(db_path) -> None:
             conn.commit()
             logger.info("Migration auto : colonne 'currency' ajoutée à la table invoices")
         snapshot_columns = _ensure_invoice_client_snapshot(conn)
+        reparees = reparer_totaux_tva_non_applicable(conn)
+        if reparees:
+            logger.info(
+                "Migration auto : %d pièce(s) en franchise de TVA réparée(s) (B-345)", reparees
+            )
         if snapshot_columns:
             logger.info(
                 "Migration auto : snapshot destinataire ajouté aux factures (%s)",

@@ -26,7 +26,7 @@ from app.services.email.base_provider import (
     SendEmailRequest,
 )
 from app.services.html_sanitizer import sanitize_html
-from imap_tools import AND, OR, MailBox, MailMessage
+from imap_tools import AND, OR, MailBox, MailMessage, MailMessageFlags
 
 logger = logging.getLogger(__name__)
 
@@ -321,8 +321,12 @@ class ImapSmtpProvider(EmailProvider):
                         else AND(flagged=True)
                     )
 
-                # Fetch messages (reversed for newest first)
-                all_msgs = list(mailbox.fetch(criteria, reverse=True, limit=offset + max_results))
+                # Fetch messages (reversed for newest first).
+                # B-351 (05/09/2026) : on demande UN message de plus que la page
+                # pour savoir s'il en reste ; avec `limit=offset + max_results`,
+                # le seuil `len(all_msgs) > offset + max_results` ne pouvait
+                # jamais être vrai et aucune page suivante n'était annoncée.
+                all_msgs = list(mailbox.fetch(criteria, reverse=True, limit=offset + max_results + 1))
 
                 # Apply pagination
                 paginated = all_msgs[offset : offset + max_results]
@@ -468,8 +472,31 @@ class ImapSmtpProvider(EmailProvider):
                 _humanize_smtp_error(e, self._smtp_port, self._smtp_use_tls)
             ) from e
 
-        # Return a generated ID (SMTP doesn't return one)
-        return f"sent_{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}"
+        # B-525 (05/09/2026) : SMTP n'archive rien. Sans append dans le dossier
+        # Envoyés, le message n'existait nulle part côté serveur : l'onglet
+        # Envoyé de THÉRÈSE et le téléphone ne le voyaient jamais. L'UID du
+        # serveur (UIDPLUS) remplace l'identifiant de synthèse quand il existe.
+        identifiant: str | None = None
+        try:
+            dossier = await self.resolve_folder_for_label("SENT")
+            if dossier:
+
+                def _sync_append():
+                    with self._connect_mailbox(timeout=IMAP_CONNECT_TIMEOUT) as mailbox:
+                        return mailbox.append(
+                            msg.as_bytes(), dossier, dt=datetime.now(), flag_set=[MailMessageFlags.SEEN]
+                        )
+
+                resultat = await self._run_imap_operation(
+                    _sync_append, timeout=IMAP_OPERATION_TIMEOUT, operation_name="IMAP append Envoyés"
+                )
+                identifiant = self._uid_appendu(resultat)
+            else:
+                logger.warning("Dossier Envoyés introuvable : message envoyé mais non archivé")
+        except Exception as e:
+            logger.warning("Copie dans Envoyés impossible (message envoyé) : %s", e)
+
+        return identifiant or f"sent_{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}"
 
     def _message_du_brouillon(self, request: SendEmailRequest) -> MIMEMultipart:
         """MIME d'un brouillon, identique qu'on le crée ou qu'on le remplace."""
@@ -492,10 +519,31 @@ class ImapSmtpProvider(EmailProvider):
     @staticmethod
     def _dossier_brouillons(mailbox: MailBox) -> str:
         """Nom du dossier Brouillons du serveur, « Drafts » à défaut."""
-        for folder in mailbox.folder.list():
-            if "draft" in folder.name.lower():
-                return folder.name
-        return "Drafts"
+        return ImapSmtpProvider._dossier_special(mailbox, "DRAFTS", "Drafts")
+
+    @staticmethod
+    def _dossier_corbeille(mailbox: MailBox) -> str:
+        """Nom du dossier Corbeille du serveur, « Trash » à défaut."""
+        return ImapSmtpProvider._dossier_special(mailbox, "TRASH", "Trash")
+
+    @staticmethod
+    def _dossier_special(mailbox: MailBox, label: str, defaut: str) -> str:
+        """B-502 (05/09/2026) : sur une boîte en français, « Brouillons » et
+        « Corbeille » n'étaient pas reconnus (heuristique anglaise seule) et
+        le brouillon partait vers un Drafts inexistant. Même résolution que
+        resolve_folder_for_label : flag special-use RFC 6154, puis noms
+        multilingues, puis le défaut."""
+        wanted_flag, name_hints = ImapSmtpProvider._SPECIAL_FOLDER_MATCH[label]
+        infos = list(mailbox.folder.list())
+        for fi in infos:
+            if any(f.lower() == wanted_flag.lower() for f in (getattr(fi, "flags", None) or ())):
+                return fi.name
+        for fi in infos:
+            delim = getattr(fi, "delim", None)
+            leaf = fi.name.split(delim)[-1] if delim else fi.name
+            if any(h in leaf.lower() for h in name_hints):
+                return fi.name
+        return defaut
 
     @staticmethod
     def _uid_appendu(resultat: object) -> str | None:
@@ -628,11 +676,7 @@ class ImapSmtpProvider(EmailProvider):
                     mailbox.delete([message_id])
                 else:
                     # Move to Trash
-                    trash_folder = "Trash"
-                    for folder in mailbox.folder.list():
-                        if "trash" in folder.name.lower() or "deleted" in folder.name.lower():
-                            trash_folder = folder.name
-                            break
+                    trash_folder = self._dossier_corbeille(mailbox)  # B-502
                     mailbox.move([message_id], trash_folder)
 
         await self._run_imap_operation(

@@ -6,6 +6,7 @@ Phase 4 - Invoicing
 """
 
 import logging
+from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 
 from app.models.database import get_session
@@ -20,6 +21,7 @@ from app.models.schemas import (
     UpdateInvoiceRequest,
 )
 from app.services.civil_time import date_civile_paris
+from app.services.error_handler import message_pour_ecran
 from app.services.invoice_pdf import InvoicePDFGenerator
 from app.services.invoice_status import statut_effectif_facture
 from app.services.user_profile import get_cached_profile
@@ -122,8 +124,59 @@ async def _generate_invoice_number(session: AsyncSession, document_type: str = "
     return f"{prefix}-{current_year}-{next_number:03d}"
 
 
-def _montants_de_ligne(ligne: InvoiceLineRequest) -> tuple[float, float]:
+async def _inserer_avec_numero_frais(
+    session: AsyncSession,
+    document_type: str,
+    fabrique: Callable[[str], Invoice],
+) -> Invoice:
+    """Lit un numéro, insère la pièce, et reprend avec un numéro frais si un
+    concurrent a pris celui-ci entre la lecture et l'insertion.
+
+    B-160 (02/09/2026) : le numéro se LIT puis s'INSÈRE, sans transaction
+    verrouillante entre les deux. Huit créations simultanées lisaient le même
+    maximum, calculaient le même numéro, et six sur huit finissaient en 500
+    « erreur inattendue » sur la contrainte d'unicité. La lecture ne peut pas
+    trancher ; l'insertion, elle, tranche pour de bon.
+
+    B-338 (05/09/2026) : cette reprise vivait dans `create_invoice` seulement.
+    La conversion de type et la conversion d'un devis en facture inséraient
+    sans reprise, et rendaient 500 sur le même défaut. Les trois chemins
+    passent ici. `fabrique` ne doit lire que des valeurs déjà en mémoire : le
+    rollback d'une reprise expire les objets chargés, et une session async
+    interdit de les recharger paresseusement.
+    """
+    for _ in range(_REPRISES_DE_NUMERO):
+        invoice_number = await _generate_invoice_number(session, document_type)
+        candidat = fabrique(invoice_number)
+        session.add(candidat)
+        try:
+            await session.flush()  # Pour avoir l'ID de la pièce
+        except IntegrityError as collision:
+            await session.rollback()
+            if "invoice_number" not in str(collision.orig):
+                # Une autre contrainte : ce n'est pas la course au numéro, et
+                # la reprise n'y changerait rien.
+                raise
+            logger.warning("Numéro %s pris par un concurrent, reprise", invoice_number)
+            continue
+        return candidat
+
+    raise HTTPException(
+        status_code=409,
+        detail="Numérotation occupée par d'autres créations simultanées, réessaie.",
+    )
+
+
+def _montants_de_ligne(
+    ligne: InvoiceLineRequest, tva_applicable: bool = True
+) -> tuple[float, float]:
     """Le HT et le TTC d'une ligne, arrondis au centime a la SOURCE.
+
+    B-345 (05/09/2026) : l'exonération (art. 293 B du CGI) est un attribut de
+    la PIÈCE. Le taux de la ligne était appliqué sans la regarder : une facture
+    en franchise valait 120 en base, dans la liste et dans l'encours, pendant
+    que le PDF remis au client imprimait 100. Le PDF est la pièce juridique :
+    c'est la base qui mentait. En franchise, le TTC d'une ligne EST son HT.
 
     F1 (0.55) : `total_ttc` etait stocke non arrondi. Trois lignes de 33,33 EUR
     a 20 % donnaient 119.98799999999999 en base, pendant que le PDF imprimait
@@ -136,6 +189,8 @@ def _montants_de_ligne(ligne: InvoiceLineRequest) -> tuple[float, float]:
     deja arrondies, donc la somme des parts egale toujours le tout.
     """
     total_ht = round(ligne.quantity * ligne.unit_price_ht, 2)
+    if not tva_applicable:
+        return total_ht, total_ht
     total_ttc = round(total_ht * (1 + ligne.tva_rate / 100), 2)
     return total_ht, total_ttc
 
@@ -242,6 +297,18 @@ def _snapshot_de_la_piece(invoice: Invoice) -> dict[str, str | None]:
         "email": invoice.client_email or "",
         "phone": invoice.client_phone or "",
         "address": invoice.client_address or "",
+    }
+
+
+def _snapshot_de_ligne(line: InvoiceLine) -> dict[str, str | float]:
+    """Les valeurs d'une ligne, copiées avant qu'un rollback ne l'expire."""
+    return {
+        "description": line.description,
+        "quantity": line.quantity,
+        "unit_price_ht": line.unit_price_ht,
+        "tva_rate": line.tva_rate,
+        "total_ht": line.total_ht,
+        "total_ttc": line.total_ttc,
     }
 
 
@@ -364,17 +431,11 @@ async def create_invoice(
     # relu paresseusement au tour suivant, ce qu'une session async interdit.
     snapshot_client = _snapshot_du_contact(contact)
 
-    # B-160 (02/09/2026) : le numéro se LIT puis s'INSÈRE, sans transaction
-    # verrouillante entre les deux. Huit créations simultanées lisaient le même
-    # maximum, calculaient le même numéro, et six sur huit finissaient en 500
-    # « erreur inattendue » sur la contrainte d'unicité. La lecture ne peut pas
-    # trancher ; l'insertion, elle, tranche pour de bon. On la reprend donc
-    # avec un numéro frais tant qu'un concurrent nous double.
-    invoice = None
-    for _ in range(_REPRISES_DE_NUMERO):
-        invoice_number = await _generate_invoice_number(session, document_type)
-        candidat = Invoice(
-            invoice_number=invoice_number,
+    invoice = await _inserer_avec_numero_frais(
+        session,
+        document_type,
+        lambda numero: Invoice(
+            invoice_number=numero,
             contact_id=request.contact_id,
             **snapshot_client,
             document_type=document_type,
@@ -385,31 +446,14 @@ async def create_invoice(
             status="draft",
             notes=request.notes,
             validite_jours=validite_jours,
-        )
-        session.add(candidat)
-        try:
-            await session.flush()  # Pour avoir l'ID de la facture
-        except IntegrityError as collision:
-            await session.rollback()
-            if "invoice_number" not in str(collision.orig):
-                # Une autre contrainte : ce n'est pas la course au numéro, et
-                # la reprise n'y changerait rien.
-                raise
-            logger.warning("Numéro %s pris par un concurrent, reprise", invoice_number)
-            continue
-        invoice = candidat
-        break
-
-    if invoice is None:
-        raise HTTPException(
-            status_code=409,
-            detail="Numérotation occupée par d'autres créations simultanées, réessaie.",
-        )
+        ),
+    )
+    invoice_number = invoice.invoice_number
 
     # Créer les lignes
     db_lines = []
     for line_req in request.lines:
-        total_ht, total_ttc = _montants_de_ligne(line_req)
+        total_ht, total_ttc = _montants_de_ligne(line_req, invoice.tva_applicable)
 
         line = InvoiceLine(
             invoice_id=invoice.id,
@@ -522,7 +566,7 @@ async def update_invoice(
         # Créer les nouvelles lignes
         db_lines = []
         for line_req in request.lines:
-            total_ht, total_ttc = _montants_de_ligne(line_req)
+            total_ht, total_ttc = _montants_de_ligne(line_req, invoice.tva_applicable)
 
             line = InvoiceLine(
                 invoice_id=invoice.id,
@@ -663,51 +707,48 @@ async def convert_invoice(
     if source.document_type == target_type:
         raise HTTPException(status_code=400, detail=f"Le document est déjà de type '{target_type}'")
 
-    # Générer un nouveau numéro pour le type cible
-    new_number = await _generate_invoice_number(session, target_type)
+    # Le rollback d'une reprise de numéro expire la pièce source : tout ce
+    # qu'on relit après l'insertion est copié ici, en valeurs.
+    source_numero, source_type = source.invoice_number, source.document_type
+    emission = datetime.now(UTC)
+    copie = {
+        "document_type": target_type,
+        "contact_id": source.contact_id,
+        "client_name": source.client_name,
+        "client_company": source.client_company,
+        "client_email": source.client_email,
+        "client_phone": source.client_phone,
+        "client_address": source.client_address,
+        "currency": source.currency,
+        "issue_date": emission,
+        # B-545 (05/09/2026) : recopier l'échéance du devis donnait une facture
+        # échue avant d'être émise (-218 jours). Même règle que la conversion
+        # devis -> facture : émission + délai de paiement (30 jours par défaut).
+        "due_date": emission + timedelta(days=_parse_payment_terms_days(source.payment_terms or "")),
+        "status": "draft",
+        "subtotal_ht": source.subtotal_ht,
+        "total_tax": source.total_tax,
+        "total_ttc": source.total_ttc,
+        "tva_applicable": source.tva_applicable,
+        "notes": source.notes or "",
+    }
+    lignes_source = [_snapshot_de_ligne(line) for line in source.lines]
 
-    # Créer la copie
-    new_invoice = Invoice(
-        invoice_number=new_number,
-        document_type=target_type,
-        contact_id=source.contact_id,
-        client_name=source.client_name,
-        client_company=source.client_company,
-        client_email=source.client_email,
-        client_phone=source.client_phone,
-        client_address=source.client_address,
-        currency=source.currency,
-        issue_date=datetime.now(UTC),
-        due_date=source.due_date,
-        status="draft",
-        subtotal_ht=source.subtotal_ht,
-        total_tax=source.total_tax,
-        total_ttc=source.total_ttc,
-        tva_applicable=source.tva_applicable,
-        notes=source.notes or "",
+    # Générer un nouveau numéro pour le type cible, avec reprise (B-338)
+    new_invoice = await _inserer_avec_numero_frais(
+        session, target_type, lambda numero: Invoice(invoice_number=numero, **copie)
     )
-    session.add(new_invoice)
-    await session.flush()
 
     # Copier les lignes
-    for line in source.lines:
-        new_line = InvoiceLine(
-            invoice_id=new_invoice.id,
-            description=line.description,
-            quantity=line.quantity,
-            unit_price_ht=line.unit_price_ht,
-            tva_rate=line.tva_rate,
-            total_ht=line.total_ht,
-            total_ttc=line.total_ttc,
-        )
-        session.add(new_line)
+    for ligne in lignes_source:
+        session.add(InvoiceLine(invoice_id=new_invoice.id, **ligne))
 
     await session.commit()
 
     # Recharger avec eager loading
     new_invoice = await _get_invoice_with_lines(session, new_invoice.id)
 
-    logger.info(f"Converted {source.invoice_number} ({source.document_type}) → {new_invoice.invoice_number} ({target_type})")
+    logger.info(f"Converted {source_numero} ({source_type}) → {new_invoice.invoice_number} ({target_type})")
 
     return _invoice_to_response(new_invoice)
 
@@ -785,11 +826,19 @@ async def generate_invoice_pdf(
         "validite_jours": invoice.validite_jours,
         "issue_date": invoice.issue_date.isoformat(),
         "due_date": invoice.due_date.isoformat(),
-        "status": invoice.status,
+        # B-468 : le PDF porte le statut EFFECTIF (une facture envoyée et
+        # échue est « En retard »), comme la liste et l'encours.
+        "status": statut_effectif_facture(invoice.status, invoice.document_type, invoice.due_date),
         "subtotal_ht": invoice.subtotal_ht,
         "total_tax": invoice.total_tax,
         "total_ttc": invoice.total_ttc,
         "notes": invoice.notes or "",
+        # B-339 : les conditions négociées à la conversion d'un devis (échéance,
+        # mode de règlement, mentions calculées) n'arrivaient jamais au PDF, qui
+        # imprimait « net à 30 jours » sous une échéance à 90 jours.
+        "payment_terms": invoice.payment_terms,
+        "payment_method": invoice.payment_method,
+        "legal_mentions": invoice.legal_mentions,
         "lines": [
             {
                 "description": line.description,
@@ -826,11 +875,14 @@ async def generate_invoice_pdf(
             currency=invoice.currency,
         )
     except Exception as e:
-        logger.error(f"Erreur génération PDF facture {invoice_id}: {e}")
+        # B-334 (05/09/2026) : le détail HTTP recopiait l'exception brute
+        # (adresses mémoire ReportLab, chemins du poste). À la limite de
+        # l'écran, seuls les messages localisés passent.
+        logger.error(f"Erreur génération PDF facture {invoice_id}: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Erreur lors de la génération du PDF : {str(e)}",
-        )
+            detail=message_pour_ecran(e, ou="pendant la génération du PDF de la facture"),
+        ) from e
 
     logger.info(f"PDF generated for invoice: {invoice.invoice_number}")
 
@@ -920,7 +972,6 @@ async def convert_devis_to_invoice(
     late_penalty_rate = 11.62  # 3x taux BCE approximatif
 
     # 4. Creer la facture
-    invoice_number = await _generate_invoice_number(session, "facture")
     issue_date = datetime.now(UTC)
     due_date = issue_date + timedelta(days=payment_days)
 
@@ -930,43 +981,40 @@ async def convert_devis_to_invoice(
         currency=devis.currency,
     )
 
-    new_invoice = Invoice(
-        invoice_number=invoice_number,
-        contact_id=devis.contact_id,
-        client_name=devis.client_name,
-        client_company=devis.client_company,
-        client_email=devis.client_email,
-        client_phone=devis.client_phone,
-        client_address=devis.client_address,
-        document_type="facture",
-        tva_applicable=devis.tva_applicable,
-        currency=devis.currency,
-        issue_date=issue_date,
-        due_date=due_date,
-        status="draft",
-        notes=devis.notes,
-        payment_terms=payment_terms,
-        payment_method=payment_method,
-        late_penalty_rate=late_penalty_rate,
-        legal_mentions=legal_mentions,
-        converted_from_id=devis.id,
-    )
+    # Le rollback d'une reprise de numéro expire le devis chargé : ses valeurs
+    # sont copiées avant l'insertion, et le devis est relu après.
+    facture = {
+        "contact_id": devis.contact_id,
+        "client_name": devis.client_name,
+        "client_company": devis.client_company,
+        "client_email": devis.client_email,
+        "client_phone": devis.client_phone,
+        "client_address": devis.client_address,
+        "document_type": "facture",
+        "tva_applicable": devis.tva_applicable,
+        "currency": devis.currency,
+        "issue_date": issue_date,
+        "due_date": due_date,
+        "status": "draft",
+        "notes": devis.notes,
+        "payment_terms": payment_terms,
+        "payment_method": payment_method,
+        "late_penalty_rate": late_penalty_rate,
+        "legal_mentions": legal_mentions,
+        "converted_from_id": devis.id,
+    }
+    lignes_devis = [_snapshot_de_ligne(line) for line in devis.lines]
 
-    session.add(new_invoice)
-    await session.flush()
+    new_invoice = await _inserer_avec_numero_frais(
+        session, "facture", lambda numero: Invoice(invoice_number=numero, **facture)
+    )
+    invoice_number = new_invoice.invoice_number
+    devis = await _get_invoice_with_lines(session, invoice_id)
 
     # 5. Copier les lignes
     db_lines = []
-    for line in devis.lines:
-        new_line = InvoiceLine(
-            invoice_id=new_invoice.id,
-            description=line.description,
-            quantity=line.quantity,
-            unit_price_ht=line.unit_price_ht,
-            tva_rate=line.tva_rate,
-            total_ht=line.total_ht,
-            total_ttc=line.total_ttc,
-        )
+    for ligne in lignes_devis:
+        new_line = InvoiceLine(invoice_id=new_invoice.id, **ligne)
         session.add(new_line)
         db_lines.append(new_line)
 

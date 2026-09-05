@@ -5,6 +5,7 @@ Multi-format export for CRM data (CSV, Excel, JSON).
 Part of the "Local First" architecture.
 """
 
+import asyncio
 import csv
 import io
 import json
@@ -118,6 +119,21 @@ def _sans_caracteres_interdits(texte: str) -> str:
     return _CARACTERES_INTERDITS.sub("", texte)
 
 
+_DEBUT_DE_FORMULE = re.compile(r"^[=@\t\r]|^[+\-](?=[^\d\s])")
+
+
+def _neutraliser_formule(texte: str) -> str:
+    """B-449 (05/09/2026) : une société « =1+1 » sortait du CSV telle quelle
+    et du XLSX en formule ACTIVE. L'export est le dernier rempart : un
+    préfixe de formule est désamorcé par une apostrophe (convention des
+    tableurs). Un téléphone en +33 ou une date en -5 restent intacts : seuls
+    « + » et « - » suivis d'autre chose qu'un chiffre sont visés.
+    """
+    if texte and _DEBUT_DE_FORMULE.match(texte):
+        return "'" + texte
+    return texte
+
+
 def _format_value(value: Any) -> str:
     """Format a value for export."""
     if value is None:
@@ -179,7 +195,7 @@ def export_to_csv(entities: list[Any], columns: list[tuple[str, str]]) -> bytes:
 
     for entity in entities:
         row = _entity_to_row(entity, columns)
-        writer.writerow(row)
+        writer.writerow({k: _neutraliser_formule(v) if isinstance(v, str) else v for k, v in row.items()})
 
     # Add BOM for Excel UTF-8 compatibility
     csv_content = output.getvalue()
@@ -237,6 +253,10 @@ def export_to_xlsx(
         for col_idx, header in enumerate(headers, 1):
             value = row_data.get(header, "")
             cell = ws.cell(row=row_idx, column=col_idx, value=value)
+            if isinstance(value, str) and value.startswith("="):
+                # B-449 : openpyxl range une chaîne « =... » en formule (type
+                # 'f') ; elle doit rester du texte dans le classeur.
+                cell.data_type = "s"
             cell.border = thin_border
 
     # Auto-adjust column widths
@@ -349,7 +369,7 @@ class CRMExportService:
         timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
 
         if format == "csv":
-            data = export_to_csv(contacts, CONTACT_COLUMNS)
+            data = await asyncio.to_thread(export_to_csv, contacts, CONTACT_COLUMNS)
             return ExportResult(
                 data=data,
                 filename=f"contacts_{timestamp}.csv",
@@ -357,7 +377,7 @@ class CRMExportService:
                 row_count=len(contacts),
             )
         elif format == "xlsx":
-            data = export_to_xlsx(contacts, CONTACT_COLUMNS, "Contacts")
+            data = await asyncio.to_thread(export_to_xlsx, contacts, CONTACT_COLUMNS, "Contacts")
             return ExportResult(
                 data=data,
                 filename=f"contacts_{timestamp}.xlsx",
@@ -403,7 +423,7 @@ class CRMExportService:
         timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
 
         if format == "csv":
-            data = export_to_csv(projects, PROJECT_COLUMNS)
+            data = await asyncio.to_thread(export_to_csv, projects, PROJECT_COLUMNS)
             return ExportResult(
                 data=data,
                 filename=f"projects_{timestamp}.csv",
@@ -411,7 +431,7 @@ class CRMExportService:
                 row_count=len(projects),
             )
         elif format == "xlsx":
-            data = export_to_xlsx(projects, PROJECT_COLUMNS, "Projets")
+            data = await asyncio.to_thread(export_to_xlsx, projects, PROJECT_COLUMNS, "Projets")
             return ExportResult(
                 data=data,
                 filename=f"projects_{timestamp}.xlsx",
@@ -457,7 +477,7 @@ class CRMExportService:
         timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
 
         if format == "csv":
-            data = export_to_csv(deliverables, DELIVERABLE_COLUMNS)
+            data = await asyncio.to_thread(export_to_csv, deliverables, DELIVERABLE_COLUMNS)
             return ExportResult(
                 data=data,
                 filename=f"deliverables_{timestamp}.csv",
@@ -465,7 +485,7 @@ class CRMExportService:
                 row_count=len(deliverables),
             )
         elif format == "xlsx":
-            data = export_to_xlsx(deliverables, DELIVERABLE_COLUMNS, "Livrables")
+            data = await asyncio.to_thread(export_to_xlsx, deliverables, DELIVERABLE_COLUMNS, "Livrables")
             return ExportResult(
                 data=data,
                 filename=f"deliverables_{timestamp}.xlsx",
@@ -589,7 +609,7 @@ class CRMExportService:
             for contact in contacts:
                 row = _entity_to_row(contact, CONTACT_COLUMNS)
                 row["Type"] = "Contact"
-                writer.writerow(row)
+                writer.writerow({k: _neutraliser_formule(v) if isinstance(v, str) else v for k, v in row.items()})
 
             csv_content = output.getvalue()
 

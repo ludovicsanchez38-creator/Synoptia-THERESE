@@ -5,6 +5,7 @@ Gestion des commandes utilisateur personnalisees.
 Stockage : ~/.therese/commands/user/*.md (YAML frontmatter + contenu)
 """
 
+import json
 import logging
 import shutil
 from datetime import datetime
@@ -92,8 +93,11 @@ class UserCommand:
 
         content = parts[2].lstrip("\n")
 
+        # B-484 (05/09/2026) : le nom du fichier est l'identité de la commande.
+        # Un frontmatter divergent la rendait introuvable (chemin dérivé du
+        # nom lu, fichier rangé sous l'autre nom).
         return cls(
-            name=frontmatter.get("name", name),
+            name=name,
             description=frontmatter.get("description", ""),
             category=frontmatter.get("category", "production"),
             icon=frontmatter.get("icon", ""),
@@ -188,8 +192,14 @@ class UserCommandsService:
         show_on_home: bool | None = None,
         show_in_slash: bool | None = None,
         content: str | None = None,
+        new_name: str | None = None,
     ) -> UserCommand | None:
-        """Met a jour une commande existante."""
+        """Met a jour une commande existante.
+
+        B-515 (05/09/2026) : un renommage ne renommait que la copie en
+        mémoire du registre ; le fichier gardait l'ancien nom et le nouveau
+        partait au redémarrage. Le fichier est renommé ici.
+        """
         cmd = self.get_command(name)
         if not cmd:
             return None
@@ -210,6 +220,15 @@ class UserCommandsService:
         cmd.updated_at = datetime.now().isoformat()
 
         filepath = self._command_path(name)
+        if new_name and new_name != name:
+            nouveau = self._command_path(new_name)
+            if nouveau.exists():
+                raise ValueError(f"Une commande « {new_name} » existe déjà.")
+            cmd.name = nouveau.stem
+            nouveau.write_text(cmd.to_markdown(), encoding="utf-8")
+            filepath.unlink(missing_ok=True)
+            logger.info(f"Renamed user command: {name} -> {cmd.name}")
+            return cmd
         filepath.write_text(cmd.to_markdown(), encoding="utf-8")
         logger.info(f"Updated user command: {name}")
         return cmd
@@ -233,7 +252,12 @@ class UserCommandsService:
         try:
             if not trash_dir.exists():
                 raise OSError("La Corbeille système n'est pas disponible")
-            shutil.move(str(filepath), str(available_destination(trash_dir)))
+            destination = available_destination(trash_dir)
+            shutil.move(str(filepath), str(destination))
+            # B-465 (05/09/2026) : le dépôt en Corbeille est noté, sans quoi la
+            # purge RGPD ne pouvait pas le retrouver et le texte de
+            # l'utilisatrice survivait à « toutes mes données ».
+            self._noter_depot_en_corbeille(destination)
         except OSError as exc:
             fallback_dir.mkdir(parents=True, exist_ok=True)
             shutil.move(str(filepath), str(available_destination(fallback_dir)))
@@ -241,6 +265,24 @@ class UserCommandsService:
 
         logger.info(f"Deleted user command: {name}")
         return True
+
+    def _index_corbeille(self) -> Path:
+        return self._commands_dir / ".corbeille.json"
+
+    def _depots_en_corbeille(self) -> list[str]:
+        index = self._index_corbeille()
+        if not index.exists():
+            return []
+        try:
+            charge = json.loads(index.read_text(encoding="utf-8"))
+            return [str(x) for x in charge] if isinstance(charge, list) else []
+        except (OSError, ValueError):
+            return []
+
+    def _noter_depot_en_corbeille(self, destination: Path) -> None:
+        depots = self._depots_en_corbeille()
+        depots.append(str(destination))
+        self._index_corbeille().write_text(json.dumps(depots, ensure_ascii=False), encoding="utf-8")
 
     def purger_tout(self) -> int:
         """Efface DÉFINITIVEMENT toutes les commandes utilisateur (RGPD Art. 17).
@@ -262,6 +304,15 @@ class UserCommandsService:
         repli = self._commands_dir / ".trash"
         if repli.exists():
             shutil.rmtree(repli, ignore_errors=True)
+
+        # B-465 : les commandes archivées dans la Corbeille système partent aussi.
+        for depot in self._depots_en_corbeille():
+            try:
+                Path(depot).unlink(missing_ok=True)
+                efface += 1
+            except OSError as exc:
+                logger.warning("Dépôt en Corbeille non effacé : %s (%s)", depot, exc)
+        self._index_corbeille().unlink(missing_ok=True)
 
         logger.info("Purge RGPD : %d commande(s) utilisateur effacée(s)", efface)
         return efface

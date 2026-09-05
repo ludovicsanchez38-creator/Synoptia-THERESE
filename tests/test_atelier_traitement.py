@@ -116,7 +116,11 @@ class TestLaMissionEstUnTraitement:
         traitement = await _traitement_atelier(_task_id_du_flux(reponse.text))
         assert traitement is not None
         assert traitement.state == EtatTache.FAILED
-        assert "panne" in (traitement.error or "")
+        # B-344 : l'erreur persistée passe la frontière d'écran, le texte brut de
+        # l'exception (« orchestrateur en panne ») reste aux journaux.
+        assert traitement.error, "l'erreur doit être renseignée"
+        assert "mission" in traitement.error.lower()
+        assert "orchestrateur en panne" not in traitement.error
 
     @pytest.mark.asyncio
     async def test_une_annulation_termine_cancelled_et_reste_coherente(

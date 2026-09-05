@@ -27,6 +27,11 @@ if _backend_dir not in sys.path:
 os.environ["THERESE_ENV"] = "test"
 os.environ["THERESE_SKIP_SERVICES"] = "1"
 os.environ["THERESE_SONDE_CATALOGUE"] = "off"  # A2 : pas de GET /models réels en tests
+# B-349 (05/09/2026) : un Ollama vivant sur le poste faisait répondre un
+# VRAI modèle à onze tests du chat (100 s au lieu de 0,3 s), et leur tolérance
+# « 200 ou 401 ou 503 » absorbait la différence. Fournisseur mort par défaut ;
+# un override explicite (CI, dev) reste respecté.
+os.environ.setdefault("OLLAMA_BASE_URL", "http://127.0.0.1:9")
 # Isolation des données : ne JAMAIS toucher la base réelle de l'utilisateur.
 # Les fixtures client/db_session font drop_all/create_all ; sans data dir dédié,
 # lancer la suite détruirait ~/.therese. setdefault respecte un override (CI/dev).

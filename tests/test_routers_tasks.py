@@ -242,3 +242,38 @@ class TestTasksActions:
         task = response.json()
         assert task["status"] == "todo"
         assert task["completed_at"] is None
+
+
+class TestLOrdreDesPriorites:
+    """B-346 (05/09/2026) : « urgent, medium, low, high ». Le tri confiait un
+    ordre métier à quatre rangs à la comparaison lexicographique d'une colonne
+    texte (`Task.priority.desc()`) : une tâche haute sortait DERNIÈRE, après
+    les basses. Le statut tenait par chance alphabétique (todo > in_progress >
+    done > cancelled) ; il reçoit lui aussi une table de rang.
+    """
+
+    @pytest.mark.asyncio
+    async def test_urgent_puis_haute_puis_moyenne_puis_basse(self, client: AsyncClient):
+        for priorite in ("low", "high", "medium", "urgent"):
+            reponse = await client.post(
+                "/api/tasks/", json={"title": f"Tache {priorite}", "priority": priorite}
+            )
+            assert reponse.status_code == 200, reponse.text
+
+        reponse = await client.get("/api/tasks/")
+        assert reponse.status_code == 200
+        assert [t["priority"] for t in reponse.json()] == ["urgent", "high", "medium", "low"]
+
+    @pytest.mark.asyncio
+    async def test_les_taches_ouvertes_precedent_les_fermees(self, client: AsyncClient):
+        for statut in ("done", "todo", "cancelled", "in_progress"):
+            reponse = await client.post(
+                "/api/tasks/", json={"title": f"Tache {statut}", "status": statut, "priority": "medium"}
+            )
+            assert reponse.status_code == 200, reponse.text
+
+        reponse = await client.get("/api/tasks/")
+        statuts = [t["status"] for t in reponse.json()]
+        assert statuts.index("todo") < statuts.index("done")
+        assert statuts.index("in_progress") < statuts.index("done")
+        assert statuts.index("done") < statuts.index("cancelled")

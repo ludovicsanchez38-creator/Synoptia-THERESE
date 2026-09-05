@@ -95,11 +95,19 @@ def _export_row(
 # ============================================================
 
 
+_MOTIFS_DE_SECRET = ("api_key", "apikey", "secret", "token", "password", "passwd", "mot_de_passe")
+
+
 def _valeur_de_preference_exportable(pref: Preference) -> str:
     """La valeur d'une préférence, telle qu'elle peut sortir de l'export."""
     from app.services.user_profile import PROFILE_KEY
 
-    if "api_key" in pref.key.lower():
+    # B-538 (05/09/2026) : le masque ne testait que « api_key ». Les jetons
+    # OAuth du CRM (crm_sheets_access_token, refresh_token), le secret client
+    # Google et les mots de passe de messagerie sortaient tels quels dans
+    # l'export de portabilité, chiffrés ou non.
+    cle = pref.key.lower()
+    if any(motif in cle for motif in _MOTIFS_DE_SECRET):
         return "[REDACTED]"
     if pref.key == PROFILE_KEY:
         return "[voir la section profil]"
@@ -584,6 +592,15 @@ async def delete_all_data(
     # On garde les logs d'audit (trace legale)
 
     await session.commit()
+
+    # B-340 (05/09/2026) : la ligne Preference du profil est effacée, mais le
+    # cache de processus (`get_cached_profile`) servait encore nom et SIRET au
+    # prompt système du chat et au générateur de réponses e-mail après un 200
+    # « supprimées conformément au RGPD ». La route DELETE /profile invalide
+    # ce cache ; la purge globale doit le faire aussi.
+    from app.services.user_profile import set_cached_profile
+
+    set_cached_profile(None)
 
     # Purger Qdrant (embeddings vectoriels)
     try:
@@ -1589,9 +1606,21 @@ async def import_contacts(
     if "contacts" not in data:
         raise HTTPException(status_code=400, detail="Format invalide: 'contacts' manquant")
 
+    # B-542 (05/09/2026) : même garde de forme que l'import de conversations
+    # (B-191). Une chaîne ou une liste de nombres sortait en 500 « réessaie »
+    # sur un AttributeError, alors que l'import ne pouvait jamais aboutir.
+    contacts = data["contacts"]
+    if not isinstance(contacts, list):
+        raise HTTPException(status_code=400, detail="Format invalide : 'contacts' doit être une liste")
+    if any(not isinstance(element, dict) for element in contacts):
+        raise HTTPException(
+            status_code=400,
+            detail="Format invalide : chaque contact doit être un objet (dictionnaire)",
+        )
+
     imported = 0
 
-    for contact_data in data["contacts"]:
+    for contact_data in contacts:
         # Check if contact already exists
         existing = await session.execute(
             select(Contact).where(Contact.id == contact_data.get("id"))

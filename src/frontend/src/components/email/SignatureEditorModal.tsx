@@ -36,6 +36,9 @@ export function SignatureEditorModal({ accountId, accountEmail, onClose }: Signa
   const [saved, setSaved] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // B-396 : un chargement en échec bloque la saisie, sinon « Enregistrer »
+  // envoyait une signature vide que le serveur écrasait sans condition.
+  const [loadFailed, setLoadFailed] = useState(false);
 
   const dialogRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -68,7 +71,10 @@ export function SignatureEditorModal({ accountId, accountEmail, onClose }: Signa
         const res = await getEmailSignature(accountId);
         if (!cancelled) setHtml(res.signature_html || '');
       } catch {
-        if (!cancelled) setError('Impossible de charger la signature.');
+        if (!cancelled) {
+          setError('Impossible de charger la signature. Ferme et réessaie.');
+          setLoadFailed(true);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -84,6 +90,7 @@ export function SignatureEditorModal({ accountId, accountEmail, onClose }: Signa
   }, [loading]);
 
   async function handleSave() {
+    if (loadFailed) return;
     setSaving(true);
     setError(null);
     try {
@@ -165,6 +172,7 @@ export function SignatureEditorModal({ accountId, accountEmail, onClose }: Signa
                   </label>
                   <textarea
                     id="signature-html"
+                    disabled={loading || loadFailed}
                     ref={textareaRef}
                     value={html}
                     onChange={(e) => setHtml(e.target.value)}
@@ -197,7 +205,7 @@ export function SignatureEditorModal({ accountId, accountEmail, onClose }: Signa
                 </button>
                 <button
                   onClick={handleSave}
-                  disabled={saving}
+                  disabled={saving || loadFailed}
                   className="flex items-center gap-2 px-4 py-2 bg-accent-fill text-accent-ink rounded-md hover:bg-accent-cyan/90 transition-colors disabled:opacity-50"
                 >
                   {saving ? (

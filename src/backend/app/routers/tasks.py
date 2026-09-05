@@ -13,8 +13,26 @@ from app.models.database import get_session
 from app.models.entities import Contact, Project, Task
 from app.models.schemas import CreateTaskRequest, TaskResponse, UpdateTaskRequest
 from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy import case
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
+
+# B-346 : rangs métier des colonnes texte, pour un tri qui ne dépende pas de
+# l'alphabet (voir list_tasks).
+_RANG_DE_PRIORITE = case(
+    (Task.priority == "urgent", 4),
+    (Task.priority == "high", 3),
+    (Task.priority == "medium", 2),
+    (Task.priority == "low", 1),
+    else_=0,
+)
+_RANG_DE_STATUT = case(
+    (Task.status == "in_progress", 4),
+    (Task.status == "todo", 3),
+    (Task.status == "done", 2),
+    (Task.status == "cancelled", 1),
+    else_=0,
+)
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -76,10 +94,15 @@ async def list_tasks(
     if contact_id:
         stmt = stmt.where(Task.contact_id == contact_id)
 
-    # Order by: uncompleted first, then by priority, then by due date
+    # Order by: uncompleted first, then by priority, then by due date.
+    # B-346 (05/09/2026) : `Task.priority.desc()` comparait du TEXTE, et
+    # rendait « urgent, medium, low, high » : une tâche haute sortait
+    # dernière. Un ordre métier se donne par une table de rang, pas par
+    # l'alphabet ; le statut tenait par chance (t > i > d > c), il reçoit
+    # la sienne aussi.
     stmt = stmt.order_by(
-        Task.status.desc(),  # todo/in_progress avant done/cancelled
-        Task.priority.desc(),
+        _RANG_DE_STATUT.desc(),  # todo/in_progress avant done/cancelled
+        _RANG_DE_PRIORITE.desc(),
         Task.due_date.asc(),
         Task.id.asc(),  # ordre TOTAL : pagination déterministe
     )
@@ -115,7 +138,7 @@ async def get_task(
     """Récupère une tâche spécifique."""
     task = await session.get(Task, task_id)
     if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
+        raise HTTPException(status_code=404, detail="Tâche introuvable.")
 
     return TaskResponse(
         id=task.id,
@@ -148,7 +171,7 @@ async def create_task(
         try:
             due_date = datetime.fromisoformat(request.due_date.replace("Z", ""))
         except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid due_date format")
+            raise HTTPException(status_code=400, detail="Format de date d'échéance invalide (attendu : ISO 8601).")
 
     # Create task
     task = Task(
@@ -193,16 +216,21 @@ async def update_task(
     """Met à jour une tâche existante."""
     task = await session.get(Task, task_id)
     if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
+        raise HTTPException(status_code=404, detail="Tâche introuvable.")
 
     # B-032 : le contact était contrôlé à la création et ignoré ici. Même
     # devoir des deux côtés, sinon la porte de service reste ouverte.
     await _verifier_rattachements(session, request.project_id, request.contact_id)
 
-    # Update fields
+    # Update fields.
+    # B-423 (05/09/2026) : les champs facultatifs sont déclarés `str | None =
+    # None`, donc « absent » et « null » se confondaient sur `is not None` :
+    # impossible d'effacer une description, une échéance ou un rattachement
+    # par PUT. Un champ ENVOYÉ à null efface ; un champ absent ne touche à rien.
+    envoyes = request.model_fields_set
     if request.title is not None:
         task.title = request.title
-    if request.description is not None:
+    if "description" in envoyes:
         task.description = request.description
     if request.status is not None:
         task.status = request.status
@@ -213,19 +241,22 @@ async def update_task(
             task.completed_at = None
     if request.priority is not None:
         task.priority = request.priority
-    if request.due_date is not None:
-        try:
-            task.due_date = datetime.fromisoformat(request.due_date.replace("Z", ""))
-        except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid due_date format")
-    if request.project_id is not None:
+    if "due_date" in envoyes:
+        if request.due_date is None:
+            task.due_date = None
+        else:
+            try:
+                task.due_date = datetime.fromisoformat(request.due_date.replace("Z", ""))
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Format de date d'échéance invalide (attendu : ISO 8601).")
+    if "project_id" in envoyes:
         task.project_id = request.project_id
     # B-032 : champ déclaré au schéma, accepté en 200, puis jeté - la réponse
     # comme la relecture rendaient l'ancien contact, sans un avertissement.
-    if request.contact_id is not None:
+    if "contact_id" in envoyes:
         task.contact_id = request.contact_id
-    if request.tags is not None:
-        task.tags = json.dumps(request.tags)
+    if "tags" in envoyes:
+        task.tags = json.dumps(request.tags) if request.tags is not None else None
 
     task.updated_at = datetime.now(UTC)
 
@@ -257,7 +288,7 @@ async def delete_task(
     """Supprime une tâche."""
     task = await session.get(Task, task_id)
     if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
+        raise HTTPException(status_code=404, detail="Tâche introuvable.")
 
     await session.delete(task)
     await session.commit()
@@ -278,7 +309,7 @@ async def complete_task(
     """Marque une tâche comme complétée."""
     task = await session.get(Task, task_id)
     if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
+        raise HTTPException(status_code=404, detail="Tâche introuvable.")
 
     task.status = "done"
     task.completed_at = datetime.now(UTC)
@@ -312,7 +343,7 @@ async def uncomplete_task(
     """Marque une tâche comme non complétée."""
     task = await session.get(Task, task_id)
     if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
+        raise HTTPException(status_code=404, detail="Tâche introuvable.")
 
     task.status = "todo"
     task.completed_at = None
