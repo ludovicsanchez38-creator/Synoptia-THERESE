@@ -106,7 +106,10 @@ class EmailSetupAssistant:
         accounts = result.scalars().all()
 
         gmail_account = next((acc for acc in accounts if acc.provider == 'gmail'), None)
-        smtp_account = next((acc for acc in accounts if acc.provider == 'smtp'), None)
+        # B-335 (05/09/2026) : le routeur enregistre un compte IMAP/SMTP avec
+        # provider='imap' (email.py) ; chercher 'smtp' ne trouvait jamais rien
+        # et l'écran de mise en route réclamait une messagerie déjà configurée.
+        smtp_account = next((acc for acc in accounts if acc.provider in ('smtp', 'imap')), None)
 
         # Check if Google OAuth credentials exist in MCP servers.
         # B-034 : le client_id n'est pas un secret (il voyage dans l'URL
