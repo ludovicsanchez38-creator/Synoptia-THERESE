@@ -10,6 +10,7 @@ Local First - Multi-Provider
 
 import json
 import logging
+import re
 import uuid
 from collections.abc import Awaitable, Callable
 from datetime import UTC, date, datetime
@@ -1306,6 +1307,23 @@ async def update_event(
         elif request.end_date:
             end = datetime.strptime(request.end_date, "%Y-%m-%d").date()
             all_day = True
+
+        # B-455 (05/09/2026) : aucune garde de cohérence à la mise à jour. Une
+        # fin avant le début ou un participant sans adresse passaient en 200 et
+        # se retrouvaient en base. La fenêtre se vérifie au point de fusion,
+        # contre l'événement STOCKÉ quand un seul bord est envoyé.
+        stocke = await session.get(CalendarEvent, event_id)
+        debut_effectif = start if start is not None else (stocke.start_datetime if stocke else None)
+        fin_effective = end if end is not None else (stocke.end_datetime if stocke else None)
+        if (
+            isinstance(debut_effectif, datetime)
+            and isinstance(fin_effective, datetime)
+            and fin_effective.replace(tzinfo=None) <= debut_effectif.replace(tzinfo=None)
+        ):
+            raise HTTPException(status_code=400, detail="La fin de l'événement doit être après son début.")
+        for participant in request.attendees or []:
+            if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", (participant or "").strip()):
+                raise HTTPException(status_code=400, detail=f"Adresse de participant invalide : {participant}")
 
         provider_req = ProviderUpdateRequest(
             summary=request.summary,
