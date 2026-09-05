@@ -27,13 +27,13 @@ class GenerationImpossible(RuntimeError):
 _CAUSES_CONNUES: tuple[tuple[tuple[str, ...], str], ...] = (
     (
         ("api key", "unauthorized", "401", "invalid_api_key", "authentication"),
-        "La clé d'API du fournisseur est refusée. Vérifie-la dans Réglages, "
+        "La clé d'API du fournisseur est refusée. Vérifie-la dans Paramètres, "
         "rubrique IA.",
     ),
     (
         ("does not support tools", "tool", "function calling"),
         "Le modèle choisi ne sait pas rédiger de réponse assistée. Choisis un "
-        "autre modèle dans Réglages, rubrique IA.",
+        "autre modèle dans Paramètres, rubrique IA.",
     ),
     (
         ("timed out", "timeout", "deadline"),
@@ -74,7 +74,7 @@ def cause_lisible(erreur_brute: str) -> str:
     return (
         "La rédaction assistée n'a pas abouti. Le détail est dans le journal "
         "de l'application ; tu peux réessayer ou changer de modèle dans "
-        "Réglages, rubrique IA."
+        "Paramètres, rubrique IA."
     )
 
 

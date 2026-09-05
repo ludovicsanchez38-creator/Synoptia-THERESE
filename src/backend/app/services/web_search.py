@@ -94,7 +94,7 @@ def verifier_autorisation_recherche() -> None:
     if not recherche_web_autorisee():
         raise RechercheWebRefusee(
             "La recherche web est désactivée. Tu peux la réactiver dans "
-            "Réglages > Services."
+            "Paramètres > Services."
         )
 
 

@@ -334,7 +334,7 @@ class BoardService:
             logger.info(f"Recherche web refusée pour le Board : {refus}")
             return (
                 "[Recherche web coupée par l'utilisateur : aucune source externe "
-                "n'a été consultée. Réglages > Services pour la réactiver.]"
+                "n'a été consultée. Paramètres > Services pour la réactiver.]"
             )
         except Exception as e:
             logger.warning(f"Échec recherche web pour Board: {e}")

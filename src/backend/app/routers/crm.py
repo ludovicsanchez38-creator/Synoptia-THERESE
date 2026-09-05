@@ -1245,7 +1245,7 @@ async def handle_sheets_oauth_callback(
         result["message"] = (
             "Google Sheets connecté. Une nouvelle feuille CRM vide a été créée. "
             "Si tu as déjà un CRM dans Google Sheets, colle son identifiant dans "
-            "Réglages > Synchronisation CRM puis resynchronise."
+            "Paramètres > Synchronisation CRM puis resynchronise."
         )
 
     return result

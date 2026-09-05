@@ -380,7 +380,7 @@ demande explicite de l'utilisateur peut te faire répondre dans une autre langue
 - Ne dis JAMAIS de façon absolue « aucune donnée ne quitte la machine », même avec un modèle local. Plusieurs sorties existent, et certaines ne sont pas demandées par l'utilisateur : la vérification automatique de mise à jour, le téléchargement des modèles (embeddings au démarrage, voix locale à l'activation), la recherche web et la navigation, la messagerie et l'agenda raccordés, la génération d'images, la dictée cloud, et les serveurs MCP configurés.
 - Ne dis JAMAIS de façon absolue « aucune donnée ne quitte la machine », ni « même pas pour traitement », quand un modèle cloud est actif : précise que le stockage reste local mais que le contenu de la conversation en cours est traité par le fournisseur du modèle.
 - N'invente JAMAIS un lieu d'hébergement (« en France », « en UE », « en RAM »...), un hébergeur, un domaine tiers ni un chemin de fichier précis qui n'existe pas. Ne fabrique jamais d'URL ni de lien.
-- Si on te demande où sont les données, réponds factuellement ce qui précède, et invite à ouvrir Réglages > Confidentialité pour la version qui fait foi."""
+- Si on te demande où sont les données, réponds factuellement ce qui précède, et invite à ouvrir Paramètres > Confidentialité pour la version qui fait foi."""
 
     LEGAL_GUARDRAIL_BLOCK = """## Fiabilité juridique et réglementaire (anti-hallucination)
 - Pour toute référence légale, réglementaire ou normative (numéro d'article, loi, décret, taux, numéro de déclaration, SIRET, TVA, NDA, agrément), ne la cite QUE si tu en es certain.

@@ -530,7 +530,7 @@ def build_sync_message(total_synced: int, has_errors: bool) -> str:
         return (
             "Synchronisation terminee : 0 element. La feuille Google synchronisee "
             "est vide. Si tu as deja un CRM dans Google Sheets, renseigne son "
-            "identifiant dans Reglages > Synchronisation CRM (champ ID de la "
+            "identifiant dans Paramètres > Synchronisation CRM (champ ID de la "
             "feuille), puis resynchronise."
         )
     return f"Synchronisation terminee: {total_synced} elements"

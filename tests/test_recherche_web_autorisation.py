@@ -59,7 +59,7 @@ class TestGardeAuNiveauDuService:
         with pytest.raises(web_search.RechercheWebRefusee) as capture:
             web_search.verifier_autorisation_recherche()
         message = str(capture.value)
-        assert "Réglages" in message and "Services" in message
+        assert "Paramètres" in message and "Services" in message
 
     def test_l_exception_se_distingue_d_une_panne_reseau(self):
         """Board et la recherche approfondie avalent les erreurs réseau.
@@ -178,7 +178,7 @@ class TestUnRefusNeSeDeguiseJamaisEnPanne:
             "ne pas envoyer l'utilisateur vérifier une clé API alors qu'il a "
             "lui-même coupé la recherche web"
         )
-        assert "Réglages" in texte or "coupée" in texte.lower(), (
+        assert "Paramètres" in texte or "coupée" in texte.lower(), (
             f"le message doit dire que la recherche est coupée. Reçu : {texte!r}"
         )
 

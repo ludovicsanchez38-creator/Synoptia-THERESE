@@ -827,7 +827,7 @@ async def generate_invoice_pdf(
             detail=(
                 "Profil émetteur incomplet : renseigne "
                 + ", ".join(missing)
-                + " dans Réglages > Profil avant de générer un document de facturation."
+                + " dans Paramètres > Profil avant de générer un document de facturation."
             ),
         )
 
