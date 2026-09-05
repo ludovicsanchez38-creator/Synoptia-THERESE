@@ -41,11 +41,11 @@ function CollapsibleSection({
         <span className="text-sm font-medium text-text">{title}</span>
         <ChevronDown className={`w-4 h-4 text-text-muted transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
-      {isOpen && (
-        <div id={panelId} className="px-4 py-4 border-t border-border/20">
-          {children}
-        </div>
-      )}
+      {/* B-357 : le panneau reste monté et masqué, pour que aria-controls
+          désigne toujours un élément présent. */}
+      <div id={panelId} hidden={!isOpen} className="px-4 py-4 border-t border-border/20">
+        {children}
+      </div>
     </div>
   );
 }
