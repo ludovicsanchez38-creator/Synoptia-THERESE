@@ -115,6 +115,6 @@ for i,e in enumerate(ECRANS):
  <div class="bloc"><h2>Ta décision pour cet écran</h2><div class="decision"><button type="button" data-choix="oui">Oui</button><button type="button" data-choix="non">Non</button><button type="button" data-choix="plus tard">Plus tard</button><input class="note" type="text" placeholder="Une réserve, si tu veux (mémorisée dans ce navigateur)"><span class="horodatage"></span></div><p class="texte" style="margin-top:10px;font-size:12px;color:var(--encre2)">« Plus tard » conserve l'existant. La décision enregistre l'écran, la direction et le thème affichés, la version et l'heure.</p></div>
 </div>
 <p style="display:flex;justify-content:space-between;margin-top:18px"><a href="{prev}">Précédent</a><a href="{nxt}">Suivant</a></p>"""
-    attrs = f'data-ecran="{e["id"]}" data-etats=\'{json.dumps(e.get("etats",{}),ensure_ascii=False)}\' data-captures=\'{json.dumps(e["captures"])}\' data-maquette="{"1" if exists else "0"}"'
+    attrs = f'data-ecran="{e["id"]}" data-etats="{html.escape(json.dumps(e.get("etats",{}),ensure_ascii=False), quote=True)}" data-captures="{html.escape(json.dumps(e["captures"]), quote=True)}" data-maquette="{"1" if exists else "0"}"'
     open(f"{D}/{e['id']}.html","w").write(page(e["titre"], corps, attrs))
 print("généré :", len(ECRANS)+2, "pages ;", sum(os.path.exists(f"{D}/maquettes/{e['id']}.html") for e in ECRANS), "maquettes présentes")
