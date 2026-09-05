@@ -252,7 +252,10 @@ jobs:
           # une amélioration force la mise à jour du chiffre, donc le mou ne peut
           # plus se reconstituer en silence.
           #
-          # 986 = compte mesuré SUR CE RUNNER (ubuntu-latest) au dernier
+          # 977 = compte mesuré SUR CE RUNNER (ubuntu-latest) au dernier
+          # recalage (05/09/2026, release 0.67.0 : 995 mesurés, treize erreurs
+          # nouvelles du cycle 3 annotées ; le Mac lit toujours un de plus).
+          # Auparavant : 986 = compte mesuré sur ce runner au dernier
           # recalage. La mesure locale sur macOS diffère de quelques unités :
           # l'écart de plateforme est réel, c'est le chiffre du runner qui vaut
           # ici. Aucun cache mypy n'est restauré dans ce job : la mesure est

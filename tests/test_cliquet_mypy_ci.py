@@ -125,7 +125,10 @@ class TestCliquetMypy:
         garde sur l'ancien chiffre : la suite backend est rouge sur `main`
         depuis. Les deux chiffres se recalent ENSEMBLE, c'est tout l'objet de
         ce test."""
-        assert _etape_mypy()["env"]["MYPY_BASELINE"] == "986"
+        # 05/09/2026 (release 0.67.0) : le runner a mesuré 995, treize erreurs
+        # nouvelles du cycle 3 ont été annotées, le cliquet descend à 977
+        # (le Mac lit 978, toujours un de plus que le runner).
+        assert _etape_mypy()["env"]["MYPY_BASELINE"] == "977"
 
 
 @pytest.mark.skipif(shutil.which("bash") is None, reason="bash requis")
