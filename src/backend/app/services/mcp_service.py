@@ -298,10 +298,33 @@ class MCPService:
                 logger.info(f"Loaded MCP server config: {server.name}")
 
         except Exception as e:
+            # B-457 (05/09/2026) : une corruption disparaissait dans une ligne
+            # de journal et tous les connecteurs avec elle. Le fichier fautif
+            # est conservé à côté pour diagnostic.
             logger.error(f"Failed to load MCP config: {e}")
+            try:
+                if self.config_path.exists():
+                    horodatage = datetime.now(UTC).strftime("%Y%m%d-%H%M%S")
+                    copie = self.config_path.with_name(
+                        f"{self.config_path.name}.corrompu-{horodatage}"
+                    )
+                    copie.write_bytes(self.config_path.read_bytes())
+                    logger.error("Configuration MCP corrompue conservée dans %s", copie)
+            except Exception as copie_err:
+                logger.warning("Copie de la configuration corrompue impossible : %s", copie_err)
 
     async def _save_config(self):
-        """Save server configurations to disk."""
+        """Save server configurations to disk (voir _ecrire_config)."""
+        self._ecrire_config()
+
+    def _ecrire_config(self) -> None:
+        """Écrit la configuration de façon ATOMIQUE.
+
+        B-457 (05/09/2026) : le fichier était ouvert en 'w' AVANT json.dump,
+        donc tronqué ; une panne pendant l'écriture laissait 25 octets et
+        tous les connecteurs disparaissaient au rechargement. On écrit dans
+        un fichier temporaire du même dossier puis on le substitue.
+        """
         self.config_path.parent.mkdir(parents=True, exist_ok=True)
 
         data = {
@@ -319,8 +342,14 @@ class MCPService:
             ]
         }
 
-        with open(self.config_path, "w") as f:
-            json.dump(data, f, indent=2)
+        temporaire = self.config_path.with_name(self.config_path.name + ".tmp")
+        try:
+            with open(temporaire, "w") as f:
+                json.dump(data, f, indent=2)
+            os.replace(temporaire, self.config_path)
+        finally:
+            if temporaire.exists():
+                temporaire.unlink(missing_ok=True)
 
     def add_server(
         self,
@@ -349,7 +378,14 @@ class MCPService:
             enabled=enabled,
         )
         self.servers[server_id] = server
-        asyncio.create_task(self._save_config())
+        # B-457 : sauvegarde SYNCHRONE et attendue. Détachée dans une tâche,
+        # elle n'existait pas encore au retour et son échec n'était jamais
+        # rendu (« Task exception was never retrieved »).
+        try:
+            self._ecrire_config()
+        except Exception:
+            self.servers.pop(server_id, None)
+            raise
         logger.info(f"Added MCP server: {name} ({server_id})")
         return server
 
