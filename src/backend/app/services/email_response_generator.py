@@ -214,7 +214,14 @@ Rédige une réponse appropriée en français."""
             )
 
             # Nettoyer la réponse (retirer signatures multiples, etc.)
-            response_text = response.strip()
+            response_text = (response or "").strip()
+            if not response_text:
+                # B-461 (05/09/2026) : un flux vide (coupure, filtre de
+                # contenu silencieux, modèle qui ne rend que du raisonnement)
+                # devenait un brouillon réduit à « Cordialement, Marie ».
+                raise GenerationImpossible(
+                    "Le modèle n'a rendu aucun texte : réessaie, ou change de modèle dans les réglages."
+                )
 
             # S'assurer qu'il y a une signature
             if f'{user_name}' not in response_text:
@@ -222,6 +229,8 @@ Rédige une réponse appropriée en français."""
 
             return response_text
 
+        except GenerationImpossible:
+            raise
         except Exception as e:
             # BUG-171. Ce bloc renvoyait un brouillon FABRIQUE (« Je reviens
             # vers vous rapidement ») avec un HTTP 200. L'utilisateur recevait
