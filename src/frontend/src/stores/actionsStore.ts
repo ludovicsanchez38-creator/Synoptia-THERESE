@@ -111,7 +111,11 @@ interface ActionsState {
 
   /** Polling interne */
   _startPolling: (taskId: string) => void;
+  _stopPolling: (taskId: string) => void;
 }
+
+// B-492 : une seule minuterie de sondage par tâche, annulable.
+const minuteriesDeSondage = new Map<string, ReturnType<typeof setTimeout>>();
 
 export const useActionsStore = create<ActionsState>((set, get) => ({
   agents: [],
@@ -192,6 +196,7 @@ export const useActionsStore = create<ActionsState>((set, get) => ({
   },
 
   cancelTask: async (taskId) => {
+    get()._stopPolling(taskId);
     try {
       await cancelTask(taskId);
       // Rafraichir immediatement
@@ -211,6 +216,16 @@ export const useActionsStore = create<ActionsState>((set, get) => ({
 
   // Polling interne (non expose dans le type public)
   _startPolling: (taskId: string) => {
+    const programmer = (delai: number) => {
+      get()._stopPolling(taskId);
+      minuteriesDeSondage.set(
+        taskId,
+        setTimeout(() => {
+          minuteriesDeSondage.delete(taskId);
+          void poll();
+        }, delai),
+      );
+    };
     const poll = async () => {
       const state = get();
       const task = state.tasks.find((t) => t.task_id === taskId);
@@ -248,11 +263,17 @@ export const useActionsStore = create<ActionsState>((set, get) => ({
         updated.status !== 'cancelled' &&
         updated.status !== 'error'
       ) {
-        setTimeout(poll, 1500);
+        programmer(1500);
       }
     };
 
-    // Premier polling apres 1s
-    setTimeout(poll, 1000);
+    // Premier polling apres 1s - un second démarrage pour la même tâche
+    // REMPLACE la minuterie au lieu d'en empiler une deuxième (B-492).
+    programmer(1000);
+  },
+  _stopPolling: (taskId: string) => {
+    const minuterie = minuteriesDeSondage.get(taskId);
+    if (minuterie) clearTimeout(minuterie);
+    minuteriesDeSondage.delete(taskId);
   },
 }));
