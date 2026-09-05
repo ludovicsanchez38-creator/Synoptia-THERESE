@@ -792,6 +792,12 @@ function AddActivityModal({ contactId, onClose, onCreated }: AddActivityModalPro
   const [submitting, setSubmitting] = useState(false);
   const [activityError, setActivityError] = useState<string | null>(null);
 
+  // B-336 : même inscription dans la pile Échap que CreateContactModal (B-262) ;
+  // sans elle, Échap retombait sur la cascade de la coque et éjectait la vue CRM.
+  const onCloseRef = useRef(onClose);
+  onCloseRef.current = onClose;
+  useEffect(() => pushEscapeHandler(() => onCloseRef.current()), []);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {

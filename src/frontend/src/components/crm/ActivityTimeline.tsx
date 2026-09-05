@@ -31,6 +31,28 @@ const ACTIVITY_COLORS = {
   score_change: 'text-agent-magenta',
 };
 
+// B-566 : `extra_data` est une chaîne JSON sérialisée côté serveur. Brute,
+// elle n'apporte rien de plus que la description. Un changement de score
+// devient une phrase ; tout le reste se tait plutôt que de s'afficher en JSON.
+function detailLisible(activity: ActivityResponse): string | null {
+  if (activity.type !== 'score_change' || !activity.extra_data) return null;
+  try {
+    const { old_score, new_score } = JSON.parse(activity.extra_data) as { old_score?: number; new_score?: number };
+    if (typeof old_score === 'number' && typeof new_score === 'number') {
+      return `Score recalculé : ${old_score} → ${new_score}`;
+    }
+  } catch {
+    // JSON illisible : rien de brut à l'écran.
+  }
+  return null;
+}
+
+function DetailDActivite({ activity }: { activity: ActivityResponse }) {
+  const detail = detailLisible(activity);
+  if (!detail) return null;
+  return <div className="mt-2 text-xs text-text-muted opacity-70">{detail}</div>;
+}
+
 export function ActivityTimeline({ contactId }: ActivityTimelineProps) {
   const [activities, setActivities] = useState<ActivityResponse[]>([]);
   const [loading, setLoading] = useState(true);
@@ -143,11 +165,7 @@ export function ActivityTimeline({ contactId }: ActivityTimelineProps) {
                   </p>
                 )}
 
-                {activity.extra_data && (
-                  <div className="mt-2 text-xs text-text-muted opacity-70">
-                    {activity.extra_data}
-                  </div>
-                )}
+                <DetailDActivite activity={activity} />
               </div>
             </div>
           </motion.div>
