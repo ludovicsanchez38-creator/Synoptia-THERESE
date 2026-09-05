@@ -886,8 +886,9 @@ async def _generate_document(
         )
     except asyncio.CancelledError:
         raise
-    except Exception as e:  # pragma: no cover - dépend du sandbox skills
-        return f"Erreur lors de la génération du document : {e}"
+    except Exception:  # pragma: no cover - dépend du sandbox skills
+        logger.exception("Erreur génération de document (workspace)")
+        return "Erreur lors de la génération du document. Le détail est au journal."
 
 
 async def _retirer_document_orphelin(
@@ -1424,7 +1425,7 @@ async def _send_email(args: dict, session: AsyncSession) -> str:
                 f"Impossible de se connecter au serveur d'envoi pour {to_addr}. "
                 "Vérifie ta connexion internet et la configuration SMTP."
             )
-        return f"Erreur lors de l'envoi de l'email : {e}"
+        return "Erreur lors de l'envoi de l'email. Le détail est au journal."
 
 
 async def _search_emails(args: dict, session: AsyncSession) -> str:
@@ -1477,9 +1478,9 @@ async def _search_emails(args: dict, session: AsyncSession) -> str:
                 "Enveloppe de la recherche emails impossible, fragment non injecté"
             )
             return "Erreur lors de la recherche."
-    except Exception as e:
+    except Exception:
         logger.exception("Erreur recherche emails")
-        return f"Erreur lors de la recherche : {e}"
+        return "Erreur lors de la recherche d'emails. Le détail est au journal."
 
 
 async def _list_calendar_events(
@@ -1556,9 +1557,9 @@ async def _list_calendar_events(
         except Exception:
             logger.warning("Enveloppe de l'agenda impossible, fragment non injecte")
             return "Erreur lors de la lecture du calendrier."
-    except Exception as e:
+    except Exception:
         logger.exception("Erreur lecture calendrier")
-        return f"Erreur lors de la lecture du calendrier : {e}"
+        return "Erreur lors de la lecture du calendrier. Le détail est au journal."
 
 
 async def _create_calendar_event(
@@ -1620,6 +1621,6 @@ async def _create_calendar_event(
             f"Evenement cree : **{event.summary}** "
             f"le {event.start.strftime('%d/%m/%Y %H:%M') if event.start else ''}"
         )
-    except Exception as e:
+    except Exception:
         logger.exception("Erreur creation evenement")
-        return f"Erreur lors de la creation de l'evenement : {e}"
+        return "Erreur lors de la création de l'événement. Le détail est au journal."
