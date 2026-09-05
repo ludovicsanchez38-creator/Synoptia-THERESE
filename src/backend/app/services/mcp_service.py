@@ -261,6 +261,9 @@ class MCPService:
         self._request_id = 0
         self._pending_requests: dict[int, asyncio.Future] = {}
         self._pending_timestamps: dict[int, float] = {}  # Sprint 2 - PERF-2.14
+        # B-350 : échéance PAR REQUÊTE (délai demandé par l'appelant), sinon le
+        # ménage tuait à 60 s un appel d'outil autorisé jusqu'à 120 s.
+        self._pending_deadlines: dict[int, float] = {}
         self._reader_tasks: dict[str, asyncio.Task] = {}
         self._stderr_reader_tasks: dict[str, asyncio.Task] = {}  # Sprint 2 - PERF-2.8
         self._cleanup_task: asyncio.Task | None = None  # Sprint 2 - PERF-2.14
@@ -618,29 +621,12 @@ class MCPService:
         """
         import time
         CLEANUP_INTERVAL = 30  # Check every 30 seconds
-        REQUEST_TIMEOUT = 60  # Cancel requests older than 60 seconds
 
         try:
             while True:
                 await asyncio.sleep(CLEANUP_INTERVAL)
 
-                now = time.time()
-                stale_ids = []
-
-                for request_id, timestamp in list(self._pending_timestamps.items()):
-                    if now - timestamp > REQUEST_TIMEOUT:
-                        stale_ids.append(request_id)
-
-                for request_id in stale_ids:
-                    if request_id in self._pending_requests:
-                        future = self._pending_requests.pop(request_id)
-                        self._pending_timestamps.pop(request_id, None)
-                        if not future.done():
-                            future.set_exception(
-                                asyncio.TimeoutError(f"Request {request_id} timed out after {REQUEST_TIMEOUT}s")
-                            )
-                        logger.warning(f"Cleaned up stale pending request: {request_id}")
-
+                stale_ids = self._purger_les_requetes_echues(time.time())
                 if stale_ids:
                     logger.info(f"Cleaned up {len(stale_ids)} stale MCP pending requests")
 
@@ -648,6 +634,25 @@ class MCPService:
             pass
         except Exception as e:
             logger.error(f"Error in pending requests cleanup: {e}")
+
+    def _purger_les_requetes_echues(self, now: float) -> list[int]:
+        """Tue les requêtes dont l'échéance PROPRE est dépassée (B-350)."""
+        REQUEST_TIMEOUT = 60
+        stale_ids = []
+        for request_id, timestamp in list(self._pending_timestamps.items()):
+            echeance = self._pending_deadlines.get(request_id, timestamp + REQUEST_TIMEOUT)
+            if now > echeance:
+                stale_ids.append(request_id)
+        for request_id in stale_ids:
+            self._pending_timestamps.pop(request_id, None)
+            self._pending_deadlines.pop(request_id, None)
+            future = self._pending_requests.pop(request_id, None)
+            if future is not None and not future.done():
+                future.set_exception(
+                    asyncio.TimeoutError(f"Request {request_id} timed out (échéance dépassée)")
+                )
+            logger.warning(f"Cleaned up stale pending request: {request_id}")
+        return stale_ids
 
     async def _handle_server_message(self, server_id: str, message: dict):
         """Handle a message from an MCP server."""
@@ -657,6 +662,7 @@ class MCPService:
             # This is a response to a request
             future = self._pending_requests.pop(msg_id)
             self._pending_timestamps.pop(msg_id, None)  # Sprint 2 - PERF-2.14
+            self._pending_deadlines.pop(msg_id, None)
             if "error" in message:
                 future.set_exception(Exception(message["error"].get("message", "Unknown error")))
             else:
@@ -690,6 +696,7 @@ class MCPService:
         future: asyncio.Future = asyncio.Future()
         self._pending_requests[request_id] = future
         self._pending_timestamps[request_id] = time.time()  # Sprint 2 - PERF-2.14
+        self._pending_deadlines[request_id] = time.time() + timeout + 5.0  # B-350
 
         # Send request
         request_line = json.dumps(request) + "\n"
@@ -703,6 +710,7 @@ class MCPService:
         except asyncio.TimeoutError:
             self._pending_requests.pop(request_id, None)
             self._pending_timestamps.pop(request_id, None)  # Sprint 2 - PERF-2.14
+            self._pending_deadlines.pop(request_id, None)
             raise RuntimeError(f"Request timeout: {method}")
 
     async def _initialize_server(self, server_id: str):
@@ -885,6 +893,7 @@ class MCPService:
                 future.cancel()
         self._pending_requests.clear()
         self._pending_timestamps.clear()
+        self._pending_deadlines.clear()
 
         logger.info("MCP service shut down")
 
