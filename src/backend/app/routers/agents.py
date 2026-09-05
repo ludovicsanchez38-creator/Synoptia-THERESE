@@ -367,14 +367,17 @@ async def agent_request(
             raise
         except Exception as e:
             logger.error(f"Erreur swarm: {e}", exc_info=True)
+            # B-344 (05/09/2026) : str(e) partait dans l'évènement SSE et se
+            # persistait dans task.error ; le garde cherchait une autre chaîne.
+            message = message_pour_ecran(e, ou="pendant la mission")
             error_chunk = AgentStreamChunk(
                 type="error",
-                content=f"Erreur inattendue : {e}",
+                content=message,
                 task_id=task.id,
             )
             yield f"data: {json.dumps(error_chunk.model_dump(exclude_none=True), ensure_ascii=False)}\n\n"
             final_status = "error"
-            final_error = str(e)
+            final_error = message
         finally:
             persistance_agent_task_ok = False
             if _running_agent_tasks.get(task.id) is current_async_task:
