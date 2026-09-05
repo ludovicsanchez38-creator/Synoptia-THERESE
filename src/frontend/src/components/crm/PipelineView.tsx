@@ -28,6 +28,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { pushEscapeHandler } from '../../lib/escapeStack';
+import { accessibiliteGlisserDeposer } from '../../lib/accessibiliteGlisserDeposer';
 import type { ContactResponse } from '../../services/api';
 
 // Les 7 stages du pipeline. Couleurs prises aux jetons depuis le 30/08/2026 :
@@ -134,35 +135,16 @@ export function PipelineView({ contacts, onContactClick, onStageChange }: Pipeli
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onDragCancel={() => setActiveContact(null)}
-      // B-237 : sans ce bloc, un lecteur d'écran français lisait les consignes
-      // ANGLAISES par défaut de dnd-kit, et annonçait des identifiants au lieu
-      // de noms de contacts et de colonnes.
-      accessibility={{
-        screenReaderInstructions: {
-          draggable:
-            'Pour saisir une carte, appuie sur la barre d’espace. Utilise ensuite les flèches ' +
-            'pour la déplacer d’une colonne à l’autre, la barre d’espace pour la déposer, ' +
-            'et Échap pour annuler.',
-        },
-        announcements: {
-          onDragStart: ({ active }) =>
-            `Carte de ${nomDuContact(active.id as string)} saisie.`,
-          onDragOver: ({ active, over }) => {
-            const stage = libelleDuStage(over ? stageDepuisCible(over.id as string) : null);
-            return stage
-              ? `Carte de ${nomDuContact(active.id as string)} au-dessus de la colonne ${stage}.`
-              : `Carte de ${nomDuContact(active.id as string)} hors d’une colonne.`;
-          },
-          onDragEnd: ({ active, over }) => {
-            const stage = libelleDuStage(over ? stageDepuisCible(over.id as string) : null);
-            return stage
-              ? `Carte de ${nomDuContact(active.id as string)} déposée dans la colonne ${stage}.`
-              : `Carte de ${nomDuContact(active.id as string)} reposée à sa place.`;
-          },
-          onDragCancel: ({ active }) =>
-            `Déplacement annulé, la carte de ${nomDuContact(active.id as string)} reste à sa place.`,
-        },
-      }}
+      // B-237 puis B-441 : consignes et annonces en français, par les noms,
+      // depuis le jeu PARTAGÉ des trois autres tableaux (un seul lexique).
+      accessibility={accessibiliteGlisserDeposer((id) => {
+        const identifiant = String(id);
+        const stage = libelleDuStage(identifiant);
+        if (stage) return `la colonne ${stage}`;
+        return contacts.some((c) => c.id === identifiant)
+          ? `la carte de ${nomDuContact(identifiant)}`
+          : null;
+      })}
     >
       <div className="flex gap-4 overflow-x-auto pb-4">
         {PIPELINE_STAGES.map((stage) => (
