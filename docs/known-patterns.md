@@ -353,3 +353,36 @@ Sur un clone existant : `git fetch --prune --prune-tags --force origin` puis
 `git reset --hard origin/main` (ou `git switch -C main origin/main`), jamais
 `git pull` qui fusionnerait les deux historiques. Clones resynchronisés le 05/09 :
 Mac, Katia (`~/therese-v2` sur le VPS Agents), Codex.
+
+## Les portes d'un worktree ne valent pas pour `main` fusionné (05/09/2026)
+
+Pendant le cycle 3 de la boucle, chaque lot passait ruff, mypy (comparé à
+`main`), tsc, eslint et les suites dans le worktree `repair/c3-lot1`, puis
+était fusionné en avance rapide. La CI de `main` était pourtant rouge sur les
+trois derniers commits avant la release 0.67.0 : ruff n'avait été lancé que
+sur `src/backend` (la CI lint aussi `tests/`), mypy était comparé à un `main`
+qui avait déjà dérivé du cliquet, un test vitest laissait une promesse rejetée
+non gérée (vert en local par timing, rouge en CI), et deux tests Windows
+échouaient pour des raisons de plateforme (`Path.home()` lit `USERPROFILE`,
+pas `HOME` ; la garde des `open()` sans encodage ne reconnaissait pas
+`Path.open("rb")` avec le mode en positionnel).
+
+Règle : avant d'annoncer une release, lire la conclusion des trois workflows
+sur le dernier commit de `main`, et lancer les six portes du `CLAUDE.md` sur
+`main` fusionné, pas seulement sur la branche de travail. Une promesse rejetée
+non gérée fait échouer vitest (exit 1) même quand tous les tests passent :
+chercher « Unhandled Rejection » dans la sortie, pas seulement le compte.
+
+## Une revue adversariale du diff avant le tag rattrape ce que les tests par lot ne voient pas (05/09/2026)
+
+`codex exec review --base v0.66.1-alpha` (23 minutes, lecture seule) sur les
+150 commits du cycle 3 a rendu deux P1 vérifiés : la purge « toutes mes
+données » ignorait les cinq tables du socle PERT (suppressions SQL directes,
+sans cascade ORM), et la fermeture de l'application tuait le sidecar dès que
+son port était lâché, alors qu'Uvicorn ferme le port AVANT d'exécuter le
+nettoyage du lifespan (MCP, bases). Les deux avaient leurs tests verts : les
+tests validaient chaque correctif dans son périmètre, pas l'interaction entre
+un correctif et une table ajoutée par un autre commit. Garder la revue du diff
+complet dans le rituel de release quand le lot dépasse quelques dizaines de
+commits, et vérifier chaque finding dans le code avant de le corriger (huit
+P2 sur neuf ont été enregistrés comme candidats plutôt que corrigés à chaud).
