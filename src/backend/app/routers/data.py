@@ -95,11 +95,19 @@ def _export_row(
 # ============================================================
 
 
+_MOTIFS_DE_SECRET = ("api_key", "apikey", "secret", "token", "password", "passwd", "mot_de_passe")
+
+
 def _valeur_de_preference_exportable(pref: Preference) -> str:
     """La valeur d'une préférence, telle qu'elle peut sortir de l'export."""
     from app.services.user_profile import PROFILE_KEY
 
-    if "api_key" in pref.key.lower():
+    # B-538 (05/09/2026) : le masque ne testait que « api_key ». Les jetons
+    # OAuth du CRM (crm_sheets_access_token, refresh_token), le secret client
+    # Google et les mots de passe de messagerie sortaient tels quels dans
+    # l'export de portabilité, chiffrés ou non.
+    cle = pref.key.lower()
+    if any(motif in cle for motif in _MOTIFS_DE_SECRET):
         return "[REDACTED]"
     if pref.key == PROFILE_KEY:
         return "[voir la section profil]"
