@@ -241,8 +241,6 @@ describe('lot 5 : plus une seule couleur brute', () => {
       'components/atelier/AgentChat.tsx : backgroundColor: isUser ? "rgba(34, 211, 238, 0.1)"',
       "components/atelier/AgentMessageBubble.tsx : backgroundColor: isUser ? 'rgba(34, 211, 238, 0.1)'",
       "components/atelier/CodeReviewPanel.tsx : backgroundColor: line.startsWith('+') && !line.startsWith('+++') ? 'rgba(34, 1",
-      "components/atelier/MissionStepper.tsx : backgroundColor: isActive ? 'rgba(168, 85, 247, 0.2)'",
-      "components/atelier/MissionStepper.tsx : backgroundColor: isDone ? '#A855F7' : 'rgba(255,255,255,0.1)'",
       "components/ui/UpdateBanner.tsx : background: 'rgba(34, 211, 238, 0.2)'",
       "components/ui/UpdateBanner.tsx : background: 'rgba(34, 211, 238, 0.2)'",
       "components/ui/UpdateBanner.tsx : background: 'rgba(34, 211, 238, 0.2)'",

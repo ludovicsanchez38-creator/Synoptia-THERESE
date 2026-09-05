@@ -241,10 +241,11 @@ function MonthView({
             <div
               key={index}
               className={`border border-border/30 rounded-md p-2 overflow-hidden ${
-                isCurrentMonth ? 'bg-surface-elevated/40' : 'bg-background/20 opacity-50'
+                isCurrentMonth ? 'bg-surface-elevated/40' : 'bg-background/20'
               } ${isToday ? 'ring-2 ring-ring' : ''}`}
             >
-              <div className="text-sm font-medium text-text mb-1">{day.getDate()}</div>
+              {/* B-414 : hors mois, l'encre atténuée reste lisible (AA), sans opacité sur la cellule. */}
+              <div className={`text-sm font-medium mb-1 ${isCurrentMonth ? 'text-text' : 'text-text-muted'}`}>{day.getDate()}</div>
               <div className="space-y-1">
                 {dayEvents.slice(0, 3).map((event) => (
                   <button

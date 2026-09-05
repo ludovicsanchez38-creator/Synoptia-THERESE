@@ -38,7 +38,7 @@ export function MissionStepper({ currentPhase }: Props) {
               <div
                 className="h-px flex-1"
                 style={{
-                  backgroundColor: isDone ? '#A855F7' : 'rgba(255,255,255,0.1)',
+                  backgroundColor: isDone ? 'var(--color-agent-purple)' : 'var(--color-border)',
                 }}
               />
             )}
@@ -46,16 +46,16 @@ export function MissionStepper({ currentPhase }: Props) {
               className="flex items-center gap-1 rounded-sm px-2 py-1 text-xs font-medium transition-all"
               style={{
                 backgroundColor: isActive
-                  ? 'rgba(168, 85, 247, 0.2)'
+                  ? 'color-mix(in srgb, var(--color-agent-purple) 20%, transparent)'
                   : isDone
-                    ? 'rgba(168, 85, 247, 0.1)'
-                    : 'rgba(255, 255, 255, 0.05)',
+                    ? 'color-mix(in srgb, var(--color-agent-purple) 10%, transparent)'
+                    : 'var(--color-surface-elevated)',
                 color: isActive
-                  ? '#A855F7'
+                  ? 'var(--color-agent-purple)'
                   : isDone
-                    ? '#A855F7'
+                    ? 'var(--color-agent-purple)'
                     : '#6B7280',
-                border: isActive ? '1px solid rgba(168, 85, 247, 0.3)' : '1px solid transparent',
+                border: isActive ? '1px solid color-mix(in srgb, var(--color-agent-purple) 30%, transparent)' : '1px solid transparent',
               }}
             >
               {isDone ? <Check size={12} /> : step.icon}
