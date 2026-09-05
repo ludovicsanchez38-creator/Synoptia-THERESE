@@ -6,7 +6,7 @@
  */
 
 import { useMemo, useEffect, useRef } from 'react';
-import { localDateKey } from '../../lib/civilDate';
+import { clesDeJoursCouverts, localDateKey, parseLocalDateKey } from '../../lib/civilDate';
 import { motion } from 'framer-motion';
 import { useCalendarStore } from '../../stores/calendarStore';
 import type { CalendarEvent } from '../../services/api';
@@ -87,11 +87,13 @@ function ListView({
     const groups: Record<string, CalendarEvent[]> = {};
 
     events.forEach((event) => {
-      const dateKey = event.start_date || event.start_datetime?.split('T')[0] || 'unknown';
-      if (!groups[dateKey]) {
-        groups[dateKey] = [];
+      // B-379 : chaque jour couvert reçoit l'événement.
+      for (const dateKey of clesDeJoursCouverts(event).length ? clesDeJoursCouverts(event) : ['unknown']) {
+        if (!groups[dateKey]) {
+          groups[dateKey] = [];
+        }
+        groups[dateKey].push(event);
       }
-      groups[dateKey].push(event);
     });
 
     // Sort by date descending
@@ -109,7 +111,7 @@ function ListView({
           {groupedEvents.map(([date, evts]) => (
             <div key={date}>
               <h3 className="text-sm font-medium text-accent-cyan-ink mb-3">
-                {new Date(date).toLocaleDateString('fr-FR', {
+                {parseLocalDateKey(date).toLocaleDateString('fr-FR', {
                   weekday: 'long',
                   day: 'numeric',
                   month: 'long',
@@ -200,8 +202,7 @@ function MonthView({
     const map: Record<string, CalendarEvent[]> = {};
 
     events.forEach((event) => {
-      const dateKey = event.start_date || event.start_datetime?.split('T')[0] || '';
-      if (dateKey) {
+      for (const dateKey of clesDeJoursCouverts(event)) {
         if (!map[dateKey]) {
           map[dateKey] = [];
         }
@@ -306,12 +307,10 @@ function WeekView({
     const finSemaine = localDateKey(weekDates[6]);
 
     events.forEach((event) => {
-      const dateKey = event.start_date || event.start_datetime?.split('T')[0] || '';
-      if (!dateKey) return;
-
-      // Vérifier si l'événement est dans la semaine visible
+      for (const dateKey of clesDeJoursCouverts(event)) {
+      // Vérifier si le jour est dans la semaine visible
       if (dateKey < debutSemaine || dateKey > finSemaine) {
-        return;
+        continue;
       }
 
       if (event.all_day) {
@@ -320,6 +319,7 @@ function WeekView({
       } else {
         if (!timedByDate[dateKey]) timedByDate[dateKey] = [];
         timedByDate[dateKey].push(event);
+      }
       }
     });
 
@@ -572,8 +572,7 @@ function DayView({
     const timedEvents: CalendarEvent[] = [];
 
     events.forEach((event) => {
-      const eventDate = event.start_date || event.start_datetime?.split('T')[0] || '';
-      if (eventDate !== dateStr) return;
+      if (!clesDeJoursCouverts(event).includes(dateStr)) return;
 
       if (event.all_day) {
         allDayEvents.push(event);

@@ -38,3 +38,36 @@ export function parisDateKey(value: string): string {
 export function isPastParisCivilDate(value: string, now: Date = new Date()): boolean {
   return parisDateKey(value) < parisDateKey(now.toISOString());
 }
+
+
+/** B-369 : une clé civile « YYYY-MM-DD » se lit en composants LOCAUX. `new
+ * Date('YYYY-MM-DD')` construit minuit UTC : à l'ouest de Greenwich, c'est la
+ * veille. */
+export function parseLocalDateKey(key: string): Date {
+  const [y, m, d] = key.slice(0, 10).split('-').map(Number);
+  return new Date(y, (m || 1) - 1, d || 1);
+}
+
+interface EvenementCivil {
+  all_day?: boolean | null;
+  start_date?: string | null;
+  end_date?: string | null;
+  start_datetime?: string | null;
+  end_datetime?: string | null;
+}
+
+/** B-379 : toutes les clés de jour qu'un événement occupe. Une journée entière
+ * couvre [start_date, end_date] (fin INCLUSIVE dans l'application, cf.
+ * BUG-144) ; un rendez-vous horodaté garde sa clé de début (la grille le
+ * positionne par sa durée, cf. B-058). */
+export function clesDeJoursCouverts(evenement: EvenementCivil): string[] {
+  const debut = evenement.start_date || evenement.start_datetime?.slice(0, 10) || '';
+  if (!debut) return [];
+  if (!evenement.all_day || !evenement.end_date || evenement.end_date <= debut) return [debut];
+  const cles: string[] = [];
+  const fin = parseLocalDateKey(evenement.end_date);
+  for (let jour = parseLocalDateKey(debut); jour <= fin && cles.length < 366; jour.setDate(jour.getDate() + 1)) {
+    cles.push(localDateKey(jour));
+  }
+  return cles;
+}
