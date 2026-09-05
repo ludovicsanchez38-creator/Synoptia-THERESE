@@ -221,6 +221,10 @@ pub(crate) struct SidecarState {
     /// Revue 0.40 : arrêt volontaire (quit, relance post-update) - dans ce cas
     /// une terminaison du sidecar ne doit PAS déclencher de redémarrage.
     pub(crate) shutting_down: std::sync::atomic::AtomicBool,
+    /// Revue COCO 0.67 : le port lâché ne signifie pas le nettoyage terminé.
+    /// Uvicorn ferme son port AVANT d'exécuter le lifespan (MCP, bases,
+    /// synchronisations) ; ce drapeau passe à vrai à la vraie fin du processus.
+    pub(crate) sidecar_termine: std::sync::atomic::AtomicBool,
     /// Relances consécutives depuis le dernier run stable (>2 min).
     /// (Lu uniquement par le code sidecar, compilé en release.)
     #[cfg_attr(debug_assertions, allow(dead_code))]
@@ -238,6 +242,12 @@ pub(crate) fn spawn_backend_sidecar(app: &tauri::AppHandle) {
 
     // Tuer les anciens process backend zombies AVANT le lancement
     kill_zombie_backends();
+
+    // Revue COCO 0.67 : un sidecar relancé repart avec un drapeau de fin à faux,
+    // sinon la fermeture suivante le tuerait sans attendre son nettoyage.
+    app.state::<SidecarState>()
+        .sidecar_termine
+        .store(false, std::sync::atomic::Ordering::SeqCst);
 
     let port = BACKEND_PORT;
     let port_str = port.to_string();
@@ -345,6 +355,10 @@ pub(crate) fn spawn_backend_sidecar(app: &tauri::AppHandle) {
                                     );
                                     println!("[THÉRÈSE] {}", msg);
                                     log_sidecar(&msg);
+                                    handle
+                                        .state::<SidecarState>()
+                                        .sidecar_termine
+                                        .store(true, std::sync::atomic::Ordering::SeqCst);
                                     // Revue 0.40 : une panne du sidecar
                                     // n'impose plus de relancer toute l'app
                                     handle_sidecar_termination(&handle, started_at, payload.code);
@@ -484,6 +498,7 @@ pub fn run() {
         .manage(SidecarState {
             child: Mutex::new(None),
             shutting_down: std::sync::atomic::AtomicBool::new(false),
+            sidecar_termine: std::sync::atomic::AtomicBool::new(false),
             restart_attempts: std::sync::atomic::AtomicU32::new(0),
         })
         .manage(BackendPort(Mutex::new(BACKEND_PORT)))
@@ -601,9 +616,20 @@ pub fn run() {
                 {
                     std::thread::sleep(std::time::Duration::from_millis(100));
                 }
+                // Revue COCO 0.67 : le port est lâché avant le nettoyage du
+                // lifespan (MCP, bases, synchronisations). On attend la vraie
+                // fin du processus, dans le même budget de cinq secondes.
+                while !state
+                    .sidecar_termine
+                    .load(std::sync::atomic::Ordering::SeqCst)
+                    && debut.elapsed() < std::time::Duration::from_secs(5)
+                {
+                    std::thread::sleep(std::time::Duration::from_millis(100));
+                }
                 log_sidecar(&format!(
-                    "Shutdown graceful attendu {} ms",
-                    debut.elapsed().as_millis()
+                    "Shutdown graceful attendu {} ms (processus terminé : {})",
+                    debut.elapsed().as_millis(),
+                    state.sidecar_termine.load(std::sync::atomic::Ordering::SeqCst)
                 ));
 
                 // Étape 3 : Force kill si toujours vivant
