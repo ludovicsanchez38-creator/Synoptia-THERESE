@@ -7,12 +7,25 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ---
 
-## [Non releasé] - Atelier documentaire
+## [v0.67.0-alpha] - 5 septembre 2026 - 194 correctifs du cycle 3 de la boucle
 
+Troisième cycle de la boucle autonome d'amélioration depuis la 0.66.1 : chaque défaut reproduit puis fermé avec son test (289 tests ajoutés). Détail par thème dans le changelog Discord et `docs/releases/v0.67.0-alpha.md`.
+
+- **Devis et factures** : un seul formulaire de devis, « Nouveau devis » crée un devis, création possible depuis une liste filtrée, client retrouvé même hors des 200 contacts récents, plus de doublon au second clic, PDF avec séparateur de milliers, « N° », délai de paiement réel, statut identique à l'écran, noms avec « & » et chevrons acceptés, franchise de TVA respectée, dates impossibles et prix non finis refusés proprement.
+- **Contacts, pipeline et CRM** : fiche sans faux téléphone ni fausse adresse, adresse conservée sous recherche active, historique lisible, Échap sur la fenêtre d'activité, mode démonstration étanche, import et export tableur sûrs, Google Sheets sans identifiant pré-rempli, purge RGPD réelle et secrets hors export.
+- **Agenda** : événements sur plusieurs jours visibles chaque jour, tri par heure, fuseaux à l'ouest, contraste des jours, agenda local par défaut sans compte Google, CalDAV avec rappels et messages en français, boutons nommés.
+- **Messagerie** : assistant Gmail sans impasse, comptes IMAP vus à la mise en route, seconde page, envois déposés dans « Envoyés », pièces jointes imbriquées, transfert HTML complet, 17 messages en français, signature sans faux profil.
+- **Actions et agents** : « Relance clients » sur les vraies créances, résultat rangé dans une vraie conversation, contextes courriels et agenda opérationnels, serveurs MCP robustes (délai 120 s, écriture atomique, secrets masqués), périmètre des agents borné.
+- **Assistante et services d'IA** : plafonds de jetons appliqués, modèle hors grille signalé, budget mensuel persistant, plus de blocage « sécurité » sur des demandes ordinaires, disjoncteur réparé, application qui ne se fige plus pendant une image ou une dictée.
+- **Accueil, navigation, accessibilité** : « Voir la suite » sur écran bas, point d'attention qui ouvre la facture, palette sans doublon, fermeture immédiate et propre (le moteur est attendu jusqu'à la fin de son nettoyage), une trentaine de correctifs d'accessibilité, lexique « Paramètres » partout.
 - **Voix locale** : modifier un texte après sa synthèse masque l'audio périmé et explique maintenant qu'il faut le générer à nouveau.
 - **OAuth Google** : la page de refus aligne son titre et ses explications avec les autres pages de retour, tout en gardant la liste des causes lisible à gauche.
 - **CI** : le contrôle mypy utilise Torch CPU sans télécharger les paquets CUDA ; sous Windows, les deux racines de tests s'exécutent une seule fois et produisent deux rapports JUnit.
 - **Planning projet (socle PERT/CPM)** : ajoute un moteur déterministe, cinq tables dédiées, des snapshots par empreinte et une API locale de calcul en lecture seule. Les données manquantes, cycles et contraintes incompatibles sont signalés sans inventer de date.
+- **Purge globale** : « toutes mes données » efface aussi les cinq tables de planning (revue Codex du diff).
+
+## [v0.27.0-alpha] - 8 juillet 2026 - Atelier documentaire (entrée rattrapée)
+
 - **Atelier documentaire (nouveau)** : rédige des documents longs (proposition, dossier, rapport) directement dans THÉRÈSE - trame générée par l'IA (sections/sous-sections), rédaction guidée section par section en streaming, capture de « pistes » (idées annexes pendant la rédaction) explorables ou ignorables, export en Markdown ou Word (.docx).
 - **RGPD** : l'export complet de données et le droit à l'oubli couvrent désormais les documents de l'atelier (documents, sections, pistes), qui en étaient absents.
 - **Correctif export de conversation** : le téléchargement d'un export de conversation (Markdown/Word) utilisait une adresse incomplète et pouvait échouer selon le mode de lancement de l'app - corrigé.
