@@ -105,7 +105,7 @@ describe('InvoiceForm décimaux', () => {
     fireEvent.click(screen.getByRole('button', { name: /Créer/i }));
 
     expect(createInvoiceMock).not.toHaveBeenCalled();
-    // B-407 / B-437 : la garde passe par le centre de notifications, plus par alert().
+    // B-407 / B-437 : la garde passe par le centre de notifications, plus par une boîte native.
     expect(window.alert).not.toHaveBeenCalled();
     expect(notifValeurInvalide).toHaveBeenCalledWith(expect.objectContaining({ type: 'warning', title: 'Valeur invalide' }));
   });
