@@ -71,6 +71,10 @@ _MAX_OPENCLAW_AGENTS = 3
 def _get_source_path() -> str | None:
     """Récupère le chemin du source configuré.
 
+    B-536 (05/09/2026) : SQLite puis jusqu'à neuf .exists() en synchrone ;
+    appelé depuis quatre routes async, il gelait la boucle 1,3 s. Les appelants
+    passent par asyncio.to_thread.
+
     Priorité : DB > env var > auto-détection.
     """
     import os
@@ -522,7 +526,10 @@ async def spawn_agent(request: SpawnAgentRequest):
     configured_source = _get_source_path()
     source_path = request.source_path or configured_source
     if source_path:
-        _resoudre_depot_autorise(source_path, configured_source)
+        # B-519 (05/09/2026) : le résultat de la garde était jeté ; l'exécuteur
+        # d'outils recevait la chaîne brute (« ~/… », « ./ ») et ne trouvait
+        # plus les fichiers. Même geste que /request : le chemin RÉSOLU.
+        source_path = str(_resoudre_depot_autorise(source_path, configured_source))
 
     # Charger le profil
     profile = get_profile(request.profile_id)
