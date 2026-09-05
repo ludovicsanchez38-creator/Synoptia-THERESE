@@ -200,7 +200,9 @@ export function EmailSetupWizard({ onComplete, onCancel }: EmailSetupWizardProps
                 onChange={(field, value) => {
                   updateState({ [field]: value });
                 }}
-                onBack={prevStep}
+                // B-329 : avec des identifiants détectés, l'étape 2 (guide)
+                // n'a pas de contenu ; le retour saute directement au choix.
+                onBack={() => setStep(wizardState.useMcpCredentials ? 1 : 2)}
                 onContinue={() => nextStep()}
               />
             )}
