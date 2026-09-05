@@ -33,6 +33,16 @@ fn log_sidecar(msg: &str) {
     }
 }
 
+/// B-448 : le backend tient-il encore son port ? Borne l'attente du shutdown
+/// graceful au temps réellement nécessaire, au lieu d'un sommeil fixe.
+fn backend_ecoute_encore(port: u16) -> bool {
+    let addr: std::net::SocketAddr = match format!("127.0.0.1:{}", port).parse() {
+        Ok(a) => a,
+        Err(_) => return false,
+    };
+    std::net::TcpStream::connect_timeout(&addr, std::time::Duration::from_millis(200)).is_ok()
+}
+
 /// Tue les anciens process backend THÉRÈSE zombies restés actifs.
 /// Nécessaire lors des mises à jour (ex: v0.1.4 → v0.1.5+).
 /// Appelée uniquement en release (bloc not(debug_assertions)).
@@ -582,8 +592,19 @@ pub fn run() {
                 }
 
                 // Étape 2 : Attendre le shutdown graceful (uvicorn + lifespan cleanup)
-                // BUG-077 : augmenté de 3s à 5s pour laisser Windows libérer les handles
-                std::thread::sleep(std::time::Duration::from_secs(5));
+                // BUG-077 : jusqu'à 5 s pour laisser Windows libérer les handles.
+                // B-448 : mais on s'arrête dès que le backend a lâché son port,
+                // au lieu de dormir cinq secondes quoi qu'il arrive.
+                let debut = std::time::Instant::now();
+                while backend_ecoute_encore(port)
+                    && debut.elapsed() < std::time::Duration::from_secs(5)
+                {
+                    std::thread::sleep(std::time::Duration::from_millis(100));
+                }
+                log_sidecar(&format!(
+                    "Shutdown graceful attendu {} ms",
+                    debut.elapsed().as_millis()
+                ));
 
                 // Étape 3 : Force kill si toujours vivant
                 let _ = child.kill();
