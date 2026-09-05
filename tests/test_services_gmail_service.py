@@ -71,3 +71,55 @@ async def test_modify_message_sans_etiquette_est_un_noop():
 
     assert result == {"id": "msg-1"}
     service._request.assert_not_awaited()
+
+
+class TestB478LesPiecesJointesImbriqueesSontComptees:
+    """B-478 (05/09/2026) : format_message_for_storage ne regardait que les
+    `parts` de premier niveau. Un transfert (multipart/mixed > message/rfc822
+    > multipart/mixed > devis.pdf) donnait has_attachments False et
+    attachment_count 0, alors que _extract_attachments récurse et trouve le
+    fichier : la liste disait « sans pièce jointe », le détail en montrait une.
+    """
+
+    def _message_transfere(self) -> dict:
+        return {
+            "id": "m1",
+            "threadId": "t1",
+            "labelIds": ["INBOX"],
+            "sizeEstimate": 1000,
+            "internalDate": "1757000000000",
+            "payload": {
+                "mimeType": "multipart/mixed",
+                "headers": [
+                    {"name": "From", "value": "Paul Durand <paul@durand.test>"},
+                    {"name": "To", "value": "marie@atelier.test"},
+                    {"name": "Subject", "value": "Fwd: devis"},
+                    {"name": "Date", "value": "Fri, 05 Sep 2026 10:00:00 +0200"},
+                ],
+                "parts": [
+                    {"mimeType": "text/plain", "body": {"data": ""}},
+                    {
+                        "mimeType": "message/rfc822",
+                        "parts": [
+                            {
+                                "mimeType": "multipart/mixed",
+                                "parts": [
+                                    {"mimeType": "text/plain", "body": {"data": ""}},
+                                    {
+                                        "mimeType": "application/pdf",
+                                        "filename": "devis.pdf",
+                                        "body": {"size": 4321, "attachmentId": "att-1"},
+                                    },
+                                ],
+                            }
+                        ],
+                    },
+                ],
+            },
+        }
+
+    def test_un_fichier_imbrique_compte(self):
+        stocke = format_message_for_storage(self._message_transfere())
+
+        assert stocke["has_attachments"] is True
+        assert stocke["attachment_count"] == 1
