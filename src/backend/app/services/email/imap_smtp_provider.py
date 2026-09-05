@@ -26,7 +26,7 @@ from app.services.email.base_provider import (
     SendEmailRequest,
 )
 from app.services.html_sanitizer import sanitize_html
-from imap_tools import AND, OR, MailBox, MailMessage
+from imap_tools import AND, OR, MailBox, MailMessage, MailMessageFlags
 
 logger = logging.getLogger(__name__)
 
@@ -472,8 +472,31 @@ class ImapSmtpProvider(EmailProvider):
                 _humanize_smtp_error(e, self._smtp_port, self._smtp_use_tls)
             ) from e
 
-        # Return a generated ID (SMTP doesn't return one)
-        return f"sent_{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}"
+        # B-525 (05/09/2026) : SMTP n'archive rien. Sans append dans le dossier
+        # Envoyés, le message n'existait nulle part côté serveur : l'onglet
+        # Envoyé de THÉRÈSE et le téléphone ne le voyaient jamais. L'UID du
+        # serveur (UIDPLUS) remplace l'identifiant de synthèse quand il existe.
+        identifiant: str | None = None
+        try:
+            dossier = await self.resolve_folder_for_label("SENT")
+            if dossier:
+
+                def _sync_append():
+                    with self._connect_mailbox(timeout=IMAP_CONNECT_TIMEOUT) as mailbox:
+                        return mailbox.append(
+                            msg.as_bytes(), dossier, dt=datetime.now(), flag_set=[MailMessageFlags.SEEN]
+                        )
+
+                resultat = await self._run_imap_operation(
+                    _sync_append, timeout=IMAP_OPERATION_TIMEOUT, operation_name="IMAP append Envoyés"
+                )
+                identifiant = self._uid_appendu(resultat)
+            else:
+                logger.warning("Dossier Envoyés introuvable : message envoyé mais non archivé")
+        except Exception as e:
+            logger.warning("Copie dans Envoyés impossible (message envoyé) : %s", e)
+
+        return identifiant or f"sent_{datetime.now(UTC).strftime('%Y%m%d%H%M%S')}"
 
     def _message_du_brouillon(self, request: SendEmailRequest) -> MIMEMultipart:
         """MIME d'un brouillon, identique qu'on le crée ou qu'on le remplace."""
