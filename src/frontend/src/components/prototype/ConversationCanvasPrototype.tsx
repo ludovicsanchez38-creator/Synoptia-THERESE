@@ -1509,7 +1509,7 @@ export function ConversationCanvasPrototype() {
                 setCapabilityCenterOpen(false);
                 setCommandOpen(false);
               }}
-              className="mr-1 hidden items-center gap-1.5 rounded-full border border-accent-cyan/30 bg-accent-tint px-2.5 py-1.5 text-sm font-semibold text-accent hover:border-accent/40 sm:flex"
+              className="mr-1 hidden items-center gap-1.5 rounded-full border border-accent-cyan/30 bg-accent-tint px-2.5 py-1.5 text-sm font-semibold text-accent hover:border-accent/40 sm:flex whitespace-nowrap shrink-0"
             >
               <ShieldCheck className="h-3.5 w-3.5 text-accent" />
               Contrôle des données

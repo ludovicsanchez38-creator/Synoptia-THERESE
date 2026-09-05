@@ -19,7 +19,7 @@ describe('TrustCenter', () => {
     expect(screen.queryByText('Stockage local chiffré. Sources affichées dans chaque résultat.')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Confidentialité' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Réglages avancés' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Paramètres' }));
 
     expect(onOpenPrivacy).toHaveBeenCalledTimes(1);
     expect(onOpenAdvanced).toHaveBeenCalledTimes(1);

@@ -612,7 +612,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
   function renderContent() {
     if (loading) {
       return (
-        <div className="flex items-center justify-center h-32">
+        <div className="flex items-center justify-center min-h-[24rem]">
           <Spinner taille="zone" className="text-accent-cyan-ink" />
         </div>
       );

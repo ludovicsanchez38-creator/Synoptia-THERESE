@@ -316,6 +316,19 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
             Réessayer
           </button>
         </div>
+      ) : filteredInvoices.length === 0 && (filters.status || filters.document_type) ? (
+        // B-410 : « rien pour ce filtre » n'est pas « rien du tout ».
+        <div className="flex flex-col items-center justify-center h-full gap-4">
+          <FileText className="w-16 h-16 text-text-muted" />
+          <p className="text-text-muted">Aucun document ne correspond à ce filtre.</p>
+          <button
+            type="button"
+            onClick={() => setFilters({})}
+            className="px-4 py-2 rounded-md border border-border text-text hover:bg-surface-2"
+          >
+            Réinitialiser les filtres
+          </button>
+        </div>
       ) : filteredInvoices.length === 0 ? (
         <div className="flex flex-col items-center justify-center h-full gap-4">
           <FileText className="w-16 h-16 text-text-muted" />
