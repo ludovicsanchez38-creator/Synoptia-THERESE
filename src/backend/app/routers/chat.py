@@ -3715,7 +3715,8 @@ async def rattacher_conversation_a_un_projet(
 )
 async def get_conversation_messages(
     conversation_id: str,
-    limit: int = 100,
+    # B-443 (05/09/2026) : `limit: int = 100` sans borne acceptait 0 et 100000.
+    limit: int = Query(default=100, ge=1, le=200),
     session: AsyncSession = Depends(get_session),
 ):
     """Get messages for a conversation."""
