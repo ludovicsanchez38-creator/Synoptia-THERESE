@@ -33,6 +33,8 @@ function ApplicationBootstrap() {
   const [isReady, setIsReady] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [checkingOnboarding, setCheckingOnboarding] = useState(true);
+  // B-517 : un cloisonnement de profil impossible bloque le démarrage.
+  const [erreurDeCloisonnement, setErreurDeCloisonnement] = useState<string | null>(null);
 
   // Accessibilite : taille de police et contraste eleve
   const fontSize = useFontSize();
@@ -120,9 +122,21 @@ function ApplicationBootstrap() {
           // profil backend avant de monter l'interface ; si le dossier a
           // change, purger les caches metier puis recharger des stores vierges.
           const stats = await api.getStats();
-          const isolation = isolateDataProfilePersistence(stats.data_dir, {
-            reload: () => window.location.reload(),
-          });
+          // B-517 : cette exception est déterministe (dossier de données vide ou
+          // illisible), un nouvel essai identique ne la résout pas, et démarrer
+          // sans cloison mélangerait les données de deux profils. On s'arrête.
+          let isolation: ReturnType<typeof isolateDataProfilePersistence>;
+          try {
+            isolation = isolateDataProfilePersistence(stats.data_dir, {
+              reload: () => window.location.reload(),
+            });
+          } catch (err) {
+            console.error('Cloisonnement du profil impossible :', err);
+            setErreurDeCloisonnement(
+              'Le dossier de données de ce profil n’a pas pu être identifié ou isolé.'
+            );
+            return;
+          }
           if (isolation === 'switched') return;
 
           // Vérifier le statut onboarding
@@ -185,6 +199,24 @@ function ApplicationBootstrap() {
       <Suspense fallback={lazyFallback}>
         <SplashScreen onReady={handleBackendReady} />
       </Suspense>
+    );
+  }
+
+  if (erreurDeCloisonnement) {
+    return (
+      <div className="h-screen w-screen bg-bg flex items-center justify-center p-8">
+        <div role="alert" className="max-w-lg rounded-md border border-error/40 bg-[var(--color-error-tint)] p-6 text-center">
+          <h1 className="text-lg font-semibold text-error">Cloisonnement du profil impossible</h1>
+          <p className="mt-2 text-sm text-text">
+            THÉRÈSE ne démarre pas sans isoler les données de ce profil : elles pourraient
+            se mélanger avec celles d’un autre dossier de travail.
+          </p>
+          <p className="mt-2 text-xs text-text-muted">{erreurDeCloisonnement}</p>
+          <button type="button" onClick={() => window.location.reload()} className="mt-4 rounded-md border border-error px-3 py-2 text-sm font-semibold text-error">
+            Relancer
+          </button>
+        </div>
+      </div>
     );
   }
 

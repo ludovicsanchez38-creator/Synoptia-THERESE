@@ -22,15 +22,21 @@ export function WorkingDirStep({ onNext, onBack }: WorkingDirStepProps) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // B-535 : un dossier disparu et une lecture impossible ne sont ni « configuré » ni « aucun ».
+  const [dossierDisparu, setDossierDisparu] = useState(false);
+  const [lectureImpossible, setLectureImpossible] = useState(false);
 
   // Load initial state
   useEffect(() => {
     async function loadState() {
       try {
-        const workingDirData = await api.getWorkingDirectory().catch(() => ({ path: null, exists: false }));
+        const workingDirData = await api.getWorkingDirectory();
         setWorkingDir(workingDirData?.path || null);
+        setDossierDisparu(Boolean(workingDirData?.path) && workingDirData.exists === false);
+        setLectureImpossible(false);
       } catch (err) {
         console.error('Failed to load working directory:', err);
+        setLectureImpossible(true);
       } finally {
         setLoading(false);
       }
@@ -125,7 +131,24 @@ export function WorkingDirStep({ onNext, onBack }: WorkingDirStepProps) {
           </p>
 
           {/* Current directory display */}
-          {workingDir ? (
+          {lectureImpossible ? (
+            <div role="alert" className="mb-6 px-4 py-3 bg-[var(--color-warning-tint)] border border-warning/40 rounded-md">
+              <div className="flex items-center gap-2 justify-center">
+                <AlertCircle className="w-4 h-4 text-warning" />
+                <span className="text-sm text-warning">Configuration du dossier illisible : le serveur n’a pas répondu. Tu peux quand même en choisir un.</span>
+              </div>
+            </div>
+          ) : workingDir && dossierDisparu ? (
+            <div role="alert" className="mb-6">
+              <div className="flex items-center gap-2 px-4 py-3 bg-[var(--color-warning-tint)] border border-warning/40 rounded-md">
+                <AlertCircle className="w-4 h-4 text-warning" />
+                <span className="text-sm text-warning">Dossier configuré mais introuvable : choisis-en un autre.</span>
+              </div>
+              <div className="mt-2 p-3 bg-background/40 rounded-md border border-border/30">
+                <p className="text-xs text-text font-mono truncate" title={workingDir}>{workingDir}</p>
+              </div>
+            </div>
+          ) : workingDir ? (
             <div className="mb-6">
               <div className="flex items-center gap-2 px-4 py-3 bg-[var(--color-success-tint)] border border-success/40 rounded-md">
                 <Check className="w-4 h-4 text-success" />

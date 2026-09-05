@@ -319,11 +319,14 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
           cachait Ollama (le dernier provider). */}
       <div
         role="radiogroup"
-        aria-label="Sélection du provider LLM"
+        aria-label="Choix du service d’IA"
         className="space-y-2 mb-6"
       >
         {PROVIDERS.map((provider) => {
-          const isAvailable = provider.id === 'ollama' ? ollamaStatus?.available : true;
+          // B-514 : « jamais mesuré » (statut null : délai dépassé, réseau) n'est
+          // pas « mesuré indisponible ». Le premier laisse choisir Ollama, avec un badge.
+          const ollamaNonMesure = provider.id === 'ollama' && ollamaStatus === null;
+          const isAvailable = provider.id === 'ollama' ? (ollamaStatus === null ? true : ollamaStatus.available) : true;
           const providerHasKey = apiKeys[provider.id] === true;
           const isSelected = selectedProvider === provider.id;
 
@@ -364,6 +367,11 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
                   {provider.id === 'ollama' && !isAvailable && (
                     <span className="px-2 py-0.5 rounded-sm text-xs font-medium bg-[var(--color-error-tint)] text-error">
                       Non disponible
+                    </span>
+                  )}
+                  {ollamaNonMesure && (
+                    <span className="px-2 py-0.5 rounded-sm text-xs font-medium bg-[var(--color-warning-tint)] text-warning">
+                      Non vérifié
                     </span>
                   )}
                 </div>
