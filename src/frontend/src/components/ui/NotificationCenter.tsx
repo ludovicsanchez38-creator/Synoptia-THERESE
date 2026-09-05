@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { useNotificationStore } from "../../stores/notificationStore";
 import { useAccessibilityStore } from "../../stores/accessibilityStore";
-import { announceToScreenReader } from "../../lib/accessibility";
+import { useNavigationStore, type AppView } from "../../stores/navigationStore";
 import { cn } from "../../lib/utils";
 import type { AppNotification } from "../../services/api/notifications";
 
@@ -83,6 +83,28 @@ function SourceBadge({ source }: { source: string }) {
   );
 }
 
+// B-472 : l'icône de lien promettait une navigation qui n'existait pas. Les
+// cibles connues du backend sont des chemins internes (/invoices/…, /crm/…)
+// ou des liens http(s) ; une cible inconnue n'affiche pas de bouton.
+const VUE_PAR_PREFIXE: ReadonlyArray<readonly [string, AppView]> = [
+  ['/invoices', 'invoices'], ['/crm', 'crm'], ['/email', 'email'], ['/calendar', 'calendar'],
+  ['/tasks', 'tasks'], ['/projects', 'projects'], ['/memory', 'memory'], ['/documents', 'documents'],
+  ['/files', 'files'],
+];
+function cibleDeNotification(actionUrl: string): (() => void) | null {
+  if (/^https?:\/\//.test(actionUrl)) {
+    return () => { window.open(actionUrl, '_blank', 'noopener,noreferrer'); };
+  }
+  const vue = VUE_PAR_PREFIXE.find(([p]) => actionUrl === p || actionUrl.startsWith(`${p}/`))?.[1];
+  return vue ? () => { useNavigationStore.getState().setView(vue); } : null;
+}
+function ouvrirLaCible(actionUrl: string): boolean {
+  const cible = cibleDeNotification(actionUrl);
+  if (!cible) return false;
+  cible();
+  return true;
+}
+
 // Element de notification individuel
 function NotificationItem({ notification }: { notification: AppNotification }) {
   const markAsRead = useNotificationStore((s) => s.markAsRead);
@@ -92,9 +114,10 @@ function NotificationItem({ notification }: { notification: AppNotification }) {
     if (!notification.is_read) {
       markAsRead(notification.id);
     }
-    // Annoncer le contenu au lecteur d'ecran
-    announceToScreenReader(`${notification.title} : ${notification.message || ''}`);
+    // B-485 : plus d'annonce manuelle - l'élément est déjà sous le focus du
+    // lecteur d'écran, et le badge de compteur annonce déjà l'arrivée.
   };
+  const actionUrl = notification.action_url;
 
   return (
     <motion.div
@@ -135,12 +158,12 @@ function NotificationItem({ notification }: { notification: AppNotification }) {
           <span className="text-xs text-text-muted">
             {timeAgo(notification.created_at)}
           </span>
-          {notification.action_url && notification.action_label && (
+          {actionUrl && notification.action_label && cibleDeNotification(actionUrl) && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                // Navigation via action_url possible ici
                 if (!notification.is_read) markAsRead(notification.id);
+                ouvrirLaCible(actionUrl);
               }}
               className="flex items-center gap-1 text-sm font-medium text-accent-cyan-ink hover:underline transition-colors"
             >
@@ -235,7 +258,6 @@ export function NotificationCenter() {
             exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8, scale: 0.95 }}
             transition={{ duration: reduceMotion ? 0 : 0.15 }}
             className={`fixed right-4 top-16 w-[380px] max-h-[480px] bg-bg/95 backdrop-blur-xl border border-border/60 rounded-md shadow-2xl z-[90] overflow-hidden flex flex-col`}
-            aria-live="polite"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
