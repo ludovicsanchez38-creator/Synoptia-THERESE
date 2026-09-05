@@ -728,6 +728,22 @@ async def get_caldav_presets() -> list[dict]:
     return list_caldav_presets()
 
 
+async def _agenda_principal_local(session: AsyncSession) -> Calendar | None:
+    """B-557 (05/09/2026) : sans compte, `primary` désigne l'agenda local principal.
+
+    `session.get(Calendar, "primary")` ne trouve jamais rien (les clés sont des
+    UUID) : l'alias par défaut de tout client tombait sur « account_id requis
+    pour Google Calendar » sur une base sans le moindre compte Google. Sans
+    agenda local principal, l'alias garde son sens Google et réclame un compte.
+    """
+    resultat = await session.execute(
+        select(Calendar)
+        .where(col(Calendar.primary).is_(True), col(Calendar.provider).in_(("local", "caldav")))
+        .limit(1)
+    )
+    return resultat.scalars().first()
+
+
 # =============================================================================
 # EVENTS MANAGEMENT
 # =============================================================================
@@ -754,6 +770,8 @@ async def list_events(
     """
     # Get calendar from DB to determine provider
     calendar = await session.get(Calendar, calendar_id)
+    if calendar is None and calendar_id == "primary" and not account_id:
+        calendar = await _agenda_principal_local(session)
 
     if calendar and calendar.provider in ("local", "caldav"):
         return await _list_events_provider(calendar, session, time_min, time_max, max_results)
@@ -1546,10 +1564,18 @@ async def delete_event(
     """Supprime un evenement (local, Google ou CalDAV)."""
     # Check if calendar is local/CalDAV
     calendar = await session.get(Calendar, calendar_id)
+    if calendar is None and calendar_id == "primary" and not account_id:
+        calendar = await _agenda_principal_local(session)
 
     if calendar and calendar.provider in ("local", "caldav"):
         provider = await _get_provider_for_calendar(calendar, session)
-        await provider.delete_event(calendar_id, event_id)
+        try:
+            await provider.delete_event(calendar.id, event_id)
+        except ValueError as absent:
+            # B-556 (05/09/2026) : le fournisseur local signale un événement
+            # absent par ValueError ; sans ce filet, un second clic sur
+            # « supprimer » rendait 500 là où la lecture rend déjà 404.
+            raise HTTPException(status_code=404, detail="Événement introuvable") from absent
         return {"success": True, "message": "Evenement supprime"}
 
     # Google Calendar
