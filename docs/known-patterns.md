@@ -305,3 +305,28 @@ Le premier essai de ce découpage, run `33900470184`, a affiché les 175 tests �
 minutes avant le résumé JUnit. Le budget du job autonome passe à dix minutes,
 avec un plafond de 60 secondes par test. Il reste ainsi borné et ne consomme
 plus le budget de la suite principale grâce à l'exécution parallèle.
+
+## Binaires lourds : garde pre-commit locale de 3 Mo, captures en JPEG hors PNG (05/09/2026)
+
+L'historique portait 56 Mo de captures PNG du guide de présentation (cinq commits
+des 03-04/09) et 21 Mo de vidéos Playwright `src/frontend/test-results/*.webm`
+entrées le 15/07 par un commit automatique `wip(auto)` et retirées deux jours
+plus tard. Le `.git` pesait 184 Mo pour un dépôt de code.
+
+Règles posées :
+
+- `docs/presentation/_build/shots-web/` (JPEG 1300 px, q78, 9,5 Mo pour 92
+  captures) est la source versionnée du guide ; `shots/` (PNG) est ignoré et
+  les originaux vivent hors dépôt sur le Mac
+  (`~/.claude/docs/therese-guide-0.66-captures-png/`). `build.sh` ne
+  reconvertit que si des PNG sont présents.
+- `_build/guide.pdf` n'est plus suivi : le livrable est
+  `docs/presentation/THERESE-0.66-guide-de-presentation.pdf`, seul.
+- Une garde locale `.git/hooks/pre-commit` sur le Mac de Ludo refuse tout
+  fichier indexé de plus de 3 Mo (`ALLOW_BIG=1 git commit …` pour un
+  livrable voulu, comme le PDF du guide). Elle s'applique aussi au commit
+  automatique de fin de tour, origine des deux accidents.
+- Les fichiers AppleDouble `._*` sont ignorés à la racine.
+
+La purge de l'historique (réécriture, force push, re-clone par Katia,
+Zézette et Codex) reste une décision de Ludo.

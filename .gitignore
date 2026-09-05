@@ -117,3 +117,6 @@ test-results/
 # État de la boucle d amelioration (skill boucle-amelioration-app), local
 .app-loop/
 .cartography-work/
+
+# Fichiers AppleDouble (métadonnées macOS)
+._*
