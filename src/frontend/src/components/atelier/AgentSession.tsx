@@ -19,7 +19,7 @@ import {
   Bot,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { streamAgentSpawn } from "../../services/api/agents";
+import { getAgentProfiles, streamAgentSpawn } from "../../services/api/agents";
 import type { SpawnAgentStreamChunk, AgentProfile } from "../../services/api/agents";
 
 // ============================================================
@@ -235,7 +235,26 @@ function genMsgId(): string {
 }
 
 export function AgentSession({ profileId, model, onBack }: Props) {
-  const profile = PROFILE_MAP[profileId];
+  // B-393 : les outils annoncés dans la carte de consentement viennent du
+  // serveur (déjà filtrés), la table locale ne sert que de repli d'affichage.
+  const [serverProfile, setServerProfile] = useState<AgentProfile | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const profils = await getAgentProfiles();
+        if (cancelled) return;
+        const trouve = profils.find((p) => p.id === profileId);
+        if (trouve) setServerProfile(trouve);
+      } catch {
+        /* repli sur la table locale */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [profileId]);
+  const profile = serverProfile ?? PROFILE_MAP[profileId];
   const colors = COLOR_MAP[profile?.color || ""] || DEFAULT_COLOR;
 
   const [messages, setMessages] = useState<AgentSessionMessage[]>([]);
