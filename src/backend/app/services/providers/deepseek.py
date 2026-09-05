@@ -133,6 +133,10 @@ class DeepSeekProvider(BaseProvider):
                                                 "name": "",
                                                 "arguments": "",
                                             }
+                                        # B-489 : l'id peut arriver dans un fragment ultérieur (Mistral le
+                                        # gérait déjà) ; sans réaffectation, l'appel partait avec "".
+                                        if tc_delta.get("id"):
+                                            tool_calls[idx]["id"] = tc_delta["id"]
 
                                         if func := tc_delta.get("function"):
                                             if name := func.get("name"):
