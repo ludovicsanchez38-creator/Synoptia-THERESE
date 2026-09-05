@@ -1676,7 +1676,7 @@ async def send_message(
     # compris), AVANT toute récupération du service.
     from datetime import UTC, datetime
 
-    from app.services.prompt_security import check_prompt_safety
+    from app.services.prompt_security import check_prompt_safety, motif_de_blocage
     security_check = check_prompt_safety(llm_user_message)
     if not security_check.is_safe:
         logger.warning(
@@ -1686,7 +1686,7 @@ async def send_message(
         return ChatResponse(
             id="",
             conversation_id=conversation.id,
-            content="Message bloqué pour raison de sécurité.",
+            content=motif_de_blocage(security_check),
             created_at=datetime.now(UTC),
         )
 
@@ -2258,14 +2258,14 @@ async def _do_stream_response(
     skill_id = resolved_skill_id
 
     # Sprint 2 - PERF-2.11: Check for prompt injection
-    from app.services.prompt_security import check_prompt_safety
+    from app.services.prompt_security import check_prompt_safety, motif_de_blocage
     security_check = check_prompt_safety(user_message)
     if not security_check.is_safe:
         logger.warning(
             f"Blocked message due to {security_check.threat_type}: "
             f"level={security_check.threat_level.value}"
         )
-        yield f"data: {json.dumps({'type': 'error', 'content': 'Message bloqué pour raison de sécurité.'})}\n\n"
+        yield f"data: {json.dumps({'type': 'error', 'content': motif_de_blocage(security_check)})}\n\n"
         return
 
     llm_service = get_llm_service()
