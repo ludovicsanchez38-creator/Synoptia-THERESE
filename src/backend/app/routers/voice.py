@@ -4,6 +4,7 @@ THÉRÈSE v2 - Voice Router
 Endpoints for voice transcription using Groq Whisper API.
 """
 
+import asyncio
 import logging
 import os
 import tempfile
@@ -261,7 +262,8 @@ async def transcribe_audio_local(
         tmp_path = tmp.name
 
     try:
-        text = transcribe_local(tmp_path, model_size=model)
+        # B-466 : la dictée locale est CPU ; hors de la boucle d'événements.
+        text = await asyncio.to_thread(transcribe_local, tmp_path, model_size=model)
         return TranscriptionResponse(text=text, language="fr")
     except RuntimeError as e:
         raise HTTPException(status_code=503, detail=str(e))
@@ -310,7 +312,7 @@ async def text_to_speech_local(payload: TTSRequest) -> FileResponse:
         out_path = tmp.name
 
     try:
-        synthesize_local(text, out_path, voice=payload.voice or DEFAULT_PIPER_VOICE)
+        await asyncio.to_thread(synthesize_local, text, out_path, voice=payload.voice or DEFAULT_PIPER_VOICE)  # B-466
         # B-270 : le WAV restait sur disque, un fichier par phrase synthétisée,
         # que rien ne réclamait jamais. Un `finally` l'effacerait AVANT que
         # Starlette ne le lise et la réponse partirait vide : la tâche de fond

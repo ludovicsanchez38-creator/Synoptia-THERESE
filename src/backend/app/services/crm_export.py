@@ -5,6 +5,7 @@ Multi-format export for CRM data (CSV, Excel, JSON).
 Part of the "Local First" architecture.
 """
 
+import asyncio
 import csv
 import io
 import json
@@ -368,7 +369,7 @@ class CRMExportService:
         timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
 
         if format == "csv":
-            data = export_to_csv(contacts, CONTACT_COLUMNS)
+            data = await asyncio.to_thread(export_to_csv, contacts, CONTACT_COLUMNS)
             return ExportResult(
                 data=data,
                 filename=f"contacts_{timestamp}.csv",
@@ -376,7 +377,7 @@ class CRMExportService:
                 row_count=len(contacts),
             )
         elif format == "xlsx":
-            data = export_to_xlsx(contacts, CONTACT_COLUMNS, "Contacts")
+            data = await asyncio.to_thread(export_to_xlsx, contacts, CONTACT_COLUMNS, "Contacts")
             return ExportResult(
                 data=data,
                 filename=f"contacts_{timestamp}.xlsx",
@@ -422,7 +423,7 @@ class CRMExportService:
         timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
 
         if format == "csv":
-            data = export_to_csv(projects, PROJECT_COLUMNS)
+            data = await asyncio.to_thread(export_to_csv, projects, PROJECT_COLUMNS)
             return ExportResult(
                 data=data,
                 filename=f"projects_{timestamp}.csv",
@@ -430,7 +431,7 @@ class CRMExportService:
                 row_count=len(projects),
             )
         elif format == "xlsx":
-            data = export_to_xlsx(projects, PROJECT_COLUMNS, "Projets")
+            data = await asyncio.to_thread(export_to_xlsx, projects, PROJECT_COLUMNS, "Projets")
             return ExportResult(
                 data=data,
                 filename=f"projects_{timestamp}.xlsx",
@@ -476,7 +477,7 @@ class CRMExportService:
         timestamp = datetime.now(UTC).strftime("%Y%m%d_%H%M%S")
 
         if format == "csv":
-            data = export_to_csv(deliverables, DELIVERABLE_COLUMNS)
+            data = await asyncio.to_thread(export_to_csv, deliverables, DELIVERABLE_COLUMNS)
             return ExportResult(
                 data=data,
                 filename=f"deliverables_{timestamp}.csv",
@@ -484,7 +485,7 @@ class CRMExportService:
                 row_count=len(deliverables),
             )
         elif format == "xlsx":
-            data = export_to_xlsx(deliverables, DELIVERABLE_COLUMNS, "Livrables")
+            data = await asyncio.to_thread(export_to_xlsx, deliverables, DELIVERABLE_COLUMNS, "Livrables")
             return ExportResult(
                 data=data,
                 filename=f"deliverables_{timestamp}.xlsx",
