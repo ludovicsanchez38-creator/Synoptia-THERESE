@@ -4,7 +4,6 @@ recopiait l'exception brute (« Connection failed: <urllib3…> »)."""
 from __future__ import annotations
 
 import pytest
-
 from app.services.calendar import provider_factory
 
 

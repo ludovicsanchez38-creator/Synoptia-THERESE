@@ -16,6 +16,7 @@ from email import encoders
 from email.mime.base import MIMEBase
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from typing import Any
 
 import aiosmtplib
 from app.services.email.base_provider import (
@@ -481,7 +482,7 @@ class ImapSmtpProvider(EmailProvider):
             dossier = await self.resolve_folder_for_label("SENT")
             if dossier:
 
-                def _sync_append():
+                def _sync_append() -> Any:
                     with self._connect_mailbox(timeout=IMAP_CONNECT_TIMEOUT) as mailbox:
                         return mailbox.append(
                             msg.as_bytes(), dossier, dt=datetime.now(), flag_set=[MailMessageFlags.SEEN]

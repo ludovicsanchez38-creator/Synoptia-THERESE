@@ -10,7 +10,6 @@ from __future__ import annotations
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
-
 from app.services.llm import LLMService
 from app.services.providers.base import LLMConfig, LLMProvider, StreamEvent
 

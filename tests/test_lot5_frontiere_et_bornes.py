@@ -60,8 +60,6 @@ class TestB430UneHTTPExceptionNEstPasAvaleeEn500:
     @pytest.mark.asyncio
     async def test_un_401_google_reste_un_401(self, client, monkeypatch):
         import httpx
-
-        from app.routers import crm as module
         from app.services import crm_sync
 
         async def jeton_valide(session):

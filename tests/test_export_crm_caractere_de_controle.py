@@ -131,7 +131,7 @@ class TestB449UneFormuleNeSortJamaisActiveDeLExport:
         reponse = await client.post("/api/crm/export/contacts?format=csv")
         assert reponse.status_code == 200, reponse.text[:200]
         texte = reponse.content.decode("utf-8-sig")
-        ligne = next(l for l in texte.splitlines() if "formule@test.fr" in l)
+        ligne = next(candidate for candidate in texte.splitlines() if "formule@test.fr" in candidate)
         assert "=1+1" not in ligne.replace("'=1+1", ""), ligne
         assert "'=1+1" in ligne or '"\'=1+1"' in ligne, f"préfixe de formule non neutralisé : {ligne}"
         assert "+33 6 12 34 56 78" in ligne

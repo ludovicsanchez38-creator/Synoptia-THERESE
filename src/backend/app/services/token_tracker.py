@@ -10,6 +10,8 @@ import os
 from collections import deque
 from dataclasses import dataclass
 from datetime import UTC, datetime
+from pathlib import Path
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -333,7 +335,7 @@ class TokenTracker:
         self._reset_daily_if_needed()
         self._reset_monthly_if_needed()
 
-        result = {
+        result: dict[str, Any] = {
             "allowed": True,
             "warnings": [],
             "errors": [],
@@ -447,9 +449,7 @@ class TokenTracker:
     # ------------------------------------------------------------------
 
     @staticmethod
-    def _fichier_usage():
-        from pathlib import Path
-
+    def _fichier_usage() -> Path:
         from app.config import settings
 
         return Path(settings.data_dir) / "token_usage.json"

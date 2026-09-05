@@ -12,7 +12,6 @@ sans dire laquelle (RULES-SECURITE : bandes de score et motif explicite).
 from __future__ import annotations
 
 import pytest
-
 from app.services.prompt_security import check_prompt_safety
 
 PHRASES_METIER = [

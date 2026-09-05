@@ -258,7 +258,7 @@ jobs:
           # ici. Aucun cache mypy n'est restauré dans ce job : la mesure est
           # fraîche par construction. (B-470 : ce commentaire disait encore
           # 1001 après quatre recalages successifs.)
-          MYPY_BASELINE: "986"
+          MYPY_BASELINE: "977"
         run: |
           # `--no-sync` est indispensable : sans lui, `uv run` resynchronise
           # le projet complet et réintroduit les dépendances CUDA évitées à

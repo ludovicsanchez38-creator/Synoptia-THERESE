@@ -15,7 +15,7 @@ RACINE = Path(__file__).resolve().parents[1] / "src" / "backend" / "app"
 def _chaines_avec_reglages() -> list[str]:
     fautes: list[str] = []
     for fichier in RACINE.rglob("*.py"):
-        with fichier.open("rb") as flux:
+        with fichier.open(mode="rb") as flux:
             for jeton in tokenize.tokenize(flux.readline):
                 if jeton.type == tokenize.STRING and re.search(r"R[ée]glages", jeton.string):
                     fautes.append(f"{fichier.relative_to(RACINE)}:{jeton.start[0]}")

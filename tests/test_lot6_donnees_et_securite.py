@@ -133,11 +133,10 @@ class TestB508LesVariablesDEnvironnementMCPSontChiffreesAuChargement:
 class TestB510LaCleDAPIEstNettoyeeAvantChiffrement:
     @pytest.mark.asyncio
     async def test_les_blancs_autour_de_la_cle_ne_sont_pas_stockes(self, client):
-        from sqlalchemy import select
-
         from app.models import database as db_module
         from app.models.entities import Preference
         from app.services.encryption import decrypt_value
+        from sqlalchemy import select
 
         reponse = await client.post(
             "/api/config/api-key",
@@ -193,6 +192,7 @@ class TestB465LaPurgeRGPDRetrouveLesCommandesArchivees:
         from app.services.user_commands import UserCommandsService
 
         monkeypatch.setenv("HOME", str(tmp_path))
+        monkeypatch.setenv("USERPROFILE", str(tmp_path))  # Path.home() sous Windows
         (tmp_path / ".Trash").mkdir()
         service = UserCommandsService()
         commande = service.create_command(name="purge_b465", description="test", content="Texte rédigé par Marie")

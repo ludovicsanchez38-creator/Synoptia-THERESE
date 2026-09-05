@@ -12,9 +12,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from pypdf import PdfReader
-
 from app.services.invoice_pdf import InvoicePDFGenerator
+from pypdf import PdfReader
 
 
 def _texte_du_pdf(tmp_path: Path, **surcharges) -> str:

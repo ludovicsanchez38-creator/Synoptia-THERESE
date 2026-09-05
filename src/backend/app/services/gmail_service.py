@@ -434,7 +434,7 @@ class GmailService:
 # ============================================================
 
 
-def _compter_pieces_jointes(payload: dict) -> int:
+def _compter_pieces_jointes(payload: dict[str, Any]) -> int:
     """Compte les parts porteuses d'un nom de fichier, à toute profondeur
     (même descente que GmailProvider._extract_attachments)."""
     total = 0

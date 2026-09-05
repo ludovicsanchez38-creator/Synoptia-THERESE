@@ -12,7 +12,6 @@ n'avaient jamais bloqué une requête.
 from __future__ import annotations
 
 import pytest
-
 from app.services.token_tracker import TokenLimits, TokenTracker, get_token_tracker
 
 

@@ -12,10 +12,9 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from icalendar import Calendar as ICalendar
-
 from app.services.calendar.base_provider import CreateEventRequest, UpdateEventRequest
 from app.services.calendar.caldav_provider import CalDAVProvider
+from icalendar import Calendar as ICalendar
 
 
 class _Evenement:

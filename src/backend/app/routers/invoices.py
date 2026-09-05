@@ -1025,6 +1025,8 @@ async def convert_devis_to_invoice(
     )
     invoice_number = new_invoice.invoice_number
     devis = await _get_invoice_with_lines(session, invoice_id)
+    if devis is None:
+        raise HTTPException(status_code=404, detail="Devis non trouvé après la reprise de numéro")
 
     # 5. Copier les lignes
     db_lines = []

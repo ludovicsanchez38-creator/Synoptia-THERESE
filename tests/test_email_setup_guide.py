@@ -9,7 +9,6 @@ configuration.
 from __future__ import annotations
 
 import pytest
-
 from app.services.email_setup_assistant import EmailSetupAssistant
 
 

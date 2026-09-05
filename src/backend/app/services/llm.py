@@ -671,7 +671,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
             if provider_class:
                 self._provider = provider_class(self.config, client)
 
-    async def _provider_pour(self, config: "LLMConfig"):
+    async def _provider_pour(self, config: "LLMConfig") -> Any:
         """Un fournisseur pour une config donnée, SANS toucher au fournisseur
         partagé (B-488 : la bascule du disjoncteur est locale à l'appel)."""
         from app.services.http_client import get_http_client
