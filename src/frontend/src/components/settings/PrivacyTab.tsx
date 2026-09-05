@@ -62,6 +62,8 @@ const PURPOSE_LABELS: Record<CloudPurpose, string> = {
 export function PrivacyTab() {
   const [purgeEnabled, setPurgeEnabled] = useState(true);
   const [purgeMonths, setPurgeMonths] = useState(36);
+  // B-453 : les valeurs par défaut s'affichaient comme si elles venaient du serveur.
+  const [purgeIndisponible, setPurgeIndisponible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -201,8 +203,10 @@ export function PrivacyTab() {
       const settings = await getPurgeSettings();
       setPurgeEnabled(settings.enabled);
       setPurgeMonths(settings.months);
+      setPurgeIndisponible(false);
     } catch (err) {
       console.error('Erreur chargement paramètres purge:', err);
+      setPurgeIndisponible(true);
     } finally {
       setLoading(false);
     }
@@ -609,6 +613,12 @@ export function PrivacyTab() {
           Un avertissement est envoyé 30 jours avant. Les contacts exclus de la purge ne sont jamais
           anonymisés automatiquement.
         </p>
+        {purgeIndisponible && (
+          <div role="alert" className="mb-4 rounded-md border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-xs text-warning">
+            <p>Réglages de purge non lus depuis le serveur : les valeurs affichées sont les valeurs par défaut, pas ta configuration réelle.</p>
+            <button type="button" onClick={() => void loadSettings()} className="mt-2 rounded-md border border-warning px-3 py-1.5 font-semibold">Réessayer le chargement</button>
+          </div>
+        )}
 
         {/* Toggle */}
         <div className="flex items-center justify-between mb-4">

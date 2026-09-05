@@ -17,9 +17,6 @@ interface CRMSyncPanelProps {
   onSyncComplete?: () => void;
 }
 
-// Default Synoptia CRM spreadsheet ID
-const DEFAULT_SPREADSHEET_ID = '1gXhiy43tvaDW0Y9FEGPmfB7BBCbUCOl_Xb6nkWtnnUk';
-
 export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
   const [config, setConfig] = useState<api.CRMSyncConfig | null>(null);
   const [apiKeys, setApiKeys] = useState<Record<string, boolean>>({});
@@ -29,7 +26,8 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [lastSyncStats, setLastSyncStats] = useState<api.CRMSyncStats | null>(null);
-  const [spreadsheetId, setSpreadsheetId] = useState(DEFAULT_SPREADSHEET_ID);
+  const [spreadsheetId, setSpreadsheetId] = useState('');
+  // B-451 : aucun identifiant réel pré-rempli, le dépôt est public.
 
   // BUG-B : choix feuille existante
   const [showExistingSheets, setShowExistingSheets] = useState(false);
@@ -44,6 +42,12 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
   const [credentialsSaving, setCredentialsSaving] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
   const credentialsFileRef = useRef<HTMLInputElement>(null);
+  // B-490 : le sondage OAuth garde son identifiant, meurt avec le panneau et
+  // DIT quand il abandonne au lieu d'éteindre le bouton en silence.
+  const sondageOAuthRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  useEffect(() => () => {
+    if (sondageOAuthRef.current) clearInterval(sondageOAuthRef.current);
+  }, []);
 
   // F-16 : Importer credentials.json
   const handleImportCredentials = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -131,19 +135,24 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
       setSuccess('Autorisez l\'accès dans le navigateur...');
 
       // Polling : détecter quand le callback OAuth est terminé
+      if (sondageOAuthRef.current) clearInterval(sondageOAuthRef.current);
       let attempts = 0;
       const maxAttempts = 40; // 2 minutes (3s x 40)
       const pollInterval = setInterval(async () => {
         attempts++;
         if (attempts >= maxAttempts) {
           clearInterval(pollInterval);
+          sondageOAuthRef.current = null;
           setConnecting(false);
+          setSuccess(null);
+          setError('L’autorisation Google n’a pas été confirmée en deux minutes. Relance la connexion.');
           return;
         }
         try {
           const cfg = await api.getCRMSyncConfig();
           if (cfg.has_token) {
             clearInterval(pollInterval);
+            sondageOAuthRef.current = null;
             setConfig(cfg);
             if (cfg.spreadsheet_id) {
               setSpreadsheetId(cfg.spreadsheet_id);
@@ -157,6 +166,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
           // Ignorer les erreurs de polling
         }
       }, 3000);
+      sondageOAuthRef.current = pollInterval;
     } catch (err: any) {
       console.error('Failed to initiate OAuth:', err);
       const msg = err.message || 'Impossible de lancer la connexion OAuth';
@@ -406,7 +416,7 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
             type="text"
             value={spreadsheetId}
             onChange={(e) => setSpreadsheetId(e.target.value)}
-            placeholder="ID du spreadsheet (ex: 1gXhiy43...)"
+            placeholder="Identifiant de la feuille (dans son URL, entre /d/ et /edit)"
             className="flex-1 px-3 py-2 bg-surface border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50"
           />
           <Button

@@ -863,10 +863,13 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
                   </div>
                 )}
                 {operationStatus && <p role="status" className="mb-4 rounded-md border border-info/40 bg-[var(--color-info-tint)] p-3 text-sm text-info">{operationStatus}</p>}
-                {error && retryOperation && (
+                {/* B-454 : une erreur sans action de reprise (onglet Outils) n'atteignait jamais l'écran. */}
+                {error && (
                   <div role="alert" className="mb-4 rounded-md border border-error/40 bg-[var(--color-error-tint)] p-3 text-sm text-error">
                     <p>{error}</p>
-                    <button type="button" onClick={retryOperation} className="mt-2 rounded-md border border-error px-3 py-2 font-semibold">Réessayer</button>
+                    {retryOperation && (
+                      <button type="button" onClick={retryOperation} className="mt-2 rounded-md border border-error px-3 py-2 font-semibold">Réessayer</button>
+                    )}
                   </div>
                 )}
                 {renderContent()}
