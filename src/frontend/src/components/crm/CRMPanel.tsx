@@ -326,7 +326,7 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
             // magasin COMPLET, jamais depuis la vue filtrée du pipeline (filtre
             // délibéré, plus haut) — sinon la vue affiche une ligne qu'elle
             // s'interdit ensuite de nommer (« Contact inconnu »).
-            <GlobalActivityView annuaire={allContacts} />
+            <GlobalActivityView annuaire={demoEnabled ? allContacts.map((c) => maskContact(c)) : allContacts} />
           )}
         </AnimatePresence>
       )}
@@ -607,6 +607,8 @@ function GlobalActivityView({ annuaire }: { annuaire: ContactResponse[] }) {
   const [activities, setActivities] = useState<ActivityResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  // B-442 : en démonstration, titres et descriptions citent des vrais noms.
+  const { maskText } = useDemoMask();
 
   useEffect(() => {
     loadAllActivities();
@@ -736,9 +738,9 @@ function GlobalActivityView({ annuaire }: { annuaire: ContactResponse[] }) {
                           activity.type
                         }</span>
                       </div>
-                      <h4 className="text-sm font-medium text-text-primary">{activity.title}</h4>
+                      <h4 className="text-sm font-medium text-text-primary">{maskText(activity.title)}</h4>
                       {activity.description && (
-                        <p className="text-xs text-text-muted mt-1 line-clamp-2">{activity.description}</p>
+                        <p className="text-xs text-text-muted mt-1 line-clamp-2">{maskText(activity.description)}</p>
                       )}
                     </div>
                     <span className="text-xs text-text-muted whitespace-nowrap shrink-0">

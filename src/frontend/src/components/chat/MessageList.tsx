@@ -116,6 +116,15 @@ export function MessageList({ onPromptSelect, onSaveAsCommand, onGuidedPanelChan
     return conversation.messages.map((msg) => ({
       ...msg,
       content: maskText(msg.content),
+      // B-483 : titres de sources web et noms de fichiers générés restaient en
+      // clair sous le masque.
+      webSources: msg.webSources?.map((source) => ({
+        ...source,
+        title: maskText(source.title),
+        snippet: maskText(source.snippet),
+      })),
+      skillFile: msg.skillFile ? { ...msg.skillFile, file_name: maskText(msg.skillFile.file_name) } : msg.skillFile,
+      skillFiles: msg.skillFiles?.map((file) => ({ ...file, file_name: maskText(file.file_name) })),
     }));
   }, [demoEnabled, conversation, maskText]);
 
