@@ -112,6 +112,8 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
             <motion.button
               key={index}
               onClick={() => setExpanded(isExpanded ? null : index)}
+              aria-expanded={isExpanded}
+              aria-controls={`security-detail-${index}`}
               className={cn(
                 'w-full text-left p-3 rounded-md border transition-all',
                 'hover:bg-surface-2',
@@ -140,6 +142,7 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
                   </div>
                   {isExpanded && (
                     <motion.p
+                      id={`security-detail-${index}`}
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}

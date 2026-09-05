@@ -343,7 +343,8 @@ function ProjectCard({ project, onSelect, onDelete, isOverlay, showDragHandle }:
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity flex-shrink-0">
           <button
             onClick={(e) => { e.stopPropagation(); onDelete(project); }}
-            className="p-1 rounded-md hover:bg-error/20 text-text-muted hover:text-error transition-colors"
+            className="grid h-8 w-8 place-items-center rounded-md hover:bg-error/20 text-text-muted hover:text-error transition-colors"
+            aria-label={`Supprimer ${project.name}`}
             title="Supprimer"
           >
             <Trash2 className="w-3.5 h-3.5" />

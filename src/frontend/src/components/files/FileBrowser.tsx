@@ -360,8 +360,10 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
       {/* Breadcrumb */}
       <div className="flex items-center gap-1 px-3 py-2 text-sm text-text-muted overflow-x-auto border-b border-border/30">
         <button
+          type="button"
           onClick={goHome}
-          className="hover:text-accent-cyan-ink transition-colors"
+          aria-label="Dossier racine"
+          className="min-h-8 px-2 rounded-sm hover:text-accent-cyan-ink transition-colors"
         >
           ~
         </button>

@@ -7,13 +7,15 @@
  * drag & drop, création/édition via ProjectModal, suppression avec confirmation.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { Plus, Briefcase } from 'lucide-react';
 import * as api from '../../services/api';
 import type { Project } from '../../services/api';
 import { Button } from '../ui/Button';
 import { Z_LAYER } from '../../styles/z-layers';
 import { pushEscapeHandler } from '../../lib/escapeStack';
+import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
+import { useStatusStore } from '../../stores/statusStore';
 import { ProjectsKanban } from './ProjectsKanban';
 import { ProjectModal } from './ProjectModal';
 import { Spinner } from '../ui/Spinner';
@@ -34,6 +36,10 @@ export function ProjectsPanel() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Project | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
+  // B-402 : la confirmation piège le focus comme ProjectModal ; Tab fuyait vers le kanban sous le voile.
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useDialogFocusTrap(dialogRef, { active: Boolean(deleteTarget) });
+  const addNotification = useStatusStore((s) => s.addNotification);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -108,10 +114,12 @@ export function ProjectsPanel() {
         await api.updateProject(projectId, { status: newStatus });
       } catch (err) {
         console.error('Failed to update project status:', err);
+        // B-428 : la carte revenait en place sans un mot.
+        addNotification({ type: 'error', title: 'Statut non modifié', message: 'Le serveur a refusé le changement de statut ; la carte est revenue à sa place.' });
         load();
       }
     },
-    [load]
+    [load, addNotification]
   );
 
   const confirmDelete = useCallback(async () => {
@@ -123,9 +131,10 @@ export function ProjectsPanel() {
       setProjects((prev) => prev.filter((p) => p.id !== id));
     } catch (err) {
       console.error('Failed to delete project:', err);
+      addNotification({ type: 'error', title: 'Projet non supprimé', message: 'Le serveur a refusé la suppression ; le projet est toujours là.' });
       load();
     }
-  }, [deleteTarget, load]);
+  }, [deleteTarget, load, addNotification]);
 
   return (
     <div className="flex-1 min-w-0 overflow-y-auto">
@@ -201,6 +210,7 @@ export function ProjectsPanel() {
           role="dialog"
           aria-modal="true"
           aria-labelledby="delete-project-title"
+          ref={dialogRef}
         >
           <div className="w-full max-w-sm rounded-md border border-border bg-surface p-5 shadow-xl">
             <h2 id="delete-project-title" className="text-base font-semibold text-text">

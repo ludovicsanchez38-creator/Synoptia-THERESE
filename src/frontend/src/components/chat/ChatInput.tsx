@@ -1244,7 +1244,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
                 aria-label="Modèle de conversation"
                 value={currentModel}
                 onChange={(e) => handleModelChange(e.target.value)}
-                className="text-sm font-medium text-text bg-transparent border-none outline-none cursor-pointer hover:text-accent-cyan-ink transition-colors appearance-none pr-4 [&>option]:bg-[var(--color-surface)] [&>option]:text-[var(--color-text)]"
+                className="min-h-9 text-sm font-medium text-text bg-transparent border-none outline-none cursor-pointer hover:text-accent-cyan-ink transition-colors appearance-none pr-4 [&>option]:bg-[var(--color-surface)] [&>option]:text-[var(--color-text)]"
                 style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 24 24' fill='none' stroke='%2322D3EE' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E")`, backgroundRepeat: 'no-repeat', backgroundPosition: 'right center' }}
               >
                 {availableModels.map((m) => (
