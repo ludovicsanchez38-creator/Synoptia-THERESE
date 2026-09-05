@@ -4,7 +4,9 @@ THERESE v2 - Token Tracker Service
 US-ESC-01 to US-ESC-05: Token tracking, cost estimation, and limits.
 """
 
+import json
 import logging
+import os
 from collections import deque
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -183,6 +185,11 @@ class TokenTracker:
         self._month_cost: float = 0.0
         self._current_month: str = datetime.now(UTC).strftime("%Y-%m")
 
+        # B-500 (05/09/2026) : ces compteurs ne vivaient qu'en mémoire ; le
+        # plafond mensuel s'appliquait à un compteur remis à zéro à chaque
+        # lancement. Relus depuis le disque au démarrage, écrits à chaque usage.
+        self._charger_depuis_le_disque()
+
         # Limits
         self._limits = TokenLimits()
 
@@ -295,6 +302,7 @@ class TokenTracker:
         self._month_input += input_tokens
         self._month_output += output_tokens
         self._month_cost += cost
+        self._sauver_sur_le_disque()
 
         logger.info(
             f"[TOKEN] Recorded: {input_tokens} in / {output_tokens} out "
@@ -394,6 +402,55 @@ class TokenTracker:
             "input_usage_pct": (self._today_input / self._limits.daily_input_limit * 100) if self._limits.daily_input_limit > 0 else 0.0,
             "output_usage_pct": (self._today_output / self._limits.daily_output_limit * 100) if self._limits.daily_output_limit > 0 else 0.0,
         }
+
+    # ------------------------------------------------------------------
+    # B-500 : persistance des compteurs
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _fichier_usage():
+        from pathlib import Path
+
+        from app.config import settings
+
+        return Path(settings.data_dir) / "token_usage.json"
+
+    def _charger_depuis_le_disque(self) -> None:
+        try:
+            fichier = self._fichier_usage()
+            if not fichier.exists():
+                return
+            charge = json.loads(fichier.read_text(encoding="utf-8"))
+            if charge.get("today_date") == self._today_date:
+                self._today_input = int(charge.get("today_input", 0))
+                self._today_output = int(charge.get("today_output", 0))
+                self._today_cost = float(charge.get("today_cost", 0.0))
+            if charge.get("current_month") == self._current_month:
+                self._month_input = int(charge.get("month_input", 0))
+                self._month_output = int(charge.get("month_output", 0))
+                self._month_cost = float(charge.get("month_cost", 0.0))
+        except Exception as e:  # une persistance illisible ne bloque jamais l'usage
+            logger.warning("Compteurs de jetons illisibles, repart de zéro : %s", e)
+
+    def _sauver_sur_le_disque(self) -> None:
+        try:
+            fichier = self._fichier_usage()
+            fichier.parent.mkdir(parents=True, exist_ok=True)
+            charge = {
+                "today_date": self._today_date,
+                "today_input": self._today_input,
+                "today_output": self._today_output,
+                "today_cost": self._today_cost,
+                "current_month": self._current_month,
+                "month_input": self._month_input,
+                "month_output": self._month_output,
+                "month_cost": self._month_cost,
+            }
+            temporaire = fichier.with_suffix(".json.tmp")
+            temporaire.write_text(json.dumps(charge), encoding="utf-8")
+            os.replace(temporaire, fichier)
+        except Exception as e:
+            logger.warning("Compteurs de jetons non sauvegardés : %s", e)
 
     def get_monthly_usage(self) -> dict:
         """Get this month's usage summary."""
