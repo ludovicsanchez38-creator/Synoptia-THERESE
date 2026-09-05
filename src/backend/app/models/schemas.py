@@ -1329,19 +1329,21 @@ class CRMImportPreviewSchema(BaseModel):
 class CreateCRMContactRequest(BaseModel):
     """Request body for creating a CRM contact."""
 
-    first_name: str
-    last_name: str | None = None
-    company: str | None = None
-    email: str | None = None
-    phone: str | None = None
-    source: str | None = None
+    # B-498 (05/09/2026) : mêmes bornes que ContactCreate, la porte CRM
+    # acceptait un prénom de dix mille caractères.
+    first_name: str = Field(max_length=LONGUEUR_NOM)
+    last_name: str | None = Field(default=None, max_length=LONGUEUR_NOM)
+    company: str | None = Field(default=None, max_length=LONGUEUR_NOM)
+    email: str | None = Field(default=None, max_length=LONGUEUR_EMAIL)
+    phone: str | None = Field(default=None, max_length=LONGUEUR_TELEPHONE)
+    source: str | None = Field(default=None, max_length=LONGUEUR_NOM)
     # B-167 : la création CRM écrit dans le MÊME pipeline que la création
     # mémoire ; elle partage donc le domaine des sept étapes affichables.
     stage: EtapePipeline = "contact"
     # QW1 : ces champs étaient jetés silencieusement à la création (la note métier
     # n'était ni stockée, ni cherchable). Cf. 2e passage personas (RH/santé/compta).
-    notes: str | None = None
-    address: str | None = None
+    notes: str | None = Field(default=None, max_length=LONGUEUR_NOTES)
+    address: str | None = Field(default=None, max_length=LONGUEUR_ADRESSE)
     tags: list[str] | None = None
 
 
