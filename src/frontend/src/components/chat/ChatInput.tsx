@@ -24,6 +24,7 @@ import {
   hasVariableTokens,
   previewVariables,
   type VariablesPreview,
+  compterVariables,
 } from '../../services/api/variables';
 import { useToolConfirmationStore } from '../../stores/toolConfirmationStore';
 import { doitAdopterIdentiteServeur } from '../../lib/identiteConversation';
@@ -1140,7 +1141,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         >
           <span className="text-text-muted">
             {(() => {
-              const total = (input.match(/(?<!\{)\{[a-z0-9_]{1,32}\}/g) ?? []).length;
+              const total = compterVariables(input);
               const resolues = total - variablesPreview.unknown.length;
               return `${resolues} variable${resolues > 1 ? 's' : ''} résolue${resolues > 1 ? 's' : ''}`;
             })()}

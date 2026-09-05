@@ -85,5 +85,18 @@ export async function previewVariables(text: string): Promise<VariablesPreview> 
 /** Un token {nom} substituable est-il présent dans le texte ? (garde locale
  * avant d'appeler le preview - même forme que le backend) */
 export function hasVariableTokens(text: string): boolean {
-  return /(?<!\{)\{[a-z0-9_]{1,32}\}/.test(text);
+  return compterVariables(text) > 0;
+}
+
+const MOTIF_JETON = /\{[a-z0-9_]{1,32}\}/g;
+
+/** Nombre de jetons {nom} substituables. B-446 : sans assertion arrière, que
+ * les WebKit antérieurs à 16.4 (cible `safari14`) refusent à l'ANALYSE du
+ * module ; une accolade doublée `{{nom}}` n'est pas un jeton. */
+export function compterVariables(text: string): number {
+  let total = 0;
+  for (const m of text.matchAll(MOTIF_JETON)) {
+    if (m.index === undefined || text[m.index - 1] !== '{') total += 1;
+  }
+  return total;
 }
