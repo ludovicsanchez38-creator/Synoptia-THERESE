@@ -83,3 +83,55 @@ class TestUnCaractereDeControleNEmporteRienDuTout:
         assert _format_value("ligne 1\nligne 2\tsuite\r") == "ligne 1\nligne 2\tsuite\r"
         assert _format_value("b\x07ell") == "bell"
         assert _format_value(None) == ""
+
+
+class TestB449UneFormuleNeSortJamaisActiveDeLExport:
+    """B-449 (05/09/2026) : une société « =1+1 » sortait de l'export XLSX en
+    formule ACTIVE (data_type 'f') et du CSV telle quelle. La neutralisation
+    à l'écriture est contournée par au moins deux constructeurs Contact ;
+    l'export doit être le dernier rempart, sans abîmer un téléphone en +33.
+    """
+
+    async def _contact_formule(self, client) -> None:
+        reponse = await client.post(
+            "/api/memory/contacts",
+            json={
+                "first_name": "For",
+                "last_name": "Mule",
+                "company": "=1+1",
+                "phone": "+33 6 12 34 56 78",
+                "email": "formule@test.fr",
+                "notes": '=HYPERLINK("http://evil.test","clique")',
+            },
+        )
+        assert reponse.status_code == 200, reponse.text
+
+    @pytest.mark.asyncio
+    async def test_le_xlsx_stocke_une_chaine_pas_une_formule(self, client):
+        from openpyxl import load_workbook
+
+        await self._contact_formule(client)
+        reponse = await client.post("/api/crm/export/contacts?format=xlsx")
+        assert reponse.status_code == 200, reponse.text[:200]
+
+        feuille = load_workbook(io.BytesIO(reponse.content))["Contacts"]
+        entetes = [c.value for c in feuille[1]]
+        col_societe = entetes.index("Entreprise") + 1
+        col_tel = entetes.index("Telephone") + 1
+        cellule = feuille.cell(row=2, column=col_societe)
+        assert cellule.data_type != "f", "la formule est ACTIVE dans le classeur"
+        assert "1+1" in str(cellule.value), "la valeur doit rester lisible"
+        assert feuille.cell(row=2, column=col_tel).value == "+33 6 12 34 56 78", (
+            "un téléphone en +33 ne doit pas être abîmé"
+        )
+
+    @pytest.mark.asyncio
+    async def test_le_csv_neutralise_le_prefixe_de_formule(self, client):
+        await self._contact_formule(client)
+        reponse = await client.post("/api/crm/export/contacts?format=csv")
+        assert reponse.status_code == 200, reponse.text[:200]
+        texte = reponse.content.decode("utf-8-sig")
+        ligne = next(l for l in texte.splitlines() if "formule@test.fr" in l)
+        assert "=1+1" not in ligne.replace("'=1+1", ""), ligne
+        assert "'=1+1" in ligne or '"\'=1+1"' in ligne, f"préfixe de formule non neutralisé : {ligne}"
+        assert "+33 6 12 34 56 78" in ligne
