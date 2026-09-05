@@ -831,7 +831,9 @@ async def import_vcf_contacts(
         parsed_contacts = parse_vcf(content)
     except Exception as e:
         logger.error(f"Erreur parsing VCF: {e}")
-        raise HTTPException(status_code=400, detail=f"Fichier VCF invalide : {e}")
+        # B-552 (05/09/2026) : le texte brut de vobject (anglais, numéro de
+        # ligne interne) traversait jusqu'à l'écran.
+        raise HTTPException(status_code=400, detail="Fichier VCF invalide : il ne respecte pas le format vCard attendu. Vérifie qu'il s'agit bien d'un export de contacts.")
 
     if not parsed_contacts:
         return {"created": 0, "updated": 0, "message": "Aucun contact trouvé dans le fichier"}
