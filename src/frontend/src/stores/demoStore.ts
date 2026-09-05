@@ -95,9 +95,25 @@ export const useDemoStore = create<DemoState>()(
  */
 function armerLaTableSiVide() {
   const etat = useDemoStore.getState();
-  if (!etat.enabled || etat.replacementMap.size > 0) return;
+  if (!etat.enabled) return;
   const map = mapDepuisLesContacts();
-  if (map.size > 0) useDemoStore.setState({ replacementMap: map });
+  if (map.size === 0) return;
+  if (etat.replacementMap.size === 0) {
+    useDemoStore.setState({ replacementMap: map });
+    return;
+  }
+  // B-523 : un contact créé APRÈS l'armement n'entrait jamais dans la table.
+  // On y fusionne les nouveaux venus sans toucher aux entrées existantes
+  // (une table plus riche construite par une surface garde la main).
+  let ajout = false;
+  const fusion = new Map(etat.replacementMap);
+  for (const [cle, valeur] of map) {
+    if (!fusion.has(cle)) {
+      fusion.set(cle, valeur);
+      ajout = true;
+    }
+  }
+  if (ajout) useDemoStore.setState({ replacementMap: fusion });
 }
 
 // L'hydratation initiale est déjà faite quand ce module finit de charger.
