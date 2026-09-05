@@ -12,6 +12,7 @@ import { useCalendarStore } from '../../stores/calendarStore';
 import type { CalendarEvent } from '../../services/api';
 import { getVisibleHourRange } from './calendarHours';
 import { getTimedEventLayout } from './calendarEventLayout';
+import { trierLesEvenementsDuJour } from '../../lib/ordreDesEvenements';
 
 /** B-247 : la semaine française commence le LUNDI. Une seule liste pour les
  *  deux vues — le Mois et la Semaine tenaient chacun la leur, et le Mois avait
@@ -209,6 +210,8 @@ function MonthView({
         map[dateKey].push(event);
       }
     });
+    // B-577 : l'ordre reçu de l'API n'est pas celui des heures du jour.
+    for (const dateKey of Object.keys(map)) map[dateKey] = trierLesEvenementsDuJour(map[dateKey]);
 
     return map;
   }, [events]);

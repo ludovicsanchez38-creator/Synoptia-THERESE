@@ -147,9 +147,13 @@ export function EventForm() {
 
     requestExternalAction({
       title: isEditing ? 'Confirmer la modification de l’événement' : 'Confirmer la création de l’événement',
-      description: attendees.length > 0
-        ? 'Vérifie les horaires et les participants. Les invitations ne partiront qu’après ta confirmation.'
-        : 'Vérifie les horaires et la destination avant d’enregistrer cet événement.',
+      // B-573 : un agenda local enregistre les participants sans pouvoir
+      // les inviter ; promettre des invitations serait faux.
+      description: attendees.length === 0
+        ? 'Vérifie les horaires et la destination avant d’enregistrer cet événement.'
+        : !selectedCalendar || selectedCalendar.provider === 'local'
+          ? 'Vérifie les horaires et les participants. Cet agenda local les enregistre mais ne peut pas leur envoyer d’invitation : préviens-les toi-même.'
+          : 'Vérifie les horaires et les participants. Les invitations ne partiront qu’après ta confirmation.',
       confirmLabel: isEditing ? 'Confirmer la modification' : 'Confirmer la création',
       details: [
         { label: 'Titre', value: summary },
@@ -248,6 +252,7 @@ export function EventForm() {
         <div className="flex items-center gap-3">
           <button
             onClick={handleCancel}
+            aria-label="Retour"
             className="p-2 hover:bg-border/30 rounded-md transition-colors"
           >
             <ChevronLeft className="w-5 h-5 text-text-muted" />

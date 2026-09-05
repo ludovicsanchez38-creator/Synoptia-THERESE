@@ -77,16 +77,17 @@ export function EventDetail() {
         <div className="flex items-center justify-between mb-4">
           <button
             onClick={() => setCurrentEvent(null)}
+            aria-label="Retour"
             className="p-2 hover:bg-border/30 rounded-md transition-colors"
           >
             <ChevronLeft className="w-5 h-5 text-text-muted" />
           </button>
 
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="sm" onClick={handleEdit}>
+            <Button variant="ghost" size="sm" onClick={handleEdit} aria-label="Modifier l’événement">
               <Edit className="w-4 h-4" />
             </Button>
-            <Button variant="ghost" size="sm" onClick={handleDelete} disabled={deleting}>
+            <Button variant="ghost" size="sm" onClick={handleDelete} disabled={deleting} aria-label="Supprimer l’événement">
               {deleting ? (
                 <Spinner taille="bouton" />
               ) : (
