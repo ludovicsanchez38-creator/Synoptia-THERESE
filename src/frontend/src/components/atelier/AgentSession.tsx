@@ -610,7 +610,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
 
       {/* Input */}
       {pendingInstruction && (
-        <div className="border-t border-border bg-bg px-3 pt-3" data-testid="agent-profile-confirmation">
+        <div role="alert" aria-label="Confirmer l’appel de l’agent" className="border-t border-border bg-bg px-3 pt-3" data-testid="agent-profile-confirmation">
           <div className="rounded-md border border-agent-amber/40 bg-agent-amber/10 p-3 text-xs text-text">
             <div className="font-semibold">Confirmer l&apos;appel de cet agent expérimental</div>
             <p className="mt-1 leading-relaxed text-text-muted">
