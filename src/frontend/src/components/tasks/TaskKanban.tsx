@@ -33,6 +33,7 @@ import * as api from '../../services/api';
 import { useDemoMask } from '../../hooks';
 import { isPastParisCivilDate } from '../../lib/civilDate';
 import { accessibiliteGlisserDeposer } from '../../lib/accessibiliteGlisserDeposer';
+import { useStatusStore } from '../../stores/statusStore';
 
 const COLUMNS = [
   { id: 'todo', label: 'À faire', icon: Circle, color: 'text-text-muted' },
@@ -80,6 +81,8 @@ export function TaskKanban() {
       updateTask(taskId, updated);
     } catch (err) {
       console.error('Failed to update task status:', err);
+      // B-524 : un refus du serveur se dit, la carte ne revient plus sans explication.
+      useStatusStore.getState().addNotification({ type: 'error', title: 'Tâche non mise à jour', message: 'Le changement n’a pas été enregistré. Réessaie dans un instant.' });
     }
   }
 

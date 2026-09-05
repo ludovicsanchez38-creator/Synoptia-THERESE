@@ -100,9 +100,9 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
       setTasks(visible);
     } catch (err: any) {
       console.error('Failed to load tasks:', err);
-      if (!hasCachedTasks) {
-        setError(err?.message || 'Impossible de charger les tâches');
-      }
+      // B-532 : un échec de rechargement se dit même avec une liste en cache,
+      // qui peut être périmée.
+      setError(hasCachedTasks ? 'Impossible de rafraîchir les tâches : la liste affichée peut être périmée.' : 'Impossible de charger les tâches');
     } finally {
       setLoading(false);
     }

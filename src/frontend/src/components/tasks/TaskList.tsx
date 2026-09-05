@@ -14,6 +14,7 @@ import * as api from '../../services/api';
 import { useDemoMask } from '../../hooks';
 import { Button } from '../ui/Button';
 import { isPastParisCivilDate } from '../../lib/civilDate';
+import { useStatusStore } from '../../stores/statusStore';
 
 export function TaskList() {
   const { tasks, searchQuery, setCurrentTask, setIsTaskFormOpen, updateTask, removeTask } =
@@ -44,6 +45,7 @@ export function TaskList() {
       }
     } catch (err) {
       console.error('Failed to toggle task:', err);
+      useStatusStore.getState().addNotification({ type: 'error', title: 'Tâche non mise à jour', message: 'Le changement n’a pas été enregistré. Réessaie dans un instant.' });
     }
   }
 
@@ -57,6 +59,7 @@ export function TaskList() {
       removeTask(taskId);
     } catch (err) {
       console.error('Failed to delete task:', err);
+      useStatusStore.getState().addNotification({ type: 'error', title: 'Tâche non supprimée', message: 'La suppression n’a pas été enregistrée. Réessaie dans un instant.' });
     }
   }
 
