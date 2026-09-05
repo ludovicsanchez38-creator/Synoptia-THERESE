@@ -16,6 +16,7 @@ import re
 from datetime import UTC, datetime
 
 from app.models.entities import Variable
+from sqlalchemy.exc import IntegrityError
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
@@ -132,7 +133,19 @@ async def create_variable(
         description=description,
     )
     session.add(variable)
-    await session.commit()
+    try:
+        await session.commit()
+    except IntegrityError as collision:
+        # B-549 (05/09/2026) : un concurrent a inséré le même nom entre la
+        # lecture et l'insertion. La contrainte UNIQUE tranche la course ; on
+        # la traduit en « existe déjà » (409) au lieu de laisser filer un 500.
+        await session.rollback()
+        if "variables.name" not in str(collision.orig):
+            raise
+        raise VariableExistante(
+            f"La variable « {name} » existe déjà. Utilise « remplacer » pour "
+            "changer sa valeur (l'écrasement silencieux est refusé)."
+        ) from collision
     await session.refresh(variable)
     return variable
 
