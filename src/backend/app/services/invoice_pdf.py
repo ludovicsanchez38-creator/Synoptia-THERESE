@@ -223,7 +223,13 @@ def _montant_fr(valeur: float) -> str:
     et d'un « 0,00 » ecrit a la main. Deux signes decimaux dans une meme piece
     comptable, et le lecteur ne sait plus lequel separe les decimales.
     """
-    return f"{valeur:.2f}".replace(".", ",")
+    # B-570 : l'écran groupe les milliers (Intl fr-FR) ; le PDF écrivait
+    # « 1490,00 ». L'espace insécable (U+00A0) est dans Latin-1, donc sûre
+    # avec les polices de base de ReportLab.
+    formate = f"{abs(valeur):,.2f}"
+    entier, decimales = formate.split(".")
+    signe = "-" if valeur < 0 and formate != "0.00" else ""
+    return f"{signe}{entier.replace(',', chr(0xA0))},{decimales}"
 
 
 def _taux_fr(valeur: float) -> str:
@@ -309,7 +315,7 @@ class InvoicePDFGenerator:
         elements: list[Any] = []
         elements.append(Paragraph(doc_title, title_style))
         elements.append(Spacer(1, 1 * mm))
-        elements.append(Paragraph(f"N. {invoice_number}", number_style))
+        elements.append(Paragraph(f"N° {invoice_number}", number_style))
         elements.append(Spacer(1, 8 * mm))
         return elements
 
