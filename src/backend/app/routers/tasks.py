@@ -222,10 +222,15 @@ async def update_task(
     # devoir des deux côtés, sinon la porte de service reste ouverte.
     await _verifier_rattachements(session, request.project_id, request.contact_id)
 
-    # Update fields
+    # Update fields.
+    # B-423 (05/09/2026) : les champs facultatifs sont déclarés `str | None =
+    # None`, donc « absent » et « null » se confondaient sur `is not None` :
+    # impossible d'effacer une description, une échéance ou un rattachement
+    # par PUT. Un champ ENVOYÉ à null efface ; un champ absent ne touche à rien.
+    envoyes = request.model_fields_set
     if request.title is not None:
         task.title = request.title
-    if request.description is not None:
+    if "description" in envoyes:
         task.description = request.description
     if request.status is not None:
         task.status = request.status
@@ -236,19 +241,22 @@ async def update_task(
             task.completed_at = None
     if request.priority is not None:
         task.priority = request.priority
-    if request.due_date is not None:
-        try:
-            task.due_date = datetime.fromisoformat(request.due_date.replace("Z", ""))
-        except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid due_date format")
-    if request.project_id is not None:
+    if "due_date" in envoyes:
+        if request.due_date is None:
+            task.due_date = None
+        else:
+            try:
+                task.due_date = datetime.fromisoformat(request.due_date.replace("Z", ""))
+            except ValueError:
+                raise HTTPException(status_code=400, detail="Invalid due_date format")
+    if "project_id" in envoyes:
         task.project_id = request.project_id
     # B-032 : champ déclaré au schéma, accepté en 200, puis jeté - la réponse
     # comme la relecture rendaient l'ancien contact, sans un avertissement.
-    if request.contact_id is not None:
+    if "contact_id" in envoyes:
         task.contact_id = request.contact_id
-    if request.tags is not None:
-        task.tags = json.dumps(request.tags)
+    if "tags" in envoyes:
+        task.tags = json.dumps(request.tags) if request.tags is not None else None
 
     task.updated_at = datetime.now(UTC)
 
