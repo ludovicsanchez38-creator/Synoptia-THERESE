@@ -93,8 +93,11 @@ class UserCommand:
 
         content = parts[2].lstrip("\n")
 
+        # B-484 (05/09/2026) : le nom du fichier est l'identité de la commande.
+        # Un frontmatter divergent la rendait introuvable (chemin dérivé du
+        # nom lu, fichier rangé sous l'autre nom).
         return cls(
-            name=frontmatter.get("name", name),
+            name=name,
             description=frontmatter.get("description", ""),
             category=frontmatter.get("category", "production"),
             icon=frontmatter.get("icon", ""),
@@ -189,8 +192,14 @@ class UserCommandsService:
         show_on_home: bool | None = None,
         show_in_slash: bool | None = None,
         content: str | None = None,
+        new_name: str | None = None,
     ) -> UserCommand | None:
-        """Met a jour une commande existante."""
+        """Met a jour une commande existante.
+
+        B-515 (05/09/2026) : un renommage ne renommait que la copie en
+        mémoire du registre ; le fichier gardait l'ancien nom et le nouveau
+        partait au redémarrage. Le fichier est renommé ici.
+        """
         cmd = self.get_command(name)
         if not cmd:
             return None
@@ -211,6 +220,15 @@ class UserCommandsService:
         cmd.updated_at = datetime.now().isoformat()
 
         filepath = self._command_path(name)
+        if new_name and new_name != name:
+            nouveau = self._command_path(new_name)
+            if nouveau.exists():
+                raise ValueError(f"Une commande « {new_name} » existe déjà.")
+            cmd.name = nouveau.stem
+            nouveau.write_text(cmd.to_markdown(), encoding="utf-8")
+            filepath.unlink(missing_ok=True)
+            logger.info(f"Renamed user command: {name} -> {cmd.name}")
+            return cmd
         filepath.write_text(cmd.to_markdown(), encoding="utf-8")
         logger.info(f"Updated user command: {name}")
         return cmd
