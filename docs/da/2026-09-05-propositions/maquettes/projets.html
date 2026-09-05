@@ -35,7 +35,7 @@
  <header class="barre">
   <div class="marque"><i aria-hidden="true"></i>THÉRÈSE</div>
   <span class="etat"><b>Atelier Exemple</b></span>
-  <span class="etat secondaire">Moteur local actif <b class="num">14 ms</b></span>
+  <span class="etat secondaire">Modèle local <b>actif</b></span>
   <div class="droite">
    <button class="btn btn-discret" type="button"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/></svg>Contrôle des données</button>
    <button class="recherche" type="button"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><span>Rechercher</span><kbd>⌘K</kbd></button>
@@ -46,7 +46,7 @@
    <button type="button"  aria-label="Accueil"><svg class="ic" viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg></button>
    <button type="button" aria-label="Nouvelle conversation"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></button>
    <button type="button" aria-label="Conversations"><svg class="ic" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/><path d="M12 8v4l3 2"/></svg></button>
-   <button type="button" aria-current="page" aria-label="Fichiers"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></button>
+   <button type="button" aria-label="Fichiers"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></button>
    <div class="bas">
     <button type="button" aria-label="Paramètres"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
     <button type="button" aria-label="Aide"><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.4-1 .9-1 1.7M12 17h.01"/></svg></button>
@@ -64,7 +64,7 @@
 
   <section class="colonnes" id="vue-colonnes" aria-label="Tâches par état">
    <div class="col"><h3><span class="etiquette e-neutre">À faire</span><span class="compte">3</span></h3>
-    <article class="tache" tabindex="0"><b><span class="priorite haute" aria-label="Priorité haute"></span> Envoyer la facture de juillet à Claire Roux</b><div class="pied"><span class="etiquette e-erreur">En retard de 2 jours</span><span class="projet"><i style="background:var(--color-domaine-factures)"></i>Roux Rénovation</span></div></article>
+    <article class="tache" tabindex="0"><b><span class="priorite haute" aria-label="Priorité haute"></span> Relancer Claire Roux pour la facture de juillet</b><div class="pied"><span class="etiquette e-erreur">En retard de 2 jours</span><span class="projet"><i style="background:var(--color-domaine-factures)"></i>Roux Rénovation</span></div></article>
     <article class="tache" tabindex="0"><b><span class="priorite haute" aria-label="Priorité haute"></span> Relancer Paul Durand pour le devis</b><div class="pied"><span class="etiquette e-erreur">En retard d'un jour</span><span class="projet"><i></i>Durand Menuiserie</span></div></article>
     <article class="tache" tabindex="0"><b><span class="priorite moyenne" aria-label="Priorité moyenne"></span> Préparer la séance 2 du Garage Benali</b><div class="pied"><span>Aujourd'hui</span><span class="projet"><i style="background:var(--color-domaine-agenda)"></i>Garage Benali</span></div></article>
     <button class="ajout" type="button"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>Ajouter une tâche</button>
@@ -79,7 +79,7 @@
   </section>
 
   <section class="carte dense" id="vue-liste" hidden aria-label="Tâches en liste">
-   <div class="ligne" tabindex="0" role="button"><div class="priorite haute" style="margin:auto"></div><div><div class="titre">Envoyer la facture de juillet à Claire Roux</div><div class="detail">Roux Rénovation · à faire</div></div><div class="droite"><span class="etiquette e-erreur">03/09 · en retard</span></div></div>
+   <div class="ligne" tabindex="0" role="button"><div class="priorite haute" style="margin:auto"></div><div><div class="titre">Relancer Claire Roux pour la facture de juillet</div><div class="detail">Roux Rénovation · à faire</div></div><div class="droite"><span class="etiquette e-erreur">03/09 · en retard</span></div></div>
    <div class="ligne" tabindex="0" role="button"><div class="priorite haute" style="margin:auto"></div><div><div class="titre">Relancer Paul Durand pour le devis</div><div class="detail">Durand Menuiserie · à faire</div></div><div class="droite"><span class="etiquette e-erreur">04/09 · en retard</span></div></div>
    <div class="ligne" tabindex="0" role="button"><div class="priorite moyenne" style="margin:auto"></div><div><div class="titre">Préparer la séance 2 du Garage Benali</div><div class="detail">Garage Benali · à faire</div></div><div class="droite"><span class="etiquette e-neutre">Aujourd'hui</span></div></div>
    <div class="ligne" tabindex="0" role="button"><div class="priorite" style="margin:auto"></div><div><div class="titre">Plans de l'accueil, version 2</div><div class="detail">Garage Benali · en cours</div></div><div class="droite"><span class="etiquette e-info">12/09</span></div></div>

@@ -87,14 +87,14 @@ Généré par contrastes.py. Seuils : 4,5:1 texte, 3:1 anneau de focus, 7:1 en c
 
 | Paire | Couleurs | Ratio | Seuil | Verdict |
 |---|---|---:|---:|---|
-| texte courant sur le fond | #0F172A sur #FAFAF7 | 17.07:1 | 4.5 | passe |
-| texte sur surface | #0F172A sur #FFFFFF | 17.85:1 | 4.5 | passe |
-| métadonnées sur le fond | #475569 sur #FAFAF7 | 7.25:1 | 4.5 | passe |
-| métadonnées sur surface | #475569 sur #FFFFFF | 7.58:1 | 4.5 | passe |
-| accent encre (liens) sur le fond | #0E7490 sur #FAFAF7 | 5.12:1 | 4.5 | passe |
+| texte courant sur le fond | #101C36 sur #F3F6FC | 15.63:1 | 4.5 | passe |
+| texte sur surface | #101C36 sur #FFFFFF | 16.92:1 | 4.5 | passe |
+| métadonnées sur le fond | #526178 sur #F3F6FC | 5.81:1 | 4.5 | passe |
+| métadonnées sur surface | #526178 sur #FFFFFF | 6.29:1 | 4.5 | passe |
+| accent encre (liens) sur le fond | #0E7490 sur #F3F6FC | 4.95:1 | 4.5 | passe |
 | accent encre sur sa teinte | #0E7490 sur #DEF4F9 | 4.70:1 | 4.5 | passe |
 | encre du bouton principal | #06121F sur #22D3EE | 10.43:1 | 4.5 | passe |
-| anneau de focus sur le fond | #0F8FB3 sur #FAFAF7 | 3.59:1 | 3.0 | passe |
+| anneau de focus sur le fond | #0F8FB3 sur #F3F6FC | 3.46:1 | 3.0 | passe |
 | erreur sur surface | #9E1818 sur #FFFFFF | 8.08:1 | 4.5 | passe |
 | avertissement sur surface | #794A05 sur #FFFFFF | 7.51:1 | 4.5 | passe |
 | succès sur surface | #046146 sur #FFFFFF | 7.49:1 | 4.5 | passe |

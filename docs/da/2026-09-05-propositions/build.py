@@ -12,6 +12,7 @@ DIRS = [("1", "Continuité", "papier, encre, serif éditorial sur quelques grand
         ("3", "Deux mondes", "ce que dit THÉRÈSE sur navy avec lueur, l'humain et les vues d'administration sur la surface claire")]
 LARGEURS = [("1280", "800"), ("1024", "700"), ("800", "600")]
 JOUR = "5 septembre 2026"
+REVISION = "maquettes 2026-09-05-b (après jury COCO)"
 CSS = """
 :root{--papier:#FAFAF7;--encre:#0F172A;--encre2:#475569;--filet:#E2E4E9;--navy:#0B1226;--lueur:#E6EDF7;--bleu:#2451FF;--cyan:#0891B2}
 *{box-sizing:border-box}html{color-scheme:light}body{margin:0;background:var(--papier);color:var(--encre);font:15px/1.55 Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
@@ -61,11 +62,11 @@ function cadreApres(){const abs=P.maquette==='1'?'':'<div class="absent">Maquett
 function rendre(){if(!ecran)return;const s=document.getElementById('cadres');
  s.innerHTML=st.vue==='avant'?cadreAvant():st.vue==='apres'?cadreApres():cadreAvant()+cadreApres();
  document.querySelectorAll('[data-k]').forEach(b=>b.setAttribute('aria-pressed',String(st[b.dataset.k])===b.dataset.v));
- const leg=document.getElementById('legende');leg.innerHTML=`<span>${st.vue==='avant'?'Capture réelle de la 0.66 (fenêtre ≈1181 px, réduite en JPEG 1300 px) : '+(captures[st.capture]||'').replace(/^\d+[a-z]?-/,'').replace(/-/g,' '):'Maquette HTML à l\'échelle 1:1, '+st.largeur+'×'+H[st.largeur]+' px, direction '+st.d+', thème '+st.theme+', texte '+st.taille+' px'+(st.contraste==='1'?', contraste élevé':'')+(st.mouvement==='1'?', mouvement réduit':'')+', état « '+(etats[st.etat]||st.etat)+' »'}</span><span>Référence : THÉRÈSE 0.66.1, commit b4ffddbe, ${document.body.dataset.jour}</span>`;}
+ const leg=document.getElementById('legende');leg.innerHTML=`<span>${st.vue==='avant'?'Capture HISTORIQUE de la 0.66 du 03-04/09 (fenêtre ≈1181 px, JPEG 1300 px, redimensionnée à la largeur choisie, pas un viewport équivalent) : '+(captures[st.capture]||'').replace(/^\d+[a-z]?-/,'').replace(/-/g,' '):'Maquette HTML à l\'échelle 1:1, '+st.largeur+'×'+H[st.largeur]+' px, direction '+st.d+', thème '+st.theme+', texte '+st.taille+' px'+(st.contraste==='1'?', contraste élevé':'')+(st.mouvement==='1'?', mouvement réduit':'')+', état « '+(etats[st.etat]||st.etat)+' »'}</span><span>Référence : THÉRÈSE 0.66.1, commit b4ffddbe · ${document.body.dataset.revision} · données de démonstration (Marie Exemple), chiffres illustratifs</span>`;}
 document.querySelectorAll('[data-k]').forEach(b=>b.addEventListener('click',()=>{const k=b.dataset.k,v=b.dataset.v;if(k==='capture'){st.capture=(st.capture+1)%Math.max(captures.length,1);}else{st[k]=v;if(['vue','d','theme','largeur','taille','contraste','mouvement'].includes(k))S(k,v);}rendre();}));
 function cle(){return 'therese-da-decision-'+ecran;}
-function chargerDecision(){const v=JSON.parse(localStorage.getItem(cle())||'{}');document.querySelectorAll('.decision [data-choix]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.choix===v.choix));const n=document.querySelector('.decision .note');if(n)n.value=v.note||'';const h=document.querySelector('.decision .horodatage');if(h)h.textContent=v.quand?`Décision « ${v.choix} » enregistrée le ${v.quand}, direction ${v.direction}, thème ${v.theme}.`:'Aucune décision enregistrée pour cet écran.';}
-document.querySelectorAll('.decision [data-choix]').forEach(b=>b.addEventListener('click',()=>{const v=JSON.parse(localStorage.getItem(cle())||'{}');v.choix=b.dataset.choix;v.direction=st.d;v.theme=st.theme;v.quand=new Date().toLocaleString('fr-FR');v.version='0.66.1';localStorage.setItem(cle(),JSON.stringify(v));chargerDecision();}));
+function chargerDecision(){const v=JSON.parse(localStorage.getItem(cle())||'{}');document.querySelectorAll('.decision [data-choix]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.choix===v.choix));const n=document.querySelector('.decision .note');if(n)n.value=v.note||'';const h=document.querySelector('.decision .horodatage');if(h)h.textContent=v.quand?`Décision « ${v.choix} » enregistrée le ${v.quand}, direction ${v.direction}, thème ${v.theme}, ${v.revision||''}.`:'Aucune décision enregistrée pour cet écran.';}
+document.querySelectorAll('.decision [data-choix]').forEach(b=>b.addEventListener('click',()=>{const v=JSON.parse(localStorage.getItem(cle())||'{}');v.choix=b.dataset.choix;v.direction=st.d;v.theme=st.theme;v.quand=new Date().toLocaleString('fr-FR');v.version='0.66.1';v.revision=document.body.dataset.revision;localStorage.setItem(cle(),JSON.stringify(v));chargerDecision();}));
 const note=document.querySelector('.decision .note');if(note)note.addEventListener('input',()=>{const v=JSON.parse(localStorage.getItem(cle())||'{}');v.note=note.value;localStorage.setItem(cle(),JSON.stringify(v));});
 if(ecran){rendre();chargerDecision();}
 const recap=document.getElementById('recap');if(recap){const l=[];for(const k of Object.keys(localStorage)){if(k.startsWith('therese-da-decision-')){const v=JSON.parse(localStorage.getItem(k));l.push(`${k.replace('therese-da-decision-','')} : ${v.choix||'?'} · direction ${v.direction||'?'} · ${v.theme||''} · ${v.quand||''}${v.note?' · '+v.note:''}`);}}
@@ -73,7 +74,7 @@ const recap=document.getElementById('recap');if(recap){const l=[];for(const k of
 """
 def page(titre, corps, attrs=""):
     return f"""<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{html.escape(titre)} · THÉRÈSE, propositions DA</title><style>{CSS}</style></head>
-<body data-jour="{JOUR}" {attrs}><header><h1>THÉRÈSE, propositions DA et UX</h1><span class="fil">{JOUR} · 0.66.1 · {html.escape(titre)}</span></header><div class="couture"></div><main>{corps}</main><script>{JS}</script></body></html>"""
+<body data-jour="{JOUR}" data-revision="{REVISION}" {attrs}><header><h1>THÉRÈSE, propositions DA et UX</h1><span class="fil">{JOUR} · 0.66.1 · {html.escape(titre)}</span></header><div class="couture"></div><main>{corps}</main><script>{JS}</script></body></html>"""
 def nav(courant):
     items = [("index.html","Sommaire"),("socle.html","Socle commun")] + [(f"{e['id']}.html", e["titre"]) for e in ECRANS]
     return '<nav class="ecrans">' + "".join(f'<a href="{h}"{" aria-current=\"page\"" if h==courant else ""}>{html.escape(t)}</a>' for h,t in items) + "</nav>"

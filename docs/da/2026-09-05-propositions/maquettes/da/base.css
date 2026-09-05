@@ -83,7 +83,7 @@ p{margin:0}
 .dense .ligne{padding:.45rem var(--espace-3)}
 
 /* Étiquettes : sémantiques et domaines (encre sur teinte, testées) */
-.etiquette{display:inline-flex;align-items:center;gap:.3em;font-size:.75rem;font-weight:600;padding:.15rem .5rem;border-radius:999px;white-space:nowrap}
+.etiquette{display:inline-flex;align-items:center;gap:.3em;font-size:.875rem;font-weight:600;padding:.15rem .5rem;border-radius:999px;white-space:nowrap}
 .e-erreur{background:color-mix(in srgb,var(--color-error) 12%,transparent);color:var(--color-error)}
 .e-attention{background:color-mix(in srgb,var(--color-warning) 14%,transparent);color:var(--color-warning)}
 .e-succes{background:color-mix(in srgb,var(--color-success) 12%,transparent);color:var(--color-success)}
@@ -105,8 +105,8 @@ p{margin:0}
 .composeur{position:absolute;left:50%;bottom:var(--espace-3);transform:translateX(-50%);width:min(var(--colonne),calc(100% - 2*var(--espace-4)));background:var(--color-surface);border:1px solid var(--color-border);border-radius:var(--radius-md);box-shadow:var(--shadow-lg);padding:var(--espace-2) var(--espace-3)}
 /* L'établi (cinq verbes) vit au bord du composeur : toujours visible, jamais recouvert (cause du candidat B-320). */
 .composeur .etabli{display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;margin:0 0 .5rem}
-.composeur .etabli span{font-size:.75rem;color:var(--color-text-muted);margin-right:.2rem}
-.composeur .etabli button{display:inline-flex;align-items:center;gap:.3rem;border:1px solid var(--color-border);background:var(--color-surface);border-radius:999px;padding:.25rem .6rem;font-size:.8125rem;font-weight:500;cursor:pointer;color:var(--color-text);white-space:nowrap}
+.composeur .etabli span{font-size:.875rem;color:var(--color-text-muted);margin-right:.2rem}
+.composeur .etabli button{display:inline-flex;align-items:center;gap:.3rem;border:1px solid var(--color-border);background:var(--color-surface);border-radius:999px;padding:.25rem .6rem;font-size:.875rem;font-weight:500;cursor:pointer;color:var(--color-text);white-space:nowrap}
 .composeur .etabli button:hover{border-color:var(--color-accent);color:var(--color-accent)}
 .composeur .etabli .plus{color:var(--color-text-muted);border-style:dashed}
 .composeur textarea{width:100%;border:0;resize:none;background:transparent;min-height:2rem;font-size:.9375rem;padding:.2rem 0;outline:none}

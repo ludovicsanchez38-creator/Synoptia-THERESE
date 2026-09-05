@@ -7,7 +7,7 @@ TITRES={"accueil":"Accueil, brief du jour","devis":"Devis et factures","decision
 for f in sorted(glob.glob(f"{R}/_fragments/*.html")):
     e=os.path.basename(f)[:-5]; frag=open(f).read()
     rail=re.sub(r'aria-current="page"','',coque)
-    cible={"accueil":"Accueil","devis":"Fichiers","decision":"Conversations","contacts":"Fichiers","projets":"Fichiers","agenda":"Fichiers","tiroir":"Conversations","parametres":"Paramètres"}.get(e)
+    cible={"accueil":"Accueil","decision":"Conversations","tiroir":"Conversations","parametres":"Paramètres"}.get(e)
     if cible: rail=rail.replace(f'<button type="button" aria-label="{cible}"', f'<button type="button" aria-current="page" aria-label="{cible}"',1)
     html=f"""<!doctype html><html lang="fr" data-d="2"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>{TITRES.get(e,e)} · maquette THÉRÈSE</title>
 <link rel="stylesheet" href="da/tokens.css"><link rel="stylesheet" href="da/base.css"><link rel="stylesheet" href="da/d1.css"><link rel="stylesheet" href="da/d2.css"><link rel="stylesheet" href="da/d3.css">

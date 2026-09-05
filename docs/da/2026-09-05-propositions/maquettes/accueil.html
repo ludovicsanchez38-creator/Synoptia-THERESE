@@ -6,12 +6,16 @@
 .brief .filtre{display:flex;align-items:center;gap:.6rem;padding:.5rem var(--espace-3);border-top:1px solid var(--color-border);font-size:.8125rem;color:var(--color-text-muted)}
 .brief .sources{display:flex;gap:.4rem;align-items:center;padding:.6rem var(--espace-3);border-top:1px solid var(--color-border);font-size:.75rem;color:var(--color-text-muted)}
 .jour{display:flex;gap:.75rem;align-items:baseline;margin-top:.25rem}
+.fil{display:flex;align-items:center;gap:.4rem;flex-wrap:wrap;margin:.25rem 0 .75rem;color:var(--color-text-muted)}
+.fil .ic{width:.9rem;height:.9rem}
+.brouillon{background:var(--color-surface-2);border:1px solid var(--color-border);border-radius:var(--radius-sm);padding:.75rem var(--espace-3);font-size:.9375rem;line-height:1.55}
+.brouillon p{margin:0 0 .5rem}.brouillon p:last-child{margin:0}
 </style></head>
 <body><div class="app">
  <header class="barre">
   <div class="marque"><i aria-hidden="true"></i>THÉRÈSE</div>
   <span class="etat"><b>Atelier Exemple</b></span>
-  <span class="etat secondaire">Moteur local actif <b class="num">14 ms</b></span>
+  <span class="etat secondaire">Modèle local <b>actif</b></span>
   <div class="droite">
    <button class="btn btn-discret" type="button"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l7 3v6c0 4-3 7-7 9-4-2-7-5-7-9V6z"/></svg>Contrôle des données</button>
    <button class="recherche" type="button"><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><span>Rechercher</span><kbd>⌘K</kbd></button>
@@ -42,16 +46,38 @@
       <div class="carte-tete">
        <div class="icone" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l1.8 4.6L18 9l-4.2 1.4L12 15l-1.8-4.6L6 9l4.2-1.4z"/></svg></div>
        <div><h2 id="brief-titre">Ton attention aujourd'hui</h2><p class="meta"><span class="num">4</span> éléments, dont <span class="num">2</span> en retard</p></div>
-       <div class="actions"><button class="btn btn-secondaire" type="button">Voir tout mon agenda</button><button class="btn btn-primaire" type="button">Commencer</button></div>
+       <div class="actions"><button class="btn btn-secondaire" type="button">Voir tout mon agenda</button><button class="btn btn-primaire" type="button">Préparer la relance de Claire</button></div>
       </div>
-      <div class="filtre"><span>Montre-moi</span><div class="segments" role="tablist"><button role="tab" aria-selected="true">l'essentiel</button><button role="tab" aria-selected="false">le minimum</button><button role="tab" aria-selected="false">tout</button></div></div>
-      <div class="ligne" tabindex="0" role="button"><div class="puce d-taches"><svg class="ic" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg></div><div><div class="titre">Envoyer la facture de juillet à Claire Roux</div><div class="detail">Tâche · échéance <span class="num">03/09</span></div></div><div class="droite"><span class="etiquette e-erreur">En retard de 2 jours</span><svg class="ic" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div></div>
+      <div class="filtre"><span>Montre-moi</span><div class="segments" role="tablist"><button role="tab" aria-selected="true">ce qui presse</button><button role="tab" aria-selected="false">seulement les retards</button><button role="tab" aria-selected="false">toute la journée</button></div></div>
+      <div class="ligne" tabindex="0" role="button"><div class="puce d-taches"><svg class="ic" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg></div><div><div class="titre">Relancer Claire Roux pour la facture de juillet</div><div class="detail">Tâche · échéance <span class="num">03/09</span> · facture <span class="num">FACT-2026-002</span> envoyée le <span class="num">28/07</span>, échue le <span class="num">25/08</span></div></div><div class="droite"><span class="etiquette e-erreur">En retard de 2 jours</span><svg class="ic" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div></div>
       <div class="ligne" tabindex="0" role="button"><div class="puce d-taches"><svg class="ic" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg></div><div><div class="titre">Relancer Paul Durand pour le devis</div><div class="detail">Tâche · échéance <span class="num">04/09</span></div></div><div class="droite"><span class="etiquette e-erreur">En retard d'un jour</span><svg class="ic" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div></div>
-      <div class="ligne" tabindex="0" role="button"><div class="puce d-factures"><svg class="ic" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg></div><div><div class="titre">Claire Roux, facture <span class="num">FACT-2026-002</span></div><div class="detail"><span class="num">1 440,00 €</span> · échue le <span class="num">25/08</span> · aucune relance envoyée</div></div><div class="droite"><span class="etiquette e-attention">À relancer</span><svg class="ic" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div></div>
+      <div class="ligne" tabindex="0" role="button"><div class="puce d-factures"><svg class="ic" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg></div><div><div class="titre">Facture <span class="num">FACT-2026-002</span>, Claire Roux</div><div class="detail"><span class="num">1 440,00 €</span> · échue depuis <span class="num">11</span> jours · aucune relance envoyée</div></div><div class="droite"><span class="etiquette e-attention">Impayée</span><svg class="ic" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div></div>
       <div class="ligne" tabindex="0" role="button"><div class="puce d-taches"><svg class="ic" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg></div><div><div class="titre">Préparer la séance 2 du Garage Benali</div><div class="detail">Tâche · échéance aujourd'hui</div></div><div class="droite"><span class="etiquette e-neutre">À traiter</span><svg class="ic" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div></div>
       <div class="sources"><span>Lu dans</span><span class="etiquette d-agenda">Agenda</span><span class="etiquette d-taches">Tâches</span><span class="etiquette d-factures">Factures</span><span style="margin-left:auto">Rafraîchi à <span class="num">11:58</span></span></div>
      </article>
 
+
+     <article class="carte brief carte-principale" id="brief-relance" hidden aria-labelledby="titre-relance">
+      <div class="carte-tete"><div class="icone" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><path d="M4 20h4l10-10-4-4L4 16z"/></svg></div><div><h2 id="titre-relance">Relance préparée pour Claire Roux</h2><p class="meta">Facture <span class="num">FACT-2026-002</span> · <span class="num">1 440,00 €</span> · échue depuis <span class="num">11</span> jours · lu : la facture, 3 échanges, l'agenda</p></div><div class="actions"><button class="btn btn-secondaire" type="button">Modifier</button><button class="btn btn-primaire" type="button">Envoyer à Claire Roux</button></div></div>
+      <div style="padding:0 var(--espace-3) var(--espace-3)">
+       <div class="fil" aria-label="Ce que relie cette relance"><span class="etiquette d-prospects">Claire Roux · Roux Rénovation</span><svg class="ic" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg><span class="etiquette d-factures">FACT-2026-002 · impayée</span><svg class="ic" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg><span class="etiquette e-attention">Relance 1 · courtoise</span><svg class="ic" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg><span class="etiquette e-neutre">Suivi le <span class="num">12/09</span></span></div>
+       <div class="brouillon" role="region" aria-label="Brouillon de la relance">
+        <p class="meta">À : claire.roux@exemple.fr · Objet : Facture FACT-2026-002 du 28 juillet</p>
+        <p>Bonjour Claire,</p>
+        <p>J'espère que le chantier vous donne entière satisfaction. Sauf erreur de ma part, la facture FACT-2026-002 de <span class="num">1 440,00 €</span>, échue le <span class="num">25 août</span>, n'a pas encore été réglée. Pouvez-vous me confirmer sa prise en charge sous huit jours ?</p>
+        <p>Je reste à votre disposition, et vous remercie.</p>
+        <p>Marie Exemple, Atelier Exemple</p>
+       </div>
+       <p class="meta" style="margin-top:.5rem">Rien ne part sans ton geste. Après l'envoi, THÉRÈSE note la relance sur la fiche de Claire et pose un suivi le <span class="num">12/09</span>.</p>
+      </div>
+     </article>
+
+     <article class="carte brief" id="brief-validee" hidden aria-labelledby="titre-validee">
+      <div class="carte-tete"><div class="icone" style="background:color-mix(in srgb,var(--color-success) 12%,transparent);color:var(--color-success)" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></div><div><h2 id="titre-validee">Relance envoyée à Claire Roux</h2><p class="meta">Aujourd'hui à <span class="num">12:04</span> · notée sur sa fiche · suivi posé le <span class="num">12/09</span></p></div><div class="actions"><button class="btn btn-secondaire" type="button">Voir la fiche</button><button class="btn btn-primaire" type="button">Suivant : relancer Paul Durand</button></div></div>
+      <div class="ligne" tabindex="0" role="button"><div class="puce d-taches"><svg class="ic" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg></div><div><div class="titre">Relancer Paul Durand pour le devis</div><div class="detail">Tâche · échéance <span class="num">04/09</span> · devis <span class="num">DEV-2026-003</span> envoyé le <span class="num">01/09</span></div></div><div class="droite"><span class="etiquette e-erreur">En retard d'un jour</span><svg class="ic" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div></div>
+      <div class="ligne" tabindex="0" role="button"><div class="puce d-taches"><svg class="ic" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg></div><div><div class="titre">Préparer la séance 2 du Garage Benali</div><div class="detail">Tâche · échéance aujourd'hui</div></div><div class="droite"><span class="etiquette e-neutre">À traiter</span><svg class="ic" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></div></div>
+      <div class="sources"><span>Reste : <span class="num">2</span> éléments</span><span style="margin-left:auto">Relance de Claire Roux terminée à <span class="num">12:04</span></span></div>
+     </article>
      <article class="carte brief" id="brief-vide" hidden>
       <div class="carte-tete"><div class="icone" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l1.8 4.6L18 9l-4.2 1.4L12 15l-1.8-4.6L6 9l4.2-1.4z"/></svg></div><div><h2>Rien ne presse aujourd'hui</h2><p class="meta">Aucune échéance, aucune facture en attente</p></div></div>
       <div class="vide"><h3>Ta journée est dégagée.</h3><p>Quand tu ajouteras une tâche, un rendez-vous ou une facture, ils apparaîtront ici avec leur échéance.</p><p style="margin-top:1rem"><button class="btn btn-primaire" type="button">Créer une tâche</button> <button class="btn btn-secondaire" type="button">Voir tout mon agenda</button></p></div>
@@ -60,7 +86,7 @@
      <article class="carte brief" id="brief-erreur" hidden>
       <div class="carte-tete"><div class="icone" aria-hidden="true"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3l1.8 4.6L18 9l-4.2 1.4L12 15l-1.8-4.6L6 9l4.2-1.4z"/></svg></div><div><h2>Ton attention aujourd'hui</h2><p class="meta">Tâches et factures lues · agenda indisponible</p></div><div class="actions"><button class="btn btn-primaire" type="button">Commencer</button></div></div>
       <div style="padding:.75rem var(--espace-3) 0"><div class="alerte" role="alert"><svg class="ic" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9L2.5 18a2 2 0 0 0 1.7 3h15.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg><div><b>L'agenda n'a pas répondu.</b> Le brief montre les tâches et les factures ; les rendez-vous manquent. <button class="btn btn-discret" type="button" style="min-height:1.75rem;padding:0 .5rem">Réessayer</button></div></div></div>
-      <div class="ligne" tabindex="0" role="button"><div class="puce d-taches"><svg class="ic" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg></div><div><div class="titre">Envoyer la facture de juillet à Claire Roux</div><div class="detail">Tâche · échéance <span class="num">03/09</span></div></div><div class="droite"><span class="etiquette e-erreur">En retard de 2 jours</span></div></div>
+      <div class="ligne" tabindex="0" role="button"><div class="puce d-taches"><svg class="ic" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></svg></div><div><div class="titre">Relancer Claire Roux pour la facture de juillet</div><div class="detail">Tâche · échéance <span class="num">03/09</span></div></div><div class="droite"><span class="etiquette e-erreur">En retard de 2 jours</span></div></div>
       <div class="ligne" tabindex="0" role="button"><div class="puce d-factures"><svg class="ic" viewBox="0 0 24 24"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg></div><div><div class="titre">Claire Roux, facture <span class="num">FACT-2026-002</span></div><div class="detail"><span class="num">1 440,00 €</span> · échue le <span class="num">25/08</span></div></div><div class="droite"><span class="etiquette e-attention">À relancer</span></div></div>
       <div class="sources"><span>Lu dans</span><span class="etiquette d-taches">Tâches</span><span class="etiquette d-factures">Factures</span><span class="etiquette e-neutre">Agenda indisponible</span></div>
      </article>
@@ -76,7 +102,7 @@
    </form>
   </main>
 <script>
-(function(){const e=new URLSearchParams(location.search).get('etat')||'normal';['normal','vide','erreur'].forEach(k=>{const n=document.getElementById('brief-'+k);if(n)n.hidden=(k!==e);});})();
+(function(){const e=new URLSearchParams(location.search).get('etat')||'normal';['normal','relance','validee','vide','erreur'].forEach(k=>{const n=document.getElementById('brief-'+k);if(n)n.hidden=(k!==e);});})();
 </script>
 
  </div>
