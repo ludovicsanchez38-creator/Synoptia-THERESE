@@ -37,11 +37,16 @@ from app.models.entities import (
     InvoiceLine,
     Message,
     Notification,
+    PlanningResource,
+    PlanningSnapshot,
     Preference,
     Prestation,
     Project,
     PromptTemplate,
     Task,
+    TaskAllocation,
+    TaskDependency,
+    TaskSchedule,
     Variable,
 )
 from app.models.entities_agents import AgentMessage, AgentSession, AgentTask, CodeChange
@@ -570,6 +575,13 @@ async def delete_all_data(
     await session.execute(delete(EmailLabel))
     await session.execute(delete(EmailMessage))
     await session.execute(delete(EmailAccount))
+    # Revue COCO 0.67 : les suppressions SQL directes ne déclenchent pas les
+    # cascades ORM ; les cinq tables du socle PERT partent explicitement,
+    # dans l'ordre des dépendances (allocations avant ressources, tout avant Task).
+    await session.execute(delete(TaskAllocation))
+    await session.execute(delete(TaskDependency))
+    await session.execute(delete(TaskSchedule))
+    await session.execute(delete(PlanningSnapshot))
     await session.execute(delete(Task))
     # Une prestation contient montant et financeur : la laisser derrière une
     # fiche effacée violerait précisément la promesse « toutes mes données ».
@@ -581,6 +593,7 @@ async def delete_all_data(
     # -- Tables principales (deja presentes)
     await session.execute(delete(Message))
     await session.execute(delete(Conversation))
+    await session.execute(delete(PlanningResource))
     await session.execute(delete(Project))
     await session.execute(delete(Contact))
     await session.execute(delete(FileMetadata))

@@ -711,3 +711,59 @@ class TestB191ImportConversationsFormeDeLaValeur:
         assert response.status_code == 200, response.text
         assert response.json()["imported"]["conversations"] == 2
         assert response.json()["imported"]["messages"] == 1
+
+
+@pytest.mark.asyncio
+async def test_delete_all_purge_aussi_les_cinq_tables_de_planning(client: AsyncClient, db_session):
+    """Revue COCO 0.67 (05/09/2026) : après un calcul de planning, « toutes tes
+    données ont été supprimées » laissait task_schedules, task_dependencies,
+    planning_resources, task_allocations et planning_snapshots en place, avec
+    les titres personnels dans result_json. Les suppressions SQL directes de
+    Task et Project ne déclenchent pas les cascades ORM.
+    """
+    from app.models.entities import (
+        PlanningResource,
+        PlanningSnapshot,
+        Project,
+        Task,
+        TaskAllocation,
+        TaskDependency,
+        TaskSchedule,
+    )
+    from sqlalchemy import func, select
+
+    projet = Project(name="Chantier de Marie")
+    db_session.add(projet)
+    await db_session.flush()
+    releve = Task(title="Relevé", project_id=projet.id)
+    plans = Task(title="Plans", project_id=projet.id)
+    db_session.add_all([releve, plans])
+    await db_session.flush()
+    marie = PlanningResource(project_id=projet.id, name="Marie")
+    db_session.add(marie)
+    await db_session.flush()
+    db_session.add_all(
+        [
+            TaskSchedule(task_id=releve.id, duration_likely_minutes=60),
+            TaskDependency(predecessor_task_id=releve.id, successor_task_id=plans.id),
+            TaskAllocation(task_id=releve.id, resource_id=marie.id),
+            PlanningSnapshot(
+                project_id=projet.id,
+                engine_version="1",
+                input_hash="h1",
+                state="complete",
+                result_json='{"titre": "Relevé chez Marie"}',
+            ),
+        ]
+    )
+    await db_session.commit()
+
+    response = await client.delete("/api/data/all?confirm=true")
+    assert response.status_code == 200, response.text
+
+    restes = {}
+    for modele in (TaskSchedule, TaskDependency, TaskAllocation, PlanningSnapshot, PlanningResource):
+        compte = (await db_session.execute(select(func.count()).select_from(modele))).scalar_one()
+        if compte:
+            restes[modele.__tablename__] = compte
+    assert restes == {}, f"tables de planning encore peuplées après la purge globale : {restes}"
