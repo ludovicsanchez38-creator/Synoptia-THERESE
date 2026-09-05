@@ -258,12 +258,12 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
     });
 
     if (normalizedLines.some((line) => line.quantity === null || line.unit_price_ht === null)) {
-      alert('Saisis des nombres valides pour les quantités et montants');
+      addNotification({ type: 'warning', title: 'Valeur invalide', message: 'Saisis des nombres valides pour les quantités et montants' });
       return;
     }
 
     if (normalizedLines.some((line) => line.quantity! < 1 || line.unit_price_ht! < 0)) {
-      alert('Saisis une quantité supérieure ou égale à 1 et un prix positif ou nul');
+      addNotification({ type: 'warning', title: 'Valeur invalide', message: 'Saisis une quantité supérieure ou égale à 1 et un prix positif ou nul' });
       return;
     }
 

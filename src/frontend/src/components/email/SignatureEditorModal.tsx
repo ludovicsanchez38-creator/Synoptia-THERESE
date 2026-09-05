@@ -31,6 +31,8 @@ interface SignatureEditorModalProps {
 
 export function SignatureEditorModal({ accountId, accountEmail, onClose }: SignatureEditorModalProps) {
   const [html, setHtml] = useState('');
+  // B-408 : version chargée, pour savoir si la saisie a changé avant de fermer.
+  const [htmlCharge, setHtmlCharge] = useState('');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
@@ -69,7 +71,10 @@ export function SignatureEditorModal({ accountId, accountEmail, onClose }: Signa
     (async () => {
       try {
         const res = await getEmailSignature(accountId);
-        if (!cancelled) setHtml(res.signature_html || '');
+        if (!cancelled) {
+          setHtml(res.signature_html || '');
+          setHtmlCharge(res.signature_html || '');
+        }
       } catch {
         if (!cancelled) {
           setError('Impossible de charger la signature. Ferme et réessaie.');
@@ -89,6 +94,15 @@ export function SignatureEditorModal({ accountId, accountEmail, onClose }: Signa
     if (!loading) textareaRef.current?.focus();
   }, [loading]);
 
+  // B-408 : un clic sur le voile fermait et perdait la signature en cours.
+  function fermerSiPropre() {
+    if (html === htmlCharge) {
+      onClose();
+      return;
+    }
+    setError('Signature modifiée : enregistre-la, ou ferme avec le bouton Fermer pour abandonner.');
+  }
+
   async function handleSave() {
     if (loadFailed) return;
     setSaving(true);
@@ -100,6 +114,7 @@ export function SignatureEditorModal({ accountId, accountEmail, onClose }: Signa
       // (ex. rel=noopener), auquel cas la sortie est plus longue, pas plus courte.
       const cleaned = res.signature_html.trim().length < html.trim().length;
       setHtml(res.signature_html); // version sanitisée = ce qui sera réellement envoyé
+      setHtmlCharge(res.signature_html);
       setNotice(
         cleaned
           ? 'Enregistré. Des éléments non autorisés ont été retirés pour la sécurité.'
@@ -123,7 +138,7 @@ export function SignatureEditorModal({ accountId, accountEmail, onClose }: Signa
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         className={`fixed inset-0 bg-black/60 backdrop-blur-sm ${Z_LAYER.MODAL}`}
-        onClick={onClose}
+        onClick={fermerSiPropre}
       />
       <motion.div
         ref={dialogRef}

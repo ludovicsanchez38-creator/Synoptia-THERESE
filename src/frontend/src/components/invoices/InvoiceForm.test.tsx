@@ -84,6 +84,8 @@ describe('InvoiceForm décimaux', () => {
 
   it('bloque les valeurs vides ou invalides à la soumission', async () => {
     window.alert = vi.fn();
+    const notifValeurInvalide = vi.fn();
+    useStatusStore.setState({ addNotification: notifValeurInvalide });
     render(<InvoiceForm invoice={null} onClose={vi.fn()} onSave={vi.fn()} />);
 
     fireEvent.change(await screen.findByLabelText(/Client/i), { target: { value: 'contact-1' } });
@@ -103,7 +105,9 @@ describe('InvoiceForm décimaux', () => {
     fireEvent.click(screen.getByRole('button', { name: /Créer/i }));
 
     expect(createInvoiceMock).not.toHaveBeenCalled();
-    expect(window.alert).toHaveBeenCalled();
+    // B-407 / B-437 : la garde passe par le centre de notifications, plus par alert().
+    expect(window.alert).not.toHaveBeenCalled();
+    expect(notifValeurInvalide).toHaveBeenCalledWith(expect.objectContaining({ type: 'warning', title: 'Valeur invalide' }));
   });
 });
 
