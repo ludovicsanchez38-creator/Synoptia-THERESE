@@ -203,6 +203,7 @@ export const useChatStore = create<ChatStore>()(
                   messages: [newMessage],
                   createdAt: new Date(),
                   updatedAt: new Date(),
+                  synced: false, // B-571 : même statut qu'une création explicite
                 },
                 ...conversations,
               ],

@@ -483,31 +483,31 @@ export function ActionPanel() {
         activeTask.status === 'pending' ||
         activeTask.status === 'cancel_requested')
     ) {
+      // B-362 : deux commandes, deux boutons frères ; un contrôle focalisable
+      // imbriqué dans un bouton est invalide et double l'arrêt de tabulation.
       return (
-        <button
-          onClick={() => openPanel()}
-          className="fixed bottom-4 right-4 z-50 flex items-center gap-2 px-4 py-2 rounded-full bg-surface border border-agent-cyan/30 text-sm text-agent-cyan shadow-lg shadow-agent-cyan/10 hover:bg-surface-elevated transition-colors animate-pulse"
-        >
-          <Spinner taille="ligne" />
-          {activeTask.status === 'cancel_requested'
-            ? `${activeTask.agent_name || 'Action'} - Arrêt en cours...`
-            : `${activeTask.agent_name || 'Action'} en cours...`}
+        <div className="fixed bottom-4 right-4 z-50 flex items-center rounded-full bg-surface border border-agent-cyan/30 shadow-lg shadow-agent-cyan/10 animate-pulse">
+          <button
+            type="button"
+            onClick={() => openPanel()}
+            className="flex items-center gap-2 rounded-full py-2 pl-4 pr-3 text-sm text-agent-cyan hover:bg-surface-elevated transition-colors"
+          >
+            <Spinner taille="ligne" />
+            {activeTask.status === 'cancel_requested'
+              ? `${activeTask.agent_name || 'Action'} - Arrêt en cours...`
+              : `${activeTask.agent_name || 'Action'} en cours...`}
+          </button>
           {activeTask.status !== 'cancel_requested' && (
-            <span
-              role="button"
-              tabIndex={0}
+            <button
+              type="button"
               aria-label="Annuler l'action"
-              onClick={(e) => {
-                e.stopPropagation();
-                cancelAction(activeTask.task_id);
-              }}
-              onKeyDown={(e) => { if (e.key === 'Enter') { e.stopPropagation(); cancelAction(activeTask.task_id); } }}
-              className="ml-1 p-1 rounded-full bg-error/20 text-error hover:bg-error/30"
+              onClick={() => cancelAction(activeTask.task_id)}
+              className="mr-2 p-1 rounded-full bg-error/20 text-error hover:bg-error/30"
             >
               <Square size={10} />
-            </span>
+            </button>
           )}
-        </button>
+        </div>
       );
     }
     return null;

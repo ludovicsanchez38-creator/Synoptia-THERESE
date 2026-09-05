@@ -64,6 +64,11 @@ export function insertResultInChat(task: TaskState): void {
 
   if (!content) return;
   insertedTaskIds.add(task.task_id);
+  // B-571 : le résultat mérite sa propre conversation, nommée d'après
+  // l'action, au lieu d'une « Nouvelle conversation » improvisée.
+  const chat = useChatStore.getState();
+  const id = chat.createConversation();
+  if (task.agent_name) chat.renameConversation(id, task.agent_name);
   useChatStore.getState().addMessage({ role: 'assistant', content });
   // BUG-107 : le résultat d'une action lancée depuis l'Accueil partait dans une
   // conversation invisible. On ramène la vue sur le chat pour le rendre visible.
