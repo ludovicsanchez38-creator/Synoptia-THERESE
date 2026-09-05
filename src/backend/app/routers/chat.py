@@ -54,6 +54,7 @@ from app.services.mcp_service import get_mcp_service
 from app.services.memory_tools import MEMORY_TOOL_NAMES, MEMORY_TOOLS, execute_memory_tool
 from app.services.path_security import validate_file_path
 from app.services.performance import get_performance_monitor, get_search_index
+from app.services.providers.base import LLMProvider
 from app.services.qdrant import get_qdrant_service
 from app.services.skills.base import SkillExecuteRequest
 from app.services.slash_commands import (
@@ -1787,6 +1788,22 @@ async def send_message(
             f"{actions_context}\n\n{memory_context}" if memory_context else actions_context
         )
 
+    # B-482 / B-486 : les plafonds s'appliquent AVANT l'appel au modèle.
+    verdict_plafonds = get_token_tracker().check_limits(
+        len(llm_user_message.split()) * 2,
+        None,
+        model=llm_service.config.model,
+        local=llm_service.config.provider == LLMProvider.OLLAMA,
+    )
+    if not verdict_plafonds["allowed"]:
+        return ChatResponse(
+            id="",
+            conversation_id=conversation.id,
+            content="Désolée : " + " ".join(verdict_plafonds["errors"]),
+            created_at=datetime.now(UTC),
+        )
+    avertissements_plafonds = verdict_plafonds["warnings"] or None
+
     context = llm_service.prepare_context(messages, memory_context=memory_context)
 
     # Collect full response (non-streaming)
@@ -1846,6 +1863,7 @@ async def send_message(
         provider=fournisseur,
         tokens_in=input_tokens,
         tokens_out=output_tokens,
+        warnings=avertissements_plafonds,
         created_at=assistant_message.created_at,
         confirmations=inline_pending_confirmations or None,
     )
@@ -2533,6 +2551,19 @@ async def _do_stream_response(
     # quand un modèle faible enchaîne des outils sans jamais produire de texte :
     # on remonte alors le résultat plutôt qu'une réponse vide et muette.
     tool_outcomes: list[tuple[str, str, bool]] = []
+
+    # B-482 / B-486 : les plafonds s'appliquent AVANT l'appel au modèle.
+    verdict_plafonds = get_token_tracker().check_limits(
+        len(user_message.split()) * 2,
+        None,
+        model=llm_service.config.model,
+        local=llm_service.config.provider == LLMProvider.OLLAMA,
+    )
+    if not verdict_plafonds["allowed"]:
+        yield f"data: {json.dumps({'type': 'error', 'content': 'Désolée : ' + ' '.join(verdict_plafonds['errors'])}, ensure_ascii=False)}\n\n"
+        return
+    for avertissement in verdict_plafonds["warnings"]:
+        yield f"data: {json.dumps({'type': 'warning', 'content': avertissement}, ensure_ascii=False)}\n\n"
 
     try:
         # Stream from LLM with tool support

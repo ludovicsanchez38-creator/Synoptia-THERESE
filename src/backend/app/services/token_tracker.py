@@ -316,11 +316,19 @@ class TokenTracker:
         input_tokens: int,
         output_tokens: int | None = None,
         model: str | None = None,
+        *,
+        local: bool = False,
     ) -> dict:
         """
         Check if a request would exceed limits (US-ESC-03).
 
         Returns dict with status and any warnings/errors.
+
+        B-482 / B-486 (05/09/2026, décision de Ludo) : un modèle hors grille
+        tarifaire est SIGNALÉ (avertissement), pas compté à zéro en silence ;
+        les deux contrôles de sortie (par message, par jour) existent enfin.
+        `local` : un modèle local (Ollama) n'a pas de tarif, ce n'est pas un
+        oubli de la grille.
         """
         self._reset_daily_if_needed()
         self._reset_monthly_if_needed()
@@ -330,6 +338,37 @@ class TokenTracker:
             "warnings": [],
             "errors": [],
         }
+
+        if model and not local and not self.tarif_connu(model):
+            result["warnings"].append(
+                f"Modèle hors grille tarifaire ({model}) : son coût n'est pas compté "
+                "dans le budget mensuel."
+            )
+
+        # Contrôles de sortie (B-486)
+        if output_tokens:
+            if output_tokens > self._limits.max_output_tokens:
+                result["warnings"].append(
+                    f"Sortie demandée ({output_tokens:,} tokens) au-delà du plafond par "
+                    f"message ({self._limits.max_output_tokens:,})."
+                )
+            projected_daily_output = self._today_output + output_tokens
+            daily_output_pct = (
+                (projected_daily_output / self._limits.daily_output_limit * 100)
+                if self._limits.daily_output_limit > 0
+                else 0.0
+            )
+            if daily_output_pct >= 100:
+                result["errors"].append(
+                    f"Limite quotidienne de sortie atteinte: {projected_daily_output:,} tokens "
+                    f"(limite: {self._limits.daily_output_limit:,})"
+                )
+                result["allowed"] = False
+            elif daily_output_pct >= self._limits.warn_at_percentage:
+                result["warnings"].append(
+                    f"Sortie quotidienne: {daily_output_pct:.0f}% "
+                    f"({projected_daily_output:,} / {self._limits.daily_output_limit:,} tokens)"
+                )
 
         # Check per-message limits
         if input_tokens > self._limits.max_input_tokens:

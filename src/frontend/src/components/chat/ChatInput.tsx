@@ -741,6 +741,13 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           if (chunk.usage || chunk.uncertainty) {
             setMessageMetadata(assistantMessageId, chunk.usage, chunk.uncertainty);
           }
+        } else if (chunk.type === 'warning') {
+          // B-482 : avertissement de plafond (modèle hors grille, budget proche).
+          useStatusStore.getState().addNotification({
+            type: 'warning',
+            title: 'Plafond de jetons',
+            message: chunk.content || 'Avertissement de plafond.',
+          });
         } else if (chunk.type === 'error') {
           throw new Error(chunk.content || "Erreur lors de la génération");
         }

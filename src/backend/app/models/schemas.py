@@ -98,6 +98,8 @@ class ChatResponse(BaseModel):
     provider: str | None = None  # P0-IA-3 : badge local/cloud par message
     client_action: dict[str, str] | None = None  # Actions déterministes : action à exécuter côté client
     confirmations: list[dict[str, Any]] | None = None  # Mutations préparées, encore non exécutées
+    # B-482 : avertissements de plafond (modèle hors grille, budget proche)
+    warnings: list[str] | None = None
     created_at: HorodatageUTC
 
 
