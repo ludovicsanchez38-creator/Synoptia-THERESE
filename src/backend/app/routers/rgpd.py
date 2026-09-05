@@ -227,6 +227,11 @@ async def anonymize_contact(
         select(Project).where(Project.contact_id == contact_id)
     )
     projects = result.scalars().all()
+    # B-445 (05/09/2026) : les identifiants sont mémorisés AVANT la
+    # suppression, pour purger les dépôts disque après le commit (doctrine
+    # B-021 : jamais avant, jamais oublié). La réponse annonçait « fichiers
+    # rattachés » supprimés alors que les octets restaient sur le disque.
+    dossiers_a_purger = [project.id for project in projects]
     for project in projects:
         await _nettoyer_et_supprimer_projet(session, project)
     dossiers_supprimes = len(projects)
@@ -249,6 +254,12 @@ async def anonymize_contact(
     session.add(anonymization_log)
 
     await session.commit()
+
+    # B-445 : après le commit, le dépôt disque de chaque dossier suit.
+    from app.routers.memory import _purger_le_depot_du_dossier
+
+    for dossier_id in dossiers_a_purger:
+        await _purger_le_depot_du_dossier(dossier_id)
 
     # Purge du fantôme vectoriel (P0-RGPD-1) : sans ça, la fiche [ANONYMISÉ]
     # remonte encore en recherche sémantique au même score (constat C4).

@@ -375,3 +375,42 @@ class TestRGPDStats:
 
         assert stats["avec_consentement"] >= 1
         assert stats["par_base_legale"]["consentement"] >= 1
+
+
+class TestB445LesOctetsDUnDossierPartentAvecLAnonymisation:
+    """B-445 (05/09/2026) : la réponse annonçait « fichiers rattachés »
+    supprimés alors que le dépôt disque du dossier restait en place.
+
+    rgpd.py empruntait _nettoyer_et_supprimer_projet (B-140) mais jamais
+    _purger_le_depot_du_dossier, que seule la route DELETE /projects appelle
+    après son commit. A/B prouvé sur le jetable : anonymisation -> dossier
+    disque intact ; suppression de dossier -> dossier disque purgé.
+    """
+
+    @pytest.mark.asyncio
+    async def test_le_depot_disque_du_dossier_est_purge(self, client: AsyncClient):
+        from pathlib import Path
+
+        from app.config import settings
+
+        contact_id = await _create_contact(client, "ClientAvecFichiers")
+        projet = await client.post(
+            "/api/memory/projects",
+            json={"name": "Projet avec fichiers", "contact_id": contact_id},
+        )
+        assert projet.status_code in (200, 201), projet.text
+        project_id = projet.json()["id"]
+
+        depot = Path(settings.data_dir) / "projects" / project_id / "files"
+        depot.mkdir(parents=True, exist_ok=True)
+        (depot / "confidentiel.txt").write_text("octets du client")
+        assert depot.exists()
+
+        reponse = await client.post(
+            f"/api/rgpd/anonymize/{contact_id}", json={"reason": "demande du client"}
+        )
+        assert reponse.status_code == 200, reponse.text
+
+        assert not (Path(settings.data_dir) / "projects" / project_id).exists(), (
+            "les octets du dossier survivent à l'effacement annoncé"
+        )
