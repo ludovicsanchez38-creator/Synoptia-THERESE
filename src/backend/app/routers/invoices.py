@@ -710,6 +710,7 @@ async def convert_invoice(
     # Le rollback d'une reprise de numéro expire la pièce source : tout ce
     # qu'on relit après l'insertion est copié ici, en valeurs.
     source_numero, source_type = source.invoice_number, source.document_type
+    emission = datetime.now(UTC)
     copie = {
         "document_type": target_type,
         "contact_id": source.contact_id,
@@ -719,8 +720,11 @@ async def convert_invoice(
         "client_phone": source.client_phone,
         "client_address": source.client_address,
         "currency": source.currency,
-        "issue_date": datetime.now(UTC),
-        "due_date": source.due_date,
+        "issue_date": emission,
+        # B-545 (05/09/2026) : recopier l'échéance du devis donnait une facture
+        # échue avant d'être émise (-218 jours). Même règle que la conversion
+        # devis -> facture : émission + délai de paiement (30 jours par défaut).
+        "due_date": emission + timedelta(days=_parse_payment_terms_days(source.payment_terms or "")),
         "status": "draft",
         "subtotal_ht": source.subtotal_ht,
         "total_tax": source.total_tax,
