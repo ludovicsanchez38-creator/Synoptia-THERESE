@@ -631,3 +631,36 @@ def _sse_events(text):
         if block.startswith("data: "):
             events.append(_json.loads(block[len("data: "):]))
     return events
+
+
+class TestB477LeStatutSuitLeTypeDeLErreur:
+    """B-477 (05/09/2026) : le routeur classait l'erreur sur le TEXTE de
+    l'exception (« existe déjà » -> 409, « existe pas » -> 404). Un nom
+    invalide qui contenait ces mots partait avec le mauvais code : le nom
+    « existe déjà » est rejeté pour sa forme (422), pas pour un doublon (409).
+    """
+
+    @pytest.mark.asyncio
+    async def test_un_nom_invalide_contenant_existe_deja_est_un_422(self, client):
+        reponse = await client.post(
+            "/api/variables",
+            json={"name": "existe déjà", "kind": "text", "value": "x"},
+        )
+        assert reponse.status_code == 422, reponse.text
+
+    @pytest.mark.asyncio
+    async def test_un_vrai_doublon_reste_un_409(self, client):
+        corps = {"name": "doublon_b477", "kind": "text", "value": "x"}
+        assert (await client.post("/api/variables", json=corps)).status_code == 200
+        reponse = await client.post("/api/variables", json=corps)
+        assert reponse.status_code == 409, reponse.text
+
+    @pytest.mark.asyncio
+    async def test_remplacer_un_nom_invalide_contenant_existe_pas_est_un_422(self, client):
+        reponse = await client.put("/api/variables/n existe pas", json={"value": "x"})
+        assert reponse.status_code == 422, reponse.text
+
+    @pytest.mark.asyncio
+    async def test_remplacer_une_variable_absente_reste_un_404(self, client):
+        reponse = await client.put("/api/variables/absente_b477", json={"value": "x"})
+        assert reponse.status_code == 404, reponse.text

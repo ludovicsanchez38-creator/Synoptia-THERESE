@@ -34,6 +34,14 @@ class VariableError(ValueError):
     """Erreur métier : le message est destiné à l'utilisateur (chat ou API)."""
 
 
+class VariableExistante(VariableError):
+    """B-477 : la création heurte un nom déjà pris (409 côté API)."""
+
+
+class VariableIntrouvable(VariableError):
+    """B-477 : le nom demandé n'existe pas (404 côté API)."""
+
+
 def validate_name(name: str) -> None:
     if not _NAME_RE.fullmatch(name):
         raise VariableError(
@@ -110,7 +118,7 @@ async def create_variable(
     _validate_description(description)
 
     if await get_variable(session, name) is not None:
-        raise VariableError(
+        raise VariableExistante(
             f"La variable « {name} » existe déjà. Utilise « remplacer » pour "
             "changer sa valeur (l'écrasement silencieux est refusé)."
         )
@@ -132,9 +140,10 @@ async def create_variable(
 async def replace_variable(
     session: AsyncSession, name: str, value: str | list[str]
 ) -> Variable:
+    validate_name(name)
     variable = await get_variable(session, name)
     if variable is None:
-        raise VariableError(f"La variable « {name} » n'existe pas.")
+        raise VariableIntrouvable(f"La variable « {name} » n'existe pas.")
     validate_value(variable.kind, value)
     variable.value = json.dumps(value, ensure_ascii=False)
     variable.updated_at = datetime.now(UTC)
@@ -150,7 +159,7 @@ async def append_to_variable(
     """Concaténation (texte, avec espace) ou ajout d'élément (liste)."""
     variable = await get_variable(session, name)
     if variable is None:
-        raise VariableError(f"La variable « {name} » n'existe pas.")
+        raise VariableIntrouvable(f"La variable « {name} » n'existe pas.")
     current = variable.parsed_value
     if variable.kind == "text":
         assert isinstance(current, str)
@@ -170,7 +179,7 @@ async def append_to_variable(
 async def delete_variable(session: AsyncSession, name: str) -> None:
     variable = await get_variable(session, name)
     if variable is None:
-        raise VariableError(f"La variable « {name} » n'existe pas.")
+        raise VariableIntrouvable(f"La variable « {name} » n'existe pas.")
     await session.delete(variable)
     await session.commit()
 
@@ -243,14 +252,14 @@ async def execute_chat_variable_action(
         if op == "supprimer":
             variable = await get_variable(session, name)
             if variable is None:
-                raise VariableError(f"La variable « {name} » n'existe pas.")
+                raise VariableIntrouvable(f"La variable « {name} » n'existe pas.")
             apercu = _format_valeur(variable).replace("\n", ", ")[:120]
             await delete_variable(session, name)
             return f"Variable « {name} » supprimée (elle valait : {apercu})."
         if op == "afficher":
             variable = await get_variable(session, name)
             if variable is None:
-                raise VariableError(f"La variable « {name} » n'existe pas.")
+                raise VariableIntrouvable(f"La variable « {name} » n'existe pas.")
             return f"{variable.name} ({_resume(variable)}) :\n{_format_valeur(variable)}"
         return "Commande variable inconnue."
     except VariableError as e:
