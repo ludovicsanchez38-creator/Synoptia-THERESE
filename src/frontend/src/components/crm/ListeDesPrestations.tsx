@@ -27,6 +27,9 @@ function montantLisible(montant: number | null): string {
 export function ListeDesPrestations({ contactId }: { contactId: string }) {
   const [prestations, setPrestations] = useState<Prestation[]>([]);
   const [chargement, setChargement] = useState(true);
+  // Une panne n'est pas un vide : sans ce message, l'écran affirmait
+  // « Aucune prestation » alors que le serveur n'avait pas répondu (05/09/2026).
+  const [erreur, setErreur] = useState<string | null>(null);
   const [intitule, setIntitule] = useState('');
   const [montant, setMontant] = useState('');
   // Aucun defaut cache : l'application ne choisit pas l'etape a la place de
@@ -38,6 +41,9 @@ export function ListeDesPrestations({ contactId }: { contactId: string }) {
     setChargement(true);
     try {
       setPrestations(await listerLesPrestations(contactId));
+      setErreur(null);
+    } catch {
+      setErreur('Impossible de charger les prestations. Réessaie dans un instant.');
     } finally {
       setChargement(false);
     }
@@ -75,6 +81,8 @@ export function ListeDesPrestations({ contactId }: { contactId: string }) {
     <div className="space-y-3">
       {chargement ? (
         <p className="text-sm text-text-muted">Lecture des prestations…</p>
+      ) : erreur ? (
+        <p role="alert" className="text-sm text-error-ink">{erreur}</p>
       ) : prestations.length === 0 ? (
         <p className="text-sm text-text-muted">
           Aucune prestation enregistrée pour cette personne.

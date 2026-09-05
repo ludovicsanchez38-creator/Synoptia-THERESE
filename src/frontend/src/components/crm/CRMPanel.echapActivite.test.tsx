@@ -24,7 +24,17 @@ const { CONTACTS } = vi.hoisted(() => ({
 
 vi.mock('../../services/api', async () => {
   const reel = await vi.importActual<typeof import('../../services/api')>('../../services/api');
-  return { ...reel, listProjects: vi.fn().mockResolvedValue([]), listActivities: vi.fn().mockResolvedValue([]) };
+  return {
+    ...reel,
+    listProjects: vi.fn().mockResolvedValue([]),
+    listActivities: vi.fn().mockResolvedValue([]),
+  };
+});
+// La fiche contact liste ses prestations depuis le module dédié, pas depuis
+// l'index de l'API : sans ce mock, l'appel partait vers le réseau.
+vi.mock('../../services/api/prestations', async () => {
+  const reel = await vi.importActual<typeof import('../../services/api/prestations')>('../../services/api/prestations');
+  return { ...reel, listerLesPrestations: vi.fn().mockResolvedValue([]) };
 });
 
 import { CRMPanel } from './CRMPanel';
@@ -34,7 +44,15 @@ describe('CRMPanel : Échap sur la modale Nouvelle activité (B-336)', () => {
     vi.clearAllMocks();
     _clearEscapeHandlers();
     useCRMStore.setState({ projects: [], activeTab: 'activities' });
-    useContactsStore.setState({ contacts: CONTACTS, selectedContactId: 'c-marie', truncated: false });
+    // Le panneau recharge les contacts au montage : sans ce stub, le store part
+    // vers le réseau et laisse une promesse rejetée non gérée (CI rouge du 05/09).
+    useContactsStore.setState({
+      contacts: CONTACTS,
+      selectedContactId: 'c-marie',
+      truncated: false,
+      loaded: true,
+      fetchContacts: vi.fn().mockResolvedValue(undefined),
+    });
   });
   afterEach(() => _clearEscapeHandlers());
 
