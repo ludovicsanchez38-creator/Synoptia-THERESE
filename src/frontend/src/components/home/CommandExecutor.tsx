@@ -27,6 +27,7 @@ import {
 import { fetchCommandSchema } from '../../services/api/commands-v3';
 import { useActionsStore } from '../../stores/actionsStore';
 import { useExternalActionConfirmation } from '../app/useExternalActionConfirmation';
+import { Spinner } from '../ui/Spinner';
 
 interface SkillState {
   skillId: string;
@@ -321,7 +322,7 @@ export function CommandExecutor({ command, onClose, onPromptSelect, onStartRFC }
     <AnimatePresence mode="wait">
       {isLoadingSchema && (
         <div className="flex items-center justify-center py-8">
-          <div className="animate-spin w-6 h-6 border-2 border-accent-cyan border-t-transparent rounded-full" />
+          <Spinner taille="zone" className="text-accent-cyan-ink" />
           <span className="ml-3 text-sm text-text-muted">Chargement du formulaire...</span>
         </div>
       )}

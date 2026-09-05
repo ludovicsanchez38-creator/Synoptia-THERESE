@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { X, Users, Plus, Search, ChevronRight, Trash2, AlertCircle, Shield, Download, Upload, UserX, RefreshCw } from 'lucide-react';
+import { X, Users, Plus, Search, ChevronRight, Trash2, AlertCircle, Shield, Download, Upload, UserX, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Spinner } from '../ui/Spinner';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../ui/Button';
 import { sidebarVariants, overlayVariants } from '../../lib/animations';
@@ -106,9 +107,10 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
       const result = await api.importVCFFile(file);
       console.log('VCF import:', result.message);
       await loadData();
-      alert(result.message);
+      addNotification({ type: 'success', title: 'Import VCF', message: result.message });
     } catch (err: any) {
-      alert('Erreur import VCF : ' + err.message);
+      console.error('VCF import failed:', err);
+      addNotification({ type: 'error', title: 'Import VCF', message: 'L’import a échoué. Vérifie le fichier et réessaie.' });
     }
     e.target.value = '';
   }
@@ -130,7 +132,8 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
         title: 'Erreur export VCF',
         message: err.message,
       });
-      alert('Erreur export VCF : ' + err.message);
+      console.error('VCF export failed:', err);
+      addNotification({ type: 'error', title: 'Export VCF', message: 'L’export a échoué. Réessaie dans un instant.' });
     }
   }
 
@@ -199,7 +202,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
       setRgpdAction(null);
     } catch (error) {
       console.error('RGPD export failed:', error);
-      alert('Erreur lors de l\'export RGPD');
+      addNotification({ type: 'error', title: 'Export RGPD', message: 'L’export a échoué. Réessaie dans un instant.' });
     } finally {
       setRgpdActionLoading(false);
     }
@@ -207,7 +210,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
 
   async function handleRGPDAnonymize(contact: api.Contact, reason: string) {
     if (!reason.trim()) {
-      alert('Indique la raison de l\'anonymisation');
+      addNotification({ type: 'warning', title: 'Anonymisation', message: 'Indique la raison de l’anonymisation.' });
       return;
     }
     setRgpdActionLoading(true);
@@ -218,7 +221,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
       await loadData(); // Reload to show anonymized contact
     } catch (error) {
       console.error('RGPD anonymize failed:', error);
-      alert('Erreur lors de l\'anonymisation');
+      addNotification({ type: 'error', title: 'Anonymisation', message: 'L’anonymisation a échoué. Réessaie dans un instant.' });
     } finally {
       setRgpdActionLoading(false);
     }
@@ -228,12 +231,12 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
     setRgpdActionLoading(true);
     try {
       const result = await api.renewContactConsent(contact.id);
-      alert(`Consentement renouvelé jusqu'au ${new Date(result.new_expiration).toLocaleDateString('fr-FR')}`);
+      addNotification({ type: 'success', title: 'Consentement', message: `Consentement renouvelé jusqu’au ${new Date(result.new_expiration).toLocaleDateString('fr-FR')}.` });
       setRgpdAction(null);
       await loadData(); // Reload to show updated expiration
     } catch (error) {
       console.error('RGPD renew consent failed:', error);
-      alert('Erreur lors du renouvellement du consentement');
+      addNotification({ type: 'error', title: 'Consentement', message: 'Le renouvellement du consentement a échoué.' });
     } finally {
       setRgpdActionLoading(false);
     }
@@ -398,7 +401,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
             <div className="flex-1 overflow-y-auto">
               {loading ? (
                 <div className="flex items-center justify-center h-32">
-                  <div className="w-6 h-6 border-2 border-accent-cyan border-t-transparent rounded-full animate-spin" />
+                  <Spinner taille="zone" className="text-accent-cyan-ink" />
                 </div>
               ) : (
                 <ContactsList
@@ -470,7 +473,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                         disabled={deleting}
                       >
                         {deleting ? (
-                          <div className="w-4 h-4 border-2 border-error border-t-transparent rounded-full animate-spin" />
+                          <Spinner className="text-error" />
                         ) : (
                           <>
                             <Trash2 className="w-4 h-4 mr-2" />
@@ -526,7 +529,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                             disabled={rgpdActionLoading}
                           >
                             {rgpdActionLoading ? (
-                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              <Spinner />
                             ) : (
                               <>
                                 <Download className="w-4 h-4 mr-2" />
@@ -573,7 +576,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                             disabled={rgpdActionLoading || !anonymizeReason.trim()}
                           >
                             {rgpdActionLoading ? (
-                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              <Spinner />
                             ) : (
                               <>
                                 <UserX className="w-4 h-4 mr-2" />
@@ -610,7 +613,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                             disabled={rgpdActionLoading}
                           >
                             {rgpdActionLoading ? (
-                              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                              <Spinner />
                             ) : (
                               <>
                                 <RefreshCw className="w-4 h-4 mr-2" />
@@ -786,6 +789,7 @@ function ContactsList({
               <button
                 onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === contact.id ? null : contact.id); }}
                 className="p-1.5 rounded-md hover:bg-accent-tint text-text-muted hover:text-accent-cyan-ink transition-colors"
+                aria-label="Actions RGPD"
                 title="Actions RGPD"
               >
                 <Shield className="w-4 h-4" />
@@ -830,6 +834,7 @@ function ContactsList({
             <button
               onClick={(e) => { e.stopPropagation(); onDelete(contact); }}
               className="p-1.5 rounded-md hover:bg-error/20 text-text-muted hover:text-error transition-colors"
+              aria-label={`Supprimer ${[contact.first_name, contact.last_name].filter(Boolean).join(' ') || 'le contact'}`}
               title="Supprimer"
             >
               <Trash2 className="w-4 h-4" />
@@ -863,7 +868,7 @@ function RGPDBadge({ contact }: { contact: api.Contact }) {
     consentement: 'bg-agent-green/20 text-agent-green',
     contrat: 'bg-agent-blue/20 text-agent-blue',
     interet_legitime: 'bg-agent-purple/20 text-agent-purple',
-    obligation_legale: 'bg-gray-500/20 text-text-muted',
+    obligation_legale: 'bg-surface-elevated text-text-muted',
   };
 
   const badgeLabels: Record<string, string> = {
@@ -885,13 +890,13 @@ function RGPDBadge({ contact }: { contact: api.Contact }) {
       className={`px-1.5 py-0.5 rounded-sm text-xs font-medium ${
         isExpired ? 'bg-error/20 text-error' :
         isExpiringSoon ? 'bg-agent-amber/20 text-agent-amber' :
-        badgeColors[baseLegale] || 'bg-gray-500/20 text-text-muted'
+        badgeColors[baseLegale] || 'bg-surface-elevated text-text-muted'
       }`}
       title={`${fullLabels[baseLegale] || baseLegale}${dateExpiration ? ` - Expire le ${new Date(dateExpiration).toLocaleDateString('fr-FR')}` : ''}`}
     >
       {badgeLabels[baseLegale] || baseLegale?.charAt(0).toUpperCase()}
       {isExpired && '!'}
-      {isExpiringSoon && !isExpired && '⚠'}
+      {isExpiringSoon && !isExpired && <AlertTriangle className="ml-0.5 inline h-3 w-3" aria-hidden="true" />}
     </span>
   );
 }
