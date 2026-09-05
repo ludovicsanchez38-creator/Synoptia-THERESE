@@ -583,3 +583,33 @@ async def test_ollama_continuation_remonte_usage_reel():
     done = _done_event(events)
     assert done.input_tokens == 42
     assert done.output_tokens == 7
+
+
+@pytest.mark.asyncio
+async def test_anthropic_filet_si_flux_coupe_sans_message_stop():
+    """B-480 (05/09/2026) : le seul « done » d'Anthropic vivait sous
+    message_stop. Un flux coupé après message_delta(stop_reason=tool_use)
+    émettait le tool_call et jamais de done : chat.py attendait indéfiniment.
+    Même filet post-boucle que les fournisseurs OpenAI-compatibles."""
+    start = {"type": "message_start", "message": {"usage": {"input_tokens": 12}}}
+    block_start = {
+        "type": "content_block_start",
+        "index": 0,
+        "content_block": {"type": "tool_use", "id": "toolu_1", "name": "create_contact"},
+    }
+    block_delta = {
+        "type": "content_block_delta",
+        "index": 0,
+        "delta": {"type": "input_json_delta", "partial_json": '{"name": "Marie"}'},
+    }
+    block_stop = {"type": "content_block_stop", "index": 0}
+    delta = {"type": "message_delta", "delta": {"stop_reason": "tool_use"}, "usage": {"output_tokens": 7}}
+    # Pas de message_stop : coupure de flux.
+    client = _FakeClient([f"data: {json.dumps(e)}" for e in (start, block_start, block_delta, block_stop, delta)])
+
+    events = await _collect(_anthropic(client).stream(None, [{"role": "user", "content": "crée Marie"}]))
+
+    assert any(e.type == "tool_call" for e in events)
+    done = _done_event(events)
+    assert done.stop_reason == "tool_use"
+    assert done.output_tokens == 7
