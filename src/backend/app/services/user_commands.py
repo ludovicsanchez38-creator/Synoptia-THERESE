@@ -5,6 +5,7 @@ Gestion des commandes utilisateur personnalisees.
 Stockage : ~/.therese/commands/user/*.md (YAML frontmatter + contenu)
 """
 
+import json
 import logging
 import shutil
 from datetime import datetime
@@ -233,7 +234,12 @@ class UserCommandsService:
         try:
             if not trash_dir.exists():
                 raise OSError("La Corbeille système n'est pas disponible")
-            shutil.move(str(filepath), str(available_destination(trash_dir)))
+            destination = available_destination(trash_dir)
+            shutil.move(str(filepath), str(destination))
+            # B-465 (05/09/2026) : le dépôt en Corbeille est noté, sans quoi la
+            # purge RGPD ne pouvait pas le retrouver et le texte de
+            # l'utilisatrice survivait à « toutes mes données ».
+            self._noter_depot_en_corbeille(destination)
         except OSError as exc:
             fallback_dir.mkdir(parents=True, exist_ok=True)
             shutil.move(str(filepath), str(available_destination(fallback_dir)))
@@ -241,6 +247,24 @@ class UserCommandsService:
 
         logger.info(f"Deleted user command: {name}")
         return True
+
+    def _index_corbeille(self) -> Path:
+        return self._commands_dir / ".corbeille.json"
+
+    def _depots_en_corbeille(self) -> list[str]:
+        index = self._index_corbeille()
+        if not index.exists():
+            return []
+        try:
+            charge = json.loads(index.read_text(encoding="utf-8"))
+            return [str(x) for x in charge] if isinstance(charge, list) else []
+        except (OSError, ValueError):
+            return []
+
+    def _noter_depot_en_corbeille(self, destination: Path) -> None:
+        depots = self._depots_en_corbeille()
+        depots.append(str(destination))
+        self._index_corbeille().write_text(json.dumps(depots, ensure_ascii=False), encoding="utf-8")
 
     def purger_tout(self) -> int:
         """Efface DÉFINITIVEMENT toutes les commandes utilisateur (RGPD Art. 17).
@@ -262,6 +286,15 @@ class UserCommandsService:
         repli = self._commands_dir / ".trash"
         if repli.exists():
             shutil.rmtree(repli, ignore_errors=True)
+
+        # B-465 : les commandes archivées dans la Corbeille système partent aussi.
+        for depot in self._depots_en_corbeille():
+            try:
+                Path(depot).unlink(missing_ok=True)
+                efface += 1
+            except OSError as exc:
+                logger.warning("Dépôt en Corbeille non effacé : %s (%s)", depot, exc)
+        self._index_corbeille().unlink(missing_ok=True)
 
         logger.info("Purge RGPD : %d commande(s) utilisateur effacée(s)", efface)
         return efface
