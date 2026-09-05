@@ -510,6 +510,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
   const formModal = showForm ? (
     <InvoiceForm
       invoice={editingInvoice}
+      defaultDocumentType={filters.document_type === 'devis' ? 'devis' : 'facture'}
       onClose={handleCloseForm}
       onSave={handleInvoiceCreatedOrUpdated}
     />

@@ -21,6 +21,8 @@ import { useExternalActionConfirmation } from '../app/useExternalActionConfirmat
 
 interface InvoiceFormProps {
   invoice: Invoice | null;
+  /** B-388 : type ouvert depuis une liste filtrée (devis) */
+  defaultDocumentType?: 'devis' | 'facture' | 'avoir';
   onClose: () => void;
   onSave: (invoice: Invoice) => void;
 }
@@ -73,7 +75,7 @@ function parseDecimalDraft(value: string) {
   return Number.isNaN(parsed) ? null : parsed;
 }
 
-export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
+export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: InvoiceFormProps) {
   const requestExternalAction = useExternalActionConfirmation();
   const addNotification = useStatusStore((s) => s.addNotification);
 
@@ -90,7 +92,7 @@ export function InvoiceForm({ invoice, onClose, onSave }: InvoiceFormProps) {
     void refreshBillingStatus();
   }, [refreshBillingStatus]);
   const [documentType, setDocumentType] = useState<'devis' | 'facture' | 'avoir'>(
-    (invoice?.document_type as 'devis' | 'facture' | 'avoir') || 'facture'
+    (invoice?.document_type as 'devis' | 'facture' | 'avoir') || defaultDocumentType || 'facture'
   );
   const [contactId, setContactId] = useState(invoice?.contact_id || '');
   const [currency, setCurrency] = useState(invoice?.currency || 'EUR');
