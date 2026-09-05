@@ -503,3 +503,28 @@ class TestSuppressionCleBraveVideLeCache:
         assert type(web_search.get_web_search_service()).__name__ != "BraveSearchService", (
             "les recherches web partent encore chez Brave avec la clé effacée"
         )
+
+
+class TestB513LeDossierDeTravailEstUneFrontiereDeConfiance:
+    """B-513 (05/09/2026), décision de Ludo : le dossier de travail devient la
+    racine du préréglage MCP filesystem ; « / », « /etc » et le dossier
+    personnel entier étaient acceptés."""
+
+    @pytest.mark.asyncio
+    @pytest.mark.parametrize("chemin", ["/", "/etc", "   "])
+    async def test_une_racine_du_systeme_est_refusee(self, client: AsyncClient, chemin: str):
+        reponse = await client.post("/api/config/working-directory", json={"path": chemin})
+        assert reponse.status_code in (400, 422), reponse.text
+
+    @pytest.mark.asyncio
+    async def test_le_dossier_personnel_entier_est_refuse(self, client: AsyncClient):
+        from pathlib import Path
+
+        reponse = await client.post("/api/config/working-directory", json={"path": str(Path.home())})
+        assert reponse.status_code == 400, reponse.text
+        assert "dédié" in reponse.json()["message"].lower() or "dossier" in reponse.json()["message"].lower()
+
+    @pytest.mark.asyncio
+    async def test_un_dossier_dedie_reste_accepte(self, client: AsyncClient, tmp_path):
+        reponse = await client.post("/api/config/working-directory", json={"path": str(tmp_path)})
+        assert reponse.status_code == 200, reponse.text

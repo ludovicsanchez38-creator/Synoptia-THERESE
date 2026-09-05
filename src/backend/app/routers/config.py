@@ -1241,13 +1241,37 @@ async def set_working_directory(
     """
     from pathlib import Path
 
-    path = Path(request.path)
+    from app.services.path_security import (
+        _dans_le_dossier_temporaire,
+        _racines_interdites,
+        _sous_une_racine,
+    )
+
+    if not (request.path or "").strip():
+        raise HTTPException(status_code=400, detail="Indique un chemin de dossier.")
+
+    path = Path(request.path).expanduser()
 
     if not path.exists():
-        raise HTTPException(status_code=400, detail="Path does not exist")
+        raise HTTPException(status_code=400, detail="Ce chemin n'existe pas.")
 
     if not path.is_dir():
-        raise HTTPException(status_code=400, detail="Path is not a directory")
+        raise HTTPException(status_code=400, detail="Ce chemin n'est pas un dossier.")
+
+    # B-513 (05/09/2026, décision de Ludo) : le dossier de travail est une
+    # FRONTIÈRE DE CONFIANCE (racine du préréglage MCP filesystem, périmètre
+    # des outils fichiers). La racine du disque, un dossier système et le
+    # dossier personnel entier sont refusés : il faut un dossier dédié.
+    resolu = path.resolve()
+    refus = "Choisis un dossier de travail dédié (par exemple un sous-dossier de ton dossier personnel) : ni la racine du disque, ni un dossier système, ni ton dossier personnel entier."
+    if resolu == Path(resolu.anchor) or resolu == Path.home().resolve():
+        raise HTTPException(status_code=400, detail=refus)
+    # Même exception que validate_file_path : le dossier temporaire du processus
+    # (sous /private/var sur macOS) reste permis, /var/log ne l'est pas.
+    if not _dans_le_dossier_temporaire(resolu) and _sous_une_racine(
+        resolu, [Path(racine) for racine in _racines_interdites()]
+    ):
+        raise HTTPException(status_code=400, detail=refus)
 
     # Get or create preference
     result = await session.execute(
