@@ -321,8 +321,12 @@ class ImapSmtpProvider(EmailProvider):
                         else AND(flagged=True)
                     )
 
-                # Fetch messages (reversed for newest first)
-                all_msgs = list(mailbox.fetch(criteria, reverse=True, limit=offset + max_results))
+                # Fetch messages (reversed for newest first).
+                # B-351 (05/09/2026) : on demande UN message de plus que la page
+                # pour savoir s'il en reste ; avec `limit=offset + max_results`,
+                # le seuil `len(all_msgs) > offset + max_results` ne pouvait
+                # jamais être vrai et aucune page suivante n'était annoncée.
+                all_msgs = list(mailbox.fetch(criteria, reverse=True, limit=offset + max_results + 1))
 
                 # Apply pagination
                 paginated = all_msgs[offset : offset + max_results]
