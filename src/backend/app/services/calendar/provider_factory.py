@@ -167,9 +167,15 @@ async def test_caldav_connection(
         provider = CalDAVProvider(url=url, username=username, password=password)
         calendars = await provider.list_calendars()
 
+        nombre = len(calendars)
         return {
             "success": True,
-            "message": f"Connected successfully. Found {len(calendars)} calendar(s).",
+            # B-440 : messages en français, comme le reste de l'écran.
+            "message": (
+                f"Connexion établie. {nombre} calendrier{'s' if nombre > 1 else ''} trouvé{'s' if nombre > 1 else ''}."
+                if nombre
+                else "Connexion établie, mais ce serveur n'expose aucun calendrier."
+            ),
             "calendars": [
                 {"id": cal.id, "name": cal.name}
                 for cal in calendars
@@ -177,8 +183,12 @@ async def test_caldav_connection(
         }
     except Exception as e:
         logger.error(f"CalDAV connection test failed: {e}")
+        from app.services.error_handler import message_pour_ecran
+
         return {
             "success": False,
-            "message": f"Connection failed: {str(e)}",
+            # B-440 : l'exception brute reste au journal ; l'écran reçoit un
+            # message localisé (frontière d'erreurs 0.48).
+            "message": message_pour_ecran(e, ou="pendant le test de connexion CalDAV"),
             "calendars": [],
         }
