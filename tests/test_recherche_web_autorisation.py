@@ -194,7 +194,7 @@ class TestUnRefusNeSeDeguiseJamaisEnPanne:
         """Le modèle doit pouvoir l'expliquer, pas inventer une panne."""
         web_search.poser_autorisation_recherche(False)
         resultat = await web_search.execute_web_search({"query": "peu importe"})
-        assert "réglages" in resultat.lower()
+        assert "paramètres" in resultat.lower()
 
 
 class TestLAncrageGoogleSuitLeMemeInterrupteur:
