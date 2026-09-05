@@ -630,11 +630,9 @@ pub fn run() {
                     // BUG-077 : attendre que Windows libère les file handles
                     std::thread::sleep(std::time::Duration::from_secs(2));
 
-                    // Fallback : kill par nom d'exécutable (couvre les processus orphelins)
-                    let _ = std::process::Command::new("taskkill")
-                        .args(["/IM", "backend.exe", "/F"])
-                        .stdin(std::process::Stdio::null())
-                        .output();
+                    // B-547 : plus de `taskkill /IM backend.exe` : il tuait aussi le
+                    // backend d'une seconde instance ou d'un dev en parallèle.
+                    // L'arbre de PID (/T) couvre déjà les enfants du sidecar.
                 }
 
                 log_sidecar("Nettoyage terminé");
