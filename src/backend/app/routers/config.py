@@ -1170,7 +1170,14 @@ async def import_claude_md(
         set_cached_profile,
     )
 
-    profile = await import_from_claude_md(session, request.file_path)
+    try:
+        profile = await import_from_claude_md(session, request.file_path)
+    except FileNotFoundError as e:
+        # B-353 (05/09/2026) : un chemin absent remontait en 500 générique.
+        raise HTTPException(
+            status_code=404,
+            detail="Fichier THERESE.md introuvable à ce chemin, vérifie-le.",
+        ) from e
 
     # Update cache
     set_cached_profile(profile)
