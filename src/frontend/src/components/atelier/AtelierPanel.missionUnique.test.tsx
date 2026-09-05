@@ -1,5 +1,5 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockStream = vi.fn();
 const mockCancelTask = vi.fn();
@@ -43,6 +43,19 @@ describe('Atelier : une mission à la fois', () => {
     vi.clearAllMocks();
     useAtelierStore.setState({ isOpen: true, activeView: 'chat', messages: [], isStreaming: false });
     mockStream.mockImplementation((...args: unknown[]) => fluxMuet(...(args as [string, string, AbortSignal])));
+  });
+
+  // Une mission encore vivante à la fin d'un test se ferme en retard, APRÈS le
+  // démontage de jsdom : son `finally` appelait setState sur un `window` disparu
+  // (« window is not defined », promesse non gérée, CI rouge du 05/09/2026).
+  // On annule et on laisse la fermeture retardée tomber pendant que le DOM vit.
+  afterEach(async () => {
+    await act(async () => {
+      const annuler = screen.queryByTitle('Annuler');
+      if (annuler) fireEvent.click(annuler);
+      await new Promise((r) => setTimeout(r, 60));
+    });
+    cleanup();
   });
 
   // Relevé par la lecture du lot WP-060, reproduit ici. `runMission` écrivait
