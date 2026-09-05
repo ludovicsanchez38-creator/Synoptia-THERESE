@@ -266,7 +266,14 @@ def _parse_csv(content: bytes) -> list[dict]:
         raise ValueError("Impossible de decoder le fichier CSV")
 
     reader = csv.DictReader(io.StringIO(text))
-    return list(reader)
+    # B-551 (05/09/2026) : une ligne plus longue que l'en-tête range ses
+    # valeurs excédentaires sous la clé None (comportement de DictReader).
+    # Cette clé cassait l'aperçu d'import (detected_columns exige des chaînes)
+    # alors que l'import réel l'ignorait : les deux digèrent le même fichier.
+    return [
+        {cle: valeur for cle, valeur in ligne.items() if cle is not None}
+        for ligne in reader
+    ]
 
 
 def _parse_xlsx(content: bytes, sheet_name: str | None = None) -> list[dict]:
