@@ -65,3 +65,16 @@ def test_les_conditions_negociees_remplacent_le_texte_en_dur(tmp_path: Path):
 def test_sans_conditions_negociees_le_defaut_reste_30_jours(tmp_path: Path):
     texte = _texte_du_pdf(tmp_path)
     assert "30 jours" in texte
+
+
+def test_les_chevrons_des_conditions_sont_imprimes_et_ne_cassent_pas_le_pdf(tmp_path: Path):
+    """Revue COCO 0.67 : payment_terms et payment_method sont des textes libres
+    interpolés dans un Paragraph ReportLab. « 30 jours <fin de mois> » perdait
+    la précision en silence, « 30 jours <b> » levait une erreur de parsing."""
+    texte = _texte_du_pdf(
+        tmp_path,
+        payment_terms="30 jours <fin de mois>",
+        payment_method="Virement <b>",
+    )
+    assert "fin de mois" in texte, "la précision entre chevrons a disparu du PDF"
+    assert "Virement" in texte

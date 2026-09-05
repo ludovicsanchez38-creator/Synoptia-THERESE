@@ -704,9 +704,10 @@ class InvoicePDFGenerator:
         payment_method = (donnees.get("payment_method") or "").strip()
         legal_mentions = (donnees.get("legal_mentions") or "").strip()
         if payment_terms:
-            reglement = f"Paiement à {payment_terms}"
+            # Revue COCO 0.67 : textes libres, donc échappés comme les autres (B-507).
+            reglement = f"Paiement à {_texte_pdf(payment_terms)}"
             if payment_method:
-                reglement += f", par {payment_method}"
+                reglement += f", par {_texte_pdf(payment_method)}"
             reglement += ".<br/>"
         else:
             reglement = "Paiement à réception de facture, net à 30 jours.<br/>"
