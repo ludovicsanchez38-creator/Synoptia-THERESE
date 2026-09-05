@@ -21,6 +21,7 @@ from app.models.schemas import (
     UpdateInvoiceRequest,
 )
 from app.services.civil_time import date_civile_paris
+from app.services.error_handler import message_pour_ecran
 from app.services.invoice_pdf import InvoicePDFGenerator
 from app.services.invoice_status import statut_effectif_facture
 from app.services.user_profile import get_cached_profile
@@ -868,11 +869,14 @@ async def generate_invoice_pdf(
             currency=invoice.currency,
         )
     except Exception as e:
-        logger.error(f"Erreur génération PDF facture {invoice_id}: {e}")
+        # B-334 (05/09/2026) : le détail HTTP recopiait l'exception brute
+        # (adresses mémoire ReportLab, chemins du poste). À la limite de
+        # l'écran, seuls les messages localisés passent.
+        logger.error(f"Erreur génération PDF facture {invoice_id}: {e}", exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Erreur lors de la génération du PDF : {str(e)}",
-        )
+            detail=message_pour_ecran(e, ou="pendant la génération du PDF de la facture"),
+        ) from e
 
     logger.info(f"PDF generated for invoice: {invoice.invoice_number}")
 
