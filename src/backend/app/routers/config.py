@@ -1139,18 +1139,26 @@ async def get_therese_md() -> dict[str, str | bool]:
     md_path = Path(settings.data_dir) / "THERESE.md"
     if not md_path.exists():
         return {"content": "", "path": str(md_path), "exists": False}
-    content = md_path.read_text(encoding="utf-8")
+    # B-512 : un fichier mal encodé (édité ailleurs) rendait 500 ; les octets
+    # illisibles sont remplacés plutôt que de cacher tout le profil.
+    content = md_path.read_text(encoding="utf-8", errors="replace")
     return {"content": content, "path": str(md_path), "exists": True}
 
 
+class ThereseMdRequest(BaseModel):
+    """B-512 : le corps était un dict libre, sans type ni borne."""
+
+    content: str = Field(max_length=200_000)
+
+
 @router.post("/therese-md")
-async def save_therese_md(request: dict) -> dict[str, str | bool]:  # type: ignore[type-arg]
+async def save_therese_md(request: ThereseMdRequest) -> dict[str, str | bool]:
     """Sauvegarde le contenu de THERESE.md."""
     from pathlib import Path
 
     md_path = Path(settings.data_dir) / "THERESE.md"
     md_path.parent.mkdir(parents=True, exist_ok=True)
-    md_path.write_text(request.get("content", ""), encoding="utf-8")
+    md_path.write_text(request.content, encoding="utf-8")
     return {"success": True, "path": str(md_path)}
 
 
