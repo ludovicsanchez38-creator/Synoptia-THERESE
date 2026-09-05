@@ -9,7 +9,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { X, Plus, Trash2, Save, FileCheck, AlertTriangle } from 'lucide-react';
-import { createInvoice, updateInvoice, convertDevisToInvoice, updateDevisStatus, type Invoice, type InvoiceLineRequest, listContacts, type Contact, markInvoicePaid } from '../../services/api';
+import { createInvoice, updateInvoice, convertDevisToInvoice, updateDevisStatus, type Invoice, type InvoiceLineRequest, listContacts, getContact, type Contact, markInvoicePaid } from '../../services/api';
 import { PLAFOND_CONTACTS } from '../../stores/contactsStore';
 import { useStatusStore } from '../../stores/statusStore';
 import { useBillingProfileStore } from '../../stores/billingProfileStore';
@@ -154,16 +154,27 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
 
   // Charger les contacts
   useEffect(() => {
-    loadContacts();
-  }, []);
+    void loadContacts(invoice?.contact_id);
+  }, [invoice?.contact_id]);
 
-  async function loadContacts() {
+  async function loadContacts(clientDeLaPiece?: string) {
     try {
       const data = await listContacts(0, PLAFOND_CONTACTS);
       setContacts(data);
       // Lot F : le devis n'offrait que 50 contacts. Même plafond que le
       // carnet, et on le dit si on l'atteint.
       setContactsTronques(data.length >= PLAFOND_CONTACTS);
+      // B-568 : le client de la pièce en cours d'édition peut être hors de la
+      // fenêtre des contacts récents ; on le charge à part pour le proposer,
+      // sinon le sélecteur retombait sur « Sélectionner un contact ».
+      if (clientDeLaPiece && !data.some((c) => c.id === clientDeLaPiece)) {
+        try {
+          const client = await getContact(clientDeLaPiece);
+          setContacts([client, ...data]);
+        } catch (error) {
+          console.error('Failed to load invoice contact:', error);
+        }
+      }
     } catch (error) {
       console.error('Failed to load contacts:', error);
     }
@@ -456,6 +467,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
 
           <button
             onClick={onClose}
+            aria-label="Fermer"
             className="p-2 rounded-md hover:bg-surface-elevated transition-colors"
           >
             <X className="w-5 h-5 text-text-muted" />
@@ -725,6 +737,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
 
                       <button
                         type="button"
+                        aria-label={`Supprimer la ligne ${index + 1}`}
                         onClick={() => removeLine(index)}
                         className="p-2 rounded-md bg-error/10 hover:bg-error/20 transition-colors"
                       >

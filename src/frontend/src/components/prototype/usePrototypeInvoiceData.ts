@@ -10,7 +10,7 @@ import {
   type CreateInvoiceRequest,
   type Invoice,
 } from '../../services/api';
-import { useContactsStore } from '../../stores/contactsStore';
+import { PLAFOND_CONTACTS, useContactsStore } from '../../stores/contactsStore';
 import { useInvoiceStore } from '../../stores/invoiceStore';
 import type { ReadResource } from './usePrototypeReadData';
 
@@ -19,6 +19,8 @@ export interface InvoiceWorkspaceData {
   contacts: Contact[];
   billingProfile: { is_complete: boolean; missing: string[] } | null;
   unavailableSources: string[];
+  // B-574 : vrai quand la page de contacts est pleine, donc peut-être tronquée.
+  contactsTronques?: boolean;
 }
 
 export function usePrototypeInvoiceData(enabled = true) {
@@ -40,7 +42,7 @@ export function usePrototypeInvoiceData(enabled = true) {
       useInvoiceStore.getState().setInvoices(invoices);
 
       const [contactsResult, profileResult] = await Promise.allSettled([
-        listContacts(0, 100),
+        listContacts(0, PLAFOND_CONTACTS),
         getBillingProfileStatus(),
       ]);
       if (activeRequest !== requestId.current) return;
@@ -53,7 +55,10 @@ export function usePrototypeInvoiceData(enabled = true) {
 
       setResource({
         status: 'ready',
-        data: { invoices, contacts, billingProfile, unavailableSources },
+        data: {
+          invoices, contacts, billingProfile, unavailableSources,
+          contactsTronques: contacts.length >= PLAFOND_CONTACTS,
+        },
         error: null,
       });
     } catch {

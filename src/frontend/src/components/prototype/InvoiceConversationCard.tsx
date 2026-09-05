@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import type { Contact, CreateInvoiceRequest, Invoice } from '../../services/api';
 import type { InvoiceWorkspaceData } from './usePrototypeInvoiceData';
+import { PLAFOND_CONTACTS } from '../../stores/contactsStore';
 import type { ReadResource } from './usePrototypeReadData';
 import { Spinner } from '../ui/Spinner';
 
@@ -569,6 +570,11 @@ function DevisDraftForm({
               <option value="">Sélectionner un contact</option>
               {data.contacts.map((contact) => <option key={contact.id} value={contact.id}>{contactLabel(contact)}</option>)}
             </select>
+            {data.contactsTronques && (
+              <span role="alert" className="mt-1 block text-xs text-warning">
+                Liste incomplète : seuls les {PLAFOND_CONTACTS} contacts les plus récents sont proposés.
+              </span>
+            )}
           </label>
           <label className="text-xs text-text-muted">Date d’émission
             <input id="devis-issue-date" aria-label="Date d’émission" aria-invalid={errorFieldId === 'devis-issue-date'} aria-describedby={errorFieldId === 'devis-issue-date' ? 'devis-form-error' : undefined} type="date" value={issueDate} onChange={(event) => { invalidateDraft(); setIssueDate(event.target.value); }} className="mt-1.5 w-full rounded-sm border border-border px-2.5 py-2 text-sm text-text" />
@@ -650,7 +656,7 @@ function DevisDraftForm({
         )}
 
         {!confirmationSnapshot && <div className="mt-4 flex justify-end">
-          <button type="button" onClick={requestConfirmation} disabled={saving} className="inline-flex items-center gap-1.5 rounded-md bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink disabled:opacity-60"><FilePlus2 className="h-3.5 w-3.5" />Enregistrer le brouillon</button>
+          <button type="button" onClick={requestConfirmation} disabled={saving || (created !== null && !hasUnsavedChanges)} className="inline-flex items-center gap-1.5 rounded-md bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink disabled:opacity-60"><FilePlus2 className="h-3.5 w-3.5" />Enregistrer le brouillon</button>
         </div>}
       </section>
     </div>

@@ -192,6 +192,11 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
     if (editingInvoice) {
       updateInvoiceInStore(invoice);
     } else {
+      // B-569 : un document créé sous un filtre de statut qui l'exclut
+      // disparaissait aussitôt de la liste. On lève le filtre pour le montrer.
+      if (filters.status && filters.status !== 'all' && filters.status !== invoice.status) {
+        setFilters({ ...filters, status: 'all' });
+      }
       loadInvoices(); // Recharger pour avoir toutes les données
     }
     handleCloseForm();
