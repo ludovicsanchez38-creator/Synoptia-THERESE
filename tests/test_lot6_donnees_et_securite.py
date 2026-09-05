@@ -124,7 +124,7 @@ class TestB508LesVariablesDEnvironnementMCPSontChiffreesAuChargement:
 
         serveur = service.servers["abcd1234"]
         assert is_value_encrypted(serveur.env["NOTION_API_KEY"]), "la clé est encore en clair en mémoire"
-        assert "secret_en_clair" not in fichier.read_text(), "la clé est encore en clair sur le disque"
+        assert "secret_en_clair" not in fichier.read_text(encoding="utf-8"), "la clé est encore en clair sur le disque"
         expose = service.list_servers()[0]["env"]
         assert "secret_en_clair" not in json.dumps(expose)
         assert "NOTION_API_KEY" in expose, "le nom de la variable doit rester visible pour l'édition"

@@ -548,7 +548,7 @@ class TestB457LaConfigurationMCPSurvitAUnePanneDEcriture:
 
         fichier = tmp_path / "mcp_servers.json"
         assert fichier.exists(), "add_server rend la main avant d'avoir écrit"
-        assert "Fichiers" in fichier.read_text()
+        assert "Fichiers" in fichier.read_text(encoding="utf-8")
 
     def test_une_panne_pendant_l_ecriture_garde_l_ancienne_configuration(
         self, service, tmp_path, monkeypatch
@@ -559,7 +559,7 @@ class TestB457LaConfigurationMCPSurvitAUnePanneDEcriture:
 
         service.add_server(name="Ancien", command="npx", args=[])
         fichier = tmp_path / "mcp_servers.json"
-        avant = fichier.read_text()
+        avant = fichier.read_text(encoding="utf-8")
         assert "Ancien" in avant
 
         def dump_qui_tombe(*a, **k):
@@ -569,10 +569,10 @@ class TestB457LaConfigurationMCPSurvitAUnePanneDEcriture:
         with pytest.raises(OSError):
             service.add_server(name="Nouveau", command="uvx", args=[])
 
-        assert fichier.read_text() == avant, "le fichier a été tronqué par la panne"
+        assert fichier.read_text(encoding="utf-8") == avant, "le fichier a été tronqué par la panne"
         monkeypatch.setattr(module.json, "dump", json_module.dump)
 
-        assert [s["name"] for s in json_module.loads(fichier.read_text())["servers"]] == ["Ancien"]
+        assert [s["name"] for s in json_module.loads(fichier.read_text(encoding="utf-8"))["servers"]] == ["Ancien"]
 
     @pytest.mark.asyncio
     async def test_un_fichier_corrompu_est_conserve_a_cote(self, tmp_path):
@@ -583,4 +583,4 @@ class TestB457LaConfigurationMCPSurvitAUnePanneDEcriture:
 
         copies = list(tmp_path.glob("mcp_servers.json.corrompu*"))
         assert copies, "le fichier fautif doit être conservé pour diagnostic"
-        assert copies[0].read_text().startswith('{"servers"')
+        assert copies[0].read_text(encoding="utf-8").startswith('{"servers"')

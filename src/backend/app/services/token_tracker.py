@@ -416,6 +416,10 @@ class TokenTracker:
         return Path(settings.data_dir) / "token_usage.json"
 
     def _charger_depuis_le_disque(self) -> None:
+        # Seul le singleton du processus persiste : un traceur isolé (tests,
+        # object.__new__) ne lit ni n'écrit le fichier.
+        if TokenTracker._instance is not self:
+            return
         try:
             fichier = self._fichier_usage()
             if not fichier.exists():
@@ -433,6 +437,8 @@ class TokenTracker:
             logger.warning("Compteurs de jetons illisibles, repart de zéro : %s", e)
 
     def _sauver_sur_le_disque(self) -> None:
+        if TokenTracker._instance is not self:
+            return
         try:
             fichier = self._fichier_usage()
             fichier.parent.mkdir(parents=True, exist_ok=True)
