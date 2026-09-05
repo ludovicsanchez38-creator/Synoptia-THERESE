@@ -20,7 +20,9 @@
 import { useEffect, useRef, type RefObject } from 'react';
 
 const FOCUSABLE_SELECTOR =
-  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]):not([disabled])';
+  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]):not([disabled]), audio[controls], video[controls]';
+// B-463 : un lecteur natif avec commandes prend le focus ; absent du sélecteur,
+// il laissait Tab sortir du dialogue depuis le canevas Voix.
 
 // Pile des pièges actifs (même principe que escapeStack) : le dernier
 // enregistré est la modale du dessus, seule autorisée à piloter le clavier.
@@ -113,7 +115,7 @@ function isolateOutsideDialog(dialog: HTMLElement): {
   let branch: HTMLElement = dialog;
   let parent = branch.parentElement;
 
-  while (parent && parent !== document.body) {
+  while (parent) {
     for (const sibling of Array.from(parent.children)) {
       if (!(sibling instanceof HTMLElement) || sibling === branch) continue;
       if (sibling.matches('[data-dialog-backdrop], [data-dialog-allow]')) continue;
@@ -129,6 +131,9 @@ function isolateOutsideDialog(dialog: HTMLElement): {
       isolateElement(sibling);
       isolated.push(sibling);
     }
+    // B-452 : le corps du document est traité lui aussi ; la boucle s'arrêtait
+    // une génération trop tôt et laissait ses enfants directs actifs.
+    if (parent === document.body) break;
     branch = parent;
     parent = parent.parentElement;
   }
