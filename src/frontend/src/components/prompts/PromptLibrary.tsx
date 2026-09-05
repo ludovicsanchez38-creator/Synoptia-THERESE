@@ -396,6 +396,7 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
           {searchQuery && (
             <button
               onClick={() => handleSearchChange('')}
+              aria-label="Effacer la recherche"
               className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-sm text-text-muted hover:text-text transition-colors"
             >
               <X className="w-4 h-4" />
