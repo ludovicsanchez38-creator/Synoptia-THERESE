@@ -131,7 +131,7 @@ class TestActionPasTermineeSiEtapeEnEchec:
             "app.services.llm.get_llm_service", lambda: FakeLLM()
         )
 
-        async def pas_de_contexte(_tools):
+        async def pas_de_contexte(*_args, **_kwargs):
             return ""
 
         monkeypatch.setattr(
