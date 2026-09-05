@@ -14,7 +14,7 @@ from typing import AsyncGenerator
 
 from app.models.schemas_agents import AgentStreamChunk
 from app.services.agents.config import get_agent_config
-from app.services.agents.git_service import GitService
+from app.services.agents.git_service import GitCommitEchoue, GitService
 from app.services.agents.runtime import AgentRuntime
 from app.services.agents.tools import (
     THERESE_TOOLS,
@@ -307,9 +307,19 @@ Tu es sur la branche `{branch_name}`. Implémente les changements demandés.
                 task_id=task_id,
             )
 
-            commit_hash = await worktree_git.commit(
-                f"[agent] {spec_content.split(chr(10))[0][:80]}"
-            )
+            try:
+                commit_hash = await worktree_git.commit(
+                    f"[agent] {spec_content.split(chr(10))[0][:80]}"
+                )
+            except GitCommitEchoue as e:
+                # B-376 : un commit refusé n'est pas « aucun changement ».
+                yield AgentStreamChunk(
+                    type="error",
+                    agent="zezette",
+                    content=f"Le commit de la mission a échoué : {e}.",
+                    task_id=task_id,
+                )
+                return
             if not commit_hash:
                 yield AgentStreamChunk(
                     type="error",

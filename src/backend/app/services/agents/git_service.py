@@ -39,6 +39,24 @@ async def _stop_process(proc: asyncio.subprocess.Process) -> None:
         await proc.wait()
 
 
+class GitCommitEchoue(RuntimeError):
+    """B-376 : un commit qui échoue n'est pas un « rien à committer »."""
+
+
+def _cause_de_commit_lisible(sortie: str) -> str:
+    """Traduit la sortie de git en cause courte, sans chemin ni détail brut."""
+    texte = (sortie or "").lower()
+    if "identity" in texte or "please tell me who you are" in texte or "user.name" in texte:
+        return "identité git non configurée (user.name et user.email)"
+    if "hook" in texte:
+        return "un hook git a refusé le commit"
+    if "lock" in texte:
+        return "un verrou git est resté posé (index.lock)"
+    if "permission" in texte:
+        return "permission refusée sur le dépôt"
+    return "git a refusé le commit (voir le journal)"
+
+
 class GitService:
     """Service git pour les opérations sur le repo source."""
 
@@ -178,12 +196,17 @@ class GitService:
             if "nothing to commit" in (out + err):
                 logger.info("Rien à committer")
                 return None
+            # B-376 (05/09/2026) : rendre None ici faisait dire au swarm « la
+            # mission n'a produit aucun changement » alors que le commit avait
+            # ÉCHOUÉ (identité git absente, hook refusé...). La cause remonte.
             logger.error(f"Commit échoué : {err}")
-            return None
+            raise GitCommitEchoue(_cause_de_commit_lisible(err or out))
 
         # Extraire le hash
         code, hash_out, _ = await self._run("rev-parse", "HEAD")
-        return hash_out if code == 0 else None
+        if code != 0:
+            raise GitCommitEchoue("git n'a pas pu donner le hash du commit créé")
+        return hash_out
 
     async def diff(self, base: str = "main", head: str = "HEAD") -> str:
         """Retourne le diff unifié entre ``base`` et une branche donnée."""
