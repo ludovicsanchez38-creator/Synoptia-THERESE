@@ -1851,6 +1851,7 @@ async def generate_email_response(
             length=request.length,
             contact_context=contact_context,
             thread_context=thread_context,
+            session=session,
         )
     except GenerationImpossible as e:
         # 502 plutôt que 500 : la panne vient du fournisseur de modèle, pas de
