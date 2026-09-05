@@ -46,10 +46,16 @@ export function EmailList({ accountId }: EmailListProps) {
   const retryCountRef = useRef(0);
   const abortControllerRef = useRef<AbortController | null>(null);
   const isLoadingRef = useRef(false);
+  // B-506 : la tentative automatique meurt avec la rubrique qui l'a lancée.
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
+    }
+    if (retryTimerRef.current) {
+      clearTimeout(retryTimerRef.current);
+      retryTimerRef.current = null;
     }
     retryCountRef.current = 0;
     isLoadingRef.current = false;
@@ -62,6 +68,7 @@ export function EmailList({ accountId }: EmailListProps) {
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
       }
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
     };
   }, []);
 
@@ -156,7 +163,10 @@ export function EmailList({ accountId }: EmailListProps) {
         const delay = retryCountRef.current * 1500; // 1.5s, 3s, 4.5s
         console.log(`[Email] Retry ${retryCountRef.current}/3 dans ${delay}ms...`);
         isLoadingRef.current = false;
-        setTimeout(() => loadMessages(), delay);
+        retryTimerRef.current = setTimeout(() => {
+          retryTimerRef.current = null;
+          if (!controller.signal.aborted) void loadMessages();
+        }, delay);
         return;
       }
 

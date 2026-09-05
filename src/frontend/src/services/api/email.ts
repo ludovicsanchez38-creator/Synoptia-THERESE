@@ -118,7 +118,7 @@ export interface GenerateGuideResponse {
 // Setup
 export async function getEmailSetupStatus(): Promise<SetupStatus> {
   const response = await apiFetch(`${API_BASE}/api/email/setup/status`);
-  if (!response.ok) throw new Error('Failed to get setup status');
+  if (!response.ok) throw new Error('Impossible de lire l’état de la configuration email');
   return response.json();
 }
 
@@ -131,7 +131,7 @@ export async function validateEmailCredentials(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ client_id: clientId, client_secret: clientSecret }),
   });
-  if (!response.ok) throw new Error('Failed to validate credentials');
+  if (!response.ok) throw new Error('Impossible de vérifier les identifiants');
   return response.json();
 }
 
@@ -144,7 +144,7 @@ export async function generateEmailSetupGuide(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ provider, has_project: hasProject }),
   });
-  if (!response.ok) throw new Error('Failed to generate guide');
+  if (!response.ok) throw new Error('Impossible de générer le guide');
   return response.json();
 }
 
@@ -196,7 +196,7 @@ export async function testSmtpConnection(request: SmtpSetupRequest): Promise<{ s
 
 export async function getEmailProviders(): Promise<EmailProviderConfig[]> {
   const response = await apiFetch(`${API_BASE}/api/email/providers`);
-  if (!response.ok) throw new Error('Failed to get providers');
+  if (!response.ok) throw new Error('Impossible de lire la liste des fournisseurs');
   return response.json();
 }
 
@@ -207,7 +207,7 @@ export async function initiateEmailOAuth(clientId: string, clientSecret: string)
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ client_id: clientId, client_secret: clientSecret }),
   });
-  if (!response.ok) throw new Error('Failed to initiate OAuth');
+  if (!response.ok) throw new Error('Impossible de démarrer l’autorisation Google');
   return response.json();
 }
 
@@ -228,13 +228,13 @@ export async function handleEmailOAuthCallback(state: string, code: string): Pro
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ state, code }),
   });
-  if (!response.ok) throw new Error('Failed to complete OAuth');
+  if (!response.ok) throw new Error('Impossible de terminer l’autorisation Google');
   return response.json();
 }
 
 export async function getEmailAuthStatus(): Promise<{ connected: boolean; accounts: EmailAccount[] }> {
   const response = await apiFetch(`${API_BASE}/api/email/auth/status`);
-  if (!response.ok) throw new Error('Failed to get auth status');
+  if (!response.ok) throw new Error('Impossible de lire l’état de connexion des comptes');
   return response.json();
 }
 
@@ -242,7 +242,7 @@ export async function disconnectEmailAccount(accountId: string): Promise<void> {
   const response = await apiFetch(`${API_BASE}/api/email/auth/disconnect/${accountId}`, {
     method: 'DELETE',
   });
-  if (!response.ok) throw new Error('Failed to disconnect account');
+  if (!response.ok) throw new Error('Impossible de déconnecter le compte');
 }
 
 // Signature HTML par compte (le backend sanitise via nh3 au PUT)
@@ -250,7 +250,7 @@ export async function getEmailSignature(
   accountId: string
 ): Promise<{ account_id: string; signature_html: string | null }> {
   const response = await apiFetch(`${API_BASE}/api/email/accounts/${accountId}/signature`);
-  if (!response.ok) throw new Error('Failed to get signature');
+  if (!response.ok) throw new Error('Impossible de lire la signature');
   return response.json();
 }
 
@@ -263,7 +263,7 @@ export async function updateEmailSignature(
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ signature_html: signatureHtml }),
   });
-  if (!response.ok) throw new Error('Failed to update signature');
+  if (!response.ok) throw new Error('Impossible d’enregistrer la signature');
   return response.json();
 }
 
@@ -293,7 +293,7 @@ export async function listEmailMessages(
 
 export async function getEmailMessage(accountId: string, messageId: string): Promise<EmailMessage> {
   const response = await apiFetch(`${API_BASE}/api/email/messages/${messageId}?account_id=${accountId}`);
-  if (!response.ok) throw new Error('Failed to get message');
+  if (!response.ok) throw new Error('Impossible de lire le message');
   return response.json();
 }
 
@@ -303,7 +303,7 @@ export async function sendEmail(accountId: string, req: SendEmailRequest): Promi
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(req),
   });
-  if (!response.ok) throw new Error('Failed to send email');
+  if (!response.ok) throw new Error('L’envoi du message a échoué');
   return response.json();
 }
 
@@ -330,7 +330,7 @@ export async function createDraft(
       body: JSON.stringify(req),
     },
   );
-  if (!response.ok) throw new Error('Failed to create draft');
+  if (!response.ok) throw new Error('Impossible d’enregistrer le brouillon');
   return response.json();
 }
 
@@ -378,7 +378,7 @@ export async function deleteEmailMessage(
 // Labels
 export async function listEmailLabels(accountId: string): Promise<EmailLabel[]> {
   const response = await apiFetch(`${API_BASE}/api/email/labels?account_id=${accountId}`);
-  if (!response.ok) throw new Error('Failed to list labels');
+  if (!response.ok) throw new Error('Impossible de lire les dossiers');
   return response.json();
 }
 
@@ -388,7 +388,7 @@ export async function createEmailLabel(accountId: string, name: string): Promise
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name }),
   });
-  if (!response.ok) throw new Error('Failed to create label');
+  if (!response.ok) throw new Error('Impossible de créer le dossier');
   return response.json();
 }
 
@@ -398,7 +398,7 @@ export async function updateEmailLabel(accountId: string, labelId: string, name:
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name }),
   });
-  if (!response.ok) throw new Error('Failed to update label');
+  if (!response.ok) throw new Error('Impossible de renommer le dossier');
   return response.json();
 }
 
@@ -406,7 +406,7 @@ export async function deleteEmailLabel(accountId: string, labelId: string): Prom
   const response = await apiFetch(`${API_BASE}/api/email/labels/${labelId}?account_id=${accountId}`, {
     method: 'DELETE',
   });
-  if (!response.ok) throw new Error('Failed to delete label');
+  if (!response.ok) throw new Error('Impossible de supprimer le dossier');
 }
 
 // Smart Email Features

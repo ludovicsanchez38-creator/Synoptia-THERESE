@@ -118,17 +118,21 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
     }
   }
 
-  async function loadLabels(accountId: string) {
+  // B-473 : rend vrai en cas de succès, pour que Rafraîchir puisse signaler
+  // un échec au lieu de tourner puis se taire.
+  async function loadLabels(accountId: string): Promise<boolean> {
     try {
       const labelsData = await api.listEmailLabels(accountId);
       setLabels(labelsData);
       setNeedsReauth(false);
+      return true;
     } catch (err: any) {
       console.error('Failed to load labels:', err);
       // Détecter si c'est un problème de token expiré
       if (err?.message?.includes('401') || err?.message?.includes('token') || err?.message?.includes('expired')) {
         setNeedsReauth(true);
       }
+      return false;
     }
   }
 
@@ -139,7 +143,11 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
     }
     setSyncing(true);
     try {
-      await loadLabels(currentAccountId);
+      const ok = await loadLabels(currentAccountId);
+      if (!ok) {
+        setError('Impossible de rafraîchir les dossiers. Vérifie la connexion du compte.');
+        return;
+      }
       triggerRefresh();
     } catch (err) {
       console.error('Failed to sync:', err);

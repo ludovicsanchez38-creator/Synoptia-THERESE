@@ -26,11 +26,13 @@ import { EmailPriorityBadge } from './EmailPriorityBadge';
 import { sanitizeEmailHtml } from '../../lib/sanitizeEmailHtml';
 import { useExternalActionConfirmation } from '../app/useExternalActionConfirmation';
 import { Spinner } from '../ui/Spinner';
+import { texteDuCorps } from '../../lib/texteDuCorpsEmail';
 
 interface EmailDetailProps {
   accountId: string;
   messageId: string;
 }
+
 
 export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
   const requestExternalAction = useExternalActionConfirmation();
@@ -176,7 +178,7 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
   // client mail), au lieu d'un corps vide.
   function buildQuotedReply(): string {
     if (!message) return '';
-    const original = message.body_plain || message.snippet || '';
+    const original = texteDuCorps(message);
     if (!original.trim()) return '';
     const quoted = original
       .split('\n')
@@ -200,7 +202,7 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
 
   function handleForward() {
     if (!message) return;
-    const forwardBody = `\n\n---------- Message transféré ----------\nDe : ${message.from_name || message.from_email} <${message.from_email}>\nDate : ${formatDate(message.date)}\nObjet : ${message.subject || '(Sans objet)'}\nÀ : ${message.to_emails.join(', ')}\n\n${message.body_plain || ''}`;
+    const forwardBody = `\n\n---------- Message transféré ----------\nDe : ${message.from_name || message.from_email} <${message.from_email}>\nDate : ${formatDate(message.date)}\nObjet : ${message.subject || '(Sans objet)'}\nÀ : ${message.to_emails.join(', ')}\n\n${texteDuCorps(message)}`;
     startComposing([], `Fwd: ${message.subject || ''}`, forwardBody);
   }
 
