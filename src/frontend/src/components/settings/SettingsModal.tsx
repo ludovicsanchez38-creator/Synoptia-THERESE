@@ -89,7 +89,8 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
   const [apiKeys, setApiKeys] = useState<Record<string, boolean>>({});
   const [corruptedKeys, setCorruptedKeys] = useState<string[]>([]);
   const [apiKeyInput, setApiKeyInput] = useState('');
-  const [showApiKey, setShowApiKey] = useState(false);
+  // B-526 : un interrupteur de visibilité PAR champ de clé, jamais un seul drapeau partagé.
+  const [clesVisibles, setClesVisibles] = useState<Record<string, boolean>>({});
 
   // Ollama
   const [ollamaStatus, setOllamaStatus] = useState<api.OllamaStatus | null>(null);
@@ -642,8 +643,8 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
             corruptedKeys={corruptedKeys}
             apiKeyInput={apiKeyInput}
             setApiKeyInput={setApiKeyInput}
-            showApiKey={showApiKey}
-            setShowApiKey={setShowApiKey}
+            showApiKey={clesVisibles.llm ?? false}
+            setShowApiKey={(v) => setClesVisibles((c) => ({ ...c, llm: v }))}
             ollamaStatus={ollamaStatus}
             ollamaModels={ollamaModels}
             systemResources={systemResources}
@@ -662,8 +663,8 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
         return (
           <ServicesTab
             apiKeys={apiKeys}
-            showApiKey={showApiKey}
-            setShowApiKey={setShowApiKey}
+            clesVisibles={clesVisibles}
+            basculerCle={(id) => setClesVisibles((c) => ({ ...c, [id]: !c[id] }))}
             error={error}
             setError={setError}
             selectedImageProvider={selectedImageProvider}

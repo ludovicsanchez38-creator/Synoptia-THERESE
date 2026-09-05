@@ -21,6 +21,8 @@ import { Spinner } from '../ui/Spinner';
 
 export function VoiceLocalSection() {
   const [status, setStatus] = useState<VoiceLocalStatus | null>(null);
+  // B-518 : un statut illisible se dit, au lieu d'un rendu null muet.
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [model, setModel] = useState<string>('base');
   const [useLocal, setUseLocal] = useState<boolean>(isVoiceLocalPreferred());
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +43,7 @@ export function VoiceLocalSection() {
     try {
       const s = await getVoiceLocalStatus();
       setStatus(s);
+      setLoadError(null);
       reconcilePreference(s);
       // Continuer le polling tant que le téléchargement tourne
       if (s.setup.state === 'running' && pollRef.current === null) {
@@ -58,6 +61,7 @@ export function VoiceLocalSection() {
       }
     } catch (err) {
       console.error('Statut voix locale indisponible:', err);
+      setLoadError('Statut de la voix locale illisible : le serveur n’a pas répondu.');
     }
   }, [reconcilePreference]);
 
@@ -91,7 +95,17 @@ export function VoiceLocalSection() {
     setVoiceLocalPreferred(next);
   }
 
-  if (!status) return null;
+  if (!status) {
+    if (!loadError) return null;
+    return (
+      <section className="rounded-md border border-border/50 p-4">
+        <p role="alert" className="text-sm text-error">{loadError}</p>
+        <button type="button" onClick={() => void refresh()} className="mt-2 rounded-md border border-border px-3 py-1.5 text-sm font-semibold text-text">
+          Réessayer
+        </button>
+      </section>
+    );
+  }
 
   const modelInfo = status.whisper_models[model];
   const downloadMb = modelInfo ? modelInfo.size_mb + 65 : 210; // + voix Piper ~60 Mo

@@ -15,8 +15,9 @@ import { Spinner } from '../ui/Spinner';
 export interface ServicesTabProps {
   // Clés API (pour vérifier si configurées)
   apiKeys: Record<string, boolean>;
-  showApiKey: boolean;
-  setShowApiKey: (v: boolean) => void;
+  /** B-526 : visibilité par identifiant de clé (openai_image, gemini_image, fal, groq). */
+  clesVisibles: Record<string, boolean>;
+  basculerCle: (id: string) => void;
   error: string | null;
   setError: (v: string | null) => void;
   // Génération d'images
@@ -52,8 +53,8 @@ export interface ServicesTabProps {
 
 export function ServicesTab({
   apiKeys,
-  showApiKey,
-  setShowApiKey,
+  clesVisibles,
+  basculerCle,
   error,
   setError,
   selectedImageProvider,
@@ -167,7 +168,7 @@ export function ServicesTab({
                       <label htmlFor={`settings-image-key-${provider.apiKeyId}`} className="sr-only">Clé API {provider.keyName}</label>
                       <input
                         id={`settings-image-key-${provider.apiKeyId}`}
-                        type={showApiKey ? 'text' : 'password'}
+                        type={clesVisibles[provider.apiKeyId] ? 'text' : 'password'}
                         value={keyInput}
                         onChange={(e) => {
                           setImageKeyInputs(prev => ({ ...prev, [provider.apiKeyId]: e.target.value }));
@@ -183,12 +184,12 @@ export function ServicesTab({
                       />
                       <button
                         type="button"
-                        onClick={() => setShowApiKey(!showApiKey)}
-                        aria-label={showApiKey ? `Masquer la clé API ${provider.keyName}` : `Afficher la clé API ${provider.keyName}`}
-                        aria-pressed={showApiKey}
+                        onClick={() => basculerCle(provider.apiKeyId)}
+                        aria-label={clesVisibles[provider.apiKeyId] ? `Masquer la clé API ${provider.keyName}` : `Afficher la clé API ${provider.keyName}`}
+                        aria-pressed={clesVisibles[provider.apiKeyId]}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors"
                       >
-                        {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        {clesVisibles[provider.apiKeyId] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
                     <Button
@@ -252,7 +253,7 @@ export function ServicesTab({
               <label htmlFor="settings-groq-key" className="sr-only">Clé API Groq</label>
               <input
                 id="settings-groq-key"
-                type={showApiKey ? 'text' : 'password'}
+                type={clesVisibles.groq ? 'text' : 'password'}
                 value={groqKeyInput}
                 onChange={(e) => {
                   setGroqKeyInput(e.target.value);
@@ -268,12 +269,12 @@ export function ServicesTab({
               />
               <button
                 type="button"
-                onClick={() => setShowApiKey(!showApiKey)}
-                aria-label={showApiKey ? 'Masquer la clé API Groq' : 'Afficher la clé API Groq'}
-                aria-pressed={showApiKey}
+                onClick={() => basculerCle('groq')}
+                aria-label={clesVisibles.groq ? 'Masquer la clé API Groq' : 'Afficher la clé API Groq'}
+                aria-pressed={clesVisibles.groq}
                 className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors"
               >
-                {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                {clesVisibles.groq ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
             </div>
             <Button variant="primary" onClick={onSaveGroqKey} disabled={groqSaving || !groqKeyInput.trim()}>
