@@ -280,6 +280,7 @@ class MCPService:
             logger.info("No MCP config found, starting fresh")
             return
 
+        a_rechiffrer = False
         try:
             with open(self.config_path) as f:
                 data = json.load(f)
@@ -290,13 +291,21 @@ class MCPService:
                     name=server_data["name"],
                     command=server_data["command"],
                     args=server_data.get("args", []),
-                    env=server_data.get("env", {}),
+                    # B-508 : un fichier d'avant le 31/08 porte ses clés en clair ; elles
+                    # sont chiffrées au chargement et le fichier est réécrit chiffré.
+                    env=_chiffrer_variables(server_data.get("env", {})),
                     enabled=server_data.get("enabled", True),
                     created_at=datetime.fromisoformat(server_data.get("created_at", datetime.now(UTC).isoformat())),
                 )
                 self.servers[server.id] = server
                 logger.info(f"Loaded MCP server config: {server.name}")
+                brut = server_data.get("env") or {}
+                if any(brut.get(k) != v for k, v in server.env.items()):
+                    a_rechiffrer = True
 
+            if a_rechiffrer:
+                self._ecrire_config()
+                logger.info("Configuration MCP réécrite avec ses variables chiffrées (B-508)")
         except Exception as e:
             # B-457 (05/09/2026) : une corruption disparaissait dans une ligne
             # de journal et tous les connecteurs avec elle. Le fichier fautif
