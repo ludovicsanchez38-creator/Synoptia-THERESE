@@ -52,6 +52,8 @@ import {
   type MeetingTarget,
 } from './MeetingConversationCard';
 import { TodayDashboardCard } from './TodayDashboardCard';
+import { IndiceDeDefilement } from './IndiceDeDefilement';
+import { destinationDuPoint } from '../../lib/pointDAttention';
 import { CalculatorWorkspaceCanvas } from './CalculatorWorkspaceCanvas';
 import { DeliverablesWorkspaceCanvas } from './DeliverablesWorkspaceCanvas';
 import { ImagesWorkspaceCanvas } from './ImagesWorkspaceCanvas';
@@ -1671,6 +1673,20 @@ export function ConversationCanvasPrototype() {
                         if (view === 'chat') openChat();
                         else openEmbeddedView(view);
                       }}
+                      onOpenItem={(item) => {
+                        // B-563 : un point d'attention nommé ouvre l'objet
+                        // précis quand on le connaît, pas la liste du module.
+                        const cible = destinationDuPoint(item);
+                        if (cible.kind === 'invoice') {
+                          setSelectedInvoiceId(cible.id);
+                          setScenario('invoice');
+                          setCanvasOpen(true);
+                          void openInvoice(cible.id);
+                          return;
+                        }
+                        if (cible.view === 'chat') openChat();
+                        else openEmbeddedView(cible.view);
+                      }}
                       setup={setupStatus}
                       onSetupEmail={() => openEmbeddedView('email')}
                     />
@@ -1870,6 +1886,8 @@ export function ConversationCanvasPrototype() {
                 className="pointer-events-none absolute inset-x-0 bottom-0 bg-[linear-gradient(to_top,var(--color-bg)_70%,transparent)] px-5 pb-5 pt-12 sm:px-8"
                 data-testid="prototype-composer-backdrop"
               >
+                {/* B-562 : tant que le fil n'est pas au bout, on le dit. */}
+                <IndiceDeDefilement cible={conversationScrollRef} />
                 <div className={`pointer-events-auto mx-auto transition-[max-width] duration-200 ${canvasOpen ? 'max-w-[760px]' : 'max-w-[860px]'}`}>
                   <div className="rounded-md border border-border bg-surface p-2 shadow-[0_18px_45px_-24px_rgba(16,28,54,0.45)] focus-within:border-accent focus-within:shadow-[0_0_0_3px_rgba(34,211,238,0.12),0_18px_45px_-24px_rgba(16,28,54,0.45)]">
                     {selectedCapability && SelectedCapabilityIcon && (

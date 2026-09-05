@@ -186,7 +186,9 @@ export const capabilities: CapabilityItem[] = [
     prompt: 'Fais le point sur mes projets et signale les prochains blocages.', destination: { kind: 'view', view: 'projects' },
   },
   {
-    id: 'billing', group: 'business', title: 'Devis et factures', icon: Receipt, scenario: 'invoice',
+    // B-567 : la palette portait « Devis et factures » deux fois (canevas et
+    // liste). Le canevas se nomme par son travail, comme TITRES_ETABLI.
+    id: 'billing', group: 'business', title: 'Facturer un client', icon: Receipt, scenario: 'invoice',
     description: 'Créer, vérifier et suivre les documents commerciaux avec validation avant envoi.',
     features: ['Devis/Factures/Avoirs', 'PDF conforme', 'Multi-devises'], keywords: ['devis', 'facture', 'paiement'],
     prompt: 'Crée un devis à partir de cette relation et montre-le-moi avant validation.',
