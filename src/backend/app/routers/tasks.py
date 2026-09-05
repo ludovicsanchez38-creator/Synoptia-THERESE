@@ -138,7 +138,7 @@ async def get_task(
     """Récupère une tâche spécifique."""
     task = await session.get(Task, task_id)
     if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
+        raise HTTPException(status_code=404, detail="Tâche introuvable.")
 
     return TaskResponse(
         id=task.id,
@@ -171,7 +171,7 @@ async def create_task(
         try:
             due_date = datetime.fromisoformat(request.due_date.replace("Z", ""))
         except ValueError:
-            raise HTTPException(status_code=400, detail="Invalid due_date format")
+            raise HTTPException(status_code=400, detail="Format de date d'échéance invalide (attendu : ISO 8601).")
 
     # Create task
     task = Task(
@@ -216,7 +216,7 @@ async def update_task(
     """Met à jour une tâche existante."""
     task = await session.get(Task, task_id)
     if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
+        raise HTTPException(status_code=404, detail="Tâche introuvable.")
 
     # B-032 : le contact était contrôlé à la création et ignoré ici. Même
     # devoir des deux côtés, sinon la porte de service reste ouverte.
@@ -248,7 +248,7 @@ async def update_task(
             try:
                 task.due_date = datetime.fromisoformat(request.due_date.replace("Z", ""))
             except ValueError:
-                raise HTTPException(status_code=400, detail="Invalid due_date format")
+                raise HTTPException(status_code=400, detail="Format de date d'échéance invalide (attendu : ISO 8601).")
     if "project_id" in envoyes:
         task.project_id = request.project_id
     # B-032 : champ déclaré au schéma, accepté en 200, puis jeté - la réponse
@@ -288,7 +288,7 @@ async def delete_task(
     """Supprime une tâche."""
     task = await session.get(Task, task_id)
     if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
+        raise HTTPException(status_code=404, detail="Tâche introuvable.")
 
     await session.delete(task)
     await session.commit()
@@ -309,7 +309,7 @@ async def complete_task(
     """Marque une tâche comme complétée."""
     task = await session.get(Task, task_id)
     if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
+        raise HTTPException(status_code=404, detail="Tâche introuvable.")
 
     task.status = "done"
     task.completed_at = datetime.now(UTC)
@@ -343,7 +343,7 @@ async def uncomplete_task(
     """Marque une tâche comme non complétée."""
     task = await session.get(Task, task_id)
     if not task:
-        raise HTTPException(status_code=404, detail="Task not found")
+        raise HTTPException(status_code=404, detail="Tâche introuvable.")
 
     task.status = "todo"
     task.completed_at = None
