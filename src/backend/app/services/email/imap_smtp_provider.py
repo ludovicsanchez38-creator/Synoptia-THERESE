@@ -519,10 +519,31 @@ class ImapSmtpProvider(EmailProvider):
     @staticmethod
     def _dossier_brouillons(mailbox: MailBox) -> str:
         """Nom du dossier Brouillons du serveur, « Drafts » à défaut."""
-        for folder in mailbox.folder.list():
-            if "draft" in folder.name.lower():
-                return folder.name
-        return "Drafts"
+        return ImapSmtpProvider._dossier_special(mailbox, "DRAFTS", "Drafts")
+
+    @staticmethod
+    def _dossier_corbeille(mailbox: MailBox) -> str:
+        """Nom du dossier Corbeille du serveur, « Trash » à défaut."""
+        return ImapSmtpProvider._dossier_special(mailbox, "TRASH", "Trash")
+
+    @staticmethod
+    def _dossier_special(mailbox: MailBox, label: str, defaut: str) -> str:
+        """B-502 (05/09/2026) : sur une boîte en français, « Brouillons » et
+        « Corbeille » n'étaient pas reconnus (heuristique anglaise seule) et
+        le brouillon partait vers un Drafts inexistant. Même résolution que
+        resolve_folder_for_label : flag special-use RFC 6154, puis noms
+        multilingues, puis le défaut."""
+        wanted_flag, name_hints = ImapSmtpProvider._SPECIAL_FOLDER_MATCH[label]
+        infos = list(mailbox.folder.list())
+        for fi in infos:
+            if any(f.lower() == wanted_flag.lower() for f in (getattr(fi, "flags", None) or ())):
+                return fi.name
+        for fi in infos:
+            delim = getattr(fi, "delim", None)
+            leaf = fi.name.split(delim)[-1] if delim else fi.name
+            if any(h in leaf.lower() for h in name_hints):
+                return fi.name
+        return defaut
 
     @staticmethod
     def _uid_appendu(resultat: object) -> str | None:
@@ -655,11 +676,7 @@ class ImapSmtpProvider(EmailProvider):
                     mailbox.delete([message_id])
                 else:
                     # Move to Trash
-                    trash_folder = "Trash"
-                    for folder in mailbox.folder.list():
-                        if "trash" in folder.name.lower() or "deleted" in folder.name.lower():
-                            trash_folder = folder.name
-                            break
+                    trash_folder = self._dossier_corbeille(mailbox)  # B-502
                     mailbox.move([message_id], trash_folder)
 
         await self._run_imap_operation(
