@@ -8,6 +8,21 @@ import pytest
 from httpx import AsyncClient
 
 
+def _reponse_hermetique(response) -> None:
+    """B-349 (05/09/2026) : le fournisseur est MORT par construction
+    (conftest : OLLAMA_BASE_URL sur un port fermé). Le chat convertit cette
+    panne en réponse 200 « Désolée : … » (ou en évènement SSE d'erreur) :
+    c'est cette réponse-là, déterministe, qu'on attend. Avant, la tolérance
+    « 200 ou 401 ou 503 » acceptait aussi bien un vrai modèle du poste
+    (100 s d'attente) que la panne, et ne prouvait rien."""
+    assert response.status_code == 200, response.text[:200]
+    if "text/event-stream" in response.headers.get("content-type", ""):
+        assert "error" in response.text or "generation" in response.text
+        return
+    contenu = response.json().get("content", "")
+    assert contenu.startswith("Désolée"), contenu[:200]
+
+
 class TestChatBasics:
     """Tests for basic chat functionality."""
 
@@ -20,7 +35,7 @@ class TestChatBasics:
         response = await client.post("/api/chat/send", json=sample_chat_message)
 
         # Streaming endpoint returns text/event-stream
-        assert response.status_code in [200, 401, 503]
+        _reponse_hermetique(response)
 
         if response.status_code == 200:
             assert "text/event-stream" in response.headers.get("content-type", "")
@@ -33,7 +48,7 @@ class TestChatBasics:
         response = await client.post("/api/chat/send", json=sample_chat_message)
 
         # May fail without LLM key
-        assert response.status_code in [200, 401, 503]
+        _reponse_hermetique(response)
 
     @pytest.mark.asyncio
     async def test_send_empty_message(self, client: AsyncClient):
@@ -45,7 +60,9 @@ class TestChatBasics:
 
         # Empty string passes Pydantic validation (it's a valid str),
         # but may fail at LLM level (no API key, etc.)
-        assert response.status_code in [200, 400, 422, 503]
+        assert response.status_code in [200, 400, 422], response.text[:200]
+        if response.status_code == 200:
+            _reponse_hermetique(response)
 
 
 class TestConversations:
@@ -127,7 +144,7 @@ class TestMemoryIntegration:
         response = await client.post("/api/chat/send", json=sample_chat_message)
 
         # Request should be accepted
-        assert response.status_code in [200, 401, 503]
+        _reponse_hermetique(response)
 
     @pytest.mark.asyncio
     async def test_message_excludes_memory_context(self, client: AsyncClient, sample_chat_message):
@@ -136,7 +153,7 @@ class TestMemoryIntegration:
 
         response = await client.post("/api/chat/send", json=sample_chat_message)
 
-        assert response.status_code in [200, 401, 503]
+        _reponse_hermetique(response)
 
 
 class TestSlashCommands:
@@ -151,7 +168,7 @@ class TestSlashCommands:
         })
 
         # Command should be processed (may fail for other reasons)
-        assert response.status_code in [200, 400, 401, 404, 503]
+        _reponse_hermetique(response)
 
     @pytest.mark.asyncio
     async def test_analyse_command(self, client: AsyncClient):
@@ -161,7 +178,7 @@ class TestSlashCommands:
             "stream": False,
         })
 
-        assert response.status_code in [200, 400, 401, 404, 503]
+        _reponse_hermetique(response)
 
     @pytest.mark.asyncio
     async def test_directive_inline_pure_sans_llm(self, client: AsyncClient):
@@ -252,7 +269,7 @@ class TestLLMProviders:
         response = await client.post("/api/chat/send", json=sample_chat_message)
 
         # Should use selected provider
-        assert response.status_code in [200, 401, 503]
+        _reponse_hermetique(response)
 
 
 class TestWebSearchIntegration:
@@ -267,7 +284,7 @@ class TestWebSearchIntegration:
         sample_chat_message["message"] = "Quelle est la meteo aujourd'hui ?"
         response = await client.post("/api/chat/send", json=sample_chat_message)
 
-        assert response.status_code in [200, 401, 503]
+        _reponse_hermetique(response)
 
 
 class TestMCPToolCalling:
@@ -333,7 +350,7 @@ class TestEntityExtraction:
         })
 
         # Request should be accepted
-        assert response.status_code in [200, 401, 503]
+        _reponse_hermetique(response)
 
 
 class TestConversationHistory:
@@ -376,7 +393,9 @@ class TestChatErrors:
         })
 
         # Should either accept or reject gracefully
-        assert response.status_code in [200, 400, 401, 404, 422, 503]
+        assert response.status_code in [200, 400, 404, 422], response.text[:200]
+        if response.status_code == 200:
+            _reponse_hermetique(response)
 
 
 # B-055 — une conversation supprimée ne doit pas survivre dans l'index
