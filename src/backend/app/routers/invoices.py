@@ -822,7 +822,9 @@ async def generate_invoice_pdf(
         "validite_jours": invoice.validite_jours,
         "issue_date": invoice.issue_date.isoformat(),
         "due_date": invoice.due_date.isoformat(),
-        "status": invoice.status,
+        # B-468 : le PDF porte le statut EFFECTIF (une facture envoyée et
+        # échue est « En retard »), comme la liste et l'encours.
+        "status": statut_effectif_facture(invoice.status, invoice.document_type, invoice.due_date),
         "subtotal_ht": invoice.subtotal_ht,
         "total_tax": invoice.total_tax,
         "total_ttc": invoice.total_ttc,
