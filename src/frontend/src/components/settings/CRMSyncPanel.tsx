@@ -6,6 +6,8 @@
  */
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { ApiError } from '../../services/api/core';
+import { listGoogleSheets } from '../../services/api/crm';
 import { RefreshCw, Link2, Check, AlertCircle, ExternalLink, Cloud, Key, Upload, List, Search } from 'lucide-react';
 import { Button } from '../ui/Button';
 import * as api from '../../services/api';
@@ -195,23 +197,8 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
       setLoadingSheets(true);
       setError(null);
 
-      const response = await fetch('/api/crm/google-sheets/list', {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-
-      if (response.status === 401) {
-        setError('Authentification Google Sheets requise. Connectez-vous d\'abord.');
-        return;
-      }
-
-      if (!response.ok) {
-        throw new Error(`Erreur ${response.status}: ${await response.text()}`);
-      }
-
-      const data = await response.json();
+      // B-354 : client API (base d'URL + jeton), plus de fetch relatif.
+      const data = await listGoogleSheets();
       setExistingSheets(data.sheets || []);
       setShowExistingSheets(true);
       
@@ -219,6 +206,10 @@ export function CRMSyncPanel({ onSyncComplete }: CRMSyncPanelProps) {
         setError('Aucune feuille Google Sheets trouvée dans votre compte.');
       }
     } catch (err: any) {
+      if (err instanceof ApiError && err.status === 401) {
+        setError(err.message || 'Authentification Google Sheets requise. Connectez-vous d\'abord.');
+        return;
+      }
       console.error('Erreur lors du chargement des feuilles:', err);
       setError(err.message || 'Impossible de charger les feuilles existantes');
     } finally {

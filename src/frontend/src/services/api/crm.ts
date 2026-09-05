@@ -40,3 +40,20 @@ export async function importVCFContacts(file: File, updateExisting = true): Prom
   if (!response.ok) { const d = await response.json().catch(() => ({})); throw new Error(d.detail || d.message || `Erreur ${response.status}`); }
   return response.json();
 }
+
+
+export interface GoogleSheetResume {
+  id: string;
+  name: string;
+  modified_time?: string | null;
+  url?: string;
+}
+
+/**
+ * B-354 : liste les feuilles Google Sheets existantes via le client API
+ * (base d'URL et jeton de session), plus par un fetch relatif résolu sur
+ * l'origine du frontend.
+ */
+export async function listGoogleSheets(): Promise<{ sheets: GoogleSheetResume[]; total: number; message?: string }> {
+  return request<{ sheets: GoogleSheetResume[]; total: number; message?: string }>('/api/crm/google-sheets/list');
+}
