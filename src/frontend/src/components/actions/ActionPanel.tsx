@@ -418,6 +418,7 @@ export function ActionPanel() {
     activeTask,
     isLoading,
     isPanelOpen,
+    error,
     loadAgents,
     selectAgent,
     launchAction,
@@ -563,7 +564,21 @@ export function ActionPanel() {
                 </div>
               ))}
 
-              {agents.length === 0 && !isLoading && (
+              {error && !isLoading && (
+                <div role="alert" className="rounded-md border border-error/20 bg-error/5 px-3 py-3 text-sm text-error">
+                  <p>Impossible de charger les actions : {error}</p>
+                  <button
+                    type="button"
+                    onClick={() => void loadAgents()}
+                    className="mt-2 rounded-sm border border-border px-3 py-1.5 text-sm font-semibold text-text"
+                  >
+                    Réessayer
+                  </button>
+                </div>
+              )}
+
+              {/* B-374 : un échec de chargement n'est pas une liste vide. */}
+              {agents.length === 0 && !isLoading && !error && (
                 <p className="text-sm text-text-muted text-center py-8">
                   Aucune action disponible.
                 </p>
