@@ -24,7 +24,7 @@ from datetime import UTC, datetime
 from typing import AsyncGenerator, cast
 
 from app.models.database import get_session
-from app.models.entities import Document, DocumentPiste, DocumentSection
+from app.models.entities import Contact, Document, DocumentPiste, DocumentSection, Project
 from app.models.schemas_documents import (
     DocumentCreate,
     DocumentResponse,
@@ -186,6 +186,12 @@ async def create_document(
     session: AsyncSession = Depends(get_session),
 ) -> DocumentResponse:
     """Crée un nouveau document, vide de toute section."""
+    # B-561 (05/09/2026) : un document naissait rattaché à un projet ou un
+    # contact inexistant. Les tâches vérifient déjà leur projet : même devoir.
+    if payload.project_id and await session.get(Project, payload.project_id) is None:
+        raise HTTPException(status_code=404, detail="Projet non trouvé")
+    if payload.contact_id and await session.get(Contact, payload.contact_id) is None:
+        raise HTTPException(status_code=404, detail="Contact non trouvé")
     document = Document(
         title=payload.title,
         brief=payload.brief,
