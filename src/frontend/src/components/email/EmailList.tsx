@@ -283,12 +283,9 @@ export function EmailList({ accountId }: EmailListProps) {
           setNeedsReauth(true);
           setTimeout(() => setError(null), 5000);
         } else {
-          // Retirer le message de l'UI même en cas d'erreur non-auth :
-          // Gmail a probablement déjà traité la suppression côté serveur
-          removeMessage(messageId);
-          if (currentMessageId === messageId) {
-            setCurrentMessage(null);
-          }
+          // B-533 : sans confirmation du serveur, le message reste à l'écran.
+          setError('La suppression n’a pas été confirmée par le serveur. Le message est conservé.');
+          setTimeout(() => setError(null), 5000);
         }
       }
     });

@@ -156,10 +156,8 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
           setTrashError('Connexion Gmail expirée. Reconnecte-toi via la bannière en haut.');
           setNeedsReauth(true);
         } else {
-          // Retirer le message de l'UI même en cas d'erreur non-auth :
-          // Gmail a probablement déjà traité la suppression côté serveur
-          removeMessage(messageId);
-          setCurrentMessage(null);
+          // B-533 : sans confirmation du serveur, le message reste à l'écran.
+          setTrashError('La suppression n’a pas été confirmée par le serveur. Le message est conservé.');
         }
       }
     });

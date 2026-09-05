@@ -35,6 +35,8 @@ export function CredentialsStep({
     clientSecret: null,
   });
   const [validating, setValidating] = useState(false);
+  // B-529 : un échec réseau de la vérification se voit, distinct d'une saisie absente.
+  const [validationError, setValidationError] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -70,6 +72,7 @@ export function CredentialsStep({
     const timer = setTimeout(async () => {
       if (clientId.trim() && clientSecret.trim()) {
         setValidating(true);
+        setValidationError(null);
         try {
           const result = await api.validateEmailCredentials(clientId, clientSecret);
           setValidation({
@@ -84,6 +87,7 @@ export function CredentialsStep({
           });
         } catch (error) {
           console.error('Validation failed:', error);
+          setValidationError('La vérification des identifiants n’a pas abouti : le serveur n’a pas répondu. Modifie un champ pour réessayer.');
         } finally {
           setValidating(false);
         }
@@ -180,6 +184,9 @@ export function CredentialsStep({
           >
             {validation.clientSecret.message}
           </p>
+        )}
+        {validationError && (
+          <p role="alert" className="text-sm text-error">{validationError}</p>
         )}
       </div>
 
