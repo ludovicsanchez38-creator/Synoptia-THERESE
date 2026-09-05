@@ -677,23 +677,11 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         from app.services.http_client import get_http_client
 
         client = await get_http_client()
-        from app.services.providers import (
-            AnthropicProvider,
-            DeepSeekProvider,
-            GeminiProvider,
-            GLMProvider,
-            GrokProvider,
-            InfomaniakProvider,
-            KimiProvider,
-            MiniMaxProvider,
-            MistralProvider,
-            OllamaProvider,
-            OpenAIProvider,
-            OpenRouterProvider,
-            PerplexityProvider,
-            QwenProvider,
-        )
-
+        # B-579 (05/09/2026) : l'import local depuis le paquet `providers`
+        # réclamait GLMProvider, KimiProvider, MiniMaxProvider et QwenProvider,
+        # que le paquet n'exporte pas : la bascule du disjoncteur (B-488)
+        # levait ImportError à chaque appel. Les classes sont déjà importées
+        # en tête de module, comme pour le fournisseur partagé.
         provider_map = {
             LLMProvider.ANTHROPIC: AnthropicProvider,
             LLMProvider.OPENAI: OpenAIProvider,
