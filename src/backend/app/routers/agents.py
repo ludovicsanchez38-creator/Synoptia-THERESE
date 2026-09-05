@@ -195,7 +195,7 @@ async def agent_request(
     session: AsyncSession = Depends(get_session),
 ):
     """Soumet une demande au swarm d'agents. Retourne un stream SSE."""
-    configured_source = _get_source_path()
+    configured_source = await asyncio.to_thread(_get_source_path)
     source_path = request.source_path or configured_source
     if not source_path:
         raise HTTPException(
@@ -523,7 +523,7 @@ async def spawn_agent(request: SpawnAgentRequest):
     # B-099 : la garde du dépôt autorisé passe AVANT tout le reste, comme sur
     # /request. Un chemin hors périmètre n'a pas à dépendre de la validité du
     # profil demandé.
-    configured_source = _get_source_path()
+    configured_source = await asyncio.to_thread(_get_source_path)
     source_path = request.source_path or configured_source
     if source_path:
         # B-519 (05/09/2026) : le résultat de la garde était jeté ; l'exécuteur
@@ -951,7 +951,7 @@ async def get_config(
     from app.models.schemas_agents import AgentModelInfo
     from app.services.agents.config import AVAILABLE_MODELS
 
-    source_path = _get_source_path()
+    source_path = await asyncio.to_thread(_get_source_path)
 
     # Lire les modèles choisis en DB. BUG-149 : la clé LEGACY
     # agent_therese_model est lue EN PREMIER pour ne servir que de repli -
@@ -1060,7 +1060,7 @@ async def get_status(
     import shutil
 
     git_available = shutil.which("git") is not None
-    source_path = _get_source_path()
+    source_path = await asyncio.to_thread(_get_source_path)
     # BUG-163, contre-vérification : `False` affirmait l'absence de dépôt
     # AVANT même que le contrôle ait tourné. Quand git est introuvable ou
     # qu'aucun chemin n'est résolu, le bloc de vérification n'est pas exécuté
