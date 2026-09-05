@@ -4200,7 +4200,7 @@ dependencies = [
 
 [[package]]
 name = "therese"
-version = "0.66.1"
+version = "0.67.0"
 dependencies = [
  "dirs 5.0.1",
  "serde",
