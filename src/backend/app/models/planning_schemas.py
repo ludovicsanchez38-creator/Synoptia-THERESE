@@ -2,8 +2,8 @@
 
 from datetime import datetime
 from typing import Literal, Self
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+from app.models.fuseau import verifier_fuseau
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
@@ -17,10 +17,7 @@ class CalculateScheduleRequest(BaseModel):
 
     @model_validator(mode="after")
     def _validate_calendar(self) -> Self:
-        try:
-            ZoneInfo(self.timezone)
-        except ZoneInfoNotFoundError as exc:
-            raise ValueError("Fuseau horaire IANA invalide") from exc
+        verifier_fuseau(self.timezone)
         if self.starts_at is not None and self.starts_at.tzinfo is None:
             raise ValueError("starts_at doit porter un fuseau horaire")
         return self

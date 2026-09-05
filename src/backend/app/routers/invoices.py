@@ -167,6 +167,21 @@ async def _inserer_avec_numero_frais(
     )
 
 
+def _date_du_client(valeur: str, champ: str) -> datetime:
+    """B-558 (05/09/2026) : « 2026-02-30 » faisait lever ValueError jusqu'au 500.
+
+    Les autres entités (contacts, tâches, agenda, planning) refusent déjà une
+    date impossible en 422 ; la facturation était la seule à tomber en 500.
+    """
+    try:
+        return datetime.fromisoformat(valeur.replace("Z", ""))
+    except ValueError as invalide:
+        raise HTTPException(
+            status_code=422,
+            detail=f"{champ} invalide : attendu une date au format AAAA-MM-JJ.",
+        ) from invalide
+
+
 def _montants_de_ligne(
     ligne: InvoiceLineRequest, tva_applicable: bool = True
 ) -> tuple[float, float]:
@@ -419,8 +434,8 @@ async def create_invoice(
         raise HTTPException(status_code=400, detail="document_type doit être : devis, facture ou avoir")
 
     # Dates par défaut
-    issue_date = datetime.fromisoformat(request.issue_date.replace("Z", "")) if request.issue_date else datetime.now(UTC)
-    due_date = datetime.fromisoformat(request.due_date.replace("Z", "")) if request.due_date else issue_date + timedelta(days=30)
+    issue_date = _date_du_client(request.issue_date, "Date d'émission") if request.issue_date else datetime.now(UTC)
+    due_date = _date_du_client(request.due_date, "Date d'échéance") if request.due_date else issue_date + timedelta(days=30)
 
     # Validité par défaut pour les devis
     validite_jours = request.validite_jours
@@ -536,10 +551,10 @@ async def update_invoice(
         invoice.currency = request.currency
 
     if request.issue_date is not None:
-        invoice.issue_date = datetime.fromisoformat(request.issue_date.replace("Z", ""))
+        invoice.issue_date = _date_du_client(request.issue_date, "Date d'émission")
 
     if request.due_date is not None:
-        invoice.due_date = datetime.fromisoformat(request.due_date.replace("Z", ""))
+        invoice.due_date = _date_du_client(request.due_date, "Date d'échéance")
 
     if request.status is not None:
         invoice.status = request.status

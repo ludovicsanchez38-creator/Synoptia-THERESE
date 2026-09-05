@@ -7,8 +7,8 @@ Request/Response models for API endpoints.
 import re
 from datetime import UTC, date, datetime
 from typing import Annotated, Any, Literal, Self
-from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
+from app.models.fuseau import verifier_fuseau
 from pydantic import (
     BaseModel,
     ConfigDict,
@@ -917,10 +917,7 @@ class CreateEventRequest(BaseModel):
             raise ValueError("La fin ne peut pas précéder le début")
 
         if self.timezone:
-            try:
-                ZoneInfo(self.timezone)
-            except ZoneInfoNotFoundError as exc:
-                raise ValueError("Fuseau horaire IANA invalide") from exc
+            verifier_fuseau(self.timezone)
 
         for attendee in self.attendees or []:
             address = attendee.strip()
@@ -1119,9 +1116,12 @@ class InvoiceLineRequest(BaseModel):
     """
 
     description: str
-    quantity: float = Field(default=1.0, gt=0)
-    unit_price_ht: float = Field(ge=0)
-    tva_rate: float = Field(default=20.0, ge=0)  # Default TVA française normale
+    # B-559 (05/09/2026) : Pydantic accepte inf et nan par défaut, et +inf
+    # satisfait `ge=0`. Les totaux devenaient inf/nan et la base refusait la
+    # colonne NOT NULL au moment d'écrire : 500, après une écriture partielle.
+    quantity: float = Field(default=1.0, gt=0, allow_inf_nan=False)
+    unit_price_ht: float = Field(ge=0, allow_inf_nan=False)
+    tva_rate: float = Field(default=20.0, ge=0, allow_inf_nan=False)  # Default TVA française normale
 
 
 class CreateInvoiceRequest(BaseModel):
