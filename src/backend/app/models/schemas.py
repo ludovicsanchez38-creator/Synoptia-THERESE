@@ -940,6 +940,9 @@ class UpdateEventRequest(BaseModel):
     attendees: list[str] | None = None
     recurrence: list[str] | None = None
     timezone: str | None = None  # Fuseau IANA du poste (cf. CreateEventRequest)
+    # B-481 : statut et rappels n'étaient jamais transmis au provider
+    status: Literal["confirmed", "tentative", "cancelled"] | None = None
+    reminders: list[int] | None = None
 
 
 class ListEventsRequest(BaseModel):

@@ -23,12 +23,22 @@ from app.services.calendar.base_provider import (
     allday_end_from_wire,
     allday_end_to_wire,
 )
+from icalendar import Alarm as IAlarm
 from icalendar import Calendar as ICalendar
 from icalendar import Event as IEvent
 from icalendar import vDate, vDatetime
 
 logger = logging.getLogger(__name__)
 
+
+
+def _alarme(minutes_avant: int) -> IAlarm:
+    """Un VALARM d'affichage `minutes_avant` minutes avant l'événement (B-481)."""
+    alarme = IAlarm()
+    alarme.add("action", "DISPLAY")
+    alarme.add("description", "Rappel")
+    alarme.add("trigger", timedelta(minutes=-int(minutes_avant)))
+    return alarme
 
 class CalDAVProvider(CalendarProvider):
     """
@@ -329,6 +339,14 @@ class CalDAVProvider(CalendarProvider):
                     else:
                         vevent.add("rrule", rrule)
 
+            # B-481 (05/09/2026) : rappels et statut n'étaient jamais écrits
+            # alors que le provider annonce supports_reminders.
+            for minutes in request.reminders or []:
+                vevent.add_component(_alarme(minutes))
+            statut = getattr(request, "status", None)
+            if statut:
+                vevent.add("status", str(statut).upper())
+
             vevent.add("dtstamp", datetime.now(UTC))
 
             ical.add_component(vevent)
@@ -428,6 +446,24 @@ class CalDAVProvider(CalendarProvider):
                     if end_dt.tzinfo is None:
                         end_dt = tz.localize(end_dt)
                     vevent["dtend"] = vDatetime(end_dt)
+
+            # B-481 : participants, récurrence, statut et rappels suivent aussi.
+            if request.attendees is not None:
+                if "attendee" in vevent:
+                    del vevent["attendee"]
+                for attendee_email in request.attendees:
+                    vevent.add("attendee", f"mailto:{attendee_email}")
+            if request.recurrence is not None:
+                if "rrule" in vevent:
+                    del vevent["rrule"]
+                for rrule in request.recurrence:
+                    vevent.add("rrule", rrule[6:] if rrule.startswith("RRULE:") else rrule)
+            if request.status is not None:
+                vevent["status"] = request.status.upper()
+            if request.reminders is not None:
+                vevent.subcomponents = [c for c in vevent.subcomponents if c.name != "VALARM"]
+                for minutes in request.reminders:
+                    vevent.add_component(_alarme(minutes))
 
             # Update and save
             donnees = ical.to_ical().decode("utf-8")

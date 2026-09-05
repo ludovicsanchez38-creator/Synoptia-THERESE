@@ -1334,6 +1334,8 @@ async def update_event(
             all_day=all_day,
             attendees=request.attendees,
             recurrence=request.recurrence,
+            status=request.status,
+            reminders=request.reminders,
         )
 
         # B-260 : un conflit d'ecriture CalDAV est un CONFLIT, pas une panne.
