@@ -5,7 +5,7 @@
  * Réutilise les composants existants (DynamicSkillForm, SkillExecutionPanel, etc.)
  */
 
-import { useState, useCallback, useRef } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import type { CommandDefinition } from '../../types/command';
 import { runAction } from '../../lib/actionRegistry';
@@ -168,9 +168,21 @@ export function CommandExecutor({ command, onClose, onPromptSelect, onStartRFC }
     }
   }, [onPromptSelect, onClose, onStartRFC]);
 
-  // Déclencher l'exécution quand une commande est sélectionnée
-  if (command && !dynamicSkill && !skillState && !imagePromptCommand && !imageState && !isLoadingSchema) {
-    execute(command);
+  // Déclencher l'exécution quand une commande est sélectionnée.
+  // B-427 : gardée par identifiant. Avec StrictMode et une key fixe, un
+  // second rendu rejouait une navigation, un envoi de prompt ou un lancement
+  // d'agent. Le déclenchement reste synchrone au rendu (les surfaces qui
+  // s'ouvrent depuis une commande l'attendent immédiatement), mais une même
+  // commande ne s'exécute qu'une fois tant qu'elle reste sélectionnée.
+  const commandeExecuteeRef = useRef<string | null>(null);
+  if (!command) {
+    commandeExecuteeRef.current = null;
+  } else if (
+    !dynamicSkill && !skillState && !imagePromptCommand && !imageState && !isLoadingSchema
+    && commandeExecuteeRef.current !== command.id
+  ) {
+    commandeExecuteeRef.current = command.id;
+    void execute(command);
   }
 
   /**
@@ -235,8 +247,10 @@ export function CommandExecutor({ command, onClose, onPromptSelect, onStartRFC }
   }, [dynamicSkill, onPromptSelect, onClose, lancerGenerationFichier]);
 
   // Handlers image
+  const dernierPromptImageRef = useRef<string | null>(null);
   const handleImageGenerate = useCallback((customPrompt: string) => {
     if (!imagePromptCommand?.image_config) return;
+    dernierPromptImageRef.current = customPrompt; // B-433 : pour « Réessayer »
 
     const config = imagePromptCommand.image_config;
     const provider = config.provider as ImageProvider;
@@ -382,7 +396,11 @@ export function CommandExecutor({ command, onClose, onPromptSelect, onStartRFC }
               await downloadGeneratedImage(imageState.response.id);
             }
           }}
-          onRetry={() => setImageState(null)}
+          onRetry={() => {
+            const dernier = dernierPromptImageRef.current;
+            if (dernier) handleImageGenerate(dernier);
+            else setImageState(null);
+          }}
           onClose={() => { setImageState(null); onClose(); }}
         />
       )}
