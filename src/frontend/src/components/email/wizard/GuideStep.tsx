@@ -6,7 +6,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { HelpCircle, ExternalLink, ChevronLeft } from 'lucide-react';
+import { Bot, Check, ChevronLeft, ExternalLink, HelpCircle, X } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import * as api from '../../../services/api';
 import ReactMarkdown from 'react-markdown';
@@ -61,7 +61,7 @@ export function GuideStep({ provider, onHasProjectChange, onBack }: GuideStepPro
           <HelpCircle className="w-6 h-6 text-accent-cyan-ink" />
         </div>
         <h3 className="text-lg font-semibold text-text">
-          🤖 Je vais t'aider à configurer Gmail
+          <Bot className="inline w-5 h-5 mr-1 align-text-bottom" aria-hidden="true" />Je vais t'aider à configurer Gmail
         </h3>
         <p className="text-sm text-text-muted">
           As-tu déjà un projet Google Cloud avec des identifiants OAuth ?
@@ -77,7 +77,7 @@ export function GuideStep({ provider, onHasProjectChange, onBack }: GuideStepPro
             whileTap={{ scale: 0.98 }}
             className="w-full p-4 bg-background/40 border-2 border-border/30 rounded-md hover:border-accent-cyan/60 transition-all text-left"
           >
-            <p className="text-base font-medium text-text">✓ Oui, j'ai déjà des identifiants</p>
+            <p className="text-base font-medium text-text"><Check className="inline w-4 h-4 mr-1 align-text-bottom" aria-hidden="true" />Oui, j'ai déjà des identifiants</p>
             <p className="text-sm text-text-muted mt-1">
               Je vais passer directement à la saisie
             </p>
@@ -89,7 +89,7 @@ export function GuideStep({ provider, onHasProjectChange, onBack }: GuideStepPro
             whileTap={{ scale: 0.98 }}
             className="w-full p-4 bg-background/40 border-2 border-border/30 rounded-md hover:border-accent-cyan/60 transition-all text-left"
           >
-            <p className="text-base font-medium text-text">✗ Non, guide-moi</p>
+            <p className="text-base font-medium text-text"><X className="inline w-4 h-4 mr-1 align-text-bottom" aria-hidden="true" />Non, guide-moi</p>
             <p className="text-sm text-text-muted mt-1">
               Je vais te montrer comment créer un projet
             </p>

@@ -726,7 +726,7 @@ function DayView({
                 <div className="relative flex items-center">
                   <div className="w-2 h-2 rounded-full bg-instant -ml-1" />
                   <div className="flex-1 h-px bg-instant" />
-                  <span className="text-xs font-medium text-error ml-2">
+                  <span className="text-xs font-medium text-instant ml-2">
                     {String(currentHour).padStart(2, '0')}:{String(currentMinute).padStart(2, '0')}
                   </span>
                 </div>

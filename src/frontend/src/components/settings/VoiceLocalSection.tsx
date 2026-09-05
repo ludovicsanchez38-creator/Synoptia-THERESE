@@ -140,7 +140,7 @@ export function VoiceLocalSection() {
               aria-label="Utiliser la voix locale pour le micro"
             >
               <span
-                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                className={`inline-block h-4 w-4 transform rounded-full bg-ink-on-fill transition-transform ${
                   useLocal ? 'translate-x-6' : 'translate-x-1'
                 }`}
               />

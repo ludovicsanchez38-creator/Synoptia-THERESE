@@ -41,8 +41,9 @@ const attentionIcons = {
 } satisfies Record<AttentionKind, typeof Calendar>;
 
 const attentionColors: Record<AttentionKind, string> = {
-  event: 'bg-accent-tint text-accent',
-  task: 'bg-[var(--color-warning-tint)] text-warning',
+  // B-363 : un domaine, une couleur (comme COULEUR_DE_DOMAINE ci-dessous).
+  event: 'bg-domaine-agenda-tint text-domaine-agenda',
+  task: 'bg-domaine-taches-tint text-domaine-taches',
   follow_up: 'bg-domaine-prospects-tint text-domaine-prospects',
   invoice: 'bg-domaine-factures-tint text-domaine-factures',
   prospect: 'bg-domaine-prospects-tint text-domaine-prospects',
