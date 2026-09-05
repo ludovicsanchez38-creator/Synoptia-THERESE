@@ -1606,9 +1606,21 @@ async def import_contacts(
     if "contacts" not in data:
         raise HTTPException(status_code=400, detail="Format invalide: 'contacts' manquant")
 
+    # B-542 (05/09/2026) : même garde de forme que l'import de conversations
+    # (B-191). Une chaîne ou une liste de nombres sortait en 500 « réessaie »
+    # sur un AttributeError, alors que l'import ne pouvait jamais aboutir.
+    contacts = data["contacts"]
+    if not isinstance(contacts, list):
+        raise HTTPException(status_code=400, detail="Format invalide : 'contacts' doit être une liste")
+    if any(not isinstance(element, dict) for element in contacts):
+        raise HTTPException(
+            status_code=400,
+            detail="Format invalide : chaque contact doit être un objet (dictionnaire)",
+        )
+
     imported = 0
 
-    for contact_data in data["contacts"]:
+    for contact_data in contacts:
         # Check if contact already exists
         existing = await session.execute(
             select(Contact).where(Contact.id == contact_data.get("id"))
