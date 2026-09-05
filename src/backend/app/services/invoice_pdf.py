@@ -207,6 +207,15 @@ def _make_header_footer(
 # =====================================================================
 
 
+
+def _texte_pdf(texte: str) -> str:
+    """Échappe un texte libre pour Paragraph (B-507) : « Réf <ABC-12> » est
+    un texte, pas une balise. Les retours à la ligne deviennent <br/> APRÈS
+    l'échappement."""
+    from xml.sax.saxutils import escape
+
+    return escape(str(texte)).replace("\n", "<br/>")
+
 def _montant_fr(valeur: float) -> str:
     """Un montant a la francaise : deux decimales, separateur virgule.
 
@@ -314,6 +323,10 @@ class InvoicePDFGenerator:
         theme = self.theme
 
         # -- Emetteur --
+        # B-507 (05/09/2026) : tout texte libre passe par _texte_pdf, sinon un
+        # chevron devient une balise ReportLab (perte silencieuse ou 500).
+        user_profile = {k: _texte_pdf(v) if isinstance(v, str) else v for k, v in user_profile.items()}
+        contact_data = {k: _texte_pdf(v) if isinstance(v, str) else v for k, v in contact_data.items()}
         emetteur_parts: list[str] = []
         company = user_profile.get("company") or user_profile.get("name", "")
         if company:
@@ -502,7 +515,7 @@ class InvoicePDFGenerator:
                 ttc_display = f"{_montant_fr(line['total_ht'])} {currency_symbol}"
 
             row = [
-                Paragraph(line["description"], s["cell"]),
+                Paragraph(_texte_pdf(line["description"]), s["cell"]),
                 Paragraph(_quantite_fr(line["quantity"]), s["cell"]),
                 Paragraph(f"{_montant_fr(line['unit_price_ht'])} {currency_symbol}", s["cell"]),
                 Paragraph(tva_display, s["cell"]),
@@ -628,7 +641,7 @@ class InvoicePDFGenerator:
                 spaceAfter=3,
             ),
         )
-        body = Paragraph(notes, s["normal"])
+        body = Paragraph(_texte_pdf(notes), s["normal"])
         return [heading, body, Spacer(1, 6 * mm)]
 
     def _build_conditions_block(

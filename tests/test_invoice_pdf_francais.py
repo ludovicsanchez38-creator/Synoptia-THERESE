@@ -75,3 +75,40 @@ def test_le_texte_extrait_du_pdf_conserve_accents_et_statut_francais(tmp_path: P
     ):
         assert attendu in texte
     assert "SENT" not in texte
+
+
+class TestB507LesChevronsDUnTexteLibreNeSontPasDesBalises:
+    """B-507 (05/09/2026) : aucun échappement XML avant Paragraph. « Réf
+    <ABC-12> » disparaissait du PDF sans erreur (pris pour une balise), et
+    « Société <A> Conseil » faisait tomber la génération (ValueError du
+    paraparser, recopiée en 500).
+    """
+
+    def _pdf(self, tmp_path: Path, **surcharges) -> str:
+        donnees = donnees_facture()
+        donnees["lines"][0]["description"] = "Prestation Réf <ABC-12> à <urgent>"
+        contact = {
+            "name": "Société <A> Conseil",
+            "company": "Dupont <SARL> & Fils",
+            "email": "",
+            "phone": "",
+            "address": "1 rue a<b",
+        }
+        contact.update(surcharges)
+        chemin = InvoicePDFGenerator(output_dir=str(tmp_path)).generate_invoice_pdf(
+            invoice_data=donnees,
+            contact_data=contact,
+            user_profile={"name": "Marie <Exemple>", "company": "Atelier", "address": "Manosque",
+                          "siret": "12345678900011"},
+        )
+        return " ".join((p.extract_text() or "").replace("\n", " ") for p in PdfReader(chemin).pages)
+
+    def test_un_chevron_ne_fait_plus_tomber_la_generation(self, tmp_path: Path):
+        texte = self._pdf(tmp_path)
+        assert "Société <A> Conseil" in texte
+
+    def test_un_chevron_n_efface_plus_de_texte(self, tmp_path: Path):
+        texte = self._pdf(tmp_path)
+        assert "<ABC-12>" in texte, "la référence entre chevrons a disparu du PDF"
+        assert "<urgent>" in texte
+        assert "Dupont <SARL> & Fils" in texte
