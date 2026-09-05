@@ -585,6 +585,15 @@ async def delete_all_data(
 
     await session.commit()
 
+    # B-340 (05/09/2026) : la ligne Preference du profil est effacée, mais le
+    # cache de processus (`get_cached_profile`) servait encore nom et SIRET au
+    # prompt système du chat et au générateur de réponses e-mail après un 200
+    # « supprimées conformément au RGPD ». La route DELETE /profile invalide
+    # ce cache ; la purge globale doit le faire aussi.
+    from app.services.user_profile import set_cached_profile
+
+    set_cached_profile(None)
+
     # Purger Qdrant (embeddings vectoriels)
     try:
         from app.services.qdrant import get_qdrant_service
