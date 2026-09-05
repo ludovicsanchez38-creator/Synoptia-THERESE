@@ -120,3 +120,6 @@ test-results/
 
 # Fichiers AppleDouble (métadonnées macOS)
 ._*
+
+# Captures des campagnes personas (lourdes, hors dépôt ; les traces .md restent)
+docs/campagnes/*/captures/

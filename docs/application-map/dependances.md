@@ -17,6 +17,7 @@
 - `.github/workflows/tests-e2e.yml` → `playwright.config.ts` : 
 - `.github/workflows/tests-e2e.yml` → `src/frontend/package-lock.json` : 
 - `.github/workflows/tests-e2e.yml` → `tests/e2e/` : 
+- `.github/workflows/tests-e2e.yml` → `tests/e2e/run-e2e-backend.sh` : 
 - `.github/workflows/tests-e2e.yml` → `tests/e2e/stories/helpers/backend.ts` : 
 - `.github/workflows/tests-windows.yml` → `src/backend/tests` : 
 - `.github/workflows/tests-windows.yml` → `src/backend/tests/` : 
@@ -260,6 +261,7 @@
 - `src/backend/app/services/embeddings.py` → `src/backend/app/config.py` : 
 - `src/backend/app/services/encryption.py` → `src/backend/app/config.py` : 
 - `src/backend/app/services/entity_extractor.py` → `src/backend/app/services/llm.py` : 
+- `src/backend/app/services/export_profile.py` → `src/backend/app/config.py` : 
 - `src/backend/app/services/gmail_service.py` → `src/backend/app/services/html_sanitizer.py` : 
 - `src/backend/app/services/gmail_service.py` → `src/backend/app/services/http_client.py` : 
 - `src/backend/app/services/image_generator.py` → `src/backend/app/models/database.py` : 
@@ -277,6 +279,7 @@
 - `src/backend/app/services/invoice_pdf.py` → `src/backend/app/models/entities.py` : 
 - `src/backend/app/services/invoice_pdf.py` → `src/backend/app/services/pdf_theme.py` : 
 - `src/backend/app/services/invoice_status.py` → `app/services/civil_time.py` : 
+- `src/backend/app/services/invoice_status.py` → `src/backend/app/services/civil_time.py` : 
 - `src/backend/app/services/llm.py` → `app.services.circuit_breaker` : 
 - `src/backend/app/services/llm.py` → `src/backend/app/services/circuit_breaker.py` : 
 - `src/backend/app/services/llm.py` → `src/backend/app/services/context.py` : 
@@ -326,12 +329,14 @@
 - `src/backend/app/services/skills/code_executor.py` → `src/backend/app/services/skills/base.py` : 
 - `src/backend/app/services/skills/markdown_docx.py` → `src/backend/app/services/export_profile.py` : 
 - `src/backend/app/services/skills/model_capability.py` → `src/backend/app/services/providers/base.py` : 
+- `src/backend/app/services/skills/planning_skills.py` → `src/backend/app/services/skills/base.py` : 
 - `src/backend/app/services/skills/registry.py` → `src/backend/app/services/skills/installed_tool.py` : 
 - `src/backend/app/services/skills/tool_installer.py` → `src/backend/app/services/skills/code_executor.py` : 
 - `src/backend/app/services/slash_commands.py` → `src/backend/app/services/memory_tools.py` : 
 - `src/backend/app/services/slash_commands.py` → `src/backend/app/services/tool_confirmations.py` : 
 - `src/backend/app/services/slash_commands.py` → `src/backend/app/services/workspace_tools.py` : 
 - `src/backend/app/services/tool_confirmations.py` → `src/backend/app/services/contexte_execution.py` : 
+- `src/backend/app/services/traitements.py` → `src/backend/app/models/processing.py` : 
 - `src/backend/app/services/traitements.py` → `src/backend/app/services/task_registry.py` : 
 - `src/backend/app/services/user_commands.py` → `src/backend/app/config.py` : 
 - `src/backend/app/services/user_profile.py` → `app.models.entities.Preference` : 
@@ -419,6 +424,7 @@
 - `src/frontend/src/App.tsx` → `src/frontend/src/components/actions/index.ts` : 
 - `src/frontend/src/App.tsx` → `src/frontend/src/components/app/CommonToolConfirmationLayer.tsx` : 
 - `src/frontend/src/App.tsx` → `src/frontend/src/components/app/ExternalActionConfirmation.tsx` : 
+- `src/frontend/src/App.tsx` → `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` : 
 - `src/frontend/src/App.tsx` → `src/frontend/src/lib/capacites/generation.ts` : 
 - `src/frontend/src/App.tsx` → `src/frontend/src/lib/profileStorageIsolation.ts` : 
 - `src/frontend/src/OnboardingRafraichitLeProfil.test.tsx` → `src/frontend/src/App.tsx` : 
@@ -432,6 +438,7 @@
 - `src/frontend/src/components/atelier/AgentCatalog.tsx` → `src/frontend/src/services/api/agents.ts` : 
 - `src/frontend/src/components/atelier/AgentChat.tsx` → `src/frontend/src/lib/accessibility.ts` : 
 - `src/frontend/src/components/atelier/AgentChat.tsx` → `src/frontend/src/stores/openclawStore.ts` : 
+- `src/frontend/src/components/atelier/AgentSession.bulles.test.tsx` → `src/frontend/src/services/api/agents.ts` : 
 - `src/frontend/src/components/atelier/AgentSession.tsx` → `src/frontend/src/components/atelier/AgentCatalog.tsx` : 
 - `src/frontend/src/components/atelier/AgentSession.tsx` → `src/frontend/src/services/api/agents.ts` : 
 - `src/frontend/src/components/atelier/AtelierPanel.tsx` → `src/frontend/src/components/atelier/AgentCatalog.tsx` : 
@@ -439,6 +446,7 @@
 - `src/frontend/src/components/atelier/AtelierPanel.tsx` → `src/frontend/src/components/atelier/AgentSession.tsx` : 
 - `src/frontend/src/components/atelier/AtelierPanel.tsx` → `src/frontend/src/components/atelier/CodeReviewPanel.tsx` : 
 - `src/frontend/src/components/atelier/AtelierPanel.tsx` → `src/frontend/src/services/api/agents.ts` : 
+- `src/frontend/src/components/atelier/MissionStepper.tsx` → `src/frontend/src/services/api/agents` : 
 - `src/frontend/src/components/atelier/SessionList.tsx` → `src/frontend/src/stores/accessibilityStore.ts` : 
 - `src/frontend/src/components/atelier/SessionList.tsx` → `src/frontend/src/stores/openclawStore.ts` : 
 - `src/frontend/src/components/atelier/index.ts` → `src/frontend/src/components/atelier/AgentChat.tsx` : 
@@ -447,6 +455,8 @@
 - `src/frontend/src/components/board/AdvisorArcLayout.tsx` → `src/frontend/src/components/board/ModeSelector.tsx` : 
 - `src/frontend/src/components/board/AdvisorArcLayout.tsx` → `src/frontend/src/components/prototype/DecisionMissionPrototype` : 
 - `src/frontend/src/components/board/AdvisorArcLayout.tsx` → `src/frontend/src/components/prototype/DecisionMissionPrototype.tsx` : 
+- `src/frontend/src/components/board/AdvisorCard.tsx` → `src/frontend/src/components/ui/CompactMarkdown.tsx` : 
+- `src/frontend/src/components/board/BoardPanel.robustesse.test.tsx` → `src/frontend/src/components/board/BoardPanel.tsx` : 
 - `src/frontend/src/components/board/BoardPanel.tsx` → `src/frontend/src/components/board/AdvisorArcLayout.tsx` : 
 - `src/frontend/src/components/board/BoardPanel.tsx` → `src/frontend/src/components/board/annulerDeliberation.ts` : 
 - `src/frontend/src/components/board/DeliberationView.tsx` → `src/frontend/src/components/board/AdvisorCard.tsx` : 
@@ -462,6 +472,7 @@
 - `src/frontend/src/components/calendar/CalendarPanel.tsx` → `src/frontend/src/components/calendar/calendarErrors.ts` : 
 - `src/frontend/src/components/calendar/CalendarView.minuit.test.tsx` → `src/frontend/src/components/calendar/CalendarView.tsx` : 
 - `src/frontend/src/components/calendar/CalendarView.semaineDernierJour.test.tsx` → `src/frontend/src/components/calendar/CalendarView.tsx` : 
+- `src/frontend/src/components/calendar/CalendarView.semaineDernierJour.test.tsx` → `src/frontend/src/stores/calendarStore.ts` : 
 - `src/frontend/src/components/calendar/CalendarView.semaineFrancaise.test.tsx` → `src/frontend/src/components/calendar/CalendarView.tsx` : 
 - `src/frontend/src/components/calendar/CalendarView.tsx` → `src/frontend/src/components/calendar/calendarEventLayout.ts` : 
 - `src/frontend/src/components/calendar/CalendarView.tsx` → `src/frontend/src/components/calendar/calendarHours.ts` : 
@@ -472,6 +483,7 @@
 - `src/frontend/src/components/calendar/EventForm.tsx` → `src/frontend/src/lib/civilDate.ts` : 
 - `src/frontend/src/components/calendar/calendarEventLayout.ts` → `src/frontend/src/lib/civilDate.ts` : 
 - `src/frontend/src/components/chat/ActionChips.tsx` → `src/frontend/src/components/chat/actionChipsData.ts` : 
+- `src/frontend/src/components/chat/ChatHeader.test.tsx` → `src/frontend/src/components/chat/ChatHeader.tsx` : 
 - `src/frontend/src/components/chat/ChatHeader.tsx` → `src/frontend/src/hooks/useUXMode` : 
 - `src/frontend/src/components/chat/ChatInput.annulation.test.tsx` → `src/frontend/src/components/chat/ActionChips.tsx` : 
 - `src/frontend/src/components/chat/ChatInput.annulation.test.tsx` → `src/frontend/src/components/chat/ChatInput.tsx` : 
@@ -521,6 +533,8 @@
 - `src/frontend/src/components/chat/actionChipsData.ts` → `src/frontend/src/components/chat/ActionChips.tsx` : 
 - `src/frontend/src/components/chat/conversationTronquee.test.ts` → `src/frontend/src/components/chat/conversationTronquee.ts` : 
 - `src/frontend/src/components/chat/conversationTronquee.ts` → `src/frontend/src/components/chat/MessageList.tsx` : 
+- `src/frontend/src/components/chat/destinationCommune.test.tsx` → `src/frontend/src/components/chat/ToolConfirmationCard.tsx` : 
+- `src/frontend/src/components/chat/destinationCommune.test.tsx` → `src/frontend/src/stores/toolConfirmationStore.ts` : 
 - `src/frontend/src/components/chat/followOutput.ts` → `src/frontend/src/components/chat/MessageList.tsx` : 
 - `src/frontend/src/components/chat/surfacesEchecReseau.test.tsx` → `src/frontend/src/stores/statusStore.ts` : 
 - `src/frontend/src/components/crm/CRMPanel.activitesNommees.test.tsx` → `src/frontend/src/services/api/memory.ts` : 
@@ -565,6 +579,7 @@
 - `src/frontend/src/components/email/ResponseGeneratorModal.tsx` → `src/frontend/src/hooks/useDialogFocusTrap.ts` : 
 - `src/frontend/src/components/email/SignatureEditorModal.tsx` → `src/frontend/src/hooks/useDialogFocusTrap.ts` : 
 - `src/frontend/src/components/email/SignatureEditorModal.tsx` → `src/frontend/src/lib/escapeStack.ts` : 
+- `src/frontend/src/components/email/SignatureEditorModal.tsx` → `src/frontend/src/lib/sanitizeEmailHtml.ts` : 
 - `src/frontend/src/components/email/wizard/EmailSetupWizard.clavier.test.tsx` → `src/frontend/src/components/email/wizard/EmailSetupWizard.tsx` : 
 - `src/frontend/src/components/email/wizard/EmailSetupWizard.tsx` → `src/frontend/src/components/email/wizard/SmtpConfigStep.tsx` : 
 - `src/frontend/src/components/email/wizard/VerifyStep.tsx` → `src/frontend/src/services/api` : 
@@ -586,6 +601,7 @@
 - `src/frontend/src/components/guided/SkillPromptPanel.tsx` → `src/frontend/src/components/guided/actionData.ts` : 
 - `src/frontend/src/components/guided/index.ts` → `src/frontend/src/components/guided/GuidedPrompts.tsx` : 
 - `src/frontend/src/components/guided/index.ts` → `src/frontend/src/components/guided/actionData.ts` : 
+- `src/frontend/src/components/guided/pastilleDeCarte.test.ts` → `src/frontend/src/components/guided/pastilleDeCarte.ts` : 
 - `src/frontend/src/components/guided/pastilleDeCarte.test.ts` → `src/frontend/src/styles/globals.css` : 
 - `src/frontend/src/components/guided/pastilleDeCarte.ts` → `src/frontend/src/components/guided/ActionCard.tsx` : 
 - `src/frontend/src/components/home/CommandExecutor.reessayer.test.tsx` → `src/frontend/src/services/api/commands-v3.ts` : 
@@ -595,6 +611,7 @@
 - `src/frontend/src/components/home/CommandExecutor.tsx` → `src/frontend/src/components/guided/actionData.ts` : 
 - `src/frontend/src/components/home/CommandExecutor.tsx` → `src/frontend/src/lib/actionRegistry.ts` : 
 - `src/frontend/src/components/home/CommandExecutor.tsx` → `src/frontend/src/stores/actionsStore.ts` : 
+- `src/frontend/src/components/home/HomeCommands.panneauGuide.test.tsx` → `src/frontend/src/components/home/HomeCommands.tsx` : 
 - `src/frontend/src/components/home/HomeCommands.tsx` → `src/frontend/src/components/guided/pastilleDeCarte` : 
 - `src/frontend/src/components/home/HomeCommands.tsx` → `src/frontend/src/components/home/CommandExecutor` : 
 - `src/frontend/src/components/home/HomeCommands.tsx` → `src/frontend/src/stores/commandsStore` : 
@@ -611,11 +628,13 @@
 - `src/frontend/src/components/invoices/InvoiceForm.identifiants.test.tsx` → `src/frontend/src/components/invoices/InvoiceForm.tsx` : 
 - `src/frontend/src/components/invoices/InvoiceForm.test.tsx` → `src/frontend/src/components/invoices/InvoiceForm.tsx` : 
 - `src/frontend/src/components/invoices/InvoiceForm.tsx` → `src/frontend/src/components/app/useExternalActionConfirmation.ts` : 
+- `src/frontend/src/components/invoices/InvoiceForm.tsx` → `src/frontend/src/lib/devise.ts` : 
 - `src/frontend/src/components/invoices/InvoiceForm.tsx` → `src/frontend/src/services/api/index.ts` : 
 - `src/frontend/src/components/invoices/InvoiceForm.tsx` → `src/frontend/src/stores/billingProfileStore.ts` : 
 - `src/frontend/src/components/invoices/InvoiceForm.tsx` → `src/frontend/src/stores/contactsStore.ts` : 
 - `src/frontend/src/components/invoices/InvoiceForm.tsx` → `src/frontend/src/stores/statusStore.ts` : 
 - `src/frontend/src/components/invoices/InvoicesPanel.causePdf.test.tsx` → `src/frontend/src/stores/statusStore.ts` : 
+- `src/frontend/src/components/invoices/InvoicesPanel.chargementEchoue.test.tsx` → `src/frontend/src/stores/invoiceStore.ts` : 
 - `src/frontend/src/components/invoices/InvoicesPanel.test.tsx` → `src/frontend/src/components/invoices/InvoicesPanel.tsx` : 
 - `src/frontend/src/components/invoices/InvoicesPanel.tsx` → `@tauri-apps/plugin-shell` : 
 - `src/frontend/src/components/invoices/InvoicesPanel.tsx` → `src/backend/app/routers/invoices.py` : 
@@ -642,11 +661,16 @@
 - `src/frontend/src/components/memory/ProjectsPanel.troncature.test.tsx` → `src/frontend/src/components/memory/ProjectsKanban.tsx` : 
 - `src/frontend/src/components/memory/ProjectsPanel.tsx` → `src/frontend/src/components/memory/ProjectsKanban.tsx` : 
 - `src/frontend/src/components/memory/ProjectsPanel.tsx` → `src/frontend/src/components/ui/Spinner.tsx` : 
+- `src/frontend/src/components/memory/ProjectsPanel.tsx` → `src/frontend/src/lib/escapeStack.ts` : 
 - `src/frontend/src/components/memory/adresseClient.test.tsx` → `src/frontend/src/components/prototype/InvoiceConversationCard.tsx` : 
 - `src/frontend/src/components/onboarding/CompleteStep.modele.test.tsx` → `src/frontend/src/components/onboarding/CompleteStep.tsx` : 
+- `src/frontend/src/components/onboarding/CompleteStep.test.tsx` → `src/frontend/src/components/onboarding/CompleteStep.tsx` : 
 - `src/frontend/src/components/onboarding/CompleteStep.tsx` → `evenement window therese:llm-config-changed` : 
+- `src/frontend/src/components/onboarding/EchapNeFermePasLApplication.test.tsx` → `@tauri-apps/api/window` : 
+- `src/frontend/src/components/onboarding/EchapNeFermePasLApplication.test.tsx` → `src/frontend/src/components/onboarding/echapMiseEnRoute.ts` : 
 - `src/frontend/src/components/onboarding/LLMStep.erreurCle.test.tsx` → `src/frontend/src/lib/catalogueModeles.ts` : 
 - `src/frontend/src/components/onboarding/LLMStep.origineCle.test.tsx` → `src/frontend/src/components/onboarding/LLMStep.tsx` : 
+- `src/frontend/src/components/onboarding/LLMStep.origineCle.test.tsx` → `src/frontend/src/services/api` : 
 - `src/frontend/src/components/onboarding/LLMStep.test.tsx` → `src/frontend/src/components/onboarding/LLMStep.tsx` : 
 - `src/frontend/src/components/onboarding/LLMStep.tsx` → `src/frontend/src/components/llm/LocalModelFeasibility.tsx` : 
 - `src/frontend/src/components/onboarding/LLMStep.tsx` → `src/frontend/src/lib/catalogueModeles.ts` : 
@@ -655,6 +679,7 @@
 - `src/frontend/src/components/onboarding/OnboardingWizard.tsx` → `src/frontend/src/hooks/useDialogFocusTrap.ts` : 
 - `src/frontend/src/components/onboarding/ProfileStep.champObligatoire.test.tsx` → `@tauri-apps/plugin-dialog` : 
 - `src/frontend/src/components/onboarding/ProfileStep.tsx` → `@tauri-apps/plugin-dialog` : 
+- `src/frontend/src/components/onboarding/SecurityStep.finalite.test.tsx` → `src/frontend/src/test/setup.ts` : 
 - `src/frontend/src/components/onboarding/SecurityStep.test.tsx` → `src/frontend/src/components/onboarding/SecurityStep.tsx` : 
 - `src/frontend/src/components/onboarding/SecurityStep.test.tsx` → `src/frontend/src/test/setup.ts` : 
 - `src/frontend/src/components/onboarding/SecurityStep.tsx` → `src/frontend/src/components/onboarding/textes.ts` : 
@@ -673,7 +698,9 @@
 - `src/frontend/src/components/prototype/BoardConversationCard.tsx` → `src/frontend/src/lib/consent.ts` : 
 - `src/frontend/src/components/prototype/BoardConversationCard.tsx` → `src/frontend/src/lib/coutAffiche.ts` : 
 - `src/frontend/src/components/prototype/BoutonOuvrirLaVue.tsx` → `src/frontend/src/lib/destinations.ts` : 
+- `src/frontend/src/components/prototype/CalculatorWorkspaceCanvas.test.tsx` → `src/frontend/src/components/prototype/CalculatorWorkspaceCanvas.tsx` : 
 - `src/frontend/src/components/prototype/CalculatorWorkspaceCanvas.tsx` → `src/frontend/src/hooks/usePanneauCouvrant.ts` : 
+- `src/frontend/src/components/prototype/CalculatorWorkspaceCanvas.tsx` → `src/frontend/src/services/api/calculators` : 
 - `src/frontend/src/components/prototype/CapabilityCenter.focus.test.tsx` → `src/frontend/src/components/prototype/CapabilityCenter.tsx` : 
 - `src/frontend/src/components/prototype/CapabilityCenter.tsx` → `src/frontend/src/components/prototype/DecisionMissionPrototype.tsx` : 
 - `src/frontend/src/components/prototype/CapabilityCenter.tsx` → `src/frontend/src/hooks/useDialogFocusTrap.ts` : 
@@ -698,6 +725,7 @@
 - `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` → `src/frontend/src/hooks/usePanneauCouvrant.ts` : 
 - `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` → `src/frontend/src/lib/actionRegistry.ts` : 
 - `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` → `src/frontend/src/lib/etabli.ts` : 
+- `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` → `src/frontend/src/lib/replierPourRecherche.ts` : 
 - `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` → `src/frontend/src/services/api/dashboard.ts` : 
 - `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` → `src/frontend/src/stores/navigationStore.ts` : 
 - `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` → `src/frontend/src/stores/panelStore.ts` : 
@@ -715,12 +743,14 @@
 - `src/frontend/src/components/prototype/ImagesWorkspaceCanvas.tsx` → `src/frontend/src/lib/consent.ts` : 
 - `src/frontend/src/components/prototype/InformationsVides.test.tsx` → `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` : 
 - `src/frontend/src/components/prototype/InvoiceConversationCard.contactsIndisponibles.test.tsx` → `src/frontend/src/components/prototype/usePrototypeInvoiceData.ts` : 
+- `src/frontend/src/components/prototype/InvoiceConversationCard.montantConfirme.test.tsx` → `src/frontend/src/components/prototype/InvoiceConversationCard.tsx` : 
 - `src/frontend/src/components/prototype/InvoiceConversationCard.test.tsx` → `src/frontend/src/components/prototype/InvoiceConversationCard.tsx` : 
 - `src/frontend/src/components/prototype/InvoiceConversationCard.test.tsx` → `src/frontend/src/lib/etabli.ts` : 
 - `src/frontend/src/components/prototype/InvoiceConversationCard.tsx` → `src/frontend/src/components/prototype/BoutonOuvrirLaVue.tsx` : 
 - `src/frontend/src/components/prototype/InvoiceConversationCard.tsx` → `src/frontend/src/components/prototype/usePrototypeInvoiceData.ts` : 
 - `src/frontend/src/components/prototype/InvoiceConversationCard.tsx` → `src/frontend/src/components/prototype/usePrototypeReadData.ts` : 
 - `src/frontend/src/components/prototype/InvoiceConversationCard.tsx` → `src/frontend/src/components/ui/Spinner.tsx` : 
+- `src/frontend/src/components/prototype/MeetingConversationCard.test.tsx` → `src/frontend/src/components/prototype/usePrototypeMeetingData.ts` : 
 - `src/frontend/src/components/prototype/MeetingConversationCard.tsx` → `src/frontend/src/components/prototype/prototypeReadModels.ts` : 
 - `src/frontend/src/components/prototype/MeetingConversationCard.tsx` → `src/frontend/src/components/prototype/usePrototypeMeetingData.ts` : 
 - `src/frontend/src/components/prototype/PanneauxNonModaux.test.tsx` → `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` : 
@@ -730,8 +760,11 @@
 - `src/frontend/src/components/prototype/PrototypeThemeContract.test.ts` → `src/frontend/src/components/prototype/` : 
 - `src/frontend/src/components/prototype/PrototypeUnifiedViewCanvas.tsx` → `src/frontend/src/components/crm/index.ts` : 
 - `src/frontend/src/components/prototype/PrototypeUnifiedViewCanvas.tsx` → `src/frontend/src/components/invoices/index.ts` : 
+- `src/frontend/src/components/prototype/ResponsiveShellContract.test.ts` → `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` : 
 - `src/frontend/src/components/prototype/RetourAccueil.test.tsx` → `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` : 
 - `src/frontend/src/components/prototype/RetourAccueil.test.tsx` → `src/frontend/src/lib/actionRegistry.ts` : 
+- `src/frontend/src/components/prototype/RetourNavigation.test.tsx` → `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` : 
+- `src/frontend/src/components/prototype/RetourNavigation.test.tsx` → `src/frontend/src/stores/navigationStore.ts` : 
 - `src/frontend/src/components/prototype/RolesDesPanneaux.test.ts` → `src/frontend/src/components/prototype/` : 
 - `src/frontend/src/components/prototype/TodayDashboardCard.modeDemo.test.tsx` → `src/frontend/src/stores/demoStore.ts` : 
 - `src/frontend/src/components/prototype/TodayDashboardCard.test.tsx` → `src/frontend/src/components/prototype/TodayDashboardCard.tsx` : 
@@ -746,10 +779,12 @@
 - `src/frontend/src/components/prototype/VoiceWorkspaceCanvas.tsx` → `src/frontend/src/hooks/usePanneauCouvrant.ts` : 
 - `src/frontend/src/components/prototype/VoiceWorkspaceCanvas.tsx` → `src/frontend/src/services/api/voice.ts` : 
 - `src/frontend/src/components/prototype/prospectRelance.test.ts` → `src/frontend/src/components/prototype/prototypeReadModels.ts` : 
+- `src/frontend/src/components/prototype/prototypeReadModels.test.ts` → `src/frontend/src/components/prototype/prototypeReadModels.ts` : 
 - `src/frontend/src/components/prototype/prototypeReadModels.ts` → `src/frontend/src/lib/civilDate.ts` : 
 - `src/frontend/src/components/prototype/prototypeReadModels.ts` → `src/frontend/src/services/api/dashboard.ts` : 
 - `src/frontend/src/components/prototype/prototypeReadModels.ts` → `src/frontend/src/services/api/memory.ts` : 
 - `src/frontend/src/components/prototype/usePrototypeAtelierData.test.tsx` → `src/frontend/src/services/api/agents.ts` : 
+- `src/frontend/src/components/prototype/usePrototypeAtelierData.ts` → `src/frontend/src/components/prototype/usePrototypeReadData.ts` : 
 - `src/frontend/src/components/prototype/usePrototypeAtelierData.ts` → `src/frontend/src/services/api/agents` : 
 - `src/frontend/src/components/prototype/usePrototypeBoardData.ts` → `src/frontend/src/components/board/annulerDeliberation.ts` : 
 - `src/frontend/src/components/prototype/usePrototypeBoardData.ts` → `src/frontend/src/lib/consent.ts` : 
@@ -792,9 +827,11 @@
 - `src/frontend/src/components/settings/SettingsModal.tsx` → `src/frontend/src/components/settings/ToolsPanel.tsx` : 
 - `src/frontend/src/components/settings/SettingsModal.tsx` → `src/frontend/src/stores/billingProfileStore.ts` : 
 - `src/frontend/src/components/settings/ToolsPanel.tsx` → `src/frontend/src/components/settings/EnvVarModal.tsx` : 
+- `src/frontend/src/components/settings/VariablesSection.tsx` → `src/frontend/src/services/api/variables` : 
 - `src/frontend/src/components/settings/modelResolution.ts` → `src/frontend/src/components/settings/LLMTab.tsx` : 
 - `src/frontend/src/components/settings/pastilleDonneesLocales.test.tsx` → `src/frontend/src/components/settings/AdvancedTab.tsx` : 
 - `src/frontend/src/components/settings/veriteAffichee.test.tsx` → `src/frontend/src/components/prototype/CapabilityCenter.tsx` : 
+- `src/frontend/src/components/sidebar/ConversationSidebar.suppression.test.tsx` → `src/frontend/src/components/sidebar/ConversationSidebar.tsx` : 
 - `src/frontend/src/components/sidebar/ConversationSidebar.tronquee.test.tsx` → `src/frontend/src/components/sidebar/ConversationSidebar.tsx` : 
 - `src/frontend/src/components/sidebar/ConversationSidebar.tronquee.test.tsx` → `src/frontend/src/stores/chatStore.ts` : 
 - `src/frontend/src/components/sidebar/ConversationSidebar.tsx` → `src/frontend/src/services/api/chat.ts` : 
@@ -804,13 +841,17 @@
 - `src/frontend/src/components/tasks/TaskKanban.tsx` → `src/frontend/src/lib/accessibiliteGlisserDeposer.ts` : 
 - `src/frontend/src/components/tasks/TaskKanban.tsx` → `src/frontend/src/services/api/index.ts` : 
 - `src/frontend/src/components/tasks/TaskKanban.tsx` → `src/frontend/src/stores/taskStore.ts` : 
+- `src/frontend/src/components/tasks/TaskList.etatVide.test.tsx` → `src/frontend/src/stores/taskStore.ts` : 
 - `src/frontend/src/components/tasks/TasksPanel.tsx` → `src/frontend/src/components/tasks/TaskKanban.tsx` : 
 - `src/frontend/src/components/tasks/TasksPanel.tsx` → `src/frontend/src/stores/taskStore.ts` : 
+- `src/frontend/src/components/tasks/tailleDuCorps.test.tsx` → `src/frontend/src/stores/taskStore.ts` : 
 - `src/frontend/src/components/traitements/TraitementsIndicator.tsx` → `src/frontend/src/components/traitements/TraitementsPanel.tsx` : 
 - `src/frontend/src/components/traitements/TraitementsIndicator.tsx` → `src/frontend/src/stores/processingTasksStore.ts` : 
 - `src/frontend/src/components/traitements/TraitementsPanel.test.tsx` → `src/frontend/src/components/traitements/TraitementsPanel.tsx` : 
 - `src/frontend/src/components/traitements/TraitementsPanel.test.tsx` → `src/frontend/src/stores/processingTasksStore.ts` : 
 - `src/frontend/src/components/traitements/TraitementsPanel.tsx` → `src/frontend/src/components/ui/Spinner.tsx` : 
+- `src/frontend/src/components/traitements/TraitementsPanel.tsx` → `src/frontend/src/stores/processingTasksStore.ts` : 
+- `src/frontend/src/components/ui/CompactMarkdown.tsx` → `src/frontend/src/lib/utils.ts` : 
 - `src/frontend/src/components/ui/ConnectionStatus.tsx` → `src/frontend/src/stores/statusStore.ts` : 
 - `src/frontend/src/components/ui/DialogShell.tsx` → `src/frontend/src/hooks/useDialogFocusTrap.ts` : 
 - `src/frontend/src/components/ui/FormField.tsx` → `src/frontend/src/lib/utils.ts` : 
@@ -820,6 +861,7 @@
 - `src/frontend/src/components/ui/Notifications.tsx` → `src/frontend/src/lib/accessibility.ts` : 
 - `src/frontend/src/components/ui/Notifications.tsx` → `src/frontend/src/stores/statusStore.ts` : 
 - `src/frontend/src/components/ui/Notifications.tsx` → `src/frontend/src/styles/z-layers.ts` : 
+- `src/frontend/src/components/ui/Select.tsx` → `src/frontend/src/lib/utils.ts` : 
 - `src/frontend/src/components/ui/SidecarStatusBanner.tsx` → `src/frontend/src-tauri/src/commands.rs` : 
 - `src/frontend/src/components/ui/SidecarStatusBanner.tsx` → `src/frontend/src-tauri/src/lib.rs` : 
 - `src/frontend/src/components/ui/UpdateBanner.tsx` → `src/frontend/src-tauri/capabilities/default.json` : 
@@ -841,8 +883,12 @@
 - `src/frontend/src/hooks/useHealthCheck.ts` → `src/frontend/src/stores/statusStore.ts` : 
 - `src/frontend/src/hooks/useKeyboardShortcuts.creneauxMorts.test.ts` → `src/frontend/src/hooks/useKeyboardShortcuts.ts` : 
 - `src/frontend/src/hooks/useKeyboardShortcuts.ts` → `react` : 
+- `src/frontend/src/hooks/useOnlineStatus.ts` → `react` : 
 - `src/frontend/src/hooks/useVoiceRecorder.ts` → `tauri-plugin-mic-recorder-api` : 
 - `src/frontend/src/lib/actionRegistry.ts` → `src/frontend/src/stores/navigationStore.ts` : 
+- `src/frontend/src/lib/animations.ts` → `framer-motion` : 
+- `src/frontend/src/lib/capacites/cartes.test.ts` → `src/frontend/src/lib/capacites/cartes.ts` : 
+- `src/frontend/src/lib/capacites/cartes.test.ts` → `src/frontend/src/stores/navigationStore.ts` : 
 - `src/frontend/src/lib/capacites/cartes.ts` → `src/frontend/src/components/prototype/CapabilityCenter.tsx` : 
 - `src/frontend/src/lib/capacites/generation.ts` → `src/backend/app/data/capacites.json` : 
 - `src/frontend/src/lib/capacites/generation.ts` → `src/frontend/src/services/api/core.ts` : 
@@ -871,6 +917,7 @@
 - `src/frontend/src/lib/lexique.test.ts` → `src/frontend/src/components/settings/SettingsModal` : 
 - `src/frontend/src/lib/lexique.test.ts` → `src/frontend/src/lib/capacites/manifeste.ts` : 
 - `src/frontend/src/lib/lexiqueTitres.test.ts` → `src/frontend/src/components/**/*.tsx` : 
+- `src/frontend/src/lib/paletteAuRepos.test.ts` → `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` : 
 - `src/frontend/src/lib/paletteAuRepos.test.ts` → `src/frontend/src/lib/actionRegistry.ts` : 
 - `src/frontend/src/lib/profileStorageIsolation.ts` → `src/frontend/src/lib/purgeLocalData.ts` : 
 - `src/frontend/src/lib/purgeLocalData.test.ts` → `src/frontend/src/lib/debouncedStorage.ts` : 
@@ -880,6 +927,7 @@
 - `src/frontend/src/lib/rattachementConversation.ts` → `src/frontend/src/services/api/chat.ts` : 
 - `src/frontend/src/lib/rattachementConversation.ts` → `src/frontend/src/stores/chatStore.ts` : 
 - `src/frontend/src/lib/sanitizeEmailHtml.ts` → `dompurify` : 
+- `src/frontend/src/lib/utils.test.ts` → `src/frontend/src/lib/utils.ts` : 
 - `src/frontend/src/lib/variateurDuBrief.ts` → `src/frontend/src/services/api/dashboard.ts` : 
 - `src/frontend/src/lib/variateurDuBrief.ts` → `window.localStorage` : 
 - `src/frontend/src/lib/windowChrome.ts` → `src/frontend/src-tauri/capabilities/default.json` : 
@@ -902,6 +950,8 @@
 - `src/frontend/src/services/api/dashboard.ts` → `src/frontend/src/services/api/core` : 
 - `src/frontend/src/services/api/dashboard.ts` → `src/frontend/src/services/api/core.ts` : 
 - `src/frontend/src/services/api/data.ts` → `@tauri-apps/plugin-dialog` : 
+- `src/frontend/src/services/api/data.ts` → `@tauri-apps/plugin-fs` : 
+- `src/frontend/src/services/api/data.ts` → `src/frontend/src/services/api/core.ts` : 
 - `src/frontend/src/services/api/documents.ts` → `src/frontend/src/services/api/core.ts` : 
 - `src/frontend/src/services/api/email.test.ts` → `src/frontend/src/services/api/email` : 
 - `src/frontend/src/services/api/email.ts` → `src/backend/app/routers/email.py` : 
@@ -1028,7 +1078,9 @@
 - `src/frontend/src/stores/documentStore.test.ts` → `src/frontend/src/services/api/documents.ts` : 
 - `src/frontend/src/stores/documentStore.test.ts` → `src/frontend/src/stores/documentStore.ts` : 
 - `src/frontend/src/stores/documentStore.ts` → `src/frontend/src/services/api/documents.ts` : 
+- `src/frontend/src/stores/invoiceStore.filtreContact.test.ts` → `src/frontend/src/stores/invoiceStore.ts` : 
 - `src/frontend/src/stores/invoiceStore.filtresRelus.test.ts` → `src/frontend/src/components/invoices/InvoicesPanel.filtreType.test.tsx` : 
+- `src/frontend/src/stores/invoiceStore.filtresRelus.test.ts` → `src/frontend/src/test/localStorage-stub.ts` : 
 - `src/frontend/src/stores/invoiceStore.ts` → `localStorage (cle therese-invoice-storage)` : 
 - `src/frontend/src/stores/invoiceStore.ts` → `src/frontend/src/services/api` : 
 - `src/frontend/src/stores/invoiceStore.ts` → `zustand/middleware` : 
@@ -1039,6 +1091,7 @@
 - `src/frontend/src/stores/panelStore.ts` → `src/frontend/src/lib/deepLinks.ts` : 
 - `src/frontend/src/stores/personalisationStore.reglageSansEffet.test.ts` → `src/frontend/src/services/api/personalisation.ts` : 
 - `src/frontend/src/stores/processingTasksStore.ts` → `src/frontend/src/services/api` : 
+- `src/frontend/src/stores/processingTasksStore.ts` → `src/frontend/src/services/api/processingTasks.ts` : 
 - `src/frontend/src/stores/toolConfirmationStore.ts` → `src/frontend/src/components/app/CommonToolConfirmationLayer.tsx` : 
 - `src/frontend/src/styles/accentDAction.test.ts` → `src/frontend/src/styles/globals.css` : 
 - `src/frontend/src/styles/contrasteDesTeintes.test.ts` → `src/frontend/src/styles/globals.css` : 
@@ -1079,6 +1132,7 @@
 - `tests/e2e/conftest.py` → `src/backend/app/main.py` : 
 - `tests/e2e/global-teardown.ts` → `tests/e2e/stories/helpers/backend.ts` : 
 - `tests/e2e/run-e2e-backend.sh` → `src/backend/app/main.py` : 
+- `tests/e2e/run-e2e-backend.sh` → `tests/e2e/global-teardown.ts` : 
 - `tests/e2e/stories/api-endpoints.spec.ts` → `tests/e2e/stories/helpers/backend.ts` : 
 - `tests/e2e/stories/api-securite.spec.ts` → `tests/e2e/stories/helpers/backend.ts` : 
 - `tests/e2e/stories/helpers/surfaces.ts` → `src/frontend/src/App.tsx` : 
@@ -1094,6 +1148,7 @@
 - `tests/e2e/stories/parcours-06-navigation.spec.ts` → `tests/e2e/stories/helpers/surfaces` : 
 - `tests/e2e/stories/parcours-06-navigation.spec.ts` → `tests/e2e/stories/helpers/surfaces.ts` : 
 - `tests/e2e/stories/parcours-07-rendez-vous-prototype.spec.ts` → `tests/e2e/stories/helpers/backend.ts` : 
+- `tests/e2e/stories/parcours-07-rendez-vous-prototype.spec.ts` → `tests/e2e/stories/helpers/surfaces.ts` : 
 - `tests/e2e/stories/parcours-08-capacites-prototype.spec.ts` → `src/backend/app/routers (routes bouchonnees)` : 
 - `tests/e2e/stories/parcours-08-capacites-prototype.spec.ts` → `tests/e2e/stories/helpers/backend.ts` : 
 - `tests/e2e/test_board.py` → `tests/e2e/conftest.py` : 
@@ -1111,16 +1166,20 @@
 - `tests/protocols/app/personas/A1-sophie-freelance.md` → `src/frontend/src/hooks/useKeyboardShortcuts.ts` : 
 - `tests/protocols/app/personas/A1-sophie-freelance.md` → `src/frontend/src/lib/deepLinks.ts` : 
 - `tests/protocols/app/personas/A2-marc-consultant.md` → `tests/protocols/app/personas/A1-sophie-freelance.md` : 
+- `tests/protocols/app/personas/A3-lea-power-user.md` → `src/frontend/src/components/settings/SettingsModal.tsx` : 
 - `tests/protocols/app/personas/A3-lea-power-user.md` → `src/frontend/src/hooks/useKeyboardShortcuts.ts` : 
 - `tests/protocols/app/personas/A3-lea-power-user.md` → `src/frontend/src/lib/deepLinks.ts` : 
+- `tests/protocols/app/personas/A3-lea-power-user.md` → `tests/protocols/app/personas/A1-sophie-freelance.md` : 
 - `tests/protocols/server/personas/S1-agent-municipal.md` → `THERESE Server` : 
 - `tests/protocols/server/personas/S1-agent-municipal.md` → `tests/protocols/shared/chrome-mcp-patterns.md` : 
 - `tests/protocols/server/personas/S2-chef-service.md` → `tests/protocols/server/personas/S1-agent-municipal.md` : 
 - `tests/protocols/server/personas/S3-dsi-admin.md` → `Synoptia-THERESE-Server/frontend/src` : 
+- `tests/protocols/server/personas/S3-dsi-admin.md` → `THERESE Server (depot Synoptia-THERESE-Server)` : 
 - `tests/protocols/server/personas/S3-dsi-admin.md` → `contrat data-testid du frontend THÉRÈSE Server` : 
 - `tests/protocols/server/personas/S3-dsi-admin.md` → `jeu de données de démonstration (admin@therese.local + 2 utilisateurs)` : 
 - `tests/protocols/server/personas/S3-dsi-admin.md` → `structure positionnelle de la table des utilisateurs` : 
 - `tests/protocols/server/personas/S3-dsi-admin.md` → `tests/protocols/README.md` : 
+- `tests/protocols/server/personas/S3-dsi-admin.md` → `tests/protocols/app/personas/A3-lea-power-user.md` : 
 - `tests/protocols/server/personas/S3-dsi-admin.md` → `tests/protocols/shared/chrome-mcp-patterns.md` : 
 - `tests/protocols/shared/catastrophes.md` → `src/backend/app/routers/data.py` : 
 - `tests/protocols/shared/catastrophes.md` → `src/frontend/src/components/board/BoardPanel.tsx` : 
@@ -1176,6 +1235,7 @@
 - `tests/test_atelier_traitement.py` → `src/backend/app/services/traitements.py` : 
 - `tests/test_atelier_traitement.py` → `tests/conftest.py` : 
 - `tests/test_aucune_identite_reelle.py` → `src/backend/app/services/user_profile.py` : 
+- `tests/test_audit_frontiere_transactionnelle.py` → `src/backend/app/models/database.py` : 
 - `tests/test_audit_frontiere_transactionnelle.py` → `src/backend/app/services/audit.py` : 
 - `tests/test_audit_frontiere_transactionnelle.py` → `tests/conftest.py` : 
 - `tests/test_auth_failclosed.py` → `app.main.app` : 
@@ -1281,8 +1341,14 @@
 - `tests/test_commandes_deux_registres.py` → `src/backend/app/services/command_registry.py` : 
 - `tests/test_connexions_sqlite_fermees.py` → `tests/test_*.py` : 
 - `tests/test_consigne_de_langue.py` → `app/services/llm.py` : 
+- `tests/test_consigne_de_langue.py` → `src/backend/app/services/context.py` : 
+- `tests/test_consigne_de_langue.py` → `src/backend/app/services/llm.py` : 
+- `tests/test_contrat_de_lecture_du_contact.py` → `src/backend/app/services/memory_tools.py` : 
+- `tests/test_contrat_de_lecture_du_contact.py` → `tests/conftest.py` : 
 - `tests/test_controle_versions_tauri.py` → `src/frontend/src-tauri/Cargo.lock` : 
+- `tests/test_dashboard_identifiants.py` → `app/routers/dashboard.py` : 
 - `tests/test_dashboard_vide_ou_indisponible.py` → `app/routers/dashboard.py` : 
+- `tests/test_dashboard_vide_ou_indisponible.py` → `app/routers/invoices.py` : 
 - `tests/test_dashboard_vide_ou_indisponible.py` → `src/backend/app/routers/dashboard.py` : 
 - `tests/test_data_export_profil_rgpd.py` → `src/backend/app/services/encryption.py` : 
 - `tests/test_data_isolation.py` → `app/config.py` : 
@@ -1296,9 +1362,12 @@
 - `tests/test_dette_0434_llm.py` → `app/services/providers/openai.py` : 
 - `tests/test_document_orchestrator.py` → `src/backend/app/services/document_orchestrator.py` : 
 - `tests/test_documents_draft_validate.py` → `app/routers/documents.py` : 
+- `tests/test_documents_draft_validate.py` → `app/services/error_handler.py` : 
+- `tests/test_documents_draft_validate.py` → `app/services/llm.py` : 
 - `tests/test_documents_router.py` → `app/services/skills/__init__.py` : 
 - `tests/test_documents_router.py` → `src/backend/app/services/skills/markdown_docx.py` : 
 - `tests/test_ecriture_preference_client.py` → `src/backend/app/main.py` : 
+- `tests/test_ecriture_preference_client.py` → `src/backend/app/models/entities.py` : 
 - `tests/test_email_response_prompt.py` → `src/backend/app/services/email_response_generator.py` : 
 - `tests/test_email_setup_secret_google.py` → `src/backend/app/routers/email.py` : 
 - `tests/test_email_setup_secret_google.py` → `src/backend/app/services/mcp_service.py` : 
@@ -1314,11 +1383,14 @@
 - `tests/test_f1_coherence_des_couches.py` → `src/backend/app/routers/invoices.py` : 
 - `tests/test_fencing_traitement.py` → `sqlalchemy.ext.asyncio.AsyncSession` : 
 - `tests/test_fencing_traitement.py` → `src/backend/app/services/indexation.py` : 
+- `tests/test_fiches_skills_coherentes.py` → `src/backend/app/services/skills/docx_generator.py` : 
+- `tests/test_fiches_skills_coherentes.py` → `src/backend/app/skills_config` : 
 - `tests/test_fiches_skills_coherentes.py` → `src/backend/app/skills_config/docx/SKILL.md` : 
 - `tests/test_fichier_genere_par_outil.py` → `app/routers/chat.py` : 
 - `tests/test_fichier_genere_par_outil.py` → `src/backend/app/routers/chat.py` : 
 - `tests/test_fichier_genere_par_outil.py` → `src/backend/app/services/workspace_tools.py` : 
 - `tests/test_fichier_genere_par_outil.py` → `tests/conftest.py` : 
+- `tests/test_financement.py` → `app/services/memory_tools.py` : 
 - `tests/test_follow_ups_civil_time.py` → `src/backend/app/routers/follow_ups.py` : 
 - `tests/test_follow_ups_civil_time.py` → `src/backend/app/services/civil_time.py` : 
 - `tests/test_frontiere_erreurs_email.py` → `src/backend/app/routers/email.py` : 
@@ -1326,6 +1398,7 @@
 - `tests/test_gemini_cle_en_entete.py` → `src/backend/app/services/providers/gemini.py` : 
 - `tests/test_gemini_thought_signatures.py` → `tests/test_provider_tools.py` : 
 - `tests/test_google_calendar_civil_time.py` → `src/backend/app/routers/calendar.py` : 
+- `tests/test_harnais_backend_autonome.py` → `src/backend/tests` : 
 - `tests/test_harnais_backend_autonome.py` → `src/backend/tests/` : 
 - `tests/test_health_db.py` → `app.models.database` : 
 - `tests/test_health_qdrant_frais.py` → `src/backend/app/services/error_handler.py` : 
@@ -1373,6 +1446,7 @@
 - `tests/test_numerotation_des_documents.py` → `src/backend/app/models/entities.py` : 
 - `tests/test_numerotation_des_documents.py` → `src/backend/app/routers/invoices.py` : 
 - `tests/test_oauth_redirect_contraste.py` → `src/backend/app/routers/email.py` : 
+- `tests/test_ollama_erreur_http.py` → `app/services/llm.py` : 
 - `tests/test_ollama_erreur_http.py` → `tests/test_provider_tools.py` : 
 - `tests/test_onboarding_collision_reelle.py` → `src/backend/app/models/database.py` : 
 - `tests/test_onboarding_collision_reelle.py` → `src/backend/app/routers/config.py` : 
@@ -1393,6 +1467,7 @@
 - `tests/test_pluriel_agenda_chat.py` → `src/backend/app/routers/dashboard.py` : 
 - `tests/test_pluriel_agenda_chat.py` → `src/backend/app/routers/email.py` : 
 - `tests/test_pluriel_agenda_chat.py` → `src/backend/app/services/workspace_tools.py` : 
+- `tests/test_pluriel_agenda_google.py` → `app/routers/calendar.py` : 
 - `tests/test_pluriel_contacts.py` → `src/backend/app/routers/email.py` : 
 - `tests/test_pluriel_fournisseur.py` → `src/backend/app/routers/config.py` : 
 - `tests/test_prestation.py` → `src/backend/app/models/entities.py` : 
@@ -1404,11 +1479,15 @@
 - `tests/test_profil_indexation_serialisee.py` → `src/backend/app/services/user_profile.py` : 
 - `tests/test_profil_indexation_serialisee.py` → `tests/aide_lecture_source.py` : 
 - `tests/test_project_sync_api.py` → `src/backend/app/routers/project_sync.py` : 
+- `tests/test_project_sync_boucle.py` → `app/services/project_sync_service.py` : 
 - `tests/test_project_sync_scanner.py` → `src/backend/app/services/project_sync.py` : 
+- `tests/test_project_sync_service.py` → `app/services/indexation.py` : 
+- `tests/test_project_sync_service.py` → `app/services/traitements.py` : 
 - `tests/test_project_sync_service.py` → `src/backend/app/services/project_sync_service.py` : 
 - `tests/test_prompt_security_contexte.py` → `app.services.prompt_security.PromptSecurityService` : 
 - `tests/test_prompt_security_contexte.py` → `src/backend/app/services/prompt_security.py` : 
 - `tests/test_protocoles_readme_coherent.py` → `tests/protocols/README.md` : 
+- `tests/test_provider_effort.py` → `app/services/providers/grok.py` : 
 - `tests/test_provider_erreurs_lisibles.py` → `src/backend/app/services/llm.py` : 
 - `tests/test_provider_erreurs_lisibles.py` → `src/backend/app/services/providers/grok.py` : 
 - `tests/test_provider_tools.py` → `src/backend/app/services/providers/` : 
@@ -1443,6 +1522,7 @@
 - `tests/test_retrait_index_service.py` → `src/backend/app/services/indexation.py` : 
 - `tests/test_retrait_index_service.py` → `src/backend/app/services/retrait_index.py` : 
 - `tests/test_routers_agents.py` → `src/backend/app/models/entities_agents.py` : 
+- `tests/test_routers_board.py` → `app/services/board.py` : 
 - `tests/test_routers_board.py` → `src/backend/app/services/board.py` : 
 - `tests/test_routers_calendar.py` → `src/backend/app/routers/calendar.py` : 
 - `tests/test_routers_calendar.py` → `tests/conftest.py` : 
@@ -1466,7 +1546,10 @@
 - `tests/test_routers_mcp.py` → `src/backend/app/services/mcp_service.py` : 
 - `tests/test_routers_memory.py` → `app.models.entities_sync.ProjectSyncRoot` : 
 - `tests/test_routers_memory.py` → `app.routers.memory.get_qdrant_service` : 
+- `tests/test_routers_memory.py` → `app/models/entities_sync.py` : 
+- `tests/test_routers_memory.py` → `app/routers/memory.py` : 
 - `tests/test_routers_memory.py` → `src/backend/app/models/entities_sync.py` : 
+- `tests/test_routers_memory.py` → `tests/test_project_sync_service.py` : 
 - `tests/test_routers_rgpd.py` → `api-http` : 
 - `tests/test_routers_rgpd.py` → `src/backend/app/services/qdrant.py` : 
 - `tests/test_routers_voice.py` → `src/backend/app/services/voice_local.py` : 
@@ -1502,6 +1585,7 @@
 - `tests/test_slash_commands.py` → `src/backend/app/services/slash_commands.py` : 
 - `tests/test_slash_commands.py` → `src/backend/app/services/tool_confirmations.py` : 
 - `tests/test_slash_commands.py` → `src/backend/app/services/workspace_tools.py` : 
+- `tests/test_statut_de_facture.py` → `app/models/entities.py` : 
 - `tests/test_statut_de_facture.py` → `app/services/workspace_tools.py` : 
 - `tests/test_statut_de_facture.py` → `src/backend/app/models/entities.py` : 
 - `tests/test_statut_de_facture.py` → `src/backend/app/services/workspace_tools.py` : 
@@ -1510,7 +1594,10 @@
 - `tests/test_token_marge_rafraichissement.py` → `app.routers.email.ensure_valid_access_token` : 
 - `tests/test_token_marge_rafraichissement.py` → `src/backend/app/routers/email.py` : 
 - `tests/test_traitement_etat_terminal.py` → `app/services/traitements.py` : 
+- `tests/test_variables.py` → `app/models/database.py` : 
+- `tests/test_variables.py` → `app/models/entities_sync.py` : 
 - `tests/test_variables.py` → `app/routers/chat.py` : 
+- `tests/test_variables.py` → `app/services/variables_service.py` : 
 - `tests/test_variables.py` → `src/backend/app/models/database.py` : 
 - `tests/test_variables.py` → `src/backend/app/routers/chat.py` : 
 - `tests/test_variables.py` → `src/backend/app/services/variables_service.py` : 

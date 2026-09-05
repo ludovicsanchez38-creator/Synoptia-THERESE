@@ -2,166 +2,34 @@
 
 - Couverture validee : 100.0 %
 - Fichiers attendus : 1205
-- Validation `passed` : False
+- Validation `passed` : True
 
 ## Fichiers non lus (0)
 
 
-## Doubles lectures manquantes (139)
+## Doubles lectures manquantes (0)
 
-- .github/workflows/tests-e2e.yml
-- src/backend/app/services/deep_research.py
-- src/backend/app/services/echeances.py
-- src/backend/app/services/email_response_generator.py
-- src/backend/app/services/export_profile.py
-- src/backend/app/services/invoice_status.py
-- src/backend/app/services/skills/markdown_docx.py
-- src/backend/app/services/skills/planning_skills.py
-- src/backend/app/services/traitements.py
-- src/frontend/src-tauri/src/lib.rs
-- src/frontend/src/App.tsx
-- src/frontend/src/components/atelier/AgentSession.bulles.test.tsx
-- src/frontend/src/components/atelier/AgentSession.tsx
-- src/frontend/src/components/atelier/MissionStepper.tsx
-- src/frontend/src/components/atelier/SessionList.tsx
-- src/frontend/src/components/board/BoardPanel.robustesse.test.tsx
-- src/frontend/src/components/calendar/CalendarPanel.nomsAccessibles.test.tsx
-- src/frontend/src/components/calendar/CalendarView.semaineDernierJour.test.tsx
-- src/frontend/src/components/chat/ChatHeader.test.tsx
-- src/frontend/src/components/chat/actionChipsData.ts
-- src/frontend/src/components/chat/destinationCommune.test.tsx
-- src/frontend/src/components/dndAnnoncesFrancaises.test.tsx
-- src/frontend/src/components/email/SignatureEditorModal.tsx
-- src/frontend/src/components/files/FileBrowser.tsx
-- src/frontend/src/components/guided/pastilleDeCarte.test.ts
-- src/frontend/src/components/home/CommandExecutor.reessayer.test.tsx
-- src/frontend/src/components/home/HomeCommands.panneauGuide.test.tsx
-- src/frontend/src/components/invoices/InvoiceForm.echap.test.tsx
-- src/frontend/src/components/invoices/InvoiceForm.francais.test.tsx
-- src/frontend/src/components/invoices/InvoiceForm.nomsAccessibles.test.tsx
-- src/frontend/src/components/invoices/InvoiceForm.profilIllisible.test.tsx
-- src/frontend/src/components/invoices/InvoiceForm.soumission.test.tsx
-- src/frontend/src/components/invoices/InvoiceForm.test.tsx
-- src/frontend/src/components/invoices/InvoiceForm.tsx
-- src/frontend/src/components/invoices/InvoicesPanel.causePdf.test.tsx
-- src/frontend/src/components/invoices/InvoicesPanel.causeSuppression.test.tsx
-- src/frontend/src/components/invoices/InvoicesPanel.chargementEchoue.test.tsx
-- src/frontend/src/components/invoices/InvoicesPanel.clavier.test.tsx
-- src/frontend/src/components/invoices/InvoicesPanel.filtreType.test.tsx
-- src/frontend/src/components/invoices/InvoicesPanel.statutInconnu.test.tsx
-- src/frontend/src/components/invoices/InvoicesPanel.troncature.test.tsx
-- src/frontend/src/components/invoices/InvoicesPanel.tsx
-- src/frontend/src/components/invoices/deviseAffichee.test.tsx
-- src/frontend/src/components/invoices/nomDuClientAffiche.test.tsx
-- src/frontend/src/components/memory/ProjectsPanel.tsx
-- src/frontend/src/components/onboarding/CompleteStep.test.tsx
-- src/frontend/src/components/onboarding/EchapNeFermePasLApplication.test.tsx
-- src/frontend/src/components/onboarding/LLMStep.origineCle.test.tsx
-- src/frontend/src/components/onboarding/SecurityStep.consentement.test.tsx
-- src/frontend/src/components/onboarding/SecurityStep.finalite.test.tsx
-- src/frontend/src/components/onboarding/SecurityStep.test.tsx
-- src/frontend/src/components/onboarding/SecurityStep.tsx
-- src/frontend/src/components/prototype/CalculatorWorkspaceCanvas.test.tsx
-- src/frontend/src/components/prototype/CalculatorWorkspaceCanvas.tsx
-- src/frontend/src/components/prototype/InvoiceConversationCard.contactsIndisponibles.test.tsx
-- src/frontend/src/components/prototype/InvoiceConversationCard.montantConfirme.test.tsx
-- src/frontend/src/components/prototype/InvoiceConversationCard.nomPorteParLaFacture.test.tsx
-- src/frontend/src/components/prototype/MeetingConversationCard.nomAccessible.test.tsx
-- src/frontend/src/components/prototype/MeetingConversationCard.test.tsx
-- src/frontend/src/components/prototype/ResponsiveShellContract.test.ts
-- src/frontend/src/components/prototype/RetourNavigation.test.tsx
-- src/frontend/src/components/prototype/TodayDashboardCard.modeDemo.test.tsx
-- src/frontend/src/components/prototype/prototypeReadModels.test.ts
-- src/frontend/src/components/prototype/usePrototypeAtelierData.ts
-- src/frontend/src/components/settings/EmailAccountsSection.tsx
-- src/frontend/src/components/settings/VariablesSection.tsx
-- src/frontend/src/components/sidebar/ConversationSidebar.suppression.test.tsx
-- src/frontend/src/components/tasks/TaskList.etatVide.test.tsx
-- src/frontend/src/components/tasks/tailleDuCorps.test.tsx
-- src/frontend/src/components/traitements/TraitementsPanel.tsx
-- src/frontend/src/components/ui/CompactMarkdown.tsx
-- src/frontend/src/components/ui/Select.tsx
-- src/frontend/src/components/window/WindowControls.tsx
-- src/frontend/src/hooks/useOnlineStatus.ts
-- src/frontend/src/lib/animations.ts
-- src/frontend/src/lib/capacites/cartes.test.ts
-- src/frontend/src/lib/civilDate.ts
-- src/frontend/src/lib/devise.ts
-- src/frontend/src/lib/escapeStack.ts
-- src/frontend/src/lib/formatsIndexables.test.ts
-- src/frontend/src/lib/paletteAuRepos.test.ts
-- src/frontend/src/lib/replierPourRecherche.ts
-- src/frontend/src/lib/utils.test.ts
-- src/frontend/src/lib/variateurDuBrief.ts
-- src/frontend/src/services/api/commands-v3.ts
-- src/frontend/src/services/api/commands.ts
-- src/frontend/src/services/api/data.ts
-- src/frontend/src/services/api/images.ts
-- src/frontend/src/services/api/processingTasks.ts
-- src/frontend/src/stores/actionsStore.ts
-- src/frontend/src/stores/invoiceStore.filtreContact.test.ts
-- src/frontend/src/stores/invoiceStore.filtresRelus.test.ts
-- src/llm/__init__.py
-- tests/e2e/STATUS.md
-- tests/e2e/run-e2e-backend.sh
-- tests/e2e/stories/api-endpoints.spec.ts
-- tests/e2e/stories/parcours-07-rendez-vous-prototype.spec.ts
-- tests/protocols/app/personas/A3-lea-power-user.md
-- tests/protocols/server/personas/S3-dsi-admin.md
-- tests/test_aide_etabli.py
-- tests/test_audit_frontiere_transactionnelle.py
-- tests/test_auth_failclosed.py
-- tests/test_billing_profile_cache.py
-- tests/test_board_traitement.py
-- tests/test_brouillon_email_cause_visible.py
-- tests/test_capacite_modele_branchee.py
-- tests/test_chat_tool_confirmation.py
-- tests/test_consigne_de_langue.py
-- tests/test_contrat_de_lecture_du_contact.py
-- tests/test_dashboard_identifiants.py
-- tests/test_dashboard_vide_ou_indisponible.py
-- tests/test_documents_draft_validate.py
-- tests/test_ecriture_preference_client.py
-- tests/test_email_setup_secret_google.py
-- tests/test_fiches_skills_coherentes.py
-- tests/test_financement.py
-- tests/test_frontiere_erreurs_email.py
-- tests/test_gemini_thought_signatures.py
-- tests/test_harnais_backend_autonome.py
-- tests/test_import_vcf_sec017.py
-- tests/test_invoice_currency_migration.py
-- tests/test_invoice_pdf_francais.py
-- tests/test_oauth_redirect_contraste.py
-- tests/test_ollama_erreur_http.py
-- tests/test_planning_migration.py
-- tests/test_pluriel_agenda_google.py
-- tests/test_profil_indexation_serialisee.py
-- tests/test_project_sync_boucle.py
-- tests/test_project_sync_idempotence.py
-- tests/test_project_sync_service.py
-- tests/test_provider_anthropic_sampling.py
-- tests/test_provider_effort.py
-- tests/test_routers_board.py
-- tests/test_routers_invoices.py
-- tests/test_routers_memory.py
-- tests/test_secrets_dans_traces.py
-- tests/test_services_oauth.py
-- tests/test_statut_de_facture.py
-- tests/test_variables.py
 
-## Invariants divergents, a arbitrer (12)
+## Invariants divergents, a arbitrer (19)
 
 - src/backend/app/models/board.py: aucun mot commun entre les invariants de lecteur-D09:c2-D09-WP-047, wp047-lecteur1:wp047-lecteur1
 - src/backend/app/routers/invoices.py: aucun mot commun entre les invariants de lecteur-D01:c3-D01-WP-C-025, lecteur-R01:c3-R01-WP-C-025
 - src/backend/app/routers/variables.py: aucun mot commun entre les invariants de lecteur-D02:c3-D02-WP-051, wp051-lecteur1:wp051-lecteur1
 - src/backend/app/services/invoice_pdf.py: aucun mot commun entre les invariants de lecteur-D01:c3-D01-WP-C-025, lecteur-R01:c3-R01-WP-C-025
+- src/backend/app/services/skills/planning_skills.py: aucun mot commun entre les invariants de lecteur-D02:c3-D02-WP-054, lecteur-cartographie:wp054-lecteur2
 - src/backend/app/skills_config/pptx/SKILL.md: aucun mot commun entre les invariants de lecteur-D02:c2-D02-WP-055, lecteur-cartographie-wp055:wp055-lecteur1
 - src/frontend/src/components/calendar/calendarErrors.ts: aucun mot commun entre les invariants de lecteur-D07:c2-D07-WP-061, lecteur-cartographie-wp061:wp061-lecteur1
 - src/frontend/src/components/invoices/InvoicesPanel.test.tsx: aucun mot commun entre les invariants de lecteur-D01:c2-D01-WP-C-026, lecteur-cartographie-wpc026:wpc026-lecteur1-20260831
 - src/frontend/src/components/memory/MemoryPanel.test.tsx: aucun mot commun entre les invariants de lecteur-D07:c2-D07-WP-064, lecteur-cartographie-wp064:wp064-lecteur1
 - src/frontend/src/components/prototype/AccueilMoinsCharge.test.tsx: aucun mot commun entre les invariants de lecteur-D06:c2-D06-WP-065, wp065-lecteur1:wp065-lecteur1
+- src/frontend/src/components/prototype/CalculatorWorkspaceCanvas.test.tsx: aucun mot commun entre les invariants de lecteur-D03:c3-D03-WP-065, wp065-lecteur1:wp065-lecteur1
+- src/frontend/src/services/api/commands.ts: aucun mot commun entre les invariants de lecteur-D04:c3-D04-WP-072, lecteur-cartographie-wp072:wp072-lecteur1
+- tests/e2e/stories/api-endpoints.spec.ts: aucun mot commun entre les invariants de lecteur-D05:c3-D05-WP-085, lecteur-wp085:wp085-lecteur1
 - tests/e2e/stories/parcours-06-navigation.spec.ts: aucun mot commun entre les invariants de lecteur-D11:c2-D11-WP-085, lecteur-M10:c2-M10-WP-085
+- tests/test_board_traitement.py: aucun mot commun entre les invariants de lecteur-D04:c3-D04-WP-078, wp078-lecteur1:wp078-lecteur1
+- tests/test_consigne_de_langue.py: aucun mot commun entre les invariants de lecteur-D04:c3-D04-WP-079, lecteur-wp079:wp079-lecteur1
 - tests/test_modeles_disponibles.py: aucun mot commun entre les invariants de lecteur-D08:c2-D08-WP-080, wp080-lecteur1:wp080-lecteur1
+- tests/test_routers_invoices.py: aucun mot commun entre les invariants de lecteur-D04:c3-D04-WP-C-029, lecteur-R17:c3-R17-WP-C-029
 - tests/test_slash_commands.py: aucun mot commun entre les invariants de lecteur-D09:c2-D09-WP-084, wp084-lecteur1:wp084-lecteur1
 
 ## Disparus depuis l'inventaire (0)

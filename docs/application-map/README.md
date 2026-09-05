@@ -1,6 +1,6 @@
 # Carte de l'application
 
-Generee le 2026-09-05T11:08:15+00:00 depuis `/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE/.cartography-work/reports` : 239 rapports, 1234 fichiers lus, 1355 fonctionnalites, 1964 risques, 802 inconnues, 484 constats visuels, 1524 dependances.
+Generee le 2026-09-05T11:34:06+00:00 depuis `/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE/.cartography-work/reports` : 282 rapports, 1234 fichiers lus, 1468 fonctionnalites, 2244 risques, 924 inconnues, 549 constats visuels, 1611 dependances.
 
 Cette carte est une agregation mecanique des rapports de lecture valides ; elle ne dit
 pas plus que ce que les lecteurs ont prouve. Les limites sont dans `couverture.md`.
