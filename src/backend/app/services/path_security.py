@@ -242,7 +242,13 @@ def validate_file_path(file_path: str | Path, allowed_base: Path | None = None) 
     # branche divulgue en outre le chemin absolu resolu, donc le nom du
     # dossier personnel - il ne doit donc etre atteint que sur un chemin
     # deja declare autorise.
-    if not path.exists():
+    try:
+        existe = path.exists()
+    except OSError as erreur:
+        # B-554 (05/09/2026) : un composant trop long lève OSError au lieu de
+        # rendre False. Le chemin n'est pas repris : il serait aussi long.
+        raise FileNotFoundError("Fichier non trouvé : chemin trop long ou mal formé") from erreur
+    if not existe:
         raise FileNotFoundError(f"Fichier non trouvé : {path}")
 
     return path

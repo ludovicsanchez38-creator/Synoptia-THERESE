@@ -1252,7 +1252,16 @@ async def set_working_directory(
 
     path = Path(request.path).expanduser()
 
-    if not path.exists():
+    # B-554 (05/09/2026) : un composant de chemin trop long fait lever une
+    # OSError par os.stat, que pathlib ne convertit pas en False ; elle
+    # traversait jusqu'au 500 générique.
+    try:
+        existe = path.exists()
+    except OSError:
+        raise HTTPException(
+            status_code=400, detail="Ce chemin n'est pas utilisable (trop long ou mal formé)."
+        )
+    if not existe:
         raise HTTPException(status_code=400, detail="Ce chemin n'existe pas.")
 
     if not path.is_dir():
