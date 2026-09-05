@@ -330,3 +330,26 @@ Règles posées :
 
 La purge de l'historique (réécriture, force push, re-clone par Katia,
 Zézette et Codex) reste une décision de Ludo.
+
+## Historique réécrit le 05/09/2026 : tout clone antérieur se resynchronise par fetch + reset, jamais par pull
+
+Purge validée par Ludo (`git filter-repo`, sauvegarde miroir complète conservée sur le
+Mac dans `Synoptia-THERESE-avant-purge-20260905.git`) : captures PNG du guide (56 Mo),
+vidéos Playwright `src/frontend/test-results` (21 Mo) et quatre anciennes versions du
+PDF (32 Mo). Le dépôt passe de 161 à 65 Mo. Périmètre : les 48 refs postérieures au
+13/07 (main, 8 branches, 39 tags depuis `v0.40.0-alpha`) ; les 145 refs antérieures
+gardent leurs SHA. Les arbres sont identiques, seuls les identifiants de commits
+changent (`main` : 3935a36e devient 75fe7161, `v0.66.1-alpha` : 79d51c25 devient
+d2d804d4). Les releases GitHub restent rattachées à leurs tags et à leurs dix
+assets. Un commit vide a été élagué (`07a5143c`, wip automatique du 03/09 qui ne
+touchait que des captures).
+
+Résiduel connu : 14,6 Mo de vidéos dans `test-results/` à la racine, entrées le
+07/04 et retirées le 14/07 ; les purger aurait réécrit tous les tags depuis avril.
+Les refs `refs/pull/*` de GitHub gardent l'ancien historique côté serveur ; sans
+effet sur les clones.
+
+Sur un clone existant : `git fetch --prune --prune-tags --force origin` puis
+`git reset --hard origin/main` (ou `git switch -C main origin/main`), jamais
+`git pull` qui fusionnerait les deux historiques. Clones resynchronisés le 05/09 :
+Mac, Katia (`~/therese-v2` sur le VPS Agents), Codex.
