@@ -62,6 +62,7 @@ export function SessionList() {
     openclawConnected,
     runningCount,
     maxAgents,
+    error,
   } = useOpenClawStore();
 
   const reduceMotion = useAccessibilityStore((s) => s.reduceMotion);
@@ -150,7 +151,18 @@ export function SessionList() {
 
       {/* List */}
       <div className="flex-1 overflow-y-auto">
-        {visibleSessions.length === 0 ? (
+        {visibleSessions.length === 0 && error ? (
+          // B-537 : une panne de lecture n'est pas « Aucune session ».
+          <div role="alert" className="flex flex-col items-center justify-center gap-2 px-4 py-8 text-center">
+            <span className="text-xs text-error">Sessions non lues : {error}</span>
+            <button
+              onClick={() => void fetchSessions()}
+              className="rounded-md border border-border px-3 py-1.5 text-sm font-medium text-text transition hover:bg-surface-2"
+            >
+              Réessayer
+            </button>
+          </div>
+        ) : visibleSessions.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 px-4 py-8 text-center">
             <span className="text-xs text-text-muted">Aucune session</span>
             <button

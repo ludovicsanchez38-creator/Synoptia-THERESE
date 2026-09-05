@@ -238,6 +238,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
   // B-393 : les outils annoncés dans la carte de consentement viennent du
   // serveur (déjà filtrés), la table locale ne sert que de repli d'affichage.
   const [serverProfile, setServerProfile] = useState<AgentProfile | null>(null);
+  const [profilCharge, setProfilCharge] = useState(false);
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -248,6 +249,8 @@ export function AgentSession({ profileId, model, onBack }: Props) {
         if (trouve) setServerProfile(trouve);
       } catch {
         /* repli sur la table locale */
+      } finally {
+        if (!cancelled) setProfilCharge(true);
       }
     })();
     return () => {
@@ -255,6 +258,8 @@ export function AgentSession({ profileId, model, onBack }: Props) {
     };
   }, [profileId]);
   const profile = serverProfile ?? PROFILE_MAP[profileId];
+  // B-522 : un profil inconnu du client ET du serveur rendait un écran muet.
+  const profilIntrouvable = profilCharge && !profile;
   const colors = COLOR_MAP[profile?.color || ""] || DEFAULT_COLOR;
 
   const [messages, setMessages] = useState<AgentSessionMessage[]>([]);
@@ -482,6 +487,12 @@ export function AgentSession({ profileId, model, onBack }: Props) {
           </span>
         )}
       </div>
+
+      {profilIntrouvable && (
+        <p role="alert" className="mx-3 mt-2 rounded-md border border-error/40 bg-[var(--color-error-tint)] p-3 text-sm text-error">
+          Profil d’agent « {profileId} » introuvable, ni sur le serveur ni dans la liste locale. Reviens à la liste et choisis un autre agent.
+        </p>
+      )}
 
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto py-2">
