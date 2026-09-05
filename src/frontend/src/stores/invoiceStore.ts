@@ -208,9 +208,17 @@ export const useInvoiceStore = create<InvoiceStore>()(
       // Le stockage peut être partiel, incohérent ou hérité d'une version
       // antérieure ; l'étalement de premier niveau de zustand le laissait
       // remplacer le défaut en bloc.
+      // B-459 : seul ce que `partialize` écrit est relu. Une clé étrangère ou
+      // héritée (factures figées, `loading` à true) ne rentre plus, et le
+      // stockage porte une version pour les migrations à venir.
+      version: 1,
+      migrate: (persiste) => {
+        const filtres = assainirFiltres((persiste as Partial<InvoiceStore> | undefined)?.filters);
+        return { filters: { status: filtres.status, document_type: filtres.document_type } };
+      },
       merge: (persiste, courant) => {
         const brut = (persiste ?? {}) as Partial<InvoiceStore>;
-        return { ...courant, ...brut, filters: assainirFiltres(brut.filters) };
+        return { ...courant, filters: assainirFiltres(brut.filters) };
       },
     }
   )
