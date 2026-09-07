@@ -113,13 +113,14 @@ class DeepSeekProvider(BaseProvider):
                                 delta = choices[0].get("delta", {})
                                 finish_reason = choices[0].get("finish_reason")
 
-                                # DeepSeek R1 : ignorer silencieusement le reasoning_content
-                                # (raisonnement interne, pas destiné à l'utilisateur final)
-                                if delta.get("reasoning_content"):
+                                # DeepSeek R1 : le reasoning_content n'est pas destiné à
+                                # l'utilisateur. B-520 : un delta qui porte AUSSI du texte
+                                # visible ne doit pas le perdre (l'ancien if/elif taisait
+                                # la prose dès que le raisonnement était présent).
+                                content = delta.get("content")
+                                if delta.get("reasoning_content") and not content:
                                     yield StreamEvent(type="text", content="")
-
-                                # Handle text content
-                                elif content := delta.get("content"):
+                                if content:
                                     yield StreamEvent(type="text", content=content)
 
                                 # Handle tool calls
