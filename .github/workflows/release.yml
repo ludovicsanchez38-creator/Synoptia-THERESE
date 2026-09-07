@@ -36,9 +36,16 @@ jobs:
     uses: ./.github/workflows/ci.yml
     secrets: inherit
 
+  # B-158 : un échec des contrats d'API et des parcours de bout en bout
+  # bloque la release, comme la CI.
+  e2e:
+    name: Parcours de bout en bout (gate de release)
+    uses: ./.github/workflows/tests-e2e.yml
+    secrets: inherit
+
   build:
     name: Build ${{ matrix.platform.name }}
-    needs: [preflight, ci]
+    needs: [preflight, ci, e2e]
     strategy:
       fail-fast: false
       matrix:

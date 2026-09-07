@@ -26,7 +26,8 @@ describe('CommandPalette : piège de focus (B-359)', () => {
     expect(focalisables.length).toBeGreaterThan(0);
     focalisables[focalisables.length - 1].focus();
     fireEvent.keyDown(document, { key: 'Tab' });
-    expect(dialog.contains(document.activeElement)).toBe(true);
-    expect(document.activeElement).not.toBe(screen.getByTestId('dehors'));
+    // jsdom ne déplace pas le focus sur Tab : seul le piège le fait boucler
+    // sur le premier élément. Sans piège, le focus resterait sur le dernier.
+    expect(document.activeElement).toBe(focalisables[0]);
   });
 });
