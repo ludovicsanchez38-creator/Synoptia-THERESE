@@ -272,6 +272,18 @@ class ContactCreate(BaseModel):
     def _relance_au_jour_civil_paris(cls, valeur: Any) -> Any:
         return _jour_civil_de_relance(valeur)
 
+    # B-171 (P-005, décision de Ludo) : une fiche sans aucune donnée d'identité
+    # est refusée, et une adresse e-mail doit ressembler à une adresse.
+    @model_validator(mode="after")
+    def _fiche_identifiable(self) -> "ContactCreate":
+        identite = [(self.first_name or "").strip(), (self.last_name or "").strip(), (self.company or "").strip(), (self.email or "").strip()]
+        if not any(identite):
+            raise ValueError("Une fiche contact a besoin d'au moins un prénom, un nom, une société ou une adresse e-mail.")
+        courriel = (self.email or "").strip()
+        if courriel and ("@" not in courriel or "." not in courriel.split("@")[-1] or " " in courriel):
+            raise ValueError("L'adresse e-mail n'a pas la forme attendue (nom@domaine).")
+        return self
+
     # Scope (L6 revue produit) : rattacher un contact à une conversation/projet.
     scope: str | None = None  # global | project | conversation (defaut global cote modele)
     scope_id: str | None = None
