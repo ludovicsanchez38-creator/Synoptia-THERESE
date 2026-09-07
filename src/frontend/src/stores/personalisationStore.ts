@@ -15,29 +15,6 @@ import { persist } from 'zustand/middleware';
 
 export type UXMode = 'standard' | 'contributeur';
 const DEFAULT_UX_MODE: UXMode = 'standard';
-// ============================================================
-// US-PERS-01: Custom Keyboard Shortcuts
-// ============================================================
-
-export interface KeyboardShortcut {
-  action: string;
-  key: string;
-  modifiers: ('cmd' | 'ctrl' | 'alt' | 'shift')[];
-  description: string;
-}
-
-const DEFAULT_SHORTCUTS: KeyboardShortcut[] = [
-  { action: 'newConversation', key: 'N', modifiers: ['cmd'], description: 'Nouvelle conversation' },
-  { action: 'toggleSidebar', key: 'B', modifiers: ['cmd'], description: 'Afficher/masquer conversations' },
-  { action: 'toggleMemory', key: 'M', modifiers: ['cmd'], description: 'Afficher/masquer espace de travail' },
-  { action: 'toggleBoard', key: 'D', modifiers: ['cmd'], description: 'Décision' },
-  { action: 'commandPalette', key: 'K', modifiers: ['cmd'], description: 'Palette de commandes' },
-  { action: 'focusInput', key: '/', modifiers: [], description: 'Focus sur le chat' },
-  { action: 'clearChat', key: 'L', modifiers: ['cmd', 'shift'], description: 'Effacer conversation' },
-  { action: 'settings', key: ',', modifiers: ['cmd'], description: 'Paramètres' },
-  { action: 'newContact', key: 'C', modifiers: ['cmd', 'shift'], description: 'Nouveau contact' },
-  { action: 'newProject', key: 'P', modifiers: ['cmd', 'shift'], description: 'Nouveau projet' },
-];
 
 // ============================================================
 // US-PERS-02: Custom Prompt Templates
@@ -141,11 +118,6 @@ interface PersonalisationState {
   uxMode: UXMode;
   setUXMode: (mode: UXMode) => void;
 
-  // US-PERS-01: Keyboard shortcuts
-  shortcuts: KeyboardShortcut[];
-  setShortcut: (action: string, key: string, modifiers: ('cmd' | 'ctrl' | 'alt' | 'shift')[]) => void;
-  resetShortcuts: () => void;
-  getShortcutForAction: (action: string) => KeyboardShortcut | undefined;
 
   // US-PERS-02: Prompt templates
   promptTemplates: PromptTemplate[];
@@ -170,7 +142,7 @@ interface PersonalisationState {
 
 export const usePersonalisationStore = create<PersonalisationState>()(
   persist(
-    (set, get) => {
+    (set) => {
       // Effectuer la migration des données localStorage au premier chargement
       const migrations = migrateFromLocalStorage();
       
@@ -181,26 +153,6 @@ export const usePersonalisationStore = create<PersonalisationState>()(
 
         uxMode: DEFAULT_UX_MODE,
         setUXMode: (mode) => set({ uxMode: mode }),
-
-        // ============================================================
-        // US-PERS-01: Keyboard Shortcuts
-        // ============================================================
-
-        shortcuts: DEFAULT_SHORTCUTS,
-
-        setShortcut: (action, key, modifiers) => {
-          set((state) => ({
-            shortcuts: state.shortcuts.map((s) =>
-              s.action === action ? { ...s, key, modifiers } : s
-            ),
-          }));
-        },
-
-        resetShortcuts: () => set({ shortcuts: DEFAULT_SHORTCUTS }),
-
-        getShortcutForAction: (action) => {
-          return get().shortcuts.find((s) => s.action === action);
-        },
 
         // ============================================================
         // US-PERS-02: Prompt Templates
@@ -271,39 +223,29 @@ export const usePersonalisationStore = create<PersonalisationState>()(
     },
     {
       name: 'therese-personalisation',
+      // B-493 : seules les données de l'utilisateur sont persistées (pas les
+      // fonctions ni les réglages dérivés), avec une version de schéma et une
+      // migration qui rend leur type aux dates relues du stockage.
+      version: 1,
+      partialize: (state) => ({
+        uxMode: state.uxMode,
+        skipDashboard: state.skipDashboard,
+        promptTemplates: state.promptTemplates,
+        llmBehavior: state.llmBehavior,
+      }),
+      migrate: (persisted) => {
+        const { shortcuts: _oublie, ...brut } = (persisted ?? {}) as Partial<PersonalisationState> & { shortcuts?: unknown };
+        // B-337 : la personnalisation des raccourcis est retirée ; une ancienne
+        // table `shortcuts` enregistrée est simplement oubliée (`_oublie`).
+        void _oublie;
+        const promptTemplates = (brut.promptTemplates ?? []).map((t) => ({
+          ...t,
+          createdAt: t.createdAt instanceof Date ? t.createdAt : new Date(t.createdAt as unknown as string),
+        }));
+        // Les champs absents d'un ancien stockage sont complétés par l'état courant au merge.
+        return { ...brut, promptTemplates } as unknown as Pick<PersonalisationState, 'uxMode' | 'skipDashboard' | 'promptTemplates' | 'llmBehavior'>;
+      },
     }
   )
 );
 
-/**
- * Hook to format a shortcut for display.
- */
-export function formatShortcut(shortcut: KeyboardShortcut): string {
-  const parts: string[] = [];
-
-  if (shortcut.modifiers.includes('cmd')) parts.push('⌘');
-  if (shortcut.modifiers.includes('ctrl')) parts.push('⌃');
-  if (shortcut.modifiers.includes('alt')) parts.push('⌥');
-  if (shortcut.modifiers.includes('shift')) parts.push('⇧');
-
-  parts.push(shortcut.key.toUpperCase());
-
-  return parts.join('');
-}
-
-/**
- * Check if an event matches a shortcut.
- */
-export function matchesShortcut(event: KeyboardEvent, shortcut: KeyboardShortcut): boolean {
-  const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
-  const cmdKey = isMac ? event.metaKey : event.ctrlKey;
-
-  const modifiersMatch =
-    (shortcut.modifiers.includes('cmd') === cmdKey) &&
-    (shortcut.modifiers.includes('shift') === event.shiftKey) &&
-    (shortcut.modifiers.includes('alt') === event.altKey);
-
-  const keyMatch = event.key.toUpperCase() === shortcut.key.toUpperCase();
-
-  return modifiersMatch && keyMatch;
-}
