@@ -112,6 +112,8 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
   const [ollamaAvailable, setOllamaAvailable] = useState(false);
   const [confirmationOpen, setConfirmationOpen] = useState(false);
   const [runError, setRunError] = useState<string | null>(null);
+  // B-640 : une demande de fermeture pendant la délibération attend confirmation.
+  const [fermetureDemandee, setFermetureDemandee] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   // 0.47 : identifiant du ProcessingTask (premier événement SSE) - cible
@@ -182,11 +184,22 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
       processingTaskIdRef.current, couperTransport(abortRef),
     );
     resetDeliberation();
+    setFermetureDemandee(false);
     setViewState('input');
     setQuestion('');
     setContext('');
     onClose();
   }, [resetDeliberation, onClose]);
+
+  // B-640 (Nadia, c4) : Échap, le fond ou « Fermer » pendant une délibération
+  // en cours demandent confirmation ; partout ailleurs, fermeture immédiate.
+  const demanderFermeture = useCallback(() => {
+    if (viewState === 'deliberating' && !isComplete) {
+      setFermetureDemandee(true);
+      return;
+    }
+    handleCloseAndReset();
+  }, [viewState, isComplete, handleCloseAndReset]);
 
   const handleCancelDeliberation = useCallback(() => {
     void annulerDeliberation(
@@ -442,11 +455,11 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
             animate="animate"
             exit="exit"
             className={`fixed inset-0 bg-black/60 backdrop-blur-sm ${Z_LAYER.MODAL}`}
-            onClick={handleCloseAndReset}
+            onClick={demanderFermeture}
           />
 
           {/* Panel */}
-          <BoardDialogShell onEscape={handleCloseAndReset}>
+          <BoardDialogShell onEscape={demanderFermeture}>
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
               <div className="flex items-center gap-3">
@@ -494,7 +507,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                     </Button>
                   </>
                 )}
-                <Button variant="ghost" size="icon" aria-label="Fermer le Board" onClick={handleCloseAndReset}>
+                <Button variant="ghost" size="icon" aria-label="Fermer le Board" onClick={demanderFermeture}>
                   <X className="w-5 h-5" />
                 </Button>
               </div>
@@ -502,14 +515,24 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-6">
-              <AnimatePresence mode="wait" initial={false}>
+              {/* B-639 (Nadia, c4) : avec mode="wait" et des sorties animées, la vue
+                  suivante ne montait qu'après la fin de sortie de la précédente. Or
+                  après une bascule Cloud → Souverain, l'indicateur partagé du
+                  sélecteur de mode (`layoutId`, retiré depuis dans ModeSelector)
+                  empêchait toute sortie de se terminer : le formulaire restait
+                  monté à opacité 0, toujours cliquable, et « Confirmer et lancer »
+                  invisible lançait une seconde délibération. Chaque composant
+                  motion de la vue sortante s'enregistre auprès de la présence et
+                  peut retarder son démontage : les vues changent donc hors de tout
+                  AnimatePresence (React démonte, rien ne reste coincé), l'animation
+                  d'entrée est conservée. */}
+              <>
                 {/* Input View */}
                 {viewState === 'input' && (
                   <motion.div
                     key="input"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
                     className="max-w-2xl mx-auto"
                   >
                     {/* Avatar et intro */}
@@ -636,9 +659,26 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                     data-testid="board-result"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
                   >
                     {runError && <div className="mb-4 rounded-md border border-error/30 bg-error/10 p-3 text-sm text-error" role="alert">{runError}</div>}
+                    {/* B-640 (Nadia, c4) : fermer pendant la délibération jetait tout
+                        sans un mot. La fermeture se confirme tant qu'elle tourne. */}
+                    {fermetureDemandee && !isComplete && (
+                      <div
+                        role="alertdialog"
+                        aria-label="Délibération en cours"
+                        className="mb-4 rounded-md border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-sm text-text"
+                      >
+                        <p className="font-semibold">Une délibération est en cours.</p>
+                        <p className="mt-1 text-text-muted">
+                          Fermer maintenant l’annule : les avis déjà obtenus ne seront pas enregistrés dans l’Historique.
+                        </p>
+                        <div className="mt-3 flex justify-end gap-2">
+                          <Button variant="ghost" size="sm" onClick={() => setFermetureDemandee(false)}>Continuer la délibération</Button>
+                          <Button variant="primary" size="sm" onClick={handleCloseAndReset}>Annuler et fermer</Button>
+                        </div>
+                      </div>
+                    )}
                     <DeliberationView
                       question={question}
                       isSearchingWeb={isSearchingWeb}
@@ -649,7 +689,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                       isComplete={isComplete}
                       onCancel={!isComplete ? handleCancelDeliberation : undefined}
                       onNewDeliberation={handleNewDeliberation}
-                      onClose={handleCloseAndReset}
+                      onClose={demanderFermeture}
                     />
                   </motion.div>
                 )}
@@ -660,7 +700,6 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                     key="history"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
                     className="max-w-2xl mx-auto"
                   >
                     <h3 className="text-lg font-semibold text-text mb-4">
@@ -728,7 +767,6 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                     key="viewing"
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
                   >
                     <DeliberationView
                       question={viewingDecision.question}
@@ -744,7 +782,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                     />
                   </motion.div>
                 )}
-              </AnimatePresence>
+              </>
             </div>
           </BoardDialogShell>
         </>

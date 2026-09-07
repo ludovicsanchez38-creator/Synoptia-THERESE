@@ -30,11 +30,16 @@ export function ModeSelector({ mode, onChange, ollamaAvailable, onRefreshOllama 
             : 'text-text-muted hover:text-text',
         )}
       >
+        {/* B-639 / B-640 (Nadia, c4) : l'indicateur partageait un `layoutId`
+            entre les deux boutons. Après une bascule de mode, aucune sortie
+            d'AnimatePresence au-dessus (changement de vue, fermeture du
+            dialogue Décision) ne se terminait plus : le dialogue restait
+            monté à opacité 0, cliquable. Un fondu par bouton suffit. */}
         {mode === 'cloud' && (
           <motion.div
-            layoutId="mode-indicator"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             className="absolute inset-0 bg-accent-cyan/10 border border-accent-cyan/30 rounded-md"
-            transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
           />
         )}
         <Cloud className="w-4 h-4 relative z-10" />
@@ -55,9 +60,9 @@ export function ModeSelector({ mode, onChange, ollamaAvailable, onRefreshOllama 
       >
         {mode === 'sovereign' && (
           <motion.div
-            layoutId="mode-indicator"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             className="absolute inset-0 bg-accent-magenta/10 border border-accent-magenta/30 rounded-md"
-            transition={{ type: 'spring', bounce: 0.2, duration: 0.4 }}
           />
         )}
         <Shield className="w-4 h-4 relative z-10" />

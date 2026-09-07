@@ -109,6 +109,28 @@ export function DeliberationView({
         </motion.div>
       )}
 
+      {/* B-639 (Nadia, c4) : avant le premier avis, rien ne disait que la
+          délibération tournait, et rien ne permettait de l'annuler. */}
+      {!isComplete && advisors.length === 0 && (
+        <div className="flex items-center gap-3 rounded-md bg-surface-elevated border border-border px-4 py-3">
+          <Spinner taille="bouton" className="text-accent-cyan-ink shrink-0" />
+          <p role="status" className="flex-1 text-sm text-text-muted">
+            Délibération lancée : en attente du premier conseiller. Avec un modèle local, le chargement peut prendre une minute.
+          </p>
+          {onCancel && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onCancel}
+              className="text-error hover:text-error hover:bg-error/10 gap-1.5 shrink-0"
+            >
+              <Square className="w-3.5 h-3.5 fill-current" />
+              Annuler
+            </Button>
+          )}
+        </div>
+      )}
+
       {/* Progress indicator */}
       {!isComplete && advisors.length > 0 && (
         <div className="flex items-center gap-3">
