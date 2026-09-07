@@ -26,7 +26,6 @@ import {
 } from '../../services/api';
 import { fetchCommandSchema } from '../../services/api/commands-v3';
 import { useActionsStore } from '../../stores/actionsStore';
-import { useExternalActionConfirmation } from '../app/useExternalActionConfirmation';
 import { Spinner } from '../ui/Spinner';
 
 interface SkillState {
@@ -53,7 +52,6 @@ interface CommandExecutorProps {
 }
 
 export function CommandExecutor({ command, onClose, onPromptSelect, onStartRFC }: CommandExecutorProps) {
-  const requestExternalAction = useExternalActionConfirmation();
   const [dynamicSkill, setDynamicSkill] = useState<{
     command: CommandDefinition;
     schema: SkillSchema;
@@ -257,17 +255,9 @@ export function CommandExecutor({ command, onClose, onPromptSelect, onStartRFC }
     const provider = config.provider as ImageProvider;
     const providerLabel = provider === 'gpt-image-2' ? 'GPT Image 2' : provider === 'fal-flux-pro' ? 'Fal Flux Pro' : 'Nano Banana 2';
 
-    requestExternalAction({
-      title: 'Confirmer la génération de l’image',
-      description: 'Vérifie le prompt et le moteur. La génération peut consommer un crédit du provider.',
-      confirmLabel: 'Confirmer et générer',
-      details: [
-        { label: 'Description', value: customPrompt },
-        { label: 'Moteur', value: providerLabel },
-        { label: 'Format', value: config.default_size || 'Format par défaut' },
-        { label: 'Qualité', value: config.default_quality || 'Qualité par défaut' },
-      ],
-    }, async () => {
+    // B-096 (décision de Ludo, 05/09/2026) : aucune confirmation avant une
+    // génération d'image, ici comme dans le canevas Images.
+    void (async () => {
       const store = useChatStore.getState();
       let conversationId = store.currentConversationId;
       if (!conversationId) {
@@ -314,8 +304,8 @@ export function CommandExecutor({ command, onClose, onPromptSelect, onStartRFC }
         updateMessage(loadingId, `Erreur : ${errorMsg}`);
         setImageState({ provider, status: 'error', prompt: customPrompt, error: errorMsg });
       }
-    });
-  }, [imagePromptCommand, addMessage, requestExternalAction, updateMessage]);
+    })();
+  }, [imagePromptCommand, addMessage, updateMessage]);
 
   // Rendu conditionnel
   return (

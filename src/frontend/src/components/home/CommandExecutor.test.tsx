@@ -61,7 +61,7 @@ describe('CommandExecutor - génération Images 0.40', () => {
     useChatStore.persist.clearStorage();
   });
 
-  it('sépare la saisie du prompt et la confirmation avant tout appel provider', async () => {
+  it('génère directement après « Générer », sans carte de confirmation (B-096, décision de Ludo)', async () => {
     render(
       <PrototypeExternalActionConfirmationProvider>
         <CommandExecutor
@@ -78,14 +78,7 @@ describe('CommandExecutor - génération Images 0.40', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Générer' }));
 
-    const preview = screen.getByTestId('external-action-confirmation');
-    expect(preview).toHaveTextContent('Un atelier lumineux avec un MacBook noir');
-    expect(preview).toHaveTextContent('GPT Image 2');
-    expect(preview).toHaveTextContent('1024x1024');
-    expect(generateImageMock).not.toHaveBeenCalled();
-
-    fireEvent.click(screen.getByRole('button', { name: 'Confirmer et générer' }));
-
+    expect(screen.queryByTestId('external-action-confirmation')).not.toBeInTheDocument();
     await waitFor(() => {
       expect(generateImageMock).toHaveBeenCalledWith({
         prompt: 'Un atelier lumineux avec un MacBook noir',
