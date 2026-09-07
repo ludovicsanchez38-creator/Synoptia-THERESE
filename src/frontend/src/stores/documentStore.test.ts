@@ -360,7 +360,7 @@ describe('documentStore', () => {
 
   describe('exportDocument', () => {
     it("retourne les métadonnées d'export en cas de succès et nettoie l'erreur", async () => {
-      useDocumentStore.setState({ error: 'Erreur périmée' });
+      useDocumentStore.setState({ exportError: 'Erreur périmée' });
       vi.mocked(exportDocument).mockResolvedValueOnce({
         success: true,
         format: 'docx',
@@ -371,14 +371,15 @@ describe('documentStore', () => {
       expect(exportDocument).toHaveBeenCalledWith('d1', 'docx');
       expect(result?.file_name).toBe('Proposition_abc12345.docx');
       expect(result?.download_url).toBe('/api/skills/download/abc12345');
-      expect(useDocumentStore.getState().error).toBeNull();
+      expect(useDocumentStore.getState().exportError).toBeNull();
     });
 
     it("retourne null et pose l'erreur en cas d'échec (ex. document vide)", async () => {
       vi.mocked(exportDocument).mockRejectedValueOnce(new Error('Document vide : rien à exporter.'));
       const result = await useDocumentStore.getState().exportDocument('d1');
       expect(result).toBeNull();
-      expect(useDocumentStore.getState().error).toBe('Document vide : rien à exporter.');
+      expect(useDocumentStore.getState().exportError).toBe('Document vide : rien à exporter.');
+      expect(useDocumentStore.getState().error).toBeNull();
     });
   });
 
@@ -545,7 +546,7 @@ describe('documentStore', () => {
       expect(state.currentDocument?.sections[0].content).toBe('Contenu final canonique (sans bloc PISTES)');
       expect(state.currentDocument?.pistes).toHaveLength(1);
       expect(state.isStreaming).toBe(false);
-      expect(state.error).toBeNull();
+      expect(state.draftError).toBeNull();
     });
 
     it("le chunk 'error' conserve le contenu partiel déjà streamé et pose l'erreur, sans recharger le document", async () => {
@@ -563,7 +564,7 @@ describe('documentStore', () => {
       const state = useDocumentStore.getState();
       expect(state.currentDocument?.sections[0].content).toBe('Début de rédaction');
       expect(state.currentDocument?.sections[0].status).toBe('brouillon');
-      expect(state.error).toBe('Erreur du fournisseur IA pendant la rédaction : timeout');
+      expect(state.draftError).toBe('Erreur du fournisseur IA pendant la rédaction : timeout');
       expect(state.isStreaming).toBe(false);
       expect(getDocument).not.toHaveBeenCalled();
     });
@@ -576,7 +577,7 @@ describe('documentStore', () => {
 
       await useDocumentStore.getState().draftSection('s1');
 
-      expect(useDocumentStore.getState().error).toBe('Impossible de contacter le serveur');
+      expect(useDocumentStore.getState().draftError).toBe('Impossible de contacter le serveur');
       expect(useDocumentStore.getState().isStreaming).toBe(false);
     });
 
@@ -635,7 +636,7 @@ describe('documentStore', () => {
 
         const state = useDocumentStore.getState();
         expect(state.currentDocument?.sections[0].content).toBe('Début du nouveau texte');
-        expect(state.error).toBe('Erreur du fournisseur IA pendant la rédaction : timeout');
+        expect(state.draftError).toBe('Erreur du fournisseur IA pendant la rédaction : timeout');
         expect(state.isStreaming).toBe(false);
       });
 
@@ -672,7 +673,7 @@ describe('documentStore', () => {
 
         const state = useDocumentStore.getState();
         expect(state.currentDocument?.sections[0].content).toBe('Paragraphe déjà rédigé.');
-        expect(state.error).toBe('Erreur du fournisseur IA pendant la rédaction : surcharge');
+        expect(state.draftError).toBe('Erreur du fournisseur IA pendant la rédaction : surcharge');
         expect(state.isStreaming).toBe(false);
       });
 
@@ -693,7 +694,7 @@ describe('documentStore', () => {
 
         const state = useDocumentStore.getState();
         expect(state.currentDocument?.sections[0].content).toBe('Paragraphe déjà rédigé.');
-        expect(state.error).toBe('Impossible de contacter le serveur');
+        expect(state.draftError).toBe('Impossible de contacter le serveur');
         expect(state.isStreaming).toBe(false);
       });
     });
@@ -743,7 +744,7 @@ describe('documentStore', () => {
         releaseChunk();
         await streaming; // ne doit pas planter (sortie silencieuse sur AbortError)
 
-        expect(useDocumentStore.getState().error).toBeNull();
+        expect(useDocumentStore.getState().draftError).toBeNull();
       });
 
       it("un nouveau draftSection annule silencieusement le stream précédent encore actif", async () => {

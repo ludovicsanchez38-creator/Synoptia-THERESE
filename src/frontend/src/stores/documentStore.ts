@@ -17,7 +17,8 @@
  * - nouveaux tableaux/objets, jamais de mutation en place) pendant que
  * `isStreaming` reste vrai. Sur chunk `error`, le contenu déjà streamé
  * depuis CE démarrage est conservé tel quel (le backend a lui-même persisté
- * le partiel, zéro perte) et `error` est posé - SAUF si l'erreur (chunk
+ * le partiel, zéro perte) et `draftError` est posé (B-630 : une erreur par
+ * origine, `error` pour le document, `exportError` pour l'export) - SAUF si l'erreur (chunk
  * `error` en tête de flux ou exception réseau immédiate) survient AVANT le
  * premier chunk texte : le backend n'a alors rien flushé (la base garde
  * l'ancien contenu), donc le store RESTAURE le contenu pré-reset au lieu de
@@ -75,7 +76,12 @@ interface DocumentStore {
   sectionActive: string | null;
   isStreaming: boolean;
   isLoading: boolean;
+  /** Erreur du document (chargement, trame, sections, validation). */
   error: string | null;
+  /** Erreur de la rédaction en flux (B-630) : affichée dans l'éditeur, avec « Reprendre ». */
+  draftError: string | null;
+  /** Erreur d'export (B-630) : affichée à côté des boutons d'export. */
+  exportError: string | null;
   /** Drapeau UI ponctuel (D4) : posé par l'action ⌘K/Accueil `documents.new`
    * AVANT que la vue Documents ne soit montée (ou pendant qu'elle l'est
    * déjà) - `DocumentsList` le consomme (ouvre sa modale de création locale)
@@ -159,6 +165,8 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
   isStreaming: false,
   isLoading: false,
   error: null,
+  draftError: null,
+  exportError: null,
   createModalRequested: false,
 
   // ============================================================
@@ -224,7 +232,7 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
     // tardif rechargerait un document qu'on vient de quitter).
     draftAbortController?.abort();
     draftAbortController = null;
-    set({ currentDocument: null, sectionActive: null, error: null, isStreaming: false });
+    set({ currentDocument: null, sectionActive: null, error: null, draftError: null, exportError: null, isStreaming: false });
   },
 
   requestCreateModal: () => set({ createModalRequested: true }),
@@ -345,7 +353,7 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
     // store doit repartir de zéro pour rester en miroir exact.
     set((s) => ({
       isStreaming: true,
-      error: null,
+      draftError: null,
       sectionActive: sectionId,
       currentDocument: s.currentDocument
         ? patchSection(s.currentDocument, sectionId, (section) => ({ ...section, content: '' }))
@@ -375,7 +383,7 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
           // afficherait vide alors que la base garde l'ancien contenu).
           set((s) => ({
             isStreaming: false,
-            error: chunk.content || 'Erreur pendant la rédaction.',
+            draftError: chunk.content || 'Erreur pendant la rédaction.',
             currentDocument: receivedText ? s.currentDocument : restorePreviousContent(s),
           }));
           return;
@@ -405,7 +413,7 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
       // pré-reset (la base n'a rien reçu, elle garde l'ancien contenu).
       set((s) => ({
         isStreaming: false,
-        error: e?.message || 'Erreur réseau pendant la rédaction.',
+        draftError: e?.message || 'Erreur réseau pendant la rédaction.',
         currentDocument: receivedText ? s.currentDocument : restorePreviousContent(s),
       }));
     } finally {
@@ -435,11 +443,11 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
   // ============================================================
 
   exportDocument: async (documentId, format = 'md') => {
-    set({ error: null });
+    set({ exportError: null });
     try {
       return await apiExportDocument(documentId, format);
     } catch (e: any) {
-      set({ error: e?.message || "Impossible d'exporter le document." });
+      set({ exportError: e?.message || "Impossible d'exporter le document." });
       return null;
     }
   },
@@ -496,5 +504,5 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
   // UI
   // ============================================================
 
-  clearError: () => set({ error: null }),
+  clearError: () => set({ error: null, draftError: null, exportError: null }),
 }));

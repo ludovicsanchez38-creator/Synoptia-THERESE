@@ -60,6 +60,8 @@ export function DocumentWorkspace({ documentId, onBack }: DocumentWorkspaceProps
   const isStreaming = useDocumentStore((s) => s.isStreaming);
   const isLoading = useDocumentStore((s) => s.isLoading);
   const error = useDocumentStore((s) => s.error);
+  const draftError = useDocumentStore((s) => s.draftError);
+  const exportError = useDocumentStore((s) => s.exportError);
   const setSectionActive = useDocumentStore((s) => s.setSectionActive);
   const reorderSections = useDocumentStore((s) => s.reorderSections);
   const createSection = useDocumentStore((s) => s.createSection);
@@ -142,7 +144,7 @@ export function DocumentWorkspace({ documentId, onBack }: DocumentWorkspaceProps
 
   return (
     <div className="flex-1 min-h-0 flex flex-col bg-bg" data-testid="document-workspace">
-      <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border/40 shrink-0">
+      <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border/40 shrink-0" data-testid="atelier-entete">
         <div className="flex items-center gap-3 min-w-0">
           <Button variant="ghost" size="sm" onClick={handleBack}>
             <ArrowLeft className="w-4 h-4 mr-1.5" />
@@ -152,6 +154,12 @@ export function DocumentWorkspace({ documentId, onBack }: DocumentWorkspaceProps
         </div>
         {doc && (
           <div className="flex items-center gap-2 shrink-0">
+            {/* B-630 : l'erreur d'export s'affiche ici, à côté du geste, et nulle part ailleurs. */}
+            {exportError && (
+              <span role="alert" className="max-w-xs truncate px-2.5 py-1 rounded-sm border border-error/30 bg-error/10 text-xs text-error" title={exportError}>
+                {exportError}
+              </span>
+            )}
             <Button variant="ghost" size="sm" onClick={() => handleExport('md')} disabled={exportingFormat !== null}>
               {exportingFormat === 'md' ? (
                 <Spinner taille="bouton" className="mr-1.5" />
@@ -197,7 +205,8 @@ export function DocumentWorkspace({ documentId, onBack }: DocumentWorkspaceProps
           <SectionEditor
             section={activeSection}
             isStreaming={isStreaming}
-            error={error}
+            error={draftError}
+            trameEnCours={isLoading && doc.sections.length === 0}
             onUpdateSection={updateSection}
             onDraft={draftSection}
             onValidate={validateSection}

@@ -137,6 +137,8 @@ export interface SectionEditorProps {
   instructionPrefill?: string | null;
   /** Appelé juste après consommation de `instructionPrefill` (le parent efface son état). */
   onInstructionPrefillApplied?: () => void;
+  /** B-627 : la trame est en cours de génération et n'a encore aucune section. */
+  trameEnCours?: boolean;
 }
 
 // =============================================================================
@@ -152,6 +154,7 @@ export function SectionEditor({
   onValidate,
   instructionPrefill,
   onInstructionPrefillApplied,
+  trameEnCours = false,
 }: SectionEditorProps) {
   const [titleDraft, setTitleDraft] = useState('');
   const [briefDraft, setBriefDraft] = useState('');
@@ -159,6 +162,7 @@ export function SectionEditor({
   const [lastInstruction, setLastInstruction] = useState<string | undefined>(undefined);
   const zoneContenuRef = useRef<HTMLDivElement>(null);
   const commandeFocalisee = useRef<HTMLElement | null>(null);
+  const instructionRef = useRef<HTMLInputElement>(null);
 
   // B-288 : au démarrage de la rédaction, toutes les commandes de la barre
   // passent en `disabled` - y compris celle qui vient d'être actionnée. Les
@@ -202,11 +206,30 @@ export function SectionEditor({
       // Finding H : préserve une saisie en cours plutôt que de l'écraser.
       setInstruction((prev) => (prev.trim() ? `${prev}; ${instructionPrefill}` : instructionPrefill));
       onInstructionPrefillApplied?.();
+      // B-628 : le champ était prérempli à 1 247 px de haut dans une fenêtre
+      // de 800 px, sans rien qui le signale. On l'amène à l'écran et on lui
+      // donne le focus : l'effet d'« Explorer » devient visible.
+      const champ = instructionRef.current;
+      if (champ) {
+        champ.scrollIntoView?.({ block: 'nearest' });
+        champ.focus();
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps -- volontaire : uniquement au changement du préremplissage (mise à jour fonctionnelle, pas besoin de `instruction` en dep)
   }, [instructionPrefill]);
 
   if (!section) {
+    if (trameEnCours) {
+      // B-627 : sans section, inviter à « sélectionner une section » mentait
+      // pendant la génération de la trame.
+      return (
+        <div className="flex-1 min-h-0 flex items-center justify-center text-center px-6" data-testid="section-editor-empty">
+          <p role="status" className="text-sm text-text-muted">
+            La trame est en cours de génération. Les sections à rédiger apparaîtront ici dès qu'elle sera prête.
+          </p>
+        </div>
+      );
+    }
     return (
       <div className="flex-1 min-h-0 flex items-center justify-center text-center px-6" data-testid="section-editor-empty">
         <div>
@@ -323,6 +346,14 @@ export function SectionEditor({
         >
           {isStreaming ? (
             <div className="whitespace-pre-wrap break-words leading-relaxed">
+              {/* B-633 : un modèle local peut raisonner plusieurs minutes avant
+                  d'écrire. Le statut dit ce qui se passe, et une synthèse
+                  vocale a enfin quelque chose à lire. */}
+              <p role="status" className="mb-2 text-xs text-text-muted not-prose">
+                {section.content
+                  ? 'Rédaction en cours…'
+                  : 'Rédaction lancée : le modèle prépare le texte, aucun mot reçu pour l’instant. Avec un modèle local, cela peut prendre plusieurs minutes.'}
+              </p>
               {section.content}
               <span className="inline-block w-0.5 h-5 bg-accent-cyan animate-pulse ml-1 rounded-full align-text-bottom" />
             </div>
@@ -345,23 +376,28 @@ export function SectionEditor({
         )}
       </div>
 
-      {/* Actions : Rédiger / Retoucher (instruction) / Valider */}
-      <div className="px-5 py-3.5 border-t border-border/40 shrink-0">
-        <div className="flex items-center gap-2">
+      {/* Actions : instruction de retouche sur sa propre ligne (B-629 : 139 px
+          de large quand elle partageait la ligne avec trois boutons), puis
+          Rédiger / Retoucher / Valider */}
+      <div className="px-5 py-3.5 border-t border-border/40 shrink-0 space-y-2">
+        <div>
+          <input
+            ref={instructionRef}
+            value={instruction}
+            onChange={(e) => setInstruction(e.target.value)}
+            placeholder="Instruction de retouche (ex. plus concis, ajouter un exemple...)"
+            aria-label="Instruction de retouche"
+            className="w-full px-2.5 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
+            disabled={isStreaming}
+          />
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
           {!isValidee && (
             <Button variant="ghost" size="sm" onClick={handleRedact} disabled={isStreaming}>
               <Sparkles className="w-4 h-4 mr-1.5" />
               Rédiger
             </Button>
           )}
-          <input
-            value={instruction}
-            onChange={(e) => setInstruction(e.target.value)}
-            placeholder="Instruction de retouche (ex. plus concis, ajouter un exemple...)"
-            aria-label="Instruction de retouche"
-            className="flex-1 min-w-0 px-2.5 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
-            disabled={isStreaming}
-          />
           <Button variant="secondary" size="sm" onClick={handleRetouch} disabled={isStreaming || !instruction.trim()}>
             <FileEdit className="w-4 h-4 mr-1.5" />
             Retoucher

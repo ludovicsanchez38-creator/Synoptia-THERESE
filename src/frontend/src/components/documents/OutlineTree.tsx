@@ -207,7 +207,15 @@ export function OutlineTree({
       )}
 
       <div className="flex-1 overflow-y-auto py-1">
-        {sortedSections.length === 0 ? (
+        {sortedSections.length === 0 && isLoading ? (
+          /* B-627 : pendant la génération (plusieurs minutes avec un modèle
+             local), l'état vide mentait. Un état de travail nommé le remplace. */
+          <div role="status" className="flex flex-col items-center justify-center gap-2 py-10 px-4 text-center">
+            <Spinner taille="bouton" />
+            <p className="text-xs font-medium text-text">Génération de la trame en cours…</p>
+            <p className="text-xs text-text-muted">Avec un modèle local, cela peut prendre plusieurs minutes. Les sections apparaîtront ici.</p>
+          </div>
+        ) : sortedSections.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 py-10 px-4 text-center">
             <p className="text-xs text-text-muted">Aucune section pour l&apos;instant.</p>
             <Button variant="secondary" size="sm" onClick={onGenerateOutline} disabled={isLoading}>
