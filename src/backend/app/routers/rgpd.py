@@ -16,6 +16,7 @@ from app.models.entities import (
     Activity,
     Contact,
     EmailMessage,
+    Invoice,
     Prestation,
     Project,
     Task,
@@ -205,6 +206,22 @@ async def anonymize_contact(
     for prestation in prestations:
         await session.delete(prestation)
 
+    # B-169 (P-003, décision de Ludo) : le nom reste sur les pièces déjà émises
+    # (pièce comptable à conserver) ; il disparaît des brouillons, qui n'ont
+    # jamais quitté l'application.
+    brouillons = (
+        await session.execute(
+            select(Invoice).where(Invoice.contact_id == contact_id, Invoice.status == "draft")
+        )
+    ).scalars().all()
+    for piece in brouillons:
+        piece.client_name = "[ANONYMISÉ]"
+        piece.client_company = None
+        piece.client_email = None
+        piece.client_phone = None
+        piece.client_address = None
+        piece.updated_at = datetime.now(UTC)
+        session.add(piece)
     # Delete activities
     result = await session.execute(
         select(Activity).where(Activity.contact_id == contact_id)
