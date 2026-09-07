@@ -17,7 +17,11 @@ test.beforeAll(async ({ request }) => {
   const tokenResp = await request.get(`${BACKEND_URL}/api/auth/token`);
   expect(tokenResp.status()).toBe(200);
   const body = await tokenResp.json();
-  authToken = body.token || '';
+  // B-397 : un 200 sans jeton ferait tourner toute la suite sans en-tête,
+  // avec des 401 lus comme des verdicts métier. Le champ est exigé.
+  expect(typeof body.token).toBe('string');
+  expect(body.token.length).toBeGreaterThan(0);
+  authToken = body.token;
 });
 
 function headers() {
