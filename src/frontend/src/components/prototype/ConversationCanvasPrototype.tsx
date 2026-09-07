@@ -886,6 +886,10 @@ export function ConversationCanvasPrototype() {
     setCommandOpen(false);
     setCapabilityCenterOpen(false);
     setTrustCenterOpen(false);
+    // B-456 : l'ouverture locale tient aussi le store d'accord, comme la fermeture.
+    if (!usePanelStoreDirect.getState().showConversationSidebar) {
+      usePanelStoreDirect.getState().toggleConversationSidebar();
+    }
   }, []);
 
   const toggleConversationDrawer = useCallback(() => {
@@ -901,6 +905,8 @@ export function ConversationCanvasPrototype() {
   // moindre effet visible.
   const tiroirDemande = usePanelStore((state) => state.showConversationSidebar);
   const dernierTiroirRef = useRef<boolean | null>(null);
+  const tiroirOuvertRef = useRef(drawerOpen);
+  tiroirOuvertRef.current = drawerOpen;
   useEffect(() => {
     if (dernierTiroirRef.current === null) {
       dernierTiroirRef.current = tiroirDemande;
@@ -908,6 +914,8 @@ export function ConversationCanvasPrototype() {
     }
     if (dernierTiroirRef.current === tiroirDemande) return;
     dernierTiroirRef.current = tiroirDemande;
+    // B-456 : une commande ne rouvre pas (ni ne change la surface d') un tiroir déjà ouvert.
+    if (tiroirDemande === tiroirOuvertRef.current) return;
     if (tiroirDemande) openConversationDrawer('history');
     else closeConversationDrawer();
     // openConversationDrawer est recréé à chaque rendu : l'inclure bouclerait.
@@ -1435,7 +1443,8 @@ export function ConversationCanvasPrototype() {
       openChat();
       return;
     }
-    if (actionId === 'conversations.toggle') { setDrawerOpen((open) => !open); return; }
+    // B-456 : un seul chemin pour « Conversations », qui tient le store d'accord avec l'écran.
+    if (actionId === 'conversations.toggle') { toggleConversationDrawer(); return; }
     if (actionId === 'contact.new') { usePanelStore.getState().openNewContact(); return; }
     if (actionId === 'project.new') { usePanelStore.getState().openNewProject(); return; }
     if (actionId === 'board.open') { toggleBoardPanel(); return; }
