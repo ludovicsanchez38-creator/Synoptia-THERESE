@@ -893,15 +893,11 @@ class Deliverable(SQLModel, table=True):
     project: Optional["Project"] = Relationship(back_populates="deliverables")
 
 
-# =============================================================================
-# UPDATE RELATIONSHIPS
-# =============================================================================
-
-# Update Contact model to have invoices relationship
-Contact.invoices = Relationship(back_populates="contact")
-
-# Update Project model to have deliverables relationship
-Project.deliverables = Relationship(back_populates="project", sa_relationship_kwargs={"cascade": "all, delete-orphan"})
+# B-469 (cycle 4) : le bloc « UPDATE RELATIONSHIPS » qui réaffectait
+# Contact.invoices et Project.deliverables après les classes a été retiré. Il
+# était sans effet sur le mapper déjà configuré, mais il affichait des options
+# différentes de celles réellement en vigueur (passive_deletes, cascade) ; les
+# relations vivent dans le corps des classes, un test verrouille leurs options.
 
 
 # =============================================================================
