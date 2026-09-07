@@ -6,6 +6,15 @@
 > (confidentialité, où vit l'export RGPD). Les étapes concernées ne pouvaient
 > donc rien trouver, et un pas qui ne trouve rien ne prouve rien.
 
+> **Réécriture du 07/09/2026 (B-327).** Les étapes 13, 21 à 23 et 48 pilotaient
+> l'application par `settings-btn` et les `sidebar-*` : deux surfaces que la
+> coque conversationnelle ne monte plus (`ConversationSidebar` et `ChatHeader`
+> n'ont aucun importeur hors de leurs propres tests). Elles passent désormais
+> par le registre d'actions que l'application expose (`window.__therese.runAction`,
+> celui-là même que sert la palette de commandes) : les conversations vivent
+> dans un tiroir (`prototype-conversation-drawer`), les réglages dans une
+> modale (`settings-modal`). Même chemin que `tests/e2e/stories/parcours-01`.
+
 > Version : 1.0 | Date : 2026-03-27
 > App : THERESE Desktop (Tauri 2.0, React, Python FastAPI)
 > URL dev : http://localhost:1420 | Backend : http://localhost:17293
@@ -269,14 +278,14 @@ mkdir -p /tmp/therese-tests
 
 ---
 
-### Étape 13 : Ouvrir Settings (bouton engrenage)
+### Étape 13 : Ouvrir les réglages (action `settings.open`)
 
 **Priorité** : P0
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `find` -> `[data-testid="settings-btn"]`
-2. `click` -> `[data-testid="settings-btn"]`
+1. `javascript_tool` -> `Boolean(window.__therese?.runAction)` (le registre est exposé ; sinon attendre 2 s et réessayer)
+2. `javascript_tool` -> `window.__therese.runAction('settings.open')`
 3. `wait_for` -> `[data-testid="settings-modal"]` visible (max 3s)
 4. `screenshot` -> `/tmp/therese-tests/A1-13_settings_open.png`
 
@@ -417,65 +426,68 @@ mkdir -p /tmp/therese-tests
 
 ## Phase 3 : Gestion des conversations (étapes 21-23)
 
-> **Sidebar fermée par défaut (depuis 11/06/2026)** : la sidebar conversations
-> n'est plus ouverte au lancement (l'app atterrit sur l'Accueil). Avant toute
-> action sur un `[data-testid="sidebar-*"]`, l'ouvrir :
-> `javascript_tool` -> `window.__therese.stores.panel.getState().togglePanel('conversationSidebar')`
-> (ou raccourci ⌘B/Ctrl+B), puis `wait_for` -> `[data-testid="sidebar"]` visible.
+> **Tiroir des conversations (B-327, 07/09/2026)** : il n'y a plus de sidebar.
+> Les conversations vivent dans un tiroir fermé par défaut, ouvert par l'action
+> `conversations.toggle` (ou le raccourci ⌘B/Ctrl+B) :
+> `javascript_tool` -> `window.__therese.runAction('conversations.toggle')`,
+> puis `wait_for` -> `[data-testid="prototype-conversation-drawer"]` visible.
+> La liste porte `[data-testid="prototype-conversation-list"]` ; chaque
+> conversation est un `button` de cette liste, la courante porte `aria-current`.
 
 ---
 
-### Étape 21 : Nouvelle conversation (bouton +)
+### Étape 21 : Nouvelle conversation (action `chat.new`)
 
 **Priorité** : P0
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `find` -> `[data-testid="sidebar-new-conversation-btn"]`
-2. `click` -> `[data-testid="sidebar-new-conversation-btn"]`
-3. `wait_for` -> l'input de chat est vidé et la liste de messages est vide (max 3s)
+1. `javascript_tool` -> `window.__therese.runAction('chat.new')`
+2. `wait_for` -> `[data-testid="chat-message-input"]` visible et vide (max 3s)
+3. `wait_for` -> la liste de messages est vide (max 3s)
 4. `screenshot` -> `/tmp/therese-tests/A1-21_new_conversation.png`
 5. `javascript_tool` -> `document.querySelectorAll('[data-testid="chat-message-item"]').length === 0`
 
-**Résultat attendu** : Une nouvelle conversation est créée. L'historique de chat est vidé. L'input est vide et prêt pour un nouveau message. La conversation précédente est sauvegardée et apparaît dans la sidebar. Le titre de la nouvelle conversation est générique ("Nouvelle conversation" ou vide).
+**Résultat attendu** : Une nouvelle conversation est créée. L'historique de chat est vidé. L'input est vide et prêt pour un nouveau message. La conversation précédente est sauvegardée et apparaît dans le tiroir. Le titre de la nouvelle conversation est générique ("Nouvelle conversation" ou vide).
 **États testés** : empty (nouvelle conversation)
 **Si FAIL** : Screenshot `/tmp/therese-tests/A1-21_new_conversation.png`
 
 ---
 
-### Étape 22 : Vérifier que l'ancienne apparaît dans la sidebar
+### Étape 22 : Vérifier que l'ancienne apparaît dans le tiroir
 
 **Priorité** : P1
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `find` -> `[data-testid="sidebar"]`
-2. `find` -> `[data-testid="sidebar-conversation-list"]`
-3. `javascript_tool` -> `document.querySelectorAll('[data-testid="sidebar-conversation-item"]').length >= 1`
+1. `javascript_tool` -> `window.__therese.runAction('conversations.toggle')`
+2. `wait_for` -> `[data-testid="prototype-conversation-drawer"]` visible (max 3s)
+3. `javascript_tool` -> `document.querySelectorAll('[data-testid="prototype-conversation-list"] button').length >= 1`
 4. `screenshot` -> `/tmp/therese-tests/A1-22_sidebar_previous.png`
-5. `click` -> premier `[data-testid="sidebar-conversation-item"]` (l'ancienne conversation)
+5. `click` -> le `button` de `[data-testid="prototype-conversation-list"]` qui ne porte PAS `aria-current` (l'ancienne conversation)
 6. `wait_for` -> les messages de l'ancienne conversation réapparaissent (max 3s)
 7. `screenshot` -> `/tmp/therese-tests/A1-22_restore_conversation.png`
 
-**Résultat attendu** : La sidebar contient au moins une conversation précédente. Le titre est pertinent (soit généré automatiquement, soit le premier message). Le clic sur une conversation restaure son historique complet. Les messages sont intacts (contenu, ordre, formatage).
+**Résultat attendu** : Le tiroir contient au moins une conversation précédente. Le titre est pertinent (soit généré automatiquement, soit le premier message). Le clic sur une conversation restaure son historique complet. Les messages sont intacts (contenu, ordre, formatage).
 **États testés** : filled (sidebar), loaded (restauration)
 **Si FAIL** : Screenshot `/tmp/therese-tests/A1-22_sidebar_previous.png`
 
 ---
 
-### Étape 23 : Rechercher dans la sidebar
+### Étape 23 : Rechercher dans le tiroir des conversations
 
 **Priorité** : P1
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `find` -> `[data-testid="sidebar-search-input"]`
-2. `click` -> `[data-testid="sidebar-search-input"]`
+0. si le tiroir est fermé : `javascript_tool` -> `window.__therese.runAction('conversations.toggle')`, puis `wait_for` -> `[data-testid="prototype-conversation-drawer"]` visible
+1. `find` -> `[data-testid="prototype-conversation-drawer"] input[aria-label="Rechercher une conversation"]`
+2. `click` -> `[data-testid="prototype-conversation-drawer"] input[aria-label="Rechercher une conversation"]`
 3. `type` -> "Bonjour"
 4. `wait_for` -> filtrage de la liste (max 2s)
 5. `screenshot` -> `/tmp/therese-tests/A1-23_sidebar_search.png`
 6. `javascript_tool` -> vérifier que la liste filtrée contient au moins la conversation avec "Bonjour"
-7. `find` -> `[data-testid="sidebar-search-input"]`
+7. `find` -> `[data-testid="prototype-conversation-drawer"] input[aria-label="Rechercher une conversation"]`
 8. `javascript_tool` -> vider le champ de recherche (triple clic + delete)
 9. `type` -> "zzzznonexistent"
 10. `wait_for` -> liste vide ou message "aucun résultat" (max 2s)
@@ -1004,9 +1016,9 @@ mkdir -p /tmp/therese-tests
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `find` -> `[data-testid="settings-btn"]`
-2. `click` -> `[data-testid="settings-btn"]`
-3. `wait_for` -> `[data-testid="settings-modal"]` visible (max 3s)
+1. `javascript_tool` -> `window.__therese.runAction('settings.open')`
+2. `wait_for` -> `[data-testid="settings-modal"]` visible (max 3s)
+3. `find` -> `[data-testid="settings-tab-privacy"]`
 4. `find` -> `[data-testid="settings-tab-privacy"]`
 5. `click` -> `[data-testid="settings-tab-privacy"]`
 6. `wait_for` -> contenu onglet Data visible (max 2s)
@@ -1065,12 +1077,8 @@ chat-message-list
 chat-message-item
 chat-attach-btn
 chat-voice-btn
-sidebar
-sidebar-new-conversation-btn
-sidebar-search-input
-sidebar-conversation-list
-sidebar-conversation-item
-settings-btn
+prototype-conversation-drawer
+prototype-conversation-list
 settings-modal
 settings-tab-ai
 settings-tab-privacy

@@ -1327,33 +1327,153 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 
 ---
 
+## Phase 14 : États d'erreur (étapes 56-60)
+
+> **Ajoutée le 07/09/2026 (B-386).** La matrice de couverture ne portait aucun
+> « État erreur » : en 55 étapes, le protocole ne faisait jamais échouer un
+> appel, ne coupait jamais le moteur, ne fournissait jamais une clé invalide.
+> Or la moitié des correctifs consignés dans le CLAUDE.md portent sur des
+> erreurs mal présentées à l'écran. Ces cinq étapes visent des témoins qui
+> existent dans le code (`data-testid` ou `role="alert"`) ; un témoin absent
+> est un FAIL, pas une étape « sans objet ».
+
+---
+
+### Étape 56 : Clé API invalide - l'erreur est nommée, aucun faux succès
+
+**Priorité** : P0
+**URL** : http://localhost:1420
+
+**Actions Chrome MCP** :
+1. `javascript_tool` -> `window.__therese.runAction('settings.open')`
+2. `wait_for` -> `[data-testid="settings-modal"]` visible (max 3s)
+3. `click` -> `[data-testid="settings-tab-ai"]`
+4. choisir un fournisseur cloud (Anthropic ou OpenAI), saisir la clé `sk-invalide-A3-56` dans le champ de clé
+5. `click` -> le bouton d'enregistrement ou de vérification de la clé
+6. `wait_for` -> `[data-testid="settings-modal"] [role="alert"]` visible (max 15s)
+7. `screenshot` -> `/tmp/therese-tests/A3-56_cle_invalide.png`
+8. `javascript_tool` -> `document.querySelector('[data-testid="settings-modal"] [role="alert"]')?.textContent`
+9. `javascript_tool` -> `[...document.querySelectorAll('[role="status"]')].map(n => n.textContent).join(' | ')` (aucune notification de succès)
+
+**Résultat attendu** : Un message d'erreur visible dans la modale nomme la cause (clé refusée par le fournisseur, réseau) sans jargon ni trace technique. Aucun toast de succès. La clé invalide n'est pas annoncée comme enregistrée « dans le coffre ». Le fournisseur précédent reste utilisable.
+**États testés** : error (clé refusée)
+**Si FAIL** : Screenshot `/tmp/therese-tests/A3-56_cle_invalide.png`
+
+---
+
+### Étape 57 : Aucun modèle actif - le composeur l'explique et bloque l'envoi
+
+**Priorité** : P0
+**URL** : http://localhost:1420
+
+**Pré-condition** : aucune clé cloud valide et Ollama arrêté (ou le fournisseur courant pointé sur un modèle absent).
+
+**Actions Chrome MCP** :
+1. `javascript_tool` -> `window.__therese.runAction('chat.new')`
+2. `wait_for` -> `[data-testid="chat-model-unavailable"]` visible (max 10s)
+3. `screenshot` -> `/tmp/therese-tests/A3-57_sans_modele.png`
+4. `javascript_tool` -> `document.querySelector('[data-testid="chat-message-input"]').disabled === true`
+5. `javascript_tool` -> `document.querySelector('[data-testid="chat-send-btn"]').disabled === true`
+6. `javascript_tool` -> `document.querySelector('[data-testid="chat-model-unavailable"]').textContent`
+
+**Résultat attendu** : Le bandeau « Choisis d'abord un modèle » est visible, avec un bouton vers les réglages IA (ou, si les réglages sont déjà ouverts, l'indication d'y choisir un modèle). L'envoi est impossible : champ et bouton désactivés. Aucune requête n'est envoyée au moteur.
+**États testés** : error (aucun modèle)
+**Si FAIL** : Screenshot `/tmp/therese-tests/A3-57_sans_modele.png`
+
+---
+
+### Étape 58 : Moteur arrêté - l'état est dit, rien ne passe pour « vide »
+
+**Priorité** : P0
+**URL** : http://localhost:1420
+
+**Actions Chrome MCP** :
+1. arrêter le backend de développement (Ctrl+C dans le terminal `make dev-backend`, ou `kill` du processus uvicorn :17293 - JAMAIS une instance installée)
+2. `wait_for` -> l'indicateur de connexion affiche « Moteur arrêté » ou « Erreur du moteur » (max 20s)
+3. `screenshot` -> `/tmp/therese-tests/A3-58_moteur_arrete.png`
+4. `javascript_tool` -> `window.__therese.runAction('memory.open')`
+5. `wait_for` -> `[data-testid="contacts-memory-error"]` ou un `[role="alert"]` visible (max 10s)
+6. `screenshot` -> `/tmp/therese-tests/A3-58_contacts_erreur.png`
+7. `javascript_tool` -> `[...document.querySelectorAll('[role="alert"]')].map(n => n.textContent).join(' | ')`
+8. relancer le backend (`make dev-backend`)
+9. `wait_for` -> l'indicateur affiche « Moteur actif » (max 30s)
+10. `screenshot` -> `/tmp/therese-tests/A3-58_moteur_revenu.png`
+
+**Résultat attendu** : L'arrêt du moteur est annoncé par l'indicateur de connexion. Les surfaces qui lisent le serveur affichent une erreur explicite (« Impossible de contacter le serveur » ou équivalent), jamais un état vide qui ferait croire à l'absence de données. Au retour du moteur, l'indicateur repasse à « Moteur actif » et les surfaces se rechargent sans redémarrer l'application.
+**États testés** : error (moteur arrêté), recovery (moteur revenu)
+**Si FAIL** : Screenshot `/tmp/therese-tests/A3-58_moteur_arrete.png`
+
+---
+
+### Étape 59 : Agenda - rafraîchissement échoué, données conservées
+
+**Priorité** : P1
+**URL** : http://localhost:1420
+
+**Actions Chrome MCP** :
+1. moteur actif : ouvrir l'agenda (`window.__therese.runAction('calendar.open')` ou la palette) et attendre l'affichage des événements créés en Phase 8
+2. arrêter le backend (comme à l'étape 58)
+3. `click` -> le bouton de rafraîchissement de l'agenda
+4. `wait_for` -> `[data-testid="calendar-stale-warning"]` visible (max 10s)
+5. `screenshot` -> `/tmp/therese-tests/A3-59_agenda_conserve.png`
+6. `javascript_tool` -> `document.querySelector('[data-testid="calendar-stale-warning"]').textContent`
+7. `javascript_tool` -> les événements affichés avant la coupure sont toujours présents dans le DOM
+8. relancer le backend, `click` -> rafraîchir, `wait_for` -> `[data-testid="calendar-stale-warning"]` absent (max 15s)
+
+**Résultat attendu** : L'échec du rafraîchissement est annoncé (« Dernier rafraîchissement échoué : données conservées (synchronisées le …) ») et les événements déjà chargés restent visibles : une panne ne se déguise pas en agenda vide. Au succès suivant, l'avertissement disparaît.
+**États testés** : error (rafraîchissement échoué), stale (données conservées)
+**Si FAIL** : Screenshot `/tmp/therese-tests/A3-59_agenda_conserve.png`
+
+---
+
+### Étape 60 : Tableau de bord - panne annoncée, pas « rien à faire »
+
+**Priorité** : P1
+**URL** : http://localhost:1420
+
+**Actions Chrome MCP** :
+1. arrêter le backend (comme à l'étape 58)
+2. `javascript_tool` -> `window.__therese.runAction('home.open')`
+3. `wait_for` -> `[data-testid="today-dashboard-error"]` visible (max 10s)
+4. `screenshot` -> `/tmp/therese-tests/A3-60_dashboard_erreur.png`
+5. `javascript_tool` -> `document.querySelector('[data-testid="today-dashboard-error"]').getAttribute('role') === 'alert'`
+6. relancer le backend, `wait_for` -> le brief du jour se recharge (max 30s)
+7. `screenshot` -> `/tmp/therese-tests/A3-60_dashboard_revenu.png`
+
+**Résultat attendu** : Le brief du jour affiche une erreur explicite tant que le moteur ne répond pas ; il n'affiche jamais « rien à faire aujourd'hui » à la place d'une panne. Si une seule source est en panne (agenda, e-mail) alors que le reste répond, le témoin `today-dashboard-indisponible` nomme la source manquante. Au retour du moteur, le brief se recharge.
+**États testés** : error (moteur arrêté), partial (source indisponible), recovery
+**Si FAIL** : Screenshot `/tmp/therese-tests/A3-60_dashboard_erreur.png`
+
+---
+
 ## Récapitulatif des priorités
 
 | Priorité | Étapes | Count |
 |----------|--------|-------|
-| P0 | 1, 3, 4, 5, 6, 9, 10, 11, 12, 13, 19, 20, 24, 26, 27, 28, 31, 32, 33, 34, 37, 39, 41, 42, 45, 46, 51, 52, 54, 55 | 30 |
-| P1 | 2, 7, 8, 14, 15, 16, 17, 18, 21, 22, 23, 25, 29, 30, 35, 36, 38, 40, 43, 44, 47, 49, 50, 53 | 24 |
+| P0 | 1, 3, 4, 5, 6, 9, 10, 11, 12, 13, 19, 20, 24, 26, 27, 28, 31, 32, 33, 34, 37, 39, 41, 42, 45, 46, 51, 52, 54, 55, 56, 57, 58 | 33 |
+| P1 | 2, 7, 8, 14, 15, 16, 17, 18, 21, 22, 23, 25, 29, 30, 35, 36, 38, 40, 43, 44, 47, 49, 50, 53, 59, 60 | 26 |
 | P2 | 48 | 1 |
 
 ## Matrice de couverture
 
 | Module | Étapes | État vide | État rempli | État erreur | État loading |
 |--------|--------|-----------|-------------|-------------|--------------|
-| Dashboard | 1-3 | - | oui | - | - |
-| Chat | 4, 6-8, 54 | oui | oui | - | - |
+| Dashboard | 1-3, 60 | - | oui | oui (60) | - |
+| Chat | 4, 6-8, 54, 57 | oui | oui | oui (57) | - |
 | Chat (LLM) | 6 | - | oui | - | oui |
 | Command Palette | 9-10 | - | oui | - | - |
-| Settings (8 tabs) | 11-19 | - | oui | - | oui |
-| Mémoire | 20-25 | oui | oui | - | - |
+| Settings (8 tabs) | 11-19, 56 | - | oui | oui (56) | oui |
+| Mémoire | 20-25, 58 | oui | oui | oui (58) | - |
 | CRM | 26-30 | oui | oui | - | - |
 | Factures | 31-36 | oui | oui | - | oui |
-| Calendrier | 37-40 | oui | oui | - | - |
+| Calendrier | 37-40, 59 | oui | oui | oui (59) | - |
 | Tâches | 41-44 | oui | oui | - | - |
 | Board IA | 45-48 | oui | oui | - | oui |
 | Skills Office | 49-50 | - | oui | - | oui |
 | Raccourcis | 4, 9, 11, 51-53 | - | oui | - | - |
 | Sécurité XSS | 54 | - | oui | - | - |
 | RGPD | 55 | - | - | - | oui |
+| Moteur (connexion) | 58 | - | - | oui (58) | oui (retour) |
 
 ## data-testid référencés
 
