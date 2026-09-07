@@ -187,7 +187,7 @@ export function TodayDashboardCard({
                 ? `${items.length} élément${items.length > 1 ? 's' : ''} issu${items.length > 1 ? 's' : ''} de tes données${
                     // B-425 : le serveur plafonne chaque liste à 50 et dit le total.
                     nombreNonAffiche(resource.data) > 0
-                      ? `, et ${nombreNonAffiche(resource.data)} autre${nombreNonAffiche(resource.data) > 1 ? 's' : ''} dans la vue complète`
+                      ? `, et ${nombreNonAffiche(resource.data)} autre${nombreNonAffiche(resource.data) > 1 ? 's' : ''} non affiché${nombreNonAffiche(resource.data) > 1 ? 's' : ''}`
                       : ''
                   }`
                 : 'Lecture des sources locales'}
