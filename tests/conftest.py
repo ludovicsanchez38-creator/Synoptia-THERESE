@@ -353,10 +353,15 @@ def pytest_sessionfinish(session, exitstatus):
 
 
 @pytest.fixture(autouse=True)
-def sonde_imap_hors_reseau(monkeypatch):
+def sonde_imap_hors_reseau(request, monkeypatch):
     """B-194 : la mise en route IMAP teste la connexion avant d'enregistrer.
     Aucun test ne parle au réseau : la sonde réussit par défaut ; un test qui
-    veut une panne remplace lui-même `ImapSmtpProvider.test_connection`."""
+    veut une panne remplace lui-même `ImapSmtpProvider.test_connection`.
+    Un test marqué `imap_reel` garde la vraie méthode (il fournit ses propres
+    faux serveurs, cf. B-039)."""
+    if request.node.get_closest_marker("imap_reel"):
+        yield
+        return
     from app.services.email import imap_smtp_provider as module
 
     async def _ok(self):

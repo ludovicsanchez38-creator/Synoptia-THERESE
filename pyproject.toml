@@ -100,6 +100,9 @@ ignore = [
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "imap_reel: garde la vraie ImapSmtpProvider.test_connection (le test fournit ses faux serveurs)",
+]
 # 01/09/2026 : onze fichiers vivaient dans src/backend/tests/ et n etaient
 # JAMAIS collectes, ni par pytest, ni par le Makefile, ni par la CI.
 # 166 tests, dont ceux de la securite des services, des sauvegardes et de
