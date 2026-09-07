@@ -441,6 +441,23 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     return () => window.clearTimeout(handle);
   }, [input]);
 
+  // B-634 : sélectionne, dans le composeur, le premier jeton {…} encore
+  // inconnu (dans l'ordre du texte), pour que l'utilisateur le remplace.
+  const selectionnerPremierJetonInconnu = useCallback(() => {
+    const zone = textareaRef.current;
+    if (!zone || !variablesPreview) return;
+    let cible: { debut: number; fin: number } | null = null;
+    for (const nom of variablesPreview.unknown) {
+      const jeton = `{${nom}}`;
+      const index = input.indexOf(jeton);
+      if (index >= 0 && (!cible || index < cible.debut)) {
+        cible = { debut: index, fin: index + jeton.length };
+      }
+    }
+    zone.focus();
+    if (cible) zone.setSelectionRange(cible.debut, cible.fin);
+  }, [input, variablesPreview]);
+
   const sendMessage = useCallback(async () => {
     const trimmed = input.trim();
     if (!trimmed || isOffline || modelAvailable !== true) return;
@@ -1154,10 +1171,21 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
             })()}
           </span>
           {variablesPreview.unknown.length > 0 && (
-            <span className="text-warning">
-              inconnue{variablesPreview.unknown.length > 1 ? 's' : ''} :{' '}
-              {variablesPreview.unknown.map((n) => `{${n}}`).join(', ')}
-            </span>
+            <>
+              <span className="text-warning">
+                inconnue{variablesPreview.unknown.length > 1 ? 's' : ''} :{' '}
+                {variablesPreview.unknown.map((n) => `{${n}}`).join(', ')}
+                {' '}· à remplacer dans le message avant l’envoi
+              </span>
+              {/* B-634 : le diagnostic était juste et l'action absente. */}
+              <button
+                type="button"
+                onClick={selectionnerPremierJetonInconnu}
+                className="text-accent-cyan-ink underline underline-offset-2 hover:text-text"
+              >
+                Compléter dans le message
+              </button>
+            </>
           )}
           {variablesPreview.errors.length > 0 && (
             <span className="text-error">{variablesPreview.errors[0]}</span>
