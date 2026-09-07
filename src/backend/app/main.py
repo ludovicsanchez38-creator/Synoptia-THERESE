@@ -807,13 +807,42 @@ async def auth_middleware(request: Request, call_next):
 # Private Network Access middleware (BUG-022)
 # WebView2 v143+ peut bloquer les requêtes de http://tauri.localhost vers http://127.0.0.1
 # via la spec Chromium Private Network Access (PNA).
-@app.middleware("http")
-async def private_network_access_middleware(request: Request, call_next):
-    """Autorise Private Network Access (WebView2 143+, Chromium PNA spec)."""
-    response = await call_next(request)
-    if request.headers.get("Access-Control-Request-Private-Network"):
-        response.headers["Access-Control-Allow-Private-Network"] = "true"
-    return response
+class PrivateNetworkAccessMiddleware:
+    """Autorise Private Network Access (WebView2 143+, Chromium PNA spec).
+
+    B-606 (cycle 4) : l'ancienne version, un `@app.middleware("http")`, était
+    ENVELOPPÉE par CORSMiddleware (ajouté après, donc plus externe) : le
+    pré-vol OPTIONS recevait la réponse de CORS sans jamais atteindre ce code,
+    et l'en-tête n'était jamais posé là où Chromium l'exige, sur le pré-vol.
+    Middleware ASGI pur, enregistré APRÈS CORS pour l'envelopper.
+    """
+
+    def __init__(self, app):
+        self.app = app
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        demande_pna = any(
+            nom == b"access-control-request-private-network"
+            for nom, _valeur in scope.get("headers", [])
+        )
+        if not demande_pna:
+            await self.app(scope, receive, send)
+            return
+
+        async def send_avec_en_tete(message):
+            if message["type"] == "http.response.start":
+                en_tetes = [
+                    (nom, valeur) for nom, valeur in message.get("headers", [])
+                    if nom != b"access-control-allow-private-network"
+                ]
+                en_tetes.append((b"access-control-allow-private-network", b"true"))
+                message = {**message, "headers": en_tetes}
+            await send(message)
+
+        await self.app(scope, receive, send_avec_en_tete)
 
 
 # CORS debug middleware (BUG-022)
@@ -859,6 +888,9 @@ app.add_middleware(
     ],
     expose_headers=["Content-Disposition"],  # Pour le telechargement de fichiers
 )
+
+# B-606 : enveloppe CORS, donc voit aussi les pré-vols OPTIONS.
+app.add_middleware(PrivateNetworkAccessMiddleware)
 
 # GZip compression (US-009 - v0.9.0)
 # Compresse les réponses > 500 octets pour réduire la bande passante.
