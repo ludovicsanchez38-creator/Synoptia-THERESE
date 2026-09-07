@@ -1093,10 +1093,14 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
 
         # B-488 : l'override de max_tokens est passé au flux, jamais écrit
         # dans la config partagée (le commentaire l'interdisait, le code le faisait).
-        config_locale = None
-        if max_tokens and max_tokens > self.config.max_tokens:
+        # B-583 : la config de base est celle que le disjoncteur retient (repli
+        # compris) ; sans cela, relever max_tokens rappelait le fournisseur
+        # déclaré indisponible.
+        config_base = self._resolve_with_circuit_breaker()
+        config_locale = None if config_base is self.config else config_base
+        if max_tokens and max_tokens > config_base.max_tokens:
             from dataclasses import replace
-            config_locale = replace(self.config, max_tokens=max_tokens)
+            config_locale = replace(config_base, max_tokens=max_tokens)
 
         ctx = self.prepare_context(messages=messages, system_prompt=effective_system)
         content_parts = []
