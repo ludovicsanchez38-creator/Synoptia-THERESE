@@ -7,6 +7,7 @@ Agent intelligent pour guider l'utilisateur dans la configuration email.
 import re
 from dataclasses import dataclass
 
+from app.services.oauth import RUNTIME_PORT
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -198,7 +199,18 @@ class EmailSetupAssistant:
 
     @staticmethod
     async def generate_guide_message(provider: str, has_project: bool) -> str:
-        """Génère un message de guide personnalisé."""
+        """Génère un message de guide personnalisé.
+
+        B-592 : l'URI de redirection dictée est celle que le code enregistre
+        réellement (port d'exécution, route callback-redirect), pas l'ancienne
+        http://localhost:8080/oauth/callback que Google refusait.
+        """
+        brut = await EmailSetupAssistant._generate_guide_message_brut(provider, has_project)
+        return brut.replace("{RUNTIME_PORT}", str(RUNTIME_PORT))
+
+    @staticmethod
+    async def _generate_guide_message_brut(provider: str, has_project: bool) -> str:
+        """Texte du guide, avec le port en gabarit."""
         if provider == 'gmail':
             if has_project:
                 return """Super ! 🎉
@@ -208,7 +220,7 @@ Tu as déjà un projet Google Cloud. Voici ce qu'il te faut :
 1. Va sur [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
 2. Sélectionne ton projet
 3. Clique sur "Créer des identifiants" → "ID client OAuth 2.0"
-4. Type d'application : **Application Web**, avec l'URI de redirection http://localhost:8080/oauth/callback
+4. Type d'application : **Application Web**, avec l'URI de redirection http://localhost:{RUNTIME_PORT}/api/email/auth/callback-redirect
 5. Copie le **Client ID** et le **Client Secret**
 
 Entre-les dans l'étape suivante !"""
@@ -223,7 +235,7 @@ Je vais te guider pour créer un projet Google Cloud :
 4. Active les API Gmail et Google Calendar (Bibliothèque → Gmail API et Google Calendar API → Activer)
 5. Va dans "Identifiants" → "Créer des identifiants"
 6. Choisis "ID client OAuth 2.0"
-7. Type : **Application Web**, avec l'URI de redirection http://localhost:8080/oauth/callback
+7. Type : **Application Web**, avec l'URI de redirection http://localhost:{RUNTIME_PORT}/api/email/auth/callback-redirect
 8. Copie le Client ID et Client Secret
 
 ⏱️ Environ 5 minutes. Prends ton temps !"""
