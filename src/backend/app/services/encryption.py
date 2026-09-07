@@ -385,6 +385,9 @@ class EncryptionService:
                 # Generer nouvelle cle
                 new_key = Fernet.generate_key()
                 keyring.set_password(KEYCHAIN_SERVICE, KEYCHAIN_ACCOUNT, new_key.decode("utf-8"))
+                # B-591 : sans cela, la garde BUG-050 du démarrage suivant
+                # préférait l'ancienne clé du fichier et annulait la rotation.
+                self._write_key_backup(new_key)
                 self._fernet = Fernet(new_key)
             except Exception as e:
                 logger.error(f"Erreur rotation cle keychain: {e}")
