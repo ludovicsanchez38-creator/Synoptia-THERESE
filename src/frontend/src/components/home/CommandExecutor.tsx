@@ -5,7 +5,7 @@
  * Réutilise les composants existants (DynamicSkillForm, SkillExecutionPanel, etc.)
  */
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import type { CommandDefinition } from '../../types/command';
 import { runAction } from '../../lib/actionRegistry';
@@ -174,16 +174,23 @@ export function CommandExecutor({ command, onClose, onPromptSelect, onStartRFC }
   // d'agent. Le déclenchement reste synchrone au rendu (les surfaces qui
   // s'ouvrent depuis une commande l'attendent immédiatement), mais une même
   // commande ne s'exécute qu'une fois tant qu'elle reste sélectionnée.
+  // B-631 : ce déclenchement se faisait PENDANT le rendu ; une commande
+  // `prompt` remonte aussitôt onPromptSelect puis onClose, soit deux setState
+  // du parent pendant le rendu de l'enfant (avertissement React « Cannot
+  // update a component (HomeCommands) while rendering CommandExecutor »).
+  // useLayoutEffect garde l'immédiateté (avant la peinture) sans être dans
+  // le rendu. Même garde par ref, même condition, à chaque rendu.
   const commandeExecuteeRef = useRef<string | null>(null);
-  if (!command) {
-    commandeExecuteeRef.current = null;
-  } else if (
-    !dynamicSkill && !skillState && !imagePromptCommand && !imageState && !isLoadingSchema
-    && commandeExecuteeRef.current !== command.id
-  ) {
+  useLayoutEffect(() => {
+    if (!command) {
+      commandeExecuteeRef.current = null;
+      return;
+    }
+    if (dynamicSkill || skillState || imagePromptCommand || imageState || isLoadingSchema) return;
+    if (commandeExecuteeRef.current === command.id) return;
     commandeExecuteeRef.current = command.id;
     void execute(command);
-  }
+  });
 
   /**
    * Lance (ou relance) une génération de fichier. `skillState` passe à

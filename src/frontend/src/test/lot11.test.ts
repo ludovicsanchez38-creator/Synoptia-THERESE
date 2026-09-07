@@ -99,7 +99,9 @@ describe('lot 11 - accessibilité, jetons et robustesse frontend', () => {
   it("B-427 : l'exécution d'une commande est gardée par identifiant, jamais rejouée par un second rendu", () => {
     const src = lire('components/home/CommandExecutor.tsx');
     expect(src).not.toMatch(/\n {2}if \(command && !dynamicSkill[^\n]*\) \{\n {4}execute\(command\);/);
-    expect(src).toMatch(/commandeExecuteeRef\.current !== command\.id/);
+    // B-631 (c4) : la garde vit dans un useLayoutEffect (plus dans le rendu), même identifiant.
+    expect(src).toMatch(/commandeExecuteeRef\.current === command\.id\) return;/);
+    expect(src).toMatch(/useLayoutEffect\(\(\) => \{\n {4}if \(!command\)/);
   });
 
   it("B-433 : réessayer une image relance la génération mémorisée", () => {
