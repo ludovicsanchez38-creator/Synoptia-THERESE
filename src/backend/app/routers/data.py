@@ -225,6 +225,13 @@ def _assembler_export_rgpd() -> dict[str, Any]:
         calendar_events = (session.execute(select(CalendarEvent))).scalars().all()
         tasks = (session.execute(select(Task))).scalars().all()
         prestations = (session.execute(select(Prestation))).scalars().all()
+        # B-588 : le socle PERT (P-039) ajoute cinq tables que l'effacement
+        # total détruit ; la portabilité doit les rendre.
+        task_schedules = (session.execute(select(TaskSchedule))).scalars().all()
+        task_dependencies = (session.execute(select(TaskDependency))).scalars().all()
+        planning_resources = (session.execute(select(PlanningResource))).scalars().all()
+        task_allocations = (session.execute(select(TaskAllocation))).scalars().all()
+        planning_snapshots = (session.execute(select(PlanningSnapshot))).scalars().all()
         invoices = (session.execute(select(Invoice))).scalars().all()
         invoice_lines = (session.execute(select(InvoiceLine))).scalars().all()
         activities = (session.execute(select(Activity))).scalars().all()
@@ -334,6 +341,11 @@ def _assembler_export_rgpd() -> dict[str, Any]:
             ],
             "tasks": [_export_row(item, json_fields=("tags",)) for item in tasks],
             "prestations": [_export_row(item) for item in prestations],
+            "task_schedules": [_export_row(item) for item in task_schedules],
+            "task_dependencies": [_export_row(item) for item in task_dependencies],
+            "planning_resources": [_export_row(item) for item in planning_resources],
+            "task_allocations": [_export_row(item) for item in task_allocations],
+            "planning_snapshots": [_export_row(item) for item in planning_snapshots],
             "invoices": [_export_row(item) for item in invoices],
             "invoice_lines": [_export_row(item) for item in invoice_lines],
             "activities": [
