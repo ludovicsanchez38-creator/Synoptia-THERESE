@@ -33,6 +33,7 @@ from app.models.schemas_email import (
     UpdateSignatureRequest,
 )
 from app.services.email.base_provider import EmailProvider
+from app.services.email.imap_smtp_provider import ImapSmtpProvider
 from app.services.email.provider_factory import (
     get_email_provider,
     list_common_providers,
@@ -786,6 +787,28 @@ async def setup_imap_account(
     Local First - pas besoin d'OAuth, juste les credentials IMAP.
     """
     # Check if account already exists
+    # B-194 (P-008, décision de Ludo) : la connexion est testée AVANT d'annoncer
+    # « configuré ». Un hôte, un port ou un mot de passe faux sortait en 200 et
+    # l'utilisateur découvrait la panne à la première lecture.
+    sonde = ImapSmtpProvider(
+        email_address=request.email,
+        password=request.password,
+        imap_host=request.imap_host,
+        imap_port=request.imap_port,
+        smtp_host=request.smtp_host,
+        smtp_port=request.smtp_port,
+        smtp_use_tls=request.smtp_use_tls,
+    )
+    verdict = await sonde.test_connection()
+    if not verdict.get("ok"):
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "Connexion impossible avec ces réglages : "
+                + str(verdict.get("message") or "vérifie l'hôte, le port et le mot de passe.")
+            ),
+        )
+
     statement = select(EmailAccount).where(EmailAccount.email == request.email)
     result = await session.execute(statement)
     existing = result.scalar_one_or_none()

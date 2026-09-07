@@ -350,3 +350,17 @@ def pytest_sessionfinish(session, exitstatus):
     sys.stdout.flush()
     sys.stderr.flush()
     os._exit(int(exitstatus))
+
+
+@pytest.fixture(autouse=True)
+def sonde_imap_hors_reseau(monkeypatch):
+    """B-194 : la mise en route IMAP teste la connexion avant d'enregistrer.
+    Aucun test ne parle au réseau : la sonde réussit par défaut ; un test qui
+    veut une panne remplace lui-même `ImapSmtpProvider.test_connection`."""
+    from app.services.email import imap_smtp_provider as module
+
+    async def _ok(self):
+        return {"ok": True, "message": "IMAP OK"}
+
+    monkeypatch.setattr(module.ImapSmtpProvider, "test_connection", _ok)
+    yield
