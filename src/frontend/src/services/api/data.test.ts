@@ -36,7 +36,8 @@ describe('data API', () => {
     });
 
     await expect(downloadAllData()).resolves.toBe('desktop_saved');
-    expect(mockApiFetch).toHaveBeenCalledWith('http://127.0.0.1:17293/api/data/export');
+    // B-385 : l'export intégral n'est pas borné par le délai de 30 s d'apiFetch
+    expect(mockApiFetch).toHaveBeenCalledWith('http://127.0.0.1:17293/api/data/export', { timeoutMs: null });
     expect(writeFile).toHaveBeenCalledWith('/tmp/therese-export.json', expect.any(Uint8Array));
   });
 

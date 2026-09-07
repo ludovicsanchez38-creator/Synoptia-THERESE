@@ -43,7 +43,9 @@ function filenameFromDisposition(disposition: string | null): string {
 }
 
 export async function downloadAllData(): Promise<DataExportResult> {
-  const response = await apiFetch(`${API_BASE}/api/data/export`);
+  // B-385 : l'export intégral peut dépasser 30 s sur une base fournie ou une
+  // machine modeste ; comme sauvegarde et restauration, il n'est pas borné.
+  const response = await apiFetch(`${API_BASE}/api/data/export`, { timeoutMs: null });
   if (!response.ok) {
     const payload = await response.json().catch(() => ({}));
     throw new ApiError(
