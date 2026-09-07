@@ -24,6 +24,20 @@ from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from fastapi.responses import FileResponse
 
 logger = logging.getLogger(__name__)
+
+def nom_de_fichier_de_reference(nom: str | None) -> str:
+    """Nom de fichier sûr pour l'image de référence téléversée (B-589).
+
+    Le nom vient du client : seule sa dernière composante est gardée, les
+    séparateurs et les remontées de dossier sont écartés, et un nom vide
+    devient « reference ».
+    """
+    from pathlib import PurePosixPath, PureWindowsPath
+
+    base = PureWindowsPath(PurePosixPath(nom or "").name).name
+    base = base.replace("\x00", "").strip().strip(".")
+    return base or "reference"
+
 router = APIRouter()
 
 
@@ -155,8 +169,9 @@ async def generate_with_reference(
     try:
         service = get_image_service()
 
-        # Save uploaded reference temporarily
-        temp_path = service.output_dir / f"ref_{reference.filename}"
+        # Save uploaded reference temporarily (B-589 : nom réduit à sa base,
+        # jamais concaténé tel quel dans un chemin)
+        temp_path = service.output_dir / f"ref_{nom_de_fichier_de_reference(reference.filename)}"
         with open(temp_path, "wb") as f:
             content = await reference.read()
             f.write(content)
