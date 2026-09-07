@@ -455,16 +455,17 @@ def _get_brave_api_key() -> str | None:
     """
     Récupère la clé API Brave Search.
 
-    Vérifie : variable d'environnement > cache module.
+    B-530 : la clé saisie dans Paramètres l'emporte ; la variable
+    d'environnement n'est qu'un repli (règle acceptée sur les clés de
+    l'environnement, qui ne doivent pas s'imposer à l'insu de l'utilisateur).
     Le cache est alimenté par set_brave_api_key() lors de la config.
     """
     import os
 
-    env_key = os.environ.get("BRAVE_API_KEY")
-    if env_key:
-        return env_key
+    if _brave_api_key_cache:
+        return _brave_api_key_cache
 
-    return _brave_api_key_cache
+    return os.environ.get("BRAVE_API_KEY") or None
 
 
 def set_brave_api_key(key: str | None) -> None:
