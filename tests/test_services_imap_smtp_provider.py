@@ -136,6 +136,7 @@ class TestSendUsesSameSecurityAsTest:
         assert "SSL/TLS directe" in str(exc.value)
 
 
+@pytest.mark.imap_reel
 class TestConnectionTimeoutMessage:
     @pytest.mark.asyncio
     async def test_timeout_smtp_465_starttls_message_causal(self):

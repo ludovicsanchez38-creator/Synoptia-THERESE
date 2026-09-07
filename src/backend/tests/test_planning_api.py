@@ -116,7 +116,7 @@ async def test_projet_incomplet_n_invente_aucune_duree(async_client, db_session)
 
 
 @pytest.mark.asyncio
-async def test_dependance_hors_projet_rend_le_planning_invalide(
+async def test_dependance_hors_projet_est_ecartee_avec_un_avertissement(
     async_client, db_session
 ):
     first_project = Project(name="Projet A")
@@ -149,8 +149,12 @@ async def test_dependance_hors_projet_rend_le_planning_invalide(
     )
 
     assert response.status_code == 200
-    assert response.json()["state"] == "invalid"
-    assert "tâche absente ou hors projet" in response.json()["errors"][0]
+    # B-531 (cycle 4) : une dépendance à cheval sur deux projets n'invalide
+    # plus le planning ; elle est écartée avec un avertissement, et une route
+    # DELETE /api/projects/{id}/dependencies/{dep} permet de la retirer.
+    corps = response.json()
+    assert corps["state"] != "invalid"
+    assert any("autre projet" in avertissement for avertissement in corps["warnings"])
 
 
 @pytest.mark.asyncio

@@ -1,13 +1,14 @@
 """B-039 : plafond anti-croissance des tests qui lisent le CODE, pas son effet.
 
-`tests/test_regression.py` fait 8409 lignes et 584 tests, dont 467 ouvrent un
+`tests/test_regression.py` faisait 8409 lignes et 584 tests, dont 467 ouvraient un
 fichier source par `read_text()` pour y chercher une chaîne. Un tel test est
 aveugle à un reformatage, à un renommage, à un déplacement de code ; une chaîne
 posée en COMMENTAIRE suffit à le satisfaire. C'est le défaut que B-013 a montré
 en grandeur nature : le garde anti-fuite de secrets restait vert alors qu'un
 code fuyant réellement les arguments d'outils passait ses deux assertions.
 
-Convertir 467 lectures de source en tests de comportement est un CHANTIER, pas
+Convertir ces 467 lectures a ete fait le 08/09/2026 (B-039, cycle 4) ; il en reste 3, dans des
+tests de comportement qui lisent un fichier de donnees. Convertir etait un CHANTIER, pas
 un correctif : chacune demande un harnais propre au domaine qu'elle prétend
 couvrir. Ce fichier ne le fait donc pas. Il pose seulement la digue : le compte
 ne monte plus. Un nouveau test de régression s'écrit contre le comportement.
@@ -18,7 +19,7 @@ Quand une conversion fait baisser le compte, baisser le plafond dans la foulée
 from pathlib import Path
 
 # Mesuré le 02/09/2026 sur tests/test_regression.py. À BAISSER, jamais à monter.
-PLAFOND_LECTURES_DE_SOURCE = 467
+PLAFOND_LECTURES_DE_SOURCE = 3
 
 _CIBLE = Path(__file__).resolve().parent / "test_regression.py"
 

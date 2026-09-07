@@ -185,3 +185,96 @@ class TestConfigurationTauri:
         assert updater["windows"]["installMode"] == "passive", "quiet échoue en silence sans droits admin (BUG-110)"
         assert updater["endpoints"], "un point de publication doit être déclaré"
         assert updater.get("pubkey"), "la clé de signature doit être embarquée"
+
+
+# ---------------------------------------------------------------- empaquetage et CI
+
+
+class TestEmpaquetage:
+    def test_le_spec_embarque_les_gabarits_office_et_le_hook_de_chemins(self):
+        arbre = _arbre(SPEC)
+        collectes = {
+            a.args[0].value
+            for a in ast.walk(arbre)
+            if isinstance(a, ast.Call) and isinstance(a.func, ast.Name) and a.func.id == "collect_data_files"
+            and a.args and isinstance(a.args[0], ast.Constant)
+        }
+        assert {"docx", "pptx"} <= collectes, "python-docx et python-pptx livrent leurs gabarits XML (BUG-024)"
+        hooks = [
+            n for n in ast.walk(arbre)
+            if isinstance(n, ast.keyword) and n.arg == "runtime_hooks"
+        ]
+        assert hooks and "runtime_hook_templates" in ast.unparse(hooks[0].value), "le hook de résolution des gabarits doit être déclaré (BUG-035)"
+        exclude = [n for n in ast.walk(arbre) if isinstance(n, ast.keyword) and n.arg == "exclude_binaries"]
+        assert exclude, "mode onedir : EXE(exclude_binaries=True) + COLLECT (BUG-044)"
+
+    def test_le_hook_de_gabarits_cree_les_dossiers_attendus_sous_un_bundle_seulement(self):
+        hook = BACKEND / "runtime_hook_templates.py"
+        assert hook.exists()
+        arbre = _arbre(hook)
+        constantes = {n.value for n in ast.walk(arbre) if isinstance(n, ast.Constant) and isinstance(n.value, str)}
+        assert {"docx/parts", "pptx/oxml", "pptx/shapes"} <= constantes
+        gardes = [n for n in ast.walk(arbre) if isinstance(n, ast.Constant) and n.value == "_MEIPASS"]
+        assert gardes, "le hook ne doit agir que dans un bundle PyInstaller"
+
+    def test_le_paquet_linux_embarque_les_bibliotheques_du_backend(self):
+        conf = json.loads((RACINE / "src" / "frontend" / "src-tauri" / "tauri.linux.conf.json").read_text(encoding="utf-8"))
+        ressources = conf.get("bundle", {}).get("resources") or conf.get("resources") or []
+        assert any("backend-libs" in r for r in ressources), ressources
+        assert any("**" in r for r in ressources), "le glob doit être récursif (_internal/**)"
+        release = (RACINE / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
+        assert "backend-libs" in release, "release.yml doit copier backend-libs dans les binaires Tauri (BUG-044b)"
+
+    def test_la_csp_autorise_les_apercus_d_images_locales(self):
+        conf = json.loads(TAURI_CONF.read_text(encoding="utf-8"))
+        csp = conf["app"]["security"]["csp"]
+        img = [d for d in csp.split(";") if d.strip().startswith("img-src")]
+        assert img, csp
+        assert "http://localhost:*" in img[0] and "http://127.0.0.1:*" in img[0], "les images générées sont servies par le moteur local (BUG-057)"
+
+
+class TestHygieneDuCode:
+    """Balayages de type lint sur le source : structure, pas comportement."""
+
+    def test_aucun_get_event_loop_dans_le_backend(self):
+        fautifs = []
+        for fichier in (BACKEND / "app").rglob("*.py"):
+            for appel in _appels(_arbre(fichier), "get_event_loop"):
+                fautifs.append(f"{fichier.relative_to(RACINE)}:{appel.lineno}")
+        assert not fautifs, f"get_event_loop est déprécié hors boucle (Python 3.13) : {fautifs}"
+
+    def test_aucun_eval_ni_compile_dans_les_routeurs(self):
+        fautifs = []
+        for fichier in (BACKEND / "app" / "routers").glob("*.py"):
+            for n in ast.walk(_arbre(fichier)):
+                if isinstance(n, ast.Call) and isinstance(n.func, ast.Name) and n.func.id in {"eval", "exec", "compile"}:
+                    fautifs.append(f"{fichier.name}:{n.lineno}")
+        assert not fautifs, fautifs
+
+    def test_aucune_cle_api_en_dur_dans_les_routeurs(self):
+        motif = re.compile(r"(sk-[A-Za-z0-9]{20,}|AIza[0-9A-Za-z_-]{30,}|xai-[A-Za-z0-9]{20,})")
+        fautifs = []
+        for fichier in (BACKEND / "app" / "routers").glob("*.py"):
+            for n in ast.walk(_arbre(fichier)):
+                if isinstance(n, ast.Constant) and isinstance(n.value, str) and motif.search(n.value):
+                    fautifs.append(f"{fichier.name}:{n.lineno}")
+        assert not fautifs, fautifs
+
+    def test_le_html_injecte_dans_l_interface_est_toujours_assaini(self):
+        front = RACINE / "src" / "frontend" / "src"
+        composants = [p for p in front.rglob("*.tsx") if ".test." not in p.name]
+        assert len(composants) >= 100, "balayage à vide"
+        fautifs = []
+        for p in composants:
+            texte = p.read_text(encoding="utf-8")
+            if "dangerouslySetInnerHTML" in texte and not re.search(r"sanitize|DOMPurify", texte, re.I):
+                fautifs.append(str(p.relative_to(front)))
+        assert not fautifs, f"dangerouslySetInnerHTML sans assainissement : {fautifs}"
+
+    def test_aucun_alert_natif_dans_les_composants(self):
+        front = RACINE / "src" / "frontend" / "src" / "components"
+        fautifs = [
+            str(p.relative_to(front)) for p in front.rglob("*.tsx")
+            if ".test." not in p.name and re.search(r"(?<![\w.])alert\(", p.read_text(encoding="utf-8"))
+        ]
+        assert not fautifs, f"alert() natif, illisible et bloquant : {fautifs}"

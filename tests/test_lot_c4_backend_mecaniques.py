@@ -10,6 +10,7 @@ B-460 : purger le journal d'audit validait tout ce que l'appelant avait en atten
 from __future__ import annotations
 
 import sqlite3
+from contextlib import closing
 
 import pytest
 from sqlalchemy import inspect, select
@@ -74,7 +75,7 @@ class TestB434ChaqueColonneASaGarde:
         moteur = create_engine(f"sqlite:///{chemin}")
         SQLModel.metadata.create_all(moteur)
         moteur.dispose()
-        with sqlite3.connect(chemin) as conn:
+        with closing(sqlite3.connect(chemin)) as conn:
             # Un démarrage interrompu entre les deux ALTER : `financeur` posée, pas `statut_financement`.
             conn.execute("DROP INDEX IF EXISTS ix_prestations_statut_financement")
             conn.execute("ALTER TABLE prestations DROP COLUMN statut_financement")
@@ -82,7 +83,7 @@ class TestB434ChaqueColonneASaGarde:
 
         db_module.apply_adhoc_migrations(chemin)
 
-        with sqlite3.connect(chemin) as conn:
+        with closing(sqlite3.connect(chemin)) as conn:
             colonnes = {row[1] for row in conn.execute("PRAGMA table_info(prestations)").fetchall()}
         assert "statut_financement" in colonnes, (
             "la colonne manquante ne sera plus jamais posée : la garde testait `financeur`, "
