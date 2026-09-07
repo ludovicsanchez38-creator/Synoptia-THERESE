@@ -28,8 +28,6 @@ import asyncio
 
 import pytest
 
-from tests.aide_lecture_source import ordre_dans_le_code
-
 
 async def _attendre_les_indexations() -> None:
     from app.services.user_profile import _INDEXATIONS_EN_COURS
@@ -62,83 +60,86 @@ class TestLIndexationSeFaitEtNeBloqueRien:
 
 
 class TestLesInvariantsDeConcurrence:
-    """Ce que le code garantit, vérifié sur le code lui-même.
+    """Ce que le code garantit, vérifié par son COMPORTEMENT (B-395).
 
-    Ces invariants ne sont pas reproductibles fidèlement par un test de course :
-    ils dépendent de l'ordonnanceur. Les vérifier structurellement vaut mieux
-    que de les vérifier par un test qui ment une fois sur deux.
+    Les quatre tests précédents lisaient le texte de la source (`inspect.getsource`)
+    et cherchaient des chaînes : ils rougissaient sur une réécriture équivalente et
+    restaient verts si un appel synchrone revenait sous un autre nom. Ici, la
+    course est rendue déterministe par des portes explicites : la première
+    indexation est bloquée EN PLEINE écriture, les suivantes s'empilent derrière
+    le verrou, puis la porte s'ouvre. Le verrou asyncio sert dans l'ordre.
     """
 
-    def test_chaque_sauvegarde_prend_un_numero_de_generation(self):
-        import inspect
-
+    @pytest.mark.asyncio
+    async def test_une_sauvegarde_engagee_va_au_bout_une_depassee_renonce_la_derniere_gagne(
+        self, db_session, monkeypatch
+    ):
         from app.services import user_profile as module
 
-        source = inspect.getsource(module.set_user_profile)
+        porte = asyncio.Event()
+        engagee = asyncio.Event()
+        indexes: list[str] = []
 
-        assert "_GENERATION_PROFIL += 1" in source
-        assert "_indexer_en_arriere_plan(profile, _GENERATION_PROFIL)" in source, (
-            "la génération n'est pas transmise à la tâche : elle ne pourra pas "
-            "savoir qu'elle est périmée"
+        async def indexation(profile):
+            engagee.set()
+            await porte.wait()
+            indexes.append(profile.name)
+
+        monkeypatch.setattr(module, "_embed_profile", indexation)
+
+        await module.set_user_profile(db_session, module.UserProfile(name="Ancien"))
+        await asyncio.wait_for(engagee.wait(), timeout=2)
+        # Tant qu'elle court, la tâche est retenue par une référence forte :
+        # sans cela le ramasse-miettes pourrait l'annuler en vol.
+        assert module._INDEXATIONS_EN_COURS, "la tâche d'indexation n'est retenue nulle part"
+
+        # Deux sauvegardes rapprochées (le double clic) pendant que la première écrit.
+        await module.set_user_profile(db_session, module.UserProfile(name="Intermédiaire"))
+        await module.set_user_profile(db_session, module.UserProfile(name="Dernier"))
+
+        porte.set()
+        await _attendre_les_indexations()
+
+        assert indexes == ["Ancien", "Dernier"], (
+            "attendu : la tâche déjà engagée va au bout (rien n'est annulé en vol), "
+            "la génération dépassée renonce sans écrire, la dernière écrit ; "
+            f"obtenu : {indexes}"
         )
-
-    def test_une_generation_depassee_renonce_avant_d_ecrire(self):
-        import inspect
-
-        from app.services import user_profile as module
-
-        source = inspect.getsource(module._indexer_en_arriere_plan)
-
-        assert "generation != _GENERATION_PROFIL" in source
-        # L'ordre est décisif : le contrôle doit être DANS la section critique
-        # et AVANT l'appel qui écrit.
-        assert ordre_dans_le_code(
-            source, "_VERROU_INDEXATION", "generation != _GENERATION_PROFIL"
-        ), "le contrôle doit avoir lieu après la prise du verrou"
-        assert ordre_dans_le_code(
-            source, "generation != _GENERATION_PROFIL", "_embed_profile(profile)"
-        ), "le contrôle doit précéder l'écriture, pas la suivre"
-
-    def test_aucune_tache_n_est_annulee_en_vol(self):
-        """L'annulation a été essayée, et elle effaçait le profil."""
-        import inspect
-
-        from app.services import user_profile as module
-
-        source = inspect.getsource(module)
-
-        assert ".cancel()" not in source, (
-            "une tâche est annulée : `asyncio.to_thread` n'étant pas annulable, "
-            "le travail engagé continuerait et pourrait effacer le profil"
-        )
-
-    def test_les_taches_sont_retenues_par_une_reference(self):
-        """Sans référence forte, le ramasse-miettes peut annuler une tâche."""
-        import inspect
-
-        from app.services import user_profile as module
-
-        source = inspect.getsource(module.set_user_profile)
-
-        assert "_INDEXATIONS_EN_COURS.add(tache)" in source
+        assert not module._INDEXATIONS_EN_COURS, "une tâche terminée reste référencée"
 
 
 class TestLesAppelsQdrantNeGelentPasLeServeur:
-    """Trois appels synchrones ont été trouvés, pas un seul.
+    """Le serveur n'a qu'un processus : un appel synchrone de 19 secondes gèle la
+    requête d'un autre écran. Les opérations Qdrant doivent donc s'exécuter HORS
+    du fil de la boucle d'événements. Vérifié en observant le fil d'exécution
+    réel, pas le texte de la source (B-395)."""
 
-    Le serveur n'a qu'un processus : un appel synchrone de 19 secondes gèle la
-    requête d'un autre écran, celle d'un utilisateur qui n'a rien demandé.
-    """
-
-    def test_aucun_appel_qdrant_synchrone_ne_subsiste(self):
-        import inspect
+    @pytest.mark.asyncio
+    async def test_aucune_operation_qdrant_ne_s_execute_sur_le_fil_de_la_boucle(self, monkeypatch):
+        import threading
 
         from app.services import user_profile as module
 
-        source = inspect.getsource(module)
+        fil_de_la_boucle = threading.get_ident()
+        appels: dict[str, int] = {}
 
-        for appel in ("qdrant.add_memory(", "qdrant.delete_by_entity("):
-            assert appel not in source, (
-                f"{appel} est appelé directement : il gèlerait la boucle "
-                "d'événements pendant toute sa durée"
+        class FauxQdrant:
+            def delete_by_entity(self, entity_id):
+                appels["delete_by_entity"] = threading.get_ident()
+
+            def add_memory(self, **kwargs):
+                appels["add_memory"] = threading.get_ident()
+
+            async def async_add_memory(self, **kwargs):
+                await asyncio.to_thread(self.add_memory, **kwargs)
+
+        monkeypatch.setattr(module, "get_qdrant_service", lambda: FauxQdrant())
+
+        await module._embed_profile(module.UserProfile(name="Jérôme", company="Synoptïa"))
+
+        assert set(appels) == {"delete_by_entity", "add_memory"}, appels
+        for nom, fil in appels.items():
+            assert fil != fil_de_la_boucle, (
+                f"{nom} s'est exécuté sur le fil de la boucle d'événements : "
+                "il la gèlerait pendant toute sa durée"
             )
