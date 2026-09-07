@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Shield,
@@ -67,6 +67,12 @@ const providerLabels: Partial<Record<LLMProvider, string>> = {
 
 export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
   const [acknowledged, setAcknowledged] = useState(false);
+  // B-541 : la case suit le fournisseur affiché. Revenir en arrière changer de
+  // fournisseur repart d'une case vide, sinon l'accord pouvait être enregistré
+  // pour un fournisseur avec une case cochée pour un autre.
+  useEffect(() => {
+    setAcknowledged(false);
+  }, [provider]);
   const [expanded, setExpanded] = useState<number | null>(null);
   const cloudEnabled = provider !== null && provider !== 'ollama';
   const providerLabel = provider ? providerLabels[provider] || provider : null;
