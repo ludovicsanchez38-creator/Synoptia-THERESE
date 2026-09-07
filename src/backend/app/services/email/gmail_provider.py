@@ -188,12 +188,25 @@ class GmailProvider(EmailProvider):
             await self._service.trash_message(message_id)
 
     async def move_message(self, message_id: str, destination_folder: str) -> EmailMessageDTO:
-        """Move a message to another label in Gmail."""
-        # In Gmail, moving means adding new label and removing old ones
-        # For simplicity, we add the destination label
+        """Move a message to another label in Gmail.
+
+        B-439 : « déplacer » ajoutait le libellé de destination sans retirer
+        l'origine ; l'écran annonçait un déplacement, le message restait aussi
+        dans la boîte de réception. Les libellés de dossier (INBOX et libellés
+        utilisateur `Label_*`) sont retirés ; les drapeaux système (UNREAD,
+        STARRED, IMPORTANT, catégories) sont conservés.
+        """
+        courant = await self._service.get_message(message_id, format="minimal")
+        actuels = list(courant.get("labelIds") or [])
+        a_retirer = [
+            label
+            for label in actuels
+            if label != destination_folder and (label == "INBOX" or label.startswith("Label_"))
+        ]
         await self._service.modify_message(
             message_id,
             add_label_ids=[destination_folder],
+            remove_label_ids=a_retirer or None,
         )
         return await self.get_message(message_id)
 
