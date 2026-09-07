@@ -258,31 +258,11 @@ export const buttonTap = {
   transition: { duration: 0.1 },
 };
 
-export const pulseAnimation = {
-  scale: [1, 1.05, 1],
-  opacity: [1, 0.8, 1],
-  transition: {
-    duration: 2,
-    repeat: Infinity,
-    ease: 'easeInOut',
-  },
-};
 
 // ============================================================
 // Skeleton/Loading Variants
 // ============================================================
 
-export const shimmer: Variants = {
-  initial: { x: '-100%' },
-  animate: {
-    x: '100%',
-    transition: {
-      duration: 1.5,
-      repeat: Infinity,
-      ease: 'linear',
-    },
-  },
-};
 
 // ============================================================
 // Utility Functions
