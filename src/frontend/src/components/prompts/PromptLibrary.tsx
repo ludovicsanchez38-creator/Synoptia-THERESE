@@ -129,7 +129,7 @@ function PromptCard({
         <div className="flex items-center gap-1 flex-shrink-0">
           <button
             onClick={handleCopy}
-            className="p-1.5 rounded-md text-text-muted hover:text-accent-cyan-ink hover:bg-accent-tint transition-colors opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+            className="p-1.5 rounded-md text-text-muted hover:text-accent-cyan-ink hover:bg-accent-tint transition-colors opacity-80 group-hover:opacity-100 group-focus-within:opacity-100"
             title="Copier le prompt"
           >
             {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
@@ -141,7 +141,7 @@ function PromptCard({
               e.stopPropagation();
               onSelect(prompt);
             }}
-            className="text-sm text-accent-cyan-ink hover:bg-accent-tint opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+            className="text-sm text-accent-cyan-ink hover:bg-accent-tint opacity-80 group-hover:opacity-100 group-focus-within:opacity-100"
           >
             Utiliser
           </Button>

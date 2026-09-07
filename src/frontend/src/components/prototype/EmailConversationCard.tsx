@@ -342,8 +342,9 @@ export function EmailMessageCanvas({
       setSavedDraftId(result.id);
       setBrouillonAJour(true);
       setConfirmSave(false);
-    } catch {
-      setError('Impossible d’enregistrer le brouillon chez le fournisseur email.');
+    } catch (reason) {
+      // B-615 : la cause connue (« Aucun compte email actif ») accusait le fournisseur.
+      setError(reason instanceof Error && reason.message ? reason.message : 'Impossible d’enregistrer le brouillon chez le fournisseur email.');
     } finally {
       setSaving(false);
     }
@@ -354,7 +355,8 @@ export function EmailMessageCanvas({
       <div className="border-b border-border px-5 py-4 pr-16">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
           <Mail className="h-3.5 w-3.5" />
-          Email connecté
+          {/* B-614 : « Email connecté » écrit en dur face à « Aucun compte email connecté ». */}
+          {nouvelleRedaction ? 'Nouveau message' : 'Email'}
         </div>
         <h2 className="mt-2 text-xl font-bold tracking-[-0.02em] text-text">Rédaction</h2>
         <p className="mt-1 text-sm text-text-muted">

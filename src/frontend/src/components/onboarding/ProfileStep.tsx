@@ -19,6 +19,22 @@ interface ProfileStepProps {
 
 export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
   const [loading, setLoading] = useState(false);
+  // B-611 : le chemin était écrit en dur (« ~/.therese/ ») alors que le
+  // moteur peut écrire ailleurs (THERESE_DATA_DIR).
+  const [dossierDeDonnees, setDossierDeDonnees] = useState<string | null>(null);
+  useEffect(() => {
+    let vivant = true;
+    // Un module d'API partiellement simulé (tests) peut ne pas exposer cet appel.
+    try {
+      const lecture = api.getConfigStats();
+      if (lecture && typeof lecture.then === 'function') {
+        lecture.then((stats) => { if (vivant && stats?.data_dir) setDossierDeDonnees(stats.data_dir); }).catch(() => undefined);
+      }
+    } catch {
+      /* dossier non affiché */
+    }
+    return () => { vivant = false; };
+  }, []);
   const [error, setError] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'success' | 'error'>('idle');
   // B-198 : distinct de `error`, qui porte aussi les échecs d'enregistrement.
@@ -141,7 +157,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
 
       {/* Info stockage */}
       <p className="text-xs text-text-muted mb-4 px-1">
-        Ces informations sont stockées localement dans ~/.therese/ et ne quittent jamais ta machine.
+        Ces informations sont stockées localement{dossierDeDonnees ? ` dans ${dossierDeDonnees}` : ''} et ne quittent jamais ta machine.
       </p>
 
       {/* Form */}

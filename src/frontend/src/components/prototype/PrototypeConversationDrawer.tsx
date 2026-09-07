@@ -302,7 +302,7 @@ export function PrototypeConversationDrawer({
                       <span className="block truncate text-sm font-semibold text-text">{conversation.title || 'Nouvelle conversation'}</span>
                       <span className="mt-0.5 flex items-center justify-between gap-2 text-xs text-text-muted">
                         <span>{updatedLabel(conversation.updatedAt)}</span>
-                        <span>{conversation.messages.length || conversation.messageCount || 0} message{(conversation.messages.length || conversation.messageCount || 0) > 1 ? 's' : ''}</span>
+                        <span>{conversation.messages.length || conversation.messageCount || 0} message{(conversation.messages.length || conversation.messageCount || 0) > 1 ? 's' : ''}{conversation.synced ? '' : ' · non enregistrée'}</span>
                       </span>
                     </button>
                     <button

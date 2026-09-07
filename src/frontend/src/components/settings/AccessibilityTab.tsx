@@ -117,6 +117,12 @@ export function AccessibilityTab() {
         </div>
       </div>
 
+      {highContrast && (
+        <p className="text-xs text-warning" role="status">
+          Contraste élevé actif : il impose un fond noir et prend le pas sur le thème choisi ci-dessus, qui s'appliquera de nouveau une fois le contraste élevé désactivé.
+        </p>
+      )}
+
       {/* Contraste élevé (US-A11Y-03) */}
       <div className="space-y-2">
         <div className="flex items-center justify-between">

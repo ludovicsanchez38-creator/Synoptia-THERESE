@@ -284,6 +284,16 @@ export async function setLLMConfig(
   });
 }
 
+/** B-607 : « Configurer plus tard » défait un fournisseur enregistré un écran plus tôt. */
+export async function clearLLMConfig(): Promise<{ cleared: boolean }> {
+  return request<{ cleared: boolean }>('/api/config/llm', { method: 'DELETE' });
+}
+
+/** B-611 : le dossier de données réel (THERESE_DATA_DIR), pas un chemin écrit en dur. */
+export async function getConfigStats(): Promise<{ data_dir?: string } & Record<string, unknown>> {
+  return request<{ data_dir?: string } & Record<string, unknown>>('/api/config/stats');
+}
+
 export async function getOllamaStatus(): Promise<OllamaStatus> {
   // Ollama peut charger un modèle avant de répondre : voir DELAIS_CONFIG.
   return request<OllamaStatus>('/api/config/ollama/status', {

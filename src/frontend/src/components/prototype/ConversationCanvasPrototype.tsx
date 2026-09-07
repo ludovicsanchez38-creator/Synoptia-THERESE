@@ -1372,7 +1372,14 @@ export function ConversationCanvasPrototype() {
     // Les parcours déterministes restent accessibles par leurs cartes et leurs
     // raccourcis ; une demande libre ne doit jamais être remplacée par un
     // scénario approché ou perdre son texte.
-    if (composerValue.trim()) openChat(composerValue);
+    // B-626 (Karim) : Entrée depuis l'accueil ENVOIE (file d'attente du chat),
+    // au lieu de recopier le texte dans un composeur qu'il fallait revalider.
+    if (composerValue.trim()) {
+      useChatStore.getState().setQueuedPrompt(composerValue.trim());
+      setComposerValue('');
+      openChat();
+      requestAnimationFrame(() => document.querySelector<HTMLTextAreaElement>('[data-testid="chat-message-input"]')?.focus());
+    }
   }
 
   const handleComposerTranscript = useCallback((text: string) => {
@@ -1556,7 +1563,7 @@ export function ConversationCanvasPrototype() {
                 que dans les titres de conversation, jamais dans les mails, les
                 fichiers ou les contacts, contrairement à ce que la loupe
                 laissait croire. Le mot reste à la palette, qui indexe tout. */}
-            <IconButton label="Conversations" onClick={() => openConversationDrawer('search')}><History className="h-[18px] w-[18px]" /></IconButton>
+            <IconButton label="Conversations" onClick={() => (usePanelStoreDirect.getState().showConversationSidebar ? closeConversationDrawer() : openConversationDrawer('search'))}><History className="h-[18px] w-[18px]" /></IconButton>
             <IconButton label="Projets" onClick={() => openEmbeddedView('projects')}><Folder className="h-[18px] w-[18px]" /></IconButton>
             {/* BUG-159 : accès permanent aux Paramètres, au-dessus de l'aide
                 (demande Dr_logic) - ils n'étaient joignables que par la palette
@@ -1952,7 +1959,7 @@ export function ConversationCanvasPrototype() {
                           rail (« Plus d'outils »). */}
                       <div className="flex items-center gap-1" />
                       <div className="flex items-center gap-2">
-                        <span className="hidden text-xs font-medium text-text-muted sm:inline">Parcours réel · mutations du chat confirmées</span>
+                        <span className="hidden text-xs font-medium text-text-muted sm:inline">Données réelles · sources affichées</span>
                         {destinationUsesChat && (
                           <VoiceDictationButton
                             onTranscript={handleComposerTranscript}

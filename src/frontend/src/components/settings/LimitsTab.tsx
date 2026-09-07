@@ -237,7 +237,7 @@ export function LimitsTab() {
         <div className="flex items-start gap-2">
           <AlertTriangle className="w-4 h-4 text-accent-cyan-ink mt-0.5" />
           <div className="text-sm text-accent-cyan-ink">
-            <p className="font-medium">Indicateurs IA (US-ESC-01)</p>
+            <p className="font-medium">Indicateurs IA</p>
             <p className="text-xs text-accent-cyan-ink mt-1">
               THÉRÈSE détecte automatiquement quand l'IA n'est pas sûre de sa réponse et l'indique dans la conversation.
             </p>

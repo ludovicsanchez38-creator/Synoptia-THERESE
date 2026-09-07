@@ -29,8 +29,8 @@ import {
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { getActions, runAction } from '../../lib/actionRegistry';
-import { replierPourRecherche } from '../../lib/replierPourRecherche';
 import { Z_LAYER } from '../../styles/z-layers';
+import { classerCommandes } from '../../lib/classerCommandes';
 
 export interface Command {
   id: string;
@@ -114,13 +114,9 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
     const available = commands;
 
     if (!query.trim()) return available;
-    const q = replierPourRecherche(query);
-    return available.filter(
-      (cmd) =>
-        replierPourRecherche(cmd.name).includes(q) ||
-        replierPourRecherche(cmd.description).includes(q) ||
-        (cmd.keywords ?? []).some((k) => replierPourRecherche(k).includes(q))
-    );
+    // B-613 : taper « Conversations » ouvrait « Tâches », dont la description
+    // contenait le mot ; le nom passe avant le mot-clé, qui passe avant la description.
+    return classerCommandes(available, query);
   }, [commands, query]);
 
   // Reset selection when query changes

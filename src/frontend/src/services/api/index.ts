@@ -97,6 +97,8 @@ export {
   setWorkingDirectory,
   getLLMConfig,
   setLLMConfig,
+  clearLLMConfig,
+  getConfigStats,
   getOllamaStatus,
   getSystemResources,
   getOnboardingStatus,

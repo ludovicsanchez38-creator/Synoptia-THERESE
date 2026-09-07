@@ -136,6 +136,7 @@ export function TaskList() {
                 {/* Checkbox */}
                 <button
                   onClick={(e) => handleToggleComplete(task, e)}
+                  aria-label={task.status === 'done' ? `Rouvrir la tâche ${task.title}` : `Marquer la tâche ${task.title} terminée`}
                   className="mt-0.5 shrink-0 hover:scale-110 transition-transform"
                 >
                   {isDone ? (
@@ -223,6 +224,7 @@ export function TaskList() {
                       onClick={(e) => handleDelete(task.id, e)}
                       className="p-1 hover:bg-error/20 rounded-sm transition-colors"
                       title="Supprimer"
+                      aria-label={`Supprimer la tâche ${task.title}`}
                     >
                       <Trash2 className="w-4 h-4 text-text-muted hover:text-error" />
                     </button>

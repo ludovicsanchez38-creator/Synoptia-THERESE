@@ -163,6 +163,8 @@ export function TaskForm() {
           <label htmlFor="taskform-titre" className="text-sm text-text-muted mb-2 block">Titre *</label>
           <input id="taskform-titre"
             type="text"
+            required
+            aria-required="true"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Titre de la tâche"

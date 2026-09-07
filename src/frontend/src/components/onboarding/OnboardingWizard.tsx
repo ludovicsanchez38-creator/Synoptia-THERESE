@@ -6,7 +6,8 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Check } from 'lucide-react';
+import { Check, Minus } from 'lucide-react';
+import { doitEffacerLeChoixDeServiceIa, etatDeLEtape } from '../../lib/onboardingEtapes';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { WelcomeStep } from './WelcomeStep';
 import { ProfileStep } from './ProfileStep';
@@ -19,6 +20,7 @@ import { Z_LAYER } from '../../styles/z-layers';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { echapPendantLaMiseEnRoute } from './echapMiseEnRoute';
 import { isMacPlatform } from '../../lib/platform';
+import * as api from '../../services/api';
 
 interface OnboardingWizardProps {
   isOpen: boolean;
@@ -84,6 +86,11 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
   }
 
   function completeLlmStep(provider: LLMProvider | null) {
+    // B-607 : un fournisseur enregistré au passage précédent est défait si
+    // l'on choisit finalement « Configurer plus tard ».
+    if (doitEffacerLeChoixDeServiceIa(configuredProvider, provider)) {
+      void api.clearLLMConfig().catch(() => undefined);
+    }
     setConfiguredProvider(provider);
     setLlmSkipped(provider === null);
     goNext();
@@ -187,15 +194,21 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
                       animate={{ scale: index === currentStep ? 1.1 : 1 }}
                       transition={{ duration: 0.2 }}
                       className={`flex h-7 w-7 items-center justify-center rounded-full border-2 sm:h-8 sm:w-8 ${
-                        index < currentStep
+                        etatDeLEtape(index, currentStep, llmSkipped ? [2] : []) === 'faite'
                           ? 'border-accent-fill bg-accent-fill text-accent-ink'
+                          : etatDeLEtape(index, currentStep, llmSkipped ? [2] : []) === 'passee'
+                          ? 'border-border bg-surface-2 text-text-muted'
                           : index === currentStep
                           ? 'border-accent bg-accent-tint text-text'
                           : 'border-border bg-surface-2 text-text-muted'
                       }`}
+                      data-etat={etatDeLEtape(index, currentStep, llmSkipped ? [2] : [])}
                     >
-                      {index < currentStep ? (
+                      {/* B-612 : une étape passée par « Configurer plus tard » n'est pas faite. */}
+                      {etatDeLEtape(index, currentStep, llmSkipped ? [2] : []) === 'faite' ? (
                         <Check className="w-4 h-4" />
+                      ) : etatDeLEtape(index, currentStep, llmSkipped ? [2] : []) === 'passee' ? (
+                        <Minus className="w-4 h-4" aria-label="Étape passée" />
                       ) : (
                         <span className="text-xs font-medium">{index + 1}</span>
                       )}

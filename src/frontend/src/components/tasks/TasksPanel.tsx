@@ -203,7 +203,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
         className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
       >
         <option value="">Tous les statuts</option>
-        <option value="todo">A faire</option>
+        <option value="todo">À faire</option>
         <option value="in_progress">En cours</option>
         <option value="done">Terminé</option>
         <option value="cancelled">Annulé</option>
