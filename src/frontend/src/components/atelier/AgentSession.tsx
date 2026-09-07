@@ -154,26 +154,6 @@ const PROFILE_MAP: Record<string, AgentProfile> = {
 // Sub-components
 // ============================================================
 
-/** Indicateur de reflexion */
-function ThinkingDots({ color }: { color: string }) {
-  return (
-    <span className="flex gap-0.5">
-      {[0, 1, 2].map((i) => (
-        <motion.span
-          key={i}
-          className={`inline-block h-1 w-1 rounded-full ${color === "text-agent-cyan" ? "bg-[var(--color-agent-cyan)]/60" : color === "text-agent-magenta" ? "bg-[var(--color-agent-magenta)]/60" : color === "text-agent-blue" ? "bg-[var(--color-agent-blue)]/60" : color === "text-agent-green" ? "bg-[var(--color-agent-green)]/60" : color === "text-agent-purple" ? "bg-[var(--color-agent-purple)]/60" : color === "text-agent-amber" ? "bg-[var(--color-agent-amber)]/60" : "bg-white/40"}`}
-          animate={{ opacity: [0.3, 1, 0.3] }}
-          transition={{
-            repeat: Infinity,
-            duration: 1.2,
-            delay: i * 0.2,
-          }}
-        />
-      ))}
-    </span>
-  );
-}
-
 /** Tool call collapsible */
 function ToolCallBlock({
   toolName,
@@ -592,20 +572,10 @@ export function AgentSession({ profileId, model, onBack }: Props) {
           </AnimatePresence>
         )}
 
-        {/* Indicateur de reflexion */}
-        {isStreaming &&
-          messages.length > 0 &&
-          messages[messages.length - 1]?.role === "user" && (
-            <div className="flex items-center gap-2 px-3 py-2">
-              <div className={`flex h-7 w-7 items-center justify-center rounded-full ${colors.bg} text-sm`}>
-                {profile?.icon || "🤖"}
-              </div>
-              <span className={`text-xs ${colors.accent}`}>
-                {profile?.name || "Agent"} reflechit
-              </span>
-              <ThinkingDots color={colors.accent} />
-            </div>
-          )}
+        {/* B-305 : la mention « <nom> réfléchit » n'était jamais rendue (le
+            message utilisateur et le placeholder assistant arrivent dans le
+            même tick, le dernier message n'est jamais « user » en streaming) ;
+            le placeholder assistant fait office d'indicateur. Branche retirée. */}
       </div>
 
       {/* Input */}
