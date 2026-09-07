@@ -64,18 +64,18 @@ jobs:
       # Vite qui vise ce backend. reuseExistingServer est a false pour ne
       # jamais retomber sur une instance reelle.
       #
-      # PERIMETRE RESTREINT AUX TESTS D'API, et c'est mesure : la premiere
-      # execution reelle de la suite, le 01/09/2026, donne 31 passes et 65
-      # echoues. Les 30 tests d'API passent tous en 13 s ; les 65 parcours
-      # d'interface attendent settings-btn, memory-panel, crm-panel et sidebar
-      # — qui existent dans le code mais que la coque conversationnelle ne
-      # monte pas. Ils testent l'interface d'avant.
-      #
-      # Brancher les 96 rendrait la CI rouge en permanence, donc ignoree, ce
-      # qui est exactement le sort qu'a connu le cliquet mypy. On garde ce qui
-      # tient. Etendre a `npx playwright test` des que les parcours sont
-      # reecrits pour la coque actuelle (B-136).
-      - name: Contrats d'API de bout en bout
+      # PERIMETRE : TOUTE la suite du projet `desktop` (B-383, 07/09/2026).
+      # Le commentaire precedent annoncait « restreint aux tests d'API » alors
+      # que --project=desktop ne restreint que le navigateur : testDir vaut
+      # ./tests/e2e/stories, sans testMatch, donc les huit parcours d'interface
+      # tournaient aussi. Ils ont ete reecrits pour la coque conversationnelle
+      # (parcours 01, 02, 05, 06 le 01-02/09 ; les autres suivaient deja le
+      # registre d'actions) : mesure locale du 07/09/2026, 97 tests, les huit
+      # parcours verts, deux contrats d'API en depassement de delai a la
+      # premiere creation de contact (chargement du modele d'embedding en
+      # local, pas une regression). Le projet `mobile` (iPhone 13) reste hors
+      # CI : l'application est un logiciel de bureau.
+      - name: Parcours et contrats d'API de bout en bout
         run: npx playwright test --project=desktop
 
       - name: Publier le rapport
