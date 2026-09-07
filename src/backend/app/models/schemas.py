@@ -380,6 +380,9 @@ class RGPDExportResponse(BaseModel):
     projects: list[dict]
     tasks: list[dict]
     exported_at: HorodatageUTC
+    # B-590 : ce que l'anonymisation efface doit d'abord pouvoir être emporté.
+    prestations: list[dict] = []
+    email_messages: list[dict] = []
 
 
 class RGPDAnonymizeRequest(BaseModel):

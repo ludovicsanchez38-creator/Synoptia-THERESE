@@ -144,13 +144,46 @@ async def export_contact_data(
         for t in tasks
     ]
 
-    logger.info(f"RGPD export for contact {contact_id}")
+    # B-590 : l'anonymisation supprime prestations et e-mails du contact ; la
+    # portabilité doit les rendre avant.
+    prestations = (
+        await session.execute(select(Prestation).where(Prestation.contact_id == contact_id))
+    ).scalars().all()
+    prestations_data = [
+        {
+            "id": p.id,
+            "intitule": p.intitule,
+            "phase": p.phase,
+            "montant_ht": p.montant_ht,
+            "financeur": p.financeur,
+            "statut_financement": p.statut_financement,
+        }
+        for p in prestations
+    ]
+    emails = (
+        await session.execute(select(EmailMessage).where(EmailMessage.contact_id == contact_id))
+    ).scalars().all()
+    emails_data = [
+        {
+            "id": m.id,
+            "thread_id": m.thread_id,
+            "subject": m.subject,
+            "from_email": m.from_email,
+            "to_emails": m.to_emails,
+            "date": m.date.isoformat() if m.date else None,
+            "snippet": m.snippet,
+        }
+        for m in emails
+    ]
 
+    logger.info(f"RGPD export for contact {contact_id}")
     return RGPDExportResponse(
         contact=contact_data,
         activities=activities_data,
         projects=projects_data,
         tasks=tasks_data,
+        prestations=prestations_data,
+        email_messages=emails_data,
         exported_at=datetime.now(UTC),
     )
 
