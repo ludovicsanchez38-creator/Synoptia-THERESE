@@ -194,14 +194,37 @@ class TokenTracker:
 
         # Limits
         self._limits = TokenLimits()
+        # B-582 : les plafonds enregistrés (Paramètres > Limites) n'étaient lus
+        # qu'à l'ouverture de l'onglet ; le chat appliquait le défaut jusque-là.
+        self._limites_chargees = False
+
+    def _charger_limites_si_besoin(self) -> None:
+        if self._limites_chargees:
+            return
+        self._limites_chargees = True
+        try:
+            from app.models.database import get_sync_connection
+            from sqlalchemy import text
+
+            with get_sync_connection() as conn:
+                row = conn.execute(
+                    text("SELECT value FROM preferences WHERE key = :key"), {"key": "token_limits"}
+                ).fetchone()
+            if row and row[0]:
+                self._limits = TokenLimits.from_dict(json.loads(row[0]))
+                logger.info(f"[TOKEN] Limits loaded from DB: {self._limits.to_dict()}")
+        except Exception as e:
+            logger.debug("Plafonds non relus depuis la base : %s", e)
 
     def set_limits(self, limits: TokenLimits) -> None:
         """Set token limits."""
+        self._limites_chargees = True
         self._limits = limits
         logger.info(f"[TOKEN] Limits updated: {limits.to_dict()}")
 
     def get_limits(self) -> TokenLimits:
         """Get current token limits."""
+        self._charger_limites_si_besoin()
         return self._limits
 
     def _reset_daily_if_needed(self) -> None:
@@ -332,6 +355,7 @@ class TokenTracker:
         `local` : un modèle local (Ollama) n'a pas de tarif, ce n'est pas un
         oubli de la grille.
         """
+        self._charger_limites_si_besoin()
         self._reset_daily_if_needed()
         self._reset_monthly_if_needed()
 
