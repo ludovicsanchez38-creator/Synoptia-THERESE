@@ -615,14 +615,12 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
             logger.warning(f"Selected provider {selected_provider} has no API key, falling back")
 
         # Fallback: first provider with a valid key
-        anthropic_key = _get_api_key_from_db("anthropic") or os.getenv("ANTHROPIC_API_KEY")
-        openai_key = _get_api_key_from_db("openai") or os.getenv("OPENAI_API_KEY")
-        gemini_key = (
-            _get_api_key_from_db("gemini")
-            or os.getenv("GEMINI_API_KEY")
-            or os.getenv("GOOGLE_API_KEY")
-        )
-        mistral_key = _get_api_key_from_db("mistral") or os.getenv("MISTRAL_API_KEY")
+        # B-200 : le repli sur l'environnement passe par la même garde que le
+        # fournisseur choisi (jamais à l'insu de l'utilisateur sur une installation).
+        anthropic_key = _get_api_key_from_db("anthropic") or _cle_depuis_environnement("anthropic")
+        openai_key = _get_api_key_from_db("openai") or _cle_depuis_environnement("openai")
+        gemini_key = _get_api_key_from_db("gemini") or _cle_depuis_environnement("gemini")
+        mistral_key = _get_api_key_from_db("mistral") or _cle_depuis_environnement("mistral")
 
         # 0.48 : le repli par clé sert le frontier du catalogue.
         for nom, cle in (
@@ -1219,12 +1217,9 @@ def get_llm_service_for_provider(
     if env_vars:
         api_key = _get_api_key_from_db(provider_name)
         if not api_key:
-            if isinstance(env_vars, str):
-                env_vars = [env_vars]
-            for env_var in env_vars:
-                api_key = os.getenv(env_var)
-                if api_key:
-                    break
+            # B-200 : même garde que le chat (jamais à l'insu de l'utilisateur
+            # sur une installation).
+            api_key = _cle_depuis_environnement(provider_name)
 
         if not api_key:
             return None
