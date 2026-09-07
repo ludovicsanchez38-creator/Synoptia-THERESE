@@ -72,6 +72,16 @@ describe('ChatInput sans modèle', () => {
     expect(apiMocks.streamMessage).not.toHaveBeenCalled();
   });
 
+  it('ne propose pas d’ouvrir les réglages IA quand ils sont déjà ouverts (B-202)', async () => {
+    usePanelStore.setState({ showSettings: true, requestedSettingsTab: 'ai' });
+    render(<ChatInput />);
+
+    const bandeau = await screen.findByTestId('chat-model-unavailable');
+    expect(bandeau).toHaveTextContent('Choisis d’abord un modèle');
+    expect(screen.queryByRole('button', { name: 'Ouvrir les réglages IA' })).not.toBeInTheDocument();
+    expect(bandeau).toHaveTextContent('Les réglages sont ouverts');
+  });
+
   it('bloque aussi l’envoi pendant la vérification initiale du modèle', () => {
     apiMocks.getLLMConfig.mockReturnValue(new Promise(() => {}));
 

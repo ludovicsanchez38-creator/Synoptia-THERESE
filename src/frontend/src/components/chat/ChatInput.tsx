@@ -142,6 +142,9 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   } = useChatStore();
   const { connectionState, setActivity } = useStatusStore();
   const openSettings = usePanelStore((state) => state.openSettings);
+  // B-202 : quand les Paramètres sont déjà ouverts, le bandeau ne propose pas
+  // de les « ouvrir » une seconde fois.
+  const reglagesDejaOuverts = usePanelStore((state) => state.showSettings);
 
   // US-007 : Autosave brouillon
   const { saveDraft, restoreDraft, clearDraft, retrySave, lastSavedAt, draftError } = useAutosave(currentConversationId);
@@ -1114,14 +1117,18 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
             <p className="text-sm font-semibold text-text">Choisis d’abord un modèle</p>
             <p className="mt-1 text-xs leading-5 text-text-muted">Aucun modèle actif ne peut répondre. Configure une clé cloud ou démarre Ollama avec un modèle local.</p>
           </div>
-          <button
-            type="button"
-            onClick={() => openSettings('ai')}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-text bg-surface px-3 py-2 text-sm font-semibold text-text"
-          >
-            <Settings className="h-3.5 w-3.5" />
-            Ouvrir les réglages IA
-          </button>
+          {reglagesDejaOuverts ? (
+            <p className="shrink-0 self-center text-xs text-text-muted">Les réglages sont ouverts : choisis un modèle dans l’onglet IA.</p>
+          ) : (
+            <button
+              type="button"
+              onClick={() => openSettings('ai')}
+              className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-text bg-surface px-3 py-2 text-sm font-semibold text-text"
+            >
+              <Settings className="h-3.5 w-3.5" />
+              Ouvrir les réglages IA
+            </button>
+          )}
         </div>
       )}
 
