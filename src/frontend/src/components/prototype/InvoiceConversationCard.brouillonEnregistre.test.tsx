@@ -50,6 +50,22 @@ describe('InvoiceWorkspaceCanvas : brouillon enregistré (B-575) et liste tronqu
     expect(screen.getByRole('button', { name: 'Enregistrer le brouillon' })).toBeEnabled();
   });
 
+  it('B-377 : une retouche après enregistrement efface le message de succès, seul l’avertissement reste', async () => {
+    rendre({ onCreateDraft: vi.fn().mockResolvedValue(invoice) });
+    fireEvent.change(screen.getByLabelText('Client du devis'), { target: { value: contact.id } });
+    fireEvent.change(screen.getByLabelText('Description ligne 1'), { target: { value: 'Diagnostic IA' } });
+    fireEvent.change(screen.getByLabelText('Prix HT ligne 1'), { target: { value: '490' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer le brouillon' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmer le brouillon' }));
+    await screen.findByTestId('devis-draft-saved');
+
+    fireEvent.change(screen.getByLabelText('Description ligne 1'), { target: { value: 'Diagnostic IA approfondi' } });
+
+    expect(screen.queryByTestId('devis-draft-saved')).not.toBeInTheDocument();
+    expect(screen.getByText(/Modifications non enregistrées/)).toBeInTheDocument();
+    expect(screen.queryByText(/Le succès précédent/)).not.toBeInTheDocument();
+  });
+
   it('dit quand la liste des clients est tronquée', () => {
     rendre({ donnees: data({ contactsTronques: true }) });
     expect(screen.getByRole('alert')).toHaveTextContent(/Liste incomplète/);

@@ -628,8 +628,9 @@ function DevisDraftForm({
         </fieldset>
 
         {error && <p id="devis-form-error" className="mt-3 text-sm font-semibold text-error" role="alert">{error}</p>}
-        {hasUnsavedChanges && <p role="status" className="mt-3 rounded-md border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-sm text-warning">Modifications non enregistrées. Le succès précédent ne correspond plus au formulaire actuel.</p>}
-        {created && (
+        {/* B-377 : succès et avertissement ne cohabitent pas ; la première retouche efface le succès. */}
+        {hasUnsavedChanges && <p role="status" className="mt-3 rounded-md border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-sm text-warning">Modifications non enregistrées depuis le dernier brouillon.</p>}
+        {created && !hasUnsavedChanges && (
           <div role="status" className="mt-3 flex items-start gap-2 rounded-md border border-success/40 bg-[var(--color-success-tint)] p-3 text-sm text-success" data-testid="devis-draft-saved">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
             <span><strong>{created.invoice_number} enregistré comme brouillon.</strong> Aucun PDF n’a été généré et aucun email n’a été envoyé.</span>
