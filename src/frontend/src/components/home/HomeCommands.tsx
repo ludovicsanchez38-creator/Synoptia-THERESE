@@ -81,6 +81,14 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
     return () => onGuidedPanelChange?.(false);
   }, [onGuidedPanelChange]);
 
+  // B-636 (Sophie, c4) : l'assistant de création de commande empilait deux
+  // composeurs. La commande `rfc` appelait onStartRFC() PUIS onClose(), et la
+  // fermeture annonçait `false` alors que l'assistant restait affiché. L'état
+  // « panneau guidé » suit désormais ce qui est réellement montré.
+  useEffect(() => {
+    onGuidedPanelChange?.(Boolean(activeCommand || showRFC));
+  }, [activeCommand, showRFC, onGuidedPanelChange]);
+
   // (KO Syn 2.2) La bibliothèque de prompts est désormais montée globalement
   // (PanelContainer + panelStore) pour être accessible depuis ⌘K partout.
   // Le bouton « home » ci-dessous garde son ouverture locale.
@@ -111,13 +119,11 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
   const handleCommandClick = useCallback((cmd: CommandDefinition) => {
     setActiveCommand(cmd);
     setSelectedCategory(null);
-    onGuidedPanelChange?.(true);
-  }, [onGuidedPanelChange]);
+  }, []);
 
   const handleClose = useCallback(() => {
     setActiveCommand(null);
-    onGuidedPanelChange?.(false);
-  }, [onGuidedPanelChange]);
+  }, []);
 
   const handleStartRFC = useCallback(() => {
     setShowRFC(true);

@@ -199,12 +199,21 @@ export function RFCWizard({ onClose, editCommand }: RFCWizardProps) {
                   onConversationUpdate={setReflectMessages}
                 />
               </div>
-              <div className="px-4 py-3 border-t border-border flex justify-end">
+              <div className="px-4 py-3 border-t border-border flex items-center justify-between gap-3">
+                {/* B-636 : un bouton désactivé sans explication. L'aide dit ce qui manque. */}
+                {reflectMessages.length === 0 ? (
+                  <p id="rfc-aide-passer-a-faire" className="text-xs text-text-muted">
+                    Envoie d’abord ton brief à THÉRÈSE : « Passer à Faire » s’active dès le premier message.
+                  </p>
+                ) : (
+                  <span />
+                )}
                 <Button
                   variant="primary"
                   onClick={goToMake}
                   disabled={reflectMessages.length === 0}
-                  className="flex items-center gap-2 text-sm"
+                  aria-describedby={reflectMessages.length === 0 ? 'rfc-aide-passer-a-faire' : undefined}
+                  className="flex items-center gap-2 text-sm shrink-0"
                 >
                   Passer à Faire
                   <ArrowRight className="w-4 h-4" />
