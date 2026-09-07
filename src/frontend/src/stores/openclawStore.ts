@@ -46,6 +46,8 @@ interface OpenClawState {
   isSending: boolean;
   isNewTaskOpen: boolean;
   error: string | null;
+  /** B-401 : une liste pas encore lue n'est pas « Aucune session ». */
+  sessionsLoading: boolean;
 
   // Actions - Connexion
   checkOpenClawStatus: () => Promise<void>;
@@ -74,6 +76,7 @@ export const useOpenClawStore = create<OpenClawState>((set, get) => ({
   openclawAgents: [],
   openclawUrl: "",
   sessions: [],
+  sessionsLoading: false,
   sessionsTotal: 0,
   activeSessionId: null,
   activeSessionMessages: [],
@@ -104,6 +107,7 @@ export const useOpenClawStore = create<OpenClawState>((set, get) => ({
 
   // Sessions
   fetchSessions: async (limit = 50, status?: string) => {
+    set({ sessionsLoading: true });
     try {
       const result = await listOpenClawSessions(limit, status);
       const running = result.sessions.filter((s) => s.status === "running").length;
@@ -115,6 +119,8 @@ export const useOpenClawStore = create<OpenClawState>((set, get) => ({
       });
     } catch (e: any) {
       set({ error: e.message || "Erreur chargement sessions" });
+    } finally {
+      set({ sessionsLoading: false });
     }
   },
 

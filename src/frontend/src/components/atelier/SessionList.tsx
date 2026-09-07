@@ -63,6 +63,7 @@ export function SessionList() {
     runningCount,
     maxAgents,
     error,
+    sessionsLoading,
   } = useOpenClawStore();
 
   const reduceMotion = useAccessibilityStore((s) => s.reduceMotion);
@@ -161,6 +162,11 @@ export function SessionList() {
             >
               Réessayer
             </button>
+          </div>
+        ) : visibleSessions.length === 0 && sessionsLoading ? (
+          // B-401 : une liste pas encore lue n'est pas « Aucune session ».
+          <div role="status" className="flex items-center justify-center px-4 py-8 text-center">
+            <span className="text-xs text-text-muted">Lecture des sessions…</span>
           </div>
         ) : visibleSessions.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-2 px-4 py-8 text-center">
