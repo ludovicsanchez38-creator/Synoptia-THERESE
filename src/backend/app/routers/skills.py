@@ -17,6 +17,7 @@ from app.services.skills import (
 )
 from app.services.skills.base import SkillOutputType
 from app.services.skills.model_capability import get_model_capability
+from app.services.token_tracker import enregistrer_usage_llm
 from app.services.user_profile import get_cached_profile
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import FileResponse
@@ -152,11 +153,15 @@ async def execute_skill(
         # 5. Appeler le LLM (max_tokens augmenté pour les skills FILE qui génèrent du code)
         # 16384 tokens pour éviter la troncature sur les documents longs (BUG-042)
         llm_max_tokens = 16384 if skill.output_type == SkillOutputType.FILE else None
+        usage_skill: dict = {}
         llm_content = await llm_service.generate_content(
             prompt=enriched_prompt,
             context=request.context,
             max_tokens=llm_max_tokens,
+            usage_sink=usage_skill,
         )
+        # B-632 : un fichier généré depuis l'établi n'était compté nulle part.
+        enregistrer_usage_llm(llm_service, usage_skill, f"skill:{skill_id}", enriched_prompt, llm_content)
 
         # BUG-pptx-nb-slides : extraire nb_slides depuis le prompt (ex: "5 slides", "10 diapositives")
         import re as _re_nb
@@ -210,11 +215,14 @@ async def execute_skill(
 {markdown_addition}
 IMPORTANT : Écris directement le contenu textuel complet et détaillé. NE génère PAS de code Python.
 """
+            usage_relance: dict = {}
             retry_content = await llm_service.generate_content(
                 prompt=retry_prompt,
                 context=request.context,
                 max_tokens=llm_max_tokens,
+                usage_sink=usage_relance,
             )
+            enregistrer_usage_llm(llm_service, usage_relance, f"skill:{skill_id}", retry_prompt, retry_content)
             result = await registry.execute(skill_id, skill_request, retry_content)
 
         return result

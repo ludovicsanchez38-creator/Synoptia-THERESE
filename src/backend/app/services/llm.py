@@ -1072,8 +1072,13 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         context: dict | None = None,
         system_prompt: str | None = None,
         max_tokens: int | None = None,
+        usage_sink: dict | None = None,
     ) -> str:
         """Generate complete content (non-streaming).
+
+        usage_sink : rempli avec l'usage réel du fournisseur (input_tokens,
+        output_tokens) quand il le fournit (B-632 : l'atelier et les skills
+        n'étaient comptés nulle part).
 
         Grounding is disabled for content generation (skills, documents)
         to avoid Gemini searching instead of generating structured content.
@@ -1113,6 +1118,11 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
                     content_parts.append(event.content)
                 elif event.type == "error":
                     errors.append(event.content or "Unknown error")
+                elif event.type == "done" and usage_sink is not None:
+                    if event.input_tokens is not None:
+                        usage_sink["input_tokens"] = event.input_tokens
+                    if event.output_tokens is not None:
+                        usage_sink["output_tokens"] = event.output_tokens
         except Exception as exc:
             cb.record_failure(provider_name, str(exc)[:200])
             raise

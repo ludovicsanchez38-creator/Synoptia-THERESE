@@ -656,3 +656,31 @@ def detect_uncertainty(response: str) -> dict:
         "confidence_level": confidence_level,
         "should_verify": confidence_level in ["low", "medium"] and len(detected_phrases) > 1,
     }
+
+
+def enregistrer_usage_llm(
+    llm_service: object,
+    usage_sink: dict | None,
+    conversation_id: str,
+    texte_entree: str = "",
+    texte_sortie: str = "",
+) -> TokenUsageRecord:
+    """Compte un appel au modèle hors chat (atelier documentaire, skills).
+
+    B-632 (persona Sophie, c4) : deux générations réelles de l'atelier ne
+    laissaient aucune trace dans `token_usage.json`. Même convention que le
+    chat : usage réel du fournisseur quand il est fourni, sinon estimation à
+    deux jetons par mot.
+    """
+    usage = usage_sink or {}
+    input_tokens = usage.get("input_tokens") or len(texte_entree.split()) * 2
+    output_tokens = usage.get("output_tokens") or len(texte_sortie.split()) * 2
+    modele = str(getattr(llm_service, "modele_effectif", None) or getattr(getattr(llm_service, "config", None), "model", "inconnu"))
+    fournisseur = str(getattr(llm_service, "fournisseur_effectif", None) or getattr(getattr(getattr(llm_service, "config", None), "provider", None), "value", "inconnu"))
+    return get_token_tracker().record_usage(
+        conversation_id=conversation_id,
+        model=modele,
+        provider=fournisseur,
+        input_tokens=int(input_tokens),
+        output_tokens=int(output_tokens),
+    )

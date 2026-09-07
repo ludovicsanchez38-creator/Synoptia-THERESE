@@ -45,6 +45,7 @@ from app.services.document_orchestrator import (
 )
 from app.services.error_handler import message_pour_ecran
 from app.services.llm import Message, get_llm_service
+from app.services.token_tracker import enregistrer_usage_llm
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
@@ -350,7 +351,8 @@ async def _draft_stream(
 
     try:
         try:
-            async for chunk in llm_service.stream_response(context, raise_on_error=True):
+            usage_redaction: dict = {}
+            async for chunk in llm_service.stream_response(context, raise_on_error=True, usage_sink=usage_redaction):
                 accumulated += chunk
                 yield f"data: {json.dumps({'type': 'text', 'content': chunk})}\n\n"
 
@@ -371,6 +373,9 @@ async def _draft_stream(
             yield f"data: {json.dumps({'type': 'error', 'content': message})}\n\n"
             return
 
+        # B-632 : compté avant l'analyse du texte, une réponse inexploitable a
+        # quand même coûté des jetons.
+        enregistrer_usage_llm(llm_service, usage_redaction, f"document:{document.id}", prompt, accumulated)
         content, pistes_texts = parse_draft_output(accumulated)
         if not content.strip():
             completed = True
@@ -477,7 +482,9 @@ async def validate_section(
 
     llm_service = get_llm_service()
     try:
-        summary = (await llm_service.generate_content(prompt=build_summary_prompt(section))).strip()
+        usage_resume: dict = {}
+        summary = (await llm_service.generate_content(prompt=build_summary_prompt(section), usage_sink=usage_resume)).strip()
+        enregistrer_usage_llm(llm_service, usage_resume, f"document:{section.document_id}", section.content, summary)
         if not summary:
             summary = section.content[:300]
     except Exception as exc:  # fallback volontaire : la validation ne bloque jamais
@@ -577,9 +584,12 @@ async def generate_outline(
         )
 
     llm_service = get_llm_service()
+    usage_trame: dict = {}
     raw_response = await llm_service.generate_content(
+        usage_sink=usage_trame,
         prompt=build_outline_prompt(document.title, document.brief)
     )
+    enregistrer_usage_llm(llm_service, usage_trame, f"document:{document.id}", document.brief or document.title, raw_response)
 
     try:
         parsed_sections = parse_outline_response(raw_response)
