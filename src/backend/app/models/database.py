@@ -613,6 +613,26 @@ def apply_adhoc_migrations(db_path) -> None:
 ALEMBIC_HEAD_REVISION = "a7b8c9d0e1f2"
 
 
+def tables_de_synchronisation() -> tuple[str, ...]:
+    """Tables du sous-système de synchronisation de dossiers, lues sur les modèles (B-398)."""
+    from app.models import entities_sync as sync
+
+    return tuple(
+        m.__tablename__
+        for m in (sync.ProjectSyncRoot, sync.ProjectSyncEntry, sync.SyncPlan, sync.SyncOperation)
+    )
+
+
+def tables_de_planning() -> tuple[str, ...]:
+    """Tables du socle PERT (P-039), lues sur les modèles (B-398)."""
+    from app.models import entities as ent
+
+    return tuple(
+        m.__tablename__
+        for m in (ent.TaskSchedule, ent.TaskDependency, ent.PlanningResource, ent.TaskAllocation, ent.PlanningSnapshot)
+    )
+
+
 def ensure_alembic_stamp(db_path) -> None:
     """Estampille la DB à la tête Alembic si elle n'a pas d'alembic_version.
 
@@ -698,25 +718,18 @@ def ensure_alembic_stamp(db_path) -> None:
                     from app.models import entities_sync as _sync  # noqa: F401
                     from sqlmodel import SQLModel as _SQLModel
 
+                    # B-398 : les noms viennent des modèles, pas d'une liste en
+                    # dur qui se périmait à la première table renommée ou ajoutée.
                     has_sync_tables = all(
                         set(_SQLModel.metadata.tables[table].columns.keys())
                         <= _colonnes(table)
-                        for table in (
-                            "project_sync_roots", "project_sync_entries",
-                            "sync_plans", "sync_operations",
-                        )
+                        for table in tables_de_synchronisation()
                     )
                     # P-039 : les cinq tables de planning sont créées par
                     # create_all au boot desktop avant cette preuve. Exiger
                     # toutes leurs colonnes empêche de sauter la migration sur
                     # une base Alembic ancienne partiellement patchée.
-                    planning_tables = (
-                        "task_schedules",
-                        "task_dependencies",
-                        "planning_resources",
-                        "task_allocations",
-                        "planning_snapshots",
-                    )
+                    planning_tables = tables_de_planning()
                     has_planning_tables = all(
                         table in _SQLModel.metadata.tables
                         and set(_SQLModel.metadata.tables[table].columns.keys())
