@@ -65,6 +65,9 @@ from sqlmodel import select
 
 logger = logging.getLogger(__name__)
 
+# B-192 : longueur minimale de la phrase de passe d'une sauvegarde chiffrée (P-007).
+LONGUEUR_MIN_PASSPHRASE = 12
+
 router = APIRouter()
 
 
@@ -1063,6 +1066,16 @@ async def create_backup(
             detail=(
                 "Une passphrase est requise pour chiffrer la sauvegarde. "
                 "Conserve-la précieusement : elle est indispensable pour restaurer."
+            ),
+        )
+    # B-192 (P-007, décision de Ludo) : douze caractères minimum. L'archive
+    # embarque la clé de la base : une phrase courte se casse hors ligne.
+    if len(password.strip()) < LONGUEUR_MIN_PASSPHRASE:
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                f"La passphrase doit compter au moins {LONGUEUR_MIN_PASSPHRASE} caractères "
+                "(une phrase mémorisable, avec des espaces si tu veux)."
             ),
         )
 

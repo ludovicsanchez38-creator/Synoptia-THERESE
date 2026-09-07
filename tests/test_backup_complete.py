@@ -287,3 +287,13 @@ async def test_restore_ferme_les_engines_avant_extraction(tmp_path, monkeypatch)
     assert result["success"] is True
     assert events[:2] == ["close_db", "extract"]
     assert db_path.read_bytes() == b"etat-restaure"
+
+
+@pytest.mark.asyncio
+async def test_une_passphrase_courte_est_refusee(client):
+    """B-192 (P-007, décision de Ludo) : douze caractères minimum."""
+    resp = await client.post("/api/data/backup", json={"password": "court-11car"})
+    assert resp.status_code == 400, resp.text
+    corps = resp.json()
+    message = corps.get("detail") or corps.get("message") or ""
+    assert "12" in message
