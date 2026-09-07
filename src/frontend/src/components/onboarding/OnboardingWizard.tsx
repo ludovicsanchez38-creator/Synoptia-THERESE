@@ -38,6 +38,8 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
   const [currentStep, setCurrentStep] = useState(0);
   const [direction, setDirection] = useState(1); // 1 = forward, -1 = backward
   const [configuredProvider, setConfiguredProvider] = useState<LLMProvider | null>(null);
+  // B-199 : « Configurer plus tard » est un choix distinct de « rien encore ».
+  const [llmSkipped, setLlmSkipped] = useState(false);
   const dialogRef = useRef<HTMLDivElement>(null);
 
   // Window controls
@@ -67,6 +69,7 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
       setCurrentStep(0);
       setDirection(1);
       setConfiguredProvider(null);
+      setLlmSkipped(false);
     }
   }, [isOpen]);
 
@@ -82,6 +85,7 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
 
   function completeLlmStep(provider: LLMProvider | null) {
     setConfiguredProvider(provider);
+    setLlmSkipped(provider === null);
     goNext();
   }
 
@@ -256,7 +260,7 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
                   {currentStep === 2 && <div data-testid="onboarding-step-2"><LLMStep onNext={completeLlmStep} onBack={goBack} /></div>}
                   {currentStep === 3 && <div data-testid="onboarding-step-3"><SecurityStep provider={configuredProvider} onNext={goNext} onBack={goBack} /></div>}
                   {currentStep === 4 && <div data-testid="onboarding-step-4"><WorkingDirStep onNext={goNext} onBack={goBack} /></div>}
-                  {currentStep === 5 && <div data-testid="onboarding-step-5"><CompleteStep onComplete={handleComplete} onBack={goBack} /></div>}
+                  {currentStep === 5 && <div data-testid="onboarding-step-5"><CompleteStep onComplete={handleComplete} onBack={goBack} llmSkipped={llmSkipped} /></div>}
                 </motion.div>
               </AnimatePresence>
             </div>

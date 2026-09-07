@@ -13,6 +13,8 @@ import { Button } from '../ui/Button';
 interface CompleteStepProps {
   onComplete: () => void;
   onBack: () => void;
+  /** B-199 : l'étape du service d'IA a été passée (« Configurer plus tard »). */
+  llmSkipped?: boolean;
 }
 
 interface SetupSummary {
@@ -21,7 +23,7 @@ interface SetupSummary {
   workingDir: string | null;
 }
 
-export function CompleteStep({ onComplete, onBack }: CompleteStepProps) {
+export function CompleteStep({ onComplete, onBack, llmSkipped = false }: CompleteStepProps) {
   const [summary, setSummary] = useState<SetupSummary>({
     profile: null,
     llmConfig: null,
@@ -86,7 +88,12 @@ export function CompleteStep({ onComplete, onBack }: CompleteStepProps) {
       // défaut : sinon « Configurer plus tard » affichait quand même une coche
       // verte et openai/gpt-5.5 (faux succès, finding Codex 16/07).
       title: 'Service d’IA',
-      value: summary.llmConfig?.available
+      // B-199 : « Configurer plus tard » l'emporte sur la configuration par
+      // défaut relue au serveur - le récapitulatif dit ce que la personne a
+      // choisi dans l'assistant, pas ce que le serveur porte en réglage initial.
+      value: llmSkipped
+        ? 'À configurer plus tard'
+        : summary.llmConfig?.available
         // B-243 : le modèle s'écrit en entier. La troncature aux deux premiers
         // segments fabriquait un identifiant absent de toute liste
         // (mistral-medium-latest -> « mistral-medium », claude-opus-4-8 ->
@@ -94,8 +101,8 @@ export function CompleteStep({ onComplete, onBack }: CompleteStepProps) {
         // `title` de la ligne, qui rendent la valeur entière au survol.
         ? `${summary.llmConfig.provider} / ${summary.llmConfig.model}`
         : 'À configurer',
-      configured: !!summary.llmConfig?.available,
-      unavailable: summaryUnavailable.includes('Service d’IA'),
+      configured: !llmSkipped && !!summary.llmConfig?.available,
+      unavailable: !llmSkipped && summaryUnavailable.includes('Service d’IA'),
     },
     {
       icon: FolderOpen,
@@ -179,6 +186,8 @@ export function CompleteStep({ onComplete, onBack }: CompleteStepProps) {
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.6 + index * 0.1 }}
             className="flex items-center gap-3 p-4 rounded-md bg-background/40 border border-border/30 text-left"
+            data-testid={`summary-${item.title.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-')}`}
+            data-configured={item.configured ? 'true' : 'false'}
           >
             <div
               className={`w-10 h-10 rounded-md flex items-center justify-center shrink-0 ${
