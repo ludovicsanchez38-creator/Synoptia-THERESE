@@ -28,6 +28,9 @@ from app.services.invoice_status import statut_effectif_facture
 from app.services.user_profile import get_cached_profile
 from fastapi import APIRouter, Depends
 from sqlalchemy import and_, func, or_
+from sqlalchemy import (
+    select as compter_select,  # B-425 : compte hors de la couture de test sur `select`
+)
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlmodel import select
@@ -250,6 +253,16 @@ async def _lire_facturation_complete(session: AsyncSession) -> bool:
     return profile.is_billing_complete() if profile is not None else False
 
 
+# B-425 : chaque liste du brief est plafonnée, et le total réel est annoncé
+# pour que l'écran puisse dire « et N autres » au lieu de tout charger.
+PLAFOND_BRIEF = 50
+
+
+async def _compter(session: AsyncSession, requete) -> int:
+    resultat = await session.execute(compter_select(func.count()).select_from(requete.order_by(None).subquery()))
+    return int(resultat.scalar_one() or 0)
+
+
 @router.get("/today")
 async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
     """Retourne les données du jour pour le tableau de bord.
@@ -365,6 +378,7 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
 
     # --- Tâches urgentes (en retard ou dues aujourd'hui) ---
     urgent_tasks = []
+    tasks_total = 0
     try:
         # BUG-125 : trier par échéance croissante (la plus en retard d'abord).
         # Sans ORDER BY, l'ordre était arbitraire (insertion) : avec plusieurs
@@ -383,7 +397,8 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
             )
             .order_by(Task.due_date.asc(), Task.id.asc())
         )
-        result_tasks = await session.execute(stmt_tasks)
+        tasks_total = await _compter(session, stmt_tasks)
+        result_tasks = await session.execute(stmt_tasks.limit(PLAFOND_BRIEF))
         tasks = result_tasks.scalars().all()
 
         for t in tasks:
@@ -401,15 +416,16 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
 
     # --- Relances email échues ou proches (J+2 maximum) ---
     due_follow_ups = []
+    follow_ups_total = 0
     try:
-        follow_ups = (
-            await session.execute(
-                select(EmailFollowUp)
-                .where(EmailFollowUp.status == "pending")
-                .where(func.substr(EmailFollowUp.due_date, 1, 10) <= follow_up_horizon)
-                .order_by(EmailFollowUp.due_date.asc(), EmailFollowUp.id.asc())
-            )
-        ).scalars().all()
+        stmt_follow_ups = (
+            select(EmailFollowUp)
+            .where(EmailFollowUp.status == "pending")
+            .where(func.substr(EmailFollowUp.due_date, 1, 10) <= follow_up_horizon)
+            .order_by(EmailFollowUp.due_date.asc(), EmailFollowUp.id.asc())
+        )
+        follow_ups_total = await _compter(session, stmt_follow_ups)
+        follow_ups = (await session.execute(stmt_follow_ups.limit(PLAFOND_BRIEF))).scalars().all()
         message_ids = {follow_up.email_message_id for follow_up in follow_ups}
         contact_ids = {follow_up.contact_id for follow_up in follow_ups if follow_up.contact_id}
         messages = (
@@ -444,6 +460,7 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
 
     # --- Factures impayées dont l'échéance est dépassée ---
     overdue_invoices = []
+    invoices_total = 0
     try:
         stmt_invoices = select(Invoice).options(selectinload(Invoice.contact)).where(
             Invoice.document_type == "facture",
@@ -452,7 +469,10 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
                 and_(Invoice.status == "sent", Invoice.due_date < today_dt),
             ),
         )
-        result_invoices = await session.execute(stmt_invoices)
+        invoices_total = await _compter(session, stmt_invoices)
+        result_invoices = await session.execute(
+            stmt_invoices.order_by(Invoice.due_date.asc(), Invoice.id.asc()).limit(PLAFOND_BRIEF)
+        )
         invoices = result_invoices.scalars().all()
 
         for inv in invoices:
@@ -500,5 +520,9 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
             "follow_ups_count": len(due_follow_ups),
             "invoices_count": len(overdue_invoices),
             "prospects_count": len(stale_prospects),
+            # B-425 : totaux réels, l'écran dit « et N autres » au-delà du plafond
+            "tasks_total": tasks_total,
+            "follow_ups_total": follow_ups_total,
+            "invoices_total": invoices_total,
         },
     }

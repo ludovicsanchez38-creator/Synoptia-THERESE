@@ -74,6 +74,10 @@ export interface DashboardSummary {
   follow_ups_count: number;
   invoices_count: number;
   prospects_count: number;
+  /** B-425 : totaux réels quand une liste est plafonnée à 50 côté serveur. */
+  tasks_total?: number;
+  follow_ups_total?: number;
+  invoices_total?: number;
 }
 
 export interface TodayDashboard {

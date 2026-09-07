@@ -27,7 +27,7 @@ import {
 } from 'lucide-react';
 import type { SetupStatus, TodayDashboard } from '../../services/api/dashboard';
 import type { AppView } from '../../stores/navigationStore';
-import { buildTodayAttentionItems, todayBriefTitle, type AttentionKind, type TodayAttentionItem } from './prototypeReadModels';
+import { buildTodayAttentionItems, nombreNonAffiche, todayBriefTitle, type AttentionKind, type TodayAttentionItem } from './prototypeReadModels';
 import type { ReadResource } from './usePrototypeReadData';
 import { Spinner } from '../ui/Spinner';
 import { SetupChecklist } from '../home/SetupChecklist';
@@ -184,7 +184,12 @@ export function TodayDashboardCard({
             </h2>
             <div className="text-xs text-text-muted">
               {resource.status === 'ready'
-                ? `${items.length} élément${items.length > 1 ? 's' : ''} issu${items.length > 1 ? 's' : ''} de tes données`
+                ? `${items.length} élément${items.length > 1 ? 's' : ''} issu${items.length > 1 ? 's' : ''} de tes données${
+                    // B-425 : le serveur plafonne chaque liste à 50 et dit le total.
+                    nombreNonAffiche(resource.data) > 0
+                      ? `, et ${nombreNonAffiche(resource.data)} autre${nombreNonAffiche(resource.data) > 1 ? 's' : ''} dans la vue complète`
+                      : ''
+                  }`
                 : 'Lecture des sources locales'}
             </div>
           </div>

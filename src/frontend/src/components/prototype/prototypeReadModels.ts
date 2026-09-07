@@ -195,6 +195,15 @@ export function buildTodayAttentionItems(data: TodayDashboard): TodayAttentionIt
   ];
 }
 
+/** B-425 : ce que le serveur a plafonné et n'a donc pas envoyé (0 si tout est là). */
+export function nombreNonAffiche(data: Pick<TodayDashboard, 'summary'> | null | undefined): number {
+  const s = data?.summary;
+  if (!s) return 0;
+  const manque = (total: number | undefined, count: number | undefined) =>
+    typeof total === 'number' && typeof count === 'number' ? Math.max(0, total - count) : 0;
+  return manque(s.tasks_total, s.tasks_count) + manque(s.follow_ups_total, s.follow_ups_count) + manque(s.invoices_total, s.invoices_count);
+}
+
 export function todayBriefTitle(itemCount: number): string {
   if (itemCount === 0) return 'Aucune priorité détectée';
   if (itemCount === 1) return 'Un point mérite ton attention';

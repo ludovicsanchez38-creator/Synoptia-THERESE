@@ -356,3 +356,30 @@ class TestSetupStatus:
         resp = await client.get("/api/dashboard/setup-status")
         assert resp.status_code == 200
         assert resp.json()["has_llm_key"] is True
+
+
+@pytest.mark.asyncio
+async def test_today_plafonne_chaque_liste_et_dit_le_total(client: AsyncClient, db_session):
+    """B-425 (cycle 4) : les listes du brief n'avaient aucun plafond alors que
+    la route promet un chargement rapide ; soixante tâches en retard étaient
+    toutes chargées et sérialisées. Décision : 50 par liste, et le total réel
+    dans le résumé pour que l'écran dise « et N autres »."""
+    from datetime import date, datetime, time, timedelta
+
+    from app.models.entities import Task
+
+    hier = datetime.combine(date.today(), time(9, 0)) - timedelta(days=1)
+    for i in range(60):
+        db_session.add(Task(id=f"tk-plafond-{i:03d}", title=f"Retard {i}", status="todo", due_date=hier - timedelta(minutes=i)))
+    await db_session.commit()
+
+    resp = await client.get("/api/dashboard/today")
+    assert resp.status_code == 200, resp.text
+    corps = resp.json()
+    assert len(corps["urgent_tasks"]) == 50, "le brief doit plafonner à 50 tâches"
+    assert corps["summary"]["tasks_count"] == 50
+    assert corps["summary"]["tasks_total"] == 60, "le total réel doit être annoncé"
+    assert corps["summary"]["follow_ups_total"] == 0
+    assert corps["summary"]["invoices_total"] == 0
+    # La plus en retard reste en tête malgré le plafond.
+    assert corps["urgent_tasks"][0]["title"] == "Retard 59"
