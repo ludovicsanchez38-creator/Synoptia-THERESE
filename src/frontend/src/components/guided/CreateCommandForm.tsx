@@ -11,6 +11,7 @@ import { ArrowLeft, Save } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { cn } from '../../lib/utils';
 import { Spinner } from '../ui/Spinner';
+import { slugDeCommande } from '../../lib/slugDeCommande';
 
 interface CreateCommandFormProps {
   onSubmit: (data: {
@@ -56,10 +57,7 @@ export function CreateCommandForm({ onSubmit, onBack, initialContent, initialDes
 
     try {
       // Slugify le nom
-      const slug = name
-        .toLowerCase()
-        .replace(/[^a-z0-9]+/g, '-')
-        .replace(/^-|-$/g, '');
+      const slug = slugDeCommande(name);
 
       await onSubmit({
         name: slug,
@@ -120,7 +118,7 @@ export function CreateCommandForm({ onSubmit, onBack, initialContent, initialDes
           />
           {name && (
             <p className="text-xs text-text-muted mt-1">
-              Slug : /{name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}
+              Slug : /{slugDeCommande(name)}
             </p>
           )}
         </div>

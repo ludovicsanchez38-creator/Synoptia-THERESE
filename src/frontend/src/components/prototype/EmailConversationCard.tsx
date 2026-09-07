@@ -526,6 +526,11 @@ export function EmailMessageCanvas({
             )}
 
             <div className="mt-3 flex flex-wrap justify-between gap-2">
+              {/* B-596 : en rédaction libre il n'y a pas de message source ;
+                  generateDraft sortait sans rien faire et le bouton restait actif. */}
+              {nouvelleRedaction ? (
+                <p className="self-center text-xs text-text-muted">Rédaction libre : aucune proposition à générer sans message source.</p>
+              ) : (
               <button
                 type="button"
                 onClick={() => void handleGenerate()}
@@ -535,6 +540,7 @@ export function EmailMessageCanvas({
                 {generating ? <Spinner taille="ligne" /> : <Sparkles className="h-3.5 w-3.5" />}
                 {generating ? 'Génération…' : 'Générer une proposition'}
               </button>
+              )}
               <button
                 type="button"
                 onClick={requestSave}

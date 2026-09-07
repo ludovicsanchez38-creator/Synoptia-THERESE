@@ -216,6 +216,12 @@ export const useActionsStore = create<ActionsState>((set, get) => ({
       await cancelTask(taskId);
       // Rafraichir immediatement
       await get().refreshTask(taskId);
+      // B-584 : la demande d'annulation laisse la tâche en cancel_requested ;
+      // sans reprise du sondage, l'écran restait sur « Arrêt en cours » sans fin.
+      const statut = get().tasks.find((t) => t.task_id === taskId)?.status;
+      if (statut && statut !== 'completed' && statut !== 'cancelled' && statut !== 'error') {
+        get()._startPolling(taskId);
+      }
     } catch (err) {
       set({
         error: err instanceof Error ? err.message : 'Erreur d\'annulation',

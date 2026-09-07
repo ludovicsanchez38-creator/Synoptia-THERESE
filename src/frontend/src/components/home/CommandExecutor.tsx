@@ -58,6 +58,7 @@ export function CommandExecutor({ command, onClose, onPromptSelect, onStartRFC }
   } | null>(null);
   const [skillState, setSkillState] = useState<SkillState | null>(null);
   const [imagePromptCommand, setImagePromptCommand] = useState<CommandDefinition | null>(null);
+  const derniereConfigImageRef = useRef<NonNullable<CommandDefinition['image_config']> | null>(null);
   const [imageState, setImageState] = useState<ImageState | null>(null);
   const [isLoadingSchema, setIsLoadingSchema] = useState(false);
 
@@ -248,10 +249,14 @@ export function CommandExecutor({ command, onClose, onPromptSelect, onStartRFC }
   // Handlers image
   const dernierPromptImageRef = useRef<string | null>(null);
   const handleImageGenerate = useCallback((customPrompt: string) => {
-    if (!imagePromptCommand?.image_config) return;
+    // B-585 : au moment de « Réessayer », imagePromptCommand est déjà refermé
+    // (mis à null au lancement) ; la configuration retenue au dernier
+    // lancement sert de repli, sinon le bouton ne relançait rien.
+    const config = imagePromptCommand?.image_config ?? derniereConfigImageRef.current;
+    if (!config) return;
     dernierPromptImageRef.current = customPrompt; // B-433 : pour « Réessayer »
+    derniereConfigImageRef.current = config;
 
-    const config = imagePromptCommand.image_config;
     const provider = config.provider as ImageProvider;
     const providerLabel = provider === 'gpt-image-2' ? 'GPT Image 2' : provider === 'fal-flux-pro' ? 'Fal Flux Pro' : 'Nano Banana 2';
 
