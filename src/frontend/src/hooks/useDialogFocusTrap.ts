@@ -19,8 +19,13 @@
  */
 import { useEffect, useRef, type RefObject } from 'react';
 
+// B-618 (Karim, c4) : un élément à tabindex="-1" n'est JAMAIS dans l'ordre de
+// tabulation, quel que soit son type. Les options d'une liste à focus
+// itinérant (`<button role="option" tabindex="-1">`) comptaient comme « un
+// focalisable après la liste » : le piège laissait Tab partir nativement, et
+// le focus atterrissait sur BODY, hors du dialogue.
 const FOCUSABLE_SELECTOR =
-  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"]):not([disabled]), audio[controls], video[controls]';
+  'button:not([disabled]):not([tabindex="-1"]), [href]:not([tabindex="-1"]), input:not([disabled]):not([tabindex="-1"]), select:not([disabled]):not([tabindex="-1"]), textarea:not([disabled]):not([tabindex="-1"]), [tabindex]:not([tabindex="-1"]):not([disabled]), audio[controls]:not([tabindex="-1"]), video[controls]:not([tabindex="-1"])';
 // B-463 : un lecteur natif avec commandes prend le focus ; absent du sélecteur,
 // il laissait Tab sortir du dialogue depuis le canevas Voix.
 

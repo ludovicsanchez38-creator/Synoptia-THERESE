@@ -57,7 +57,8 @@ describe('lot 12 - gardes de régression', () => {
   });
 
   it('B-463 : un lecteur audio ou vidéo avec commandes compte parmi les focusables', () => {
-    expect(lire('hooks/useDialogFocusTrap.ts')).toMatch(/audio\[controls\], video\[controls\]/);
+    // B-618 (c4) : chaque partie du sélecteur exclut désormais tabindex="-1".
+    expect(lire('hooks/useDialogFocusTrap.ts')).toMatch(/audio\[controls\][^,]*, video\[controls\]/);
   });
 
   it("B-472 : le bouton d'action d'une notification navigue vers sa cible", () => {
