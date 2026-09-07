@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from 'react';
+import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAccessibilityStore } from '../../stores/accessibilityStore';
 import {
@@ -27,7 +28,6 @@ import {
   FilePlus2,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
-import { useUXMode } from '../../hooks/useUXMode';
 import { getActions, runAction } from '../../lib/actionRegistry';
 import { replierPourRecherche } from '../../lib/replierPourRecherche';
 import { Z_LAYER } from '../../styles/z-layers';
@@ -40,7 +40,6 @@ export interface Command {
   shortcut?: string;
   action: () => void;
   category: 'chat' | 'memory' | 'panels' | 'settings';
-  contributeurOnly?: boolean;
   keywords?: string[];
 }
 
@@ -82,8 +81,10 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  // B-359 : une surface qui se dit modale piège le focus (Tab ne sort plus).
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useDialogFocusTrap(dialogRef, { active: isOpen, onEscape: onClose });
   const reduceMotion = useAccessibilityStore((s) => s.reduceMotion);
-  const { isContributeur } = useUXMode();
 
   // Détection plateforme pour affichage raccourcis (⌘ sur Mac, Ctrl sur Windows/Linux)
   const mod = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl+';
@@ -107,10 +108,10 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
   );
 
   const filteredCommands = useMemo(() => {
-    // Filtrer les commandes reservees au mode Contributeur
-    const available = isContributeur
-      ? commands
-      : commands.filter((cmd) => !cmd.contributeurOnly);
+    // B-059 : le filtre « Contributeur » de la palette ne retirait rien (aucune
+    // commande ne portait le drapeau) ; retiré sur décision de Ludo. Le mode
+    // Contributeur ne gate plus que les onglets Outils, Agents et Avancé.
+    const available = commands;
 
     if (!query.trim()) return available;
     const q = replierPourRecherche(query);
@@ -120,7 +121,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
         replierPourRecherche(cmd.description).includes(q) ||
         (cmd.keywords ?? []).some((k) => replierPourRecherche(k).includes(q))
     );
-  }, [commands, query, isContributeur]);
+  }, [commands, query]);
 
   // Reset selection when query changes
   useEffect(() => {
@@ -187,6 +188,7 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
 
           {/* Palette with scale and fade animation */}
           <motion.div
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
             aria-label="Palette de commandes"

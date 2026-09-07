@@ -56,6 +56,19 @@ describe('classifyCalendarError', () => {
   });
 
   it("n'affiche rien sur erreur générique si du cache est disponible", () => {
-    expect(classifyCalendarError('boom', { fallback: 'X', hasCache: true })).toEqual({ error: null });
+    // B-271 : l'échec n'est plus avalé, il devient un marqueur discret.
+    expect(classifyCalendarError('boom', { fallback: 'X', hasCache: true })).toEqual({ error: null, staleWarning: 'X' });
+  });
+
+  it("B-271 : avec du cache, l'échec n'est pas avalé : pas de bandeau, mais un marqueur discret", () => {
+    const action = classifyCalendarError('boom', { fallback: 'Impossible de charger les événements', hasCache: true });
+    expect(action.error).toBeNull();
+    expect(action.staleWarning).toBe('Impossible de charger les événements');
+  });
+
+  it("B-271 : sans cache, l'erreur reste un bandeau, sans marqueur", () => {
+    const action = classifyCalendarError('boom', { fallback: 'Impossible de charger les événements', hasCache: false });
+    expect(action.error).toBe('Impossible de charger les événements');
+    expect(action.staleWarning).toBeUndefined();
   });
 });

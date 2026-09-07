@@ -32,7 +32,8 @@ export interface CalendarErrorAction {
    * Nouvelle valeur de `needsReauth` à appliquer, ou `undefined` pour ne PAS y
    * toucher (préserver l'état courant sur une erreur générique).
    */
-  needsReauth?: boolean;
+  needsReauth?: boolean;  /** B-271 : le cache reste affiché, mais le dernier rafraîchissement a échoué. */
+  staleWarning?: string;
 }
 
 /**
@@ -62,5 +63,8 @@ export function classifyCalendarError(
   if (msg.includes('Google Calendar')) {
     return { error: msg, needsReauth: false };
   }
-  return { error: opts.hasCache ? null : opts.fallback };
+  // B-271 : avec du cache affiché, l'échec n'est plus avalé : pas de bandeau
+  // d'erreur qui cacherait les données, mais un marqueur discret à afficher.
+  if (opts.hasCache) return { error: null, staleWarning: opts.fallback };
+  return { error: opts.fallback };
 }

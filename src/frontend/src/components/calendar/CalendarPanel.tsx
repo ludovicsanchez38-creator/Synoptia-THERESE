@@ -6,6 +6,7 @@
  */
 
 import { useEffect, useRef, useState } from 'react';
+import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -54,6 +55,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
     setViewMode,
     setSelectedDate,
     setLastSyncAt,
+    lastSyncAt,
   } = useCalendarStore();
 
   const { accounts, currentAccountId, setAccounts, setCurrentAccount, needsReauth, setNeedsReauth } = useEmailStore();
@@ -101,6 +103,11 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
   // aussitôt. On attend désormais la liste du serveur, ou son échec — le `catch`
   // de loadCalendars relève le drapeau quand il reste du cache à afficher.
   const [calendarsReady, setCalendarsReady] = useState(false);
+  // B-271 : marqueur discret quand le cache est affiché mais le rafraîchissement a échoué.
+  const [staleWarning, setStaleWarning] = useState<string | null>(null);
+  // B-359 : en fenêtre, l'agenda se dit modal ; il piège donc le focus.
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useDialogFocusTrap(dialogRef, { active: !standalone && !!isOpen, onEscape: () => onClose?.() });
 
   // Load calendars on mount (séquentiel : events se chargent APRÈS)
   useEffect(() => {
@@ -185,6 +192,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
       });
 
       setEvents(evts);
+      setStaleWarning(null); // B-271 : le rafraîchissement a réussi
 
       // BUG-162 : même désarmement que dans loadCalendars, sur le chemin le
       // plus fréquent (changer de mois recharge les événements).
@@ -199,6 +207,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
         hasCache: hasCachedEvents,
       });
       if (action.error !== null) setError(action.error);
+      if (action.staleWarning) setStaleWarning(action.staleWarning);
       if (action.needsReauth !== undefined) setNeedsReauth(action.needsReauth);
     }
   }
@@ -403,6 +412,11 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
           {currentAccount && (
             <p className="text-sm text-text-muted">{currentAccount.email}</p>
           )}
+          {staleWarning && (
+            <p role="status" className="text-xs text-warning" data-testid="calendar-stale-warning">
+              Dernier rafraîchissement échoué : données conservées{lastSyncAt ? ` (synchronisées le ${new Date(lastSyncAt).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })})` : ''}.
+            </p>
+          )}
         </div>
       </div>
 
@@ -584,6 +598,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
 
         {/* Panel */}
         <motion.div
+          ref={dialogRef}
           role="dialog"
           aria-modal="true"
           aria-label="Calendrier"
