@@ -88,7 +88,8 @@ interface ChatStore {
   isCurrentConversationEmpty: () => boolean;
 
   // Actions
-  createConversation: (ephemeral?: boolean) => string;
+  /** `options.naviguer` : faux pour une conversation créée par un événement de fond (B-409). */
+  createConversation: (ephemeral?: boolean, options?: { naviguer?: boolean }) => string;
   loadConversation: (id: string) => void;
   deleteConversation: (id: string) => void;
   addMessage: (message: Omit<Message, 'id' | 'timestamp'> & { id?: string }) => string;
@@ -133,7 +134,7 @@ export const useChatStore = create<ChatStore>()(
         return !current || current.messages.length === 0;
       },
 
-      createConversation: (ephemeral = false) => {
+      createConversation: (ephemeral = false, options = {}) => {
         const id = generateId();
         const newConversation: Conversation = {
           id,
@@ -152,7 +153,9 @@ export const useChatStore = create<ChatStore>()(
         // Avant la vue Accueil (0.21), l'app était toujours sur 'chat' et ce
         // couplage était implicite ; depuis, créer une conversation depuis
         // l'Accueil laissait la zone centrale sur l'Accueil (Cmd+N « invisible »).
-        useNavigationStore.getState().setView('chat');
+        // B-409 : sauf quand la conversation naît d'un événement de fond
+        // (résultat d'action) : l'utilisateur n'est alors pas déplacé.
+        if (options.naviguer !== false) useNavigationStore.getState().setView('chat');
         return id;
       },
 

@@ -10,6 +10,8 @@ interface Notification {
   message?: string;
   timestamp: Date;
   duration?: number;
+  /** B-409 : une action proposée, jamais imposée (« Voir » ouvre la conversation). */
+  action?: { label: string; onClick: () => void };
 }
 
 interface StatusStore {

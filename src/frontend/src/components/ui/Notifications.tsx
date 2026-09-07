@@ -82,6 +82,15 @@ export function Notifications() {
               <Icon className={cn('w-5 h-5 flex-shrink-0 mt-0.5', iconColors[notification.type])} />
               <div className="flex-1 min-w-0">
                 <p className="font-medium text-text break-words">{notification.title}</p>
+                {notification.action && (
+                  <button
+                    type="button"
+                    onClick={() => { notification.action?.onClick(); dismissNotification(notification.id); }}
+                    className="mt-2 rounded-md border border-border px-2.5 py-1 text-sm font-medium text-text hover:bg-surface-2"
+                  >
+                    {notification.action.label}
+                  </button>
+                )}
                 {notification.message && (
                   // BUG-134 : token primaire (le muted rendait le message
                   // explicatif à peine lisible sur le fond translucide) +
