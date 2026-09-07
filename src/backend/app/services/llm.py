@@ -140,6 +140,31 @@ def _base_url_configuree(provider: str) -> str | None:
     return valeur
 
 
+def _cle_depuis_environnement(provider_name: str) -> str | None:
+    """Clé d'API lue dans l'environnement du processus, ou None.
+
+    B-200 (P-010, décision de Ludo) : dans la version installée
+    (`therese_env == "production"`), les clés présentes dans l'environnement
+    de la machine ne sont plus lues à l'insu de l'utilisateur : un fournisseur
+    cloud n'est utilisable que par une clé saisie dans Paramètres. En
+    développement, le repli reste ; `THERESE_LIRE_CLES_ENV=1` le rétablit
+    explicitement sur une installation.
+    """
+    from app.config import settings
+    from app.services.modeles_catalogue import CATALOGUE
+
+    fiche = CATALOGUE.get(provider_name)
+    if fiche is None:
+        return None
+    if settings.therese_env == "production" and os.getenv("THERESE_LIRE_CLES_ENV") != "1":
+        return None
+    for env_var in fiche.env_vars:
+        valeur = os.getenv(env_var)
+        if valeur:
+            return valeur
+    return None
+
+
 def _get_api_key_from_db(provider: str) -> str | None:
     """La clé d'un fournisseur, cache d'abord, base ensuite.
 
@@ -578,12 +603,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
 
             api_key = _get_api_key_from_db(selected_provider)
             if not api_key:
-                # Panel 0.48 : les variables d'env viennent du catalogue -
-                # la table en dur ignorait GOOGLE_API_KEY (alternative Gemini).
-                for env_var in CATALOGUE[selected_provider].env_vars:
-                    api_key = os.getenv(env_var)
-                    if api_key:
-                        break
+                api_key = _cle_depuis_environnement(selected_provider)
 
             if api_key:
                 # Adresse personnalisée par fournisseur (dette 0.43.4) : sans
@@ -744,10 +764,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
 
             api_key = _get_api_key_from_db(name)
             if not api_key:
-                for env_var in CATALOGUE[name].env_vars:
-                    api_key = os.getenv(env_var)
-                    if api_key:
-                        break
+                api_key = _cle_depuis_environnement(name)
 
             if api_key:
                 fallbacks.append(
