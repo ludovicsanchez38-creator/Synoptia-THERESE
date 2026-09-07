@@ -310,7 +310,8 @@ Thomas est DSI depuis 8 ans. Il a deploye THERESE Server sur un serveur on-premi
 - **Chrome MCP** :
   ```
   javascript_tool :
-    const rows = document.querySelectorAll('[data-testid="admin-user-row"]');
+    window.qsa ||= (...sels) => { for (const s of sels) { const t = [...document.querySelectorAll(s)]; if (t.length) return t; } throw new Error("Aucun element pour : " + sels.join(" | ") + " - selecteur faux ou ecran inattendu, ce pas ne prouve rien."); };
+    const rows = qsa('[data-testid="admin-user-row"]');
     let targetRow = null;
     rows.forEach(row => {
       const select = row.querySelector('[data-testid="admin-user-role-select"]');
@@ -340,7 +341,8 @@ Thomas est DSI depuis 8 ans. Il a deploye THERESE Server sur un serveur on-premi
 - **Chrome MCP** :
   ```
   javascript_tool :
-    const rows = document.querySelectorAll('[data-testid="admin-user-row"]');
+    window.qsa ||= (...sels) => { for (const s of sels) { const t = [...document.querySelectorAll(s)]; if (t.length) return t; } throw new Error("Aucun element pour : " + sels.join(" | ") + " - selecteur faux ou ecran inattendu, ce pas ne prouve rien."); };
+    const rows = qsa('[data-testid="admin-user-row"]');
     let targetToggle = null;
     rows.forEach(row => {
       const email = row.querySelector('td:nth-child(2)')?.textContent;
@@ -365,7 +367,8 @@ Thomas est DSI depuis 8 ans. Il a deploye THERESE Server sur un serveur on-premi
 - **Chrome MCP** :
   ```
   javascript_tool :
-    const rows = document.querySelectorAll('[data-testid="admin-user-row"]');
+    window.qsa ||= (...sels) => { for (const s of sels) { const t = [...document.querySelectorAll(s)]; if (t.length) return t; } throw new Error("Aucun element pour : " + sels.join(" | ") + " - selecteur faux ou ecran inattendu, ce pas ne prouve rien."); };
+    const rows = qsa('[data-testid="admin-user-row"]');
     let adminToggle = null;
     rows.forEach(row => {
       const email = row.querySelector('td:nth-child(2)')?.textContent;
@@ -375,13 +378,16 @@ Thomas est DSI depuis 8 ans. Il a deploye THERESE Server sur un serveur on-premi
     });
     if (adminToggle) {
       const isDisabled = adminToggle.disabled || adminToggle.getAttribute('aria-disabled') === 'true';
-      if (!isDisabled) { adminToggle.click(); }
-      return { disabled: isDisabled, clicked: !isDisabled };
+      // B-380 : on CONSTATE, on ne clique jamais. Si la garde est absente, cliquer
+      // desactiverait le seul compte administrateur, et la session suivante ne
+      // pourrait plus se connecter pour reparer. Une garde absente est un FAIL
+      // a consigner, pas une faille a declencher.
+      return { disabled: isDisabled, verdict: isDisabled ? 'PASS : garde presente' : 'FAIL : la garde est absente, defaut a consigner sans cliquer' };
     }
     return 'admin row not found';
   take_screenshot → "S3-13-admin-self-deactivate-blocked.png"
   ```
-- **Attendu** : Le bouton est desactive OU le clic est sans effet OU un message d'erreur s'affiche
+- **Attendu** : Le bouton est desactive (`disabled` ou `aria-disabled`). Un bouton actif est un FAIL P0 consigne tel quel : le protocole ne le clique pas.
 - **Tests supplementaires** :
   - `[P0]` L'admin reste actif apres la tentative
   - `[P0]` Pas de crash ou erreur 500
@@ -394,7 +400,8 @@ Thomas est DSI depuis 8 ans. Il a deploye THERESE Server sur un serveur on-premi
   ```
   wait_for [data-testid="admin-audit-logs"] visible
   javascript_tool :
-    const logs = document.querySelectorAll('[data-testid="admin-audit-log-item"]');
+    window.qsa ||= (...sels) => { for (const s of sels) { const t = [...document.querySelectorAll(s)]; if (t.length) return t; } throw new Error("Aucun element pour : " + sels.join(" | ") + " - selecteur faux ou ecran inattendu, ce pas ne prouve rien."); };
+    const logs = qsa('[data-testid="admin-audit-log-item"]');
     const firstLog = logs[0]?.textContent;
     return { count: logs.length, sample: firstLog };
   take_screenshot → "S3-14-audit-logs.png"
@@ -425,7 +432,8 @@ Thomas est DSI depuis 8 ans. Il a deploye THERESE Server sur un serveur on-premi
     return 'filter applied';
   wait 1s
   javascript_tool :
-    const logs = document.querySelectorAll('[data-testid="admin-audit-log-item"]');
+    window.qsa ||= (...sels) => { for (const s of sels) { const t = [...document.querySelectorAll(s)]; if (t.length) return t; } throw new Error("Aucun element pour : " + sels.join(" | ") + " - selecteur faux ou ecran inattendu, ce pas ne prouve rien."); };
+    const logs = qsa('[data-testid="admin-audit-log-item"]');
     return { filteredCount: logs.length };
   take_screenshot → "S3-15-audit-filtered.png"
   ```
@@ -477,7 +485,8 @@ Thomas est DSI depuis 8 ans. Il a deploye THERESE Server sur un serveur on-premi
 - **Chrome MCP** :
   ```
   javascript_tool :
-    const messages = document.querySelectorAll('[data-testid="chat-message-item"]');
+    window.qsa ||= (...sels) => { for (const s of sels) { const t = [...document.querySelectorAll(s)]; if (t.length) return t; } throw new Error("Aucun element pour : " + sels.join(" | ") + " - selecteur faux ou ecran inattendu, ce pas ne prouve rien."); };
+    const messages = qsa('[data-testid="chat-message-item"]');
     const lastMessage = messages[messages.length - 1];
     return lastMessage?.textContent?.length > 10;
   ```
@@ -610,7 +619,8 @@ Thomas est DSI depuis 8 ans. Il a deploye THERESE Server sur un serveur on-premi
 - **Chrome MCP** :
   ```
   javascript_tool :
-    const tasks = document.querySelectorAll('[data-testid="task-item"]');
+    window.qsa ||= (...sels) => { for (const s of sels) { const t = [...document.querySelectorAll(s)]; if (t.length) return t; } throw new Error("Aucun element pour : " + sels.join(" | ") + " - selecteur faux ou ecran inattendu, ce pas ne prouve rien."); };
+    const tasks = qsa('[data-testid="task-item"]');
     const found = Array.from(tasks).some(t => t.textContent.includes('Audit securite'));
     return { taskCount: tasks.length, auditTaskFound: found };
   ```
@@ -622,7 +632,8 @@ Thomas est DSI depuis 8 ans. Il a deploye THERESE Server sur un serveur on-premi
 - **Chrome MCP** :
   ```
   javascript_tool :
-    const tasks = document.querySelectorAll('[data-testid="task-item"]');
+    window.qsa ||= (...sels) => { for (const s of sels) { const t = [...document.querySelectorAll(s)]; if (t.length) return t; } throw new Error("Aucun element pour : " + sels.join(" | ") + " - selecteur faux ou ecran inattendu, ce pas ne prouve rien."); };
+    const tasks = qsa('[data-testid="task-item"]');
     const auditTask = Array.from(tasks).find(t => t.textContent.includes('Audit securite'));
     const badge = auditTask?.querySelector('[data-testid="task-status-badge"]');
     return badge?.textContent;
@@ -635,7 +646,8 @@ Thomas est DSI depuis 8 ans. Il a deploye THERESE Server sur un serveur on-premi
 - **Chrome MCP** :
   ```
   javascript_tool :
-    const tasks = document.querySelectorAll('[data-testid="task-item"]');
+    window.qsa ||= (...sels) => { for (const s of sels) { const t = [...document.querySelectorAll(s)]; if (t.length) return t; } throw new Error("Aucun element pour : " + sels.join(" | ") + " - selecteur faux ou ecran inattendu, ce pas ne prouve rien."); };
+    const tasks = qsa('[data-testid="task-item"]');
     return { totalVisibleTasks: tasks.length };
   take_screenshot → "S3-27-tasks-admin-view.png"
   ```
@@ -687,7 +699,8 @@ Thomas est DSI depuis 8 ans. Il a deploye THERESE Server sur un serveur on-premi
 - **Chrome MCP** :
   ```
   javascript_tool :
-    const contacts = document.querySelectorAll('[data-testid="crm-contact-item"]');
+    window.qsa ||= (...sels) => { for (const s of sels) { const t = [...document.querySelectorAll(s)]; if (t.length) return t; } throw new Error("Aucun element pour : " + sels.join(" | ") + " - selecteur faux ou ecran inattendu, ce pas ne prouve rien."); };
+    const contacts = qsa('[data-testid="crm-contact-item"]');
     const found = Array.from(contacts).some(c => c.textContent.includes('Jean-Marc'));
     return { contactCount: contacts.length, found };
   ```
@@ -703,7 +716,8 @@ Thomas est DSI depuis 8 ans. Il a deploye THERESE Server sur un serveur on-premi
 - **Chrome MCP** :
   ```
   javascript_tool :
-    const contacts = Array.from(document.querySelectorAll('[data-testid="crm-contact-item"]'));
+    window.qsa ||= (...sels) => { for (const s of sels) { const t = [...document.querySelectorAll(s)]; if (t.length) return t; } throw new Error("Aucun element pour : " + sels.join(" | ") + " - selecteur faux ou ecran inattendu, ce pas ne prouve rien."); };
+    const contacts = qsa('[data-testid="crm-contact-item"]');
     const temoinVisible = contacts.some(c => c.textContent.includes('OrgB-ISOLATION'));
     return { contactCount: contacts.length, temoinVisible, safe: !temoinVisible };
   ```
@@ -717,7 +731,8 @@ Thomas est DSI depuis 8 ans. Il a deploye THERESE Server sur un serveur on-premi
 - **Chrome MCP** :
   ```
   javascript_tool :
-    const contacts = document.querySelectorAll('[data-testid="crm-contact-item"]');
+    window.qsa ||= (...sels) => { for (const s of sels) { const t = [...document.querySelectorAll(s)]; if (t.length) return t; } throw new Error("Aucun element pour : " + sels.join(" | ") + " - selecteur faux ou ecran inattendu, ce pas ne prouve rien."); };
+    const contacts = qsa('[data-testid="crm-contact-item"]');
     return { totalContacts: contacts.length };
   take_screenshot → "S3-32-crm-admin-view.png"
   ```
@@ -765,7 +780,8 @@ Thomas est DSI depuis 8 ans. Il a deploye THERESE Server sur un serveur on-premi
 - **Chrome MCP** :
   ```
   javascript_tool :
-    const cards = document.querySelectorAll('[data-testid="board-advisor-card"]');
+    window.qsa ||= (...sels) => { for (const s of sels) { const t = [...document.querySelectorAll(s)]; if (t.length) return t; } throw new Error("Aucun element pour : " + sels.join(" | ") + " - selecteur faux ou ecran inattendu, ce pas ne prouve rien."); };
+    const cards = qsa('[data-testid="board-advisor-card"]');
     return {
       advisorCount: cards.length,
       advisors: Array.from(cards).map(c => c.textContent.substring(0, 100))
@@ -786,7 +802,8 @@ Thomas est DSI depuis 8 ans. Il a deploye THERESE Server sur un serveur on-premi
     // B-384 (05/09/2026) : `board-result` n'existe pas cote Server, les avis
     // vivent dans `board-advisor-card` ; et sans temoin de l'org B (etape 31),
     // aucune fuite ne pouvait etre constatee.
-    const cartes = Array.from(document.querySelectorAll('[data-testid="board-advisor-card"]'));
+    window.qsa ||= (...sels) => { for (const s of sels) { const t = [...document.querySelectorAll(s)]; if (t.length) return t; } throw new Error("Aucun element pour : " + sels.join(" | ") + " - selecteur faux ou ecran inattendu, ce pas ne prouve rien."); };
+    const cartes = qsa('[data-testid="board-advisor-card"]');
     const texte = cartes.map(c => c.textContent).join(' ');
     const fuite = texte.includes('OrgB-ISOLATION');
     return { cartes: cartes.length, extrait: texte.substring(0, 300), fuite, safe: cartes.length > 0 && !fuite };
@@ -816,7 +833,8 @@ Thomas est DSI depuis 8 ans. Il a deploye THERESE Server sur un serveur on-premi
 - **Chrome MCP** :
   ```
   javascript_tool :
-    const skills = document.querySelectorAll('[data-testid="skill-item"]');
+    window.qsa ||= (...sels) => { for (const s of sels) { const t = [...document.querySelectorAll(s)]; if (t.length) return t; } throw new Error("Aucun element pour : " + sels.join(" | ") + " - selecteur faux ou ecran inattendu, ce pas ne prouve rien."); };
+    const skills = qsa('[data-testid="skill-item"]');
     return {
       count: skills.length,
       names: Array.from(skills).map(s => s.textContent.substring(0, 50))
@@ -872,7 +890,8 @@ Thomas est DSI depuis 8 ans. Il a deploye THERESE Server sur un serveur on-premi
   ```
   wait_for [data-testid="admin-audit-logs"] visible
   javascript_tool :
-    const logs = document.querySelectorAll('[data-testid="admin-audit-log-item"]');
+    window.qsa ||= (...sels) => { for (const s of sels) { const t = [...document.querySelectorAll(s)]; if (t.length) return t; } throw new Error("Aucun element pour : " + sels.join(" | ") + " - selecteur faux ou ecran inattendu, ce pas ne prouve rien."); };
+    const logs = qsa('[data-testid="admin-audit-log-item"]');
     const logTexts = Array.from(logs).slice(0, 10).map(l => l.textContent);
     return { recentLogs: logTexts };
   take_screenshot → "S3-41-audit-final.png"
@@ -890,12 +909,15 @@ Thomas est DSI depuis 8 ans. Il a deploye THERESE Server sur un serveur on-premi
 - **Chrome MCP** :
   ```
   javascript_tool :
-    const rows = document.querySelectorAll('[data-testid="admin-user-row"]');
+    window.qsa ||= (...sels) => { for (const s of sels) { const t = [...document.querySelectorAll(s)]; if (t.length) return t; } throw new Error("Aucun element pour : " + sels.join(" | ") + " - selecteur faux ou ecran inattendu, ce pas ne prouve rien."); };
+    const rows = qsa('[data-testid="admin-user-row"]');
     rows.forEach(row => {
       const toggle = row.querySelector('[data-testid="admin-user-toggle-active"]');
       const email = row.querySelector('td:nth-child(2)')?.textContent;
-      // Chercher l'utilisateur desactive (pas admin)
-      if (email && !email.includes('admin@') && toggle) {
+      // Tout compte inactif est reactive, l'administrateur COMPRIS : un
+      // protocole qui l'aurait desactive par accident doit pouvoir revenir
+      // en arriere depuis cette meme session (B-380).
+      if (email && toggle) {
         // Verifier si inactif via un indicateur visuel
         const statusCell = row.querySelector('td:nth-child(4)');
         if (statusCell && statusCell.textContent.toLowerCase().includes('inactif')) {
