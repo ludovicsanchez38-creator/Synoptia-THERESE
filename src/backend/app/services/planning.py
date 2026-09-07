@@ -169,6 +169,28 @@ class WorkCalendar:
     """Calendrier ouvré V1 : lundi-vendredi, 09-12 et 14-18."""
 
     _intervals = ((time(9), time(12)), (time(14), time(18)))
+    # B-475 : le motif est hebdomadaire et fixe ; les journées entières se
+    # comptent d'un trait au lieu d'un parcours jour par jour dont le coût
+    # suivait l'écart de dates (une année 9999 saisie par erreur : plusieurs
+    # secondes, puis un débordement de date).
+    _seconds_per_day = sum(
+        (end.hour * 60 + end.minute - start.hour * 60 - start.minute) * 60
+        for start, end in _intervals
+    )
+    _minutes_per_week = 5 * _seconds_per_day // 60
+
+    @staticmethod
+    def _weekdays_in(first: date, last: date) -> int:
+        """Nombre de jours lundi-vendredi dans [first, last], sans parcours."""
+        if last < first:
+            return 0
+        days = (last - first).days + 1
+        weeks, rest = divmod(days, 7)
+        head = first.weekday()
+        return weeks * 5 + sum(1 for n in range(rest) if (head + n) % 7 < 5)
+
+    def _is_day_start(self, instant: datetime) -> bool:
+        return instant.weekday() < 5 and instant.time() == self._intervals[0][0]
 
     def __init__(self, timezone: str = "Europe/Paris") -> None:
         try:
@@ -221,8 +243,8 @@ class WorkCalendar:
             left, right = right, left
             sign = -1
         total_seconds = 0
-        day = left.date()
-        while day <= right.date():
+        first_day, last_day = left.date(), right.date()
+        for day in sorted({first_day, last_day}):
             for interval_start, interval_end in self._bounds(day):
                 overlap_start = max(left, interval_start)
                 overlap_end = min(right, interval_end)
@@ -230,7 +252,11 @@ class WorkCalendar:
                     total_seconds += int(
                         (overlap_end - overlap_start).total_seconds()
                     )
-            day += timedelta(days=1)
+        if (last_day - first_day).days > 1:
+            full_days = self._weekdays_in(
+                first_day + timedelta(days=1), last_day - timedelta(days=1)
+            )
+            total_seconds += full_days * self._seconds_per_day
         return sign * Fraction(total_seconds, 60)
 
     def add_work_minutes(
@@ -244,6 +270,17 @@ class WorkCalendar:
         if remaining == 0:
             return current
         while remaining > 0:
+            if remaining > self._minutes_per_week and self._is_day_start(current):
+                # Un multiple exact s'arrête à la FIN du dernier créneau, pas au
+                # début du suivant : la dernière semaine reste au parcours fin.
+                weeks = int((remaining - 1) // self._minutes_per_week)
+                current = datetime.combine(
+                    current.date() + timedelta(weeks=weeks),
+                    self._intervals[0][0],
+                    self.timezone,
+                )
+                remaining -= weeks * self._minutes_per_week
+                continue
             active_end: datetime | None = None
             for start, end in self._bounds(current.date()):
                 if start <= current < end:
