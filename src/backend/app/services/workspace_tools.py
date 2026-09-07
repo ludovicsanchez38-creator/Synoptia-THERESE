@@ -1511,7 +1511,11 @@ async def _list_calendar_events(
 
     try:
         supplement = {}
-        if project_id is not None and type(provider).__name__ == "LocalCalendarProvider":
+        # B-476 : le cloisonnement dépendait du NOM de la classe ; une sous-classe
+        # ou un renommage retombait en silence dans le régime sans périmètre.
+        from app.services.calendar.local_provider import LocalCalendarProvider
+
+        if project_id is not None and isinstance(provider, LocalCalendarProvider):
             supplement["project_id"] = project_id
         events, _ = await provider.list_events(
             calendar_id=cal_id,
