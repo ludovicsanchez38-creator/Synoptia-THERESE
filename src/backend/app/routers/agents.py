@@ -504,7 +504,7 @@ async def list_profiles() -> list[AgentProfileResponse]:
 
 
 @router.post("/spawn")
-async def spawn_agent(request: SpawnAgentRequest):
+async def spawn_agent(request: SpawnAgentRequest, session: AsyncSession = Depends(get_session)):
     """Lance un agent local avec un profil preconfigure. Retourne un stream SSE.
 
     L'agent utilise le system_prompt du profil et uniquement les outils autorises
@@ -530,6 +530,42 @@ async def spawn_agent(request: SpawnAgentRequest):
         # d'outils recevait la chaîne brute (« ~/… », « ./ ») et ne trouvait
         # plus les fichiers. Même geste que /request : le chemin RÉSOLU.
         source_path = str(_resoudre_depot_autorise(source_path, configured_source))
+        # B-422 (cycle 4) : mêmes gardes que /request. Un agent lancé par /spawn
+        # échappait au panneau Travaux et pouvait tourner hors de main, sur un
+        # travail non enregistré, ou pendant une mission Atelier.
+        git = GitService(source_path)
+        depot = await git.is_repo()
+        if depot is None:
+            raise HTTPException(
+                status_code=503,
+                detail="Git n'a pas répondu : impossible de vérifier le dépôt. Réessaie dans un instant.",
+            )
+        if depot:
+            current_branch = await git.current_branch()
+            propre = await git.ensure_clean()
+            if current_branch is None or propre is None:
+                raise HTTPException(
+                    status_code=503,
+                    detail="Git n'a pas répondu : impossible de lire l'état du dépôt. Réessaie dans un instant.",
+                )
+            if current_branch != "main":
+                raise HTTPException(
+                    status_code=409,
+                    detail=f"L'Atelier exige la branche main, branche actuelle : {current_branch}.",
+                )
+            if not propre:
+                raise HTTPException(
+                    status_code=409,
+                    detail="Le dépôt contient des changements non enregistrés. Termine-les avant de lancer un agent.",
+                )
+    active_result = await session.execute(
+        select(func.count(AgentTask.id)).where(AgentTask.status.in_(["pending", "in_progress"]))
+    )
+    if (active_result.scalar() or 0) > 0:
+        raise HTTPException(
+            status_code=409,
+            detail="Une mission Atelier est déjà en cours. Attends sa fin ou annule-la avant de lancer un agent.",
+        )
 
     # Charger le profil
     profile = get_profile(request.profile_id)
