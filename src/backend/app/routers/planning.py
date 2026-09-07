@@ -2,6 +2,7 @@
 
 import json
 import logging
+from dataclasses import replace
 from datetime import UTC, datetime
 
 from app.models.database import get_session
@@ -25,7 +26,7 @@ from app.services.planning import (
     planning_result_to_dict,
     planning_result_to_json,
 )
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy import or_
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -43,7 +44,16 @@ def _utc_if_naive(value: datetime | None) -> datetime | None:
 
 async def _project_inputs(
     session: AsyncSession, project_id: str
-) -> tuple[list[PlanningTaskInput], list[PlanningDependencyInput]]:
+) -> tuple[
+    list[PlanningTaskInput], list[PlanningDependencyInput], list[PlanningDependencyInput]
+]:
+    """Entrées du calcul : tâches, dépendances internes, dépendances à cheval.
+
+    B-531 : une dépendance dont une seule extrémité appartient au projet n'est
+    pas une erreur DE CE projet. Elle est rendue à part : écartée du calcul,
+    signalée par un avertissement, mais comptée dans l'empreinte des entrées
+    pour qu'une suppression déclenche un nouveau calcul.
+    """
     project = await session.get(Project, project_id)
     if project is None:
         raise HTTPException(status_code=404, detail="Projet non trouvé")
@@ -55,7 +65,7 @@ async def _project_inputs(
     ).scalars().all()
     task_ids = [task.id for task in tasks]
     if not task_ids:
-        return [], []
+        return [], [], []
 
     schedules = (
         await session.execute(
@@ -108,16 +118,30 @@ async def _project_inputs(
                 ),
             )
         )
-    dependency_inputs = [
-        PlanningDependencyInput(
+    dependency_inputs: list[PlanningDependencyInput] = []
+    straddling: list[PlanningDependencyInput] = []
+    known = set(task_ids)
+    for dependency in dependencies:
+        entree = PlanningDependencyInput(
             predecessor_task_id=dependency.predecessor_task_id,
             successor_task_id=dependency.successor_task_id,
             kind=dependency.kind,
             lag_minutes=dependency.lag_minutes,
         )
-        for dependency in dependencies
+        if dependency.predecessor_task_id in known and dependency.successor_task_id in known:
+            dependency_inputs.append(entree)
+        else:
+            straddling.append(entree)
+    return task_inputs, dependency_inputs, straddling
+
+
+def _straddling_warnings(straddling: list[PlanningDependencyInput]) -> list[str]:
+    return [
+        f"Dépendance {d.predecessor_task_id} -> {d.successor_task_id} ignorée : "
+        "l'autre tâche appartient à un autre projet (supprime-la depuis ce projet "
+        "si elle est obsolète)"
+        for d in straddling
     ]
-    return task_inputs, dependency_inputs
 
 
 def _snapshot_response(
@@ -175,10 +199,10 @@ async def calculate_project_schedule(
     session: AsyncSession = Depends(get_session),
 ) -> ProjectScheduleResponse:
     """Calcule un snapshot déterministe et réutilise l'identique."""
-    tasks, dependencies = await _project_inputs(session, project_id)
+    tasks, dependencies, straddling = await _project_inputs(session, project_id)
     input_hash = fingerprint_inputs(
         tasks,
-        dependencies,
+        [*dependencies, *straddling],
         request.starts_at,
         request.timezone,
     )
@@ -200,6 +224,11 @@ async def calculate_project_schedule(
         starts_at=request.starts_at,
         timezone=request.timezone,
     )
+    if straddling:
+        result = replace(
+            result,
+            warnings=tuple(sorted({*result.warnings, *_straddling_warnings(straddling)})),
+        )
     snapshot = PlanningSnapshot(
         project_id=project_id,
         engine_version=ENGINE_VERSION,
@@ -238,6 +267,32 @@ async def calculate_project_schedule(
         }
     )
 
+
+@router.delete("/{project_id}/dependencies/{dependency_id}", status_code=204)
+async def delete_task_dependency(
+    project_id: str,
+    dependency_id: str,
+    session: AsyncSession = Depends(get_session),
+) -> Response:
+    """Retire une dépendance dont au moins une extrémité appartient au projet (B-531)."""
+    if await session.get(Project, project_id) is None:
+        raise HTTPException(status_code=404, detail="Projet non trouvé")
+    dependency = await session.get(TaskDependency, dependency_id)
+    if dependency is None:
+        raise HTTPException(status_code=404, detail="Dépendance non trouvée")
+    task_ids = set(
+        (
+            await session.execute(select(Task.id).where(Task.project_id == project_id))
+        ).scalars().all()
+    )
+    if (
+        dependency.predecessor_task_id not in task_ids
+        and dependency.successor_task_id not in task_ids
+    ):
+        raise HTTPException(status_code=404, detail="Dépendance non trouvée")
+    await session.delete(dependency)
+    await session.commit()
+    return Response(status_code=204)
 
 @router.get(
     "/{project_id}/schedule/snapshots/{snapshot_id}",
