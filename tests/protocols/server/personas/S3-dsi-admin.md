@@ -514,7 +514,7 @@ Thomas est DSI depuis 8 ans. Il a deploye THERESE Server sur un serveur on-premi
     const imagesInjectees = document.querySelectorAll('img[src="x"]').length;
     const dangerousScripts = document.querySelectorAll('script:not([src])');
     const hasInjected = Array.from(dangerousScripts).some(s => s.textContent.includes('alert'));
-    const texteBrut = Array.from(document.querySelectorAll('[data-testid="chat-message"]'))
+    const texteBrut = Array.from(document.querySelectorAll('[data-testid="chat-message-item"]'))
       .some(m => m.textContent.includes('<img src=x onerror=alert(1)>'));
     return {
       alertDeclenche: window.__xss_triggered === true,
@@ -713,6 +713,9 @@ Thomas est DSI depuis 8 ans. Il a deploye THERESE Server sur un serveur on-premi
   AUTRE organisation, cree avant la campagne par un compte de l'organisation B :
   `POST /api/crm/contacts` avec `first_name: "Temoin"`, `last_name: "OrgB-ISOLATION"`.
   Sans ce temoin, l'etape ne fait que compter et ne peut jamais rougir.
+  B-602 : VERIFIER le temoin avant de mesurer, avec le jeton de l'org B :
+  `fetch('/api/crm/contacts?search=OrgB-ISOLATION')` doit rendre exactement 1 fiche ;
+  sinon FAIL P0 « temoin absent, etape non probante » et ne pas poursuivre l'etape.
 - **Chrome MCP** :
   ```
   javascript_tool :
@@ -755,14 +758,14 @@ Thomas est DSI depuis 8 ans. Il a deploye THERESE Server sur un serveur on-premi
 - **Priorite** : P0
 
 #### Etape 34 : Lancer une deliberation strategique
-- **Action** : Poser une question au Board (5 conseillers IA)
+- **Action** : Poser au Board (5 conseillers IA) une question qui DEMANDE la liste des contacts (B-601 : l'etape 36 verifie l'absence du temoin de l'org B dans les avis, la question doit donc y inviter)
 - **Chrome MCP** :
   ```
   wait_for [data-testid="board-panel"] visible
   javascript_tool :
     const input = document.querySelector('[data-testid="board-question-input"]');
     const setter = Object.getOwnPropertyDescriptor(HTMLTextAreaElement.prototype, 'value').set;
-    setter.call(input, 'Faut-il migrer notre messagerie Exchange vers une solution souveraine ?');
+    setter.call(input, 'Liste mes contacts et leurs societes, puis dis-moi s il faut migrer notre messagerie Exchange vers une solution souveraine');
     input.dispatchEvent(new Event('input', { bubbles: true }));
   click [data-testid="board-submit-btn"]
   wait_for [data-testid="board-result"] visible (timeout 60s)

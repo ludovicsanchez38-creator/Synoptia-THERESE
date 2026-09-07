@@ -919,20 +919,94 @@ mkdir -p /tmp/therese-tests
 | P1 | 5, 6, 8, 9, 10, 11, 18, 19, 23, 25, 28, 29, 31, 33, 36, 37, 40, 41, 42 | 19 |
 | P2 | - | 0 |
 
+## Phase 11 : États d'erreur (étapes 43-45)
+
+> **Ajoutée le 08/09/2026 (B-600).** La matrice de couverture ne portait aucun
+> « État erreur » pour les dix modules. Trois étapes visent des témoins qui
+> existent dans le code ; un témoin absent est un FAIL, pas une étape « sans objet ».
+>
+> **Liste de messages virtualisée (B-599)** : la liste du chat passe par
+> react-virtuoso, seuls les messages de la fenêtre de rendu portent
+> `[data-testid="chat-message-item"]`. Un comptage DOM à zéro prouve le vide ;
+> un comptage DOM ne prouve JAMAIS un total. Pour un total, lire le store :
+> `javascript_tool` -> `window.__therese?.stores?.chat?.getState().messages.length`
+> si ce pont est exposé, sinon `GET /api/chat/conversations/{id}/messages`
+> avec le jeton de session. « Le dernier message » = le dernier élément
+> rendu après un défilement en bas de liste.
+
+---
+
+### Étape 43 : Clé API invalide - l'erreur est nommée, aucun faux succès
+
+**Priorité** : P0
+**URL** : http://localhost:1420
+
+**Actions Chrome MCP** :
+1. `javascript_tool` -> `window.__therese.runAction('settings.open')`
+2. `wait_for` -> `[data-testid="settings-modal"]` visible (max 3s)
+3. `click` -> `[data-testid="settings-tab-ai"]`
+4. choisir un fournisseur cloud, saisir la clé `sk-invalide-A2-43`, valider
+5. `wait_for` -> `[data-testid="settings-modal"] [role="alert"]` visible (max 15s)
+6. `screenshot` -> `/tmp/therese-tests/A2-43_cle_invalide.png`
+7. `javascript_tool` -> `[...document.querySelectorAll('[role="status"]')].map(n => n.textContent).join(' | ')` (aucune notification de succès)
+
+**Résultat attendu** : un message d'erreur lisible dans la modale, aucun toast de succès, le fournisseur précédent reste utilisable.
+**États testés** : error
+**Si FAIL** : Screenshot `/tmp/therese-tests/A2-43_cle_invalide.png`
+
+---
+
+### Étape 44 : Moteur arrêté - les listes disent « indisponible », pas « vide »
+
+**Priorité** : P0
+**URL** : http://localhost:1420
+
+**Actions Chrome MCP** :
+1. arrêter le backend de développement (Ctrl+C dans `make dev-backend`, JAMAIS une instance installée)
+2. `wait_for` -> l'indicateur de connexion affiche « Moteur arrêté » ou « Erreur du moteur » (max 20s)
+3. `javascript_tool` -> `window.__therese.runAction('crm.open')`
+4. `wait_for` -> un `[role="alert"]` visible (max 10s)
+5. `screenshot` -> `/tmp/therese-tests/A2-44_crm_moteur_arrete.png`
+6. relancer le backend ; `wait_for` -> « Moteur actif » (max 30s) ; `screenshot` -> `/tmp/therese-tests/A2-44_moteur_revenu.png`
+
+**Résultat attendu** : le CRM affiche une erreur explicite, jamais un pipeline vide qui ferait croire à l'absence de contacts. Au retour du moteur, les données reviennent sans redémarrer l'application.
+**États testés** : error, recovery
+**Si FAIL** : Screenshot `/tmp/therese-tests/A2-44_crm_moteur_arrete.png`
+
+---
+
+### Étape 45 : Facture - PDF impossible sans profil émetteur complet
+
+**Priorité** : P1
+**URL** : http://localhost:1420
+
+**Actions Chrome MCP** :
+1. Paramètres > Profil : vider le SIRET, enregistrer
+2. ouvrir « Devis et factures », ouvrir une facture existante, demander le PDF
+3. `wait_for` -> un message d'erreur qui nomme le champ manquant (max 10s)
+4. `screenshot` -> `/tmp/therese-tests/A2-45_pdf_profil_incomplet.png`
+5. remettre le SIRET, enregistrer, redemander le PDF -> succès
+
+**Résultat attendu** : le refus nomme précisément ce qui manque (« SIRET ») et où le renseigner ; aucun PDF non conforme n'est produit. Après correction, le PDF est généré.
+**États testés** : error, success
+**Si FAIL** : Screenshot `/tmp/therese-tests/A2-45_pdf_profil_incomplet.png`
+
+---
+
 ## Matrice de couverture
 
 | Module | Étapes | État vide | État rempli | État erreur | État loading |
 |--------|--------|-----------|-------------|-------------|--------------|
 | Dashboard | 1-2 | oui | oui | - | - |
-| Chat | 3-7 | oui | oui | - | oui |
+| Chat | 3-7 | oui | oui | - (moteur : 44) | oui |
 | Sidebar | 8-11 | - | oui | - | - |
-| CRM | 12-19 | oui | oui | - | oui |
-| Factures | 20-26 | oui | oui | - | oui |
+| CRM | 12-19, 44 | oui | oui | oui (44) | oui |
+| Factures | 20-26, 45 | oui | oui | oui (45) | oui |
 | Email | 27-29 | oui | oui | - | - |
 | Calendrier | 30-33 | oui | oui | - | - |
 | Tâches | 34-38 | oui | oui | - | - |
 | Board IA | 39-40 | oui | oui | - | oui |
-| Settings | 41-42 | - | oui | - | - |
+| Settings | 41-43 | - | oui | oui (43) | - |
 
 ## data-testid référencés
 
@@ -993,6 +1067,6 @@ update-banner
 
 ## Durée estimée
 
-- Parcours complet (42 étapes) : ~25-35 minutes
+- Parcours complet (45 étapes) : ~30-40 minutes
 - P0 uniquement (23 étapes) : ~15-20 minutes
 - Sans clé API (skip 4-7, 39-40) : retrancher ~10 minutes

@@ -10,7 +10,7 @@ tests/protocols/
   app/                               # THERESE App (Desktop Tauri)
     personas/
       A1-sophie-freelance.md         # Graphiste freelance, non-tech (48 etapes, ~180 tests)
-      A2-marc-consultant.md          # Consultant RH, Excel (42 etapes, ~160 tests)
+      A2-marc-consultant.md          # Consultant RH, Excel (45 etapes, ~170 tests)
       A3-lea-power-user.md           # Coach business, power user (60 etapes, ~230 tests)
     modules/                         # Tests par module (a venir)
     catastrophes/                    # Scenarios catastrophe App
@@ -48,12 +48,12 @@ tests/protocols/
 | Persona | Produit | Etapes | Complements | Tests | Duree fiche | Duree Chrome MCP |
 |---------|---------|--------|-------------|-------|-------------|------------------|
 | A1 Sophie (freelance) | App | 48 | - | ~180 | 25-35 min | 2h30-3h |
-| A2 Marc (consultant) | App | 42 | - | ~160 | 25-35 min | 2h-2h30 |
+| A2 Marc (consultant) | App | 45 | - | ~170 | 30-40 min | 2h15-2h45 |
 | A3 Lea (power user) | App | 60 | - | ~230 | 40-55 min | 3h-3h30 |
 | S1 Agent Municipal | Server | 35 | 7 | ~130 | 25-35 min | 1h30-2h |
 | S2 Chef de Service | Server | 38 | 8 | ~140 | 35-50 min | 1h30-2h |
 | S3 DSI Admin | Server | 42 | - | ~170 | non renseignee | 2h-2h30 |
-| **TOTAL** | | **265** | **15** | **~1000** | **~2h30-3h30 (hors S3)** | **13-16h** |
+| **TOTAL** | | **268** | **15** | **~1000** | **~2h30-3h30 (hors S3)** | **13-16h** |
 
 ## Comment lancer
 
