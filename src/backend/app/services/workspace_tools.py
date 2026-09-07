@@ -402,9 +402,9 @@ async def execute_workspace_tool(
     ici. La cloison n'etait donc pas contournee dans les outils metier - elle
     n'y etait pas EXPRIMABLE (campagne cinq personas, constat d'Ines).
 
-    Un seul consommateur pour l'instant : l'agenda LOCAL. Factures, mails et
-    fichiers l'ignorent encore, et un test le fige pour que personne ne croie
-    la signature suffisante.
+    Consommateurs : l'agenda LOCAL et, depuis B-539, les outils de facturation
+    (le dossier borne les pièces à son client). Mails et fichiers l'ignorent
+    encore : un e-mail n'est rattaché à aucun dossier.
     """
     _dossier = await _dossier_de_la_conversation(conversation_id, session)
     if tool_name == "read_emails":
@@ -422,9 +422,9 @@ async def execute_workspace_tool(
     elif tool_name == "generate_document":
         return await _generate_document(arguments, session, contexte=contexte)
     elif tool_name == "search_invoices":
-        return await _search_invoices(arguments, session)
+        return await _search_invoices(arguments, session, project_id=_dossier)
     elif tool_name == "invoice_totals":
-        return await _invoice_totals(arguments, session)
+        return await _invoice_totals(arguments, session, project_id=_dossier)
     else:
         return f"Outil inconnu : {tool_name}"
 
@@ -680,7 +680,36 @@ def _totaux_des_documents(documents: list[Any], maintenant: Any) -> dict[str, An
     }
 
 
-async def _invoice_totals(args: dict, session: AsyncSession) -> str:
+_DOSSIER_SANS_CLIENT = (
+    "Ce dossier n'est rattaché à aucun client : aucune facture ne lui est "
+    "attribuable. Détache la conversation du dossier pour interroger toute la "
+    "facturation."
+)
+
+
+async def _client_du_dossier(
+    project_id: str | None, session: AsyncSession
+) -> tuple[bool, str | None]:
+    """(cloisonné ?, client du dossier).
+
+    B-539 : une facture n'a pas de dossier, elle a un client. Le périmètre
+    d'une conversation rattachée se traduit donc par le client du projet. Un
+    dossier sans client FERME (aucune pièce attribuable) plutôt que d'ouvrir
+    toute la facturation : le rattachement a été demandé, il est tenu.
+    """
+    if not project_id:
+        return False, None
+    from app.models.entities import Project
+
+    projet = await session.get(Project, project_id)
+    if projet is None:
+        return True, None
+    return True, projet.contact_id
+
+
+async def _invoice_totals(
+    args: dict, session: AsyncSession, *, project_id: str | None = None
+) -> str:
     """B3 : ce qu'il reste a encaisser.
 
     Borne aux FACTURES : un devis n'est pas une creance. La relecture de design
@@ -697,6 +726,10 @@ async def _invoice_totals(args: dict, session: AsyncSession) -> str:
 
     maintenant = datetime.now(UTC).replace(tzinfo=None)
 
+    cloisonne, client_id = await _client_du_dossier(project_id, session)
+    if cloisonne and client_id is None:
+        return _DOSSIER_SANS_CLIENT
+
     # Factures ET avoirs : un avoir est une créance NÉGATIVE. L'ignorer
     # surestime l'encours ; l'ajouter tel quel le double, car `total_ttc` est
     # toujours stocké positif. Les devis restent dehors : un devis n'est pas dû.
@@ -706,19 +739,25 @@ async def _invoice_totals(args: dict, session: AsyncSession) -> str:
         .where(
             Invoice.document_type.in_(["facture", "avoir"]),
             Invoice.status.in_(["sent", "overdue"]),
+            *([Invoice.contact_id == client_id] if cloisonne else []),
         )
     )
     documents = list(lignes.scalars().all())
     return json.dumps(_totaux_des_documents(documents, maintenant), ensure_ascii=False)
 
 
-async def _search_invoices(args: dict, session: AsyncSession) -> str:
+async def _search_invoices(
+    args: dict, session: AsyncSession, *, project_id: str | None = None
+) -> str:
     """BUG-148 : retrouve les factures/devis/avoirs locaux par reference ou client."""
     from app.models.entities import Contact, Invoice
 
     query = (args.get("query") or "").strip()
     if not query:
         return "Erreur : indique une référence (ex: FACT-2026-001) ou un nom de client."
+    cloisonne, client_id = await _client_du_dossier(project_id, session)
+    if cloisonne and client_id is None:
+        return _DOSSIER_SANS_CLIENT
 
     # F8 revue : % et _ sont des jokers ILIKE - échappés, sinon une requête
     # « % » retourne arbitrairement les dernières factures.
@@ -738,6 +777,8 @@ async def _search_invoices(args: dict, session: AsyncSession) -> str:
         .order_by(Invoice.issue_date.desc())
         .limit(10)
     )
+    if cloisonne:
+        statement = statement.where(Invoice.contact_id == client_id)
     rows = (await session.execute(statement)).all()
 
     if not rows:

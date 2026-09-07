@@ -23,11 +23,11 @@ CE QUE CE LOT NE FAIT PAS, et c'est délibéré :
 - il ne rattache PAS les événements existants (pas de backfill) : les coller au
   premier dossier venu serait présomptueux.
 
-Le dernier test de ce fichier FIGE que les factures et les mails ignorent le
-périmètre, pour que personne ne croie la signature suffisante.
+Depuis B-539 (cycle 4), les factures sont cloisonnées par le client du dossier
+(`tests/test_cloison_factures.py`). Les mails l'ignorent toujours : un e-mail
+n'est rattaché à aucun dossier.
 """
 
-import json
 from datetime import datetime, timedelta
 
 import pytest
@@ -177,24 +177,6 @@ class TestUnEvenementSuitSonDossier:
             "un événement sans dossier doit rester visible : sinon la mise à "
             "jour ferait disparaître l'agenda de tout le monde"
         )
-
-
-class TestCeQueCeLotNeCloisonnePas:
-    """Figé pour que personne ne croie la signature suffisante."""
-
-    @pytest.mark.asyncio
-    async def test_les_factures_ignorent_encore_le_perimetre(self, client):
-        from app.models.database import get_session_context
-        from app.services.workspace_tools import execute_workspace_tool
-
-        martin = await _projet(client, "Dossier Martin")
-        async with get_session_context() as session:
-            await _conversation_rattachee(session, martin, "conv-fact")
-            resultat = await execute_workspace_tool(
-                "invoice_totals", {}, session, conversation_id="conv-fact"
-            )
-        # Il rend un résultat, sans erreur de périmètre : la cloison n'y est pas.
-        assert json.loads(resultat) is not None
 
 
 class TestLeCheminDeConfirmationEstCouvertAussi:
