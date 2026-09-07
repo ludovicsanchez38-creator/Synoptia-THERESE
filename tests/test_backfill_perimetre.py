@@ -204,13 +204,13 @@ class TestBackfillDuPerimetre:
 
 
 class TestLeFiltreNAcceptePlusLInclassable:
-    def test_un_payload_inclassable_est_exclu_des_recherches_de_projet(self):
+    def test_un_payload_inclassable_est_exclu_des_recherches_de_projet(self, monkeypatch):
         """Sinon le backfill n'aurait rien changé pour ces points."""
         from unittest.mock import MagicMock
 
         from app.services import qdrant as module
 
-        module.embed_text = lambda _t: [0.0] * 768
+        monkeypatch.setattr(module, "embed_text", lambda _t: [0.0] * 768)
         service = module.QdrantService.__new__(module.QdrantService)
         faux_client = MagicMock()
         faux_client.query_points.return_value = MagicMock(points=[])
@@ -222,9 +222,11 @@ class TestLeFiltreNAcceptePlusLInclassable:
         filtre = faux_client.query_points.call_args.kwargs["query_filter"].model_dump(
             exclude_none=True
         )
-        branches = next(
-            (c["should"] for c in filtre.get("must", []) if "should" in c), []
-        )
+        # B-598 : sans branche `should`, l'ensemble était vide et l'assertion
+        # d'exclusion passait par construction.
+        branches_should = [c["should"] for c in filtre.get("must", []) if "should" in c]
+        assert branches_should, f"aucune branche should dans le filtre : {filtre}"
+        branches = branches_should[0]
         valeurs = {
             (cond.get("key"), (cond.get("match") or {}).get("value"))
             for branche in branches
@@ -251,12 +253,12 @@ class TestLaBrancheLegacyEstRestreinte:
     """
 
     @staticmethod
-    def _filtre_emis():
+    def _filtre_emis(monkeypatch):
         from unittest.mock import MagicMock
 
         from app.services import qdrant as module
 
-        module.embed_text = lambda _t: [0.0] * 768
+        monkeypatch.setattr(module, "embed_text", lambda _t: [0.0] * 768)
         service = module.QdrantService.__new__(module.QdrantService)
         faux_client = MagicMock()
         faux_client.query_points.return_value = MagicMock(points=[])
@@ -267,11 +269,13 @@ class TestLaBrancheLegacyEstRestreinte:
             exclude_none=True
         )
 
-    def test_les_documents_sans_perimetre_sont_exclus(self):
-        filtre = self._filtre_emis()
-        branches = next(
-            (c["should"] for c in filtre.get("must", []) if "should" in c), []
-        )
+    def test_les_documents_sans_perimetre_sont_exclus(self, monkeypatch):
+        filtre = self._filtre_emis(monkeypatch)
+        # B-598 : sans branche `should`, l'ensemble était vide et l'assertion
+        # d'exclusion passait par construction.
+        branches_should = [c["should"] for c in filtre.get("must", []) if "should" in c]
+        assert branches_should, f"aucune branche should dans le filtre : {filtre}"
+        branches = branches_should[0]
         branche_vide = [
             b
             for b in branches
@@ -288,12 +292,14 @@ class TestLaBrancheLegacyEstRestreinte:
             "reclassement, un document d'un autre client peut remonter"
         )
 
-    def test_les_souvenirs_non_documentaires_restent_acceptes(self):
+    def test_les_souvenirs_non_documentaires_restent_acceptes(self, monkeypatch):
         """Sans cette branche, contacts et projets disparaîtraient du contexte."""
-        filtre = self._filtre_emis()
-        branches = next(
-            (c["should"] for c in filtre.get("must", []) if "should" in c), []
-        )
+        filtre = self._filtre_emis(monkeypatch)
+        # B-598 : sans branche `should`, l'ensemble était vide et l'assertion
+        # d'exclusion passait par construction.
+        branches_should = [c["should"] for c in filtre.get("must", []) if "should" in c]
+        assert branches_should, f"aucune branche should dans le filtre : {filtre}"
+        branches = branches_should[0]
         assert any(
             any("is_empty" in cond for cond in b.get("must", [])) for b in branches
         ), "les souvenirs sans périmètre ne sont plus consultables du tout"

@@ -49,7 +49,8 @@ function estUnBaril(chemin: string): boolean {
 
 /** Les composants React exportés par un fichier `.tsx`. */
 function composantsExportes(contenu: string): string[] {
-  return [...contenu.matchAll(/^export function ([A-Z][A-Za-z0-9]*)/gm)].map(
+  // B-604 : « export const X = » et « export default function X » comptent aussi.
+  return [...contenu.matchAll(/^export (?:default )?(?:function|const) ([A-Z][A-Za-z0-9]*)/gm)].map(
     (m) => m[1],
   );
 }
