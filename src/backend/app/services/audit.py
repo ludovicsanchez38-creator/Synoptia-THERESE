@@ -231,9 +231,15 @@ class AuditService:
 
         cutoff_date = datetime.now(UTC) - timedelta(days=days)
 
+        # B-460 : la purge commitait la session REÇUE au constructeur et
+        # validait au passage tout ce que l'appelant avait en attente (même
+        # frontière que B-028 pour `log`). Elle travaille sur sa propre session.
+        from app.models import database as db_module
+
         query = delete(ActivityLog).where(ActivityLog.timestamp < cutoff_date)
-        result = await self.session.execute(query)
-        await self.session.commit()
+        async with db_module.AsyncSessionLocal() as propre:
+            result = await propre.execute(query)
+            await propre.commit()
 
         deleted_count = result.rowcount
         logger.info(f"Supprime {deleted_count} logs de plus de {days} jours")
