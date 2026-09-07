@@ -1333,10 +1333,17 @@ async def update_event(
         stocke = await session.get(CalendarEvent, event_id)
         debut_effectif = start if start is not None else (stocke.start_datetime if stocke else None)
         fin_effective = end if end is not None else (stocke.end_datetime if stocke else None)
+        # B-586 : comparer des INSTANTS. Un bord conscient est ramené en UTC ;
+        # un bord naïf (stocké, ou saisi sans fuseau) est déjà en UTC.
+        def _instant(valeur: datetime) -> datetime:
+            if valeur.tzinfo is not None:
+                return valeur.astimezone(UTC).replace(tzinfo=None)
+            return valeur
+
         if (
             isinstance(debut_effectif, datetime)
             and isinstance(fin_effective, datetime)
-            and fin_effective.replace(tzinfo=None) <= debut_effectif.replace(tzinfo=None)
+            and _instant(fin_effective) <= _instant(debut_effectif)
         ):
             raise HTTPException(status_code=400, detail="La fin de l'événement doit être après son début.")
         for participant in request.attendees or []:
