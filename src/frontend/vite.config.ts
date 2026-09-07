@@ -26,6 +26,12 @@ export default defineConfig(({ command }) => ({
   },
   // Env prefix for Tauri
   envPrefix: ['VITE_', 'TAURI_'],
+  // B-264 : les neuf surfaces chargées en lazy() faisaient découvrir des
+  // dépendances en cours de session ; Vite ré-optimisait et rechargeait la
+  // page (~3 % des parcours de bout en bout). Le crawl couvre toutes les sources.
+  optimizeDeps: {
+    entries: ['index.html', 'src/**/*.{ts,tsx}'],
+  },
   build: {
     // Tauri supports es2021
     target: process.env.TAURI_PLATFORM === 'windows' ? 'chrome105' : 'safari14',
