@@ -23,20 +23,29 @@
 - **?** Actions deterministes du chat et variables :  _(rapport WP-051)_
 - **?** Actions et commandes exécutées sans modèle :  _(rapport WP-049-c2-M02)_
 - **?** Activites CRM :  _(rapport WP-072)_
+- **?** Activites CRM :  _(rapport WP-DIFF-021-c4-R10)_
 - **?** Activités CRM :  _(rapport WP-062-c3-R13)_
+- **?** Administration de THÉRÈSE Server :  _(rapport WP-C-031-c4-D03)_
+- **?** Adresse du serveur Ollama configurable :  _(rapport WP-DIFF-022-c4-D04)_
 - **?** Affichage d'un montant dans sa devise :  _(rapport WP-071-c3-R17)_
 - **?** Affichage des montants de facturation :  _(rapport WP-071-c3-D04)_
 - **?** Affichage du coût des appels de modèles :  _(rapport WP-071-c2-D09)_
+- **?** Agenda :  _(rapport WP-061-c4-R07)_
 - **?** Agenda :  _(rapport WP-073)_
 - **?** Agenda (client API) :  _(rapport WP-072-c3-R17)_
 - **?** Agenda (coque et chargement) :  _(rapport WP-061-c3-R12)_
+- **?** Agenda (evenements et alias primary) :  _(rapport WP-DIFF-022-c4-R09)_
 - **?** Agenda (panneau modal et pleine page) :  _(rapport WP-061)_
 - **?** Agenda (quatre rendus) :  _(rapport WP-061-c3-R12)_
+- **?** Agenda - client API :  _(rapport WP-072-c4-R12)_
+- **?** Agenda - dates civiles :  _(rapport WP-070-c4-R12)_
 - **?** Agenda : détail et suppression d'un événement :  _(rapport WP-061-c2-M03)_
 - **?** Agenda : grilles, fuseau et retour a la grille :  _(rapport WP-DIFF-008-c3-R24)_
 - **?** Agenda : reconciliation des calendriers et reconnexion Google :  _(rapport WP-DIFF-008-c3-R24)_
 - **?** Agenda : vues liste, mois, semaine et jour :  _(rapport WP-061-c2-M03)_
 - **?** Agenda CalDAV :  _(rapport WP-051-c3-R05)_
+- **?** Agenda CalDAV :  _(rapport WP-051-c4-R05)_
+- **?** Agenda CalDAV :  _(rapport WP-DIFF-022-c4-R09)_
 - **?** Agenda Google (lecture et écriture d'événements) :  _(rapport WP-051-c3-R06)_
 - **?** Agenda du chat aligne sur l'agenda de l'ecran :  _(rapport WP-081-c3-R19)_
 - **?** Agenda et import ICS :  _(rapport WP-DIFF-012-c3-R27)_
@@ -44,22 +53,32 @@
 - **?** Agenda multi-fournisseur :  _(rapport WP-048-c2-M10)_
 - **?** Agenda multi-fournisseur :  _(rapport WP-048-c3-R02)_
 - **?** Agenda multi-fournisseurs :  _(rapport WP-048)_
+- **?** Agenda multi-fournisseurs :  _(rapport WP-048-c4-R03)_
 - **?** Agenda multi-fournisseurs (local, Google, CalDAV) :  _(rapport WP-051)_
 - **?** Agendas Google multi-comptes :  _(rapport WP-081-c3-D05)_
 - **?** Agent Katia (guide et PM) :  _(rapport WP-047)_
 - **?** Agent Zezette (developpeuse) :  _(rapport WP-047)_
+- **?** Agent relance-clients :  _(rapport WP-DIFF-018-c4-D05)_
 - **?** Agents actionnables :  _(rapport WP-047-c3-R01)_
+- **?** Agents actionnables :  _(rapport WP-051-c4-R05)_
 - **?** Agents actionnables :  _(rapport WP-060-c3-R12)_
+- **?** Agents actionnables :  _(rapport WP-060-c4-R09)_
 - **?** Agents actionnables :  _(rapport WP-072)_
 - **?** Agents actionnables :  _(rapport WP-073)_
+- **?** Agents actionnables :  _(rapport WP-073-c4-R02)_
 - **?** Agents actionnables (ActionRunner) :  _(rapport WP-078)_
 - **?** Agents actionnables (panneau Actions) :  _(rapport WP-051)_
 - **?** Agents actionnables (panneau Actions) :  _(rapport WP-051-c3-R05)_
+- **?** Agents actionnables et leur annulation :  _(rapport WP-078-c4-D03)_
+- **?** Agents actionnables et leur contexte :  _(rapport WP-DIFF-022-c4-R09)_
 - **?** Agents actionnables et suivi de tache :  _(rapport WP-073-c3-D04)_
 - **?** Agents actionnables et suivi de tâche :  _(rapport WP-073-c3-R17)_
+- **?** Agents actionnables et suivi de tâches :  _(rapport WP-073-c4-D04)_
 - **?** Agents actionnables multi-etapes :  _(rapport WP-048)_
+- **?** Agents d'action :  _(rapport WP-047-c4-R12)_
 - **?** Agents d'action en plusieurs étapes :  _(rapport WP-084-c2-M15)_
 - **?** Agents d'action multi-etapes :  _(rapport WP-047)_
+- **?** Agents embarques (Atelier) :  _(rapport WP-055-c4-D02)_
 - **?** Agents expérimentaux (session et liste) :  _(rapport WP-C-026-c3-R08)_
 - **?** Agregation des routeurs FastAPI :  _(rapport WP-048)_
 - **?** Aide et chemins d'acces aux capacites :  _(rapport WP-078-c3-D04)_
@@ -89,23 +108,30 @@
 - **?** Arrêt d'une réponse en cours :  _(rapport WP-061-c3-R12)_
 - **?** Arrêt gracieux du backend :  _(rapport WP-084-c2-D09)_
 - **?** Arrêt gracieux du backend :  _(rapport WP-084-c3-R21)_
+- **?** Arrêt propre du moteur local :  _(rapport WP-DIFF-022-c4-D04)_
 - **?** Artefacts de mise a jour automatique en CI :  _(rapport WP-C-026)_
 - **?** Artefacts updater signés :  _(rapport WP-C-004-c2-D08)_
 - **?** Assainissement HTML :  _(rapport WP-052)_
+- **?** Assainissement HTML backend :  _(rapport WP-052-c4-D04)_
 - **?** Assistant RFC de création de commande :  _(rapport WP-067)_
 - **?** Assistant de configuration Email :  _(rapport WP-063-c3-R13)_
+- **?** Assistant de configuration Email :  _(rapport WP-063-c4-R04)_
 - **?** Assistant de configuration d'un compte email :  _(rapport WP-063-c2-D09)_
+- **?** Assistant de configuration de la messagerie :  _(rapport WP-063-c4-D04)_
 - **?** Assistant de configuration e-mail :  _(rapport WP-073)_
 - **?** Assistant de configuration email :  _(rapport WP-050)_
 - **?** Assistant de configuration email :  _(rapport WP-052)_
 - **?** Assistant de configuration email :  _(rapport WP-063)_
 - **?** Assistant de configuration email :  _(rapport WP-DIFF-016-c3-R28)_
+- **?** Assistant de configuration email :  _(rapport WP-DIFF-021-c4-D05)_
 - **?** Assistant de configuration initiale :  _(rapport WP-065)_
+- **?** Assistant de connexion e-mail :  _(rapport WP-DIFF-021-c4-R10)_
 - **?** Assistant de mise en route :  _(rapport WP-065-c3-R14)_
 - **?** Assistant de premiere configuration :  _(rapport WP-065-c2-M14)_
 - **?** Atelier (deux agents sur le code source) :  _(rapport WP-051-c3-R05)_
 - **?** Atelier - agents de code :  _(rapport WP-072)_
 - **?** Atelier - agents de profil et statut du depot :  _(rapport WP-048-c3-D02)_
+- **?** Atelier - agents locaux par profil :  _(rapport WP-C-026-c4-R03)_
 - **?** Atelier - agents métier préconfigurés :  _(rapport WP-060-c2-M11)_
 - **?** Atelier - conversation avec un agent de profil :  _(rapport WP-C-026-c3-D02)_
 - **?** Atelier - liste des sessions OpenClaw :  _(rapport WP-C-026)_
@@ -113,12 +139,19 @@
 - **?** Atelier - mission de code en streaming :  _(rapport WP-060-c2-M11)_
 - **?** Atelier - mission swarm sur le code source :  _(rapport WP-048-c3-D02)_
 - **?** Atelier - missions d'agents de code :  _(rapport WP-078)_
+- **?** Atelier - missions d'agents sur le depot :  _(rapport WP-048-c4-R03)_
+- **?** Atelier - missions d'amelioration :  _(rapport WP-051-c4-R05)_
+- **?** Atelier - session d'agent :  _(rapport WP-C-026-c4-D01)_
 - **?** Atelier - session d'agent en streaming :  _(rapport WP-C-026)_
 - **?** Atelier - sessions OpenClaw :  _(rapport WP-C-026-c3-D02)_
+- **?** Atelier - sessions OpenClaw :  _(rapport WP-C-026-c4-R03)_
+- **?** Atelier - une mission à la fois :  _(rapport WP-DIFF-003-c4-R12)_
 - **?** Atelier : liste des sessions OpenClaw :  _(rapport WP-C-026-c2-D01)_
 - **?** Atelier : session de chat avec un agent spawné :  _(rapport WP-C-026-c2-D01)_
 - **?** Atelier : une mission a la fois :  _(rapport WP-DIFF-003-c2-M14)_
 - **?** Atelier Katia et Zézette :  _(rapport WP-067-c2-D06)_
+- **?** Atelier agents - carte de consentement :  _(rapport WP-DIFF-020-c4-R12)_
+- **?** Atelier conversationnel :  _(rapport WP-065-c4-D03)_
 - **?** Atelier d'agents (missions sur le code source) :  _(rapport WP-048-c3-R02)_
 - **?** Atelier d'agents (missions sur le depot) :  _(rapport WP-DIFF-012-c3-R26)_
 - **?** Atelier d'agents - couche git :  _(rapport WP-051-c2-M12)_
@@ -128,22 +161,29 @@
 - **?** Atelier d'agents de code :  _(rapport WP-048)_
 - **?** Atelier de missions de code :  _(rapport WP-065)_
 - **?** Atelier des agents :  _(rapport WP-073)_
+- **?** Atelier des agents (depot et Git) :  _(rapport WP-DIFF-022-c4-R09)_
+- **?** Atelier des agents (progression de mission) :  _(rapport WP-060-c4-R09)_
+- **?** Atelier documentaire :  _(rapport WP-048-c4-D02)_
 - **?** Atelier documentaire :  _(rapport WP-050)_
+- **?** Atelier documentaire :  _(rapport WP-050-c4-R02)_
 - **?** Atelier documentaire :  _(rapport WP-052)_
 - **?** Atelier documentaire :  _(rapport WP-062)_
 - **?** Atelier documentaire :  _(rapport WP-072)_
 - **?** Atelier documentaire :  _(rapport WP-074)_
 - **?** Atelier documentaire :  _(rapport WP-079)_
 - **?** Atelier documentaire :  _(rapport WP-079-c3-R18)_
+- **?** Atelier documentaire :  _(rapport WP-DIFF-022-c4-R09)_
 - **?** Atelier documentaire (trame, rédaction guidée, export) :  _(rapport WP-052-c2-D08)_
 - **?** Atelier documentaire - fonctions pures de l'orchestrateur :  _(rapport WP-079-c2-D05)_
 - **?** Atelier documentaire - liste et création :  _(rapport WP-062-c2-M12)_
 - **?** Atelier documentaire - store et streaming de rédaction :  _(rapport WP-074-c2-D05)_
+- **?** Atelier documentaire - état client :  _(rapport WP-074-c4-D04)_
 - **?** Atelier documentaire : redaction guidee par section :  _(rapport WP-079-c3-D05)_
 - **?** Atelier documentaire : trame et rangs de section :  _(rapport WP-DIFF-013-c3-R27)_
 - **?** Atelier local, missions Katia et Zézette :  _(rapport WP-067)_
 - **?** Atlas des portraits :  _(rapport WP-066)_
 - **?** Aucun champ de saisie anonyme :  _(rapport WP-070)_
+- **?** Audit visuel dans l'application lancee :  _(rapport WP-046-c4-D05)_
 - **?** Authentification de l'API locale :  _(rapport WP-C-029-c3-D04)_
 - **?** Authentification locale fail-closed (US-001) :  _(rapport WP-C-029-c2-D03)_
 - **?** Authentification locale par jeton de session :  _(rapport WP-C-029-c3-R17)_
@@ -164,10 +204,12 @@
 - **?** Bibliotheque de prompts :  _(rapport WP-065)_
 - **?** Bibliotheque de prompts :  _(rapport WP-065-c2-D11)_
 - **?** Bibliotheque de prompts :  _(rapport WP-065-c2-M14)_
+- **?** Bibliotheque de prompts :  _(rapport WP-065-c4-R05)_
 - **?** Bibliotheque de prompts :  _(rapport WP-073)_
 - **?** Bibliotheque de prompts : recherche differee :  _(rapport WP-DIFF-008-c3-R24)_
 - **?** Bibliothèque de prompts :  _(rapport WP-050)_
 - **?** Bibliothèque de prompts :  _(rapport WP-065-c3-R14)_
+- **?** Bibliothèque de prompts :  _(rapport WP-065-c4-D03)_
 - **?** Bloc capacites du prompt systeme :  _(rapport WP-078)_
 - **?** Bloc « capacités » du prompt de conversation :  _(rapport WP-078-c3-R18)_
 - **?** Blocage d'une seance :  _(rapport WP-048-c2-M10)_
@@ -178,6 +220,8 @@
 - **?** Board de decision :  _(rapport WP-048)_
 - **?** Board de decision :  _(rapport WP-048-c3-R02)_
 - **?** Board de decision :  _(rapport WP-072)_
+- **?** Board de decision (cinq conseillers) :  _(rapport WP-083-c4-R09)_
+- **?** Board de decision (service) :  _(rapport WP-051-c4-R05)_
 - **?** Board de decision : cinq conseillers :  _(rapport WP-083-c3-D05)_
 - **?** Board de decision : modele affiche = modele envoye :  _(rapport WP-DIFF-008-c3-R24)_
 - **?** Board de decision a cinq conseillers :  _(rapport WP-060)_
@@ -189,14 +233,20 @@
 - **?** Board de décision (cinq conseillers) :  _(rapport WP-060-c3-R12)_
 - **?** Board de décision (conseillers en frontier) :  _(rapport WP-078-c3-R17)_
 - **?** Board de décision - les cinq conseillers :  _(rapport WP-060-c2-M11)_
+- **?** Board de décision conversationnel :  _(rapport WP-065-c4-D03)_
 - **?** Board de décision à cinq conseillers :  _(rapport WP-047-c2-D09)_
 - **?** Boite de reception :  _(rapport WP-073)_
 - **?** Bornes des lignes de facture :  _(rapport WP-048-c3-D01)_
+- **?** Boucle d'outils et confirmation :  _(rapport WP-049-c4-R01)_
 - **?** Boucle d'outils et portillon de confirmation :  _(rapport WP-049-c3-R03)_
+- **?** Boucle d'outils multi-fournisseurs :  _(rapport WP-081-c4-R10)_
 - **?** Boîte e-mail du prototype :  _(rapport WP-067)_
 - **?** Boîte mail du prototype :  _(rapport WP-067-c3-R16)_
 - **?** Boîte à outils d'accessibilité :  _(rapport WP-070)_
+- **?** Branchement CalDAV :  _(rapport WP-DIFF-021-c4-R10)_
+- **?** Branchement d'un calendrier CalDAV :  _(rapport WP-DIFF-009-c4-R11)_
 - **?** Branchement d'un calendrier CalDAV depuis les Reglages :  _(rapport WP-DIFF-009-c3-R25)_
+- **?** Branchement d'un serveur CalDAV :  _(rapport WP-072-c4-D05)_
 - **?** Brief Ma journee :  _(rapport WP-072)_
 - **?** Brief d'accueil et mise en route :  _(rapport WP-083-c3-R21)_
 - **?** Brief du jour :  _(rapport WP-049-c2-M02)_
@@ -204,6 +254,7 @@
 - **?** Brief du jour :  _(rapport WP-065)_
 - **?** Brief du jour :  _(rapport WP-066)_
 - **?** Brief du jour :  _(rapport WP-066-c3-R15)_
+- **?** Brief du jour :  _(rapport WP-066-c4-R08)_
 - **?** Brief du jour :  _(rapport WP-DIFF-016-c3-R28)_
 - **?** Brief du jour (accueil) :  _(rapport WP-083-c2-M05)_
 - **?** Brief du jour (carte d'accueil) :  _(rapport WP-066-c2-M15)_
@@ -217,17 +268,22 @@
 - **?** Brouillon de message persistant :  _(rapport WP-069-c2-D11)_
 - **?** Brouillon de reponse a un e-mail :  _(rapport WP-DIFF-012-c3-R26)_
 - **?** Brouillon de reponse a un mail :  _(rapport WP-052-c3-D02)_
+- **?** Brouillon de reponse e-mail :  _(rapport WP-DIFF-022-c4-R09)_
 - **?** Brouillon de reponse e-mail : l'echec est dit :  _(rapport WP-078-c3-D04)_
 - **?** Brouillon de réponse assisté :  _(rapport WP-052)_
 - **?** Brouillon de réponse assisté :  _(rapport WP-052-c3-R06)_
+- **?** Brouillon de réponse assisté :  _(rapport WP-052-c4-D04)_
 - **?** Brouillon de réponse à un e-mail :  _(rapport WP-078-c3-R18)_
 - **?** Brouillons :  _(rapport WP-050-c3-R04)_
 - **?** Brouillons de message :  _(rapport WP-069)_
+- **?** Brouillons e-mail :  _(rapport WP-083-c4-R09)_
 - **?** Bulle de message et fichiers generes :  _(rapport WP-061)_
+- **?** Bump de version et index des noms :  _(rapport WP-DIFF-012-c4-D05)_
 - **?** CI de gate (lint, tests, audits, mypy, clippy) :  _(rapport WP-C-004-c2-R1)_
 - **?** CI des contrats d'API de bout en bout :  _(rapport WP-DIFF-001-c2-D10)_
 - **?** CRM : onglets, pipeline et fil d'activites :  _(rapport WP-DIFF-008-c3-R24)_
 - **?** CRM : pipeline, activites, livrables, synchronisation :  _(rapport WP-083)_
+- **?** CRM et RGPD (contrat serveur) :  _(rapport WP-048-c4-R03)_
 - **?** CRUD de facturation :  _(rapport WP-C-025-c2-R1)_
 - **?** CRUD de facturation :  _(rapport WP-C-029-c3-D04)_
 - **?** CRUD de facturation (côté tests) :  _(rapport WP-C-029-c2-R1)_
@@ -246,18 +302,23 @@
 - **?** Calendrier local, Google et CalDAV :  _(rapport WP-083)_
 - **?** Calendriers CalDAV :  _(rapport WP-047)_
 - **?** Calendriers et evenements :  _(rapport WP-072)_
+- **?** Canevas Facturer de la coque :  _(rapport WP-DIFF-020-c4-D04)_
 - **?** Canevas e-mail (lecture et redaction) :  _(rapport WP-DIFF-009-c3-R25)_
 - **?** Capacite d'outillage des modeles Ollama :  _(rapport WP-078-c3-D04)_
 - **?** Capacités ACL de la webview Tauri :  _(rapport WP-057-c2-D10)_
 - **?** Capture d'une commande RFC :  _(rapport WP-067-c2-M15)_
 - **?** Capture micro :  _(rapport WP-057-c2-D11)_
 - **?** Carnet de contacts :  _(rapport WP-064-c3-R14)_
+- **?** Carnet de contacts :  _(rapport WP-064-c4-R10)_
 - **?** Carnet de contacts :  _(rapport WP-074)_
+- **?** Carnet de contacts :  _(rapport WP-DIFF-021-c4-R10)_
+- **?** Carnet de contacts (source unique) :  _(rapport WP-074-c4-R08)_
 - **?** Carte Facturer de la coque conversationnelle :  _(rapport WP-DIFF-007-c3-R23)_
 - **?** Carte Facturer du parcours conversationnel :  _(rapport WP-DIFF-007-c3-D06)_
 - **?** Carte d'accueil « la journee » :  _(rapport WP-DIFF-009-c3-R25)_
 - **?** Carte de boite de reception :  _(rapport WP-066)_
 - **?** Carte de téléchargement d'un document produit en conversation :  _(rapport WP-079-c3-R18)_
+- **?** Carte de téléchargement d'un fichier produit par un outil :  _(rapport WP-079-c4-D04)_
 - **?** Carte de téléchargement d'un fichier produit par un outil du chat :  _(rapport WP-079-c2-D05)_
 - **?** Cartes d'action guidees :  _(rapport WP-063)_
 - **?** Cartes d'action guidées :  _(rapport WP-063-c2-M09)_
@@ -268,6 +329,7 @@
 - **?** Catalogue de fournisseurs e-mail préréglés :  _(rapport WP-052-c2-M08)_
 - **?** Catalogue de modeles et sonde de derive :  _(rapport WP-078)_
 - **?** Catalogue de modèles cloud :  _(rapport WP-070)_
+- **?** Catalogue de modèles servi par le backend :  _(rapport WP-070-c4-D04)_
 - **?** Catalogue de presets MCP :  _(rapport WP-050)_
 - **?** Catalogue de serveurs MCP :  _(rapport WP-073)_
 - **?** Catalogue de skills :  _(rapport WP-073)_
@@ -277,16 +339,19 @@
 - **?** Catalogue des modèles servi au frontend :  _(rapport WP-049-c2-M02)_
 - **?** Catalogue documentaire du modèle (search_files et read_file) :  _(rapport WP-078-c2-D07)_
 - **?** Catalogue et lecture de fichiers indexés :  _(rapport WP-053)_
+- **?** Catalogue et lecture des fichiers indexés :  _(rapport WP-053-c4-D02)_
 - **?** Catalogue neutre des modeles LLM et politique d'effort :  _(rapport WP-080-c3-R19)_
 - **?** Catalogue neutre des modeles et politique d'effort :  _(rapport WP-080)_
 - **?** Catalogue neutre des modèles :  _(rapport WP-053)_
 - **?** Categorisation des courriels :  _(rapport WP-047)_
 - **?** Centre de capacites :  _(rapport WP-DIFF-008-c3-R25)_
+- **?** Centre de capacites et centre de confiance :  _(rapport WP-065-c4-R05)_
 - **?** Centre de capacités et centre de confiance :  _(rapport WP-065-c3-R14)_
 - **?** Centre de confiance :  _(rapport WP-065-c2-D06)_
 - **?** Centre de confiance :  _(rapport WP-067)_
 - **?** Centre de notifications :  _(rapport WP-069)_
 - **?** Centre de notifications :  _(rapport WP-069-c3-R16)_
+- **?** Centre de notifications :  _(rapport WP-069-c4-R12)_
 - **?** Centre de notifications in-app :  _(rapport WP-069-c2-M15)_
 - **?** Chaine d'integration Windows :  _(rapport WP-DIFF-018-c3-R28)_
 - **?** Chaine d'integration continue des tests de bout en bout :  _(rapport WP-DIFF-001-c3-D05)_
@@ -295,6 +360,8 @@
 - **?** Chaine de migrations Alembic :  _(rapport WP-047)_
 - **?** Charte IA bloquante à la première connexion :  _(rapport WP-086-c2-D05)_
 - **?** Charte graphique et jetons de couleur :  _(rapport WP-DIFF-009-c3-R26)_
+- **?** Chat (point d'application des gardes) :  _(rapport WP-DIFF-022-c4-R09)_
+- **?** Chat - flux SSE et conversations :  _(rapport WP-072-c4-R12)_
 - **?** Chat : composeur, pièces jointes et flux :  _(rapport WP-061-c2-M03)_
 - **?** Chat : consentement cloud par finalité et par fournisseur :  _(rapport WP-061-c2-M03)_
 - **?** Chat : rendu d'une bulle de message :  _(rapport WP-061-c2-M03)_
@@ -303,6 +370,8 @@
 - **?** Chat en flux SSE :  _(rapport WP-072)_
 - **?** Chat en flux SSE avec boucle d'outils :  _(rapport WP-079)_
 - **?** Chat multi-LLM et conversations :  _(rapport WP-083-c3-R21)_
+- **?** Chat multi-fournisseurs :  _(rapport WP-083-c4-R09)_
+- **?** Chaîne de construction du frontend :  _(rapport WP-056-c4-R12)_
 - **?** Chaîne de version et alignement Tauri :  _(rapport WP-046-c3-R01)_
 - **?** Checklist de mise en route :  _(rapport WP-049-c2-M02)_
 - **?** Checklist de mise en route :  _(rapport WP-049-c3-R04)_
@@ -315,30 +384,48 @@
 - **?** Chiffrement au repos, sandbox et isolation des tests :  _(rapport WP-079)_
 - **?** Chiffrement de la base au repos (US-014) :  _(rapport WP-C-025-c2-M06)_
 - **?** Chiffrement des secrets et des sauvegardes :  _(rapport WP-052)_
+- **?** Chiffrement des secrets et des sauvegardes :  _(rapport WP-052-c4-D04)_
+- **?** Chiffrement local des secrets :  _(rapport WP-083-c4-D04)_
+- **?** Choix du dossier de travail (mise en route) :  _(rapport WP-065-c4-D03)_
 - **?** Choix du fournisseur et du modele :  _(rapport WP-049)_
 - **?** Choix du modele et etat d'Ollama :  _(rapport WP-072)_
+- **?** Choix du service d'IA et catalogue de modèles :  _(rapport WP-049-c4-D02)_
 - **?** Classement des emails par priorité :  _(rapport WP-052)_
 - **?** Classement par priorite :  _(rapport WP-050-c3-R04)_
+- **?** Classification des erreurs d'agenda :  _(rapport WP-061-c4-D04)_
 - **?** Cle de jour civil du calendrier :  _(rapport WP-070-c2-M16)_
 - **?** Cles API des fournisseurs :  _(rapport WP-049-c3-R03)_
 - **?** Cles API par fournisseur :  _(rapport WP-049)_
 - **?** Cles API par fournisseur :  _(rapport WP-072)_
+- **?** Cles d'API et leur origine :  _(rapport WP-083-c4-R09)_
+- **?** Client API de la messagerie :  _(rapport WP-073-c4-R02)_
 - **?** Client API facturation :  _(rapport WP-C-027)_
 - **?** Client Google Sheets :  _(rapport WP-054)_
+- **?** Client HTTP de l'agenda :  _(rapport WP-072-c4-D05)_
+- **?** Cliquet de typage :  _(rapport WP-DIFF-012-c4-R12)_
+- **?** Cliquet mypy de la CI :  _(rapport WP-DIFF-022-c4-R09)_
 - **?** Cloison de l'agenda local par dossier :  _(rapport WP-079-c2-M16)_
+- **?** Cloison de périmètre de la mémoire vectorielle :  _(rapport WP-078-c4-D03)_
 - **?** Cloison documentaire d'une conversation :  _(rapport WP-049-c2-M02)_
+- **?** Cloison documentaire de la conversation :  _(rapport WP-049-c4-R01)_
+- **?** Cloison entre organisations (multi-tenant) :  _(rapport WP-C-031-c4-D03)_
 - **?** Cloison par périmètre (projet / conversation / global) :  _(rapport WP-053)_
 - **?** Cloisonnement de l'agenda par dossier :  _(rapport WP-079)_
 - **?** Cloisonnement de la memoire par perimetre :  _(rapport WP-078)_
 - **?** Cloisonnement documentaire de la conversation :  _(rapport WP-049-c3-R03)_
 - **?** Cloisonnement documentaire des conversations :  _(rapport WP-047-c2-D11)_
 - **?** Cloisonnement documentaire du chat par projet :  _(rapport WP-083-c2-D04)_
+- **?** Cloisonnement documentaire par périmètre :  _(rapport WP-083-c4-D04)_
 - **?** Cloisonnement du carnet par dossier :  _(rapport WP-049-c2-M02)_
+- **?** Cloisonnement du carnet par dossier :  _(rapport WP-049-c4-D02)_
+- **?** Cloisonnement du profil de donnees :  _(rapport WP-060-c4-R09)_
 - **?** Cloisonnement du profil de donnees :  _(rapport WP-DIFF-016-c3-R28)_
 - **?** Cloisonnement par perimetre (0.43) :  _(rapport WP-083)_
 - **?** Clé de jour civile :  _(rapport WP-070)_
 - **?** Clés API par fournisseur :  _(rapport WP-049-c2-M02)_
 - **?** Clés des connecteurs MCP :  _(rapport WP-068-c3-R16)_
+- **?** Coffre des clés d'API :  _(rapport WP-049-c4-D02)_
+- **?** Coffre des clés d'API :  _(rapport WP-049-c4-R01)_
 - **?** Coherence graphique verrouillee par test :  _(rapport WP-074-c2-M10)_
 - **?** Cohérence graphique et contraste :  _(rapport WP-074-c3-R17)_
 - **?** Commande d'aide locale :  _(rapport WP-079)_
@@ -356,27 +443,35 @@
 - **?** Commandes unifiees V3 :  _(rapport WP-072-c3-D04)_
 - **?** Commandes unifiees v3 :  _(rapport WP-072)_
 - **?** Commandes unifiées :  _(rapport WP-047-c3-R01)_
+- **?** Commandes utilisateur :  _(rapport WP-DIFF-022-c4-R09)_
 - **?** Commandes utilisateur (API heritee) :  _(rapport WP-072-c3-D04)_
 - **?** Commandes utilisateur (deux registres) :  _(rapport WP-DIFF-012-c3-R26)_
 - **?** Commandes utilisateur (generation precedente) :  _(rapport WP-072)_
 - **?** Commandes utilisateur (v1) :  _(rapport WP-049)_
 - **?** Commandes utilisateur personnalisees :  _(rapport WP-049-c3-R03)_
+- **?** Commandes utilisateur personnalisées :  _(rapport WP-054-c4-R11)_
 - **?** Commandes utilisateur v3 :  _(rapport WP-DIFF-013-c3-R28)_
 - **?** Compilation et empaquetage du front :  _(rapport WP-074)_
+- **?** Comportement clavier des dialogues et panneaux :  _(rapport WP-070-c4-D04)_
 - **?** Comportement du modele :  _(rapport WP-073)_
 - **?** Composeur de conversation :  _(rapport WP-061-c3-R12)_
 - **?** Comptage des jetons et garde-budget :  _(rapport WP-C-025-c3-R01)_
+- **?** Comptage des jetons et plafonds :  _(rapport WP-C-025-c4-R04)_
 - **?** Compte Gmail (OAuth) :  _(rapport WP-052-c3-R06)_
 - **?** Compte IMAP/SMTP :  _(rapport WP-050-c3-R04)_
 - **?** Compte IMAP/SMTP générique :  _(rapport WP-052-c3-R06)_
 - **?** Compte e-mail IMAP/SMTP générique :  _(rapport WP-052-c2-M08)_
 - **?** Compte e-mail IMAP/SMTP souverain :  _(rapport WP-084-c3-R21)_
 - **?** Compte email IMAP/SMTP :  _(rapport WP-DIFF-013-c3-R28)_
+- **?** Comptes de messagerie :  _(rapport WP-050-c4-R02)_
 - **?** Comptes email IMAP/SMTP :  _(rapport WP-047)_
 - **?** Comptes mail et agendas sans Google :  _(rapport WP-047-c3-D01)_
 - **?** Confidentialite des journaux :  _(rapport WP-C-029-c3-D04)_
+- **?** Confidentialite, portabilite et effacement :  _(rapport WP-068-c4-R08)_
 - **?** Confidentialité, données personnelles et voix locale :  _(rapport WP-068)_
+- **?** Confidentialité, sauvegardes et consentements :  _(rapport WP-068-c4-D03)_
 - **?** Configuration SMTP/IMAP :  _(rapport WP-063)_
+- **?** Configuration de l'assistante :  _(rapport WP-083-c4-R09)_
 - **?** Configuration du fournisseur LLM :  _(rapport WP-049-c3-R03)_
 - **?** Configuration du fournisseur et du modèle :  _(rapport WP-049-c2-M02)_
 - **?** Configuration du fournisseur et du modèle IA :  _(rapport WP-068)_
@@ -387,7 +482,9 @@
 - **?** Configuration typee :  _(rapport WP-047)_
 - **?** Configuration, clés API et onboarding :  _(rapport WP-083-c3-R21)_
 - **?** Confirmation avant action externe payante :  _(rapport WP-064)_
+- **?** Confirmation d'action externe sur l'agenda :  _(rapport WP-061-c4-D04)_
 - **?** Confirmation d'une action a effet externe :  _(rapport WP-DIFF-008-c3-R24)_
+- **?** Confirmation d'une action externe :  _(rapport WP-DIFF-021-c4-R10)_
 - **?** Confirmation d'une action sensible :  _(rapport WP-074-c3-R17)_
 - **?** Confirmation d'une action sensible proposée par le modèle :  _(rapport WP-062-c3-D03)_
 - **?** Confirmation des actions sensibles :  _(rapport WP-079)_
@@ -401,10 +498,14 @@
 - **?** Confirmation humaine des actions sensibles :  _(rapport WP-062-c2-D09)_
 - **?** Confirmation humaine des outils sensibles :  _(rapport WP-062-c2-M12)_
 - **?** Conformite RGPD des contacts :  _(rapport WP-047)_
+- **?** Conformité RGPD des contacts :  _(rapport WP-050-c4-D03)_
 - **?** Conformité RGPD par contact :  _(rapport WP-050-c2-M04)_
 - **?** Conformité RGPD par contact :  _(rapport WP-083-c3-R21)_
 - **?** Connecteur Google Sheets :  _(rapport WP-049-c3-R04)_
+- **?** Connecteurs :  _(rapport WP-053-c4-R07)_
 - **?** Connecteurs MCP :  _(rapport WP-068)_
+- **?** Connecteurs MCP :  _(rapport WP-084-c4-R11)_
+- **?** Connecteurs MCP :  _(rapport WP-DIFF-022-c4-R09)_
 - **?** Connecteurs MCP (serveurs externes appelés par THÉRÈSE) :  _(rapport WP-053-c3-R06)_
 - **?** Connexion Gmail :  _(rapport WP-050-c3-R04)_
 - **?** Connexion Gmail par OAuth :  _(rapport WP-050)_
@@ -417,6 +518,7 @@
 - **?** Consentement cloud de la mise en route :  _(rapport WP-DIFF-007-c3-D06)_
 - **?** Consentement cloud de la mise en route :  _(rapport WP-DIFF-007-c3-R23)_
 - **?** Consentement cloud par finalite et fournisseur :  _(rapport WP-061)_
+- **?** Consentement cloud par finalité et fournisseur :  _(rapport WP-070-c4-D04)_
 - **?** Consentement cloud par fournisseur :  _(rapport WP-073)_
 - **?** Consentement cloud à l'onboarding :  _(rapport WP-C-027-c2-D02)_
 - **?** Consentement d'envoi au cloud :  _(rapport WP-061-c3-R12)_
@@ -427,14 +529,18 @@
 - **?** Consommation des flux SSE :  _(rapport WP-072)_
 - **?** Consommation et incertitude :  _(rapport WP-050-c3-R04)_
 - **?** Consultation et filtrage des logs d'audit :  _(rapport WP-C-031)_
+- **?** Contacts :  _(rapport WP-050-c4-R02)_
 - **?** Contacts (mémoire) :  _(rapport WP-064-c2-M09)_
 - **?** Contacts CRM :  _(rapport WP-050)_
 - **?** Contacts CRM :  _(rapport WP-072)_
 - **?** Contacts et projets (mémoire) :  _(rapport WP-073-c2-M15)_
 - **?** Conteneur des panneaux et modales :  _(rapport WP-061)_
 - **?** Contexte local d'un agent d'action :  _(rapport WP-DIFF-018-c3-R28)_
+- **?** Contexte local des actions :  _(rapport WP-DIFF-022-c4-R09)_
 - **?** Contraste AA des couleurs de domaine et des remplissages :  _(rapport WP-074-c2-D11)_
 - **?** Contraste et accessibilité mesurés :  _(rapport WP-074)_
+- **?** Contrat de l'API :  _(rapport WP-048-c4-D02)_
+- **?** Contrat de l'API (schemas Pydantic) :  _(rapport WP-048-c4-R03)_
 - **?** Contrat de lecture d'une fiche contact :  _(rapport WP-079-c3-D04)_
 - **?** Contrat de theme de la coque :  _(rapport WP-066)_
 - **?** Contrat des commandes :  _(rapport WP-074)_
@@ -449,47 +555,68 @@
 - **?** Controles de fenetre par plateforme :  _(rapport WP-069)_
 - **?** Contrôle de génération du manifeste :  _(rapport WP-070)_
 - **?** Contrôle de génération du manifeste :  _(rapport WP-070-c2-D06)_
+- **?** Contrôle du fuseau horaire à l'entrée :  _(rapport WP-DIFF-019-c4-R01)_
+- **?** Contrôles de fenêtre par plateforme :  _(rapport WP-069-c4-D04)_
+- **?** Conversation :  _(rapport WP-049-c4-R01)_
+- **?** Conversation :  _(rapport WP-061-c4-R07)_
 - **?** Conversation avec le modele :  _(rapport WP-049-c3-R03)_
 - **?** Conversation streamee avec outils :  _(rapport WP-049)_
 - **?** Conversations :  _(rapport WP-072)_
 - **?** Conversations :  _(rapport WP-073)_
+- **?** Conversations du chat :  _(rapport WP-DIFF-021-c4-R10)_
 - **?** Conversations et export :  _(rapport WP-049)_
+- **?** Conversations et index de recherche :  _(rapport WP-083-c4-R09)_
 - **?** Conversations et messages :  _(rapport WP-049-c2-M02)_
+- **?** Conversations et messages :  _(rapport WP-073-c4-R02)_
+- **?** Conversations recentes de l'accueil :  _(rapport WP-064-c4-D05)_
 - **?** Copie figée du destinataire d'une pièce comptable :  _(rapport WP-047-c2-M11)_
 - **?** Coque Tauri et droits du webview :  _(rapport WP-057-c3-R09)_
+- **?** Coque Tauri et fenetre principale :  _(rapport WP-060-c4-R09)_
 - **?** Coque Tauri et sidecar backend :  _(rapport WP-060-c2-M11)_
 - **?** Coque conversation-canevas :  _(rapport WP-065)_
 - **?** Coque conversationnelle (comportement vérifié par test) :  _(rapport WP-065-c3-R14)_
+- **?** Coque de bureau :  _(rapport WP-057-c4-R01)_
 - **?** Coque de bureau et moteur local :  _(rapport WP-060-c3-R12)_
 - **?** Coque de fenetre sans cadre :  _(rapport WP-072)_
 - **?** Coque de fenetre sans decoration :  _(rapport WP-057)_
 - **?** Coque de l'interface unifiée :  _(rapport WP-066-c3-R15)_
 - **?** Coque desktop Tauri et son perimetre de permissions :  _(rapport WP-057-c2-M16)_
+- **?** Coque desktop et mise a jour :  _(rapport WP-060-c4-D05)_
+- **?** Coque unifiee (accueil conversationnel) :  _(rapport WP-066-c4-R08)_
 - **?** Coque unifiee THERESE :  _(rapport WP-066)_
 - **?** Coque, navigation et composants frontend :  _(rapport WP-082-c3-R20)_
 - **?** Corpus juridique verifie :  _(rapport WP-047)_
 - **?** Couche de fournisseurs LLM en streaming :  _(rapport WP-053-c3-R07)_
+- **?** Couleurs d'etat issues du theme :  _(rapport WP-071-c4-D01)_
 - **?** Couleurs d'etat par tokens de theme :  _(rapport WP-071)_
 - **?** Couverture Windows des tests backend :  _(rapport WP-C-004-c3-D01)_
 - **?** Creation d'une commande personnalisee :  _(rapport WP-063)_
 - **?** Creation et modification d'evenement :  _(rapport WP-061)_
+- **?** Création d'une commande personnalisée :  _(rapport WP-063-c4-D04)_
 - **?** Création du premier contact depuis le devis :  _(rapport WP-C-027)_
 - **?** Création et modification d'un événement de calendrier :  _(rapport WP-061-c2-D07)_
 - **?** Cycle de vie d'une piece comptable :  _(rapport WP-C-025-c3-D01)_
 - **?** Cycle de vie du backend :  _(rapport WP-047)_
+- **?** Cycle de vie du backend embarque :  _(rapport WP-060-c4-R09)_
+- **?** Cycle de vie du backend embarque :  _(rapport WP-DIFF-022-c4-R09)_
 - **?** Cycle de vie du moteur local (sidecar backend) :  _(rapport WP-060-c3-D03)_
 - **?** Cycle de vie du sidecar backend Python :  _(rapport WP-060)_
 - **?** Dates civiles (calendrier, échéances de tâches) :  _(rapport WP-070-c3-R17)_
+- **?** Dates civiles de l'agenda :  _(rapport WP-DIFF-021-c4-R10)_
 - **?** Dates civiles du calendrier et des taches :  _(rapport WP-070-c3-D04)_
+- **?** Decision (Board) dans le canevas conversationnel :  _(rapport WP-065-c4-R05)_
 - **?** Decision d'afficher l'assistant de premier lancement :  _(rapport WP-060)_
 - **?** Definition unique d'une relance due :  _(rapport WP-054-c2-M16)_
 - **?** Definition unique de la relance due :  _(rapport WP-054-c2-D11)_
 - **?** Delai maximal commun :  _(rapport WP-072)_
 - **?** Delais justifies du parcours de configuration :  _(rapport WP-072)_
 - **?** Demarrage de l'application desktop :  _(rapport WP-060)_
+- **?** Demarrage de l'interface :  _(rapport WP-060-c4-R09)_
 - **?** Demarrage et empaquetage du sidecar :  _(rapport WP-055)_
 - **?** Demarrage, sidecar et mise a jour :  _(rapport WP-082-c3-R20)_
+- **?** Depot d'un fichier dans un projet :  _(rapport WP-084-c4-D05)_
 - **?** Depot de fichier dans un projet :  _(rapport WP-084)_
+- **?** Derivation du texte depuis le HTML :  _(rapport WP-DIFF-021-c4-R10)_
 - **?** Destinataire figé des pièces (côté tests) :  _(rapport WP-C-029-c2-R1)_
 - **?** Destinataire figé des pièces de facturation :  _(rapport WP-C-025-c2-R1)_
 - **?** Detection de plateforme :  _(rapport WP-071)_
@@ -499,13 +626,20 @@
 - **?** Devis et facturation :  _(rapport WP-047)_
 - **?** Devis et factures :  _(rapport WP-C-026-c3-D02)_
 - **?** Devis et factures :  _(rapport WP-C-026-c3-R08)_
+- **?** Devis et factures :  _(rapport WP-C-026-c4-D01)_
+- **?** Devis et factures :  _(rapport WP-C-026-c4-R03)_
+- **?** Devis et factures - formulaire et liste :  _(rapport WP-DIFF-020-c4-R12)_
 - **?** Devis et factures - le client nomme a l'ecran :  _(rapport WP-C-027-c3-D02)_
+- **?** Devis et factures - persistance des filtres :  _(rapport WP-DIFF-020-c4-R12)_
+- **?** Devis et factures - état et filtres :  _(rapport WP-C-028-c4-R12)_
 - **?** Devis, avoirs et TVA optionnelle :  _(rapport WP-047-c3-D01)_
 - **?** Devis, factures et avoirs :  _(rapport WP-080)_
 - **?** Devise d'un montant :  _(rapport WP-071)_
 - **?** Devise du document :  _(rapport WP-C-025)_
 - **?** Diagnostic tri-etat du depot :  _(rapport WP-051-c2-D11)_
+- **?** Dialogues et panneaux - piégeage du focus :  _(rapport WP-070-c4-R12)_
 - **?** Dictee :  _(rapport WP-073)_
+- **?** Dictee et synthese vocale :  _(rapport WP-051-c4-R05)_
 - **?** Dictee vocale :  _(rapport WP-057)_
 - **?** Dictée et synthèse vocale locales :  _(rapport WP-055-c3-R07)_
 - **?** Dictée et voix locale :  _(rapport WP-083-c3-R21)_
@@ -519,10 +653,14 @@
 - **?** Documents de l'atelier :  _(rapport WP-050-c3-R04)_
 - **?** Domaine ferme des etapes de pipeline :  _(rapport WP-048-c3-D01)_
 - **?** Dossier de financement d'une prestation :  _(rapport WP-080-c3-D05)_
+- **?** Dossier de travail comme frontiere de confiance :  _(rapport WP-083-c4-R09)_
 - **?** Dossier synchronisé d'un projet :  _(rapport WP-064)_
+- **?** Dossiers (projets) :  _(rapport WP-050-c4-R02)_
 - **?** Dossiers projets et suppression propre :  _(rapport WP-050-c2-M04)_
+- **?** Dossiers speciaux IMAP :  _(rapport WP-083-c4-R09)_
 - **?** Double source du schema :  _(rapport WP-047)_
 - **?** Droit a l'oubli :  _(rapport WP-050-c3-R04)_
+- **?** Droits par contact :  _(rapport WP-050-c4-R02)_
 - **?** Décision (Board de conseillers) :  _(rapport WP-060-c3-D03)_
 - **?** Décision (Board) dans la coque conversationnelle :  _(rapport WP-065-c3-R14)_
 - **?** Démarrage de l'application et première configuration :  _(rapport WP-060-c3-D03)_
@@ -532,27 +670,32 @@
 - **?** Dépôt d'une pièce jointe dans un projet :  _(rapport WP-050)_
 - **?** Dépôt de fichiers dans le chat :  _(rapport WP-070)_
 - **?** Dépôt de pièces jointes dans le composeur :  _(rapport WP-061-c2-D07)_
+- **?** Détail des refus de fournisseur au journal :  _(rapport WP-079-c4-D04)_
 - **?** Détail diagnosticable d'un refus de fournisseur LLM :  _(rapport WP-079-c3-R18)_
 - **?** Détection d'un fil de conversation tronqué :  _(rapport WP-062-c2-D09)_
 - **?** Détection du statut réseau :  _(rapport WP-070)_
 - **?** E-mail (Gmail et IMAP/SMTP) :  _(rapport WP-083-c3-R21)_
 - **?** E-mail (client API) :  _(rapport WP-073-c3-R17)_
+- **?** E-mail dans la coque conversationnelle :  _(rapport WP-066-c4-D04)_
 - **?** Echap pendant la mise en route :  _(rapport WP-065-c2-M14)_
 - **?** Echap pendant la mise en route :  _(rapport WP-DIFF-003-c2-M14)_
 - **?** Echeance de relance en jour civil :  _(rapport WP-DIFF-002-c3-R23)_
 - **?** Echeance de relance en jour civil :  _(rapport WP-DIFF-004-c3-R23)_
+- **?** Echeance de relance normalisee :  _(rapport WP-DIFF-002-c4-D05)_
 - **?** Echeance de suivi d'une prestation :  _(rapport WP-052-c3-D02)_
 - **?** Echec de stockage annonce et rejouable :  _(rapport WP-069-c2-D11)_
 - **?** Economie d'energie :  _(rapport WP-073)_
 - **?** Ecran Taches (liste et Kanban) :  _(rapport WP-DIFF-009-c3-R25)_
 - **?** Ecran de demarrage (splash inline) :  _(rapport WP-DIFF-009-c3-R26)_
 - **?** Ecran de demarrage F-09 :  _(rapport WP-056)_
+- **?** Ecran de mise en route :  _(rapport WP-DIFF-022-c4-R09)_
 - **?** Ecrire : redaction de brouillon :  _(rapport WP-066)_
 - **?** Ecriture concurrente d'un evenement d'agenda :  _(rapport WP-DIFF-012-c3-R26)_
 - **?** Ecriture et relecture des preferences :  _(rapport WP-DIFF-012-c3-R27)_
 - **?** Editeur de signature :  _(rapport WP-063)_
 - **?** Effacement de toutes les donnees :  _(rapport WP-072)_
 - **?** Effacement et portabilité globale :  _(rapport WP-083-c2-M05)_
+- **?** Effacement total (Art. 17) :  _(rapport WP-050-c4-R02)_
 - **?** Effort de raisonnement configurable par fournisseur :  _(rapport WP-081-c3-D05)_
 - **?** Emission du PDF de facturation :  _(rapport WP-C-025)_
 - **?** En-tete et navigation entre panneaux :  _(rapport WP-061)_
@@ -568,6 +711,7 @@
 - **?** Envoi de message en flux :  _(rapport WP-061)_
 - **?** Erreurs annoncees :  _(rapport WP-071)_
 - **?** Escalade et suivi de consommation :  _(rapport WP-055-c2-M07)_
+- **?** Espace Facturer du prototype :  _(rapport WP-C-027-c4-R11)_
 - **?** Espace Livrables par projet :  _(rapport WP-067)_
 - **?** Espace Rendez-vous :  _(rapport WP-067)_
 - **?** Espace Voix et transcription :  _(rapport WP-067)_
@@ -578,6 +722,7 @@
 - **?** Etabli de l'accueil :  _(rapport WP-071)_
 - **?** Etabli des cinq verbes :  _(rapport WP-066)_
 - **?** Etancheite du variateur :  _(rapport WP-072)_
+- **?** Etape LLM de l'onboarding :  _(rapport WP-DIFF-008-c4-D05)_
 - **?** Etape choix du service d'IA :  _(rapport WP-065)_
 - **?** Etape dossier de travail :  _(rapport WP-065)_
 - **?** Etape profil :  _(rapport WP-065)_
@@ -588,11 +733,14 @@
 - **?** Etiquettes et dossiers :  _(rapport WP-050-c3-R04)_
 - **?** Execution CI des parcours de bout en bout :  _(rapport WP-DIFF-001-c2-M16)_
 - **?** Execution d'un skill :  _(rapport WP-073)_
+- **?** Execution d'une commande du centre de capacites :  _(rapport WP-064-c4-R10)_
 - **?** Explorateur de fichiers :  _(rapport WP-DIFF-016-c3-R28)_
+- **?** Explorateur de fichiers et indexation :  _(rapport WP-063-c4-R04)_
 - **?** Explorateur de fichiers et indexation documentaire :  _(rapport WP-063-c3-D03)_
 - **?** Explorateur de fichiers local :  _(rapport WP-063)_
 - **?** Exploration et indexation des fichiers locaux :  _(rapport WP-063-c3-R13)_
 - **?** Export CRM (XLSX, CSV, JSON) :  _(rapport WP-DIFF-012-c3-R27)_
+- **?** Export CRM complet :  _(rapport WP-DIFF-012-c4-D05)_
 - **?** Export CRM multi-format :  _(rapport WP-052)_
 - **?** Export CRM multi-format :  _(rapport WP-052-c2-M08)_
 - **?** Export DOCX deterministe :  _(rapport WP-054-c3-D02)_
@@ -602,6 +750,8 @@
 - **?** Export d'une conversation :  _(rapport WP-049-c2-M02)_
 - **?** Export d'une conversation :  _(rapport WP-049-c3-R03)_
 - **?** Export d'une conversation :  _(rapport WP-072)_
+- **?** Export de portabilite :  _(rapport WP-083-c4-R09)_
+- **?** Export de portabilite (Art. 20) :  _(rapport WP-050-c4-R02)_
 - **?** Export de portabilite RGPD :  _(rapport WP-050-c3-R04)_
 - **?** Export des contacts au format VCard :  _(rapport WP-073-c2-D07)_
 - **?** Export du CRM (contacts, projets, livrables) :  _(rapport WP-052-c3-R06)_
@@ -620,19 +770,24 @@
 - **?** Extraction d'entités depuis un message :  _(rapport WP-052)_
 - **?** Exécution d'une commande d'accueil :  _(rapport WP-064-c3-R14)_
 - **?** Facade LLM multi-fournisseurs :  _(rapport WP-084)_
+- **?** Facturation (contrat serveur) :  _(rapport WP-048-c4-R03)_
+- **?** Facturation (creation, conversion, franchise de TVA) :  _(rapport WP-DIFF-022-c4-R09)_
 - **?** Facturation (devis, facture, avoir) :  _(rapport WP-C-025-c2-M06)_
 - **?** Facturation (devis, facture, avoir) :  _(rapport WP-C-025-c3-R01)_
+- **?** Facturation (devis, facture, avoir) :  _(rapport WP-C-025-c4-R04)_
 - **?** Facturation (devis, factures, PDF) :  _(rapport WP-C-029-c3-R17)_
 - **?** Facturation (devis, factures, avoirs) :  _(rapport WP-C-025)_
 - **?** Facturation - CRUD des devis et des factures :  _(rapport WP-C-029-c2-M11)_
 - **?** Facturation - génération du PDF conforme :  _(rapport WP-C-029-c2-M11)_
 - **?** Facturation - liste et cycle de vie des documents :  _(rapport WP-C-026)_
+- **?** Facturation - moteur et pieces :  _(rapport WP-C-025-c4-D01)_
 - **?** Facturation : devise des documents et PDF conforme :  _(rapport WP-C-025-c2-D04)_
 - **?** Facturation : numerotation des devis et factures :  _(rapport WP-DIFF-013-c3-R27)_
 - **?** Facturation : panneau Devis et factures + formulaire :  _(rapport WP-C-026-c2-D01)_
 - **?** Facturation, CRM, calendrier, email et RGPD :  _(rapport WP-082-c3-R20)_
 - **?** Facturer un client (canevas conversationnel) :  _(rapport WP-C-027-c3-D03)_
 - **?** Facturer un client depuis l'établi :  _(rapport WP-C-027-c3-R08)_
+- **?** Facturer un client depuis la conversation :  _(rapport WP-C-027-c4-D02)_
 - **?** Faisabilité RAM d'un modèle Ollama local :  _(rapport WP-064)_
 - **?** Famille de fournisseurs compatibles OpenAI :  _(rapport WP-054-c3-R07)_
 - **?** Fenetre d'un evenement d'agenda :  _(rapport WP-048-c3-D01)_
@@ -646,12 +801,15 @@
 - **?** Fiche d'evenement :  _(rapport WP-061)_
 - **?** Fiche des raccourcis clavier :  _(rapport WP-062)_
 - **?** Fiche des raccourcis clavier :  _(rapport WP-062-c3-R13)_
+- **?** Fiche des raccourcis clavier :  _(rapport WP-062-c4-D05)_
+- **?** Fiche du skill tableur :  _(rapport WP-055-c4-D02)_
 - **?** Fiche projet :  _(rapport WP-064)_
 - **?** Fiches contacts :  _(rapport WP-073)_
 - **?** Fiches contacts et cloison de périmètre :  _(rapport WP-050-c2-M04)_
 - **?** Fiches de skills bureautiques (orphelines) :  _(rapport WP-055)_
 - **?** Fiches projets :  _(rapport WP-073)_
 - **?** Fichiers d'un projet :  _(rapport WP-073)_
+- **?** Fichiers générés visibles dans le chat :  _(rapport WP-078-c4-D03)_
 - **?** Fichiers joints d'un projet :  _(rapport WP-064)_
 - **?** Fil de conversation : rendu markdown et etats d'echec :  _(rapport WP-DIFF-008-c3-R24)_
 - **?** Fil de conversation du chat :  _(rapport WP-061-c3-R13)_
@@ -663,7 +821,9 @@
 - **?** Focus visible sur les actions revelees au survol :  _(rapport WP-071)_
 - **?** Formats de fichiers indexables :  _(rapport WP-071-c3-D04)_
 - **?** Formats indexables :  _(rapport WP-071)_
+- **?** Formulaire d'evenement :  _(rapport WP-DIFF-021-c4-R10)_
 - **?** Formulaire de devis et facture :  _(rapport WP-DIFF-006-c3-D06)_
+- **?** Formulaire de devis et facture :  _(rapport WP-DIFF-020-c4-D04)_
 - **?** Formulaire de rendez-vous du canevas Rencontres :  _(rapport WP-DIFF-009-c3-D06)_
 - **?** Formulaire dynamique de skill :  _(rapport WP-063)_
 - **?** Formulaire dynamique de skill :  _(rapport WP-063-c2-M09)_
@@ -671,22 +831,31 @@
 - **?** Fournisseur LLM MiniMax (OpenAI-compatible) :  _(rapport WP-053-c2-D10)_
 - **?** Fournisseur e-mail IMAP/SMTP :  _(rapport WP-084)_
 - **?** Fournisseurs GLM, Kimi, Qwen, MiniMax :  _(rapport WP-081-c2-D08)_
+- **?** Fournisseurs LLM au format OpenAI :  _(rapport WP-054-c4-R11)_
 - **?** Fournisseurs LLM et boucle d'outils :  _(rapport WP-081)_
 - **?** Fournisseurs LLM et cache de cles :  _(rapport WP-DIFF-012-c3-R27)_
 - **?** Fournisseurs d'images :  _(rapport WP-050-c3-R04)_
+- **?** Fournisseurs de modeles :  _(rapport WP-081-c4-R10)_
 - **?** Frontiere d'erreur globale :  _(rapport WP-069)_
+- **?** Frontiere d'erreurs :  _(rapport WP-DIFF-022-c4-R09)_
 - **?** Frontiere d'erreurs a l'ecran :  _(rapport WP-DIFF-012-c3-R27)_
 - **?** Frontiere d'erreurs utilisateur :  _(rapport WP-080)_
 - **?** Frontière d'erreurs utilisateur :  _(rapport WP-052)_
+- **?** Frontière d'erreurs utilisateur :  _(rapport WP-080-c4-R11)_
 - **?** Gabarit d'environnement du frontend :  _(rapport WP-DIFF-009-c3-R26)_
 - **?** Gabarit de pull request :  _(rapport WP-C-002-c2-D10)_
 - **?** Gabarits d'issues GitHub (bug et suggestion) :  _(rapport WP-C-003-c2-D10)_
 - **?** Garantie transverse : un bandeau d'erreur est annoncé :  _(rapport WP-071-c2-D09)_
+- **?** Garde d'accentuation des messages utilisateur :  _(rapport WP-078-c4-D03)_
 - **?** Garde d'authentification locale fail-closed :  _(rapport WP-C-029)_
 - **?** Garde d'injection de prompt :  _(rapport WP-C-025-c3-D01)_
+- **?** Garde de coherence graphique et de contraste :  _(rapport WP-074-c4-R08)_
 - **?** Garde de confirmation des actions metier sensibles :  _(rapport WP-C-026)_
+- **?** Garde de contraste et d'accessibilité :  _(rapport WP-074-c4-D04)_
 - **?** Garde de la recherche web :  _(rapport WP-081)_
 - **?** Garde des chemins de fichiers :  _(rapport WP-C-025-c3-D01)_
+- **?** Garde des composants atteignables :  _(rapport WP-DIFF-008-c4-D05)_
+- **?** Garde-budget des appels de modele :  _(rapport WP-C-025-c4-D01)_
 - **?** Garde-budget et escalade :  _(rapport WP-055-c3-R08)_
 - **?** Garde-fou RAM des modeles locaux :  _(rapport WP-084)_
 - **?** Garde-fou profil emetteur (P0-PROD-2) :  _(rapport WP-C-028)_
@@ -694,7 +863,10 @@
 - **?** Garde-fous de libellés et d'établi :  _(rapport WP-067)_
 - **?** Garde-fous de sécurité du poste et des secrets :  _(rapport WP-DIFF-004-c2-M13)_
 - **?** Gardes d'entrée : chemins et prompts :  _(rapport WP-C-025-c3-R01)_
+- **?** Gardes de securite du contexte et des chemins :  _(rapport WP-C-025-c4-R04)_
+- **?** Gardes de securite fichiers et prompts :  _(rapport WP-C-025-c4-D01)_
 - **?** Gardes de securite statiques :  _(rapport WP-082-c3-R20)_
+- **?** Gardes de source des lots du cycle 3 :  _(rapport WP-DIFF-021-c4-R10)_
 - **?** Gardes de vocabulaire et d'annonce des erreurs :  _(rapport WP-071-c3-R17)_
 - **?** Gardes qui lisent le code source :  _(rapport WP-DIFF-009-c3-R25)_
 - **?** Gardes structurelles qui savent rougir :  _(rapport WP-DIFF-004-c2-M13)_
@@ -702,22 +874,33 @@
 - **?** Gates structurels du depot :  _(rapport WP-080)_
 - **?** Generateurs bureautiques et replis :  _(rapport WP-083)_
 - **?** Generation avec image de reference :  _(rapport WP-050-c3-R04)_
+- **?** Generation d'images :  _(rapport WP-064-c4-R10)_
 - **?** Generation d'images :  _(rapport WP-073)_
+- **?** Generation de brouillon de reponse email :  _(rapport WP-DIFF-012-c4-D05)_
 - **?** Generation de documents Office depuis le chat :  _(rapport WP-055-c2-M07)_
+- **?** Generation de documents bureautiques :  _(rapport WP-064-c4-R10)_
 - **?** Generation de reponse par IA :  _(rapport WP-063)_
 - **?** Generation de reponses email :  _(rapport WP-079)_
 - **?** Generation de template de commande :  _(rapport WP-049)_
 - **?** Generation depuis un prompt :  _(rapport WP-050-c3-R04)_
+- **?** Generation du PDF de facture ou devis :  _(rapport WP-DIFF-017-c4-D05)_
 - **?** Generation et telechargement d'images :  _(rapport WP-073-c3-D04)_
+- **?** Gestes RGPD sur un contact :  _(rapport WP-064-c4-R10)_
 - **?** Gestion des erreurs reseau (US-ERR) :  _(rapport WP-071)_
 - **?** Gestion des serveurs MCP (API) :  _(rapport WP-083-c2-D04)_
 - **?** Ghost text prédictif du composeur :  _(rapport WP-070-c2-D06)_
 - **?** Glisser-deposer de fichiers :  _(rapport WP-063)_
+- **?** Glisser-déposer de fichiers :  _(rapport WP-070-c4-D04)_
+- **?** Glisser-déposer des tâches au Kanban :  _(rapport WP-068-c4-D03)_
+- **?** Génération d'images :  _(rapport WP-048-c4-D02)_
 - **?** Génération d'images :  _(rapport WP-050)_
+- **?** Génération d'images :  _(rapport WP-050-c4-D03)_
 - **?** Génération d'images :  _(rapport WP-052)_
 - **?** Génération d'images :  _(rapport WP-052-c3-R06)_
+- **?** Génération d'images :  _(rapport WP-052-c4-R06)_
 - **?** Génération d'images :  _(rapport WP-064-c2-M09)_
 - **?** Génération d'images (GPT Image 2, Nano Banana 2, Fal Flux Pro) :  _(rapport WP-064)_
+- **?** Génération d'images (routeur) :  _(rapport WP-083-c4-D04)_
 - **?** Génération de documents Office par exécution de code :  _(rapport WP-054-c3-R07)_
 - **?** Génération de fichier bureautique par skill :  _(rapport WP-064)_
 - **?** Harnais de test backend :  _(rapport WP-078)_
@@ -726,10 +909,12 @@
 - **?** Harnais de tests backend :  _(rapport WP-DIFF-012-c3-D07)_
 - **?** Harnais de tests de bout en bout :  _(rapport WP-085-c3-D05)_
 - **?** Heure civile Europe/Paris aux frontières UTC :  _(rapport WP-DIFF-004-c2-M13)_
+- **?** Historique d'activites :  _(rapport WP-062-c4-R10)_
 - **?** Historique de conversations plafonné :  _(rapport WP-068-c2-D08)_
 - **?** Historique de l'Atelier :  _(rapport WP-047)_
 - **?** Historique des decisions du Board :  _(rapport WP-060)_
 - **?** Historique et prestations d'un contact :  _(rapport WP-062)_
+- **?** Historique reconstructible du Board :  _(rapport WP-047-c4-D04)_
 - **?** Hiérarchie typographique des cartes de tâche :  _(rapport WP-DIFF-009-c3-D06)_
 - **?** Horodatage a la frontiere de l'ecran :  _(rapport WP-048-c3-R02)_
 - **?** Horodatage absolu des reponses :  _(rapport WP-048-c3-D01)_
@@ -744,6 +929,7 @@
 - **?** Images jointes au message de chat :  _(rapport WP-052)_
 - **?** Images produites :  _(rapport WP-050-c3-R04)_
 - **?** Implémentations de fournisseurs :  _(rapport WP-053)_
+- **?** Import CRM :  _(rapport WP-DIFF-022-c4-R09)_
 - **?** Import CRM avec prévisualisation :  _(rapport WP-052-c2-M08)_
 - **?** Import CRM multi-format :  _(rapport WP-052)_
 - **?** Import JSON conversations et contacts :  _(rapport WP-050-c3-R04)_
@@ -753,6 +939,7 @@
 - **?** Import de contacts (VCF et CSV) :  _(rapport WP-DIFF-012-c3-D07)_
 - **?** Import de contacts (VCF et CSV) :  _(rapport WP-DIFF-012-c3-R27)_
 - **?** Import de conversations et de contacts :  _(rapport WP-050-c2-M04)_
+- **?** Import de conversations et de contacts :  _(rapport WP-083-c4-R09)_
 - **?** Import de conversations et de contacts depuis un export :  _(rapport WP-050-c2-D03)_
 - **?** Import de fichiers CRM :  _(rapport WP-049-c3-R04)_
 - **?** Import et export .ics :  _(rapport WP-061-c3-R12)_
@@ -762,11 +949,14 @@
 - **?** Import et export VCF :  _(rapport WP-073)_
 - **?** Import et export VCard :  _(rapport WP-050-c2-M04)_
 - **?** Import et export VCard :  _(rapport WP-050-c3-R05)_
+- **?** Import et export du CRM :  _(rapport WP-052-c4-R06)_
 - **?** Import et export du carnet en VCF :  _(rapport WP-073-c2-M15)_
 - **?** Imports CRM :  _(rapport WP-049)_
 - **?** Index de recherche des conversations :  _(rapport WP-053)_
 - **?** Index des noms des surfaces (document généré) :  _(rapport WP-080-c2-D08)_
 - **?** Index des protocoles de test manuels :  _(rapport WP-086)_
+- **?** Index inverse de recherche des conversations :  _(rapport WP-053-c4-D02)_
+- **?** Indexation d'une pièce jointe du composeur :  _(rapport WP-061-c4-D04)_
 - **?** Indexation de fichiers pour le RAG :  _(rapport WP-050)_
 - **?** Indexation des documents :  _(rapport WP-078)_
 - **?** Indexation des pieces jointes et fichiers de projet :  _(rapport WP-080)_
@@ -775,12 +965,17 @@
 - **?** Indexation documentaire et extensions :  _(rapport WP-079)_
 - **?** Indexation semantique du profil utilisateur :  _(rapport WP-081-c3-D05)_
 - **?** Indexation serialisee du profil utilisateur :  _(rapport WP-081-c2-M16)_
+- **?** Indicateur d'attente de reponse :  _(rapport WP-062-c4-D05)_
 - **?** Indicateur d'attente unique :  _(rapport WP-069)_
+- **?** Indice de defilement de l'accueil :  _(rapport WP-DIFF-021-c4-R10)_
 - **?** Installation et desinstallation Windows :  _(rapport WP-060)_
 - **?** Interdiction des couleurs brutes :  _(rapport WP-074-c2-D11)_
 - **?** Interdiction des couleurs de theme en style inline :  _(rapport WP-074-c2-D11)_
 - **?** Interrupteur de recherche web :  _(rapport WP-049)_
+- **?** Interrupteur de recherche web :  _(rapport WP-081-c4-R10)_
 - **?** Intégration continue (six portes) :  _(rapport WP-C-004-c2-M15)_
+- **?** Intégration continue - six portes :  _(rapport WP-C-004-c4-R12)_
+- **?** Isolation d'un dialogue :  _(rapport WP-DIFF-021-c4-R10)_
 - **?** Isolation du backend E2E Playwright :  _(rapport WP-085)_
 - **?** Isolation du backend E2E jetable :  _(rapport WP-085-c2-D10)_
 - **?** Isolation du profil de données :  _(rapport WP-060-c3-R12)_
@@ -790,8 +985,10 @@
 - **?** Jeton de session local :  _(rapport WP-047)_
 - **?** Jetons de couleur des pastilles de cartes d'action :  _(rapport WP-DIFF-003-c2-M14)_
 - **?** Jeux de donnees seedes par API :  _(rapport WP-085)_
+- **?** Jour civil de reference :  _(rapport WP-DIFF-002-c4-D05)_
 - **?** Jour metier a Paris :  _(rapport WP-DIFF-002-c2-M16)_
 - **?** Journal d'activite :  _(rapport WP-050-c3-R04)_
+- **?** Journal d'activite :  _(rapport WP-050-c4-R02)_
 - **?** Journal d'activite :  _(rapport WP-051)_
 - **?** Journal d'activite (audit) :  _(rapport WP-DIFF-011-c3-D07)_
 - **?** Journal d'activite consultable :  _(rapport WP-DIFF-012-c3-R26)_
@@ -804,6 +1001,7 @@
 - **?** Journee type App (A2 Marc) :  _(rapport WP-086)_
 - **?** Kanban des projets :  _(rapport WP-064-c2-M09)_
 - **?** Kanban des projets par statut :  _(rapport WP-064)_
+- **?** Kanban des taches :  _(rapport WP-DIFF-009-c4-D05)_
 - **?** Kanban des tâches :  _(rapport WP-068-c2-M11)_
 - **?** Lancement du moteur backend en sidecar :  _(rapport WP-057)_
 - **?** Lancement du sidecar Python :  _(rapport WP-059)_
@@ -813,9 +1011,13 @@
 - **?** Lecture d'un message :  _(rapport WP-063)_
 - **?** Lecture d'un message :  _(rapport WP-063-c3-R13)_
 - **?** Lecture des messages :  _(rapport WP-050-c3-R04)_
+- **?** Lecture, reponse et transfert d'un message :  _(rapport WP-DIFF-021-c4-R10)_
+- **?** Lexique - un mot par chose :  _(rapport WP-DIFF-022-c4-R09)_
+- **?** Lexique des surfaces et des verbes de l'etabli :  _(rapport WP-071-c4-D01)_
 - **?** Liens profonds :  _(rapport WP-071)_
 - **?** Liens profonds d'ouverture :  _(rapport WP-071-c3-R17)_
 - **?** Liens profonds d'ouverture de surface :  _(rapport WP-DIFF-009-c3-R25)_
+- **?** Liens profonds de l'application :  _(rapport WP-DIFF-009-c4-D05)_
 - **?** Limitation de debit :  _(rapport WP-047)_
 - **?** Limites de jetons et estimation de cout :  _(rapport WP-048-c3-R02)_
 - **?** Limites et consommation de jetons :  _(rapport WP-068-c2-D08)_
@@ -823,6 +1025,7 @@
 - **?** Liste des documents de l'atelier :  _(rapport WP-062-c3-R13)_
 - **?** Liste des messages :  _(rapport WP-063)_
 - **?** Liste des messages :  _(rapport WP-063-c3-R13)_
+- **?** Liste des pièces et état persisté :  _(rapport WP-DIFF-020-c4-D04)_
 - **?** Liste et filtres des devis, factures et avoirs :  _(rapport WP-C-028-c3-R09)_
 - **?** Liste noire des chemins systeme :  _(rapport WP-DIFF-004-c3-R23)_
 - **?** Liste virtualisee des messages :  _(rapport WP-061)_
@@ -833,30 +1036,42 @@
 - **?** Livrables et suivi client :  _(rapport WP-067-c2-D06)_
 - **?** Livrables et suivi client (panneau prototype) :  _(rapport WP-066-c2-D04)_
 - **?** Logs d'activité (US-SEC-05) :  _(rapport WP-050-c2-D03)_
+- **?** Maitrise des sorties reseau :  _(rapport WP-081-c4-R10)_
 - **?** Manifeste de capacités :  _(rapport WP-070)_
+- **?** Manifeste de capacités :  _(rapport WP-080-c4-D04)_
+- **?** Manifeste de capacités (données) :  _(rapport WP-047-c4-D04)_
 - **?** Manifeste des capacites :  _(rapport WP-047)_
 - **?** Marquage concurrent de la mise en route :  _(rapport WP-DIFF-004-c2-M13)_
 - **?** Marquage de la mise en route tolerant a la concurrence :  _(rapport WP-DIFF-004-c2-D11)_
 - **?** Marqueur d'onboarding :  _(rapport WP-049-c3-R03)_
+- **?** Marqueur d'onboarding :  _(rapport WP-049-c4-D02)_
 - **?** Marqueur de fin d'onboarding :  _(rapport WP-049-c2-M02)_
 - **?** Marqueur de mise en route :  _(rapport WP-049)_
 - **?** Masquage des secrets dans les journaux :  _(rapport WP-047)_
 - **?** Masquage des secrets dans les journaux :  _(rapport WP-C-029)_
 - **?** Masquage des secrets dans les journaux :  _(rapport WP-C-029-c2-D03)_
+- **?** Masque de demonstration :  _(rapport WP-062-c4-R10)_
+- **?** Masque de demonstration :  _(rapport WP-064-c4-R10)_
+- **?** Masque de demonstration :  _(rapport WP-DIFF-021-c4-R10)_
 - **?** Materiel de revue de diff :  _(rapport WP-051-c2-D11)_
 - **?** Memoire : contacts, projets, recherche et suppression propre :  _(rapport WP-083-c3-D05)_
 - **?** Memoire : etats vides du carnet et plafond des projets :  _(rapport WP-DIFF-008-c3-R24)_
 - **?** Memoire des contacts :  _(rapport WP-065)_
 - **?** Memoire semantique cloisonnee :  _(rapport WP-054)_
 - **?** Menu des commandes slash :  _(rapport WP-062)_
+- **?** Messagerie (Gmail et IMAP/SMTP) :  _(rapport WP-052-c4-R06)_
 - **?** Messagerie IMAP/SMTP :  _(rapport WP-DIFF-012-c3-D07)_
+- **?** Messagerie IMAP/SMTP :  _(rapport WP-DIFF-022-c4-R09)_
 - **?** Messagerie IMAP/SMTP et boîte de réception :  _(rapport WP-050)_
 - **?** Messagerie multi-fournisseurs (contrat commun) :  _(rapport WP-052-c3-R06)_
+- **?** Messages Gmail normalises :  _(rapport WP-083-c4-R09)_
 - **?** Messages d'erreur des fournisseurs LLM :  _(rapport WP-DIFF-013-c3-R27)_
 - **?** Messages d'erreur et de refus instructifs :  _(rapport WP-081)_
+- **?** Messages et dossiers :  _(rapport WP-050-c4-R02)_
 - **?** Mesure de performance du streaming :  _(rapport WP-053)_
 - **?** Mesure de performance et SLA affichés :  _(rapport WP-084-c2-M15)_
 - **?** Mesure de performance et index de recherche en mémoire :  _(rapport WP-053-c3-R07)_
+- **?** Mesuré des flux de réponse :  _(rapport WP-053-c4-D02)_
 - **?** Metriques de performance :  _(rapport WP-073)_
 - **?** Migrations SQLite legacy au demarrage :  _(rapport WP-C-029)_
 - **?** Migrations ad hoc SQLite et classification des erreurs :  _(rapport WP-C-029-c2-D03)_
@@ -869,21 +1084,29 @@
 - **?** Migrations de schema :  _(rapport WP-DIFF-017-c3-R28)_
 - **?** Migrations de schéma Alembic :  _(rapport WP-047-c2-D09)_
 - **?** Migrations legacy des factures (côté tests) :  _(rapport WP-C-029-c2-R1)_
+- **?** Mise a jour automatique :  _(rapport WP-060-c4-R09)_
 - **?** Mise a jour automatique :  _(rapport WP-069)_
 - **?** Mise a jour automatique et redemarrage :  _(rapport WP-057)_
 - **?** Mise a jour et redemarrage :  _(rapport WP-057-c2-D11)_
 - **?** Mise a jour et redemarrage :  _(rapport WP-059)_
 - **?** Mise a jour signee :  _(rapport WP-060)_
+- **?** Mise en cache des messages Gmail :  _(rapport WP-083-c4-D04)_
 - **?** Mise en route :  _(rapport WP-072)_
+- **?** Mise en route (onboarding) :  _(rapport WP-083-c4-R09)_
 - **?** Mise en route (onboarding) :  _(rapport WP-DIFF-013-c3-R27)_
+- **?** Mise en route - dossier de travail :  _(rapport WP-065-c4-R05)_
+- **?** Mise en route - service d'IA :  _(rapport WP-065-c4-R05)_
 - **?** Mise en route : profil, dossier de travail, cle LLM, recapitulatif :  _(rapport WP-DIFF-008-c3-R24)_
 - **?** Mise en route de la messagerie :  _(rapport WP-052-c3-R06)_
+- **?** Mise en route de la messagerie :  _(rapport WP-DIFF-022-c4-R09)_
 - **?** Mise en route du compte e-mail Google :  _(rapport WP-DIFF-011-c3-R26)_
 - **?** Mise en route du compte e-mail Google (OAuth) :  _(rapport WP-DIFF-011-c3-D07)_
 - **?** Mise en route sur le brief :  _(rapport WP-066)_
+- **?** Mise à jour automatique de l'application :  _(rapport WP-069-c4-D04)_
 - **?** Mise à jour automatique signée :  _(rapport WP-060-c2-M11)_
 - **?** Mise à jour de l'application :  _(rapport WP-060-c3-R12)_
 - **?** Mission de code de l'Atelier :  _(rapport WP-060)_
+- **?** Mission de l'Atelier comme traitement suivi :  _(rapport WP-078-c4-R06)_
 - **?** Mission de l'Atelier suivie comme un traitement :  _(rapport WP-078-c2-M12)_
 - **?** Modales et piege de focus :  _(rapport WP-069)_
 - **?** Mode UX standard ou contributeur :  _(rapport WP-070)_
@@ -892,14 +1115,17 @@
 - **?** Mode cabinet (cloisonnement du carnet) :  _(rapport WP-049-c3-R03)_
 - **?** Mode cabinet et isolation des donnees :  _(rapport WP-080)_
 - **?** Mode demo :  _(rapport WP-074-c2-M10)_
+- **?** Mode demo :  _(rapport WP-DIFF-009-c4-D05)_
 - **?** Mode demo (masquage des identites) :  _(rapport WP-DIFF-009-c3-R26)_
 - **?** Mode demo (masquage) :  _(rapport WP-069)_
 - **?** Mode demo et masquage des donnees :  _(rapport WP-071)_
+- **?** Mode demonstration :  _(rapport WP-074-c4-R08)_
 - **?** Mode demonstration :  _(rapport WP-DIFF-003-c3-R23)_
 - **?** Mode demonstration :  _(rapport WP-DIFF-009-c3-R25)_
 - **?** Mode demonstration : masquage des noms reels :  _(rapport WP-DIFF-003-c2-M14)_
 - **?** Mode démo :  _(rapport WP-074)_
 - **?** Mode démo (masquage des données réelles) :  _(rapport WP-074-c3-R17)_
+- **?** Mode démonstration :  _(rapport WP-069-c4-D04)_
 - **?** Mode démonstration (masquage des données) :  _(rapport WP-071-c2-M15)_
 - **?** Mode démonstration : masque des noms réels :  _(rapport WP-DIFF-003-c3-D06)_
 - **?** Mode maintenance des restaurations :  _(rapport WP-047)_
@@ -912,14 +1138,18 @@
 - **?** Module e-mail :  _(rapport WP-074)_
 - **?** Modèles de lecture du brief :  _(rapport WP-067)_
 - **?** Montage des routeurs :  _(rapport WP-048-c3-R02)_
+- **?** Moteur de planification PERT/CPM :  _(rapport WP-DIFF-018-c4-D05)_
 - **?** Moteur de planning PERT/CPM :  _(rapport WP-DIFF-018-c3-R28)_
+- **?** Moteur local Ollama :  _(rapport WP-DIFF-022-c4-R09)_
 - **?** Mémoire (contacts, projets, périmètres) :  _(rapport WP-083-c3-R21)_
 - **?** Mémoire : contacts et dossiers :  _(rapport WP-050-c3-R05)_
 - **?** Ménage de suppression d'un dossier :  _(rapport WP-083-c2-M05)_
 - **?** Navigation clavier roving tabindex :  _(rapport WP-072)_
 - **?** Navigation dans l'arborescence de fichiers :  _(rapport WP-063-c2-D09)_
+- **?** Navigation de la coque conversationnelle :  _(rapport WP-074-c4-D04)_
 - **?** Navigation déterministe demandée par le backend :  _(rapport WP-070)_
 - **?** Navigation par vues :  _(rapport WP-074)_
+- **?** Navigation web :  _(rapport WP-055-c4-D02)_
 - **?** Navigation web automatisee :  _(rapport WP-048)_
 - **?** Navigation web automatisee et calculateurs :  _(rapport WP-051)_
 - **?** Navigation web pilotee :  _(rapport WP-072)_
@@ -931,11 +1161,16 @@
 - **?** Notifications dans l'application :  _(rapport WP-073)_
 - **?** Notifications et centre de notifications :  _(rapport WP-DIFF-009-c3-R25)_
 - **?** Notifications in-app :  _(rapport WP-050)_
+- **?** Notifications internes :  _(rapport WP-073-c4-D04)_
 - **?** Notifications push in-app :  _(rapport WP-074)_
 - **?** Notifications éphémères et annonce aux lecteurs d'écran :  _(rapport WP-069-c2-D09)_
 - **?** Numero de generation des indexations de profil :  _(rapport WP-081-c2-D11)_
+- **?** Numerotation des devis et factures :  _(rapport WP-DIFF-013-c4-R09)_
 - **?** OAuth 2.0 PKCE Gmail et rafraîchissement anticipé :  _(rapport WP-C-029-c2-D03)_
 - **?** OAuth 2.0 PKCE Google :  _(rapport WP-C-029-c3-D04)_
+- **?** Onglet Parametres avances :  _(rapport WP-DIFF-021-c4-R10)_
+- **?** Orchestration LLM :  _(rapport WP-DIFF-022-c4-R09)_
+- **?** Orchestration des services d'IA :  _(rapport WP-053-c4-R07)_
 - **?** Origine de la clé API annoncée à la mise en route :  _(rapport WP-DIFF-008-c3-D06)_
 - **?** Outil chat search_invoices :  _(rapport WP-C-029-c2-R1)_
 - **?** Outil de conversation search_invoices :  _(rapport WP-C-029-c2-M11)_
@@ -943,16 +1178,23 @@
 - **?** Outillage de release et gates de CI :  _(rapport WP-DIFF-012-c3-R26)_
 - **?** Outillage et gates du frontend :  _(rapport WP-056-c2-M16)_
 - **?** Outils MCP :  _(rapport WP-073)_
+- **?** Outils MCP exposes au modele :  _(rapport WP-081-c4-R10)_
 - **?** Outils MCP exposés au modèle :  _(rapport WP-053-c2-M11)_
 - **?** Outils appelables par le modèle pendant la conversation :  _(rapport WP-055-c3-R08)_
 - **?** Outils d'espace de travail appelables par le LLM :  _(rapport WP-055-c2-M07)_
+- **?** Outils de mémoire du chat :  _(rapport WP-053-c4-D02)_
 - **?** Outils installes :  _(rapport WP-073)_
 - **?** Outils installes par l'utilisateur :  _(rapport WP-054)_
+- **?** Outils installés :  _(rapport WP-050-c4-D03)_
 - **?** Outils installés par l'utilisateur :  _(rapport WP-050)_
 - **?** Outils metier du chat :  _(rapport WP-055)_
 - **?** Outils mémoire du chat :  _(rapport WP-053)_
+- **?** Outils métier du chat :  _(rapport WP-055-c4-R06)_
 - **?** Outils métier du chat (mail, agenda, documents, factures) :  _(rapport WP-055-c2-D02)_
+- **?** Outils sensibles sous confirmation :  _(rapport WP-083-c4-R09)_
 - **?** Ouverture des surfaces dans les parcours E2E :  _(rapport WP-DIFF-005-c2-M16)_
+- **?** PDF de devis, facture et avoir :  _(rapport WP-DIFF-017-c4-R08)_
+- **?** PDF de facture :  _(rapport WP-DIFF-022-c4-R09)_
 - **?** PDF de facture et de devis :  _(rapport WP-DIFF-017-c3-D07)_
 - **?** PDF de facture et de devis :  _(rapport WP-DIFF-017-c3-R28)_
 - **?** Page de retour OAuth servie au navigateur systeme :  _(rapport WP-DIFF-011-c3-R26)_
@@ -963,6 +1205,7 @@
 - **?** Palette de commandes au repos :  _(rapport WP-071)_
 - **?** Palette de commandes au repos :  _(rapport WP-071-c3-D04)_
 - **?** Palette de commandes du canevas de conversation :  _(rapport WP-DIFF-008-c3-R25)_
+- **?** Panneau Agenda :  _(rapport WP-DIFF-008-c4-D05)_
 - **?** Panneau Devis et factures :  _(rapport WP-C-026-c2-R1)_
 - **?** Panneau Devis et factures :  _(rapport WP-DIFF-006-c3-D06)_
 - **?** Panneau Devis et factures :  _(rapport WP-DIFF-007-c3-D06)_
@@ -971,6 +1214,7 @@
 - **?** Panneau Mémoire (tiroir ou vue plein écran) :  _(rapport WP-064)_
 - **?** Panneau couvrant ou côte à côte :  _(rapport WP-070)_
 - **?** Panneau d'actions d'agents :  _(rapport WP-DIFF-016-c3-R28)_
+- **?** Panneau d'actions et taches d'agents :  _(rapport WP-DIFF-021-c4-R10)_
 - **?** Panneau de messagerie :  _(rapport WP-063)_
 - **?** Panneau des agents actionnables :  _(rapport WP-060)_
 - **?** Panneau des traitements longs :  _(rapport WP-050)_
@@ -978,19 +1222,25 @@
 - **?** Panneau des travaux (traitements de fond) :  _(rapport WP-069-c2-D09)_
 - **?** Panneau devis et factures :  _(rapport WP-C-026-c2-M14)_
 - **?** Panneau et grille Agenda :  _(rapport WP-DIFF-008-c3-D06)_
+- **?** Panneaux et modales de la coque :  _(rapport WP-061-c4-D04)_
 - **?** Panneaux et modales de la coque :  _(rapport WP-074)_
 - **?** Panneaux non modaux :  _(rapport WP-066)_
 - **?** Paquet src/llm (coquille documentaire) :  _(rapport WP-076-c3-D04)_
 - **?** Paquets du backend :  _(rapport WP-047)_
+- **?** Parametres (modale a onglets) :  _(rapport WP-068-c4-R08)_
 - **?** Parametres > IA (fournisseur, modele, cle) :  _(rapport WP-DIFF-009-c3-R25)_
 - **?** Paramètres (coque et rubriques) :  _(rapport WP-068-c3-R16)_
+- **?** Paramètres - onglet Avancé :  _(rapport WP-067-c4-R11)_
 - **?** Paramètres > Comptes e-mail :  _(rapport WP-068-c3-D03)_
 - **?** Paramètres avancés et synchronisation CRM :  _(rapport WP-067-c3-R16)_
+- **?** Paramètres de l'application :  _(rapport WP-049-c4-R01)_
 - **?** Parcours CRM de bout en bout :  _(rapport WP-085-c2-D11)_
 - **?** Parcours complet d'un utilisateur avance sur THERESE Desktop :  _(rapport WP-086-c3-D05)_
 - **?** Parcours d'interface Playwright :  _(rapport WP-085-c2-M10)_
 - **?** Parcours d'interface Playwright 01 a 06 :  _(rapport WP-085)_
 - **?** Parcours de navigation de la coque :  _(rapport WP-085-c2-D11)_
+- **?** Parcours de recette DSI / admin (THÉRÈSE Server) :  _(rapport WP-C-031-c4-R11)_
+- **?** Parcours de recette « journée type d'un consultant » :  _(rapport WP-086-c4-D03)_
 - **?** Parcours debutant App (A1 Sophie) :  _(rapport WP-086)_
 - **?** Parcours du prototype conversationnel (backend simule) :  _(rapport WP-085)_
 - **?** Parcours guidé d'accueil (GUIDED_ACTIONS) :  _(rapport WP-064)_
@@ -1000,6 +1250,7 @@
 - **?** Parcours role manager (S2, Server) :  _(rapport WP-086)_
 - **?** Pastille de contexte memoire :  _(rapport WP-061)_
 - **?** Pastille des contacts liés :  _(rapport WP-061-c3-R12)_
+- **?** Pastille flottante des actions en cours :  _(rapport WP-DIFF-021-c4-D05)_
 - **?** Pastilles colorees des cartes d'action :  _(rapport WP-DIFF-003-c3-D05)_
 - **?** Patterns Chrome MCP anti-flaky :  _(rapport WP-086)_
 - **?** Performance et économie d'énergie :  _(rapport WP-050)_
@@ -1007,6 +1258,7 @@
 - **?** Perimetre des permissions fichiers de la coque Tauri :  _(rapport WP-DIFF-009-c3-R26)_
 - **?** Perimetre documentaire d'une conversation :  _(rapport WP-049)_
 - **?** Persistance debouncee du chat :  _(rapport WP-071)_
+- **?** Persistance debouncee du chat :  _(rapport WP-071-c4-D01)_
 - **?** Personnalisation (gabarits, comportement, visibilité) :  _(rapport WP-073-c3-R17)_
 - **?** Personnalisation (modeles de prompt, comportement LLM, visibilite) :  _(rapport WP-055-c2-M07)_
 - **?** Personnalisation de l'assistant :  _(rapport WP-050)_
@@ -1016,13 +1268,19 @@
 - **?** Pieces jointes et indexation :  _(rapport WP-061)_
 - **?** Piege clavier et isolation du fond (useDialogFocusTrap) :  _(rapport WP-DIFF-009-c3-R25)_
 - **?** Piege et restitution du focus des surfaces modales :  _(rapport WP-DIFF-008-c3-R25)_
+- **?** Pile Echap unifiee :  _(rapport WP-DIFF-021-c4-R10)_
+- **?** Pile d'echappement des surfaces internes :  _(rapport WP-071-c4-D01)_
 - **?** Pile d'echappement partagee :  _(rapport WP-DIFF-008-c3-R24)_
 - **?** Pilotage d'agents OpenClaw :  _(rapport WP-053)_
+- **?** Pipeline - création et import de contacts :  _(rapport WP-072-c4-R12)_
+- **?** Pipeline - export des données :  _(rapport WP-DIFF-012-c4-R12)_
 - **?** Pipeline CRM :  _(rapport WP-047)_
 - **?** Pipeline CRM :  _(rapport WP-074)_
 - **?** Pipeline CRM :  _(rapport WP-083-c2-M05)_
 - **?** Pipeline commercial :  _(rapport WP-049-c3-R04)_
+- **?** Pipeline commercial :  _(rapport WP-049-c4-R01)_
 - **?** Pipeline commercial :  _(rapport WP-062-c3-R13)_
+- **?** Pipeline commercial (Kanban 7 etapes) :  _(rapport WP-062-c4-R10)_
 - **?** Pipeline commercial CRM :  _(rapport WP-062)_
 - **?** Pipeline commercial en Kanban :  _(rapport WP-062-c2-M12)_
 - **?** Pipeline commercial et scoring :  _(rapport WP-049)_
@@ -1035,28 +1293,36 @@
 - **?** Piégeage du focus des dialogues :  _(rapport WP-070)_
 - **?** Plafonds annoncés au lieu de troncatures silencieuses :  _(rapport WP-081)_
 - **?** Plafonds de jetons :  _(rapport WP-050-c3-R04)_
+- **?** Plafonds et coûts de jetons :  _(rapport WP-050-c4-D03)_
 - **?** Plancher typographique verrouillé par test :  _(rapport WP-074-c2-D05)_
+- **?** Planning PERT et chemin critique :  _(rapport WP-DIFF-015-c4-R12)_
+- **?** Planning PERT/CPM d'un projet (P-039 lot A) :  _(rapport WP-DIFF-015-c4-D03)_
 - **?** Planning PERT/CPM d'un projet (lot A) :  _(rapport WP-DIFF-015-c3-R28)_
 - **?** Planning borne par la base :  _(rapport WP-047-c3-R02)_
 - **?** Pluriel : plusieurs comptes, agendas, dossiers de données et fiches :  _(rapport WP-081)_
 - **?** Point d'entrée des hooks :  _(rapport WP-069-c3-R16)_
 - **?** Point d'import unique du client API :  _(rapport WP-073-c3-R17)_
+- **?** Points d'attention du jour :  _(rapport WP-DIFF-021-c4-R10)_
 - **?** Points de sante :  _(rapport WP-047)_
+- **?** Politique de defilement de la conversation :  _(rapport WP-062-c4-D05)_
 - **?** Politique de lecture du fil de conversation :  _(rapport WP-062)_
 - **?** Pont MCP THÉRÈSE pour agents externes :  _(rapport WP-053)_
 - **?** Pont MCP sortant (THÉRÈSE vue comme outil par un agent) :  _(rapport WP-053-c3-R06)_
 - **?** Pont OpenClaw :  _(rapport WP-048-c3-D02)_
 - **?** Pont OpenClaw :  _(rapport WP-048-c3-R02)_
+- **?** Pont OpenClaw :  _(rapport WP-048-c4-R03)_
 - **?** Pool HTTP partagé :  _(rapport WP-052)_
 - **?** Portabilite d'un contact :  _(rapport WP-073)_
 - **?** Portabilite, sauvegarde et effacement :  _(rapport WP-072-c3-D04)_
 - **?** Portabilité et effacement RGPD :  _(rapport WP-050)_
 - **?** Portabilité, sauvegardes et effacement :  _(rapport WP-068-c3-R16)_
 - **?** Porte MCP en lecture seule :  _(rapport WP-080)_
+- **?** Porte MCP en lecture seule :  _(rapport WP-080-c4-R11)_
 - **?** Porte d'intégration continue :  _(rapport WP-C-004-c3-R01)_
 - **?** Porte de qualite avant publication :  _(rapport WP-C-004-c3-D01)_
 - **?** Portee du systeme de fichiers :  _(rapport WP-057-c2-D11)_
 - **?** Portes HTTP de l'agenda :  _(rapport WP-DIFF-012-c3-R26)_
+- **?** Portes d'intégration continue :  _(rapport WP-C-004-c4-D03)_
 - **?** Portillon de confirmation des actions sensibles :  _(rapport WP-054-c3-R07)_
 - **?** Portillon de confirmation des outils :  _(rapport WP-084)_
 - **?** Portillon de confirmation des outils sensibles :  _(rapport WP-054)_
@@ -1067,19 +1333,26 @@
 - **?** Preferences d'accessibilite a la racine :  _(rapport WP-069)_
 - **?** Preferences utilisateur :  _(rapport WP-DIFF-012-c3-D07)_
 - **?** Preparer un rendez-vous :  _(rapport WP-066)_
+- **?** Prestations (engagements commerciaux) :  _(rapport WP-083-c4-R09)_
 - **?** Prestations (negociations et formations d'un contact) :  _(rapport WP-081-c3-R19)_
+- **?** Prestations d'un contact :  _(rapport WP-DIFF-021-c4-R10)_
+- **?** Prestations d'une personne :  _(rapport WP-062-c4-R10)_
 - **?** Prestations et état courant d'un contact :  _(rapport WP-081)_
 - **?** Prestations vendues :  _(rapport WP-050)_
+- **?** Prestations vendues :  _(rapport WP-050-c4-D03)_
 - **?** Prestations vendues :  _(rapport WP-073)_
 - **?** Primitives d'interface :  _(rapport WP-069)_
 - **?** Primitives de formulaire de ui/ :  _(rapport WP-069-c3-D03)_
 - **?** Priorisation des courriels :  _(rapport WP-047)_
+- **?** Priorisation et reponse assistee :  _(rapport WP-050-c4-R02)_
 - **?** Priorisation et réponse assistée :  _(rapport WP-050)_
+- **?** Priorité des messages reçus :  _(rapport WP-047-c4-D04)_
 - **?** Production de documents par skills :  _(rapport WP-050)_
 - **?** Profil d'export DOCX :  _(rapport WP-052-c3-D02)_
 - **?** Profil d'export documentaire :  _(rapport WP-052)_
 - **?** Profil d'export documentaire :  _(rapport WP-073)_
 - **?** Profil dans la coque :  _(rapport WP-065)_
+- **?** Profil emetteur de facturation :  _(rapport WP-C-029-c4-D05)_
 - **?** Profil emetteur et cache de facturation :  _(rapport WP-C-029-c3-D04)_
 - **?** Profil et identite :  _(rapport WP-049)_
 - **?** Profil et identité :  _(rapport WP-049-c2-M02)_
@@ -1088,9 +1361,13 @@
 - **?** Profil utilisateur (identité, facturation, indexation) :  _(rapport WP-055-c2-D02)_
 - **?** Profil utilisateur et son indexation différée :  _(rapport WP-081)_
 - **?** Profil utilisateur, identité de facturation et mode démo :  _(rapport WP-068)_
+- **?** Profil émetteur de facturation :  _(rapport WP-C-029-c4-R12)_
 - **?** Profil émetteur et cache process :  _(rapport WP-C-029-c2-D03)_
+- **?** Profil émetteur, THERESE.md et dossier de travail :  _(rapport WP-049-c4-D02)_
+- **?** Progression d'une mission d'agent :  _(rapport WP-060-c4-D05)_
 - **?** Projets :  _(rapport WP-064-c3-D03)_
 - **?** Projets CRM :  _(rapport WP-050)_
+- **?** Projets en kanban de statut :  _(rapport WP-064-c4-R10)_
 - **?** Projets et kanban de statut :  _(rapport WP-064-c3-R14)_
 - **?** Prompt systeme, souverainete et anti-hallucination :  _(rapport WP-082-c3-R20)_
 - **?** Prompt système du générateur de réponses email :  _(rapport WP-079-c2-D05)_
@@ -1099,14 +1376,17 @@
 - **?** Protocole persona S3 - DSI / Admin (THÉRÈSE Server) :  _(rapport WP-C-031-c2-D06)_
 - **?** Protocoles de test manuel - controles qui peuvent echouer :  _(rapport WP-DIFF-010-c3-R26)_
 - **?** Protocoles de test manuels et leur README :  _(rapport WP-DIFF-013-c3-R27)_
+- **?** Protocoles de test manuels et leur README :  _(rapport WP-DIFF-013-c4-D05)_
 - **?** Protocoles de tests manuels par persona (Chrome MCP) :  _(rapport WP-086-c2-D05)_
 - **?** Prototype conversationnel : preparer un rendez-vous :  _(rapport WP-085-c3-D05)_
 - **?** Prototypes conversationnels en lecture seule :  _(rapport WP-085-c2-M10)_
 - **?** Providers LLM et boucle d'outils :  _(rapport WP-082-c3-R20)_
 - **?** Préférence de mouvement réduit :  _(rapport WP-070)_
+- **?** Préférences d'accessibilité et thème :  _(rapport WP-073-c4-D04)_
 - **?** Préférences de personnalisation :  _(rapport WP-074)_
 - **?** Préférences de personnalisation persistées :  _(rapport WP-074-c3-R17)_
 - **?** Préférences génériques :  _(rapport WP-049-c2-M02)_
+- **?** Préférences typées :  _(rapport WP-049-c4-D02)_
 - **?** Préparer un rendez-vous :  _(rapport WP-066-c3-R15)_
 - **?** Préparer un rendez-vous (agenda + CRM) :  _(rapport WP-066-c2-D04)_
 - **?** Publication des installeurs 3 OS :  _(rapport WP-C-004-c2-D08)_
@@ -1114,14 +1394,18 @@
 - **?** Puces d'actions déterministes du chat :  _(rapport WP-062-c3-D03)_
 - **?** Puces d'actions déterministes du composeur :  _(rapport WP-061-c2-D07)_
 - **?** Purge RGPD locale (BUG-153) :  _(rapport WP-071)_
+- **?** Purge automatique :  _(rapport WP-050-c4-R02)_
 - **?** Purge automatique :  _(rapport WP-073)_
+- **?** Purge de la memoire vectorielle :  _(rapport WP-083-c4-R09)_
 - **?** Périmètre des fiches et des documents :  _(rapport WP-081)_
 - **?** Périmètre disque accordé à l'application :  _(rapport WP-057-c3-R09)_
 - **?** Qdrant local et rate limiting du sidecar :  _(rapport WP-081)_
 - **?** Qualite de la suite de tests :  _(rapport WP-DIFF-013-c3-R27)_
 - **?** Qualite des messages rendus a l'utilisateur :  _(rapport WP-078)_
 - **?** RBAC et isolation multi-tenant de THERESE Server :  _(rapport WP-086-c2-D05)_
+- **?** RGPD - portabilite, oubli, consentement :  _(rapport WP-083-c4-R09)_
 - **?** RGPD : portabilite, oubli, consentement :  _(rapport WP-083)_
+- **?** RGPD et secrets :  _(rapport WP-DIFF-022-c4-R09)_
 - **?** RGPD par contact :  _(rapport WP-083-c2-M05)_
 - **?** RGPD, anonymisation et consentement :  _(rapport WP-050-c3-R05)_
 - **?** RGPD, export de portabilité :  _(rapport WP-050-c3-R05)_
@@ -1141,6 +1425,7 @@
 - **?** Rattachement d'une conversation a un projet :  _(rapport WP-066)_
 - **?** Rattachement d'une conversation a un projet :  _(rapport WP-072)_
 - **?** Rattachement d'une conversation à un dossier :  _(rapport WP-061-c3-R12)_
+- **?** Rattachement d'une tache a un contact :  _(rapport WP-084-c4-D05)_
 - **?** Rattachement de la conversation a un dossier :  _(rapport WP-061)_
 - **?** Rattacher un projet avant le premier message :  _(rapport WP-071)_
 - **?** Recette manuelle de l'administration THERESE Server :  _(rapport WP-C-031-c3-R22)_
@@ -1161,12 +1446,15 @@
 - **?** Recherche en memoire : contrat de champ client/serveur :  _(rapport WP-DIFF-003-c2-M14)_
 - **?** Recherche et navigation web :  _(rapport WP-055)_
 - **?** Recherche et navigation web :  _(rapport WP-055-c3-R07)_
+- **?** Recherche et navigation web :  _(rapport WP-055-c4-R06)_
+- **?** Recherche hybride :  _(rapport WP-050-c4-R02)_
 - **?** Recherche hybride dans la mémoire :  _(rapport WP-050)_
 - **?** Recherche hybride dans la mémoire :  _(rapport WP-050-c2-M04)_
 - **?** Recherche hybride de la mémoire :  _(rapport WP-050-c3-R05)_
 - **?** Recherche memoire :  _(rapport WP-073)_
 - **?** Recherche sémantique en mémoire :  _(rapport WP-073-c2-M15)_
 - **?** Recherche temporisee :  _(rapport WP-065-c2-D11)_
+- **?** Recherche web :  _(rapport WP-055-c4-D02)_
 - **?** Recherche web et navigation :  _(rapport WP-084)_
 - **?** Recherche web pour le modèle :  _(rapport WP-084-c2-M15)_
 - **?** Reclassement des payloads vectoriels d'avant la 0.42 :  _(rapport WP-053)_
@@ -1178,9 +1466,13 @@
 - **?** Redaction guidee en streaming :  _(rapport WP-050-c3-R04)_
 - **?** Registre d'actions commun :  _(rapport WP-065)_
 - **?** Registre d'actions de l'application :  _(rapport WP-070)_
+- **?** Registre des commandes :  _(rapport WP-051-c4-R05)_
 - **?** Registre des commandes (accueil, menu slash, commandes personnelles) :  _(rapport WP-051-c3-R06)_
 - **?** Registre des traitements longs :  _(rapport WP-073-c3-D04)_
+- **?** Registre des traitements longs et annulation :  _(rapport WP-081-c4-D05)_
 - **?** Registre unifié des commandes :  _(rapport WP-051-c2-M12)_
+- **?** Registre unifié des commandes :  _(rapport WP-055-c4-D02)_
+- **?** Reglages d'accessibilite globaux :  _(rapport WP-060-c4-R09)_
 - **?** Rejeu des tours d'outils :  _(rapport WP-053-c3-R07)_
 - **?** Rejeu du jeton après relance du moteur :  _(rapport WP-C-027)_
 - **?** Rejeu du jeton de session après relance du moteur :  _(rapport WP-C-027-c2-D02)_
@@ -1196,18 +1488,25 @@
 - **?** Relances email :  _(rapport WP-047)_
 - **?** Relances et alertes :  _(rapport WP-066)_
 - **?** Relances et alertes :  _(rapport WP-066-c3-R15)_
+- **?** Relances et alertes :  _(rapport WP-066-c4-R08)_
 - **?** Relances liees a un e-mail :  _(rapport WP-073)_
 - **?** Relances liees aux courriels :  _(rapport WP-048-c3-R02)_
 - **?** Release : artefacts updater Tauri en CI :  _(rapport WP-C-026-c2-D01)_
 - **?** Rendez-vous depuis la conversation :  _(rapport WP-066-c3-D03)_
 - **?** Rendu Markdown borné des réponses du modèle :  _(rapport WP-061-c3-R13)_
 - **?** Rendu Markdown compact :  _(rapport WP-DIFF-016-c3-R28)_
+- **?** Rendu Markdown compact :  _(rapport WP-DIFF-016-c4-R05)_
 - **?** Rendu compact du texte des conseillers et des actions :  _(rapport WP-DIFF-016-c3-D07)_
+- **?** Reparation de donnees heritees :  _(rapport WP-DIFF-022-c4-R09)_
 - **?** Repli de casse et de diacritiques pour la recherche :  _(rapport WP-DIFF-009-c3-D06)_
 - **?** Repli de fournisseur sur circuit ouvert :  _(rapport WP-053)_
 - **?** Reponse en flux :  _(rapport WP-073)_
 - **?** Reprise des applies orphelins :  _(rapport WP-053)_
+- **?** Resolution d'intention de skill :  _(rapport WP-054-c4-D05)_
+- **?** Ressources de lecture du prototype :  _(rapport WP-067-c4-R11)_
+- **?** Ressources de lecture du prototype :  _(rapport WP-DIFF-021-c4-R10)_
 - **?** Retour a l'accueil :  _(rapport WP-066)_
+- **?** Retour au chat à l'activation d'une conversation :  _(rapport WP-073-c4-D04)_
 - **?** Retour deterministe :  _(rapport WP-066)_
 - **?** Retour déterministe entre écrans :  _(rapport WP-066-c3-D03)_
 - **?** Retour à l'accueil depuis le rail :  _(rapport WP-066-c2-D04)_
@@ -1219,6 +1518,7 @@
 - **?** Rédaction guidée par section :  _(rapport WP-063-c2-M09)_
 - **?** Réglages d'accessibilité et d'apparence :  _(rapport WP-067)_
 - **?** Réglages d'économie d'énergie :  _(rapport WP-053)_
+- **?** Réglages d'économie d'énergie :  _(rapport WP-053-c4-D02)_
 - **?** Réglages de purge et statistiques RGPD :  _(rapport WP-050-c2-M04)_
 - **?** Réglages des agents embarqués :  _(rapport WP-067)_
 - **?** Réponse conversationnelle en flux :  _(rapport WP-049-c2-M02)_
@@ -1228,6 +1528,7 @@
 - **?** Sanitisation du HTML des mails Gmail au cache :  _(rapport WP-083-c2-D04)_
 - **?** Sauvegarde chiffrée et restauration avec filet :  _(rapport WP-050-c2-M04)_
 - **?** Sauvegarde et restauration :  _(rapport WP-050-c3-R04)_
+- **?** Sauvegarde et restauration chiffrees :  _(rapport WP-050-c4-R02)_
 - **?** Sauvegarde et restauration chiffrees :  _(rapport WP-078)_
 - **?** Sauvegarde et restauration chiffrées :  _(rapport WP-078-c2-M12)_
 - **?** Sauvegarde et restauration chiffrées (US-011, US-003, US-014) :  _(rapport WP-050-c2-D03)_
@@ -1239,7 +1540,12 @@
 - **?** Schema des quatre tables de project.sync :  _(rapport WP-080-c3-R19)_
 - **?** Schemas CRM, facturation et RGPD :  _(rapport WP-048)_
 - **?** Schéma de données local :  _(rapport WP-047-c2-M11)_
+- **?** Schéma de project.sync :  _(rapport WP-080-c4-D04)_
+- **?** Score de potentiel commercial :  _(rapport WP-054-c4-D05)_
 - **?** Scénarios catastrophe App et Server :  _(rapport WP-086-c2-M08)_
+- **?** Secrets et cles au repos :  _(rapport WP-DIFF-022-c4-R09)_
+- **?** Section CalDAV des reglages :  _(rapport WP-DIFF-021-c4-D05)_
+- **?** Securite des invites :  _(rapport WP-DIFF-022-c4-R09)_
 - **?** Securite des prompts et enveloppe du contenu tiers :  _(rapport WP-C-025)_
 - **?** Selecteur de modele actif :  _(rapport WP-061)_
 - **?** Selecteurs des protocoles :  _(rapport WP-DIFF-004-c3-R23)_
@@ -1257,11 +1563,14 @@
 - **?** Services externes (images, dictée, recherche web, extraction) :  _(rapport WP-068)_
 - **?** Session d'agent de l'atelier :  _(rapport WP-DIFF-006-c3-D06)_
 - **?** Session d'agent de l'atelier :  _(rapport WP-DIFF-006-c3-R23)_
+- **?** Session d'agent de l'atelier :  _(rapport WP-DIFF-020-c4-D04)_
 - **?** Sessions OpenClaw :  _(rapport WP-060)_
 - **?** Sessions d'agents OpenClaw :  _(rapport WP-074)_
+- **?** Signalement d'une conversation partiellement chargee :  _(rapport WP-062-c4-D05)_
 - **?** Signature HTML :  _(rapport WP-050-c3-R04)_
 - **?** Signature d'email :  _(rapport WP-072)_
 - **?** Signature d'envoi :  _(rapport WP-047)_
+- **?** Signature d'un compte e-mail :  _(rapport WP-DIFF-021-c4-R10)_
 - **?** Signature e-mail par compte :  _(rapport WP-063-c3-D03)_
 - **?** Skills Office (docx, pptx, xlsx) :  _(rapport WP-DIFF-012-c3-D07)_
 - **?** Skills Office : échec franc plutôt que livrable faux :  _(rapport WP-083-c2-D04)_
@@ -1271,8 +1580,12 @@
 - **?** Snapshot du destinataire sur les pieces de facturation :  _(rapport WP-DIFF-002-c2-M16)_
 - **?** Socle d'accessibilité :  _(rapport WP-070-c2-D06)_
 - **?** Socle d'animation Framer Motion :  _(rapport WP-070-c3-D04)_
+- **?** Socle de configuration :  _(rapport WP-047-c4-R12)_
+- **?** Socle de donnees et chiffrement au repos :  _(rapport WP-C-025-c4-D01)_
 - **?** Socle de donnees planning (PERT / Gantt) :  _(rapport WP-DIFF-017-c3-D07)_
+- **?** Socle de la suite backend :  _(rapport WP-078-c4-R06)_
 - **?** Socle de la suite pytest backend :  _(rapport WP-078-c2-M12)_
+- **?** Socle de persistance chiffre :  _(rapport WP-C-025-c4-R04)_
 - **?** Socle des appels HTTP :  _(rapport WP-072)_
 - **?** Sonde de dérive du catalogue :  _(rapport WP-051-c3-R05)_
 - **?** Sonde de sante :  _(rapport WP-DIFF-012-c3-R27)_
@@ -1281,6 +1594,7 @@
 - **?** Sortie clavier de la mise en route :  _(rapport WP-DIFF-003-c3-D06)_
 - **?** Sortie et isolation des panneaux :  _(rapport WP-067)_
 - **?** Sortie nommée du panneau de travail :  _(rapport WP-065-c2-D06)_
+- **?** Sortie visible d'un panneau :  _(rapport WP-067-c4-D05)_
 - **?** Statut de completude du profil emetteur :  _(rapport WP-C-028-b)_
 - **?** Statut des modeles Ollama :  _(rapport WP-078)_
 - **?** Statut du depot de l'Atelier :  _(rapport WP-078)_
@@ -1288,6 +1602,7 @@
 - **?** Statut effectif d'une facture :  _(rapport WP-DIFF-014-c3-R28)_
 - **?** Statut effectif d'une facture :  _(rapport WP-DIFF-018-c3-R28)_
 - **?** Statut effectif des pieces de facturation :  _(rapport WP-DIFF-014-c3-D07)_
+- **?** Statut effectif des pieces de facturation :  _(rapport WP-DIFF-018-c4-D05)_
 - **?** Statuts de devis et de facture :  _(rapport WP-084)_
 - **?** Statuts de pieces de facturation :  _(rapport WP-084-c3-D05)_
 - **?** Statuts des devis et des factures :  _(rapport WP-084-c3-R21)_
@@ -1299,6 +1614,7 @@
 - **?** Suggestion prédictive en grisé :  _(rapport WP-070)_
 - **?** Suggestions d'entites detectees :  _(rapport WP-061)_
 - **?** Suite E2E Python (pytest + Playwright sync) :  _(rapport WP-085)_
+- **?** Suite de bout en bout Playwright :  _(rapport WP-085-c4-D05)_
 - **?** Suite de bout en bout Playwright (stories) :  _(rapport WP-085-c3-R22)_
 - **?** Suite de bout en bout en integration continue :  _(rapport WP-DIFF-001-c3-R23)_
 - **?** Suite de tests backend (non branchee) :  _(rapport WP-055)_
@@ -1311,6 +1627,7 @@
 - **?** Suivi des jetons et plafonds :  _(rapport WP-050)_
 - **?** Suivi des jetons, coûts et limites (US-ESC-01 à 05) :  _(rapport WP-050-c2-D03)_
 - **?** Suivi des tokens, coûts et limites :  _(rapport WP-C-025-c2-D04)_
+- **?** Suivi et plafonds de jetons :  _(rapport WP-DIFF-022-c4-R09)_
 - **?** Suivis métier attachés aux emails :  _(rapport WP-050-c2-M04)_
 - **?** Suivis métier liés aux emails :  _(rapport WP-050)_
 - **?** Supervision et relance du sidecar :  _(rapport WP-069)_
@@ -1320,6 +1637,7 @@
 - **?** Suppression totale des données (droit à l'oubli, Art. 17) :  _(rapport WP-050-c2-D03)_
 - **?** Surface API du frontend :  _(rapport WP-073)_
 - **?** Surface Décision (Board des conseillers) :  _(rapport WP-060-c2-D08)_
+- **?** Surface Email :  _(rapport WP-063-c4-R04)_
 - **?** Surface Facturer dans la conversation :  _(rapport WP-C-027)_
 - **?** Surface IPC accordee au frontend THERESE :  _(rapport WP-058)_
 - **?** Surface de chat de la coque :  _(rapport WP-066)_
@@ -1328,9 +1646,13 @@
 - **?** Surfaces d'entree bornees (MCP, images, commandes, memoire) :  _(rapport WP-DIFF-012-c3-R27)_
 - **?** Surlignage des variables d'un prompt :  _(rapport WP-065-c2-D11)_
 - **?** Synchronisation CRM Google Sheets :  _(rapport WP-067)_
+- **?** Synchronisation CRM Google Sheets :  _(rapport WP-067-c4-R11)_
 - **?** Synchronisation CRM depuis Google Sheets :  _(rapport WP-052)_
 - **?** Synchronisation Google Sheets :  _(rapport WP-049)_
+- **?** Synchronisation Google Sheets :  _(rapport WP-049-c4-R01)_
+- **?** Synchronisation Google Sheets :  _(rapport WP-052-c4-R06)_
 - **?** Synchronisation Google Sheets :  _(rapport WP-072)_
+- **?** Synchronisation Google Sheets du CRM :  _(rapport WP-DIFF-022-c4-R09)_
 - **?** Synchronisation d'agenda :  _(rapport WP-073)_
 - **?** Synchronisation d'un dossier :  _(rapport WP-073)_
 - **?** Synchronisation d'un dossier de projet :  _(rapport WP-048)_
@@ -1347,10 +1669,15 @@
 - **?** TVA auto-entrepreneur :  _(rapport WP-047)_
 - **?** Tableau de bord du jour :  _(rapport WP-049)_
 - **?** Tableau de conformite :  _(rapport WP-073)_
+- **?** Tables de planning (PERT) :  _(rapport WP-083-c4-R09)_
 - **?** Taches :  _(rapport WP-050-c3-D02)_
 - **?** Taches :  _(rapport WP-073)_
+- **?** Taches (kanban et liste) :  _(rapport WP-068-c4-R08)_
 - **?** Taches et rattachements :  _(rapport WP-DIFF-013-c3-R28)_
+- **?** Taches locales :  _(rapport WP-050-c4-R02)_
 - **?** Taches locales :  _(rapport WP-083)_
+- **?** Taches locales :  _(rapport WP-083-c4-R09)_
+- **?** Taches locales :  _(rapport WP-DIFF-022-c4-R09)_
 - **?** Taches rattachees a un contact :  _(rapport WP-084)_
 - **?** Televersement dans un projet :  _(rapport WP-073)_
 - **?** Temoin de non-vacuite du balayage :  _(rapport WP-DIFF-003-c2-D11)_
@@ -1370,6 +1697,7 @@
 - **?** Toasts d'etat :  _(rapport WP-069)_
 - **?** Toasts éphémères :  _(rapport WP-069-c3-R16)_
 - **?** Totaux de ce qu'il reste à encaisser :  _(rapport WP-055-c3-R08)_
+- **?** Toute erreur affichée est annoncée :  _(rapport WP-071-c4-R12)_
 - **?** Traitements longs :  _(rapport WP-073)_
 - **?** Traitements longs et annulation :  _(rapport WP-054)_
 - **?** Traitements longs et annulation :  _(rapport WP-084)_
@@ -1378,6 +1706,7 @@
 - **?** Trame du document (atelier documentaire) :  _(rapport WP-063)_
 - **?** Trame et reorganisation :  _(rapport WP-050-c3-R04)_
 - **?** Trame et sections du document :  _(rapport WP-063-c3-R13)_
+- **?** Transcription et synthese vocales locales :  _(rapport WP-DIFF-022-c4-R09)_
 - **?** Travaux (traitements longs) :  _(rapport WP-054-c3-D02)_
 - **?** Travaux (traitements longs) :  _(rapport WP-069)_
 - **?** Travaux récents :  _(rapport WP-069-c3-D03)_
@@ -1390,6 +1719,7 @@
 - **?** Tâches locales :  _(rapport WP-050-c3-R05)_
 - **?** Un mot par chose :  _(rapport WP-071)_
 - **?** Unite des couts de modeles :  _(rapport WP-071)_
+- **?** Usage reel de tokens :  _(rapport WP-081-c4-R10)_
 - **?** Utilitaires generiques du frontend :  _(rapport WP-072-c3-D04)_
 - **?** Utilitaires transverses :  _(rapport WP-072)_
 - **?** Validation des chemins de fichiers :  _(rapport WP-C-025)_
@@ -1398,12 +1728,18 @@
 - **?** Validation des fichiers de capability Tauri :  _(rapport WP-058)_
 - **?** Variables V1 (texte ou liste) et substitution dans le chat :  _(rapport WP-084-c3-R22)_
 - **?** Variables V1 : valeurs nommees reutilisables :  _(rapport WP-084-c3-D05)_
+- **?** Variables du composeur :  _(rapport WP-DIFF-021-c4-R10)_
 - **?** Variables réutilisables :  _(rapport WP-068-c3-D03)_
 - **?** Variables utilisateur :  _(rapport WP-047)_
 - **?** Variables utilisateur :  _(rapport WP-051-c3-D02)_
+- **?** Variables utilisateur :  _(rapport WP-051-c4-R05)_
 - **?** Variables utilisateur :  _(rapport WP-055)_
+- **?** Variables utilisateur :  _(rapport WP-055-c4-R06)_
 - **?** Variables utilisateur :  _(rapport WP-073)_
+- **?** Variables utilisateur :  _(rapport WP-073-c4-R02)_
 - **?** Variables utilisateur :  _(rapport WP-084)_
+- **?** Variables utilisateur :  _(rapport WP-084-c4-R11)_
+- **?** Variables utilisateur :  _(rapport WP-DIFF-022-c4-R09)_
 - **?** Variateur du brief :  _(rapport WP-066)_
 - **?** Variateur du brief (trois mots) :  _(rapport WP-066-c2-M15)_
 - **?** Variateur du brief du jour :  _(rapport WP-067)_
@@ -1439,8 +1775,11 @@
 - **?** Vue active :  _(rapport WP-073)_
 - **?** Vue d'accueil :  _(rapport WP-064-c2-M09)_
 - **?** Vues agenda mois, semaine, jour, liste :  _(rapport WP-061)_
+- **?** Vues de l'agenda :  _(rapport WP-DIFF-021-c4-R10)_
+- **?** Vues de l'agenda (liste, mois, semaine, jour) :  _(rapport WP-DIFF-021-c4-D05)_
 - **?** Vues embarquees :  _(rapport WP-066)_
 - **?** Vues embarquees dans la coque unifiee :  _(rapport WP-DIFF-009-c3-R25)_
+- **?** Véracité des indicateurs affichés :  _(rapport WP-084-c4-R11)_
 - **?** Vérité d'exécution des outils :  _(rapport WP-052)_
 - **?** Vérité des libellés de cloisonnement :  _(rapport WP-062)_
 - **?** Widgets de l'accueil v2 (bandeau, actions rapides, conversations récentes) :  _(rapport WP-064)_
@@ -1449,10 +1788,14 @@
 - **?** Échéance de suivi après prestation :  _(rapport WP-052)_
 - **?** Écrire un message (brouillon uniquement) :  _(rapport WP-066-c3-R15)_
 - **?** Établi : « Écrire » ouvre un brouillon :  _(rapport WP-066-c2-D04)_
+- **?** Étape sécurité de l'onboarding :  _(rapport WP-C-027-c4-R11)_
+- **?** Étape sécurité de la mise en route :  _(rapport WP-C-027-c4-D02)_
 - **?** Étape sécurité et consentement cloud :  _(rapport WP-C-027-c3-R08)_
 - **?** État d'Ollama et ressources machine :  _(rapport WP-049-c2-M02)_
+- **?** État du moteur local :  _(rapport WP-069-c4-D04)_
 - **?** État et réarmement du circuit breaker :  _(rapport WP-049-c2-M02)_
 - **?** État local des conversations du chat :  _(rapport WP-073-c2-D07)_
+- **?** État partage de la facturation :  _(rapport WP-C-028-c4-D02)_
 - **?** État partagé des devis et factures :  _(rapport WP-C-028-c3-D03)_
 - **?** État transverse et toasts :  _(rapport WP-074)_
 - **?** Événement « toute la journée » :  _(rapport WP-078-c3-R18)_
