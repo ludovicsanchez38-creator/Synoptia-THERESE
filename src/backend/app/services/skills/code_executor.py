@@ -649,6 +649,37 @@ def _ensure_save_call(code: str) -> str:
     return code
 
 
+def _code_hors_chaines_et_commentaires(code: str) -> str:
+    """B-544 : les motifs interdits se cherchent dans le CODE, pas dans le
+    texte d'un document. Chaînes, parties littérales des f-strings et
+    commentaires sont remplacés par des espaces, positions conservées, si
+    bien que « os.system(...) » reste détectable et « le module os. » dans un
+    paragraphe ne l'est plus. Les expressions entre accolades d'une f-string
+    restent du code et sont conservées."""
+    import io
+    import tokenize
+
+    lignes = code.splitlines(keepends=True)
+    a_blanchir = {tokenize.STRING, tokenize.COMMENT}
+    milieu_fstring = getattr(tokenize, "FSTRING_MIDDLE", None)
+    if milieu_fstring is not None:
+        a_blanchir.add(milieu_fstring)
+    try:
+        jetons = list(tokenize.generate_tokens(io.StringIO(code).readline))
+    except (tokenize.TokenError, SyntaxError):
+        return code
+    for jeton in jetons:
+        if jeton.type not in a_blanchir:
+            continue
+        (l1, c1), (l2, c2) = jeton.start, jeton.end
+        for numero in range(l1, l2 + 1):
+            ligne = lignes[numero - 1]
+            debut = c1 if numero == l1 else 0
+            fin = c2 if numero == l2 else len(ligne.rstrip("\r\n"))
+            lignes[numero - 1] = ligne[:debut] + " " * (fin - debut) + ligne[fin:]
+    return "".join(lignes)
+
+
 def validate_code(code: str) -> tuple[bool, str]:
     """
     Valide la sécurité du code Python généré.
@@ -670,19 +701,20 @@ def validate_code(code: str) -> tuple[bool, str]:
     except SyntaxError as e:
         return False, f"Erreur de syntaxe Python : {e}"
 
-    # 2. Vérifier les patterns bloqués
+    # 2. Vérifier les patterns bloqués, dans le code seulement (B-544)
+    code_seul = _code_hors_chaines_et_commentaires(code)
     for pattern in BLOCKED_PATTERNS:
-        if re.search(pattern, code):
+        if re.search(pattern, code_seul):
             return False, f"Pattern interdit détecté : {pattern}"
 
     # 3. Vérifier que open() n'est utilisé qu'avec output_path
     # On autorise open() uniquement via les appels .save() des bibliothèques
-    open_calls = re.findall(r"\bopen\s*\(", code)
+    open_calls = re.findall(r"\bopen\s*\(", code_seul)
     if open_calls:
         # Vérifier que open() est utilisé uniquement avec output_path
         # Pattern autorisé : open(output_path, ...) ou open(str(output_path), ...)
         safe_open = re.findall(
-            r"\bopen\s*\(\s*(?:str\s*\(\s*)?output_path", code
+            r"\bopen\s*\(\s*(?:str\s*\(\s*)?output_path", code_seul
         )
         if len(open_calls) != len(safe_open):
             return False, "open() n'est autorisé qu'avec output_path"
