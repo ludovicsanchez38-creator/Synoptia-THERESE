@@ -183,6 +183,36 @@ def construire_items_indexation(
     ]
 
 
+async def dossiers_choisis() -> list[Path]:
+    """Les dossiers que l'utilisateur a choisis : dossier de travail (préférence)
+    et racines synchronisées actives. Vide tant qu'aucun n'est choisi (B-170)."""
+    from app.config import settings
+    from app.models.entities import Preference
+    from app.models.entities_sync import ProjectSyncRoot
+
+    dossiers: list[Path] = []
+    async with get_session_context() as session:
+        pref = (await session.execute(select(Preference).where(Preference.key == "working_directory"))).scalar_one_or_none()
+        if pref and pref.value:
+            dossiers.append(Path(pref.value).expanduser().resolve())
+        racines = (await session.execute(select(ProjectSyncRoot.racine).where(ProjectSyncRoot.detachee == False))).scalars().all()  # noqa: E712
+        dossiers.extend(Path(r).expanduser().resolve() for r in racines if r)
+    if dossiers:
+        dossiers.append(Path(settings.data_dir).expanduser().resolve())
+    return dossiers
+
+
+def _est_sous_un_dossier(fichier: Path, dossiers: list[Path]) -> bool:
+    cible = fichier.resolve()
+    for dossier in dossiers:
+        try:
+            cible.relative_to(dossier)
+            return True
+        except ValueError:
+            continue
+    return False
+
+
 async def index_payload(
     path: str,
     est_abandonnee: Callable[[], Awaitable[bool]] | None = None,
@@ -224,6 +254,20 @@ async def index_payload(
         raise HTTPException(status_code=404, detail=str(e))
     except ValueError as e:
         raise HTTPException(status_code=400, detail=str(e))
+    # B-170 (P-004, décision de Ludo) : dès qu'un dossier a été choisi (dossier
+    # de travail ou dossier synchronisé), l'indexation reste dans ces dossiers
+    # et dans le dossier de données de THÉRÈSE. Sans aucun dossier choisi, rien
+    # ne borne encore : il n'y a pas de périmètre à faire respecter.
+    bases = await dossiers_choisis()
+    if bases and not _est_sous_un_dossier(file_path, bases):
+        raise HTTPException(
+            status_code=403,
+            detail=(
+                "Ce fichier est hors des dossiers choisis (dossier de travail et dossiers "
+                "synchronisés). Range-le dans l'un d'eux, ou change le dossier de travail "
+                "dans Paramètres."
+            ),
+        )
 
     if not file_path.is_file():
         raise HTTPException(status_code=400, detail="Path is not a file")
