@@ -4,6 +4,18 @@
 
 set -euo pipefail
 
+# B-521 : `sed -i ''` est la syntaxe BSD (macOS). Sous GNU sed (Linux, donc
+# tout runner d'intégration continue), `-i ''` est un script vide et le bump
+# ne s'exécute pas. Un seul point d'entrée, portable.
+sed_inplace() {
+    if sed --version >/dev/null 2>&1; then
+        sed -i -E "$@"
+    else
+        sed -i '' -E "$@"
+    fi
+}
+
+
 NEW="${1:-}"
 if [ -z "$NEW" ]; then
     echo "Usage: $0 <version>"
@@ -46,23 +58,23 @@ for f in "${FILES[@]}"; do
     case "$REL" in
         pyproject.toml|package.json|src/frontend/package.json)
             # JSON/TOML: "version": "X.Y.Z" ou version = "X.Y.Z"
-            sed -i '' -E 's/("version"[[:space:]]*:[[:space:]]*"|version[[:space:]]*=[[:space:]]*")[0-9]+\.[0-9]+\.[0-9]+[^"]*/\1'"$NEW"'/' "$f"
+            sed_inplace 's/("version"[[:space:]]*:[[:space:]]*"|version[[:space:]]*=[[:space:]]*")[0-9]+\.[0-9]+\.[0-9]+[^"]*/\1'"$NEW"'/' "$f"
             ;;
         src/frontend/src-tauri/tauri.conf.json)
             # JSON: "version": "X.Y.Z"
-            sed -i '' -E 's/("version"[[:space:]]*:[[:space:]]*")[0-9]+\.[0-9]+\.[0-9]+[^"]*/\1'"$NEW"'/' "$f"
+            sed_inplace 's/("version"[[:space:]]*:[[:space:]]*")[0-9]+\.[0-9]+\.[0-9]+[^"]*/\1'"$NEW"'/' "$f"
             ;;
         src/frontend/src-tauri/Cargo.toml)
             # TOML: version = "X.Y.Z"
-            sed -i '' -E 's/(version[[:space:]]*=[[:space:]]*")[0-9]+\.[0-9]+\.[0-9]+[^"]*/\1'"$NEW"'/' "$f"
+            sed_inplace 's/(version[[:space:]]*=[[:space:]]*")[0-9]+\.[0-9]+\.[0-9]+[^"]*/\1'"$NEW"'/' "$f"
             ;;
         src/backend/app/config.py)
             # Python: app_version: str = "X.Y.Z"
-            sed -i '' -E 's/(app_version[[:space:]]*:[[:space:]]*str[[:space:]]*=[[:space:]]*")[0-9]+\.[0-9]+\.[0-9]+[^"]*/\1'"$NEW"'/' "$f"
+            sed_inplace 's/(app_version[[:space:]]*:[[:space:]]*str[[:space:]]*=[[:space:]]*")[0-9]+\.[0-9]+\.[0-9]+[^"]*/\1'"$NEW"'/' "$f"
             ;;
         src/backend/app/__init__.py)
             # Python: __version__ = "X.Y.Z"
-            sed -i '' -E 's/(__version__[[:space:]]*=[[:space:]]*")[0-9]+\.[0-9]+\.[0-9]+[^"]*/\1'"$NEW"'/' "$f"
+            sed_inplace 's/(__version__[[:space:]]*=[[:space:]]*")[0-9]+\.[0-9]+\.[0-9]+[^"]*/\1'"$NEW"'/' "$f"
             ;;
     esac
 
@@ -72,7 +84,7 @@ done
 # README : badge de version (suffixe -alpha conventionnel ; shields.io escape '-' en '--')
 README="$ROOT/README.md"
 if [ -f "$README" ]; then
-    sed -i '' -E 's|(badge/version-)[0-9]+\.[0-9]+\.[0-9]+(--alpha)|\1'"$NEW"'\2|' "$README"
+    sed_inplace 's|(badge/version-)[0-9]+\.[0-9]+\.[0-9]+(--alpha)|\1'"$NEW"'\2|' "$README"
     if grep -q "badge/version-$NEW--alpha" "$README"; then
         echo "  OK  README.md (badge version)"
     else

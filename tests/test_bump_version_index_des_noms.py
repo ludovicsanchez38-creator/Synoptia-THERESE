@@ -47,9 +47,11 @@ FICHIERS_DE_VERSION = {
     "src/backend/app/__init__.py": '__version__ = "0.1.0"\n',
 }
 
+# B-521 (cycle 4) : le script est portable (sed_inplace), la suite tourne aussi
+# sous GNU sed ; seul Windows reste hors périmètre (pas de bash natif).
 pytestmark = pytest.mark.skipif(
-    sys.platform != "darwin",
-    reason="bump-version.sh utilise « sed -i '' » (BSD) : il ne tourne que sur macOS",
+    sys.platform == "win32",
+    reason="bump-version.sh est un script bash",
 )
 
 
