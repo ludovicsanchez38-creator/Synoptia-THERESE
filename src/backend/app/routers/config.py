@@ -866,8 +866,13 @@ async def export_data(
     conversations_result = await session.execute(select(Conversation))
     conversations = conversations_result.scalars().all()
 
-    messages_result = await session.execute(select(Message))
+    messages_result = await session.execute(select(Message).order_by(Message.created_at, Message.id))
     messages = messages_result.scalars().all()
+    # B-511 : une passe pour ranger les messages par conversation, au lieu d'un
+    # filtre imbriqué conversations × messages (coût quadratique).
+    messages_par_conversation: dict[str, list[Message]] = {}
+    for m in messages:
+        messages_par_conversation.setdefault(m.conversation_id, []).append(m)
 
     export_data = {
         "exported_at": datetime.now(UTC).isoformat(),
@@ -913,8 +918,7 @@ async def export_data(
                         "content": m.content,
                         "created_at": m.created_at.isoformat(),
                     }
-                    for m in messages
-                    if m.conversation_id == conv.id
+                    for m in messages_par_conversation.get(conv.id, [])
                 ],
             }
             for conv in conversations
