@@ -524,6 +524,13 @@ class CommandRegistry:
         # Mettre à jour le registre (B-515 : le nom vient du fichier renommé)
         if name is not None:
             cmd.name = updated.name
+            # B-587 : l'identifiant et la clé du registre suivent le nom, sinon
+            # recréer l'ancien nom écrase la commande renommée jusqu'au redémarrage.
+            nouvel_id = f"user-{updated.name}"
+            if nouvel_id != command_id:
+                self._commands.pop(command_id, None)
+                cmd.id = nouvel_id
+                self._commands[nouvel_id] = cmd
         if description is not None:
             cmd.description = description
         if icon is not None:
