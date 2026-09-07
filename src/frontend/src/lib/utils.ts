@@ -19,13 +19,16 @@ export function formatRelativeDate(date: Date | string): string {
   const seconds = Math.floor(diff / 1000);
   const minutes = Math.floor(seconds / 60);
   const hours = Math.floor(minutes / 60);
-  const days = Math.floor(hours / 24);
 
   if (seconds < 60) return "À l'instant";
   if (minutes < 60) return `Il y a ${minutes} min`;
   if (hours < 24) return `Il y a ${hours}h`;
-  if (days === 1) return 'Hier';
-  if (days < 7) return `Il y a ${days} jours`;
+  // B-412 : au-delà de 24 h, on compte en jours CIVILS (comme les dates civiles
+  // de l'agenda) : avant-hier soir n'est pas « Hier » le surlendemain matin.
+  const debutDuJour = (x: Date) => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
+  const joursCivils = Math.round((debutDuJour(now) - debutDuJour(d)) / 86_400_000);
+  if (joursCivils <= 1) return 'Hier';
+  if (joursCivils < 7) return `Il y a ${joursCivils} jours`;
 
   return d.toLocaleDateString('fr-FR', {
     day: 'numeric',
