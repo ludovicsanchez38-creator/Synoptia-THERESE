@@ -10,7 +10,8 @@
  * VITE_THERESE_BACKEND_PORT : les E2E isolés (revue 0.40) pointent ainsi le
  * frontend vers leur backend jetable au lieu de l'instance réelle (17293).
  */
-const DEFAULT_BACKEND_PORT = Number(import.meta.env.VITE_THERESE_BACKEND_PORT ?? 17293);
+// Un VITE_THERESE_BACKEND_PORT vide (variable posée sans valeur) ne doit pas donner le port 0.
+const DEFAULT_BACKEND_PORT = Number(import.meta.env.VITE_THERESE_BACKEND_PORT) || 17293;
 export let API_BASE = `http://127.0.0.1:${DEFAULT_BACKEND_PORT}`;
 
 /**

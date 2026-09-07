@@ -18,6 +18,7 @@ import {
   } from 'lucide-react';
 import { useCalendarStore } from '../../stores/calendarStore';
 import { useEmailStore } from '../../stores/emailStore';
+import { useStatusStore } from '../../stores/statusStore';
 import { Button } from '../ui/Button';
 import * as api from '../../services/api';
 import { Spinner } from '../ui/Spinner';
@@ -42,7 +43,7 @@ export function EventDetail() {
       setCurrentEvent(null);
     } catch (err) {
       console.error('Failed to delete event:', err);
-      alert('Échec de la suppression');
+      useStatusStore.getState().addNotification({ type: 'error', title: 'Suppression impossible', message: 'Échec de la suppression du rendez-vous.' });
     } finally {
       setDeleting(false);
     }
