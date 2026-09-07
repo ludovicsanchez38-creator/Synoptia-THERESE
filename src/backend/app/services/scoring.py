@@ -5,6 +5,7 @@ Système de scoring prospects/clients.
 Phase 5 - CRM Features
 """
 
+import json
 import logging
 from datetime import UTC, datetime
 
@@ -114,7 +115,7 @@ async def update_contact_score(session: AsyncSession, contact: Contact, reason: 
             type="score_change",
             title=f"Score: {old_score} → {new_score}",
             description=f"Raison: {reason}",
-            extra_data=f'{{"old_score": {old_score}, "new_score": {new_score}, "reason": "{reason}"}}',
+            extra_data=json.dumps({"old_score": old_score, "new_score": new_score, "reason": reason}, ensure_ascii=False),
         )
         session.add(activity)
 
