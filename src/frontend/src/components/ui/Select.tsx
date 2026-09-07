@@ -6,6 +6,7 @@
  */
 
 import { forwardRef, type SelectHTMLAttributes } from 'react';
+import { ChevronDown } from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 export interface SelectOption {
@@ -22,6 +23,7 @@ export interface SelectProps extends SelectHTMLAttributes<HTMLSelectElement> {
 export const Select = forwardRef<HTMLSelectElement, SelectProps>(
   ({ className, error, options, placeholder, ...props }, ref) => {
     return (
+      <div className="relative">
       <select
         ref={ref}
         aria-invalid={error || undefined}
@@ -36,9 +38,8 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           !error && 'border-border focus:ring-agent-cyan focus:border-agent-cyan/50',
           // Error state
           error && 'border-error/50 focus:ring-error focus:border-error/50',
-          // Custom arrow
-          'bg-[length:16px_16px] bg-[position:right_12px_center] bg-no-repeat',
-          "bg-[url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")]",
+          // B-292 / B-405 : la flèche est une icône peinte par un jeton du thème
+          // (plus de SVG en data-URI au trait figé en #888), voir ci-dessous.
           'pr-10',
           className
         )}
@@ -55,6 +56,11 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
           </option>
         ))}
       </select>
+      <ChevronDown
+        aria-hidden="true"
+        className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted"
+      />
+      </div>
     );
   }
 );
