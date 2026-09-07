@@ -353,9 +353,14 @@ def apply_adhoc_migrations(db_path) -> None:
         if colonnes_events and "blocage" not in colonnes_events:
             conn.execute("ALTER TABLE calendar_events ADD COLUMN blocage TEXT")
             conn.commit()
+        # B-434 : une garde PAR colonne. Un démarrage interrompu entre les deux
+        # ALTER laissait `statut_financement` à jamais absente, la garde ne
+        # regardant que `financeur`.
         if colonnes_prestations and "financeur" not in colonnes_prestations:
             conn.execute("ALTER TABLE prestations ADD COLUMN financeur TEXT")
+        if colonnes_prestations and "statut_financement" not in colonnes_prestations:
             conn.execute("ALTER TABLE prestations ADD COLUMN statut_financement TEXT")
+        if colonnes_prestations:
             conn.execute(
                 "CREATE INDEX IF NOT EXISTS ix_prestations_statut_financement "
                 "ON prestations(statut_financement)"
