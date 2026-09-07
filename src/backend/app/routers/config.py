@@ -1887,6 +1887,27 @@ async def get_llm_status():
     }
 
 
+@router.delete("/llm")
+async def clear_llm_config(session: AsyncSession = Depends(get_session)) -> dict[str, bool]:
+    """Efface le choix de service d'IA (B-607, persona Jean).
+
+    « Configurer plus tard » dans la mise en route laissait en base le
+    fournisseur enregistré un écran plus tôt : le récapitulatif disait « à
+    configurer » alors que le moteur avait un fournisseur. Les trois
+    préférences tombent et le service est reconstruit au prochain appel.
+    """
+    from app.services import llm as llm_module
+
+    resultat = await session.execute(
+        select(Preference).where(Preference.key.in_(["llm_provider", "llm_model", "llm_effort"]))
+    )
+    for pref in resultat.scalars().all():
+        await session.delete(pref)
+    await session.commit()
+    llm_module._llm_service = None
+    return {"cleared": True}
+
+
 @router.post("/llm/circuit-breaker/reset")
 async def reset_circuit_breaker(provider: str | None = None):
     """Reset le circuit breaker pour un provider (ou tous).
