@@ -135,15 +135,17 @@ class EmailClassifier:
         # Détermination finale
         # ============================================================
 
+        # B-293 : la couleur en toutes lettres, sans pastille emoji (charte du
+        # projet : icônes SVG, dessinées par l'écran).
         if score >= 50:
             priority = 'high'
-            color = '🔴 Rouge'
+            color = 'Rouge'
         elif score >= 20:
             priority = 'medium'
-            color = '🟠 Orange'
+            color = 'Orange'
         else:
             priority = 'low'
-            color = '🟢 Vert'
+            color = 'Vert'
 
         # Raison finale
         if not reasons:

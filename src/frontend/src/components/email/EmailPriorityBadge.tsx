@@ -1,7 +1,7 @@
 /**
  * EmailPriorityBadge.tsx
  *
- * Badge de priorité coloré pour les emails (Rouge/Orange/Vert).
+ * Badge de priorité coloré pour les emails (Rouge/Orange/Vert), pastille dessinée.
  * US-EMAIL-08: Priorisation visuelle
  */
 
@@ -15,21 +15,21 @@ interface EmailPriorityBadgeProps {
 
 const PRIORITY_CONFIG = {
   high: {
-    emoji: '🔴',
+    dot: 'bg-error',
     text: 'Urgent',
     color: 'text-error',
     bg: 'bg-error/10',
     border: 'border-error/30',
   },
   medium: {
-    emoji: '🟠',
+    dot: 'bg-agent-amber',
     text: 'Important',
     color: 'text-agent-amber',
     bg: 'bg-agent-amber/10',
     border: 'border-agent-amber/30',
   },
   low: {
-    emoji: '🟢',
+    dot: 'bg-agent-green',
     text: 'Normal',
     color: 'text-agent-green',
     bg: 'bg-agent-green/10',
@@ -54,7 +54,8 @@ export function EmailPriorityBadge({
       className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md border ${config.bg} ${config.border} ${className}`}
       title={score ? `Score: ${score}/100` : undefined}
     >
-      <span className="text-sm">{config.emoji}</span>
+      {/* B-293 : pastille dessinée, plus d'emoji (charte : icônes SVG ou formes) */}
+      <span aria-hidden="true" className={`inline-block h-2 w-2 rounded-full ${config.dot}`} />
       {showText && (
         <span className={`text-xs font-medium ${config.color}`}>
           {config.text}
