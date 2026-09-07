@@ -799,6 +799,15 @@ def calculate_schedule(
         cursor_offset = offset
 
     task_by_id = {task.id: task for task in tasks}
+
+    def _debut(offset: Fraction, task_id: str) -> datetime:
+        # B-581 : une même valeur d'offset sert de FIN au prédécesseur (12 h,
+        # borne de pause) et de DÉBUT au successeur ; un début se normalise
+        # vers le prochain instant ouvré (14 h). Un jalon garde sa date.
+        if durations[task_id] == 0:
+            return dates[offset]
+        return calendar.normalize_start(dates[offset])
+
     task_results = tuple(
         PlanningTaskResult(
             task_id=task_id,
@@ -815,9 +824,9 @@ def calculate_schedule(
             ),
             total_float_minutes=_minutes(latest[task_id] - earliest[task_id]),
             is_critical=latest[task_id] == earliest[task_id],
-            earliest_start_at=dates[earliest[task_id]],
+            earliest_start_at=_debut(earliest[task_id], task_id),
             earliest_finish_at=dates[earliest[task_id] + durations[task_id]],
-            latest_start_at=dates[latest[task_id]],
+            latest_start_at=_debut(latest[task_id], task_id),
             latest_finish_at=dates[latest[task_id] + durations[task_id]],
         )
         for task_id in order
