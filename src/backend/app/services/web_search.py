@@ -31,6 +31,11 @@ class SearchResponse:
     query: str
     results: list[SearchResult]
     total_results: int
+    # B-444 : « aucun résultat » et « la recherche n'a pas pu se faire » sont
+    # deux réponses. Une page au gabarit inconnu ou une erreur HTTP marquent
+    # la recherche indisponible, au lieu de passer pour une recherche vide.
+    indisponible: bool = False
+    raison: str | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -106,6 +111,13 @@ def formater_resultats_pour_llm(response: SearchResponse) -> str:
     `[End web]` passait nu. Un seul site, `source="web"`. Les messages
     « aucun résultat » restent hors enveloppe : ce sont nos phrases.
     """
+    if response.indisponible:
+        return (
+            f"RECHERCHE WEB INDISPONIBLE pour: {response.query}"
+            + (f" ({response.raison})" if response.raison else "")
+            + ". Ne conclus pas à l'absence de résultats : dis que la recherche "
+            "n'a pas pu se faire et propose de réessayer plus tard."
+        )
     if not response.results:
         return f"Aucun résultat trouvé pour: {response.query}"
 
@@ -204,10 +216,10 @@ class BraveSearchService:
 
         except httpx.HTTPStatusError as e:
             logger.error(f"Brave Search error: {e.response.status_code}")
-            return SearchResponse(query=query, results=[], total_results=0)
+            return SearchResponse(query=query, results=[], total_results=0, indisponible=True, raison="le service de recherche n'a pas répondu")
         except Exception as e:
             logger.error(f"Brave Search error: {e}")
-            return SearchResponse(query=query, results=[], total_results=0)
+            return SearchResponse(query=query, results=[], total_results=0, indisponible=True, raison="le service de recherche n'a pas répondu")
 
     def format_results_for_llm(self, response: SearchResponse) -> str:
         """Format search results as context for LLM."""
@@ -278,6 +290,15 @@ class WebSearchService:
             # Parse results from HTML
             results = self._parse_html_results(html, max_results)
 
+            if not results and not self._page_de_resultats_reconnue(html):
+                # B-444 : ni résultat ni « pas de résultat » : le gabarit a
+                # changé ou la page n'est pas celle attendue.
+                logger.error("DuckDuckGo : page sans marqueur de résultat (gabarit inconnu ?)")
+                return SearchResponse(
+                    query=query, results=[], total_results=0,
+                    indisponible=True, raison="page de résultats non reconnue",
+                )
+
             return SearchResponse(
                 query=query,
                 results=results,
@@ -286,10 +307,28 @@ class WebSearchService:
 
         except httpx.HTTPStatusError as e:
             logger.error(f"DuckDuckGo search error: {e.response.status_code}")
-            return SearchResponse(query=query, results=[], total_results=0)
+            return SearchResponse(
+                query=query, results=[], total_results=0,
+                indisponible=True, raison=f"erreur HTTP {e.response.status_code}",
+            )
         except Exception as e:
             logger.error(f"Web search error: {e}")
-            return SearchResponse(query=query, results=[], total_results=0)
+            return SearchResponse(
+                query=query, results=[], total_results=0,
+                indisponible=True, raison="erreur réseau",
+            )
+
+    @staticmethod
+    def _page_de_resultats_reconnue(html: str) -> bool:
+        """Vrai si la page porte les marqueurs du gabarit connu : des résultats,
+        ou l'annonce explicite qu'il n'y en a pas."""
+        return (
+            'class="result__a"' in html
+            or "result__a" in html
+            or "no-results" in html
+            or "No results" in html
+            or "Aucun résultat" in html
+        )
 
     def _parse_html_results(self, html: str, max_results: int) -> list[SearchResult]:
         """Parse search results from DuckDuckGo HTML response."""
@@ -400,7 +439,7 @@ class SearXNGService:
 
         except Exception as e:
             logger.error(f"SearXNG search error: {e}")
-            return SearchResponse(query=query, results=[], total_results=0)
+            return SearchResponse(query=query, results=[], total_results=0, indisponible=True, raison="le service de recherche n'a pas répondu")
 
     def format_results_for_llm(self, response: SearchResponse) -> str:
         """Format search results for LLM consumption."""
