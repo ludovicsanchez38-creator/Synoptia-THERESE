@@ -36,7 +36,24 @@ export function AtelierPanel() {
     setSourcePath,
     processChunk,
     addUserMessage,
+    composerFocusRequested,
+    consumeComposerFocus,
   } = useAtelierStore();
+  const racineRef = useRef<HTMLDivElement>(null);
+
+  // B-641 (Nadia, c4) : ⌘+⇧+K annonçait « Katia - nouvelle tâche » mais
+  // ouvrait seulement l'Atelier, focus resté sur BODY. Le store porte la
+  // demande ; le panneau la sert une fois monté et l'efface.
+  useEffect(() => {
+    if (!isOpen || !composerFocusRequested) return;
+    const id = window.setTimeout(() => {
+      racineRef.current
+        ?.querySelector<HTMLTextAreaElement>('textarea[aria-label="Message à l’agent"]')
+        ?.focus();
+      consumeComposerFocus();
+    }, 0);
+    return () => window.clearTimeout(id);
+  }, [isOpen, composerFocusRequested, consumeComposerFocus]);
 
   const [agentConfig, setAgentConfig] = useState<AgentConfigResponse | null>(null);
   const [activeAgentProfile, setActiveAgentProfile] = useState<string | null>(null);
@@ -155,9 +172,17 @@ export function AtelierPanel() {
   const katiaModel = agentConfig?.katia_model || "";
   const zezetteModel = agentConfig?.zezette_model || "";
   const showModelBadge = katiaModel || zezetteModel;
+  // B-648 (Nadia, c4) : sans clé cloud, « Katia: claude-sonnet-4-6 » s'affichait
+  // comme si de rien n'était. Un modèle absent de la liste utilisable est dit tel.
+  const modelesUtilisables = new Set((agentConfig?.available_models ?? []).map((m) => m.id));
+  const indisponible = (modele: string) =>
+    Boolean(modele) && modelesUtilisables.size > 0 && !modelesUtilisables.has(modele);
+  const TITRE_INDISPONIBLE =
+    "Ce modèle n’est pas utilisable ici : aucune clé cloud configurée, ou modèle local non installé. Change-le dans Réglages > IA.";
 
   return (
     <div
+      ref={racineRef}
       className={`fixed right-0 top-0 ${Z_LAYER.MODAL} flex h-full flex-col border-l border-border bg-bg shadow-2xl`}
       style={{ width: "480px" }}
     >
@@ -219,13 +244,19 @@ export function AtelierPanel() {
         {showModelBadge && activeView !== "agents" && (
           <div className="flex items-center gap-2 px-4 pb-2 text-xs text-text-muted">
             {katiaModel && (
-              <span className="rounded-sm bg-agent-purple/10 px-1.5 py-0.5 text-agent-purple">
-                Katia: {katiaModel}
+              <span
+                className={`rounded-sm px-1.5 py-0.5 ${indisponible(katiaModel) ? "bg-warning/10 text-warning" : "bg-agent-purple/10 text-agent-purple"}`}
+                title={indisponible(katiaModel) ? TITRE_INDISPONIBLE : undefined}
+              >
+                Katia: {katiaModel}{indisponible(katiaModel) && " · non disponible"}
               </span>
             )}
             {zezetteModel && (
-              <span className="rounded-sm bg-agent-amber/10 px-1.5 py-0.5 text-agent-amber">
-                Zézette: {zezetteModel}
+              <span
+                className={`rounded-sm px-1.5 py-0.5 ${indisponible(zezetteModel) ? "bg-warning/10 text-warning" : "bg-agent-amber/10 text-agent-amber"}`}
+                title={indisponible(zezetteModel) ? TITRE_INDISPONIBLE : undefined}
+              >
+                Zézette: {zezetteModel}{indisponible(zezetteModel) && " · non disponible"}
               </span>
             )}
           </div>

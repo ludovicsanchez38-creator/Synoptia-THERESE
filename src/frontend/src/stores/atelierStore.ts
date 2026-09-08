@@ -46,6 +46,8 @@ interface AtelierState {
   // Panel
   isOpen: boolean;
   activeView: AtelierView;
+  /** B-641 : une ouverture « nouvelle tâche » demande le focus du composeur. */
+  composerFocusRequested: boolean;
 
   // Chat
   messages: AgentMessage[];
@@ -61,8 +63,9 @@ interface AtelierState {
 
   // Actions - Panel
   togglePanel: () => void;
-  openPanel: () => void;
+  openPanel: (options?: { focusComposer?: boolean }) => void;
   closePanel: () => void;
+  consumeComposerFocus: () => void;
   setActiveView: (view: AtelierView) => void;
 
   // Actions - Chat
@@ -97,6 +100,7 @@ export const useAtelierStore = create<AtelierState>((set, get) => ({
   // Initial state
   isOpen: false,
   activeView: 'chat',
+  composerFocusRequested: false,
   messages: [],
   isStreaming: false,
   currentStreamingId: null,
@@ -106,8 +110,14 @@ export const useAtelierStore = create<AtelierState>((set, get) => ({
 
   // Panel
   togglePanel: () => set((s) => ({ isOpen: !s.isOpen })),
-  openPanel: () => set({ isOpen: true }),
-  closePanel: () => set({ isOpen: false }),
+  openPanel: (options) =>
+    set((s) => ({
+      isOpen: true,
+      activeView: options?.focusComposer ? 'chat' : s.activeView,
+      composerFocusRequested: Boolean(options?.focusComposer),
+    })),
+  closePanel: () => set({ isOpen: false, composerFocusRequested: false }),
+  consumeComposerFocus: () => set({ composerFocusRequested: false }),
   setActiveView: (view) => set({ activeView: view }),
 
   // Chat
