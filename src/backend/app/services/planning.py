@@ -270,10 +270,14 @@ class WorkCalendar:
         if remaining == 0:
             return current
         while remaining > 0:
-            if remaining > self._minutes_per_week and self._is_day_start(current):
-                # Un multiple exact s'arrête à la FIN du dernier créneau, pas au
-                # début du suivant : la dernière semaine reste au parcours fin.
-                weeks = int((remaining - 1) // self._minutes_per_week)
+            # Un multiple exact s'arrête à la FIN du dernier créneau, pas au
+            # début du suivant : la dernière semaine reste au parcours fin.
+            # Revue COCO 0.68.0 (P1) : entre une semaine et une semaine plus une
+            # minute, `weeks` vaut zéro ; la branche tournait alors sans rien
+            # consommer. Elle n'est prise que s'il reste au moins une semaine
+            # entière à sauter.
+            weeks = int((remaining - 1) // self._minutes_per_week)
+            if weeks >= 1 and self._is_day_start(current):
                 current = datetime.combine(
                     current.date() + timedelta(weeks=weeks),
                     self._intervals[0][0],

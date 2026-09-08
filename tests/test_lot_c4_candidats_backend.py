@@ -269,3 +269,29 @@ class TestB593LeScoreEcritDuJsonValide:
         activite = (await db_session.execute(select(Activity).where(Activity.contact_id == contact.id, Activity.type == "score_change"))).scalars().first()
         assert activite is not None
         assert json.loads(activite.extra_data)["reason"] == raison, activite.extra_data
+
+
+class TestCocoP1BoucleInfinieDuCalendrierOuvre:
+    """Revue COCO 0.68.0 (P1) : `add_work_minutes` entre dans le saut de semaines
+    dès que `remaining > 2100`, mais `weeks = int((remaining - 1) // 2100)` vaut
+    zéro entre 2100 et 2101 minutes : le `continue` ne change ni la date ni la
+    durée, et la route de planification (synchrone) fige le backend."""
+
+    def test_une_duree_d_une_semaine_et_vingt_secondes_termine(self):
+        import threading
+        from fractions import Fraction
+
+        from app.services.planning import WorkCalendar
+
+        calendrier = WorkCalendar("Europe/Paris")
+        resultat: list[datetime] = []
+        fil = threading.Thread(
+            target=lambda: resultat.append(
+                calendrier.add_work_minutes(datetime(2026, 9, 7, 9, 0, tzinfo=PARIS), Fraction(2100) + Fraction(1, 3))
+            ),
+            daemon=True,
+        )
+        fil.start()
+        fil.join(timeout=5)
+        assert not fil.is_alive(), "add_work_minutes ne rend pas la main : boucle infinie entre 2100 et 2101 minutes"
+        assert resultat[0].astimezone(PARIS) == datetime(2026, 9, 14, 9, 0, 20, tzinfo=PARIS)
