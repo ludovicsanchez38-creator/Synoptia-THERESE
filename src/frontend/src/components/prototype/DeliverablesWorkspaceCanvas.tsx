@@ -15,7 +15,8 @@ import {
   ShieldCheck,
   UserRound,
 } from 'lucide-react';
-import type { DeliverableResponse } from '../../services/api/crm-extended';
+import { createDeliverable, updateDeliverable, type DeliverableResponse } from '../../services/api/crm-extended';
+import { STATUTS_LIVRABLE, estEnRetard } from '../../lib/livrables';
 import type { Invoice } from '../../services/api/invoices';
 import type { Task } from '../../services/api/tasks';
 import {
@@ -52,9 +53,66 @@ function formatDate(value: string | null): string | null {
 }
 
 function isOverdue(deliverable: DeliverableResponse): boolean {
-  if (!deliverable.due_date || deliverable.status === 'valide') return false;
-  const dueDate = new Date(deliverable.due_date);
-  return Number.isFinite(dueDate.getTime()) && dueDate.getTime() < Date.now();
+  return estEnRetard(deliverable);
+}
+
+function messageDerreur(err: unknown): string {
+  return err instanceof Error && err.message ? err.message : 'Écriture impossible pour le moment.';
+}
+
+/** P-048 : créer un livrable (titre, échéance, statut) depuis la vue. */
+function AjoutLivrable({ projectId, onCree }: { projectId: string; onCree: (projectId: string, livrable: DeliverableResponse) => void }) {
+  const [ouvert, setOuvert] = useState(false);
+  const [titre, setTitre] = useState('');
+  const [echeance, setEcheance] = useState('');
+  const [statut, setStatut] = useState<string>('a_faire');
+  const [enCours, setEnCours] = useState(false);
+  const [erreur, setErreur] = useState<string | null>(null);
+  const [succes, setSucces] = useState<string | null>(null);
+  const titreRef = useRef<HTMLInputElement>(null);
+
+  const soumettre = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!titre.trim() || enCours) return;
+    setEnCours(true);
+    setErreur(null);
+    setSucces(null);
+    try {
+      const cree = await createDeliverable({ project_id: projectId, title: titre.trim(), status: statut, ...(echeance ? { due_date: echeance } : {}) });
+      onCree(projectId, cree);
+      setTitre('');
+      setEcheance('');
+      setStatut('a_faire');
+      setSucces(`Livrable « ${cree.title} » ajouté.`);
+      setOuvert(false);
+    } catch (err) {
+      setErreur(messageDerreur(err));
+    } finally {
+      setEnCours(false);
+    }
+  };
+
+  return (
+    <div className="mt-3">
+      {!ouvert ? (
+        <button type="button" onClick={() => { setOuvert(true); setSucces(null); requestAnimationFrame(() => titreRef.current?.focus()); }} className="rounded-md border border-accent-fill bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink">Ajouter un livrable</button>
+      ) : (
+        <form onSubmit={soumettre} aria-label="Nouveau livrable" className="rounded-md border border-border bg-surface p-3">
+          <label className="block text-xs font-semibold text-text">Titre<input ref={titreRef} required value={titre} onChange={(e) => setTitre(e.target.value)} maxLength={200} className="mt-1 w-full rounded-md border border-border bg-surface-2 px-2 py-1.5 text-sm text-text" /></label>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <label className="block text-xs font-semibold text-text">Échéance<input type="date" value={echeance} onChange={(e) => setEcheance(e.target.value)} className="mt-1 w-full rounded-md border border-border bg-surface-2 px-2 py-1.5 text-sm text-text" /></label>
+            <label className="block text-xs font-semibold text-text">Statut<select value={statut} onChange={(e) => setStatut(e.target.value)} className="mt-1 w-full rounded-md border border-border bg-surface-2 px-2 py-1.5 text-sm text-text">{STATUTS_LIVRABLE.map((code) => <option key={code} value={code}>{STATUS[code].label}</option>)}</select></label>
+          </div>
+          {erreur && <div role="alert" className="mt-2 rounded-md border border-error/40 bg-[var(--color-error-tint)] px-3 py-2 text-xs text-error">{erreur}</div>}
+          <div className="mt-3 flex justify-end gap-2">
+            <button type="button" onClick={() => { setOuvert(false); setErreur(null); }} className="rounded-md border border-border px-3 py-1.5 text-xs font-semibold text-text-muted">Annuler</button>
+            <button type="submit" disabled={!titre.trim() || enCours} className="rounded-md bg-accent-fill px-3 py-1.5 text-xs font-semibold text-accent-ink disabled:opacity-40">{enCours ? 'Ajout…' : 'Ajouter'}</button>
+          </div>
+        </form>
+      )}
+      {succes && <p role="status" className="mt-2 text-xs text-success">{succes}</p>}
+    </div>
+  );
 }
 
 function contactName(contact: { first_name: string | null; last_name: string | null; company: string | null } | undefined): string {
@@ -75,7 +133,7 @@ function invoiceLabel(invoice: Invoice): string {
   return `${types[invoice.document_type]} ${invoice.invoice_number}`;
 }
 
-function DeliverableRow({ deliverable }: { deliverable: DeliverableResponse }) {
+function DeliverableRow({ deliverable, onChangerStatut }: { deliverable: DeliverableResponse; onChangerStatut?: (id: string, statut: string) => Promise<void> }) {
   const status = STATUS[deliverable.status] ?? {
     label: deliverable.status || 'Statut inconnu',
     textClass: 'text-text-muted',
@@ -84,6 +142,24 @@ function DeliverableRow({ deliverable }: { deliverable: DeliverableResponse }) {
   };
   const Icon = status.icon;
   const overdue = isOverdue(deliverable);
+  // P-048 (revue COCO, findings 2 et 5) : une seule écriture en vol par
+  // livrable, la ligne prend le DTO renvoyé ; un statut existant inconnu
+  // reste affiché tel quel jusqu'à un choix volontaire.
+  const [enEcriture, setEnEcriture] = useState(false);
+  const [erreur, setErreur] = useState<string | null>(null);
+  const statutConnu = (STATUTS_LIVRABLE as readonly string[]).includes(deliverable.status);
+  const changer = async (cible: string) => {
+    if (!onChangerStatut || cible === deliverable.status) return;
+    setEnEcriture(true);
+    setErreur(null);
+    try {
+      await onChangerStatut(deliverable.id, cible);
+    } catch (err) {
+      setErreur(messageDerreur(err));
+    } finally {
+      setEnEcriture(false);
+    }
+  };
   return (
     <article className="rounded-md border border-border bg-surface p-3" data-testid="deliverable-row">
       <div className="flex items-start gap-3">
@@ -91,8 +167,16 @@ function DeliverableRow({ deliverable }: { deliverable: DeliverableResponse }) {
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
             <h4 className="text-sm font-semibold leading-5 text-text">{deliverable.title}</h4>
-            <span className={`shrink-0 rounded-full border border-current px-2 py-0.5 text-xs font-semibold ${status.tintClass} ${status.textClass}`}>{status.label}</span>
+            {onChangerStatut ? (
+              <select aria-label={`Statut de ${deliverable.title}`} value={deliverable.status} disabled={enEcriture} onChange={(event) => void changer(event.target.value)} className={`shrink-0 rounded-full border border-current px-2 py-0.5 text-xs font-semibold ${status.tintClass} ${status.textClass}`}>
+                {!statutConnu && <option value={deliverable.status}>{status.label}</option>}
+                {STATUTS_LIVRABLE.map((code) => <option key={code} value={code}>{STATUS[code].label}</option>)}
+              </select>
+            ) : (
+              <span className={`shrink-0 rounded-full border border-current px-2 py-0.5 text-xs font-semibold ${status.tintClass} ${status.textClass}`}>{status.label}</span>
+            )}
           </div>
+          {erreur && <div role="alert" className="mt-1 text-xs text-error">{erreur}</div>}
           {deliverable.description && <p className="mt-1 text-xs leading-5 text-text-muted">{deliverable.description}</p>}
           <div className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-xs text-text-muted">
             {deliverable.due_date && <span className={`flex items-center gap-1 ${overdue ? 'font-semibold text-warning' : ''}`}><CalendarClock className="h-3 w-3" />{overdue ? 'En retard · ' : 'Échéance · '}{formatDate(deliverable.due_date)}</span>}
@@ -159,7 +243,13 @@ export function DeliverablesWorkspaceCanvas({
   const selectedProject = projectsResource.status === 'ready'
     ? projectsResource.data.find((project) => project.id === selectedProjectId) ?? null
     : null;
-  const { data: loadedDetail, refresh: refreshDetail } = usePrototypeDeliverableProjectData(selectedProject);
+  const { data: loadedDetail, refresh: refreshDetail, appliquerLivrable } = usePrototypeDeliverableProjectData(selectedProject);
+  // P-048 : les écritures capturent leur projet ; le hook ignore un résultat
+  // qui arrive après un changement de projet.
+  const changerStatut = async (projectId: string, id: string, statut: string) => {
+    const dto = await updateDeliverable(id, { status: statut });
+    appliquerLivrable?.(projectId, dto);
+  };
   const detail = loadedDetail?.projectId === selectedProjectId ? loadedDetail : null;
 
   const view = useMemo(() => {
@@ -194,9 +284,9 @@ export function DeliverablesWorkspaceCanvas({
     <aside ref={dialogRef} role="region" aria-labelledby="deliverables-workspace-title" tabIndex={-1} className="absolute inset-y-0 right-0 z-20 flex h-full w-full max-w-[650px] flex-col border-l border-border bg-surface-2 shadow-[-18px_0_45px_rgba(16,28,54,0.12)] sm:w-[calc(100%-48px)] xl:relative xl:w-[45%] xl:min-w-[460px] xl:shadow-none" data-testid="deliverables-workspace-canvas">
       <button type="button" onClick={onClose} aria-label="Fermer le suivi client" className="absolute right-4 top-3.5 z-30 grid h-9 w-9 place-items-center rounded-md border border-border bg-surface text-text-muted shadow-sm hover:text-text"><PanelRightClose className="h-4 w-4" /></button>
       <header className="border-b border-border px-5 py-4 pr-16">
-        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-text-muted"><FileCheck2 className="h-3.5 w-3.5" />Lecture locale unifiée</div>
+        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-text-muted"><FileCheck2 className="h-3.5 w-3.5" />Suivi local unifié</div>
         <h2 id="deliverables-workspace-title" data-dialog-autofocus tabIndex={-1} className="mt-2 text-xl font-bold tracking-[-0.02em] text-text outline-none">Livrables et suivi client</h2>
-        <p className="mt-1 text-sm text-text-muted">Promis, livré, tâches restantes et facturation du contact, sans modifier les données.</p>
+        <p className="mt-1 text-sm text-text-muted">Promis, livré, tâches restantes et facturation du contact. Tu peux ajouter un livrable et changer son statut ; le reste se lit ici et se modifie dans sa vue.</p>
       </header>
 
       {projectsResource.status === 'loading' ? (
@@ -222,7 +312,8 @@ export function DeliverablesWorkspaceCanvas({
             {view.deliverables.length > 0 && <div role="toolbar" aria-label="Filtrer les livrables" className="mt-4 flex flex-wrap gap-1.5">{STATUS_FILTERS.map((filter) => <button key={filter.id} data-deliverable-filter type="button" aria-pressed={statusFilter === filter.id} tabIndex={statusFilter === filter.id ? 0 : -1} onKeyDown={(event) => handleRovingFocus(event, '[data-deliverable-filter]', 'horizontal')} onClick={() => setStatusFilter(filter.id)} className={`rounded-full border px-2.5 py-1.5 text-sm font-semibold ${statusFilter === filter.id ? 'border-accent-fill bg-accent-fill text-accent-ink' : 'border-border bg-surface text-text-muted'}`}>{filter.label}</button>)}</div>}
 
             <section className="mt-3 space-y-2" aria-label="Livrables du projet">
-              {!detail || detail.deliverables.status === 'loading' ? <div className="flex items-center justify-center gap-2 rounded-md border border-border bg-surface px-4 py-7 text-xs text-text-muted"><Spinner taille="bouton" />Chargement des livrables…</div> : detail.deliverables.status === 'error' ? <div role="alert" className="rounded-md border border-warning/40 bg-[var(--color-warning-tint)] px-4 py-4 text-xs text-warning">{detail.deliverables.error}</div> : view.filteredDeliverables.length > 0 ? view.filteredDeliverables.map((deliverable) => <DeliverableRow key={deliverable.id} deliverable={deliverable} />) : <div className="rounded-md border border-dashed border-border bg-surface px-4 py-7 text-center text-xs text-text-muted">{view.deliverables.length === 0 ? 'Aucun livrable n’est rattaché à ce projet. En créer un n’est pas encore possible depuis l’interface (proposition P-048).' : 'Aucun livrable avec ce statut.'}</div>}
+              {!detail || detail.deliverables.status === 'loading' ? <div className="flex items-center justify-center gap-2 rounded-md border border-border bg-surface px-4 py-7 text-xs text-text-muted"><Spinner taille="bouton" />Chargement des livrables…</div> : detail.deliverables.status === 'error' ? <div role="alert" className="rounded-md border border-warning/40 bg-[var(--color-warning-tint)] px-4 py-4 text-xs text-warning">{detail.deliverables.error}</div> : view.filteredDeliverables.length > 0 ? view.filteredDeliverables.map((deliverable) => <DeliverableRow key={deliverable.id} deliverable={deliverable} onChangerStatut={(id, statut) => changerStatut(view.project.id, id, statut)} />) : <div className="rounded-md border border-dashed border-border bg-surface px-4 py-7 text-center text-xs text-text-muted">{view.deliverables.length === 0 ? 'Aucun livrable n’est rattaché à ce projet : ajoute le premier.' : 'Aucun livrable avec ce statut.'}</div>}
+              <AjoutLivrable projectId={view.project.id} onCree={(projectId, livrable) => appliquerLivrable?.(projectId, livrable)} />
             </section>
 
             <section className="mt-5 grid gap-3 sm:grid-cols-2">
@@ -231,7 +322,7 @@ export function DeliverablesWorkspaceCanvas({
             </section>
           </>}
 
-          <div className="mt-4 flex items-start gap-2 rounded-md border border-accent-cyan/30 bg-accent-tint p-3 text-xs leading-5 text-accent"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />Lecture seule depuis Projets, CRM, Tâches et Facturation. Aucune validation, suppression ou synchronisation n’est déclenchée ici.</div>
+          <div className="mt-4 flex items-start gap-2 rounded-md border border-accent-cyan/30 bg-accent-tint p-3 text-xs leading-5 text-accent"><ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />Lu depuis Projets, CRM, Tâches et Facturation. Ajouter un livrable ou changer son statut écrit dans ta base locale ; aucune suppression ni synchronisation n’est déclenchée ici.</div>
           <div className="mt-3 grid grid-cols-2 gap-2"><BoutonOuvrirLaVue vue="projects" onOuvrir={onOpenProjects} className="rounded-md border border-border bg-surface px-3 py-2 text-xs font-semibold text-text" /><BoutonOuvrirLaVue vue="invoices" onOuvrir={onOpenInvoices} className="rounded-md border border-border bg-surface px-3 py-2 text-xs font-semibold text-text" /></div>
         </div>
       )}

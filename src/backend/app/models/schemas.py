@@ -1229,6 +1229,24 @@ class DeliverableResponse(BaseModel):
     updated_at: HorodatageUTC
 
 
+# P-048 (revue COCO) : les quatre statuts sont le contrat, pas une chaîne libre.
+STATUTS_LIVRABLE = ("a_faire", "en_cours", "en_revision", "valide")
+
+
+def _titre_de_livrable(valeur: str) -> str:
+    if not valeur or not valeur.strip():
+        raise ValueError("Le titre du livrable ne peut pas être vide")
+    return valeur.strip()
+
+
+def _statut_de_livrable(valeur: str) -> str:
+    if valeur not in STATUTS_LIVRABLE:
+        raise ValueError(
+            "Statut inconnu : " + ", ".join(STATUTS_LIVRABLE) + " attendus"
+        )
+    return valeur
+
+
 class CreateDeliverableRequest(BaseModel):
     """Request pour créer un livrable."""
 
@@ -1238,6 +1256,16 @@ class CreateDeliverableRequest(BaseModel):
     status: str = "a_faire"
     due_date: str | None = None
 
+    @field_validator("title")
+    @classmethod
+    def _valider_titre(cls, valeur: str) -> str:
+        return _titre_de_livrable(valeur)
+
+    @field_validator("status")
+    @classmethod
+    def _valider_statut(cls, valeur: str) -> str:
+        return _statut_de_livrable(valeur)
+
 
 class UpdateDeliverableRequest(BaseModel):
     """Request pour modifier un livrable."""
@@ -1246,6 +1274,16 @@ class UpdateDeliverableRequest(BaseModel):
     description: str | None = None
     status: str | None = None
     due_date: str | None = None
+
+    @field_validator("title")
+    @classmethod
+    def _valider_titre(cls, valeur: str | None) -> str | None:
+        return None if valeur is None else _titre_de_livrable(valeur)
+
+    @field_validator("status")
+    @classmethod
+    def _valider_statut(cls, valeur: str | None) -> str | None:
+        return None if valeur is None else _statut_de_livrable(valeur)
 
 
 class UpdateContactStageRequest(BaseModel):

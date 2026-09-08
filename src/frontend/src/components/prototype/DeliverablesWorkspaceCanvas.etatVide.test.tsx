@@ -30,6 +30,7 @@ vi.mock('./usePrototypeDeliverablesData', () => ({
       tasks: { status: 'ready', data: [], error: null },
     },
     refresh: vi.fn(),
+    appliquerLivrable: vi.fn(),
   }),
 }));
 vi.mock('./BoutonOuvrirLaVue', () => ({
@@ -47,12 +48,13 @@ function renderCanevas() {
 }
 
 describe('B-635 : un projet sans livrable ne propose pas de filtres et dit ce qui manque', () => {
-  it('sans livrable : aucun filtre de statut, un état vide qui annonce l’absence de création', () => {
+  it('sans livrable : aucun filtre de statut, un état vide qui invite à créer le premier (P-048)', () => {
     etat.livrables = [];
     renderCanevas();
     expect(screen.queryByRole('toolbar', { name: 'Filtrer les livrables' })).toBeNull();
     const vide = screen.getByText(/Aucun livrable/);
-    expect(vide).toHaveTextContent(/pas encore possible depuis l’interface|pas encore possible depuis l'interface/i);
+    // P-048 : la création existe désormais ; l'état vide y invite.
+    expect(vide).toHaveTextContent(/ajoute le premier/i);
   });
 
   it('avec au moins un livrable : les filtres de statut reviennent', () => {

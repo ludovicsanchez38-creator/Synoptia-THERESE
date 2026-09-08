@@ -338,11 +338,14 @@ async def update_deliverable(
         deliverable.description = request.description
 
     if request.status is not None:
-        deliverable.status = request.status
-
-        # Auto-remplir completed_at si validé
-        if request.status == "valide" and deliverable.completed_at is None:
+        # P-048 (revue COCO) : entrer dans « valide » date la validation (une
+        # revalidation redate) ; en sortir efface la date, sinon un livrable
+        # rouvert puis revalidé garderait l'ancienne date.
+        if request.status == "valide" and deliverable.status != "valide":
             deliverable.completed_at = datetime.now(UTC)
+        elif request.status != "valide":
+            deliverable.completed_at = None
+        deliverable.status = request.status
 
     if request.due_date is not None:
         deliverable.due_date = datetime.fromisoformat(request.due_date.replace("Z", ""))

@@ -96,5 +96,18 @@ export function usePrototypeDeliverableProjectData(project: Project | null) {
     };
   }, [refresh]);
 
-  return { data, refresh };
+  // P-048 (revue COCO, finding 1) : une écriture rattachée à un projet ne
+  // touche que ce projet ; si l'utilisateur a changé de projet entre-temps,
+  // le résultat est ignoré (le prochain chargement le montrera).
+  const appliquerLivrable = useCallback((projectId: string, livrable: DeliverableResponse) => {
+    setData((courant) => {
+      if (!courant || courant.projectId !== projectId || courant.deliverables.status !== 'ready') return courant;
+      const existants = courant.deliverables.data;
+      const connu = existants.some((item) => item.id === livrable.id);
+      const suivants = connu ? existants.map((item) => (item.id === livrable.id ? livrable : item)) : [livrable, ...existants];
+      return { ...courant, deliverables: { status: 'ready', data: suivants, error: null } };
+    });
+  }, []);
+
+  return { data, refresh, appliquerLivrable };
 }
