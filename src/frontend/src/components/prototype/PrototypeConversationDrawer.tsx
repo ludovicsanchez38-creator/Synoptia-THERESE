@@ -128,6 +128,10 @@ export function PrototypeConversationDrawer({
   const filtered = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase('fr-FR');
     return [...conversations]
+      // P-054 (Nadia, c4) : une conversation sans aucun message (⌘N sans
+      // rien écrire) n'a rien où revenir ; la lister faisait un fantôme
+      // « Nouvelle conversation · 0 message ». Elle apparaît au premier message.
+      .filter((conversation) => (conversation.messages.length || conversation.messageCount || 0) > 0)
       .filter((conversation) => !normalized || conversation.title.toLocaleLowerCase('fr-FR').includes(normalized))
       .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime());
   }, [conversations, query]);
