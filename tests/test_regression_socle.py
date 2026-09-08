@@ -15,6 +15,7 @@ agenda (P0-PROD-3, QW2) et l'ordre des messages (BUG-031).
 from __future__ import annotations
 
 import inspect
+import os
 import re
 import sqlite3
 import subprocess
@@ -329,8 +330,11 @@ class TestMcp:
         monkeypatch.setenv("HOME", str(tmp_path))
         monkeypatch.setattr(Path, "home", classmethod(lambda cls: tmp_path))
         chemin = build_mcp_enriched_path()
-        assert "/opt/homebrew/bin" in chemin
-        assert ".volta/bin" in chemin
+        # Les préfixes fixes (/usr/local/bin, /opt/homebrew/bin) sont ajoutés
+        # sur tous les systèmes ; le test ne dépend pas de l'existence du
+        # dossier Homebrew (rouge sur ubuntu et Windows le 08/09/2026).
+        assert "/opt/homebrew/bin" in chemin.split(os.pathsep)
+        assert str(tmp_path / ".volta" / "bin") in chemin
         assert str(tmp_path / ".nvm" / "versions" / "node" / "v22.19.0" / "bin") in chemin, chemin
 
     def test_l_appel_d_un_outil_dispose_d_au_moins_une_minute(self):
