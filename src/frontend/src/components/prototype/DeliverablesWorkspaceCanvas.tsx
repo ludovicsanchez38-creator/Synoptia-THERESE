@@ -105,8 +105,8 @@ function AjoutLivrable({ projectId, onCree }: { projectId: string; onCree: (proj
           </div>
           {erreur && <div role="alert" className="mt-2 rounded-md border border-error/40 bg-[var(--color-error-tint)] px-3 py-2 text-xs text-error">{erreur}</div>}
           <div className="mt-3 flex justify-end gap-2">
-            <button type="button" onClick={() => { setOuvert(false); setErreur(null); }} className="rounded-md border border-border px-3 py-1.5 text-xs font-semibold text-text-muted">Annuler</button>
-            <button type="submit" disabled={!titre.trim() || enCours} className="rounded-md bg-accent-fill px-3 py-1.5 text-xs font-semibold text-accent-ink disabled:opacity-40">{enCours ? 'Ajout…' : 'Ajouter'}</button>
+            <button type="button" onClick={() => { setOuvert(false); setErreur(null); }} className="rounded-md border border-border px-3 py-1.5 text-sm font-semibold text-text-muted">Annuler</button>
+            <button type="submit" disabled={!titre.trim() || enCours} className="rounded-md bg-accent-fill px-3 py-1.5 text-sm font-semibold text-accent-ink disabled:opacity-40">{enCours ? 'Ajout…' : 'Ajouter'}</button>
           </div>
         </form>
       )}
@@ -168,7 +168,7 @@ function DeliverableRow({ deliverable, onChangerStatut }: { deliverable: Deliver
           <div className="flex items-start justify-between gap-2">
             <h4 className="text-sm font-semibold leading-5 text-text">{deliverable.title}</h4>
             {onChangerStatut ? (
-              <select aria-label={`Statut de ${deliverable.title}`} value={deliverable.status} disabled={enEcriture} onChange={(event) => void changer(event.target.value)} className={`shrink-0 rounded-full border border-current px-2 py-0.5 text-xs font-semibold ${status.tintClass} ${status.textClass}`}>
+              <select aria-label={`Statut de ${deliverable.title}`} value={deliverable.status} disabled={enEcriture} onChange={(event) => void changer(event.target.value)} className={`shrink-0 rounded-full border border-current px-2 py-0.5 text-sm font-semibold ${status.tintClass} ${status.textClass}`}>
                 {!statutConnu && <option value={deliverable.status}>{status.label}</option>}
                 {STATUTS_LIVRABLE.map((code) => <option key={code} value={code}>{STATUS[code].label}</option>)}
               </select>

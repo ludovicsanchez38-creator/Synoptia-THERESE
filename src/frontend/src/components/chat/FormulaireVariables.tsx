@@ -107,8 +107,8 @@ export function FormulaireVariables({
         </div>
       )}
       <div className="mt-2 flex justify-end gap-2">
-        <button type="button" onClick={onFermer} className="rounded-md border border-border px-2.5 py-1 font-semibold text-text-muted">Fermer</button>
-        <button type="button" onClick={() => void enregistrer()} disabled={enCours || aRemplir.length === 0} className="rounded-md bg-accent-fill px-2.5 py-1 font-semibold text-accent-ink disabled:opacity-40">
+        <button type="button" onClick={onFermer} className="rounded-md border border-border px-2.5 py-1 text-sm font-semibold text-text-muted">Fermer</button>
+        <button type="button" onClick={() => void enregistrer()} disabled={enCours || aRemplir.length === 0} className="rounded-md bg-accent-fill px-2.5 py-1 text-sm font-semibold text-accent-ink disabled:opacity-40">
           {enCours ? 'Enregistrement…' : 'Enregistrer comme variables'}
         </button>
       </div>
