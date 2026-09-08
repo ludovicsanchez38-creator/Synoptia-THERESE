@@ -218,3 +218,53 @@ zéro section ; les chemins simples (409 en cours, 503 registre, DONE) par la
 route.
 
 Ordre inchangé : P-045, P-051, P-048, P-049, P-056.
+
+## Livraison (08/09/2026, 22 h 05 → 23 h 40)
+
+Onze propositions livrées sur `main`, un commit par sujet, test rouge puis
+correctif puis sabotage à chaque fois :
+
+| Commit | Sujet |
+|---|---|
+| `cefe1d66` | P-047 « Par où commencer » |
+| `e94d852e` | P-050 une seule entrée de palette pour Actions |
+| `348b5ab1` | P-052 ⌘⇧F pose le focus dans la recherche des Contacts |
+| `6bfd8026` | P-053 garde : le tiroir des conversations était déjà une région nommée dans ses trois surfaces (aucun changement) |
+| `e3c2e418` | P-054 une conversation sans message n'est plus listée |
+| `67eb96a4` | P-046 même casse d'en-têtes pour les deux kanbans |
+| `49be380e` | P-045 mention de l'effort neutralisé avec outils (GPT-5/o-series), parité de prédicat frontend/backend |
+| `3a8cffdb` | P-051 tout agent se lance depuis sa fiche (trois entrées), erreur dans la fiche, focus |
+| `232f41eb` | P-048 créer un livrable et changer son statut, validation backend, cycle de validation, retard civil |
+| `c6efba9e` | P-049 renseigner les variables d'un prompt (enregistrement, jamais de substitution dans le message) |
+| `0181f753` | plancher typographique 14 px sur les nouveaux cliquables (garde lot 4) |
+| `b72e1d4e` | P-056 génération de trame annulable (voie (a), pas de fail-open, porteuse détachée, point de non-retour sous shield, codes structurés) |
+
+Portes sur `b72e1d4e` : ruff, pytest 3 319 (0 échec), vitest 414 fichiers /
+1 916 tests, tsc, eslint 27 avertissements (plafond), mypy 954 (cliquet).
+CI de `main` : verte sur `67eb96a4` et `0181f753` (V2, E2E, Windows) ;
+`b72e1d4e` : E2E vert, V2 et Windows en cours à l'écriture de ces lignes.
+
+Contrôle dans Chrome (Playwright, pile jetable 17393/1420, données vierges,
+Ollama gemma4-tia réel, preuves dans `.app-loop/cycles/5/stabilize/`) :
+
+- P-047 : « Par où commencer » affiché, ancien libellé absent.
+- P-050 : requête « Actions » dans la palette → « Actions et relances » et
+  « Tâches » seulement, plus de doublon « Actions ».
+- P-051 : « Relance clients » ouvre sa fiche (focus sur le titre, « Retour au
+  catalogue » nommé, « Lancer »), aucun POST avant « Lancer », le retour rend
+  le focus à la carte.
+- P-048 : « Ajouter un livrable » → « Maquette de la page d'accueil » ajouté,
+  message de succès, sélecteur de statut passé à « En cours ».
+- P-049 : « Bonjour {prenom}, voici le devis pour {nom_client} » → puce
+  « 0 variable résolue, inconnues… » → « Renseigner les variables » → Marie /
+  Dupont → « Enregistrer » → puce « 2 variables résolues », message intact.
+- P-045 : Réglages > IA, GPT (OpenAI), gpt-5.6-sol → mention affichée,
+  `aria-describedby` posé.
+- P-056 : « Générer la trame » → traitement `Trame : Proposition formation IA`
+  running et annulable dans le registre (entity_id = document) → « Annuler la
+  génération » → « Arrêt demandé… » → « Génération de la trame annulée. »,
+  traitement `cancelled`, zéro section, bouton « Générer la trame » revenu.
+  Console : un seul message, le 409 attendu de l'annulation.
+
+Boucle : cycle 5 en `STABILIZE`. La release suivante (0.69.0-alpha) attend le
+GO de Ludo (`/release-therese`).
