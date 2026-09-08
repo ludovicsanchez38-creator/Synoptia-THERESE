@@ -12,7 +12,7 @@ AGENT_PROFILES: list[dict[str, Any]] = [
         "id": "researcher",
         "name": "Chercheur Web",
         "icon": "\U0001f50d",
-        "description": "Recherche sur le web et synthetise les resultats",
+        "description": "Recherche sur le web et synthétise les résultats",
         "color": "cyan",
         "system_prompt": (
             "Tu es un assistant de recherche expert au service d'un solopreneur ou d'une TPE.\n"
@@ -35,7 +35,7 @@ AGENT_PROFILES: list[dict[str, Any]] = [
         "id": "writer",
         "name": "Rédacteur",
         "icon": "\u270d\ufe0f",
-        "description": "Redige des textes professionnels adaptes a ton activite",
+        "description": "Rédige des textes professionnels adaptés à ton activité",
         "color": "magenta",
         "system_prompt": (
             "Tu es un redacteur professionnel specialise dans la communication des solopreneurs "
@@ -62,7 +62,7 @@ AGENT_PROFILES: list[dict[str, Any]] = [
         "id": "analyst",
         "name": "Analyste",
         "icon": "\U0001f4ca",
-        "description": "Analyse des donnees, du code ou des documents et produit des rapports",
+        "description": "Analyse des données, du code ou des documents et produit des rapports",
         "color": "blue",
         "system_prompt": (
             "Tu es un analyste rigoureux qui aide les solopreneurs et TPE a prendre des decisions "
@@ -88,7 +88,7 @@ AGENT_PROFILES: list[dict[str, Any]] = [
         "id": "planner",
         "name": "Planificateur",
         "icon": "\U0001f4c5",
-        "description": "Organise tes projets, cree des plans d'action et des roadmaps",
+        "description": "Organise tes projets, crée des plans d'action et des feuilles de route",
         "color": "green",
         "system_prompt": (
             "Tu es un planificateur de projets specialise dans l'accompagnement des solopreneurs "
@@ -118,7 +118,7 @@ AGENT_PROFILES: list[dict[str, Any]] = [
         "id": "coder",
         "name": "Codeur",
         "icon": "\U0001f4bb",
-        "description": "Ecrit, corrige et ameliore du code dans ton projet",
+        "description": "Écrit, corrige et améliore du code dans ton projet",
         "color": "purple",
         "system_prompt": (
             "Tu es un developpeur senior polyvalent qui aide les solopreneurs techniques "
@@ -150,7 +150,7 @@ AGENT_PROFILES: list[dict[str, Any]] = [
         "id": "creative",
         "name": "Créatif",
         "icon": "\U0001f3a8",
-        "description": "Genere des idees, du contenu creatif et des concepts visuels",
+        "description": "Génère des idées, du contenu créatif et des concepts visuels",
         "color": "amber",
         "system_prompt": (
             "Tu es un directeur creatif freelance qui aide les solopreneurs et TPE a se "

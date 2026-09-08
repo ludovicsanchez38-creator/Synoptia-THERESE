@@ -978,6 +978,16 @@ async def rollback_task(
 # ============================================================
 
 
+async def _modeles_ollama_installes() -> list[str]:
+    """B-649 : les modèles locaux proposés à l'Atelier sont ceux qu'Ollama sert."""
+    from app.routers.config import _available_models_for
+
+    try:
+        return await _available_models_for("ollama")
+    except Exception:
+        return []
+
+
 @router.get("/config")
 async def get_config(
     session: AsyncSession = Depends(get_session),
@@ -1028,11 +1038,27 @@ async def get_config(
     if shutil.which("ollama"):
         configured_providers.add("ollama")
 
-    # Si aucun provider configure, montrer tous les modeles (premier lancement)
+    # Si aucun provider configure, montrer tous les modeles cloud (premier lancement)
     if configured_providers:
-        filtered_models = [m for m in AVAILABLE_MODELS if m["provider"] in configured_providers]
+        filtered_models = [
+            m for m in AVAILABLE_MODELS
+            if m["provider"] in configured_providers and m["provider"] != "ollama"
+        ]
     else:
-        filtered_models = AVAILABLE_MODELS
+        filtered_models = [m for m in AVAILABLE_MODELS if m["provider"] != "ollama"]
+
+    # B-649 (Nadia, c4) : la liste des modèles locaux était figée (cinq entrées)
+    # et proposait des modèles qu'Ollama ne sert pas, avec le premier
+    # présélectionné ; l'agent par défaut ne pouvait pas tourner. Les modèles
+    # locaux proposés sont ceux réellement installés.
+    if "ollama" in configured_providers or not configured_providers:
+        filtered_models = [
+            *filtered_models,
+            *[
+                {"id": nom, "name": f"{nom} (local, installé)", "provider": "ollama"}
+                for nom in await _modeles_ollama_installes()
+            ],
+        ]
 
     return AgentConfigResponse(
         source_path=source_path,

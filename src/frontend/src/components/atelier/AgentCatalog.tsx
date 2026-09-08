@@ -157,11 +157,19 @@ export function AgentCatalog({ onSelectAgent }: Props) {
           if (configResp?.available_models) {
             setAvailableModels(configResp.available_models);
           }
-          // Si pas de modele selectionne, utiliser le defaut du profil
-          if (!selectedModel && profilesData[0]?.default_model) {
-            const defaultModel = profilesData[0].default_model;
-            setSelectedModel(defaultModel);
-            localStorage.setItem(STORAGE_KEY, defaultModel);
+          // Si pas de modèle sélectionné, utiliser le défaut du profil.
+          // B-649 (Nadia, c4) : ce défaut (qwen3.5:9b) était présélectionné
+          // alors qu'aucun modèle de la liste n'était installé. Un défaut hors
+          // de la liste proposée est remplacé par le premier modèle proposé.
+          const proposes = configResp?.available_models ?? [];
+          const courant = selectedModel || profilesData[0]?.default_model || "";
+          const retenu =
+            !customModel && proposes.length > 0 && !proposes.some((m) => m.id === courant)
+              ? proposes[0].id
+              : courant;
+          if (retenu && retenu !== selectedModel) {
+            setSelectedModel(retenu);
+            localStorage.setItem(STORAGE_KEY, retenu);
           }
           setError(null);
         }
@@ -208,7 +216,7 @@ export function AgentCatalog({ onSelectAgent }: Props) {
           Choisis un agent
         </h3>
         <p className="text-xs text-text-muted">
-          Chaque agent est specialise dans un domaine. Selectionne celui qui correspond a ta tache.
+          Chaque agent est spécialisé dans un domaine. Sélectionne celui qui correspond à ta tâche.
         </p>
       </div>
 
