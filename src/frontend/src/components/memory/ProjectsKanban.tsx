@@ -209,7 +209,8 @@ function DroppableStatusGroup({ column, projects, onSelect, onDelete }: Droppabl
       {/* Section Header */}
       <div className={`flex items-center gap-2 px-3 py-2 ${column.bg}`}>
         <column.icon className={`w-4 h-4 ${column.color} ${column.id === 'active' ? 'fill-current' : ''}`} />
-        <span className={`text-xs font-semibold uppercase tracking-wider ${column.color}`}>
+        {/* P-046 (Karim, c4) : même casse que le kanban des tâches (casse de phrase du lexique), plus de capitales. */}
+        <span className={`text-xs font-semibold ${column.color}`}>
           {column.label}
         </span>
         <span className="ml-auto text-xs text-text-muted">({projects.length})</span>
