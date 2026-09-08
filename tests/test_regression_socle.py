@@ -328,15 +328,20 @@ class TestMcp:
         (tmp_path / ".nvm" / "versions" / "node" / "v22.19.0" / "bin").mkdir(parents=True)
         (tmp_path / ".volta" / "bin").mkdir(parents=True)
         monkeypatch.setenv("HOME", str(tmp_path))
+        # Windows : expanduser lit USERPROFILE avant HOME.
+        monkeypatch.setenv("USERPROFILE", str(tmp_path))
         monkeypatch.setattr(Path, "home", classmethod(lambda cls: tmp_path))
         chemin = build_mcp_enriched_path()
         # Seuls les dossiers qui existent entrent dans le PATH : Homebrew n'est
         # attendu que là où il est installé (rouge sur ubuntu et Windows le
-        # 08/09/2026, où ce test réécrit supposait macOS).
+        # 08/09/2026, où ce test réécrit supposait macOS). Les segments sont
+        # comparés normalisés : le service assemble « ~/.volta/bin » avec une
+        # barre oblique, Windows le relit avec des antislashs.
+        segments = {os.path.normpath(p) for p in chemin.split(os.pathsep)}
         if Path("/opt/homebrew/bin").is_dir():
-            assert "/opt/homebrew/bin" in chemin.split(os.pathsep)
-        assert str(tmp_path / ".volta" / "bin") in chemin
-        assert str(tmp_path / ".nvm" / "versions" / "node" / "v22.19.0" / "bin") in chemin, chemin
+            assert os.path.normpath("/opt/homebrew/bin") in segments
+        assert os.path.normpath(str(tmp_path / ".volta" / "bin")) in segments, chemin
+        assert os.path.normpath(str(tmp_path / ".nvm" / "versions" / "node" / "v22.19.0" / "bin")) in segments, chemin
 
     def test_l_appel_d_un_outil_dispose_d_au_moins_une_minute(self):
         from app.services.mcp_service import MCPService
