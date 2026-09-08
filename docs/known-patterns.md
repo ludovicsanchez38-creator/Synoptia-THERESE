@@ -386,3 +386,41 @@ un correctif et une table ajoutée par un autre commit. Garder la revue du diff
 complet dans le rituel de release quand le lot dépasse quelques dizaines de
 commits, et vérifier chaque finding dans le code avant de le corriger (huit
 P2 sur neuf ont été enregistrés comme candidats plutôt que corrigés à chaud).
+
+## Le filtre de sécurité d'OpenAI interrompt `codex exec review` sur le validateur de code généré (08/09/2026)
+
+`codex exec review --base v0.67.0-alpha` (gpt-6-astra, effort max) a lu
+`src/backend/app/services/skills/code_executor.py`, dont les motifs interdits
+(`os`, `sys`, `subprocess`) et la fonction `validate_code` ont déclenché
+« This content was flagged for possible cybersecurity risk » : revue
+interrompue au bout de 13 minutes, sans verdict ni fichier `-o`. Relancée en
+`codex exec` avec un prompt fichier qui exclut ce module et ses tests
+(`':(exclude)…'` dans le `git diff`, plus une consigne explicite), la revue va
+au bout en 21 minutes et rend un vrai verdict (NO-GO, 2 P1 + 1 P2, tous
+vérifiés). Garder cette exclusion pour toute revue de diff qui touche ce
+fichier, et lire la fin du log : l'absence du fichier `-o` est le symptôme.
+
+## Un test vert dans la suite et rouge seul : l'ordre d'exécution masquait une course avec un module lazy (08/09/2026)
+
+`PanneauxNonModaux` « une modale ouverte PAR-DESSUS garde Échap » passait dans
+la suite complète (1 858 tests) et échouait huit fois sur huit lancé seul, puis
+en CI. Instrumenté : au moment d'Échap, `showSettings` est vrai mais aucun
+`role="dialog"` n'est monté, car les Réglages sont chargés en lazy, et le focus
+est encore dans le tiroir ; le raccourci B-645 (« la surface qui tient le focus
+se ferme d'abord ») fermait le tiroir. Dans la suite, un test précédent du
+même fichier avait déjà chargé le module, la modale se montait avant Échap et
+le test passait par accident. Deux règles : lancer seul (`vitest run <fichier>
+-t "<nom>"`) tout test rouge en CI et vert en local avant d'accuser le
+runner ; et une modale demandée possède Échap dès la demande, pas au montage
+(B-658). Une première attribution au commit voisin (B-657) était fausse.
+
+## Windows : le job « Backend autonome » varie de 5 min 45 à plus de 10 min pour la même suite (08/09/2026)
+
+Sur le commit de bump 0.68.0 (versions seules), le job a atteint 100 % des
+tests à 10 min 01 et l'étape a expiré (`timeout-minutes: 10`) ; le rerun passe
+en 8 min 14, et le run de la nuit en 5 min 45. Aucun test rouge : c'est la
+variance du runner partagé, aggravée par le harnais B-306 en fin de suite.
+Lire le journal (progression `[100%]` puis `timed out`) avant de parler de
+régression ; le job n'est pas dans le gate du build de release. Relever le
+timeout de l'étape n'est acceptable qu'avec une mesure séparée du temps
+d'exécution et du temps de sortie.
