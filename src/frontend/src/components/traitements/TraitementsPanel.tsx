@@ -6,7 +6,10 @@
  * « Arrêt demandé - fin de l'étape en cours ». Jamais un arrêt annoncé
  * pendant que le travail continue.
  */
+import { useEffect } from 'react';
 import { Square, X } from 'lucide-react';
+
+import { pushEscapeHandler } from '../../lib/escapeStack';
 
 import type { Traitement } from '../../services/api';
 import { useProcessingTasksStore } from '../../stores/processingTasksStore';
@@ -28,6 +31,11 @@ export function TraitementsPanel() {
   const arretsDemandes = useProcessingTasksStore((s) => s.arretsDemandes);
   const annuler = useProcessingTasksStore((s) => s.annuler);
   const fermer = useProcessingTasksStore((s) => s.fermerPanneau);
+
+  // B-651 (ronde B, D1) : un role=dialog qu'Échap ne fermait pas. Le panneau
+  // s'inscrit dans la pile d'Échap, première moitié de la cascade de la coque
+  // (les overlays portés par les stores) ; le retrait suit le démontage.
+  useEffect(() => pushEscapeHandler(fermer), [fermer]);
 
   return (
     <div
