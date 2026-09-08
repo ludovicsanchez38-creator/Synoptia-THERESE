@@ -1910,7 +1910,7 @@ export function ConversationCanvasPrototype() {
                   </div>
 
                   <div className="mt-9 border-t border-border pt-5">
-                    <div className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">Essayer un autre parcours</div>
+                    <div className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">Par où commencer</div>
                     <div className="flex flex-wrap gap-2">
                       {actionsVisibles.map((action) => (
                         <button

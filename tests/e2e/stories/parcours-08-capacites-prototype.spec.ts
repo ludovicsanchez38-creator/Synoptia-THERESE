@@ -218,7 +218,7 @@ test.describe('Prototype conversationnel - parcours unifiés des capacités', ()
     ]) {
       await page.setViewportSize(viewport);
 
-      const parcours = page.getByText('Essayer un autre parcours', { exact: true }).locator('..');
+      const parcours = page.getByText('Par où commencer', { exact: true }).locator('..');
       const fil = page.getByTestId('prototype-conversation-scroll');
       const saisieDuComposeur = page.getByPlaceholder(/Demande à Thérèse/);
       await fil.evaluate((element) => {

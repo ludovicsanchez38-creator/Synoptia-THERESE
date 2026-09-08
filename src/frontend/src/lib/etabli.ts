@@ -3,7 +3,7 @@
  *
  * CINQ actions, ids et destinations FIGÉS (les ids sont les scénarios
  * réels de la coque et des liens profonds ?scenario=). La palette ⌘K et
- * « Essayer un autre parcours » suivent cette liste ; les anciennes puces
+ * « Par où commencer » (ex-« Essayer un autre parcours », P-047) suivent cette liste ; les anciennes puces
  * priorités et mission vivent au tiroir (« Plus d'outils »).
  *
  * « Décider » a rejoint l'établi le 26/08/2026 : le Board est la capacité

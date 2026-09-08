@@ -3,7 +3,7 @@
  *
  * L'accueil propose CINQ actions (Écrire, Retrouver, Préparer, Facturer,
  * Décider), depuis une source unique (lib/etabli.ts) suivie aussi par la
- * palette ⌘K et « Essayer un autre parcours ». Les puces priorités et mission
+ * palette ⌘K et « Par où commencer ». Les puces priorités et mission
  * restent hors de l'accueil : leurs capacités vivent au tiroir (« Plus
  * d'outils », la porte renommée du rail). Le placeholder inactif est une
  * constante partagée des deux composeurs.
@@ -106,7 +106,7 @@ describe('L’accueil est un établi', () => {
 
     // Le bloc de parcours n'apparaît qu'une fois DANS un scénario, et la
     // puce active y est marquée : c'est la preuve que board est ouvert.
-    const parcours = await screen.findByText('Essayer un autre parcours');
+    const parcours = await screen.findByText('Par où commencer');
     const bloc = parcours.parentElement as HTMLElement;
     const puce = Array.from(bloc.querySelectorAll('button')).find(
       (b) => b.textContent === 'Décider',
@@ -136,15 +136,15 @@ describe('L’accueil est un établi', () => {
     expect(screen.getByPlaceholderText(PLACEHOLDER_COMPOSEUR)).toBeInTheDocument();
   });
 
-  it('« Essayer un autre parcours » suit la même liste', async () => {
+  it('« Par où commencer » suit la même liste', async () => {
     render(<ConversationCanvasPrototype />);
 
-    // Entrer dans un scénario pour voir le bloc « Essayer un autre parcours »
+    // Entrer dans un scénario pour voir le bloc « Par où commencer »
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Retrouver' }));
     });
 
-    const parcours = await screen.findByText('Essayer un autre parcours');
+    const parcours = await screen.findByText('Par où commencer');
     const bloc = parcours.parentElement as HTMLElement;
     for (const action of ACTIONS_ETABLI) {
       expect(bloc.textContent).toContain(action.label);
