@@ -660,7 +660,7 @@ def detect_uncertainty(response: str) -> dict:
 
 def enregistrer_usage_llm(
     llm_service: object,
-    usage_sink: dict | None,
+    usage_sink: dict[str, int] | None,
     conversation_id: str,
     texte_entree: str = "",
     texte_sortie: str = "",

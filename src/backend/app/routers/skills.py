@@ -153,7 +153,7 @@ async def execute_skill(
         # 5. Appeler le LLM (max_tokens augmenté pour les skills FILE qui génèrent du code)
         # 16384 tokens pour éviter la troncature sur les documents longs (BUG-042)
         llm_max_tokens = 16384 if skill.output_type == SkillOutputType.FILE else None
-        usage_skill: dict = {}
+        usage_skill: dict[str, int] = {}
         llm_content = await llm_service.generate_content(
             prompt=enriched_prompt,
             context=request.context,
@@ -215,7 +215,7 @@ async def execute_skill(
 {markdown_addition}
 IMPORTANT : Écris directement le contenu textuel complet et détaillé. NE génère PAS de code Python.
 """
-            usage_relance: dict = {}
+            usage_relance: dict[str, int] = {}
             retry_content = await llm_service.generate_content(
                 prompt=retry_prompt,
                 context=request.context,

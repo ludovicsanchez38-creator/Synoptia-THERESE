@@ -983,7 +983,7 @@ async def _modeles_ollama_installes() -> list[str]:
     from app.routers.config import _available_models_for
 
     try:
-        return await _available_models_for("ollama")
+        return list(await _available_models_for("ollama"))
     except Exception:
         return []
 

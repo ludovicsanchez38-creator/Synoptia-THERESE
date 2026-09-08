@@ -351,7 +351,7 @@ async def _draft_stream(
 
     try:
         try:
-            usage_redaction: dict = {}
+            usage_redaction: dict[str, int] = {}
             async for chunk in llm_service.stream_response(context, raise_on_error=True, usage_sink=usage_redaction):
                 accumulated += chunk
                 yield f"data: {json.dumps({'type': 'text', 'content': chunk})}\n\n"
@@ -482,7 +482,7 @@ async def validate_section(
 
     llm_service = get_llm_service()
     try:
-        usage_resume: dict = {}
+        usage_resume: dict[str, int] = {}
         summary = (await llm_service.generate_content(prompt=build_summary_prompt(section), usage_sink=usage_resume)).strip()
         enregistrer_usage_llm(llm_service, usage_resume, f"document:{section.document_id}", section.content, summary)
         if not summary:
@@ -584,7 +584,7 @@ async def generate_outline(
         )
 
     llm_service = get_llm_service()
-    usage_trame: dict = {}
+    usage_trame: dict[str, int] = {}
     raw_response = await llm_service.generate_content(
         usage_sink=usage_trame,
         prompt=build_outline_prompt(document.title, document.brief)

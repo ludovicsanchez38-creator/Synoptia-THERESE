@@ -882,7 +882,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         tools: list[dict] | None = None,
         enable_grounding: bool = True,
         raise_on_error: bool = False,
-        usage_sink: dict | None = None,
+        usage_sink: dict[str, int] | None = None,
     ) -> AsyncGenerator[str, None]:
         """Stream response (text only, backward compat).
 
@@ -1072,7 +1072,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         context: dict | None = None,
         system_prompt: str | None = None,
         max_tokens: int | None = None,
-        usage_sink: dict | None = None,
+        usage_sink: dict[str, int] | None = None,
     ) -> str:
         """Generate complete content (non-streaming).
 
