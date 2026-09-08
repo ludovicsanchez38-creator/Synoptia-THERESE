@@ -1,0 +1,19 @@
+{
+  "commentaire": "Témoins partagés entre le prédicat frontend (lib/effortOpenAI.ts) et le backend (_uses_max_completion_tokens) : la famille OpenAI qui refuse outils + raisonnement sur /v1/chat/completions (P-045).",
+  "temoins": {
+    "gpt-5.6-luna": true,
+    "gpt-5.6-sol": true,
+    "gpt-5.5": true,
+    "gpt-5.4-mini": true,
+    "GPT-5.5-pro": true,
+    "o1-mini": true,
+    "o3": true,
+    "o4-mini": true,
+    "gpt-4.1": false,
+    "gpt-4o-mini": false,
+    "claude-sonnet-4-6": false,
+    "grok-4.6": false,
+    "qwen3:8b": false
+  },
+  "effort_transmis_sans_outils": ["gpt-5.6-sol", "gpt-5.6-terra", "gpt-5.6-luna"]
+}

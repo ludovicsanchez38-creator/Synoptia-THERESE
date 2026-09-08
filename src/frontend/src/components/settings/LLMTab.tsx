@@ -9,6 +9,7 @@ import type { LLMEffort } from '../../services/api/config';
 import { LocalModelFeasibility } from '../llm/LocalModelFeasibility';
 import { FOURNISSEURS as PROVIDERS, chargerCatalogue, type ModeleDecore } from '../../lib/catalogueModeles';
 import { handleRovingFocus } from '../../lib/rovingFocus';
+import { effortTransmisSansOutils, modeleOpenAIRaisonnant } from '../../lib/effortOpenAI';
 
 // Configuration des providers LLM - catalogue centralisé (dette 0.43.4) :
 // la liste statique vit dans lib/catalogueModeles, la liste dynamique vient
@@ -565,7 +566,7 @@ const EFFORT_OPTIONS = [
   { value: 'max', label: 'Maximal - le plus lent, le plus fiable' },
 ] as const;
 
-function EffortSelector({
+export function EffortSelector({
   selectedProvider,
   selectedModel,
 }: {
@@ -617,6 +618,13 @@ function EffortSelector({
     }
   }
 
+  // P-045 : la famille GPT-5/o-series refuse outils + raisonnement sur
+  // /v1/chat/completions ; le moteur neutralise l'effort dès qu'une
+  // conversation utilise des outils. L'écran le dit, sans promettre que
+  // l'effort passe sans outils sur un modèle non pris en charge.
+  const mentionOutils = selectedProvider === 'openai' && modeleOpenAIRaisonnant(selectedModel);
+  const effortSansOutils = effortTransmisSansOutils(selectedModel);
+
   return (
     <div>
       <div className="flex items-center justify-between gap-3">
@@ -633,6 +641,7 @@ function EffortSelector({
         id="llm-effort"
         value={effort}
         disabled={saving}
+        aria-describedby={mentionOutils ? 'llm-effort-outils' : undefined}
         onChange={(e) => void handleChange(e.target.value)}
         className="px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:border-accent-cyan/50 transition-colors [&>option]:bg-surface [&>option]:text-text"
       >
@@ -643,6 +652,15 @@ function EffortSelector({
         ))}
         </select>
       </div>
+      {mentionOutils && (
+        <p id="llm-effort-outils" data-testid="effort-mention-outils" className="mt-2 text-xs text-text-muted">
+          Dans THÉRÈSE, l'effort est désactivé pour ce modèle dès qu'une conversation utilise des outils :
+          l'API d'OpenAI refuse le raisonnement avec des outils sur ce chemin.{' '}
+          {effortSansOutils
+            ? 'Sans outils, ce réglage est transmis (trame, rédaction).'
+            : 'Sans outils, ce réglage n\'est pas transmis à ce modèle : seuls les GPT-5.6 sont pris en charge.'}
+        </p>
+      )}
       {status && <p role="status" className="mt-2 text-xs text-info">{status}</p>}
       {error && (
         <div role="alert" className="mt-2 rounded-md border border-error/40 bg-[var(--color-error-tint)] p-3 text-xs text-error">
