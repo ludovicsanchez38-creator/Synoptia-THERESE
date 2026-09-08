@@ -5,6 +5,7 @@ API endpoints pour le board de décision stratégique.
 """
 
 import asyncio
+import contextlib
 import json
 import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
@@ -118,28 +119,46 @@ async def _clore_apres_deconnexion(
     board_service: BoardService,
     handle: TraitementHandle | None,
     decision_sauvee: "Callable[[], Awaitable[bool]]",
+    ressources: contextlib.AsyncExitStack | None = None,
 ) -> None:
     """Clôture d'une délibération dont le client a disparu - exécutée hors
     du scope annulé : attend la fin réelle du porteur ET de la persistance
-    protégée avant de trancher done/cancelled."""
+    protégée avant de trancher done/cancelled.
+
+    B-653 (ronde B, D3) : `ressources` porte la session du générateur. Fermée
+    DANS le scope annulé par BaseHTTPMiddleware (annulation re-livrée à chaque
+    await), la connexion aiosqlite était terminée à mi-course et restait hors
+    du pool ; une requête suivante échouait en « no active connection ». Elle
+    est rendue ici, dans une tâche détachée, quoi qu'il arrive avant.
+    """
     from app.models.processing import EtatTache
 
-    await asyncio.gather(porteur, return_exceptions=True)
-    persistance = board_service._persistance_en_cours
-    if persistance is not None:
-        await asyncio.gather(persistance, return_exceptions=True)
-    if handle is None:
-        return
     try:
-        if await decision_sauvee():
-            await _terminer_sans_masquer(handle, EtatTache.DONE)
-        else:
-            await _terminer_sans_masquer(handle, EtatTache.CANCELLED)
-    except Exception:
-        logger.warning(
-            "Clôture après déconnexion impossible pour le Board",
-            exc_info=True,
-        )
+        await asyncio.gather(porteur, return_exceptions=True)
+        persistance = board_service._persistance_en_cours
+        if persistance is not None:
+            await asyncio.gather(persistance, return_exceptions=True)
+        if handle is None:
+            return
+        try:
+            if await decision_sauvee():
+                await _terminer_sans_masquer(handle, EtatTache.DONE)
+            else:
+                await _terminer_sans_masquer(handle, EtatTache.CANCELLED)
+        except Exception:
+            logger.warning(
+                "Clôture après déconnexion impossible pour le Board",
+                exc_info=True,
+            )
+    finally:
+        if ressources is not None:
+            try:
+                await ressources.aclose()
+            except Exception:
+                logger.warning(
+                    "Session du Board non rendue proprement après déconnexion",
+                    exc_info=True,
+                )
 
 
 @router.post("/deliberate")
@@ -208,7 +227,14 @@ async def deliberate(
             asyncio.Queue()
         )
 
-        async with get_session_context() as session:
+        # B-653 : la session n'est plus tenue par un `async with` dans le
+        # générateur. À la déconnexion du client, sa fermeture aurait lieu dans
+        # le scope annulé et la connexion serait terminée à mi-course ; la pile
+        # de contextes est remise à la clôture détachée, hors de ce scope.
+        ressources = contextlib.AsyncExitStack()
+        session = await ressources.enter_async_context(get_session_context())
+        remis_a_la_cloture = False
+        try:
             board_service = BoardService(session)
 
             async def porteur() -> None:
@@ -312,14 +338,18 @@ async def deliberate(
                 # la ligne resterait running à jamais : il part donc dans
                 # une tâche détachée, insensible au scope annulé.
                 tache.cancel()
+                remis_a_la_cloture = True
                 nettoyage = asyncio.create_task(
                     _clore_apres_deconnexion(
-                        tache, board_service, handle, _decision_sauvee
+                        tache, board_service, handle, _decision_sauvee, ressources
                     )
                 )
                 _nettoyages_en_cours.add(nettoyage)
                 nettoyage.add_done_callback(_nettoyages_en_cours.discard)
                 raise
+        finally:
+            if not remis_a_la_cloture:
+                await ressources.aclose()
 
     return StreamingResponse(
         generate(),
