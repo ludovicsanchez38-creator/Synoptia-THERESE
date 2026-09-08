@@ -615,7 +615,7 @@ def _sans_accents(texte: str) -> str:
     )
 
 
-def detect_uncertainty(response: str) -> dict:
+def detect_uncertainty(response: str) -> dict[str, Any]:
     """
     Detect if the LLM response indicates uncertainty (US-ESC-01).
 
