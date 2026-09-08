@@ -45,6 +45,26 @@ describe('actionsStore.insertResultInChat (BUG-107 / prep-RDV)', () => {
     expect(useNavigationStore.getState().activeView).toBe('chat');
   });
 
+  it('« Voir » ouvre la conversation du résultat concerné, pas la dernière créée (revue COCO 0.68.0)', () => {
+    useStatusStore.setState({ notifications: [] });
+    insertResultInChat(completedTask('task-coco-voir-a'));
+    const idA = useChatStore.getState().currentConversationId;
+    insertResultInChat({
+      ...completedTask('task-coco-voir-b'),
+      agent_name: 'Relance clients',
+      result: 'Trois relances préparées.',
+    });
+    const idB = useChatStore.getState().currentConversationId;
+    expect(idA).not.toBe(idB);
+    const notifA = useStatusStore
+      .getState()
+      .notifications.find((n) => n.title?.startsWith('Préparation RDV'));
+    expect(notifA?.action?.label).toBe('Voir');
+    notifA?.action?.onClick();
+    expect(useChatStore.getState().currentConversationId).toBe(idA);
+    expect(useNavigationStore.getState().activeView).toBe('chat');
+  });
+
   it('déjà sur le chat : aucune notification, le résultat est simplement visible', () => {
     useStatusStore.setState({ notifications: [] });
     useNavigationStore.setState({ activeView: 'chat', history: [] });

@@ -81,7 +81,10 @@ export function insertResultInChat(task: TaskState): void {
     type: task.status === 'error' ? 'warning' : 'success',
     title: task.agent_name ? `${task.agent_name} : résultat disponible` : 'Résultat disponible',
     message: 'Rangé dans une nouvelle conversation.',
-    action: { label: 'Voir', onClick: () => useNavigationStore.getState().setView('chat') },
+    // Revue COCO 0.68.0 (P2) : « Voir » sélectionne LA conversation du résultat
+    // (loadConversation ramène aussi la vue sur le chat) ; avec deux résultats
+    // arrivés pendant qu'on travaillait ailleurs, il ouvrait le dernier créé.
+    action: { label: 'Voir', onClick: () => useChatStore.getState().loadConversation(id) },
   });
 }
 
