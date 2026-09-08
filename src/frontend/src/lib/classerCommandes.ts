@@ -23,6 +23,33 @@ function rang(commande: CommandeClassable, q: string): number {
   return -1;
 }
 
+/**
+ * B-637 (persona Nadia, c4) : la palette de la coque affiche plusieurs listes
+ * à la suite (capacités, puis commandes de l'application). Chaque liste est
+ * classée, mais la sélection initiale doit viser la meilleure correspondance
+ * TOUTES listes confondues : « Conversations » désigne la commande du même
+ * nom, pas la capacité dont la description contient le mot. Retourne l'index
+ * plat (listes concaténées) ; 0 sans recherche ou sans correspondance. À rang
+ * égal, la liste placée devant garde la main.
+ */
+export function indexDeLaMeilleureOption(
+  groupes: readonly (readonly CommandeClassable[])[],
+  recherche: string,
+): number {
+  const q = replierPourRecherche(recherche.trim());
+  if (!q) return 0;
+  let meilleur = { index: 0, rang: Number.POSITIVE_INFINITY };
+  let decalage = 0;
+  for (const groupe of groupes) {
+    groupe.forEach((commande, i) => {
+      const r = rang(commande, q);
+      if (r >= 0 && r < meilleur.rang) meilleur = { index: decalage + i, rang: r };
+    });
+    decalage += groupe.length;
+  }
+  return meilleur.index;
+}
+
 export function classerCommandes<T extends CommandeClassable>(commandes: readonly T[], recherche: string): T[] {
   const q = replierPourRecherche(recherche.trim());
   if (!q) return [...commandes];

@@ -35,6 +35,7 @@ import { ConnectionStatus } from '../ui/ConnectionStatus';
 import { WindowControls } from '../window/WindowControls';
 import { isMacPlatform } from '../../lib/platform';
 import { replierPourRecherche } from '../../lib/replierPourRecherche';
+import { classerCommandes, indexDeLaMeilleureOption } from '../../lib/classerCommandes';
 import { startWindowDrag } from '../../lib/windowChrome';
 import {
   AtelierHistoryCard,
@@ -439,13 +440,13 @@ function CommandPalette({
         .filter((item): item is CapabilityItem => Boolean(item))
         .filter((item) => !item.scenario || !dejaEnParcours.has(item.scenario));
     }
-    return capabilities
-      .filter((item) =>
-        replierPourRecherche(
-          [item.title, item.description, ...item.features, ...item.keywords].join(' '),
-        ).includes(normalized),
-      )
-      .slice(0, 8);
+    // B-637 (Nadia, c4) : les deux listes se filtraient par simple `includes`,
+    // sans classement ; la première passait toujours devant. Le titre prime
+    // sur les mots-clés et les fonctions, qui priment sur la description.
+    return classerCommandes(
+      capabilities.map((item) => ({ ...item, name: item.title, keywords: [...item.keywords, ...item.features] })),
+      query,
+    ).slice(0, 8);
   }, [query]);
   const visibleActions = useMemo(() => {
     const normalized = replierPourRecherche(query.trim());
@@ -460,10 +461,9 @@ function CommandPalette({
         visibleCapabilities.map((c) => c.id),
       );
     }
-    return getActions().filter((action) =>
-      replierPourRecherche(
-        [action.label, action.description || '', ...(action.keywords || [])].join(' '),
-      ).includes(normalized),
+    return classerCommandes(
+      getActions().map((action) => ({ ...action, name: action.label })),
+      query,
     ).slice(0, 6);
   }, [query, visibleCapabilities]);
   const scenarioCount = query ? 0 : ACTIONS_ETABLI.length;
@@ -471,8 +471,20 @@ function CommandPalette({
   const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
 
   useEffect(() => {
-    setActiveOption(0);
-  }, [query]);
+    // B-637 : la sélection initiale vise la meilleure correspondance toutes
+    // listes confondues (« Conversations » = la commande, pas « Tâches »).
+    setActiveOption(
+      query
+        ? indexDeLaMeilleureOption(
+            [
+              visibleCapabilities.map((c) => ({ name: c.title, keywords: [...c.keywords, ...c.features], description: c.description })),
+              visibleActions.map((a) => ({ name: a.label, keywords: a.keywords, description: a.description })),
+            ],
+            query,
+          )
+        : 0,
+    );
+  }, [query, visibleCapabilities, visibleActions]);
 
   const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Home' || event.key === 'End') {
@@ -678,6 +690,12 @@ function CommandPalette({
  * confiance, chat, vue embarquée, panneaux). Une surface nouvelle doit
  * s'inscrire dans l'une des deux — il n'y a pas de troisième endroit.
  */
+/** B-645 (Nadia, c4) : le tiroir des conversations tient-il le focus ? */
+function leTiroirALeFocus(): boolean {
+  const tiroir = document.querySelector('[aria-labelledby="prototype-conversation-drawer-title"]');
+  return Boolean(tiroir && document.activeElement && tiroir.contains(document.activeElement));
+}
+
 function consommeEchapUnifie(): boolean {
   if (runTopEscapeHandler()) return true;
   const ps = usePanelStoreDirect.getState();
@@ -1196,7 +1214,8 @@ export function ConversationCanvasPrototype() {
     onSearch: () => openEmbeddedView('memory'),
     onToggleDemoMode: toggleDemoMode,
     onToggleAtelierPanel: toggleAtelierPanel,
-    onOpenKatiaNewTask: openAtelierPanel,
+    // B-641 (Nadia, c4) : « Katia - nouvelle tâche » ouvre le Chat de l'Atelier, focus dans le composeur.
+    onOpenKatiaNewTask: () => openAtelierPanel({ focusComposer: true }),
   });
 
   // Hotfix 0.48.1 : un panneau latéral est ouvert ET recouvre la zone ?
@@ -1226,6 +1245,11 @@ export function ConversationCanvasPrototype() {
         // par la pile unifiée (Réglages, contact, projet, bibliothèque, Actions,
         // Atelier). Échap fermait alors le chat DERRIÈRE la modale, ou ne
         // faisait rien. Ces overlays passent en premier.
+        // B-645 (Nadia, c4) : panneau Actions ouvert PUIS tiroir des
+        // conversations (⌘B), le premier Échap fermait le panneau et laissait
+        // le tiroir avec son focus. La surface qui tient le focus se ferme
+        // d'abord.
+        if (drawerOpen && leTiroirALeFocus()) { closeConversationDrawer(); return; }
         if (consommeEchapUnifie()) return;
         if (commandOpen) closeCommandPalette();
         else if (capabilityCenterOpen) closeCapabilityCenter();
