@@ -23,7 +23,7 @@ async def test_une_connexion_qui_echoue_refuse_la_configuration(client, db_sessi
     from app.services.email import imap_smtp_provider as module
 
     async def _panne(self):
-        return {"ok": False, "message": "IMAP : identifiants refusés par le serveur"}
+        return {"success": False, "imap_ok": False, "smtp_ok": True, "message": "IMAP : identifiants refusés par le serveur"}
 
     monkeypatch.setattr(module.ImapSmtpProvider, "test_connection", _panne)
 
@@ -38,5 +38,24 @@ async def test_une_connexion_qui_echoue_refuse_la_configuration(client, db_sessi
 @pytest.mark.asyncio
 async def test_une_connexion_qui_reussit_enregistre_le_compte(client):
     reponse = await client.post("/api/email/auth/imap-setup", json=CORPS)
+    assert reponse.status_code == 200, reponse.text
+    assert reponse.json()["provider"] == "imap"
+
+
+@pytest.mark.imap_reel
+@pytest.mark.asyncio
+async def test_la_vraie_sonde_qui_reussit_enregistre_le_compte(client, monkeypatch):
+    """Revue COCO 0.68.0 (P1) : la route lisait `verdict["ok"]` alors que la vraie
+    `test_connection()` répond `success` (+ `imap_ok`, `smtp_ok`). Tout compte
+    IMAP valide sortait en 400 ; la fixture de test masquait le contrat."""
+    from unittest.mock import AsyncMock, patch
+
+    from app.services.email import imap_smtp_provider as module
+
+    with patch.object(module.ImapSmtpProvider, "_connect_mailbox"), patch(
+        "app.services.email.imap_smtp_provider.aiosmtplib.SMTP"
+    ) as faux_smtp:
+        faux_smtp.return_value = AsyncMock()
+        reponse = await client.post("/api/email/auth/imap-setup", json=CORPS)
     assert reponse.status_code == 200, reponse.text
     assert reponse.json()["provider"] == "imap"

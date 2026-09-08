@@ -800,7 +800,10 @@ async def setup_imap_account(
         smtp_use_tls=request.smtp_use_tls,
     )
     verdict = await sonde.test_connection()
-    if not verdict.get("ok"):
+    # Revue COCO 0.68.0 (P1) : `test_connection()` répond `success` (+ `imap_ok`,
+    # `smtp_ok`, `message`), pas `ok` ; lire la mauvaise clé refusait tout compte
+    # valide en 400 avec le message « Connexion IMAP et SMTP reussie ».
+    if not verdict.get("success"):
         raise HTTPException(
             status_code=400,
             detail=(

@@ -365,7 +365,9 @@ def sonde_imap_hors_reseau(request, monkeypatch):
     from app.services.email import imap_smtp_provider as module
 
     async def _ok(self):
-        return {"ok": True, "message": "IMAP OK"}
+        # Même contrat que la vraie méthode (revue COCO 0.68.0 : la fixture
+        # répondait `ok` et masquait la clé `success` lue par la route).
+        return {"success": True, "imap_ok": True, "smtp_ok": True, "message": "Connexion IMAP et SMTP reussie"}
 
     monkeypatch.setattr(module.ImapSmtpProvider, "test_connection", _ok)
     yield
