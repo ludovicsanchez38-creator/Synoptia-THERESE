@@ -171,9 +171,12 @@ export async function deleteDocument(id: string): Promise<{ success: boolean; me
 // Trame - Génération et sections
 // ============================================================
 
-export async function generateOutline(documentId: string): Promise<DocumentSection[]> {
+export async function generateOutline(documentId: string, taskId?: string): Promise<DocumentSection[]> {
   return request<DocumentSection[]>(`/api/documents/${documentId}/outline`, {
     method: 'POST',
+    // P-056 : l'identifiant du traitement est choisi ici pour pouvoir demander
+    // l'arrêt pendant que la requête est en vol.
+    body: taskId ? JSON.stringify({ task_id: taskId }) : undefined,
     timeoutMs: null, // génération LLM de la trame complète
   });
 }

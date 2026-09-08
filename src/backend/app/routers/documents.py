@@ -17,14 +17,17 @@ cette lecture alimente à la fois la vérification de complétude et
 l'assemblage - jamais deux lectures qui pourraient diverger.
 """
 
+import asyncio
 import json
 import logging
 import time
+import uuid
 from datetime import UTC, datetime
 from typing import AsyncGenerator, cast
 
-from app.models.database import get_session
+from app.models.database import get_session, get_session_context
 from app.models.entities import Contact, Document, DocumentPiste, DocumentSection, Project
+from app.models.processing import EtatTache
 from app.models.schemas_documents import (
     DocumentCreate,
     DocumentResponse,
@@ -35,6 +38,7 @@ from app.models.schemas_documents import (
     SectionsReorder,
     SectionUpdate,
 )
+from app.services import task_registry, traitements
 from app.services.document_orchestrator import (
     assemble_markdown,
     build_outline_prompt,
@@ -544,11 +548,147 @@ async def create_section(
     return _section_to_response(section)
 
 
-@router.post("/{document_id}/outline")
+class OutlineRequest(BaseModel):
+    """P-056 : le client choisit l'identifiant du traitement pour pouvoir
+    demander l'arrêt pendant que la requête est en vol (voie (a) de la revue
+    COCO). Optionnel : les appels existants continuent de marcher."""
+
+    task_id: uuid.UUID | None = None
+
+
+class TrameIllisible(Exception):
+    """Le LLM a répondu, mais pas une trame."""
+
+
+class TrameOccupee(Exception):
+    """Des sections ont été rédigées pendant la génération : on n'écrase rien."""
+
+
+class _TrameAnnulee:
+    """Sentinelle : la génération s'est arrêtée avant toute écriture."""
+
+
+TRAME_ANNULEE = _TrameAnnulee()
+
+# Références fortes sur les porteuses : une déconnexion du client n'annule pas
+# la génération (elle reste visible et annulable dans « Travaux »).
+_PORTEUSES: set["asyncio.Task[object]"] = set()
+
+_MESSAGE_SECTIONS_REDIGEES = (
+    "Ce document a déjà des sections rédigées - la génération de "
+    "trame ne peut pas les écraser. Crée une section manuellement "
+    "pour compléter la trame existante."
+)
+
+
+async def _terminer_temoin(handle: traitements.TraitementHandle, etat: str, *, error: str | None = None) -> None:
+    """Le suivi est un témoin, jamais un acteur : sa clôture peut échouer (base
+    verrouillée) sans changer le sort de la trame."""
+    try:
+        await handle.terminer(etat, error=error)
+    except Exception:
+        logger.warning("Suivi de la trame non clôturé (%s)", handle.id, exc_info=True)
+
+
+async def _ecrire_la_trame(document_id: str, parsed_sections: list[dict[str, object]]) -> list[SectionResponse]:
+    """Point de non-retour de la génération : relit les sections dans SA
+    transaction (revue COCO, finding 4) et ne remplace que des sections encore
+    toutes vides. Appelée sous `asyncio.shield` : une annulation qui arrive
+    pendant l'écriture laisse l'écriture aboutir."""
+    async with get_session_context() as session:
+        existing_result = await session.execute(
+            select(DocumentSection).where(DocumentSection.document_id == document_id)
+        )
+        existing_sections = existing_result.scalars().all()
+        if any(s.status != "vide" or s.content != "" for s in existing_sections):
+            raise TrameOccupee()
+        for old_section in existing_sections:
+            await session.delete(old_section)
+        sections: list[DocumentSection] = []
+        for index, item in enumerate(parsed_sections):
+            section = DocumentSection(
+                document_id=document_id,
+                title=cast(str, item["title"]),
+                brief=cast(str, item["brief"]),
+                order=(index + 1) * 10.0,
+                depth=cast(int, item["depth"]),
+            )
+            session.add(section)
+            sections.append(section)
+        await session.commit()
+        for section in sections:
+            await session.refresh(section)
+        sections.sort(key=lambda s: s.order)
+        return [_section_to_response(s) for s in sections]
+
+
+async def _generer_la_trame(
+    handle: traitements.TraitementHandle, document_id: str, titre: str, brief: str | None
+) -> list[SectionResponse] | _TrameAnnulee:
+    """La porteuse : tout le travail (LLM, analyse, écriture), avec les
+    transitions exactes du registre. L'état terminal est posé ICI, par le
+    producteur, après son nettoyage réel : DONE, FAILED ou CANCELLED."""
+    try:
+        llm_service = get_llm_service()
+        usage_trame: dict[str, int] = {}
+        raw_response = await llm_service.generate_content(
+            usage_sink=usage_trame,
+            prompt=build_outline_prompt(titre, brief),
+        )
+        enregistrer_usage_llm(llm_service, usage_trame, f"document:{document_id}", brief or titre, raw_response)
+        try:
+            parsed_sections = parse_outline_response(raw_response)
+        except ValueError:
+            await _terminer_temoin(handle, EtatTache.FAILED, error="Trame illisible")
+            raise TrameIllisible() from None
+        # Dernier point où l'arrêt ne coûte rien : rien n'est écrit.
+        if await handle.annulation_demandee():
+            await _terminer_temoin(handle, EtatTache.CANCELLED)
+            return TRAME_ANNULEE
+        ecriture = asyncio.ensure_future(_ecrire_la_trame(document_id, parsed_sections))
+        try:
+            sections = await asyncio.shield(ecriture)
+        except asyncio.CancelledError:
+            # Point de non-retour franchi : la persistance acquise vaut succès.
+            sections = await ecriture
+        await _terminer_temoin(handle, EtatTache.DONE)
+        return sections
+    except asyncio.CancelledError:
+        await _terminer_temoin(handle, EtatTache.CANCELLED)
+        return TRAME_ANNULEE
+    except TrameIllisible:
+        raise
+    except TrameOccupee:
+        await _terminer_temoin(handle, EtatTache.FAILED, error="Sections rédigées pendant la génération")
+        raise
+    except Exception as exc:
+        await _terminer_temoin(handle, EtatTache.FAILED, error=str(exc)[:200])
+        raise
+
+
+async def _lancer_la_generation(
+    handle: traitements.TraitementHandle, document_id: str, titre: str, brief: str | None
+) -> "asyncio.Task[list[SectionResponse] | _TrameAnnulee]":
+    """QUEUED → RUNNING, puis la porteuse détachée, enrôlée pour l'annulation.
+    `AnnuleAvantDemarrage` remonte si l'arrêt a été demandé avant."""
+    await handle.demarrer()
+    porteuse = asyncio.create_task(_generer_la_trame(handle, document_id, titre, brief))
+    _PORTEUSES.add(porteuse)
+    porteuse.add_done_callback(_PORTEUSES.discard)
+    await handle.lier_adaptateur(task_registry.AnnulationParTacheAsyncio(porteuse))
+    return porteuse
+
+
+def _reponse_code(status_code: int, code: str, message: str) -> JSONResponse:
+    return JSONResponse(status_code=status_code, content={"code": code, "message": message})
+
+
+@router.post("/{document_id}/outline", response_model=None)
 async def generate_outline(
     document_id: str,
+    corps: OutlineRequest | None = None,
     session: AsyncSession = Depends(get_session),
-) -> list[SectionResponse]:
+) -> list[SectionResponse] | JSONResponse:
     """
     Génère la trame (plan détaillé) d'un document via le LLM.
 
@@ -557,68 +697,58 @@ async def generate_outline(
     refuse avec 409 SANS APPELER LE LLM - la création manuelle de section
     reste possible pour compléter une trame existante.
 
-    Si la réponse du LLM est illisible (`parse_outline_response` lève
-    `ValueError`), répond 502 sans créer la moindre section.
-
-    Durcissement (revue B2) : si la trame existante est déjà entièrement
-    vide (le garde-fou ci-dessus ne s'est pas déclenché), elle est
-    REMPLACÉE par la nouvelle plutôt qu'additionnée - sinon un double appel
-    (double-clic, ou re-génération après une 1re trame jamais retouchée)
-    laisserait des doublons d'order 10/20/30 en base. Remplacement sans
-    perte : ces sections sont par construction vides de tout contenu.
+    P-056 (ronde B2, design V2 après revue COCO) : la génération est un
+    traitement `document_outline` du registre, annulable depuis « Travaux »
+    ou depuis l'Atelier. Pas de fail-open : sans registre, pas de LLM (503).
+    Deux générations simultanées du même document : 409 `outline_in_progress`.
+    Annulation avant écriture : 409 `outline_cancelled`, zéro section.
+    Annulation pendant l'écriture : la trame existe, le traitement est DONE.
+    Une déconnexion du client n'arrête rien : la porteuse est détachée.
     """
     document = await _get_document_or_404(session, document_id)
-
     existing_result = await session.execute(
         select(DocumentSection).where(DocumentSection.document_id == document_id)
     )
-    existing_sections = existing_result.scalars().all()
-    if any(s.status != "vide" or s.content != "" for s in existing_sections):
-        raise HTTPException(
-            status_code=409,
-            detail=(
-                "Ce document a déjà des sections rédigées - la génération de "
-                "trame ne peut pas les écraser. Crée une section manuellement "
-                "pour compléter la trame existante."
-            ),
-        )
+    if any(s.status != "vide" or s.content != "" for s in existing_result.scalars().all()):
+        raise HTTPException(status_code=409, detail=_MESSAGE_SECTIONS_REDIGEES)
 
-    llm_service = get_llm_service()
-    usage_trame: dict[str, int] = {}
-    raw_response = await llm_service.generate_content(
-        usage_sink=usage_trame,
-        prompt=build_outline_prompt(document.title, document.brief)
-    )
-    enregistrer_usage_llm(llm_service, usage_trame, f"document:{document.id}", document.brief or document.title, raw_response)
+    if await traitements.actif_pour("document_outline", document_id):
+        return _reponse_code(409, "outline_in_progress", "Une génération de trame est déjà en cours pour ce document.")
+
+    titre, brief = document.title, document.brief
+    try:
+        handle = await traitements.creer_traitement(
+            type="document_outline",
+            label=f"Trame : {titre[:60]}",
+            entity_id=document_id,
+            id=str(corps.task_id) if corps and corps.task_id else None,
+        )
+    except traitements.IdentifiantDejaPris:
+        return _reponse_code(409, "task_id_taken", "Cet identifiant de traitement est déjà utilisé.")
+    except Exception:
+        logger.warning("Suivi indisponible pour la trame de %s", document_id, exc_info=True)
+        return _reponse_code(503, "suivi_indisponible", "Suivi des traitements indisponible : la génération n'a pas été lancée.")
 
     try:
-        parsed_sections = parse_outline_response(raw_response)
-    except ValueError:
-        raise HTTPException(status_code=502, detail="Trame illisible, réessaie.")
+        porteuse = await _lancer_la_generation(handle, document_id, titre, brief)
+    except traitements.AnnuleAvantDemarrage:
+        return _reponse_code(409, "outline_cancelled", "Génération de la trame annulée.")
 
-    # Idempotence : la trame existante (si elle existe) est entièrement
-    # vide à ce stade - on la remplace au lieu de l'additionner.
-    for old_section in existing_sections:
-        await session.delete(old_section)
-
-    sections: list[DocumentSection] = []
-    for index, item in enumerate(parsed_sections):
-        section = DocumentSection(
-            document_id=document_id,
-            title=cast(str, item["title"]),
-            brief=cast(str, item["brief"]),
-            order=(index + 1) * 10.0,
-            depth=cast(int, item["depth"]),
-        )
-        session.add(section)
-        sections.append(section)
-
-    await session.commit()
-    for section in sections:
-        await session.refresh(section)
-
-    sections.sort(key=lambda s: s.order)
-    return [_section_to_response(s) for s in sections]
+    # Aucune connexion tenue pendant l'attente du modèle (leçon B-653).
+    await session.close()
+    try:
+        resultat = await asyncio.shield(porteuse)
+    except TrameIllisible:
+        raise HTTPException(status_code=502, detail="Trame illisible, réessaie.") from None
+    except TrameOccupee:
+        raise HTTPException(status_code=409, detail=_MESSAGE_SECTIONS_REDIGEES) from None
+    except asyncio.CancelledError:
+        raise
+    except Exception as exc:
+        raise HTTPException(status_code=500, detail=f"Génération de la trame impossible : {str(exc)[:160]}") from exc
+    if isinstance(resultat, _TrameAnnulee):
+        return _reponse_code(409, "outline_cancelled", "Génération de la trame annulée.")
+    return resultat
 
 
 @router.post("/{document_id}/sections/reorder", response_model=None)

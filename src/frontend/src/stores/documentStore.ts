@@ -39,6 +39,7 @@
  */
 
 import { create } from 'zustand';
+import { annulerTraitement } from '../services/api/processingTasks';
 import type {
   DocumentResponse,
   DocumentDetail,
@@ -82,6 +83,10 @@ interface DocumentStore {
   draftError: string | null;
   /** Erreur d'export (B-630) : affichée à côté des boutons d'export. */
   exportError: string | null;
+  /** P-056 : la génération de trame en cours, identifiée par document et traitement. */
+  outlineGeneration: { documentId: string; taskId: string; arretDemande: boolean } | null;
+  /** P-056 : fin neutre d'une génération (annulée), à afficher sans la traiter en erreur. */
+  outlineNotice: string | null;
   /** Drapeau UI ponctuel (D4) : posé par l'action ⌘K/Accueil `documents.new`
    * AVANT que la vue Documents ne soit montée (ou pendant qu'elle l'est
    * déjà) - `DocumentsList` le consomme (ouvre sa modale de création locale)
@@ -107,6 +112,8 @@ interface DocumentStore {
 
   // Trame / sections
   generateOutline: (documentId: string) => Promise<void>;
+  /** P-056 : demande l'arrêt de la génération de trame en cours. */
+  cancelOutline: () => Promise<void>;
   createSection: (documentId: string, payload: SectionCreateRequest) => Promise<void>;
   updateSection: (sectionId: string, payload: SectionUpdateRequest) => Promise<void>;
   reorderSections: (documentId: string, items: SectionsReorderItem[]) => Promise<void>;
@@ -167,6 +174,8 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
   error: null,
   draftError: null,
   exportError: null,
+  outlineGeneration: null,
+  outlineNotice: null,
   createModalRequested: false,
 
   // ============================================================
@@ -232,7 +241,7 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
     // tardif rechargerait un document qu'on vient de quitter).
     draftAbortController?.abort();
     draftAbortController = null;
-    set({ currentDocument: null, sectionActive: null, error: null, draftError: null, exportError: null, isStreaming: false });
+    set({ currentDocument: null, sectionActive: null, error: null, draftError: null, exportError: null, outlineNotice: null, isStreaming: false });
   },
 
   requestCreateModal: () => set({ createModalRequested: true }),
@@ -243,14 +252,21 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
   // ============================================================
 
   generateOutline: async (documentId) => {
-    set({ isLoading: true, error: null });
+    // P-056 : la génération est identifiée par document et traitement ; le
+    // client choisit l'identifiant pour pouvoir demander l'arrêt pendant que
+    // la requête est en vol. Une réponse qui arrive après un changement de
+    // document ne touche que la liste, jamais le document ouvert.
+    const taskId = crypto.randomUUID();
+    set({ isLoading: true, error: null, outlineNotice: null, outlineGeneration: { documentId, taskId, arretDemande: false } });
+    const encoreLaMienne = (s: { outlineGeneration: { taskId: string } | null }) => s.outlineGeneration?.taskId === taskId;
     try {
-      const sections = await apiGenerateOutline(documentId);
+      const sections = await apiGenerateOutline(documentId, taskId);
       // Revue Soso 27/07 (F5) : seul currentDocument était mis à jour. De retour
       // à la liste, la carte gardait sections_total: 0 et s'annonçait « Sans
       // trame » alors que la trame venait d'être écrite en base.
       set((s) => ({
-        isLoading: false,
+        isLoading: encoreLaMienne(s) ? false : s.isLoading,
+        outlineGeneration: encoreLaMienne(s) ? null : s.outlineGeneration,
         documents: s.documents.map((d) =>
           d.id === documentId ? { ...d, sections_total: sections.length } : d,
         ),
@@ -260,7 +276,27 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
             : s.currentDocument,
       }));
     } catch (e: any) {
-      set({ isLoading: false, error: e?.message || 'Impossible de générer la trame.' });
+      const annulee = e?.code === 'outline_cancelled';
+      set((s) => ({
+        isLoading: encoreLaMienne(s) ? false : s.isLoading,
+        outlineGeneration: encoreLaMienne(s) ? null : s.outlineGeneration,
+        outlineNotice: annulee ? 'Génération de la trame annulée.' : s.outlineNotice,
+        error: annulee ? s.error : e?.message || 'Impossible de générer la trame.',
+      }));
+    }
+  },
+
+  cancelOutline: async () => {
+    const enCours = get().outlineGeneration;
+    if (!enCours || enCours.arretDemande) return;
+    set({ outlineGeneration: { ...enCours, arretDemande: true } });
+    try {
+      await annulerTraitement(enCours.taskId);
+    } catch (e: any) {
+      set((s) => ({
+        outlineGeneration: s.outlineGeneration?.taskId === enCours.taskId ? { ...s.outlineGeneration, arretDemande: false } : s.outlineGeneration,
+        error: e?.message || "Impossible de demander l'arrêt de la génération.",
+      }));
     }
   },
 

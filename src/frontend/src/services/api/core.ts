@@ -270,7 +270,9 @@ export class ApiError extends Error {
   constructor(
     public status: number,
     public statusText: string,
-    message?: string
+    message?: string,
+    /** P-056 : code métier renvoyé par le backend (`{code, message}`), quand il y en a un. */
+    public code?: string
   ) {
     super(message || `${status} ${statusText}`);
     this.name = 'ApiError';
@@ -305,7 +307,8 @@ export async function request<T>(
   if (!response.ok) {
     const data = await response.json().catch(() => null);
     const message = data?.detail || data?.message || `Erreur ${response.status}`;
-    throw new ApiError(response.status, response.statusText, message);
+    const code = typeof data?.code === 'string' && data.code !== 'HTTP_ERROR' ? data.code : undefined;
+    throw new ApiError(response.status, response.statusText, message, code);
   }
 
   return response.json();

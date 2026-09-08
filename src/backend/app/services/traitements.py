@@ -44,6 +44,10 @@ class AnnuleAvantDemarrage(Exception):
     """La tâche a été annulée pendant qu'elle était en file : ne pas démarrer."""
 
 
+class IdentifiantDejaPris(Exception):
+    """P-056 : le client a fourni un identifiant déjà utilisé par un traitement."""
+
+
 @dataclass
 class ResultatArret:
     state: str
@@ -163,9 +167,17 @@ async def creer_traitement(
     project_id: str | None = None,
     conversation_id: str | None = None,
     entity_id: str | None = None,
+    id: str | None = None,
 ) -> TraitementHandle:
+    """`id` (P-056) : identifiant choisi par le client pour pouvoir demander
+    l'arrêt d'un traitement dont la requête HTTP est encore en vol (la route
+    ne répond qu'à la fin). Collision → `IdentifiantDejaPris`."""
     async with get_session_context() as session:
+        if id is not None and await session.get(ProcessingTask, id) is not None:
+            raise IdentifiantDejaPris(id)
+        champs: dict[str, Any] = {"id": id} if id is not None else {}
         ligne = ProcessingTask(
+            **champs,
             type=type,
             label=label,
             state=EtatTache.QUEUED,
@@ -266,6 +278,8 @@ def _dto(ligne: ProcessingTask) -> dict[str, Any]:
         "progress": ligne.progress,
         "project_id": ligne.project_id,
         "conversation_id": ligne.conversation_id,
+        # P-056 : l'écran retrouve le traitement d'un document par son id métier.
+        "entity_id": ligne.entity_id,
         "error": ligne.error,
         "created_at": ligne.created_at.isoformat() if ligne.created_at else None,
         "started_at": ligne.started_at.isoformat() if ligne.started_at else None,
@@ -280,6 +294,24 @@ def _dto(ligne: ProcessingTask) -> dict[str, Any]:
             )
         ),
     }
+
+
+async def actif_pour(type: str, entity_id: str) -> bool:
+    """P-056 : un traitement de ce type est-il vivant pour cet id métier ?
+    Deux générations simultanées du même document écriraient deux trames."""
+    async with get_session_context() as session:
+        resultat = await session.execute(
+            select(ProcessingTask.id)
+            .where(
+                ProcessingTask.type == type,
+                ProcessingTask.entity_id == entity_id,
+                ProcessingTask.state.in_(
+                    (EtatTache.QUEUED, EtatTache.RUNNING, EtatTache.CANCEL_REQUESTED)
+                ),
+            )
+            .limit(1)
+        )
+        return resultat.first() is not None
 
 
 async def lister(*, actives: bool | None = None, limit: int = 50) -> list[dict[str, Any]]:

@@ -61,6 +61,9 @@ export function DocumentWorkspace({ documentId, onBack }: DocumentWorkspaceProps
   const isLoading = useDocumentStore((s) => s.isLoading);
   const error = useDocumentStore((s) => s.error);
   const draftError = useDocumentStore((s) => s.draftError);
+  const outlineGeneration = useDocumentStore((s) => s.outlineGeneration);
+  const outlineNotice = useDocumentStore((s) => s.outlineNotice);
+  const cancelOutline = useDocumentStore((s) => s.cancelOutline);
   const exportError = useDocumentStore((s) => s.exportError);
   const setSectionActive = useDocumentStore((s) => s.setSectionActive);
   const reorderSections = useDocumentStore((s) => s.reorderSections);
@@ -154,6 +157,12 @@ export function DocumentWorkspace({ documentId, onBack }: DocumentWorkspaceProps
         </div>
         {doc && (
           <div className="flex items-center gap-2 shrink-0">
+            {/* P-056 : une génération annulée est une fin neutre, dite ici. */}
+            {outlineNotice && (
+              <span role="status" className="max-w-xs truncate px-2.5 py-1 rounded-sm border border-border bg-surface-2 text-xs text-text-muted" title={outlineNotice}>
+                {outlineNotice}
+              </span>
+            )}
             {/* B-630 : l'erreur d'export s'affiche ici, à côté du geste, et nulle part ailleurs. */}
             {exportError && (
               <span role="alert" className="max-w-xs truncate px-2.5 py-1 rounded-sm border border-error/30 bg-error/10 text-xs text-error" title={exportError}>
@@ -206,7 +215,9 @@ export function DocumentWorkspace({ documentId, onBack }: DocumentWorkspaceProps
             section={activeSection}
             isStreaming={isStreaming}
             error={draftError}
-            trameEnCours={isLoading && doc.sections.length === 0}
+            trameEnCours={outlineGeneration?.documentId === doc.id}
+            onAnnulerTrame={() => void cancelOutline()}
+            arretDemande={outlineGeneration?.documentId === doc.id && outlineGeneration.arretDemande}
             onUpdateSection={updateSection}
             onDraft={draftSection}
             onValidate={validateSection}

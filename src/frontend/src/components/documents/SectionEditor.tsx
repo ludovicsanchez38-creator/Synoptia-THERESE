@@ -139,6 +139,10 @@ export interface SectionEditorProps {
   onInstructionPrefillApplied?: () => void;
   /** B-627 : la trame est en cours de génération et n'a encore aucune section. */
   trameEnCours?: boolean;
+  /** P-056 : demander l'arrêt de la génération de trame. */
+  onAnnulerTrame?: () => void;
+  /** P-056 : l'arrêt a été demandé, on attend que le moteur s'arrête. */
+  arretDemande?: boolean;
 }
 
 // =============================================================================
@@ -155,6 +159,8 @@ export function SectionEditor({
   instructionPrefill,
   onInstructionPrefillApplied,
   trameEnCours = false,
+  onAnnulerTrame,
+  arretDemande = false,
 }: SectionEditorProps) {
   const [titleDraft, setTitleDraft] = useState('');
   const [briefDraft, setBriefDraft] = useState('');
@@ -224,9 +230,22 @@ export function SectionEditor({
       // pendant la génération de la trame.
       return (
         <div className="flex-1 min-h-0 flex items-center justify-center text-center px-6" data-testid="section-editor-empty">
-          <p role="status" className="text-sm text-text-muted">
-            La trame est en cours de génération. Les sections à rédiger apparaîtront ici dès qu'elle sera prête.
-          </p>
+          <div>
+            <p role="status" className="text-sm text-text-muted">
+              La trame est en cours de génération. Les sections à rédiger apparaîtront ici dès qu'elle sera prête.
+            </p>
+            {/* P-056 : un levier d'arrêt, visible tant que ça tourne. */}
+            {onAnnulerTrame && (
+              <button
+                type="button"
+                onClick={onAnnulerTrame}
+                disabled={arretDemande}
+                className="mt-3 rounded-md border border-border px-3 py-1.5 text-sm font-semibold text-text-muted hover:text-text disabled:opacity-60"
+              >
+                {arretDemande ? 'Arrêt demandé…' : 'Annuler la génération'}
+              </button>
+            )}
+          </div>
         </div>
       );
     }
