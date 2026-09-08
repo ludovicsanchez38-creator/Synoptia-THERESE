@@ -203,6 +203,12 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
   }
 
   const filteredInvoices = getFilteredInvoices();
+  // B-646 (Nadia, c4) : Statut = Toutes (la valeur par défaut) comptait comme
+  // un filtre, et l'écran vide accusait « ce filtre » avec pour seule action
+  // de le réinitialiser. Seul un filtre qui restreint compte.
+  const filtreEffectif = Boolean(
+    (filters.status && filters.status !== 'all') || filters.document_type || filters.contact_id,
+  );
 
   if (!effectiveOpen) return null;
 
@@ -321,7 +327,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
             Réessayer
           </button>
         </div>
-      ) : filteredInvoices.length === 0 && (filters.status || filters.document_type) ? (
+      ) : filteredInvoices.length === 0 && filtreEffectif ? (
         // B-410 : « rien pour ce filtre » n'est pas « rien du tout ».
         <div className="flex flex-col items-center justify-center h-full gap-4">
           <FileText className="w-16 h-16 text-text-muted" />
