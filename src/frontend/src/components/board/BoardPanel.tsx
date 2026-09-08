@@ -180,9 +180,12 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
     // backend arrête réellement les conseillers (un abort seul ne coupait
     // que le transport). couperTransport capture le controller MAINTENANT
     // (revue F8 : la ref est nettoyée avant le repli asynchrone).
-    void annulerDeliberation(
-      processingTaskIdRef.current, couperTransport(abortRef),
-    );
+    // B-652 (ronde B, D2) : l'identifiant du traitement n'était remis à null
+    // qu'au démarrage suivant ; chaque fermeture rejouait une demande d'arrêt
+    // (409) sur une délibération finie. Lu puis effacé, une seule fois.
+    const traitementACloturer = processingTaskIdRef.current;
+    processingTaskIdRef.current = null;
+    void annulerDeliberation(traitementACloturer, couperTransport(abortRef));
     resetDeliberation();
     setFermetureDemandee(false);
     setViewState('input');
@@ -202,9 +205,9 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
   }, [viewState, isComplete, handleCloseAndReset]);
 
   const handleCancelDeliberation = useCallback(() => {
-    void annulerDeliberation(
-      processingTaskIdRef.current, couperTransport(abortRef),
-    );
+    const traitementACloturer = processingTaskIdRef.current;
+    processingTaskIdRef.current = null;
+    void annulerDeliberation(traitementACloturer, couperTransport(abortRef));
     resetDeliberation();
     setViewState('input');
   }, [resetDeliberation]);
