@@ -330,10 +330,11 @@ class TestMcp:
         monkeypatch.setenv("HOME", str(tmp_path))
         monkeypatch.setattr(Path, "home", classmethod(lambda cls: tmp_path))
         chemin = build_mcp_enriched_path()
-        # Les préfixes fixes (/usr/local/bin, /opt/homebrew/bin) sont ajoutés
-        # sur tous les systèmes ; le test ne dépend pas de l'existence du
-        # dossier Homebrew (rouge sur ubuntu et Windows le 08/09/2026).
-        assert "/opt/homebrew/bin" in chemin.split(os.pathsep)
+        # Seuls les dossiers qui existent entrent dans le PATH : Homebrew n'est
+        # attendu que là où il est installé (rouge sur ubuntu et Windows le
+        # 08/09/2026, où ce test réécrit supposait macOS).
+        if Path("/opt/homebrew/bin").is_dir():
+            assert "/opt/homebrew/bin" in chemin.split(os.pathsep)
         assert str(tmp_path / ".volta" / "bin") in chemin
         assert str(tmp_path / ".nvm" / "versions" / "node" / "v22.19.0" / "bin") in chemin, chemin
 

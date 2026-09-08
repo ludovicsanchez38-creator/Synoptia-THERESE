@@ -128,7 +128,11 @@ class TestCliquetMypy:
         # 05/09/2026 (release 0.67.0) : le runner a mesuré 995, treize erreurs
         # nouvelles du cycle 3 ont été annotées, le cliquet descend à 977
         # (le Mac lit 978, toujours un de plus que le runner).
-        assert _etape_mypy()["env"]["MYPY_BASELINE"] == "977"
+        # 08/09/2026 (cycle 4) : le compte flottait (978 ou 977) à cause
+        # d'attributs `= None` sans annotation dans browser_agent.py ; typés,
+        # le runner mesure 954 (run 34173892609, job mypy vert en égalité
+        # stricte) et le Mac aussi.
+        assert _etape_mypy()["env"]["MYPY_BASELINE"] == "954"
 
 
 @pytest.mark.skipif(shutil.which("bash") is None, reason="bash requis")
