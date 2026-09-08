@@ -7,13 +7,15 @@
  * fond avait été refusée par les testeurs) ; il porte `data-dialog-backdrop`
  * pour que le focus trap ne l'isole pas avec le reste.
  */
-export function VoilePanneau() {
+export function VoilePanneau({ fixe = false }: { fixe?: boolean } = {}) {
   return (
     <div
       data-testid="panneau-voile"
       data-dialog-backdrop
       aria-hidden="true"
-      className="absolute inset-0 z-[15] bg-text/35 backdrop-blur-[2px]"
+      // `fixe` : pour un panneau posé en `fixed` hors de la zone principale
+      // (panneau Actions, B-644), le voile couvre la fenêtre sous lui.
+      className={`${fixe ? 'fixed z-40' : 'absolute z-[15]'} inset-0 bg-text/35 backdrop-blur-[2px]`}
     />
   );
 }

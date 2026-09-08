@@ -6,7 +6,7 @@
  * la progression en temps reel et le resultat final.
  */
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, Play, Square, ChevronRight, FileBarChart, UserCheck, CalendarCheck, Wallet, Radar, Handshake,
@@ -17,6 +17,9 @@ import { cn } from '../../lib/utils';
 import { useActionsStore } from '../../stores/actionsStore';
 import type { ActionAgent, TaskState, TaskStep } from '../../services/api/actions';
 import { Spinner } from '../ui/Spinner';
+import { usePanneauCouvrant } from '../../hooks/usePanneauCouvrant';
+import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
+import { VoilePanneau } from '../prototype/VoilePanneau';
 import { CompactMarkdown } from '../ui/CompactMarkdown';
 
 /** Mapping icone -> composant Lucide */
@@ -239,6 +242,15 @@ function TaskProgress({
   const isStopping = task.status === 'cancel_requested';
   const isDone = task.status === 'completed';
   const isError = task.status === 'error';
+  // B-643 (Nadia, c4) : une tâche annulée gardait la progression posée par
+  // le moteur (100 %) à côté d'étapes restées en attente. Annulée, elle
+  // affiche la part des étapes réellement terminées.
+  const progression =
+    task.status === 'cancelled'
+      ? task.steps.length
+        ? task.steps.filter((s) => s.status === 'completed').length / task.steps.length
+        : 0
+      : task.progress;
 
   const statusLabel = {
     pending: 'En attente...',
@@ -302,12 +314,12 @@ function TaskProgress({
               isDone ? 'bg-agent-green' : isError ? 'bg-error' : 'bg-accent-fill',
             )}
             initial={{ width: 0 }}
-            animate={{ width: `${Math.round(task.progress * 100)}%` }}
+            animate={{ width: `${Math.round(progression * 100)}%` }}
             transition={{ duration: 0.3 }}
           />
         </div>
         <p className="text-xs text-text-muted mt-1 text-right">
-          {Math.round(task.progress * 100)}%
+          {Math.round(progression * 100)}%
         </p>
       </div>
 
@@ -435,6 +447,19 @@ export function ActionPanel() {
     }
   }, [isPanelOpen, agents.length, loadAgents]);
 
+  // B-644 (Nadia, c4) : à 1024 px, le panneau recouvrait dix commandes qui
+  // restaient focalisables, sans voile ni `inert`. Même règle que les six
+  // panneaux de la coque (0.48.1) : sous le seuil côte à côte, un voile se
+  // voit et le fond devient inerte ; le clavier reste à la page.
+  const estCouvrant = usePanneauCouvrant();
+  const panneauRef = useRef<HTMLDivElement>(null);
+  useDialogFocusTrap(panneauRef, {
+    active: isPanelOpen,
+    onEscape: closePanel,
+    isolateBackground: estCouvrant,
+    piegeClavier: false,
+  });
+
   const handleLaunch = useCallback(
     async (params: Record<string, string>) => {
       if (!selectedAgent) return;
@@ -514,8 +539,11 @@ export function ActionPanel() {
   }
 
   return (
+    <>
+      {estCouvrant && <VoilePanneau fixe />}
     <AnimatePresence>
       <motion.div
+        ref={panneauRef}
         initial={{ x: '100%', opacity: 0 }}
         animate={{ x: 0, opacity: 1 }}
         exit={{ x: '100%', opacity: 0 }}
@@ -614,5 +642,6 @@ export function ActionPanel() {
         </div>
       </motion.div>
     </AnimatePresence>
+    </>
   );
 }
