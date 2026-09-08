@@ -623,7 +623,12 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                         <div className="rounded-md border border-accent-cyan/30 bg-accent-cyan/10 p-4 text-sm text-text-muted" data-testid="board-confirmation">
                           <p className="font-semibold text-text">Confirmer le lancement</p>
                           <p className="mt-1">Mode : {mode === 'cloud' ? 'cloud avec recherche web' : 'souverain via Ollama local'}.</p>
-                          <p className="mt-1">Le mode cloud transmet la question, le contexte, le profil local utile et les résultats web aux fournisseurs configurés. Jusqu’à six appels LLM peuvent consommer des crédits API.</p>
+                          {/* B-642 (Nadia, c4) : sous un lancement local, le paragraphe sur les crédits cloud faisait douter de ce qui allait partir. */}
+                          {mode === 'cloud' ? (
+                            <p className="mt-1">Le mode cloud transmet la question, le contexte, le profil local utile et les résultats web aux fournisseurs configurés. Jusqu’à six appels LLM peuvent consommer des crédits API.</p>
+                          ) : (
+                            <p className="mt-1">Tout reste sur cette machine : la question, le contexte et les avis passent par Ollama en local, un conseiller après l’autre. Aucun crédit n’est consommé et aucun repli vers le cloud n’aura lieu.</p>
+                          )}
                           <div className="mt-3 flex justify-end gap-2">
                             <Button variant="ghost" size="sm" onClick={() => setConfirmationOpen(false)}>Annuler</Button>
                             <Button variant="primary" size="sm" onClick={() => void handleStartDeliberation()}>Confirmer et lancer</Button>
