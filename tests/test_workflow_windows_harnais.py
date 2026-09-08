@@ -68,5 +68,9 @@ def test_les_deux_racines_tournent_dans_des_jobs_paralleles_et_bornes():
         for etape in jobs["backend-autonomous-windows"]["steps"]
         if etape.get("name") == "Tests backend autonomes (pytest)"
     )
-    assert etape_autonome["timeout-minutes"] == 10
+    # 08/09/2026 : la même suite a pris 5 min 42 puis plus de 10 min sur le
+    # runner partagé (ralentissement d'exécution, pas de sortie). Le pas garde
+    # une borne mesurée, strictement sous celle du job.
+    assert etape_autonome["timeout-minutes"] == 14
+    assert etape_autonome["timeout-minutes"] < jobs["backend-autonomous-windows"]["timeout-minutes"] == 15
     assert "--timeout=60" in etape_autonome["run"]
