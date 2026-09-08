@@ -114,7 +114,7 @@ import { estCoteACote, usePanneauCouvrant } from '../../hooks/usePanneauCouvrant
 import { VoilePanneau } from './VoilePanneau';
 import { ACTIONS_ETABLI, ICONES_ETABLI, PLACEHOLDER_COMPOSEUR, TITRES_ETABLI } from '../../lib/etabli';
 import { actionsDeLEtabli } from '../../lib/etabliDePremierLancement';
-import { actionsAuRepos } from '../../lib/paletteAuRepos';
+import { actionsAuRepos, sansLesDestinationsDesCapacites } from '../../lib/paletteAuRepos';
 import { fetchSetupStatus, type SetupStatus } from '../../services/api/dashboard';
 
 type Scenario = 'today' | 'memory' | 'email' | 'meeting' | 'invoice' | 'board' | 'atelier';
@@ -461,8 +461,11 @@ function CommandPalette({
         visibleCapabilities.map((c) => c.id),
       );
     }
+    // P-050 (Nadia, c4) : avec une requête, une action déjà portée par une
+    // capacité affichée (« Actions et relances » → actions.open) n'est pas
+    // proposée une seconde fois sous un autre nom.
     return classerCommandes(
-      getActions().map((action) => ({ ...action, name: action.label })),
+      sansLesDestinationsDesCapacites(getActions(), visibleCapabilities).map((action) => ({ ...action, name: action.label })),
       query,
     ).slice(0, 6);
   }, [query, visibleCapabilities]);

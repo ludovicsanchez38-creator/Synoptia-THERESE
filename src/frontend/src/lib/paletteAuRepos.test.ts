@@ -15,7 +15,7 @@ import path from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { actionsAuRepos } from './paletteAuRepos';
+import { actionsAuRepos, sansLesDestinationsDesCapacites } from './paletteAuRepos';
 
 const ACTIONS = [
   { id: 'email.open', label: 'Ouvrir la messagerie' },
@@ -108,5 +108,19 @@ describe('Ce que la palette propose avant qu’on tape', () => {
       'utf8',
     );
     expect(source).toContain('actionsAuRepos(');
+  });
+});
+
+describe('P-050 : une action déjà portée par une capacité visible n\'est pas proposée deux fois', () => {
+  it('retire les actions qui sont la destination d\'une capacité, garde les autres', () => {
+    const actions = [
+      { id: 'actions.open', label: 'Actions' },
+      { id: 'memory.open', label: 'Ouvrir les Contacts' },
+    ];
+    const capacites = [
+      { id: 'actions', destination: { kind: 'action' as const, action: 'actions.open' } },
+      { id: 'email', destination: { kind: 'scenario' as const } },
+    ];
+    expect(sansLesDestinationsDesCapacites(actions, capacites).map((a) => a.id)).toEqual(['memory.open']);
   });
 });

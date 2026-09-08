@@ -75,3 +75,26 @@ export function actionsAuRepos<T extends ActionProposable>(
     })
     .slice(0, PLAFOND_AU_REPOS);
 }
+
+interface CapaciteAvecDestination {
+  id: string;
+  destination?: { kind: string; action?: string };
+}
+
+/**
+ * P-050 (Nadia, c4) : « Actions et relances » (capacité) et « Actions »
+ * (registre) menaient au même panneau ; deux entrées pour une seule chose font
+ * douter qu'elles soient identiques. Une action qui est la destination d'une
+ * capacité visible n'est pas proposée une seconde fois.
+ */
+export function sansLesDestinationsDesCapacites<T extends { id: string }>(
+  actions: readonly T[],
+  capacites: readonly CapaciteAvecDestination[],
+): T[] {
+  const portees = new Set(
+    capacites
+      .map((capacite) => (capacite.destination?.kind === 'action' ? capacite.destination.action : undefined))
+      .filter((id): id is string => Boolean(id)),
+  );
+  return actions.filter((action) => !portees.has(action.id));
+}
