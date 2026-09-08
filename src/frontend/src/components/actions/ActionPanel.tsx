@@ -60,6 +60,7 @@ function AgentCard({
 
   return (
     <motion.button
+      data-agent-id={agent.id}
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ scale: 1.01 }}
@@ -112,15 +113,22 @@ function ParamsForm({
   onSubmit,
   onBack,
   isLoading,
+  error,
 }: {
   agent: ActionAgent;
   onSubmit: (params: Record<string, string>) => void;
   onBack: () => void;
   isLoading: boolean;
+  /** P-051 : une erreur de lancement se lit dans la fiche, pas seulement dans la liste. */
+  error?: string | null;
 }) {
   const [values, setValues] = useState<Record<string, string>>({});
   const IconComp = ICON_MAP[agent.icon] || Zap;
   const colorClass = CATEGORY_COLORS[agent.category] || 'text-agent-cyan';
+  // P-051 : la fiche remplace la carte qui avait le focus ; elle le reprend
+  // sur son titre pour qu'un clavier ne retombe pas sur le corps du document.
+  const titreRef = useRef<HTMLHeadingElement>(null);
+  useEffect(() => { titreRef.current?.focus(); }, [agent.id]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -136,6 +144,8 @@ function ParamsForm({
       {/* Header */}
       <div className="flex items-center gap-3 p-4 border-b border-border">
         <button
+          type="button"
+          aria-label="Retour au catalogue"
           onClick={onBack}
           className="p-1 rounded-sm hover:bg-surface-2 text-text-muted hover:text-text"
         >
@@ -145,7 +155,7 @@ function ParamsForm({
           <IconComp size={18} />
         </div>
         <div>
-          <h3 className="text-sm font-medium text-text">{agent.name}</h3>
+          <h3 ref={titreRef} tabIndex={-1} className="text-sm font-medium text-text outline-none">{agent.name}</h3>
           <p className="text-xs text-text-muted">{agent.steps_count} étapes</p>
         </div>
       </div>
@@ -153,6 +163,11 @@ function ParamsForm({
       {/* Form */}
       <form onSubmit={handleSubmit} className="flex-1 flex flex-col p-4 gap-4">
         <p className="text-xs text-text-muted">{agent.description}</p>
+        {error && (
+          <div role="alert" className="rounded-md border border-error/20 bg-error/5 px-3 py-2 text-xs text-error">
+            Lancement impossible : {error}
+          </div>
+        )}
 
         {agent.params.map((param) => (
           <div key={param.id} className="space-y-1.5">
@@ -472,21 +487,20 @@ export function ActionPanel() {
     [selectedAgent, launchAction],
   );
 
+  // P-051 (Nadia, c4) : plus de lancement direct depuis la carte ; la fiche
+  // confirme, même sans paramètre.
+  const ouvrirLaFicheAgent = useActionsStore((s) => s.ouvrirLaFicheAgent);
   const handleQuickLaunch = useCallback(
-    async (agent: ActionAgent) => {
-      if (agent.params.length > 0) {
-        selectAgent(agent);
-      } else {
-        try {
-          selectAgent(null);
-          await launchAction(agent.id);
-        } catch {
-          // Erreur geree par le store
-        }
-      }
-    },
-    [selectAgent, launchAction],
+    (agent: ActionAgent) => { ouvrirLaFicheAgent(agent); },
+    [ouvrirLaFicheAgent],
   );
+  // Retour au catalogue : la carte quittée reprend le focus.
+  const [retourVers, setRetourVers] = useState<string | null>(null);
+  useEffect(() => {
+    if (selectedAgent || !retourVers) return;
+    document.querySelector<HTMLElement>(`[data-agent-id="${retourVers}"]`)?.focus();
+    setRetourVers(null);
+  }, [selectedAgent, retourVers]);
 
   // Grouper par categorie
   const grouped = agents.reduce<Record<string, ActionAgent[]>>((acc, agent) => {
@@ -624,7 +638,8 @@ export function ActionPanel() {
             <ParamsForm
               agent={selectedAgent}
               onSubmit={handleLaunch}
-              onBack={() => selectAgent(null)}
+              error={error}
+              onBack={() => { setRetourVers(selectedAgent.id); selectAgent(null); }}
               isLoading={isLoading}
             />
           )}

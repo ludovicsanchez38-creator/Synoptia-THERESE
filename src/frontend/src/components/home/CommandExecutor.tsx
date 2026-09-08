@@ -142,24 +142,13 @@ export function CommandExecutor({ command, onClose, onPromptSelect, onStartRFC }
         if (actionsStore.agents.length === 0) {
           actionsStore.loadAgents().then(() => {
             const agent = useActionsStore.getState().agents.find((a) => a.id === agentId);
-            if (agent) {
-              actionsStore.openPanel();
-              if (agent.params.length > 0) {
-                actionsStore.selectAgent(agent);
-              } else {
-                actionsStore.launchAction(agentId);
-              }
-            }
+            // P-051 : la fiche confirme, même sans paramètre.
+            if (agent) useActionsStore.getState().ouvrirLaFicheAgent(agent);
           });
         } else {
           const agent = actionsStore.agents.find((a) => a.id === agentId);
           if (agent) {
-            actionsStore.openPanel();
-            if (agent.params.length > 0) {
-              actionsStore.selectAgent(agent);
-            } else {
-              actionsStore.launchAction(agentId);
-            }
+            actionsStore.ouvrirLaFicheAgent(agent);
           }
         }
         onClose();

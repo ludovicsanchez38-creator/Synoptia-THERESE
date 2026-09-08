@@ -109,6 +109,12 @@ interface ActionsState {
 
   /** Selectionne un agent */
   selectAgent: (agent: ActionAgent | null) => void;
+  /**
+   * P-051 (Nadia, c4) : un agent d'action ne part plus au premier clic. Toute
+   * entrée (carte du catalogue, `{{action: id}}` du composeur, commande de
+   * l'accueil) ouvre sa fiche, où « Lancer » confirme, même sans paramètre.
+   */
+  ouvrirLaFicheAgent: (agent: ActionAgent) => void;
 
   /** Lance un agent */
   launchAction: (agentId: string, params?: Record<string, string>) => Promise<TaskState>;
@@ -159,6 +165,10 @@ export const useActionsStore = create<ActionsState>((set, get) => ({
 
   selectAgent: (agent) => {
     set({ selectedAgent: agent });
+  },
+
+  ouvrirLaFicheAgent: (agent) => {
+    set({ isPanelOpen: true, selectedAgent: agent, error: null });
   },
 
   launchAction: async (agentId, params = {}) => {

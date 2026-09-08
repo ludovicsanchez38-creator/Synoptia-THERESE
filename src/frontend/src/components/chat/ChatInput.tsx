@@ -475,12 +475,8 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       const agent = useActionsStore.getState().agents.find((a) => a.id === agentId);
       if (agent) {
         setInput('');
-        actionsStore.openPanel();
-        if (agent.params.length > 0) {
-          actionsStore.selectAgent(agent);
-        } else {
-          actionsStore.launchAction(agentId);
-        }
+        // P-051 : la fiche confirme, même sans paramètre.
+        useActionsStore.getState().ouvrirLaFicheAgent(agent);
         return;
       }
     }
