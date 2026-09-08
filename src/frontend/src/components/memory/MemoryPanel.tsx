@@ -9,6 +9,7 @@ import type { MemoryScope, RGPDStatsResponse } from '../../services/api';
 import { useDemoMask } from '../../hooks';
 import { useStatusStore } from '../../stores/statusStore';
 import { useContactsStore } from '../../stores/contactsStore';
+import { useNavigationStore } from '../../stores/navigationStore';
 import { pushEscapeHandler } from '../../lib/escapeStack';
 import { Z_LAYER } from '../../styles/z-layers';
 
@@ -82,6 +83,17 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
   } = useContactsStore();
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  // P-052 : le raccourci « Rechercher dans les Contacts » demande le focus du
+  // champ ; la demande est consommée ici, que le panneau soit monté avant ou
+  // après elle.
+  const rechercheDemandee = useNavigationStore((state) => state.memorySearchFocusRequested);
+  useEffect(() => {
+    if (!rechercheDemandee) return;
+    const champ = document.querySelector<HTMLInputElement>('[data-testid="memory-search-input"]');
+    if (!champ) return;
+    champ.focus();
+    useNavigationStore.getState().consumeMemorySearchFocus();
+  }, [rechercheDemandee]);
   // E3-05: Scope filter state
   const [scopeFilter, setScopeFilter] = useState<MemoryScope | 'all'>('all');
   // E3-06: Delete state

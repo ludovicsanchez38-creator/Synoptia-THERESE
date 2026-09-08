@@ -70,11 +70,23 @@ interface NavigationStore {
   resetToChat: () => void;
   /** Initialise la vue selon les préférences utilisateur */
   initializeView: () => void;
+  /**
+   * P-052 (Nadia, c4) : ⌘⇧F « Rechercher dans les Contacts » promet une
+   * recherche ; la vue s'ouvrait avec le focus sur le titre. La demande vit
+   * ici parce que le panneau peut être chargé après l'action (lazy) ou déjà
+   * ouvert : il la consomme dans un effet abonné au drapeau.
+   */
+  memorySearchFocusRequested: boolean;
+  requestMemorySearchFocus: () => void;
+  consumeMemorySearchFocus: () => void;
 }
 
 export const useNavigationStore = create<NavigationStore>((set) => ({
   activeView: null, // aucune vue embarquée : la coque montre son accueil
   history: [],
+  memorySearchFocusRequested: false,
+  requestMemorySearchFocus: () => set({ memorySearchFocusRequested: true }),
+  consumeMemorySearchFocus: () => set({ memorySearchFocusRequested: false }),
 
   setView: (view) =>
     set((state) => {
