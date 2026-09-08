@@ -424,3 +424,11 @@ Lire le journal (progression `[100%]` puis `timed out`) avant de parler de
 régression ; le job n'est pas dans le gate du build de release. Relever le
 timeout de l'étape n'est acceptable qu'avec une mesure séparée du temps
 d'exécution et du temps de sortie.
+
+Mesure faite le soir même sur `fe26a95e` (run 34281473209) : 38 % à 1 min 31,
+77 % à 7 min 52, expiration à 10 min alors que la suite progresse encore. Le
+ralentissement est dans l'exécution, pas dans la sortie, et la même suite a
+tenu 5 min 42 une heure plus tôt (run 34280441437). L'étape passe à
+14 minutes sous un job à 15 ; `--timeout=60` par test reste le garde contre un
+vrai blocage. Deux expirations sur trois runs de la journée justifiaient la
+marge.

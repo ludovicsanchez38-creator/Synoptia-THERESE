@@ -35,11 +35,14 @@ jobs:
       - name: Tests backend autonomes (pytest)
         shell: bash
         # B-306 : exécuter directement cette racine prouve qu'elle tient sans
-        # charger tests/conftest.py. Le run 33900470184 a atteint 100 % en
-        # 8 min 03 : dix minutes gardent une marge mesurée tout en bornant un
-        # éventuel blocage de teardown.
+        # charger tests/conftest.py. Le 08/09/2026, la même suite a pris
+        # 5 min 42 (run 34280441437) puis plus de 10 min (runs 34279568894 et
+        # 34281473209, 38 % à 1 min 31 et 77 % à 7 min 52 : c'est l'exécution
+        # qui ralentit, pas la sortie). Quatorze minutes absorbent la variance
+        # du runner ; `--timeout=60` par test et le timeout du job bornent
+        # toujours un blocage.
         run: uv run pytest src/backend/tests/ -q --timeout=60 -p no:cacheprovider --junit-xml=junit-windows-backend.xml
-        timeout-minutes: 10
+        timeout-minutes: 14
 
       - name: Bilan des échecs du backend autonome
         if: always()
