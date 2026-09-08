@@ -56,6 +56,12 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers) {
       // These shortcuts only work with modifier key
       if (!modKey) return;
 
+      // B-638 (Nadia, c4) : la Décision ouverte, ⌘E ⌘T ⌘I ⌘P ⌘O changeaient
+      // la vue DERRIÈRE la fenêtre modale, et ⌘E empilait deux dialogues. Un
+      // dialogue modal absorbe les raccourcis de navigation ; Échap (traité
+      // plus haut) reste le seul geste clavier global tant qu'il est ouvert.
+      if (document.querySelector('[role="dialog"][aria-modal="true"]')) return;
+
       // Cmd+Shift+K - Ouvrir Atelier en mode Katia + focus nouvelle tache
       if (key === 'k' && event.shiftKey) {
         event.preventDefault();
