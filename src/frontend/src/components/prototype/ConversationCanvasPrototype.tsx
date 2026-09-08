@@ -696,6 +696,21 @@ function leTiroirALeFocus(): boolean {
   return Boolean(tiroir && document.activeElement && tiroir.contains(document.activeElement));
 }
 
+/**
+ * Une modale de la coque est demandée (Réglages, raccourcis, bibliothèque,
+ * Décision, contact, projet, enregistrement de commande). Elle possède Échap
+ * même si elle n'est pas encore montée : ces panneaux sont chargés en lazy, et
+ * pendant ce délai le focus est encore dans le tiroir. Sans cette garde, le
+ * raccourci B-645 fermait le tiroir et laissait la modale ouverte (S1-3).
+ */
+function uneModaleDeLaCoqueEstDemandee(): boolean {
+  const ps = usePanelStoreDirect.getState();
+  return Boolean(
+    ps.showSaveCommand || ps.showContactModal || ps.showProjectModal || ps.showBoardPanel
+    || ps.showShortcuts || ps.showSettings || ps.showPromptLibrary,
+  );
+}
+
 function consommeEchapUnifie(): boolean {
   if (runTopEscapeHandler()) return true;
   const ps = usePanelStoreDirect.getState();
@@ -1249,7 +1264,7 @@ export function ConversationCanvasPrototype() {
         // conversations (⌘B), le premier Échap fermait le panneau et laissait
         // le tiroir avec son focus. La surface qui tient le focus se ferme
         // d'abord.
-        if (drawerOpen && leTiroirALeFocus()) { closeConversationDrawer(); return; }
+        if (drawerOpen && leTiroirALeFocus() && !uneModaleDeLaCoqueEstDemandee()) { closeConversationDrawer(); return; }
         if (consommeEchapUnifie()) return;
         if (commandOpen) closeCommandPalette();
         else if (capabilityCenterOpen) closeCapabilityCenter();
