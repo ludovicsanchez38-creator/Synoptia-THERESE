@@ -9,6 +9,7 @@ import logging
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
+from typing import Any
 
 from app.config import settings
 
@@ -81,9 +82,14 @@ class BrowserAgent:
     """
 
     def __init__(self) -> None:
-        self._playwright = None
-        self._browser = None
-        self._page = None
+        # Typés `Any` à dessein : sans annotation, mypy inférait tantôt `None`
+        # (et signalait l'affectation du Playwright), tantôt rien, d'où un
+        # compte d'erreurs qui flottait d'une exécution à l'autre (CI du
+        # 08/09/2026, 978 contre 977). Les objets Playwright sont importés
+        # paresseusement, l'extra e2e n'étant pas toujours installé.
+        self._playwright: Any = None
+        self._browser: Any = None
+        self._page: Any = None
         self._outputs_dir = self._ensure_outputs_dir()
 
     def _ensure_outputs_dir(self) -> Path:

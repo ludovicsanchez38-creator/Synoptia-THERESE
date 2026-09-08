@@ -88,7 +88,7 @@ class TokenLimits:
     # Warnings
     warn_at_percentage: int = 80  # Warn when usage reaches 80%
 
-    def to_dict(self) -> dict:
+    def to_dict(self) -> dict[str, Any]:
         return {
             "max_input_tokens": self.max_input_tokens,
             "max_output_tokens": self.max_output_tokens,
