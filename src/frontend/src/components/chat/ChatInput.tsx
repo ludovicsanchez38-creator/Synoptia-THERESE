@@ -26,6 +26,7 @@ import {
   type VariablesPreview,
   compterVariables,
 } from '../../services/api/variables';
+import { FormulaireVariables } from './FormulaireVariables';
 import { useToolConfirmationStore } from '../../stores/toolConfirmationStore';
 import { doitAdopterIdentiteServeur } from '../../lib/identiteConversation';
 import { attendrePersistance, assurerConversationPersistee } from '../../lib/rattachementConversation';
@@ -119,6 +120,24 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   // confirmation par double-envoi quand des variables sont inconnues.
   const [variablesPreview, setVariablesPreview] = useState<VariablesPreview | null>(null);
   const unknownConfirmedRef = useRef(false);
+  // P-049 : formulaire « Renseigner les variables » sous la puce ; chaque
+  // aperçu est étiqueté par un compteur de requête, une réponse périmée est
+  // ignorée et la confirmation de double-envoi se réarme quand l'aperçu change
+  // (revue COCO, finding 2).
+  const [formulaireVariablesOuvert, setFormulaireVariablesOuvert] = useState(false);
+  const apercuRequeteRef = useRef(0);
+  const rafraichirApercu = useCallback(async (texte: string) => {
+    const requete = ++apercuRequeteRef.current;
+    try {
+      const apercu = await previewVariables(texte);
+      if (apercuRequeteRef.current !== requete) return;
+      unknownConfirmedRef.current = false;
+      setVariablesPreview(apercu);
+    } catch {
+      if (apercuRequeteRef.current !== requete) return;
+      setVariablesPreview(null);
+    }
+  }, []);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
@@ -428,18 +447,14 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   useEffect(() => {
     unknownConfirmedRef.current = false;
     if (!hasVariableTokens(input)) {
+      apercuRequeteRef.current += 1;
       setVariablesPreview(null);
+      setFormulaireVariablesOuvert(false);
       return;
     }
-    const handle = window.setTimeout(async () => {
-      try {
-        setVariablesPreview(await previewVariables(input));
-      } catch {
-        setVariablesPreview(null);
-      }
-    }, 350);
+    const handle = window.setTimeout(() => { void rafraichirApercu(input); }, 350);
     return () => window.clearTimeout(handle);
-  }, [input]);
+  }, [input, rafraichirApercu]);
 
   // B-634 : sélectionne, dans le composeur, le premier jeton {…} encore
   // inconnu (dans l'ordre du texte), pour que l'utilisateur le remplace.
@@ -1181,12 +1196,29 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
               >
                 Compléter dans le message
               </button>
+              {/* P-049 : enregistrer les valeurs comme variables, sans toucher au message. */}
+              <button
+                type="button"
+                onClick={() => setFormulaireVariablesOuvert((ouvert) => !ouvert)}
+                aria-expanded={formulaireVariablesOuvert}
+                className="text-accent-cyan-ink underline underline-offset-2 hover:text-text"
+              >
+                Renseigner les variables
+              </button>
             </>
           )}
           {variablesPreview.errors.length > 0 && (
             <span className="text-error">{variablesPreview.errors[0]}</span>
           )}
         </div>
+      )}
+      {variablesPreview && formulaireVariablesOuvert && variablesPreview.unknown.length > 0 && (
+        <FormulaireVariables
+          key={variablesPreview.unknown.join('|')}
+          inconnues={variablesPreview.unknown}
+          onEnregistre={() => { void rafraichirApercu(input); }}
+          onFermer={() => { setFormulaireVariablesOuvert(false); textareaRef.current?.focus(); }}
+        />
       )}
 
       {/* Attached files */}
