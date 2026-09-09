@@ -19,6 +19,16 @@ export interface DeliverableProjectData {
 
 const loading = <T>(): SectionResource<T> => ({ status: 'loading', data: null, error: null });
 
+/** Les écritures récentes prennent le pas sur la liste lue ; les inconnues passent en tête. */
+function fusionnerLivrables(existants: DeliverableResponse[], ecrits: DeliverableResponse[]): DeliverableResponse[] {
+  let suivants = existants;
+  for (const livrable of ecrits) {
+    const connu = suivants.some((item) => item.id === livrable.id);
+    suivants = connu ? suivants.map((item) => (item.id === livrable.id ? livrable : item)) : [livrable, ...suivants];
+  }
+  return suivants;
+}
+
 function resultResource<T>(result: PromiseSettledResult<T>, error: string): SectionResource<T> {
   return result.status === 'fulfilled'
     ? { status: 'ready', data: result.value, error: null }
@@ -48,6 +58,9 @@ export function usePrototypeDeliverablesProjects() {
 export function usePrototypeDeliverableProjectData(project: Project | null) {
   const [data, setData] = useState<DeliverableProjectData | null>(null);
   const requestIdRef = useRef(0);
+  // Revue COCO 0.69.0 (finding 6) : les livrables écrits pendant qu'une
+  // lecture est en vol, à fusionner quand la liste arrive (sinon elle les efface).
+  const ecrituresEnVolRef = useRef<{ projectId: string; livrable: DeliverableResponse }[]>([]);
 
   const refresh = useCallback(async () => {
     if (!project) {
@@ -76,12 +89,19 @@ export function usePrototypeDeliverableProjectData(project: Project | null) {
     ]);
 
     if (requestIdRef.current !== requestId) return;
+    const livrablesLus = resultResource(deliverablesResult, 'Les livrables du projet sont momentanément indisponibles.');
+    const ecritesPendant = ecrituresEnVolRef.current.filter((item) => item.projectId === project.id).map((item) => item.livrable);
+    ecrituresEnVolRef.current = [];
+    const deliverables: SectionResource<DeliverableResponse[]> =
+      livrablesLus.status === 'ready' && ecritesPendant.length > 0
+        ? { status: 'ready', data: fusionnerLivrables(livrablesLus.data, ecritesPendant), error: null }
+        : livrablesLus;
     const invoices = resultResource(invoicesResult, 'La facturation du contact est momentanément indisponible.');
     const tasks = resultResource(tasksResult, 'Les tâches du projet sont momentanément indisponibles.');
     setData({
       projectId: project.id,
       contact: resultResource(contactResult, 'Le contact du projet est momentanément indisponible.'),
-      deliverables: resultResource(deliverablesResult, 'Les livrables du projet sont momentanément indisponibles.'),
+      deliverables,
       invoices,
       tasks,
       invoiceLimitReached: invoices.status === 'ready' && invoices.data.length === 100,
@@ -101,11 +121,13 @@ export function usePrototypeDeliverableProjectData(project: Project | null) {
   // le résultat est ignoré (le prochain chargement le montrera).
   const appliquerLivrable = useCallback((projectId: string, livrable: DeliverableResponse) => {
     setData((courant) => {
-      if (!courant || courant.projectId !== projectId || courant.deliverables.status !== 'ready') return courant;
-      const existants = courant.deliverables.data;
-      const connu = existants.some((item) => item.id === livrable.id);
-      const suivants = connu ? existants.map((item) => (item.id === livrable.id ? livrable : item)) : [livrable, ...existants];
-      return { ...courant, deliverables: { status: 'ready', data: suivants, error: null } };
+      if (!courant || courant.projectId !== projectId) return courant;
+      if (courant.deliverables.status !== 'ready') {
+        // Lecture en vol : retenir l'écriture, `refresh` la fusionnera.
+        ecrituresEnVolRef.current = [...ecrituresEnVolRef.current.filter((item) => item.livrable.id !== livrable.id), { projectId, livrable }];
+        return courant;
+      }
+      return { ...courant, deliverables: { status: 'ready', data: fusionnerLivrables(courant.deliverables.data, [livrable]), error: null } };
     });
   }, []);
 

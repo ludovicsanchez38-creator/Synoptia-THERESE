@@ -112,4 +112,17 @@ describe('données Livrables 0.40', () => {
     expect(result.current.data?.projectId).toBe(secondProject.id);
     expect(result.current.data?.deliverables.data?.[0]?.project_id).toBe(secondProject.id);
   });
+  it('revue COCO 0.69.0 : un livrable créé pendant le chargement initial reste affiché une fois la liste arrivée', async () => {
+    let livrer: (valeur: DeliverableResponse[]) => void = () => {};
+    vi.mocked(listDeliverables).mockImplementation(() => new Promise((resolve) => { livrer = resolve; }));
+    const { result } = renderHook(() => usePrototypeDeliverableProjectData(project));
+    await waitFor(() => expect(result.current.data?.deliverables.status).toBe('loading'));
+
+    const nouveau: DeliverableResponse = { ...deliverable, id: 'deliverable-2', title: 'Créé pendant le chargement' };
+    act(() => { result.current.appliquerLivrable(project.id, nouveau); });
+    act(() => { livrer([deliverable]); });
+    await waitFor(() => expect(result.current.data?.deliverables.status).toBe('ready'));
+    // La liste arrivée après l'écriture ne doit pas effacer ce qui vient d'être créé.
+    expect(result.current.data?.deliverables.data?.map((item) => item.id)).toEqual(['deliverable-2', 'deliverable-1']);
+  });
 });
