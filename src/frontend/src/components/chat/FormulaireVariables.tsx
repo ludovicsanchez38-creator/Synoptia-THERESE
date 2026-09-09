@@ -37,6 +37,16 @@ export function FormulaireVariables({
   const premierRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => { premierRef.current?.focus(); }, []);
+  // Revue COCO 0.69.0 (finding 4) : le parent ne remonte plus le formulaire
+  // à chaque aperçu (un succès partiel effaçait les saisies refusées) ; les
+  // jetons apparus depuis reçoivent leur champ, les autres gardent leur état.
+  useEffect(() => {
+    setChamps((courants) => {
+      const manquants = inconnues.filter((nom) => !courants[nom]);
+      if (manquants.length === 0) return courants;
+      return { ...courants, ...Object.fromEntries(manquants.map((nom) => [nom, { valeur: '', statut: 'saisie', erreur: null }])) };
+    });
+  }, [inconnues]);
 
   const noms = inconnues.filter((nom) => champs[nom]);
   const aRemplir = noms.filter((nom) => champs[nom].statut !== 'enregistree' && champs[nom].valeur.trim());

@@ -1214,7 +1214,6 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       )}
       {variablesPreview && formulaireVariablesOuvert && variablesPreview.unknown.length > 0 && (
         <FormulaireVariables
-          key={variablesPreview.unknown.join('|')}
           inconnues={variablesPreview.unknown}
           onEnregistre={() => { void rafraichirApercu(input); }}
           onFermer={() => { setFormulaireVariablesOuvert(false); textareaRef.current?.focus(); }}

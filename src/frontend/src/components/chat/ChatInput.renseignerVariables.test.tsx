@@ -93,4 +93,25 @@ describe('ChatInput : renseigner les variables (P-049)', () => {
     await waitFor(() => expect(screen.queryByLabelText('{prenom}')).toBeNull());
     await waitFor(() => expect(document.activeElement).toBe(zone));
   });
+  it('revue COCO 0.69.0 : un succès partiel garde la valeur et le refus des variables restantes', async () => {
+    vi.mocked(createVariable).mockImplementation(async (nom: string) => {
+      if (nom === 'nom_client') throw new Error('Nom réservé.');
+      return { name: nom, kind: 'text', value: 'Marie', description: null, updated_at: '' };
+    });
+    render(<ChatInput />);
+    const zone = (await screen.findByTestId('chat-message-input')) as HTMLTextAreaElement;
+    fireEvent.change(zone, { target: { value: 'Bonjour {prenom}, relance {nom_client}' } });
+    await screen.findByTestId('variables-preview-chip', {}, { timeout: 3000 });
+    fireEvent.click(screen.getByRole('button', { name: 'Renseigner les variables' }));
+    fireEvent.change(await screen.findByLabelText('{prenom}'), { target: { value: 'Marie' } });
+    fireEvent.change(screen.getByLabelText('{nom_client}'), { target: { value: 'ISOCUBE' } });
+    // L'aperçu recalculé après le succès de {prenom} ne connaît plus que {nom_client}.
+    vi.mocked(previewVariables).mockResolvedValue({ resolved: '', unknown: ['nom_client'], errors: [], variables_revision: 'r2' });
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer comme variables' }));
+    await waitFor(() => expect(screen.getByRole('alert')).toHaveTextContent(/Nom réservé/));
+    await waitFor(() => expect(screen.getByTestId('variables-preview-chip')).toHaveTextContent(/inconnue : \{nom_client\}/));
+    // Le formulaire n'a pas été remonté : la saisie refusée et son alerte sont toujours là.
+    expect((screen.getByLabelText('{nom_client}') as HTMLInputElement).value).toBe('ISOCUBE');
+    expect(screen.getByRole('alert')).toHaveTextContent(/Nom réservé/);
+  });
 });
