@@ -91,8 +91,13 @@ async def test_deux_generations_simultanees_409_outline_in_progress(client: Asyn
     from app.services import traitements
 
     document = await _document(client)
+    from app.services import task_registry
+
     autre = await traitements.creer_traitement(type="document_outline", label="Trame : en cours", entity_id=document)
     await autre.demarrer()
+    # Revue COCO 0.69.0 (finding 8) : seule une génération avec un producteur
+    # vivant compte ; une ligne running sans adaptateur serait une orpheline.
+    await autre.lier_adaptateur(task_registry.AnnulationCooperative(lambda: None))
     with patch("app.services.llm.LLMService.generate_content", new_callable=AsyncMock, return_value=TRAME) as llm:
         reponse = await client.post(f"/api/documents/{document}/outline")
     assert reponse.status_code == 409, reponse.text

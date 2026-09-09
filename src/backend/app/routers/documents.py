@@ -18,6 +18,7 @@ l'assemblage - jamais deux lectures qui pourraient diverger.
 """
 
 import asyncio
+import functools
 import json
 import logging
 import time
@@ -583,18 +584,44 @@ _MESSAGE_SECTIONS_REDIGEES = (
 
 async def _terminer_temoin(handle: traitements.TraitementHandle, etat: str, *, error: str | None = None) -> None:
     """Le suivi est un témoin, jamais un acteur : sa clôture peut échouer (base
-    verrouillée) sans changer le sort de la trame."""
-    try:
-        await handle.terminer(etat, error=error)
-    except Exception:
-        logger.warning("Suivi de la trame non clôturé (%s)", handle.id, exc_info=True)
+    verrouillée) sans changer le sort de la trame. Revue COCO 0.69.0 (finding 8) :
+    une seconde tentative, puis la ligne reste sans producteur ; `actif_pour`
+    ignore une telle orpheline, elle ne verrouille pas la génération suivante."""
+    for tentative in (1, 2):
+        try:
+            await handle.terminer(etat, error=error)
+            return
+        except Exception:
+            logger.warning("Suivi de la trame non clôturé (%s, tentative %d)", handle.id, tentative, exc_info=True)
+            if tentative == 1:
+                await asyncio.sleep(0.2)
 
 
-async def _ecrire_la_trame(document_id: str, parsed_sections: list[dict[str, object]]) -> list[SectionResponse]:
+def _clore_si_orpheline(handle: traitements.TraitementHandle, tache: "asyncio.Task[object]") -> None:
+    """Revue COCO 0.69.0 (finding 3) : une annulation qui touche la porteuse
+    avant son premier pas n'entre jamais dans son `try`, personne ne pose
+    l'état terminal et le traitement reste `cancel_requested` pour toujours
+    (non annulable, et `actif_pour` bloque le document). C'est ici, à la fin
+    de la tâche, que le témoin est clos dans ce cas."""
+    if not tache.cancelled():
+        return
+    cloture = asyncio.ensure_future(_terminer_temoin(handle, EtatTache.CANCELLED))
+    _PORTEUSES.add(cloture)
+    cloture.add_done_callback(_PORTEUSES.discard)
+
+
+async def _ecrire_la_trame(
+    document_id: str, parsed_sections: list[dict[str, object]], ids_initiales: frozenset[str] = frozenset()
+) -> list[SectionResponse]:
     """Point de non-retour de la génération : relit les sections dans SA
     transaction (revue COCO, finding 4) et ne remplace que des sections encore
     toutes vides. Appelée sous `asyncio.shield` : une annulation qui arrive
-    pendant l'écriture laisse l'écriture aboutir."""
+    pendant l'écriture laisse l'écriture aboutir.
+
+    Revue COCO 0.69.0 (finding 1) : seules les sections vides CONNUES AU
+    LANCEMENT sont remplacées. Une section ajoutée à la main pendant la
+    génération (titre et consigne saisis, contenu encore vide) est du travail
+    de l'utilisateur : elle est conservée, placée après la trame générée."""
     async with get_session_context() as session:
         existing_result = await session.execute(
             select(DocumentSection).where(DocumentSection.document_id == document_id)
@@ -602,8 +629,12 @@ async def _ecrire_la_trame(document_id: str, parsed_sections: list[dict[str, obj
         existing_sections = existing_result.scalars().all()
         if any(s.status != "vide" or s.content != "" for s in existing_sections):
             raise TrameOccupee()
+        ajoutees_pendant = sorted(
+            (s for s in existing_sections if s.id not in ids_initiales), key=lambda s: s.order
+        )
         for old_section in existing_sections:
-            await session.delete(old_section)
+            if old_section.id in ids_initiales:
+                await session.delete(old_section)
         sections: list[DocumentSection] = []
         for index, item in enumerate(parsed_sections):
             section = DocumentSection(
@@ -615,6 +646,9 @@ async def _ecrire_la_trame(document_id: str, parsed_sections: list[dict[str, obj
             )
             session.add(section)
             sections.append(section)
+        for rang, section in enumerate(ajoutees_pendant, start=len(parsed_sections) + 1):
+            section.order = rang * 10.0
+            sections.append(section)
         await session.commit()
         for section in sections:
             await session.refresh(section)
@@ -623,12 +657,26 @@ async def _ecrire_la_trame(document_id: str, parsed_sections: list[dict[str, obj
 
 
 async def _generer_la_trame(
-    handle: traitements.TraitementHandle, document_id: str, titre: str, brief: str | None
+    handle: traitements.TraitementHandle,
+    document_id: str,
+    titre: str,
+    brief: str | None,
+    ids_initiales: frozenset[str] = frozenset(),
 ) -> list[SectionResponse] | _TrameAnnulee:
     """La porteuse : tout le travail (LLM, analyse, écriture), avec les
     transitions exactes du registre. L'état terminal est posé ICI, par le
-    producteur, après son nettoyage réel : DONE, FAILED ou CANCELLED."""
+    producteur, après son nettoyage réel : DONE, FAILED ou CANCELLED.
+
+    Revue COCO 0.69.0 (finding 3) : QUEUED → RUNNING se fait ICI, après
+    l'enrôlement de l'adaptateur par `_lancer_la_generation`. Il n'existe donc
+    plus de fenêtre « running sans adaptateur » : une demande d'arrêt trouve
+    soit une ligne queued (annulée directement, `demarrer()` refuse), soit
+    l'adaptateur vivant."""
     try:
+        try:
+            await handle.demarrer()
+        except traitements.AnnuleAvantDemarrage:
+            return TRAME_ANNULEE
         llm_service = get_llm_service()
         usage_trame: dict[str, int] = {}
         raw_response = await llm_service.generate_content(
@@ -645,13 +693,20 @@ async def _generer_la_trame(
         if await handle.annulation_demandee():
             await _terminer_temoin(handle, EtatTache.CANCELLED)
             return TRAME_ANNULEE
-        ecriture = asyncio.ensure_future(_ecrire_la_trame(document_id, parsed_sections))
+        ecriture = asyncio.ensure_future(_ecrire_la_trame(document_id, parsed_sections, ids_initiales))
         try:
             sections = await asyncio.shield(ecriture)
         except asyncio.CancelledError:
             # Point de non-retour franchi : la persistance acquise vaut succès.
             sections = await ecriture
-        await _terminer_temoin(handle, EtatTache.DONE)
+        # Revue COCO 0.69.0 (finding 5) : la clôture DONE est elle aussi à
+        # l'abri d'une annulation tardive ; après la persistance, le résultat
+        # reste un succès et la réponse renvoie la trame.
+        cloture = asyncio.ensure_future(_terminer_temoin(handle, EtatTache.DONE))
+        try:
+            await asyncio.shield(cloture)
+        except asyncio.CancelledError:
+            await cloture
         return sections
     except asyncio.CancelledError:
         await _terminer_temoin(handle, EtatTache.CANCELLED)
@@ -667,14 +722,20 @@ async def _generer_la_trame(
 
 
 async def _lancer_la_generation(
-    handle: traitements.TraitementHandle, document_id: str, titre: str, brief: str | None
+    handle: traitements.TraitementHandle,
+    document_id: str,
+    titre: str,
+    brief: str | None,
+    ids_initiales: frozenset[str] = frozenset(),
 ) -> "asyncio.Task[list[SectionResponse] | _TrameAnnulee]":
-    """QUEUED → RUNNING, puis la porteuse détachée, enrôlée pour l'annulation.
-    `AnnuleAvantDemarrage` remonte si l'arrêt a été demandé avant."""
-    await handle.demarrer()
-    porteuse = asyncio.create_task(_generer_la_trame(handle, document_id, titre, brief))
+    """La porteuse détachée, enrôlée pour l'annulation AVANT son premier pas
+    (elle fait elle-même QUEUED → RUNNING). Une annulation arrivée avant
+    tourne en `TRAME_ANNULEE` ; une annulation qui la touche avant son premier
+    pas est close par `_clore_si_orpheline`."""
+    porteuse = asyncio.create_task(_generer_la_trame(handle, document_id, titre, brief, ids_initiales))
     _PORTEUSES.add(porteuse)
     porteuse.add_done_callback(_PORTEUSES.discard)
+    porteuse.add_done_callback(functools.partial(_clore_si_orpheline, handle))
     await handle.lier_adaptateur(task_registry.AnnulationParTacheAsyncio(porteuse))
     return porteuse
 
@@ -709,8 +770,10 @@ async def generate_outline(
     existing_result = await session.execute(
         select(DocumentSection).where(DocumentSection.document_id == document_id)
     )
-    if any(s.status != "vide" or s.content != "" for s in existing_result.scalars().all()):
+    sections_initiales = existing_result.scalars().all()
+    if any(s.status != "vide" or s.content != "" for s in sections_initiales):
         raise HTTPException(status_code=409, detail=_MESSAGE_SECTIONS_REDIGEES)
+    ids_initiales = frozenset(s.id for s in sections_initiales)
 
     if await traitements.actif_pour("document_outline", document_id):
         return _reponse_code(409, "outline_in_progress", "Une génération de trame est déjà en cours pour ce document.")
@@ -729,10 +792,7 @@ async def generate_outline(
         logger.warning("Suivi indisponible pour la trame de %s", document_id, exc_info=True)
         return _reponse_code(503, "suivi_indisponible", "Suivi des traitements indisponible : la génération n'a pas été lancée.")
 
-    try:
-        porteuse = await _lancer_la_generation(handle, document_id, titre, brief)
-    except traitements.AnnuleAvantDemarrage:
-        return _reponse_code(409, "outline_cancelled", "Génération de la trame annulée.")
+    porteuse = await _lancer_la_generation(handle, document_id, titre, brief, ids_initiales)
 
     # Aucune connexion tenue pendant l'attente du modèle (leçon B-653).
     await session.close()
@@ -743,6 +803,10 @@ async def generate_outline(
     except TrameOccupee:
         raise HTTPException(status_code=409, detail=_MESSAGE_SECTIONS_REDIGEES) from None
     except asyncio.CancelledError:
+        if porteuse.cancelled():
+            # La porteuse a été annulée avant son premier pas : c'est une
+            # annulation de la trame, pas de la requête.
+            return _reponse_code(409, "outline_cancelled", "Génération de la trame annulée.")
         raise
     except Exception as exc:
         raise HTTPException(status_code=500, detail=f"Génération de la trame impossible : {str(exc)[:160]}") from exc

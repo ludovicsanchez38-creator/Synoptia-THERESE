@@ -298,20 +298,27 @@ def _dto(ligne: ProcessingTask) -> dict[str, Any]:
 
 async def actif_pour(type: str, entity_id: str) -> bool:
     """P-056 : un traitement de ce type est-il vivant pour cet id métier ?
-    Deux générations simultanées du même document écriraient deux trames."""
+    Deux générations simultanées du même document écriraient deux trames.
+
+    Revue COCO 0.69.0 (finding 8) : une ligne `running` ou `cancel_requested`
+    SANS adaptateur vivant est orpheline (son producteur est parti sans avoir
+    pu clore le suivi, base verrouillée par exemple) ; elle n'empêche rien.
+    Une `queued` compte toujours : son producteur arrive."""
     async with get_session_context() as session:
         resultat = await session.execute(
-            select(ProcessingTask.id)
-            .where(
+            select(ProcessingTask.id, ProcessingTask.state).where(
                 ProcessingTask.type == type,
                 ProcessingTask.entity_id == entity_id,
                 ProcessingTask.state.in_(
                     (EtatTache.QUEUED, EtatTache.RUNNING, EtatTache.CANCEL_REQUESTED)
                 ),
             )
-            .limit(1)
         )
-        return resultat.first() is not None
+        lignes = resultat.all()
+    return any(
+        etat == EtatTache.QUEUED or task_registry.est_vivante(identifiant)
+        for identifiant, etat in lignes
+    )
 
 
 async def lister(*, actives: bool | None = None, limit: int = 50) -> list[dict[str, Any]]:
