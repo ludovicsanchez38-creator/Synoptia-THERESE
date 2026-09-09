@@ -432,3 +432,34 @@ tenu 5 min 42 une heure plus tôt (run 34280441437). L'étape passe à
 14 minutes sous un job à 15 ; `--timeout=60` par test reste le garde contre un
 vrai blocage. Deux expirations sur trois runs de la journée justifiaient la
 marge.
+
+## asyncio : une tâche annulée avant son premier pas n'entre jamais dans son `try` (09/09/2026)
+
+Revue COCO de la 0.69.0, finding 3. `task.cancel()` sur une tâche qui n'a
+pas encore couru lève `CancelledError` à son entrée : aucun `try`/`except`
+du corps ne s'exécute, donc aucun état terminal n'est posé par le producteur.
+Un registre qui attend que le producteur clôture reste alors
+`cancel_requested` pour toujours. Deux gardes : enrôler l'adaptateur
+d'annulation AVANT le premier pas et faire faire la transition queued →
+running par la tâche elle-même (plus de fenêtre « running sans adaptateur »),
+et un `add_done_callback` qui clôt le témoin si `tache.cancelled()`. Test :
+patcher `lier_adaptateur` pour annuler la tâche passée, sans await.
+
+## React : une `key` dérivée d'une liste remonte le composant à chaque recalcul (09/09/2026)
+
+Revue COCO de la 0.69.0, finding 4. `key={inconnues.join('|')}` sur un
+formulaire : quand la liste change (un enregistrement partiel réussi retire
+un jeton), React démonte et remonte, et l'état local (saisies, erreurs de
+refus) disparaît. Garder une clé stable et faire suivre la liste par un
+`useEffect` qui ajoute les entrées manquantes. Le test unitaire du formulaire
+seul ne voit pas ce défaut : il se joue dans le parent.
+
+## Revue du diff avant le tag : encore huit défauts après six portes vertes (09/09/2026)
+
+Cycle 5 : TDD avec sabotage, six portes, contrôle Chrome des sept surfaces,
+design de P-056 challengé avant le code. La revue COCO du diff a quand même
+trouvé trois pertes de données ou blocages (section supprimée, brouillon
+injoignable, traitement figé) et cinq défauts visibles. Les tests par lot
+couvrent chaque commit, jamais les interactions entre commits ni les états
+intermédiaires (lecture en vol, annulation tardive). La revue du diff reste
+obligatoire avant chaque tag, quel que soit le vert des portes.
