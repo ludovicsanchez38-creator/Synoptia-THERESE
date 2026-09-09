@@ -2,9 +2,24 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 
 const AUTOSAVE_DELAY = 5000; // 5 secondes
 
-function getDraftKey(conversationId: string | null): string | null {
+export function getDraftKey(conversationId: string | null): string | null {
   if (!conversationId) return null;
   return `therese-draft-${conversationId}`;
+}
+
+/**
+ * Revue COCO 0.69.0 (finding 2) : une conversation sans message envoyé peut
+ * porter un brouillon sauvegardé ici ; la cacher rendrait ce brouillon
+ * inaccessible. Lecture défensive : un stockage absent ou en panne = pas de brouillon.
+ */
+export function aUnBrouillonLocal(conversationId: string): boolean {
+  const key = getDraftKey(conversationId);
+  if (!key) return false;
+  try {
+    return (localStorage.getItem(key) ?? '').trim().length > 0;
+  } catch {
+    return false;
+  }
 }
 
 /**

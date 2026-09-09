@@ -2,6 +2,14 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { FileDown, History, MessageSquare, MoreHorizontal, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
 import { motion, useIsPresent } from 'framer-motion';
 import { useChatStore, type Conversation } from '../../stores/chatStore';
+import { aUnBrouillonLocal } from '../../hooks/useAutosave';
+
+/** Revue COCO 0.69.0 (finding 2) : une conversation listée sans message l'est pour son brouillon, autant le dire. */
+function compteMessages(conversation: { messages: unknown[]; messageCount?: number }): string {
+  const nombre = conversation.messages.length || conversation.messageCount || 0;
+  if (nombre === 0) return 'Brouillon en attente';
+  return `${nombre} message${nombre > 1 ? 's' : ''}`;
+}
 import {
   deleteConversation as deleteConversationRemote,
   exportConversation,
@@ -131,7 +139,10 @@ export function PrototypeConversationDrawer({
       // P-054 (Nadia, c4) : une conversation sans aucun message (⌘N sans
       // rien écrire) n'a rien où revenir ; la lister faisait un fantôme
       // « Nouvelle conversation · 0 message ». Elle apparaît au premier message.
-      .filter((conversation) => (conversation.messages.length || conversation.messageCount || 0) > 0)
+      // Revue COCO 0.69.0 (finding 2) : sauf si un brouillon local l'attend,
+      // sinon ce brouillon devient injoignable.
+      .filter((conversation) =>
+        (conversation.messages.length || conversation.messageCount || 0) > 0 || aUnBrouillonLocal(conversation.id))
       .filter((conversation) => !normalized || conversation.title.toLocaleLowerCase('fr-FR').includes(normalized))
       .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime());
   }, [conversations, query]);
@@ -306,7 +317,7 @@ export function PrototypeConversationDrawer({
                       <span className="block truncate text-sm font-semibold text-text">{conversation.title || 'Nouvelle conversation'}</span>
                       <span className="mt-0.5 flex items-center justify-between gap-2 text-xs text-text-muted">
                         <span>{updatedLabel(conversation.updatedAt)}</span>
-                        <span>{conversation.messages.length || conversation.messageCount || 0} message{(conversation.messages.length || conversation.messageCount || 0) > 1 ? 's' : ''}{conversation.synced ? '' : ' · non enregistrée'}</span>
+                        <span>{compteMessages(conversation)}{conversation.synced ? '' : ' · non enregistrée'}</span>
                       </span>
                     </button>
                     <button
