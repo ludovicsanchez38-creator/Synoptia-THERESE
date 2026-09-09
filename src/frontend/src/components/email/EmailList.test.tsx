@@ -54,6 +54,14 @@ function seedStore() {
     currentMessageId: null,
     currentLabelId: 'INBOX',
     searchQuery: '',
+    accounts: [{
+      id: 'account-1',
+      email: 'camille@exemple.fr',
+      provider: 'imap',
+      scopes: [],
+      created_at: '2026-01-01T00:00:00Z',
+      last_sync: null,
+    }],
     refreshCounter: 0,
     needsReauth: false,
     hasMore: false,
@@ -102,6 +110,22 @@ describe('EmailList - confirmation de suppression 0.40', () => {
     });
     expect(screen.queryByTestId('external-action-confirmation')).not.toBeInTheDocument();
   });
+
+  it('BUG-179 : ne propose pas une reconnexion Gmail pour un compte IMAP', async () => {
+    deleteEmailMessageMock.mockRejectedValue(new Error('Token expired'));
+    render(
+      <PrototypeExternalActionConfirmationProvider>
+        <EmailList accountId="account-1" />
+      </PrototypeExternalActionConfirmationProvider>,
+    );
+
+    await screen.findByText('Contrat à valider');
+    fireEvent.click(screen.getByTitle('Supprimer'));
+    fireEvent.click(screen.getByRole('button', { name: 'Mettre à la corbeille' }));
+
+    expect(await screen.findByText('Session du compte email expirée. Vérifie les identifiants de ce compte.')).toBeInTheDocument();
+    expect(screen.queryByText(/Connexion Gmail expirée/)).not.toBeInTheDocument();
+  });
 });
 
 describe('BUG-122 - dossier IMAP introuvable', () => {
@@ -127,7 +151,6 @@ describe('BUG-122 - dossier IMAP introuvable', () => {
     await waitFor(() =>
       expect(screen.getByText(/Dossier « Envoyés » introuvable/)).toBeInTheDocument(),
     );
-    // L'ancienne liste (INBOX en cache) ne doit plus être affichée.
     expect(screen.queryByText('Contrat à valider')).not.toBeInTheDocument();
   });
 });

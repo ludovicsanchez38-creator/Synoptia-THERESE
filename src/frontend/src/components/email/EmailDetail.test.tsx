@@ -28,6 +28,7 @@ vi.mock('../../services/api', () => ({
 vi.mock('../../stores/emailStore', () => ({
   useEmailStore: () => ({
     messages: storeMessages,
+    accounts: [],
     setCurrentMessage: vi.fn(),
     updateMessage: mockUpdateMessage,
     removeMessage: mockRemoveMessage,

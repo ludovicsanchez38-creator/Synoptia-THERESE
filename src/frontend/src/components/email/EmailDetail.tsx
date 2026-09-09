@@ -36,7 +36,7 @@ interface EmailDetailProps {
 
 export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
   const requestExternalAction = useExternalActionConfirmation();
-  const { messages, setCurrentMessage, updateMessage, removeMessage, startComposing, setNeedsReauth } = useEmailStore();
+  const { messages, setCurrentMessage, updateMessage, removeMessage, startComposing, setNeedsReauth, accounts } = useEmailStore();
   const [_loading, _setLoading] = useState(false);
   const [bodyLoading, setBodyLoading] = useState(false);
   const [bodyError, setBodyError] = useState(false);
@@ -61,6 +61,9 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
   const [followUpFeedback, setFollowUpFeedback] = useState<string | null>(null);
 
   const message = messages.find((m) => m.id === messageId);
+  const isGmailAccount = accounts.some(
+    (account) => account.id === accountId && account.provider === 'gmail',
+  );
 
   // Mark as read when opened
   useEffect(() => {
@@ -153,8 +156,10 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
         console.error('Failed to trash message:', err);
         const msg = err?.message || '';
         if (msg.includes('expired') || msg.includes('revoked') || msg.includes('401') || msg.includes('Token')) {
-          setTrashError('Connexion Gmail expirée. Reconnecte-toi via la bannière en haut.');
-          setNeedsReauth(true);
+          setTrashError(isGmailAccount
+            ? 'Connexion Gmail expirée. Reconnecte-toi via la bannière en haut.'
+            : 'Session du compte email expirée. Vérifie les identifiants de ce compte.');
+          setNeedsReauth(isGmailAccount);
         } else {
           // B-533 : sans confirmation du serveur, le message reste à l'écran.
           setTrashError('La suppression n’a pas été confirmée par le serveur. Le message est conservé.');

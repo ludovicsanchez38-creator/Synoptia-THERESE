@@ -31,6 +31,7 @@ export function EmailList({ accountId }: EmailListProps) {
     searchQuery,
     setSearchQuery,
     setNeedsReauth,
+    accounts,
     refreshCounter,
     hasMore,
     setHasMore,
@@ -41,6 +42,9 @@ export function EmailList({ accountId }: EmailListProps) {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const isGmailAccount = accounts.some(
+    (account) => account.id === accountId && account.provider === 'gmail',
+  );
 
   // Load messages when label or account changes (avec retry automatique)
   const retryCountRef = useRef(0);
@@ -172,8 +176,10 @@ export function EmailList({ accountId }: EmailListProps) {
 
       // Détecter expiration token OAuth (BUG-029)
       if (isAuthError) {
-        setError('Connexion Gmail expirée - reconnecte-toi.');
-        setNeedsReauth(true);
+        setError(isGmailAccount
+          ? 'Connexion Gmail expirée - reconnecte-toi.'
+          : 'Session du compte email expirée. Vérifie les identifiants de ce compte.');
+        setNeedsReauth(isGmailAccount);
       } else if (isNetworkError) {
         // BUG-066: Erreur réseau identifiée clairement
         setError('Erreur réseau - le backend ne répond pas');
@@ -279,8 +285,10 @@ export function EmailList({ accountId }: EmailListProps) {
         console.error('Failed to trash message:', err);
         const msg = err?.message || '';
         if (msg.includes('expired') || msg.includes('revoked') || msg.includes('Token')) {
-          setError('Connexion Gmail expirée - reconnecte-toi.');
-          setNeedsReauth(true);
+          setError(isGmailAccount
+            ? 'Connexion Gmail expirée - reconnecte-toi.'
+            : 'Session du compte email expirée. Vérifie les identifiants de ce compte.');
+          setNeedsReauth(isGmailAccount);
           setTimeout(() => setError(null), 5000);
         } else {
           // B-533 : sans confirmation du serveur, le message reste à l'écran.
