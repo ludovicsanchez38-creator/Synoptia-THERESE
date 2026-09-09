@@ -74,4 +74,16 @@ describe('documentStore : trame annulable (P-056)', () => {
     expect(useDocumentStore.getState().currentDocument?.id).toBe('d2');
     expect(useDocumentStore.getState().currentDocument?.sections).toEqual([]);
   });
+  it('revue COCO 0.69.0 : un second lancement pendant une génération ne remplace pas le suivi du premier', async () => {
+    vi.mocked(generateOutline).mockImplementation(() => new Promise(() => {}));
+    void useDocumentStore.getState().generateOutline('d1');
+    const premier = useDocumentStore.getState().outlineGeneration;
+    expect(premier).not.toBeNull();
+    await useDocumentStore.getState().generateOutline('d1');
+    // Un seul appel réseau, le suivi initial (et son bouton d'annulation) intact.
+    expect(generateOutline).toHaveBeenCalledTimes(1);
+    expect(useDocumentStore.getState().outlineGeneration).toEqual(premier);
+    expect(useDocumentStore.getState().outlineNotice).toMatch(/déjà en cours/);
+    expect(useDocumentStore.getState().error).toBeNull();
+  });
 });

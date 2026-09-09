@@ -256,6 +256,14 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
     // client choisit l'identifiant pour pouvoir demander l'arrêt pendant que
     // la requête est en vol. Une réponse qui arrive après un changement de
     // document ne touche que la liste, jamais le document ouvert.
+    // Revue COCO 0.69.0 (finding 7) : un second lancement pendant une
+    // génération suivie ne doit ni remplacer le suivi (le 409 du second
+    // effaçait le bouton d'annulation du premier), ni partir sur le réseau.
+    const dejaSuivie = get().outlineGeneration;
+    if (dejaSuivie && dejaSuivie.documentId === documentId) {
+      set({ outlineNotice: 'Une génération de trame est déjà en cours pour ce document.' });
+      return;
+    }
     const taskId = crypto.randomUUID();
     set({ isLoading: true, error: null, outlineNotice: null, outlineGeneration: { documentId, taskId, arretDemande: false } });
     const encoreLaMienne = (s: { outlineGeneration: { taskId: string } | null }) => s.outlineGeneration?.taskId === taskId;

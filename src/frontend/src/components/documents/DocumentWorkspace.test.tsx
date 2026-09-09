@@ -295,4 +295,14 @@ describe('DocumentWorkspace', () => {
       expect(useDocumentStore.getState().setSectionActive).not.toHaveBeenCalled();
     });
   });
+  it('revue COCO 0.69.0 : un document rouvert pendant sa génération de trame garde l’état de travail, pas le bouton « Générer »', () => {
+    useDocumentStore.setState({
+      currentDocument: makeDetail(),
+      isLoading: false,
+      outlineGeneration: { documentId: 'doc-1', taskId: 'trame-1', arretDemande: false },
+    } as never);
+    render(<DocumentWorkspace documentId="doc-1" onBack={vi.fn()} />);
+    expect(screen.getByText(/Génération de la trame en cours/i)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /Générer la trame/i })).toBeNull();
+  });
 });

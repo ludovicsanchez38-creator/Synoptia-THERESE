@@ -202,7 +202,9 @@ export function DocumentWorkspace({ documentId, onBack }: DocumentWorkspaceProps
             <OutlineTree
               sections={doc.sections}
               activeSectionId={sectionActive}
-              isLoading={isLoading}
+              /* Revue COCO 0.69.0 (finding 7) : rouvrir le document remet
+                 isLoading à faux ; la trame suivie garde son état de travail. */
+              isLoading={isLoading || outlineGeneration?.documentId === doc.id}
               error={error}
               onSelect={setSectionActive}
               onReorder={(items) => reorderSections(documentId, items)}
