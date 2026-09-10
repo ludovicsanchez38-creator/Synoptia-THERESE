@@ -211,27 +211,44 @@ test.describe('Prototype conversationnel - parcours unifiés des capacités', ()
     await expect(page.getByTestId('conversation-canvas-prototype')).toBeVisible();
   });
 
-  test('B-320 : les autres parcours restent entièrement visibles au-dessus du composeur', async ({ page }, testInfo) => {
+  // DA lot 1 (10/09/2026) : l'établi « Par où commencer » vit désormais DANS
+  // le composeur. Ce que B-320 protège n'a pas changé : le dernier contenu du
+  // fil doit finir au-dessus du composeur une fois le fil défilé au bout. On
+  // mesure le dernier enfant de la colonne intérieure, pas la boîte du
+  // scroller (qui est la colonne entière, sous le composeur posé en absolu),
+  // contre le bord haut de la carte du composeur.
+  test('B-320 : le dernier contenu du fil reste entièrement visible au-dessus du composeur', async ({ page }, testInfo) => {
     for (const viewport of [
       { width: 1181, height: 820 },
       { width: 1063, height: 739 },
     ]) {
       await page.setViewportSize(viewport);
 
-      const parcours = page.getByText('Par où commencer', { exact: true }).locator('..');
       const fil = page.getByTestId('prototype-conversation-scroll');
-      const saisieDuComposeur = page.getByPlaceholder(/Demande à Thérèse/);
+      const dernierContenu = fil.locator('> div > :last-child');
+      const carteDuComposeur = page.getByTestId('composeur-carte');
+      await expect(page.getByTestId('etabli-composeur')).toBeVisible();
       await fil.evaluate((element) => {
         element.scrollTop = element.scrollHeight;
       });
 
-      const [parcoursBox, saisieBox] = await Promise.all([
-        parcours.boundingBox(),
-        saisieDuComposeur.boundingBox(),
+      // La base des parcours est presque vide : le fil tient souvent au-dessus
+      // du composeur sans aucun dégagement, et la seule mesure du dernier
+      // contenu serait verte par construction (sabotage du 10/09/2026 :
+      // `paddingBottom: 0` passait). L'invariant mécanique est donc mesuré
+      // aussi : le dégagement bas du fil couvre la hauteur du fond du composeur.
+      const degagementBas = await fil.evaluate((element) => parseFloat(getComputedStyle(element).paddingBottom));
+      const fondBox = await page.getByTestId('prototype-composer-backdrop').boundingBox();
+      expect(fondBox).not.toBeNull();
+      expect(degagementBas).toBeGreaterThanOrEqual(fondBox!.height);
+
+      const [contenuBox, carteBox] = await Promise.all([
+        dernierContenu.boundingBox(),
+        carteDuComposeur.boundingBox(),
       ]);
-      expect(parcoursBox).not.toBeNull();
-      expect(saisieBox).not.toBeNull();
-      expect(parcoursBox!.y + parcoursBox!.height).toBeLessThanOrEqual(saisieBox!.y);
+      expect(contenuBox).not.toBeNull();
+      expect(carteBox).not.toBeNull();
+      expect(contenuBox!.y + contenuBox!.height).toBeLessThanOrEqual(carteBox!.y);
 
       await page.screenshot({
         path: testInfo.outputPath(`b-320-${viewport.width}x${viewport.height}.png`),

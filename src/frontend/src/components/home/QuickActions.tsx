@@ -38,7 +38,7 @@ export function QuickActions() {
           key={id}
           type="button"
           onClick={() => handle(id)}
-          className="card-brutal flex items-center gap-2.5 p-3 rounded-md bg-surface border-[1.5px] border-border text-left"
+          className="flex items-center gap-2.5 p-3 rounded-md bg-surface border-[1.5px] border-border text-left"
         >
           {/* Pastille duotone : jeton de domaine, cerclée d'encre. Les anciens
               accents numérotés, assemblés à l'exécution, n'avaient plus aucune

@@ -177,7 +177,7 @@ function NotificationItem({ notification }: { notification: AppNotification }) {
       {/* Indicateur non lu */}
       {!notification.is_read && (
         <div className="mt-1.5">
-          <div className="w-2 h-2 rounded-full bg-accent-cyan shadow-[0_0_6px_rgba(34,211,238,0.5)]" />
+          <div className="w-2 h-2 rounded-full bg-accent-cyan" />
         </div>
       )}
     </motion.div>
@@ -240,7 +240,7 @@ export function NotificationCenter() {
         <Bell className="w-4.5 h-4.5 text-text-muted" />
         {unreadCount > 0 && (
           <span
-            className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center text-xs font-bold text-ink-on-fill bg-error rounded-full px-1 shadow-[0_0_8px_rgba(239,68,68,0.4)]"
+            className="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] flex items-center justify-center text-xs font-bold text-ink-on-fill bg-error rounded-full px-1"
             aria-live="polite"
             aria-label={`${unreadCount} notification${unreadCount > 1 ? 's' : ''} non lue${unreadCount > 1 ? 's' : ''}`}
           >

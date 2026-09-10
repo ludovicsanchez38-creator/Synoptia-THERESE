@@ -133,6 +133,22 @@
   --radius-sm: 0.5rem;    /* 8 px  : champs, puces, petits contrôles */
   --radius-md: 0.875rem;  /* 14 px : boutons, cartes, panneaux (valeur de la DA) */
 
+  /* Teintes sémantiques opaques, composées sur la surface (AA). DA lot 1
+     (10/09/2026) : elles vivaient dans `:root`, d'où Tailwind 4 ne génère
+     aucune utilitaire (B-109) ; `bg-error-tint` n'existait pas. Les
+     déclinaisons sombre et contraste élevé les redéfinissent plus bas. */
+  --color-success-tint: #E7F7EF;
+  --color-warning-tint: #FFF8E8;
+  --color-error-tint: #FFF1F1;
+  --color-info-tint: #EAF1FF;
+
+  /* DA « Application affinée » (lot 1, 10/09/2026) : la colonne de lecture
+     et la police éditoriale des titres de brief. En direction 2, l'éditorial
+     EST la police display ; `--font-editorial` (namespace `--font-*`) génère
+     `font-editorial`, ce que `--font-family-*` ne fait pas. */
+  --container-colonne: 56rem;
+  --font-editorial: 'Plus Jakarta Sans', 'Inter', system-ui, sans-serif;
+
   /* Shadows (clair) */
   --shadow-sm: 0 1px 2px rgba(16, 28, 54, 0.05);
   --shadow-md: 0 1px 2px rgba(16, 28, 54, 0.05), 0 10px 24px -10px rgba(16, 28, 54, 0.16);
@@ -154,15 +170,6 @@
      ombre dure décalée sans flou. Déclinées par thème ci-dessous. */
   --btn-ink: #101C36;
 
-  /* Les anciens --k1..--k4 (accents KPI / catégories, issus de la DA de mai)
-     vivent désormais sous --color-domaine-* plus haut : des noms qui disent
-     le domaine, des utilitaires Tailwind, et deux valeurs assombries pour
-     passer AA sur leur propre teinte. */
-  --color-success-tint: #E7F7EF;
-  --color-warning-tint: #FFF8E8;
-  --color-error-tint: #FFF1F1;
-
-  --color-info-tint: #EAF1FF;
 }
 
 /* ============================================================
@@ -262,14 +269,9 @@
   --btn-ink: #E6EDF7;
 }
 
-/* Base styles - fenêtre avec coins arrondis */
-h1,
-h2,
-h3 {
-  font-family: var(--font-family-display);
-  letter-spacing: -0.015em;
-}
-
+/* Base styles - fenêtre avec coins arrondis.
+   Les titres et le focus vivent dans `@layer base` en fin de fichier (DA
+   lot 1) : hors couche, ils battaient toute utilitaire. */
 html {
   font-family: var(--font-family-sans);
   -webkit-font-smoothing: antialiased;
@@ -306,12 +308,6 @@ button,
 select option {
   background-color: var(--color-surface);
   color: var(--color-text);
-}
-
-/* Focus visible */
-:focus-visible {
-  outline: 2px solid var(--color-ring);
-  outline-offset: 2px;
 }
 
 /* Tailwind 4 rend les ::placeholder à 50 % de la couleur courante
@@ -382,45 +378,9 @@ img, a { -webkit-user-drag: none; }
   background: radial-gradient(ellipse at 50% 0%, rgba(34, 211, 238, 0.03) 0%, transparent 70%), var(--color-surface);
 }
 
-/* ============================================================
-   DA BOUTONS « ÉQUILIBRE » (30/08/2026, lot 2)
-   Remplace le « brutaliste éditorial » du 11/06 : bordure 2 px et ombre
-   dure sans flou, quatrième direction artistique du projet à côté de la DA
-   validée. Ici l'ombre est celle des cartes, le bouton se soulève au survol
-   et revient au clic.
-   ============================================================ */
-.btn-da {
-  box-shadow: var(--shadow-card);
-  transition: transform 0.12s ease, box-shadow 0.12s ease,
-    background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
-}
-.btn-da:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-pop);
-}
-.btn-da:active:not(:disabled) {
-  transform: translateY(0);
-  box-shadow: var(--shadow-card);
-}
-.btn-da:disabled { box-shadow: none; }
-
-/* Carte cliquable : non-layered pour que la transition transform ne soit
-   pas écrasée par la règle « * » ci-dessous (Tailwind 4 = cascade layers,
-   unlayered > layered). Le nom garde « brutal » par compatibilité ; le
-   comportement suit la DA « Équilibre » depuis le 30/08/2026. */
-.card-brutal {
-  transition: transform 0.12s ease, box-shadow 0.12s ease,
-    background-color 0.15s ease, border-color 0.15s ease;
-}
-.card-brutal:hover {
-  border-color: var(--color-ring);
-  box-shadow: var(--shadow-pop);
-  transform: translateY(-1px);
-}
-.card-brutal:active {
-  transform: translateY(0);
-  box-shadow: var(--shadow-card);
-}
+/* DA « Application affinée » (lot 1, 10/09/2026) : plus d'ombre ni de
+   soulèvement sur les boutons et les cartes. `btn-da` et `card-brutal`
+   (DA « Équilibre » du 30/08) sont retirés ; `Button` porte sa forme seul. */
 
 /* Icônes lucide : trait affirmé (2.25 au lieu de 2) - les SVG maison
    n'ont pas la classe .lucide et gardent leur trait. */
@@ -630,4 +590,34 @@ html[data-reduce-motion="true"] *::after {
 [data-high-contrast="true"] :focus-visible {
   outline: 3px solid #FFFFFF;
   outline-offset: 3px;
+}
+/* DA lot 1 : en contraste élevé, une étiquette abandonne sa teinte pour
+   l'encre pleine cerclée (7:1 exigé). */
+[data-high-contrast="true"] [data-etiquette] {
+  background: transparent;
+  border: 1px solid currentColor;
+}
+
+/* ============================================================
+   DA « Application affinée » (lot 1, 10/09/2026) : le socle typographique.
+   En `@layer base` : un titre ou un texte SANS classe prend la DA, une
+   utilitaire (`text-2xl`, `text-sm`, `focus-visible:ring-*`) gagne toujours.
+   `html { font-size }` n'est PAS posé : la préférence de taille le pilote.
+   ============================================================ */
+@layer base {
+  h1, h2, h3 {
+    font-family: var(--font-family-display);
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    margin: 0;
+  }
+  h1 { font-size: 1.625rem; font-weight: 800; }
+  h2 { font-size: 1.1875rem; font-weight: 700; }
+  h3 { font-size: 1rem; font-weight: 700; }
+  body { font: 400 0.875rem/1.5 var(--font-family-sans); }
+  :focus-visible {
+    outline: 3px solid var(--color-ring);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+  }
 }

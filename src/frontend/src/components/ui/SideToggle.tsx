@@ -70,7 +70,7 @@ export function SideToggle({ side, isOpen, onClick, label, shortcut }: SideToggl
           w-0.5 rounded-full
           transition-all duration-300
           ${isOpen
-            ? 'h-16 bg-accent-cyan shadow-[0_0_12px_rgba(34,211,238,0.5)]'
+            ? 'h-16 bg-accent-cyan'
             : 'h-10 bg-accent-cyan/40'
           }
           ${isHovered ? 'bg-accent-cyan/70' : ''}

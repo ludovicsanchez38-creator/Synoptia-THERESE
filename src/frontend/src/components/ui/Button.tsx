@@ -6,11 +6,11 @@ export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   size?: 'sm' | 'md' | 'lg' | 'icon';
 }
 
-// DA « Équilibre » : primary/secondary/danger portent .btn-da (globals.css),
-// une classe NON-layered qui pose l'ombre douce et le soulèvement au survol.
-// Conséquence inchangée : un shadow-* passé en className sera ignoré sur ces
-// variants (twMerge ne déduplique que les utilities Tailwind). Pour une ombre
-// custom, utiliser ghost.
+// DA « Application affinée » (lot 1, 10/09/2026) : `.btn` de base.css.
+// 36 px, sans ombre ni soulèvement ; le primaire est le remplissage cyan,
+// le secondaire une surface bordée, le discret (ghost) est écrit en accent,
+// le danger repose sur la teinte d'erreur. Le grand geste d'un écran garde
+// 44 px (`lg`). L'API ne change pas : les 254 usages compilent tels quels.
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'primary', size = 'md', disabled, children, ...props }, ref) => {
@@ -24,20 +24,15 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           'disabled:opacity-50 disabled:cursor-not-allowed',
           // DA « Équilibre » : l'accent d'action est le remplissage cyan,
           // le secondaire est une surface bordée.
-          variant === 'primary' && 'btn-da bg-accent-fill text-accent-ink',
-          variant === 'secondary' && 'btn-da border border-border bg-surface text-text',
-          variant === 'ghost' &&
-            'bg-transparent font-medium text-text-muted transition-colors hover:text-text hover:bg-surface-elevated/50 active:translate-y-px',
-          variant === 'danger' && 'btn-da border border-error bg-error/10 text-error',
-          // Rayons : petit bouton, petit rayon. Le lot 3 du 30/08/2026 les
-          // avait inversés en gonflant --radius-md de 8 à 14 px sans toucher
-          // aux classes, ce qui donnait une pilule de 32 px de haut à côté
-          // d'un bouton d'action de 44 px presque carré.
-          // Sizes
+          'transition-colors',
+          variant === 'primary' && 'bg-accent-fill text-accent-ink hover:brightness-95',
+          variant === 'secondary' && 'border border-border bg-surface text-text hover:bg-surface-2',
+          variant === 'ghost' && 'bg-transparent text-accent hover:bg-accent-tint',
+          variant === 'danger' && 'bg-[var(--color-error-tint)] text-error hover:brightness-95',
           size === 'sm' && 'h-8 px-3 text-sm rounded-sm',
-          size === 'md' && 'h-11 px-4 text-sm rounded-md',
-          size === 'lg' && 'h-12 px-6 text-base rounded-md',
-          size === 'icon' && 'h-11 w-11 rounded-md',
+          size === 'md' && 'h-9 px-4 text-sm rounded-md',
+          size === 'lg' && 'h-11 px-6 text-base rounded-md',
+          size === 'icon' && 'h-9 w-9 rounded-md',
           className
         )}
         {...props}

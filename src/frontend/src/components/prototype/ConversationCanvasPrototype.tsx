@@ -158,11 +158,14 @@ function IconButton({
       type="button"
       aria-label={label}
       title={label}
+      aria-current={active ? 'page' : undefined}
       onClick={onClick}
-      className={`grid h-11 w-11 place-items-center rounded-md border transition-colors ${
+      /* DA lot 1 : bouton de rail de 2,5 rem ; l'actif est en teinte
+         d'accent, le cyan plein reste au geste principal. */
+      className={`grid h-10 w-10 place-items-center rounded-sm transition-colors ${
         active
-          ? 'border-accent-fill bg-accent-fill text-accent-ink'
-          : 'border-transparent text-text-muted hover:border-border hover:bg-surface hover:text-text'
+          ? 'bg-accent-tint text-accent'
+          : 'text-text-muted hover:bg-surface-2 hover:text-text'
       } ${className}`}
     >
       {children}
@@ -326,7 +329,7 @@ function ContextCanvas({
       animate={{ x: 0, opacity: 1 }}
       exit={{ x: 32, opacity: 0 }}
       transition={{ duration: 0.22, ease: [0.2, 0.8, 0.2, 1] }}
-      className="absolute inset-y-0 right-0 z-20 h-full w-full max-w-[620px] border-l border-border bg-surface-2 shadow-[-18px_0_45px_rgba(16,28,54,0.12)] sm:w-[calc(100%-48px)] xl:relative xl:w-[43%] xl:min-w-[440px] xl:shadow-none"
+      className="absolute inset-y-0 right-0 z-20 h-full w-full max-w-[620px] border-l border-border bg-surface-2 shadow-lg sm:w-[calc(100%-48px)] xl:relative xl:w-[43%] xl:min-w-[440px] xl:shadow-none"
     >
       <h2 id="prototype-context-canvas-title" data-dialog-autofocus tabIndex={-1} className="sr-only">
         {scenarioLabels[scenario]}
@@ -524,7 +527,7 @@ function CommandPalette({
         animate={{ y: 0, scale: 1 }}
         exit={{ y: -12, scale: 0.98 }}
         onClick={(event) => event.stopPropagation()}
-        className="w-full max-w-[570px] overflow-hidden rounded-md border border-border bg-surface shadow-[0_26px_70px_rgba(16,28,54,0.25)]"
+        className="w-full max-w-[570px] overflow-hidden rounded-md border border-border bg-surface shadow-lg"
       >
         <div className="flex items-center gap-3 border-b border-border px-4 py-3.5">
           <Search className="h-5 w-5 text-text-muted" />
@@ -1537,15 +1540,12 @@ export function ConversationCanvasPrototype() {
       data-embedded-view={embeddedView ?? (chatOpen ? 'chat' : 'accueil')}
     >
       <div className="flex h-full flex-col">
-        <header data-dialog-allow onMouseDown={startWindowDrag} className="flex min-h-14 shrink-0 items-center gap-3 border-b border-border bg-surface px-3 select-none sm:px-4">
+        <header data-dialog-allow onMouseDown={startWindowDrag} className="flex min-h-13 shrink-0 items-center gap-3 border-b border-border bg-surface px-3 select-none sm:px-4">
           <WindowControls side="left" />
           <div className="flex min-w-0 flex-1 items-center gap-4">
             <div className="flex min-w-0 items-center gap-2.5">
-              <span className="relative h-2.5 w-2.5 rounded-full bg-accent-fill" aria-hidden="true">
-                <span className="absolute inset-0 rounded-full bg-accent-fill opacity-40 blur-[4px]" />
-              </span>
+              <span className="h-2.5 w-2.5 rounded-full bg-accent-fill" aria-hidden="true" />
               <span className="text-sm font-bold tracking-[0.02em] text-text">THÉRÈSE</span>
-              <span className="hidden rounded-full border border-border bg-surface-2 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide text-text-muted lg:inline-flex">Interface unifiée</span>
             </div>
             {/* Finding 10 : l'état de connexion ne vivait que dans la surface
                 de chat. Un utilisateur dans CRM, Fichiers ou Factures ne voyait
@@ -1556,9 +1556,9 @@ export function ConversationCanvasPrototype() {
             </div>
           </div>
 
-          <div className="hidden items-center gap-2 rounded-md border border-border bg-surface-2 px-3 py-2 text-xs font-semibold text-text md:flex" data-testid="workspace-label" aria-label={`Espace de travail : ${workspaceName}`}>
+          <div className="hidden items-center gap-2 rounded-full border border-border bg-surface-2 px-3 py-1.5 text-sm text-text-muted md:flex" data-testid="workspace-label" aria-label={`Espace de travail : ${workspaceName}`}>
             <Briefcase className="h-3.5 w-3.5 text-accent" />
-            {workspaceName}
+            <b className="font-medium text-text">{workspaceName}</b>
           </div>
 
           <div className="flex flex-1 items-center justify-end gap-1.5">
@@ -1569,7 +1569,7 @@ export function ConversationCanvasPrototype() {
                 setCapabilityCenterOpen(false);
                 setCommandOpen(false);
               }}
-              className="mr-1 hidden items-center gap-1.5 rounded-full border border-accent-cyan/30 bg-accent-tint px-2.5 py-1.5 text-sm font-semibold text-accent hover:border-accent/40 sm:flex whitespace-nowrap shrink-0"
+              className="mr-1 hidden h-9 items-center gap-1.5 rounded-md px-3 text-sm font-semibold text-accent hover:bg-accent-tint sm:flex whitespace-nowrap shrink-0"
             >
               <ShieldCheck className="h-3.5 w-3.5 text-accent" />
               Contrôle des données
@@ -1581,7 +1581,7 @@ export function ConversationCanvasPrototype() {
                 setCapabilityCenterOpen(false);
                 setTrustCenterOpen(false);
               }}
-              className="hidden items-center gap-2 rounded-md border border-border bg-surface px-2.5 py-1.5 text-sm text-text-muted hover:bg-surface-2 md:flex"
+              className="hidden h-9 items-center gap-2 rounded-full border border-border bg-surface px-3 text-sm text-text-muted hover:bg-surface-2 md:flex"
             >
               <Search className="h-3.5 w-3.5" />
               Rechercher
@@ -1593,12 +1593,12 @@ export function ConversationCanvasPrototype() {
         </header>
 
         <div className="relative flex min-h-0 flex-1">
-          <nav data-dialog-allow aria-label="Navigation principale" className="flex w-16 shrink-0 flex-col items-center border-r border-border bg-surface-2 py-3">
+          <nav data-dialog-allow aria-label="Navigation principale" className="flex w-14 shrink-0 flex-col items-center gap-1 border-r border-border bg-surface py-4">
             {/* Signalé par Ludo le 28/08 : aucun bouton ne ramenait à l'accueil.
                 On ne pouvait que fermer ce qu'on avait ouvert, ce qui suppose
                 de savoir ce qu'on a ouvert. Il vient en tête du rail : c'est
                 la destination la plus fondamentale de l'application. */}
-            <IconButton label="Accueil" onClick={() => runUnifiedAction('home.open')}><Home className="h-[18px] w-[18px]" /></IconButton>
+            <IconButton label="Accueil" active={!chatOpen && !embeddedView && scenario === 'today'} onClick={() => runUnifiedAction('home.open')}><Home className="h-[18px] w-[18px]" /></IconButton>
             <IconButton label="Nouvelle conversation" onClick={startConversation}><Plus className="h-[18px] w-[18px]" /></IconButton>
             {/* Entrée 4 : deux boutons ouvraient le même tiroir, où `surface` ne
                 change que le focus initial. Et « Rechercher » ici ne cherchait
@@ -1606,7 +1606,7 @@ export function ConversationCanvasPrototype() {
                 fichiers ou les contacts, contrairement à ce que la loupe
                 laissait croire. Le mot reste à la palette, qui indexe tout. */}
             <IconButton label="Conversations" onClick={() => (usePanelStoreDirect.getState().showConversationSidebar ? closeConversationDrawer() : openConversationDrawer('search'))}><History className="h-[18px] w-[18px]" /></IconButton>
-            <IconButton label="Projets" onClick={() => openEmbeddedView('projects')}><Folder className="h-[18px] w-[18px]" /></IconButton>
+            <IconButton label="Projets" active={embeddedView === 'projects'} onClick={() => openEmbeddedView('projects')}><Folder className="h-[18px] w-[18px]" /></IconButton>
             {/* BUG-159 : accès permanent aux Paramètres, au-dessus de l'aide
                 (demande Dr_logic) - ils n'étaient joignables que par la palette
                 ou par le bouton Profil, dont la fonction n'était pas lisible. */}
@@ -1641,7 +1641,7 @@ export function ConversationCanvasPrototype() {
                       : 'Ouvrir le profil'
                 }
                 title={profileState === 'loading' ? 'Chargement du profil…' : 'Ouvrir le profil'}
-                className="grid h-11 w-11 place-items-center rounded-full border border-accent-fill bg-accent-fill text-sm font-bold text-accent-ink shadow-[var(--shadow-card)] disabled:opacity-70"
+                className="grid h-10 w-10 place-items-center rounded-full bg-accent-fill text-sm font-bold text-accent-ink disabled:opacity-70"
               >
                 {profileState === 'loading' ? (
                   <Spinner taille="bouton" />
@@ -1684,7 +1684,7 @@ export function ConversationCanvasPrototype() {
                 className="flex-1 overflow-y-auto px-5 pt-7 sm:px-8"
                 style={{ paddingBottom: composerClearance }}
               >
-                <div className={`mx-auto transition-[max-width] duration-200 ${canvasOpen ? 'max-w-[760px]' : 'max-w-[860px]'}`}>
+                <div className={`mx-auto transition-[max-width] duration-200 ${canvasOpen ? 'max-w-[760px]' : 'max-w-colonne'}`}>
                   {(boardRun.status === 'running' || atelierRun.status === 'running') && (
                     <div className="mb-4 flex flex-wrap gap-2" data-testid="shell-background-activities" role="status">
                       {boardRun.status === 'running' && <button type="button" onClick={() => { setScenario('board'); setSelectedBoardTarget('current'); setCanvasOpen(true); }} className="inline-flex items-center gap-2 rounded-md border border-domaine-prospects/30 bg-domaine-prospects-tint px-3 py-2 text-sm font-semibold text-domaine-prospects"><Spinner taille="ligne" />Board en arrière-plan · {boardRun.phase || 'délibération en cours'}</button>}
@@ -1694,7 +1694,7 @@ export function ConversationCanvasPrototype() {
                   <div className="mb-7 flex items-start gap-3">
                     <CharacterPortrait index={0} className="mt-0.5 h-8 w-8 rounded-md border border-text shadow-[var(--shadow-card)]" />
                     <div>
-                      <h1 className="text-2xl font-bold tracking-[-0.035em] text-text">Bonjour{displayName ? ` ${displayName}` : ''}.</h1>
+                      <h1 className="text-text">Bonjour{displayName ? ` ${displayName}` : ''}.</h1>
                       <p className="mt-1 text-sm leading-6 text-text-muted">
                         {scenario === 'today'
                           ? "J’ai regroupé ce qui mérite ton attention. Tu peux agir ici, sans chercher le bon module."
@@ -1912,30 +1912,6 @@ export function ConversationCanvasPrototype() {
                     )}
                   </div>
 
-                  <div className="mt-9 border-t border-border pt-5">
-                    <div className="mb-3 text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">Par où commencer</div>
-                    <div className="flex flex-wrap gap-2">
-                      {actionsVisibles.map((action) => (
-                        <button
-                          key={action.id}
-                          type="button"
-                          onClick={() => chooseScenario(action.id)}
-                          aria-pressed={scenario === action.id}
-                          /* text-sm et non text-sm : ce sont les cinq gestes
-                             principaux de l'accueil, ils avaient la taille de
-                             « Connecté » et des mentions du bas de page. Une
-                             action ne se lit pas comme une métadonnée. */
-                          className={`rounded-full border px-3 py-2 text-sm font-semibold ${
-                            scenario === action.id
-                              ? 'border-accent-fill bg-accent-fill text-accent-ink'
-                              : 'border-border bg-surface text-text-muted hover:border-border hover:text-text'
-                          }`}
-                        >
-                          {action.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
                 </div>
               </div>
 
@@ -1946,8 +1922,30 @@ export function ConversationCanvasPrototype() {
               >
                 {/* B-562 : tant que le fil n'est pas au bout, on le dit. */}
                 <IndiceDeDefilement cible={conversationScrollRef} />
-                <div className={`pointer-events-auto mx-auto transition-[max-width] duration-200 ${canvasOpen ? 'max-w-[760px]' : 'max-w-[860px]'}`}>
-                  <div className="rounded-md border border-border bg-surface p-2 shadow-[0_18px_45px_-24px_rgba(16,28,54,0.45)] focus-within:border-accent focus-within:shadow-[0_0_0_3px_rgba(34,211,238,0.12),0_18px_45px_-24px_rgba(16,28,54,0.45)]">
+                <div className={`pointer-events-auto mx-auto transition-[max-width] duration-200 ${canvasOpen ? 'max-w-[760px]' : 'max-w-colonne'}`}>
+                  <div data-testid="composeur-carte" className="rounded-md border border-border bg-surface p-2 shadow-lg focus-within:border-accent focus-within:ring-[3px] focus-within:ring-ring/30">
+                    {/* DA lot 1 : l'établi (cinq verbes) vit au bord du composeur,
+                        toujours visible, jamais recouvert (B-320). Le libellé
+                        reste « Par où commencer » ; `actionsVisibles` et
+                        `aria-pressed` sont inchangés. */}
+                    <div data-testid="etabli-composeur" className="mb-2 flex flex-wrap items-center gap-1.5 px-1 pt-1">
+                      <span className="mr-1 text-sm text-text-muted">Par où commencer</span>
+                      {actionsVisibles.map((action) => (
+                        <button
+                          key={action.id}
+                          type="button"
+                          onClick={() => chooseScenario(action.id)}
+                          aria-pressed={scenario === action.id}
+                          className={`rounded-full border px-3 py-1 text-sm font-medium whitespace-nowrap transition-colors ${
+                            scenario === action.id
+                              ? 'border-accent bg-accent-tint text-accent'
+                              : 'border-border bg-surface text-text hover:border-accent hover:text-accent'
+                          }`}
+                        >
+                          {action.label}
+                        </button>
+                      ))}
+                    </div>
                     {selectedCapability && SelectedCapabilityIcon && (
                       <div className="mx-1 mt-1 flex items-center gap-2 rounded-md border border-domaine-prospects/30 bg-domaine-prospects-tint px-2.5 py-2 text-xs text-domaine-prospects">
                         <span className="grid h-6 w-6 place-items-center rounded-sm bg-domaine-prospects-tint text-domaine-prospects">
@@ -2001,7 +1999,7 @@ export function ConversationCanvasPrototype() {
                           rail (« Plus d'outils »). */}
                       <div className="flex items-center gap-1" />
                       <div className="flex items-center gap-2">
-                        <span className="hidden text-xs font-medium text-text-muted sm:inline">Données réelles · sources affichées</span>
+                        <span className="hidden text-xs font-medium text-text-muted sm:inline">Thérèse te demande confirmation avant tout envoi ou modification externe.</span>
                         {destinationUsesChat && (
                           <VoiceDictationButton
                             onTranscript={handleComposerTranscript}
@@ -2016,14 +2014,13 @@ export function ConversationCanvasPrototype() {
                           disabled={destinationIsPending || (destinationUsesChat && !composerValue.trim())}
                           aria-label={composerActionLabel}
                           title={composerActionLabel}
-                          className="grid h-11 w-11 place-items-center rounded-md border border-text bg-accent-fill text-accent-ink shadow-[var(--shadow-card)] hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:border-border disabled:bg-surface-2 disabled:text-text-muted disabled:shadow-none disabled:hover:translate-y-0"
+                          className="grid h-9 w-9 place-items-center rounded-sm bg-accent-fill text-accent-ink transition-colors hover:brightness-95 disabled:cursor-not-allowed disabled:bg-surface-2 disabled:text-text-muted"
                         >
                           {destinationUsesChat ? <ArrowUp className="h-[18px] w-[18px]" /> : <ChevronRight className="h-[18px] w-[18px]" />}
                         </button>
                       </div>
                     </div>
                   </div>
-                  <div className="mt-2 text-center text-xs text-text-muted">Thérèse affiche les sources reçues et confirme les effets externes effectivement raccordés.</div>
                 </div>
               </div>
             </section>

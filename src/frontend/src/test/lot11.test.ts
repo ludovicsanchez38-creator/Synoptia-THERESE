@@ -70,7 +70,9 @@ describe('lot 11 - accessibilité, jetons et robustesse frontend', () => {
 
   it('B-418 : le bouton Contrôle des données ne se replie pas', () => {
     const src = lire('components/prototype/ConversationCanvasPrototype.tsx');
-    expect(src).toMatch(/rounded-full border border-accent-cyan\/30 bg-accent-tint px-2\.5 py-1\.5 text-sm font-semibold text-accent hover:border-accent\/40 sm:flex whitespace-nowrap shrink-0/);
+    // DA lot 1 (10/09/2026) : l'aspect du bouton a changé (discret, en
+    // accent) ; ce que B-418 garde, c'est qu'il ne se replie pas.
+    expect(src).toMatch(/text-accent hover:bg-accent-tint sm:flex whitespace-nowrap shrink-0/);
   });
 
   it('B-419 : le Centre de confiance dit « Paramètres »', () => {
