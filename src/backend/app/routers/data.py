@@ -775,7 +775,9 @@ async def get_available_actions():
 
 @router.delete("/logs")
 async def cleanup_old_logs(
-    days: int = 90,
+    # Cycle 6 : `days=0` ou négatif posait la borne dans le présent ou le
+    # futur et vidait le journal que la purge RGPD conserve.
+    days: int = Query(90, ge=1),
     session: AsyncSession = Depends(get_session),
 ):
     """
