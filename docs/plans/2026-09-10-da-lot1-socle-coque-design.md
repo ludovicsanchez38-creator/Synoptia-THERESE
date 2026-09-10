@@ -5,7 +5,7 @@ Date : 10/09/2026. Cadrage validé par Ludo (« Go DA! ») :
 acceptée, cycle 7 en `IMPLEMENT`. Source : `docs/da/2026-09-05-propositions/`
 (`maquettes/da/base.css` = la direction 2 entière, `tokens.css` = les jetons
 réels de `globals.css`, `d2.css` vide). Ce document est soumis à Grok
-(contradicteur) AVANT toute ligne de code. Version 3 (10/09, 18:55) : la
+(contradicteur) AVANT toute ligne de code. Version 3 (10/09, 18:55, GO de Grok au troisième passage, reliquat du point 5 intégré) : la
 version 1 a reçu un NO-GO de Grok (22 points, tous confirmés à la lecture du
 code, `.cartography-work/reviews/c7-grok-da-lot1-design.log`), la version 2
 un second NO-GO (21 points traités, un partiel, 9 nouveaux,
@@ -131,8 +131,8 @@ cyan plein (réservé au geste principal) : pilule `border-accent bg-accent-tint
 text-accent`, les autres `border-border bg-surface text-text` avec hover
 `border-accent text-accent` (DA `.etabli button:hover`). `Etabli.test.tsx` et les tests
 qui citent le libellé restent verts sans modification ; le test qui change
-est celui de l'emplacement, écrit rouge d'abord (« `etabli-composeur` est un
-descendant du wrapper `pointer-events-auto` du composeur »).
+est celui de l'emplacement, écrit rouge d'abord (« `etabli-composeur` est le
+premier enfant de la carte du composeur »).
 
 Le parcours e2e `parcours-08-capacites-prototype.spec.ts` (B-320) mesure
 aujourd'hui « le parent de « Par où commencer » finit au-dessus du champ » :
@@ -217,8 +217,8 @@ migrés ici : c'est le travail de chaque lot d'écran.
 3. Nouveau `components/ui/Button.da.test.tsx` : tailles et absence de
    `btn-da` par variant.
 4. Nouveau `ConversationCanvasPrototype.da.test.tsx` : rail `w-14`, boutons
-   du rail 40 px, `etabli-composeur` descendant du wrapper cliquable du
-   composeur, envoyer sans `border-text`, badge « Interface unifiée » absent,
+   du rail 40 px, `etabli-composeur` PREMIER ENFANT de la carte du composeur
+   (le bloc `rounded-md border bg-surface`), donc cliquable, envoyer sans `border-text`, badge « Interface unifiée » absent,
    `aria-current="page"` sur Accueil, colonne ET composeur `max-w-colonne`.
    Contre B-109 : une classe présente dans un `className` ne prouve pas
    qu'une règle existe ; `styles/jetonsDA.test.ts` asserte la déclaration
