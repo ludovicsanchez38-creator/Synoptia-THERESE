@@ -1116,6 +1116,11 @@ async def create_event(
     """
     # Determine provider from calendar
     calendar = await session.get(Calendar, request.calendar_id)
+    # Cycle 6 : même repli qu'à la lecture et à la suppression (B-557).
+    if calendar is None and request.calendar_id == "primary" and not account_id:
+        calendar = await _agenda_principal_local(session)
+        if calendar is not None:
+            request.calendar_id = calendar.id
 
     if calendar and calendar.provider in ("local", "caldav"):
         return await _create_event_provider(calendar, request, session)
@@ -1303,6 +1308,11 @@ async def update_event(
     """Met a jour un evenement (local, Google ou CalDAV)."""
     # Check if calendar is local/CalDAV
     calendar = await session.get(Calendar, calendar_id)
+    # Cycle 6 : même repli qu'à la lecture et à la suppression (B-557).
+    if calendar is None and calendar_id == "primary" and not account_id:
+        calendar = await _agenda_principal_local(session)
+        if calendar is not None:
+            calendar_id = calendar.id
 
     if calendar and calendar.provider in ("local", "caldav"):
         from app.services.calendar.base_provider import UpdateEventRequest as ProviderUpdateRequest
