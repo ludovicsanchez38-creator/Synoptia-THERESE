@@ -78,14 +78,18 @@ async def export_contact_data(
     )
     projects = result.scalars().all()
 
-    # Get tasks (via projects)
+    # Get tasks (via projects, et rattachées directement au contact : cycle 6,
+    # une tâche à `contact_id` sans projet n'était ni restituée ni effacée)
     project_ids = [p.id for p in projects]
     tasks = []
     if project_ids:
         result = await session.execute(
             select(Task).where(Task.project_id.in_(project_ids))
         )
-        tasks = result.scalars().all()
+        tasks = list(result.scalars().all())
+    result = await session.execute(select(Task).where(Task.contact_id == contact_id))
+    deja = {t.id for t in tasks}
+    tasks.extend(t for t in result.scalars().all() if t.id not in deja)
 
     # Build export
     contact_data = {
@@ -285,6 +289,12 @@ async def anonymize_contact(
     for project in projects:
         await _nettoyer_et_supprimer_projet(session, project)
     dossiers_supprimes = len(projects)
+
+    # Cycle 6 : les tâches rattachées directement au contact ne suivent
+    # aucune cascade de projet ; elles s'effacent ici.
+    result = await session.execute(select(Task).where(Task.contact_id == contact_id))
+    for tache in result.scalars().all():
+        await session.delete(tache)
 
     # RGPD-1 (US-003) : effacer les emails liés au contact (art. 17). Ils
     # restaient en base avec le contact_id, contenu intégral inclus.
