@@ -90,6 +90,14 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers) {
         return;
       }
 
+      // Cmd+, - Paramètres : promis « à tout moment » par la mise en route
+      // (cycle 6, Sophie sophie-07), donc aussi depuis le composeur.
+      if (event.key === ',') {
+        event.preventDefault();
+        handlers.onOpenSettings?.();
+        return;
+      }
+
       // Skip other shortcuts when in inputs
       if (isInput) return;
 
@@ -171,13 +179,6 @@ export function useKeyboardShortcuts(handlers: ShortcutHandlers) {
       if (key === 'a' && event.shiftKey) {
         event.preventDefault();
         handlers.onToggleAtelierPanel?.();
-        return;
-      }
-
-      // Cmd+, - Settings
-      if (event.key === ',') {
-        event.preventDefault();
-        handlers.onOpenSettings?.();
         return;
       }
 
