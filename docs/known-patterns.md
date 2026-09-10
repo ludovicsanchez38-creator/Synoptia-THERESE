@@ -463,3 +463,53 @@ injoignable, traitement figé) et cinq défauts visibles. Les tests par lot
 couvrent chaque commit, jamais les interactions entre commits ni les états
 intermédiaires (lecture en vol, annulation tardive). La revue du diff reste
 obligatoire avant chaque tag, quel que soit le vert des portes.
+
+## `open -a THERESE` ouvre un bundle de build périmé (10/09/2026)
+
+Release 0.70.0. `open -a THERESE` demande à LaunchServices « une app nommée
+THERESE » et peut résoudre le bundle laissé par un build local dans
+`src/frontend/src-tauri/target/release/bundle/macos/` (ici une 0.66.1), pas
+celle de `/Applications`. Le smoke croit alors tester la version publiée.
+Toujours lancer par `open /Applications/THERESE.app`, et mettre les bundles
+de `target/` à la Corbeille après un build local.
+
+## Binaire signé ad hoc : le trousseau redemande l'accès à chaque version (10/09/2026)
+
+Release 0.70.0. Le moteur packagé (`Contents/MacOS/backend`) est signé
+`adhoc`, sans `TeamIdentifier` : l'ACL de l'item `therese-app` /
+`encryption-key` est liée au hash du binaire, donc chaque nouvelle version
+déclenche un dialogue SecurityAgent au premier accès, et le démarrage
+(`_get_key_from_keychain`, juste après « Initializing database ») attend la
+réponse. Vu de l'extérieur : « moteur sans port », et un quit pendant cette
+attente laisse un orphelin (motif B-667). Un smoke sur un dossier de données
+jetable ne rencontre jamais ce dialogue (l'entrée est créée par le nouveau
+binaire lui-même) : il valide le bundle, pas le premier lancement chez un
+installé. Pour prouver l'un et l'autre : smoke sur dossier vierge (bundle),
+puis lancement sur les vraies données avec le dialogue autorisé à la main.
+Une signature Developer ID stable ferait accepter les nouvelles versions par
+le « designated requirement ».
+
+## Un bug ajouté pendant ZERO_CHECK efface la ronde en cours, même différé ensuite (10/09/2026)
+
+Cycle 6. L'invariant 9 du skill remet `zero_bug_rounds` à zéro sur tout
+`add-bug`, quel que soit le statut donné après (B-734, intermittent Windows,
+différé dans la minute). La ronde A a été perdue. Enregistrer les candidats
+issus de la CI avant de lancer les rondes, ou accepter une ronde de plus :
+ne pas contourner l'invariant.
+
+## Cliquet mypy en égalité stricte : deux fichiers à recaler ensemble (10/09/2026)
+
+Cycle 6. `MYPY_BASELINE` dans `.github/workflows/ci.yml` est comparé à
+égalité stricte au compte mesuré (cache vidé, `--ignore-missing-imports
+--no-error-summary`), et `tests/test_cliquet_mypy_ci.py` garde la valeur.
+Réduire les erreurs (956 → 951) sans recaler les deux rougit la CI aussi
+sûrement que les augmenter. Même commit pour l'annotation, le workflow et la
+garde.
+
+## Un « clipping » de trois pixels sous le pointeur est un `whileHover` (10/09/2026)
+
+Ronde C du cycle 6. Une carte de `ChoiceStep` mesurée à 309,1 px pour 303 px
+de large en thème sombre : c'est `whileHover={{ scale: 1.02 }}` sous la
+souris de l'auditeur (303 × 1,02), même effet en clair sur l'autre carte.
+Avant de classer un débordement, mesurer sans survol ou comparer une carte
+identique hors pointeur.
