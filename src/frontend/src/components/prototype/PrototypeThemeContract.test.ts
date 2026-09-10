@@ -33,7 +33,7 @@ describe('contrat de thème de la coque 0.40', () => {
   it('conserve les portraits générés pour les identités principales', () => {
     const combined = componentSources.map(({ source }) => source).join('\n');
     expect(combined).toContain("url('/prototype/therese-character-atlas-v1.png')");
-    expect(combined.match(/<CharacterPortrait/g)?.length ?? 0).toBeGreaterThanOrEqual(12);
+    expect(combined.match(/<CharacterPortrait/g)?.length ?? 0).toBeGreaterThanOrEqual(10);
   });
 
   it('interdit les anciens statuts Tailwind et les tailles inférieures à 12 px', () => {

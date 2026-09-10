@@ -14,6 +14,8 @@ const UI = resolve(__dirname);
 const COQUE = resolve(__dirname, '../prototype/ConversationCanvasPrototype.tsx');
 // Lot 2 : la carte du brief consomme les primitives, donc les jetons.
 const BRIEF = resolve(__dirname, '../prototype/TodayDashboardCard.tsx');
+// Lot 3 : le tiroir des conversations.
+const TIROIR = resolve(__dirname, '../prototype/PrototypeConversationDrawer.tsx');
 
 /** Chemins (relatifs à src/) tolérés, avec la raison. Vide au départ. */
 const LISTE_BLANCHE: Record<string, string> = {
@@ -26,7 +28,7 @@ function sources(): string[] {
   const fichiers = (readdirSync(UI, { recursive: true }) as string[])
     .filter((f) => /\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f))
     .map((f) => join(UI, f));
-  return [...fichiers, COQUE, BRIEF];
+  return [...fichiers, COQUE, BRIEF, TIROIR];
 }
 
 /** Hex de 3 à 8 chiffres, rgb/rgba, hsl/hsla, color-mix : tout ce qui n'est pas un jeton. */

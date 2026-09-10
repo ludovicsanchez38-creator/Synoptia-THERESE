@@ -10,7 +10,6 @@ import {
   Calculator,
   Calendar,
   CheckCircle2,
-  ChevronRight,
   Database,
   FileText,
   Gauge,
@@ -38,9 +37,13 @@ import {
   X,
   type LucideIcon,
 } from 'lucide-react';
-import { CharacterPortrait } from './DecisionMissionPrototype';
 import type { AppView } from '../../stores/navigationStore';
 import type { DeepLinkAction, SettingsTab } from '../../lib/deepLinks';
+import { Button } from '../ui/Button';
+import { EtatVide } from '../ui/EtatVide';
+import { Input } from '../ui/Input';
+import { cn } from '../../lib/utils';
+import { CLASSES_GROUPE_CAPACITE, classesTypeCapacite, typeCapacite } from './typeCapacite';
 
 export type CapabilityGroupId = 'organize' | 'business' | 'create' | 'decide' | 'automate' | 'control';
 export type PrototypeScenario = 'today' | 'memory' | 'email' | 'meeting' | 'invoice' | 'board' | 'atelier';
@@ -354,9 +357,6 @@ export function CapabilityCenter({
     );
   }, [query, selectedGroup]);
 
-  const activeGroup = capabilityGroups.find((group) => group.id === selectedGroup) ?? capabilityGroups[0];
-  const ActiveGroupIcon = activeGroup.icon;
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -376,30 +376,26 @@ export function CapabilityCenter({
         exit={{ y: 18, scale: 0.985 }}
         transition={{ duration: 0.2 }}
         onClick={(event) => event.stopPropagation()}
-        className="flex h-[calc(100vh-1rem)] w-full max-w-[1120px] flex-col overflow-hidden rounded-md border border-border bg-surface shadow-[0_34px_90px_rgba(16,28,54,0.28)] sm:h-[min(760px,88vh)] sm:rounded-md"
+        className="flex h-[calc(100vh-1rem)] w-full max-w-[1120px] flex-col overflow-hidden rounded-md border border-border bg-surface shadow-lg sm:h-[min(760px,88vh)] sm:rounded-md"
       >
         <header className="flex items-start gap-3 border-b border-border px-4 py-4 sm:gap-5 sm:px-6 sm:py-5">
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-md border border-text bg-accent-tint text-accent shadow-[var(--shadow-card)]">
-            <Sparkles className="h-5 w-5" />
-          </span>
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h2 id="capability-center-title" tabIndex={-1} className="text-xl font-bold tracking-[-0.025em] text-text outline-none">Ce que Thérèse sait mobiliser</h2>
-              <span className="rounded-full bg-bg px-2 py-1 text-xs font-semibold text-text-muted">{capabilities.length} capacités</span>
+              <h2 id="capability-center-title" tabIndex={-1} className="outline-none">Capacités</h2>
+              <span className="text-sm font-semibold text-text-muted">{capabilities.length} capacité{capabilities.length > 1 ? 's' : ''}</span>
             </div>
-            <p className="mt-1 text-sm text-text-muted">Tu demandes un résultat. Thérèse combine les fonctions utiles et garde les détails techniques en retrait.</p>
           </div>
-          <button type="button" onClick={onClose} aria-label="Fermer les capacités" className="grid h-11 w-11 shrink-0 place-items-center rounded-md border border-border text-text-muted hover:bg-bg hover:text-text">
-            <X className="h-4 w-4" />
-          </button>
+          <Button variant="ghost" size="icon" type="button" onClick={onClose} aria-label="Fermer les capacités">
+            <X className="h-[18px] w-[18px]" />
+          </Button>
         </header>
 
         <div className="flex min-h-0 flex-1 flex-col md:flex-row">
           <nav role="tablist" className="flex w-full shrink-0 gap-1 overflow-x-auto border-b border-border bg-surface-2 p-2 md:block md:w-[250px] md:overflow-y-auto md:border-b-0 md:border-r md:p-3" aria-label="Intentions">
-            <div className="hidden px-2 pt-1 text-xs font-semibold uppercase tracking-[0.14em] text-text-muted md:mb-3 md:block">Je veux…</div>
             {capabilityGroups.map((group) => {
               const Icon = group.icon;
               const selected = selectedGroup === group.id && !query;
+              const n = countForGroup(group.id);
               return (
                 <button
                   key={group.id}
@@ -420,93 +416,58 @@ export function CapabilityCenter({
                   }}
                   className={`flex min-h-11 shrink-0 items-center gap-2 rounded-md px-3 py-2 text-left md:mb-1 md:w-full md:gap-3 md:py-3 ${selected ? 'bg-surface shadow-sm ring-1 ring-border' : 'hover:bg-surface/75'}`}
                 >
-                  <span className="grid h-8 w-8 place-items-center rounded-md" style={{ backgroundColor: group.tint, color: group.color }}>
-                    <Icon className="h-4 w-4" />
+                  <span className={cn('grid h-8 w-8 place-items-center rounded-full', CLASSES_GROUPE_CAPACITE[group.id])}>
+                    <Icon className="h-[18px] w-[18px]" />
                   </span>
                   <span className="min-w-0 flex-1">
-                    <span className="block text-xs font-semibold text-text">{group.shortTitle}</span>
-                    <span className="mt-0.5 hidden text-xs text-text-muted md:block">{countForGroup(group.id)} capacités</span>
+                    <span className="block text-sm font-semibold text-text">{group.title}</span>
+                    <span className="mt-0.5 hidden text-sm text-text-muted md:block">{n} capacité{n > 1 ? 's' : ''}</span>
                   </span>
-                  <ChevronRight className={`hidden h-4 w-4 md:block ${selected ? 'text-text' : 'text-text-muted'}`} />
                 </button>
               );
             })}
-            <div className="mt-5 hidden rounded-md border border-accent-cyan/30 bg-accent-tint p-3 md:block">
-              <div className="flex items-center gap-2 text-xs font-semibold text-accent">
-                <ShieldCheck className="h-4 w-4 text-accent" />
-                Toujours sous contrôle
-              </div>
-              <p className="mt-1.5 text-xs leading-4 text-text-muted">Sources et coûts affichés lorsqu’ils sont disponibles ; envoi d’e-mail et création de rendez-vous confirmés avant l’effet.</p>
-            </div>
           </nav>
 
           <div id="capability-results-panel" role="tabpanel" aria-labelledby={`capability-group-${selectedGroup}`} className="flex min-w-0 flex-1 flex-col">
             <div className="border-b border-border px-4 py-3 sm:px-5 sm:py-4">
-              <div className="relative">
-                <Search className="absolute left-3 top-2.5 h-4 w-4 text-text-muted" />
-                <input
-                  data-dialog-autofocus
-                  type="search"
-                  aria-label="Rechercher une capacité"
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Chercher une capacité, un résultat ou un outil…"
-                  className="w-full rounded-md border border-border bg-surface-2 py-2.5 pl-9 pr-3 text-sm text-text outline-none focus:border-accent focus:bg-surface"
-                />
-              </div>
-              {!query && (
-                <div className="mt-3 flex items-start gap-3">
-                  <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md" style={{ backgroundColor: activeGroup.tint, color: activeGroup.color }}>
-                    <ActiveGroupIcon className="h-4 w-4" />
-                  </span>
-                  <div>
-                    <div className="text-sm font-semibold text-text">{activeGroup.title}</div>
-                    <div className="mt-0.5 text-xs text-text-muted">{activeGroup.description}</div>
-                  </div>
-                </div>
-              )}
+              <Input
+                data-dialog-autofocus
+                type="search"
+                icon={<Search className="h-[18px] w-[18px]" />}
+                aria-label="Rechercher une capacité"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Chercher une capacité, un résultat ou un outil…"
+                className="bg-surface-2"
+              />
             </div>
 
             <div className="flex-1 overflow-y-auto bg-bg p-3 sm:p-5">
               <div className="sr-only" role="status" aria-live="polite">{visibleCapabilities.length} capacité{visibleCapabilities.length > 1 ? 's' : ''} affichée{visibleCapabilities.length > 1 ? 's' : ''}</div>
               {visibleCapabilities.length === 0 ? (
-                <div className="grid h-full place-items-center text-center">
-                  <div>
-                    <Search className="mx-auto h-7 w-7 text-text-muted" />
-                    <div className="mt-3 text-sm font-semibold text-text">Aucune capacité trouvée</div>
-                    <div className="mt-1 text-xs text-text-muted">Essaie avec le résultat souhaité, par exemple « devis » ou « analyser ».</div>
-                  </div>
-                </div>
+                <EtatVide titre="Aucune capacité trouvée">
+                  Essaie avec le résultat souhaité, par exemple « devis » ou « analyser ».
+                </EtatVide>
               ) : (
                 <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
                   {visibleCapabilities.map((capability) => {
                     const Icon = capability.icon;
-                    const group = capabilityGroups.find((item) => item.id === capability.group) ?? activeGroup;
+                    const type = typeCapacite(capability);
                     return (
                       <button
                         key={capability.id}
                         type="button"
                         onClick={() => onChoose(capability)}
-                        className="group rounded-md border border-border bg-surface p-4 text-left shadow-[0_8px_24px_-22px_rgba(16,28,54,0.55)] hover:-translate-y-0.5 hover:border-border hover:shadow-[0_14px_30px_-20px_rgba(16,28,54,0.35)]"
+                        className="grid w-full grid-cols-[1fr_auto] gap-x-2 gap-y-0.5 rounded-sm border border-border bg-surface px-3 py-2.5 text-left hover:bg-surface-2"
                       >
-                        <div className="flex items-start gap-3">
-                          {capability.id === 'decision-board' ? (
-                            <CharacterPortrait index={1} className="h-9 w-9 rounded-md border border-white shadow-sm" />
-                          ) : capability.id === 'agents' ? (
-                            <CharacterPortrait index={6} className="h-9 w-9 rounded-md border border-white shadow-sm" />
-                          ) : (
-                            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md" style={{ backgroundColor: group.tint, color: group.color }}>
-                              <Icon className="h-[18px] w-[18px]" />
-                            </span>
-                          )}
-                          <span className="min-w-0 flex-1">
-                            <span className="flex items-center justify-between gap-3">
-                              <span className="text-sm font-semibold text-text">{capability.title}</span>
-                              <ChevronRight className="h-4 w-4 shrink-0 text-text-muted group-hover:text-text" />
-                            </span>
-                            <span className="mt-1 block text-xs leading-5 text-text-muted">{capability.description}</span>
+                        <span className="flex min-w-0 items-center gap-2">
+                          <span className={cn('grid h-8 w-8 shrink-0 place-items-center rounded-full', CLASSES_GROUPE_CAPACITE[capability.group])}>
+                            <Icon className="h-[18px] w-[18px]" />
                           </span>
-                        </div>
+                          <b className="truncate text-sm font-semibold">{capability.title}</b>
+                        </span>
+                        <span className={classesTypeCapacite(type)}>{type}</span>
+                        <span className="col-span-2 text-sm text-text-muted">{capability.description}</span>
                       </button>
                     );
                   })}
@@ -514,9 +475,8 @@ export function CapabilityCenter({
               )}
             </div>
 
-            <footer className="flex flex-wrap items-center justify-between gap-1 border-t border-border bg-surface px-4 py-2 text-xs text-text-muted sm:px-5 sm:py-3">
-              <span>Une capacité ouvre le parcours réel correspondant ou prépare une demande à poursuivre dans le chat.</span>
-              <span className="font-semibold text-text-muted">Langage naturel · {/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘K' : 'Ctrl+K'} · Capacités</span>
+            <footer className="border-t border-border px-4 py-3 text-sm text-text-muted">
+              Une capacité Vue ou Parcours s'ouvre au clic. Une Demande relue pose une phrase dans le composeur, que tu relis avant l'envoi.
             </footer>
           </div>
         </div>

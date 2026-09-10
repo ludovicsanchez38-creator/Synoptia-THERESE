@@ -9,6 +9,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, within } from '@testing-library/react';
 
 import { CapabilityCenter, capabilities } from './CapabilityCenter';
+import { typeCapacite } from './typeCapacite';
 
 const IDS_SCENARIO = [
   'daily-brief',
@@ -68,9 +69,7 @@ describe('Lot 3 DA : titre et compte du catalogue', () => {
 });
 
 describe('Lot 3 DA : typeCapacite', () => {
-  it('classe prompts, actions, les 7 parcours et une vue ; un clic onChoose reste inchangé', async () => {
-    const nomDuModule = 'typeCapacite';
-    const { typeCapacite } = await import(`./${nomDuModule}.ts`);
+  it('classe prompts, actions, les 7 parcours et une vue ; un clic onChoose reste inchangé', () => {
     const parId = Object.fromEntries(capabilities.map((c) => [c.id, c]));
     for (const id of IDS_PROMPT) {
       expect(typeCapacite(parId[id]), id).toBe('Demande relue');

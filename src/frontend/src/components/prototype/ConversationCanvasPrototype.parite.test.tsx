@@ -498,8 +498,8 @@ describe('Entrées du tiroir (B0)', () => {
     // déclare sa destination, le clic l'ouvre. Il n'y avait aucune raison de
     // demander une confirmation pour aller quelque part.
     fireEvent.click(screen.getByRole('button', { name: 'Plus d’outils' }));
-    // La carte vit dans le groupe « Automatiser » - le Centre ouvre sur un autre
-    fireEvent.click(await screen.findByRole('tab', { name: /Automatisation/ }));
+    // La carte vit dans le groupe « Automatiser et déléguer » (titre long, lot 3 DA).
+    fireEvent.click(await screen.findByRole('tab', { name: /Automatiser et déléguer/ }));
     fireEvent.click(await screen.findByRole('button', { name: /Connecteurs/ }));
 
     await waitFor(() => {

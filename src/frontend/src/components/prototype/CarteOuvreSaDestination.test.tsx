@@ -38,7 +38,7 @@ async function ouvrirLeTiroir() {
   await act(async () => {
     fireEvent.click(screen.getByRole('button', { name: 'Plus d’outils' }));
   });
-  await screen.findByRole('heading', { name: 'Ce que Thérèse sait mobiliser' });
+  await screen.findByRole('heading', { name: 'Capacités' });
 }
 
 describe('Une carte ouvre sa destination', () => {

@@ -61,6 +61,9 @@ describe('PrototypeConversationDrawer', () => {
     const onOpenChat = vi.fn();
     render(<PrototypeConversationDrawer onClose={onClose} onOpenChat={onOpenChat} />);
 
+    expect(screen.getByPlaceholderText('Rechercher dans les conversations')).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Nouvelle conversation' })).toHaveLength(1);
+
     fireEvent.change(screen.getByLabelText('Rechercher une conversation'), { target: { value: 'absente' } });
     expect(screen.getByText('Aucune conversation trouvée')).toBeInTheDocument();
 

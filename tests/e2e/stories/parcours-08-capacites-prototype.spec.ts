@@ -174,9 +174,8 @@ async function chooseCapability(page: Page, name: string) {
   // un bouton disparu depuis plusieurs versions, et attendaient trente
   // secondes avant de renoncer.
   await page.getByRole('button', { name: /plus d.outils/i }).click();
-  // Le centre s'intitule « Ce que Thérèse sait mobiliser » depuis la 0.48 :
-  // le titre porte l'intention, pas la catégorie.
-  const dialog = page.getByRole('dialog', { name: 'Ce que Thérèse sait mobiliser' });
+  // Lot 3 DA : le centre s'intitule « Capacités » (maquette tiroir).
+  const dialog = page.getByRole('dialog', { name: 'Capacités' });
   await expect(dialog).toBeVisible();
   await dialog.getByPlaceholder(/Chercher une capacité/).fill(name);
   // La liste se filtre après la saisie : attendre que la carte cherchée soit

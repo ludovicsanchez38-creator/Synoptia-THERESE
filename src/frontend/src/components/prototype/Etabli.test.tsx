@@ -120,7 +120,7 @@ describe('L’accueil est un établi', () => {
     expect(screen.queryByRole('button', { name: 'Aide' })).toBeNull();
     fireEvent.click(screen.getByRole('button', { name: 'Plus d’outils' }));
     expect(
-      await screen.findByRole('heading', { name: 'Ce que Thérèse sait mobiliser' }),
+      await screen.findByRole('heading', { name: 'Capacités' }),
     ).toBeInTheDocument();
   });
 

@@ -1,8 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { FileDown, History, MessageSquare, MoreHorizontal, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
+import { FileDown, MoreHorizontal, Pencil, Plus, Search, Trash2, X } from 'lucide-react';
 import { motion, useIsPresent } from 'framer-motion';
 import { useChatStore, type Conversation } from '../../stores/chatStore';
 import { aUnBrouillonLocal } from '../../hooks/useAutosave';
+import { Alerte } from '../ui/Alerte';
+import { Button } from '../ui/Button';
+import { EtatVide } from '../ui/EtatVide';
+import { Input } from '../ui/Input';
+import { cn } from '../../lib/utils';
 
 /** Revue COCO 0.69.0 (finding 2) : une conversation listée sans message l'est pour son brouillon, autant le dire. */
 function compteMessages(conversation: { messages: unknown[]; messageCount?: number }): string {
@@ -46,12 +51,19 @@ function dateLabel(date: Date): string {
 function updatedLabel(date: Date): string {
   const value = new Date(date);
   if (Number.isNaN(value.getTime())) return 'Date inconnue';
-  return value.toLocaleString('fr-FR', {
-    day: '2-digit',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const day = new Date(value.getFullYear(), value.getMonth(), value.getDate());
+  const distance = Math.round((today.getTime() - day.getTime()) / 86_400_000);
+
+  if (distance === 0 || distance === 1) {
+    return value.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+  }
+  if (distance > 1 && distance < 7) {
+    return value.toLocaleDateString('fr-FR', { weekday: 'short' });
+  }
+  return value.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
 }
 
 function groupConversations(conversations: Conversation[]): Array<[string, Conversation[]]> {
@@ -240,37 +252,27 @@ export function PrototypeConversationDrawer({
       // contrôles tabulables SOUS un panneau opaque - le finding S1-2 du hotfix.
       // `xl:left-0` annule le décalage du rail, qui n'a plus lieu d'être une fois
       // le tiroir placé dans le flux.
-      className="absolute inset-y-0 left-16 z-30 flex w-[306px] flex-col border-r border-border bg-surface shadow-[12px_0_40px_rgba(16,28,54,0.10)] xl:relative xl:left-0 xl:shrink-0 xl:shadow-none"
+      className="absolute inset-y-0 left-16 z-30 flex w-[22rem] flex-col border-r border-border bg-surface shadow-lg xl:relative xl:left-0 xl:shrink-0 xl:shadow-none"
       data-testid="prototype-conversation-drawer"
     >
       <div className="flex h-14 shrink-0 items-center justify-between border-b border-border px-4">
-        <span id="prototype-conversation-drawer-title" className="text-sm font-semibold text-text">Conversations</span>
-        <button type="button" onClick={onClose} aria-label="Fermer les conversations" className="grid h-8 w-8 place-items-center rounded-md text-text-muted hover:bg-bg hover:text-text">
-          <X className="h-4 w-4" />
-        </button>
+        <h2 id="prototype-conversation-drawer-title" className="text-base">Conversations</h2>
+        <Button variant="ghost" size="icon" onClick={onClose} aria-label="Fermer les conversations">
+          <X className="h-[18px] w-[18px]" />
+        </Button>
       </div>
 
-      <div className="shrink-0 p-3">
-        <button
-          ref={newConversationRef}
-          type="button"
-          onClick={startConversation}
-          className="mb-3 flex w-full items-center justify-center gap-2 rounded-md border border-accent-fill bg-accent-fill px-3 py-2.5 text-sm font-semibold text-accent-ink shadow-[var(--shadow-card)]"
-        >
-          <Plus className="h-4 w-4" />
-          Nouvelle conversation
-        </button>
-        <div className="relative">
-          <Search className="absolute left-3 top-2.5 h-4 w-4 text-text-muted" />
-          <input
-            ref={searchRef}
-            aria-label="Rechercher une conversation"
-            placeholder="Rechercher…"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            className="w-full rounded-md border border-border bg-surface-2 py-2 pl-9 pr-3 text-sm text-text outline-none focus:border-accent"
-          />
-        </div>
+      <div className="shrink-0 px-4 py-2">
+        <Input
+          ref={searchRef}
+          type="search"
+          icon={<Search className="h-[18px] w-[18px]" />}
+          aria-label="Rechercher une conversation"
+          placeholder="Rechercher dans les conversations"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          className="bg-surface-2"
+        />
       </div>
 
       <div
@@ -280,48 +282,66 @@ export function PrototypeConversationDrawer({
         className="min-h-0 flex-1 overflow-y-auto px-3 pb-3 outline-none"
         data-testid="prototype-conversation-list"
       >
-        {error && <div role="alert" className="mb-2 rounded-sm border border-error/40 bg-[var(--color-error-tint)] px-3 py-2 text-xs text-error">{error}</div>}
+        {error && <Alerte className="mb-2">{error}</Alerte>}
         {filtered.length === 0 ? (
-          <div className="flex min-h-40 flex-col items-center justify-center px-5 text-center text-text-muted">
-            <MessageSquare className="mb-2 h-7 w-7 opacity-50" />
-            <p className="text-sm font-medium">{query ? 'Aucune conversation trouvée' : 'Aucune conversation enregistrée'}</p>
-            {!query && <p className="mt-1 text-xs leading-5">Commence une conversation pour la retrouver ici.</p>}
-          </div>
+          <EtatVide titre={query ? 'Aucune conversation trouvée' : 'Aucune conversation'}>
+            {query ? null : 'Ta première demande à Thérèse apparaîtra ici, avec ce qu’elle a produit.'}
+          </EtatVide>
         ) : grouped.map(([label, items]) => (
           <section key={label} className="mb-4">
-            <div className="mb-1 flex items-center gap-1.5 px-2 text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">
-              <History className="h-3 w-3" />
+            <div className="px-2 py-1.5 text-xs font-semibold uppercase tracking-wider text-text-muted">
               {label}
             </div>
             {items.map((conversation) => (
               <div key={conversation.id} className="relative mb-1">
                 {editingId === conversation.id ? (
                   <div className="rounded-md border border-accent bg-surface p-2">
-                    <input autoFocus aria-label="Nouveau titre" value={editingTitle} maxLength={120} onChange={(event) => setEditingTitle(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') void saveTitle(conversation); if (event.key === 'Escape') setEditingId(null); }} className="w-full rounded-sm border border-border px-2 py-1.5 text-sm text-text outline-none" />
-                    <div className="mt-2 flex justify-end gap-2"><button type="button" onClick={() => setEditingId(null)} className="text-sm font-semibold text-text-muted">Annuler</button><button type="button" onClick={() => void saveTitle(conversation)} className="rounded-sm bg-accent-fill px-2 py-1 text-sm font-semibold text-accent-ink">Enregistrer</button></div>
+                    <Input
+                      autoFocus
+                      aria-label="Nouveau titre"
+                      value={editingTitle}
+                      maxLength={120}
+                      onChange={(event) => setEditingTitle(event.target.value)}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter') void saveTitle(conversation);
+                        if (event.key === 'Escape') setEditingId(null);
+                      }}
+                    />
+                    <div className="mt-2 flex justify-end gap-2">
+                      <Button variant="ghost" size="md" type="button" onClick={() => setEditingId(null)}>Annuler</Button>
+                      <Button variant="primary" size="md" type="button" onClick={() => void saveTitle(conversation)}>Enregistrer</Button>
+                    </div>
                   </div>
                 ) : deleteConfirmationId === conversation.id ? (
-                  <div className="rounded-md border border-error/40 bg-[var(--color-error-tint)] p-3 text-sm text-error" data-testid="conversation-delete-confirmation"><strong>Supprimer définitivement cette conversation ?</strong><div className="mt-2 flex justify-end gap-2"><button type="button" onClick={() => setDeleteConfirmationId(null)} className="rounded-sm bg-surface px-2 py-1 font-semibold">Annuler</button><button type="button" onClick={() => void confirmDelete(conversation)} className="rounded-sm bg-error-fill px-2 py-1 font-semibold text-error-ink">Confirmer la suppression</button></div></div>
+                  <div className="rounded-md border border-border bg-surface p-3" data-testid="conversation-delete-confirmation">
+                    <p className="text-sm font-semibold">Supprimer définitivement cette conversation ?</p>
+                    <div className="mt-2 flex justify-end gap-2">
+                      <Button variant="secondary" size="md" type="button" onClick={() => setDeleteConfirmationId(null)}>Annuler</Button>
+                      <Button variant="danger" size="md" type="button" onClick={() => void confirmDelete(conversation)}>Confirmer la suppression</Button>
+                    </div>
+                  </div>
                 ) : (
                   <>
                     <button
                       type="button"
                       onClick={() => openConversation(conversation.id)}
                       aria-current={currentConversationId === conversation.id ? 'page' : undefined}
-                      className={`w-full rounded-md border px-3 py-2.5 pr-10 text-left transition-colors ${
-                        currentConversationId === conversation.id
-                          ? 'border-accent/40 bg-accent-tint'
-                          : 'border-transparent hover:border-border hover:bg-surface-2'
-                      }`}
+                      className={cn(
+                        'grid w-full grid-cols-[1fr_auto] gap-x-2 gap-y-0.5 rounded-sm px-3 py-2.5 pr-11 text-left',
+                        'focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-[-3px] focus-visible:outline-ring',
+                        currentConversationId === conversation.id ? 'bg-accent-tint' : 'hover:bg-surface-2',
+                      )}
                     >
-                      <span className="block truncate text-sm font-semibold text-text">{conversation.title || 'Nouvelle conversation'}</span>
-                      <span className="mt-0.5 flex items-center justify-between gap-2 text-xs text-text-muted">
-                        <span>{updatedLabel(conversation.updatedAt)}</span>
-                        <span>{compteMessages(conversation)}{conversation.synced ? '' : ' · non enregistrée'}</span>
+                      <b className="truncate text-sm font-semibold">{conversation.title || 'Nouvelle conversation'}</b>
+                      <span className="text-sm tabular-nums text-text-muted">{updatedLabel(conversation.updatedAt)}</span>
+                      <span className="col-span-2 truncate text-sm text-text-muted">
+                        {compteMessages(conversation)}{conversation.synced ? '' : ' · non enregistrée'}
                       </span>
                     </button>
-                    <button
+                    <Button
                       ref={menuId === conversation.id ? menuTriggerRef : undefined}
+                      variant="ghost"
+                      size="icon"
                       type="button"
                       aria-label={`Actions pour ${conversation.title}`}
                       aria-haspopup="menu"
@@ -331,15 +351,30 @@ export function PrototypeConversationDrawer({
                         menuTriggerRef.current = event.currentTarget;
                         setMenuId(menuId === conversation.id ? null : conversation.id);
                       }}
-                      className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-sm text-text-muted hover:bg-surface"
-                    ><MoreHorizontal className="h-4 w-4" /></button>
-                    {menuId === conversation.id && <div ref={menuRef} id={`conversation-menu-${conversation.id}`} role="menu" aria-label={`Actions pour ${conversation.title}`} onKeyDown={handleMenuKeyDown} className="absolute right-2 top-9 z-10 w-44 rounded-md border border-border bg-surface py-1 shadow-xl" data-testid="conversation-actions-menu"><button role="menuitem" tabIndex={-1} type="button" onClick={() => { setEditingId(conversation.id); setEditingTitle(conversation.title); setMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-text hover:bg-surface-2"><Pencil className="h-3.5 w-3.5" />Renommer</button><button role="menuitem" tabIndex={-1} type="button" onClick={() => void exportConversation(conversation.id, 'md').catch(() => setError('L’export Markdown a échoué.'))} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-text hover:bg-surface-2"><FileDown className="h-3.5 w-3.5" />Exporter en Markdown</button><button role="menuitem" tabIndex={-1} type="button" onClick={() => void exportConversation(conversation.id, 'docx').catch(() => setError('L’export Word a échoué.'))} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-text hover:bg-surface-2"><FileDown className="h-3.5 w-3.5" />Exporter en Word</button><button role="menuitem" tabIndex={-1} type="button" onClick={() => { setDeleteConfirmationId(conversation.id); setMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-error hover:bg-[var(--color-error-tint)]"><Trash2 className="h-3.5 w-3.5" />Supprimer</button></div>}
+                      className="absolute right-2 top-2 text-text-muted"
+                    >
+                      <MoreHorizontal className="h-[18px] w-[18px]" />
+                    </Button>
+                    {menuId === conversation.id && <div ref={menuRef} id={`conversation-menu-${conversation.id}`} role="menu" aria-label={`Actions pour ${conversation.title}`} onKeyDown={handleMenuKeyDown} className="absolute right-2 top-11 z-10 w-44 rounded-md border border-border bg-surface py-1 shadow-xl" data-testid="conversation-actions-menu"><button role="menuitem" tabIndex={-1} type="button" onClick={() => { setEditingId(conversation.id); setEditingTitle(conversation.title); setMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-text hover:bg-surface-2"><Pencil className="h-3.5 w-3.5" />Renommer</button><button role="menuitem" tabIndex={-1} type="button" onClick={() => void exportConversation(conversation.id, 'md').catch(() => setError('L’export Markdown a échoué.'))} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-text hover:bg-surface-2"><FileDown className="h-3.5 w-3.5" />Exporter en Markdown</button><button role="menuitem" tabIndex={-1} type="button" onClick={() => void exportConversation(conversation.id, 'docx').catch(() => setError('L’export Word a échoué.'))} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-text hover:bg-surface-2"><FileDown className="h-3.5 w-3.5" />Exporter en Word</button><button role="menuitem" tabIndex={-1} type="button" onClick={() => { setDeleteConfirmationId(conversation.id); setMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-error hover:bg-[var(--color-error-tint)]"><Trash2 className="h-3.5 w-3.5" />Supprimer</button></div>}
                   </>
                 )}
               </div>
             ))}
           </section>
         ))}
+      </div>
+      <div className="border-t border-border px-4 py-2.5">
+        <Button
+          ref={newConversationRef}
+          variant="primary"
+          size="md"
+          type="button"
+          onClick={startConversation}
+          className="w-full gap-2"
+        >
+          <Plus className="h-[18px] w-[18px]" />
+          Nouvelle conversation
+        </Button>
       </div>
     </motion.aside>
   );
