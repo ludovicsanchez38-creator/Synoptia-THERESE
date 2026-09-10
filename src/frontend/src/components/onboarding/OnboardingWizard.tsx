@@ -42,6 +42,8 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
   const [configuredProvider, setConfiguredProvider] = useState<LLMProvider | null>(null);
   // B-199 : « Configurer plus tard » est un choix distinct de « rien encore ».
   const [llmSkipped, setLlmSkipped] = useState(false);
+  /** #162 : « plus tard » choisi, mais l'effacement au serveur a échoué : le fournisseur reste actif. */
+  const [serviceIaConserve, setServiceIaConserve] = useState<LLMProvider | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
 
   // Window controls
@@ -85,12 +87,20 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
     setCurrentStep((prev) => Math.max(prev - 1, 0));
   }
 
-  function completeLlmStep(provider: LLMProvider | null) {
+  async function completeLlmStep(provider: LLMProvider | null) {
     // B-607 : un fournisseur enregistré au passage précédent est défait si
     // l'on choisit finalement « Configurer plus tard ».
+    // #162 : l'échec de cet effacement n'est plus avalé : le récapitulatif dira
+    // que le fournisseur reste actif.
+    let conserve: LLMProvider | null = null;
     if (doitEffacerLeChoixDeServiceIa(configuredProvider, provider)) {
-      void api.clearLLMConfig().catch(() => undefined);
+      try {
+        await api.clearLLMConfig();
+      } catch {
+        conserve = configuredProvider;
+      }
     }
+    setServiceIaConserve(conserve);
     setConfiguredProvider(provider);
     setLlmSkipped(provider === null);
     goNext();
@@ -273,7 +283,7 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
                   {currentStep === 2 && <div data-testid="onboarding-step-2"><LLMStep onNext={completeLlmStep} onBack={goBack} /></div>}
                   {currentStep === 3 && <div data-testid="onboarding-step-3"><SecurityStep provider={configuredProvider} onNext={goNext} onBack={goBack} /></div>}
                   {currentStep === 4 && <div data-testid="onboarding-step-4"><WorkingDirStep onNext={goNext} onBack={goBack} /></div>}
-                  {currentStep === 5 && <div data-testid="onboarding-step-5"><CompleteStep onComplete={handleComplete} onBack={goBack} llmSkipped={llmSkipped} /></div>}
+                  {currentStep === 5 && <div data-testid="onboarding-step-5"><CompleteStep onComplete={handleComplete} onBack={goBack} llmSkipped={llmSkipped} serviceIaConserve={serviceIaConserve} /></div>}
                 </motion.div>
               </AnimatePresence>
             </div>

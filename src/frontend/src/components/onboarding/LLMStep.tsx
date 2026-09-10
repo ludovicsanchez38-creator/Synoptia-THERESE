@@ -111,7 +111,6 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
   const configuringRef = useRef(false);
   // B-607 : un fournisseur enregistré dans CETTE étape (Continuer, puis Retour)
   // doit être défait si l'on choisit finalement « Configurer plus tard ».
-  const enregistreIciRef = useRef(false);
 
   const loadState = useCallback(async () => {
     const activeRequest = ++loadRequestRef.current;
@@ -257,14 +256,8 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
   }
 
   async function handlePlusTard() {
-    if (enregistreIciRef.current) {
-      try {
-        await api.clearLLMConfig();
-        enregistreIciRef.current = false;
-      } catch {
-        // Le moteur garde alors le fournisseur : le récapitulatif le dira.
-      }
-    }
+    // #162 : un seul écrivain pour l'effacement, le wizard (B-607), qui en
+    // rapporte l'échec au récapitulatif. Ici, on transmet seulement le choix.
     onNext(null);
   }
 
@@ -281,7 +274,6 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
         undefined,
         selectedProvider === 'qwen' ? baseUrlInput.trim() : undefined,
       );
-      enregistreIciRef.current = true;
       onNext(selectedProvider);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la configuration');

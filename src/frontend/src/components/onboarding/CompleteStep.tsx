@@ -8,6 +8,7 @@ import { useCallback, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { PartyPopper, Check, User, Cpu, FolderOpen, Sparkles, AlertCircle, RefreshCw } from 'lucide-react';
 import * as api from '../../services/api';
+import { libelleDuFournisseur } from '../../lib/libellesFournisseurs';
 import { Button } from '../ui/Button';
 
 interface CompleteStepProps {
@@ -15,6 +16,8 @@ interface CompleteStepProps {
   onBack: () => void;
   /** B-199 : l'étape du service d'IA a été passée (« Configurer plus tard »). */
   llmSkipped?: boolean;
+  /** #162 : « plus tard » choisi, mais ce fournisseur n'a pas pu être effacé au serveur et reste actif. */
+  serviceIaConserve?: string | null;
 }
 
 interface SetupSummary {
@@ -23,7 +26,7 @@ interface SetupSummary {
   workingDir: string | null;
 }
 
-export function CompleteStep({ onComplete, onBack, llmSkipped = false }: CompleteStepProps) {
+export function CompleteStep({ onComplete, onBack, llmSkipped = false, serviceIaConserve = null }: CompleteStepProps) {
   const [summary, setSummary] = useState<SetupSummary>({
     profile: null,
     llmConfig: null,
@@ -92,7 +95,9 @@ export function CompleteStep({ onComplete, onBack, llmSkipped = false }: Complet
       // défaut relue au serveur - le récapitulatif dit ce que la personne a
       // choisi dans l'assistant, pas ce que le serveur porte en réglage initial.
       value: llmSkipped
-        ? 'À configurer plus tard'
+        ? serviceIaConserve
+          ? `À configurer plus tard (le réglage ${libelleDuFournisseur(serviceIaConserve)} n’a pas pu être effacé et reste actif)`
+          : 'À configurer plus tard'
         : summary.llmConfig?.available
         // B-243 : le modèle s'écrit en entier. La troncature aux deux premiers
         // segments fabriquait un identifiant absent de toute liste
