@@ -211,6 +211,41 @@ class ImapSmtpProvider(EmailProvider):
             ssl_context=_make_ssl_context(),
         )
 
+    # Cycle 6 (P1) : un UID IMAP n'a de sens que dans SON dossier. L'identifiant
+    # d'un message hors INBOX porte donc son dossier (« Sent::12 ») ; un
+    # identifiant nu reste un message de la boîte de réception (compatibilité
+    # des identifiants déjà enregistrés). Avant : lire, marquer, supprimer ou
+    # déplacer un message des Envoyés agissait sur l'UID homonyme de l'INBOX.
+    _SEPARATEUR_DOSSIER = "::"
+
+    @classmethod
+    def _identifiant(cls, folder: str, uid: str) -> str:
+        if not folder or folder.upper() == "INBOX":
+            return str(uid)
+        return f"{folder}{cls._SEPARATEUR_DOSSIER}{uid}"
+
+    @classmethod
+    def _dossier_et_uid(cls, message_id: str) -> tuple[str, str]:
+        dossier, sep, uid = str(message_id).rpartition(cls._SEPARATEUR_DOSSIER)
+        if not sep:
+            return "INBOX", str(message_id)
+        return dossier or "INBOX", uid
+
+    @staticmethod
+    def _criteres(unread_only: bool, query: str | None, flagged_only: bool):
+        """Cycle 6 : « non lus », « mot-clé » et « suivis » se COMBINENT ; avant,
+        la recherche par mot-clé remplaçait le filtre des non-lus."""
+        conditions: dict = {}
+        if unread_only:
+            conditions["seen"] = False
+        if flagged_only:
+            conditions["flagged"] = True
+        if query:
+            if conditions:
+                return AND(OR(subject=query, body=query), **conditions)
+            return AND(OR(subject=query, body=query))
+        return AND(**conditions) if conditions else "ALL"
+
     def _connect_mailbox(
         self,
         initial_folder: str = "INBOX",
@@ -309,18 +344,8 @@ class ImapSmtpProvider(EmailProvider):
                 initial_folder=folder_name,
                 timeout=IMAP_CONNECT_TIMEOUT,
             ) as mailbox:
-                # Build search criteria
-                criteria = AND(seen=False) if unread_only else "ALL"
-
-                if query:
-                    # Simple text search in subject/body
-                    criteria = AND(OR(subject=query, body=query))
-                if flagged_only:
-                    criteria = (
-                        AND(OR(subject=query, body=query), flagged=True)
-                        if query
-                        else AND(flagged=True)
-                    )
+                # Build search criteria (cycle 6 : filtres combinés)
+                criteria = self._criteres(unread_only, query, flagged_only)
 
                 # Fetch messages (reversed for newest first).
                 # B-351 (05/09/2026) : on demande UN message de plus que la page
@@ -334,7 +359,7 @@ class ImapSmtpProvider(EmailProvider):
 
                 result = []
                 for msg in paginated:
-                    result.append(self._imap_to_dto(msg))
+                    result.append(self._imap_to_dto(msg, folder=folder_name))
 
                 # Calculate next page token
                 next_token = None
@@ -400,11 +425,13 @@ class ImapSmtpProvider(EmailProvider):
     ) -> EmailMessageDTO:
         """Get a single message from IMAP with timeout."""
 
+        dossier, uid = self._dossier_et_uid(message_id)
+
         def _sync_fetch():
-            with self._connect_mailbox(timeout=IMAP_CONNECT_TIMEOUT) as mailbox:
-                # Search by UID
-                for msg in mailbox.fetch(AND(uid=message_id)):
-                    return self._imap_to_dto(msg, include_attachments=include_attachments)
+            with self._connect_mailbox(initial_folder=dossier, timeout=IMAP_CONNECT_TIMEOUT) as mailbox:
+                # Search by UID, dans le dossier du message
+                for msg in mailbox.fetch(AND(uid=uid)):
+                    return self._imap_to_dto(msg, include_attachments=include_attachments, folder=dossier)
                 raise ValueError(f"Message {message_id} not found")
 
         return await self._run_imap_operation(
@@ -644,21 +671,23 @@ class ImapSmtpProvider(EmailProvider):
     ) -> EmailMessageDTO:
         """Modify message flags in IMAP with timeout."""
 
+        dossier, uid = self._dossier_et_uid(message_id)
+
         def _sync_modify():
-            with self._connect_mailbox(timeout=IMAP_CONNECT_TIMEOUT) as mailbox:
+            with self._connect_mailbox(initial_folder=dossier, timeout=IMAP_CONNECT_TIMEOUT) as mailbox:
                 if mark_read is True:
-                    mailbox.flag([message_id], {r"\Seen"}, True)
+                    mailbox.flag([uid], {r"\Seen"}, True)
                 elif mark_read is False:
-                    mailbox.flag([message_id], {r"\Seen"}, False)
+                    mailbox.flag([uid], {r"\Seen"}, False)
 
                 if mark_starred is True:
-                    mailbox.flag([message_id], {r"\Flagged"}, True)
+                    mailbox.flag([uid], {r"\Flagged"}, True)
                 elif mark_starred is False:
-                    mailbox.flag([message_id], {r"\Flagged"}, False)
+                    mailbox.flag([uid], {r"\Flagged"}, False)
 
                 # Fetch updated message
-                for msg in mailbox.fetch(AND(uid=message_id)):
-                    return self._imap_to_dto(msg)
+                for msg in mailbox.fetch(AND(uid=uid)):
+                    return self._imap_to_dto(msg, folder=dossier)
 
                 raise ValueError(f"Message {message_id} not found")
 
@@ -671,14 +700,16 @@ class ImapSmtpProvider(EmailProvider):
     async def delete_message(self, message_id: str, permanent: bool = False) -> None:
         """Delete a message from IMAP with timeout."""
 
+        dossier, uid = self._dossier_et_uid(message_id)
+
         def _sync_delete():
-            with self._connect_mailbox(timeout=IMAP_CONNECT_TIMEOUT) as mailbox:
+            with self._connect_mailbox(initial_folder=dossier, timeout=IMAP_CONNECT_TIMEOUT) as mailbox:
                 if permanent:
-                    mailbox.delete([message_id])
+                    mailbox.delete([uid])
                 else:
                     # Move to Trash
                     trash_folder = self._dossier_corbeille(mailbox)  # B-502
-                    mailbox.move([message_id], trash_folder)
+                    mailbox.move([uid], trash_folder)
 
         await self._run_imap_operation(
             _sync_delete,
@@ -689,16 +720,21 @@ class ImapSmtpProvider(EmailProvider):
     async def move_message(self, message_id: str, destination_folder: str) -> EmailMessageDTO:
         """Move a message to another folder in IMAP with timeout."""
 
+        dossier, uid = self._dossier_et_uid(message_id)
+
         def _sync_move():
-            with self._connect_mailbox(timeout=IMAP_CONNECT_TIMEOUT) as mailbox:
-                mailbox.move([message_id], destination_folder)
-
-                # Fetch from new location
-                mailbox.folder.set(destination_folder)
-                for msg in mailbox.fetch(AND(uid=message_id)):
-                    return self._imap_to_dto(msg)
-
-                raise ValueError(f"Message {message_id} not found after move")
+            with self._connect_mailbox(initial_folder=dossier, timeout=IMAP_CONNECT_TIMEOUT) as mailbox:
+                # Cycle 6 : l'UID est réattribué dans la destination ; on lit le
+                # message dans son dossier d'origine, puis on le déplace.
+                dto = None
+                for msg in mailbox.fetch(AND(uid=uid)):
+                    dto = self._imap_to_dto(msg, folder=destination_folder)
+                    break
+                if dto is None:
+                    raise ValueError(f"Message {message_id} not found")
+                mailbox.move([uid], destination_folder)
+                dto.labels = [destination_folder]
+                return dto
 
         return await self._run_imap_operation(
             _sync_move,
@@ -795,9 +831,11 @@ class ImapSmtpProvider(EmailProvider):
     ) -> EmailAttachmentDTO:
         """Get attachment content from IMAP message with timeout."""
 
+        dossier, uid = self._dossier_et_uid(message_id)
+
         def _sync_fetch():
-            with self._connect_mailbox(timeout=IMAP_CONNECT_TIMEOUT) as mailbox:
-                for msg in mailbox.fetch(AND(uid=message_id)):
+            with self._connect_mailbox(initial_folder=dossier, timeout=IMAP_CONNECT_TIMEOUT) as mailbox:
+                for msg in mailbox.fetch(AND(uid=uid)):
                     for idx, att in enumerate(msg.attachments):
                         if str(idx) == attachment_id or att.filename == attachment_id:
                             return EmailAttachmentDTO(
@@ -905,7 +943,7 @@ class ImapSmtpProvider(EmailProvider):
     # Private Helpers
     # ============================================================
 
-    def _imap_to_dto(self, msg: MailMessage, include_attachments: bool = False) -> EmailMessageDTO:
+    def _imap_to_dto(self, msg: MailMessage, include_attachments: bool = False, folder: str = "INBOX") -> EmailMessageDTO:
         """Convert imap-tools MailMessage to EmailMessageDTO."""
         attachments = []
         if include_attachments:
@@ -927,7 +965,7 @@ class ImapSmtpProvider(EmailProvider):
                 ))
 
         return EmailMessageDTO(
-            id=msg.uid,
+            id=self._identifiant(folder, msg.uid),
             subject=msg.subject,
             snippet=msg.text[:200] if msg.text else None,
             from_email=msg.from_,

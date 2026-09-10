@@ -43,7 +43,7 @@ def _provider(monkeypatch, boite: _BoiteFactice):
         yield boite
 
     monkeypatch.setattr(provider, "_connect_mailbox", _connexion)
-    monkeypatch.setattr(provider, "_imap_to_dto", lambda msg, include_attachments=False: msg)
+    monkeypatch.setattr(provider, "_imap_to_dto", lambda msg, include_attachments=False, folder="INBOX": msg)
     return provider
 
 
