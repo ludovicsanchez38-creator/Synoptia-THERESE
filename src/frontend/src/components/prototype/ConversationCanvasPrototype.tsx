@@ -53,6 +53,7 @@ import {
   type MeetingTarget,
 } from './MeetingConversationCard';
 import { TodayDashboardCard } from './TodayDashboardCard';
+import { ligneDuJour } from './ligneDuJour';
 import { IndiceDeDefilement } from './IndiceDeDefilement';
 import { destinationDuPoint } from '../../lib/pointDAttention';
 import { CalculatorWorkspaceCanvas } from './CalculatorWorkspaceCanvas';
@@ -1691,14 +1692,25 @@ export function ConversationCanvasPrototype() {
                       {atelierRun.status === 'running' && <button type="button" onClick={() => { setScenario('atelier'); setSelectedAtelierTarget('current'); setCanvasOpen(true); }} className="inline-flex items-center gap-2 rounded-md border border-accent-cyan/30 bg-accent-tint px-3 py-2 text-sm font-semibold text-accent"><Spinner taille="ligne" />Atelier en arrière-plan · {atelierRun.phase || 'mission en cours'}</button>}
                     </div>
                   )}
+                  {scenario === 'today' ? (
+                  <div data-testid="accueil-entete" className="mb-7 grid grid-cols-[2rem_1fr] items-start gap-3">
+                    <CharacterPortrait index={0} className="mt-0.5 h-8 w-8 rounded-full" />
+                    <div>
+                      <h1 className="font-editorial text-text">Bonjour{displayName ? <>{' '}<em className="not-italic">{displayName}</em></> : null}.</h1>
+                      <p className="mt-1 text-sm leading-6 text-text-muted">
+                        J’ai regroupé ce qui mérite ton attention. Tu peux agir ici, sans chercher le bon module.
+                      </p>
+                      <p data-testid="accueil-jour" className="mt-1 text-xs font-medium text-text-muted">{ligneDuJour(todayResource.data ?? null, heureDAffichage)}</p>
+                    </div>
+                  </div>
+                  ) : (
+                  <>
                   <div className="mb-7 flex items-start gap-3">
                     <CharacterPortrait index={0} className="mt-0.5 h-8 w-8 rounded-md border border-text shadow-[var(--shadow-card)]" />
                     <div>
                       <h1 className="text-text">Bonjour{displayName ? ` ${displayName}` : ''}.</h1>
                       <p className="mt-1 text-sm leading-6 text-text-muted">
-                        {scenario === 'today'
-                          ? "J’ai regroupé ce qui mérite ton attention. Tu peux agir ici, sans chercher le bon module."
-                          : scenario === 'memory'
+                        {scenario === 'memory'
                             ? 'Je consulte les contacts réellement enregistrés et leur contexte local, sans rien modifier.'
                           : scenario === 'email'
                             ? 'Je prépare un message. Tu peux le relire et le corriger : rien ne part d’ici.'
@@ -1722,6 +1734,8 @@ export function ConversationCanvasPrototype() {
                         ce qu'on lit. */}
                     <span className="font-normal">· {heureDAffichage}</span>
                   </div>
+                  </>
+                  )}
 
                   {scenario === 'today' ? (
                     <TodayDashboardCard
