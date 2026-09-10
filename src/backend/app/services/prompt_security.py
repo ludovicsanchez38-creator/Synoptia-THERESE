@@ -142,7 +142,8 @@ DANGEROUS_CHARS = {
 SOURCES_DE_CONTEXTE = frozenset(
     # B-104 : un titre d'evenement est pose par un tiers (invitation) et
     # rejoint donc les sources encadrees, avec son etiquette propre.
-    {"fichier", "memoire", "web", "email", "factures", "agenda"}
+    # Cycle 6 : le résultat d'un outil d'agent (web, fichier, commande) a son étiquette.
+    {"fichier", "memoire", "web", "email", "factures", "agenda", "outil"}
 )
 
 

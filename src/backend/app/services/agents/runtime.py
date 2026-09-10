@@ -8,7 +8,10 @@ Réutilise LLMService pour le streaming multi-provider.
 import json
 import logging
 from dataclasses import dataclass
-from typing import Any, AsyncGenerator
+from typing import TYPE_CHECKING, Any, AsyncGenerator
+
+if TYPE_CHECKING:
+    from app.services.llm import Message
 
 from app.services.agents.config import AgentConfig
 from app.services.agents.tools import AgentToolExecutor
@@ -75,6 +78,18 @@ def _get_llm_for_model(model_id: str):
 
     # Fallback : service principal de l'utilisateur
     return get_llm_service()
+
+
+def _message_de_resultat_d_outil(tool_name: str, result: str) -> "Message":
+    """Cycle 6 (secondes lectures) : le résultat d'un outil (page web, fichier,
+    sortie de commande) est du contenu TIERS. Il rejoint le contexte du modèle
+    dans l'enveloppe de source que le Board et la mémoire appliquent déjà, ses
+    faux marqueurs neutralisés, au lieu d'être recollé brut en message `user`."""
+    from app.services.llm import Message
+    from app.services.prompt_security import get_prompt_security
+
+    enveloppe = get_prompt_security().sanitize_for_context(str(result), source="outil")
+    return Message(role="user", content=f"[Résultat de {tool_name}]\n{enveloppe}")
 
 
 class AgentRuntime:
@@ -261,12 +276,7 @@ class AgentRuntime:
                 )
 
                 # Ajouter le résultat à l'historique pour la prochaine itération
-                messages.append(
-                    LLMMessage(
-                        role="user",
-                        content=f"[Résultat de {tool_name}]\n{result}",
-                    )
-                )
+                messages.append(_message_de_resultat_d_outil(tool_name, result))
 
         # Max iterations atteint
         yield AgentEvent(
