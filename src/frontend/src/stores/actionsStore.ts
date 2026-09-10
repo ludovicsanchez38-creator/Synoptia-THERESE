@@ -68,6 +68,7 @@ export function insertResultInChat(task: TaskState): void {
   // B-571 : le résultat mérite sa propre conversation, nommée d'après
   // l'action, au lieu d'une « Nouvelle conversation » improvisée.
   const chat = useChatStore.getState();
+  const conversationAvant = chat.currentConversationId;
   const id = chat.createConversation(false, { naviguer: false });
   if (task.agent_name) chat.renameConversation(id, task.agent_name);
   useChatStore.getState().addMessage({ role: 'assistant', content });
@@ -76,7 +77,13 @@ export function insertResultInChat(task: TaskState): void {
   // pas déclenché à cet instant ne change jamais sa vue ; s'il travaille
   // ailleurs, une notification propose « Voir » au lieu de l'y ramener de force.
   const navigation = useNavigationStore.getState();
-  if (navigation.activeView === 'chat') return;
+  const surLeChat = navigation.activeView === 'chat';
+  // #219 : sur le chat avec une conversation ouverte, le résultat ne la
+  // remplace pas sous les doigts de l'utilisateur ; il est rangé à côté et
+  // proposé par la même notification.
+  const redigeAilleurs = surLeChat && conversationAvant !== null && conversationAvant !== id;
+  if (redigeAilleurs) useChatStore.setState({ currentConversationId: conversationAvant });
+  if (surLeChat && !redigeAilleurs) return;
   useStatusStore.getState().addNotification({
     type: task.status === 'error' ? 'warning' : 'success',
     title: task.agent_name ? `${task.agent_name} : résultat disponible` : 'Résultat disponible',
