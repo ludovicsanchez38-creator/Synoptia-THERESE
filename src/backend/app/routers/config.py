@@ -31,6 +31,7 @@ from app.models.schemas import (
 from app.services.audit import AuditAction, log_activity
 from app.services.encryption import decrypt_value, encrypt_value, is_value_encrypted
 from app.services.http_client import get_http_client
+from app.services.providers.base import LLMProvider
 from app.services.system_resources import OLLAMA_CONTEXT_MARGIN_BYTES, detect_system_memory
 from fastapi import APIRouter, Body, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
@@ -40,6 +41,24 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
 logger = logging.getLogger(__name__)
+
+# Cycle 6 : source unique des variables d'environnement et des clés de préférence
+# par fournisseur ; la checklist du tableau de bord (dashboard.py) en dérive.
+CLES_API_PAR_FOURNISSEUR: dict[LLMProvider, tuple[str, str]] = {
+    LLMProvider.ANTHROPIC: ("ANTHROPIC_API_KEY", "anthropic_api_key"),
+    LLMProvider.OPENAI: ("OPENAI_API_KEY", "openai_api_key"),
+    LLMProvider.GEMINI: ("GEMINI_API_KEY", "gemini_api_key"),
+    LLMProvider.MISTRAL: ("MISTRAL_API_KEY", "mistral_api_key"),
+    LLMProvider.GROK: ("XAI_API_KEY", "grok_api_key"),
+    LLMProvider.OPENROUTER: ("OPENROUTER_API_KEY", "openrouter_api_key"),
+    LLMProvider.PERPLEXITY: ("PERPLEXITY_API_KEY", "perplexity_api_key"),
+    LLMProvider.DEEPSEEK: ("DEEPSEEK_API_KEY", "deepseek_api_key"),
+    LLMProvider.GLM: ("GLM_API_KEY", "glm_api_key"),
+    LLMProvider.KIMI: ("KIMI_API_KEY", "kimi_api_key"),
+    LLMProvider.QWEN: ("QWEN_API_KEY", "qwen_api_key"),
+    LLMProvider.MINIMAX: ("MINIMAX_API_KEY", "minimax_api_key"),
+    LLMProvider.INFOMANIAK: ("INFOMANIAK_API_KEY", "infomaniak_api_key"),
+}
 
 router = APIRouter()
 
@@ -1527,21 +1546,7 @@ async def set_llm_config(
                 return None
         return pref_value
 
-    env_key_map = {
-        LLMProvider.ANTHROPIC: ("ANTHROPIC_API_KEY", "anthropic_api_key"),
-        LLMProvider.OPENAI: ("OPENAI_API_KEY", "openai_api_key"),
-        LLMProvider.GEMINI: ("GEMINI_API_KEY", "gemini_api_key"),
-        LLMProvider.MISTRAL: ("MISTRAL_API_KEY", "mistral_api_key"),
-        LLMProvider.GROK: ("XAI_API_KEY", "grok_api_key"),
-        LLMProvider.OPENROUTER: ("OPENROUTER_API_KEY", "openrouter_api_key"),
-        LLMProvider.PERPLEXITY: ("PERPLEXITY_API_KEY", "perplexity_api_key"),
-        LLMProvider.DEEPSEEK: ("DEEPSEEK_API_KEY", "deepseek_api_key"),
-        LLMProvider.GLM: ("GLM_API_KEY", "glm_api_key"),
-        LLMProvider.KIMI: ("KIMI_API_KEY", "kimi_api_key"),
-        LLMProvider.QWEN: ("QWEN_API_KEY", "qwen_api_key"),
-        LLMProvider.MINIMAX: ("MINIMAX_API_KEY", "minimax_api_key"),
-        LLMProvider.INFOMANIAK: ("INFOMANIAK_API_KEY", "infomaniak_api_key"),
-    }
+    env_key_map = CLES_API_PAR_FOURNISSEUR
 
     if provider == LLMProvider.OLLAMA:
         base_url = settings.ollama_base_url

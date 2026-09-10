@@ -57,16 +57,22 @@ def _attendee_emails(raw_attendees: str | None) -> list[str]:
     return emails
 
 # US-012 : détection « au moins une clé LLM configurée » pour la checklist
-# de mise en route. Mêmes providers que le router config (env OU Preference DB).
-_LLM_KEY_SOURCES: list[tuple[list[str], str]] = [
-    (["ANTHROPIC_API_KEY"], "anthropic_api_key"),
-    (["MISTRAL_API_KEY"], "mistral_api_key"),
-    (["OPENAI_API_KEY"], "openai_api_key"),
-    (["GEMINI_API_KEY", "GOOGLE_API_KEY"], "gemini_api_key"),
-    (["GROQ_API_KEY"], "groq_api_key"),
-    (["XAI_API_KEY"], "grok_api_key"),
-    (["OPENROUTER_API_KEY"], "openrouter_api_key"),
-]
+# de mise en route. Cycle 6 : la liste avait divergé (sept fournisseurs sur
+# quatorze) ; elle dérive désormais de la table du routeur de configuration.
+def _sources_de_cles() -> list[tuple[list[str], str]]:
+    from app.routers.config import CLES_API_PAR_FOURNISSEUR
+
+    sources: list[tuple[list[str], str]] = []
+    for env_var, pref_key in CLES_API_PAR_FOURNISSEUR.values():
+        variables = [env_var, "GOOGLE_API_KEY"] if env_var == "GEMINI_API_KEY" else [env_var]
+        sources.append((variables, pref_key))
+    for extra in ((["GROQ_API_KEY"], "groq_api_key"),):
+        if extra[1] not in {pref for _v, pref in sources}:
+            sources.append(extra)
+    return sources
+
+
+_LLM_KEY_SOURCES: list[tuple[list[str], str]] = _sources_de_cles()
 
 
 async def _has_any_llm_key(session: AsyncSession) -> bool:
