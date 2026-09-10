@@ -44,6 +44,8 @@ class FicheModele:
     #: dict = traduction demande logique -> valeur émise (plafond inclus).
     effort: str | dict[str, str] | None = None
     max_tokens_recommande: int | None = None
+    #: Fenêtre de contexte propre au modèle quand elle diffère de celle du fournisseur.
+    context_window: int | None = None
 
 
 @dataclass(frozen=True)
@@ -114,7 +116,7 @@ CATALOGUE: dict[str, FicheFournisseur] = {
         fiches={
             # gpt-6-astra (doc du 10/09/2026) : reasoning.effort low/medium/high/
             # xhigh/max ; « none » n'est pas documenté, donc jamais envoyé.
-            "gpt-6-astra": FicheModele(effort=_EFFORT_GPT6),
+            "gpt-6-astra": FicheModele(effort=_EFFORT_GPT6, context_window=1_050_000),
             # Fiches 5.6 : none/low/medium/high/xhigh/max, transmis tel quel.
             "gpt-5.6-sol": FicheModele(effort=TEL_QUEL),
             "gpt-5.6-terra": FicheModele(effort=TEL_QUEL),
@@ -319,3 +321,13 @@ def resoudre_effort(
 def max_tokens_recommande(modele: str) -> int | None:
     fiche = _FICHES_PAR_MODELE.get(modele)
     return fiche.max_tokens_recommande if fiche else None
+
+
+def fenetre_de_contexte(provider: str, model: str | None) -> int:
+    """La fenêtre de contexte du modèle, sinon celle de son fournisseur.
+
+    Revue Grok 0.70.0 : `prepare_context` coupait à la fenêtre du fournisseur
+    (200 000 pour OpenAI) alors que gpt-6-astra en accepte 1 050 000."""
+    fournisseur = CATALOGUE[provider]
+    fiche = fournisseur.fiches.get(model or "")
+    return fiche.context_window if fiche and fiche.context_window else fournisseur.context_window

@@ -590,6 +590,10 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         if selected_provider and selected_provider in provider_configs:
             provider_enum, default_model, ctx_window = provider_configs[selected_provider]
             model = selected_model or default_model
+            # Revue Grok 0.70.0 : la fenêtre suit le modèle choisi, pas seulement le fournisseur.
+            from app.services.modeles_catalogue import fenetre_de_contexte
+
+            ctx_window = fenetre_de_contexte(selected_provider, model)
 
             if selected_provider == "ollama":
                 # BUG-098 : si aucun modèle n'est sélectionné, prendre le premier
@@ -641,6 +645,10 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         if selected_provider and selected_provider != "ollama" and selected_provider in provider_configs:
             provider_enum, default_model, ctx_window = provider_configs[selected_provider]
             model = selected_model or default_model
+            # Revue Grok 0.70.0 : la fenêtre suit le modèle choisi, pas seulement le fournisseur.
+            from app.services.modeles_catalogue import fenetre_de_contexte
+
+            ctx_window = fenetre_de_contexte(selected_provider, model)
             logger.warning(
                 f"Aucune cle API trouvee pour {selected_provider}. "
                 "Retour de la config sans cle - l'appel API echouera avec un message "

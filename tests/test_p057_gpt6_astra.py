@@ -76,3 +76,14 @@ def test_les_tarifs_releves_le_10_09_sont_ceux_du_compteur(modele, attendu):
     from app.services.token_tracker import TOKEN_PRICES
 
     assert TOKEN_PRICES.get(modele) == attendu, f"{modele} : {TOKEN_PRICES.get(modele)}"
+
+
+def test_la_fenetre_de_contexte_suit_le_modele_pas_seulement_le_fournisseur():
+    """Revue Grok 0.70.0 (P2) : la fiche gpt-6-astra annonçait 1 050 000 jetons en
+    commentaire, mais `prepare_context` coupait à la fenêtre du fournisseur
+    (200 000) ; un long document sur Astra était tronqué bien avant sa capacité."""
+    from app.services.modeles_catalogue import fenetre_de_contexte
+
+    assert fenetre_de_contexte("openai", "gpt-6-astra") == 1_050_000
+    assert fenetre_de_contexte("openai", "gpt-5.6-sol") == 200_000
+    assert fenetre_de_contexte("anthropic", "claude-inconnu") == 200_000
