@@ -1544,14 +1544,14 @@ export function ConversationCanvasPrototype() {
           <WindowControls side="left" />
           <div className="flex min-w-0 flex-1 items-center gap-4">
             <div className="flex min-w-0 items-center gap-2.5">
-              <span className="h-2.5 w-2.5 rounded-full bg-accent-fill" aria-hidden="true" />
-              <span className="text-sm font-bold tracking-[0.02em] text-text">THÉRÈSE</span>
+              <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-accent-fill" aria-hidden="true" />
+              <span className="shrink-0 whitespace-nowrap text-sm font-bold tracking-[0.02em] text-text">THÉRÈSE</span>
             </div>
             {/* Finding 10 : l'état de connexion ne vivait que dans la surface
                 de chat. Un utilisateur dans CRM, Fichiers ou Factures ne voyait
                 plus rien quand le backend tombait — ses actions échouaient sans
                 explication. Ici, il couvre toutes les vues. */}
-            <div data-testid="etat-connexion-coque" className="shrink-0">
+            <div data-testid="etat-connexion-coque" className="min-w-0 overflow-hidden">
               <ConnectionStatus />
             </div>
           </div>
@@ -1584,7 +1584,7 @@ export function ConversationCanvasPrototype() {
               className="hidden h-9 items-center gap-2 rounded-full border border-border bg-surface px-3 text-sm text-text-muted hover:bg-surface-2 md:flex"
             >
               <Search className="h-3.5 w-3.5" />
-              Rechercher
+              <span className="max-[840px]:hidden">Rechercher</span>
               <kbd className="rounded-sm bg-bg px-1.5 py-0.5 text-xs text-text-muted">{isMacPlatform() ? '⌘K' : 'Ctrl+K'}</kbd>
             </button>
             <TraitementsIndicator />

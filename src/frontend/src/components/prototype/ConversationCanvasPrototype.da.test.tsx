@@ -73,6 +73,25 @@ describe('La coque prend la forme de la DA', () => {
     expect(screen.getByTestId('workspace-label')).toBeInTheDocument();
   });
 
+  /**
+   * Recette du 10/09 à 800 px : la marque « THÉRÈSE » était écrasée par
+   * l'indicateur de connexion (« THÉRÈSEur actif 10ms »). La DA masque
+   * l'état secondaire et le mot « Rechercher » sous 840 px ; l'indicateur
+   * de connexion reste (Finding 10) mais se tronque au lieu d'écraser.
+   */
+  it('à moins de 840 px, la marque ne s’écrase pas et la recherche se replie sur son icône', () => {
+    render(<ConversationCanvasPrototype />);
+    const marque = screen.getByText('THÉRÈSE', { selector: 'span' });
+    expect(marque.className).toMatch(/\bshrink-0\b/);
+    expect((marque.previousElementSibling as HTMLElement).className).toMatch(/\bshrink-0\b/);
+    expect(marque.className).toMatch(/\bwhitespace-nowrap\b/);
+    const etat = screen.getByTestId('etat-connexion-coque');
+    expect(etat.className).toMatch(/\bmin-w-0\b/);
+    expect(etat.className).toMatch(/\boverflow-hidden\b/);
+    const rechercher = screen.getByText('Rechercher', { selector: 'span' });
+    expect(rechercher.className).toMatch(/max-\[840px\]:hidden/);
+  });
+
   it('la colonne et le composeur partagent la largeur de 56 rem', () => {
     render(<ConversationCanvasPrototype />);
     const fil = screen.getByTestId('prototype-conversation-scroll');

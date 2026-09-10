@@ -61,9 +61,9 @@ export function ConnectionStatus() {
           connectionState === 'connecting' && 'animate-spin'
         )}
       />
-      <span className={config.color}>{config.label}</span>
+      <span className={cn(config.color, 'whitespace-nowrap')}>{config.label}</span>
       {connectionState === 'connected' && latency && (
-        <span className="text-text-muted">{latency}ms</span>
+        <span className="text-text-muted max-[840px]:hidden">{latency}ms</span>
       )}
     </div>
   );
