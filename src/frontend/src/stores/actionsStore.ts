@@ -246,6 +246,12 @@ export const useActionsStore = create<ActionsState>((set, get) => ({
       set({
         error: err instanceof Error ? err.message : 'Erreur d\'annulation',
       });
+      // #221 : l'annulation refusée ne laisse pas la tâche sans suivi ; le
+      // sondage arrêté avant l'appel reprend tant qu'elle n'est pas finie.
+      const statut = get().tasks.find((t) => t.task_id === taskId)?.status;
+      if (statut && statut !== 'completed' && statut !== 'cancelled' && statut !== 'error') {
+        get()._startPolling(taskId);
+      }
     }
   },
 
