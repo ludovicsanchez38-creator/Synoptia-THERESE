@@ -1,9 +1,9 @@
 # DA « Application affinée », lot 2 : l'écran Accueil (design à challenger avant le code)
 
-Version 4, 10/09/2026 23:05, après les revues Grok de la v1 (NO-GO, 4 P1,
-9 P2, 4 P3), de la v2 (NO-GO, 2 P1, 3 P2, 3 P3) et de la v3 (NO-GO, 1 P1,
-2 P2, 3 P3), toutes reprises ici ; journaux
-`.cartography-work/reviews/grok-da-lot2-design-v{1,2,3}.log`. Précédent : lot 1
+Version 5, 10/09/2026 23:35, après les revues Grok de la v1 (NO-GO, 4 P1,
+9 P2, 4 P3), de la v2 (NO-GO, 2 P1, 3 P2, 3 P3), de la v3 (NO-GO, 1 P1,
+2 P2, 3 P3) et de la v4 (NO-GO, 1 P1, 2 P2, 3 P3), toutes reprises ici ;
+journaux `.cartography-work/reviews/grok-da-lot2-design-v{1,2,3,4}.log`. Précédent : lot 1
 (socle et coque), livré en v0.71.0-alpha. Maquette de référence :
 `docs/da/2026-09-05-propositions/maquettes/accueil.html` (états `normal`,
 `vide`, `erreur` ; `relance` et `validee` sont des canevas, voir § 8), page
@@ -50,7 +50,7 @@ Maquette `.message` : grille `2rem 1fr`, gap .75 rem, marge basse `--espace-4`.
 | Élément | Aujourd'hui | Cible |
 |---|---|---|
 | Avatar | portrait 2 rem `rounded-md border border-text shadow-card` | portrait 2 rem `rounded-full`, sans bordure ni ombre |
-| Titre | `<h1>` Bonjour Sophie. | `<h1 className="font-editorial">Bonjour <em className="not-italic">Sophie</em>.` (la maquette : `h1.editorial em{font-style:normal}`, aucune couleur ; `font-editorial` est l'utilitaire du jeton `--font-editorial`, la classe `.editorial` de la maquette n'existe pas dans l'application) |
+| Titre | `<h1>` Bonjour Sophie. | `<h1 className="font-editorial">Bonjour <em className="not-italic">Sophie</em>.` ; sans `displayName`, « Bonjour. » sans `em` ni espace, comme aujourd'hui (la maquette : `h1.editorial em{font-style:normal}`, aucune couleur ; `font-editorial` est l'utilitaire du jeton `--font-editorial`, la classe `.editorial` de la maquette n'existe pas dans l'application) |
 | Sous-titre | `text-sm leading-6 text-text-muted` | inchangé (`.sous`) |
 | Ligne « THÉRÈSE · 19:01 » (mini-portrait) | présente | retirée ; remplacée par `<p data-testid="accueil-jour" className="text-xs font-medium text-text-muted">` (le `.meta` de la maquette), toujours rendue sur le scénario `today`, composée de segments séparés par « · » : (a) la date, seulement quand `resource.data` existe (en `ready`, et pendant une revalidation où `data` est encore là, B-426) : `AAAA-MM-JJ` découpé, puis `new Date(annee, mois - 1, jour)`, jamais `new Date('AAAA-MM-JJ')` (BUG-125), formaté par `Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })` puis premier caractère seul mis en capitale en JS (`s.charAt(0).toLocaleUpperCase('fr-FR') + s.slice(1)`, jamais `capitalize` Tailwind qui toucherait le mois) ; (b) « Sources : agenda, tâches, factures » avec LA MÊME règle que le pied (§ 5) : sources présentes (liste non vide), ordre de `NOM_DE_SOURCE`, minuscules ; absent sans source ; (c) « Rafraîchi à HH:MM » dès que `heureDAffichage` existe, quel que soit l'état de la ressource (c'est l'heure de la coque, dite aujourd'hui hors ressource, `ConversationCanvasPrototype.tsx:1723`). Exemple : « Jeudi 10 septembre · Sources : agenda, tâches, factures · Rafraîchi à 21:40 » ; en chargement initial : « Rafraîchi à 21:40 » |
 | Heure | dans la ligne THÉRÈSE | dans la ligne du jour ci-dessus, jamais au pied de la carte (la carte ne reçoit pas de prop d'heure) |
@@ -66,14 +66,18 @@ hors lot.
 
 ### 2.1 Extensions des primitives (petites, testées)
 
-- `CarteTete` : prop `idTitre?: string` posée sur le `<h2>` ; conteneur
-  `flex flex-wrap` et `actions` en `ml-auto flex flex-wrap gap-2
-  max-[840px]:basis-full max-[840px]:ml-0` : sous 840 px les actions
+- `CarteTete` : prop `idTitre?: string` posée sur le `<h2>` ; le conteneur
+  garde `flex items-center gap-3 px-4 pt-4 pb-2` et reçoit en plus
+  `flex-wrap` ; `actions` passe de `ml-auto flex gap-2` à `ml-auto flex
+  flex-wrap gap-2 max-[840px]:basis-full max-[840px]:ml-0` : sous 840 px les actions
   occupent une ligne entière sous le titre (le titre garde `min-w-0 flex-1`
   sur sa ligne, rien ne se comprime).
 - `Alerte` : étale les attributs natifs (`HTMLAttributes<HTMLDivElement>`,
   donc `data-testid`) ; prop `action?: ReactNode` rendue hors du `<p>`, sous le
-  texte (`mt-2`) ; ici toujours un `Button variant="ghost" size="md"`.
+  texte (`mt-2`). Dans la carte, deux usages et une variante chacun :
+  erreur totale → `Button variant="secondary" size="md"` Réessayer ; panne
+  partielle → `Button variant="ghost" size="md"` Réessayer (§ 6 reprend
+  ces deux formes, sans autre).
 - `Segments` : exporte `CLASSES_SEGMENTS` (« `inline-flex gap-1 p-1
   rounded-full bg-surface-2` ») et `classeSegment(actif)` (« `rounded-full
   px-3 py-1 text-sm font-medium` » + actif `bg-surface text-text shadow-sm`
@@ -97,7 +101,7 @@ hors lot.
 | ready, N ≥ 1 | `todayBriefTitle(N)` (« Un point mérite ton attention » / « Ton attention aujourd'hui ») | « 1 élément » / « N éléments » + (M ≥ 1 ? « , dont 1 en retard » / « , dont M en retard » : rien) + (B-425 ? « , et 1 autre non affiché » / « , et K autres non affichés » : rien) ; puis, si des sources sont en panne, « · Agenda indisponible » / « · Agenda, Tâches indisponibles » |
 | ready, N = 0, sans panne, messagerie branchée (vide constaté) | « Rien ne presse aujourd'hui » | « Aucune échéance, aucune facture en attente » |
 | ready, N = 0, sans messagerie | « Ta journée » | « Messagerie non branchée » |
-| ready, N = 0, au moins une source en panne (vide non constaté) | « Ta journée » | « <sources> indisponible(s), lecture incomplète » |
+| ready, N = 0, au moins une source en panne (vide non constaté) | « Ta journée » | « Agenda indisponible, lecture incomplète » / « Agenda, Tâches indisponibles, lecture incomplète » |
 
   `todayBriefTitle(0)` devient « Rien ne presse aujourd'hui » et n'est plus
   appelé que pour le vide constaté ; M = nombre d'éléments `urgent`.
@@ -105,7 +109,8 @@ hors lot.
   N ≥ 1, le geste principal : `Button variant="primary" size="md"`, texte
   visible « Commencer : <titre du premier élément> » (masqué en mode démo,
   sans `truncate` : le bouton s'écrit en entier, sur deux lignes au besoin
-  (`h-auto min-h-9 whitespace-normal text-left`), pas d'`aria-label` : le nom accessible est le
+  (`h-auto min-h-9 whitespace-normal text-left min-w-0 max-w-full`, et
+  `basis-full` sous 840 px comme le conteneur `actions`), pas d'`aria-label` : le nom accessible est le
   texte, distinct du titre de la ligne pour `getByText` et `getByRole`), qui
   appelle exactement le gestionnaire de la première ligne :
   `onOpenItem ? onOpenItem(item) : onOpenView(item.targetView)` (repli
@@ -157,7 +162,7 @@ telle quelle si inconnue, jamais avalée) ; pas d'heure au pied (elle est dans l
 | chargement | spinner + « Je rassemble ta journée… » | trois `Squelette` (`w-8`, `w-[60%]`, `w-[40%]`) `aria-hidden`, puis le texte actuel en `role="status"`, `text-sm text-text-muted` |
 | erreur | icône + « Brief indisponible » + message + bouton plein | `Alerte data-testid="today-dashboard-error"` titre « Brief indisponible », `children` = `resource.error`, `action` = `Button variant="secondary" size="md"` Réessayer |
 | panne (toute source dans `indisponibles`), quel que soit le corps | bandeau warning 12 px sans bouton | `Alerte data-testid="today-dashboard-indisponible"` rendue dans TOUS les corps `ready`, entre le variateur et le corps, texte actuel inchangé (« Je n'ai pas pu lire Agenda. Ce qui en vient manque ici : ce n'est pas forcément une journée calme. ») ; `action` = `Button variant="ghost" size="md"` Réessayer SEULEMENT quand le corps n'en porte pas (N ≥ 1, ou sans messagerie) : un seul Réessayer dans la carte |
-| corps, par priorité (comme aujourd'hui, `TodayDashboardCard.tsx:291-306`) | idem | 1) `has_email === false` → sans messagerie ; 2) sinon N ≥ 1 → lignes ; 3) sinon panne → vide non constaté ; 4) sinon → vide constaté |
+| corps, par priorité (exactement l'ordre actuel, `TodayDashboardCard.tsx:289-306`) | idem | 1) N ≥ 1 → lignes (la liste gagne dès qu'elle n'est pas vide, messagerie branchée ou non) ; 2) sinon `has_email === false` → sans messagerie ; 3) sinon panne → vide non constaté ; 4) sinon → vide constaté |
 | vide non constaté | « Ta journée est incomplète » + bouton | `EtatVide data-testid="today-dashboard-incomplet"` titre « Ta journée est incomplète », texte actuel (« Rien ne remonte, mais la lecture n'a pas abouti : ce n'est pas une journée calme constatée. »), `action` = `Button variant="secondary" size="md"` Réessayer (l'`Alerte` au-dessus n'en a pas). Jamais la formulation du vide constaté |
 | vide constaté | coche verte « Rien d'urgent pour le moment » | `EtatVide data-testid="today-dashboard-empty"` titre « Ta journée est dégagée. », texte « Quand tu ajouteras une tâche, un rendez-vous ou une facture, ils apparaîtront ici avec leur échéance. », sans action (« Ouvrir Agenda » est déjà en tête) |
 | sans messagerie | « Branche tes mails… » + bouton plein | `EtatVide data-testid="today-dashboard-setup-email"` titre et texte actuels, `action` = `Button variant="primary" size="md"` « Brancher mes mails » ; avec une panne, l'`Alerte` au-dessus porte Réessayer (test « la panne est nommée même quand l'écran invite à brancher les mails ») |
