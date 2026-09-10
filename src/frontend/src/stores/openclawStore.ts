@@ -206,11 +206,16 @@ export const useOpenClawStore = create<OpenClawState>((set, get) => ({
   cancelSession: async (sessionId: string) => {
     try {
       await cancelOpenClawSession(sessionId);
-      set((s) => ({
-        sessions: s.sessions.map((sess) =>
-          sess.id === sessionId ? { ...sess, status: "cancelled" as const } : sess
-        ),
-      }));
+      set((s) => {
+        // #229 : une session en cours qu'on annule libère une place d'agent.
+        const etaitEnCours = s.sessions.some((sess) => sess.id === sessionId && sess.status === "running");
+        return {
+          sessions: s.sessions.map((sess) =>
+            sess.id === sessionId ? { ...sess, status: "cancelled" as const } : sess
+          ),
+          runningCount: etaitEnCours ? Math.max(0, s.runningCount - 1) : s.runningCount,
+        };
+      });
     } catch (e: any) {
       set({ error: e.message || "Erreur annulation" });
     }
