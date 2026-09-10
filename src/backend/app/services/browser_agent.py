@@ -82,10 +82,22 @@ def _validate_url(url: str) -> str | None:
     return None
 
 
+def _adresse_sensible(adresse: Any) -> bool:
+    return bool(
+        adresse.is_private or adresse.is_loopback or adresse.is_link_local
+        or adresse.is_reserved or adresse.is_unspecified or adresse.is_multicast
+    )
+
+
 def _cible_locale_ou_privee(hostname: str | None) -> bool:
     """Vrai pour localhost, une adresse de boucle, privée, de lien local,
-    réservée ou non spécifiée. Un nom d'hôte public passe (pas de résolution DNS ici)."""
+    réservée ou non spécifiée, ET pour tout nom qui s'y résout.
+
+    Revue Grok 0.70.0 : sans résolution, `127.0.0.1.nip.io`, un entier décimal
+    (`2130706433`) ou hexadécimal passaient le garde. Un nom qui ne se résout
+    pas est refusé aussi : on ne sait pas où il mène."""
     import ipaddress
+    import socket
 
     if not hostname:
         return True
@@ -93,13 +105,20 @@ def _cible_locale_ou_privee(hostname: str | None) -> bool:
     if hote == "localhost" or hote.endswith(".localhost") or hote.endswith(".local") or hote.endswith(".internal"):
         return True
     try:
-        adresse = ipaddress.ip_address(hote)
+        return _adresse_sensible(ipaddress.ip_address(hote))
     except ValueError:
-        return False
-    return (
-        adresse.is_private or adresse.is_loopback or adresse.is_link_local
-        or adresse.is_reserved or adresse.is_unspecified or adresse.is_multicast
-    )
+        pass
+    try:
+        resolutions = socket.getaddrinfo(hote, None)
+    except (socket.gaierror, OSError, UnicodeError):
+        return True
+    adresses = []
+    for entree in resolutions:
+        try:
+            adresses.append(ipaddress.ip_address(entree[4][0]))
+        except (ValueError, IndexError, TypeError):
+            return True
+    return not adresses or any(_adresse_sensible(a) for a in adresses)
 
 
 class BrowserAgent:
@@ -190,6 +209,20 @@ class BrowserAgent:
                 viewport={"width": 1280, "height": 720},
             )
 
+    async def _refuser_si_cible_interdite(self, action: str) -> BrowserResult | None:
+        """Après une navigation ou un clic, la page atteinte doit passer le même
+        garde que l'URL demandée ; sinon on la quitte sans en lire le contenu."""
+        atteinte = str(getattr(self._page, "url", "") or "")
+        erreur = _validate_url(atteinte) if atteinte and not atteinte.startswith("about:") else None
+        if not erreur:
+            return None
+        logger.warning(f"Navigation refusée après {action} : {atteinte} ({erreur})")
+        try:
+            await self._page.goto("about:blank", timeout=ACTION_TIMEOUT_MS)
+        except Exception:  # noqa: BLE001 - quitter la page est un mieux, pas une obligation
+            pass
+        return BrowserResult(success=False, action=action, url=atteinte, error=erreur)
+
     async def navigate(self, url: str) -> BrowserResult:
         """Navigue vers une URL et retourne le titre + contenu textuel."""
         error = _validate_url(url)
@@ -199,6 +232,13 @@ class BrowserAgent:
         try:
             await self._ensure_page()
             response = await self._page.goto(url, timeout=ACTION_TIMEOUT_MS, wait_until="domcontentloaded")
+
+            # Revue Grok 0.70.0 : l'URL atteinte (après redirections) est
+            # validée comme l'URL demandée, sinon une page publique qui
+            # redirige vers la machine ramenait le jeton de session.
+            refus = await self._refuser_si_cible_interdite("navigate")
+            if refus:
+                return refus
 
             if response and response.status >= 400:
                 return BrowserResult(
@@ -289,6 +329,9 @@ class BrowserAgent:
             await self._page.click(selector, timeout=ACTION_TIMEOUT_MS)
             # Attendre la stabilisation après le clic
             await self._page.wait_for_load_state("domcontentloaded", timeout=ACTION_TIMEOUT_MS)
+            refus = await self._refuser_si_cible_interdite("click")
+            if refus:
+                return refus
             title = await self._page.title()
 
             return BrowserResult(

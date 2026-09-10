@@ -36,9 +36,13 @@ def test_le_navigateur_interne_refuse_les_cibles_locales_et_privees(url):
     assert _validate_url(url) is not None, f"cible locale acceptée : {url}"
 
 
-def test_le_navigateur_interne_accepte_une_cible_publique():
+def test_le_navigateur_interne_accepte_une_cible_publique(monkeypatch):
+    import socket
+
     from app.services.browser_agent import _validate_url
 
+    # Revue Grok 0.70.0 : le garde résout désormais le nom ; ce test ne dépend pas du réseau.
+    monkeypatch.setattr(socket, "getaddrinfo", lambda *a, **k: [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 0))])
     assert _validate_url("https://www.legifrance.gouv.fr/") is None
 
 
@@ -187,3 +191,129 @@ async def test_creer_puis_modifier_un_evenement_sur_primary_tombe_sur_l_agenda_l
     modification = await client.put(f"/api/calendar/events/{identifiant}", json={"summary": "Point Camille (déplacé)"})
     assert modification.status_code == 200, f"PUT /events sur primary : {modification.status_code} {modification.text[:160]}"
     assert modification.json()["summary"] == "Point Camille (déplacé)"
+
+
+# --- revue Grok du diff 0.70.0, finding 2 : le garde local résout et revalide ----
+
+@pytest.mark.parametrize("hote", ["127.0.0.1.nip.io", "2130706433", "0x7f000001"])
+def test_le_garde_local_resout_le_nom_avant_de_juger(monkeypatch, hote):
+    """Un nom qui se résout vers la machine (nip.io, entier décimal, hexadécimal)
+    passait le garde, qui ne regardait que les littéraux IP."""
+    import socket
+
+    from app.services.browser_agent import _cible_locale_ou_privee
+
+    monkeypatch.setattr(socket, "getaddrinfo", lambda *a, **k: [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("127.0.0.1", 0))])
+    assert _cible_locale_ou_privee(hote) is True, hote
+
+
+def test_le_garde_local_laisse_passer_un_nom_public(monkeypatch):
+    import socket
+
+    from app.services.browser_agent import _cible_locale_ou_privee
+
+    monkeypatch.setattr(socket, "getaddrinfo", lambda *a, **k: [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 0))])
+    assert _cible_locale_ou_privee("www.legifrance.gouv.fr") is False
+
+
+class _FausseReponse:
+    status = 200
+
+
+class _FaussePage:
+    """Une page dont la navigation aboutit ailleurs que l'URL demandée (redirection)."""
+
+    def __init__(self, url_finale: str):
+        self.url = url_finale
+        self.contenu_lu = False
+
+    async def goto(self, url, **kwargs):
+        return _FausseReponse()
+
+    async def title(self):
+        return "Jeton de session"
+
+    async def inner_text(self, selector):
+        self.contenu_lu = True
+        return '{"token": "secret"}'
+
+    async def click(self, selector, **kwargs):
+        return None
+
+    async def wait_for_load_state(self, *a, **k):
+        return None
+
+
+@pytest.mark.asyncio
+async def test_une_redirection_vers_la_machine_locale_est_refusee_apres_navigation(monkeypatch):
+    """`navigate` validait l'URL demandée, jamais l'URL atteinte : une page publique
+    qui redirige vers 127.0.0.1:17293/api/auth/token ramenait le jeton."""
+    import socket
+
+    from app.services.browser_agent import BrowserAgent
+
+    monkeypatch.setattr(socket, "getaddrinfo", lambda *a, **k: [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 0))])
+    agent = BrowserAgent()
+    page = _FaussePage("http://127.0.0.1:17293/api/auth/token")
+    agent._page = page
+
+    async def _ensure_page():
+        return None
+
+    monkeypatch.setattr(agent, "_ensure_page", _ensure_page)
+    resultat = await agent.navigate("https://public.example/redirige")
+    assert resultat.success is False and "Cible interdite" in (resultat.error or ""), resultat
+    assert page.contenu_lu is False, "le contenu de la cible interdite a été lu"
+
+
+@pytest.mark.asyncio
+async def test_un_clic_qui_mene_a_la_machine_locale_est_refuse(monkeypatch):
+    from app.services.browser_agent import BrowserAgent
+
+    agent = BrowserAgent()
+    page = _FaussePage("http://localhost:17293/api/auth/token")
+    agent._page = page
+
+    async def _ensure_page():
+        return None
+
+    monkeypatch.setattr(agent, "_ensure_page", _ensure_page)
+    resultat = await agent.click("a.lien")
+    assert resultat.success is False and "Cible interdite" in (resultat.error or ""), resultat
+
+
+# --- revue Grok du diff 0.70.0, finding 7 : MIME des pièces jointes et alternative ----
+
+def test_le_service_gmail_encode_un_nom_de_piece_accentue_et_une_alternative_texte():
+    import base64
+    from email import message_from_bytes
+
+    from app.services.gmail_service import GmailService
+
+    brut = GmailService._encoder_message(
+        to=["camille@example.com"], subject="Devis", body="<p>Bonjour <b>Camille</b>,<br>ci-joint le devis.</p>", cc=None, bcc=None, html=True,
+        attachments=[('Devis_société "été".pdf', b"%PDF-1.4 faux", "application/pdf")],
+        in_reply_to=None, references=None,
+    )
+    message = message_from_bytes(base64.urlsafe_b64decode(brut))
+    pieces = [p for p in message.walk() if p.get_filename()]
+    assert [p.get_filename() for p in pieces] == ['Devis_société "été".pdf'], [p.get_filename() for p in pieces]
+    types = [p.get_content_type() for p in message.walk()]
+    assert "text/plain" in types and "text/html" in types, types
+    texte = next(p for p in message.walk() if p.get_content_type() == "text/plain").get_payload(decode=True).decode("utf-8")
+    assert "Bonjour Camille" in texte and "<b>" not in texte, texte
+
+
+def test_le_service_gmail_donne_une_alternative_texte_a_un_html_sans_piece():
+    import base64
+    from email import message_from_bytes
+
+    from app.services.gmail_service import GmailService
+
+    brut = GmailService._encoder_message(
+        to=["camille@example.com"], subject="Devis", body="<p>Bonjour</p>", cc=None, bcc=None, html=True,
+        attachments=None, in_reply_to=None, references=None,
+    )
+    message = message_from_bytes(base64.urlsafe_b64decode(brut))
+    types = [p.get_content_type() for p in message.walk()]
+    assert types.count("text/plain") == 1 and types.count("text/html") == 1, types
