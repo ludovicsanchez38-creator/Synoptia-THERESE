@@ -74,4 +74,25 @@ describe('FormField', () => {
 
     expect(screen.getByLabelText('Titre')).not.toHaveAttribute('aria-describedby');
   });
+
+  it('aligne le libellé en sm semibold, l’aide et l’erreur en xs', () => {
+    const { container } = render(
+      <FormField
+        label="Taux"
+        htmlFor="taux"
+        description="En pourcentage"
+        error="Valeur trop basse"
+      >
+        <Input id="taux" />
+      </FormField>,
+    );
+
+    const libelle = container.querySelector('label');
+    expect(libelle?.className).toMatch(/text-sm/);
+    expect(libelle?.className).toMatch(/font-semibold/);
+    expect(libelle?.className).not.toMatch(/font-medium/);
+
+    expect(screen.getByText('En pourcentage').className).toMatch(/text-xs/);
+    expect(screen.getByRole('alert').className).toMatch(/text-xs/);
+  });
 });

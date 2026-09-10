@@ -28,16 +28,13 @@ export const Select = forwardRef<HTMLSelectElement, SelectProps>(
         ref={ref}
         aria-invalid={error || undefined}
         className={cn(
-          'w-full rounded-md px-3 py-2 text-sm transition-all duration-150 appearance-none',
-          'bg-surface-2 border text-text',
-          'focus:outline-none focus:ring-2 focus:ring-offset-0',
+          'w-full rounded-sm px-3 py-2 text-sm min-h-9 appearance-none',
+          'bg-surface border text-text',
+          'focus:outline-none focus:ring-[3px]',
           'disabled:opacity-50 disabled:cursor-not-allowed',
-          // High contrast support
           'forced-colors:border-[ButtonText] forced-colors:focus:border-[Highlight]',
-          // Normal state
-          !error && 'border-border focus:ring-agent-cyan focus:border-agent-cyan/50',
-          // Error state
-          error && 'border-error/50 focus:ring-error focus:border-error/50',
+          !error && 'border-border focus:border-accent focus:ring-ring/30',
+          error && 'border-error focus:border-error focus:ring-error/30',
           // B-292 / B-405 : la flèche est une icône peinte par un jeton du thème
           // (plus de SVG en data-URI au trait figé en #888), voir ci-dessous.
           'pr-10',
