@@ -1111,7 +1111,9 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         content_parts = []
         errors = []
         cb = get_circuit_breaker()
-        provider_name = self.config.provider.value
+        # Cycle 6 : l'appel part sur `config_base` (repli compris) ; porter
+        # l'issue au fournisseur déclaré refermait le circuit du mauvais.
+        provider_name = config_base.provider.value
         try:
             async for event in self.stream_response_with_tools(ctx, enable_grounding=False, config=config_locale):
                 if event.type == "text" and event.content:
