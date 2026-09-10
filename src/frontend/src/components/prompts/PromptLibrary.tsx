@@ -103,13 +103,22 @@ function PromptCard({
     if (copieTimeoutRef.current) clearTimeout(copieTimeoutRef.current);
   }, []);
 
+  const [copieEchouee, setCopieEchouee] = useState(false);
   const handleCopy = useCallback(
-    (e: React.MouseEvent) => {
+    async (e: React.MouseEvent) => {
       e.stopPropagation();
-      navigator.clipboard.writeText(prompt.prompt);
-      setCopied(true);
       if (copieTimeoutRef.current) clearTimeout(copieTimeoutRef.current);
-      copieTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
+      // Cycle 6 (Sophie, sophie-03) : la coche s'affichait même quand le
+      // navigateur refusait l'écriture ; on attend le résultat et on le dit.
+      try {
+        await navigator.clipboard.writeText(prompt.prompt);
+        setCopieEchouee(false);
+        setCopied(true);
+      } catch {
+        setCopied(false);
+        setCopieEchouee(true);
+      }
+      copieTimeoutRef.current = setTimeout(() => { setCopied(false); setCopieEchouee(false); }, 2000);
     },
     [prompt.prompt]
   );
@@ -131,9 +140,13 @@ function PromptCard({
             onClick={handleCopy}
             className="p-1.5 rounded-md text-text-muted hover:text-accent-cyan-ink hover:bg-accent-tint transition-colors opacity-80 group-hover:opacity-100 group-focus-within:opacity-100"
             title="Copier le prompt"
+            data-copie={copied ? 'ok' : copieEchouee ? 'echec' : 'idle'}
           >
             {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
           </button>
+          {copieEchouee && (
+            <span role="status" className="text-xs text-error">Copie impossible : le presse-papiers est refusé.</span>
+          )}
           <Button
             variant="ghost"
             size="sm"
