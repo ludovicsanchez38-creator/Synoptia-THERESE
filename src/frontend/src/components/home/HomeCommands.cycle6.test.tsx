@@ -33,4 +33,15 @@ describe('D86 : les actions d’une commande perso existent hors survol', () => 
       expect(bouton.closest('.hidden')).toBeNull();
     }
   });
+
+  it('Grok 0.70.0 P2 : invisibles hors survol, les actions ne sont pas cliquables dans le vide', async () => {
+    render(<HomeCommands onPromptSelect={() => {}} />);
+    fireEvent.click(screen.getByRole('button', { name: /Produire/ }));
+    const deplacer = await screen.findByRole('button', { name: 'Déplacer' });
+    const conteneur = deplacer.closest('.opacity-0') as HTMLElement | null;
+    expect(conteneur).not.toBeNull();
+    expect(conteneur?.className).toMatch(/\bpointer-events-none\b/);
+    expect(conteneur?.className).toMatch(/group-hover\/cmd:pointer-events-auto/);
+    expect(conteneur?.className).toMatch(/focus-within:pointer-events-auto/);
+  });
 });

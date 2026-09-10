@@ -262,7 +262,7 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
                   />
                   {/* Actions pour commandes utilisateur */}
                   {cmd.is_editable && (
-                    <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover/cmd:opacity-100 focus-within:opacity-100">
+                    <div className="flex items-center gap-0.5 opacity-0 pointer-events-none transition-opacity group-hover/cmd:opacity-100 group-hover/cmd:pointer-events-auto focus-within:opacity-100 focus-within:pointer-events-auto">
                       {/* D86 : hors survol, ces actions restent dans la mise en page
                           (opacité, pas display:none) pour être atteignables au clavier. */}
                       {/* Bouton déplacer */}
