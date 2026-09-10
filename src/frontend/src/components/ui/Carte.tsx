@@ -28,14 +28,18 @@ export function Carte({ as: Tag = 'article', className, children, ...props }: Ca
 export interface CarteTeteProps {
   icone?: ReactNode;
   titre: string;
+  /** Lot 2 : id du h2, pour qu'une section puisse s'en nommer (`aria-labelledby`). */
+  idTitre?: string;
   meta?: string;
   actions?: ReactNode;
   className?: string;
 }
 
-export function CarteTete({ icone, titre, meta, actions, className }: CarteTeteProps) {
+export function CarteTete({ icone, titre, idTitre, meta, actions, className }: CarteTeteProps) {
   return (
-    <div className={cn('flex items-center gap-3 px-4 pt-4 pb-2', className)}>
+    // Lot 2 : `flex-wrap`, et sous 840 px les actions prennent une ligne
+    // entière sous le titre (`basis-full`) au lieu de le comprimer.
+    <div className={cn('flex flex-wrap items-center gap-3 px-4 pt-4 pb-2', className)}>
       {icone != null && (
         <span
           aria-hidden="true"
@@ -45,10 +49,12 @@ export function CarteTete({ icone, titre, meta, actions, className }: CarteTeteP
         </span>
       )}
       <div className="min-w-0 flex-1">
-        <h2>{titre}</h2>
+        <h2 id={idTitre}>{titre}</h2>
         {meta ? <p className="text-xs font-medium text-text-muted">{meta}</p> : null}
       </div>
-      {actions ? <div className="ml-auto flex gap-2">{actions}</div> : null}
+      {actions ? (
+        <div className="ml-auto flex flex-wrap gap-2 max-[840px]:basis-full max-[840px]:ml-0">{actions}</div>
+      ) : null}
     </div>
   );
 }

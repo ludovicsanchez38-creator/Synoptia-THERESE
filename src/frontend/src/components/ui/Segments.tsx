@@ -20,12 +20,22 @@ export interface SegmentsProps {
   className?: string;
 }
 
+/** Lot 2 : classes partagées avec le variateur du brief (radiogroup) : une seule source. */
+export const CLASSES_SEGMENTS = 'inline-flex gap-1 p-1 rounded-full bg-surface-2';
+
+export function classeSegment(actif: boolean): string {
+  return cn(
+    'rounded-full px-3 py-1 text-sm font-medium',
+    actif ? 'bg-surface text-text shadow-sm' : 'text-text-muted hover:text-text',
+  );
+}
+
 export function Segments({ label, options, valeur, onChange, className }: SegmentsProps) {
   return (
     <div
       role="group"
       aria-label={label}
-      className={cn('inline-flex gap-1 p-1 rounded-full bg-surface-2', className)}
+      className={cn(CLASSES_SEGMENTS, className)}
     >
       {options.map((option) => {
         const presse = option.id === valeur;
@@ -35,10 +45,7 @@ export function Segments({ label, options, valeur, onChange, className }: Segmen
             type="button"
             aria-pressed={presse}
             onClick={() => onChange(option.id)}
-            className={cn(
-              'rounded-full px-3 py-1 text-sm font-medium',
-              presse ? 'bg-surface text-text shadow-sm' : 'text-text-muted',
-            )}
+            className={classeSegment(presse)}
           >
             {option.label}
           </button>

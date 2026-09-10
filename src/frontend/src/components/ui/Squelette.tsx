@@ -11,17 +11,20 @@ import { cn } from '../../lib/utils';
 export interface SqueletteProps {
   largeur?: string;
   lignes?: number;
+  /** Lot 2 : forme de la barre (défaut `h-3 rounded-full`), ex. `h-8 rounded-sm` pour une puce. */
+  classeBarre?: string;
   className?: string;
 }
 
 const STYLE_GLISSE = `@keyframes glisse { to { background-position: -200% 0; } }`;
 
-export function Squelette({ largeur = 'w-full', lignes = 1, className }: SqueletteProps) {
+export function Squelette({ largeur = 'w-full', lignes = 1, classeBarre = 'h-3 rounded-full', className }: SqueletteProps) {
   const barres = Array.from({ length: Math.max(1, lignes) }, (_, i) => (
     <div
       key={i}
       className={cn(
-        'h-3 rounded-full animate-[glisse_1.2s_linear_infinite]',
+        classeBarre,
+        'animate-[glisse_1.2s_linear_infinite]',
         'bg-[linear-gradient(90deg,var(--color-surface-2),var(--color-border),var(--color-surface-2))]',
         '[background-size:200%_100%]',
         largeur,

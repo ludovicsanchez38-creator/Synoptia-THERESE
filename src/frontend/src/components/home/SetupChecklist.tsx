@@ -7,7 +7,9 @@ import type { SetupStatus } from '../../services/api/dashboard';
 import { useNavigationStore } from '../../stores/navigationStore';
 import { usePanelStore } from '../../stores/panelStore';
 
-export function SetupChecklist({ status }: { status: SetupStatus }) {
+export function SetupChecklist({ status, niveau = 'h2' }: { status: SetupStatus; niveau?: 'h2' | 'h3' }) {
+  // Lot 2 DA : monté dans la carte du brief, qui porte déjà le h2.
+  const Titre = niveau;
   // Une vérification qui a échoué ne dit RIEN de l'état réel : la présenter
   // comme « à faire » enverrait l'utilisateur reconfigurer un service qui
   // marche. On l'écarte de la liste, et on le dit.
@@ -49,7 +51,7 @@ export function SetupChecklist({ status }: { status: SetupStatus }) {
 
   return (
     <section className="rounded-md border border-border bg-surface-2 p-4">
-      <h2 className="text-sm font-semibold text-text mb-3">Mise en route</h2>
+      <Titre className="text-sm font-semibold text-text mb-3">Mise en route</Titre>
       {invérifiables.size > 0 && (
         <p className="mb-3 flex items-start gap-2 rounded-md border border-warning/30 bg-[var(--color-warning-tint)] px-3 py-2 text-xs leading-5 text-warning">
           <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
