@@ -32,7 +32,7 @@ store, aucun parcours ne change.
    `BoardConversationCard.tsx`. `BoardPanel`, `AdvisorCard`, `DeliberationView`,
    `AdvisorArcLayout`, `ModeSelector` hors lot.
 2. Le canevas reste le panneau côte à côte (`max-w-[620px]`, `role="region"`,
-   hotfix 0.48.1). La maquette est une page à 66 rem : page pleine = P-0xz.
+   hotfix 0.48.1). La maquette est une page à 66 rem : page pleine = P-080.
 3. Les cinq noms officiels restent (L'Analyste, Le Stratège, L'Avocat du
    Diable, Le Pragmatique, Le Visionnaire). Les noms maquette (Financier,
    Opérationnel, Voix du client, Contradicteur) sont P-0xy.
@@ -157,7 +157,7 @@ segments séparés par « · » :
   (même chaîne qu'aujourd'hui, `BoardConversationCard.tsx:183`) ;
 - `decision.context` / `run.context` inchangé, sous la meta, `text-sm`.
 
-Pas de durée, pas de « Contexte lu : contact, 2 devis » (P-0xz).
+Pas de durée, pas de « Contexte lu : contact, 2 devis » (P-080).
 
 ### 3.2 Synthèse (`data-testid="board-synthesis"` conservé)
 
@@ -194,7 +194,7 @@ Trois montages, un seul `data-testid="board-synthesis"` :
    puis liste `ul` `text-sm`, `CheckCircle2` 18 px `text-success`, rôle
    visuel seulement. Prochaines étapes : `h4 className="text-sm font-bold text-text"`
    « Prochaines étapes » (aujourd'hui `:148`), puis `ol` numérotée `text-sm`,
-   mêmes `next_steps`. Pas de bouton Copier ni « Créer les tâches » (P-0xx).
+   mêmes `next_steps`. Pas de bouton Copier ni « Créer les tâches » (P-081).
    `CompactMarkdown` n'est pas monté sur la synthèse (aujourd'hui du texte
    brut) : inchangé.
 3. **Sinon** (pas de synthèse et pas `running`) : pas de carte synthèse.
@@ -413,10 +413,10 @@ comportement n'est retirée.
 
 - Page pleine 66 rem, fil d'Ariane « Décisions › Décision du … », durée,
   « Contexte lu : contact, 2 devis, agenda » : le canevas reste le panneau
-  620 px. Fonctionnalité : **P-0xz** (numéro à attribuer par l'orchestrateur).
+  620 px. Fonctionnalité : **P-080** (numéro à attribuer par l'orchestrateur).
 - « Copier », « Créer les tâches », « Exporter en Markdown », « Poser une
   autre question » (on garde « Nouvelle question »), « modifiable tant
-  qu'aucune tâche n'est créée » : **P-0xx**.
+  qu'aucune tâche n'est créée » : **P-081**.
 - « Redemander cet avis », positions Accepte / Refuse / sous condition,
   renommage des cinq conseillers : **P-0xy**.
 - `BoardPanel` et ses sous-composants, scénario `board` de l'en-tête de
