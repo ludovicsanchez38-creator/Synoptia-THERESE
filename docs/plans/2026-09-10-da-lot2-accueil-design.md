@@ -1,9 +1,11 @@
 # DA « Application affinée », lot 2 : l'écran Accueil (design à challenger avant le code)
 
-Version 5, 10/09/2026 23:35, après les revues Grok de la v1 (NO-GO, 4 P1,
-9 P2, 4 P3), de la v2 (NO-GO, 2 P1, 3 P2, 3 P3), de la v3 (NO-GO, 1 P1,
-2 P2, 3 P3) et de la v4 (NO-GO, 1 P1, 2 P2, 3 P3), toutes reprises ici ;
-journaux `.cartography-work/reviews/grok-da-lot2-design-v{1,2,3,4}.log`. Précédent : lot 1
+Version 6, 11/09/2026 00:15, après cinq revues Grok (v1 NO-GO 4 P1, 9 P2,
+4 P3 ; v2 NO-GO 2 P1, 3 P2, 3 P3 ; v3 NO-GO 1 P1, 2 P2, 3 P3 ; v4 NO-GO
+1 P1, 2 P2, 3 P3 ; v5 NO-GO 1 P1, 5 P2, 3 P3), toutes reprises ici ; journaux
+`.cartography-work/reviews/grok-da-lot2-design-v{1,2,3,4,5b}.log`. Un point
+de la v5 est repris autrement que proposé : le geste principal reste visible
+en mode démo (masqué comme la ligne), les tests passent par le rôle. Précédent : lot 1
 (socle et coque), livré en v0.71.0-alpha. Maquette de référence :
 `docs/da/2026-09-05-propositions/maquettes/accueil.html` (états `normal`,
 `vide`, `erreur` ; `relance` et `validee` sont des canevas, voir § 8), page
@@ -105,7 +107,7 @@ hors lot.
 
   `todayBriefTitle(0)` devient « Rien ne presse aujourd'hui » et n'est plus
   appelé que pour le vide constaté ; M = nombre d'éléments `urgent`.
-- Actions de tête : `BoutonOuvrirLaVue`, dont le rendu par défaut devient `Button variant="secondary" size="md"` (libellé « Ouvrir <vue> » inchangé, `className` de remplacement conservé ; les six autres cartes en héritent, c'est la même consommation du socle que `Button` au lot 1) puis, en `ready` avec
+- Actions de tête : `BoutonOuvrirLaVue` avec un `className` local qui reproduit `Button secondary md` (`inline-flex h-9 items-center rounded-md border border-border bg-surface px-4 text-sm font-semibold text-text hover:bg-surface-2 transition-colors` + l'anneau de focus), libellé « Ouvrir Agenda » inchangé ; le défaut du composant partagé n'est pas touché (les six autres cartes gardent le leur, § 8) puis, en `ready` avec
   N ≥ 1, le geste principal : `Button variant="primary" size="md"`, texte
   visible « Commencer : <titre du premier élément> » (masqué en mode démo,
   sans `truncate` : le bouton s'écrit en entier, sur deux lignes au besoin
@@ -137,7 +139,7 @@ droite=… onClick=…>` :
 | invoice | factures | Receipt |
 | prospect | prospects | Users |
 
-`droite` = `<Etiquette ton={urgent ? 'erreur' : 'neutre'}>{badge}</Etiquette>`
+`droite` = `<Etiquette ton={kind === 'invoice' ? 'attention' : urgent ? 'erreur' : 'neutre'}>{badge}</Etiquette>` (la maquette peint les factures en `e-attention`, « Impayée » / « À relancer » ; les retards de tâches et de relances en `e-erreur` ; présentation seule, `urgent` reste ce qu'il est pour le tri et le repli)
 + `ChevronRight` 18 px muted (transparent au clic, la `Ligne` s'en charge).
 Titre et détail masqués en mode démo. Le détail n'est plus tronqué (la
 maquette l'écrit sur deux lignes) : `text-sm`, ligne cliquable (plancher
@@ -147,8 +149,14 @@ size="md"` pleine largeur, bordure haute, libellé `libelleDuRepli` inchangé.
 ## 5. Le pied `.sources`
 
 `border-t bg-surface-2 px-4 py-2.5 text-xs font-medium text-text-muted`,
-rendu en `ready` seulement s'il a quelque chose à dire (au moins une source
-présente ou en panne ; le vide constaté n'a pas de pied, comme `brief-vide`) :
+rendu en `ready` seulement s'il a quelque chose à dire : « source présente »
+= tableau non vide dans la réponse (`events`, `urgent_tasks`,
+`due_follow_ups`, `overdue_invoices`, `stale_prospects`), exactement la règle
+actuelle (`TodayDashboardCard.tsx:395-399`), donc le pied existe aussi à
+N = 0 quand `events` ne contient que des rendez-vous solo (qui ne font pas de
+ligne, `prototypeReadModels.ts:183`) ; ou au moins une clé de
+`indisponibles`. Sans rien de tout cela (le `brief-vide` de la maquette), pas
+de pied. La ligne du jour (§ 1) suit la même définition :
 « Lu dans » + une `Etiquette domaine=…` par source présente, cinq libellés
 distincts conservés (Agenda, Tâches, Relances, Factures, CRM ; Relances et
 CRM en `domaine="prospects"`) + une `Etiquette ton="neutre"` « <Source>
@@ -159,14 +167,14 @@ telle quelle si inconnue, jamais avalée) ; pas d'heure au pied (elle est dans l
 
 | État | Aujourd'hui | Cible |
 |---|---|---|
-| chargement | spinner + « Je rassemble ta journée… » | trois `Squelette` (`w-8`, `w-[60%]`, `w-[40%]`) `aria-hidden`, puis le texte actuel en `role="status"`, `text-sm text-text-muted` |
+| chargement | spinner + « Je rassemble ta journée… » | trois rangées `aria-hidden` façon `Ligne` (`grid grid-cols-[2rem_1fr_auto] gap-3 items-center px-4 py-3 border-t border-border`) : une puce `Squelette largeur="w-8" className="h-8 rounded-sm"`, puis une colonne de deux barres `Squelette largeur="w-[60%]"` et `largeur="w-[40%]"`, rien à droite ; puis le texte actuel « Je rassemble ta journée… » en `role="status"`, `px-4 py-3 text-sm text-text-muted` |
 | erreur | icône + « Brief indisponible » + message + bouton plein | `Alerte data-testid="today-dashboard-error"` titre « Brief indisponible », `children` = `resource.error`, `action` = `Button variant="secondary" size="md"` Réessayer |
-| panne (toute source dans `indisponibles`), quel que soit le corps | bandeau warning 12 px sans bouton | `Alerte data-testid="today-dashboard-indisponible"` rendue dans TOUS les corps `ready`, entre le variateur et le corps, texte actuel inchangé (« Je n'ai pas pu lire Agenda. Ce qui en vient manque ici : ce n'est pas forcément une journée calme. ») ; `action` = `Button variant="ghost" size="md"` Réessayer SEULEMENT quand le corps n'en porte pas (N ≥ 1, ou sans messagerie) : un seul Réessayer dans la carte |
+| panne (toute source dans `indisponibles`), quel que soit le corps | bandeau warning 12 px sans bouton | `Alerte data-testid="today-dashboard-indisponible"` rendue dans TOUS les corps `ready`, entre le variateur et le corps, dans une enveloppe `px-4 pt-3` (l'alerte en retrait de la maquette, `padding:.75rem var(--espace-3) 0`, jamais collée aux bords ; même enveloppe pour l'erreur totale), texte actuel inchangé (« Je n'ai pas pu lire Agenda. Ce qui en vient manque ici : ce n'est pas forcément une journée calme. ») ; `action` = `Button variant="ghost" size="md"` Réessayer SEULEMENT quand le corps n'en porte pas (N ≥ 1, ou sans messagerie) : un seul Réessayer dans la carte |
 | corps, par priorité (exactement l'ordre actuel, `TodayDashboardCard.tsx:289-306`) | idem | 1) N ≥ 1 → lignes (la liste gagne dès qu'elle n'est pas vide, messagerie branchée ou non) ; 2) sinon `has_email === false` → sans messagerie ; 3) sinon panne → vide non constaté ; 4) sinon → vide constaté |
 | vide non constaté | « Ta journée est incomplète » + bouton | `EtatVide data-testid="today-dashboard-incomplet"` titre « Ta journée est incomplète », texte actuel (« Rien ne remonte, mais la lecture n'a pas abouti : ce n'est pas une journée calme constatée. »), `action` = `Button variant="secondary" size="md"` Réessayer (l'`Alerte` au-dessus n'en a pas). Jamais la formulation du vide constaté |
 | vide constaté | coche verte « Rien d'urgent pour le moment » | `EtatVide data-testid="today-dashboard-empty"` titre « Ta journée est dégagée. », texte « Quand tu ajouteras une tâche, un rendez-vous ou une facture, ils apparaîtront ici avec leur échéance. », sans action (« Ouvrir Agenda » est déjà en tête) |
 | sans messagerie | « Branche tes mails… » + bouton plein | `EtatVide data-testid="today-dashboard-setup-email"` titre et texte actuels, `action` = `Button variant="primary" size="md"` « Brancher mes mails » ; avec une panne, l'`Alerte` au-dessus porte Réessayer (test « la panne est nommée même quand l'écran invite à brancher les mails ») |
-| mise en route | `SetupChecklist` (surface-2, boutons maison) | inchangé dans ce lot, sauf son titre en `h3` (la carte porte déjà le `h2`) ; rendu sous l'`EtatVide`, avant le pied, dans les trois corps à N = 0 (sans messagerie, vide non constaté, vide constaté), comme aujourd'hui (`TodayDashboardCard.tsx:338-346`), dans un `px-4 pb-4` |
+| mise en route | `SetupChecklist` (surface-2, boutons maison) | inchangé dans ce lot, sauf une prop `niveau?: 'h2' \| 'h3'` (défaut `h2`, les montages seuls ne changent pas) que la carte passe à `h3` (elle porte déjà le `h2`) ; rendu sous l'`EtatVide`, avant le pied, dans les trois corps à N = 0 (sans messagerie, vide non constaté, vide constaté), comme aujourd'hui (`TodayDashboardCard.tsx:338-346`), dans un `px-4 pb-4` |
 
 `EtatVide` reçoit les attributs natifs (`data-testid`) : extension de la
 primitive, même geste que `Alerte`.
@@ -181,13 +189,19 @@ Nouveaux (`TodayDashboardCard.da.test.tsx`, rouges d'abord) :
    première ligne (avec et sans `onOpenItem`) et n'existe pas quand la liste
    est vide, ni hors `ready` ;
 3. la tête garde son `id` (la section a un nom accessible), la meta écrit
-   « 4 éléments, dont 2 en retard » et « 3 éléments » quand aucun retard ;
+   exactement « 4 éléments, dont 2 en retard » et « 3 éléments » sur des jeux
+   sans `indisponibles` ; un cas séparé vérifie le suffixe « · Agenda
+   indisponible » ;
 4. le pied écrit « Lu dans », une étiquette par source, « Agenda
-   indisponible » en panne, et n'existe pas sur le vide constaté ;
+   indisponible » en panne, n'existe pas sur un jeu sans aucun tableau ni
+   panne, et existe avec « Agenda » sur un jeu réduit à un rendez-vous solo
+   (N = 0) ;
 5. le chargement montre des squelettes `aria-hidden` et un `role="status"` ;
-6. la panne partielle est un `role="alert"` qui nomme la source ; un seul
-   « Réessayer » dans la carte, quel que soit l'état ; le vide constaté n'a
-   pas d'alerte ;
+6. la panne partielle est un `role="alert"` qui nomme la source ; le
+   nombre de « Réessayer » dans la carte est exactement 1 sur erreur totale,
+   panne avec N ≥ 1, vide non constaté, sans messagerie avec panne, et
+   exactement 0 sur chargement, liste sans panne, vide constaté, sans
+   messagerie sans panne ; le vide constaté n'a pas d'alerte ;
 7. aucune classe `text-xs` sur un interactif de la carte, aucune couleur en
    dur dans `TodayDashboardCard.tsx` (extension de `aucuneCouleurEnDur` au
    fichier) ;
@@ -214,10 +228,13 @@ données » → « 1 élément » exactement), `TodayDashboardCard.variateur.tes
 heure » du scénario `today`, rendue sans ressource : l'assertion vise
 désormais `getByTestId('accueil-jour')` et son « Rafraîchi à », présent dès
 le chargement, donc sans mock supplémentaire),
-`TodayDashboardCard.modeDemo.test.tsx:56` (`getByText(/Claire Fontaine/)`
-trouverait la ligne ET « Commencer : … » : passer par `getAllByText` ou
-`getByRole('button', { name })`, l'invariant « aucun nom réel » est vérifié
-sur les deux). Aucune assertion de comportement n'est retirée.
+`TodayDashboardCard.modeDemo.test.tsx:56` et `:78` (le geste principal
+reste rendu en mode démo, avec le titre masqué comme la ligne : cacher une
+fonction en démonstration serait un autre écran ; `getByText(/Claire
+Fontaine/)` et `getByText(/Nathalie BALLOT/)` trouveraient la ligne ET
+« Commencer : … » : les deux cas passent par `getByRole('button', { name:
+'Relancer Nathalie BALLOT' })` pour la ligne et `{ name: /^Commencer :/ }`
+pour le geste, et vérifient « aucun nom réel » sur les deux boutons). Aucune assertion de comportement n'est retirée.
 
 ## 8. Ce que ce lot ne fait pas
 
