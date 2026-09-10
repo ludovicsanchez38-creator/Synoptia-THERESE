@@ -74,7 +74,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   createInvoiceMock.mockResolvedValue({ id: 'inv-1' });
   getBillingProfileStatusMock.mockResolvedValue({ is_complete: true, missing: [] });
-  useBillingProfileStore.setState({ missing: null, statutLecture: 'ok' });
+  useBillingProfileStore.setState({ missing: null, statutLecture: 'lu' });
   useStatusStore.setState({ notifications: [] });
 });
 

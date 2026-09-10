@@ -6,7 +6,7 @@
  * US-018 : Conversion devis -> facture + conditions de paiement
  */
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, type FormEvent } from 'react';
 import { motion } from 'framer-motion';
 import { X, Plus, Trash2, Save, FileCheck, AlertTriangle } from 'lucide-react';
 import { createInvoice, updateInvoice, convertDevisToInvoice, updateDevisStatus, type Invoice, type InvoiceLineRequest, listContacts, getContact, type Contact, markInvoicePaid } from '../../services/api';
@@ -18,6 +18,12 @@ import { cn } from '../../lib/utils';
 import { Z_LAYER } from '../../styles/z-layers';
 import { pushEscapeHandler } from '../../lib/escapeStack';
 import { useExternalActionConfirmation } from '../app/useExternalActionConfirmation';
+import { Button } from '../ui/Button';
+import { FormField } from '../ui/FormField';
+import { Input } from '../ui/Input';
+import { Select } from '../ui/Select';
+import { Segments } from '../ui/Segments';
+import { Textarea } from '../ui/Textarea';
 
 interface InvoiceFormProps {
   invoice: Invoice | null;
@@ -48,13 +54,29 @@ const CURRENCIES = [
   { value: 'CAD', label: 'CAD (CA$)' },
 ];
 
-const CURRENCY_SYMBOLS: Record<string, string> = {
-  EUR: '€',
-  CHF: 'CHF',
-  USD: '$',
-  GBP: '£',
-  CAD: 'CA$',
-};
+const OPTIONS_TYPE_DOCUMENT = [
+  { id: 'devis', label: 'Devis' },
+  { id: 'facture', label: 'Facture' },
+  { id: 'avoir', label: 'Avoir' },
+];
+
+const OPTIONS_STATUT_DEVIS = [
+  { value: 'draft', label: 'Brouillon' },
+  { value: 'sent', label: 'Envoyé' },
+  { value: 'accepted', label: 'Accepté' },
+  { value: 'refused', label: 'Refusé' },
+  { value: 'expired', label: 'Expiré' },
+  { value: 'converted', label: 'Converti en facture' },
+  { value: 'cancelled', label: 'Annulée' },
+];
+
+const OPTIONS_STATUT_FACTURE = [
+  { value: 'draft', label: 'Brouillon' },
+  { value: 'sent', label: 'Envoyé' },
+  { value: 'paid', label: 'Payée' },
+  { value: 'overdue', label: 'En retard' },
+  { value: 'cancelled', label: 'Annulée' },
+];
 
 /** Rattache le bouton d'envoi, rendu hors du bloc défilant, à son formulaire. */
 const ID_FORMULAIRE = 'invoice-form';
@@ -134,6 +156,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
   const [isSaving, setIsSaving] = useState(false);
   const [isConverting, setIsConverting] = useState(false);
   const [showConvertDialog, setShowConvertDialog] = useState(false);
+  const [lignesSansDescription, setLignesSansDescription] = useState<number[]>([]);
 
   // B-228 : la modale n'était inscrite NI dans la pile Échap NI dans le
   // panelStore. `consommeEchapUnifie` rendait donc false, la cascade de la coque
@@ -188,6 +211,9 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
   function removeLine(index: number) {
     setLines(lines.filter((_, i) => i !== index));
     setLineInputs(lineInputs.filter((_, i) => i !== index));
+    setLignesSansDescription((prev) =>
+      prev.filter((i) => i !== index).map((i) => (i > index ? i - 1 : i)),
+    );
   }
 
   function updateLine(index: number, field: keyof InvoiceLineRequest, value: any) {
@@ -234,7 +260,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
     return { subtotalHT, totalTax, totalTTC };
   }
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
 
     if (!contactId) {
@@ -249,14 +275,24 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
 
     // BUG-132 : une ligne par défaut existe mais sans description -> ne pas
     // afficher « ajoute une ligne » (trompeur), viser le vrai champ manquant.
-    if (lines.every((line) => !line.description.trim())) {
-      addNotification({
-        type: 'warning',
-        title: 'Champ requis',
-        message: 'Renseigne la description d’au moins une ligne',
-      });
+    // Chaque ligne vide est marquée ; la notification ne part que si toutes
+    // le sont (état maquette `nouveau` : ligne remplie + ligne vide).
+    const vides = lines
+      .map((line, index) => (line.description.trim() ? -1 : index))
+      .filter((index) => index >= 0);
+    if (vides.length > 0) {
+      setLignesSansDescription(vides);
+      if (vides.length === lines.length) {
+        addNotification({
+          type: 'warning',
+          title: 'Champ requis',
+          message: 'Renseigne la description d’au moins une ligne',
+        });
+      }
+      document.getElementById(`invoiceform-description-${vides[0]}`)?.focus();
       return;
     }
+    setLignesSansDescription([]);
 
     const normalizedLines = lines.map((line, index) => {
       const quantity = parseDecimalDraft(lineInputs[index]?.quantity ?? '');
@@ -430,20 +466,34 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
 
   const { subtotalHT, totalTax, totalTTC } = calculateInvoiceTotals();
 
+  const nomContact = (contact: Contact) =>
+    [contact.first_name, contact.last_name].filter(Boolean).join(' ')
+    || contact.company
+    || contact.email
+    || contact.id;
+
+  const titreFormulaire = invoice
+    ? `Modifier ${invoice.invoice_number}`
+    : documentType === 'devis'
+      ? 'Nouveau devis'
+      : documentType === 'avoir'
+        ? 'Nouvel avoir'
+        : 'Nouvelle facture';
+
+  const bandeauProfil = 'flex items-start gap-3 p-3 rounded-md bg-[var(--color-warning-tint)] border border-warning/30 text-warning';
+
   return (
     <div
       className={`fixed inset-0 ${Z_LAYER.MODAL_NESTED} flex items-center justify-center`}
       onClick={onClose}
     >
-      {/* Backdrop */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/60"
       />
 
-      {/* Modal */}
       <motion.div
         role="dialog"
         aria-modal="true"
@@ -454,38 +504,28 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
         transition={{ duration: 0.2 }}
         className={cn(
           'relative w-full max-w-4xl max-h-[90vh] mx-4',
-          'bg-surface/95 backdrop-blur-xl border border-border/50 rounded-md',
-          'shadow-2xl overflow-hidden flex flex-col'
+          'bg-surface border border-border rounded-md shadow-sm',
+          'overflow-hidden flex flex-col',
         )}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
-          <h2 className="text-lg font-semibold text-text">
-            {invoice ? `Modifier ${invoice.invoice_number}` : `${documentType === 'devis' ? 'Nouveau devis' : documentType === 'avoir' ? 'Nouvel avoir' : 'Nouvelle facture'}`}
-          </h2>
-
-          <button
-            onClick={onClose}
-            aria-label="Fermer"
-            className="p-2 rounded-md hover:bg-surface-elevated transition-colors"
-          >
-            <X className="w-5 h-5 text-text-muted" />
-          </button>
+        <div className="flex items-center justify-between px-6 py-4 border-b border-border">
+          <h2 className="font-editorial text-lg font-semibold text-text">{titreFormulaire}</h2>
+          <Button variant="ghost" size="icon" type="button" aria-label="Fermer" onClick={onClose}>
+            <X className="h-[18px] w-[18px]" />
+          </Button>
         </div>
 
-        {/* Form */}
         {/* B-011 : la barre d'actions vit HORS du bloc défilant, à dessein. Le
             bouton d'envoi était donc orphelin (`.form === null`) : Entrée ne
             soumettait rien, les six champs `required` n'étaient jamais évalués
             et `onSubmit` était du code mort. L'attribut `form` rattache le
             bouton sans rien déplacer à l'écran. */}
         <form id={ID_FORMULAIRE} onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* P0-PROD-2 : garde-fou émetteur (facture non conforme sans SIRET/identité) */}
           {billingMissing && billingMissing.length > 0 && (
-            <div className="flex items-start gap-3 p-3 rounded-md bg-agent-amber/10 border border-agent-amber/30">
-              <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
-              <p className="text-sm text-warning">
+            <div className={bandeauProfil}>
+              <AlertTriangle className="h-[18px] w-[18px] shrink-0 mt-0.5" />
+              <p className="text-sm">
                 Infos de ta société incomplètes ({billingMissing.join(', ')}). Une facture sans ces
                 informations n'est pas conforme. Complète-les dans Réglages &gt; Profil avant de
                 générer le PDF.
@@ -493,73 +533,39 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
             </div>
           )}
 
-          {/* B-001 : une lecture impossible ne se déguise pas en profil complet.
-              Le store rendait `missing: null` sur un échec comme sur un profil
-              conforme : l'écran promettait alors des mentions légales que rien
-              n'avait vérifiées. Le bandeau ne paraît que sur `illisible`, jamais
-              au montage (`jamais_lu`), pour ne pas clignoter à chaque ouverture. */}
           {statutLectureProfil === 'illisible' && (
-            <div
-              role="alert"
-              className="flex items-start gap-3 p-3 rounded-md bg-agent-amber/10 border border-agent-amber/30"
-            >
-              <AlertTriangle className="w-4 h-4 text-warning shrink-0 mt-0.5" />
-              <p className="text-sm text-warning">
+            <div role="alert" className={bandeauProfil}>
+              <AlertTriangle className="h-[18px] w-[18px] shrink-0 mt-0.5" />
+              <p className="text-sm">
                 Impossible de vérifier les infos de ta société pour le moment. Elles ne sont
                 peut-être pas complètes : ouvre Réglages &gt; Profil avant de générer le PDF.
               </p>
             </div>
           )}
 
-          {/* Type de document */}
           {!invoice && (
-            <div>
-              <label className="block text-sm font-medium text-text mb-2">Type de document</label>
-              <div className="flex gap-2">
-                {([['devis', 'Devis'], ['facture', 'Facture'], ['avoir', 'Avoir']] as const).map(([type, label]) => (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() => setDocumentType(type)}
-                    className={cn(
-                      'px-4 py-2 rounded-md text-sm font-medium transition-colors',
-                      documentType === type
-                        ? 'bg-accent-tint text-accent-cyan-ink border border-accent-cyan/50'
-                        : 'bg-surface border border-border/50 text-text-muted hover:bg-surface-elevated'
-                    )}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <Segments
+              label="Type de document"
+              valeur={documentType}
+              options={OPTIONS_TYPE_DOCUMENT}
+              onChange={(id) => setDocumentType(id as 'devis' | 'facture' | 'avoir')}
+            />
           )}
 
-          {/* Contact & Dates */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label htmlFor="contact" className="block text-sm font-medium text-text mb-2">
-                Client *
-              </label>
-              <select
-                id="contact"
-                value={contactId}
-                onChange={(e) => setContactId(e.target.value)}
-                className={cn(
-                  'w-full px-3 py-2 rounded-md',
-                  'bg-bg border border-border/50',
-                  'text-text placeholder:text-text-muted',
-                  'focus:outline-none focus:ring-2 focus:ring-ring'
-                )}
-                required
-              >
-                <option value="">Sélectionner un contact</option>
-                {contacts.map((contact) => (
-                  <option key={contact.id} value={contact.id}>
-                    {[contact.first_name, contact.last_name].filter(Boolean).join(' ') || contact.company || contact.email || contact.id}
-                  </option>
-                ))}
-              </select>
+              <FormField label="Client *" htmlFor="contact">
+                <Select
+                  id="contact"
+                  value={contactId}
+                  onChange={(e) => setContactId(e.target.value)}
+                  required
+                  options={[
+                    { value: '', label: 'Sélectionner un contact' },
+                    ...contacts.map((contact) => ({ value: contact.id, label: nomContact(contact) })),
+                  ]}
+                />
+              </FormField>
               {contactsTronques && (
                 <p role="alert" className="mt-1 text-sm text-warning">
                   Liste incomplète : seuls les {PLAFOND_CONTACTS} contacts les plus récents
@@ -568,277 +574,173 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
               )}
             </div>
 
-            <div>
-              <label htmlFor="status" className="block text-sm font-medium text-text mb-2">
-                Statut
-              </label>
-              <select
+            <FormField label="Statut" htmlFor="status">
+              <Select
                 id="status"
                 value={status}
                 onChange={(e) => setStatus(e.target.value as typeof status)}
-                className={cn(
-                  'w-full px-3 py-2 rounded-md',
-                  'bg-bg border border-border/50',
-                  'text-text',
-                  'focus:outline-none focus:ring-2 focus:ring-ring'
-                )}
-              >
-                <option value="draft">Brouillon</option>
-                <option value="sent">Envoyé</option>
-                {documentType === 'devis' ? (
-                  <>
-                    <option value="accepted">Accepté</option>
-                    <option value="refused">Refusé</option>
-                    <option value="expired">Expiré</option>
-                    <option value="converted">Converti en facture</option>
-                  </>
-                ) : (
-                  <>
-                    {/* « Accepté » est un statut de DEVIS. Le proposer ici
-                        sortait la facture de l'encours (qui ne regarde que
-                        « Envoyé » et « En retard ») : une créance de 1 200 €
-                        disparaissait par un clic de menu. */}
-                    <option value="paid">Payée</option>
-                    <option value="overdue">En retard</option>
-                  </>
-                )}
-                <option value="cancelled">Annulée</option>
-              </select>
-            </div>
+                options={documentType === 'devis' ? OPTIONS_STATUT_DEVIS : OPTIONS_STATUT_FACTURE}
+              />
+            </FormField>
 
-            <div>
-              <label htmlFor="currency" className="block text-sm font-medium text-text mb-2">
-                Devise
-              </label>
-              <select
+            <FormField label="Devise" htmlFor="currency">
+              <Select
                 id="currency"
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
-                className={cn(
-                  'w-full px-3 py-2 rounded-md',
-                  'bg-bg border border-border/50',
-                  'text-text',
-                  'focus:outline-none focus:ring-2 focus:ring-ring'
-                )}
-              >
-                {CURRENCIES.map((c) => (
-                  <option key={c.value} value={c.value}>
-                    {c.label}
-                  </option>
-                ))}
-              </select>
-            </div>
+                options={CURRENCIES}
+              />
+            </FormField>
 
-            <div>
-              <label htmlFor="issueDate" className="block text-sm font-medium text-text mb-2">
-                Date d'émission *
-              </label>
-              <input
+            <FormField label="Date d'émission *" htmlFor="issueDate">
+              <Input
                 type="date"
                 id="issueDate"
                 value={issueDate}
                 onChange={(e) => setIssueDate(e.target.value)}
-                className={cn(
-                  'w-full px-3 py-2 rounded-md',
-                  'bg-bg border border-border/50',
-                  'text-text',
-                  'focus:outline-none focus:ring-2 focus:ring-ring'
-                )}
                 required
               />
-            </div>
+            </FormField>
 
-            <div>
-              <label htmlFor="dueDate" className="block text-sm font-medium text-text mb-2">
-                Date d'échéance *
-              </label>
-              <input
+            <FormField label="Date d'échéance *" htmlFor="dueDate">
+              <Input
                 type="date"
                 id="dueDate"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
-                className={cn(
-                  'w-full px-3 py-2 rounded-md',
-                  'bg-bg border border-border/50',
-                  'text-text',
-                  'focus:outline-none focus:ring-2 focus:ring-ring'
-                )}
                 required
               />
-            </div>
+            </FormField>
 
             {documentType === 'devis' && (
-              <div>
-                <label htmlFor="validiteJours" className="block text-sm font-medium text-text mb-2">
-                  Validité (jours)
-                </label>
-                <input
+              <FormField label="Validité (jours)" htmlFor="validiteJours">
+                <Input
                   type="number"
                   id="validiteJours"
                   min={1}
                   max={365}
                   value={validiteJours}
                   onChange={(e) => setValiditeJours(parseInt(e.target.value, 10) || 30)}
-                  className={cn(
-                    'w-full px-3 py-2 rounded-md',
-                    'bg-bg border border-border/50',
-                    'text-text',
-                    'focus:outline-none focus:ring-2 focus:ring-ring'
-                  )}
                 />
-              </div>
+              </FormField>
             )}
           </div>
 
-          {/* Lines */}
           <div>
-            <div className="flex items-center justify-between mb-3">
-              <label className="block text-sm font-medium text-text">
-                Lignes de facturation *
-              </label>
-              <button
-                type="button"
-                onClick={addLine}
-                className="px-3 py-1 rounded-md bg-accent-tint text-accent-cyan-ink hover:bg-accent-tint transition-colors flex items-center gap-2"
-              >
-                <Plus className="w-4 h-4" />
-                Ajouter une ligne
-              </button>
-            </div>
-
-            <div className="space-y-2">
-              {lines.map((line, index) => {
-                const { totalHT } = calculateLineTotals(line, index);
-
-                return (
-                  <div key={index} className="p-4 rounded-md bg-bg border border-border/50 space-y-3">
-                    <div className="flex items-start gap-3">
-                      <div className="flex-1">
-                        {/* B-234 : le rang est disponible sur la même
-                            itération que ses champs voisins, déjà numérotés ;
-                            sans lui, trois champs portaient le même nom
-                            accessible. NB : ne pas nommer ici les libellés
-                            voisins, `TestBUG091_DecimalSeparator` lit ce
-                            fichier en cherchant leur PREMIÈRE occurrence. */}
-                        <input aria-label={`Description ligne ${index + 1}`}
-                          type="text"
+            <p className="text-sm font-medium text-text mb-3">Lignes de facturation *</p>
+            <table className="w-full border-collapse">
+              <thead>
+                <tr>
+                  <th className="text-left text-xs font-semibold text-text-muted px-4 py-2 border-b border-border tracking-wide">Description</th>
+                  <th className="text-left text-xs font-semibold text-text-muted px-4 py-2 border-b border-border tracking-wide">Quantité</th>
+                  <th className="text-left text-xs font-semibold text-text-muted px-4 py-2 border-b border-border tracking-wide">Prix HT</th>
+                  <th className="text-left text-xs font-semibold text-text-muted px-4 py-2 border-b border-border tracking-wide">TVA</th>
+                  <th className="text-left text-xs font-semibold text-text-muted px-4 py-2 border-b border-border tracking-wide">Total HT</th>
+                  <th className="sr-only">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {lines.map((line, index) => {
+                  const { totalHT } = calculateLineTotals(line, index);
+                  const erreurDescription = lignesSansDescription.includes(index);
+                  return (
+                    <tr key={index}>
+                      <td className="px-4 py-2.5 border-b border-border align-middle">
+                        <Input
+                          id={`invoiceform-description-${index}`}
+                          aria-label={`Description ligne ${index + 1}`}
                           placeholder="Description"
                           value={line.description}
-                          onChange={(e) => updateLine(index, 'description', e.target.value)}
-                          className={cn(
-                            'w-full px-3 py-2 rounded-md',
-                            'bg-surface border border-border/50',
-                            'text-text placeholder:text-text-muted',
-                            'focus:outline-none focus:ring-2 focus:ring-ring'
-                          )}
-                          required
+                          onChange={(e) => {
+                            const valeur = e.target.value;
+                            updateLine(index, 'description', valeur);
+                            if (valeur.trim()) {
+                              setLignesSansDescription((prev) => prev.filter((i) => i !== index));
+                            }
+                          }}
+                          error={erreurDescription}
+                          aria-describedby={erreurDescription ? `invoiceform-description-${index}-erreur` : undefined}
                         />
-                      </div>
-
-                      <button
-                        type="button"
-                        aria-label={`Supprimer la ligne ${index + 1}`}
-                        onClick={() => removeLine(index)}
-                        className="p-2 rounded-md bg-error/10 hover:bg-error/20 transition-colors"
-                      >
-                        <Trash2 className="w-4 h-4 text-error" />
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-4 gap-3">
-                      <div>
-                        <label htmlFor={`invoiceform-quantite-${index}`} className="block text-xs text-text-muted mb-1">Quantité</label>
-                        <input id={`invoiceform-quantite-${index}`}
+                        {erreurDescription && (
+                          <p
+                            id={`invoiceform-description-${index}-erreur`}
+                            role="alert"
+                            className="mt-1 font-medium text-error text-sm"
+                          >
+                            Renseigne la description de cette ligne, ou supprime-la.
+                          </p>
+                        )}
+                      </td>
+                      <td className="px-4 py-2.5 border-b border-border align-middle">
+                        <Input
+                          id={`invoiceform-quantite-${index}`}
                           aria-label={`Quantité ligne ${index + 1}`}
                           type="text"
                           inputMode="decimal"
                           value={lineInputs[index]?.quantity ?? formatDecimalInput(line.quantity)}
                           onChange={(e) => updateDecimalLineInput(index, 'quantity', e.target.value)}
-                          className={cn(
-                            'w-full px-3 py-2 rounded-md',
-                            'bg-surface border border-border/50',
-                            'text-text',
-                            'focus:outline-none focus:ring-2 focus:ring-ring'
-                          )}
                           required
                         />
-                      </div>
-
-                      <div>
-                        <label className="block text-xs text-text-muted mb-1">Prix HT ({CURRENCY_SYMBOLS[currency] || currency})</label>
-                        <input
+                      </td>
+                      <td className="px-4 py-2.5 border-b border-border align-middle">
+                        <Input
+                          id={`invoiceform-prix-${index}`}
                           aria-label={`Prix HT ligne ${index + 1}`}
                           type="text"
                           inputMode="decimal"
                           value={lineInputs[index]?.unit_price_ht ?? formatDecimalInput(line.unit_price_ht)}
                           onChange={(e) => updateDecimalLineInput(index, 'unit_price_ht', e.target.value)}
-                          className={cn(
-                            'w-full px-3 py-2 rounded-md',
-                            'bg-surface border border-border/50',
-                            'text-text',
-                            'focus:outline-none focus:ring-2 focus:ring-ring'
-                          )}
                           required
                         />
-                      </div>
-
-                      <div>
-                        <label htmlFor={`invoiceform-tva-${index}`} className="block text-xs text-text-muted mb-1">TVA</label>
-                        <select id={`invoiceform-tva-${index}`}
-                          value={line.tva_rate}
+                      </td>
+                      <td className="px-4 py-2.5 border-b border-border align-middle">
+                        <Select
+                          id={`invoiceform-tva-${index}`}
+                          aria-label={`TVA ligne ${index + 1}`}
+                          options={TVA_RATES.map((r) => ({ value: String(r.value), label: r.label }))}
+                          value={String(line.tva_rate)}
                           onChange={(e) => updateLine(index, 'tva_rate', parseFloat(e.target.value))}
-                          className={cn(
-                            'w-full px-3 py-2 rounded-md',
-                            'bg-surface border border-border/50',
-                            'text-text',
-                            'focus:outline-none focus:ring-2 focus:ring-ring'
-                          )}
+                        />
+                      </td>
+                      <td className="px-4 py-2.5 border-b border-border align-middle tabular-nums whitespace-nowrap">
+                        {montantAvecDevise(totalHT, currency)}
+                      </td>
+                      <td className="px-4 py-2.5 border-b border-border align-middle">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          type="button"
+                          aria-label={`Supprimer la ligne ${index + 1}`}
+                          onClick={() => removeLine(index)}
                         >
-                          {TVA_RATES.map((rate) => (
-                            <option key={rate.value} value={rate.value}>
-                              {rate.label}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block text-xs text-text-muted mb-1">Total HT</label>
-                        <div className="px-3 py-2 rounded-md bg-surface-elevated text-text font-medium">
-                          {montantAvecDevise(totalHT, currency)}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                          <Trash2 className="h-[18px] w-[18px]" />
+                        </Button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+            <p className="mt-2">
+              <Button variant="ghost" size="md" type="button" onClick={addLine}>
+                <Plus className="h-[18px] w-[18px]" />
+                Ajouter une ligne
+              </Button>
+            </p>
           </div>
 
-          {/* Notes */}
-          <div>
-            <label htmlFor="notes" className="block text-sm font-medium text-text mb-2">
-              Notes
-            </label>
-            <textarea
+          <FormField label="Notes" htmlFor="notes">
+            <Textarea
               id="notes"
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              className={cn(
-                'w-full px-3 py-2 rounded-md',
-                'bg-bg border border-border/50',
-                'text-text placeholder:text-text-muted',
-                'focus:outline-none focus:ring-2 focus:ring-ring',
-                'resize-none'
-              )}
               placeholder="Notes internes ou mentions spécifiques..."
             />
-          </div>
+          </FormField>
 
-          {/* Payment info (read-only if present from conversion) */}
           {invoice?.payment_terms && (
-            <div className="p-4 rounded-md bg-surface-elevated/30 border border-border/50 space-y-2">
+            <div className="p-4 rounded-md bg-surface-2 border border-border space-y-2">
               <h3 className="text-sm font-medium text-text mb-2">Conditions de paiement</h3>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
@@ -857,123 +759,78 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
                 )}
               </div>
               {invoice.legal_mentions && (
-                <div className="mt-2 pt-2 border-t border-border/30">
-                  <p className="text-xs text-text-muted whitespace-pre-line">{invoice.legal_mentions}</p>
+                <div className="mt-2 pt-2 border-t border-border">
+                  <p className="text-sm text-text-muted whitespace-pre-line">{invoice.legal_mentions}</p>
                 </div>
               )}
             </div>
           )}
 
-          {/* Totals */}
-          <div className="p-4 rounded-md bg-surface-elevated/50 border border-border/50 space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-text-muted">Total HT</span>
-              <span className="font-medium text-text">{montantAvecDevise(subtotalHT, currency)}</span>
-            </div>
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-text-muted">Total TVA</span>
-              <span className="font-medium text-text">{montantAvecDevise(totalTax, currency)}</span>
-            </div>
-            <div className="h-px bg-border/50" />
-            <div className="flex items-center justify-between">
-              <span className="font-semibold text-text">Total TTC</span>
-              <span className="text-2xl font-bold text-accent-cyan-ink">{montantAvecDevise(totalTTC, currency)}</span>
-            </div>
+          <div className="grid grid-cols-[1fr_auto] justify-end gap-x-6 gap-y-1 tabular-nums">
+            <span className="text-text-muted">Total HT</span>
+            <span className="font-medium text-text">{montantAvecDevise(subtotalHT, currency)}</span>
+            <span className="text-text-muted">Total TVA</span>
+            <span className="font-medium text-text">{montantAvecDevise(totalTax, currency)}</span>
+            <span className="font-semibold text-lg">Total TTC</span>
+            <span className="font-semibold text-lg">{montantAvecDevise(totalTTC, currency)}</span>
           </div>
         </form>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-border/50 flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="px-6 py-4 border-t border-border flex items-center justify-between">
+          <div className="flex flex-wrap items-center gap-2">
             {invoice && invoice.document_type !== 'devis' && invoice.status !== 'paid' && invoice.status !== 'cancelled' && invoice.status !== 'converted' && (
-              <button
-                type="button"
-                onClick={handleMarkPaid}
-                className="px-4 py-2 rounded-md bg-agent-green/20 text-agent-green hover:bg-agent-green/30 transition-colors"
-              >
+              <Button variant="secondary" size="md" type="button" onClick={handleMarkPaid}>
                 Marquer comme payée
-              </button>
+              </Button>
             )}
 
             {invoice && invoice.document_type === 'devis' && invoice.status !== 'accepted' && invoice.status !== 'refused' && invoice.status !== 'converted' && invoice.status !== 'cancelled' && invoice.status !== 'expired' && (
               <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleDevisStatus('accepted')}
-                  className="px-3 py-2 rounded-md bg-agent-green/20 text-agent-green hover:bg-agent-green/30 transition-colors text-sm font-medium"
-                >
+                <Button variant="secondary" size="md" type="button" onClick={() => handleDevisStatus('accepted')}>
                   Accepter
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDevisStatus('refused')}
-                  className="px-3 py-2 rounded-md bg-agent-amber/20 text-agent-amber hover:bg-agent-amber/30 transition-colors text-sm font-medium"
-                >
+                </Button>
+                <Button variant="secondary" size="md" type="button" onClick={() => handleDevisStatus('refused')}>
                   Refuser
-                </button>
+                </Button>
               </div>
             )}
 
-            {/* Bouton Convertir en facture (devis uniquement) */}
             {canConvert && (
-              <button
+              <Button
+                variant="secondary"
+                size="md"
                 type="button"
                 onClick={() => setShowConvertDialog(true)}
                 disabled={isConverting}
-                className={cn(
-                  'px-4 py-2 rounded-md font-medium transition-colors',
-                  'bg-agent-purple/20 text-agent-purple hover:bg-agent-purple/30',
-                  'flex items-center gap-2',
-                  isConverting && 'opacity-50 cursor-not-allowed'
-                )}
               >
-                <FileCheck className="w-4 h-4" />
+                <FileCheck className="h-[18px] w-[18px]" />
                 {isConverting ? 'Conversion...' : 'Convertir en facture'}
-              </button>
+              </Button>
             )}
           </div>
 
           <div className="flex items-center gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 rounded-md bg-surface-elevated text-text hover:bg-surface-elevated/70 transition-colors"
-            >
+            <Button variant="secondary" size="md" type="button" onClick={onClose}>
               Annuler
-            </button>
-            <button
-              type="submit"
-              form={ID_FORMULAIRE}
-              disabled={isSaving}
-              className={cn(
-                'px-4 py-2 rounded-md font-medium transition-colors',
-                'bg-accent-fill text-accent-ink hover:bg-accent-fill/90',
-                'flex items-center gap-2',
-                isSaving && 'opacity-50 cursor-not-allowed'
-              )}
-            >
-              <Save className="w-4 h-4" />
+            </Button>
+            <Button variant="primary" size="md" type="submit" form={ID_FORMULAIRE} disabled={isSaving}>
+              <Save className="h-[18px] w-[18px]" />
               {isSaving ? 'Sauvegarde...' : invoice ? 'Mettre à jour' : 'Créer'}
-            </button>
+            </Button>
           </div>
         </div>
 
-        {/* Confirm convert dialog */}
         {showConvertDialog && (
           <div
             className="absolute inset-0 z-10 flex items-center justify-center"
             onClick={() => setShowConvertDialog(false)}
           >
-            <div className="absolute inset-0 bg-black/50 backdrop-blur-sm rounded-md" />
+            <div className="absolute inset-0 bg-black/60 rounded-md" />
             <div
               role="dialog"
               aria-modal="true"
               aria-label="Confirmer la conversion"
-              className={cn(
-                'relative w-full max-w-md mx-4 p-6',
-                'bg-surface/95 backdrop-blur-xl border border-border/50 rounded-md',
-                'shadow-2xl space-y-4'
-              )}
+              className="relative w-full max-w-md mx-4 p-6 bg-surface border border-border rounded-md shadow-sm space-y-4"
               onClick={(e) => e.stopPropagation()}
             >
               <h3 className="text-lg font-semibold text-text">Convertir en facture ?</h3>
@@ -981,7 +838,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
                 Une facture sera créée à partir du devis <strong>{invoice?.invoice_number}</strong> avec
                 les mêmes lignes et montants. Le devis sera marqué comme converti.
               </p>
-              <div className="p-3 rounded-md bg-surface-elevated/50 border border-border/30 text-sm space-y-1">
+              <div className="p-3 rounded-md bg-surface-2 border border-border text-sm space-y-1">
                 <p className="text-text-muted">
                   <span className="font-medium text-text">Conditions :</span> 30 jours, virement bancaire
                 </p>
@@ -990,23 +847,13 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
                 </p>
               </div>
               <div className="flex items-center justify-end gap-3">
-                <button
-                  onClick={() => setShowConvertDialog(false)}
-                  className="px-4 py-2 rounded-md bg-surface-elevated text-text hover:bg-surface-elevated/70 transition-colors"
-                >
+                <Button variant="secondary" size="md" type="button" onClick={() => setShowConvertDialog(false)}>
                   Annuler
-                </button>
-                <button
-                  onClick={handleConvertToInvoice}
-                  className={cn(
-                    'px-4 py-2 rounded-md font-medium transition-colors',
-                    'bg-agent-purple text-ink-on-fill hover:opacity-90',
-                    'flex items-center gap-2'
-                  )}
-                >
-                  <FileCheck className="w-4 h-4" />
+                </Button>
+                <Button variant="primary" size="md" type="button" onClick={handleConvertToInvoice}>
+                  <FileCheck className="h-[18px] w-[18px]" />
                   Convertir
-                </button>
+                </Button>
               </div>
             </div>
           </div>

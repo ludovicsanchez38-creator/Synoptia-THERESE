@@ -8,8 +8,8 @@
  * chargement du panneau.
  *
  * Résultat : après une écriture du second écrivain, l'en-tête affichait
- * « 1+ document » et gardait le bandeau « Liste incomplète : seuls les 100
- * documents les plus récents » au-dessus d'une liste d'un seul élément. Un
+ * « 1+ pièce » et gardait le bandeau « Liste incomplète : seules les 100
+ * pièces les plus récentes » au-dessus d'une liste d'un seul élément. Un
  * avertissement qui décrit des données disparues est pire que pas
  * d'avertissement.
  *
@@ -86,9 +86,10 @@ describe('B-003 : la troncature suit la liste affichée, pas le dernier chargeme
     render(<InvoicesPanel standalone />);
 
     // Le chargement du panneau atteint le plafond : l'avertissement est juste.
-    // Le compteur est fait de plusieurs nœuds texte dans un même <p> : on garde
-    // l'élément, React réutilise le nœud d'un rendu à l'autre.
-    const compteur = await screen.findByText('100+ documents');
+    // Le compteur est fait de plusieurs nœuds texte dans un même
+    // <p data-testid="invoices-compteur"> : on garde l'élément, React
+    // réutilise le nœud d'un rendu à l'autre.
+    const compteur = await screen.findByText('100+ pièces');
     expect(screen.getByText(/Liste incomplète/)).toBeInTheDocument();
 
     // Second écrivain : le hook du parcours prototype remplit le même store
@@ -98,7 +99,7 @@ describe('B-003 : la troncature suit la liste affichée, pas le dernier chargeme
     });
 
     await waitFor(() => {
-      expect(compteur.textContent).toBe('1 document');
+      expect(compteur.textContent).toBe('1 pièce');
     });
     expect(screen.queryByText(/Liste incomplète/)).not.toBeInTheDocument();
     // 20 s : cf InvoicesPanel.chargementEchoue.test.tsx, même fixture de 100.
@@ -109,7 +110,7 @@ describe('B-003 : la troncature suit la liste affichée, pas le dernier chargeme
 
     render(<InvoicesPanel standalone />);
 
-    expect(await screen.findByText('2 documents')).toBeInTheDocument();
+    expect(await screen.findByText('2 pièces')).toBeInTheDocument();
     expect(screen.queryByText(/Liste incomplète/)).not.toBeInTheDocument();
   });
 });

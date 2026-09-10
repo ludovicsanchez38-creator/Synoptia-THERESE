@@ -95,12 +95,12 @@ describe('B-011 : le bouton d’envoi appartient au formulaire', () => {
   it('les champs requis sont réellement évalués par le formulaire avant l’envoi', async () => {
     render(<InvoiceForm invoice={null} onClose={vi.fn()} onSave={vi.fn()} />);
 
-    // Contact renseigné, description laissée VIDE : le champ porte `required`.
-    fireEvent.change(await screen.findByLabelText(/Client/i), { target: { value: 'contact-1' } });
-    const description = screen.getByPlaceholderText('Description') as HTMLInputElement;
+    // Rien n'est rempli : le `Select` client porte encore `required`.
+    // La description n'a plus `required` (erreur de ligne après handleSubmit).
+    const client = await screen.findByLabelText('Client *');
 
     const invalide = vi.fn();
-    description.addEventListener('invalid', invalide);
+    client.addEventListener('invalid', invalide);
 
     fireEvent.click(screen.getByRole('button', { name: /Créer/i }));
 

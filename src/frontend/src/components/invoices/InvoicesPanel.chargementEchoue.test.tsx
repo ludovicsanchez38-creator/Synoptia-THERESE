@@ -2,8 +2,8 @@
  * B-009 : après un chargement tronqué puis un échec, trois messages
  * contradictoires à l'écran.
  *
- * Mesuré au navigateur : le compteur disait « 0+ document », un bandeau
- * role=alert affirmait que les 100 documents les plus récents étaient
+ * Mesuré au navigateur : le compteur disait « 0+ pièce », un bandeau
+ * role=alert affirmait que les 100 pièces les plus récentes étaient
  * affichés, et un second role=alert disait que le chargement était
  * impossible. Le « 0 » et le « + » venaient de deux sources qui ne se
  * parlaient pas : le drapeau de troncature du chargement précédent, jamais
@@ -83,7 +83,7 @@ describe('B-009 : un échec de rechargement efface le chargement précédent', (
   it('l’écran ne garde ni le bandeau de troncature ni le compteur périmé', async () => {
     render(<InvoicesPanel standalone />);
 
-    const compteur = await screen.findByText('100+ documents');
+    const compteur = await screen.findByText('100+ pièces');
     expect(screen.getByText(/Liste incomplète/)).toBeInTheDocument();
 
     // Le filtre change une dépendance de l'effet SANS démonter le panneau :
@@ -96,7 +96,7 @@ describe('B-009 : un échec de rechargement efface le chargement précédent', (
     ).toBeInTheDocument();
 
     await waitFor(() => {
-      expect(compteur.textContent).toBe('0 document');
+      expect(compteur.textContent).toBe('0 pièce');
     });
     expect(screen.queryByText(/Liste incomplète/)).not.toBeInTheDocument();
 

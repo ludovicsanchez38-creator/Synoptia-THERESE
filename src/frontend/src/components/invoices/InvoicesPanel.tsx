@@ -7,20 +7,8 @@
 
 import { montantAvecDevise } from '../../lib/devise';
 import { useEffect, useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  X,
-  Plus,
-  FileText,
-  Download,
-  Mail,
-  CheckCircle2,
-  AlertCircle,
-  Ban,
-  Clock,
-  ThumbsDown,
-  ArrowRightLeft,
-} from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { AlertCircle, FileText, Plus, X } from 'lucide-react';
 import { filtresAvecType, statutsProposesPour, useInvoiceStore } from '../../stores/invoiceStore';
 import { useStatusStore } from '../../stores/statusStore';
 import { listInvoices, deleteInvoice, generateInvoicePDF, type Invoice } from '../../services/api';
@@ -28,23 +16,27 @@ import { InvoiceForm } from './InvoiceForm';
 import { cn } from '../../lib/utils';
 import { Z_LAYER } from '../../styles/z-layers';
 import { pushEscapeHandler } from '../../lib/escapeStack';
+import { Alerte } from '../ui/Alerte';
+import { Button } from '../ui/Button';
+import { Carte } from '../ui/Carte';
+import { EtatVide } from '../ui/EtatVide';
+import { Etiquette } from '../ui/Etiquette';
+import { Segments } from '../ui/Segments';
+import { Squelette } from '../ui/Squelette';
+import { STATUS_CONFIG } from './statutsFacture';
+import { cellulesStatut, compteurPieces, sousLignePiece } from './presentationFacture';
 
 /** Lot F : le GET factures plafonne à 100. Atteint = liste incomplète. */
 const PLAFOND_FACTURES = 100;
 
-const STATUS_CONFIG: Record<string, { label: string; icon: any; color: string; badgeBg?: string }> = {
-  draft: { label: 'Brouillon', icon: FileText, color: 'text-text-muted', badgeBg: 'bg-gray-500/20' },
-  sent: { label: 'Envoyée', icon: Mail, color: 'text-info', badgeBg: 'bg-info/20' },
-  accepted: { label: 'Accepté', icon: CheckCircle2, color: 'text-success', badgeBg: 'bg-success/20' },
-  // refused/converted : pas de token sémantique dédié (orange/purple hors success/warning/error/info) -
-  // laissés en couleur Tailwind brute, cf dette CLAUDE.md contraste clair
-  refused: { label: 'Refusé', icon: ThumbsDown, color: 'text-agent-amber', badgeBg: 'bg-agent-amber/20' },
-  expired: { label: 'Expiré', icon: Clock, color: 'text-warning', badgeBg: 'bg-warning/20' },
-  paid: { label: 'Payée', icon: CheckCircle2, color: 'text-success', badgeBg: 'bg-success/20' },
-  overdue: { label: 'En retard', icon: AlertCircle, color: 'text-error', badgeBg: 'bg-error/20' },
-  converted: { label: 'Converti', icon: ArrowRightLeft, color: 'text-agent-purple', badgeBg: 'bg-agent-purple/20' },
-  cancelled: { label: 'Annulée', icon: Ban, color: 'text-text-muted', badgeBg: 'bg-gray-500/20' },
-};
+const OPTIONS_TYPE = [
+  { id: 'all', label: 'Tout' },
+  { id: 'devis', label: 'Devis' },
+  { id: 'facture', label: 'Factures' },
+  { id: 'avoir', label: 'Avoirs' },
+] as const;
+
+const SQUELETTES = ['w-24', 'w-[60%]', 'w-20', 'w-20', 'w-16', 'w-16', 'w-12'] as const;
 
 interface InvoicesPanelProps {
   standalone?: boolean;
@@ -219,271 +211,293 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
   const filtreEffectif = Boolean(
     (filters.status && filters.status !== 'all') || filters.document_type || filters.contact_id,
   );
+  const echues = filteredInvoices.filter((invoice) => invoice.status === 'overdue').length;
 
   if (!effectiveOpen) return null;
 
   const invoicesHeader = (
-    <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-md bg-accent-cyan/20 flex items-center justify-center">
-          <FileText className="w-5 h-5 text-accent-cyan-ink" />
-        </div>
-        <div>
-          {/* B-241 : la coque `PrototypeUnifiedViewCanvas` pose déjà le titre de
-              la vue, et en fait le nom accessible de la région. Ce libellé reste
-              visible mais n'est plus un titre : deux titres de même texte, c'est
-              un plan de page qui ment. */}
-          <p className="text-lg font-semibold text-text">Devis et factures</p>
-          <p className="text-sm text-text-muted">
-            {filteredInvoices.length}{listeTronquee ? '+' : ''} document{filteredInvoices.length > 1 ? 's' : ''}
+    <div className="flex flex-wrap items-end gap-3 px-4 py-4 border-b border-border">
+      <div>
+        {/* B-241 : la coque `PrototypeUnifiedViewCanvas` pose déjà le titre de
+            la vue, et en fait le nom accessible de la région. Ce libellé reste
+            visible mais n'est plus un titre : deux titres de même texte, c'est
+            un plan de page qui ment. */}
+        <p className="font-editorial text-lg font-semibold text-text">Devis et factures</p>
+        <p data-testid="invoices-compteur" className="text-sm text-text-muted">
+          {compteurPieces(filteredInvoices.length, listeTronquee, echues)}
+        </p>
+        {listeTronquee && (
+          <p role="alert" className="text-sm text-warning">
+            Liste incomplète : seules les {PLAFOND_FACTURES} pièces les plus
+            récentes de ce filtre sont affichées.
           </p>
-          {listeTronquee && (
-            <p role="alert" className="text-sm text-warning">
-              Liste incomplète : seuls les {PLAFOND_FACTURES} documents les plus
-              récents de ce filtre sont affichés.
-            </p>
-          )}
-        </div>
+        )}
       </div>
 
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={handleCreateNew}
-          className={cn(
-            'px-4 py-2 rounded-md',
-            'bg-accent-fill text-accent-ink font-medium',
-            'hover:bg-accent-cyan/90 transition-colors',
-            'flex items-center gap-2'
-          )}
-        >
-          <Plus className="w-4 h-4" />
+      <div className="ml-auto flex flex-wrap gap-2 max-[840px]:basis-full max-[840px]:ml-0">
+        <Button variant="primary" size="lg" type="button" onClick={handleCreateNew}>
+          <Plus className="h-[18px] w-[18px]" />
           {filters.document_type === 'devis' ? 'Nouveau devis' : 'Nouvelle facture'}
-        </button>
+        </Button>
 
         {!standalone && (
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             type="button"
+            aria-label="Fermer"
             onClick={() => setIsInvoicePanelOpen(false)}
-            className="p-2 rounded-md hover:bg-surface-elevated transition-colors"
           >
-            <X className="w-5 h-5 text-text-muted" />
-          </button>
+            <X className="h-[18px] w-[18px]" />
+          </Button>
         )}
       </div>
     </div>
   );
 
   const invoicesFilters = (
-    <div className="px-6 py-3 border-b border-border/50 space-y-2">
-      {/* Filtre par type de document */}
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-text-muted w-10">Type</span>
-        {([['all', 'Tout'], ['devis', 'Devis'], ['facture', 'Factures'], ['avoir', 'Avoirs']] as const).map(([type, label]) => (
-          <button
-            type="button"
-            key={type}
-            onClick={() => setFilters(filtresAvecType(filters, type === 'all' ? undefined : type))}
-            className={cn(
-              'px-3 py-1 rounded-md text-sm transition-colors',
-              (type === 'all' && !filters.document_type) || filters.document_type === type
-                ? 'bg-accent-tint text-accent-cyan-ink'
-                : 'text-text-muted hover:bg-surface-elevated'
-            )}
-          >
-            {label}
-          </button>
-        ))}
+    <div className="px-4 py-3 border-b border-border space-y-2">
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm text-text-muted">Type</span>
+        <Segments
+          label="Type"
+          className="flex-wrap"
+          valeur={filters.document_type ?? 'all'}
+          options={[...OPTIONS_TYPE]}
+          onChange={(id) =>
+            setFilters(
+              filtresAvecType(
+                filters,
+                id === 'all' ? undefined : (id as 'devis' | 'facture' | 'avoir'),
+              ),
+            )
+          }
+        />
       </div>
-      {/* Filtre par statut */}
-      <div className="flex items-center gap-2">
-      <span className="text-xs text-text-muted w-10">Statut</span>
-      <div className="flex items-center gap-2 flex-wrap">
-        {statutsProposesPour(filters.document_type).map((status) => (
-          <button
-            type="button"
-            key={status}
-            onClick={() => setFilters({ ...filters, status })}
-            className={cn(
-              'px-3 py-1 rounded-md text-sm transition-colors',
-              filters.status === status
-                ? 'bg-accent-fill text-accent-ink font-medium'
-                : 'bg-surface-elevated text-text-muted hover:bg-surface-elevated/70'
-            )}
-          >
-            {status === 'all' ? 'Toutes' : STATUS_CONFIG[status].label}
-          </button>
-        ))}
-      </div>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-sm text-text-muted">Statut</span>
+        <Segments
+          label="Statut"
+          className="flex-wrap"
+          valeur={filters.status ?? 'all'}
+          options={statutsProposesPour(filters.document_type).map((status) => ({
+            id: status,
+            label: status === 'all' ? 'Toutes' : STATUS_CONFIG[status].label,
+          }))}
+          onChange={(id) => setFilters({ ...filters, status: id as typeof filters.status })}
+        />
       </div>
     </div>
   );
 
-  const invoicesList = (
-    <div className="flex-1 overflow-y-auto p-6">
-      {isLoading ? (
-        <div className="flex items-center justify-center h-full">
-          <div className="text-text-muted">Chargement...</div>
-        </div>
-      ) : loadError ? (
-        <div className="flex flex-col items-center justify-center h-full gap-4" role="alert">
-          <AlertCircle className="w-16 h-16 text-warning" />
-          <p className="text-text">{loadError}</p>
-          <button
-            type="button"
-            onClick={() => { void loadInvoices(); }}
-            className="px-4 py-2 rounded-md bg-accent-fill text-accent-ink hover:bg-accent-fill/90"
-          >
-            Réessayer
-          </button>
-        </div>
-      ) : filteredInvoices.length === 0 && filtreEffectif ? (
-        // B-410 : « rien pour ce filtre » n'est pas « rien du tout ».
-        <div className="flex flex-col items-center justify-center h-full gap-4">
-          <FileText className="w-16 h-16 text-text-muted" />
-          <p className="text-text-muted">Aucun document ne correspond à ce filtre.</p>
-          <button
-            type="button"
-            onClick={() => setFilters({})}
-            className="px-4 py-2 rounded-md border border-border text-text hover:bg-surface-2"
-          >
-            Réinitialiser les filtres
-          </button>
-        </div>
-      ) : filteredInvoices.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-full gap-4">
-          <FileText className="w-16 h-16 text-text-muted" />
-          <p className="text-text-muted">Aucune facture</p>
-          <button
-            type="button"
-            onClick={handleCreateNew}
-            className="px-4 py-2 rounded-md bg-accent-fill text-accent-ink hover:bg-accent-fill/90"
-          >
-            Créer une facture
-          </button>
-        </div>
-      ) : (
-        <div className="space-y-2">
-          {filteredInvoices.map((invoice) => {
-            // B-010 : les trois lectures de la même entrée, plus bas, ont
-            // toujours eu leur `?.` et leur repli ; celle-ci non. Un statut
-            // hors catalogue (une base alpha antérieure à la 0.55 en contient)
-            // faisait tomber l'application entière sur l'écran « Oups ! ».
-            const StatusIcon = STATUS_CONFIG[invoice.status]?.icon ?? FileText;
+  const corpsListe = (() => {
+    if (isLoading) {
+      return (
+        <>
+          {[0, 1, 2].map((rang) => (
+            <div
+              key={rang}
+              aria-hidden
+              className="grid grid-cols-7 gap-3 px-4 py-3 border-t border-border"
+            >
+              {SQUELETTES.map((largeur, piste) => (
+                <Squelette key={piste} largeur={largeur} />
+              ))}
+            </div>
+          ))}
+          <p role="status" className="px-4 py-3 text-sm text-text-muted">
+            Chargement...
+          </p>
+        </>
+      );
+    }
 
+    if (loadError) {
+      return (
+        <Alerte
+          data-testid="invoices-load-error"
+          icone={<AlertCircle className="h-[18px] w-[18px]" />}
+          titre="Chargement impossible"
+          action={
+            <Button variant="secondary" size="md" type="button" onClick={() => { void loadInvoices(); }}>
+              Réessayer
+            </Button>
+          }
+        >
+          {loadError}
+        </Alerte>
+      );
+    }
+
+    if (filteredInvoices.length === 0 && filtreEffectif && filters.status === 'overdue') {
+      return (
+        <EtatVide
+          data-testid="invoices-empty-overdue"
+          titre="Aucune pièce en retard"
+          action={
+            <Button variant="secondary" size="md" type="button" onClick={() => setFilters({})}>
+              Réinitialiser les filtres
+            </Button>
+          }
+        >
+          Les factures échues et impayées apparaîtront ici.
+        </EtatVide>
+      );
+    }
+
+    if (filteredInvoices.length === 0 && filtreEffectif) {
+      return (
+        <EtatVide
+          data-testid="invoices-empty-filtre"
+          titre="Aucun document ne correspond à ce filtre."
+          action={
+            <Button variant="secondary" size="md" type="button" onClick={() => setFilters({})}>
+              Réinitialiser les filtres
+            </Button>
+          }
+        />
+      );
+    }
+
+    if (filteredInvoices.length === 0) {
+      return (
+        <EtatVide
+          data-testid="invoices-empty"
+          titre="Aucune facture"
+          action={
+            <Button variant="primary" size="md" type="button" onClick={handleCreateNew}>
+              Créer une facture
+            </Button>
+          }
+        />
+      );
+    }
+
+    return (
+      <table className="w-full border-collapse">
+        <thead>
+          <tr>
+            <th className="text-left text-xs font-semibold text-text-muted px-4 py-2 border-b border-border tracking-wide">
+              Pièce
+            </th>
+            <th className="text-left text-xs font-semibold text-text-muted px-4 py-2 border-b border-border tracking-wide">
+              Client
+            </th>
+            <th className="text-left text-xs font-semibold text-text-muted px-4 py-2 border-b border-border tracking-wide">
+              Envoi
+            </th>
+            <th className="text-left text-xs font-semibold text-text-muted px-4 py-2 border-b border-border tracking-wide">
+              Paiement
+            </th>
+            <th className="text-left text-xs font-semibold text-text-muted px-4 py-2 border-b border-border tracking-wide">
+              Échéance
+            </th>
+            <th className="text-right text-xs font-semibold text-text-muted px-4 py-2 border-b border-border tracking-wide">
+              Montant TTC
+            </th>
+            <th className="sr-only">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {filteredInvoices.map((invoice) => {
+            const { envoi, paiement, echeance } = cellulesStatut(invoice);
             return (
-              <motion.div
+              <tr
                 key={invoice.id}
-                /* B-151 : repère par élément pour les protocoles (`qsa`). */
                 data-testid="invoice-item"
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className={cn(
-                  'p-4 rounded-md border border-border/50',
-                  'hover:bg-surface-elevated/30 transition-colors',
-                  'cursor-pointer group'
-                )}
+                className="hover:[&>td]:bg-surface-2"
                 onClick={() => handleEdit(invoice)}
               >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      {/* B4 : l'artisan cherchait Moreau, la liste ne montrait
-                          que DEV-2026-001. Le client d'abord, la référence
-                          ensuite — et la référence seule quand le nom manque. */}
-                      {/* B-208 : ouvrir un document n'existait qu'au clic sur
-                          la carte, un conteneur sans rôle ni tabIndex. La
-                          commande d'ouverture est ici, nommée par le client
-                          (la référence à défaut) : atteignable à la
-                          tabulation, annoncée comme bouton, et distincte des
-                          deux boutons de la ligne pour qu'Entrée sur
-                          « Supprimer » n'ouvre pas aussi le formulaire. */}
-                      <h3 className="font-medium text-text">
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            handleEdit(invoice);
-                          }}
-                          className="rounded-sm text-left hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                        >
-                          {invoice.contact_name || invoice.invoice_number}
-                        </button>
-                      </h3>
-                      {invoice.contact_name && (
-                        <span className="text-xs text-text-muted">{invoice.invoice_number}</span>
-                      )}
-                      {invoice.document_type && invoice.document_type !== 'facture' && (
-                        <span className={cn(
-                          'px-2 py-0.5 rounded-sm text-xs font-medium',
-                          invoice.document_type === 'devis' ? 'bg-agent-blue/20 text-agent-blue' : 'bg-agent-amber/20 text-agent-amber'
-                        )}>
-                          {invoice.document_type === 'devis' ? 'Devis' : 'Avoir'}
-                        </span>
-                      )}
-                      <div className={cn(
-                        'flex items-center gap-1.5 px-2 py-0.5 rounded-sm text-xs font-medium',
-                        STATUS_CONFIG[invoice.status]?.color || 'text-text-muted',
-                        STATUS_CONFIG[invoice.status]?.badgeBg || 'bg-gray-500/20'
-                      )}>
-                        <StatusIcon className="w-3.5 h-3.5" />
-                        <span>{STATUS_CONFIG[invoice.status]?.label || invoice.status}</span>
-                      </div>
-                    </div>
-
-                    <div className="text-sm text-text-muted space-y-1">
-                      <p>{invoice.document_type === 'devis' ? 'Émis' : 'Émise'} le {new Date(invoice.issue_date).toLocaleDateString('fr-FR')}</p>
-                      <p>Échéance le {new Date(invoice.due_date).toLocaleDateString('fr-FR')}</p>
-                      {invoice.document_type === 'devis' && invoice.validite_jours && (
-                        <p>Validité : {invoice.validite_jours} jours</p>
-                      )}
-                      {invoice.payment_date && (
-                        <p>Payée le {new Date(invoice.payment_date).toLocaleDateString('fr-FR')}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col items-end gap-2">
-                    <div className="text-right">
-                      <p className="text-2xl font-bold text-accent-cyan-ink">{montantAvecDevise(invoice.total_ttc, invoice.currency)}</p>
-                      <p className="text-sm text-text-muted">TTC</p>
-                    </div>
-
-                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleGeneratePDF(invoice);
-                        }}
-                        className="p-2 rounded-md bg-surface-elevated hover:bg-surface-elevated/70"
-                        title="Générer et ouvrir le PDF"
-                      >
-                        <Download className="w-4 h-4 text-text-muted" />
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleDeleteInvoice(invoice);
-                        }}
-                        className="p-2 rounded-md bg-error/10 hover:bg-error/20"
-                        title="Supprimer"
-                      >
-                        <X className="w-4 h-4 text-error" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
+                <td className="px-4 py-2.5 border-b border-border align-middle">
+                  <span className="font-mono text-sm whitespace-nowrap">{invoice.invoice_number}</span>
+                  <p className="text-xs font-medium text-text-muted">{sousLignePiece(invoice)}</p>
+                </td>
+                <td className="px-4 py-2.5 border-b border-border align-middle">
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleEdit(invoice);
+                    }}
+                    className="font-semibold text-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+                    aria-label={invoice.contact_name ? undefined : invoice.invoice_number}
+                  >
+                    {invoice.contact_name ?? ''}
+                  </button>
+                </td>
+                <td className="px-4 py-2.5 border-b border-border align-middle">
+                  <Etiquette ton={envoi.ton}>
+                    {envoi.icone ? <FileText className="h-[18px] w-[18px]" /> : null}
+                    {envoi.texte}
+                  </Etiquette>
+                  {envoi.sous ? <p className="text-xs text-text-muted">{envoi.sous}</p> : null}
+                </td>
+                <td className="px-4 py-2.5 border-b border-border align-middle">
+                  {'ton' in paiement ? (
+                    <Etiquette ton={paiement.ton}>{paiement.texte}</Etiquette>
+                  ) : (
+                    <span className="text-sm text-text-muted">{paiement.texte}</span>
+                  )}
+                </td>
+                <td
+                  className={cn(
+                    'px-4 py-2.5 border-b border-border align-middle tabular-nums whitespace-nowrap',
+                    echeance.echue && 'font-semibold text-error',
+                    echeance.muted && !echeance.echue && 'text-text-muted',
+                  )}
+                >
+                  {echeance.texte}
+                  {echeance.sous ? (
+                    <p className="text-xs text-text-muted font-normal">{echeance.sous}</p>
+                  ) : null}
+                </td>
+                <td className="px-4 py-2.5 border-b border-border align-middle text-right font-semibold tabular-nums whitespace-nowrap text-text">
+                  {montantAvecDevise(invoice.total_ttc, invoice.currency)}
+                </td>
+                <td className="px-4 py-2.5 border-b border-border align-middle">
+                  <Button
+                    variant="ghost"
+                    size="md"
+                    type="button"
+                    title="Générer et ouvrir le PDF"
+                    aria-label="Générer et ouvrir le PDF"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      void handleGeneratePDF(invoice);
+                    }}
+                  >
+                    PDF
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="md"
+                    type="button"
+                    className="text-error"
+                    title="Supprimer"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleDeleteInvoice(invoice);
+                    }}
+                  >
+                    Supprimer
+                  </Button>
+                </td>
+              </tr>
             );
           })}
-        </div>
-      )}
+        </tbody>
+      </table>
+    );
+  })();
+
+  const invoicesList = (
+    <div className="flex-1 min-h-0 overflow-y-auto p-6">
+      <Carte as="section" className="overflow-x-auto">
+        {corpsListe}
+      </Carte>
     </div>
   );
 
@@ -492,16 +506,12 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
       className={`fixed inset-0 ${Z_LAYER.MODAL_NESTED} flex items-center justify-center`}
       onClick={() => !isDeleting && setDeletingInvoice(null)}
     >
-      <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" />
+      <div className="absolute inset-0 bg-black/60" />
       <div
         role="dialog"
         aria-modal="true"
         aria-label="Confirmer la suppression"
-        className={cn(
-          'relative w-full max-w-md mx-4 p-6',
-          'bg-surface/95 backdrop-blur-xl border border-border/50 rounded-md',
-          'shadow-2xl space-y-4'
-        )}
+        className="relative w-full max-w-md mx-4 p-6 bg-surface border border-border rounded-md shadow-sm space-y-4"
         onClick={(e) => e.stopPropagation()}
       >
         <h3 className="text-lg font-semibold text-text">Supprimer la facture ?</h3>
@@ -510,32 +520,30 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
           Cette action est irréversible.
         </p>
         <div className="flex items-center justify-end gap-3">
-          <button
+          <Button
+            variant="secondary"
+            size="md"
             type="button"
             onClick={(e) => {
               e.preventDefault();
               setDeletingInvoice(null);
             }}
             disabled={isDeleting}
-            className="px-4 py-2 rounded-md bg-surface-elevated text-text hover:bg-surface-elevated/70 transition-colors"
           >
             Annuler
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="danger"
+            size="md"
             type="button"
             onClick={(e) => {
               e.preventDefault();
               void confirmDeleteInvoice();
             }}
             disabled={isDeleting}
-            className={cn(
-              'px-4 py-2 rounded-md font-medium transition-colors',
-              'bg-error text-ink-on-fill hover:bg-error',
-              isDeleting && 'opacity-50 cursor-not-allowed'
-            )}
           >
             {isDeleting ? 'Suppression...' : 'Supprimer'}
-          </button>
+          </Button>
         </div>
       </div>
     </div>
@@ -572,15 +580,13 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
         className={`fixed inset-0 ${Z_LAYER.MODAL} flex items-center justify-center`}
         onClick={() => setIsInvoicePanelOpen(false)}
       >
-        {/* Backdrop */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+          className="absolute inset-0 bg-black/60"
         />
 
-        {/* Panel */}
         <motion.div
           role="dialog"
           aria-modal="true"
@@ -592,8 +598,8 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
           transition={{ duration: 0.2 }}
           className={cn(
             'relative w-full max-w-6xl h-[85vh] mx-4',
-            'bg-surface/95 backdrop-blur-xl border border-border/50 rounded-md',
-            'shadow-2xl overflow-hidden flex flex-col'
+            'bg-surface border border-border rounded-md',
+            'shadow-sm overflow-hidden flex flex-col',
           )}
           onClick={(e) => e.stopPropagation()}
         >

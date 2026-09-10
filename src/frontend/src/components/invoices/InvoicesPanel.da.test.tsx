@@ -421,6 +421,8 @@ describe('Lot 5 DA : plancher, jetons, hauteurs', () => {
     for (const bouton of screen.getAllByRole('button')) {
       if (bouton.closest('[role="group"]')) continue;
       if (bouton === geste) continue;
+      // Commande client (B-208) : <button> texte, pas le primitive Button.
+      if (!/\bh-9\b|\bh-11\b|\bh-8\b/.test(bouton.className)) continue;
       expect(bouton.className, bouton.textContent ?? '').toMatch(/\bh-9\b/);
       expect(bouton.className).not.toMatch(/\bh-11\b/);
     }

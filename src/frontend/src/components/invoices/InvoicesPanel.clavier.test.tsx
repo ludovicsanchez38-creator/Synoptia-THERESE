@@ -61,7 +61,7 @@ const devis = {
 
 const sansClient = { ...devis, id: 'devis-2', invoice_number: 'DEV-2026-002', contact_name: null };
 
-describe('B-208 : la carte d’un document est une commande atteignable au clavier', () => {
+describe('B-208 : la ligne d’un document est une commande atteignable au clavier', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useInvoiceStore.setState({
