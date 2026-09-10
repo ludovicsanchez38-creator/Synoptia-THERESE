@@ -80,6 +80,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
     search: searchContacts,
     removeLocal,
     truncated: contactsTronques,
+    error: contactsError,
   } = useContactsStore();
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -411,6 +412,20 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto">
+              {/* #149 : le store dit quand la lecture a échoué ; le panneau le montre,
+                  sinon un carnet en panne passe pour un carnet vide. */}
+              {contactsError && !loading && (
+                <div role="alert" className="mx-4 my-3 flex items-center justify-between gap-2 rounded-md border border-error/30 bg-error/10 px-3 py-2 text-sm text-error">
+                  <span>{contactsError}</span>
+                  <button
+                    type="button"
+                    onClick={() => void loadData()}
+                    className="rounded-md border border-error px-2 py-1 text-xs font-semibold"
+                  >
+                    Réessayer
+                  </button>
+                </div>
+              )}
               {loading ? (
                 <div className="flex items-center justify-center h-32">
                   <Spinner taille="zone" className="text-accent-cyan-ink" />
