@@ -17,6 +17,8 @@ import logging
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from app.services.error_handler import ErreurPourEcran
+
 if TYPE_CHECKING:
     from faster_whisper import WhisperModel
 
@@ -103,7 +105,7 @@ def _voix_du_catalogue(voice: str) -> str:
     cette liste blanche : un seul point de vérité, appliqué partout.
     """
     if voice not in _PIPER_VOICE_URLS:
-        raise RuntimeError(f"Voix Piper inconnue : {voice}")
+        raise ErreurPourEcran(f"Voix Piper inconnue : {voice}")
     return voice
 
 
@@ -236,7 +238,7 @@ def transcribe_local(audio_path: str, model_size: str | None = None, language: s
     Lève RuntimeError si la dépendance optionnelle n'est pas installée.
     """
     if not stt_available():
-        raise RuntimeError(
+        raise ErreurPourEcran(
             "STT local indisponible : faster-whisper non installé. " + INSTALL_HINT
         )
 
@@ -262,7 +264,7 @@ def synthesize_local(text: str, out_path: str, voice: str = DEFAULT_PIPER_VOICE)
     Lève RuntimeError si la dépendance ou la voix n'est pas disponible.
     """
     if not tts_available():
-        raise RuntimeError("TTS local indisponible : Piper non installé. " + INSTALL_HINT)
+        raise ErreurPourEcran("TTS local indisponible : Piper non installé. " + INSTALL_HINT)
 
     # B-105 : `voice` vient de la requête. Liste blanche AVANT toute
     # construction de chemin et avant le chargement du moteur.
@@ -274,8 +276,9 @@ def synthesize_local(text: str, out_path: str, voice: str = DEFAULT_PIPER_VOICE)
 
     onnx = voices_dir() / f"{voice}.onnx"
     if not onnx.exists():
-        raise RuntimeError(
-            f"Voix Piper '{voice}' absente ({onnx}). "
+        # Cycle 6 : pas de chemin absolu à l'écran ; le nom du fichier attendu suffit.
+        raise ErreurPourEcran(
+            f"Voix Piper '{voice}' absente (fichier {onnx.name} attendu dans le dossier des voix). "
             "Télécharge-la (voir docs/VOICE-LOCAL.md) puis réessaie."
         )
 

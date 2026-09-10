@@ -266,7 +266,9 @@ async def transcribe_audio_local(
         text = await asyncio.to_thread(transcribe_local, tmp_path, model_size=model)
         return TranscriptionResponse(text=text, language="fr")
     except RuntimeError as e:
-        raise HTTPException(status_code=503, detail=str(e))
+        # Cycle 6 : un message écrit pour l'écran (ErreurPourEcran) passe ; un
+        # RuntimeError technique (chemin local) devient générique.
+        raise HTTPException(status_code=503, detail=message_pour_ecran(e, ou="pendant la transcription locale")) from e
     except Exception as e:
         logger.exception("Erreur transcription locale")
         raise HTTPException(status_code=500, detail=message_pour_ecran(e, ou="pendant la transcription locale")) from e
@@ -325,7 +327,7 @@ async def text_to_speech_local(payload: TTSRequest) -> FileResponse:
         )
     except RuntimeError as e:
         _effacer_fichier_temporaire(out_path)
-        raise HTTPException(status_code=503, detail=str(e))
+        raise HTTPException(status_code=503, detail=message_pour_ecran(e, ou="pendant la synthèse vocale")) from e
     except Exception as e:
         _effacer_fichier_temporaire(out_path)
         logger.exception("Erreur synthèse vocale locale")
