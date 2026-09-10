@@ -49,7 +49,7 @@ lot et cette phrase devient fausse).
    cibles de clic. **Ludo tranche avant le code** : soit un GO explicite sur
    ce remplacement pour `nouveau`, soit le panneau entre dans le lot et
    « aucun parcours ne change » est faux. Ce n'est pas un numéro de portail
-   (P-071) qui escamote un état déjà dessiné.
+   qui escamote un état déjà dessiné.
 6. Toute taille de `Button` est `md` (36 px) ou `icon` (36 px) ; `size="sm"`
    n'y est pas employé. « Nouveau rendez-vous » est le grand geste, en `lg`.
    Les blocs de la grille et les jetons « Journée » sont des `<button>`
@@ -256,7 +256,7 @@ avant le code). Tête : retour `Button ghost icon` `aria-label="Retour"`
 
 Les quatre libellés d'horaire restent ceux d'aujourd'hui (`EventForm.tsx:317-353`) :
 « Date de début », « Heure de début », « Date de fin », « Heure de fin »
-(la maquette fusionne en « Date » / « Heure » = P-073, hors lot). L'astérisque
+(la maquette fusionne en « Date » / « Heure » = P-083, hors lot). L'astérisque
 vient de `FormField required`, pas du texte du label. Case à cocher **hors**
 `FormField` (le `label` de `FormField` est `block` au-dessus,
 `FormField.tsx:53-62`) : rangée `flex items-center gap-3` actuelle
@@ -349,7 +349,7 @@ chargement) : `text-xs font-medium text-text-muted mt-2`. Résumé = calendrier
 `src/frontend/src/services/api/calendar.ts:16` ; un CalDAV branché **est**
 en ligne). Pas `=== 'google'` seul (un CalDAV sans Google affichait le
 suffixe à tort). Pas « le courant n'est pas google ». Pas de légende
-Rendez-vous / Prospects / Tâches (P-072).
+Rendez-vous / Prospects / Tâches (P-082).
 
 ## 9. Gardes mécaniques et tests à aligner
 
@@ -434,14 +434,14 @@ hors lot.
   `agenda.html:36-38`). Aujourd'hui le formulaire remplace le contenu ; le
   superposer changerait les cibles de clic. **Écart déjà dessiné** (état
   maquetté `nouveau`, critère `ecrans.json:123`) : Ludo GO sur le remplacement
-  actuel, ou le panneau entre dans le lot (décision 5). Le numéro P-071
+  actuel, ou le panneau entre dans le lot (décision 5). Un numéro de portail
   n'esquive pas cet état.
 - Tâches et prospects dessinés sur la grille, légende de domaines, pastille
-  « à préparer ». L'API ne livre que des `CalendarEvent`. **P-072**.
+  « à préparer ». L'API ne livre que des `CalendarEvent`. **P-082**.
 - Champ « Avec » qui résout un contact et propose de le créer s'il est
   absent ; plage « 10:00 à 11:00 » en un champ. Aujourd'hui : e-mails et
   quatre champs d'horaire (« Date de début », « Heure de début », « Date de
-  fin », « Heure de fin »). **P-073**.
+  fin », « Heure de fin »). **P-083**.
 - `MeetingConversationCard` / scénario `meeting` (autre surface).
 - Aucun changement de données, d'API, de store ni de navigation.
 
