@@ -64,6 +64,11 @@ interface CommandsState {
   generateTemplate: (data: GenerateTemplateRequest) => Promise<GenerateTemplateResponse>;
 }
 
+/** D132 : une écriture en panne laisse une trace lisible, puis relance pour l'appelant. */
+function messageDe(err: unknown, repli: string): string {
+  return err instanceof Error && err.message ? err.message : repli;
+}
+
 export const useCommandsStore = create<CommandsState>((set, get) => ({
   commands: [],
   isLoading: false,
@@ -103,21 +108,39 @@ export const useCommandsStore = create<CommandsState>((set, get) => ({
   },
 
   createCommand: async (data) => {
-    const created = await createUserCommand(data);
-    // Recharger les commandes
-    await get().fetchCommands();
-    return created;
+    set({ error: null });
+    try {
+      const created = await createUserCommand(data);
+      // Recharger les commandes
+      await get().fetchCommands();
+      return created;
+    } catch (err) {
+      set({ error: messageDe(err, 'Impossible de créer la commande') });
+      throw err;
+    }
   },
 
   updateCommand: async (id, data) => {
-    const updated = await updateUserCommand(id, data);
-    // Recharger les commandes
-    await get().fetchCommands();
-    return updated;
+    set({ error: null });
+    try {
+      const updated = await updateUserCommand(id, data);
+      // Recharger les commandes
+      await get().fetchCommands();
+      return updated;
+    } catch (err) {
+      set({ error: messageDe(err, 'Impossible de modifier la commande') });
+      throw err;
+    }
   },
 
   deleteCommand: async (id) => {
-    await deleteUserCommand(id);
+    set({ error: null });
+    try {
+      await deleteUserCommand(id);
+    } catch (err) {
+      set({ error: messageDe(err, 'Impossible de supprimer la commande') });
+      throw err;
+    }
     // Retirer du store
     set((state) => ({
       commands: state.commands.filter((c) => c.id !== id),
