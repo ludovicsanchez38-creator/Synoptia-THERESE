@@ -346,7 +346,14 @@ async def _draft_stream(
         # Cycle 6 : le flux périodique et le flux d'erreur écrivaient le brut ;
         # un flux cassé après `PISTES:` laissait le marqueur et les pistes
         # dans la section, là où la fin normale n'écrit que le contenu.
-        target.content, _pistes_en_cours = parse_draft_output(raw_content)
+        contenu, _pistes_en_cours = parse_draft_output(raw_content)
+        if not contenu.strip() and (target.content or "").strip():
+            # Revue Grok 0.70.0 : même garde que le chemin final ; un brut sans
+            # contenu exploitable (PISTES seul, flux coupé) ne vide pas une
+            # section déjà rédigée.
+            last_flushed_raw = raw_content
+            return
+        target.content = contenu
         target.status = "brouillon"
         target.updated_at = datetime.now(UTC)
         session.add(target)

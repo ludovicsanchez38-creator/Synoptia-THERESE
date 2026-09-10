@@ -577,3 +577,38 @@ class TestValidateSection:
     async def test_validate_section_introuvable_404(self, client: AsyncClient):
         response = await client.post("/api/documents/sections/id-inexistant/validate")
         assert response.status_code == 404
+
+
+class TestRevueGrok0700FlushSurPistesSeules:
+    @pytest.mark.asyncio
+    async def test_un_flush_sans_contenu_preserve_la_section_deja_redigee(
+        self, client: AsyncClient, monkeypatch: pytest.MonkeyPatch
+    ):
+        """Revue Grok 0.70.0 (P2) : le flux périodique ou d'erreur écrivait
+        `parse_draft_output(brut)[0]` sans la garde du chemin final ; un flux
+        cassé juste après `PISTES:` écrasait le brouillon existant par une
+        chaîne vide."""
+        import app.models.database as db_module
+        from app.models.entities import DocumentSection
+        from app.routers import documents as documents_router
+
+        monkeypatch.setattr(documents_router, "DRAFT_FLUSH_INTERVAL_SECONDS", 0.0)
+        doc = await _create_document(client)
+        section = await _create_section(client, doc["id"], "Financement bancaire", order=10.0)
+        async with db_module.AsyncSessionLocal() as session:
+            cible = await session.get(DocumentSection, section["id"])
+            cible.content = "Ancien texte de la section, à conserver."
+            session.add(cible)
+            await session.commit()
+
+        async def fake_stream(self, context, **kwargs) -> AsyncGenerator[str, None]:
+            yield "PISTES:\n- une piste\n"
+            raise RuntimeError("fournisseur coupé")
+
+        with patch("app.services.llm.LLMService.stream_response", new=fake_stream):
+            response = await client.post(f"/api/documents/sections/{section['id']}/draft", json={"instruction": None})
+        assert response.status_code == 200, response.text
+
+        async with db_module.AsyncSessionLocal() as session:
+            apres = await session.get(DocumentSection, section["id"])
+            assert apres.content == "Ancien texte de la section, à conserver.", apres.content
