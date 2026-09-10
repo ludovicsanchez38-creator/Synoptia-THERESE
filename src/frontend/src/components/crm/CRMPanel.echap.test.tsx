@@ -40,7 +40,7 @@ import { CRMPanel } from './CRMPanel';
 
 async function ouvrirLeFormulaire() {
   render(<CRMPanel standalone />);
-  fireEvent.click(await screen.findByRole('button', { name: /Ajouter un contact/i }));
+  fireEvent.click(await screen.findByRole('button', { name: /Nouveau contact/i }));
   return screen.findByRole('dialog', { name: 'Nouveau contact CRM' });
 }
 

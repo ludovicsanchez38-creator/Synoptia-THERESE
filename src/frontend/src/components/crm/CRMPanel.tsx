@@ -7,7 +7,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, LayoutDashboard, Users, Activity, UserPlus, Upload, Mail, Phone, FileText, Plus, Clock } from 'lucide-react';
+import { X, UserPlus, Upload, Mail, Phone, FileText, Users, AlertCircle } from 'lucide-react';
 import { PipelineView } from './PipelineView';
 import { ActivityTimeline } from './ActivityTimeline';
 import { ListeDesPrestations } from './ListeDesPrestations';
@@ -20,6 +20,18 @@ import { useStatusStore } from '../../stores/statusStore';
 import { Z_LAYER } from '../../styles/z-layers';
 import { handleRovingFocus } from '../../lib/rovingFocus';
 import { pushEscapeHandler } from '../../lib/escapeStack';
+import { cn } from '../../lib/utils';
+import { Alerte } from '../ui/Alerte';
+import { Button } from '../ui/Button';
+import { Carte, CarteTete } from '../ui/Carte';
+import { EtatVide } from '../ui/EtatVide';
+import { FormField } from '../ui/FormField';
+import { Input } from '../ui/Input';
+import { Select } from '../ui/Select';
+import { Squelette } from '../ui/Squelette';
+import { Textarea } from '../ui/Textarea';
+import { CLASSES_SEGMENTS, classeSegment } from '../ui/segments.classes';
+import { PIPELINE_ETAPES } from './pipelineEtapes';
 
 interface CRMPanelProps {
   isOpen?: boolean;
@@ -52,6 +64,7 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [showAddActivity, setShowAddActivity] = useState(false);
   const [activityRefreshKey, setActivityRefreshKey] = useState(0);
+  const vcfInputRef = useRef<HTMLInputElement>(null);
   const { enabled: demoEnabled, maskContact, populateMap } = useDemoMask();
 
   const effectiveOpen = standalone || isOpen;
@@ -136,71 +149,65 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
     : null;
 
   const tabs = [
-    { id: 'pipeline' as const, label: 'Pipeline', icon: LayoutDashboard },
-    { id: 'activities' as const, label: 'Activités', icon: Activity },
+    { id: 'pipeline' as const, label: 'Pipeline' },
+    { id: 'activities' as const, label: 'Activités' },
   ];
 
   if (!effectiveOpen) return null;
 
   const crmHeader = (
-    <div className="flex items-center justify-between px-6 py-4 border-b border-border/30">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-sm bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
-          <LayoutDashboard className="w-5 h-5 text-accent" />
-        </div>
-        <div>
-          {/* B-241 : la coque `PrototypeUnifiedViewCanvas` pose déjà le titre de
-              la vue, et en fait le nom accessible de la région. Ce libellé reste
-              visible mais n'est plus un titre : deux titres de même texte, c'est
-              un plan de page qui ment. */}
-          <p className="text-lg font-semibold text-text">Pipeline</p>
-          <p className="text-sm text-text-muted">
-            {contacts.length} contact{contacts.length > 1 ? 's' : ''}
-            {contactsTronques ? '+' : ''} · {projects.length} projet{projects.length > 1 ? 's' : ''}
+    <div className="flex flex-wrap items-end gap-3 px-4 pt-4 pb-2">
+      <div>
+        {/* B-241 : la coque `PrototypeUnifiedViewCanvas` pose déjà le titre de
+            la vue, et en fait le nom accessible de la région. Ce libellé reste
+            visible mais n'est plus un titre : deux titres de même texte, c'est
+            un plan de page qui ment. */}
+        <p className="text-lg font-semibold text-text">Pipeline</p>
+        <p className="text-sm text-text-muted tabular-nums">
+          {contacts.length} contact{contacts.length > 1 ? 's' : ''}
+          {contactsTronques ? '+' : ''} · {projects.length} projet{projects.length > 1 ? 's' : ''}
+        </p>
+        {contactsTronques && (
+          <p role="alert" data-testid="crm-troncature" className="text-sm text-warning bg-[var(--color-warning-tint)]">
+            Liste incomplète : le pipeline ne montre que les 200 contacts les plus récents.
           </p>
-          {contactsTronques && (
-            <p role="alert" className="text-sm text-warning">
-              Liste incomplète : le pipeline ne montre que les 200 contacts les plus récents.
-            </p>
-          )}
-        </div>
+        )}
       </div>
 
-      <div className="flex items-center gap-2">
-        <label className="flex items-center gap-2 px-3 py-2 hover:bg-surface rounded-md transition-colors text-sm text-text-muted cursor-pointer">
-          <Upload className="w-4 h-4" />
-          <span className="hidden sm:inline">Import .vcf</span>
-          <input type="file" accept=".vcf" className="hidden" onChange={handleImportVCF} />
-        </label>
-
-        <button
-          onClick={() => setShowCreateForm(true)}
-          className="flex items-center gap-2 px-3 py-2 bg-accent-tint hover:bg-accent-tint text-accent-cyan-ink rounded-md transition-colors text-sm font-medium"
-        >
-          <UserPlus className="w-4 h-4" />
-          Ajouter un contact
-        </button>
-
+      <div className="ml-auto flex flex-wrap gap-2 max-[840px]:basis-full max-[840px]:ml-0">
+        <input
+          ref={vcfInputRef}
+          type="file"
+          accept=".vcf"
+          className="hidden"
+          onChange={handleImportVCF}
+        />
+        <Button variant="secondary" size="md" onClick={() => vcfInputRef.current?.click()}>
+          <Upload size={18} />
+          Importer (.vcf)
+        </Button>
+        <Button variant="primary" size="md" onClick={() => setShowCreateForm(true)}>
+          <UserPlus size={18} />
+          Nouveau contact
+        </Button>
         {!standalone && (
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-surface rounded-md transition-colors"
-          >
+          <Button variant="ghost" size="icon" onClick={onClose}>
             <X className="w-5 h-5 text-text-muted" />
-          </button>
+          </Button>
         )}
       </div>
     </div>
   );
 
   const crmTabs = (
-    // B-219 : deux boutons nus, l'état actif porté par la seule couleur. Le
-    // motif de référence est celui des Paramètres, dans la même application :
-    // tablist / tab / aria-selected, plus les flèches pour changer d'onglet -
-    // sans elles, le `tabIndex={-1}` de l'onglet inactif l'enfermerait.
-    <div role="tablist" aria-label="Vues du CRM" className="flex gap-2 px-6 pt-4 border-b border-surface">
+    // B-219 : tablist / tab / aria-selected, plus les flèches pour changer
+    // d'onglet - sans elles, le `tabIndex={-1}` de l'onglet inactif l'enfermerait.
+    <div
+      role="tablist"
+      aria-label="Vues du CRM"
+      className={cn(CLASSES_SEGMENTS, 'px-4 pt-3')}
+    >
       {tabs.map(tab => {
-        const Icon = tab.icon;
         const isActive = activeTab === tab.id;
 
         return (
@@ -213,29 +220,23 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
             tabIndex={isActive ? 0 : -1}
             onKeyDown={(event) => handleRovingFocus(event, '[role="tab"]', 'horizontal')}
             onClick={() => setActiveTab(tab.id)}
-            className={`
-              flex items-center gap-2 px-4 py-2 rounded-t-md transition-colors relative
-              ${
-                isActive
-                  ? 'bg-surface text-text-primary'
-                  : 'text-text-muted hover:bg-surface/50'
-              }
-            `}
-          >
-            <Icon className="w-4 h-4" />
-            <span className="font-medium">{tab.label}</span>
-
-            {isActive && (
-              <motion.div
-                layoutId="activeTab"
-                className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent-cyan"
-              />
+            className={cn(
+              classeSegment(isActive),
+              'focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-ring',
             )}
+          >
+            {tab.label}
           </button>
         );
       })}
     </div>
   );
+
+  const crmErreur = error ? (
+    <Alerte data-testid="crm-erreur" icone={<AlertCircle size={18} />}>
+      {error}
+    </Alerte>
+  ) : null;
 
   const crmContent = (
     <div
@@ -245,15 +246,21 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
       tabIndex={0}
       className="flex-1 overflow-auto p-6 outline-none"
     >
-      {error && (
-        <div role="alert" className="mb-4 px-3 py-2 bg-error/10 border border-error/20 rounded-md">
-          <p className="text-sm text-error">{error}</p>
-        </div>
-      )}
-
       {loading ? (
-        <div className="flex items-center justify-center h-full">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-accent-cyan"></div>
+        <div>
+          <p role="status">Chargement du pipeline…</p>
+          <div
+            aria-hidden="true"
+            className="grid grid-flow-col auto-cols-[minmax(15rem,1fr)] gap-3"
+          >
+            {[0, 1, 2].map((colonne) => (
+              <div key={colonne} className="grid gap-2">
+                <Squelette classeBarre="h-8 rounded-sm" largeur="w-8" />
+                <Squelette largeur="w-[60%]" />
+                <Squelette largeur="w-[40%]" />
+              </div>
+            ))}
+          </div>
         </div>
       ) : (
         <AnimatePresence mode="wait">
@@ -279,28 +286,22 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
             >
-              <div className="flex items-center justify-between mb-6">
-                <div>
-                  <h3 className="text-lg font-semibold text-text-primary">
-                    {displaySelectedContact.first_name} {displaySelectedContact.last_name}
-                  </h3>
-                  {displaySelectedContact.company && (
-                    <p className="text-sm text-text-muted">{displaySelectedContact.company}</p>
-                  )}
-                </div>
-                <button
-                  onClick={() => setShowAddActivity(true)}
-                  className="flex items-center gap-2 px-3 py-2 bg-accent-tint hover:bg-accent-tint text-accent-cyan-ink rounded-md transition-colors text-sm font-medium"
-                >
-                  <Plus className="w-4 h-4" />
-                  Ajouter une activité
-                </button>
-              </div>
+              <Carte>
+                <CarteTete
+                  titre={`${displaySelectedContact.first_name} ${displaySelectedContact.last_name}`}
+                  meta={displaySelectedContact.company || undefined}
+                  actions={
+                    <Button variant="primary" size="md" onClick={() => setShowAddActivity(true)}>
+                      Ajouter une activité
+                    </Button>
+                  }
+                />
+              </Carte>
 
               {/* Les prestations d'abord : c'est l'ETAT (ce que Ludo a
                   enregistre), la timeline en dessous n'est que la trace de ce
                   qui a ete ecrit. */}
-              <section className="mb-6">
+              <section className="mb-6 mt-4">
                 <h3 className="mb-2 text-sm font-semibold text-text">Prestations</h3>
                 <ListeDesPrestations contactId={selectedContact!.id} />
               </section>
@@ -342,6 +343,7 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
       <div className="flex-1 min-h-0 flex flex-col bg-bg" data-testid="crm-panel">
         {crmHeader}
         {crmTabs}
+        {crmErreur}
         {crmContent}
 
         {showCreateForm && (
@@ -379,6 +381,7 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
           >
             {crmHeader}
             {crmTabs}
+            {crmErreur}
             {crmContent}
 
             {showCreateForm && (
@@ -403,14 +406,7 @@ interface CreateContactModalProps {
   onCreate: (data: CreateCRMContactRequest) => void;
 }
 
-const STAGES = [
-  { id: 'contact', label: 'Contact' },
-  { id: 'discovery', label: 'Découverte' },
-  { id: 'proposition', label: 'Proposition' },
-  { id: 'signature', label: 'Signature' },
-  { id: 'delivery', label: 'Livraison' },
-  { id: 'active', label: 'Actif' },
-];
+const STAGES = PIPELINE_ETAPES.filter((s) => s.id !== 'archive');
 
 function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
   const [form, setForm] = useState<CreateCRMContactRequest>({
@@ -467,110 +463,93 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
       >
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-text-primary">Nouveau contact</h3>
-          <button onClick={onClose} className="p-1 hover:bg-background rounded-md transition-colors">
+          <Button variant="ghost" size="icon" onClick={onClose} type="button">
             <X className="w-5 h-5 text-text-muted" />
-          </button>
+          </Button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {formError && (
-            <div role="alert" className="px-3 py-2 bg-error/10 border border-error/20 rounded-md">
-              <p className="text-sm text-error">{formError}</p>
-            </div>
-          )}
+          {formError && <Alerte>{formError}</Alerte>}
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="crmpanel-prenom" className="block text-xs text-text-muted mb-1">Prénom *</label>
-              <input id="crmpanel-prenom"
+            <FormField htmlFor="crmpanel-prenom" label="Prénom *">
+              <Input
+                id="crmpanel-prenom"
                 type="text"
                 value={form.first_name}
                 onChange={(e) => setForm(prev => ({ ...prev, first_name: e.target.value }))}
-                className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text focus:ring-2 focus:ring-ring outline-none"
                 required
               />
-            </div>
-            <div>
-              <label htmlFor="crmpanel-nom" className="block text-xs text-text-muted mb-1">Nom</label>
-              <input id="crmpanel-nom"
+            </FormField>
+            <FormField htmlFor="crmpanel-nom" label="Nom">
+              <Input
+                id="crmpanel-nom"
                 type="text"
                 value={form.last_name || ''}
                 onChange={(e) => setForm(prev => ({ ...prev, last_name: e.target.value }))}
-                className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text focus:ring-2 focus:ring-ring outline-none"
               />
-            </div>
+            </FormField>
           </div>
 
-          <div>
-            <label htmlFor="crmpanel-entreprise" className="block text-xs text-text-muted mb-1">Entreprise</label>
-            <input id="crmpanel-entreprise"
+          <FormField htmlFor="crmpanel-entreprise" label="Entreprise">
+            <Input
+              id="crmpanel-entreprise"
               type="text"
               value={form.company || ''}
               onChange={(e) => setForm(prev => ({ ...prev, company: e.target.value }))}
-              className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text focus:ring-2 focus:ring-ring outline-none"
             />
-          </div>
+          </FormField>
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="crmpanel-email" className="block text-xs text-text-muted mb-1">Email</label>
-              <input id="crmpanel-email"
+            <FormField htmlFor="crmpanel-email" label="Email">
+              <Input
+                id="crmpanel-email"
                 type="email"
                 value={form.email || ''}
                 onChange={(e) => setForm(prev => ({ ...prev, email: e.target.value }))}
-                className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text focus:ring-2 focus:ring-ring outline-none"
               />
-            </div>
-            <div>
-              <label htmlFor="crmpanel-telephone" className="block text-xs text-text-muted mb-1">Téléphone</label>
-              <input id="crmpanel-telephone"
+            </FormField>
+            <FormField htmlFor="crmpanel-telephone" label="Téléphone">
+              <Input
+                id="crmpanel-telephone"
                 type="tel"
                 value={form.phone || ''}
                 onChange={(e) => setForm(prev => ({ ...prev, phone: e.target.value }))}
-                className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text focus:ring-2 focus:ring-ring outline-none"
               />
-            </div>
+            </FormField>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="crmpanel-source" className="block text-xs text-text-muted mb-1">Source</label>
-              <input id="crmpanel-source"
+            <FormField htmlFor="crmpanel-source" label="Source">
+              <Input
+                id="crmpanel-source"
                 type="text"
                 value={form.source || ''}
                 onChange={(e) => setForm(prev => ({ ...prev, source: e.target.value }))}
                 placeholder="LinkedIn, Site web..."
-                className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text placeholder:text-text-muted focus:ring-2 focus:ring-ring outline-none"
               />
-            </div>
-            <div>
-              <label htmlFor="crmpanel-stage" className="block text-xs text-text-muted mb-1">Stage</label>
-              <select id="crmpanel-stage"
+            </FormField>
+            <FormField htmlFor="crmpanel-stage" label="Stage">
+              <Select
+                id="crmpanel-stage"
                 value={form.stage}
                 onChange={(e) => setForm(prev => ({ ...prev, stage: e.target.value }))}
-                className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text focus:ring-2 focus:ring-ring outline-none"
-              >
-                {STAGES.map(s => (
-                  <option key={s.id} value={s.id}>{s.label}</option>
-                ))}
-              </select>
-            </div>
+                options={STAGES.map((s) => ({ value: s.id, label: s.label }))}
+              />
+            </FormField>
           </div>
 
           <div className="flex justify-end gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm text-text-muted hover:bg-background rounded-md transition-colors"
-            >
+            <Button type="button" variant="ghost" size="md" onClick={onClose}>
               Annuler
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
+              variant="primary"
+              size="md"
               disabled={!form.first_name.trim() || submitting}
-              className="px-4 py-2 text-sm font-medium bg-accent-fill text-accent-ink rounded-md hover:bg-accent-fill/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? 'Création...' : 'Créer le contact'}
-            </button>
+            </Button>
           </div>
         </form>
       </motion.div>
@@ -668,51 +647,55 @@ function GlobalActivityView({ annuaire }: { annuaire: ContactResponse[] }) {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
     >
-      {/* Filter chips */}
-      <div className="flex flex-wrap gap-2 mb-6">
+      <div role="group" className={cn(CLASSES_SEGMENTS, 'mb-6 flex-wrap')}>
         {ACTIVITY_FILTER_CHIPS.map(chip => {
           const isActive = filter === chip.id;
           const ChipIcon = chip.icon;
           return (
             <button
               key={chip.id}
+              type="button"
               onClick={() => setFilter(chip.id)}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-sm text-sm font-medium transition-colors ${
-                isActive
-                  ? 'bg-accent-tint text-accent-cyan-ink'
-                  : 'bg-surface text-text-muted hover:bg-surface-elevated'
-              }`}
+              className={classeSegment(isActive)}
             >
-              {ChipIcon && <ChipIcon className="w-3.5 h-3.5" />}
+              {ChipIcon && <ChipIcon size={18} />}
               {chip.label}
             </button>
           );
         })}
       </div>
 
-      {/* Loading */}
       {loading && (
-        <div className="flex items-center justify-center py-12">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-cyan"></div>
+        <div>
+          <p role="status">Chargement des activités…</p>
+          <Squelette lignes={3} />
         </div>
       )}
 
       {!loading && erreurActivites && (
-        <div role="alert" className="mx-auto my-8 max-w-md rounded-md border border-error/40 bg-[var(--color-error-tint)] p-4 text-center text-sm text-error">
-          <p>{erreurActivites}</p>
-          <button type="button" onClick={() => void loadAllActivities()} className="mt-2 rounded-md border border-error px-3 py-1.5 font-semibold">Réessayer</button>
-        </div>
+        <Alerte
+          data-testid="crm-activites-erreur"
+          action={
+            <Button variant="secondary" size="md" type="button" onClick={() => void loadAllActivities()}>
+              Réessayer
+            </Button>
+          }
+        >
+          {erreurActivites}
+        </Alerte>
       )}
 
-      {/* Empty state */}
       {!loading && !erreurActivites && filteredActivities.length === 0 && (
-        <div className="flex items-center justify-center py-12 text-text-muted">
-          <div className="text-center">
-            <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
-            <p>{filter === 'all' ? 'Aucune activité enregistrée' : `Aucune activité de type "${ACTIVITY_FILTER_CHIPS.find(c => c.id === filter)?.label}"`}</p>
-            <p className="text-xs mt-1">Clique sur un contact dans le Pipeline pour ajouter une activité</p>
-          </div>
-        </div>
+        <EtatVide
+          data-testid="crm-activites-vide"
+          titre={
+            filter === 'all'
+              ? 'Aucune activité enregistrée'
+              : `Aucune activité de type "${ACTIVITY_FILTER_CHIPS.find(c => c.id === filter)?.label}"`
+          }
+        >
+          Clique sur un contact dans le Pipeline pour ajouter une activité
+        </EtatVide>
       )}
 
       {/* Timeline */}
@@ -739,9 +722,9 @@ function GlobalActivityView({ annuaire }: { annuaire: ContactResponse[] }) {
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <div className="flex items-center gap-2 mb-0.5">
-                        <span className="text-xs font-medium text-accent-cyan-ink">{contactName}</span>
-                        <span className="text-xs text-text-muted">·</span>
-                        <span className="text-xs text-text-muted capitalize">{
+                        <span className="text-sm font-medium text-accent-cyan-ink">{contactName}</span>
+                        <span className="text-sm text-text-muted">·</span>
+                        <span className="text-sm text-text-muted capitalize">{
                           activity.type === 'email' ? 'Email' :
                           activity.type === 'call' ? 'Appel' :
                           activity.type === 'meeting' ? 'Réunion' :
@@ -752,10 +735,10 @@ function GlobalActivityView({ annuaire }: { annuaire: ContactResponse[] }) {
                       </div>
                       <h4 className="text-sm font-medium text-text-primary">{maskText(activity.title)}</h4>
                       {activity.description && (
-                        <p className="text-xs text-text-muted mt-1 line-clamp-2">{maskText(activity.description)}</p>
+                        <p className="text-sm text-text-muted mt-1 line-clamp-2">{maskText(activity.description)}</p>
                       )}
                     </div>
-                    <span className="text-xs text-text-muted whitespace-nowrap shrink-0">
+                    <span className="tabular-nums text-sm text-text-muted whitespace-nowrap shrink-0">
                       {formatDate(activity.created_at)}
                     </span>
                   </div>
@@ -840,20 +823,16 @@ function AddActivityModal({ contactId, onClose, onCreated }: AddActivityModalPro
       >
         <div className="flex items-center justify-between mb-6">
           <h3 className="text-lg font-semibold text-text-primary">Nouvelle activité</h3>
-          <button onClick={onClose} className="p-1 hover:bg-background rounded-md transition-colors">
+          <Button variant="ghost" size="icon" onClick={onClose} type="button">
             <X className="w-5 h-5 text-text-muted" />
-          </button>
+          </Button>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          {activityError && (
-            <div role="alert" className="px-3 py-2 bg-error/10 border border-error/20 rounded-md">
-              <p className="text-sm text-error">{activityError}</p>
-            </div>
-          )}
+          {activityError && <Alerte>{activityError}</Alerte>}
           <div>
-            <label className="block text-xs text-text-muted mb-2">Type</label>
-            <div className="flex gap-2">
+            <p className="block text-sm font-semibold text-text mb-2">Type</p>
+            <div role="group" className={CLASSES_SEGMENTS}>
               {ACTIVITY_TYPES.map(at => {
                 const AtIcon = at.icon;
                 const isActive = type === at.id;
@@ -862,13 +841,9 @@ function AddActivityModal({ contactId, onClose, onCreated }: AddActivityModalPro
                     key={at.id}
                     type="button"
                     onClick={() => setType(at.id)}
-                    className={`flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                      isActive
-                        ? 'bg-accent-tint text-accent-cyan-ink'
-                        : 'bg-background text-text-muted hover:bg-background/80'
-                    }`}
+                    className={classeSegment(isActive)}
                   >
-                    <AtIcon className="w-4 h-4" />
+                    <AtIcon size={18} />
                     {at.label}
                   </button>
                 );
@@ -876,44 +851,39 @@ function AddActivityModal({ contactId, onClose, onCreated }: AddActivityModalPro
             </div>
           </div>
 
-          <div>
-            <label htmlFor="crmpanel-titre" className="block text-xs text-text-muted mb-1">Titre *</label>
-            <input id="crmpanel-titre"
+          <FormField htmlFor="crmpanel-titre" label="Titre *">
+            <Input
+              id="crmpanel-titre"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="Ex: Appel de suivi, Envoi devis..."
-              className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text placeholder:text-text-muted focus:ring-2 focus:ring-ring outline-none"
               required
             />
-          </div>
+          </FormField>
 
-          <div>
-            <label htmlFor="crmpanel-description" className="block text-xs text-text-muted mb-1">Description</label>
-            <textarea id="crmpanel-description"
+          <FormField htmlFor="crmpanel-description" label="Description">
+            <Textarea
+              id="crmpanel-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Détails de l'activité..."
               rows={3}
-              className="w-full px-3 py-2 bg-background border border-border rounded-md text-sm text-text placeholder:text-text-muted focus:ring-2 focus:ring-ring outline-none resize-none"
             />
-          </div>
+          </FormField>
 
           <div className="flex justify-end gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onClose}
-              className="px-4 py-2 text-sm text-text-muted hover:bg-background rounded-md transition-colors"
-            >
+            <Button type="button" variant="ghost" size="md" onClick={onClose}>
               Annuler
-            </button>
-            <button
+            </Button>
+            <Button
               type="submit"
+              variant="primary"
+              size="md"
               disabled={!title.trim() || submitting}
-              className="px-4 py-2 text-sm font-medium bg-accent-fill text-accent-ink rounded-md hover:bg-accent-fill/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting ? 'Ajout...' : 'Ajouter'}
-            </button>
+            </Button>
           </div>
         </form>
       </motion.div>

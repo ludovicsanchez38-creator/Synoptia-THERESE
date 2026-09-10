@@ -6,8 +6,10 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Phone, Users, FileText, TrendingUp, ArrowRight, Clock } from 'lucide-react';
+import { Mail, Phone, Users, FileText, TrendingUp, ArrowRight } from 'lucide-react';
 import { listActivities, type ActivityResponse } from '../../services/api';
+import { EtatVide } from '../ui/EtatVide';
+import { Squelette } from '../ui/Squelette';
 
 interface ActivityTimelineProps {
   contactId: string;
@@ -94,20 +96,11 @@ export function ActivityTimeline({ contactId }: ActivityTimelineProps) {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-accent-cyan"></div>
-      </div>
-    );
+    return <Squelette lignes={3} />;
   }
 
   if (activities.length === 0) {
-    return (
-      <div className="text-center py-8 text-text-muted">
-        <Clock className="w-12 h-12 mx-auto mb-3 opacity-50" />
-        <p>Aucune activité pour ce contact</p>
-      </div>
-    );
+    return <EtatVide titre="Aucune activité pour ce contact" />;
   }
 
   return (

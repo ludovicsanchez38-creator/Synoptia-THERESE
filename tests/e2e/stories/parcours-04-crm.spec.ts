@@ -9,7 +9,7 @@
  * Révisé le 02/09/2026 (B-148). Le test des sept colonnes cherchait ses
  * libellés par `page.getByText(stage, { exact: false })`, c'est-à-dire une
  * SOUS-CHAÎNE dans TOUTE la page, puis prenait `.first()` : « Contact » était
- * satisfait par le bouton « Ajouter un contact » du même panneau, et le test
+ * satisfait par le bouton « Nouveau contact » du même panneau, et le test
  * ne prouvait rien sur les colonnes. Les libellés étaient de surcroît écrits
  * sans accent (« Decouverte » pour « Découverte »), si bien que le test
  * échouait sur ce seul mot tout en donnant l'illusion de mesurer sept
@@ -58,18 +58,18 @@ test.describe('Parcours 04 - CRM', () => {
     // L'onglet « Pipeline » est celui d'ouverture, et `DroppableStage` est le
     // SEUL à poser un titre de niveau 3 dans cet onglet : compter ces titres,
     // c'est compter les colonnes. Un locator ancré au panneau, plus de
-    // `.first()`, plus de sous-chaîne : le bouton « Ajouter un contact » ne
+    // `.first()`, plus de sous-chaîne : le bouton « Nouveau contact » ne
     // peut plus tenir lieu de colonne « Contact ».
     const entetesDeColonne = crmPanel.getByRole('heading', { level: 3 });
     await expect(entetesDeColonne).toHaveCount(COLONNES_DU_PIPELINE.length, { timeout: 10000 });
     await expect(entetesDeColonne).toHaveText([...COLONNES_DU_PIPELINE]);
   });
 
-  test('US-301.HP : le bouton "Ajouter un contact" est visible et cliquable', async ({ page }) => {
+  test('US-301.HP : le bouton "Nouveau contact" est visible et cliquable', async ({ page }) => {
     const crmPanel = page.getByTestId('crm-panel');
     await expect(crmPanel).toBeVisible({ timeout: 15000 });
 
-    const addBtn = crmPanel.getByRole('button', { name: /ajouter un contact/i });
+    const addBtn = crmPanel.getByRole('button', { name: /nouveau contact/i });
     await expect(addBtn).toBeVisible();
     await addBtn.click();
 
@@ -93,7 +93,7 @@ test.describe('Parcours 04 - CRM', () => {
     await expect(crmPanel).toBeVisible({ timeout: 15000 });
 
     // Ouvrir le formulaire
-    await crmPanel.getByRole('button', { name: /ajouter un contact/i }).click();
+    await crmPanel.getByRole('button', { name: /nouveau contact/i }).click();
 
     const formulaire = page.getByRole('dialog', { name: 'Nouveau contact CRM' });
     await expect(formulaire).toBeVisible({ timeout: 5000 });
@@ -119,7 +119,7 @@ test.describe('Parcours 04 - CRM', () => {
     await expect(crmPanel.getByRole('heading', { level: 3, name: 'Contact' })).toBeVisible();
 
     // 3. Ouvrir formulaire ajout
-    await crmPanel.getByRole('button', { name: /ajouter un contact/i }).click();
+    await crmPanel.getByRole('button', { name: /nouveau contact/i }).click();
     const formulaire = page.getByRole('dialog', { name: 'Nouveau contact CRM' });
     await expect(formulaire).toBeVisible({ timeout: 5000 });
 
@@ -143,7 +143,7 @@ test.describe('Parcours 04 - CRM', () => {
     'US-300.HP : Echap ferme le formulaire de contact sans ejecter le panneau CRM (B-262)',
     async ({ page }) => {
       const crmPanel = page.getByTestId('crm-panel');
-      await crmPanel.getByRole('button', { name: /ajouter un contact/i }).click();
+      await crmPanel.getByRole('button', { name: /nouveau contact/i }).click();
 
       const formulaire = page.getByRole('dialog', { name: 'Nouveau contact CRM' });
       await expect(formulaire).toBeVisible({ timeout: 5000 });

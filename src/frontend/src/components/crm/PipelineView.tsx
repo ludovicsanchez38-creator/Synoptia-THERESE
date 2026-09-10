@@ -7,7 +7,10 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { User, Building2, Mail, TrendingUp, GripVertical, HelpCircle } from 'lucide-react';
+import { GripVertical, HelpCircle } from 'lucide-react';
+import { Etiquette } from '../ui/Etiquette';
+import { cn } from '../../lib/utils';
+import { PIPELINE_ETAPES, etiquetteDEtape } from './pipelineEtapes';
 import {
   DndContext,
   DragOverlay,
@@ -31,19 +34,7 @@ import { pushEscapeHandler } from '../../lib/escapeStack';
 import { accessibiliteGlisserDeposer } from '../../lib/accessibiliteGlisserDeposer';
 import type { ContactResponse } from '../../services/api';
 
-// Les 7 stages du pipeline. Couleurs prises aux jetons depuis le 30/08/2026 :
-// les nuances Tailwind brutes d'avant (bg-agent-amber, bg-gray-400…) donnaient
-// du blanc a 1,2:1 a 3,3:1 sur l'en-tete de colonne. Toutes celles-ci passent
-// AA en blanc (5,02 a 7,09).
-const PIPELINE_STAGES = [
-  { id: 'contact', label: 'Contact', color: 'bg-agent-cyan' },
-  { id: 'discovery', label: 'Découverte', color: 'bg-agent-blue' },
-  { id: 'proposition', label: 'Proposition', color: 'bg-domaine-prospects' },
-  { id: 'signature', label: 'Signature', color: 'bg-agent-amber' },
-  { id: 'delivery', label: 'Livraison', color: 'bg-domaine-taches' },
-  { id: 'active', label: 'Actif', color: 'bg-success' },
-  { id: 'archive', label: 'Archive', color: 'bg-text-muted' },
-];
+const PIPELINE_STAGES = PIPELINE_ETAPES;
 
 interface PipelineViewProps {
   contacts: ContactResponse[];
@@ -86,7 +77,7 @@ export function PipelineView({ contacts, onContactClick, onStageChange }: Pipeli
 
   /** Colonne visée par une cible de dépôt : une colonne, ou la carte survolée. */
   function stageDepuisCible(overId: string): string | null {
-    const stageIds = PIPELINE_STAGES.map((s) => s.id);
+    const stageIds: string[] = PIPELINE_STAGES.map((s) => s.id);
     if (stageIds.includes(overId)) return overId;
     for (const stage of stageIds) {
       if (contactsByStage[stage]?.some((c) => c.id === overId)) return stage;
@@ -146,7 +137,7 @@ export function PipelineView({ contacts, onContactClick, onStageChange }: Pipeli
           : null;
       })}
     >
-      <div className="flex gap-4 overflow-x-auto pb-4">
+      <div className="grid grid-flow-col auto-cols-[minmax(15rem,1fr)] gap-3 overflow-x-auto pb-2 snap-x snap-proximity">
         {PIPELINE_STAGES.map((stage) => (
           <DroppableStage key={stage.id} stage={stage} count={contactsByStage[stage.id]?.length || 0}>
             <SortableContext
@@ -188,25 +179,25 @@ interface DroppableStageProps {
 
 function DroppableStage({ stage, count, children }: DroppableStageProps) {
   const { isOver, setNodeRef } = useDroppable({ id: stage.id });
+  const etiquette = etiquetteDEtape(stage.id);
 
   return (
-    <div ref={setNodeRef} className="flex-shrink-0 w-72">
-      {/* Header colonne */}
-      <div className={`${stage.color} text-ink-on-fill rounded-t-md px-4 py-3`}>
-        <div className="flex items-center justify-between">
-          <h3 className="font-semibold">{stage.label}</h3>
-          <span className="text-sm ">{count}</span>
-        </div>
+    <div
+      ref={setNodeRef}
+      className={cn(
+        'snap-start min-h-[22rem] bg-surface-2 rounded-md p-2 grid gap-2 content-start',
+        isOver && 'ring-2 ring-ring bg-accent-tint',
+      )}
+    >
+      <div className="flex items-center gap-2 px-2 py-1">
+        <h3>
+          <Etiquette domaine={etiquette.domaine} ton={etiquette.ton}>
+            {stage.label}
+          </Etiquette>
+        </h3>
+        <span className="ml-auto text-sm font-medium text-text-muted tabular-nums">{count}</span>
       </div>
-
-      {/* Cards contacts */}
-      <div
-        className={`bg-surface border border-surface rounded-b-md p-2 min-h-[200px] space-y-2 transition-colors ${
-          isOver ? 'ring-2 ring-ring/50 bg-accent-cyan/5' : ''
-        }`}
-      >
-        {children}
-      </div>
+      {children}
     </div>
   );
 }
@@ -257,22 +248,26 @@ interface ContactCardProps {
   dragListeners?: Record<string, unknown>;
 }
 
+const SCORE_AIDE =
+  "Score de potentiel commercial, calculé depuis les informations du contact et son étape dans le pipeline. Plus il est haut, plus le prospect est chaud. L'échelle n'est pas plafonnée.";
+
 function ContactCard({ contact, onClick, isOverlay, dragListeners }: ContactCardProps) {
   return (
     <motion.div
       /* B-151 : repère par élément pour les protocoles (`qsa`). Pas sur la
          carte de survol du drag, qui doublerait le comptage. */
       data-testid={isOverlay ? undefined : 'crm-contact-item'}
+      aria-grabbed={isOverlay ? true : undefined}
       layout={!isOverlay}
       initial={isOverlay ? undefined : { opacity: 0, y: 10 }}
       animate={isOverlay ? undefined : { opacity: 1, y: 0 }}
       exit={isOverlay ? undefined : { opacity: 0, y: -10 }}
       onClick={onClick}
-      className={`bg-background border border-surface hover:border-accent-cyan rounded-md p-3 cursor-pointer transition-colors relative ${
-        isOverlay ? 'shadow-xl ring-2 ring-ring/30' : ''
-      }`}
+      className={cn(
+        'bg-surface border border-border rounded-sm p-3 cursor-grab text-sm relative',
+        isOverlay && 'outline outline-2 outline-dashed outline-accent outline-offset-2 bg-accent-tint',
+      )}
     >
-      {/* Drag Handle */}
       {dragListeners && (
         <div
           className="absolute top-3 left-1 cursor-grab active:cursor-grabbing text-text-muted hover:text-text-muted"
@@ -284,50 +279,26 @@ function ContactCard({ contact, onClick, isOverlay, dragListeners }: ContactCard
       )}
 
       <div className={dragListeners ? 'pl-5' : ''}>
-        {/* Nom */}
-        <div className="flex items-center gap-2 mb-2">
-          <User className="w-4 h-4 text-text-muted" />
-          <span className="font-medium text-sm text-text-primary">
-            {contact.first_name} {contact.last_name}
-          </span>
+        <div className="font-semibold">
+          {contact.first_name} {contact.last_name}
         </div>
 
-        {/* Entreprise */}
         {contact.company && (
-          <div className="flex items-center gap-2 text-xs text-text-muted mb-1">
-            <Building2 className="w-3 h-3" />
-            <span className="truncate">{contact.company}</span>
-          </div>
+          <p className="text-sm text-text-muted truncate">{contact.company}</p>
         )}
 
-        {/* Email */}
         {contact.email && (
-          <div className="flex items-center gap-2 text-xs text-text-muted mb-1">
-            <Mail className="w-3 h-3" />
-            <span className="truncate">{contact.email}</span>
-          </div>
+          <p className="text-sm text-text-muted truncate">{contact.email}</p>
         )}
 
-        {/* Score */}
-        <div className="flex items-center justify-between mt-2 pt-2 border-t border-surface">
-          <div
-            className="flex items-center gap-1 text-xs"
-            title="Score de potentiel commercial, calculé depuis les informations du contact et son étape dans le pipeline. Plus il est haut, plus le prospect est chaud. L'échelle n'est pas plafonnée."
-          >
-            <TrendingUp className="w-3 h-3 text-accent-cyan-ink" />
-            <span className="text-text-muted">Score:</span>
-            <span className="font-semibold text-accent-cyan-ink">{contact.score}</span>
-            <HelpCircle
-              className="w-3 h-3 text-text-muted"
-              aria-label="Score de potentiel commercial, calculé depuis les informations du contact et son étape dans le pipeline. Plus il est haut, plus le prospect est chaud. L'échelle n'est pas plafonnée."
-            />
+        <div className="flex flex-wrap gap-2 items-center text-sm text-text-muted mt-2">
+          <div className="flex items-center gap-1" title={SCORE_AIDE}>
+            <span>Score</span>
+            <span className="tabular-nums font-semibold text-text">{contact.score}</span>
+            <HelpCircle size={18} className="text-text-muted" aria-label={SCORE_AIDE} />
           </div>
 
-          {contact.source && (
-            <span className="text-xs bg-surface px-2 py-0.5 rounded-sm text-text-muted">
-              {contact.source}
-            </span>
-          )}
+          {contact.source ? <Etiquette ton="neutre">{contact.source}</Etiquette> : null}
         </div>
       </div>
     </motion.div>

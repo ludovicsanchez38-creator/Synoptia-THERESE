@@ -1,8 +1,15 @@
 import { useState, useEffect } from 'react';
-import { X, Users, Plus, Search, ChevronRight, Trash2, AlertCircle, Shield, Download, Upload, UserX, RefreshCw, AlertTriangle } from 'lucide-react';
+import { X, Plus, Search, ChevronRight, Trash2, AlertCircle, Shield, Download, Upload, UserX, RefreshCw, AlertTriangle } from 'lucide-react';
 import { Spinner } from '../ui/Spinner';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Alerte } from '../ui/Alerte';
 import { Button } from '../ui/Button';
+import { EtatVide } from '../ui/EtatVide';
+import { Etiquette } from '../ui/Etiquette';
+import { Input } from '../ui/Input';
+import { Ligne } from '../ui/Ligne';
+import { Squelette } from '../ui/Squelette';
+import { CLASSES_SEGMENTS, classeSegment } from '../ui/segments.classes';
 import { sidebarVariants, overlayVariants } from '../../lib/animations';
 import * as api from '../../services/api';
 import type { MemoryScope, RGPDStatsResponse } from '../../services/api';
@@ -301,54 +308,49 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
             {/* Header - en standalone, les actions vivent ici (harmonisation
                 17/07 : la barre « Nouveau contact » pleine largeur en pied de
                 page était un vestige du tiroir, absurde sur une vue) */}
-            <div className="flex min-h-14 flex-wrap items-center justify-between gap-y-2 border-b border-border/50 px-4 py-2">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-sm border-[1.5px] border-[var(--btn-ink)] bg-accent-tint">
-                  <Users className="h-5 w-5 text-accent" />
-                </div>
-                <div>
-                  {/* B-241 : la coque `PrototypeUnifiedViewCanvas` pose déjà le titre de
-                      la vue, et en fait le nom accessible de la région. Ce libellé reste
-                      visible mais n'est plus un titre : deux titres de même texte, c'est
-                      un plan de page qui ment. */}
-                  <p className="text-lg font-semibold text-text">Contacts</p>
-                  {contactsTronques && (
-                    <p role="alert" className="text-sm text-warning">
-                      Liste incomplète : {contacts.length} contacts affichés, d'autres
-                      existent. Cherche par le nom pour les retrouver.
-                    </p>
-                  )}
-                </div>
+            <div className="flex flex-wrap items-end gap-3 px-4 pt-4 pb-2">
+              <div>
+                {/* B-241 : la coque `PrototypeUnifiedViewCanvas` pose déjà le titre de
+                    la vue, et en fait le nom accessible de la région. Ce libellé reste
+                    visible mais n'est plus un titre : deux titres de même texte, c'est
+                    un plan de page qui ment. */}
+                <p className="text-lg font-semibold text-text">Contacts</p>
+                {contactsTronques && (
+                  <p role="alert" data-testid="memory-troncature" className="text-sm text-warning bg-[var(--color-warning-tint)]">
+                    Liste incomplète : {contacts.length} contacts affichés, d'autres
+                    existent. Cherche par le nom pour les retrouver.
+                  </p>
+                )}
               </div>
               {standalone ? (
-                <div className="flex items-center gap-1.5">
+                <div className="ml-auto flex flex-wrap gap-2 max-[840px]:basis-full max-[840px]:ml-0">
                   <Button
-                    variant="ghost"
-                    size="sm"
+                    variant="secondary"
+                    size="md"
                     onClick={() => vcfInputRef.current?.click()}
                     title="Importer des contacts (.vcf)"
                   >
-                    <Upload className="h-4 w-4 sm:mr-1.5" />
-                    <span className="hidden sm:inline">Importer</span>
+                    <Upload size={18} />
+                    Importer (.vcf)
                   </Button>
                   <Button
                     variant="ghost"
-                    size="sm"
+                    size="md"
                     onClick={handleExportVCF}
                     title="Exporter les contacts (.vcf)"
                   >
-                    <Download className="h-4 w-4 sm:mr-1.5" />
-                    <span className="hidden sm:inline">Exporter</span>
+                    <Download size={18} />
+                    Exporter
                   </Button>
                   <Button
                     variant="primary"
-                    size="sm"
+                    size="md"
                     onClick={onNewContact}
                     data-testid="memory-add-contact-btn"
                     title="Nouveau contact"
                   >
-                    <Plus className="h-4 w-4 sm:mr-1.5" />
-                    <span className="hidden sm:inline">Nouveau contact</span>
+                    <Plus size={18} />
+                    Nouveau contact
                   </Button>
                 </div>
               ) : (
@@ -364,28 +366,22 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
             {/* Search + Scope Filter */}
             {(
               <div className="p-3 border-b border-border/30 space-y-2">
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-                  <input aria-label="Rechercher un contact"
-                    type="text"
-                    placeholder="Rechercher..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    data-testid="memory-search-input"
-                    className="w-full pl-10 pr-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
-                  />
-                </div>
-                {/* E3-05: Scope filter pills */}
-                <div className="flex gap-1.5">
+                <Input
+                  type="search"
+                  icon={<Search size={18} />}
+                  aria-label="Retrouver un contact"
+                  placeholder="Rechercher..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  data-testid="memory-search-input"
+                />
+                <div role="group" className={CLASSES_SEGMENTS}>
                   {(['all', 'global', 'project', 'conversation'] as const).map((scope) => (
                     <button
                       key={scope}
+                      type="button"
                       onClick={() => setScopeFilter(scope)}
-                      className={`px-2.5 py-1 text-sm font-medium rounded-sm transition-colors ${
-                        scopeFilter === scope
-                          ? 'bg-accent-tint text-accent-cyan-ink border border-accent-cyan/50'
-                          : 'bg-background/40 text-text-muted hover:bg-background/60 border border-transparent'
-                      }`}
+                      className={classeSegment(scopeFilter === scope)}
                     >
                       {scope === 'all' ? 'Tout' : scope === 'global' ? 'Global' : scope === 'project' ? 'Projet' : 'Conv.'}
                     </button>
@@ -396,8 +392,8 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
 
             {/* RGPD Alert Banner */}
             {rgpdStats && rgpdStats.expires_ou_bientot > 0 && (
-              <div className="mx-3 mt-3 p-2.5 rounded-md bg-agent-amber/10 border border-agent-amber/30">
-                <div className="flex items-center gap-2 text-sm text-agent-amber">
+              <div className="mx-3 mt-3 p-2.5 rounded-md text-sm text-warning bg-[var(--color-warning-tint)]">
+                <div className="flex items-center gap-2">
                   <Shield className="w-4 h-4 flex-shrink-0" />
                   <span>
                     <strong>{rgpdStats.expires_ou_bientot}</strong> contact{rgpdStats.expires_ou_bientot > 1 ? 's' : ''} RGPD expire{rgpdStats.expires_ou_bientot > 1 ? 'nt' : ''} bientot
@@ -411,21 +407,18 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
               {/* #149 : le store dit quand la lecture a échoué ; le panneau le montre,
                   sinon un carnet en panne passe pour un carnet vide. */}
               {contactsError && !loading && (
-                <div role="alert" className="mx-4 my-3 flex items-center justify-between gap-2 rounded-md border border-error/30 bg-error/10 px-3 py-2 text-sm text-error">
-                  <span>{contactsError}</span>
-                  <button
-                    type="button"
-                    onClick={() => void loadData()}
-                    className="rounded-md border border-error px-2 py-1 text-sm font-semibold"
-                  >
-                    Réessayer
-                  </button>
-                </div>
+                <Alerte
+                  action={
+                    <Button variant="secondary" size="md" type="button" onClick={() => void loadData()}>
+                      Réessayer
+                    </Button>
+                  }
+                >
+                  {contactsError}
+                </Alerte>
               )}
               {loading ? (
-                <div className="flex items-center justify-center h-32">
-                  <Spinner taille="zone" className="text-accent-cyan-ink" />
-                </div>
+                <Squelette lignes={4} className="px-4 py-4" />
               ) : (
                 <ContactsList
                   contacts={displayContacts}
@@ -756,116 +749,98 @@ function ContactsList({
 
   if (contacts.length === 0) {
     return (
-      <div
+      <EtatVide
         data-testid="contacts-etat-vide"
-        className="flex flex-col items-center justify-center h-32 gap-2 px-4 text-center text-text-muted"
-      >
-        <Users className="w-8 h-8 opacity-50" />
-        <p className="text-sm">{etatVide.message}</p>
-        {etatVide.actionLabel && (
-          <Button variant="ghost" size="sm" onClick={onLeverLesFiltres}>
-            {etatVide.actionLabel}
-          </Button>
-        )}
-      </div>
+        titre={etatVide.message}
+        action={
+          etatVide.actionLabel ? (
+            <Button variant="ghost" size="md" onClick={onLeverLesFiltres}>
+              {etatVide.actionLabel}
+            </Button>
+          ) : undefined
+        }
+      />
     );
   }
 
   return (
-    <div className="divide-y divide-border/30">
-      {contacts.map((contact) => (
-        <div
-          key={contact.id}
-          className="w-full flex items-center gap-3 p-3 hover:bg-background/40 transition-colors text-left group relative"
-        >
-          {/* Avatar - clickable */}
-          <button
+    <div>
+      {contacts.map((contact) => {
+        const titre = [contact.first_name, contact.last_name].filter(Boolean).join(' ') || 'Sans nom';
+        const detail = [contact.company, contact.email].filter(Boolean).join(' · ') || undefined;
+        return (
+          <Ligne
+            key={contact.id}
+            puce={getInitials(contact.first_name, contact.last_name)}
+            titre={titre}
+            detail={detail}
             onClick={() => onSelect(contact)}
-            className="flex items-center gap-3 flex-1 min-w-0 text-left"
-          >
-            <div className="w-10 h-10 rounded-full bg-accent-tint border border-border flex items-center justify-center text-sm font-medium text-text flex-shrink-0">
-              {getInitials(contact.first_name, contact.last_name)}
-            </div>
-
-            {/* Info */}
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-medium text-text truncate">
-                  {[contact.first_name, contact.last_name].filter(Boolean).join(' ') || 'Sans nom'}
-                </p>
-                {/* RGPD Badge */}
+            droite={
+              <>
                 <RGPDBadge contact={contact} />
-              </div>
-              {contact.company && (
-                <p className="text-xs text-text-muted truncate">{contact.company}</p>
-              )}
-              {contact.email && (
-                <p className="text-xs text-text-muted truncate">{contact.email}</p>
-              )}
-            </div>
-          </button>
-
-          {/* RGPD Menu + Delete button */}
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity">
-            {/* RGPD Menu */}
-            <div className="relative">
-              <button
-                onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === contact.id ? null : contact.id); }}
-                className="p-1.5 rounded-md hover:bg-accent-tint text-text-muted hover:text-accent-cyan-ink transition-colors"
-                aria-label="Actions RGPD"
-                title="Actions RGPD"
-              >
-                <Shield className="w-4 h-4" />
-              </button>
-              {/* Dropdown menu */}
-              <AnimatePresence>
-                {openMenuId === contact.id && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: -5 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: -5 }}
-                    className={`absolute right-0 top-full mt-1 w-48 bg-surface border border-border rounded-md shadow-xl ${Z_LAYER.DROPDOWN} py-1`}
-                    onClick={(e) => e.stopPropagation()}
+                <div className="relative">
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === contact.id ? null : contact.id); }}
+                    className="p-1.5 rounded-md hover:bg-accent-tint text-text-muted hover:text-accent-cyan-ink transition-colors"
+                    aria-label="Actions RGPD"
+                    title="Actions RGPD"
                   >
-                    <button
-                      onClick={() => { onRGPDAction('export', contact); setOpenMenuId(null); }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text hover:bg-background/40 transition-colors"
-                    >
-                      <Download className="w-4 h-4 text-accent-cyan-ink" />
-                      Exporter (Art. 20)
-                    </button>
-                    <button
-                      onClick={() => { onRGPDAction('renew', contact); setOpenMenuId(null); }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text hover:bg-background/40 transition-colors"
-                    >
-                      <RefreshCw className="w-4 h-4 text-agent-green" />
-                      Renouveler consentement
-                    </button>
-                    <div className="border-t border-border/50 my-1" />
-                    <button
-                      onClick={() => { onRGPDAction('anonymize', contact); setOpenMenuId(null); }}
-                      className="w-full flex items-center gap-2 px-3 py-2 text-sm text-error hover:bg-error/10 transition-colors"
-                    >
-                      <UserX className="w-4 h-4" />
-                      Anonymiser (Art. 17)
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-            {/* Delete button */}
-            <button
-              onClick={(e) => { e.stopPropagation(); onDelete(contact); }}
-              className="p-1.5 rounded-md hover:bg-error/20 text-text-muted hover:text-error transition-colors"
-              aria-label={`Supprimer ${[contact.first_name, contact.last_name].filter(Boolean).join(' ') || 'le contact'}`}
-              title="Supprimer"
-            >
-              <Trash2 className="w-4 h-4" />
-            </button>
-            <ChevronRight className="w-4 h-4 text-text-muted" />
-          </div>
-        </div>
-      ))}
+                    <Shield className="w-4 h-4" />
+                  </button>
+                  <AnimatePresence>
+                    {openMenuId === contact.id && (
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.95, y: -5 }}
+                        animate={{ opacity: 1, scale: 1, y: 0 }}
+                        exit={{ opacity: 0, scale: 0.95, y: -5 }}
+                        className={`absolute right-0 top-full mt-1 w-48 bg-surface border border-border rounded-md shadow-xl ${Z_LAYER.DROPDOWN} py-1`}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <button
+                          type="button"
+                          onClick={() => { onRGPDAction('export', contact); setOpenMenuId(null); }}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text hover:bg-background/40 transition-colors"
+                        >
+                          <Download className="w-4 h-4 text-accent-cyan-ink" />
+                          Exporter (Art. 20)
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => { onRGPDAction('renew', contact); setOpenMenuId(null); }}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text hover:bg-background/40 transition-colors"
+                        >
+                          <RefreshCw className="w-4 h-4 text-agent-green" />
+                          Renouveler consentement
+                        </button>
+                        <div className="border-t border-border/50 my-1" />
+                        <button
+                          type="button"
+                          onClick={() => { onRGPDAction('anonymize', contact); setOpenMenuId(null); }}
+                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-error hover:bg-error/10 transition-colors"
+                        >
+                          <UserX className="w-4 h-4" />
+                          Anonymiser (Art. 17)
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); onDelete(contact); }}
+                  className="p-1.5 rounded-md hover:bg-error/20 text-text-muted hover:text-error transition-colors"
+                  aria-label={`Supprimer ${titre === 'Sans nom' ? 'le contact' : titre}`}
+                  title="Supprimer"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+                <ChevronRight className="w-4 h-4 text-text-muted" />
+              </>
+            }
+          />
+        );
+      })}
     </div>
   );
 }
@@ -877,22 +852,14 @@ function RGPDBadge({ contact }: { contact: api.Contact }) {
 
   if (!baseLegale) {
     return (
-      <span className="px-1.5 py-0.5 rounded-sm text-xs font-medium bg-agent-amber/20 text-agent-amber" title="Base légale RGPD non définie pour ce contact">
-        RGPD ?
+      <span title="Base légale RGPD non définie pour ce contact">
+        <Etiquette ton="attention">RGPD ?</Etiquette>
       </span>
     );
   }
 
-  // Check if expiring soon (within 30 days)
   const isExpiringSoon = dateExpiration && new Date(dateExpiration) <= new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
   const isExpired = dateExpiration && new Date(dateExpiration) < new Date();
-
-  const badgeColors: Record<string, string> = {
-    consentement: 'bg-agent-green/20 text-agent-green',
-    contrat: 'bg-agent-blue/20 text-agent-blue',
-    interet_legitime: 'bg-agent-purple/20 text-agent-purple',
-    obligation_legale: 'bg-surface-elevated text-text-muted',
-  };
 
   const badgeLabels: Record<string, string> = {
     consentement: 'C',
@@ -908,18 +875,23 @@ function RGPDBadge({ contact }: { contact: api.Contact }) {
     obligation_legale: 'Obligation legale',
   };
 
+  const tonsBase: Record<string, 'succes' | 'info' | 'neutre'> = {
+    consentement: 'succes',
+    contrat: 'info',
+    interet_legitime: 'neutre',
+    obligation_legale: 'neutre',
+  };
+
+  const ton = isExpired ? 'erreur' : isExpiringSoon ? 'attention' : (tonsBase[baseLegale] ?? 'neutre');
+  const title = `${fullLabels[baseLegale] || baseLegale}${dateExpiration ? ` - Expire le ${new Date(dateExpiration).toLocaleDateString('fr-FR')}` : ''}`;
+
   return (
-    <span
-      className={`px-1.5 py-0.5 rounded-sm text-xs font-medium ${
-        isExpired ? 'bg-error/20 text-error' :
-        isExpiringSoon ? 'bg-agent-amber/20 text-agent-amber' :
-        badgeColors[baseLegale] || 'bg-surface-elevated text-text-muted'
-      }`}
-      title={`${fullLabels[baseLegale] || baseLegale}${dateExpiration ? ` - Expire le ${new Date(dateExpiration).toLocaleDateString('fr-FR')}` : ''}`}
-    >
-      {badgeLabels[baseLegale] || baseLegale?.charAt(0).toUpperCase()}
-      {isExpired && '!'}
-      {isExpiringSoon && !isExpired && <AlertTriangle className="ml-0.5 inline h-3 w-3" aria-hidden="true" />}
+    <span title={title}>
+      <Etiquette ton={ton}>
+        {badgeLabels[baseLegale] || baseLegale?.charAt(0).toUpperCase()}
+        {isExpired && '!'}
+        {isExpiringSoon && !isExpired && <AlertTriangle className="ml-0.5 inline h-3 w-3" aria-hidden="true" />}
+      </Etiquette>
     </span>
   );
 }
