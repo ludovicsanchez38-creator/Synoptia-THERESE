@@ -96,6 +96,11 @@ corrigés en TDD (deux rouges vérifiés, garde du contraste élevé sabotée) :
    ignorés.
 7. P3 : primaire en `brightness-95` au lieu de `.96` de la DA.
 
+Second passage : six traités, un partiel (la zone droite rendait encore le
+clic à un span non interactif via `[&>*]:pointer-events-auto`) ; corrigé en
+bornant la réception du pointeur aux boutons, liens et champs (`e0de99a6`).
+Troisième passage : GO, aucun P1 nouveau.
+
 ## Réserves déclarées
 
 - `UpdateBanner.tsx` est en liste blanche nommée de la garde « aucune couleur
