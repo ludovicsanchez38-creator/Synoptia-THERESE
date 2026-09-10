@@ -242,6 +242,10 @@ class OpenRouterProvider(BaseProvider):
                                             content="Le modèle a épuisé son budget de tokens sans produire de réponse visible. "
                                             "Essayez avec un prompt plus court ou augmentez max_tokens.",
                                         )
+                                        # Cycle 6 : l'erreur est émise, le [DONE] qui suit
+                                        # n'en ajoute pas une seconde.
+                                        stream_finished = True
+                                        break
                                     else:
                                         pending_stop_reason = "length"
 
@@ -252,6 +256,8 @@ class OpenRouterProvider(BaseProvider):
                                         content="Le modèle a filtré la réponse (content_filter). "
                                         "Reformule ton message ou essaie un autre modèle.",
                                     )
+                                    stream_finished = True
+                                    break
 
                         except json.JSONDecodeError:
                             continue
