@@ -269,3 +269,18 @@ pour le geste, et vérifient « aucun nom réel » sur les deux boutons). Aucune
    ligne et sur un segment, un seul « Réessayer » par état.
 4. Revue Grok du diff avant le tag, `/release-therese 0.72.0-alpha` avec le
    GO de Ludo.
+
+## 11. Revue v6 : GO (11/09/2026 00:40), six reprises à l'implémentation
+
+Journal `.cartography-work/reviews/grok-da-lot2-design-v6.log`. Aucun P1.
+Repris tels quels dans le code : (1) `Squelette` reçoit `classeBarre` pour
+que la puce du chargement soit `h-8 rounded-sm` ; (2) tests démo : allumé →
+`queryByRole` « Relancer Nathalie BALLOT » absent, `getByRole` « Relancer
+Claire Fontaine » et `/^Commencer :/` sans nom réel ; éteint → `getByRole`
+« Relancer Nathalie BALLOT » ; (3) les deux `Alerte` portent `icone`
+(`AlertCircle` 18 px) ; (4) anneau du variateur écrit sur le `label` :
+`focus-within:outline focus-within:outline-[3px] focus-within:outline-offset-2
+focus-within:outline-ring` ; (5) `SetupChecklist` reçoit
+`status={setup.has_email === false ? { ...setup, has_email: true } : setup}`
+comme aujourd'hui ; (6) formes minuscules des sources dans la ligne du jour
+par table : agenda, tâches, relances, factures, CRM (sigle conservé).
