@@ -132,7 +132,9 @@ class TestCliquetMypy:
         # d'attributs `= None` sans annotation dans browser_agent.py ; typés,
         # le runner mesure 954 (run 34173892609, job mypy vert en égalité
         # stricte) et le Mac aussi.
-        assert _etape_mypy()["env"]["MYPY_BASELINE"] == "954"
+        # 10/09/2026 (cycle 6) : cinq annotations dans les fournisseurs e-mail
+        # (afa28993) ; le runner mesure 951 (run 34479930815), le Mac aussi.
+        assert _etape_mypy()["env"]["MYPY_BASELINE"] == "951"
 
 
 @pytest.mark.skipif(shutil.which("bash") is None, reason="bash requis")

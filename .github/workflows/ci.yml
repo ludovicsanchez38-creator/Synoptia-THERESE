@@ -252,11 +252,11 @@ jobs:
           # une amélioration force la mise à jour du chiffre, donc le mou ne peut
           # plus se reconstituer en silence.
           #
-          # 954 = compte mesuré SUR CE RUNNER (ubuntu-latest) au dernier
-          # recalage (08/09/2026, cycle 4 : le job mypy du run 34173892609 a
-          # accepté 954 en égalité stricte ; le Mac lit 954 aussi, le compte
-          # flottait à cause d'attributs `= None` sans annotation dans
-          # browser_agent.py, typés depuis). Auparavant : 977 (05/09/2026,
+          # 951 = compte mesuré SUR CE RUNNER (ubuntu-latest) au dernier
+          # recalage (10/09/2026, cycle 6 : le run 34479930815 a lu 951 après
+          # l'annotation de cinq lignes des fournisseurs e-mail, afa28993 ; le
+          # Mac lit 951 aussi). Auparavant : 954 (08/09/2026, cycle 4 : run
+          # 34173892609 accepté en égalité stricte), puis 977 (05/09/2026,
           # release 0.67.0 : 995 mesurés, treize erreurs annotées), et avant
           # cela 986 = compte mesuré sur ce runner au dernier
           # recalage. La mesure locale sur macOS diffère de quelques unités :
@@ -264,7 +264,7 @@ jobs:
           # ici. Aucun cache mypy n'est restauré dans ce job : la mesure est
           # fraîche par construction. (B-470 : ce commentaire disait encore
           # 1001 après quatre recalages successifs.)
-          MYPY_BASELINE: "954"
+          MYPY_BASELINE: "951"
         run: |
           # `--no-sync` est indispensable : sans lui, `uv run` resynchronise
           # le projet complet et réintroduit les dépendances CUDA évitées à
