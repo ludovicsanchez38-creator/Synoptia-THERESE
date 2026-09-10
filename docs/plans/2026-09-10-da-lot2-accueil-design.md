@@ -42,7 +42,11 @@ réseau, aucun store, aucun parcours ne change.
    l'état est le même (vide constaté, tête, pied). Les états « incomplet »
    et « sans messagerie » gardent leur prose actuelle : ils n'ont pas
    d'équivalent maquetté et leurs mots ont été pesés (B-051, B1 0.48).
-5. Toute taille de bouton dans la carte est `md` (36 px, le `.btn` du socle) ;
+5. **Cadence corrigée par Ludo (11/09/2026 00:55) : une seule release pour
+   toute la DA**, quand les lots seront livrés ; les lots s'enchaînent sur
+   `main` sans tag intermédiaire. Le § 9.4 (release 0.72.0 par lot) est
+   caduc : la 0.72.0-alpha portera l'ensemble.
+6. Toute taille de bouton dans la carte est `md` (36 px, le `.btn` du socle) ;
    `sm` (32 px) n'y est pas employé.
 
 ## 1. L'en-tête de l'Accueil (dans la coque, scénario `today` seulement)
