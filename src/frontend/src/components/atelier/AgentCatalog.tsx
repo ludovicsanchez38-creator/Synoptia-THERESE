@@ -175,8 +175,9 @@ export function AgentCatalog({ onSelectAgent }: Props) {
         }
       } catch {
         if (!cancelled) {
+          // #112 : le repli reste utilisable, mais il ne se fait pas passer pour le catalogue.
           setProfiles(FALLBACK_PROFILES);
-          setError(null);
+          setError("Catalogue des agents non lu : profils par défaut affichés.");
         }
       } finally {
         if (!cancelled) setLoading(false);
@@ -207,6 +208,11 @@ export function AgentCatalog({ onSelectAgent }: Props) {
 
   return (
     <div className="flex flex-1 flex-col overflow-y-auto px-4 py-6">
+      {error && (
+        <div role="alert" className="mb-4 rounded-md border border-error/30 bg-error/10 px-3 py-2 text-xs text-error">
+          {error}
+        </div>
+      )}
       {/* Header */}
       <div className="mb-5 text-center">
         <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-md bg-agent-cyan/10">
