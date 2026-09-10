@@ -183,8 +183,11 @@ export const useOpenClawStore = create<OpenClawState>((set, get) => ({
     try {
       const messages = await getOpenClawSessionMessages(sessionId);
       set({ activeSessionMessages: messages });
-    } catch (_e: any) {
-      // Silencieux - les messages peuvent ne pas encore exister
+    } catch (e: any) {
+      // Une session fraîche n'a pas encore de messages : le 404 reste silencieux.
+      // Toute autre panne est dite (#230), sinon elle passe pour une session muette.
+      if (e?.status === 404) return;
+      set({ error: `Messages non lus : ${e?.message || "erreur inconnue"}` });
     }
   },
 
