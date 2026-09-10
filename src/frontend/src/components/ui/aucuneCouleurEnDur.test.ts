@@ -14,8 +14,9 @@ const UI = resolve(__dirname);
 const COQUE = resolve(__dirname, '../prototype/ConversationCanvasPrototype.tsx');
 // Lot 2 : la carte du brief consomme les primitives, donc les jetons.
 const BRIEF = resolve(__dirname, '../prototype/TodayDashboardCard.tsx');
-// Lot 3 : le tiroir des conversations.
+// Lot 3 : le tiroir des conversations, et le catalogue hors TrustCenter.
 const TIROIR = resolve(__dirname, '../prototype/PrototypeConversationDrawer.tsx');
+const CATALOGUE = resolve(__dirname, '../prototype/CapabilityCenter.tsx');
 
 /** Chemins (relatifs à src/) tolérés, avec la raison. Vide au départ. */
 const LISTE_BLANCHE: Record<string, string> = {
@@ -28,7 +29,15 @@ function sources(): string[] {
   const fichiers = (readdirSync(UI, { recursive: true }) as string[])
     .filter((f) => /\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f))
     .map((f) => join(UI, f));
-  return [...fichiers, COQUE, BRIEF, TIROIR];
+  return [...fichiers, COQUE, BRIEF, TIROIR, CATALOGUE];
+}
+
+function contenuPourGarde(fichier: string): string {
+  const contenu = readFileSync(fichier, 'utf-8');
+  if (fichier !== CATALOGUE) return contenu;
+  const debut = contenu.indexOf('export function CapabilityCenter');
+  const fin = contenu.indexOf('\nfunction TrustRow', debut);
+  return contenu.slice(debut, fin < 0 ? contenu.length : fin);
 }
 
 /** Hex de 3 à 8 chiffres, rgb/rgba, hsl/hsla, color-mix : tout ce qui n'est pas un jeton. */
@@ -45,7 +54,7 @@ describe('aucune couleur en dur dans les primitives ni la coque', () => {
     const fautifs: string[] = [];
     for (const f of sources()) {
       if (LISTE_BLANCHE[court(f)]) continue;
-      const contenu = readFileSync(f, 'utf-8');
+      const contenu = contenuPourGarde(f);
       contenu.split('\n').forEach((ligne, i) => {
         if (COMMENTAIRE.test(ligne)) return;
         if (COULEUR_EN_DUR.test(ligne)) fautifs.push(`${court(f)}:${i + 1}`);

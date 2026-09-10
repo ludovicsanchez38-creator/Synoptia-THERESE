@@ -74,67 +74,46 @@ export interface CapabilityItem {
 interface CapabilityGroup {
   id: CapabilityGroupId;
   title: string;
-  shortTitle: string;
   description: string;
   icon: LucideIcon;
-  color: string;
-  tint: string;
 }
 
 export const capabilityGroups: CapabilityGroup[] = [
   {
     id: 'organize',
     title: 'Organiser mon quotidien',
-    shortTitle: 'Quotidien',
     description: 'Voir l’essentiel et transformer les informations entrantes en actions.',
     icon: Calendar,
-    color: 'var(--color-domaine-agenda)',
-    tint: 'var(--color-domaine-agenda-tint)',
   },
   {
     id: 'business',
     title: 'Développer mon activité',
-    shortTitle: 'Activité',
     description: 'Suivre les personnes, les projets et le cycle commercial de bout en bout.',
     icon: Briefcase,
-    color: 'var(--color-domaine-factures)',
-    tint: 'var(--color-domaine-factures-tint)',
   },
   {
     id: 'create',
     title: 'Créer et produire',
-    shortTitle: 'Création',
     description: 'Passer d’une idée à un livrable utilisable, dans le bon format.',
     icon: FileText,
-    color: 'var(--color-domaine-taches)',
-    tint: 'var(--color-domaine-taches-tint)',
   },
   {
     id: 'decide',
     title: 'Comprendre et décider',
-    shortTitle: 'Décision',
     description: 'Chercher, vérifier, comparer et éclairer une décision importante.',
     icon: Gavel,
-    color: 'var(--color-domaine-prospects)',
-    tint: 'var(--color-domaine-prospects-tint)',
   },
   {
     id: 'automate',
     title: 'Automatiser et déléguer',
-    shortTitle: 'Automatisation',
     description: 'Faire exécuter des tâches répétitives par des actions, outils et agents.',
     icon: Workflow,
-    color: 'var(--color-success)',
-    tint: 'var(--color-success-tint)',
   },
   {
     id: 'control',
     title: 'Maîtriser Thérèse',
-    shortTitle: 'Contrôle',
     description: 'Garder la main sur les données, les modèles, les coûts et le comportement.',
     icon: ShieldCheck,
-    color: 'var(--color-text-muted)',
-    tint: 'var(--color-surface-2)',
   },
 ];
 

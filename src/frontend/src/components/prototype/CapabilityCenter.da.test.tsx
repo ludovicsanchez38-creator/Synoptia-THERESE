@@ -21,6 +21,8 @@ const IDS_SCENARIO = [
   'agents',
 ] as const;
 const IDS_PROMPT = ['web-research', 'legal', 'skills-commands'] as const;
+const COULEUR_EN_DUR = /#[0-9A-Fa-f]{3,8}\b|(?<![A-Za-z])rgba?\(|(?<![A-Za-z])hsla?\(|\bcolor-mix\(/;
+const COMMENTAIRE = /^\s*(\/\/|\*|\/\*)/;
 
 function sourceFonctionCapabilityCenter(): string {
   const contenu = readFileSync(join(__dirname, 'CapabilityCenter.tsx'), 'utf8');
@@ -82,6 +84,29 @@ describe('Lot 3 DA : typeCapacite', () => {
     expect(typeCapacite(parId.tasks)).toBe('Vue');
 
     const { onChoose } = ouvrir();
+    expect(screen.getByRole('button', { name: /^Tâches/ })).toHaveTextContent('Vue');
+    expect(screen.getByRole('button', { name: /^Relances et alertes/ })).toHaveTextContent('Action');
+    expect(screen.getByRole('button', { name: /^Brief du jour/ })).toHaveTextContent('Parcours');
+    expect(screen.getByRole('button', { name: /^Email/ })).toHaveTextContent('Parcours');
+    expect(screen.getByRole('button', { name: /^Agenda/ })).toHaveTextContent('Parcours');
+
+    fireEvent.click(screen.getByRole('tab', { name: /Développer mon activité/ }));
+    expect(screen.getByRole('button', { name: /^Contacts/ })).toHaveTextContent('Parcours');
+    expect(screen.getByRole('button', { name: /^Facturer un client/ })).toHaveTextContent('Parcours');
+
+    fireEvent.click(screen.getByRole('tab', { name: /Créer et produire/ }));
+    expect(screen.getByRole('button', { name: /^Word, PowerPoint et Excel/ })).toHaveTextContent('Action');
+
+    fireEvent.click(screen.getByRole('tab', { name: /Comprendre et décider/ }));
+    expect(screen.getByRole('button', { name: /^Décision/ })).toHaveTextContent('Parcours');
+    expect(screen.getByRole('button', { name: /^Recherche web/ })).toHaveTextContent('Demande relue');
+    expect(screen.getByRole('button', { name: /^Références juridiques/ })).toHaveTextContent('Demande relue');
+
+    fireEvent.click(screen.getByRole('tab', { name: /Automatiser et déléguer/ }));
+    expect(screen.getByRole('button', { name: /^Améliorer THÉRÈSE/ })).toHaveTextContent('Parcours');
+    expect(screen.getByRole('button', { name: /^Skills et commandes/ })).toHaveTextContent('Demande relue');
+
+    fireEvent.click(screen.getByRole('tab', { name: /Organiser mon quotidien/ }));
     fireEvent.click(screen.getByRole('button', { name: /^Tâches/ }));
     expect(onChoose).toHaveBeenCalledTimes(1);
     expect(onChoose.mock.calls[0][0].id).toBe('tasks');
@@ -102,7 +127,7 @@ describe('Lot 3 DA : focus, intentions, vide, pied', () => {
     const onglets = within(liste).getAllByRole('tab');
     expect(onglets).toHaveLength(6);
     expect(onglets[0].id).toBe('capability-group-organize');
-    expect(sourceFonctionCapabilityCenter()).not.toMatch(/style=\{\{\s*backgroundColor/);
+    expect(sourceFonctionCapabilityCenter()).not.toMatch(/style=\{\{/);
   });
 
   it('EtatVide « Aucune capacité trouvée » sur une requête absurde', () => {
@@ -132,6 +157,11 @@ describe('Lot 3 DA : plancher, translate et ombres du catalogue', () => {
   it('plus de hover:-translate-y ni d’ombre rgba sur le dialogue et les cartes', () => {
     const source = sourceFonctionCapabilityCenter();
     expect(source).not.toMatch(/hover:-translate-y/);
-    expect(source).not.toMatch(/rgba?\(/);
+    const fautifs: string[] = [];
+    source.split('\n').forEach((ligne, i) => {
+      if (COMMENTAIRE.test(ligne)) return;
+      if (COULEUR_EN_DUR.test(ligne)) fautifs.push(`${i + 1}:${ligne.trim()}`);
+    });
+    expect(fautifs).toEqual([]);
   });
 });

@@ -1,6 +1,6 @@
 /**
  * Type affiché sur une carte du catalogue (lot 3 DA).
- * Suit `chooseCapability` : un `scenario` ouvre un parcours (P-069).
+ * Ordre § 3.1 ; sur le catalogue actuel aucun id n'a les deux.
  */
 import type { CapabilityGroupId, CapabilityItem } from './CapabilityCenter';
 

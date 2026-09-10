@@ -126,6 +126,9 @@ describe('Lot 3 DA : lignes de conversation', () => {
     expect(kebab.className).toMatch(/\bh-9\b/);
     expect(kebab.className).toMatch(/\bw-9\b/);
     expect(kebab.className).toMatch(/text-text-muted/);
+    ligne.focus();
+    fireEvent.keyDown(ligne, { key: 'Enter' });
+    // jsdom n'active pas un <button> sur Entrée ; le navigateur émet un click.
     fireEvent.click(ligne);
     expect(onOpenChat).toHaveBeenCalledTimes(1);
   });
@@ -208,8 +211,19 @@ describe('Lot 3 DA : plancher typographique et jetons', () => {
       currentConversationId: 'c1',
     });
     render(<PrototypeConversationDrawer onClose={vi.fn()} onOpenChat={vi.fn()} />);
-    const fautifs = interactifsSousLePlancher(screen.getByTestId('prototype-conversation-drawer'));
-    expect(fautifs).toEqual([]);
+    const racine = screen.getByTestId('prototype-conversation-drawer');
+    expect(interactifsSousLePlancher(racine)).toEqual([]);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Actions pour Relance clients' }));
+    expect(interactifsSousLePlancher(racine)).toEqual([]);
+
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Renommer' }));
+    expect(interactifsSousLePlancher(racine)).toEqual([]);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Annuler' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Actions pour Relance clients' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Supprimer' }));
+    expect(interactifsSousLePlancher(racine)).toEqual([]);
   });
 
   it('aucune couleur en dur dans PrototypeConversationDrawer.tsx', () => {
