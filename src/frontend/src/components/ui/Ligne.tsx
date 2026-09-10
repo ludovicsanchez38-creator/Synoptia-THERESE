@@ -3,8 +3,9 @@
  *
  * Cliquable : le titre est un bouton étiré (`before:absolute before:inset-0`
  * sur une rangée `relative`). Les actions de `droite` passent au-dessus
- * (`relative z-10`) : un seul interactif pour la rangée, Entrée et Espace
- * natifs. Non cliquable : aucun rôle, aucun tabIndex.
+ * (`relative z-10`) mais seuls les vrais interactifs y reçoivent le pointeur
+ * (bouton, lien, champ) : une heure ou un chevron restent transparents au
+ * bouton étiré. Un seul interactif pour la rangée, Entrée et Espace natifs. Non cliquable : aucun rôle, aucun tabIndex.
  *
  * Le détail est en `text-sm` : la ligne se clique, `text-xs` est interdit
  * sur un interactif (plancher typographique).
@@ -79,7 +80,8 @@ export function Ligne({
         {detail ? <p className="text-sm text-text-muted">{detail}</p> : null}
       </div>
       {droite != null ? (
-        <div className={cn('flex items-center gap-2 text-text-muted', cliquable && 'relative z-10 pointer-events-none [&>*]:pointer-events-auto')}>
+        <div className={cn('flex items-center gap-2 text-text-muted', cliquable &&
+            'relative z-10 pointer-events-none [&_button]:pointer-events-auto [&_a]:pointer-events-auto [&_input]:pointer-events-auto [&_select]:pointer-events-auto [&_textarea]:pointer-events-auto [&_[role=button]]:pointer-events-auto')}>
           {droite}
         </div>
       ) : (

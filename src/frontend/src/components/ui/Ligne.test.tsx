@@ -122,6 +122,11 @@ describe('Ligne : la zone de droite ne mange pas le clic', () => {
     const droite = container.querySelector('.z-10') as HTMLElement;
     expect(droite).not.toBeNull();
     expect(droite.className).toMatch(/\bpointer-events-none\b/);
-    expect(droite.className).toMatch(/\[&>\*\]:pointer-events-auto/);
+    // Seuls les vrais interactifs reçoivent le pointeur : un span (heure,
+    // chevron) reste transparent au bouton étiré (second passage Grok).
+    expect(droite.className).not.toMatch(/\[&>\*\]:pointer-events-auto/);
+    for (const cible of ['button', 'a', 'input', 'select', 'textarea', '[role=button]']) {
+      expect(droite.className, cible).toContain(`[&_${cible}]:pointer-events-auto`);
+    }
   });
 });
