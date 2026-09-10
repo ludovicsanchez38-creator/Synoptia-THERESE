@@ -1,6 +1,6 @@
 # DA « Application affinée », lot 4 : l'écran Contacts et pipeline (design à challenger avant le code)
 
-Version 2, 10/09/2026 23:44, après la revue de la v1 (15 points repris, 0 non repris) ; journal `.cartography-work/reviews/grok-da-lot4-contacts-design-v1.log`. Précédent : lot 2 (Accueil), GO v6. Maquette de
+Version 2.1, 11/09/2026, après la revue de la v2 (10 points repris, 0 non repris) ; journal `.cartography-work/reviews/grok-da-lot4-contacts-design-v2.log`. Version 2, 10/09/2026 23:44, après la revue de la v1 (15 points repris, 0 non repris) ; journal `.cartography-work/reviews/grok-da-lot4-contacts-design-v1.log`. Précédent : lot 2 (Accueil), GO v6. Maquette de
 référence : `docs/da/2026-09-05-propositions/maquettes/contacts.html` (états
 `normal`, `deplace`, `fiche`), critères de `ecrans.json` : « Lire une fiche,
 faire glisser une étape, voir la prochaine relance. Contacts hors pipeline
@@ -42,7 +42,7 @@ parcours ne change. Les deux vues de la coque restent deux vues.
    la maquette n'a pas de trait, et ce `layoutId` est le jumeau de celui qui
    gelait AnimatePresence sur le Board.
 4. « Nouveau contact » est le grand geste des deux vues : `Button variant="primary" size="md"` (`h-9`, 36 px). La maquette `.btn` est `min-height:2.25rem` (36 px, `base.css:60`) pour Importer **et** Nouveau contact ; `size="lg"` (`h-11`, 44 px, Button.tsx:34) les départagerait. Tout autre bouton de ces écrans est `md` (36 px) ;
-   `sm` n'y est plus employé. CRM aujourd'hui : « Ajouter un contact » →
+   `sm` n'y est plus employé. **Exemptées** : les puces `classeSegment` (onglets, filtres d'activités, types d'activité, périmètre Contacts) restent `px-3 py-1`, pas `h-9` (maquette `.segments button`). CRM aujourd'hui : « Ajouter un contact » →
    « Nouveau contact » (même `onClick`, même modale `aria-label="Nouveau contact CRM"`). Import : « Import .vcf » → « Importer (.vcf) ».
 5. Cadence : une seule release pour toute la DA (décision Ludo du 11/09, lot 2).
 6. Le placeholder de recherche Contacts ne recopie pas « Nom, société, e-mail… »
@@ -125,7 +125,8 @@ conservé (donnée déjà montrée, la maquette ne l'a pas). Pied : `flex flex-w
 gap-2 items-center text-sm text-text-muted` ; `tabular-nums` sur le score ;
 libellé « Score » + valeur + `HelpCircle` 18 px, **même** `title` /
 `aria-label` qu'aujourd'hui (pas « de 0 à 100 », `scoreLibelle.test.tsx`) ;
-`source` → `<Etiquette ton="neutre">{source}</Etiquette>` si présente.
+la valeur reste dans **son propre nœud** (`getByText('145')` exact) ;
+`source` → `<Etiquette ton="neutre">{source}</Etiquette>` **seulement si** `source` est présent (recette : un contact sans source).
 
 État `deplace` (glissé actif) : la carte d'overlay (`isOverlay`) porte
 `outline outline-2 outline-dashed outline-accent outline-offset-2 bg-accent-tint`
@@ -148,9 +149,9 @@ Priorité inchangée (`CRMPanel.tsx` : erreur, puis loading, puis onglet).
 | troncature | phrase warning | **pas** `Alerte` (§ 2) : `role="alert"` `text-warning` `bg-[var(--color-warning-tint)]`, phrase actuelle seule, sans `titre` |
 | pipeline, N ≥ 1 | colonnes + cartes | § 4 et § 5 |
 | pipeline, N = 0 | sept colonnes vides | idem, sans texte inventé |
-| activités, contact sélectionné | nom + société + « Ajouter une activité » + Prestations + Historique | `Carte` : `CarteTete` titre = prénom + nom, meta = société si présente, `actions` = `Button variant="primary" size="md"` « Ajouter une activité » (même `setShowAddActivity`) ; `ListeDesPrestations` inchangée sous un `h3` « Prestations » ; `ActivityTimeline` sous un `h3` « Historique » |
+| activités, contact sélectionné | nom + société + « Ajouter une activité » + Prestations + Historique | `Carte` : `CarteTete` titre = prénom + nom (**h2 assumé** : `CarteTete` n'a pas de prop `as`, Carte.tsx:52), meta = société si présente, `actions` = `Button variant="primary" size="md"` « Ajouter une activité » (même `setShowAddActivity`) ; `ListeDesPrestations` inchangée sous un `h3` « Prestations » ; `ActivityTimeline` sous un `h3` « Historique » |
 | activités, aucun contact | puces de filtre + fil global | filtres : `role="group"` habillé par `CLASSES_SEGMENTS` / `classeSegment` (pas `Segments` : les puces portent encore une icône 18 px), mêmes ids `all` / `email` / `call` / `meeting` / `note`, mêmes libellés ; une ligne par activité : date (`formatDate` actuel, relatif : « À l'instant » / `Il y a ${diffMins}min` / `Il y a ${diffHours}h` / `Il y a ${diffDays}j` / `toLocaleDateString('fr-FR')`, CRMPanel.tsx:644-661) `tabular-nums text-sm text-text-muted` + titre `text-sm` (`maskText(activity.title)`) + description si présente (`maskText(activity.description)`, `line-clamp-2`, `text-sm text-text-muted mt-1`, aujourd'hui CRMPanel.tsx:754-756) + nom du contact (B-205, magasin complet) + type ; `maskText` conservé sur titre **et** description |
-| activités globales, chargement | spinner | `Squelette lignes={3}` `aria-hidden` + `role="status"` |
+| activités globales, chargement | spinner | `Squelette lignes={3}` `aria-hidden` + `role="status"` « Chargement des activités… » |
 | activités globales, panne (B-527) | alerte + Réessayer | `Alerte data-testid="crm-activites-erreur"` même phrase, `action` = `Button variant="secondary" size="md"` « Réessayer » ; un seul Réessayer |
 | activités globales, vide | icône + phrase + `text-xs` | `EtatVide data-testid="crm-activites-vide"` titre = phrase actuelle (« Aucune activité enregistrée » / `Aucune activité de type "…"`), `children` = « Clique sur un contact dans le Pipeline pour ajouter une activité » (phrase actuelle, CRMPanel.tsx:713, pas de prop `texte` : EtatVide.tsx:13 `children`) ; sans action |
 | timeline (chargement / vide / panne) | spinner ; « Aucune activité pour ce contact » ; silence | `Squelette lignes={3}` ; `EtatVide` ce titre sans action ; panne inchangée (pas de Réessayer inventé) |
@@ -166,9 +167,9 @@ C'est la « Liste » de la maquette, déjà une destination. En-tête aligné su
 troncature → **pas** `Alerte` (même motif que § 2, MemoryPanel.tsx:316
 `text-warning`) : `<p role="alert" data-testid="memory-troncature" className="text-sm text-warning bg-[var(--color-warning-tint)]">` + phrase actuelle
 (P-016 : « Liste incomplète : {n} contacts affichés, d'autres existent. Cherche par le nom pour les retrouver. »), sans `titre` ;
-actions standalone : `Button secondary md` « Importer », `Button ghost md`
-« Exporter », `Button primary md` « Nouveau contact »
-(`data-testid="memory-add-contact-btn"`). Recherche : `Input type="search"`,
+actions standalone : `Button secondary md` « Importer (.vcf) » `title="Importer des contacts (.vcf)"`, `Button ghost md`
+« Exporter » `title="Exporter les contacts (.vcf)"`, `Button primary md` « Nouveau contact »
+`title="Nouveau contact"` (`data-testid="memory-add-contact-btn"`). Recherche : `Input type="search"`,
 `icon={<Search 18 px>}`, `aria-label="Retrouver un contact"`, placeholder
 « Rechercher... », même debounce 250 ms. Périmètre : `CLASSES_SEGMENTS` /
 `classeSegment`, mêmes quatre boutons Tout / Global / Projet / Conv. (les
@@ -185,8 +186,8 @@ séparés par ` · ` : `[contact.company, contact.email].filter(Boolean).join(' 
 (société seule si pas d'e-mail, e-mail seul si pas de société, prop omise si
 les deux absents) ; aujourd'hui les deux `<p>` s'affichent, MemoryPanel.tsx:799-804.
 `droite` = `<Etiquette>` du badge RGPD (table ci-dessous) + actions RGPD /
-supprimer déjà présentes (`relative z-10`, la `Ligne` laisse passer boutons
-et liens). `data-testid` aucun sur la ligne aujourd'hui : on n'en invente pas.
+supprimer déjà présentes, **toujours visibles** (`Ligne` n'a pas `group` : pas de `opacity-0 group-hover` ; la `Ligne` laisse passer boutons
+et liens via `relative z-10`). `data-testid` aucun sur la ligne aujourd'hui : on n'en invente pas.
 
 Badge RGPD → `Etiquette` (P-002). Lettres, `!`, triangle et `title` inchangés.
 `Etiquette.tsx:16` : tons `erreur` \| `attention` \| `succes` \| `info` \|
@@ -212,6 +213,7 @@ Badge RGPD → `Etiquette` (P-002). Lettres, `!`, triangle et `title` inchangés
 
 `CreateContactModal` / `AddActivityModal` : `Alerte` pour l'erreur de
 formulaire ; champs via `FormField` + `Input` / `Select` / `Textarea`.
+Même grille `grid-cols-2`, mêmes placeholders (`LinkedIn, Site web...`, `Ex: Appel de suivi, Envoi devis...`, `Détails de l'activité...`) ; le `X` de fermeture = `Button variant="ghost" size="icon"`.
 `FormField` pose `htmlFor` (sinon le `<label>` n'est pas rattaché, FormField.tsx:16
 `htmlFor?`, l.54 `htmlFor={htmlFor}`) = les ids conservés :
 `crmpanel-prenom`, `crmpanel-nom`, `crmpanel-entreprise`, `crmpanel-email`,
@@ -227,7 +229,7 @@ Boutons `md` « Annuler » (`ghost`) et soumettre (`primary`) ; libellés de
 submit **inchangés** : `{submitting ? 'Création...' : 'Créer le contact'}`
 (CRMPanel.tsx:572) et `{submitting ? 'Ajout...' : 'Ajouter'}`
 (CRMPanel.tsx:915). `pushEscapeHandler` inchangé (B-262, B-336). Types
-d'activité : `CLASSES_SEGMENTS` / `classeSegment`, mêmes ids.
+d'activité : `CLASSES_SEGMENTS` / `classeSegment`, mêmes ids, `type="button"` inchangé (ces puces sont dans un `<form>`).
 `ContactModal` (édition depuis Contacts) : hors lot (couche modale, pas l'état
 `fiche` de la maquette).
 
@@ -248,15 +250,18 @@ Nouveaux, rouges d'abord :
   voiles).
 - `PipelineView.da.test.tsx` : sept `h3` aux libellés exacts, compte hors
   `h3` ; une carte = `data-testid="crm-contact-item"` ; overlay de glissé
-  `aria-grabbed="true"` ; badge `data-etiquette` ; `overflow-x` sur le
-  conteneur ; score 145 affiché, pas « de 0 à 100 ».
+  `aria-grabbed="true"` ; badge `data-etiquette` **si `source` est présent**
+  (absent sinon) ; `overflow-x` sur le conteneur ; score 145 affiché dans
+  son propre nœud, pas « de 0 à 100 ».
 - `ActivityTimeline.da.test.tsx` : vide = `EtatVide` ; chargement =
   `Squelette aria-hidden` ; « Score recalculé » et `line-through` toujours
   là.
 - `MemoryPanel.da.test.tsx` : `Ligne` (une commande, grille `2rem 1fr auto`) ;
   `EtatVide` transmet `contacts-etat-vide` ; « Réessayer » = 1 sur panne, 0
   sur vide constaté ; `memory-search-input` et `memory-add-contact-btn`
-  présents ; interactifs ≥ 14 px.
+  présents ; interactifs ≥ 14 px ; les `title` « Importer des contacts
+  (.vcf) », « Exporter les contacts (.vcf) », « Nouveau contact » restent
+  (MemoryPanel.test.tsx, MemoryPanel.cycle6.test.tsx).
 
 À aligner dans le même commit (forme, pas comportement) :
 `CRMPanel.echap.test.tsx` (`/Ajouter un contact/i` → `/Nouveau contact/i`) ;
@@ -309,5 +314,7 @@ comportement n'est retirée.
 
 ## Points non repris
 
-Aucun : les 15 points du journal v1 sont fondés (preuve relue dans les fichiers
-cités) et repris ci-dessus.
+Aucun : les 15 points du journal v1 et les 10 du journal v2 sont fondés
+(preuve relue dans les fichiers cités) et repris ci-dessus.
+
+Reprises v2, une ligne chacune : (1) garder les `title` des trois actions Contacts et les citer en § 9 ; (2) exempter les puces `classeSegment` de la règle `md` ; (3) `type="button"` inchangé sur les types d'activité (formulaire) ; (4) actions RGPD / supprimer toujours visibles dans `droite` ; (5) même libellé « Importer (.vcf) » sur les deux vues ; (6) `CarteTete` pose un `h2`, on l'assume ; (7) chargement du fil global = « Chargement des activités… » ; (8) même grille, mêmes placeholders, `X` = `Button ghost icon` ; (9) badge `data-etiquette` seulement si `source` ; (10) la valeur du score reste dans son propre nœud.
