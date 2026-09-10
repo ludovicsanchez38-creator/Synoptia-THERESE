@@ -27,6 +27,7 @@ import { listInvoices, deleteInvoice, generateInvoicePDF, type Invoice } from '.
 import { InvoiceForm } from './InvoiceForm';
 import { cn } from '../../lib/utils';
 import { Z_LAYER } from '../../styles/z-layers';
+import { pushEscapeHandler } from '../../lib/escapeStack';
 
 /** Lot F : le GET factures plafonne à 100. Atteint = liste incomplète. */
 const PLAFOND_FACTURES = 100;
@@ -70,6 +71,15 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [deletingInvoice, setDeletingInvoice] = useState<Invoice | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+
+  // #287 : « Supprimer la facture ? » prend Échap sur la pile ; sinon la touche
+  // remonte à la coque, qui replie toute la vue Facturer.
+  useEffect(() => {
+    if (!deletingInvoice) return;
+    return pushEscapeHandler(() => {
+      if (!isDeleting) setDeletingInvoice(null);
+    });
+  }, [deletingInvoice, isDeleting]);
 
   const effectiveOpen = standalone || isInvoicePanelOpen;
 
