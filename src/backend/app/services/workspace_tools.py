@@ -26,6 +26,9 @@ _agenda_ecran: ContextVar[str | None] = ContextVar("agenda_ecran", default=None)
 
 logger = logging.getLogger(__name__)
 
+# Cycle 6 : le motif est partagé par le choix d'agenda et le message rendu au modèle.
+_PLUSIEURS_AGENDAS = "Plusieurs agendas sont configurés"
+
 
 # ============================================================
 # Tool Definitions (OpenAI function calling format)
@@ -1153,7 +1156,7 @@ async def _resoudre_calendrier(
     if len(agendas) > 1:
         noms = ", ".join(cal.summary for cal in agendas)
         return None, (
-            "Plusieurs agendas sont configurés "
+            f"{_PLUSIEURS_AGENDAS} "
             f"({noms}). Choisis-en un dans le panneau Agenda avant "
             "de lire ou de créer un rendez-vous depuis le chat."
         )
@@ -1541,6 +1544,14 @@ async def _list_calendar_events(
         session, calendar_id=_id_agenda_demande(args=args)
     )
     if error:
+        # Cycle 6 : plusieurs agendas sans sélection n'est pas « aucun agenda » ;
+        # l'ancien message dictait au modèle d'annoncer l'inverse de la réalité.
+        if error.startswith(_PLUSIEURS_AGENDAS):
+            return (
+                f"PLUSIEURS AGENDAS SANS SELECTION ({error}). "
+                "N'invente AUCUN evenement, date ni rendez-vous. Indique a l'utilisateur "
+                "que plusieurs agendas existent et qu'il doit en choisir un dans le panneau Agenda."
+            )
         # QW2 : sans calendrier connecté, l'IA inventait des RDV. On renvoie une
         # consigne directive pour qu'elle relaie l'absence au lieu de broder.
         return (
