@@ -26,11 +26,17 @@ TOKEN_PRICES = {
     # (platform.claude.com/docs, developers.openai.com, ai.google.dev,
     # docs.mistral.ai/inference/pricing, docs.x.ai) - panel de revue :
     # un frontier absent d'ici affiche un coût menti à 0,00.
+    # Cycle 6 (D184, relevé platform.claude.com/docs/en/about-claude/pricing le 10/09/2026)
+    "claude-fable-5": {"input": 10.00, "output": 50.00},
+    "claude-sonnet-5": {"input": 2.00, "output": 10.00},
+    "claude-opus-4-7": {"input": 5.00, "output": 25.00},
+    "claude-opus-4-6": {"input": 5.00, "output": 25.00},
     "claude-opus-5": {"input": 5.00, "output": 25.00},
     "claude-opus-4-8": {"input": 5.00, "output": 25.00},
     "claude-sonnet-4-6": {"input": 3.00, "output": 15.00},
     "claude-haiku-4-5-20251001": {"input": 1.00, "output": 5.00},
-    # OpenAI (juin 2026)
+    # OpenAI (juin 2026 ; gpt-6-astra relevé developers.openai.com/api/docs/pricing le 10/09/2026, standard, contexte court)
+    "gpt-6-astra": {"input": 10.00, "output": 50.00},
     "gpt-5.6-sol": {"input": 4.00, "output": 20.00},
     "gpt-5.6-terra": {"input": 2.00, "output": 12.00},
     "gpt-5.6-luna": {"input": 0.20, "output": 1.20},
@@ -42,17 +48,30 @@ TOKEN_PRICES = {
     # Gemini (juin 2026)
     # Tarif en vigueur jusqu'au 31/12/2026 (puis 1.50/7.50 annoncés)
     "gemini-3.7-flash": {"input": 0.75, "output": 3.75},
+    # Cycle 6 (D184, relevé ai.google.dev/gemini-api/docs/pricing le 10/09/2026, prompts <= 200k)
+    "gemini-3.6-flash": {"input": 0.75, "output": 3.75},
+    "gemini-3.5-flash-lite": {"input": 0.30, "output": 2.50},
+    "gemini-2.5-pro": {"input": 1.25, "output": 10.00},
+    "gemini-2.5-flash": {"input": 0.30, "output": 2.50},
     "gemini-3.1-pro-preview": {"input": 2.00, "output": 12.00},
     "gemini-3.5-flash": {"input": 1.50, "output": 9.00},
     "gemini-3.1-flash-lite": {"input": 0.25, "output": 1.50},
     # Mistral (alias evergreen)
     "mistral-medium-3-5": {"input": 1.50, "output": 7.50},
+    # Cycle 6 (D184, relevé docs.mistral.ai/inference/pricing le 10/09/2026)
+    "mistral-medium-latest": {"input": 1.50, "output": 7.50},
+    "mistral-large-2512": {"input": 0.50, "output": 1.50},
+    "mistral-small-2603": {"input": 0.15, "output": 0.60},
+    "codestral-2508": {"input": 0.30, "output": 0.90},
+    "ministral-8b-2512": {"input": 0.15, "output": 0.15},
+    "ministral-3b-2512": {"input": 0.10, "output": 0.10},
     "mistral-large-latest": {"input": 2.00, "output": 6.00},
     "codestral-latest": {"input": 0.30, "output": 0.90},
     "mistral-small-latest": {"input": 0.20, "output": 0.60},
     # Grok (juin 2026)
     # < 200k tokens de prompt (le cas Board/chat)
     "grok-4.6": {"input": 2.00, "output": 6.00},
+    "grok-4.5": {"input": 2.00, "output": 6.00},  # relevé docs.x.ai/docs/models le 10/09/2026 (< 200k)
     "grok-4.3": {"input": 1.25, "output": 2.50},
     "grok-4.20-0309-reasoning": {"input": 1.25, "output": 2.50},
     "grok-4.20-0309-non-reasoning": {"input": 1.25, "output": 2.50},

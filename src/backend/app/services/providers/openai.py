@@ -48,6 +48,7 @@ def _uses_max_completion_tokens(model: str) -> bool:
     """
     model_lower = model.lower()
     return (
+        model_lower.startswith("gpt-6") or
         model_lower.startswith("gpt-5") or
         model_lower.startswith("o1") or
         model_lower.startswith("o3") or

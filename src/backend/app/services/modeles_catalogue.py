@@ -66,6 +66,8 @@ _EFFORT_MISTRAL_MEDIUM = {"low": "high", "medium": "high", "high": "high", "max"
 
 _ANTHROPIC_EFFORT_OK = FicheModele(effort=_EFFORT_ANTHROPIC)
 
+_EFFORT_GPT6 = {"low": "low", "medium": "medium", "high": "high", "xhigh": "xhigh", "max": "max"}
+
 CATALOGUE: dict[str, FicheFournisseur] = {
     "anthropic": FicheFournisseur(
         provider=LLMProvider.ANTHROPIC,
@@ -101,7 +103,8 @@ CATALOGUE: dict[str, FicheFournisseur] = {
         env_vars=("OPENAI_API_KEY",),
         context_window=200000,
         modeles=(
-            "gpt-5.6-sol",       # Le plus capable (recommandé)
+            "gpt-5.6-sol",       # Le plus capable de la génération 5.6 (recommandé)
+            "gpt-6-astra",       # Puissance maximale, plus cher (P-057, Ludo 09/09/2026 ; contexte 1 050 000, sortie 128 000)
             "gpt-5.6-terra",     # Équilibre intelligence/coût
             "gpt-5.6-luna",      # Le plus économique de la génération
             "gpt-5.5",           # Génération précédente
@@ -109,6 +112,9 @@ CATALOGUE: dict[str, FicheFournisseur] = {
             "gpt-5.4-mini",      # Petit, rapide, bon marché
         ),
         fiches={
+            # gpt-6-astra (doc du 10/09/2026) : reasoning.effort low/medium/high/
+            # xhigh/max ; « none » n'est pas documenté, donc jamais envoyé.
+            "gpt-6-astra": FicheModele(effort=_EFFORT_GPT6),
             # Fiches 5.6 : none/low/medium/high/xhigh/max, transmis tel quel.
             "gpt-5.6-sol": FicheModele(effort=TEL_QUEL),
             "gpt-5.6-terra": FicheModele(effort=TEL_QUEL),
