@@ -194,15 +194,19 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
     onClose();
   }, [resetDeliberation, onClose]);
 
+  // #110 : une délibération tombée en erreur n'est plus « en cours » ; elle
+  // n'a plus rien à annuler ni à protéger d'une fermeture.
+  const deliberationEnCours = viewState === 'deliberating' && !isComplete && !runError;
+
   // B-640 (Nadia, c4) : Échap, le fond ou « Fermer » pendant une délibération
   // en cours demandent confirmation ; partout ailleurs, fermeture immédiate.
   const demanderFermeture = useCallback(() => {
-    if (viewState === 'deliberating' && !isComplete) {
+    if (deliberationEnCours) {
       setFermetureDemandee(true);
       return;
     }
     handleCloseAndReset();
-  }, [viewState, isComplete, handleCloseAndReset]);
+  }, [deliberationEnCours, handleCloseAndReset]);
 
   const handleCancelDeliberation = useCallback(() => {
     const traitementACloturer = processingTaskIdRef.current;
@@ -432,13 +436,13 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
       setViewingDecision(null);
     } else if (viewState === 'history') {
       setViewState('input');
-    } else if (viewState === 'deliberating' && isComplete) {
+    } else if (viewState === 'deliberating' && (isComplete || runError)) {
       resetDeliberation();
       setQuestion('');
       setContext('');
       setViewState('input');
     }
-  }, [viewState, isComplete, resetDeliberation]);
+  }, [viewState, isComplete, runError, resetDeliberation]);
 
   const handleNewDeliberation = useCallback(() => {
     resetDeliberation();
@@ -466,7 +470,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
               <div className="flex items-center gap-3">
-                {(viewState === 'history' || viewState === 'viewing' || (viewState === 'deliberating' && isComplete)) && (
+                {(viewState === 'history' || viewState === 'viewing' || (viewState === 'deliberating' && (isComplete || runError))) && (
                   <Button variant="ghost" size="icon" onClick={handleBack}>
                     <ChevronLeft className="w-5 h-5" />
                   </Button>
@@ -671,7 +675,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                     {runError && <div className="mb-4 rounded-md border border-error/30 bg-error/10 p-3 text-sm text-error" role="alert">{runError}</div>}
                     {/* B-640 (Nadia, c4) : fermer pendant la délibération jetait tout
                         sans un mot. La fermeture se confirme tant qu'elle tourne. */}
-                    {fermetureDemandee && !isComplete && (
+                    {fermetureDemandee && deliberationEnCours && (
                       <div
                         role="alertdialog"
                         aria-label="Délibération en cours"
@@ -695,7 +699,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                       synthesis={synthesis}
                       isSynthesizing={isSynthesizing}
                       isComplete={isComplete}
-                      onCancel={!isComplete ? handleCancelDeliberation : undefined}
+                      onCancel={deliberationEnCours ? handleCancelDeliberation : undefined}
                       onNewDeliberation={handleNewDeliberation}
                       onClose={demanderFermeture}
                     />
