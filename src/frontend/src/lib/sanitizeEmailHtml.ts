@@ -58,8 +58,12 @@ function blockRemoteImages(html: string): string {
   const doc = new DOMParser().parseFromString(html, 'text/html');
   let blocked = false;
   doc.querySelectorAll('img').forEach((img) => {
-    const src = img.getAttribute('src') ?? '';
-    if (/^https?:/i.test(src)) {
+    const src = (img.getAttribute('src') ?? '').trim();
+    // Cycle 6 (D126) : seule une image embarquée (data:, blob:) reste. Un
+    // « //hôte/pixel.gif » héritait du protocole de la page (https dans
+    // l'application empaquetée) et passait la garde `^https?:` ; un chemin
+    // sans schéma se résout contre l'origine et ne vaut rien dans un e-mail.
+    if (src && !/^(data|blob):/i.test(src)) {
       img.setAttribute('data-blocked-src', src);
       img.removeAttribute('src');
       if (!img.getAttribute('alt')) img.setAttribute('alt', 'Image distante bloquée');

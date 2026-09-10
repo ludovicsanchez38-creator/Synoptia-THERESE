@@ -37,3 +37,23 @@ describe('sanitizeEmailHtml - US-002 images distantes', () => {
     expect(out.toLowerCase()).not.toContain('style=');
   });
 });
+
+describe('sanitizeEmailHtml - cycle 6 (D126) : pixel espion à protocole implicite', () => {
+  it('bloque une image « //hôte/pixel.gif » (protocole hérité de la page, https dans l’application empaquetée)', () => {
+    const html = sanitizeEmailHtml('<p>Bonjour</p><img src="//pisteur.example/pixel.gif" width="1" height="1">');
+    expect(html).not.toMatch(/\ssrc="\/\/pisteur/);
+    expect(html).toContain('data-blocked-src="//pisteur.example/pixel.gif"');
+    expect(html).toMatch(/data-remote-blocked="true"/);
+  });
+
+  it('bloque aussi un srcset distant et une source sans schéma explicite', () => {
+    const html = sanitizeEmailHtml('<img src="pixel.gif" srcset="https://pisteur.example/2x.gif 2x">');
+    expect(html).not.toMatch(/srcset=/);
+    expect(html).not.toMatch(/\ssrc="pixel\.gif"/);
+  });
+
+  it('garde les images data: inline', () => {
+    const html = sanitizeEmailHtml('<img src="data:image/gif;base64,R0lGODlhAQABAAAAACw=">');
+    expect(html).toMatch(/src="data:image\/gif/);
+  });
+});
