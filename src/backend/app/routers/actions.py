@@ -11,6 +11,7 @@ from app.services.action_agents import (
     ActionRunner,
     get_agent_definitions,
 )
+from app.services.error_handler import message_pour_ecran
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
@@ -140,7 +141,7 @@ async def run_action(agent_id: str, request: RunActionRequest):
         logger.error("Erreur lancement action %s : %s", agent_id, e, exc_info=True)
         raise HTTPException(
             status_code=500,
-            detail=f"Erreur lors du lancement de l'action : {e}",
+            detail=message_pour_ecran(e, ou="pendant le lancement de l'action"),
         )
 
 

@@ -41,6 +41,7 @@ from app.services.crm_utils import (
     upsert_project,
     upsert_task,
 )
+from app.services.error_handler import message_pour_ecran
 from app.services.oauth import (
     GOOGLE_AUTH_URL,
     GOOGLE_TOKEN_URL,
@@ -1516,7 +1517,7 @@ async def sync_crm(
         logger.error(f"CRM sync failed: {e}")
         raise HTTPException(
             status_code=500,
-            detail=f"Erreur de synchronisation: {str(e)}"
+            detail=message_pour_ecran(e, ou="pendant la synchronisation CRM"),
         )
 
 

@@ -287,4 +287,4 @@ async def delete_image(image_id: str) -> dict:
         return {"deleted": True, "id": image_id, "file_name": image.file_name}
     except Exception as e:
         logger.error(f"Failed to delete image {image_id}: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to delete image: {e}")
+        raise HTTPException(status_code=500, detail=message_pour_ecran(e, ou="pendant la suppression de l'image"))

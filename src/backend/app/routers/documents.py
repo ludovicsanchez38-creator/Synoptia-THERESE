@@ -809,7 +809,8 @@ async def generate_outline(
             return _reponse_code(409, "outline_cancelled", "Génération de la trame annulée.")
         raise
     except Exception as exc:
-        raise HTTPException(status_code=500, detail=f"Génération de la trame impossible : {str(exc)[:160]}") from exc
+        logger.error("Génération de la trame impossible : %s", exc, exc_info=True)
+        raise HTTPException(status_code=500, detail=message_pour_ecran(exc, ou="pendant la génération de la trame")) from exc
     if isinstance(resultat, _TrameAnnulee):
         return _reponse_code(409, "outline_cancelled", "Génération de la trame annulée.")
     return resultat

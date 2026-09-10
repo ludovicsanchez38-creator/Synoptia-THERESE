@@ -57,6 +57,7 @@ from app.services.audit import (
     log_activity,
 )
 from app.services.encryption import decrypt_backup_archive, encrypt_backup_archive
+from app.services.error_handler import message_pour_ecran
 from app.services.maintenance import maintenance_mode
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
@@ -1099,7 +1100,7 @@ async def create_backup(
         logger.exception("Sauvegarde annulée : impossible de garantir la cohérence")
         raise HTTPException(
             status_code=503,
-            detail=f"Sauvegarde impossible à garantir : {exc}",
+            detail=message_pour_ecran(exc, ou="pendant la sauvegarde (cohérence non garantie)"),
         ) from exc
 
     enc_path = backup_dir / f"{backup_name}.tar.gz.enc"
@@ -1110,7 +1111,7 @@ async def create_backup(
         enc_path.unlink(missing_ok=True)
         logger.exception("Chiffrement de la sauvegarde échoué")
         raise HTTPException(
-            status_code=500, detail=f"Chiffrement de la sauvegarde impossible : {exc}"
+            status_code=500, detail=message_pour_ecran(exc, ou="pendant le chiffrement de la sauvegarde")
         ) from exc
     # L'archive en clair ne doit jamais subsister à côté de la version chiffrée.
     archive_path.unlink(missing_ok=True)
@@ -1369,7 +1370,7 @@ async def restore_backup(
         except Exception as exc:
             raise HTTPException(
                 status_code=500,
-                detail=f"Archive de sécurité impossible : {exc}. Restauration annulée.",
+                detail=message_pour_ecran(exc, ou="pendant l'archive de sécurité (restauration annulée)"),
             ) from exc
 
         # Restore (US-011 : archive complète ; .db legacy = DB seule)
@@ -1414,7 +1415,7 @@ async def restore_backup(
             )
             raise HTTPException(
                 status_code=500,
-                detail=f"Échec de la restauration: {e}. Données restaurées à l'état précédent.{suffix}",
+                detail=f"{message_pour_ecran(e, ou='pendant la restauration')} Données restaurées à l'état précédent.{suffix}",
             ) from e
     finally:
         maintenance_mode.end()
