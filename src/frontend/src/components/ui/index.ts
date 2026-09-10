@@ -5,6 +5,7 @@
  * US-011 : Composants formulaire standardises
  */
 
+export { Alerte, type AlerteProps } from './Alerte';
 export { Button, type ButtonProps } from './Button';
 export { Carte, CarteTete, type CarteProps, type CarteTeteProps } from './Carte';
 export { DialogShell } from './DialogShell';
