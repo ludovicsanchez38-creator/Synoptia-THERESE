@@ -168,6 +168,8 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
     setViewingDecision(null);
     setConfirmationOpen(false);
     setRunError(null);
+    // Revue Grok 0.70.0 (P2) : une demande de fermeture ne survit pas à la délibération.
+    setFermetureDemandee(false);
   }, []);
 
   useEffect(() => {
@@ -368,6 +370,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
 
           case 'error':
             setRunError(chunk.content || 'Le Board a rencontré une erreur.');
+            setFermetureDemandee(false);
             if (abortRef.current === controller) abortRef.current = null;
             return;
         }
@@ -386,6 +389,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
         return;
       }
       setRunError('Impossible de terminer la délibération.');
+      setFermetureDemandee(false);
     } finally {
       if (abortRef.current === controller) abortRef.current = null;
     }
@@ -471,7 +475,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
             <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
               <div className="flex items-center gap-3">
                 {(viewState === 'history' || viewState === 'viewing' || (viewState === 'deliberating' && (isComplete || runError))) && (
-                  <Button variant="ghost" size="icon" onClick={handleBack}>
+                  <Button variant="ghost" size="icon" onClick={handleBack} aria-label="Retour">
                     <ChevronLeft className="w-5 h-5" />
                   </Button>
                 )}
