@@ -137,7 +137,9 @@ export const useAtelierStore = create<AtelierState>((set, get) => ({
   startAgentStream: (agentId) => {
     const id = generateId();
     set((s) => ({
-      messages: [...s.messages, {
+      // #220 : un flux encore ouvert est clos avant d'en ouvrir un autre, sinon
+      // le message précédent reste « en cours » pour toujours.
+      messages: [...s.messages.map((m) => (m.id === s.currentStreamingId ? { ...m, isStreaming: false } : m)), {
         id,
         agentId,
         content: '',
