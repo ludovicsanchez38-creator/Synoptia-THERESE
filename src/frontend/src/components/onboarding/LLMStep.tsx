@@ -258,7 +258,18 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
   async function handlePlusTard() {
     // #162 : un seul écrivain pour l'effacement, le wizard (B-607), qui en
     // rapporte l'échec au récapitulatif. Ici, on transmet seulement le choix.
-    onNext(null);
+    // Revue Grok 0.70.0 (P1) : le wizard attend le serveur ; tant qu'il n'a pas
+    // répondu, le bouton reste inactif, sinon deux clics sautaient l'étape
+    // Sécurité.
+    if (configuringRef.current) return;
+    configuringRef.current = true;
+    setConfiguring(true);
+    try {
+      await onNext(null);
+    } finally {
+      configuringRef.current = false;
+      setConfiguring(false);
+    }
   }
 
   async function handleContinue() {

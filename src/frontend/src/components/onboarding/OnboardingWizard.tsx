@@ -45,6 +45,8 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
   /** #162 : « plus tard » choisi, mais l'effacement au serveur a échoué : le fournisseur reste actif. */
   const [serviceIaConserve, setServiceIaConserve] = useState<LLMProvider | null>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
+  /** Revue Grok 0.70.0 (P1) : l'achèvement de l'étape IA attend le serveur ; un second appel pendant l'attente est ignoré. */
+  const achevementIaEnCoursRef = useRef(false);
 
   // Window controls
   const handleMinimize = () => getCurrentWindow().minimize();
@@ -88,22 +90,28 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
   }
 
   async function completeLlmStep(provider: LLMProvider | null) {
-    // B-607 : un fournisseur enregistré au passage précédent est défait si
-    // l'on choisit finalement « Configurer plus tard ».
-    // #162 : l'échec de cet effacement n'est plus avalé : le récapitulatif dira
-    // que le fournisseur reste actif.
-    let conserve: LLMProvider | null = null;
-    if (doitEffacerLeChoixDeServiceIa(configuredProvider, provider)) {
-      try {
-        await api.clearLLMConfig();
-      } catch {
-        conserve = configuredProvider;
+    if (achevementIaEnCoursRef.current) return;
+    achevementIaEnCoursRef.current = true;
+    try {
+      // B-607 : un fournisseur enregistré au passage précédent est défait si
+      // l'on choisit finalement « Configurer plus tard ».
+      // #162 : l'échec de cet effacement n'est plus avalé : le récapitulatif dira
+      // que le fournisseur reste actif.
+      let conserve: LLMProvider | null = null;
+      if (doitEffacerLeChoixDeServiceIa(configuredProvider, provider)) {
+        try {
+          await api.clearLLMConfig();
+        } catch {
+          conserve = configuredProvider;
+        }
       }
+      setServiceIaConserve(conserve);
+      setConfiguredProvider(provider);
+      setLlmSkipped(provider === null);
+      goNext();
+    } finally {
+      achevementIaEnCoursRef.current = false;
     }
-    setServiceIaConserve(conserve);
-    setConfiguredProvider(provider);
-    setLlmSkipped(provider === null);
-    goNext();
   }
 
   function handleComplete() {
