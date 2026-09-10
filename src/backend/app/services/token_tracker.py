@@ -201,7 +201,6 @@ class TokenTracker:
     def _charger_limites_si_besoin(self) -> None:
         if self._limites_chargees:
             return
-        self._limites_chargees = True
         try:
             from app.models.database import get_sync_connection
             from sqlalchemy import text
@@ -213,6 +212,9 @@ class TokenTracker:
             if row and row[0]:
                 self._limits = TokenLimits.from_dict(json.loads(row[0]))
                 logger.info(f"[TOKEN] Limits loaded from DB: {self._limits.to_dict()}")
+            # Cycle 6 : le drapeau ne se pose qu'après une lecture réussie ; un
+            # échec (base verrouillée) figeait les défauts jusqu'au redémarrage.
+            self._limites_chargees = True
         except Exception as e:
             logger.debug("Plafonds non relus depuis la base : %s", e)
 
