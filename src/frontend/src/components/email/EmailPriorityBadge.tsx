@@ -56,10 +56,14 @@ export function EmailPriorityBadge({
     >
       {/* B-293 : pastille dessinée, plus d'emoji (charte : icônes SVG ou formes) */}
       <span aria-hidden="true" className={`inline-block h-2 w-2 rounded-full ${config.dot}`} />
-      {showText && (
+      {showText ? (
         <span className={`text-xs font-medium ${config.color}`}>
           {config.text}
         </span>
+      ) : (
+        // #143 : sans texte visible, la priorité garde un nom pour les
+        // technologies d'assistance (la couleur seule ne la porte pas).
+        <span className="sr-only">{config.text}</span>
       )}
     </div>
   );
