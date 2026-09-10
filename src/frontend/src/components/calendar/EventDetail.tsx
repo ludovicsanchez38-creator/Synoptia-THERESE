@@ -5,9 +5,10 @@
  * Phase 2 - Calendar
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
+  AlertCircle,
   ChevronLeft,
   Edit,
   Trash2,
@@ -22,6 +23,7 @@ import { useStatusStore } from '../../stores/statusStore';
 import { Button } from '../ui/Button';
 import * as api from '../../services/api';
 import { Spinner } from '../ui/Spinner';
+import { pushEscapeHandler } from '../../lib/escapeStack';
 
 export function EventDetail() {
   const { events, currentEventId, setCurrentEvent, setIsEventFormOpen, removeEvent } =
@@ -29,12 +31,28 @@ export function EventDetail() {
   const { currentAccountId } = useEmailStore();
 
   const [deleting, setDeleting] = useState(false);
+  // D62 : plus de confirm() natif (non garanti sous Tauri, hors charte) ; une
+  // confirmation en ligne, fail-closed, comme le fichier joint de ProjectModal.
+  const [suppressionDemandee, setSuppressionDemandee] = useState(false);
 
   const event = events.find((evt) => evt.id === currentEventId);
 
-  async function handleDelete() {
-    if (!event || !confirm('Supprimer cet événement ?')) return;
+  // Changer de rendez-vous abandonne la question en cours ; Échap ne ferme
+  // que la confirmation.
+  useEffect(() => { setSuppressionDemandee(false); }, [currentEventId]);
+  useEffect(() => {
+    if (!suppressionDemandee) return;
+    return pushEscapeHandler(() => setSuppressionDemandee(false));
+  }, [suppressionDemandee]);
 
+  function handleDelete() {
+    if (!event) return;
+    setSuppressionDemandee(true);
+  }
+
+  async function confirmerLaSuppression() {
+    if (!event) return;
+    setSuppressionDemandee(false);
     setDeleting(true);
 
     try {
@@ -97,6 +115,20 @@ export function EventDetail() {
             </Button>
           </div>
         </div>
+
+        {suppressionDemandee && (
+          <div className="mb-4 flex items-center gap-2 rounded-md border border-error/20 bg-[var(--color-error-tint)] px-3 py-3">
+            <AlertCircle className="w-4 h-4 text-error shrink-0" />
+            <div className="flex-1">
+              <p className="text-sm font-medium text-error">Supprimer « {event.summary} » ?</p>
+              <p className="text-xs text-error">Cette action est irréversible.</p>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="ghost" size="sm" onClick={() => setSuppressionDemandee(false)}>Conserver le rendez-vous</Button>
+              <Button variant="danger" size="sm" onClick={confirmerLaSuppression} disabled={deleting}>Supprimer définitivement</Button>
+            </div>
+          </div>
+        )}
 
         <h3 className="text-xl font-semibold text-text mb-2">{event.summary}</h3>
 
