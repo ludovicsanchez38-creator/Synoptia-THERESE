@@ -33,11 +33,12 @@ describe('CarteTete (lot 2)', () => {
 describe('Alerte (lot 2)', () => {
   it('transmet les attributs natifs et rend l’action hors du paragraphe', () => {
     render(
-      <Alerte data-testid="alerte-panne" titre="Panne" action={<button type="button">Réessayer</button>}>
+      <Alerte data-testid="alerte-panne" role="status" titre="Panne" action={<button type="button">Réessayer</button>}>
         Je n’ai pas pu lire Agenda.
       </Alerte>,
     );
     const alerte = screen.getByTestId('alerte-panne');
+    // Un `role` passé par l'appelant ne peut pas écraser celui de la primitive.
     expect(alerte).toHaveAttribute('role', 'alert');
     const bouton = screen.getByRole('button', { name: 'Réessayer' });
     expect(alerte).toContainElement(bouton);
