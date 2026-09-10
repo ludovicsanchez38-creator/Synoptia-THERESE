@@ -228,6 +228,8 @@ export function RFCChat({ systemPrompt, placeholder, initialMessage, onConversat
               className="h-9 w-9 flex-shrink-0"
               onClick={() => sendMessage()}
               disabled={!input.trim()}
+              aria-label="Envoyer"
+              title="Envoyer"
             >
               <Send className="w-4 h-4" />
             </Button>
