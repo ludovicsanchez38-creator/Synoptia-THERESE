@@ -53,7 +53,7 @@ export function FormField({
       <label
         htmlFor={htmlFor}
         className={cn(
-          'block text-sm font-medium transition-colors',
+          'block text-sm font-semibold transition-colors',
           error ? 'text-error' : 'text-text'
         )}
       >
