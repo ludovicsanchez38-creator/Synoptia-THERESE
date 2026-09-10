@@ -61,7 +61,9 @@ export const APP_ACTIONS: AppAction[] = [
   // 28/08 : cette action, son raccourci H et ses mots-clés « accueil » menaient
   // au SECOND écran d'accueil, celui que le plan retire. Le seul chemin nommé
   // vers l'accueil réel conduisait donc au mauvais.
-  { id: 'home.open', label: 'Accueil', description: "Revenir à la page d'accueil", group: 'Navigation', shortcut: 'H', keywords: ['accueil', 'home', 'journée'], run: () => nav().retourAccueil() },
+  // #203 (cycle 6) : plus de raccourci annoncé ici, aucune branche ne traite la
+  // touche h et Cmd+H est pris par macOS. Un raccourci affiché doit exister.
+  { id: 'home.open', label: 'Accueil', description: "Revenir à la page d'accueil", group: 'Navigation', keywords: ['accueil', 'home', 'journée'], run: () => nav().retourAccueil() },
   { id: 'crm.open', label: 'Ouvrir le Pipeline', description: 'Pipeline commercial', group: 'Navigation', shortcut: 'P', keywords: ['pipeline', 'prospects'], run: () => nav().setView('crm') },
   { id: 'email.open', label: 'Ouvrir l\'Email', description: 'Boîte email', group: 'Navigation', shortcut: 'E', run: () => nav().setView('email') },
   { id: 'calendar.open', label: 'Ouvrir l\'Agenda', description: 'Agenda et rendez-vous', group: 'Navigation', shortcut: '⇧C', keywords: ['agenda', 'rdv'], run: () => nav().setView('calendar') },
