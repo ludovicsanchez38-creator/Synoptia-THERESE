@@ -513,3 +513,40 @@ de large en thème sombre : c'est `whileHover={{ scale: 1.02 }}` sous la
 souris de l'auditeur (303 × 1,02), même effet en clair sur l'autre carte.
 Avant de classer un débordement, mesurer sans survol ou comparer une carte
 identique hors pointeur.
+
+## Grok Build en headless : `acceptEdits` n'écrit rien, `bypassPermissions` écrit (10/09/2026)
+
+Lot 1 de la DA. Lancé avec `--prompt-file … --permission-mode acceptEdits
+--always-approve`, Grok annonce « je crée le fichier », fait un seul tour et
+sort code 0 sans avoir écrit (mesuré sur un fichier témoin). Avec
+`--permission-mode bypassPermissions --always-approve`, le fichier existe.
+Les règles `deny` de `~/.grok/config.toml` restent actives. Pour une revue,
+`--permission-mode plan` lit et rapporte ; si elle s'arrête sans verdict à
+60 tours, relancer avec `--max-turns 150` et une consigne « lis peu, écris
+tôt ». Script d'exécution en worktree : `~/.claude/scripts/grok-task.sh`.
+
+## Deux Vite sur le même `node_modules` : deux copies de React (10/09/2026)
+
+Recette avant/après du lot 1 : un Vite sur main (1420) et un Vite sur un
+worktree dont `node_modules` est un lien symbolique vers celui de main
+(1421). Le second a re-pré-bundlé `node_modules/.vite/deps` sous le premier :
+page vide, « Invalid hook call … more than one copy of React ». Un seul Vite
+à la fois par `node_modules`, relancé avec `--force` ; et le navigateur
+intégré garde un cache de chunks : sonder en navigateur Playwright propre.
+
+## Restaurer un sabotage par `git checkout -- fichier` efface toute l'édition (10/09/2026)
+
+Lot 1 de la DA : un sabotage posé dans `globals.css` (déjà édité, non
+commité) restauré par `git checkout -- globals.css` a remis le fichier à
+HEAD et effacé le socle entier. Restaurer par le remplacement inverse exact,
+ou rejouer le script d'édition et comparer l'empreinte du diff
+(`git diff | shasum`) avant et après. `git checkout` n'est sûr que si le
+fichier n'a aucune édition non commitée.
+
+## Un e2e « au-dessus du composeur » vert par construction sur une base vide (10/09/2026)
+
+B-320 réécrit : sur la base presque vide des parcours, le dernier contenu
+tient au-dessus du composeur même sans dégagement, et le sabotage
+(`paddingBottom: 0`) passait. Mesurer aussi l'invariant mécanique
+(`paddingBottom` du fil ≥ hauteur du fond du composeur), et cibler le
+dernier enfant VISIBLE (le dernier enfant DOM était un wrapper vide).
