@@ -13,6 +13,8 @@ export function LimitsTab() {
   const [status, setStatus] = useState<api.EscalationStatus | null>(null);
   const [limits, setLimits] = useState<api.TokenLimits | null>(null);
   const [saving, setSaving] = useState(false);
+  /** #187 : une panne de lecture ou d'enregistrement se dit, elle ne se logue pas seulement. */
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadData();
@@ -20,6 +22,7 @@ export function LimitsTab() {
 
   async function loadData() {
     setLoading(true);
+    setError(null);
     try {
       const [statusData, limitsData] = await Promise.all([
         api.getEscalationStatus(),
@@ -29,6 +32,7 @@ export function LimitsTab() {
       setLimits(limitsData);
     } catch (err) {
       console.error('Échec du chargement des données de limites:', err);
+      setError('Les limites n’ont pas pu être lues.');
     } finally {
       setLoading(false);
     }
@@ -37,11 +41,13 @@ export function LimitsTab() {
   async function handleSaveLimits() {
     if (!limits) return;
     setSaving(true);
+    setError(null);
     try {
       await api.setTokenLimits(limits);
       await loadData();
     } catch (err) {
       console.error('Échec de la sauvegarde des limites:', err);
+      setError('Les limites n’ont pas pu être enregistrées.');
     } finally {
       setSaving(false);
     }
@@ -65,6 +71,14 @@ export function LimitsTab() {
 
   return (
     <div className="space-y-6">
+      {error && (
+        <div role="alert" className="flex items-center justify-between gap-2 rounded-md border border-error/30 bg-error/10 px-3 py-2 text-sm text-error">
+          <span>{error}</span>
+          {!limits && (
+            <Button variant="ghost" size="sm" onClick={() => void loadData()}>Réessayer</Button>
+          )}
+        </div>
+      )}
       {/* En-tête */}
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-sm bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
