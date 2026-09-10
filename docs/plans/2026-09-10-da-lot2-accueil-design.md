@@ -1,8 +1,9 @@
 # DA « Application affinée », lot 2 : l'écran Accueil (design à challenger avant le code)
 
-Version 3, 10/09/2026 22:35, après les revues Grok de la v1 (NO-GO, 4 P1,
-9 P2, 4 P3) et de la v2 (NO-GO, 2 P1, 3 P2, 3 P3), toutes reprises ici ;
-journaux `.cartography-work/reviews/grok-da-lot2-design-v{1,2}.log`. Précédent : lot 1
+Version 4, 10/09/2026 23:05, après les revues Grok de la v1 (NO-GO, 4 P1,
+9 P2, 4 P3), de la v2 (NO-GO, 2 P1, 3 P2, 3 P3) et de la v3 (NO-GO, 1 P1,
+2 P2, 3 P3), toutes reprises ici ; journaux
+`.cartography-work/reviews/grok-da-lot2-design-v{1,2,3}.log`. Précédent : lot 1
 (socle et coque), livré en v0.71.0-alpha. Maquette de référence :
 `docs/da/2026-09-05-propositions/maquettes/accueil.html` (états `normal`,
 `vide`, `erreur` ; `relance` et `validee` sont des canevas, voir § 8), page
@@ -51,11 +52,15 @@ Maquette `.message` : grille `2rem 1fr`, gap .75 rem, marge basse `--espace-4`.
 | Avatar | portrait 2 rem `rounded-md border border-text shadow-card` | portrait 2 rem `rounded-full`, sans bordure ni ombre |
 | Titre | `<h1>` Bonjour Sophie. | `<h1 className="font-editorial">Bonjour <em className="not-italic">Sophie</em>.` (la maquette : `h1.editorial em{font-style:normal}`, aucune couleur ; `font-editorial` est l'utilitaire du jeton `--font-editorial`, la classe `.editorial` de la maquette n'existe pas dans l'application) |
 | Sous-titre | `text-sm leading-6 text-text-muted` | inchangé (`.sous`) |
-| Ligne « THÉRÈSE · 19:01 » (mini-portrait) | présente | retirée ; remplacée par `<p className="text-xs font-medium text-text-muted">` (le `.meta` de la maquette) : « Jeudi 10 septembre · Sources : agenda, tâches, relances, factures, CRM ». La date vient de `resource.data.date` (`AAAA-MM-JJ` découpé, puis `new Date(annee, mois - 1, jour)`, jamais `new Date('AAAA-MM-JJ')` (BUG-125), formaté par `Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })`, jour de la semaine capitalisé) et n'est écrite qu'en `ready`. Les sources suivent LA MÊME règle que le pied (§ 5) : les sources présentes (liste non vide), dans l'ordre de `NOM_DE_SOURCE`, en minuscules ; les pannes ne sont pas listées ici (elles le sont dans la meta de tête et au pied). Sans aucune source présente, la date seule. Hors `ready` : rien |
-| Heure | dans la ligne THÉRÈSE | dans le pied de la carte : « Rafraîchi à HH:MM » (prop `rafraichiA` de la carte, alimentée par `heureDAffichage`) |
+| Ligne « THÉRÈSE · 19:01 » (mini-portrait) | présente | retirée ; remplacée par `<p data-testid="accueil-jour" className="text-xs font-medium text-text-muted">` (le `.meta` de la maquette), toujours rendue sur le scénario `today`, composée de segments séparés par « · » : (a) la date, seulement quand `resource.data` existe (en `ready`, et pendant une revalidation où `data` est encore là, B-426) : `AAAA-MM-JJ` découpé, puis `new Date(annee, mois - 1, jour)`, jamais `new Date('AAAA-MM-JJ')` (BUG-125), formaté par `Intl.DateTimeFormat('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' })` puis premier caractère seul mis en capitale en JS (`s.charAt(0).toLocaleUpperCase('fr-FR') + s.slice(1)`, jamais `capitalize` Tailwind qui toucherait le mois) ; (b) « Sources : agenda, tâches, factures » avec LA MÊME règle que le pied (§ 5) : sources présentes (liste non vide), ordre de `NOM_DE_SOURCE`, minuscules ; absent sans source ; (c) « Rafraîchi à HH:MM » dès que `heureDAffichage` existe, quel que soit l'état de la ressource (c'est l'heure de la coque, dite aujourd'hui hors ressource, `ConversationCanvasPrototype.tsx:1723`). Exemple : « Jeudi 10 septembre · Sources : agenda, tâches, factures · Rafraîchi à 21:40 » ; en chargement initial : « Rafraîchi à 21:40 » |
+| Heure | dans la ligne THÉRÈSE | dans la ligne du jour ci-dessus, jamais au pied de la carte (la carte ne reçoit pas de prop d'heure) |
 
-Les six autres scénarios (`memory`, `email`, `meeting`, `invoice`, `board`,
-`atelier`) gardent leur en-tête actuel : hors lot.
+Le bloc portrait + `h1` + sous-titre est aujourd'hui partagé par les sept
+scénarios (`ConversationCanvasPrototype.tsx:1694-1714`) : il est scindé par
+`scenario === 'today'` (avatar rond, `font-editorial`, ligne du jour) ;
+les six autres scénarios (`memory`, `email`, `meeting`, `invoice`, `board`,
+`atelier`) gardent leur bloc actuel, ligne « THÉRÈSE · heure » comprise :
+hors lot.
 
 ## 2. La carte du brief : `Carte` + `CarteTete`
 
@@ -143,8 +148,7 @@ présente ou en panne ; le vide constaté n'a pas de pied, comme `brief-vide`) :
 distincts conservés (Agenda, Tâches, Relances, Factures, CRM ; Relances et
 CRM en `domaine="prospects"`) + une `Etiquette ton="neutre"` « <Source>
 indisponible » par clé de `indisponibles` (nom de `NOM_DE_SOURCE`, ou la clé
-telle quelle si inconnue, jamais avalée) + à droite « Rafraîchi à HH:MM »
-(`ml-auto`, `tabular-nums`) quand `rafraichiA` est donné.
+telle quelle si inconnue, jamais avalée) ; pas d'heure au pied (elle est dans la ligne du jour, § 1).
 
 ## 6. Les états (corps de la carte)
 
@@ -157,7 +161,7 @@ telle quelle si inconnue, jamais avalée) + à droite « Rafraîchi à HH:MM »
 | vide non constaté | « Ta journée est incomplète » + bouton | `EtatVide data-testid="today-dashboard-incomplet"` titre « Ta journée est incomplète », texte actuel (« Rien ne remonte, mais la lecture n'a pas abouti : ce n'est pas une journée calme constatée. »), `action` = `Button variant="secondary" size="md"` Réessayer (l'`Alerte` au-dessus n'en a pas). Jamais la formulation du vide constaté |
 | vide constaté | coche verte « Rien d'urgent pour le moment » | `EtatVide data-testid="today-dashboard-empty"` titre « Ta journée est dégagée. », texte « Quand tu ajouteras une tâche, un rendez-vous ou une facture, ils apparaîtront ici avec leur échéance. », sans action (« Ouvrir Agenda » est déjà en tête) |
 | sans messagerie | « Branche tes mails… » + bouton plein | `EtatVide data-testid="today-dashboard-setup-email"` titre et texte actuels, `action` = `Button variant="primary" size="md"` « Brancher mes mails » ; avec une panne, l'`Alerte` au-dessus porte Réessayer (test « la panne est nommée même quand l'écran invite à brancher les mails ») |
-| mise en route | `SetupChecklist` (surface-2, boutons maison) | inchangé dans ce lot, sauf son titre en `h3` (la carte porte déjà le `h2`) |
+| mise en route | `SetupChecklist` (surface-2, boutons maison) | inchangé dans ce lot, sauf son titre en `h3` (la carte porte déjà le `h2`) ; rendu sous l'`EtatVide`, avant le pied, dans les trois corps à N = 0 (sans messagerie, vide non constaté, vide constaté), comme aujourd'hui (`TodayDashboardCard.tsx:338-346`), dans un `px-4 pb-4` |
 
 `EtatVide` reçoit les attributs natifs (`data-testid`) : extension de la
 primitive, même geste que `Alerte`.
@@ -174,8 +178,7 @@ Nouveaux (`TodayDashboardCard.da.test.tsx`, rouges d'abord) :
 3. la tête garde son `id` (la section a un nom accessible), la meta écrit
    « 4 éléments, dont 2 en retard » et « 3 éléments » quand aucun retard ;
 4. le pied écrit « Lu dans », une étiquette par source, « Agenda
-   indisponible » en panne, « Rafraîchi à 11:58 » quand la prop est donnée,
-   et n'existe pas sur le vide constaté ;
+   indisponible » en panne, et n'existe pas sur le vide constaté ;
 5. le chargement montre des squelettes `aria-hidden` et un `role="status"` ;
 6. la panne partielle est un `role="alert"` qui nomme la source ; un seul
    « Réessayer » dans la carte, quel que soit l'état ; le vide constaté n'a
@@ -184,7 +187,10 @@ Nouveaux (`TodayDashboardCard.da.test.tsx`, rouges d'abord) :
    dur dans `TodayDashboardCard.tsx` (extension de `aucuneCouleurEnDur` au
    fichier) ;
 8. dans la coque : plus de ligne « THÉRÈSE · heure » sur le scénario `today`,
-   la date du jour est écrite en français, le `h1` porte `font-editorial` ;
+   la ligne du jour écrit « Rafraîchi à HH:MM » dès le chargement, puis la
+   date en français (« Jeudi 10 septembre », premier caractère seul en
+   capitale) et les sources présentes en `ready`, le `h1` porte
+   `font-editorial` ; sur `memory`, la ligne « THÉRÈSE · heure » est intacte ;
 9. primitives : `CarteTete` pose `idTitre`, `Alerte` et `EtatVide`
    transmettent `data-testid` et rendent `action`, `Segments` expose ses
    classes et les consomme.
@@ -193,14 +199,16 @@ Nouveaux (`TodayDashboardCard.da.test.tsx`, rouges d'abord) :
 forme, pas le comportement) : `lot9DA.test.ts` B-363 (les couleurs viennent
 de `Ligne domaine`, le test vérifie la table kind → domaine),
 `TodayDashboardCard.test.tsx` (« Rien d'urgent » → « Ta journée est
-dégagée. », « Sources réelles » → « Lu dans », « issu de tes données » →
-« éléments »), `TodayDashboardCard.variateur.test.tsx` (« Aucune priorité
-détectée » → « Rien ne presse aujourd'hui », « 9 éléments issus de tes
-données » → « 9 éléments, dont … » ou « 9 éléments » selon les retards du
-jeu de données), `AccueilMoinsCharge.test.tsx` (commentaire), `InformationsVides.test.tsx:49`
+dégagée. », « Sources réelles » → « Lu dans », « 1 élément issu de tes
+données » → « 1 élément » exactement), `TodayDashboardCard.variateur.test.tsx`
+(« Aucune priorité détectée » → « Rien ne presse aujourd'hui » ;
+`dashboard(9, 0)` n'a aucun retard, donc « 9 éléments issus de tes données »
+→ « 9 éléments » exactement ; un jeu avec retards écrit « 9 éléments, dont
+2 en retard »), `AccueilMoinsCharge.test.tsx` (commentaire), `InformationsVides.test.tsx:49`
 (`getByText('THÉRÈSE', { selector: 'div' })` visait la ligne « THÉRÈSE ·
-heure » du scénario `today`, qui devient « Rafraîchi à HH:MM » au pied de la
-carte : l'assertion suit l'heure, hors vide constaté),
+heure » du scénario `today`, rendue sans ressource : l'assertion vise
+désormais `getByTestId('accueil-jour')` et son « Rafraîchi à », présent dès
+le chargement, donc sans mock supplémentaire),
 `TodayDashboardCard.modeDemo.test.tsx:56` (`getByText(/Claire Fontaine/)`
 trouverait la ligne ET « Commencer : … » : passer par `getAllByText` ou
 `getByRole('button', { name })`, l'invariant « aucun nom réel » est vérifié
