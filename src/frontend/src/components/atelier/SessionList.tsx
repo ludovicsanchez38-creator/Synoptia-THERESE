@@ -150,6 +150,13 @@ export function SessionList() {
         </span>
       </div>
 
+      {/* D195 : liste pleine et rafraîchissement en panne, la panne se dit quand même. */}
+      {error && visibleSessions.length > 0 && (
+        <div role="alert" className="border-b border-error/30 bg-error/10 px-3 py-1.5 text-xs text-error">
+          {error}
+        </div>
+      )}
+
       {/* List */}
       <div className="flex-1 overflow-y-auto">
         {visibleSessions.length === 0 && error ? (
