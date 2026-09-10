@@ -191,3 +191,16 @@ describe('Lot 2 DA : l’en-tête de l’Accueil', () => {
     expect(screen.queryByTestId('accueil-jour')).toBeNull();
   });
 });
+
+describe('Lot 2 DA : le composeur reste au-dessus des lignes du brief', () => {
+  it('le fond du composeur porte un plan (z-20) supérieur au z-10 de la zone droite d’une Ligne', async () => {
+    // Recette du 11/09 à 800 px : l'étiquette « À traiter » d'une ligne
+    // repliée sous le composeur se dessinait PAR-DESSUS lui. La `Ligne`
+    // pose `relative z-10` sur sa zone droite ; sans plan, le fond du
+    // composeur (plus loin dans le DOM, sans z-index) perdait.
+    render(<ConversationCanvasPrototype />);
+    await screen.findByTestId('accueil-jour');
+    const fond = screen.getByTestId('prototype-composer-backdrop');
+    expect(fond.className).toMatch(/\bz-20\b/);
+  });
+});

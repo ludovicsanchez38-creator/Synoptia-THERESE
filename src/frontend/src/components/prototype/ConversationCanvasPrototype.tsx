@@ -1931,7 +1931,10 @@ export function ConversationCanvasPrototype() {
 
               <div
                 ref={composerBackdropRef}
-                className="pointer-events-none absolute inset-x-0 bottom-0 bg-[linear-gradient(to_top,var(--color-bg)_70%,transparent)] px-5 pb-5 pt-12 sm:px-8"
+                /* Lot 2 DA : un plan au-dessus des lignes (`Ligne` pose z-10 sur sa zone
+                   droite) ; sans lui, une étiquette repliée sous le composeur se
+                   dessinait par-dessus (recette du 11/09 à 800 px). */
+                className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-[linear-gradient(to_top,var(--color-bg)_70%,transparent)] px-5 pb-5 pt-12 sm:px-8"
                 data-testid="prototype-composer-backdrop"
               >
                 {/* B-562 : tant que le fil n'est pas au bout, on le dit. */}

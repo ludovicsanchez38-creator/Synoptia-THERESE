@@ -25,15 +25,15 @@ import {
 } from 'lucide-react';
 import type { SetupStatus, TodayDashboard } from '../../services/api/dashboard';
 import type { AppView } from '../../stores/navigationStore';
-import { buildTodayAttentionItems, nombreNonAffiche, todayBriefTitle, type AttentionKind, type TodayAttentionItem } from './prototypeReadModels';
+import { buildTodayAttentionItems, nombreNonAffiche, nommerLesSources, sourcesPresentes, todayBriefTitle, type AttentionKind, type TodayAttentionItem } from './prototypeReadModels';
 import type { ReadResource } from './usePrototypeReadData';
 import { Alerte } from '../ui/Alerte';
 import { Button } from '../ui/Button';
 import { Carte, CarteTete } from '../ui/Carte';
 import { EtatVide } from '../ui/EtatVide';
-import { Etiquette, type DomaineEtiquette } from '../ui/Etiquette';
+import { Etiquette } from '../ui/Etiquette';
 import { Ligne, type DomaineLigne } from '../ui/Ligne';
-import { CLASSES_SEGMENTS, classeSegment } from '../ui/Segments';
+import { CLASSES_SEGMENTS, classeSegment } from '../ui/segments.classes';
 import { Squelette } from '../ui/Squelette';
 import { SetupChecklist } from '../home/SetupChecklist';
 
@@ -61,45 +61,6 @@ const DOMAINE_DE_KIND: Record<AttentionKind, DomaineLigne> = {
   invoice: 'factures',
   prospect: 'prospects',
 };
-
-/**
- * Les cinq sources du brief, dans l'ordre d'affichage. `cle` est le nom que le
- * serveur donne dans `indisponibles` (B-051), `nom` le mot de l'écran,
- * `minuscule` sa forme dans la ligne du jour (le sigle CRM reste un sigle),
- * `presente` la règle « tableau non vide » (un rendez-vous solo compte : il
- * est lu même s'il ne fait pas de ligne).
- */
-export const SOURCES_DU_BRIEF: ReadonlyArray<{
-  cle: string;
-  nom: string;
-  minuscule: string;
-  domaine: DomaineEtiquette;
-  presente: (data: TodayDashboard) => boolean;
-}> = [
-  { cle: 'calendrier', nom: 'Agenda', minuscule: 'agenda', domaine: 'agenda', presente: (d) => liste(d.events).length > 0 },
-  { cle: 'taches', nom: 'Tâches', minuscule: 'tâches', domaine: 'taches', presente: (d) => liste(d.urgent_tasks).length > 0 },
-  { cle: 'relances_email', nom: 'Relances', minuscule: 'relances', domaine: 'prospects', presente: (d) => liste(d.due_follow_ups).length > 0 },
-  { cle: 'factures', nom: 'Factures', minuscule: 'factures', domaine: 'factures', presente: (d) => liste(d.overdue_invoices).length > 0 },
-  { cle: 'prospects', nom: 'CRM', minuscule: 'CRM', domaine: 'prospects', presente: (d) => liste(d.stale_prospects).length > 0 },
-];
-
-function liste<T>(valeur: T[] | undefined | null): T[] {
-  return Array.isArray(valeur) ? valeur : [];
-}
-
-export function sourcesPresentes(data: TodayDashboard) {
-  return SOURCES_DU_BRIEF.filter((s) => s.presente(data));
-}
-
-/**
- * B-051 : le serveur nomme ses sources en propre (« calendrier », « taches »,
- * ...). Une clé inconnue ressort telle quelle plutôt que de disparaître :
- * mieux vaut un mot brut qu'une panne muette.
- */
-export function nommerLesSources(cles: string[] | undefined | null): string[] {
-  if (!Array.isArray(cles)) return [];
-  return cles.map((cle) => SOURCES_DU_BRIEF.find((s) => s.cle === cle)?.nom ?? cle);
-}
 
 const pluriel = (n: number, un: string, plusieurs: string) => (n > 1 ? plusieurs : un);
 
@@ -363,7 +324,7 @@ export function TodayDashboardCard({
               size="md"
               /* Entrée 11b : la suite se déroule ici, pas sur un autre écran. */
               onClick={() => setToutAfficher(true)}
-              className="w-full rounded-none border-t border-border"
+              className="w-full border-t border-border"
             >
               {libelleDuRepli(replies.length, retardsReplies)}
             </Button>

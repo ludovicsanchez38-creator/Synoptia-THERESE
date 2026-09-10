@@ -8,7 +8,8 @@ import { describe, expect, it } from 'vitest';
 import { Alerte } from './Alerte';
 import { CarteTete } from './Carte';
 import { EtatVide } from './EtatVide';
-import { CLASSES_SEGMENTS, Segments, classeSegment } from './Segments';
+import { Segments } from './Segments';
+import { CLASSES_SEGMENTS, classeSegment } from './segments.classes';
 import { Squelette } from './Squelette';
 
 describe('CarteTete (lot 2)', () => {

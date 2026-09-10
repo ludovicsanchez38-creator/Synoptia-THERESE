@@ -1,6 +1,6 @@
 /** Lot 2 DA : la ligne du jour de l'Accueil (date française, sources, heure). */
 import type { TodayDashboard } from '../../services/api/dashboard';
-import { sourcesPresentes } from './TodayDashboardCard';
+import { sourcesPresentes } from './prototypeReadModels';
 
 const FORME_ISO = /^(\d{4})-(\d{2})-(\d{2})$/;
 

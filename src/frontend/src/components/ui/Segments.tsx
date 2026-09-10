@@ -6,6 +6,7 @@
  * role="group" nommé + aria-pressed.
  */
 import { cn } from '../../lib/utils';
+import { CLASSES_SEGMENTS, classeSegment } from './segments.classes';
 
 export interface OptionSegment {
   id: string;
@@ -18,16 +19,6 @@ export interface SegmentsProps {
   valeur: string;
   onChange: (id: string) => void;
   className?: string;
-}
-
-/** Lot 2 : classes partagées avec le variateur du brief (radiogroup) : une seule source. */
-export const CLASSES_SEGMENTS = 'inline-flex gap-1 p-1 rounded-full bg-surface-2';
-
-export function classeSegment(actif: boolean): string {
-  return cn(
-    'rounded-full px-3 py-1 text-sm font-medium',
-    actif ? 'bg-surface text-text shadow-sm' : 'text-text-muted hover:text-text',
-  );
 }
 
 export function Segments({ label, options, valeur, onChange, className }: SegmentsProps) {

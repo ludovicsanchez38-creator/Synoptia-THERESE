@@ -7,6 +7,7 @@ import type {
   TodayDashboard,
 } from '../../services/api/dashboard';
 import type { Contact } from '../../services/api/memory';
+import type { DomaineEtiquette } from '../ui/Etiquette';
 import type { AppView } from '../../stores/navigationStore';
 import { parisDateKey } from '../../lib/civilDate';
 
@@ -202,6 +203,41 @@ export function nombreNonAffiche(data: Pick<TodayDashboard, 'summary'> | null | 
   const manque = (total: number | undefined, count: number | undefined) =>
     typeof total === 'number' && typeof count === 'number' ? Math.max(0, total - count) : 0;
   return manque(s.tasks_total, s.tasks_count) + manque(s.follow_ups_total, s.follow_ups_count) + manque(s.invoices_total, s.invoices_count);
+}
+
+/**
+ * Les cinq sources du brief, dans l'ordre d'affichage. `cle` est le nom que le
+ * serveur donne dans `indisponibles` (B-051), `nom` le mot de l'écran,
+ * `minuscule` sa forme dans la ligne du jour (le sigle CRM reste un sigle),
+ * `presente` la règle « tableau non vide » (un rendez-vous solo compte : il
+ * est lu même s'il ne fait pas de ligne).
+ */
+export const SOURCES_DU_BRIEF: ReadonlyArray<{
+  cle: string;
+  nom: string;
+  minuscule: string;
+  domaine: DomaineEtiquette;
+  presente: (data: TodayDashboard) => boolean;
+}> = [
+  { cle: 'calendrier', nom: 'Agenda', minuscule: 'agenda', domaine: 'agenda', presente: (d) => liste(d.events).length > 0 },
+  { cle: 'taches', nom: 'Tâches', minuscule: 'tâches', domaine: 'taches', presente: (d) => liste(d.urgent_tasks).length > 0 },
+  { cle: 'relances_email', nom: 'Relances', minuscule: 'relances', domaine: 'prospects', presente: (d) => liste(d.due_follow_ups).length > 0 },
+  { cle: 'factures', nom: 'Factures', minuscule: 'factures', domaine: 'factures', presente: (d) => liste(d.overdue_invoices).length > 0 },
+  { cle: 'prospects', nom: 'CRM', minuscule: 'CRM', domaine: 'prospects', presente: (d) => liste(d.stale_prospects).length > 0 },
+];
+
+export function sourcesPresentes(data: TodayDashboard) {
+  return SOURCES_DU_BRIEF.filter((s) => s.presente(data));
+}
+
+/**
+ * B-051 : le serveur nomme ses sources en propre (« calendrier », « taches »,
+ * ...). Une clé inconnue ressort telle quelle plutôt que de disparaître :
+ * mieux vaut un mot brut qu'une panne muette.
+ */
+export function nommerLesSources(cles: string[] | undefined | null): string[] {
+  if (!Array.isArray(cles)) return [];
+  return cles.map((cle) => SOURCES_DU_BRIEF.find((s) => s.cle === cle)?.nom ?? cle);
 }
 
 export function todayBriefTitle(itemCount: number): string {
