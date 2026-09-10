@@ -373,7 +373,7 @@ class TestDraftFlushPeriodiqueEtFermeture:
             )
 
         assert response.status_code == 200, response.text
-        assert captured["mid_stream_content"] == "Premier fragment. "
+        assert captured["mid_stream_content"].strip() == "Premier fragment."  # cycle 6 : le flush écrit le contenu analysé (sans marqueur PISTES), donc épuré
 
     @pytest.mark.asyncio
     async def test_fermeture_generator_exit_persiste_le_partiel(self, client: AsyncClient):

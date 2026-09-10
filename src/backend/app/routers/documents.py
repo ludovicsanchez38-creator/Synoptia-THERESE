@@ -343,7 +343,10 @@ async def _draft_stream(
 
     async def _flush(raw_content: str) -> None:
         nonlocal last_flushed_raw
-        target.content = raw_content
+        # Cycle 6 : le flux périodique et le flux d'erreur écrivaient le brut ;
+        # un flux cassé après `PISTES:` laissait le marqueur et les pistes
+        # dans la section, là où la fin normale n'écrit que le contenu.
+        target.content, _pistes_en_cours = parse_draft_output(raw_content)
         target.status = "brouillon"
         target.updated_at = datetime.now(UTC)
         session.add(target)
@@ -744,6 +747,29 @@ def _reponse_code(status_code: int, code: str, message: str) -> JSONResponse:
     return JSONResponse(status_code=status_code, content={"code": code, "message": message})
 
 
+# Cycle 6 (secondes lectures, Grok D13) : `actif_pour` puis `creer_traitement`
+# n'étaient pas atomiques ; deux demandes qui se croisaient sur un document
+# vide passaient toutes les deux et concaténaient leurs trames. Un verrou par
+# document, dans ce processus (le moteur est unique), ferme la fenêtre.
+_verrous_trame: dict[str, asyncio.Lock] = {}
+
+
+async def _reserver_la_trame(document_id: str, label: str, task_id: str | None) -> "traitements.TraitementHandle | JSONResponse":
+    verrou = _verrous_trame.setdefault(document_id, asyncio.Lock())
+    async with verrou:
+        if await traitements.actif_pour("document_outline", document_id):
+            return _reponse_code(409, "outline_in_progress", "Une génération de trame est déjà en cours pour ce document.")
+        try:
+            return await traitements.creer_traitement(
+                type="document_outline", label=label, entity_id=document_id, id=task_id
+            )
+        except traitements.IdentifiantDejaPris:
+            return _reponse_code(409, "task_id_taken", "Cet identifiant de traitement est déjà utilisé.")
+        except Exception:
+            logger.warning("Suivi indisponible pour la trame de %s", document_id, exc_info=True)
+            return _reponse_code(503, "suivi_indisponible", "Suivi des traitements indisponible : la génération n'a pas été lancée.")
+
+
 @router.post("/{document_id}/outline", response_model=None)
 async def generate_outline(
     document_id: str,
@@ -775,22 +801,11 @@ async def generate_outline(
         raise HTTPException(status_code=409, detail=_MESSAGE_SECTIONS_REDIGEES)
     ids_initiales = frozenset(s.id for s in sections_initiales)
 
-    if await traitements.actif_pour("document_outline", document_id):
-        return _reponse_code(409, "outline_in_progress", "Une génération de trame est déjà en cours pour ce document.")
-
     titre, brief = document.title, document.brief
-    try:
-        handle = await traitements.creer_traitement(
-            type="document_outline",
-            label=f"Trame : {titre[:60]}",
-            entity_id=document_id,
-            id=str(corps.task_id) if corps and corps.task_id else None,
-        )
-    except traitements.IdentifiantDejaPris:
-        return _reponse_code(409, "task_id_taken", "Cet identifiant de traitement est déjà utilisé.")
-    except Exception:
-        logger.warning("Suivi indisponible pour la trame de %s", document_id, exc_info=True)
-        return _reponse_code(503, "suivi_indisponible", "Suivi des traitements indisponible : la génération n'a pas été lancée.")
+    reservation = await _reserver_la_trame(document_id, f"Trame : {titre[:60]}", str(corps.task_id) if corps and corps.task_id else None)
+    if not isinstance(reservation, traitements.TraitementHandle):
+        return reservation
+    handle = reservation
 
     porteuse = await _lancer_la_generation(handle, document_id, titre, brief, ids_initiales)
 
