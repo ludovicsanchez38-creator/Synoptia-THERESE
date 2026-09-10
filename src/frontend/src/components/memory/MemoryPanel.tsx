@@ -775,6 +775,7 @@ function ContactsList({
             titre={titre}
             detail={detail}
             onClick={() => onSelect(contact)}
+            className={openMenuId === contact.id ? Z_LAYER.DROPDOWN : undefined}
             droite={
               <>
                 <RGPDBadge contact={contact} />
@@ -794,7 +795,7 @@ function ContactsList({
                         initial={{ opacity: 0, scale: 0.95, y: -5 }}
                         animate={{ opacity: 1, scale: 1, y: 0 }}
                         exit={{ opacity: 0, scale: 0.95, y: -5 }}
-                        className={`absolute right-0 top-full mt-1 w-48 bg-surface border border-border rounded-md shadow-xl ${Z_LAYER.DROPDOWN} py-1`}
+                        className={`absolute right-0 top-full mt-1 w-48 bg-surface border border-border rounded-md shadow-xl ${Z_LAYER.DROPDOWN} py-1 pointer-events-auto`}
                         onClick={(e) => e.stopPropagation()}
                       >
                         <button

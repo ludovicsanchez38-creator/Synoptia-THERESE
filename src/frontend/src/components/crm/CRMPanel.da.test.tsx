@@ -100,7 +100,14 @@ function interactifsSousLePlancher(racine: HTMLElement): string[] {
   return fautifs;
 }
 
-function poser(extra: { activeTab?: 'pipeline' | 'activities'; contacts?: Contact[] } = {}) {
+function poser(
+  extra: {
+    activeTab?: 'pipeline' | 'activities';
+    contacts?: Contact[];
+    selectedContactId?: string | null;
+    truncated?: boolean;
+  } = {},
+) {
   useCRMStore.setState({ projects: [], activeTab: extra.activeTab ?? 'pipeline' });
   useContactsStore.setState({
     contacts: extra.contacts ?? [],
@@ -108,8 +115,8 @@ function poser(extra: { activeTab?: 'pipeline' | 'activities'; contacts?: Contac
     loading: false,
     loaded: true,
     error: null,
-    selectedContactId: null,
-    truncated: false,
+    selectedContactId: extra.selectedContactId ?? null,
+    truncated: extra.truncated ?? false,
   });
 }
 
@@ -164,19 +171,66 @@ describe('Lot 4 DA : un seul Réessayer, aux états qui en ont déjà un', () =>
 describe('Lot 4 DA : Nouveau contact', () => {
   it('ouvre la même modale que « Ajouter un contact »', async () => {
     render(<CRMPanel standalone />);
-    fireEvent.click(await screen.findByRole('button', { name: /Nouveau contact/i }));
+    const nouveau = await screen.findByRole('button', { name: /Nouveau contact/i });
+    expect(nouveau.className).toMatch(/\bgap-2\b/);
+    expect(screen.getByRole('button', { name: /Importer \(\.vcf\)/ }).className).toMatch(/\bgap-2\b/);
+    fireEvent.click(nouveau);
     expect(await screen.findByRole('dialog', { name: 'Nouveau contact CRM' })).toBeInTheDocument();
   });
 });
 
 describe('Lot 4 DA : plancher et jetons', () => {
-  it('aucun interactif n’est en text-xs, aucune couleur en dur dans le standalone', async () => {
-    poser({ contacts: [marie] });
-    api.listContacts.mockResolvedValue([marie]);
-    render(<CRMPanel standalone />);
-    await waitFor(() => expect(screen.getByTestId('crm-panel')).toBeInTheDocument());
+  const activite = {
+    id: 'a1',
+    contact_id: 'ct-1',
+    type: 'note' as const,
+    title: 'Appel de suivi',
+    description: 'Point commercial',
+    extra_data: null,
+    created_at: '2026-08-01T00:00:00Z',
+  };
+
+  async function verifierPlancher(attendre: () => void) {
+    const { unmount } = render(<CRMPanel standalone />);
+    await waitFor(attendre);
     const panneau = screen.getByTestId('crm-panel');
     expect(interactifsSousLePlancher(panneau)).toEqual([]);
     expect(couleursEnDurSous(panneau)).toEqual([]);
+    unmount();
+  }
+
+  it('aucun interactif n’est en text-xs, aucune couleur en dur dans le standalone', async () => {
+    poser({ contacts: [marie] });
+    api.listContacts.mockResolvedValue([marie]);
+    await verifierPlancher(() => expect(screen.getByText('Marie Lefevre')).toBeInTheDocument());
+
+    api.listContacts.mockResolvedValue([]);
+    poser();
+    await verifierPlancher(() =>
+      expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(7),
+    );
+
+    api.listActivities.mockResolvedValue([]);
+    poser({ activeTab: 'activities' });
+    await verifierPlancher(() => expect(screen.getByTestId('crm-activites-vide')).toBeInTheDocument());
+
+    api.listActivities.mockRejectedValue(new Error('boom'));
+    poser({ activeTab: 'activities' });
+    await verifierPlancher(() =>
+      expect(screen.getByTestId('crm-activites-erreur')).toBeInTheDocument(),
+    );
+
+    api.listProjects.mockRejectedValue(new Error('Le serveur ne répond pas'));
+    api.listContacts.mockResolvedValue([marie]);
+    poser({ contacts: [marie] });
+    await verifierPlancher(() => expect(screen.getByTestId('crm-erreur')).toBeInTheDocument());
+    api.listProjects.mockResolvedValue([]);
+
+    api.listActivities.mockResolvedValue([activite]);
+    api.listContacts.mockResolvedValue([marie]);
+    poser({ activeTab: 'activities', contacts: [marie], selectedContactId: 'ct-1' });
+    await verifierPlancher(() =>
+      expect(screen.getByRole('button', { name: 'Ajouter une activité' })).toBeInTheDocument(),
+    );
   });
 });

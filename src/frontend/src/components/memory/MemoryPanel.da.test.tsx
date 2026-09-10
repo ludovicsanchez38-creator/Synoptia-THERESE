@@ -107,7 +107,14 @@ beforeEach(() => {
 
 describe('Lot 4 DA : liste Contacts', () => {
   it('une fiche est une Ligne : une commande, grille 2rem 1fr auto', async () => {
-    poserLeCarnet([marie]);
+    const paul = {
+      ...marie,
+      id: 'ct-2',
+      first_name: 'Paul',
+      last_name: 'Girard',
+      email: 'paul@girard.test',
+    } as Contact;
+    poserLeCarnet([marie, paul]);
     const onEditContact = vi.fn();
     render(<MemoryPanel standalone onEditContact={onEditContact} />);
     const titre = await screen.findByRole('button', { name: 'Marie Lefevre' });
@@ -116,6 +123,19 @@ describe('Lot 4 DA : liste Contacts', () => {
     expect(rangee.tagName).not.toBe('BUTTON');
     fireEvent.click(titre);
     expect(onEditContact).toHaveBeenCalledTimes(1);
+
+    onEditContact.mockClear();
+    fireEvent.click(within(rangee).getByRole('button', { name: 'Actions RGPD' }));
+    const exporter = await screen.findByRole('button', { name: 'Exporter (Art. 20)' });
+    const panneau = exporter.parentElement as HTMLElement;
+    expect(panneau.className).toMatch(/\bpointer-events-auto\b/);
+    expect(rangee.className).toMatch(/\bz-20\b/);
+    const rangeePaul = screen
+      .getByRole('button', { name: 'Paul Girard' })
+      .closest('[class*="grid-cols-[2rem_1fr_auto]"]') as HTMLElement;
+    expect(rangeePaul.className).not.toMatch(/\bz-20\b/);
+    fireEvent.click(exporter);
+    expect(onEditContact).not.toHaveBeenCalled();
   });
 
   it('EtatVide transmet contacts-etat-vide', async () => {

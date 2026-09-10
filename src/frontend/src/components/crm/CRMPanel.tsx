@@ -182,11 +182,11 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
           className="hidden"
           onChange={handleImportVCF}
         />
-        <Button variant="secondary" size="md" onClick={() => vcfInputRef.current?.click()}>
+        <Button variant="secondary" size="md" className="gap-2" onClick={() => vcfInputRef.current?.click()}>
           <Upload size={18} />
           Importer (.vcf)
         </Button>
-        <Button variant="primary" size="md" onClick={() => setShowCreateForm(true)}>
+        <Button variant="primary" size="md" className="gap-2" onClick={() => setShowCreateForm(true)}>
           <UserPlus size={18} />
           Nouveau contact
         </Button>

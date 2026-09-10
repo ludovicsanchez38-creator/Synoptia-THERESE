@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { GripVertical, HelpCircle } from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
 import { Etiquette } from '../ui/Etiquette';
 import { cn } from '../../lib/utils';
 import { PIPELINE_ETAPES, etiquetteDEtape } from './pipelineEtapes';
@@ -47,7 +47,7 @@ export function PipelineView({ contacts, onContactClick, onStageChange }: Pipeli
   const [activeContact, setActiveContact] = useState<ContactResponse | null>(null);
 
   // B-237 : sans `coordinateGetter`, dnd-kit avance son pointeur virtuel de
-  // 25 px par flèche — dans des colonnes de 288 px (`w-72` plus bas), la carte
+  // 25 px par flèche — dans des colonnes minmax(15rem, 1fr), la carte
   // reste au-dessus d'elle-même et aucune cible n'est jamais annoncée.
   // `sortableKeyboardCoordinates` saute de conteneur en conteneur.
   const sensors = useSensors(
@@ -245,13 +245,12 @@ interface ContactCardProps {
   contact: ContactResponse;
   onClick: () => void;
   isOverlay?: boolean;
-  dragListeners?: Record<string, unknown>;
 }
 
 const SCORE_AIDE =
   "Score de potentiel commercial, calculé depuis les informations du contact et son étape dans le pipeline. Plus il est haut, plus le prospect est chaud. L'échelle n'est pas plafonnée.";
 
-function ContactCard({ contact, onClick, isOverlay, dragListeners }: ContactCardProps) {
+function ContactCard({ contact, onClick, isOverlay }: ContactCardProps) {
   return (
     <motion.div
       /* B-151 : repère par élément pour les protocoles (`qsa`). Pas sur la
@@ -264,42 +263,30 @@ function ContactCard({ contact, onClick, isOverlay, dragListeners }: ContactCard
       exit={isOverlay ? undefined : { opacity: 0, y: -10 }}
       onClick={onClick}
       className={cn(
-        'bg-surface border border-border rounded-sm p-3 cursor-grab text-sm relative',
+        'bg-surface border border-border rounded-sm p-3 cursor-grab text-sm',
         isOverlay && 'outline outline-2 outline-dashed outline-accent outline-offset-2 bg-accent-tint',
       )}
     >
-      {dragListeners && (
-        <div
-          className="absolute top-3 left-1 cursor-grab active:cursor-grabbing text-text-muted hover:text-text-muted"
-          {...dragListeners}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <GripVertical className="w-4 h-4" />
-        </div>
+      <div className="font-semibold">
+        {contact.first_name} {contact.last_name}
+      </div>
+
+      {contact.company && (
+        <p className="text-sm text-text-muted truncate">{contact.company}</p>
       )}
 
-      <div className={dragListeners ? 'pl-5' : ''}>
-        <div className="font-semibold">
-          {contact.first_name} {contact.last_name}
+      {contact.email && (
+        <p className="text-sm text-text-muted truncate">{contact.email}</p>
+      )}
+
+      <div className="flex flex-wrap gap-2 items-center text-sm text-text-muted mt-2">
+        <div className="flex items-center gap-1" title={SCORE_AIDE}>
+          <span>Score</span>
+          <span className="tabular-nums font-semibold text-text">{contact.score}</span>
+          <HelpCircle size={18} className="text-text-muted" aria-label={SCORE_AIDE} />
         </div>
 
-        {contact.company && (
-          <p className="text-sm text-text-muted truncate">{contact.company}</p>
-        )}
-
-        {contact.email && (
-          <p className="text-sm text-text-muted truncate">{contact.email}</p>
-        )}
-
-        <div className="flex flex-wrap gap-2 items-center text-sm text-text-muted mt-2">
-          <div className="flex items-center gap-1" title={SCORE_AIDE}>
-            <span>Score</span>
-            <span className="tabular-nums font-semibold text-text">{contact.score}</span>
-            <HelpCircle size={18} className="text-text-muted" aria-label={SCORE_AIDE} />
-          </div>
-
-          {contact.source ? <Etiquette ton="neutre">{contact.source}</Etiquette> : null}
-        </div>
+        {contact.source ? <Etiquette ton="neutre">{contact.source}</Etiquette> : null}
       </div>
     </motion.div>
   );

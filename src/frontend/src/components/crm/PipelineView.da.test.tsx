@@ -2,6 +2,8 @@
  * DA « Application affinée », lot 4 : les colonnes du pipeline
  * (`docs/plans/2026-09-11-da-lot4-contacts-design.md`, § 9).
  */
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -120,5 +122,13 @@ describe('Lot 4 DA : fiches', () => {
       await new Promise((resoudre) => setTimeout(resoudre, 0));
     });
     expect(document.querySelector('[aria-grabbed="true"]')).not.toBeNull();
+  });
+
+  it('la carte n’a plus de poignée GripVertical morte', () => {
+    const source = readFileSync(join(__dirname, 'PipelineView.tsx'), 'utf8');
+    expect(source).not.toMatch(/GripVertical/);
+    expect(source).not.toMatch(/dragListeners/);
+    expect(source).not.toMatch(/w-72/);
+    expect(source).toMatch(/minmax\(15rem/);
   });
 });
