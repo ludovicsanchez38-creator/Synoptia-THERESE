@@ -448,8 +448,9 @@ function DevisDraftForm({
       setCreated(invoice);
       setHasUnsavedChanges(false);
       setConfirmationSnapshot(null);
-    } catch {
-      setError('Impossible d’enregistrer le devis brouillon.');
+    } catch (err) {
+      // D203 : la cause renvoyée par l'API arrive à l'écran, comme dans InvoicesPanel (B-218).
+      setError(messageDeLApi(err, 'Impossible d’enregistrer le devis brouillon.'));
     } finally {
       savingRef.current = false;
       setSaving(false);
@@ -479,8 +480,8 @@ function DevisDraftForm({
         address: contactForm.address.trim() || null,
       });
       setContactId(contact.id);
-    } catch {
-      setContactError('Impossible de créer le contact pour le moment.');
+    } catch (err) {
+      setContactError(messageDeLApi(err, 'Impossible de créer le contact pour le moment.'));
     } finally {
       contactSavingRef.current = false;
       setContactSaving(false);
@@ -662,6 +663,11 @@ function DevisDraftForm({
       </section>
     </div>
   );
+}
+
+/** D203 : le message du serveur quand il en donne un, sinon le repli. */
+function messageDeLApi(err: unknown, repli: string): string {
+  return err instanceof Error && err.message.trim() ? err.message : repli;
 }
 
 export function InvoiceWorkspaceCanvas({
