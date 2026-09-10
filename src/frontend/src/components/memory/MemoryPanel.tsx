@@ -140,11 +140,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
             : 'Téléchargement du fichier VCF démarré',
       });
     } catch (err: any) {
-      addNotification({
-        type: 'error',
-        title: 'Erreur export VCF',
-        message: err.message,
-      });
+      // #150 : une seule notification, sans le message brut de l'exception.
       console.error('VCF export failed:', err);
       addNotification({ type: 'error', title: 'Export VCF', message: 'L’export a échoué. Réessaie dans un instant.' });
     }

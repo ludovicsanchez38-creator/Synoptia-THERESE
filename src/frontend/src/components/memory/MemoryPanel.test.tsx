@@ -103,15 +103,13 @@ describe('MemoryPanel export VCF', () => {
 
     fireEvent.click(await screen.findByTitle('Exporter les contacts (.vcf)'));
 
+    // #150 (cycle 6) : une seule notification, en clair, sans le message brut
+    // de l'exception (le test codifiait la première des deux notifications).
     await waitFor(() => {
-      expect(useStatusStore.getState().notifications).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            type: 'error',
-            title: 'Erreur export VCF',
-            message: 'disk full',
-          }),
-        ])
+      const erreurs = useStatusStore.getState().notifications.filter((n) => n.type === 'error');
+      expect(erreurs).toHaveLength(1);
+      expect(erreurs[0]).toEqual(
+        expect.objectContaining({ title: 'Export VCF', message: expect.stringMatching(/L’export a échoué/) }),
       );
     });
   });
