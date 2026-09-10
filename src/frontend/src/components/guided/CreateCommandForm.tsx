@@ -85,7 +85,10 @@ export function CreateCommandForm({ onSubmit, onBack, initialContent, initialDes
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
         <button
+          type="button"
           onClick={onBack}
+          aria-label="Retour"
+          title="Retour"
           className="flex items-center justify-center w-8 h-8 rounded-md bg-surface-elevated hover:bg-surface-elevated/80 text-text-muted hover:text-text transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
