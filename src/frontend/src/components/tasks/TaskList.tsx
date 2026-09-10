@@ -154,7 +154,16 @@ export function TaskList() {
                         isDone ? 'line-through text-text-muted' : 'text-text'
                       }`}
                     >
-                      {maskText(task.title)}
+                      {/* D105 : la carte s'ouvre à la souris ; au clavier, c'est
+                          le titre qui porte l'action, avec un nom. */}
+                      <button
+                        type="button"
+                        aria-label={`Ouvrir la tâche ${task.title}`}
+                        onClick={(e) => { e.stopPropagation(); handleTaskClick(task.id); }}
+                        className="text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan rounded-sm"
+                      >
+                        {maskText(task.title)}
+                      </button>
                     </h4>
 
                     {/* Priority & Status */}
