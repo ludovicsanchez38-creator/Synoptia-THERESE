@@ -5,7 +5,7 @@
  * Phase 3 - Tasks/Todos
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeft, Save } from 'lucide-react';
 import { useTaskStore } from '../../stores/taskStore';
@@ -37,9 +37,14 @@ export function TaskForm() {
   const isEditing = !!currentTaskId;
   const task = tasks.find((t) => t.id === currentTaskId);
 
-  // Load task data for editing
+  // Load task data for editing.
+  // #189 : une fois par tâche ouverte, pas à chaque nouvelle instance de
+  // l'objet (un rafraîchissement de la liste pendant la saisie réécrivait
+  // les six champs avec les valeurs du serveur).
+  const tacheChargeeRef = useRef<string | null>(null);
   useEffect(() => {
-    if (isEditing && task) {
+    if (isEditing && task && tacheChargeeRef.current !== task.id) {
+      tacheChargeeRef.current = task.id;
       setTitle(task.title);
       setDescription(task.description || '');
       setStatus(task.status);
