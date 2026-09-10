@@ -62,10 +62,11 @@ export function LimitsTab() {
   }
 
   // Calcul des pourcentages d'utilisation
-  const dailyInputPercent = limits && status?.daily_usage
+  // #188 : une limite à zéro ne se divise pas ; la barre reste à 0 au lieu de NaN ou 100.
+  const dailyInputPercent = limits && status?.daily_usage && limits.daily_input_limit > 0
     ? Math.min(100, (status.daily_usage.input_tokens / limits.daily_input_limit) * 100)
     : 0;
-  const monthlyBudgetPercent = limits && status?.monthly_usage
+  const monthlyBudgetPercent = limits && status?.monthly_usage && limits.monthly_budget_eur > 0
     ? Math.min(100, (status.monthly_usage.cost_eur / limits.monthly_budget_eur) * 100)
     : 0;
 
@@ -155,7 +156,7 @@ export function LimitsTab() {
           {/* Progression du budget */}
           <div className="space-y-1">
             <div className="flex justify-between text-xs text-text-muted">
-              <span>Budget mensuel ({limits?.monthly_budget_eur || 50} {UNITE_COUT})</span>
+              <span>Budget mensuel ({limits?.monthly_budget_eur ?? 50} {UNITE_COUT})</span>
               <span>{monthlyBudgetPercent.toFixed(0)}%</span>
             </div>
             <div className="h-2 bg-background rounded-full overflow-hidden">
