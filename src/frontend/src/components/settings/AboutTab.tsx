@@ -1,63 +1,24 @@
 // Onglet "À propos" - Version actuelle + Vérification des mises à jour
-// Vérifie les releases GitHub et propose le téléchargement si nouvelle version disponible
+// Utilise le même plugin Tauri que le bandeau pour ne jamais comparer deux sources.
 
 import { useState, useEffect } from 'react';
-import { RefreshCw, Download, CheckCircle, ExternalLink, Info, MessageSquareWarning } from 'lucide-react';
+import { RefreshCw, CheckCircle, ExternalLink, Info, MessageSquareWarning } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useBackendStore } from '../../hooks/useBackend';
 import { checkHealth } from '../../services/api';
 
-const GITHUB_REPO = 'ludovicsanchez38-creator/Synoptia-THERESE';
-const RELEASES_URL = `https://github.com/${GITHUB_REPO}/releases`;
+
 // US-012 : invitation Discord alpha PERMANENTE (revue adversariale : l'URL
 // vanity discord.gg/therese-alpha n'existait pas - Unknown Invite. Celle-ci
 // est créée par le bot Thérèse sur la guilde THÉRÈSE - Alpha, sans expiration).
 const DISCORD_URL = 'https://discord.gg/krDGArdbH8';
 
-interface ReleaseInfo {
-  tag_name: string;
-  name: string;
-  html_url: string;
-  published_at: string;
-  body: string;
-  assets: { name: string; browser_download_url: string; size: number }[];
-}
-
 type UpdateStatus = 'idle' | 'checking' | 'up-to-date' | 'update-available' | 'error';
-
-function compareVersions(current: string, latest: string): number {
-  // Nettoyer les préfixes (v, alpha, etc.)
-  const clean = (v: string) => v.replace(/^v/, '').replace(/-alpha.*$/, '');
-  const a = clean(current).split('.').map(Number);
-  const b = clean(latest).split('.').map(Number);
-  for (let i = 0; i < Math.max(a.length, b.length); i++) {
-    const diff = (b[i] || 0) - (a[i] || 0);
-    if (diff !== 0) return diff;
-  }
-  return 0;
-}
-
-function formatBytes(bytes: number): string {
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} Ko`;
-  return `${(bytes / (1024 * 1024)).toFixed(0)} Mo`;
-}
-
-function getPlatformAsset(assets: ReleaseInfo['assets']): ReleaseInfo['assets'][0] | null {
-  const platform = navigator.platform.toLowerCase();
-  if (platform.includes('mac')) {
-    return assets.find(a => a.name.endsWith('.dmg')) || null;
-  }
-  if (platform.includes('win')) {
-    return assets.find(a => a.name.endsWith('.msi') || a.name.endsWith('.exe')) || null;
-  }
-  // Linux
-  return assets.find(a => a.name.endsWith('.AppImage') || a.name.endsWith('.deb')) || null;
-}
 
 export function AboutTab() {
   const version = useBackendStore((s) => s.version);
   const [updateStatus, setUpdateStatus] = useState<UpdateStatus>('idle');
-  const [latestRelease, setLatestRelease] = useState<ReleaseInfo | null>(null);
+  const [latestVersion, setLatestVersion] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // Fetch la version si elle n'est pas encore disponible (panels Tauri = contexte JS séparé)
@@ -76,28 +37,19 @@ export function AboutTab() {
     setErrorMsg(null);
 
     try {
-      const response = await fetch(
-        `https://api.github.com/repos/${GITHUB_REPO}/releases`,
-        { headers: { Accept: 'application/vnd.github.v3+json' } }
-      );
-
-      if (!response.ok) {
-        throw new Error(`GitHub API : ${response.status}`);
+      if (!('__TAURI__' in window)) {
+        throw new Error('La vérification des mises à jour est disponible dans l’application installée.');
       }
-
-      const releases: ReleaseInfo[] = await response.json();
-      if (!releases.length) {
-        throw new Error('Aucune release trouvée');
-      }
-
-      // Prendre la première release (la plus récente, y compris pre-release)
-      const latest = releases[0];
-      setLatestRelease(latest);
-
-      const currentVersion = version || '0.0.0';
-      if (compareVersions(currentVersion, latest.tag_name) > 0) {
+      // BUG-178 : GitHub et Tauri n'avaient pas le même manifeste ni le même
+      // circuit d'installation. Les réglages interrogent désormais exactement
+      // le plugin consommé par UpdateBanner.
+      const { check } = await import('@tauri-apps/plugin-updater');
+      const update = await check();
+      if (update?.available) {
+        setLatestVersion(update.version);
         setUpdateStatus('update-available');
       } else {
+        setLatestVersion(null);
         setUpdateStatus('up-to-date');
       }
     } catch (err) {
@@ -106,14 +58,6 @@ export function AboutTab() {
     }
   }
 
-  function openReleasePage() {
-    // Utiliser le shell Tauri pour ouvrir dans le navigateur
-    import('@tauri-apps/plugin-shell').then(({ open }) => {
-      open(latestRelease?.html_url || RELEASES_URL);
-    }).catch(() => {
-      window.open(latestRelease?.html_url || RELEASES_URL, '_blank');
-    });
-  }
 
   function openDownload(url: string) {
     // return open(url) : propage le rejet d'open() au catch (hors Tauri,
@@ -124,8 +68,6 @@ export function AboutTab() {
       window.open(url, '_blank');
     });
   }
-
-  const platformAsset = latestRelease ? getPlatformAsset(latestRelease.assets) : null;
 
   return (
     <div className="space-y-6">
@@ -214,17 +156,14 @@ export function AboutTab() {
           )}
 
           {/* Résultat : mise à jour disponible */}
-          {updateStatus === 'update-available' && latestRelease && (
+          {updateStatus === 'update-available' && latestVersion && (
             <div className="space-y-3">
               <div className="bg-accent-cyan/10 border border-accent-cyan/30 rounded-md p-3">
                 <p className="text-sm text-accent-cyan-ink font-medium mb-1">
-                  Nouvelle version disponible : {latestRelease.tag_name}
+                  Nouvelle version disponible : {latestVersion}
                 </p>
                 <p className="text-xs text-text-muted">
-                  {latestRelease.name || latestRelease.tag_name}
-                  {latestRelease.published_at && (
-                    <> - {new Date(latestRelease.published_at).toLocaleDateString('fr-FR')}</>
-                  )}
+                  Le bandeau de mise à jour utilise ce même résultat pour télécharger et installer la version.
                 </p>
               </div>
 
@@ -233,27 +172,7 @@ export function AboutTab() {
                 Tes données sont conservées lors de la mise à jour (dossier ~/.therese/).
               </div>
 
-              {/* Bouton téléchargement direct pour la plateforme */}
-              {platformAsset && (
-                <Button
-                  variant="primary"
-                  onClick={() => openDownload(platformAsset.browser_download_url)}
-                  className="w-full justify-center"
-                >
-                  <Download className="w-4 h-4 mr-2" />
-                  Télécharger {platformAsset.name} ({formatBytes(platformAsset.size)})
-                </Button>
-              )}
 
-              {/* Lien vers la page des releases */}
-              <Button
-                variant="ghost"
-                onClick={openReleasePage}
-                className="w-full justify-center text-text-muted"
-              >
-                <ExternalLink className="w-4 h-4 mr-2" />
-                Voir toutes les versions sur GitHub
-              </Button>
             </div>
           )}
 
