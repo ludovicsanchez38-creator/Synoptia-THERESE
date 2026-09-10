@@ -78,6 +78,8 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
   const [saving, setSaving] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  /** D79 : « Autre » ouvre un champ numérique au lieu d'être ignoré. */
+  const [portsPersonnalises, setPortsPersonnalises] = useState({ imap: false, smtp: false });
 
   useEffect(() => {
     loadProviders();
@@ -281,9 +283,14 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
           <label htmlFor="smtp-imap-port" className="text-sm text-text-muted">Port IMAP</label>
           <select
             id="smtp-imap-port"
-            value={IMAP_PORT_OPTIONS.some((o) => o.value === form.imap_port) ? String(form.imap_port) : 'custom'}
+            value={!portsPersonnalises.imap && IMAP_PORT_OPTIONS.some((o) => o.value === form.imap_port) ? String(form.imap_port) : 'custom'}
             onChange={(e) => {
-              if (e.target.value !== 'custom') updateField('imap_port', parseInt(e.target.value));
+              if (e.target.value === 'custom') {
+                setPortsPersonnalises((p) => ({ ...p, imap: true }));
+                return;
+              }
+              setPortsPersonnalises((p) => ({ ...p, imap: false }));
+              updateField('imap_port', parseInt(e.target.value));
             }}
             className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
           >
@@ -292,6 +299,18 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
             ))}
             <option value="custom">Autre : {form.imap_port}</option>
           </select>
+          {(portsPersonnalises.imap || !IMAP_PORT_OPTIONS.some((o) => o.value === form.imap_port)) && (
+            <input
+              id="smtp-imap-port-custom"
+              type="number"
+              min={1}
+              max={65535}
+              aria-label="Port IMAP personnalisé"
+              value={form.imap_port}
+              onChange={(e) => updateField('imap_port', parseInt(e.target.value) || 0)}
+              className="mt-1.5 w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
+            />
+          )}
         </div>
       </div>
 
@@ -312,9 +331,13 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
           <label htmlFor="smtp-smtp-port" className="text-sm text-text-muted">Port SMTP</label>
           <select
             id="smtp-smtp-port"
-            value={SMTP_PORT_OPTIONS.some((o) => o.value === form.smtp_port) ? String(form.smtp_port) : 'custom'}
+            value={!portsPersonnalises.smtp && SMTP_PORT_OPTIONS.some((o) => o.value === form.smtp_port) ? String(form.smtp_port) : 'custom'}
             onChange={(e) => {
-              if (e.target.value === 'custom') return;
+              if (e.target.value === 'custom') {
+                setPortsPersonnalises((p) => ({ ...p, smtp: true }));
+                return;
+              }
+              setPortsPersonnalises((p) => ({ ...p, smtp: false }));
               const option = SMTP_PORT_OPTIONS.find((o) => String(o.value) === e.target.value);
               if (option) {
                 // Choisir un port courant règle aussi le mode de sécurité.
@@ -330,6 +353,18 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
             ))}
             <option value="custom">Autre : {form.smtp_port}</option>
           </select>
+          {(portsPersonnalises.smtp || !SMTP_PORT_OPTIONS.some((o) => o.value === form.smtp_port)) && (
+            <input
+              id="smtp-smtp-port-custom"
+              type="number"
+              min={1}
+              max={65535}
+              aria-label="Port SMTP personnalisé"
+              value={form.smtp_port}
+              onChange={(e) => updateField('smtp_port', parseInt(e.target.value) || 0)}
+              className="mt-1.5 w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
+            />
+          )}
         </div>
       </div>
 
