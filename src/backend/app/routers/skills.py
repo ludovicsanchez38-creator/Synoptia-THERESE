@@ -5,6 +5,7 @@ API endpoints pour la génération de documents via skills.
 """
 
 import logging
+import re
 
 from app.models.database import get_session
 from app.models.entities import Contact, Project
@@ -24,6 +25,9 @@ from fastapi.responses import FileResponse
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 logger = logging.getLogger(__name__)
+
+# Cycle 6 : un identifiant de fichier de skill (uuid ou hex) ne contient ni joker ni séparateur.
+IDENTIFIANT_FICHIER = re.compile(r"[A-Za-z0-9_-]{4,64}")
 
 router = APIRouter()
 
@@ -254,6 +258,11 @@ async def download_file(file_id: str):
         output_dir = registry.output_dir
 
         # Chercher un fichier dont le nom contient le file_id (format: Title_fileId[:8].ext)
+        # Cycle 6 : l'identifiant entrait brut dans le motif glob ; `*` servait
+        # le premier fichier du dossier de sortie. Un identifiant n'a que des
+        # caractères d'identifiant.
+        if not IDENTIFIANT_FICHIER.fullmatch(file_id):
+            raise HTTPException(status_code=400, detail="Identifiant de fichier invalide")
         short_id = file_id[:8]
         matching_files = list(output_dir.glob(f"*_{short_id}.*"))
 
