@@ -111,6 +111,24 @@ class GmailProvider(EmailProvider):
 
         return dto
 
+    async def _complement_du_contrat(self, request: SendEmailRequest) -> dict:
+        """Cycle 6 : le contrat commun déclare pièces jointes et fil de
+        discussion ; Gmail les ignorait en silence. Le fil Gmail se retrouve
+        par le message d'origine (`threadId`)."""
+        thread_id = None
+        if request.reply_to_message_id:
+            try:
+                origine = await self._service.get_message(request.reply_to_message_id, format="minimal")
+                thread_id = origine.get("threadId")
+            except Exception:
+                logger.warning("Fil Gmail introuvable pour %s : envoi hors fil", request.reply_to_message_id, exc_info=True)
+        return {
+            "attachments": request.attachments or None,
+            "in_reply_to": request.in_reply_to,
+            "references": request.references,
+            "thread_id": thread_id,
+        }
+
     async def send_message(self, request: SendEmailRequest) -> str:
         """Send an email via Gmail."""
         result = await self._service.send_message(
@@ -120,6 +138,7 @@ class GmailProvider(EmailProvider):
             cc=request.cc if request.cc else None,
             bcc=request.bcc if request.bcc else None,
             html=request.is_html,
+            **await self._complement_du_contrat(request),
         )
         return result.get("id", "")
 
@@ -132,6 +151,7 @@ class GmailProvider(EmailProvider):
             cc=request.cc if request.cc else None,
             bcc=request.bcc if request.bcc else None,
             html=request.is_html,
+            **await self._complement_du_contrat(request),
         )
         return result.get("id", "")
 
@@ -145,6 +165,7 @@ class GmailProvider(EmailProvider):
             cc=request.cc if request.cc else None,
             bcc=request.bcc if request.bcc else None,
             html=request.is_html,
+            **await self._complement_du_contrat(request),
         )
         return str(result.get("id", draft_id))
 

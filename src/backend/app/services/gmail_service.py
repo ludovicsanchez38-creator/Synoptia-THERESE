@@ -229,38 +229,67 @@ class GmailService:
         cc: list[str] | None = None,
         bcc: list[str] | None = None,
         html: bool = False,
+        attachments: list[tuple[str, bytes, str]] | None = None,
+        in_reply_to: str | None = None,
+        references: str | None = None,
+        thread_id: str | None = None,
     ) -> dict:
-        """
-        Send an email.
+        """Send an email (pièces jointes et fil de discussion compris, cycle 6)."""
+        raw = self._encoder_message(to, subject, body, cc, bcc, html, attachments, in_reply_to, references)
+        charge: dict[str, Any] = {'raw': raw}
+        if thread_id:
+            charge['threadId'] = thread_id
+        return await self._request('POST', 'users/me/messages/send', json_data=charge)
 
-        Args:
-            to: List of recipient emails
-            subject: Email subject
-            body: Email body (plain or HTML)
-            cc: CC recipients
-            bcc: BCC recipients
-            html: Whether body is HTML
+    @staticmethod
+    def _encoder_message(
+        to: list[str],
+        subject: str,
+        body: str,
+        cc: list[str] | None = None,
+        bcc: list[str] | None = None,
+        html: bool = False,
+        attachments: list[tuple[str, bytes, str]] | None = None,
+        in_reply_to: str | None = None,
+        references: str | None = None,
+    ) -> str:
+        """MIME complet, encodé pour l'API : corps (texte ou HTML), en-têtes de fil,
+        pièces jointes. Cycle 6 : `GmailProvider` recevait le contrat commun
+        (`SendEmailRequest`) mais n'en transmettait que le corps ; un envoi ou un
+        brouillon partait sans sa pièce jointe et hors du fil, sans erreur."""
+        from email import encoders
+        from email.mime.base import MIMEBase
 
-        Returns:
-            Sent message object
-        """
-        # Create message
-        message = MIMEMultipart() if html else MIMEText(body)
+        message = MIMEMultipart('alternative') if html else MIMEMultipart()
+        message.attach(MIMEText(body, 'html' if html else 'plain', 'utf-8'))
         message['To'] = ', '.join(to)
         message['Subject'] = subject
-
         if cc:
             message['Cc'] = ', '.join(cc)
         if bcc:
             message['Bcc'] = ', '.join(bcc)
-
-        if html:
-            message.attach(MIMEText(body, 'html'))
-
-        # Encode message
-        raw = base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
-
-        return await self._request('POST', 'users/me/messages/send', json_data={'raw': raw})
+        if in_reply_to:
+            message['In-Reply-To'] = in_reply_to
+        if references:
+            message['References'] = references
+        if attachments:
+            if html:
+                # Une alternative ne porte pas de pièce : on l'emboîte dans un mixed.
+                enveloppe = MIMEMultipart()
+                for entete in ('To', 'Subject', 'Cc', 'Bcc', 'In-Reply-To', 'References'):
+                    if message[entete]:
+                        enveloppe[entete] = message[entete]
+                        del message[entete]
+                enveloppe.attach(message)
+                message = enveloppe
+            for filename, content, content_type in attachments:
+                principal, _, sous = (content_type or 'application/octet-stream').partition('/')
+                part = MIMEBase(principal, sous or 'octet-stream')
+                part.set_payload(content)
+                encoders.encode_base64(part)
+                part.add_header('Content-Disposition', f'attachment; filename="{filename}"')
+                message.attach(part)
+        return base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
 
     @staticmethod
     def _encode_draft(
@@ -270,21 +299,12 @@ class GmailService:
         cc: list[str] | None = None,
         bcc: list[str] | None = None,
         html: bool = False,
+        attachments: list[tuple[str, bytes, str]] | None = None,
+        in_reply_to: str | None = None,
+        references: str | None = None,
     ) -> str:
         """MIME du brouillon, encodé pour l'API (créé comme remplacé)."""
-        message = MIMEMultipart() if html else MIMEText(body)
-        message['To'] = ', '.join(to)
-        message['Subject'] = subject
-
-        if cc:
-            message['Cc'] = ', '.join(cc)
-        if bcc:
-            message['Bcc'] = ', '.join(bcc)
-
-        if html:
-            message.attach(MIMEText(body, 'html'))
-
-        return base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
+        return GmailService._encoder_message(to, subject, body, cc, bcc, html, attachments, in_reply_to, references)
 
     async def create_draft(
         self,
@@ -294,15 +314,17 @@ class GmailService:
         cc: list[str] | None = None,
         bcc: list[str] | None = None,
         html: bool = False,
+        attachments: list[tuple[str, bytes, str]] | None = None,
+        in_reply_to: str | None = None,
+        references: str | None = None,
+        thread_id: str | None = None,
     ) -> dict:
         """Create a draft email."""
-        raw = self._encode_draft(to, subject, body, cc, bcc, html)
-
-        return await self._request(
-            'POST',
-            'users/me/drafts',
-            json_data={'message': {'raw': raw}}
-        )
+        raw = self._encode_draft(to, subject, body, cc, bcc, html, attachments, in_reply_to, references)
+        message: dict[str, Any] = {'raw': raw}
+        if thread_id:
+            message['threadId'] = thread_id
+        return await self._request('POST', 'users/me/drafts', json_data={'message': message})
 
     async def update_draft(
         self,
@@ -313,6 +335,10 @@ class GmailService:
         cc: list[str] | None = None,
         bcc: list[str] | None = None,
         html: bool = False,
+        attachments: list[tuple[str, bytes, str]] | None = None,
+        in_reply_to: str | None = None,
+        references: str | None = None,
+        thread_id: str | None = None,
     ) -> dict[str, Any]:
         """Replace the content of an existing draft (B-060).
 
@@ -320,12 +346,14 @@ class GmailService:
         son identifiant : ré-enregistrer une correction ne laisse donc pas un
         second exemplaire dans la boîte.
         """
-        raw = self._encode_draft(to, subject, body, cc, bcc, html)
-
+        raw = self._encode_draft(to, subject, body, cc, bcc, html, attachments, in_reply_to, references)
+        message: dict[str, Any] = {'raw': raw}
+        if thread_id:
+            message['threadId'] = thread_id
         return await self._request(
             'PUT',
             f'users/me/drafts/{draft_id}',
-            json_data={'id': draft_id, 'message': {'raw': raw}}
+            json_data={'id': draft_id, 'message': message}
         )
 
     async def modify_message(
