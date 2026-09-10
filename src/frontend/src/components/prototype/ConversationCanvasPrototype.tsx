@@ -1865,7 +1865,7 @@ export function ConversationCanvasPrototype() {
 
                   <div className="mt-4 flex flex-wrap items-center gap-2">
                     {/* Entrée 3 : sur le brief, la carte affiche déjà ses
-                        « Sources réelles », conditionnées aux données
+                        « Lu dans », conditionnées aux données
                         chargées. Cette rangée-ci, écrite en dur, disait la
                         même chose deux centimètres plus bas. Les autres
                         parcours gardent la leur : elles ne se répètent pas,

@@ -21,8 +21,8 @@ export interface AlerteProps extends HTMLAttributes<HTMLDivElement> {
 export function Alerte({ ton: _ton = 'erreur', titre, icone, children, action, className, ...props }: AlerteProps) {
   return (
     <div
-      role="alert"
       {...props}
+      role="alert"
       className={cn(
         'flex gap-3 items-start px-4 py-3 rounded-sm bg-[var(--color-error-tint)] border border-error/30 text-text',
         className,

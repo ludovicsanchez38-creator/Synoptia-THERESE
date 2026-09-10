@@ -34,7 +34,7 @@ describe('Entrée 3 : une seule rangée de sources sur le brief', () => {
     render(<ConversationCanvasPrototype />);
     await act(async () => { await Promise.resolve(); });
 
-    // La carte porte « Sources réelles », conditionnées aux données chargées.
+    // La carte porte « Lu dans », conditionnées aux données chargées.
     // La coque en collait une seconde, écrite en dur, juste en dessous.
     const rangees = screen.queryAllByText(/^Sources$/);
     expect(rangees).toHaveLength(0);

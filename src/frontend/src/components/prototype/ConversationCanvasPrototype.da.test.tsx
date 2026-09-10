@@ -19,6 +19,7 @@ import { usePanelStore } from '../../stores/panelStore';
 import { usePersonalisationStore } from '../../stores/personalisationStore';
 import { _clearEscapeHandlers } from '../../lib/escapeStack';
 import { ConversationCanvasPrototype } from './ConversationCanvasPrototype';
+import { Ligne } from '../ui/Ligne';
 
 vi.mock('../../services/api/voice', async (importOriginal) => ({
   ...(await importOriginal<object>()),
@@ -201,6 +202,13 @@ describe('Lot 2 DA : le composeur reste au-dessus des lignes du brief', () => {
     render(<ConversationCanvasPrototype />);
     await screen.findByTestId('accueil-jour');
     const fond = screen.getByTestId('prototype-composer-backdrop');
-    expect(fond.className).toMatch(/\bz-20\b/);
+    const planDuFond = Number(/\bz-(\d+)\b/.exec(fond.className)?.[1]);
+    expect(planDuFond).toBe(20);
+    // Revue Grok du diff : la relation de plans se mesure des deux côtés.
+    const { container } = render(<Ligne titre="L" droite={<span>d</span>} onClick={() => {}} />);
+    const droite = container.querySelector('[class*="z-"]') as HTMLElement;
+    const planDeLaLigne = Number(/\bz-(\d+)\b/.exec(droite.className)?.[1]);
+    expect(planDeLaLigne).toBe(10);
+    expect(planDeLaLigne).toBeLessThan(planDuFond);
   });
 });

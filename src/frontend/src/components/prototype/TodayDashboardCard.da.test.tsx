@@ -160,6 +160,15 @@ describe('Lot 2 DA : chargement, panne, Réessayer', () => {
     expect(screen.getByRole('button', { name: 'Brancher mes mails' })).toBeInTheDocument();
   });
 
+  it('aucun interactif de la carte n’est écrit en text-xs (variateur, repli, tête compris)', () => {
+    const neuf = dashboard({ urgent_tasks: Array.from({ length: 9 }, (_, i) => tache(`n${i}`, `Tâche ${i}`, JOUR)) });
+    afficher(ready({ ...neuf, indisponibles: ['calendrier'] }));
+    const interactifs = carte().querySelectorAll('button, input, label, a, select, textarea');
+    expect(interactifs.length).toBeGreaterThan(5);
+    const fautifs = Array.from(interactifs).filter((el) => /\btext-xs\b/.test((el as HTMLElement).className));
+    expect(fautifs.map((el) => el.textContent)).toEqual([]);
+  });
+
   it('la mise en route passe en h3 sous l’état vide', () => {
     afficher(ready(dashboard()), { setup: setup(true, false) });
     expect(screen.getByRole('heading', { level: 3, name: 'Mise en route' })).toBeInTheDocument();

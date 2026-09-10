@@ -361,7 +361,7 @@ describe('Variateur du brief - le chargement ne ment pas (revue Soso, P2)', () =
     installLocalStorageStub();
   });
 
-  it("ne titre pas « Aucune priorité détectée » pendant qu'il relit", () => {
+  it("ne titre pas « Rien ne presse aujourd’hui » pendant qu'il relit", () => {
     render(
       <TodayDashboardCard
         resource={{ status: 'loading', error: null, data: null }}
@@ -370,7 +370,11 @@ describe('Variateur du brief - le chargement ne ment pas (revue Soso, P2)', () =
       />,
     );
 
-    expect(screen.queryByRole('heading', { name: 'Aucune priorité détectée' })).not.toBeInTheDocument();
+    // Revue Grok du diff (lot 2) : l'ancien libellé rendait l'assertion vraie
+    // par construction ; c'est le titre du vide constaté qui ne doit pas
+    // apparaître tant que la ressource n'est pas prête.
+    expect(screen.queryByRole('heading', { name: 'Rien ne presse aujourd’hui' })).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { level: 2, name: 'Ta journée' })).toBeInTheDocument();
   });
 
   it('retrouve son réglage après un aller-retour par le chargement', () => {
