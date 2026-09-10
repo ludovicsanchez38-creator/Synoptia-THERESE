@@ -416,7 +416,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                   <button
                     type="button"
                     onClick={() => void loadData()}
-                    className="rounded-md border border-error px-2 py-1 text-xs font-semibold"
+                    className="rounded-md border border-error px-2 py-1 text-sm font-semibold"
                   >
                     Réessayer
                   </button>
