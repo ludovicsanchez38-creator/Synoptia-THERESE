@@ -206,6 +206,10 @@ function CategoryAccordion({
   defaultOpen: boolean;
 }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
+  // Cycle 6 (Sophie, sophie-02) : une recherche annonçait « 3 résultats » sans
+  // en montrer un seul si la catégorie avait été repliée avant ; l'accordéon
+  // suit désormais l'intention du parent quand elle change.
+  useEffect(() => { setIsOpen(defaultOpen); }, [defaultOpen]);
 
   return (
     <div className="border border-border/20 rounded-md overflow-hidden bg-bg/80">
@@ -448,7 +452,9 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
           <div className="grid gap-4">
             {displayedCategories.map((category, index) => (
               <CategoryAccordion
-                key={category.category}
+                // Cycle 6 (Sophie, sophie-02) : une nouvelle recherche remonte
+                // l'accordéon, donc rouvre une catégorie repliée à la main.
+                key={`${category.category}-${searchResults !== null ? searchQuery : ''}`}
                 category={category}
                 onSelectPrompt={handleSelect}
                 defaultOpen={searchResults !== null || index === 0}
