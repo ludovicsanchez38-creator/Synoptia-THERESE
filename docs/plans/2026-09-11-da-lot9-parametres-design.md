@@ -1,6 +1,6 @@
 # DA « Application affinée », lot 9 : l'écran Paramètres (design à challenger avant le code)
 
-Version 2, 11/09/2026 00:46, après la revue de la v1 (15 points repris, 0 non repris) ; journal `.cartography-work/reviews/grok-da-lot9-parametres-design-v1.log`.
+Version 3, 11/09/2026 01:09, après la revue de la v2 (17 points repris, 0 non repris) ; journal `.cartography-work/reviews/grok-da-lot9-parametres-design-v2.log`.
 Précédent : lot 3 (Tiroir), sur `main` ; cadence : une
 seule release pour toute la DA (décision Ludo 11/09, 0.72.0-alpha porte
 l'ensemble). Maquette :
@@ -37,8 +37,13 @@ de lecture partielle ne doit pas se teinter en erreur).
    rubriques du mode standard suivent la maquette. Outils, Agents, Avancé
    restent contributeur, nommés par BUG-159. Pas de 10e destination.
 3. La liste `FOURNISSEURS` (14 ids, Anthropic en tête, Ollama en queue) reste
-   entière et dans cet ordre, en grille 2 colonnes, `role="radiogroup"`
-   `aria-label="Fournisseur LLM"`. Pas de carte « Autres + 6 » (P-087, P-018).
+   entière et dans cet ordre, en grille 2 colonnes (`grid-cols-2`, comme
+   `.fournisseurs` de la maquette, **sans** césure à 840 px), `role="group"`
+   `aria-label="Fournisseur LLM"`. Chaque carte = `button type="button"`
+   `aria-pressed` (maquette `role="button"` `aria-pressed`, parametres.html:74),
+   **pas** `role="radio"` : `setLLMConfig` est un POST, la flèche ne doit pas
+   persister, donc le motif APG radio n'est pas tenu. Pas de carte
+   « Autres + 6 » (P-087, P-018).
 4. Les noms du catalogue (`provider.name`) restent. Les formulations de la
    maquette remplacent la prose là où l'état est le même (étiquettes de clé,
    tête, vide Ollama). Un état sans équivalent maquetté garde ses mots
@@ -59,14 +64,14 @@ une colonne, rubriques en 3 colonnes.
 |---|---|---|
 | Cadre | `max-w-3xl` `shadow-2xl` `rounded-md` `bg-surface` | `max-w-6xl` (72 rem, `.colonne` de la maquette), `shadow-lg`, mêmes `role` / `aria-label` / testid / `data-active-tab` / `data-requested-tab` ; overlay `data-dialog-backdrop` `bg-black/60` conservé (motif de `DialogShell`, pas un jeton nouveau) |
 | Tête | `<h2 className="text-lg">Paramètres` + fermer | `<h1 id="settings-title">Paramètres</h1>` (registre : `@layer base` pose déjà `font-family: var(--font-family-display)`, `src/frontend/src/styles/globals.css:608-614` ; **pas** `className="font-editorial"`, la maquette est un `h1` sans `.editorial`, `parametres.html:56`, `base.css:48-49`) ; le dialogue passe `aria-labelledby="settings-title"` et **garde** `aria-label="Paramètres"` (filet) ; `Button variant="ghost" size="icon"` `data-testid="settings-close-btn"` `aria-label="Fermer les paramètres"` |
-| Nav | `role="tablist"` `aria-label="Rubriques des paramètres"` `sm:w-44` | mêmes rôle, nom, ids `settings-tab-${id}`, `aria-selected` / `aria-controls` / roving (flèches, Home, End) ; `max-[1023px]:grid max-[1023px]:grid-cols-3 min-[1024px]:block min-[1024px]:w-60` (**pas** `sm:block` : entre 640 px et 1023 px `sm:block` et `max-[1023px]:grid` ont la même spécificité ; la maquette, `parametres.html:30`, passe en 3 colonnes sous 1024 px) ; courant : `aria-selected` `bg-accent-tint text-accent font-semibold` (plus de `border-r-2 border-accent-cyan`) ; inactif : `text-text-muted hover:bg-surface-2 hover:text-text` ; `min-h-9 px-3 text-sm` ; icône Lucide 18 px |
+| Nav | `role="tablist"` `aria-label="Rubriques des paramètres"` `sm:w-44` | mêmes rôle, nom, ids `settings-tab-${id}`, `aria-selected` / `aria-controls` / roving (flèches, Home, End) ; `max-[1023px]:grid max-[1023px]:grid-cols-3 min-[1024px]:block min-[1024px]:w-60` (**pas** `sm:block` : entre 640 px et 1023 px `sm:block` et `max-[1023px]:grid` ont la même spécificité ; la maquette, `parametres.html:30`, passe en 3 colonnes sous 1024 px) ; le premier enfant (bloc Contributeur + `settings-hidden-tabs`, SettingsModal.tsx:786-815) porte `max-[1023px]:col-span-3` : à 800 px la grille 3 colonnes ne porte que les `role="tab"` ; sans ça le toggle occupe une cellule ; courant : `aria-selected` `bg-accent-tint text-accent font-semibold` (plus de `border-r-2 border-accent-cyan`) ; inactif : `text-text-muted hover:bg-surface-2 hover:text-text` ; `min-h-9 px-3 text-sm` ; icône Lucide 18 px |
 | Libellés | Profil, IA, Services, Accessibilité, Outils, Agents, Confidentialité, Avancé, À propos | Profil ; **Service d'IA** ; **Services et connecteurs** ; **Accessibilité et affichage** ; Outils ; Agents ; **Sécurité et confidentialité** ; Avancé ; **À propos et mise à jour** |
 | Mode contributeur | interrupteur 20 px, libellé `text-xs` | interrupteur `w-10 h-6` (`role` natif du `input` `data-testid="ux-mode-toggle"`) dans un `<label>` qui ne contient **que** l'interrupteur et le libellé `text-sm font-medium` « Mode Contributeur » ; l'aide `text-xs text-text-muted` « Fonctions avancées » est un `<p>` **hors** du `label` (garde 7 : pas de `text-xs` dans le sous-arbre d'un interactif) ; `settings-hidden-tabs` inchangé (« Masquées ici : Outils, Agents, Avancé. ») |
 | Pied | Fermer ghost + Enregistrer primary (onglet profil) | `Button variant="ghost" size="md"` Fermer ; `Button variant="primary" size="md"` `data-testid="settings-save-btn"` : « Enregistrement... » / « Enregistrer », mêmes `disabled` |
 
 ## 2. Alertes et chargement de la coque
 
-Si `loading` : uniquement les six squelettes + `role="status"` « Lecture des
+Si `loading` : uniquement **six** `Squelette` + `role="status"` « Lecture des
 réglages… » ; `loadWarnings`, `error` et `operationStatus` sont **masqués**
 (`loadSettings` ne vide pas `error` au début, SettingsModal.tsx:176-177, un
 refus précédent resterait à l'écran). Hors chargement, ordre dans le
@@ -81,10 +86,10 @@ Extension de primitive, testée (`Alerte.tsx`, `Alerte.test.tsx`) : `ton?:
 
 | État | Aujourd'hui | Cible |
 |---|---|---|
-| chargement | `Spinner taille="zone"` centré | six rangées `aria-hidden` en grille `grid-cols-2 gap-2.5` : chaque cellule `Squelette largeur="w-full" classeBarre="h-16 rounded-sm"` ; puis `role="status"` `text-sm text-text-muted` « Lecture des réglages… » ; **rien d'autre** |
-| lecture partielle (`loadWarnings`) | bandeau maison `settings-load-warning` `bg-[var(--color-warning-tint)]` | `Alerte ton="attention"` `data-testid="settings-load-warning"` `icone={<AlertCircle className="h-[18px] w-[18px]" />}` ; titre : 1 warning → « Ce réglage n’a pas pu être lu » ; N > 1 → « Ces réglages n’ont pas pu être lus » ; `children` = « : {liste}. Les valeurs affichées ici sont des valeurs par défaut, pas ta configuration réelle. » ; `action` = `Button variant="secondary" size="md"` « Réessayer le chargement » (`onClick={() => void loadSettings()}`) |
+| chargement | `Spinner taille="zone"` centré | **six** `Squelette` (`largeur="w-full"` `classeBarre="h-16 rounded-sm"`) `aria-hidden` en grille `grid-cols-2 gap-2.5` : trois rangées de deux, **pas** six rangées (12 barres) ; puis `role="status"` `text-sm text-text-muted` « Lecture des réglages… » ; **rien d'autre** |
+| lecture partielle (`loadWarnings`) | bandeau maison `settings-load-warning` `bg-[var(--color-warning-tint)]` | `Alerte ton="attention"` `data-testid="settings-load-warning"` `icone={<AlertCircle className="h-[18px] w-[18px]" />}` ; `titre` : 1 warning → « Ce réglage n’a pas pu être lu : {liste}. » ; N > 1 → « Ces réglages n’ont pas pu être lus : {liste}. » (liste dans le titre, comme aujourd'hui, SettingsModal.tsx:858-859) ; `children` = « Les valeurs affichées ici sont des valeurs par défaut, pas ta configuration réelle. » (**pas** un `children` qui commence par « : {liste} » : `Alerte` enveloppe déjà `children` dans un `<p>` sous le `titre`, Alerte.tsx:37-38) ; `action` = `Button variant="secondary" size="md"` « Réessayer le chargement » (`onClick={() => void loadSettings()}`) |
 | `operationStatus` | `role="status"` teinté info | `p role="status"` `px-4 py-3 text-sm text-info` (pas `Alerte` : ce n'est pas une erreur) |
-| `error` de coque | bandeau + Réessayer si `retryOperation` | `Alerte` (ton défaut `'erreur'`) `icone={AlertCircle 18 px}` `children={error}` ; `action` = `Button variant="ghost" size="md"` « Réessayer » **si** `retryOperation` (même quand `loadWarnings.length > 0` : ce bouton appelle `retryOperation()`, pas `loadSettings`) |
+| `error` de coque | bandeau + Réessayer si `retryOperation` | `Alerte` (ton défaut `'erreur'`) `icone={AlertCircle 18 px}` `children={error}` ; `action` = `Button variant="ghost" size="md"` « Réessayer » **si** `retryOperation` (même quand `loadWarnings.length > 0` : ce bouton appelle `retryOperation()`, pas `loadSettings`) ; **sauf** si `cleInvalide` : ce refus n'a **qu'une** `Alerte`, dans la carte clé (§ 4), maquette `#alerte-cle` seule (parametres.html:84). `getByRole('alert')` de B-201 vise cette occurrence unique : au modal complet, coque et carte clé ne montent pas la même `error` |
 
 Un Réessayer **par action**, noms distincts, jamais fusionnés : « Réessayer
 le chargement » → `loadSettings` ; « Réessayer » → `retryOperation()`
@@ -99,24 +104,55 @@ ces trois couples).
 - `CarteTete idTitre="settings-ia-title"` icône `Cpu` 18 px, titre « Service
   d'IA », meta « Le modèle qui répond. En local, rien ne quitte ton
   ordinateur. En ligne, chaque fournisseur demande ton accord une fois. »
-- Grille `grid grid-cols-1 min-[840px]:grid-cols-2 gap-2.5 px-4 pb-4`.
+- Grille `grid grid-cols-2 gap-2.5 px-4 pb-4` (comme
+  `.fournisseurs{grid-template-columns:repeat(2,1fr)}`, parametres.html:14 ;
+  **pas** `min-[840px]:grid-cols-2` : le 840 px de `base.css:142` ne touche
+  pas `.fournisseurs`, seulement `.barre .etat.secondaire` et `.recherche`).
 
-Chaque fournisseur = **un** `button role="radio"`. `onKeyDown` **ne** délègue
+Chaque fournisseur = **un** `button type="button"`
+`aria-pressed={selectedProvider === provider.id}` (maquette
+`role="button"` `aria-pressed`, parametres.html:74). **Pas** `role="radio"`
+ni `role="radiogroup"` : un radio APG se coche à la flèche
+(`rovingFocus.ts:35` `next.click()`), or `setLLMConfig` est un POST. Conteneur
+`role="group"` `aria-label="Fournisseur LLM"`. `onKeyDown` **ne** délègue
 **pas** à `handleRovingFocus` (rovingFocus.ts:33-35 : `next.focus()` puis
 `next.click()` ; `click()` appellerait `onSelectProvider` → `setLLMConfig`).
 Handler local : flèches / Home / End déplacent le `tabIndex` 0 et le `focus()`
 le long de l'ordre DOM (les quatre flèches, comme `orientation="both"`)
 **sans** `click()`. `setLLMConfig` uniquement sur activation native (`click`,
-Espace, Entrée). `handleRovingFocus` et son `click()` restent inchangés pour
-les autres appelants. En grille 2 colonnes, `ArrowDown` va au voisin DOM
-(colonne de droite) : ce n'est qu'un déplacement de focus.
+Espace, Entrée : un `button` le fait déjà). `handleRovingFocus` et son
+`click()` restent inchangés pour les autres appelants. En grille 2 colonnes,
+`ArrowDown` va au voisin DOM (colonne de droite) : ce n'est qu'un déplacement
+de focus.
 
 `grid grid-cols-[1fr_auto] gap-x-2.5 gap-y-0.5 p-3 rounded-sm border text-left text-sm min-h-9` ;
 courant (`aria-checked`) : `border-accent bg-accent-tint` + `outline outline-2 outline-offset-0 outline-ring` ;
 sinon `border-border hover:bg-surface-2` ; Ollama indisponible : `disabled`
 `opacity-50 cursor-not-allowed` (comme aujourd'hui) ;
 `focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-ring`.
-Titre : `font-semibold` = `provider.name`. Ligne `.quoi` : `col-span-2 text-sm text-text-muted` = `provider.description` ; si `provider.id === 'ollama'` et `ollamaStatus` : N = `ollamaStatus.models.length` (pas `ollamaModels`, `string[]` sans le champ), « 1 modèle installé » / « N modèles installés » (`N > 1`) ; « · outils pris en charge » seulement si `selectedProvider === 'ollama'` **et** `const fiche = ollamaStatus.models.find((m) => m.name === selectedModel)` est défini **et** `fiche.gere_les_outils === true` (`undefined` n'affiche pas la mention ; `gere_les_outils !== false` ment hors Ollama, où `find` est `undefined` et `undefined !== false` est vrai ; `OllamaModel.gere_les_outils?: boolean`, config.ts:241) ; si Ollama disponible et N = 0 : « Aucun modèle installé ». Droite : étiquettes de gauche à droite :
+Titre : `font-semibold` = `provider.name`. Ligne `.quoi` :
+`col-span-2 text-sm text-text-muted`, **une** chaîne, jamais une
+concaténation `description` + compte. Hors Ollama : `provider.description`
+seul. Ollama : **jamais** `provider.description` (`'100% local - Aucune clé
+API requise'`, catalogueModeles.ts:315) ; une chaîne par cas, N =
+`ollamaStatus?.models.length ?? 0` (pas `ollamaModels`, `string[]` sans le
+champ) :
+- `!ollamaStatus?.available` : « Service local injoignable »
+- disponible et N = 0 : « Aucun modèle installé »
+- N = 1 : si `selectedProvider === 'ollama'` et `selectedModel` non vide :
+  `{selectedModel} · 1 modèle installé` ; sinon « 1 modèle installé »
+- N > 1 : si `selectedProvider === 'ollama'` et `selectedModel` non vide :
+  `{selectedModel} · N modèles installés` ; sinon « N modèles installés »
+  (maquette `gemma4-tia · 2 modèles installés`, parametres.html:74)
+
+Puis, collé à **cette** chaîne, ` · outils pris en charge` seulement si
+`selectedProvider === 'ollama'` **et**
+`const fiche = ollamaStatus.models.find((m) => m.name === selectedModel)`
+est défini **et** `fiche.gere_les_outils === true` (`undefined` n'affiche pas
+la mention ; `gere_les_outils !== false` ment hors Ollama, où `find` est
+`undefined` et `undefined !== false` est vrai ;
+`OllamaModel.gere_les_outils?: boolean`, config.ts:241). Droite : étiquettes
+de gauche à droite :
 
 - Anthropic : « Recommandé » `ton="info"` (comme aujourd'hui), à gauche de l'état.
 - si `id === selectedProvider` **et** pas (`id === 'ollama' && !ollamaStatus?.available`) : `ton="succes"` « Actif », **en plus** de l'état de clé, jamais à sa place.
@@ -133,29 +169,53 @@ porte l'état).
 
 ## 4. Carte clé, modèle, effort
 
-Seconde `Carte` si `needsApiKey` (pas Ollama). `CarteTete` titre =
+Seconde `Carte` si `needsApiKey` (pas Ollama) : **uniquement** la clé (champ,
+succès, refus, lien console). `CarteTete niveau="h3"` (étendre `CarteTete` :
+`niveau?: 'h2' | 'h3'`, défaut `'h2'` pour les têtes de section ; aujourd'hui
+Carte.tsx:52 pose un `<h2>` figé) titre =
 `Clé API {currentProviderConfig.name}`, meta : `hasApiKey` → « La clé est
 chiffrée sur ton ordinateur et n'est jamais affichée en entier. » ; sinon →
-« Nécessaire pour utiliser ce fournisseur ».
+« Nécessaire pour utiliser ce fournisseur ». La maquette titre cette carte
+en `h3` sous le `h2` de section (parametres.html:82).
 
-Booléen `cleInvalide` (état de `SettingsModal`, passé à `LLMTab`) : posé
-`true` uniquement dans `handleSaveApiKey` (vide « Entre une clé API »,
+Booléen `cleInvalide` (état de `SettingsModal`, passé à `LLMTab` en
+`cleInvalide?: boolean`, défaut `false` : `LLMTab.refusAnnonce.test.tsx:22-42`,
+`LLMTab.qwen.test.tsx` et `LLMTab.test.tsx` rendent `LLMTab` sans cette prop).
+Posé `true` uniquement dans `handleSaveApiKey` (vide « Entre une clé API »,
 préfixe `La clé API doit commencer par "${providerConfig.keyPrefix}"`, catch
-de `setApiKey`) ; remis à `false` dès `setError(null)` sur ce chemin, ou
-succès. Les `setError` de `setLLMConfig` (fournisseur, modèle), Groq, Brave,
-dossier, profil, Ollama, ToolsPanel, stats, recherche web, extraction **ne**
-posent **pas** `cleInvalide`.
+de `setApiKey`). Remis à `false` à **chaque** `setError(null)` : saisie du
+champ `#settings-api-key` (LLMTab.tsx:281-284), `selectTab`
+(SettingsModal.tsx:720), `handleSelectProvider` (SettingsModal.tsx:454),
+début de `handleSaveApiKey` avant l'appel, succès, et tout autre
+`setError(null)` (Groq, Brave, dossier, profil, Ollama, ToolsPanel, stats,
+recherche web, extraction). Les `setError(...)` de `setLLMConfig`
+(fournisseur, modèle), Groq, Brave, dossier, profil, Ollama, ToolsPanel,
+stats, recherche web, extraction **ne** posent **pas** `cleInvalide`.
+`Input error={cleInvalide}` (donc `aria-invalid`) **seulement** tant que
+l'`Alerte` de refus est visible (`cleInvalide && error`) : un refus de
+préfixe, puis une frappe ou un autre onglet, ne laisse pas `aria-invalid`
+sans alerte (WCAG 3.3.1).
 
 | Élément | Aujourd'hui | Cible |
 |---|---|---|
 | Statut | bandeaux « Clé API configurée » / « Aucune clé » / « corrompue » | **retirés** : l'étiquette de la grille (§ 3) dit l'état ; le refus vit dans l'`Alerte` |
-| Champ | `<input id="settings-api-key">` maison + œil `absolute` + « Sauver » | `FormField label="Clé d'API" htmlFor="settings-api-key"` n'a **qu'un** enfant : `Input id="settings-api-key"` `type={showApiKey ? 'text' : 'password'}` `className="font-mono tracking-widest"` `error={cleInvalide}` (`Input` pose `aria-invalid` + bordure, Input.tsx:27 ; `FormField` sans prop `error`, sinon `Children.map` clonerait `aria-invalid` sur tout enfant, FormField.tsx:41-48). À côté, **hors** de `FormField`, rangée `flex gap-2 items-center` (maquette `.cle`, pas d'overlay : le `relative` d'`Input` est interne, Input.tsx:19, un œil `absolute` ne s'y cale pas) : le `FormField` `flex-1` ; `Button variant="ghost" size="icon"` œil `aria-label` / `aria-pressed` conservés (B-526) ; `Button variant="primary" size="md"` : `hasApiKey` → « Remplacer », sinon « Enregistrer » ; `saving` → `Spinner taille="bouton"` ; `disabled={saving \|\| !apiKeyInput.trim()}` ; Entrée inchangée |
+| Champ | `<input id="settings-api-key">` maison + œil `absolute` + « Sauver » | **Pas** de `FormField` : il clone tout enfant (FormField.tsx:41-48), donc ni rangée en enfant unique (l'`aria-invalid` irait sur le `div`) ni `FormField` `flex-1` dans la rangée (le label et l'input formeraient un seul item flex, œil et geste calés à droite du bloc entier). Maquette : `<label for="cle">` puis `<div class="cle">` (parametres.html:19, 83). Cible : `<label htmlFor="settings-api-key" className="block text-sm font-semibold">Clé d'API</label>` puis `.cle` = `div` `className="flex gap-2 items-center"` contenant (1) `div` `className="flex-1 min-w-0"` autour de `Input id="settings-api-key"` `type={showApiKey ? 'text' : 'password'}` `className="font-mono tracking-widest"` `error={Boolean(cleInvalide && error)}` (`Input` pose `aria-invalid` + bordure, Input.tsx:27 ; le `relative` d'`Input` est interne, Input.tsx:19, d'où le wrapper `flex-1 min-w-0` plutôt qu'une `className` sur `Input`, qui atterrit sur le `<input>`), (2) `Button variant="ghost" size="icon"` œil `aria-label` / `aria-pressed` conservés (B-526), (3) `Button variant="primary" size="md"` : `hasApiKey` → « Remplacer », sinon « Enregistrer » ; `saving` → `Spinner taille="bouton"` ; `disabled={saving \|\| !apiKeyInput.trim()}` ; Entrée inchangée |
 | Succès | `role="status"` « Clé API enregistrée » | inchangé (B-201) |
-| Refus | `<p role="alert">` + `error` | `Alerte` (ton `'erreur'`) `icone={AlertCircle 18 px}` `children={error}` sans `action` si le refus vient de `handleSaveApiKey` (pas de `retryOperation` sur ce chemin) |
+| Refus | `<p role="alert">` + `error` | `Alerte` (ton `'erreur'`) `icone={AlertCircle 18 px}` `children={error}` sans `action` si `cleInvalide` (pas de `retryOperation` sur `handleSaveApiKey`). **Seule** `Alerte` de ce refus : la coque ne le remonte pas (§ 2). B-201 (`LLMTab.refusAnnonce.test.tsx`) passe `cleInvalide={true}` avec `error={REFUS}` |
 | Lien console | `text-xs` | inchangé, `text-sm` |
-| Ollama | bandeau + Re-tester `size="sm"` | `Alerte` si indisponible (`ollamaStatus.error \|\| 'Ollama non disponible'`) ; sinon `p role="status"` « Ollama connecté ({base_url}) » ; `Button variant="ghost" size="md"` `aria-label="Re-tester la connexion Ollama"` |
+| Ollama | bandeau + Re-tester `size="sm"` | **hors** de la carte clé (Ollama n'a pas `needsApiKey`) ; `Alerte` si indisponible (`ollamaStatus.error \|\| 'Ollama non disponible'`) ; sinon `p role="status"` « Ollama connecté ({base_url}) » ; `Button variant="ghost" size="icon"` `aria-label="Re-tester la connexion Ollama"` (icône `RefreshCw` seule : `size="icon"` = 36 px, pas `size="md"` `h-9 px-4` autour d'une icône sans nom visible ; LLMTab.tsx:379-381 est aujourd'hui `size="sm"` + icône) |
+
+Modèle, effort, Qwen et `LocalModelFeasibility` : **toujours hors** de la
+carte clé, visibles pour Ollama (sinon le sélecteur disparaît avec
+`needsApiKey`). Une `Carte` toujours rendue, `CarteTete niveau="h3"` titre =
+`currentProviderConfig.name` (maquette `h3` « OpenAI » / réglages du modèle,
+parametres.html:82), contenant les deux rangées ; Qwen et la faisabilité à
+la suite, hors de cette carte aussi.
+
+| Élément | Aujourd'hui | Cible |
+|---|---|---|
 | Modèle | `<select id="settings-llm-model">` + « Custom » | rangée `grid grid-cols-[1fr_auto] items-center gap-4 py-2.5 border-t border-border px-4` : `<label htmlFor="settings-llm-model" className="text-sm font-semibold">Modèle</label>` (pas un `<b>` : le `Select` n'aurait plus de nom accessible, WCAG 4.1.2 ; `getByLabelText('Modèle')` de `SettingsModal.fournisseurIA.test.tsx:93` et `LLMTab.test.tsx:49`) + `Select id="settings-llm-model"` `options` = `availableModels` (label `name` + badge entre parenthèses, comme aujourd'hui) ; Custom, modèle hors liste, Qwen : inchangés sauf boutons `md` et `Input` / `FormField` ; Qwen : le bouton d'adresse dit **« Enregistrer l'adresse »** (jamais « Enregistrer » : collision avec la clé si `!hasApiKey` ; `LLMTab.qwen.test.tsx:70` `name: 'Enregistrer'` à aligner) |
-| Effort | `<select id="llm-effort">` | même rangée ; `<label htmlFor="llm-effort" className="text-sm font-semibold">Effort de raisonnement</label>` + `Select id="llm-effort"` (`getByLabelText('Effort de raisonnement')` et `aria-describedby`, `LLMTab.effortOpenAI.test.tsx:20`) ; options et `disabled={saving}` inchangés ; `data-testid="effort-mention-outils"` : `text-sm` (plus `text-xs` sur un texte lié à un interactif) ; erreur d'effort : `Alerte` + `Button variant="ghost" size="md"` « Réessayer l'effort » (`onClick={() => failedEffort && void handleChange(failedEffort)}`, LLMTab.tsx:668) — **toujours** rendu si `failedEffort`, même si la coque a `retryOperation` ou `loadWarnings` |
+| Effort | `<select id="llm-effort">` | même rangée (`grid-cols-[1fr_auto]`, comme `.ligne-reglage`) ; `<label htmlFor="llm-effort" className="text-sm font-semibold">Effort de raisonnement</label>` + `Select id="llm-effort"` (`getByLabelText('Effort de raisonnement')` et `aria-describedby`, `LLMTab.effortOpenAI.test.tsx:20`) ; sous le label, `p` `id="llm-effort-aide"` `className="text-sm text-text-muted col-start-1"` (`.ligne-reglage .aide{grid-column:1}`, parametres.html:23) : « Appliqué aux modèles qui le gèrent (Claude récents, GPT-5.6, Grok 4.5, modèles Ollama « thinking »). Auto laisse le modèle décider. » (LLMTab.tsx:635-638, conservé ; la maquette dit « Envoyé seulement aux modèles qui le prennent en charge. », parametres.html:87) ; le `Select` a `aria-describedby` qui inclut `llm-effort-aide` **et**, si `mentionOutils`, `llm-effort-outils` ; options et `disabled={saving}` inchangés ; `data-testid="effort-mention-outils"` : `text-sm` (plus `text-xs` sur un texte lié à un interactif) ; erreur d'effort : `Alerte` + `Button variant="ghost" size="md"` « Réessayer l'effort » (`onClick={() => failedEffort && void handleChange(failedEffort)}`, LLMTab.tsx:668) — **toujours** rendu si `failedEffort`, même si la coque a `retryOperation` ou `loadWarnings` |
 
 Pas de jauge « Ce mois-ci », pas d'interrupteur d'accord cloud (P-088).
 `LocalModelFeasibility` inchangé hors classes de couleur en dur s'il en reste.
