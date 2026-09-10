@@ -24,8 +24,20 @@ export interface VariablesPreview {
 
 async function _json<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    const message = await response.text().catch(() => null);
-    throw new ApiError(response.status, response.statusText, message || undefined);
+    // Cycle 6 (Sophie, sophie-05) : le corps brut `{"code":…,"message":…}`
+    // arrivait tel quel dans la notification ; on lit le message, comme `request()`.
+    const texte = await response.text().catch(() => '');
+    let message: string | undefined;
+    let code: string | undefined;
+    try {
+      const data = JSON.parse(texte);
+      const details = Array.isArray(data?.details) ? data.details.map((d: { message?: string }) => d?.message).filter(Boolean).join(' ; ') : '';
+      message = [data?.message || data?.detail, details].filter(Boolean).join(' : ') || undefined;
+      code = typeof data?.code === 'string' && data.code !== 'HTTP_ERROR' ? data.code : undefined;
+    } catch {
+      message = texte || undefined;
+    }
+    throw new ApiError(response.status, response.statusText, message, code);
   }
   return response.json() as Promise<T>;
 }
