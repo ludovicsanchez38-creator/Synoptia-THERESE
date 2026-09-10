@@ -606,7 +606,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
               ? `Decris ta tache pour ${profile?.name || "l'agent"}...`
               : "Message de suivi..."
           }
-          disabled={isStreaming}
+          disabled={isStreaming || profilIntrouvable}
           rows={1}
           className="flex-1 resize-none rounded-md border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-text-muted outline-none transition focus:border-agent-cyan/50 disabled:opacity-50"
           style={{ minHeight: "38px", maxHeight: "120px" }}
@@ -628,7 +628,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
         ) : (
           <button
             onClick={handleSend}
-            disabled={!inputValue.trim()}
+            disabled={!inputValue.trim() || profilIntrouvable}
             className="flex h-9 w-9 items-center justify-center rounded-md bg-agent-cyan/20 text-agent-cyan transition hover:bg-agent-cyan/30 disabled:opacity-30 disabled:hover:bg-agent-cyan/20"
             title="Envoyer"
           >
