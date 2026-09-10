@@ -788,22 +788,24 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     } catch (error) {
       // Stop batching on error
       stopBatching();
-      // Le message et ses pièces jointes restent modifiables/réessayables tant
-      // que le backend n'a pas confirmé la fin du stream.
-      setInput((current) => current.trim() ? current : trimmed);
-      setAttachedFiles((current) => {
-        if (current.length > 0) return current;
-        for (const file of sentFiles) attachedPathsRef.current.add(file.path);
-        return sentFiles;
-      });
-      saveDraft(trimmed);
       // Interruption volontaire : afficher le texte déjà reçu
       if (error instanceof DOMException && error.name === 'AbortError') {
         // Revue harmonisation F2a : l'utilisateur a ARRÊTÉ la réponse - la
         // navigation reçue est annulée avec le reste, pas de vue surprise.
+        // #125 : le message est déjà dans la conversation ; il ne revient pas
+        // dans le composeur (ce n'est pas un échec d'envoi).
         pendingClientAction = null;
         updateMessage(assistantMessageId, accumulatedContent || '*(interrompu)*');
       } else {
+        // Le message et ses pièces jointes restent modifiables/réessayables tant
+        // que le backend n'a pas confirmé la fin du stream.
+        setInput((current) => current.trim() ? current : trimmed);
+        setAttachedFiles((current) => {
+          if (current.length > 0) return current;
+          for (const file of sentFiles) attachedPathsRef.current.add(file.path);
+          return sentFiles;
+        });
+        saveDraft(trimmed);
         console.error('Error sending message:', error);
 
         // BUG-070 : conversation fantôme → 404 persistant
