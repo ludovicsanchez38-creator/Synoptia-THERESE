@@ -137,12 +137,23 @@ async def test_la_synchronisation_crm_lit_l_onglet_deliverables(client, monkeypa
 
 # --- plafonds de jetons ---------------------------------------------------
 
-def test_un_echec_de_lecture_des_plafonds_est_reessaye_au_controle_suivant(monkeypatch):
+@pytest.fixture
+def singleton_du_compteur_rendu_neutre():
+    """Le compteur est un singleton : chaque test le laisse comme il l'a trouvé (défauts, non chargé)."""
     from app.services import token_tracker as module
 
-    suivi = module.TokenTracker()  # singleton : l'état est rendu à la fin par monkeypatch
-    monkeypatch.setattr(suivi, "_limites_chargees", False)
-    monkeypatch.setattr(suivi, "_limits", module.TokenLimits())
+    suivi = module.TokenTracker()
+    yield suivi
+    suivi._limits = module.TokenLimits()
+    suivi._limites_chargees = False
+
+
+def test_un_echec_de_lecture_des_plafonds_est_reessaye_au_controle_suivant(monkeypatch, singleton_du_compteur_rendu_neutre):
+    from app.services import token_tracker as module
+
+    suivi = singleton_du_compteur_rendu_neutre
+    suivi._limites_chargees = False
+    suivi._limits = module.TokenLimits()
     appels = {"n": 0}
 
     class _Connexion:
@@ -169,3 +180,42 @@ def test_un_echec_de_lecture_des_plafonds_est_reessaye_au_controle_suivant(monke
     assert suivi._limites_chargees is False, "un échec de lecture ne doit pas figer les plafonds par défaut"
     suivi._charger_limites_si_besoin()
     assert appels["n"] == 2 and suivi._limites_chargees is True
+
+
+# --- compteur de jetons : lecteurs et zéro réel (secondes lectures, Grok D185/D186) --
+
+def test_les_lecteurs_d_usage_chargent_les_plafonds_avant_de_les_lire(monkeypatch, singleton_du_compteur_rendu_neutre):
+    suivi = singleton_du_compteur_rendu_neutre
+    suivi._limites_chargees = False
+    appels = {"n": 0}
+
+    def _charge():
+        appels["n"] += 1
+        suivi._limites_chargees = True
+
+    monkeypatch.setattr(suivi, "_charger_limites_si_besoin", _charge)
+    suivi.get_daily_usage()
+    assert appels["n"] >= 1, "get_daily_usage lit self._limits sans les charger"
+    suivi._limites_chargees = False  # assignation directe : monkeypatch restaurerait True après la fixture
+    suivi.get_monthly_usage()
+    assert appels["n"] >= 2, "get_monthly_usage lit self._limits sans les charger"
+
+
+def test_un_usage_reel_de_zero_jeton_n_est_pas_remplace_par_une_estimation(monkeypatch):
+    from types import SimpleNamespace
+
+    from app.services import token_tracker as module
+
+    enregistre = {}
+
+    class FauxSuivi:
+        def record_usage(self, **kwargs):
+            enregistre.update(kwargs)
+            return SimpleNamespace(**kwargs)
+
+    monkeypatch.setattr(module, "get_token_tracker", lambda: FauxSuivi())
+    service = SimpleNamespace(config=SimpleNamespace(model="m", provider=SimpleNamespace(value="p")))
+    module.enregistrer_usage_llm(service, {"input_tokens": 0, "output_tokens": 0}, "conv", texte_entree="un deux trois", texte_sortie="quatre cinq")
+    assert enregistre["input_tokens"] == 0 and enregistre["output_tokens"] == 0, enregistre
+    module.enregistrer_usage_llm(service, None, "conv", texte_entree="un deux trois", texte_sortie="quatre cinq")
+    assert enregistre["input_tokens"] == 6 and enregistre["output_tokens"] == 4, "sans usage réel, l'estimation reste deux jetons par mot"

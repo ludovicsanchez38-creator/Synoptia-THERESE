@@ -456,6 +456,9 @@ class TokenTracker:
 
     def get_daily_usage(self) -> dict:
         """Get today's usage summary."""
+        # Cycle 6 : ces lecteurs affichaient les plafonds par défaut tant
+        # qu'aucun contrôle n'avait chargé ceux de la base.
+        self._charger_limites_si_besoin()
         self._reset_daily_if_needed()
 
         return {
@@ -525,6 +528,7 @@ class TokenTracker:
 
     def get_monthly_usage(self) -> dict:
         """Get this month's usage summary."""
+        self._charger_limites_si_besoin()
         self._reset_monthly_if_needed()
 
         return {
@@ -675,8 +679,14 @@ def enregistrer_usage_llm(
     deux jetons par mot.
     """
     usage = usage_sink or {}
-    input_tokens = usage.get("input_tokens") or len(texte_entree.split()) * 2
-    output_tokens = usage.get("output_tokens") or len(texte_sortie.split()) * 2
+    # Cycle 6 : un zéro réel du fournisseur est une mesure, pas une absence ;
+    # `or` le remplaçait par l'estimation à deux jetons par mot.
+    input_tokens = usage.get("input_tokens")
+    if input_tokens is None:
+        input_tokens = len(texte_entree.split()) * 2
+    output_tokens = usage.get("output_tokens")
+    if output_tokens is None:
+        output_tokens = len(texte_sortie.split()) * 2
     modele = str(getattr(llm_service, "modele_effectif", None) or getattr(getattr(llm_service, "config", None), "model", "inconnu"))
     fournisseur = str(getattr(llm_service, "fournisseur_effectif", None) or getattr(getattr(getattr(llm_service, "config", None), "provider", None), "value", "inconnu"))
     return get_token_tracker().record_usage(
