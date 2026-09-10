@@ -7,6 +7,7 @@ Wraps the existing GmailService.
 
 import json
 import logging
+from typing import Any
 
 from app.services.email.base_provider import (
     EmailAttachmentDTO,
@@ -111,7 +112,7 @@ class GmailProvider(EmailProvider):
 
         return dto
 
-    async def _complement_du_contrat(self, request: SendEmailRequest) -> dict:
+    async def _complement_du_contrat(self, request: SendEmailRequest) -> dict[str, Any]:
         """Cycle 6 : le contrat commun déclare pièces jointes et fil de
         discussion ; Gmail les ignorait en silence. Le fil Gmail se retrouve
         par le message d'origine (`threadId`)."""

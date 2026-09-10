@@ -232,10 +232,10 @@ class ImapSmtpProvider(EmailProvider):
         return dossier or "INBOX", uid
 
     @staticmethod
-    def _criteres(unread_only: bool, query: str | None, flagged_only: bool):
+    def _criteres(unread_only: bool, query: str | None, flagged_only: bool) -> Any:
         """Cycle 6 : « non lus », « mot-clé » et « suivis » se COMBINENT ; avant,
         la recherche par mot-clé remplaçait le filtre des non-lus."""
-        conditions: dict = {}
+        conditions: dict[str, Any] = {}
         if unread_only:
             conditions["seen"] = False
         if flagged_only:
@@ -722,7 +722,7 @@ class ImapSmtpProvider(EmailProvider):
 
         dossier, uid = self._dossier_et_uid(message_id)
 
-        def _sync_move():
+        def _sync_move() -> EmailMessageDTO:
             with self._connect_mailbox(initial_folder=dossier, timeout=IMAP_CONNECT_TIMEOUT) as mailbox:
                 # Cycle 6 : l'UID est réattribué dans la destination ; on lit le
                 # message dans son dossier d'origine, puis on le déplace.
@@ -965,7 +965,7 @@ class ImapSmtpProvider(EmailProvider):
                 ))
 
         return EmailMessageDTO(
-            id=self._identifiant(folder, msg.uid),
+            id=self._identifiant(folder, msg.uid or ""),
             subject=msg.subject,
             snippet=msg.text[:200] if msg.text else None,
             from_email=msg.from_,
