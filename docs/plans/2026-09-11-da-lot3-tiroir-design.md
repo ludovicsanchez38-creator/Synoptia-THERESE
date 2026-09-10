@@ -1,6 +1,6 @@
 # DA « Application affinée », lot 3 : l'écran Tiroir (design à challenger avant le code)
 
-Version 1, 11/09/2026. Précédent : lot 2 (Accueil), livré sur `main` ;
+Version 1, 11/09/2026, reprises de la revue v1 (GO). Précédent : lot 2 (Accueil), livré sur `main` ;
 cadence : une seule release pour toute la DA (décision Ludo 11/09, 0.72.0-alpha
 porte l'ensemble). Maquette :
 `docs/da/2026-09-05-propositions/maquettes/tiroir.html` (états `normal`,
@@ -53,9 +53,9 @@ Maquette `.tiroir` : `width: 22rem`, grille `auto auto 1fr auto`, `role="region"
 
 | Élément | Aujourd'hui | Cible |
 |---|---|---|
-| Panneau | `aside` `w-[306px]` `left-16` `shadow-[12px_0_40px_rgba(16,28,54,0.10)]` `xl:relative xl:left-0 xl:shadow-none` | mêmes `role="region"`, `aria-labelledby="prototype-conversation-drawer-title"`, `tabIndex={-1}`, `data-testid="prototype-conversation-drawer"` ; `w-[22rem]` ; `left-14` (rail lot 1 = `w-14`, plus l'écart de 8 px) ; `shadow-lg xl:shadow-none` ; isolation, voile de la coque, Échap, surfaces `new` / `search` / `history` inchangés |
-| Tête | `h-14`, `<span>` 14 px « Conversations », fermer 32 px | `<h2 id="prototype-conversation-drawer-title">Conversations</h2>` (taille du `h2` de `@layer base`, pas `text-sm`) ; `Button variant="ghost" size="icon"` `aria-label="Fermer les conversations"` (libellé conservé, tests et cascade) |
-| Recherche | `<input>` maison, placeholder « Rechercher… » | `Input type="search" icon={<Search className="h-[18px] w-[18px]" />}` `aria-label="Rechercher une conversation"` (conservé : les tests ciblent ce nom), `placeholder="Rechercher dans les conversations"`, `data-testid` absent aujourd'hui, on n'en invente pas |
+| Panneau | `aside` `w-[306px]` `left-16` `shadow-[12px_0_40px_rgba(16,28,54,0.10)]` `xl:relative xl:left-0 xl:shadow-none` | mêmes `role="region"`, `aria-labelledby="prototype-conversation-drawer-title"`, `tabIndex={-1}`, `data-testid="prototype-conversation-drawer"` ; `w-[22rem]` ; `left-16` (rail lot 1 = `w-14` + écart 8 px = 4 rem) ; `shadow-lg xl:shadow-none` ; isolation, voile de la coque, Échap, surfaces `new` / `search` / `history` inchangés |
+| Tête | `h-14`, `<span>` 14 px « Conversations », fermer 32 px | `<h2 id="prototype-conversation-drawer-title" className="text-base">Conversations</h2>` (1 rem, comme la maquette, pas la taille `h2` de `@layer base`) ; `Button variant="ghost" size="icon"` `aria-label="Fermer les conversations"` (libellé conservé, tests et cascade) |
+| Recherche | `<input>` maison, placeholder « Rechercher… » | `Input type="search" icon={<Search className="h-[18px] w-[18px]" />}` `className="bg-surface-2"` (twMerge : le défaut de la primitive est `bg-surface`) `aria-label="Rechercher une conversation"` (conservé : les tests ciblent ce nom), `placeholder="Rechercher dans les conversations"`, `data-testid` absent aujourd'hui, on n'en invente pas |
 | Geste principal | en tête, classes maison + `shadow-[var(--shadow-card)]` | **pied** `border-t border-border px-4 py-2.5` : `Button variant="primary" size="md" className="w-full"` `ref={newConversationRef}` « Nouvelle conversation », icône `Plus` 18 px ; même `startConversation` |
 | Liste | `data-testid="prototype-conversation-list"` | conservé ; `aria-label="Historique des conversations"` conservé |
 
@@ -75,9 +75,9 @@ le menu d'actions, déjà au-dessus via `absolute`).
 | Quand | `updatedLabel` = jour + mois + heure, `text-xs` | `text-sm tabular-nums text-text-muted` ; même `updatedAt` : jour civil = `toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })` ; hier idem ; 2 à 6 jours = `toLocaleDateString('fr-FR', { weekday: 'short' })` ; au-delà = `toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' })` ; `Date inconnue` inchangé |
 | Compte | `compteMessages` + suffixe sync, `text-xs` | `col-span-2 text-sm text-text-muted truncate` ; chaînes exactes conservées : « Brouillon en attente » si 0 ; « 1 message » / « N messages » si N ≥ 1 (`N > 1`) ; suffixe ` · non enregistrée` si `!synced` |
 | Groupe | `text-xs` uppercase + icône `History` 12 px | `text-xs font-semibold uppercase tracking-wider text-text-muted px-2 py-1.5` sans icône (maquette `.groupe`) ; libellés `dateLabel` inchangés (`Aujourd’hui`, `Hier`, `Cette semaine`, mois + année, `Date inconnue`) |
-| Menu | déclencheur 28 px, `data-testid="conversation-actions-menu"` | `Button variant="ghost" size="icon"` `aria-label={`Actions pour ${title}`}` et le menu (Renommer, Exporter en Markdown, Exporter en Word, Supprimer) inchangés ; testid conservé |
+| Menu | déclencheur 28 px, `data-testid="conversation-actions-menu"` | `Button variant="ghost" size="icon"` `className="absolute right-2 top-2 text-text-muted"` `aria-label={`Actions pour ${title}`}` ; le menu (Renommer, Exporter en Markdown, Exporter en Word, Supprimer) inchangé sauf `top-11` (plus de recouvrement avec le 36 px) ; testid conservé |
 | Renommer | input maison | `Input aria-label="Nouveau titre"` `maxLength={120}` ; `Button variant="ghost" size="md"` Annuler ; `Button variant="primary" size="md"` Enregistrer ; Entrée / Échap inchangés |
-| Suppression | bandeau maison, `data-testid="conversation-delete-confirmation"` | `Alerte` ce testid, titre « Supprimer définitivement cette conversation ? », `action` = Annuler `secondary md` + Confirmer `danger md` « Confirmer la suppression » ; textes des boutons conservés |
+| Suppression | bandeau maison, `data-testid="conversation-delete-confirmation"` | `div` ce testid (pas `Alerte` : ce n'est pas une erreur, aujourd'hui sans `role="alert"`) + Annuler `Button secondary md` + Confirmer `Button danger md` « Confirmer la suppression » ; textes des boutons conservés |
 
 Filtre, tri, verrouillage (`navigationLocked`), `openConversation` /
 `onClose` / `onOpenChat` : inchangés.
@@ -91,12 +91,12 @@ actuel du modal, distinct du voile du tiroir). `useDialogFocusTrap`,
 
 | Élément | Aujourd'hui | Cible |
 |---|---|---|
-| Cadre | `max-w-[1120px]`, ombre `rgba`, `h-[min(760px,88vh)]` | `shadow-lg` à la place des `rgba` ; `hover:-translate-y-0.5` retiré (leçon du clipping sous le pointeur) ; largeur, `flex-col md:flex-row`, `role="tablist"` / `role="tab"` / `aria-controls` / roving : inchangés (`ResponsiveShellContract` garde `flex-col md:flex-row`) |
-| Titre | `<h2 id="capability-center-title">Ce que Thérèse sait mobiliser</h2>` 20 px | même `id`, texte **« Capacités »** ; pastille `{n} capacité{n > 1 ? 's' : ''}` en `text-sm font-semibold text-text-muted` (`n = capabilities.length`, jamais `30` en dur) ; sous-titre « Tu demandes un résultat… » retiré (la maquette n'en a pas ; le pied le dit) |
+| Cadre | `max-w-[1120px]`, ombre `rgba`, `h-[min(760px,88vh)]` | `shadow-lg` à la place des `rgba` ; `hover:-translate-y-0.5` retiré (leçon du clipping sous le pointeur) ; largeur, `flex-col md:flex-row`, **`lg:grid-cols-2` conservé** sur les cartes (P-068), `role="tablist"` / `role="tab"` / `aria-controls` / roving : inchangés (`ResponsiveShellContract` garde `flex-col md:flex-row`) |
+| Titre | `<h2 id="capability-center-title">Ce que Thérèse sait mobiliser</h2>` 20 px | même `id`, texte **« Capacités »** ; compte `{n} capacité{n > 1 ? 's' : ''}` en `text-sm font-semibold text-text-muted` (`n = capabilities.length`, jamais `30` en dur) ; sous-titre « Tu demandes un résultat… », pastille Sparkles 44 px et « Je veux… » retirés (absents de la maquette ; le pied dit l'usage) |
 | Fermer | 44 px, `aria-label="Fermer les capacités"` | `Button variant="ghost" size="icon"`, même `aria-label` |
-| Recherche | input maison, `data-dialog-autofocus` | `Input type="search"` même `aria-label="Rechercher une capacité"`, même placeholder, même autofocus |
-| Groupes | `shortTitle` 12 px, icône `style={{ backgroundColor: tint }}` | `title` (nom long déjà dans les données) en `text-sm font-semibold` ; compte `n capacité(s)` en `text-sm` ; icône pastille ronde 2 rem `bg-*-tint` **par classes**, table `id → classes` : `organize` agenda, `business` factures, `create` taches, `decide` prospects, `automate` `bg-[var(--color-success-tint)] text-success`, `control` `bg-surface-2 text-text-muted` ; plus aucun `style={{ color }}` ; `id={`capability-group-${id}`}`, `role="tab"`, flèches : inchangés |
-| Cartes | bouton 2 col., description 12 px, portraits Board / agents | un bouton pleine largeur, grille `1fr auto` façon `.capacite` : `<b className="text-sm font-semibold">` titre, type à droite (§ 3.1), description `col-span-2 text-sm text-text-muted` ; icône de `capability.icon` 18 px dans la pastille du groupe (plus de `CharacterPortrait`) ; `onClick={() => onChoose(capability)}` inchangé |
+| Recherche | input maison, `data-dialog-autofocus` | `Input type="search"` `className="bg-surface-2"` même `aria-label="Rechercher une capacité"`, même placeholder, même autofocus |
+| Groupes | `shortTitle` 12 px, icône `style={{ backgroundColor: tint }}` | `title` (nom long déjà dans les données) en `text-sm font-semibold` ; compte `n capacité(s)` en `text-sm` ; icône pastille ronde 2 rem **par classes exactes** : `organize` `bg-domaine-agenda-tint text-domaine-agenda` ; `business` `bg-domaine-factures-tint text-domaine-factures` ; `create` `bg-domaine-taches-tint text-domaine-taches` ; `decide` `bg-domaine-prospects-tint text-domaine-prospects` ; `automate` `bg-[var(--color-success-tint)] text-success` ; `control` `bg-surface-2 text-text-muted` ; plus aucun `style={{ backgroundColor` ni `style={{ color }}` ; `id={`capability-group-${id}`}`, `role="tab"`, flèches : inchangés ; `ChevronRight` des onglets retiré ; `activeGroup.description` retiré |
+| Cartes | bouton 2 col., description 12 px, portraits Board / agents | un bouton pleine largeur, grille `1fr auto` façon `.capacite` dans `lg:grid-cols-2` : `<b className="text-sm font-semibold">` titre, type à droite (§ 3.1) à la place du `ChevronRight`, description `col-span-2 text-sm text-text-muted` ; icône de `capability.icon` 18 px dans la pastille du groupe (plus de `CharacterPortrait`) ; `onClick={() => onChoose(capability)}` inchangé |
 | Encadré « Toujours sous contrôle » | 12 px, présent en `md` | retiré (absent de la maquette ; le Centre de confiance reste le bouton de la barre) |
 | Pied | deux phrases, 12 px | `text-sm text-text-muted px-4 py-3` : « Une capacité Vue ou Parcours s'ouvre au clic. Une Demande relue pose une phrase dans le composeur, que tu relis avant l'envoi. » |
 | Vide recherche | titre + texte 12 px | `EtatVide` titre « Aucune capacité trouvée », texte actuel (« Essaie avec le résultat souhaité, par exemple « devis » ou « analyser ». »), sans action |
@@ -106,14 +106,18 @@ Les 30 ids, `destination` / `scenario`, `features` (recherche) : inchangés.
 
 ### 3.1 Type affiché (présentation seule)
 
-Fonction exportée `typeCapacite(item): 'Demande relue' | 'Action' | 'Parcours' | 'Vue'` :
+Fonction exportée `typeCapacite(item): 'Demande relue' | 'Action' | 'Parcours' | 'Vue'`
+(module `.ts` sans composant). Le type suit `chooseCapability` (un `scenario`
+ouvre un parcours) ; les libellés Vue de la maquette pour Brief du jour,
+Agenda et Contacts sont P-069, pas ce lot.
 
 1. `destination.kind === 'prompt'` → « Demande relue » (`text-sm font-semibold text-accent`)
 2. sinon `destination.kind === 'follow-ups'` → « Action »
 3. sinon `destination.kind === 'action'` et `action === 'guided.open'` → « Action »
-4. sinon `scenario` défini → « Parcours »
+4. sinon `scenario` défini → « Parcours » (les 7 ids : `daily-brief`, `email`, `calendar`, `contacts-memory`, `billing`, `decision-board`, `agents`)
 5. sinon → « Vue »
 
+Action / Parcours / Vue : `text-sm font-semibold uppercase tracking-wider text-text-muted`.
 Les trois prompts restent relus ; ce n'est pas une étiquette `Etiquette`
 (la maquette `.type` n'est pas une pilule). Plancher 14 px (la rangée est
 un bouton). Ordre de priorité ci-dessus, un seul libellé par carte.
@@ -143,36 +147,40 @@ Nouveaux, rouges d'abord :
 `PrototypeConversationDrawer.da.test.tsx`
 
 1. le panneau fait `w-[22rem]`, le titre est un `h2` d'id
-   `prototype-conversation-drawer-title`, la région s'en nomme ;
+   `prototype-conversation-drawer-title` en `text-base`, la région s'en nomme ;
 2. « Nouvelle conversation » est le `Button` `primary` du pied, et
    `surface="new"` lui donne encore le focus ;
 3. une ligne courante porte `aria-current="page"` et `bg-accent-tint` ;
-   le déclencheur d'actions est un bouton 36 px ; Entrée sur la ligne
-   appelle encore `onOpenChat` ;
+   le déclencheur d'actions est un bouton 36 px `text-text-muted` ; Entrée sur la ligne
+   appelle encore `onOpenChat` ; `updatedLabel` : les 4 branches (jour civil,
+   hier, 2 à 6 jours, au-delà) ;
 4. vide sans requête : titre « Aucune conversation », pas « enregistrée » ;
    vide avec requête : « Aucune conversation trouvée » ; un seul
    « Nouvelle conversation » (le pied), y compris à vide ;
 5. `Alerte` sur verrouillage, zéro bouton « Réessayer » dans le tiroir ;
-6. aucune classe `text-xs` sur un interactif, aucune couleur en dur dans
-   `PrototypeConversationDrawer.tsx` (étendre `aucuneCouleurEnDur` à ce
-   fichier).
+   la confirmation de suppression est un `div` testid, pas une `Alerte` ;
+6. aucune classe `text-xs` sur un interactif **ni dans son sous-arbre**,
+   aucune couleur en dur dans `PrototypeConversationDrawer.tsx` (étendre
+   `aucuneCouleurEnDur` à ce fichier).
 
 `CapabilityCenter.da.test.tsx`
 
 1. le `h2#capability-center-title` dit « Capacités » ; le compte écrit
-   « 30 capacités » via `capabilities.length` ;
+   `${capabilities.length} capacités` (jamais `30` en dur) ;
 2. `typeCapacite` : les 3 prompts → « Demande relue », `attention` →
-   « Action », `office` → « Action », `email` / `decision-board` →
-   « Parcours », `tasks` → « Vue » ; un clic `onChoose` inchangé ;
+   « Action », `office` → « Action », les 7 ids `scenario`
+   (`daily-brief`, `email`, `calendar`, `contacts-memory`, `billing`,
+   `decision-board`, `agents`) → « Parcours », `tasks` → « Vue » ; un clic
+   `onChoose` inchangé ;
 3. un seul `[data-dialog-autofocus]`, le focus va au champ (les deux cas
    actuels restent, ici ou délégués) ;
 4. `role="tablist"` nommé « Intentions », six `role="tab"`, le premier
    groupe reste `organize` ; plus de `style={{ backgroundColor` dans la
    fonction `CapabilityCenter` ;
 5. `EtatVide` « Aucune capacité trouvée » sur une requête absurde ;
-6. aucune classe `text-xs` sur un interactif de la fonction, plus de
-   `hover:-translate-y`, plus d'ombre `rgba` **sur le dialogue et les
-   cartes** (`TrustCenter` exclu) ;
+6. aucune classe `text-xs` sur un interactif de la fonction **ni dans son
+   sous-arbre**, plus de `hover:-translate-y`, plus d'ombre `rgba` **sur le
+   dialogue et les cartes** (`TrustCenter` exclu) ;
 7. le pied contient « Demande relue » et « s'ouvre au clic ».
 
 À aligner dans le même commit, forme seulement : `CarteOuvreSaDestination.test.tsx:41`,
@@ -180,6 +188,8 @@ Nouveaux, rouges d'abord :
 (« Ce que Thérèse sait mobiliser » → « Capacités ») ; `PrototypeConversationDrawer.test.tsx`
 (le bouton « Nouvelle conversation » reste unique, désormais au pied ;
 placeholder « Rechercher dans les conversations ») ;
+`PrototypeThemeContract.test.ts` (plancher `<CharacterPortrait>` 12 → 10,
+le catalogue n'en porte plus) ;
 `ResponsiveShellContract.test.ts` inchangé sur `flex-col md:flex-row` et
 sur `left-4 right-4` / `sm:w-[360px]` (TrustCenter). `Etabli.test.tsx`
 (`queryByRole('button', { name: /Capacités/ })` absent) reste vert : le
@@ -218,3 +228,21 @@ n'est retirée.
    visible, composeur non recouvert.
 4. Revue Grok du diff avant le tag, `/release-therese 0.72.0-alpha` avec le
    GO de Ludo (toute la DA, pas ce lot seul).
+
+## 8. Revue v1 : GO, reprises fondées
+
+Journal `.cartography-work/reviews/grok-da-lot3-tiroir-design-v1.log`. Aucun P1.
+1. `typeCapacite` suit `chooseCapability` (P-069 parké) : les 7 ids à `scenario` (`daily-brief`, `email`, `calendar`, `contacts-memory`, `billing`, `decision-board`, `agents`) s'étiquettent « Parcours », y compris Brief du jour, Agenda et Contacts que la maquette marque Vue.
+2. `PrototypeThemeContract.test.ts` : abaisser le plancher des `<CharacterPortrait>` de 12 à 10 (le catalogue n'en porte plus).
+3. Les deux `Input` de recherche portent `className="bg-surface-2"` (twMerge, le défaut de la primitive est `bg-surface`).
+4. Le tiroir garde `left-16` (rail `w-14` + écart 8 px = 4 rem).
+5. Déclencheur d'actions : `Button ghost icon` `className="absolute right-2 top-2 text-text-muted"` ; le menu passe à `top-11`.
+6. Le `h2` du tiroir porte `text-base` (1 rem, comme la maquette).
+7. Les cartes du catalogue gardent `lg:grid-cols-2` dans le dialogue `max-w-[1120px]` (P-068).
+8. Confirmation de suppression : `div` testid + deux `Button` (`secondary` Annuler, `danger` Confirmer) ; `Alerte` reste réservée à l'erreur (`role="alert"`).
+9. `updatedLabel` : les 4 branches (jour civil, hier, 2–6 jours, au-delà) sont testées dans `PrototypeConversationDrawer.da.test.tsx`.
+10. Catalogue : retirer « Je veux… », la pastille Sparkles 44 px, `activeGroup.description` et les `ChevronRight` des onglets et des cartes (le type s'affiche à droite).
+11. Type hors « Demande relue » : `text-sm font-semibold uppercase tracking-wider text-text-muted`.
+12. Pastilles de groupe, classes exactes : `organize` `bg-domaine-agenda-tint text-domaine-agenda` ; `business` `bg-domaine-factures-tint text-domaine-factures` ; `create` `bg-domaine-taches-tint text-domaine-taches` ; `decide` `bg-domaine-prospects-tint text-domaine-prospects` ; `automate` `bg-[var(--color-success-tint)] text-success` ; `control` `bg-surface-2 text-text-muted`.
+13. Garde `text-xs` : inspecter le sous-arbre de chaque interactif, pas seulement la balise ouvrante.
+14. Compte du catalogue : `expect(…).toHaveTextContent(\`${capabilities.length} capacités\`)`, jamais `30` en dur.
