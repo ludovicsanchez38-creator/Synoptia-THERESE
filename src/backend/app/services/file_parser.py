@@ -295,6 +295,43 @@ def _extract_xlsx(file_path: Path) -> str:
     return "\n".join(output)
 
 
+def _decouper_les_paves(paragraphs: list[str], chunk_size: int) -> list[str]:
+    """Cycle 6 (secondes lectures) : un paragraphe plus long que la taille de
+    fragment (ou un fichier sans ligne vide) était émis entier, chevauchement
+    en plus, et partait tel quel à l'embedding. Il est découpé à la phrase, au
+    mot, puis au caractère, sans jamais dépasser `chunk_size`."""
+    import re
+
+    resultat: list[str] = []
+    for para in paragraphs:
+        if len(para) <= chunk_size:
+            resultat.append(para)
+            continue
+        morceaux = re.split(r"(?<=[.!?])\s+", para)
+        courant = ""
+        for morceau in morceaux:
+            while len(morceau) > chunk_size:
+                # Une « phrase » plus longue que le fragment : au mot, sinon au caractère.
+                coupe = morceau.rfind(" ", 0, chunk_size)
+                if coupe <= 0:
+                    coupe = chunk_size
+                if courant:
+                    resultat.append(courant)
+                    courant = ""
+                resultat.append(morceau[:coupe].strip())
+                morceau = morceau[coupe:].strip()
+            if not morceau:
+                continue
+            if courant and len(courant) + 1 + len(morceau) > chunk_size:
+                resultat.append(courant)
+                courant = morceau
+            else:
+                courant = f"{courant} {morceau}".strip() if courant else morceau
+        if courant:
+            resultat.append(courant)
+    return resultat
+
+
 def chunk_text(
     text: str,
     chunk_size: int = 1000,
@@ -318,7 +355,7 @@ def chunk_text(
         return
 
     # Try to split on paragraphs first
-    paragraphs = text.split(separator)
+    paragraphs = _decouper_les_paves(text.split(separator), chunk_size)
 
     current_chunk = ""
     for para in paragraphs:
