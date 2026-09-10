@@ -262,7 +262,9 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
                   />
                   {/* Actions pour commandes utilisateur */}
                   {cmd.is_editable && (
-                    <div className="hidden group-hover/cmd:flex items-center gap-0.5">
+                    <div className="flex items-center gap-0.5 opacity-0 transition-opacity group-hover/cmd:opacity-100 focus-within:opacity-100">
+                      {/* D86 : hors survol, ces actions restent dans la mise en page
+                          (opacité, pas display:none) pour être atteignables au clavier. */}
                       {/* Bouton déplacer */}
                       <div className="relative">
                         <button
@@ -273,6 +275,7 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
                           }}
                           className="p-1 rounded-sm hover:bg-accent-tint text-text-muted hover:text-accent-cyan-ink transition-colors"
                           title="Déplacer"
+                          aria-label="Déplacer"
                         >
                           <ArrowRightLeft className="w-3 h-3" />
                         </button>
@@ -326,6 +329,7 @@ export function HomeCommands({ onPromptSelect, onGuidedPanelChange }: HomeComman
                           }}
                           className="p-1 rounded-full hover:bg-error/15 text-text-muted hover:text-error transition-colors"
                           title="Supprimer"
+                          aria-label="Supprimer"
                         >
                           <Trash2 className="w-3 h-3" />
                         </button>
