@@ -34,6 +34,8 @@ export function useAutosave(conversationId: string | null) {
   const lastSavedValueRef = useRef<string>('');
   const latestValueRef = useRef<string>('');
   const failedOperationRef = useRef<'save' | 'remove' | 'restore' | null>(null);
+  const conversationIdRef = useRef(conversationId);
+  conversationIdRef.current = conversationId;
 
   const persistDraft = useCallback((key: string, content: string): boolean => {
     try {
@@ -150,11 +152,22 @@ export function useAutosave(conversationId: string | null) {
     }
   }, [conversationId]);
 
-  // Nettoyage du timer au démontage
+  // Nettoyage du timer au démontage.
+  // #198 : un brouillon encore en attente est écrit avant de disparaître ;
+  // sinon taper puis fermer le composeur avant cinq secondes ne laissait rien.
   useEffect(() => {
     return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
+      if (!timerRef.current) return;
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+      const key = getDraftKey(conversationIdRef.current);
+      const contenu = latestValueRef.current;
+      if (key && contenu.trim() && contenu !== lastSavedValueRef.current) {
+        try {
+          localStorage.setItem(key, contenu);
+        } catch {
+          // Le champ a déjà disparu : il n'y a plus rien à annoncer.
+        }
       }
     };
   }, []);
