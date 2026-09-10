@@ -1421,6 +1421,9 @@ async def _send_email(args: dict, session: AsyncSession) -> str:
         return "Erreur : le destinataire est obligatoire."
     if not subject:
         return "Erreur : le sujet est obligatoire."
+    # Cycle 6 : un corps vide partait après confirmation (forme du défaut D1 du 27/08).
+    if not str(body).strip():
+        return "Erreur : le corps du message est vide."
 
     # Validation basique du format email
     email_pattern = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
