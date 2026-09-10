@@ -14,6 +14,7 @@ import {
 import { cn } from '../../lib/utils';
 import { grantCloudConsent } from '../../lib/consent';
 import type { LLMProvider } from '../../services/api';
+import { libelleDuFournisseur } from '../../lib/libellesFournisseurs';
 import { TEXTES_ONBOARDING } from './textes';
 
 interface SecurityStepProps {
@@ -59,11 +60,6 @@ const severityLabels = {
   low: 'Risque faible',
 };
 
-const providerLabels: Partial<Record<LLMProvider, string>> = {
-  anthropic: 'Anthropic', openai: 'OpenAI', gemini: 'Google Gemini', mistral: 'Mistral',
-  grok: 'xAI', openrouter: 'OpenRouter', perplexity: 'Perplexity', deepseek: 'DeepSeek',
-  infomaniak: 'Infomaniak', ollama: 'Ollama local',
-};
 
 export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
   const [acknowledged, setAcknowledged] = useState(false);
@@ -75,7 +71,8 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
   }, [provider]);
   const [expanded, setExpanded] = useState<number | null>(null);
   const cloudEnabled = provider !== null && provider !== 'ollama';
-  const providerLabel = provider ? providerLabels[provider] || provider : null;
+  // #294 : la table partagée couvre tous les fournisseurs (glm, kimi, qwen, minimax compris).
+  const providerLabel = provider ? libelleDuFournisseur(provider) : null;
 
   return (
     <motion.div

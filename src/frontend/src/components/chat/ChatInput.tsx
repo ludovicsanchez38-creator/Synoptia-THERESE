@@ -36,6 +36,7 @@ import { streamMessage, streamDeepResearch, indexFile, cancelGeneration, ApiErro
 import type { StreamChunk } from '../../services/api/chat';
 import { useAutosave } from '../../hooks/useAutosave';
 import { cn } from '../../lib/utils';
+import { libelleDuFournisseur } from '../../lib/libellesFournisseurs';
 import { PLACEHOLDER_COMPOSEUR } from '../../lib/etabli';
 import { ACCEPT_FICHIERS, FILTRES_SELECTEUR } from '../../lib/formatsIndexables';
 import {
@@ -73,12 +74,6 @@ interface AttachedFile extends DroppedFile {
   indexStatus: 'indexing' | 'ready' | 'error';
   indexError?: string;
 }
-
-const cloudProviderLabels: Partial<Record<LLMProvider, string>> = {
-  anthropic: 'Anthropic', openai: 'OpenAI', gemini: 'Google Gemini', mistral: 'Mistral',
-  grok: 'xAI', openrouter: 'OpenRouter', perplexity: 'Perplexity', deepseek: 'DeepSeek',
-  infomaniak: 'Infomaniak',
-};
 
 
 // US-007 : Indicateur de dernière sauvegarde
@@ -544,7 +539,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         action: 'message',
         purpose: finaliteCloud,
         provider: currentProvider,
-        providerLabel: cloudProviderLabels[currentProvider] || currentProvider,
+        providerLabel: libelleDuFournisseur(currentProvider),
         dataCategories: [
           'message saisi',
           'contexte de conversation',
@@ -865,7 +860,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         action: 'deep-research',
         purpose: 'llm',
         provider: currentProvider,
-        providerLabel: cloudProviderLabels[currentProvider] || currentProvider,
+        providerLabel: libelleDuFournisseur(currentProvider),
         dataCategories: ['requête saisie', 'contexte de conversation', 'résultats de recherche web'],
       });
       return;
