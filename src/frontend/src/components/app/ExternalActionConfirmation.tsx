@@ -1,5 +1,6 @@
 import {
   useCallback,
+  useEffect,
   useRef,
   useState,
   type ReactNode,
@@ -23,6 +24,9 @@ interface PendingExternalAction extends ExternalActionPreview {
 export function PrototypeExternalActionConfirmationProvider({ children }: { children: ReactNode }) {
   const [pending, setPending] = useState<PendingExternalAction | null>(null);
   const [busy, setBusy] = useState(false);
+  /** D58 : un effet externe qui échoue reste à l'écran avec sa cause. */
+  const [echec, setEchec] = useState<string | null>(null);
+  useEffect(() => { setEchec(null); }, [pending]);
   const pendingRef = useRef<PendingExternalAction | null>(null);
   const busyRef = useRef(false);
 
@@ -66,10 +70,16 @@ export function PrototypeExternalActionConfirmationProvider({ children }: { chil
 
     busyRef.current = true;
     setBusy(true);
+    setEchec(null);
     try {
       await action.run();
-    } finally {
       clearPending();
+    } catch (err) {
+      // D58 : la carte reste ouverte ; l'utilisateur voit pourquoi et choisit.
+      setEchec(err instanceof Error && err.message ? err.message : 'cause inconnue');
+    } finally {
+      busyRef.current = false;
+      setBusy(false);
     }
   }, [clearPending]);
 
@@ -111,6 +121,12 @@ export function PrototypeExternalActionConfirmationProvider({ children }: { chil
                 </div>
               ))}
             </dl>
+
+            {echec && (
+              <p role="alert" className="mt-3 rounded-md border border-error/30 bg-error/10 px-3 py-2 text-sm text-error">
+                L’action n’a pas abouti : {echec}
+              </p>
+            )}
 
             <div className="mt-5 flex justify-end gap-2">
               <button
