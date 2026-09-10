@@ -78,9 +78,10 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
       populateMap(useContactsStore.getState().contacts, projectsData);
     } catch (err: any) {
       console.error('Failed to load CRM data:', err);
-      if (!hasCachedContacts) {
-        setError(err?.message || 'Impossible de charger les données CRM');
-      }
+      // D69 : même avec des contacts en cache, un rechargement en panne se dit,
+      // sinon une liste périmée passe pour à jour. Le store des contacts porte
+      // le message quand c'est lui qui a échoué.
+      setError(useContactsStore.getState().error || err?.message || 'Impossible de charger les données CRM');
     } finally {
       setLoading(false);
     }
