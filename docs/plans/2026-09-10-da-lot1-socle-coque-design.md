@@ -5,10 +5,11 @@ Date : 10/09/2026. Cadrage validé par Ludo (« Go DA! ») :
 acceptée, cycle 7 en `IMPLEMENT`. Source : `docs/da/2026-09-05-propositions/`
 (`maquettes/da/base.css` = la direction 2 entière, `tokens.css` = les jetons
 réels de `globals.css`, `d2.css` vide). Ce document est soumis à Grok
-(contradicteur) AVANT toute ligne de code. Version 2 (10/09, 18:40) : la
+(contradicteur) AVANT toute ligne de code. Version 3 (10/09, 18:55) : la
 version 1 a reçu un NO-GO de Grok (22 points, tous confirmés à la lecture du
-code, `.cartography-work/reviews/c7-grok-da-lot1-design.log`) ; chaque
-point est intégré ci-dessous.
+code, `.cartography-work/reviews/c7-grok-da-lot1-design.log`), la version 2
+un second NO-GO (21 points traités, un partiel, 9 nouveaux,
+`c7-grok-da-lot1-design-v2.log`) ; chaque point est intégré ci-dessous.
 
 ## Ce que le lot change, en une phrase
 
@@ -42,10 +43,11 @@ règles DA posées en `@layer base` restent mortes derrière eux.
 | `html{font-size:16px}` | **ne pas copier** | `useFontSize()` pose 14, 16 ou 18 px sur `<html>` (préférence Petite / Grande) ; le copier figerait la préférence |
 | `--font-family-editorial` | `@theme --font-editorial` (même pile que display) | Tailwind 4 génère `font-*` depuis `--font-*`, pas depuis `--font-family-*` (`--font-family-display` du projet ne produit pas `font-display`, 0 usage) ; Instrument Serif (direction 1) n'est pas importé |
 | `--colonne: 56rem` | `@theme --container-colonne: 56rem` | génère `max-w-colonne` (namespace `--container-*`, comme `--container-4xl`) ; B-109 : `:root` ne génère aucune utilitaire ; la garde asserte la déclaration ET le style calculé |
+| (jetons du projet) `--color-error-tint`, `--color-success-tint`, `--color-warning-tint`, `--color-info-tint` | **promus de `:root` (l.160-165) dans `@theme`**, mêmes pigments ; les redéfinitions sombre et contraste élevé restent | B-109 : en `:root` ils ne génèrent pas `bg-error-tint`, et les primitives (`Etiquette`, `Alerte`, `Button danger`) partiraient sans fond ; le motif de `contrasteDesTeintes.test.ts` (`--color-error:`) ne les attrape pas |
 | `--rail: 3.5rem`, barre 3,25 rem, `--espace-1..5` | rien | déjà dans la grille Tailwind : `w-14`, `min-h-13`, `p-2/3/4/6/8` |
 | `--shadow-card: var(--shadow-sm)` (clair) | **jeton global inchangé** | cinq usages hors lot (`FollowUpsWorkspaceCanvas`, `ImagesWorkspaceCanvas`, `VoiceWorkspaceCanvas`, `CapabilityCenter`, `PrototypeConversationDrawer`) ; seule la primitive `Carte` prend `shadow-sm` ; les canevas suivront à leur lot |
 | `h1, h2, h3` (1,625 rem 800 / 1,1875 rem 700 / 1 rem 700, display, `letter-spacing -0.01em`, `line-height 1.2`, `margin 0`) | `@layer base`, après retrait du jumeau hors couche | un titre sans classe prend la DA ; un titre avec `text-2xl` garde sa taille jusqu'au lot de son écran |
-| `body{font:400 .875rem/1.5 var(--font-family-sans)}` (ligne DA entière : le raccourci `font` sans famille est invalide et serait ignoré) | `@layer base` | le texte sans classe passe de 16 à 14 px ; mesuré en recette, y compris en Petite (12,25 px : `--text-xs` plafonne les `text-xs`, pas le texte sans classe, à vérifier au pixel) |
+| `body{font:400 .875rem/1.5 var(--font-family-sans)}` (ligne DA entière : le raccourci `font` sans famille est invalide et serait ignoré) | `@layer base`, en PLUS du bloc `body` hors couche existant (`background-color`, `color`, `overflow: hidden`, `border-radius`), qui reste | le texte sans classe passe de 16 à 14 px ; mesuré en recette, y compris en Petite (12,25 px : `--text-xs` plafonne les `text-xs`, pas le texte sans classe, à vérifier au pixel) |
 | `:focus-visible { outline: 3px solid var(--color-ring); outline-offset: 2px }` | `@layer base`, après retrait du jumeau hors couche (le bloc contraste élevé l.630 reste) | les composants qui posent `focus-visible:outline-none` + anneau gardent le leur |
 | `.btn*`, `.carte`, `.ligne`, `.etiquette`, `.segments`, `.vide`, `.alerte`, `.chargement`, `.champ`, `.tableau` | composants React dans `components/ui` | aucune classe globale copiée ; aucune collision de nom mesurée |
 | `[data-reduced-motion="true"] *{transition:none}` | rien : l'app pose `data-reduce-motion` (sans « d », `globals.css` l.491) et `prefers-reduced-motion` l.479 | le `Squelette` s'appuie sur ces deux filets, pas sur l'attribut DA |
@@ -118,13 +120,16 @@ pilules bordées, hover `border-accent`), précédés d'un libellé. Actuel : bl
 
 Décision : le groupe garde son libellé visible « Par où commencer » (c'est le
 `span` de tête de l'établi DA) et son nom accessible, et se déplace dans le
-composeur, au-dessus du champ, **à l'intérieur du wrapper
-`pointer-events-auto`** (le fond `prototype-composer-backdrop` est
-`pointer-events-none` : un établi posé dans le fond ne recevrait aucun
-clic). Il reçoit `data-testid="etabli-composeur"` pour être ciblé sans
+composeur, au-dessus du champ, **premier enfant de la carte du composeur** (le bloc `rounded-md border
+bg-surface` de la l.1950, lui-même dans le wrapper `pointer-events-auto` ;
+le fond `prototype-composer-backdrop` est `pointer-events-none` et le wrapper
+contient aussi la phrase sous la carte : « dans le wrapper » ne suffit pas). Il reçoit `data-testid="etabli-composeur"` pour être ciblé sans
 remonter au parent. `actionsVisibles` (masquage de « Facturer » sur une
 installation neuve, `etabliSansFacturer.test.tsx`) et `aria-pressed` (lu par
-`Etabli.test.tsx`) sont conservés tels quels. `Etabli.test.tsx` et les tests
+`Etabli.test.tsx`) sont conservés tels quels. Le verbe pressé abandonne le
+cyan plein (réservé au geste principal) : pilule `border-accent bg-accent-tint
+text-accent`, les autres `border-border bg-surface text-text` avec hover
+`border-accent text-accent` (DA `.etabli button:hover`). `Etabli.test.tsx` et les tests
 qui citent le libellé restent verts sans modification ; le test qui change
 est celui de l'emplacement, écrit rouge d'abord (« `etabli-composeur` est un
 descendant du wrapper `pointer-events-auto` du composeur »).
@@ -133,8 +138,10 @@ Le parcours e2e `parcours-08-capacites-prototype.spec.ts` (B-320) mesure
 aujourd'hui « le parent de « Par où commencer » finit au-dessus du champ » :
 une fois l'établi dans le composeur, ce parent serait le composeur entier
 (rouge) ou le groupe seul (tautologie). Il est réécrit sur ce qu'il protège
-vraiment : le dernier contenu du fil (`prototype-conversation-scroll`
-défilé au bout) finit au-dessus du composeur, aux deux largeurs. Ce spec est
+vraiment : après défilement au bout, le DERNIER ENFANT de la colonne
+intérieure du fil (pas la boîte de `prototype-conversation-scroll`, qui est
+la colonne entière sous le composeur posé en `absolute`) finit au-dessus du
+bord haut de la carte du composeur, aux deux largeurs. Ce spec est
 lancé à part, hors des six portes, avec le rapport JSON. Le composeur plus
 haut est absorbé par la mesure réelle de `composerClearance`
 (`ResizeObserver` sur le fond du composeur).
@@ -164,10 +171,17 @@ externe. ») à la place de « Données réelles · sources affichées » et de 
 ligne sous le composeur ; aucun test ne cite ces deux phrases (mesuré).
 
 Branché dans ce lot : `IconButton` déclare `active` sans qu'aucun appel ne
-le passe ; le rail reçoit `aria-current="page"` (DA
+le passe et n'accepte aucune autre prop ; il dérive lui-même
+`aria-current={active ? 'page' : undefined}` (pas de rest props à ouvrir) ;
+le rail reçoit ainsi `aria-current="page"` (DA
 `.rail button[aria-current="page"]`) sur « Accueil » quand l'accueil
 conversationnel est affiché sans vue ni chat, et sur « Projets » quand la vue
 Projets est ouverte. C'est un attribut en plus, aucun geste ne change.
+
+Le `h1` d'accueil (l.1697, `text-2xl font-bold tracking-[-0.035em]`) vit
+dans le fichier déjà édité : il perd sa taille et son tracking pour laisser
+`@layer base` poser 1,625 rem / 800 / -0,01 em, sinon la recette de
+l'accueil ne montre pas le titre DA.
 
 Les vues intégrées (`PrototypeUnifiedViewCanvas`, en-tête « Retour ») ne
 changent pas dans ce lot ; le composeur reste propre à l'accueil
@@ -180,7 +194,7 @@ conversationnel.
 | `Button` (alignée) | variants `primary` (accent-fill / accent-ink, hover brightness), `secondary` (border-border, bg-surface, hover surface-2), `ghost` → aspect « discret » (text-accent, hover accent-tint), `danger` (fond `--color-error-tint`, text-error) ; tailles du § 3 ; `disabled` opacité .5 ; plus de `btn-da` | l'API (`variant`, `size`) ne change pas : 254 usages compilent tels quels. Effet visible partout : les « Annuler », « Retour », « Fermer » en `ghost` passent du gris à l'accent ; la recette regarde Paramètres, la mise en route et une modale pour juger si c'est trop |
 | `Input`, `Select`, `Textarea` (alignées) | `border-border`, `rounded-sm`, `bg-surface` (au lieu de `surface-2`), `min-h-9`, focus = `border-accent` + anneau `ring/30 %` ; erreur = `border-error` | API inchangée. Zéro import de production (dette 0.49, mesurée) : alignées pour les écrans à venir, elles ne comptent pas comme preuve visuelle |
 | `FormField` (alignée) | libellé 13 px 600 → `text-sm font-semibold` (plancher), aide `text-xs` | API inchangée |
-| `Carte`, `CarteTete` (nouvelles) | `bg-surface border rounded-md shadow-[var(--shadow-card)]` ; tête : icône ronde `accent-tint`, titre `h2`, `actions` à droite | remplace les cartes à la main écran par écran, pas dans ce lot |
+| `Carte`, `CarteTete` (nouvelles) | `bg-surface border rounded-md shadow-sm` (jamais le jeton global `--shadow-card`, voir § 1) ; tête : icône ronde `accent-tint`, titre `h2`, `actions` à droite | remplace les cartes à la main écran par écran, pas dans ce lot |
 | `Ligne` (nouvelle) | `grid-cols-[2rem_1fr_auto]`, puce de domaine, titre 600, détail `text-sm` muted, droite ; `dense` | quand elle est cliquable, la rangée n'est PAS un bouton : le titre est un `<button>` « étiré » (`before:absolute before:inset-0` sur une rangée `relative`) et les actions de droite sont `relative` au-dessus : un seul interactif pour la rangée, Entrée et Espace natifs, aucun interactif emboîté ; non cliquable = aucun rôle |
 | `Etiquette` (nouvelle) | `ton` = erreur / attention / succès / info / neutre, `domaine` = agenda / tâches / factures / prospects ; en contraste élevé : fond transparent + `border currentColor` | fonds = les jetons de teinte OPAQUES du projet (`--color-*-tint`, `--color-domaine-*-tint`, déjà AA sur la surface), encre = jeton sémantique ; pas de `color-mix` translucide (c'est le défaut que les teintes opaques ont corrigé) |
 | `Segments` (nouvelle) | pilule `surface-2`, sélectionné `surface` + `shadow-sm` | pas de `tablist` orphelin (sans onglets, roving ni flèches) : un `role="group"` nommé et des boutons `aria-pressed`, motif déjà lu par les tests de l'établi |
@@ -208,9 +222,10 @@ migrés ici : c'est le travail de chaque lot d'écran.
    `aria-current="page"` sur Accueil, colonne ET composeur `max-w-colonne`.
    Contre B-109 : une classe présente dans un `className` ne prouve pas
    qu'une règle existe ; `styles/jetonsDA.test.ts` asserte la déclaration
-   `--container-colonne: 56rem` et `--font-editorial` DANS le bloc `@theme`
-   de `globals.css`, et un test jsdom lit `getComputedStyle` sur la colonne
-   avec la feuille chargée.
+   `--container-colonne: 56rem`, `--font-editorial` et les quatre teintes
+   sémantiques DANS le bloc `@theme` de `globals.css` (jsdom ne calcule pas
+   une largeur issue de `@theme` : la largeur réelle se mesure en recette et
+   dans le parcours e2e B-320, pas en jsdom).
 5. `Etiquette.test.tsx` : contraste élevé retire la teinte (bordure
    `currentColor`).
 
