@@ -53,8 +53,12 @@ describe('TodayDashboardCard en mode démo', () => {
       />,
     );
 
+    // Lot 2 DA : le geste principal « Commencer : … » répète le titre de la
+    // ligne ; les deux boutons sont vérifiés, aucun ne laisse le vrai nom.
+    expect(screen.queryByRole('button', { name: /Nathalie BALLOT/ })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Relancer Claire Fontaine' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Commencer :/ })).toHaveTextContent('Claire Fontaine');
     expect(screen.queryByText(/Nathalie BALLOT/)).not.toBeInTheDocument();
-    expect(screen.getByText(/Claire Fontaine/)).toBeInTheDocument();
   });
 
   it('laisse le texte intact quand le mode est éteint', () => {
@@ -75,6 +79,7 @@ describe('TodayDashboardCard en mode démo', () => {
       />,
     );
 
-    expect(screen.getByText(/Nathalie BALLOT/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Relancer Nathalie BALLOT' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Commencer :/ })).toHaveTextContent('Nathalie BALLOT');
   });
 });

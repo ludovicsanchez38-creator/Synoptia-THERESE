@@ -74,7 +74,7 @@ describe('Variateur du brief - le geste', () => {
     expect(lignesVisibles()).toBe(6);
     expect(screen.getByRole('button', { name: /Voir les 3 autres éléments/ })).toBeInTheDocument();
     // Le sous-titre compte le total, pas les lignes visibles.
-    expect(screen.getByText('9 éléments issus de tes données')).toBeInTheDocument();
+    expect(screen.getByText('9 éléments')).toBeInTheDocument();
   });
 
   it('propose trois mots écrits, pas trois pastilles muettes', () => {
@@ -95,7 +95,7 @@ describe('Variateur du brief - le geste', () => {
 
     expect(lignesVisibles()).toBe(2);
     expect(screen.getByRole('button', { name: /Voir les 7 autres éléments/ })).toBeInTheDocument();
-    expect(screen.getByText('9 éléments issus de tes données')).toBeInTheDocument();
+    expect(screen.getByText('9 éléments')).toBeInTheDocument();
   });
 
   it('« tout » développe la liste entière et retire le repli', () => {

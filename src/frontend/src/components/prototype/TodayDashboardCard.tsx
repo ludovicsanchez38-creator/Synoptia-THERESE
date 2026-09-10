@@ -16,12 +16,10 @@ import { BoutonOuvrirLaVue } from './BoutonOuvrirLaVue';
 import {
   AlertCircle,
   Calendar,
-  CheckCircle2,
   ChevronRight,
   ListTodo,
   Mail,
   Receipt,
-  RefreshCw,
   Sparkles,
   Users,
 } from 'lucide-react';
@@ -29,8 +27,22 @@ import type { SetupStatus, TodayDashboard } from '../../services/api/dashboard';
 import type { AppView } from '../../stores/navigationStore';
 import { buildTodayAttentionItems, nombreNonAffiche, todayBriefTitle, type AttentionKind, type TodayAttentionItem } from './prototypeReadModels';
 import type { ReadResource } from './usePrototypeReadData';
-import { Spinner } from '../ui/Spinner';
+import { Alerte } from '../ui/Alerte';
+import { Button } from '../ui/Button';
+import { Carte, CarteTete } from '../ui/Carte';
+import { EtatVide } from '../ui/EtatVide';
+import { Etiquette, type DomaineEtiquette } from '../ui/Etiquette';
+import { Ligne, type DomaineLigne } from '../ui/Ligne';
+import { CLASSES_SEGMENTS, classeSegment } from '../ui/Segments';
+import { Squelette } from '../ui/Squelette';
 import { SetupChecklist } from '../home/SetupChecklist';
+
+/*
+ * DA « Application affinée », lot 2 (11/09/2026) : la carte du brief prend la
+ * forme de la maquette `accueil.html` en consommant les primitives du lot 1.
+ * Mêmes données, mêmes états, mêmes destinations ; design challengé six fois
+ * avant le code : `docs/plans/2026-09-10-da-lot2-accueil-design.md`.
+ */
 
 const attentionIcons = {
   event: Calendar,
@@ -40,59 +52,76 @@ const attentionIcons = {
   prospect: Users,
 } satisfies Record<AttentionKind, typeof Calendar>;
 
-const attentionColors: Record<AttentionKind, string> = {
-  // B-363 : un domaine, une couleur (comme COULEUR_DE_DOMAINE ci-dessous).
-  event: 'bg-domaine-agenda-tint text-domaine-agenda',
-  task: 'bg-domaine-taches-tint text-domaine-taches',
-  follow_up: 'bg-domaine-prospects-tint text-domaine-prospects',
-  invoice: 'bg-domaine-factures-tint text-domaine-factures',
-  prospect: 'bg-domaine-prospects-tint text-domaine-prospects',
-};
-
-function StateShell({ children }: { children: React.ReactNode }) {
-  return <div className="flex min-h-44 items-center justify-center px-5 py-8">{children}</div>;
-}
-
-// Les quatre couleurs de domaine de la DA « Équilibre » : un domaine, une
-// couleur, pour reconnaître une facture d'un rendez-vous sans lire. « CRM »
-// partage la couleur des prospects, « Relances » celle des tâches : ce sont
-// les mêmes domaines vus sous un autre angle.
-const COULEUR_DE_DOMAINE: Record<string, string> = {
-  Agenda: 'bg-domaine-agenda-tint text-domaine-agenda',
-  Tâches: 'bg-domaine-taches-tint text-domaine-taches',
-  // Une relance porte sur un contact : même domaine que les prospects.
-  // Avant, la ligne « Relancer… » était violette et la pastille
-  // « Relances » brune, pour exactement la même donnée.
-  Relances: 'bg-domaine-prospects-tint text-domaine-prospects',
-  Factures: 'bg-domaine-factures-tint text-domaine-factures',
-  CRM: 'bg-domaine-prospects-tint text-domaine-prospects',
+// B-363 : un domaine, une couleur. Depuis le lot 2, la couleur vient de la
+// `Ligne` (`domaine`), la carte ne connaît que la correspondance.
+const DOMAINE_DE_KIND: Record<AttentionKind, DomaineLigne> = {
+  event: 'agenda',
+  task: 'taches',
+  follow_up: 'prospects',
+  invoice: 'factures',
+  prospect: 'prospects',
 };
 
 /**
- * B-051 : le serveur nomme ses sources en propre (« calendrier », « taches »,
- * ...). L'écran, lui, parle Agenda / Tâches / Relances. Une clé inconnue
- * ressort telle quelle plutôt que de disparaître : mieux vaut un mot brut
- * qu'une panne muette.
+ * Les cinq sources du brief, dans l'ordre d'affichage. `cle` est le nom que le
+ * serveur donne dans `indisponibles` (B-051), `nom` le mot de l'écran,
+ * `minuscule` sa forme dans la ligne du jour (le sigle CRM reste un sigle),
+ * `presente` la règle « tableau non vide » (un rendez-vous solo compte : il
+ * est lu même s'il ne fait pas de ligne).
  */
-const NOM_DE_SOURCE: Record<string, string> = {
-  calendrier: 'Agenda',
-  taches: 'Tâches',
-  relances_email: 'Relances',
-  factures: 'Factures',
-  prospects: 'CRM',
-};
+export const SOURCES_DU_BRIEF: ReadonlyArray<{
+  cle: string;
+  nom: string;
+  minuscule: string;
+  domaine: DomaineEtiquette;
+  presente: (data: TodayDashboard) => boolean;
+}> = [
+  { cle: 'calendrier', nom: 'Agenda', minuscule: 'agenda', domaine: 'agenda', presente: (d) => liste(d.events).length > 0 },
+  { cle: 'taches', nom: 'Tâches', minuscule: 'tâches', domaine: 'taches', presente: (d) => liste(d.urgent_tasks).length > 0 },
+  { cle: 'relances_email', nom: 'Relances', minuscule: 'relances', domaine: 'prospects', presente: (d) => liste(d.due_follow_ups).length > 0 },
+  { cle: 'factures', nom: 'Factures', minuscule: 'factures', domaine: 'factures', presente: (d) => liste(d.overdue_invoices).length > 0 },
+  { cle: 'prospects', nom: 'CRM', minuscule: 'CRM', domaine: 'prospects', presente: (d) => liste(d.stale_prospects).length > 0 },
+];
 
-function nommerLesSources(cles: string[] | undefined | null): string[] {
-  if (!Array.isArray(cles)) return [];
-  return cles.map((cle) => NOM_DE_SOURCE[cle] ?? cle);
+function liste<T>(valeur: T[] | undefined | null): T[] {
+  return Array.isArray(valeur) ? valeur : [];
 }
 
-function SourcePill({ label }: { label: string }) {
-  const couleur = COULEUR_DE_DOMAINE[label] ?? 'bg-surface-2 text-text-muted';
+export function sourcesPresentes(data: TodayDashboard) {
+  return SOURCES_DU_BRIEF.filter((s) => s.presente(data));
+}
+
+/**
+ * B-051 : le serveur nomme ses sources en propre (« calendrier », « taches »,
+ * ...). Une clé inconnue ressort telle quelle plutôt que de disparaître :
+ * mieux vaut un mot brut qu'une panne muette.
+ */
+export function nommerLesSources(cles: string[] | undefined | null): string[] {
+  if (!Array.isArray(cles)) return [];
+  return cles.map((cle) => SOURCES_DU_BRIEF.find((s) => s.cle === cle)?.nom ?? cle);
+}
+
+const pluriel = (n: number, un: string, plusieurs: string) => (n > 1 ? plusieurs : un);
+
+function metaDesPannes(pannes: string[]): string {
+  return `${pannes.join(', ')} ${pluriel(pannes.length, 'indisponible', 'indisponibles')}`;
+}
+
+function SqueletteDeLigne() {
   return (
-    <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${couleur}`}>{label}</span>
+    <div className="grid grid-cols-[2rem_1fr_auto] items-center gap-3 border-t border-border px-4 py-3">
+      <Squelette largeur="w-8" classeBarre="h-8 rounded-sm" />
+      <div className="flex flex-col gap-2">
+        <Squelette largeur="w-[60%]" />
+        <Squelette largeur="w-[40%]" />
+      </div>
+      <span />
+    </div>
   );
 }
+
+const CLASSE_BOUTON_VUE =
+  'inline-flex h-9 items-center rounded-md border border-border bg-surface px-4 text-sm font-semibold text-text transition-colors hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg';
 
 export function TodayDashboardCard({
   resource,
@@ -106,16 +135,8 @@ export function TodayDashboardCard({
   onRetry: () => void;
   onOpenView: (view: AppView) => void;
   /**
-   * Ouvrir l'objet que l'item désigne (entrée 8 du plan du 28/08).
-   *
-   * « Tu peux agir ici, sans chercher le bon module » s'affiche trois lignes
-   * plus haut, et le clic ouvrait le module. Sur « Relancer Dupont », il
-   * fallait retrouver Dupont dans la boîte entière.
-   *
-   * Facultatif, et personne ne le fournit encore : la première tentative
-   * ouvrait bien une surface pour chaque type, mais l'OBJET n'y arrivait que
-   * pour la facture. Un brief à moitié précis serait pire que l'actuel,
-   * uniformément grossier. Le point d'accroche reste, la reprise le remplira.
+   * Ouvrir l'objet que l'item désigne (entrée 8 du plan du 28/08, B-563).
+   * Facultatif : sans lui, la ligne ouvre la vue de son domaine.
    */
   onOpenItem?: (item: TodayAttentionItem) => void;
   /** B1 (0.48) : l'état vide dit la vérité - sans compte email, le brief
@@ -123,16 +144,14 @@ export function TodayDashboardCard({
   setup?: SetupStatus | null;
   onSetupEmail?: () => void;
 }) {
-  // Le masque du mode demo etait consomme par six surfaces et pas par
-  // celle-ci, qui est l ecran par defaut : en demonstration, les vrais
-  // noms de clients restaient a l affichage. Constate dans l application
-  // lancee le 01/09/2026.
+  // Le masque du mode démo : l'écran par défaut ne laisse aucun vrai nom.
   const { maskText } = useDemoMask();
   const items = resource.status === 'ready' ? buildTodayAttentionItems(resource.data) : [];
   // Une lecture qui a échoué ne dit RIEN de l'état réel : compter ses données
   // pour zéro, c'est annoncer une journée calme qu'on n'a pas constatée.
   const sourcesEnPanne =
     resource.status === 'ready' ? nommerLesSources(resource.data.indisponibles) : [];
+  const presentes = resource.status === 'ready' ? sourcesPresentes(resource.data) : [];
   // Entrée 11b : le brief montre six éléments, le reste se déroule ici plutôt
   // que sur un autre écran. Depuis le 29/08, le seuil est réglable.
   const [toutAfficher, setToutAfficher] = useState(false);
@@ -167,62 +186,82 @@ export function TodayDashboardCard({
     if (jour !== null) ecrireLeReglage(jour, valeur);
   }
 
-  return (
-    <section
-      aria-labelledby="today-dashboard-title"
-      className="overflow-hidden rounded-md border border-border bg-surface shadow-[0_12px_28px_-22px_rgba(16,28,54,0.45)]"
-      data-testid="today-dashboard-card"
-    >
-      <div className="flex items-center justify-between border-b border-border px-4 py-3">
-        <div className="flex items-center gap-2.5">
-          <span className="grid h-8 w-8 place-items-center rounded-md border border-text bg-accent-tint text-accent">
-            <Sparkles className="h-4 w-4" />
-          </span>
-          <div>
-            <h2 id="today-dashboard-title" className="text-base font-semibold text-text">
-              {resource.status === 'ready' ? todayBriefTitle(items.length) : 'Ta journée'}
-            </h2>
-            <div className="text-xs text-text-muted">
-              {resource.status === 'ready'
-                ? `${items.length} élément${items.length > 1 ? 's' : ''} issu${items.length > 1 ? 's' : ''} de tes données${
-                    // B-425 : le serveur plafonne chaque liste à 50 et dit le total.
-                    nombreNonAffiche(resource.data) > 0
-                      ? `, et ${nombreNonAffiche(resource.data)} autre${nombreNonAffiche(resource.data) > 1 ? 's' : ''} non affiché${nombreNonAffiche(resource.data) > 1 ? 's' : ''}`
-                      : ''
-                  }`
-                : 'Lecture des sources locales'}
-            </div>
-          </div>
-        </div>
-        <BoutonOuvrirLaVue vue="calendar" onOuvrir={() => onOpenView('calendar')} />
-      </div>
+  // Le geste principal et la ligne ouvrent la même chose, par le même chemin.
+  function ouvrir(item: TodayAttentionItem) {
+    if (onOpenItem) onOpenItem(item);
+    else onOpenView(item.targetView);
+  }
 
-      {/* Le variateur (plan du 29/08). Les trois mots sont écrits : une pastille
-          muette, c'est « des petits dessins sans nom, je n'ose pas ». Il
-          n'apparaît que lorsqu'il a de quoi replier, pour ne pas offrir une
-          commande sans effet. */}
+  // Corps, par priorité (inchangée) : la liste gagne dès qu'elle n'est pas
+  // vide ; sinon la messagerie absente ; sinon la panne ; sinon le vide.
+  const sansMessagerie = items.length === 0 && setup !== null && setup.has_email === false;
+  const videNonConstate = items.length === 0 && !sansMessagerie && sourcesEnPanne.length > 0;
+  const nbRetards = items.filter((item) => item.urgent).length;
+  const nonAffiches = resource.status === 'ready' ? nombreNonAffiche(resource.data) : 0;
+
+  let titre = 'Ta journée';
+  let meta = 'Lecture des sources locales';
+  if (resource.status === 'error') meta = 'Lecture impossible';
+  else if (resource.status === 'ready' && items.length > 0) {
+    titre = todayBriefTitle(items.length);
+    meta = `${items.length} ${pluriel(items.length, 'élément', 'éléments')}`;
+    if (nbRetards > 0) meta += `, dont ${nbRetards} en retard`;
+    if (nonAffiches > 0) meta += `, et ${nonAffiches} ${pluriel(nonAffiches, 'autre non affiché', 'autres non affichés')}`;
+    if (sourcesEnPanne.length > 0) meta += ` · ${metaDesPannes(sourcesEnPanne)}`;
+  } else if (resource.status === 'ready' && sansMessagerie) meta = 'Messagerie non branchée';
+  else if (resource.status === 'ready' && videNonConstate) meta = `${metaDesPannes(sourcesEnPanne)}, lecture incomplète`;
+  else if (resource.status === 'ready') {
+    titre = todayBriefTitle(0);
+    meta = 'Aucune échéance, aucune facture en attente';
+  }
+
+  const listeDeMiseEnRoute = setup !== null && (
+    <div className="px-4 pb-4">
+      {/* L'étape messagerie est masquée quand le message dédié la porte déjà :
+          deux invitations pour le même geste en valent zéro. */}
+      <SetupChecklist niveau="h3" status={setup.has_email === false ? { ...setup, has_email: true } : setup} />
+    </div>
+  );
+
+  return (
+    <Carte as="section" aria-labelledby="today-dashboard-title" data-testid="today-dashboard-card">
+      <CarteTete
+        idTitre="today-dashboard-title"
+        icone={<Sparkles className="h-[18px] w-[18px]" />}
+        titre={titre}
+        meta={meta}
+        actions={
+          <>
+            <BoutonOuvrirLaVue vue="calendar" onOuvrir={() => onOpenView('calendar')} className={CLASSE_BOUTON_VUE} />
+            {resource.status === 'ready' && items.length > 0 && (
+              <Button
+                variant="primary"
+                size="md"
+                className="h-auto min-h-9 min-w-0 max-w-full whitespace-normal text-left max-[840px]:basis-full"
+                onClick={() => ouvrir(items[0])}
+              >
+                Commencer : {maskText(items[0].title)}
+              </Button>
+            )}
+          </>
+        }
+      />
+
+      {/* Le variateur (plan du 29/08) : trois mots écrits, un seul choix
+          (radiogroup), habillé des segments de la DA. Il n'apparaît que
+          lorsqu'il a de quoi replier. */}
       {resource.status === 'ready' && motsOfferts.length > 1 && (
-        <div className="flex flex-wrap items-center gap-2 border-b border-border px-4 py-2">
-          <span id="variateur-brief-libelle" className="text-xs text-text-muted">
-            Aujourd’hui, montre-moi
+        <div className="flex flex-wrap items-center gap-2 border-t border-border px-4 py-2">
+          <span id="variateur-brief-libelle" className="text-sm text-text-muted">
+            Montre-moi
           </span>
-          <div
-            role="radiogroup"
-            aria-labelledby="variateur-brief-libelle"
-            className="flex items-center gap-1 rounded-md border border-border bg-surface-2 p-0.5"
-          >
+          <div role="radiogroup" aria-labelledby="variateur-brief-libelle" className={CLASSES_SEGMENTS}>
             {motsOfferts.map(({ valeur, mot }) => (
               <label
                 key={valeur}
-                /* La radio elle-même est hors écran (`sr-only`) : sans cette
-                   règle, le contour de focus se dessinerait sur un pixel
-                   invisible et personne ne saurait, au clavier, sur quel mot
-                   il se trouve. */
-                className={`cursor-pointer rounded-sm px-2.5 py-1 text-xs font-medium transition-colors focus-within:outline focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-accent-cyan ${
-                  motCoche?.valeur === valeur
-                    ? 'bg-surface text-text shadow-[0_1px_2px_rgba(16,28,54,0.12)]'
-                    : 'text-text-muted hover:text-text'
-                }`}
+                /* La radio est hors écran (`sr-only`) : l'anneau se dessine
+                   sur le mot, sinon personne ne saurait, au clavier, où il est. */
+                className={`cursor-pointer transition-colors focus-within:outline focus-within:outline-[3px] focus-within:outline-offset-2 focus-within:outline-ring ${classeSegment(motCoche?.valeur === valeur)}`}
               >
                 <input
                   type="radio"
@@ -244,161 +283,150 @@ export function TodayDashboardCard({
         </div>
       )}
 
-      {/* Nommer la panne AU-DESSUS du corps, et une seule fois. Le mettre dans
-          l'une des branches d'état la laissait perdre contre l'invitation à
-          brancher les mails : une base verrouillée chez un nouvel utilisateur
-          n'aurait jamais été dite. */}
+      {/* La panne est nommée dans tous les corps, une seule fois, au-dessus.
+          Un seul « Réessayer » dans la carte : ici seulement si le corps n'en
+          porte pas (le vide non constaté a le sien). */}
       {resource.status === 'ready' && sourcesEnPanne.length > 0 && (
-        <div
-          className="flex items-start gap-2 border-b border-border bg-[var(--color-warning-tint)] px-4 py-2.5 text-xs leading-5 text-warning"
-          data-testid="today-dashboard-indisponible"
-        >
-          <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-          <span>
+        <div className="px-4 pt-3">
+          <Alerte
+            data-testid="today-dashboard-indisponible"
+            icone={<AlertCircle className="h-[18px] w-[18px]" />}
+            action={
+              videNonConstate ? undefined : (
+                <Button variant="ghost" size="md" onClick={onRetry}>
+                  Réessayer
+                </Button>
+              )
+            }
+          >
             Je n’ai pas pu lire {sourcesEnPanne.join(', ')}. Ce qui en vient manque
             ici : ce n’est pas forcément une journée calme.
-          </span>
+          </Alerte>
         </div>
       )}
 
       {resource.status === 'loading' ? (
-        <StateShell>
-          <div className="flex items-center gap-2 text-sm text-text-muted" role="status">
-            <Spinner taille="bouton" className="text-accent" />
+        <>
+          <div aria-hidden="true">
+            <SqueletteDeLigne />
+            <SqueletteDeLigne />
+            <SqueletteDeLigne />
+          </div>
+          <p role="status" className="px-4 py-3 text-sm text-text-muted">
             Je rassemble ta journée…
-          </div>
-        </StateShell>
+          </p>
+        </>
       ) : resource.status === 'error' ? (
-        <StateShell>
-          <div className="max-w-sm text-center" data-testid="today-dashboard-error">
-            <AlertCircle className="mx-auto h-5 w-5 text-warning" />
-            <p className="mt-2 text-sm font-semibold text-text">Brief indisponible</p>
-            <p className="mt-1 text-xs leading-5 text-text-muted">{resource.error}</p>
-            <div className="mt-4 flex justify-center gap-2">
-              <button
-                type="button"
-                onClick={onRetry}
-                className="inline-flex items-center gap-1.5 rounded-md border border-accent-fill bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink"
-              >
-                <RefreshCw className="h-3.5 w-3.5" />
+        <div className="px-4 pt-3 pb-4">
+          <Alerte
+            data-testid="today-dashboard-error"
+            titre="Brief indisponible"
+            icone={<AlertCircle className="h-[18px] w-[18px]" />}
+            action={
+              <Button variant="secondary" size="md" onClick={onRetry}>
                 Réessayer
-              </button>
-            </div>
-          </div>
-        </StateShell>
-      ) : items.length === 0 ? (
-        <StateShell>
-          {setup !== null && setup.has_email === false ? (
-            <div className="text-center" data-testid="today-dashboard-setup-email">
-              <Mail className="mx-auto h-6 w-6 text-accent" />
-              <p className="mt-2 text-sm font-semibold text-text">Branche tes mails pour que je te prépare la journée</p>
-              <p className="mt-1 text-xs text-text-muted">Sans boîte connectée, le brief ne voit ni messages à traiter ni relances.</p>
-              <button
-                type="button"
-                onClick={onSetupEmail}
-                /* L'action qui sort de l'état vide : elle mérite mieux que
-                   la taille des métadonnées qui l'entourent. */
-                className="mt-4 rounded-md bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink"
-              >
-                Brancher mes mails
-              </button>
-            </div>
-          ) : sourcesEnPanne.length > 0 ? (
-            /* Le vide n'est pas constaté : il n'a pas pu être lu. Surtout, il ne
-               prend pas la coche verte « rien d'urgent ». */
-            <div className="text-center" data-testid="today-dashboard-incomplet">
-              <AlertCircle className="mx-auto h-6 w-6 text-warning" />
-              <p className="mt-2 text-sm font-semibold text-text">Ta journée est incomplète</p>
-              <p className="mt-1 text-xs leading-5 text-text-muted">
-                Rien ne remonte, mais la lecture n’a pas abouti : ce n’est pas une
-                journée calme constatée.
-              </p>
-              <button
-                type="button"
-                onClick={onRetry}
-                className="mt-4 inline-flex items-center gap-1.5 rounded-md border border-accent-fill bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink"
-              >
-                <RefreshCw className="h-3.5 w-3.5" />
-                Réessayer
-              </button>
-            </div>
-          ) : (
-            <div className="text-center" data-testid="today-dashboard-empty">
-              <CheckCircle2 className="mx-auto h-6 w-6 text-success" />
-              <p className="mt-2 text-sm font-semibold text-text">Rien d’urgent pour le moment</p>
-              <p className="mt-1 text-xs text-text-muted">Aucune relance, échéance ou rencontre à enjeu n’est remontée.</p>
-            </div>
-          )}
-          {/* Entrée 11 : ce qui reste à brancher se voyait uniquement sur un
-              second accueil, joignable par « Voir les autres ». La liste vient
-              ici, à l'endroit qui constate le vide qu'elle explique.
-              L'étape messagerie est masquée quand le message dédié ci-dessus
-              la porte déjà : deux invitations pour le même geste en valent
-              zéro. La liste se cache d'elle-même quand tout est branché. */}
-          {setup !== null && (
-            <div className="mt-4">
-              <SetupChecklist
-                status={
-                  setup.has_email === false ? { ...setup, has_email: true } : setup
-                }
-              />
-            </div>
-          )}
-        </StateShell>
-      ) : (
-        <div className="divide-y divide-border">
+              </Button>
+            }
+          >
+            {resource.error}
+          </Alerte>
+        </div>
+      ) : items.length > 0 ? (
+        <div>
           {visibleItems.map((item) => {
             const Icon = attentionIcons[item.kind];
             return (
-              <button
+              <Ligne
                 key={item.id}
-                type="button"
-                onClick={() => (onOpenItem ? onOpenItem(item) : onOpenView(item.targetView))}
-                className="flex w-full items-center gap-3 px-4 py-3.5 text-left hover:bg-surface-2"
-              >
-                <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-md ${attentionColors[item.kind]}`}>
-                  <Icon className="h-[18px] w-[18px]" />
-                </span>
-                <span className="min-w-0 flex-1">
-                  <span className="flex flex-wrap items-center gap-2">
-                    <span className="text-sm font-semibold text-text">{maskText(item.title)}</span>
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                      item.urgent ? 'bg-[var(--color-error-tint)] text-error' : 'bg-surface-2 text-text-muted'
-                    }`}>
+                domaine={DOMAINE_DE_KIND[item.kind]}
+                puce={<Icon className="h-[18px] w-[18px]" />}
+                titre={maskText(item.title)}
+                detail={maskText(item.detail)}
+                droite={
+                  <>
+                    {/* La maquette peint les factures en attention, les retards
+                        de tâches et de relances en erreur : présentation seule,
+                        `urgent` reste ce qu'il est pour le tri et le repli. */}
+                    <Etiquette ton={item.kind === 'invoice' ? 'attention' : item.urgent ? 'erreur' : 'neutre'}>
                       {item.badge}
-                    </span>
-                  </span>
-                  <span className="mt-0.5 block truncate text-xs text-text-muted">{maskText(item.detail)}</span>
-                </span>
-                <ChevronRight className="h-4 w-4 shrink-0 text-text-muted" />
-              </button>
+                    </Etiquette>
+                    <ChevronRight className="h-[18px] w-[18px]" />
+                  </>
+                }
+                onClick={() => ouvrir(item)}
+              />
             );
           })}
           {items.length > visibleItems.length && (
-            <button
-              type="button"
-              /* Entrée 11b : ce bouton menait à un second accueil pour lire la
-                 suite d'une liste qu'on a déjà sous les yeux. Elle se déroule
-                 ici. */
+            <Button
+              variant="ghost"
+              size="md"
+              /* Entrée 11b : la suite se déroule ici, pas sur un autre écran. */
               onClick={() => setToutAfficher(true)}
-              className="w-full px-4 py-3 text-center text-sm font-semibold text-accent hover:bg-surface-2"
+              className="w-full rounded-none border-t border-border"
             >
               {libelleDuRepli(replies.length, retardsReplies)}
-            </button>
+            </Button>
           )}
         </div>
+      ) : sansMessagerie ? (
+        <>
+          <EtatVide
+            data-testid="today-dashboard-setup-email"
+            titre="Branche tes mails pour que je te prépare la journée"
+            action={
+              <Button variant="primary" size="md" onClick={onSetupEmail}>
+                Brancher mes mails
+              </Button>
+            }
+          >
+            Sans boîte connectée, le brief ne voit ni messages à traiter ni relances.
+          </EtatVide>
+          {listeDeMiseEnRoute}
+        </>
+      ) : videNonConstate ? (
+        <>
+          {/* Le vide n'est pas constaté : il n'a pas pu être lu. Surtout, il ne
+              prend pas la formulation du vide constaté. */}
+          <EtatVide
+            data-testid="today-dashboard-incomplet"
+            titre="Ta journée est incomplète"
+            action={
+              <Button variant="secondary" size="md" onClick={onRetry}>
+                Réessayer
+              </Button>
+            }
+          >
+            Rien ne remonte, mais la lecture n’a pas abouti : ce n’est pas une
+            journée calme constatée.
+          </EtatVide>
+          {listeDeMiseEnRoute}
+        </>
+      ) : (
+        <>
+          <EtatVide data-testid="today-dashboard-empty" titre="Ta journée est dégagée.">
+            Quand tu ajouteras une tâche, un rendez-vous ou une facture, ils
+            apparaîtront ici avec leur échéance.
+          </EtatVide>
+          {listeDeMiseEnRoute}
+        </>
       )}
 
-      {resource.status === 'ready' && (
-        <div className="flex flex-wrap items-center gap-1.5 border-t border-border bg-surface-2 px-4 py-2.5">
-          <span className="mr-1 text-xs font-medium text-text-muted">Sources réelles</span>
-          {resource.data.events.length > 0 && <SourcePill label="Agenda" />}
-          {resource.data.urgent_tasks.length > 0 && <SourcePill label="Tâches" />}
-          {resource.data.due_follow_ups.length > 0 && <SourcePill label="Relances" />}
-          {resource.data.overdue_invoices.length > 0 && <SourcePill label="Factures" />}
-          {resource.data.stale_prospects.length > 0 && <SourcePill label="CRM" />}
+      {resource.status === 'ready' && (presentes.length > 0 || sourcesEnPanne.length > 0) && (
+        <div className="flex flex-wrap items-center gap-1.5 border-t border-border bg-surface-2 px-4 py-2.5 text-xs font-medium text-text-muted">
+          <span className="mr-1">Lu dans</span>
+          {presentes.map((s) => (
+            <Etiquette key={s.cle} domaine={s.domaine}>
+              {s.nom}
+            </Etiquette>
+          ))}
+          {sourcesEnPanne.map((nom) => (
+            <Etiquette key={`panne-${nom}`} ton="neutre">
+              {nom} indisponible
+            </Etiquette>
+          ))}
         </div>
       )}
-    </section>
+    </Carte>
   );
 }

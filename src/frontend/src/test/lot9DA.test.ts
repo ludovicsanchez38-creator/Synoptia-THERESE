@@ -37,8 +37,10 @@ describe('lot 9 - DA et UI', () => {
 
   it('B-363 : les couleurs d\'attention agenda et tâches sont celles du domaine', () => {
     const src = lire('components/prototype/TodayDashboardCard.tsx');
-    expect(src).toMatch(/event: 'bg-domaine-agenda-tint text-domaine-agenda'/);
-    expect(src).toMatch(/task: 'bg-domaine-taches-tint text-domaine-taches'/);
+    // Lot 2 DA (11/09/2026) : la couleur vient de la `Ligne` par son
+    // `domaine` ; la carte ne porte plus que la correspondance kind → domaine.
+    expect(src).toMatch(/event: 'agenda'/);
+    expect(src).toMatch(/task: 'taches'/);
   });
 
   it('B-373 : un fieldset en display:contents ne porte pas disabled:opacity', () => {

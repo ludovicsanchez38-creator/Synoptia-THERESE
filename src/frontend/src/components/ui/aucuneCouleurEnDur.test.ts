@@ -12,6 +12,8 @@ import { describe, expect, it } from 'vitest';
 
 const UI = resolve(__dirname);
 const COQUE = resolve(__dirname, '../prototype/ConversationCanvasPrototype.tsx');
+// Lot 2 : la carte du brief consomme les primitives, donc les jetons.
+const BRIEF = resolve(__dirname, '../prototype/TodayDashboardCard.tsx');
 
 /** Chemins (relatifs à src/) tolérés, avec la raison. Vide au départ. */
 const LISTE_BLANCHE: Record<string, string> = {
@@ -24,11 +26,14 @@ function sources(): string[] {
   const fichiers = (readdirSync(UI, { recursive: true }) as string[])
     .filter((f) => /\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f))
     .map((f) => join(UI, f));
-  return [...fichiers, COQUE];
+  return [...fichiers, COQUE, BRIEF];
 }
 
 /** Hex de 3 à 8 chiffres, rgb/rgba, hsl/hsla, color-mix : tout ce qui n'est pas un jeton. */
-const COULEUR_EN_DUR = /#[0-9A-Fa-f]{3,8}\b|\brgba?\(|\bhsla?\(|\bcolor-mix\(/;
+// Lot 2 : `\b` ratait `shadow-[0_1px_rgba(...)]` (le `_` est un caractère de
+// mot) ; on ancre sur « pas une lettre avant », ce qui garde `rgba(` dans
+// une valeur arbitraire Tailwind.
+const COULEUR_EN_DUR = /#[0-9A-Fa-f]{3,8}\b|(?<![A-Za-z])rgba?\(|(?<![A-Za-z])hsla?\(|\bcolor-mix\(/;
 const COMMENTAIRE = /^\s*(\/\/|\*|\/\*)/;
 
 const court = (f: string) => f.slice(f.lastIndexOf('/src/') + 5);

@@ -205,7 +205,9 @@ export function nombreNonAffiche(data: Pick<TodayDashboard, 'summary'> | null | 
 }
 
 export function todayBriefTitle(itemCount: number): string {
-  if (itemCount === 0) return 'Aucune priorité détectée';
+  // Lot 2 DA : la formulation de la maquette, réservée au vide constaté
+  // (la carte ne l'appelle plus pour une panne ni pour une messagerie absente).
+  if (itemCount === 0) return 'Rien ne presse aujourd’hui';
   if (itemCount === 1) return 'Un point mérite ton attention';
   return 'Ton attention aujourd’hui';
 }

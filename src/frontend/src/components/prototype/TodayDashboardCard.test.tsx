@@ -40,7 +40,7 @@ describe('TodayDashboardCard', () => {
 
     expect(screen.getByText('Rendez-vous réel')).toBeInTheDocument();
     expect(screen.getByRole('heading', { name: 'Un point mérite ton attention' })).toBeInTheDocument();
-    expect(screen.getByText('1 élément issu de tes données')).toBeInTheDocument();
+    expect(screen.getByText('1 élément')).toBeInTheDocument();
     fireEvent.click(screen.getByText('Rendez-vous réel'));
     expect(onOpenView).toHaveBeenCalledWith('calendar');
   });
@@ -107,7 +107,7 @@ describe('L’état vide honnête (B1, 0.48)', () => {
       />,
     );
 
-    expect(screen.getByText('Rien d’urgent pour le moment')).toBeInTheDocument();
+    expect(screen.getByText('Ta journée est dégagée.')).toBeInTheDocument();
     expect(
       screen.queryByText('Branche tes mails pour que je te prépare la journée'),
     ).toBeNull();
@@ -168,7 +168,7 @@ describe('Entrée 11 : ce qui reste à brancher se voit sur le brief', () => {
     );
 
     expect(screen.queryByText(/Configurer une clé IA/)).toBeNull();
-    expect(screen.getByText('Rien d’urgent pour le moment')).toBeInTheDocument();
+    expect(screen.getByText('Ta journée est dégagée.')).toBeInTheDocument();
   });
 })
 
