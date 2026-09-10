@@ -205,6 +205,12 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
       // plus fréquent (changer de mois recharge les événements).
       if (currentCal?.provider === 'google') {
         setNeedsReauth(false);
+        // Revue Grok 0.70.0 (P2) : un succès DEPUIS GOOGLE rend faux le message
+        // posé par loadCalendars (403, expiration) ; il tombe avec le geste.
+        if (erreurDesAgendasRef.current) {
+          erreurDesAgendasRef.current = false;
+          setError(null);
+        }
       }
     } catch (err: any) {
       console.error('Failed to load events:', err);
