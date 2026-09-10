@@ -5,7 +5,7 @@
  * Phase 3 - Tasks/Todos
  */
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion } from 'framer-motion';
 import { CheckCircle2, Circle, Clock, AlertCircle, Trash2 } from 'lucide-react';
 import { useTaskStore } from '../../stores/taskStore';
@@ -15,11 +15,19 @@ import { useDemoMask } from '../../hooks';
 import { Button } from '../ui/Button';
 import { isPastParisCivilDate } from '../../lib/civilDate';
 import { useStatusStore } from '../../stores/statusStore';
+import { pushEscapeHandler } from '../../lib/escapeStack';
 
 export function TaskList() {
   const { tasks, searchQuery, setCurrentTask, setIsTaskFormOpen, updateTask, removeTask } =
     useTaskStore();
   const { maskText } = useDemoMask();
+  // D106 : plus de confirm() natif ; confirmation en ligne dans la carte,
+  // fail-closed, et Échap ne ferme que la question.
+  const [tacheASupprimer, setTacheASupprimer] = useState<Task | null>(null);
+  useEffect(() => {
+    if (!tacheASupprimer) return;
+    return pushEscapeHandler(() => setTacheASupprimer(null));
+  }, [tacheASupprimer]);
 
   // Filter tasks
   const filteredTasks = useMemo(() => {
@@ -49,14 +57,18 @@ export function TaskList() {
     }
   }
 
-  async function handleDelete(taskId: string, e: React.MouseEvent) {
+  function handleDelete(task: Task, e: React.MouseEvent) {
     e.stopPropagation();
+    setTacheASupprimer(task);
+  }
 
-    if (!confirm('Supprimer cette tâche ?')) return;
-
+  async function confirmerLaSuppression() {
+    const cible = tacheASupprimer;
+    if (!cible) return;
+    setTacheASupprimer(null);
     try {
-      await api.deleteTask(taskId);
-      removeTask(taskId);
+      await api.deleteTask(cible.id);
+      removeTask(cible.id);
     } catch (err) {
       console.error('Failed to delete task:', err);
       useStatusStore.getState().addNotification({ type: 'error', title: 'Tâche non supprimée', message: 'La suppression n’a pas été enregistrée. Réessaie dans un instant.' });
@@ -230,7 +242,7 @@ export function TaskList() {
 
                     {/* Delete Button */}
                     <button
-                      onClick={(e) => handleDelete(task.id, e)}
+                      onClick={(e) => handleDelete(task, e)}
                       className="p-1 hover:bg-error/20 rounded-sm transition-colors"
                       title="Supprimer"
                       aria-label={`Supprimer la tâche ${task.title}`}
@@ -240,6 +252,22 @@ export function TaskList() {
                   </div>
                 </div>
               </div>
+              {tacheASupprimer?.id === task.id && (
+                <div
+                  className="mt-3 flex items-center gap-2 rounded-md border border-error/20 bg-[var(--color-error-tint)] px-3 py-3"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <AlertCircle className="w-4 h-4 text-error shrink-0" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-error">Supprimer « {maskText(task.title)} » ?</p>
+                    <p className="text-xs text-error">Cette action est irréversible.</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => setTacheASupprimer(null)}>Conserver la tâche</Button>
+                    <Button variant="danger" size="sm" onClick={confirmerLaSuppression}>Supprimer définitivement</Button>
+                  </div>
+                </div>
+              )}
             </motion.div>
           );
         })}
