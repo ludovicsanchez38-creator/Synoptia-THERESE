@@ -94,6 +94,34 @@ def recherche_web_autorisee() -> bool:
     return _autorisation_recherche_cache
 
 
+async def charger_autorisation_depuis_la_base() -> None:
+    """Charge l'interrupteur au démarrage. Préférence absente : le défaut
+    documenté (autorisé) s'applique. Préférence ILLISIBLE (base verrouillée,
+    table absente) : cycle 6, la recherche est COUPÉE et un avertissement le
+    dit, au lieu de laisser sortir des requêtes qu'un utilisateur a peut-être
+    interdites."""
+    try:
+        from app.models.database import get_session_context
+        from app.models.entities import Preference
+        from sqlalchemy import select
+
+        async with get_session_context() as session:
+            resultat = await session.execute(
+                select(Preference).where(Preference.key == "web_search_enabled")
+            )
+            preference = resultat.scalar_one_or_none()
+        if preference is not None:
+            autorisee = str(preference.value).lower() == "true"
+            poser_autorisation_recherche(autorisee)
+            logger.info("Recherche web : %s (préférence chargée)", "autorisée" if autorisee else "coupée")
+    except Exception as exc:
+        poser_autorisation_recherche(False)
+        logger.warning(
+            "Préférence de recherche web illisible (%s) : recherche web coupée jusqu'au prochain démarrage ou réglage",
+            exc,
+        )
+
+
 def verifier_autorisation_recherche() -> None:
     """Lève `RechercheWebRefusee` si la recherche web est coupée."""
     if not recherche_web_autorisee():
