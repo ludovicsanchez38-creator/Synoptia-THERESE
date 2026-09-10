@@ -63,7 +63,8 @@ describe('VoiceDictationButton', () => {
 
     expect(screen.getByRole('button', { name: "Arrêter l'enregistrement" })).toBeEnabled();
     expect(screen.getByRole('status')).toHaveTextContent('Écoute 00:12');
-    expect(screen.getByLabelText('Aperçu live de la dictée')).toBeInTheDocument();
+    // D67 (cycle 6) : plus d'« aperçu live », les barres ne mesurent rien.
+    expect(screen.getByRole('status')).toHaveTextContent('Enregistrement en cours');
 
     mockVoiceState({ state: 'processing', isProcessing: true });
     rerender(<VoiceDictationButton onTranscript={vi.fn()} onError={vi.fn()} />);

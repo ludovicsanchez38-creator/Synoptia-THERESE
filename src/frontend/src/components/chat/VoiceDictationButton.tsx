@@ -121,11 +121,15 @@ export function VoiceDictationButton({
                 <span className="h-2 w-2 animate-pulse rounded-full bg-error" />
                 Écoute {elapsedLabel}
               </div>
-              <div className="mt-1 flex items-end gap-0.5" aria-label="Aperçu live de la dictée">
-                {[2, 4, 3, 5, 2].map((height, index) => (
-                  <span key={`${height}-${index}`} className="w-1 animate-pulse rounded-full bg-accent-cyan" style={{ height: `${height * 2}px` }} />
-                ))}
-                <span className="ml-1 text-xs text-text-muted">Aperçu audio en direct</span>
+              {/* D67 : les barres sont une décoration, pas une mesure du micro ;
+                  l'écran ne promet plus un « aperçu en direct ». */}
+              <div className="mt-1 flex items-end gap-0.5">
+                <span aria-hidden="true" data-decoratif className="flex items-end gap-0.5">
+                  {[2, 4, 3, 5, 2].map((height, index) => (
+                    <span key={`${height}-${index}`} className="w-1 animate-pulse rounded-full bg-accent-cyan" style={{ height: `${height * 2}px` }} />
+                  ))}
+                </span>
+                <span className="ml-1 text-xs text-text-muted">Enregistrement en cours</span>
               </div>
             </div>
           ) : (
