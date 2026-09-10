@@ -45,8 +45,10 @@ describe('L’en-tête de la carte dit une heure, pas « maintenant »', () => {
       render(<ConversationCanvasPrototype />);
     });
 
+    // Lot 2 DA (11/09/2026) : sur le brief, l'heure vit dans la ligne du jour
+    // (« Rafraîchi à HH:MM »), rendue dès le chargement, sans ressource.
     const entete = await waitFor(() => {
-      const noeud = screen.getByText('THÉRÈSE', { selector: 'div' });
+      const noeud = screen.getByTestId('accueil-jour');
       expect(noeud).toBeInTheDocument();
       return noeud;
     });

@@ -24,6 +24,24 @@ vi.mock('../../services/api/voice', async (importOriginal) => ({
   ...(await importOriginal<object>()),
 }));
 
+// Lot 2 DA : le brief reçoit un jour connu et une seule source présente,
+// pour vérifier la ligne du jour (date en français, sources, heure).
+const briefDuLot2 = vi.hoisted(() => ({
+  date: '2026-09-10',
+  events: [],
+  urgent_tasks: [{ id: 't1', title: 'Relancer Claire Roux', status: 'todo', priority: 'high', due_date: '2026-09-08', project_id: null }],
+  due_follow_ups: [],
+  overdue_invoices: [],
+  stale_prospects: [],
+  indisponibles: [],
+  summary: { events_count: 0, tasks_count: 1, follow_ups_count: 0, invoices_count: 0, prospects_count: 0 },
+}));
+vi.mock('../../services/api/dashboard', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  fetchTodayDashboard: vi.fn(async () => briefDuLot2),
+  fetchSetupStatus: vi.fn(async () => ({ has_calendar: true, has_email: true, billing_complete: true, has_invoices: true, has_llm_key: true, indisponibles: [] })),
+}));
+
 beforeEach(() => {
   vi.clearAllMocks();
   window.history.replaceState({}, '', '/?interface=conversation-canvas');
@@ -143,5 +161,33 @@ describe('La coque prend la forme de la DA', () => {
     const h1 = screen.getByRole('heading', { level: 1 });
     expect(h1.className).not.toMatch(/\btext-2xl\b/);
     expect(h1.className).not.toMatch(/tracking-\[/);
+  });
+});
+
+describe('Lot 2 DA : l’en-tête de l’Accueil', () => {
+  it('sur le brief : portrait rond, titre éditorial, ligne du jour avec date, sources et heure, plus de ligne « THÉRÈSE · »', async () => {
+    render(<ConversationCanvasPrototype />);
+    const jour = await screen.findByTestId('accueil-jour');
+    // La date vient du backend (jamais `new Date('AAAA-MM-JJ')`, BUG-125) ;
+    // seul le premier caractère est en capitale ; l'heure est celle de la coque.
+    await screen.findByRole('button', { name: 'Relancer Claire Roux' });
+    expect(jour.textContent).toMatch(/^Jeudi 10 septembre · Sources : tâches · Rafraîchi à \d{1,2}:\d{2}$/);
+    expect(screen.queryByText('THÉRÈSE', { selector: 'div' })).toBeNull();
+    const h1 = screen.getByRole('heading', { level: 1 });
+    expect(h1.className).toMatch(/\bfont-editorial\b/);
+    const entete = screen.getByTestId('accueil-entete');
+    expect(entete.className).toMatch(/grid-cols-\[2rem_1fr\]/);
+    expect((entete.firstElementChild as HTMLElement).className).toMatch(/\brounded-full\b/);
+    expect((entete.firstElementChild as HTMLElement).className).not.toMatch(/\bborder\b/);
+  });
+
+  it('sur Retrouver (mémoire) : la ligne « THÉRÈSE · heure » est intacte', async () => {
+    render(<ConversationCanvasPrototype />);
+    await screen.findByTestId('accueil-jour');
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Retrouver' }));
+    });
+    expect(screen.getByText('THÉRÈSE', { selector: 'div' }).textContent).toMatch(/\d{1,2}:\d{2}/);
+    expect(screen.queryByTestId('accueil-jour')).toBeNull();
   });
 });
