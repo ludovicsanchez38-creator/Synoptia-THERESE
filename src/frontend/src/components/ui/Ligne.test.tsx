@@ -1,0 +1,107 @@
+/**
+ * Ligne : une rangée de liste (grille 2 rem / 1fr / auto).
+ *
+ * Quand elle est cliquable, la rangée n'EST PAS un bouton : le titre l'est,
+ * étiré par un pseudo-élément sur toute la surface, et les actions de droite
+ * passent au-dessus (z-10). Un seul interactif, Entrée et Espace natifs,
+ * aucun bouton emboîté. Sans onClick : aucun rôle, aucun tabIndex — une
+ * rangée d'information n'est pas un arrêt de tabulation.
+ *
+ * Le détail est en text-sm : la ligne se clique, le plancher typographique
+ * interdit text-xs sur un interactif.
+ */
+import { fireEvent, render, screen } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+
+import { Ligne } from './Ligne';
+
+describe('Ligne', () => {
+  it('pose la grille DA, la puce de domaine, le titre 600 et le détail en sm', () => {
+    const { container } = render(
+      <Ligne
+        domaine="agenda"
+        puce="A"
+        titre="Point client"
+        detail="Mardi 10 h"
+        droite={<span>14:00</span>}
+      />,
+    );
+
+    const rangee = container.firstElementChild as HTMLElement;
+    expect(rangee.className).toMatch(/grid-cols-\[2rem_1fr_auto\]/);
+    expect(rangee.className).toMatch(/gap-3/);
+    expect(rangee.className).toMatch(/items-center/);
+    expect(rangee.className).toMatch(/px-4/);
+    expect(rangee.className).toMatch(/py-3/);
+    expect(rangee.className).toMatch(/border-t/);
+    expect(rangee.className).toMatch(/border-border/);
+    expect(rangee.className).toMatch(/hover:bg-surface-2/);
+
+    const puce = screen.getByText('A');
+    expect(puce.className).toMatch(/h-8/);
+    expect(puce.className).toMatch(/w-8/);
+    expect(puce.className).toMatch(/rounded-sm/);
+    expect(puce.className).toMatch(/bg-domaine-agenda-tint/);
+    expect(puce.className).toMatch(/text-domaine-agenda/);
+
+    const titre = screen.getByText('Point client');
+    expect(titre.className).toMatch(/font-semibold/);
+    expect(titre.tagName).not.toBe('BUTTON');
+
+    const detail = screen.getByText('Mardi 10 h');
+    expect(detail.className).toMatch(/text-sm/);
+    expect(detail.className).toMatch(/text-text-muted/);
+    expect(detail.className).not.toMatch(/text-xs/);
+
+    expect(screen.getByText('14:00')).toBeInTheDocument();
+  });
+
+  it('sans onClick : aucun rôle, aucun tabIndex', () => {
+    const { container } = render(<Ligne titre="Lecture seule" detail="rien à faire" />);
+    const rangee = container.firstElementChild as HTMLElement;
+
+    expect(rangee.getAttribute('role')).toBeNull();
+    expect(rangee.getAttribute('tabindex')).toBeNull();
+    expect(screen.queryByRole('button')).not.toBeInTheDocument();
+    expect(screen.getByText('Lecture seule').getAttribute('tabindex')).toBeNull();
+  });
+
+  it('avec onClick : le titre est le bouton étiré, la droite reste au-dessus', () => {
+    const onClick = vi.fn();
+    const { container } = render(
+      <Ligne
+        titre="Ouvrir le dossier"
+        detail="Cliquer ouvre"
+        onClick={onClick}
+        droite={<button type="button">Relancer</button>}
+      />,
+    );
+
+    const rangee = container.firstElementChild as HTMLElement;
+    expect(rangee.className).toMatch(/\brelative\b/);
+
+    const titre = screen.getByRole('button', { name: 'Ouvrir le dossier' });
+    expect(titre).toHaveAttribute('type', 'button');
+    expect(titre.className).toMatch(/before:absolute/);
+    expect(titre.className).toMatch(/before:inset-0/);
+    expect(titre.className).toMatch(/before:content-\[''\]/);
+
+    const relancer = screen.getByRole('button', { name: 'Relancer' });
+    expect(relancer.parentElement?.className).toMatch(/relative/);
+    expect(relancer.parentElement?.className).toMatch(/z-10/);
+
+    fireEvent.click(titre);
+    expect(onClick).toHaveBeenCalledTimes(1);
+
+    /* Entrée et Espace viennent du bouton natif : le titre EST un button,
+       donc le navigateur les déclenche. On vérifie le contrat, pas un
+       keyDown synthétique qui en jsdom n'active pas un button. */
+    expect(titre.tagName).toBe('BUTTON');
+  });
+
+  it('en dense, réduit le padding vertical', () => {
+    const { container } = render(<Ligne titre="Compacte" dense />);
+    expect((container.firstElementChild as HTMLElement).className).toMatch(/py-2/);
+    expect((container.firstElementChild as HTMLElement).className).not.toMatch(/py-3/);
+  });
+});
