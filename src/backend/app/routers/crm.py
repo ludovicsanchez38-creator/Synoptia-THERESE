@@ -1472,6 +1472,30 @@ async def sync_crm(
             logger.error(f"Error syncing tasks: {e}")
             stats["errors"].append(f"Tasks: {str(e)}")
 
+        # Cycle 6 : la docstring annonçait Deliverables, le corps ne lisait que
+        # Clients, Projects et Tasks ; les compteurs restaient à zéro. Même
+        # écriture que POST /sync/import.
+        try:
+            deliverables_data = await sheets_service.get_all_data_as_dicts(spreadsheet_id, "Deliverables")
+            logger.info(f"Found {len(deliverables_data)} deliverables in Google Sheets")
+            for raw_row in deliverables_data:
+                identifiant = raw_row.get("ID", "unknown") if isinstance(raw_row, dict) else "unknown"
+                try:
+                    row = _sanitize_row(raw_row)
+                    _, created = await upsert_deliverable_from_import(session, row, safe_get=True)
+                    if created:
+                        stats["deliverables_created"] += 1
+                    else:
+                        stats["deliverables_updated"] += 1
+                except ValueError:
+                    continue
+                except Exception as e:
+                    logger.error(f"Error syncing deliverable {identifiant}: {e}")
+                    stats["errors"].append(f"Deliverable {identifiant}: {str(e)}")
+        except Exception as e:
+            logger.error(f"Error syncing deliverables: {e}")
+            stats["errors"].append(f"Deliverables: {str(e)}")
+
         await session.commit()
 
         # Mettre a jour le timestamp de derniere synchronisation
