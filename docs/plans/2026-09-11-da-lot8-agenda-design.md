@@ -1,6 +1,6 @@
 # DA « Application affinée », lot 8 : l'écran Agenda (design à challenger avant le code)
 
-Version 2, 11/09/2026 00:37, après la revue de la v1 (19 points repris, 0 non repris) ; journal `.cartography-work/reviews/grok-da-lot8-agenda-design-v1.log`. Précédent : lot 3 (Tiroir), sur `main` ; cadence : une
+Version 3, 11/09/2026 00:55, après la revue de la v2 (12 points repris, 0 non repris) ; journal `.cartography-work/reviews/grok-da-lot8-agenda-design-v2.log`. Précédent : lot 3 (Tiroir), sur `main` ; cadence : une
 seule release pour toute la DA (décision Ludo 11/09, 0.72.0-alpha porte
 l'ensemble). Maquette :
 `docs/da/2026-09-05-propositions/maquettes/agenda.html` (états `normal`,
@@ -21,7 +21,7 @@ Le panneau Agenda (`CalendarPanel.tsx`, monté `standalone` par la vue
 `calendar` de `PrototypeUnifiedViewCanvas.tsx`) et ses trois enfants
 (`CalendarView`, `EventForm`, `EventDetail`) prennent la forme de la maquette
 **sur les états `normal`, `mois` et `erreur`** en consommant les primitives du
-lot 1 (`Carte`, `Segments`, `Alerte`, `EtatVide`, `Squelette`, `Ligne`,
+lot 1 (`Carte`, `Segments`, `Alerte`, `EtatVide`, `Squelette`,
 `Etiquette`, `Button`, `Input`, `Select`, `Textarea`, `FormField`) ; les
 mêmes données, les mêmes états, les mêmes destinations. L'état maquetté
 `nouveau` (`.panneau` 26 rem, grille encore visible, `agenda.html:36-38` et
@@ -72,6 +72,7 @@ les deux barres actuelles (`calendarHeader` + `calendarNav`) en une rangée.
 | Période | `<h3 className="capitalize">` + `getNavLabel()` | `<h3 id="agenda-periode" className="text-base font-semibold">` ; jour : `toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })` puis première lettre seule en capitale (lot 2, jamais `capitalize`) ; si `localDateKey(selectedDate) === localDateKey(new Date())`, suffixe ` (aujourd'hui)` ; semaine : libellé ci-dessous (bornes lundi-dimanche inchangées, `getDay()` + offset actuel) ; mois/liste : mois long + année, première lettre seule en capitale |
 | Sélecteur | `<select aria-label="Calendrier affiché">` maison, `Z_LAYER.ONBOARDING` | `Select` même `aria-label`, `options={calendars.map(c => ({ value: c.id, label: c.summary }))}`, `value={currentCalendarId \|\| ''}`, même `onChange` ; wrapper `relative` + z-index conservé (BUG-049) ; liste vide : aucune option, pas de bouton « créer » (BUG-143) |
 | Sync / ICS | `Button ghost sm` | `Button variant="ghost" size="icon"` ; `aria-label` / `title` conservés (« Synchroniser l'agenda », « Importer un fichier .ics », « Exporter en .ics ») ; `input.hidden` inchangé |
+| Segments + geste | modes + « Nouvel événement » dans `calendarHeader` (droite) | dans la rangée fusionnée, groupe `className="ml-auto flex flex-wrap gap-2"` (`basis-full` sous 840 px, déjà annoncé sur le conteneur) = `Segments` puis le `Button variant="primary" size="lg"` « Nouveau rendez-vous » ; maquette `.vue-tete .actions{margin-left:auto}` (`agenda.html:7,70`). Sans `ml-auto` le groupe reste collé au sélecteur / sync, pas à droite |
 | Fermer (overlay) | `<button>` sans nom | `Button variant="ghost" size="icon"` `aria-label="Fermer l'agenda"` (absent en `standalone`) |
 
 Libellé de semaine (`getNavLabel`, vue `week`). Aujourd'hui `fmtStart` et
@@ -94,7 +95,9 @@ calculés :
 
 ## 2. Segments et geste principal
 
-Ordre visuel de la maquette, ids du store : Jour `day`, Semaine `week`,
+Vivent dans le groupe `ml-auto flex flex-wrap gap-2` de § 1 (pas une
+seconde barre ; maquette `.vue-tete .actions`, `agenda.html:7,70`). Ordre
+visuel de la maquette, ids du store : Jour `day`, Semaine `week`,
 Mois `month`, Liste `list`. `Segments label="Vue de l'agenda" valeur={viewMode}
 onChange={(id) => choisirVue(id as …)}` (groupe + `aria-pressed`, pas un
 `tablist`). Pas `sm` : `classeSegment` est déjà `text-sm`. Geste :
@@ -110,7 +113,11 @@ actuel `flex-1 overflow-y-auto` (`CalendarView.tsx:453`). Le scroll reste
 sur la grille horaire.
 
 Grille `grid-cols-[3.5rem_repeat(7,1fr)]` (gutter `3.5rem` de la maquette,
-**7** colonnes). En-tête : **deux nœuds distincts** par jour (comme
+**7** colonnes). **Même gabarit** pour l'en-tête, la rangée « Journée » et
+la piste horaire : aujourd'hui les trois sont du `flex` + gutter `w-16`
+(4 rem, `CalendarView.tsx:396-398`, `423-450`, `456`) ; coller `3.5rem` sur
+l'en-tête / les heures et garder `w-16` sur « Journée » décale les jetons
+sous le mauvais jour. En-tête : **deux nœuds distincts** par jour (comme
 aujourd'hui, pas collés « mar.1 » comme `agenda.html:75`) : un `div` dont
 le texte entier est `lun.` … `dim.` (`text-sm text-text-muted`) + un nœud
 numéro `text-base font-semibold tabular-nums` ; aujourd'hui : numéro
@@ -118,11 +125,12 @@ numéro `text-base font-semibold tabular-nums` ; aujourd'hui : numéro
 text-text-muted` (non interactif, plancher 12 px). Pas de `bg-accent-cyan/5`.
 
 Rangée « Journée » **conservée** au-dessus de la grille horaire
-(`CalendarView.tsx:423-450`). `getTimedEventLayout` exige
+(`CalendarView.tsx:423-450`) : `grid grid-cols-[3.5rem_repeat(7,1fr)]`,
+première cellule = libellé gutter `text-sm text-text-muted` « Journée »
+(plus `text-xs`), **pas** `w-16` + `flex-1`. `getTimedEventLayout` exige
 `start_datetime` / `end_datetime` et retourne `null` sans eux
 (`calendarEventLayout.ts:90-92`) : un `all_day` n'a pas de `top` dans la
-grille horaire. Filtre `allDayByDate` inchangé. Libellé gutter
-`text-sm text-text-muted` « Journée » (plus `text-xs`). Jetons : `<button>`
+grille horaire. Filtre `allDayByDate` inchangé. Jetons : `<button>`
 `text-sm truncate border-l-[3px] border-domaine-agenda bg-domaine-agenda-tint
 text-domaine-agenda px-2 py-0.5 rounded-sm` (plus de magenta
 `bg-accent-magenta/20`).
@@ -161,8 +169,13 @@ d'`aria-label` sur son repère. `whileHover` / `scale` retirés.
 ## 4. Grille mois (`MonthView`)
 
 `Carte as="section"`. Une seule grille `grid-cols-7` sans `gap`,
-`overflow-hidden rounded-md` : **7 en-têtes** puis **42 cases** (49 enfants),
-lundi d'abord. En-têtes : nœuds séparés `text-sm text-text-muted`, texte
+`rounded-md border border-border` : **7 en-têtes** puis **42 cases** (49 enfants),
+lundi d'abord. **Pas** `overflow-hidden` sur ce conteneur (la maquette
+`.mois{overflow:hidden}`, `agenda.html:26`, collée ici couperait l'anneau
+du socle `:focus-visible{outline:3px solid;outline-offset:2px}`,
+`docs/da/2026-09-05-propositions/maquettes/da/base.css:23` : 3 px + offset
+2 px = 5 px hors boîte ; la semaine évite déjà ce clip § 3). En-têtes :
+nœuds séparés `text-sm text-text-muted`, texte
 entier `lun.` … `dim.` (maquette `.jt`, `agenda.html:85` ; la regex
 d'`etiquettesJours` lit le texte entier). Cellules `min-h-[5.5rem] p-1.5
 border-t border-l border-border text-sm` ; hors mois : numéro
@@ -170,7 +183,8 @@ border-t border-l border-border text-sm` ; hors mois : numéro
 `h-[1.4rem] w-[1.4rem] rounded-full bg-accent-fill text-accent-ink grid
 place-items-center`. Puces : bouton `text-sm truncate border-l-2
 border-domaine-agenda bg-domaine-agenda-tint text-domaine-agenda px-1.5 py-0.5
-rounded-sm` + anneau du socle. « +N autre » / « +N autres » inchangé,
+rounded-sm` + anneau du socle (défaut, pas rentrant : plus de parent qui
+clippe). « +N autre » / « +N autres » inchangé,
 `text-xs` (non cliquable).
 
 Le test actuel compte deux `div.grid-cols-7` et 42 enfants de la seconde
@@ -184,15 +198,33 @@ et bornes 6-22 inchangés (marqueur B-238 : `06:00`). **Garder** les
 demi-heures `:30` (`CalendarView.tsx:686-697`) et le `h3` interne + suffixe
 « (aujourd'hui) » (`CalendarView.tsx:643-649`) : le `h3#agenda-periode` du
 panneau porte la date civile complète, le `h3` interne reste le titre de
-la grille Jour. Rangée « Toute la journée » **conservée** au-dessus de la
+la grille Jour. Le `h3` interne : `className="text-base font-semibold"`
+**sans** `capitalize` (aujourd'hui `CalendarView.tsx:644` ; lot 2 / § 1 :
+jamais `capitalize`, première lettre seule en capitale, même règle que
+`h3#agenda-periode`). Blocs horaires Jour : même horaire que la semaine,
+`HH:MM à HH:MM` (`formatTime(start_datetime)` + ` à ` + `formatTime(end_datetime)`,
+plus le ` - ` actuel, `CalendarView.tsx:761-762`) ; si `location`, même
+ligne, séparateur ` · `, **sans** garde `layout.height > 50`
+(`CalendarView.tsx:764` aujourd'hui masque le lieu sur un bloc court).
+Rangée « Toute la journée » **conservée** au-dessus de la
 grille (`CalendarView.tsx:652-668`), mêmes jetons `domaine-agenda` que la
 semaine, filtre `allDayEvents` inchangé, libellé gutter `text-sm
 text-text-muted` « Toute la journée ».
 
-Liste : plus de `motion.button` ni `scale` ; chaque rendez-vous = `Ligne
-domaine="agenda" titre={summary} detail={lieu} droite={event.all_day ?
-'Toute la journée' : formatTime(event.start_datetime!)} onClick=…`. Chaîne
-exacte `Toute la journée` (pas « toute la journée »). Vide : `EtatVide
+Liste : plus de `motion.button` ni `scale` ; **pas** `Ligne`
+(`Ligne.tsx:49-55` : le `<button>` ne contient que `{titre}`, aucune prop
+`aria-label` : l'horaire et le lieu sortiraient du nom accessible ;
+aujourd'hui le `motion.button` concatène résumé + lieu + heure,
+`CalendarView.tsx:123-143`). Chaque rendez-vous = un `<button type="button"
+className="w-full text-left grid grid-cols-[2rem_1fr_auto] gap-3 items-center
+px-4 py-3 border-t border-border hover:bg-surface-2">` (mêmes colonnes que
+`Ligne`) ; puce `aria-hidden` `h-8 w-8 rounded-sm bg-domaine-agenda-tint
+text-domaine-agenda` ; titre `font-semibold text-text` = `summary` ; si
+`location`, `p className="text-sm text-text-muted"` = lieu ; droite
+`text-text-muted` = `event.all_day ? 'Toute la journée' :
+formatTime(event.start_datetime!)`. Nom accessible = concaténation des nœuds
+texte (résumé, lieu s'il existe, horaire). Chaîne exacte `Toute la journée`
+(pas « toute la journée »). Vide : `EtatVide
 titre="Aucun événement"`, sans action. Groupes par jour : `h3 text-sm
 font-semibold`, `parseLocalDateKey` conservé, tri descendant
 `b.localeCompare(a)` inchangé (`CalendarView.tsx:101`).
@@ -213,7 +245,6 @@ avant le code). Tête : retour `Button ghost icon` `aria-label="Retour"`
 | Champ | `label` | `htmlFor` / `id` | `required` |
 |---|---|---|---|
 | Titre | Titre | `eventform-titre` | oui |
-| Toute la journée | Événement sur toute la journée | `all-day` | non |
 | Date de début | Date de début | `eventform-date-de-debut` | oui |
 | Heure de début | Heure de début | `eventform-heure-de-debut` | oui (masqué si `allDay`) |
 | Date de fin | Date de fin | `eventform-date-de-fin` | oui |
@@ -226,16 +257,22 @@ avant le code). Tête : retour `Button ghost icon` `aria-label="Retour"`
 Les quatre libellés d'horaire restent ceux d'aujourd'hui (`EventForm.tsx:317-353`) :
 « Date de début », « Heure de début », « Date de fin », « Heure de fin »
 (la maquette fusionne en « Date » / « Heure » = P-073, hors lot). L'astérisque
-vient de `FormField required`, pas du texte du label. Case à cocher : garder
-`htmlFor="all-day"` ; le `<label>` reste **à côté** de la case (flex actuel),
-pas au-dessus via le `label` de `FormField` si ça casse la rangée : l'association
-`htmlFor` suffit à `getByLabelText('Événement sur toute la journée')`.
+vient de `FormField required`, pas du texte du label. Case à cocher **hors**
+`FormField` (le `label` de `FormField` est `block` au-dessus,
+`FormField.tsx:53-62`) : rangée `flex items-center gap-3` actuelle
+(`EventForm.tsx:301-312`), `<input type="checkbox" id="all-day">` +
+`<label htmlFor="all-day" className="text-sm text-text">Événement sur toute
+la journée</label>` à côté, pas au-dessus. `htmlFor="all-day"` seul.
+`getByLabelText('Événement sur toute la journée')` conservé.
 Participants : `description="Séparez les emails par des virgules"` (aide
 actuelle). Placeholder titre « Titre de l'événement » conservé (test).
 Placeholder lieu « Atelier, adresse ou lien ».
 
-Erreur : **une seule** `Alerte` (`children` = `error` / `formError`, sans
-`action`, `data-testid` absent aujourd'hui). `FormField` ne reçoit **pas**
+Erreur : **une seule** `Alerte` `children={formError || guardError}`
+(aujourd'hui `const error = formError || guardError` alimente un seul
+bandeau, `EventForm.tsx:51,282-286` ; `children` = `error` / `formError`
+seul laisserait `guardError` muet). Sans `action`, `data-testid` absent
+aujourd'hui. `FormField` ne reçoit **pas**
 `error={formError}` : `FormField` rend `<p role="alert">`
 (`FormField.tsx:72-76`) et un second « date de fin » ferait échouer
 `EventForm.test.tsx:157` `findByText(/date de fin/)`. `FormField error`
@@ -252,10 +289,16 @@ Pas un second sélecteur. Confirmation externe et
 
 ## 7. Fiche (`EventDetail`)
 
-Pas d'état maquetté. Titre **`h3`** conservé (B-238 le reconnaît). Si
+Pas d'état maquetté. Tête : `Button variant="ghost" size="icon"`
+`aria-label="Retour"` `onClick={() => setCurrentEvent(null)}` (comme § 6 ;
+aujourd'hui un `<button>` maison, `EventDetail.tsx:97-103`). Titre **`h3`**
+conservé (B-238 le reconnaît). Si
 `event` est nul : « Événement introuvable » (`EventDetail.tsx:74-78`),
-inchangé. Statut `Etiquette ton={tentative ? 'attention' : 'erreur'}`
-« Provisoire » / « Annulé ». Confirmation de suppression : `div` (pas
+inchangé. Statut : n'afficher `Etiquette` **que si** `event.status !==
+'confirmed'` (`EventDetail.tsx:136-144` aujourd'hui ; sans cette garde
+tout rendez-vous `confirmed` sortait « Annulé »). `ton={event.status ===
+'tentative' ? 'attention' : 'erreur'}` enfants « Provisoire » / « Annulé ».
+Confirmation de suppression : `div` (pas
 `Alerte` : ce n'est pas une erreur, lot 3) + `Button ghost md` « Conserver
 le rendez-vous » + `Button danger md` « Supprimer définitivement » ; textes
 inchangés. Modifier / Supprimer : `Button ghost icon`, `aria-label`
@@ -282,7 +325,7 @@ ferme ce cas.
 
 | État | Aujourd'hui | Cible |
 |---|---|---|
-| chargement | icône `RefreshCw` qui tourne | trois rangées `aria-hidden` façon semaine (gutter `Squelette classeBarre="h-8 rounded-sm" largeur="w-8"` + barre `w-[60%]`) puis `role="status"` « Chargement de l'agenda… » `text-sm text-text-muted` |
+| chargement | icône `RefreshCw` qui tourne | trois rangées `aria-hidden` façon semaine : chaque rangée `flex items-center gap-2`, un `Squelette classeBarre="h-8 rounded-sm" largeur="w-8"` **puis** un `Squelette classeBarre="h-8 rounded-sm" largeur="w-[60%]"` (`SqueletteProps.largeur` unique, `Squelette.tsx:12,21` : un seul `Squelette` ne porte pas deux largeurs) ; puis `role="status"` « Chargement de l'agenda… » `text-sm text-text-muted` |
 | `isEventFormOpen` | `EventForm` | § 6 |
 | `currentEventId` | `EventDetail` | § 7 |
 | sinon | `CalendarView` | § 3-5 |
@@ -301,8 +344,11 @@ chargement) : `text-xs font-medium text-text-muted mt-2`. Résumé = calendrier
 **courant** (`calendars.find(c => c.id === currentCalendarId)`) :
 `Agenda local « {summary} »` si `courant.provider === 'local'`, sinon
 `{summary}`. Suffixe ` · aucun agenda en ligne branché` si **aucun** des
-`calendars` n'a `provider === 'google'` (`!calendars.some(c => c.provider
-=== 'google')`), pas « le courant n'est pas google ». Pas de légende
+`calendars` n'est en ligne : `!calendars.some(c => c.provider !== 'local')`
+(`Calendar.provider` vaut `'local' | 'google' | 'caldav'`,
+`src/frontend/src/services/api/calendar.ts:16` ; un CalDAV branché **est**
+en ligne). Pas `=== 'google'` seul (un CalDAV sans Google affichait le
+suffixe à tort). Pas « le courant n'est pas google ». Pas de légende
 Rendez-vous / Prospects / Tâches (P-072).
 
 ## 9. Gardes mécaniques et tests à aligner
@@ -324,29 +370,44 @@ sans bouton créer ; (6) aucune classe `text-xs` dans le sous-arbre d'un
 interactif, aucune couleur en dur dans les quatre fichiers (étendre
 `aucuneCouleurEnDur` : `CalendarPanel.tsx`, `CalendarView.tsx`, `EventForm.tsx`,
 `EventDetail.tsx` ; `bg-instant` est un jeton) ; (7) overlay : plus de
-`bg-black`.
+`bg-black` ; (8) groupe Segments + « Nouveau rendez-vous » porte `ml-auto` ;
+(9) pied : suffixe « aucun agenda en ligne branché » absent si un
+`provider === 'caldav'` (présent seulement si tous les agendas sont
+`local`) ; (10) chargement : chaque rangée = deux `Squelette` (`w-8` puis
+`w-[60%]`), pas un seul.
 
 `CalendarView.da.test.tsx` : (1) semaine : 7 colonnes, « lun. » … « dim. »,
 ligne `bg-instant` avec `role="img"` et `aria-label` `/Il est/` **seulement
 si `nowLineTop !== null`** (même garde que `CalendarView.tsx:379-382` : pas
-dès que aujourd'hui est dans la semaine) ; (2) un bloc = un `button`, titre
+dès que aujourd'hui est dans la semaine) ; en-tête, rangée « Journée » et
+piste horaire partagent `grid-cols-[3.5rem_repeat(7,1fr)]` (pas de `w-16`
+sur « Journée ») ; (2) un bloc = un `button`, titre
 en `text-sm`, résumé entier dans le nom accessible (chaîne non coupée) ;
-horaire `HH:MM à HH:MM` ; (3) deux rendez-vous au même créneau : **asserter
+horaire `HH:MM à HH:MM` **en semaine et en jour** ; Jour : lieu sur la
+même ligne s'il existe (pas de garde `height > 50`) ; aucun `capitalize`
+sur le `h3` interne Jour ; (3) deux rendez-vous au même créneau : **asserter
 le `style` des deux boutons** (`left: '0%'` et `left: '50%'`, `width`
 correspondant), pas seulement `leftPercent` du helper ; (4) mois : 7
 en-têtes `lun.`…`dim.` + 42 cellules, première = lundi, aujourd'hui en
-`bg-accent-fill` ; (5) liste : une `Ligne` par événement,
-`droite` « Toute la journée » pour un `all_day`, vide = `EtatVide` « Aucun
-événement ».
+`bg-accent-fill` ; la grille mois n'a **pas** `overflow-hidden` ; (5) liste :
+un `<button>` par événement dont le nom accessible **contient** le résumé
+et l'horaire (ou « Toute la journée ») ; droite visuelle « Toute la journée »
+pour un `all_day` ; vide = `EtatVide` « Aucun événement ».
 
 `EventForm.da.test.tsx` : ids des champs encore là, chaque `FormField`
-porte `htmlFor` égal à l'id, `FormField` « Lieu ou visio », Enregistrer
+porte `htmlFor` égal à l'id, `FormField` « Lieu ou visio », case « toute
+la journée » **hors** `FormField` (`getByLabelText('Événement sur toute la
+journée')` via `htmlFor="all-day"`), Enregistrer
 toujours `md`, titre « Nouveau rendez-vous » hors édition, agenda affiché
 `readOnly` + `aria-readonly="true"` (pas `disabled`), une seule
-`role="alert"` pour `formError`.
+`role="alert"` pour `formError || guardError` (les deux sources, un bandeau).
 
-`EventDetail.da.test.tsx` : titre `h3`, confirmation sans `role="alert"`,
-boutons `md` / `icon`, « Événement introuvable » si id inconnu.
+`EventDetail.da.test.tsx` : titre `h3`, `Button ghost icon` `aria-label="Retour"`
+appelle `setCurrentEvent(null)`, confirmation sans `role="alert"`,
+boutons `md` / `icon`, « Événement introuvable » si id inconnu ;
+`Etiquette` absente si `status === 'confirmed'`, « Provisoire »
+`ton="attention"` si `tentative`, « Annulé » `ton="erreur"` si autre
+statut non confirmé.
 
 À aligner, forme seulement : `CalendarView.semaineFrancaise.test.tsx`
 `['Lun','Mar','Mer','Jeu','Ven','Sam','Dim']` → `['lun.','mar.','mer.','jeu.','ven.','sam.','dim.']`
@@ -356,7 +417,9 @@ mois) ; le test « première cellule » (`:50-62`) : ne plus exiger
 `grilles.length === 2` ; une seule `grid-cols-7`, 7 en-têtes + 42 cases
 (`enfants.length === 49`, `enfants.slice(7)` pour les numéros `['31','1','2']`) ;
 `CalendarPanel.retourGrille.test.tsx` marqueur Mois/Semaine `'Mer'` → `'mer.'`,
-Liste `heading level 4` → `getByRole('button', { name: RESUME })` (`Ligne`) ;
+Liste `heading level 4` → `getByRole('button', { name: (n) => n.includes(RESUME) })`
+(le nom concatène résumé + horaire, égalité stricte sur `RESUME` seul
+casserait) ;
 `EventForm.test.tsx` placeholder titre **inchangé**, `findByText(/date de
 fin/)` **inchangé** (une seule occurrence : le bandeau) ; `getByLabelText(
 'Événement sur toute la journée')` (`EventForm.test.tsx:138`) et
@@ -406,4 +469,7 @@ hors lot.
 
 ## Points non repris
 
-Aucun. Les 19 constats du journal `.cartography-work/reviews/grok-da-lot8-agenda-design-v1.log` (1–19, VERDICT NO-GO) sont repris dans le corps.
+Aucun constat de la v2 n'est écarté. Les 12 constats du journal
+`.cartography-work/reviews/grok-da-lot8-agenda-design-v2.log` (1-12,
+VERDICT NO-GO) sont repris dans le corps. Les 19 de la v1
+(`.cartography-work/reviews/grok-da-lot8-agenda-design-v1.log`) le restent.
