@@ -114,6 +114,20 @@ def parse_email_address(header_value: str) -> tuple[str, str | None]:
 # ============================================================
 
 
+def _texte_depuis_html(html: str) -> str:
+    """Version texte d'un corps HTML : sauts de ligne pour les blocs, balises
+    retirées, entités décodées, lignes vides repliées."""
+    import html as html_module
+    import re
+
+    texte = re.sub(r'(?i)<br\s*/?>', '\n', html)
+    texte = re.sub(r'(?i)</(p|div|li|h[1-6]|tr)>', '\n', texte)
+    texte = re.sub(r'<[^>]+>', '', texte)
+    texte = html_module.unescape(texte)
+    lignes = [ligne.strip() for ligne in texte.splitlines()]
+    return re.sub(r'\n{3,}', '\n\n', '\n'.join(lignes)).strip()
+
+
 class GmailService:
     """
     Gmail API client.
@@ -260,8 +274,15 @@ class GmailService:
         from email import encoders
         from email.mime.base import MIMEBase
 
-        message = MIMEMultipart('alternative') if html else MIMEMultipart()
-        message.attach(MIMEText(body, 'html' if html else 'plain', 'utf-8'))
+        if html:
+            # Revue Grok 0.70.0 : une alternative porte toujours sa version texte,
+            # sinon un client qui préfère le texte n'affiche rien.
+            message = MIMEMultipart('alternative')
+            message.attach(MIMEText(_texte_depuis_html(body), 'plain', 'utf-8'))
+            message.attach(MIMEText(body, 'html', 'utf-8'))
+        else:
+            message = MIMEMultipart()
+            message.attach(MIMEText(body, 'plain', 'utf-8'))
         message['To'] = ', '.join(to)
         message['Subject'] = subject
         if cc:
@@ -287,7 +308,9 @@ class GmailService:
                 part = MIMEBase(principal, sous or 'octet-stream')
                 part.set_payload(content)
                 encoders.encode_base64(part)
-                part.add_header('Content-Disposition', f'attachment; filename="{filename}"')
+                # Revue Grok 0.70.0 : le nom passe par l'encodeur d'en-tête (RFC 2231),
+                # pas par une interpolation qu'un accent ou un guillemet cassait.
+                part.add_header('Content-Disposition', 'attachment', filename=filename)
                 message.attach(part)
         return base64.urlsafe_b64encode(message.as_bytes()).decode('utf-8')
 
