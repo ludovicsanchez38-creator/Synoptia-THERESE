@@ -1,7 +1,7 @@
 # Couverture et limites de la carte
 
 - Couverture validee : 100.0 %
-- Fichiers attendus : 1273
+- Fichiers attendus : 1374
 - Validation `passed` : True
 
 ## Fichiers non lus (0)
@@ -10,43 +10,47 @@
 ## Doubles lectures manquantes (0)
 
 
-## Invariants divergents, a arbitrer (28)
+## Invariants divergents, a arbitrer (31)
 
 - src/backend/app/models/board.py: aucun mot commun entre les invariants de lecteur-D09:c2-D09-WP-047, wp047-lecteur1:wp047-lecteur1
 - src/backend/app/services/memory_tools.py: aucun mot commun entre les invariants de lecteur-D02:c4-D02-WP-053, lecteur-cartographie-wp053:wp053-lecteur1
-- src/backend/app/services/planning.py: aucun mot commun entre les invariants de lecteur-D03:c4-D03-WP-DIFF-015, lecteur-R28:c3-R28-WP-DIFF-015
 - src/backend/app/services/prompt_security.py: aucun mot commun entre les invariants de lecteur-D01:c4-D01-WP-C-025, lecteur-R04:c4-R04-WP-C-025
+- src/backend/app/services/skills/__init__.py: aucun mot commun entre les invariants de lecteur-D02:c6-D02-WP-054, lecteur-cartographie:wp054-lecteur2
 - src/backend/app/services/skills/planning_skills.py: aucun mot commun entre les invariants de lecteur-D02:c3-D02-WP-054, lecteur-cartographie:wp054-lecteur2
 - src/backend/app/skills_config/pptx/SKILL.md: aucun mot commun entre les invariants de lecteur-D02:c2-D02-WP-055, lecteur-cartographie-wp055:wp055-lecteur1
-- src/frontend/src-tauri/tauri.conf.json: aucun mot commun entre les invariants de lecteur-D05:c4-D05-WP-060, lecteur-R09:c4-R09-WP-060
-- src/frontend/src/components/calendar/calendarErrors.ts: aucun mot commun entre les invariants de lecteur-D07:c2-D07-WP-061, lecteur-cartographie-wp061:wp061-lecteur1
+- src/frontend/src/components/atelier/AgentSession.tsx: aucun mot commun entre les invariants de lecteur-D02:c6-D02-WP-C-026, lecteur-R07:c6-R07-WP-C-026
+- src/frontend/src/components/email/ResponseGeneratorModal.tsx: aucun mot commun entre les invariants de lecteur-D03:c6-D03-WP-063, lecteur-wp063:wp063-lecteur1
 - src/frontend/src/components/email/wizard/EmailSetupWizard.tsx: aucun mot commun entre les invariants de lecteur-D04:c4-D04-WP-063, lecteur-R04:c4-R04-WP-063
-- src/frontend/src/components/guided/CreateCommandForm.tsx: aucun mot commun entre les invariants de lecteur-D04:c4-D04-WP-063, lecteur-wp063:wp063-lecteur1
+- src/frontend/src/components/email/wizard/SmtpConfigStep.tsx: aucun mot commun entre les invariants de lecteur-D03:c6-D03-WP-063, lecteur-wp063:wp063-lecteur1
 - src/frontend/src/components/invoices/InvoiceForm.tsx: aucun mot commun entre les invariants de lecteur-D01:c4-D01-WP-C-026, lecteur-R03:c4-R03-WP-C-026
 - src/frontend/src/components/invoices/InvoicesPanel.test.tsx: aucun mot commun entre les invariants de lecteur-D01:c2-D01-WP-C-026, lecteur-cartographie-wpc026:wpc026-lecteur1-20260831
 - src/frontend/src/components/memory/MemoryPanel.test.tsx: aucun mot commun entre les invariants de lecteur-D07:c2-D07-WP-064, lecteur-cartographie-wp064:wp064-lecteur1
 - src/frontend/src/components/prototype/AccueilMoinsCharge.test.tsx: aucun mot commun entre les invariants de lecteur-D06:c2-D06-WP-065, wp065-lecteur1:wp065-lecteur1
 - src/frontend/src/components/prototype/CalculatorWorkspaceCanvas.test.tsx: aucun mot commun entre les invariants de lecteur-D03:c3-D03-WP-065, wp065-lecteur1:wp065-lecteur1
+- src/frontend/src/components/settings/AccessibilityTab.tsx: aucun mot commun entre les invariants de lecteur-D03:c6-D03-WP-067, lecteur-R08:c6-R08-WP-067
 - src/frontend/src/components/ui/UpdateBanner.tsx: aucun mot commun entre les invariants de lecteur-D04:c4-D04-WP-069, wp069-lecteur1:wp069-lecteur1
-- src/frontend/src/hooks/useDialogFocusTrap.ts: aucun mot commun entre les invariants de lecteur-D04:c4-D04-WP-070, lecteur-R12:c4-R12-WP-070
+- src/frontend/src/lib/civilDate.test.ts: aucun mot commun entre les invariants de lecteur-D03:c6-D03-WP-070, lecteur-R17:c3-R17-WP-070
+- src/frontend/src/lib/sanitizeError.test.ts: aucun mot commun entre les invariants de lecteur-D03:c6-D03-WP-072, lecteur-cartographie-wp072:wp072-lecteur1
 - src/frontend/src/services/api/commands.ts: aucun mot commun entre les invariants de lecteur-D04:c3-D04-WP-072, lecteur-cartographie-wp072:wp072-lecteur1
 - src/frontend/src/services/api/notifications.ts: aucun mot commun entre les invariants de lecteur-D04:c4-D04-WP-073, lecteur-cartographie:wp073-lecteur1
+- src/frontend/src/services/api/skills.ts: aucun mot commun entre les invariants de lecteur-D04:c6-D04-WP-073, lecteur-cartographie:wp073-lecteur1
 - src/frontend/src/test/a11y.test.tsx: aucun mot commun entre les invariants de lecteur-D04:c4-D04-WP-074, wp074-lecteur1:wp074-lecteur1
-- tests/e2e/stories/api-endpoints.spec.ts: aucun mot commun entre les invariants de lecteur-D05:c3-D05-WP-085, lecteur-wp085:wp085-lecteur1
 - tests/e2e/stories/parcours-06-navigation.spec.ts: aucun mot commun entre les invariants de lecteur-D11:c2-D11-WP-085, lecteur-M10:c2-M10-WP-085
 - tests/test_action_agents.py: aucun mot commun entre les invariants de lecteur-D03:c4-D03-WP-078, wp078-lecteur1:wp078-lecteur1
 - tests/test_board_traitement.py: aucun mot commun entre les invariants de lecteur-D04:c3-D04-WP-078, wp078-lecteur1:wp078-lecteur1
 - tests/test_consigne_de_langue.py: aucun mot commun entre les invariants de lecteur-D04:c3-D04-WP-079, lecteur-wp079:wp079-lecteur1
 - tests/test_modeles_disponibles.py: aucun mot commun entre les invariants de lecteur-D08:c2-D08-WP-080, wp080-lecteur1:wp080-lecteur1
 - tests/test_routers_invoices.py: aucun mot commun entre les invariants de lecteur-D04:c3-D04-WP-C-029, lecteur-R17:c3-R17-WP-C-029
+- tests/test_services_web_search.py: aucun mot commun entre les invariants de lecteur-D03:c6-D03-WP-084, lecteur-M15:c2-M15-WP-084
 - tests/test_slash_commands.py: aucun mot commun entre les invariants de lecteur-D09:c2-D09-WP-084, wp084-lecteur1:wp084-lecteur1
 
 ## Disparus depuis l'inventaire (0)
 
 
-## Lus sur une version anterieure (366)
+## Lus sur une version anterieure (429)
 
 - .github/workflows/ci.yml
+- .github/workflows/release.yml
 - .github/workflows/tests-e2e.yml
 - .github/workflows/tests-windows.yml
 - scripts/bump-version.sh
@@ -82,16 +86,20 @@
 - src/backend/app/routers/images.py
 - src/backend/app/routers/invoices.py
 - src/backend/app/routers/memory.py
+- src/backend/app/routers/planning.py
 - src/backend/app/routers/rgpd.py
+- src/backend/app/routers/skills.py
 - src/backend/app/routers/tasks.py
 - src/backend/app/routers/variables.py
 - src/backend/app/routers/voice.py
 - src/backend/app/services/action_agents.py
 - src/backend/app/services/agents/git_service.py
+- src/backend/app/services/agents/profiles.py
 - src/backend/app/services/agents/swarm.py
 - src/backend/app/services/agents/tools.py
 - src/backend/app/services/audit.py
 - src/backend/app/services/board.py
+- src/backend/app/services/browser_agent.py
 - src/backend/app/services/calculators.py
 - src/backend/app/services/calendar/base_provider.py
 - src/backend/app/services/calendar/caldav_provider.py
@@ -107,17 +115,21 @@
 - src/backend/app/services/email/gmail_provider.py
 - src/backend/app/services/email/imap_smtp_provider.py
 - src/backend/app/services/email/provider_factory.py
+- src/backend/app/services/email_classifier.py
 - src/backend/app/services/email_response_generator.py
 - src/backend/app/services/email_setup_assistant.py
+- src/backend/app/services/encryption.py
 - src/backend/app/services/gmail_service.py
 - src/backend/app/services/image_generator.py
 - src/backend/app/services/import_service.py
+- src/backend/app/services/indexation.py
 - src/backend/app/services/invoice_pdf.py
 - src/backend/app/services/llm.py
 - src/backend/app/services/mcp_service.py
 - src/backend/app/services/mcp_therese_server.py
 - src/backend/app/services/path_security.py
 - src/backend/app/services/performance.py
+- src/backend/app/services/planning.py
 - src/backend/app/services/prompt_security.py
 - src/backend/app/services/providers/anthropic.py
 - src/backend/app/services/providers/base.py
@@ -129,11 +141,13 @@
 - src/backend/app/services/providers/openrouter.py
 - src/backend/app/services/providers/perplexity.py
 - src/backend/app/services/relances.py
+- src/backend/app/services/scoring.py
 - src/backend/app/services/skills/base.py
 - src/backend/app/services/skills/code_executor.py
 - src/backend/app/services/skills/markdown_docx.py
 - src/backend/app/services/token_tracker.py
 - src/backend/app/services/tool_confirmations.py
+- src/backend/app/services/traitements.py
 - src/backend/app/services/user_commands.py
 - src/backend/app/services/user_profile.py
 - src/backend/app/services/variables_service.py
@@ -146,6 +160,7 @@
 - src/backend/tests/test_backup.py
 - src/backend/tests/test_escalation.py
 - src/backend/tests/test_personalisation.py
+- src/backend/tests/test_planning_api.py
 - src/backend/tests/test_services_security.py
 - src/frontend/.env.example
 - src/frontend/index.html
@@ -172,10 +187,16 @@
 - src/frontend/src/components/atelier/SessionList.tsx
 - src/frontend/src/components/board/AdvisorArcLayout.tsx
 - src/frontend/src/components/board/AdvisorCard.tsx
+- src/frontend/src/components/board/BoardPanel.tsx
+- src/frontend/src/components/board/DeliberationView.tsx
+- src/frontend/src/components/board/ModeSelector.tsx
 - src/frontend/src/components/calendar/CalendarPanel.tsx
+- src/frontend/src/components/calendar/CalendarView.joursCouverts.test.tsx
 - src/frontend/src/components/calendar/CalendarView.tsx
 - src/frontend/src/components/calendar/EventDetail.tsx
 - src/frontend/src/components/calendar/EventForm.tsx
+- src/frontend/src/components/calendar/calendarErrors.test.ts
+- src/frontend/src/components/calendar/calendarErrors.ts
 - src/frontend/src/components/calendar/calendarEventLayout.test.ts
 - src/frontend/src/components/calendar/calendarEventLayout.ts
 - src/frontend/src/components/calendar/calendarHours.test.ts
@@ -199,6 +220,8 @@
 - src/frontend/src/components/crm/CRMPanel.tsx
 - src/frontend/src/components/crm/ListeDesPrestations.tsx
 - src/frontend/src/components/crm/PipelineView.tsx
+- src/frontend/src/components/documents/DocumentWorkspace.test.tsx
+- src/frontend/src/components/documents/DocumentWorkspace.tsx
 - src/frontend/src/components/documents/DocumentsList.tsx
 - src/frontend/src/components/documents/OutlineTree.tsx
 - src/frontend/src/components/documents/PistesPanel.test.tsx
@@ -209,6 +232,7 @@
 - src/frontend/src/components/email/EmailDetail.tsx
 - src/frontend/src/components/email/EmailList.tsx
 - src/frontend/src/components/email/EmailPanel.tsx
+- src/frontend/src/components/email/EmailPriorityBadge.tsx
 - src/frontend/src/components/email/SignatureEditorModal.tsx
 - src/frontend/src/components/email/wizard/CredentialsStep.tsx
 - src/frontend/src/components/email/wizard/EmailSetupWizard.tsx
@@ -216,13 +240,16 @@
 - src/frontend/src/components/email/wizard/VerifyStep.tsx
 - src/frontend/src/components/files/FileBrowser.tsx
 - src/frontend/src/components/guided/ActionCard.tsx
+- src/frontend/src/components/guided/CreateCommandForm.tsx
 - src/frontend/src/components/guided/DynamicSkillForm.tsx
 - src/frontend/src/components/guided/ImageGenerationPanel.tsx
 - src/frontend/src/components/guided/actionData.ts
 - src/frontend/src/components/guided/index.ts
+- src/frontend/src/components/home/CommandExecutor.test.tsx
 - src/frontend/src/components/home/CommandExecutor.tsx
 - src/frontend/src/components/home/HomeCommands.tsx
 - src/frontend/src/components/home/QuickActions.tsx
+- src/frontend/src/components/home/composantsAtteignables.test.ts
 - src/frontend/src/components/home/index.ts
 - src/frontend/src/components/invoices/InvoiceForm.test.tsx
 - src/frontend/src/components/invoices/InvoiceForm.tsx
@@ -247,9 +274,12 @@
 - src/frontend/src/components/prototype/CapabilityCenter.tsx
 - src/frontend/src/components/prototype/ConversationCanvasPrototype.test.tsx
 - src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx
+- src/frontend/src/components/prototype/DeliverablesWorkspaceCanvas.tsx
 - src/frontend/src/components/prototype/EmailConversationCard.test.tsx
 - src/frontend/src/components/prototype/EmailConversationCard.tsx
+- src/frontend/src/components/prototype/Etabli.test.tsx
 - src/frontend/src/components/prototype/FollowUpsWorkspaceCanvas.tsx
+- src/frontend/src/components/prototype/InvoiceConversationCard.brouillonEnregistre.test.tsx
 - src/frontend/src/components/prototype/InvoiceConversationCard.tsx
 - src/frontend/src/components/prototype/MeetingConversationCard.tsx
 - src/frontend/src/components/prototype/PanneauxNonModaux.test.tsx
@@ -262,37 +292,48 @@
 - src/frontend/src/components/prototype/TrustCenter.test.tsx
 - src/frontend/src/components/prototype/VoiceWorkspaceCanvas.test.tsx
 - src/frontend/src/components/prototype/VoiceWorkspaceCanvas.tsx
+- src/frontend/src/components/prototype/VoilePanneau.tsx
 - src/frontend/src/components/prototype/prospectRelance.test.ts
 - src/frontend/src/components/prototype/prototypeReadModels.robustesse.test.ts
 - src/frontend/src/components/prototype/prototypeReadModels.test.ts
 - src/frontend/src/components/prototype/prototypeReadModels.ts
+- src/frontend/src/components/prototype/usePrototypeDeliverablesData.test.tsx
+- src/frontend/src/components/prototype/usePrototypeDeliverablesData.ts
 - src/frontend/src/components/prototype/usePrototypeEmailData.ts
 - src/frontend/src/components/prototype/usePrototypeInvoiceData.ts
 - src/frontend/src/components/prototype/usePrototypeReadData.ts
 - src/frontend/src/components/rfc/RFCCapture.tsx
+- src/frontend/src/components/rfc/RFCWizard.tsx
+- src/frontend/src/components/settings/AccessibilityTab.tsx
 - src/frontend/src/components/settings/AdvancedTab.tsx
 - src/frontend/src/components/settings/CRMSyncPanel.tsx
 - src/frontend/src/components/settings/CalDAVSection.tsx
 - src/frontend/src/components/settings/EnvVarModal.tsx
 - src/frontend/src/components/settings/LLMTab.tsx
+- src/frontend/src/components/settings/LimitsTab.tsx
 - src/frontend/src/components/settings/PrivacyTab.tsx
 - src/frontend/src/components/settings/ProfileTab.tsx
 - src/frontend/src/components/settings/ServicesTab.tsx
 - src/frontend/src/components/settings/SettingsModal.tsx
 - src/frontend/src/components/settings/VoiceLocalSection.tsx
 - src/frontend/src/components/sidebar/ConversationSidebar.tsx
+- src/frontend/src/components/tasks/TaskForm.tsx
 - src/frontend/src/components/tasks/TaskKanban.tsx
 - src/frontend/src/components/tasks/TaskList.tsx
 - src/frontend/src/components/tasks/TasksPanel.tsx
+- src/frontend/src/components/traitements/TraitementsPanel.tsx
 - src/frontend/src/components/ui/CompactMarkdown.tsx
 - src/frontend/src/components/ui/NotificationCenter.tsx
 - src/frontend/src/components/ui/Notifications.test.tsx
 - src/frontend/src/components/ui/Notifications.tsx
+- src/frontend/src/components/ui/Select.tsx
 - src/frontend/src/hooks/index.ts
 - src/frontend/src/hooks/useAutosave.test.ts
 - src/frontend/src/hooks/useAutosave.ts
 - src/frontend/src/hooks/useDialogFocusTrap.ts
 - src/frontend/src/hooks/useKeyboardShortcuts.ts
+- src/frontend/src/lib/actionRegistry.ts
+- src/frontend/src/lib/animations.ts
 - src/frontend/src/lib/civilDate.test.ts
 - src/frontend/src/lib/civilDate.ts
 - src/frontend/src/lib/deepLinks.ts
@@ -300,35 +341,54 @@
 - src/frontend/src/lib/devise.test.ts
 - src/frontend/src/lib/devise.ts
 - src/frontend/src/lib/erreursAnnoncees.test.ts
+- src/frontend/src/lib/etabli.ts
 - src/frontend/src/lib/lexique.test.ts
 - src/frontend/src/lib/lexiqueTitres.test.ts
+- src/frontend/src/lib/paletteAuRepos.test.ts
+- src/frontend/src/lib/paletteAuRepos.ts
 - src/frontend/src/lib/purgeLocalData.test.ts
 - src/frontend/src/lib/purgeLocalData.ts
+- src/frontend/src/lib/utils.ts
 - src/frontend/src/services/api/calendar.ts
 - src/frontend/src/services/api/chat.ts
 - src/frontend/src/services/api/config.ts
+- src/frontend/src/services/api/core.ts
 - src/frontend/src/services/api/crm.ts
 - src/frontend/src/services/api/dashboard.ts
+- src/frontend/src/services/api/data.test.ts
+- src/frontend/src/services/api/data.ts
+- src/frontend/src/services/api/documents.ts
 - src/frontend/src/services/api/email.test.ts
 - src/frontend/src/services/api/email.ts
 - src/frontend/src/services/api/index.ts
 - src/frontend/src/services/api/memory.ts
 - src/frontend/src/services/api/personalisation.ts
 - src/frontend/src/services/api/variables.ts
+- src/frontend/src/stores/actionsStore.insertResult.test.ts
 - src/frontend/src/stores/actionsStore.ts
+- src/frontend/src/stores/atelierStore.ts
 - src/frontend/src/stores/billingProfileStore.test.ts
 - src/frontend/src/stores/billingProfileStore.ts
 - src/frontend/src/stores/chatStore.ts
 - src/frontend/src/stores/contactsStore.ts
 - src/frontend/src/stores/demoStore.ts
+- src/frontend/src/stores/documentStore.test.ts
+- src/frontend/src/stores/documentStore.ts
 - src/frontend/src/stores/invoiceStore.ts
+- src/frontend/src/stores/navigationStore.ts
+- src/frontend/src/stores/openclawStore.ts
 - src/frontend/src/stores/personalisationStore.ts
+- src/frontend/src/stores/statusStore.ts
 - src/frontend/src/stores/toolConfirmationStore.ts
 - src/frontend/src/styles/couleursDeDomaine.test.ts
 - src/frontend/src/styles/globals.css
+- src/frontend/src/test/lot11.test.ts
+- src/frontend/src/test/lot12.test.ts
+- src/frontend/vite.config.ts
 - tests/conftest.py
 - tests/e2e/README.md
 - tests/e2e/run-e2e-backend.sh
+- tests/e2e/stories/api-endpoints.spec.ts
 - tests/e2e/stories/helpers/surfaces.ts
 - tests/e2e/stories/parcours-01-premier-lancement.spec.ts
 - tests/e2e/stories/parcours-02-memory.spec.ts
@@ -340,16 +400,20 @@
 - tests/e2e/stories/parcours-08-capacites-prototype.spec.ts
 - tests/protocols/README.md
 - tests/protocols/app/personas/A1-sophie-freelance.md
+- tests/protocols/app/personas/A2-marc-consultant.md
 - tests/protocols/app/personas/A3-lea-power-user.md
 - tests/protocols/server/personas/S3-dsi-admin.md
 - tests/protocols/shared/catastrophes.md
 - tests/test_alembic_stamp.py
 - tests/test_atelier_traitement.py
 - tests/test_auth_failclosed.py
+- tests/test_backfill_perimetre.py
+- tests/test_backup_complete.py
 - tests/test_backup_encryption.py
 - tests/test_billing_profile_cache.py
 - tests/test_board_frontier.py
 - tests/test_brouillon_email_cause_visible.py
+- tests/test_bump_version_index_des_noms.py
 - tests/test_calendar_allday_semantics.py
 - tests/test_chat_capacites_annoncees.py
 - tests/test_cliquet_mypy_ci.py
@@ -377,6 +441,7 @@
 - tests/test_modeles_catalogue.py
 - tests/test_modeles_sync.py
 - tests/test_numerotation_des_documents.py
+- tests/test_plafond_tests_textuels.py
 - tests/test_pluriel_agenda_chat.py
 - tests/test_pluriel_contacts.py
 - tests/test_prestation.py
@@ -411,4 +476,5 @@
 - tests/test_statut_de_facture.py
 - tests/test_variables.py
 - tests/test_veracite_affichage.py
+- tests/test_workflow_windows_harnais.py
 - tests/test_workspace_search_invoices.py
