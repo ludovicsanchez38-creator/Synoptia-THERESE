@@ -1,6 +1,6 @@
 # DA « Application affinée », lot 5 : l'écran Devis et factures (design à challenger avant le code)
 
-Version 3, 11/09/2026 00:17, après la revue de la v2 (13 points repris, 0 non repris) ; journal `.cartography-work/reviews/grok-da-lot5-devis-design-v2.log`.
+Version 3.1, 11/09/2026, après la revue de la v3 (6 points repris, 0 non repris) ; journal `.cartography-work/reviews/grok-da-lot5-devis-design-v3.log`. Version 3, 11/09/2026 00:17, après la revue de la v2 (13 points repris, 0 non repris) ; journal `.cartography-work/reviews/grok-da-lot5-devis-design-v2.log`.
 Précédents : lot 1 (socle et coque, v0.71.0-alpha),
 lot 2 (Accueil). Maquette de référence :
 `docs/da/2026-09-05-propositions/maquettes/devis.html` (états `normal`,
@@ -62,8 +62,8 @@ compteur l.237-238). On ne fusionne pas titre et compteur.
 | Titre visible | `<p className="text-lg font-semibold text-text">Devis et factures</p>` | même nœud (le premier `<p>`), `className="font-editorial text-lg font-semibold text-text"` ; pas de `data-testid` |
 | Compteur | `{n}{+?} document(s)` dans un second `<p className="text-sm text-text-muted">` | ce second `<p data-testid="invoices-compteur" className="text-sm text-text-muted">` : `{n}{listeTronquee ? '+' : ''} pièce{n > 1 ? 's' : ''}` ; si M ≥ 1 pièces `status === 'overdue'` dans `filteredInvoices` (tous `document_type` : un avoir `overdue` compte, § 3.1) : `, dont 1 pièce échue` / `, dont M pièces échues` (M = ce filtre, pas l'encours réel hors plafond). 0 / 1 : « pièce » sans s. Jeux de tests tout `draft` : pas de « dont » |
 | Troncature | `<p role="alert" className="text-sm text-warning">Liste incomplète : seuls les 100 documents les plus récents de ce filtre sont affichés.</p>` | même `role="alert"`, même jeton `warning`, pas une `Alerte` (teinte d'erreur) ; le mot suit le compteur : `Liste incomplète : seules les {PLAFOND_FACTURES} pièces les plus récentes de ce filtre sont affichées.` (accord féminin ; un seul mot, « pièce », dans les deux chaînes) |
-| Geste | `<button>` maison « Nouveau devis » / « Nouvelle facture » | `Button variant="primary" size="lg"` + `Plus` 18 px, mêmes libellés, `handleCreateNew` |
-| Fermer (hors standalone) | `<button>` icône `X` sans nom | `Button variant="ghost" size="icon"` `aria-label="Fermer"` children `<X className="h-[18px] w-[18px]" />`, `setIsInvoicePanelOpen(false)` |
+| Geste | `<button>` maison « Nouveau devis » / « Nouvelle facture » | `Button variant="primary" size="lg"` `type="button"` + `Plus` 18 px, mêmes libellés, `handleCreateNew` |
+| Fermer (hors standalone) | `<button>` icône `X` sans nom | `Button variant="ghost" size="icon"` `type="button"` `aria-label="Fermer"` children `<X className="h-[18px] w-[18px]" />`, `setIsInvoicePanelOpen(false)` |
 
 Conteneur : `flex flex-wrap items-end gap-3 px-4 py-4 border-b border-border` ;
 actions `ml-auto flex flex-wrap gap-2 max-[840px]:basis-full max-[840px]:ml-0`.
@@ -90,9 +90,10 @@ Pas de champ recherche, pas de « Tri : échéance ».
 
 ## 3. La liste : tableau dans une `Carte`
 
-`Carte as="section" className="overflow-x-auto" aria-labelledby` inutilisé
-(le nom de la région est celui de la coque). Chargement, erreur et vides
-remplacent le `<table>` **dans cette même `Carte`**, ils ne s'affichent ni
+Corps : `flex-1 min-h-0 overflow-y-auto` (scroller vertical nommé, inchangé
+à `p-6`). `Carte as="section" className="overflow-x-auto"` ; `aria-labelledby`
+inutilisé (le nom de la région est celui de la coque). Chargement, erreur et
+vides remplacent le `<table>` **dans cette même `Carte`**, ils ne s'affichent ni
 à sa place hors carte ni au-dessus (§ 5). `<table className="w-full
 border-collapse">` : `th` `text-left text-xs font-semibold text-text-muted
 px-4 py-2 border-b border-border tracking-wide` ; « Montant TTC » en
@@ -109,12 +110,12 @@ La 1re colonne (référence) reste un `span.font-mono`, pas un second bouton.
 | Colonne | Contenu |
 |---|---|
 | Pièce | `span.font-mono.text-sm.whitespace-nowrap` = `invoice_number` ; sous-ligne `text-xs font-medium text-text-muted` : « Devis » / « Avoir » / « Facture » +, pour une facture, ` · ` + mois `Intl.DateTimeFormat('fr-FR', { month: 'long' })` sur `new Date(issue_date)` (même parseur qu'aujourd'hui, minuscule) |
-| Client | `<button type="button">` actuel (nom, référence à défaut, `handleEdit`, stopPropagation) `font-semibold text-sm text-left` + anneau du `Button` (`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg`) ; pas de raison sociale (absente du DTO) |
+| Client | `<button type="button">` (`handleEdit`, stopPropagation) `font-semibold text-sm text-left` + anneau du `Button` (`focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg`) : texte = `contact_name` s'il existe ; sinon **aucun** texte (la Pièce dit déjà `invoice_number`) et `aria-label={invoice_number}` (B-208, la commande reste nommée) ; pas de raison sociale (absente du DTO) |
 | Envoi | `Etiquette` § 3.1 |
 | Paiement | `Etiquette` ou `span` muted « Sans objet » § 3.1 |
 | Échéance | `tabular-nums` § 3.1 ; **pas** une `Etiquette` (maquette : `td.num` en `text-error` ou muted) |
 | Montant TTC | `montantAvecDevise(total_ttc, currency)`, `text-right font-semibold tabular-nums whitespace-nowrap text-text` (plus `text-2xl` ni `text-accent-cyan-ink`) |
-| Actions | toujours visibles (plus `opacity-0 group-hover`) : `Button variant="ghost" size="md"` titre inchangé « Générer et ouvrir le PDF », texte « PDF » ; `Button variant="ghost" size="md" className="text-error"` titre « Supprimer », texte « Supprimer ». Mêmes `onClick` stoppés |
+| Actions | toujours visibles (plus `opacity-0 group-hover`) : `Button variant="ghost" size="md"` `type="button"` `title` et `aria-label` « Générer et ouvrir le PDF » (2.5.3 : le texte « PDF » est dans le nom), texte « PDF » ; `Button variant="ghost" size="md" className="text-error"` `type="button"` titre « Supprimer », texte « Supprimer ». Mêmes `onClick` stoppés |
 
 Statut inconnu (B-010) : `Etiquette ton="neutre"` = `invoice.status` brut,
 icône `FileText` 18 px dans Envoi seulement ; Paiement « Sans objet » ;
@@ -175,13 +176,13 @@ border border-border rounded-md shadow-sm`, plus `backdrop-blur-xl` ni
 | Tête | `h2` « Nouveau devis » / « Nouvelle facture » / « Nouvel avoir » / `Modifier {n}` ; `X` nommé Fermer | mêmes chaînes ; `h2` `font-editorial` ; `Button variant="ghost" size="icon"` `type="button"` `aria-label="Fermer"` children `<X className="h-[18px] w-[18px]" />` |
 | Profil incomplet / illisible | bandeaux `bg-agent-amber/10` | mêmes textes, `bg-[var(--color-warning-tint)] border border-warning/30 text-warning` ; illisible garde `role="alert"` |
 | Type (création) | trois `<button type="button">` | `Segments label="Type de document"` Devis / Facture / Avoir, `valeur={documentType}` (`type="button"` déjà dans la primitive) |
-| Champs | `<label>` + `<input>`/`<select>`/`<textarea>` maison | `FormField` + `Input` / `Select` / `Textarea` ; ids `contact`, `status`, `currency`, `issueDate`, `dueDate`, `validiteJours`, `notes`, `invoiceform-description-{i}`, `invoiceform-quantite-{i}`, `invoiceform-prix-{i}`, `invoiceform-tva-{i}` ; option vide « Sélectionner un contact » (`value=""`), pas `placeholder` disabled du `Select` ; `required` natifs conservés **sauf** la description des lignes (contact, `issueDate`, `dueDate`, quantité, prix HT). `FormField.label` = libellés actuels, étoile **dans la chaîne**, **sans** `FormField.required` (le `*` de `FormField.tsx:61` est `aria-hidden="true"`, le nom accessible deviendrait « Client » et casserait `InvoiceForm.clientHorsFenetre.test.tsx:54` `getByLabelText('Client *')`) : `label="Client *"` `htmlFor="contact"` (`Select` `id="contact"` `required`) ; `label="Statut"` `htmlFor="status"` ; `label="Devise"` `htmlFor="currency"` ; `label="Date d'émission *"` `htmlFor="issueDate"` (`Input` `required`) ; `label="Date d'échéance *"` `htmlFor="dueDate"` (`Input` `required`) ; `label="Validité (jours)"` `htmlFor="validiteJours"` ; `label="Notes"` `htmlFor="notes"`. Titre du bloc lignes : nœud visible `text-sm font-medium text-text` « Lignes de facturation * » (`InvoiceForm.tsx:697`, pas « Lignes ») ; ce n'est pas un `FormField` |
+| Champs | `<label>` + `<input>`/`<select>`/`<textarea>` maison | `FormField` + `Input` / `Select` / `Textarea` ; ids `contact`, `status`, `currency`, `issueDate`, `dueDate`, `validiteJours`, `notes`, `invoiceform-description-{i}`, `invoiceform-quantite-{i}`, `invoiceform-prix-{i}`, `invoiceform-tva-{i}` ; option vide « Sélectionner un contact » (`value=""`), pas `placeholder` disabled du `Select` ; `required` natifs conservés **sauf** la description des lignes (contact, `issueDate`, `dueDate`, quantité, prix HT). `FormField.label` = libellés actuels, étoile **dans la chaîne**, **sans** `FormField.required` (le `*` de `FormField.tsx:61` est `aria-hidden="true"`, le nom accessible deviendrait « Client » et casserait `InvoiceForm.clientHorsFenetre.test.tsx:54` `getByLabelText('Client *')`) : `label="Client *"` `htmlFor="contact"` (`Select` `id="contact"` `required`) ; `label="Statut"` `htmlFor="status"` ; `label="Devise"` `htmlFor="currency"` ; `label="Date d'émission *"` `htmlFor="issueDate"` (`Input` `required`) ; `label="Date d'échéance *"` `htmlFor="dueDate"` (`Input` `required`) ; `label="Validité (jours)"` `htmlFor="validiteJours"` ; `label="Notes"` `htmlFor="notes"`. `Select` Statut : mêmes deux listes qu'aujourd'hui (`InvoiceForm.tsx:588-604`) — devis : Brouillon / Envoyé / Accepté / Refusé / Expiré / Converti en facture / Annulée ; facture et avoir : Brouillon / Envoyé / Payée / En retard / Annulée (`statutsProposes.test.tsx` conservé, pas à aligner). Titre du bloc lignes : nœud visible `text-sm font-medium text-text` « Lignes de facturation * » (`InvoiceForm.tsx:697`, pas « Lignes ») ; ce n'est pas un `FormField` |
 | Client, bandeau contacts | `contactsTronques` : `<p role="alert" className="mt-1 text-sm text-warning">Liste incomplète : seuls les {PLAFOND_CONTACTS} contacts les plus récents sont proposés.</p>` (`InvoiceForm.tsx:563-568`) | inchangé (chaînes, `role`, jeton `warning`) ; sous le `Select` client, pas une `Alerte` |
 | Lignes | cartes empilées, labels `text-xs` | `<table>` de lignes (jetons) ; `th` : « Description », « Quantité » (pas « Qté » de la maquette : `InvoiceForm.francais.test.tsx` exige `getByText('Quantité')`), « Prix HT », « TVA », « Total HT », dernière `th` `sr-only` « Actions ». **Aucun** `<label>` visuel dans les `td` : le `th` + `aria-label` du champ suffisent (`getByText('Quantité')` jette s'il reste le `label` actuel `InvoiceForm.tsx:750` en plus du `th`) |
 | Description d'une ligne | `<input required aria-label={`Description ligne ${i+1}`}>` `placeholder="Description"` | `Input` `id={`invoiceform-description-${i}`}` `aria-label={`Description ligne ${i+1}`}` `placeholder="Description"` **sans `required`**. Après `handleSubmit` : **chaque** ligne dont `!description.trim()` reçoit `error` + `aria-invalid` (prop `error` de `Input`) + `aria-describedby={`invoiceform-description-${i}-erreur`}` vers un `p` `id={`invoiceform-description-${i}-erreur`}` `role="alert"` `className="mt-1 font-medium text-error text-sm"` (maquette `.erreur-champ`) « Renseigne la description de cette ligne, ou supprime-la. » **Pas** un `FormField` dans la `td` (`FormField.label` est obligatoire ; sans `htmlFor`, `errorId` n'est pas calculé, `FormField.tsx:12` et `:30-47`). Au moment du `return` de validation, **avant** de sortir de `handleSubmit` : `document.getElementById(\`invoiceform-description-${i}\`)?.focus()` sur la première ligne vide (l'`id` est sur l'`<input>` interne, `Input` transmet `...props` ; le pied vit hors du bloc défilant, B-011 `InvoiceForm.tsx:478-482`, le `required` natif ne scrolle plus vers le champ). L'erreur d'une ligne tombe au `onChange` de sa description dès que `description.trim()` est non vide (`error` / `aria-invalid` / `p role="alert"` retirés pour cette ligne) ; une ligne encore vide reste marquée jusqu'à saisie ou prochaine soumission. |
 | Validation BUG-132 | `if (lines.every((line) => !line.description.trim()))` + notification ; le `required` natif bloque avant `onSubmit` si une ligne est vraiment vide | valider **chaque** ligne sans description trimée (état maquette `nouveau` : ligne 1 remplie, ligne 2 vide, message sous le champ). Notification BUG-132 « Renseigne la description d'au moins une ligne » **seulement si toutes** les lignes sont vides ; si au moins une ligne est remplie, pas de notification, uniquement les `p role="alert"` des lignes vides. `return` dans les deux cas (pas d'enregistrement). |
 | Quantité / Prix HT / TVA | `aria-label={`Quantité ligne ${i+1}`}` + `id={`invoiceform-quantite-${i}`}` ; Prix HT : `aria-label={`Prix HT ligne ${i+1}`}` sans `id` (`InvoiceForm.nomsAccessibles.test.tsx:47-48`, `InvoiceForm.soumission.test.tsx`, `InvoiceForm.test.tsx`) ; TVA : `<label htmlFor={`invoiceform-tva-${index}`}>TVA</label>` + `<select id={`invoiceform-tva-${index}`}>` sans `aria-label` (`InvoiceForm.tsx:786-787`) | garder les deux `aria-label` quantité et prix ; `id={`invoiceform-quantite-${i}`}` conservé ; **ajouter** `id={`invoiceform-prix-${i}`}` (le prix est aujourd'hui anonyme hors `aria-label`) ; `required` conservé sur les deux. TVA : `Select` `id={`invoiceform-tva-${i}`}` `aria-label={`TVA ligne ${i+1}`}` (comme `InvoiceConversationCard.tsx:615`) `options={TVA_RATES.map((r) => ({ value: String(r.value), label: r.label }))}` `value={String(line.tva_rate)}` ; **pas** de `label` visuel dans la `td` ; **pas** de `FormField` dans la `td` ; pas de `required` sur la TVA (inchangé) |
-| Ajouter / supprimer ligne | boutons maison, `type="button"` déjà (`InvoiceForm.tsx:700`, `:739`) | `Button ghost md` `type="button"` « Ajouter une ligne » ; `Button ghost icon` `type="button"` `aria-label={`Supprimer la ligne ${i+1}`}` children `<Trash2 className="h-[18px] w-[18px]" />` |
+| Ajouter / supprimer ligne | boutons maison, `type="button"` déjà (`InvoiceForm.tsx:700`, `:739`) | `Button ghost md` `type="button"` « Ajouter une ligne » **sous** le `<table>` (maquette `devis.html:102`, pas à droite du titre) ; `Button ghost icon` `type="button"` `aria-label={`Supprimer la ligne ${i+1}`}` children `<Trash2 className="h-[18px] w-[18px]" />` |
 | Totaux | `text-2xl text-accent-cyan-ink` | `grid grid-cols-[1fr_auto] justify-end gap-x-6 gap-y-1 tabular-nums` ; « Total TTC » `font-semibold text-lg` ; `montantAvecDevise` inchangé |
 | Pied | Marquer comme payée / Accepter / Refuser / Convertir en facture / Annuler / Créer | mêmes libellés, mêmes gardes ; le bouton du pied reste **« Convertir en facture »** (`InvoiceForm.tsx:932`) ; le dialogue seul dit « Convertir » (`InvoiceForm.tsx:1008`). `Button md` : payée et Accepter `secondary`, Refuser `secondary` (comme Annuler : `Button.tsx:30` `ghost` = `text-accent hover:bg-accent-tint`, ce n'est pas un refus), Convertir en facture `secondary`, Annuler `secondary`, soumission `primary` liée à `form={ID_FORMULAIRE}` (`type="submit"`, seul submit) « Créer » / « Mettre à jour » / « Sauvegarde... ». **Chaque `Button` hors soumission porte `type="button"`** (un `Button` dans un `<form>` sans `type` devient submit) |
 | Conversion | dialogue actuel | mêmes chaînes ; Annuler `secondary md` `type="button"`, Convertir `primary md` `type="button"` ; voile `bg-black/60` ; surface jetons comme le formulaire |
@@ -293,7 +294,8 @@ toujours `/ne correspond à ce filtre/` ; un cas `overdue` éventuel viserait
 (commentaire « carte » → « ligne » ; assertions de rôles inchangées : la
 commande nommée reste le bouton client, le `tr` n'a pas de `tabIndex`),
 `InvoicesPanel.test.tsx` (getByTitle PDF / Supprimer conservés ; « Aucune
-facture » conservé). `InvoiceForm.soumission.test.tsx` (`/Créer/`,
+facture » conservé ; le cas « formulaire parent » l.100-122 reste vert grâce
+aux `type="button"` du panneau). `InvoiceForm.soumission.test.tsx` (`/Créer/`,
 `getByLabelText('Prix HT ligne 1')` conservé ; le 4e cas
 l.95-112 « description laissée VIDE : le champ porte `required` » /
 `expect(invalide).toHaveBeenCalledTimes(1)` : **retargeter** l'écoute
@@ -359,6 +361,13 @@ Aucune assertion de comportement n'est retirée.
 4. Revue Grok du diff avant fusion dans `main` ; pas de tag de lot.
 
 ## 9. Points non repris
+
+Aucun de la revue v3. Les 6 constats du journal
+`.cartography-work/reviews/grok-da-lot5-devis-design-v3.log` (3 P2, 3 P3)
+sont fondés ; chacun a une correction dans les sections 1 à 6 (bouton Client
+sans doublon du numéro, `type="button"` des quatre gestes du panneau, nom
+accessible du PDF, scroller vertical du corps, options du `Select` Statut,
+« Ajouter une ligne » sous le tableau).
 
 Aucun de la revue v2. Les 13 constats du journal
 `.cartography-work/reviews/grok-da-lot5-devis-design-v2.log` (1 P1, 7 P2,
