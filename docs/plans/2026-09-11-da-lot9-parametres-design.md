@@ -31,7 +31,7 @@ de lecture partielle ne doit pas se teinter en erreur).
 ## Décisions tranchées par défaut (Ludo peut corriger)
 
 1. Les Paramètres restent une **modale** (`role="dialog"` `aria-modal="true"`
-   `data-testid="settings-modal"`) : la maquette en page est P-086. Overlay,
+   `data-testid="settings-modal"`) : la maquette en page est P-084. Overlay,
    piège de focus, Échap, BUG-156 inchangés.
 2. Les neuf `id` de `ALL_TABS` restent ; seuls les libellés visibles des six
    rubriques du mode standard suivent la maquette. Outils, Agents, Avancé
@@ -43,7 +43,7 @@ de lecture partielle ne doit pas se teinter en erreur).
    `aria-pressed` (maquette `role="button"` `aria-pressed`, parametres.html:74),
    **pas** `role="radio"` : `setLLMConfig` est un POST, la flèche ne doit pas
    persister, donc le motif APG radio n'est pas tenu. Pas de carte
-   « Autres + 6 » (P-087, P-018).
+   « Autres + 6 » (P-085, P-018).
 4. Les noms du catalogue (`provider.name`) restent. Les formulations de la
    maquette remplacent la prose là où l'état est le même (étiquettes de clé,
    tête, vide Ollama). Un état sans équivalent maquetté garde ses mots
@@ -217,7 +217,7 @@ la suite, hors de cette carte aussi.
 | Modèle | `<select id="settings-llm-model">` + « Custom » | rangée `grid grid-cols-[1fr_auto] items-center gap-4 py-2.5 border-t border-border px-4` : `<label htmlFor="settings-llm-model" className="text-sm font-semibold">Modèle</label>` (pas un `<b>` : le `Select` n'aurait plus de nom accessible, WCAG 4.1.2 ; `getByLabelText('Modèle')` de `SettingsModal.fournisseurIA.test.tsx:93` et `LLMTab.test.tsx:49`) + `Select id="settings-llm-model"` `options` = `availableModels` (label `name` + badge entre parenthèses, comme aujourd'hui) ; Custom, modèle hors liste, Qwen : inchangés sauf boutons `md` et `Input` / `FormField` ; Qwen : le bouton d'adresse dit **« Enregistrer l'adresse »** (jamais « Enregistrer » : collision avec la clé si `!hasApiKey` ; `LLMTab.qwen.test.tsx:70` `name: 'Enregistrer'` à aligner) |
 | Effort | `<select id="llm-effort">` | même rangée (`grid-cols-[1fr_auto]`, comme `.ligne-reglage`) ; `<label htmlFor="llm-effort" className="text-sm font-semibold">Effort de raisonnement</label>` + `Select id="llm-effort"` (`getByLabelText('Effort de raisonnement')` et `aria-describedby`, `LLMTab.effortOpenAI.test.tsx:20`) ; sous le label, `p` `id="llm-effort-aide"` `className="text-sm text-text-muted col-start-1"` (`.ligne-reglage .aide{grid-column:1}`, parametres.html:23) : « Appliqué aux modèles qui le gèrent (Claude récents, GPT-5.6, Grok 4.5, modèles Ollama « thinking »). Auto laisse le modèle décider. » (LLMTab.tsx:635-638, conservé ; la maquette dit « Envoyé seulement aux modèles qui le prennent en charge. », parametres.html:87) ; le `Select` a `aria-describedby` qui inclut `llm-effort-aide` **et**, si `mentionOutils`, `llm-effort-outils` ; options et `disabled={saving}` inchangés ; `data-testid="effort-mention-outils"` : `text-sm` (plus `text-xs` sur un texte lié à un interactif) ; erreur d'effort : `Alerte` + `Button variant="ghost" size="md"` « Réessayer l'effort » (`onClick={() => failedEffort && void handleChange(failedEffort)}`, LLMTab.tsx:668) — **toujours** rendu si `failedEffort`, même si la coque a `retryOperation` ou `loadWarnings` |
 
-Pas de jauge « Ce mois-ci », pas d'interrupteur d'accord cloud (P-088).
+Pas de jauge « Ce mois-ci », pas d'interrupteur d'accord cloud (P-086).
 `LocalModelFeasibility` inchangé hors classes de couleur en dur s'il en reste.
 
 ## 5. Profil : `ProfileTab`
@@ -245,7 +245,7 @@ Pas de jauge « Ce mois-ci », pas d'interrupteur d'accord cloud (P-088).
 - Seconde `Carte` : `CarteTete` titre « Profil émetteur des factures », meta
   « SIRET, TVA, adresse et mentions légales, utilisés sur chaque devis et
   facture. » **Seule** occurrence des champs facture, éditables (pas un
-  résumé Complet : P-090), mêmes `id` / handlers / placeholders. Ids de
+  résumé Complet : P-087), mêmes `id` / handlers / placeholders. Ids de
   cette carte : `settings-profile-address`, `settings-profile-siren`,
   `settings-profile-tva`, `settings-profile-siret`, `settings-profile-ape`,
   `settings-profile-nda`. Libellés conservés (Adresse, SIREN, TVA, SIRET,
@@ -329,19 +329,18 @@ comportement n'est retirée. Onboarding (`Sauver` de `LLMStep`) hors lot.
 
 ## 8. Ce que ce lot ne fait pas
 
-- Paramètres en page, rail `aria-current`, colonne 72 rem hors modale : **P-086**
-  (à attribuer par l'orchestrateur).
+- Paramètres en page, rail `aria-current`, colonne 72 rem hors modale : **P-084**.
 - Tester / quatre derniers caractères / date de vérification / badge
   « Clé refusée » distinct d'une clé encore en place : **P-012** déjà au
   portail. Service cloud 503 (« Indisponible depuis HH:MM ») : même fiche,
   l'app ne le connaît que pour Ollama.
 - Carte « Autres + 6 » (masquerait GLM, Kimi, Qwen, MiniMax ; Groq n'est pas
-  un fournisseur LLM) : **P-087**.
+  un fournisseur LLM) : **P-085**.
 - Jauge « Ce mois-ci » et accord cloud dans Service d'IA (les données vivent
-  dans `LimitsTab` / `PrivacyTab`) : **P-088**.
+  dans `LimitsTab` / `PrivacyTab`) : **P-086**.
 - Rubriques de premier rang « Coûts et limites », « Stockage et sauvegardes »,
   item « Katia et Zézette » ; scinder Nom complet / Surnom en Prénom / Nom ;
-  carte émetteur résumé « Complet » qui cacherait les champs : **P-089**.
+  carte émetteur résumé « Complet » qui cacherait les champs : **P-087**.
 - Restyle des contenus Services, Accessibilité, Confidentialité, À propos,
   Avancé, Outils, Agents (non maquettés). `LimitsTab` reste dans Avancé.
 - Aucun changement de données, d'API, de store ni de navigation.
