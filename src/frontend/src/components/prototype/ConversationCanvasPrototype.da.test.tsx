@@ -60,6 +60,13 @@ describe('La coque prend la forme de la DA', () => {
     expect(accueil.className).toMatch(/\bbg-accent-tint\b/);
     expect(accueil.className).not.toMatch(/\bbg-accent-fill\b/);
 
+    // Revue Grok du diff (P1) : presser un verbe de l'établi ne quitte pas
+    // l'accueil conversationnel (ni vue, ni chat) : Accueil reste la page.
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Retrouver' }));
+    });
+    expect(screen.getByRole('button', { name: 'Accueil' })).toHaveAttribute('aria-current', 'page');
+
     await act(async () => {
       fireEvent.click(screen.getByRole('button', { name: 'Projets' }));
     });

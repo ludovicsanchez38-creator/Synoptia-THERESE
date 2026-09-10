@@ -225,7 +225,9 @@ test.describe('Prototype conversationnel - parcours unifiés des capacités', ()
       await page.setViewportSize(viewport);
 
       const fil = page.getByTestId('prototype-conversation-scroll');
-      const dernierContenu = fil.locator('> div > :last-child');
+      // Le dernier enfant DOM de la colonne est, à l'accueil, le wrapper
+      // vide des sources (hauteur 0) : on prend le dernier enfant VISIBLE.
+      const dernierContenu = fil.locator('> div > :visible').last();
       const carteDuComposeur = page.getByTestId('composeur-carte');
       await expect(page.getByTestId('etabli-composeur')).toBeVisible();
       await fil.evaluate((element) => {

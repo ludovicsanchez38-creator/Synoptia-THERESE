@@ -105,3 +105,23 @@ describe('Ligne', () => {
     expect((container.firstElementChild as HTMLElement).className).not.toMatch(/py-3/);
   });
 });
+
+/**
+ * Revue Grok du diff du lot 1 (P1) : la zone de droite était hissée en
+ * `z-10` dès que la rangée était cliquable, même quand elle ne contient
+ * qu'une heure ou un chevron : elle mangeait le clic du bouton étiré. Le
+ * conteneur laisse passer le pointeur, seuls ses enfants (interactifs ou
+ * non) le reçoivent. jsdom ne simule pas `pointer-events` : la garde porte
+ * sur les classes, la preuve visuelle sur la recette.
+ */
+describe('Ligne : la zone de droite ne mange pas le clic', () => {
+  it('laisse passer le pointeur vers le bouton étiré', () => {
+    const { container } = render(
+      <Ligne titre="Relancer Claire" detail="échue" droite={<span>12:04</span>} onClick={() => {}} />,
+    );
+    const droite = container.querySelector('.z-10') as HTMLElement;
+    expect(droite).not.toBeNull();
+    expect(droite.className).toMatch(/\bpointer-events-none\b/);
+    expect(droite.className).toMatch(/\[&>\*\]:pointer-events-auto/);
+  });
+});

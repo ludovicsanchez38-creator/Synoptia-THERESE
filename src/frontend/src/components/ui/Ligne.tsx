@@ -79,7 +79,7 @@ export function Ligne({
         {detail ? <p className="text-sm text-text-muted">{detail}</p> : null}
       </div>
       {droite != null ? (
-        <div className={cn('flex items-center gap-2 text-text-muted', cliquable && 'relative z-10')}>
+        <div className={cn('flex items-center gap-2 text-text-muted', cliquable && 'relative z-10 pointer-events-none [&>*]:pointer-events-auto')}>
           {droite}
         </div>
       ) : (

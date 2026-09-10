@@ -1598,7 +1598,7 @@ export function ConversationCanvasPrototype() {
                 On ne pouvait que fermer ce qu'on avait ouvert, ce qui suppose
                 de savoir ce qu'on a ouvert. Il vient en tête du rail : c'est
                 la destination la plus fondamentale de l'application. */}
-            <IconButton label="Accueil" active={!chatOpen && !embeddedView && scenario === 'today'} onClick={() => runUnifiedAction('home.open')}><Home className="h-[18px] w-[18px]" /></IconButton>
+            <IconButton label="Accueil" active={!chatOpen && !embeddedView} onClick={() => runUnifiedAction('home.open')}><Home className="h-[18px] w-[18px]" /></IconButton>
             <IconButton label="Nouvelle conversation" onClick={startConversation}><Plus className="h-[18px] w-[18px]" /></IconButton>
             {/* Entrée 4 : deux boutons ouvraient le même tiroir, où `surface` ne
                 change que le focus initial. Et « Rechercher » ici ne cherchait

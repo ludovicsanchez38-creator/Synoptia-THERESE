@@ -21,22 +21,27 @@ const LISTE_BLANCHE: Record<string, string> = {
 };
 
 function sources(): string[] {
-  const fichiers = readdirSync(UI)
+  const fichiers = (readdirSync(UI, { recursive: true }) as string[])
     .filter((f) => /\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f))
     .map((f) => join(UI, f));
   return [...fichiers, COQUE];
 }
 
+/** Hex de 3 à 8 chiffres, rgb/rgba, hsl/hsla, color-mix : tout ce qui n'est pas un jeton. */
+const COULEUR_EN_DUR = /#[0-9A-Fa-f]{3,8}\b|\brgba?\(|\bhsla?\(|\bcolor-mix\(/;
+const COMMENTAIRE = /^\s*(\/\/|\*|\/\*)/;
+
 const court = (f: string) => f.slice(f.lastIndexOf('/src/') + 5);
 
 describe('aucune couleur en dur dans les primitives ni la coque', () => {
-  it('ni #rrggbb ni rgb()', () => {
+  it('ni hex, ni rgb(), ni hsl(), ni color-mix()', () => {
     const fautifs: string[] = [];
     for (const f of sources()) {
       if (LISTE_BLANCHE[court(f)]) continue;
       const contenu = readFileSync(f, 'utf-8');
       contenu.split('\n').forEach((ligne, i) => {
-        if (/#[0-9A-Fa-f]{6}\b|rgba?\(/.test(ligne)) fautifs.push(`${court(f)}:${i + 1}`);
+        if (COMMENTAIRE.test(ligne)) return;
+        if (COULEUR_EN_DUR.test(ligne)) fautifs.push(`${court(f)}:${i + 1}`);
       });
     }
     expect(fautifs).toEqual([]);

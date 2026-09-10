@@ -25,7 +25,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
           // DA « Équilibre » : l'accent d'action est le remplissage cyan,
           // le secondaire est une surface bordée.
           'transition-colors',
-          variant === 'primary' && 'bg-accent-fill text-accent-ink hover:brightness-95',
+          variant === 'primary' && 'bg-accent-fill text-accent-ink hover:brightness-[.96]',
           variant === 'secondary' && 'border border-border bg-surface text-text hover:bg-surface-2',
           variant === 'ghost' && 'bg-transparent text-accent hover:bg-accent-tint',
           variant === 'danger' && 'bg-[var(--color-error-tint)] text-error hover:brightness-95',

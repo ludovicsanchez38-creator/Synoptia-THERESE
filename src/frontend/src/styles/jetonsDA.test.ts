@@ -77,6 +77,6 @@ describe('DA lot 1 : ce qui est retiré et ce qui est ajouté', () => {
   });
 
   it('en contraste élevé, une étiquette abandonne sa teinte pour une bordure d’encre', () => {
-    expect(CSS).toMatch(/\[data-high-contrast="true"\]\s*\[data-etiquette\]\s*\{[^}]*background:\s*transparent[^}]*border:\s*1px solid currentColor/s);
+    expect(horsCouche()).toMatch(/\[data-high-contrast="true"\]\s*\[data-etiquette\]\s*\{[^}]*background:\s*transparent[^}]*border:\s*1px solid currentColor/s);
   });
 });

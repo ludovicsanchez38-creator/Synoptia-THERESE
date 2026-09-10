@@ -10,6 +10,8 @@
  * attribut, la règle n'aurait rien à attraper.
  */
 import { render, screen } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 import { Etiquette } from './Etiquette';
@@ -61,5 +63,18 @@ describe('Etiquette', () => {
     const pastille = screen.getByText(domaine);
     expect(pastille.className).toContain(fond);
     expect(pastille.className).toContain(encre);
+  });
+});
+
+/**
+ * §8.5 du design : en contraste élevé, une étiquette abandonne sa teinte
+ * pour une bordure d'encre. La règle vit dans globals.css, HORS couche
+ * (dans `@layer base`, `bg-*-tint` gagnerait et la teinte resterait).
+ */
+describe('Etiquette : contraste élevé', () => {
+  it('la règle [data-high-contrast] [data-etiquette] est posée hors couche', () => {
+    const css = readFileSync(join(__dirname, '../../styles/globals.css'), 'utf-8');
+    const horsCouche = css.replace(/@layer\s+\w+\s*\{[\s\S]*?\n\}/g, '');
+    expect(horsCouche).toMatch(/\[data-high-contrast="true"\]\s*\[data-etiquette\]\s*\{[^}]*background:\s*transparent[^}]*border:\s*1px solid currentColor/s);
   });
 });

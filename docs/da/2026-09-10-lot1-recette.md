@@ -73,6 +73,29 @@ primaire 36 px) ; vue intégrée Projets (en-tête « Retour » inchangé).
   (`aria-pressed`) rouge, 64 tests de primitives ; portes rejouées sur main
   après fusion (voir le rapport de release).
 
+## Revue Grok du diff avant le tag
+
+NO-GO au premier passage, sept points, tous confirmés à la lecture et
+corrigés en TDD (deux rouges vérifiés, garde du contraste élevé sabotée) :
+
+1. P1 : « Accueil » perdait `aria-current="page"` dès qu'un verbe de l'établi
+   était pressé, alors qu'on reste sur l'accueil conversationnel. Condition
+   ramenée à « ni vue, ni chat ».
+2. P1 : la zone de droite d'une `Ligne` cliquable était hissée en `z-10` même
+   sans interactif et mangeait le clic du bouton étiré. Le conteneur laisse
+   passer le pointeur, seuls ses enfants le reçoivent.
+3. P2 : le test « contraste élevé retire la teinte » du §8.5 manquait dans
+   `Etiquette.test.tsx` ; ajouté, il lit `globals.css` hors couche.
+4. P2 : la garde de `jetonsDA` cherchait la règle dans tout le fichier : dans
+   `@layer base` la teinte aurait gagné. Elle passe par `horsCouche()`.
+5. P2 : le parcours e2e B-320 mesurait le dernier enfant DOM de la colonne,
+   qui à l'accueil est le wrapper vide des sources (hauteur 0). Il prend le
+   dernier enfant visible.
+6. P2 : la garde « aucune couleur en dur » n'était pas récursive et laissait
+   passer `#fff`, `#rrggbbaa`, `hsl(`, `color-mix(`. Élargie, commentaires
+   ignorés.
+7. P3 : primaire en `brightness-95` au lieu de `.96` de la DA.
+
 ## Réserves déclarées
 
 - `UpdateBanner.tsx` est en liste blanche nommée de la garde « aucune couleur
