@@ -103,7 +103,9 @@ class TestLaPreferenceEstChargeeEtSuivie:
         from app import main
 
         source = inspect.getsource(main)
-        assert "poser_autorisation_recherche" in source, (
+        # Cycle 6 (a3579023) : le lifespan passe par charger_autorisation_depuis_la_base,
+        # qui pose l'autorisation ET coupe la recherche si la préférence est illisible.
+        assert "charger_autorisation_depuis_la_base" in source, (
             "le démarrage doit charger web_search_enabled dans le cache du service"
         )
 
