@@ -71,7 +71,35 @@ def _validate_url(url: str) -> str | None:
             f"Seuls {', '.join(sorted(ALLOWED_SCHEMES))} sont autorisés."
         )
 
+    # Cycle 6 (revue des lecteurs, confirmé par Grok) : le protocole ne
+    # suffit pas. Le moteur écoute sur 127.0.0.1 et `/api/auth/token` est
+    # exempté d'authentification : une URL proposée par le modèle vers la
+    # machine elle-même ou le réseau privé ramènerait le jeton de session
+    # (ou un service LAN) dans la conversation.
+    if _cible_locale_ou_privee(parsed.hostname):
+        return "Cible interdite : le navigateur interne ne visite ni la machine locale ni le réseau privé."
+
     return None
+
+
+def _cible_locale_ou_privee(hostname: str | None) -> bool:
+    """Vrai pour localhost, une adresse de boucle, privée, de lien local,
+    réservée ou non spécifiée. Un nom d'hôte public passe (pas de résolution DNS ici)."""
+    import ipaddress
+
+    if not hostname:
+        return True
+    hote = hostname.strip("[]").lower()
+    if hote == "localhost" or hote.endswith(".localhost") or hote.endswith(".local") or hote.endswith(".internal"):
+        return True
+    try:
+        adresse = ipaddress.ip_address(hote)
+    except ValueError:
+        return False
+    return (
+        adresse.is_private or adresse.is_loopback or adresse.is_link_local
+        or adresse.is_reserved or adresse.is_unspecified or adresse.is_multicast
+    )
 
 
 class BrowserAgent:
