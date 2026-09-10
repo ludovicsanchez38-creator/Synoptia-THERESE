@@ -66,6 +66,8 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
   // B-491 : le sondage de réautorisation meurt avec le panneau et DIT quand
   // il abandonne, au lieu de s'éteindre après cinq minutes sans un mot.
   const sondageReauthRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  /** #124 : l'erreur affichée vient des agendas ; le chargement des événements ne l'efface pas. */
+  const erreurDesAgendasRef = useRef(false);
   useEffect(() => () => {
     if (sondageReauthRef.current) clearInterval(sondageReauthRef.current);
   }, []);
@@ -126,6 +128,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
   async function loadCalendars() {
     if (!hasCachedCalendars) setLoading(true);
     setError(null);
+    erreurDesAgendasRef.current = false;
 
     try {
       const cals = await api.listCalendars(currentAccountId || undefined);
@@ -159,7 +162,10 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
       console.error('Failed to load calendars:', err);
       const msg = err?.message || '';
       const action = classifyCalendarError(msg, { fallback: 'Impossible de charger les calendriers' });
-      if (action.error !== null) setError(action.error);
+      if (action.error !== null) {
+        setError(action.error);
+        erreurDesAgendasRef.current = true;
+      }
       if (action.needsReauth !== undefined) setNeedsReauth(action.needsReauth);
       // Si on a du cache, laisser les events se charger quand même
       if (hasCachedCalendars) setCalendarsReady(true);
@@ -171,7 +177,8 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
   async function loadEvents() {
     if (!currentCalendarId) return;
 
-    setError(null);
+    // #124 : un succès sur l'agenda local n'efface pas l'explication d'un 403 Google.
+    if (!erreurDesAgendasRef.current) setError(null);
 
     try {
       // Load events for the selected month
