@@ -318,14 +318,14 @@ Aucune assertion de comportement n'est retirée.
 - Quatre cartes de résumé, bouton Exporter, recherche « Client, référence… »,
   « Tri : échéance », raison sociale sous le client, nom d'atelier dans le
   sous-titre : données ou agrégats absents (le plafond 100 rendrait un total
-  local menteur). Portail, P-068.
+  local menteur). Portail, P-072.
 - « Relancer » sur la ligne et dans le vide en retard : aucun envoi (test
-  « ne présente pas un envoi email »). Portail, P-069.
+  « ne présente pas un envoi email »). Portail, P-073.
 - « Convertir » sur la ligne : le parcours vit dans le formulaire (P-014).
-  Portail, P-070.
+  Portail, P-074.
 - Création en page : fil d'Ariane, champ Objet, client créé depuis le champ,
   « Valable jusqu'au » en date, conditions saisies, brouillon auto, aperçu
-  PDF, libellé « Valider le devis ». Portail, P-071.
+  PDF, libellé « Valider le devis ». Portail, P-075.
 - Factur-X (pied de maquette) : déjà P-026. Franchise de TVA : déjà P-028.
 - PDF ReportLab, API, store, navigation, mode calque du panneau.
 - Nombre `validite_jours` des devis déjà envoyés (aujourd'hui « Validité :

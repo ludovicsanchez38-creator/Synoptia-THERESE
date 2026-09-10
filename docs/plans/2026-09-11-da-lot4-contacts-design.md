@@ -280,12 +280,12 @@ comportement n'est retirée.
 
 - Fusionner Contacts et Pipeline en un écran « Contacts et pipeline » à trois
   onglets, avec recherche et tri « prochaine relance » sur le pipeline.
-  Fonctionnalité, pas DA : P-068 (numéro à confirmer par l'orchestrateur).
+  Fonctionnalité, pas DA : P-071.
 - La section « Hors pipeline », le bandeau « Prochaine relance », les montants
   sur les cartes et les colonnes, le bouton « Relancer », le fil d'Ariane, la
   fiche deux colonnes (identité + chrono), le texte visible d'aide clavier, le
   « Dépose ici… » des colonnes vides, le compteur « à relancer cette semaine ».
-  Même P-068.
+  Même P-071.
 - Réduire ou renommer les étapes (0.66.1).
 - `ListeDesPrestations.tsx`, `ContactModal.tsx`, le mode tiroir / modale, les
   six autres vues de la coque.
