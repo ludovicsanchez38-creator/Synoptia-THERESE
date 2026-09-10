@@ -136,3 +136,35 @@ async def test_une_panne_de_voix_locale_ne_recopie_pas_un_chemin_a_l_ecran(clien
     reponse = await client.post("/api/voice/local/transcribe", files={"audio": ("rec.webm", b"RIFF....", "audio/webm")})
     assert reponse.status_code == 503, reponse.text
     assert "faster-whisper non installé" in reponse.text, reponse.text
+
+
+# --- revue Grok du diff 0.70.0, finding 1 : l'identifiant après déplacement ----
+
+class FauxMailboxCopyUid(FauxMailbox):
+    """Un serveur IMAP répond COPYUID au déplacement : l'UID change dans la destination."""
+
+    def move(self, uids, destination):
+        super().move(uids, destination)
+        return (("OK", [b"[COPYUID 1694 5 42] Move completed"]), ("OK", [b"Expunge completed"]))
+
+
+@pytest.mark.asyncio
+async def test_un_message_deplace_porte_l_uid_de_sa_destination(monkeypatch):
+    """Revue Grok 0.70.0 (P2) : `move_message` renvoyait `Dest::ancienUid` ; un UID
+    homonyme dans la destination faisait agir lecture, drapeau ou suppression sur
+    un autre message. Le serveur dit le nouvel UID (COPYUID) : c'est lui qui compte."""
+    from app.services.email.imap_smtp_provider import ImapSmtpProvider
+
+    journal: list = []
+    boites = {"INBOX": [_message("5", "À archiver")], "Archive": [_message("5", "Un autre message, UID homonyme")]}
+    provider = ImapSmtpProvider("ludo@example.com", "secret", "imap.example.com")
+
+    @contextlib.contextmanager
+    def _connexion(timeout=None, initial_folder="INBOX"):
+        journal.append(("login", initial_folder))
+        yield FauxMailboxCopyUid(journal, initial_folder, boites)
+
+    monkeypatch.setattr(provider, "_connect_mailbox", _connexion)
+    deplace = await provider.move_message("5", "Archive")
+    assert deplace.id == "Archive::42", deplace.id
+    assert deplace.subject == "À archiver"

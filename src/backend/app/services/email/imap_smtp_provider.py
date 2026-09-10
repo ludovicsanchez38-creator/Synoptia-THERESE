@@ -717,6 +717,22 @@ class ImapSmtpProvider(EmailProvider):
             operation_name="IMAP delete_message",
         )
 
+    @staticmethod
+    def _uid_apres_copie(resultat: Any) -> str | None:
+        """Le nouvel UID annoncé par `[COPYUID validité source destination]`,
+        ou None si la réponse ne le porte pas (ou porte plusieurs UID)."""
+        try:
+            reponse_copie = resultat[0]
+            lignes = reponse_copie[1] if isinstance(reponse_copie, tuple) else reponse_copie
+        except (TypeError, IndexError, KeyError):
+            return None
+        for ligne in lignes or []:
+            texte = ligne.decode("utf-8", "replace") if isinstance(ligne, bytes) else str(ligne)
+            m = re.search(r"COPYUID\s+\d+\s+[\d:,]+\s+(\d+)(?![\d:,])", texte)
+            if m:
+                return m.group(1)
+        return None
+
     async def move_message(self, message_id: str, destination_folder: str) -> EmailMessageDTO:
         """Move a message to another folder in IMAP with timeout."""
 
@@ -732,7 +748,11 @@ class ImapSmtpProvider(EmailProvider):
                     break
                 if dto is None:
                     raise ValueError(f"Message {message_id} not found")
-                mailbox.move([uid], destination_folder)
+                resultat = mailbox.move([uid], destination_folder)
+                # Revue Grok 0.70.0 : l'UID est réattribué dans la destination ;
+                # le serveur le dit dans COPYUID (RFC 4315). Sans cette réponse,
+                # l'ancien UID reste le seul repère connu.
+                dto.id = self._identifiant(destination_folder, self._uid_apres_copie(resultat) or uid)
                 dto.labels = [destination_folder]
                 return dto
 
