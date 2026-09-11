@@ -59,7 +59,11 @@ describe('lot 11 - accessibilité, jetons et robustesse frontend', () => {
 
   it('B-416 : le bouton de suppression de carte projet a un nom accessible et une cible', () => {
     const src = lire('components/memory/ProjectsKanban.tsx');
-    expect(src).toMatch(/aria-label=\{`Supprimer \$\{project\.name\}`\}/);
+    // B-752 : le nom du projet passe désormais par le masque du mode démo, et
+    // le nom accessible avec lui. Ce que B-416 garde est intact - le bouton
+    // s'appelle « Supprimer » suivi du nom du projet - seule la forme change.
+    expect(src).toMatch(/const nom = maskText\(project\.name\);/);
+    expect(src).toMatch(/aria-label=\{`Supprimer \$\{nom\}`\}/);
     expect(src).not.toMatch(/className="p-1 rounded-md hover:bg-error\/20/);
   });
 
