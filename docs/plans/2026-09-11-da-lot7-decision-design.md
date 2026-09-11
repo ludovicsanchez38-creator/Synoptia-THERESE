@@ -221,8 +221,8 @@ segments séparés par « · » :
     ton="succes"` « Décision enregistrée » ;
   - **`BoardRunView`**, `run.status === 'error'` et au moins un avis rendu
     (contenu non vide **ou** `isComplete`) : `Etiquette ton="attention"`
-    « **Délibération partielle · N avis rendu** » (`s` à `rendu` et à `avis`
-    si `N > 1`), N = nombre d'avis avec contenu non vide **ou** `isComplete`,
+    « **Délibération partielle · N avis rendu** » (`s` à `rendu` seulement si
+    `N > 1` : « avis » est invariable), N = nombre d'avis avec contenu non vide **ou** `isComplete`,
     **le même prédicat** que « au moins un avis rendu » et que l'affichage de
     l'étiquette ; pas `completed` seul : un avis interrompu avec du texte
     compte dans N, un avis vide coincé `isRunning: true` ne compte pas.
