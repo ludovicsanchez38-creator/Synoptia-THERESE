@@ -4,6 +4,11 @@
 import { useState, useRef, useCallback } from 'react';
 import { User, Upload, Check, AlertCircle, Eye, FileText, X, Save } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { Carte, CarteTete } from '../ui/Carte';
+import { Etiquette } from '../ui/Etiquette';
+import { FormField } from '../ui/FormField';
+import { Input } from '../ui/Input';
+import { Textarea } from '../ui/Textarea';
 import { useDemoStore } from '../../stores/demoStore';
 import * as api from '../../services/api';
 import { Z_LAYER } from '../../styles/z-layers';
@@ -33,7 +38,11 @@ export interface ProfileTabProps {
   profile: api.UserProfile | null;
   saving: boolean;
   saved: boolean;
-  error: string | null;
+  /**
+   * Lot 9 : plus de prop `error`. La coque rend l'erreur, et elle seule : la
+   * passer ici la montait une seconde fois, en deux `role="alert"` pour un même
+   * message. `setError` reste, elle sert aux remises à zéro.
+   */
   setError: (e: string | null) => void;
   onSave: () => void;
   onImport: () => void;
@@ -45,7 +54,6 @@ export function ProfileTab({
   profile,
   saving: _saving,
   saved,
-  error,
   setError,
   onSave: _onSave,
   onImport,
@@ -101,28 +109,6 @@ export function ProfileTab({
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-sm bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
-            <User className="w-5 h-5 text-accent" />
-          </div>
-          <div>
-            <h3 className="font-medium text-text">Ton profil</h3>
-            <p className="text-xs text-text-muted">THÉRÈSE utilisera ces infos pour te répondre</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" onClick={openMdModal}>
-            <FileText className="w-4 h-4 mr-2" />
-            Voir THERESE.md
-          </Button>
-          <Button variant="ghost" size="sm" onClick={onImport}>
-            <Upload className="w-4 h-4 mr-2" />
-            Importer
-          </Button>
-        </div>
-      </div>
-
       {/* Modal THERESE.md */}
       {mdModalOpen && (
         <div className={`fixed inset-0 ${Z_LAYER.MODAL} flex items-center justify-center bg-black/60`}>
@@ -189,12 +175,12 @@ export function ProfileTab({
                 )}
               </div>
               <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" onClick={closeMdModal}>
+                <Button variant="ghost" size="md" onClick={closeMdModal}>
                   Fermer
                 </Button>
                 <Button
                   variant="primary"
-                  size="sm"
+                  size="md"
                   onClick={saveMdContent}
                   disabled={mdSaving || mdLoading}
                 >
@@ -211,25 +197,50 @@ export function ProfileTab({
         </div>
       )}
 
-      {/* Statut du profil */}
-      {profile ? (
-        <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-success-tint)] border border-success/40 rounded-md">
-          <Check className="w-4 h-4 text-success" />
-          <span className="text-sm text-success">Profil configuré : {profile.display_name}</span>
-        </div>
-      ) : (
-        <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-warning-tint)] border border-warning/40 rounded-md">
-          <AlertCircle className="w-4 h-4 text-warning" />
-          <span className="text-sm text-warning">Profil non configuré - Configure ton identité</span>
-        </div>
-      )}
+      {/* Carte identité. Le geste « Importer THERESE.md » est en tête, nommé :
+          la phrase « Tu peux aussi importer ton profil depuis un fichier
+          THERESE.md », posée en 12 px au pied de la rubrique, redisait ce que ce
+          bouton dit déjà, en plus petit et plus loin. Elle est retirée. */}
+      <Carte as="section" aria-labelledby="settings-profil-title">
+        <CarteTete
+          idTitre="settings-profil-title"
+          icone={<User className="h-[18px] w-[18px]" />}
+          titre="Profil"
+          meta="Ce que Thérèse sait de toi pour te répondre juste. Modifiable à tout moment, exportable, effaçable."
+          actions={(
+            <>
+              <Button variant="ghost" size="md" onClick={openMdModal}>
+                <FileText className="mr-2 h-[18px] w-[18px]" />
+                Voir THERESE.md
+              </Button>
+              <Button variant="secondary" size="md" onClick={onImport}>
+                <Upload className="mr-2 h-[18px] w-[18px]" />
+                Importer THERESE.md
+              </Button>
+            </>
+          )}
+        />
 
-      {/* Champs du formulaire */}
-      <div className="space-y-3">
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label htmlFor="settings-profile-name" className="text-xs text-text-muted mb-1 block">Nom complet *</label>
-            <input
+        {/* `whitespace-normal` : la pilule refuse le retour à la ligne par
+            défaut, or ces deux chaînes sont longues (45 caractères pour l'une,
+            un nom de longueur inconnue pour l'autre) et déborderaient en petite
+            largeur ou en grande taille de police. */}
+        <div className="px-4 pb-2">
+          {profile ? (
+            <Etiquette ton="succes" className="whitespace-normal">
+              Profil configuré : {profile.display_name}
+            </Etiquette>
+          ) : (
+            <Etiquette ton="attention" className="whitespace-normal">
+              Profil non configuré - Configure ton identité
+            </Etiquette>
+          )}
+        </div>
+
+        {/* Deux colonnes à partir de 1024 px, comme `.grille-2` du socle. */}
+        <div className="grid grid-cols-1 min-[1024px]:grid-cols-2 gap-x-4 px-4 pb-4">
+          <FormField label="Nom complet" htmlFor="settings-profile-name" required>
+            <Input
               id="settings-profile-name"
               type="text"
               value={profileForm.name}
@@ -238,186 +249,158 @@ export function ProfileTab({
                 setError(null);
               }}
               placeholder="Marie Exemple"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring"
             />
-          </div>
-          <div>
-            <label htmlFor="settings-profile-nickname" className="text-xs text-text-muted mb-1 block">Surnom</label>
-            <input
+          </FormField>
+          <FormField label="Surnom" htmlFor="settings-profile-nickname">
+            <Input
               id="settings-profile-nickname"
               type="text"
               value={profileForm.nickname}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, nickname: e.target.value }))}
               placeholder="Marie"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring"
             />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label htmlFor="settings-profile-company" className="text-xs text-text-muted mb-1 block">Entreprise</label>
-            <input
+          </FormField>
+          <FormField label="Entreprise" htmlFor="settings-profile-company">
+            <Input
               id="settings-profile-company"
               type="text"
               value={profileForm.company}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, company: e.target.value }))}
               placeholder="Exemple SARL"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring"
             />
-          </div>
-          <div>
-            <label htmlFor="settings-profile-role" className="text-xs text-text-muted mb-1 block">Rôle</label>
-            <input
+          </FormField>
+          <FormField label="Rôle" htmlFor="settings-profile-role">
+            <Input
               id="settings-profile-role"
               type="text"
               value={profileForm.role}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, role: e.target.value }))}
               placeholder="Entrepreneur IA"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring"
             />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label htmlFor="settings-profile-email" className="text-xs text-text-muted mb-1 block">Email</label>
-            <input
+          </FormField>
+          <FormField label="Email" htmlFor="settings-profile-email">
+            <Input
               id="settings-profile-email"
               type="email"
               value={profileForm.email}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, email: e.target.value }))}
               placeholder="marie@exemple.fr"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring"
             />
-          </div>
-          <div>
-            <label htmlFor="settings-profile-location" className="text-xs text-text-muted mb-1 block">Localisation</label>
-            <input
+          </FormField>
+          <FormField label="Localisation" htmlFor="settings-profile-location">
+            <Input
               id="settings-profile-location"
               type="text"
               value={profileForm.location}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, location: e.target.value }))}
               placeholder="Manosque, France"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring"
             />
-          </div>
+          </FormField>
         </div>
 
-        {/* Facturation */}
-        <div>
-          <label htmlFor="settings-profile-address" className="text-xs text-text-muted mb-1 block">Adresse (facturation)</label>
-          <input
-            id="settings-profile-address"
-            type="text"
-            value={profileForm.address}
-            onChange={(e) => setProfileForm((prev) => ({ ...prev, address: e.target.value }))}
-            placeholder="12 rue de l'Exemple, 04100 Manosque"
-            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring"
-          />
+        {/* Hors de la grille, en pleine largeur : sous 1024 px la grille n'a
+            qu'une colonne, et un `col-span-2` y créerait une seconde colonne
+            implicite qui casserait la mise en page. */}
+        <div className="px-4 pb-4">
+          <FormField
+            label="Ce que Thérèse doit savoir"
+            htmlFor="settings-profile-context"
+            description="Ces informations sont injectées dans le contexte de l'IA pour personnaliser ses réponses (offres, secteur, projets en cours...)."
+          >
+            <Textarea
+              id="settings-profile-context"
+              value={profileForm.context}
+              onChange={(e) => setProfileForm((prev) => ({ ...prev, context: e.target.value }))}
+              placeholder="Ex : Je propose des formations IA pour TPE. Mon offre phare est FORGER (490 € HT, 2h30)..."
+              rows={3}
+              className="resize-none"
+            />
+          </FormField>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label htmlFor="settings-profile-siren" className="text-xs text-text-muted mb-1 block">SIREN</label>
-            <input
+        {saved && (
+          <p role="status" className="flex items-center gap-1 px-4 pb-4 text-sm text-success">
+            <Check className="h-4 w-4" />
+            Profil enregistré
+          </p>
+        )}
+      </Carte>
+
+      {/* Seule occurrence des champs de facturation, éditables. */}
+      <Carte as="section" aria-labelledby="settings-emetteur-title">
+        <CarteTete
+          idTitre="settings-emetteur-title"
+          icone={<FileText className="h-[18px] w-[18px]" />}
+          titre="Profil émetteur des factures"
+          meta="SIRET, TVA, adresse et mentions légales, utilisés sur chaque devis et facture."
+        />
+
+        <div className="px-4 pb-4">
+          <FormField label="Adresse (facturation)" htmlFor="settings-profile-address">
+            <Input
+              id="settings-profile-address"
+              type="text"
+              value={profileForm.address}
+              onChange={(e) => setProfileForm((prev) => ({ ...prev, address: e.target.value }))}
+              placeholder="12 rue de l'Exemple, 04100 Manosque"
+            />
+          </FormField>
+        </div>
+
+        <div className="grid grid-cols-1 min-[1024px]:grid-cols-2 gap-x-4 px-4 pb-4">
+          <FormField label="SIREN" htmlFor="settings-profile-siren">
+            <Input
               id="settings-profile-siren"
               type="text"
               value={profileForm.siren}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, siren: e.target.value }))}
               placeholder="123 456 789"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring"
             />
-          </div>
-          <div>
-            <label htmlFor="settings-profile-tva" className="text-xs text-text-muted mb-1 block">TVA intracommunautaire</label>
-            <input
+          </FormField>
+          <FormField label="TVA intracommunautaire" htmlFor="settings-profile-tva">
+            <Input
               id="settings-profile-tva"
               type="text"
               value={profileForm.tva_intra}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, tva_intra: e.target.value }))}
               placeholder="FR 00 123 456 789"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50"
             />
-          </div>
-        </div>
-
-        {/* P0-PROD-2 : identité émetteur (requise pour une facture conforme) */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label htmlFor="settings-profile-siret" className="text-xs text-text-muted mb-1 block">SIRET (requis pour facturer)</label>
-            <input
+          </FormField>
+          <FormField label="SIRET (requis pour facturer)" htmlFor="settings-profile-siret">
+            <Input
               id="settings-profile-siret"
               type="text"
               value={profileForm.siret}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, siret: e.target.value }))}
               placeholder="123 456 789 00010"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring"
             />
-          </div>
-          <div>
-            <label htmlFor="settings-profile-ape" className="text-xs text-text-muted mb-1 block">Code APE / NAF</label>
-            <input
+          </FormField>
+          <FormField label="Code APE / NAF" htmlFor="settings-profile-ape">
+            <Input
               id="settings-profile-ape"
               type="text"
               value={profileForm.code_ape}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, code_ape: e.target.value }))}
               placeholder="0000Z"
-              className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50"
             />
-          </div>
+          </FormField>
         </div>
 
-        <div>
-          <label htmlFor="settings-profile-nda" className="text-xs text-text-muted mb-1 block">N° de déclaration d'activité (organisme de formation)</label>
-          <input
-            id="settings-profile-nda"
-            type="text"
-            value={profileForm.nda}
-            onChange={(e) => setProfileForm((prev) => ({ ...prev, nda: e.target.value }))}
-            placeholder="00 00 00000 00"
-            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50"
-          />
+        <div className="px-4 pb-4">
+          <FormField
+            label="N° de déclaration d'activité (organisme de formation)"
+            htmlFor="settings-profile-nda"
+          >
+            <Input
+              id="settings-profile-nda"
+              type="text"
+              value={profileForm.nda}
+              onChange={(e) => setProfileForm((prev) => ({ ...prev, nda: e.target.value }))}
+              placeholder="00 00 00000 00"
+            />
+          </FormField>
         </div>
-
-        <div>
-          <label htmlFor="settings-profile-context" className="text-xs text-text-muted mb-1 block">
-            Contexte additionnel
-          </label>
-          <p className="text-xs text-text-muted mb-1.5">
-            Ces informations sont injectées dans le contexte de l'IA pour personnaliser ses réponses (offres, secteur, projets en cours...).
-          </p>
-          <textarea
-            id="settings-profile-context"
-            value={profileForm.context}
-            onChange={(e) => setProfileForm((prev) => ({ ...prev, context: e.target.value }))}
-            placeholder="Ex : Je propose des formations IA pour TPE. Mon offre phare est FORGER (490 € HT, 2h30)..."
-            rows={3}
-            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-          />
-        </div>
-      </div>
-
-      {/* Erreur */}
-      {error && (
-        <p role="alert" className="text-sm text-error flex items-center gap-1">
-          <AlertCircle className="w-3 h-3" />
-          {error}
-        </p>
-      )}
-
-      {/* Succès */}
-      {saved && (
-        <p role="status" className="text-sm text-success flex items-center gap-1">
-          <Check className="w-3 h-3" />
-          Profil enregistré
-        </p>
-      )}
-
-      {/* Texte d'aide */}
-      <p className="text-xs text-text-muted">
-        Tu peux aussi importer ton profil depuis un fichier THERESE.md
-      </p>
+      </Carte>
 
       {/* Mode Démo */}
       <DemoModeSection />
@@ -439,20 +422,28 @@ export function DemoModeSection() {
           <Eye className="w-5 h-5 text-accent-cyan-ink" />
         </div>
         <div className="flex-1">
-          <h3 className="font-medium text-text">Mode Démo</h3>
-          <p className="text-xs text-text-muted">
+          <h3 className="text-sm font-semibold text-text">Mode Démo</h3>
+          <p className="text-sm text-text-muted">
             Remplace par des personas fictifs les noms, sociétés et e-mails de tes fiches contacts
           </p>
         </div>
+        {/* Sans `type`, ce bouton valait `submit` ; sans rôle ni nom, le
+            lecteur d'écran annonçait « bouton », sans dire quoi ni dans quel
+            état. Piste 40 x 24 et curseur 20, comme l'interrupteur du mode
+            contributeur. */}
         <button
+          type="button"
+          role="switch"
+          aria-checked={demoEnabled}
+          aria-label="Mode démo"
           onClick={toggleDemo}
-          className={`relative w-11 h-6 rounded-full transition-colors ${
+          className={`relative w-10 h-6 rounded-full transition-colors ${
             demoEnabled ? 'bg-accent' : 'bg-border'
           }`}
         >
           <span
             className={`absolute top-0.5 left-0.5 w-5 h-5 bg-ink-on-fill rounded-full transition-transform ${
-              demoEnabled ? 'translate-x-5' : 'translate-x-0'
+              demoEnabled ? 'translate-x-4' : 'translate-x-0'
             }`}
           />
         </button>
@@ -463,18 +454,16 @@ export function DemoModeSection() {
           lui est invisible, et l'utilisateur qui filme sa démonstration n'avait
           aucun moyen de le savoir : le réglage promettait « les données
           clients », sans dire où la promesse s'arrête. */}
-      <p className="text-xs text-text-muted">
+      <p className="text-sm text-text-muted">
         Ce qui reste en clair : ce que tu as tapé toi-même ailleurs. Un nom de société
         écrit à la main dans le titre d'une tâche ou d'une conversation n'est dans aucune
         fiche contact, donc le masque ne le connaît pas. Relis l'écran avant de filmer.
       </p>
 
       {demoEnabled && (
-        <div className="p-3 bg-accent-cyan/10 border border-accent-cyan/20 rounded-md">
-          <span className="text-sm text-accent-cyan-ink">
-            Mode démo actif - {isMac ? '⌘' : 'Ctrl'}⇧D pour basculer
-          </span>
-        </div>
+        <p role="status" className="text-sm text-accent-cyan-ink">
+          Mode démo actif - {isMac ? '⌘' : 'Ctrl'}⇧D pour basculer
+        </p>
       )}
     </div>
   );

@@ -199,7 +199,10 @@ test.describe('Parcours 05 - Settings', () => {
     // un bouton inerte. On renseigne le champ obligatoire, puis on vérifie que
     // l'enregistrement a bien eu lieu plutôt que le seul fait d'avoir cliqué.
     const modale = page.getByTestId('settings-modal');
-    await modale.getByLabel('Nom complet *').fill('Recette E2E');
+    // Lot 9 : l'étoile vient de `FormField` et se colle au libellé
+    // (`Nom complet*`). La correspondance par défaut de Playwright est une
+    // sous-chaîne : la requête sans étoile trouve les deux formes.
+    await modale.getByLabel('Nom complet').fill('Recette E2E');
 
     const sauvegarder = page.getByTestId('settings-save-btn');
     await expect(sauvegarder).toBeEnabled();

@@ -26,6 +26,9 @@ import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { useBillingProfileStore } from '../../stores/billingProfileStore';
 import { resolveSettingsTab, type SettingsTab } from '../../lib/deepLinks';
 import { Spinner } from '../ui/Spinner';
+import { Alerte } from '../ui/Alerte';
+import { Squelette } from '../ui/Squelette';
+import { AlertCircle } from 'lucide-react';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -37,14 +40,14 @@ type Tab = 'profile' | 'ai' | 'services' | 'accessibility' | 'tools' | 'agents' 
 
 export const ALL_TABS: { id: Tab; label: string; icon: typeof User; contributeurOnly?: boolean }[] = [
   { id: 'profile', label: 'Profil', icon: User },
-  { id: 'ai', label: 'IA', icon: Cpu },
-  { id: 'services', label: 'Services', icon: Layers },
-  { id: 'accessibility', label: 'Accessibilité', icon: Accessibility },
+  { id: 'ai', label: 'Service d’IA', icon: Cpu },
+  { id: 'services', label: 'Services et connecteurs', icon: Layers },
+  { id: 'accessibility', label: 'Accessibilité et affichage', icon: Accessibility },
   { id: 'tools', label: 'Outils', icon: Wrench, contributeurOnly: true },
   { id: 'agents', label: 'Agents', icon: Zap, contributeurOnly: true },
-  { id: 'privacy', label: 'Confidentialité', icon: Shield },
+  { id: 'privacy', label: 'Sécurité et confidentialité', icon: Shield },
   { id: 'advanced', label: 'Avancé', icon: SlidersHorizontal, contributeurOnly: true },
-  { id: 'about', label: 'À propos', icon: Info },
+  { id: 'about', label: 'À propos et mise à jour', icon: Info },
 ];
 
 async function loadSetting<T>(label: string, request: Promise<T>, fallback: T) {
@@ -61,7 +64,22 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
   );
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  /** Cible de repli du focus : le tabpanel est déjà focalisable (tabIndex 0). */
+  const panneauRef = useRef<HTMLDivElement>(null);
+  const [error, setErrorBrut] = useState<string | null>(null);
+  /**
+   * Lot 9 : `cleInvalide` distingue un REFUS DE CLÉ de toute autre erreur.
+   * Lui seul pose `aria-invalid` sur le champ et déporte l'alerte dans la
+   * carte du service (la coque se tait alors : une erreur ne s'annonce qu'une
+   * fois). Il retombe à chaque `setError(null)` -- saisie du champ, changement
+   * d'onglet, de fournisseur, succès -- sans qu'aucun des trente-cinq sites
+   * d'appel ait à le savoir : une seule source, tous les chemins couverts.
+   */
+  const [cleInvalide, setCleInvalide] = useState(false);
+  function setError(message: string | null) {
+    setErrorBrut(message);
+    if (message === null) setCleInvalide(false);
+  }
   const [loading, setLoading] = useState(true);
   const [loadWarnings, setLoadWarnings] = useState<string[]>([]);
   const [operationStatus, setOperationStatus] = useState<string | null>(null);
@@ -173,9 +191,17 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
     }
   }
 
-  async function loadSettings() {
+  /**
+   * Rend la liste des réglages qui n'ont PAS pu être lus, pour que l'appelant
+   * sache si le bandeau disparaît (et donc si le focus va être perdu).
+   *
+   * `loadWarnings` n'est plus vidé au début : tant que la relecture court,
+   * l'écran continue d'annoncer l'état connu et le bouton « Réessayer le
+   * chargement » ne se démonte pas sous le doigt qui vient de le cliquer.
+   * La liste est de toute façon remplacée à chaque retour de lecture.
+   */
+  async function loadSettings(): Promise<string[]> {
     setLoading(true);
-    setLoadWarnings([]);
     const [keysState, llmState, preferencesState, statsState, profileState, workingDirState, ollamaState, resourcesState, groqState, webSearchState] = await Promise.all([
       loadSetting('clés API', api.getApiKeysWithCorrupted(), { keys: {} as Record<string, boolean>, corrupted: [], sources: {} as Record<string, string> }),
       loadSetting('configuration IA', api.getLLMConfig(), { provider: 'anthropic', model: 'claude-sonnet-4-6', available_models: [] }),
@@ -197,6 +223,10 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
       .map((state) => state.unavailable)
       .filter((label): label is string => Boolean(label));
     setLoadWarnings(unavailable);
+    // `restants` suit ce qui est RÉELLEMENT posé : le catch ci-dessous ajoute
+    // « données de configuration » après coup, et rendre `unavailable` tel quel
+    // annoncerait une liste vide alors que le bandeau reste à l'écran.
+    let restants = unavailable;
 
     const keysResult = keysState.value;
     const llmConfig = llmState.value;
@@ -271,11 +301,19 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
         }
       }
     } catch (err) {
-      setLoadWarnings((current) => [...new Set([...current, 'données de configuration'])]);
-      setError(err instanceof Error ? err.message : 'La configuration chargée est inutilisable.');
+      restants = [...new Set([...restants, 'données de configuration'])];
+      setLoadWarnings(restants);
+      // Les deux setters natifs plutôt que `setError` : `loadSettings` ne doit
+      // référencer aucune valeur instable, sinon l'effet d'ouverture réclame
+      // une dépendance qu'il ne peut pas prendre sans boucler. Une lecture qui
+      // échoue n'est jamais un refus de clé.
+      setErrorBrut(err instanceof Error ? err.message : 'La configuration chargée est inutilisable.');
+      setCleInvalide(false);
     } finally {
       setLoading(false);
     }
+
+    return restants;
   }
 
   async function retestOllama() {
@@ -302,12 +340,14 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
   async function handleSaveApiKey() {
     if (!apiKeyInput.trim()) {
       setError('Entre une clé API');
+      setCleInvalide(true);
       return;
     }
 
     const providerConfig = PROVIDERS.find(p => p.id === selectedProvider);
     if (providerConfig?.keyPrefix && !apiKeyInput.startsWith(providerConfig.keyPrefix)) {
       setError(`La clé API doit commencer par "${providerConfig.keyPrefix}"`);
+      setCleInvalide(true);
       return;
     }
 
@@ -324,6 +364,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
       setTimeout(() => setSaved(false), 3000);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erreur lors de la sauvegarde');
+      setCleInvalide(true);
     } finally {
       setSaving(false);
     }
@@ -612,9 +653,17 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
 
   function renderContent() {
     if (loading) {
+      // Trois rangées de deux : la forme de ce qui arrive, pas douze barres.
+      // Les squelettes sont décoratifs (`aria-hidden` posé par la primitive),
+      // c'est le `role="status"` qui annonce la lecture.
       return (
-        <div className="flex items-center justify-center min-h-[24rem]">
-          <Spinner taille="zone" className="text-accent-cyan-ink" />
+        <div className="space-y-3">
+          <div className="grid grid-cols-2 gap-2.5">
+            {Array.from({ length: 6 }, (_, i) => (
+              <Squelette key={i} largeur="w-full" classeBarre="h-16 rounded-sm" />
+            ))}
+          </div>
+          <p role="status" className="text-sm text-text-muted">Lecture des réglages…</p>
         </div>
       );
     }
@@ -628,7 +677,6 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
             profile={profile}
             saving={profileSaving}
             saved={profileSaved}
-            error={error}
             setError={setError}
             onSave={handleSaveProfile}
             onImport={handleImportClaudeMd}
@@ -651,6 +699,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
             saving={saving}
             saved={saved}
             error={error}
+            cleInvalide={cleInvalide}
             setError={setError}
             onSelectProvider={handleSelectProvider}
             onSelectModel={handleSelectModel}
@@ -762,6 +811,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
             ref={dialogRef}
             role="dialog"
             aria-modal="true"
+            aria-labelledby="settings-title"
             aria-label="Paramètres"
             data-testid="settings-modal"
             data-active-tab={activeTab}
@@ -770,22 +820,29 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
             initial="initial"
             animate="animate"
             exit="exit"
-            className={`fixed left-1/2 top-1/2 flex max-h-[calc(100vh-1rem)] w-[calc(100%-1rem)] max-w-3xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-md border border-border bg-surface shadow-2xl sm:max-h-[85vh] ${Z_LAYER.MODAL}`}
+            className={`fixed left-1/2 top-1/2 flex max-h-[calc(100vh-1rem)] w-[calc(100%-1rem)] max-w-6xl -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-md border border-border bg-surface shadow-lg sm:max-h-[85vh] ${Z_LAYER.MODAL}`}
           >
             {/* En-tête */}
             <div className="flex shrink-0 items-center justify-between border-b border-border/50 px-4 py-3 sm:px-6 sm:py-4">
-              <h2 className="text-lg font-semibold text-text">Paramètres</h2>
+              {/* `@layer base` pose déjà la famille de titres : pas de
+                  `font-editorial` ici, la maquette est un h1 sans `.editorial`. */}
+              <h1 id="settings-title" className="text-lg font-semibold text-text">Paramètres</h1>
               <Button variant="ghost" size="icon" onClick={onClose} data-testid="settings-close-btn" aria-label="Fermer les paramètres">
                 <X className="w-5 h-5" />
               </Button>
             </div>
 
             {/* Corps : sidebar + contenu */}
-            <div className="flex min-h-0 flex-1 flex-col overflow-hidden sm:flex-row">
+            {/* La césure passe de 640 à 1024 px : entre les deux, la nav est une
+                grille de trois colonnes AU-DESSUS du panneau (maquette
+                `.reglages{grid-template-columns:1fr}` sous 1024 px). Avec la
+                bascule en ligne dès 640 px, elle occupait toute une rangée flex
+                et le panneau tombait à zéro entre 640 et 1023 px. */}
+            <div className="flex min-h-0 flex-1 flex-col overflow-hidden min-[1024px]:flex-row">
               {/* Sidebar navigation */}
-              <nav role="tablist" aria-label="Rubriques des paramètres" className="flex w-full shrink-0 items-stretch gap-1 overflow-x-auto border-b border-border/30 bg-background/30 p-2 sm:block sm:w-44 sm:overflow-y-auto sm:border-b-0 sm:border-r sm:py-2">
+              <nav role="tablist" aria-label="Rubriques des paramètres" className="w-full shrink-0 gap-1 border-b border-border/30 bg-background/30 p-2 max-[1023px]:grid max-[1023px]:grid-cols-3 min-[1024px]:block min-[1024px]:w-60 min-[1024px]:overflow-y-auto min-[1024px]:border-b-0 min-[1024px]:border-r min-[1024px]:py-2">
                 {/* Toggle Mode Contributeur */}
-                <div className="mb-0 min-w-40 shrink-0 border-r border-border/30 px-2 py-2 sm:mb-2 sm:min-w-0 sm:border-b sm:border-r-0 sm:px-4 sm:py-3">
+                <div className="mb-0 shrink-0 border-border/30 px-2 py-2 max-[1023px]:col-span-3 min-[1024px]:mb-2 min-[1024px]:border-b min-[1024px]:px-4 min-[1024px]:py-3">
                   <label className="flex items-center gap-2 cursor-pointer group">
                     <div className="relative">
                       <input
@@ -795,14 +852,19 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
                         className="sr-only peer"
                         data-testid="ux-mode-toggle"
                       />
-                      <div className="w-9 h-5 bg-border/50 rounded-full peer-checked:bg-accent-cyan/60 transition-colors" />
-                      <div className="absolute top-0.5 left-0.5 w-4 h-4 bg-text rounded-full transition-transform peer-checked:translate-x-4" />
+                      {/* Piste 40 x 24, curseur 20, inset 2, course 16 :
+                          2 + 20 + 16 = 38 pour 40, symétrique aux 2 px de départ. */}
+                      <div className="w-10 h-6 bg-border/50 rounded-full peer-checked:bg-accent-cyan/60 transition-colors" />
+                      <div className="absolute top-0.5 left-0.5 w-5 h-5 bg-text rounded-full transition-transform peer-checked:translate-x-4" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <span className="text-xs font-medium text-text block leading-tight">Mode Contributeur</span>
-                      <span className="text-xs text-text-muted leading-tight">Fonctions avancées</span>
+                      <span className="text-sm font-medium text-text block leading-tight">Mode Contributeur</span>
                     </div>
                   </label>
+                  {/* Hors du `label` : la règle du lot bannit 12 px dans le
+                      sous-arbre d'un interactif, et cette aide n'est pas le nom
+                      de l'interrupteur. */}
+                  <p className="text-xs text-text-muted leading-tight">Fonctions avancées</p>
                   {/* BUG-159 : en mode standard, les rubriques avancées
                       disparaissaient sans un mot. Le testeur, à la recherche du
                       chemin du dépôt des agents, a cru qu'elles n'existaient
@@ -827,14 +889,14 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
                       data-testid={`settings-tab-${tab.id}`}
                       onClick={() => selectTab(tab.id)}
                       onKeyDown={(event) => handleTabKeyDown(event, index)}
-                      className={`flex shrink-0 items-center gap-2 border-b-2 px-3 py-2.5 text-sm transition-colors sm:w-full sm:gap-3 sm:border-b-0 sm:border-r-2 sm:px-4 ${
+                      className={`flex min-h-9 shrink-0 items-center gap-2.5 rounded-sm px-3 py-2 text-left text-sm transition-colors min-[1024px]:w-full ${
                         isActive
-                          ? 'border-accent-cyan bg-accent-tint text-accent'
-                          : 'border-transparent text-text-muted hover:bg-surface-elevated/30 hover:text-text'
+                          ? 'bg-accent-tint text-accent font-semibold'
+                          : 'text-text-muted hover:bg-surface-2 hover:text-text'
                       }`}
                     >
-                      <Icon className="w-4 h-4 shrink-0" />
-                      <span className="font-medium">{tab.label}</span>
+                      <Icon className="h-[18px] w-[18px] shrink-0" />
+                      <span>{tab.label}</span>
                     </button>
                   );
                 })}
@@ -842,6 +904,7 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
 
               {/* Contenu */}
               <div
+                ref={panneauRef}
                 id={`settings-panel-${activeTab}`}
                 role="tabpanel"
                 aria-labelledby={`settings-tab-${activeTab}`}
@@ -852,26 +915,56 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
                     « il manque des clés » alors qu'il s'agit d'un échec de
                     LECTURE. Le testeur a cru à un défaut de configuration de la
                     génération d'images. */}
+                {/* Le bandeau de lecture partielle survit au chargement : sinon
+                    son bouton se démonte sous le doigt qui vient de le cliquer et
+                    le focus retombe sur le `body`. D'où l'`aria-disabled` plutôt
+                    qu'un `disabled`, et le repli du focus sur le tabpanel quand la
+                    reprise réussit et que le bandeau disparaît pour de bon. */}
                 {loadWarnings.length > 0 && (
-                  <div role="alert" data-testid="settings-load-warning" className="mb-4 rounded-md border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-sm text-warning">
-                    <p>
-                      <strong>
-                        {loadWarnings.length > 1 ? 'Ces réglages n’ont pas pu être lus' : 'Ce réglage n’a pas pu être lu'} : {loadWarnings.join(', ')}.
-                      </strong>{' '}
-                      Les valeurs affichées ici sont des valeurs par défaut, pas ta configuration réelle.
-                    </p>
-                    <button type="button" onClick={() => void loadSettings()} className="mt-2 rounded-md border border-warning px-3 py-2 font-semibold">Réessayer le chargement</button>
-                  </div>
-                )}
-                {operationStatus && <p role="status" className="mb-4 rounded-md border border-info/40 bg-[var(--color-info-tint)] p-3 text-sm text-info">{operationStatus}</p>}
-                {/* B-454 : une erreur sans action de reprise (onglet Outils) n'atteignait jamais l'écran. */}
-                {error && (
-                  <div role="alert" className="mb-4 rounded-md border border-error/40 bg-[var(--color-error-tint)] p-3 text-sm text-error">
-                    <p>{error}</p>
-                    {retryOperation && (
-                      <button type="button" onClick={retryOperation} className="mt-2 rounded-md border border-error px-3 py-2 font-semibold">Réessayer</button>
+                  <Alerte
+                    ton="attention"
+                    data-testid="settings-load-warning"
+                    className="mb-4"
+                    icone={<AlertCircle className="h-[18px] w-[18px]" />}
+                    titre={`${loadWarnings.length > 1 ? 'Ces réglages n’ont pas pu être lus' : 'Ce réglage n’a pas pu être lu'} : ${loadWarnings.join(', ')}.`}
+                    action={(
+                      <Button
+                        variant="secondary"
+                        size="md"
+                        aria-disabled={loading}
+                        className="aria-disabled:opacity-50 aria-disabled:cursor-wait"
+                        onClick={() => {
+                          if (loading) return;
+                          void (async () => {
+                            const restants = await loadSettings();
+                            if (restants.length === 0) panneauRef.current?.focus();
+                          })();
+                        }}
+                      >
+                        Réessayer le chargement
+                      </Button>
                     )}
-                  </div>
+                  >
+                    Les valeurs affichées ici sont des valeurs par défaut, pas ta configuration réelle.
+                  </Alerte>
+                )}
+                {!loading && operationStatus && <p role="status" className="mb-4 px-4 py-3 text-sm text-info">{operationStatus}</p>}
+                {/* B-454 : une erreur sans action de reprise (onglet Outils) n'atteignait jamais l'écran.
+                    Lot 9 : un refus de clé n'a qu'UNE alerte, celle de la carte du
+                    service. La condition reste `{error && (` : la garde de B-454
+                    lit ce littéral. */}
+                {error && (
+                  loading || cleInvalide ? null : (
+                    <Alerte
+                      className="mb-4"
+                      icone={<AlertCircle className="h-[18px] w-[18px]" />}
+                      action={retryOperation ? (
+                        <Button variant="ghost" size="md" onClick={retryOperation}>Réessayer</Button>
+                      ) : undefined}
+                    >
+                      {error}
+                    </Alerte>
+                  )
                 )}
                 {renderContent()}
               </div>
@@ -879,12 +972,13 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
 
             {/* Pied de page */}
             <div className="flex shrink-0 justify-end gap-3 border-t border-border/50 px-4 py-3 sm:px-6 sm:py-4">
-              <Button variant="ghost" onClick={onClose}>
+              <Button variant="ghost" size="md" onClick={onClose}>
                 Fermer
               </Button>
               {activeTab === 'profile' && (
                 <Button
                   variant="primary"
+                  size="md"
                   onClick={handleSaveProfile}
                   disabled={profileSaving || !profileForm.name.trim()}
                   data-testid="settings-save-btn"

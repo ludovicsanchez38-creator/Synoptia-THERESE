@@ -61,8 +61,11 @@ export function FormField({
         {required && <span className="text-error ml-0.5" aria-hidden="true">*</span>}
       </label>
 
+      {/* Lot 9 : ces deux textes passent en 14 px. Ils sont rattachés au champ
+          par aria-describedby, donc liés à un interactif, et la règle du lot y
+          bannit 12 px. */}
       {description && (
-        <p id={descId} className="text-xs text-text-muted">
+        <p id={descId} className="text-sm text-text-muted">
           {description}
         </p>
       )}
@@ -73,7 +76,7 @@ export function FormField({
         <p
           id={errorId}
           role="alert"
-          className="text-xs text-error mt-1"
+          className="text-sm text-error mt-1"
         >
           {error}
         </p>

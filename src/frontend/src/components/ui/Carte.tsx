@@ -28,14 +28,22 @@ export function Carte({ as: Tag = 'article', className, children, ...props }: Ca
 export interface CarteTeteProps {
   icone?: ReactNode;
   titre: string;
-  /** Lot 2 : id du h2, pour qu'une section puisse s'en nommer (`aria-labelledby`). */
+  /**
+   * Lot 9 : le niveau du titre. Défaut `h2` (tête de section). Une carte
+   * imbriquée dans une section -- la carte du service d'IA sous le titre
+   * « Service d'IA » -- prend `h3` : un h2 dans un h2 casse le plan du
+   * document pour qui navigue par titres.
+   */
+  niveau?: 'h2' | 'h3';
+  /** Lot 2 : id du titre, pour qu'une section puisse s'en nommer (`aria-labelledby`). */
   idTitre?: string;
   meta?: string;
   actions?: ReactNode;
   className?: string;
 }
 
-export function CarteTete({ icone, titre, idTitre, meta, actions, className }: CarteTeteProps) {
+export function CarteTete({ icone, titre, niveau = 'h2', idTitre, meta, actions, className }: CarteTeteProps) {
+  const Titre = niveau;
   return (
     // Lot 2 : `flex-wrap`, et sous 840 px les actions prennent une ligne
     // entière sous le titre (`basis-full`) au lieu de le comprimer.
@@ -49,7 +57,7 @@ export function CarteTete({ icone, titre, idTitre, meta, actions, className }: C
         </span>
       )}
       <div className="min-w-0 flex-1">
-        <h2 id={idTitre}>{titre}</h2>
+        <Titre id={idTitre}>{titre}</Titre>
         {meta ? <p className="text-xs font-medium text-text-muted">{meta}</p> : null}
       </div>
       {actions ? (

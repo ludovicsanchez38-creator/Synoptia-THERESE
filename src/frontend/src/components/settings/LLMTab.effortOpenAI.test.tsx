@@ -17,7 +17,9 @@ describe('EffortSelector : mention outils + raisonnement (P-045)', () => {
     const mention = await screen.findByTestId('effort-mention-outils');
     expect(mention).toHaveTextContent(/désactivé pour ce modèle dès qu.une conversation utilise des outils/i);
     expect(mention).toHaveTextContent(/Sans outils, ce réglage est transmis/i);
-    await waitFor(() => expect(screen.getByLabelText('Effort de raisonnement')).toHaveAttribute('aria-describedby', 'llm-effort-outils'));
+    // Lot 9 : l'aide du champ a un `id` et est décrite au Select en toutes
+    // circonstances ; la mention s'y AJOUTE, dans cet ordre.
+    await waitFor(() => expect(screen.getByLabelText('Effort de raisonnement')).toHaveAttribute('aria-describedby', 'llm-effort-aide llm-effort-outils'));
   });
 
   it('openai + gpt-5.5 : la mention ne promet pas que l’effort passe sans outils', async () => {
@@ -30,7 +32,7 @@ describe('EffortSelector : mention outils + raisonnement (P-045)', () => {
     const { unmount } = render(<EffortSelector selectedProvider="anthropic" selectedModel="claude-sonnet-4-6" />);
     await screen.findByLabelText('Effort de raisonnement');
     expect(screen.queryByTestId('effort-mention-outils')).toBeNull();
-    expect(screen.getByLabelText('Effort de raisonnement')).not.toHaveAttribute('aria-describedby');
+    expect(screen.getByLabelText('Effort de raisonnement')).toHaveAttribute('aria-describedby', 'llm-effort-aide');
     unmount();
     render(<EffortSelector selectedProvider="openai" selectedModel="gpt-4.1" />);
     await screen.findByLabelText('Effort de raisonnement');

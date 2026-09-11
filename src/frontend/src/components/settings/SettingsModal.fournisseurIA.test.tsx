@@ -47,11 +47,10 @@ vi.mock('../../services/api', async (importOriginal) => ({
 async function ouvrirOngletIA() {
   render(<SettingsModal isOpen onClose={vi.fn()} />);
   fireEvent.click(screen.getByTestId('settings-tab-ai'));
+  // Lot 9 : la grille renonce au motif radio (`setLLMConfig` est un POST, la
+  // flèche ne doit pas l'appeler). Les cartes sont des boutons à état.
   await waitFor(() =>
-    expect(screen.getByRole('radio', { name: /Mistral AI/ })).toHaveAttribute(
-      'aria-checked',
-      'true',
-    ),
+    expect(screen.getByRole('button', { name: /Mistral AI/, pressed: true })).toBeInTheDocument(),
   );
 }
 
@@ -65,10 +64,10 @@ describe('B-225 - inspecter un fournisseur ne perd pas le modèle choisi', () =>
     const api = await import('../../services/api');
     await ouvrirOngletIA();
 
-    fireEvent.click(screen.getByRole('radio', { name: /GPT \(OpenAI\)/ }));
+    fireEvent.click(screen.getByRole('button', { name: /GPT \(OpenAI\)/ }));
     await waitFor(() => expect(vi.mocked(api.setLLMConfig)).toHaveBeenCalled());
 
-    fireEvent.click(screen.getByRole('radio', { name: /Mistral AI/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Mistral AI/ }));
     await waitFor(() =>
       expect(vi.mocked(api.setLLMConfig).mock.calls.length).toBeGreaterThanOrEqual(2),
     );
@@ -85,9 +84,9 @@ describe('B-225 - inspecter un fournisseur ne perd pas le modèle choisi', () =>
     await ouvrirOngletIA();
     const api = await import('../../services/api');
 
-    fireEvent.click(screen.getByRole('radio', { name: /GPT \(OpenAI\)/ }));
+    fireEvent.click(screen.getByRole('button', { name: /GPT \(OpenAI\)/ }));
     await waitFor(() => expect(vi.mocked(api.setLLMConfig)).toHaveBeenCalled());
-    fireEvent.click(screen.getByRole('radio', { name: /Mistral AI/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Mistral AI/ }));
 
     await waitFor(() =>
       expect(screen.getByLabelText('Modèle')).toHaveValue('mistral-medium-latest'),
@@ -105,11 +104,11 @@ describe('B-225 - inspecter un fournisseur ne perd pas le modèle choisi', () =>
       expect(vi.mocked(api.setLLMConfig)).toHaveBeenCalledWith('mistral', 'mistral-small-latest'),
     );
 
-    fireEvent.click(screen.getByRole('radio', { name: /GPT \(OpenAI\)/ }));
+    fireEvent.click(screen.getByRole('button', { name: /GPT \(OpenAI\)/ }));
     await waitFor(() =>
       expect(vi.mocked(api.setLLMConfig).mock.calls.length).toBeGreaterThanOrEqual(2),
     );
-    fireEvent.click(screen.getByRole('radio', { name: /Mistral AI/ }));
+    fireEvent.click(screen.getByRole('button', { name: /Mistral AI/ }));
 
     await waitFor(() =>
       expect(vi.mocked(api.setLLMConfig).mock.calls.length).toBeGreaterThanOrEqual(3),

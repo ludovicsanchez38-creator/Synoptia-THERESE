@@ -67,7 +67,8 @@ describe('LLMTab - adresse d’espace de travail Qwen', () => {
     fireEvent.change(champ, {
       target: { value: 'https://ws-9.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1' },
     });
-    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    // Lot 9 : « Enregistrer » seul entrait en collision avec le bouton de la clé.
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer l’adresse' }));
 
     await waitFor(() => {
       expect(apiMocks.setLLMConfig).toHaveBeenCalledWith(

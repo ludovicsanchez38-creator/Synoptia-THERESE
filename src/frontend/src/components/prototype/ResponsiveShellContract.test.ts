@@ -9,8 +9,11 @@ function source(relativePath: string): string {
 describe('contrat responsive de la coque 0.40', () => {
   it('empile les parcours denses avant leurs breakpoints', () => {
     expect(source('onboarding/WelcomeStep.tsx')).toMatch(/grid-cols-1[^"\n]*sm:grid-cols-3/);
-    expect(source('settings/SettingsModal.tsx')).toContain('flex-col overflow-hidden sm:flex-row');
-    expect(source('settings/SettingsModal.tsx')).toContain('overflow-x-auto');
+    // Lot 9 : même intention, nouvelle césure. Le corps s'empile jusqu'à
+    // 1024 px (et non plus 640), et la nav n'a plus à défiler horizontalement :
+    // sous 1024 px elle est une grille de trois colonnes au-dessus du panneau.
+    expect(source('settings/SettingsModal.tsx')).toContain('flex-col overflow-hidden min-[1024px]:flex-row');
+    expect(source('settings/SettingsModal.tsx')).toContain('max-[1023px]:grid-cols-3');
     expect(source('prototype/ContactsMemoryCard.tsx')).toContain('grid-rows-[minmax(160px,40%)_minmax(0,1fr)]');
     expect(source('prototype/ContactsMemoryCard.tsx')).toContain('sm:grid-cols-[210px_minmax(0,1fr)]');
     const capabilityCenter = source('prototype/CapabilityCenter.tsx');

@@ -19,6 +19,9 @@ import { describe, expect, it, vi } from 'vitest';
 import { LLMTab } from './LLMTab';
 
 function rendre(error: string | null, saved = false) {
+  // Lot 9 : `cleInvalide` distingue un REFUS DE CLÉ de toute autre erreur ; lui
+  // seul rend l'alerte ici (la coque se tait alors). L'état reproduit est le
+  // même qu'avant : un préfixe refusé par `handleSaveApiKey`.
   render(
     <LLMTab
       selectedProvider="anthropic"
@@ -34,6 +37,7 @@ function rendre(error: string | null, saved = false) {
       saving={false}
       saved={saved}
       error={error}
+      cleInvalide={error !== null}
       setError={vi.fn()}
       onSelectProvider={vi.fn()}
       onSelectModel={vi.fn()}
