@@ -129,14 +129,17 @@ export const FOURNISSEURS: FournisseurConfig[] = [
     keyPlaceholder: 'sk-ant-...',
     consoleUrl: 'https://console.anthropic.com/settings/keys',
     models: [
+      // B-753 : un identifiant n'apparaît qu'UNE fois. `Select` pose
+      // `key={opt.value}` : `claude-fable-5` et `claude-sonnet-5` étaient
+      // déclarés deux fois, avec un second badge, et le sélecteur servait deux
+      // lignes identiques sous la même clé React. La première déclaration fait
+      // foi ; aucun modèle ne quitte le catalogue.
       // Fable 5 : modèle frontier Anthropic (1M contexte). Thinking toujours
       // actif, paramètres de sampling refusés - géré côté provider backend.
       { id: 'claude-fable-5', name: 'Claude Fable 5', badge: 'Frontier' },
       { id: 'claude-opus-5', name: 'Claude Opus 5', badge: 'Recommandé' },
-      { id: 'claude-fable-5', name: 'Claude Fable 5', badge: 'Puissance max' },
       { id: 'claude-sonnet-5', name: 'Claude Sonnet 5', badge: 'Équilibré' },
       { id: 'claude-opus-4-8', name: 'Claude Opus 4.8' },
-      { id: 'claude-sonnet-5', name: 'Claude Sonnet 5', badge: 'Recommandé' },
       { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6', badge: 'Équilibré' },
       { id: 'claude-haiku-4-5-20251001', name: 'Claude Haiku 4.5', badge: 'Rapide' },
     ],
@@ -197,9 +200,10 @@ export const FOURNISSEURS: FournisseurConfig[] = [
     consoleUrl: 'https://console.x.ai',
     models: [
       // ATTENTION : l'ID API est grok-4.5 avec un POINT (grok-4-5 -> 404).
+      // B-753 : grok-4.5 était lui aussi déclaré deux fois - même clé React,
+      // même ligne servie en double. La première déclaration fait foi.
       { id: 'grok-4.5', name: 'Grok 4.5', badge: 'Flagship' },
       { id: 'grok-4.6', name: 'Grok 4.6', badge: 'Recommandé' },
-      { id: 'grok-4.5', name: 'Grok 4.5' },
       { id: 'grok-4.3', name: 'Grok 4.3' },
       { id: 'grok-4.20-0309-reasoning', name: 'Grok 4.20 Reasoning', badge: 'Raisonnement' },
       { id: 'grok-4.20-0309-non-reasoning', name: 'Grok 4.20', badge: 'Rapide' },

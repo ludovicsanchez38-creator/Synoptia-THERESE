@@ -8,7 +8,7 @@
  */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { _viderLeCache, chargerCatalogue, decorer, selectionApresCatalogue } from './catalogueModeles';
+import { FOURNISSEURS, _viderLeCache, chargerCatalogue, decorer, selectionApresCatalogue } from './catalogueModeles';
 
 afterEach(() => {
   _viderLeCache();
@@ -76,4 +76,24 @@ describe('La liste fraîche ne reclasse jamais un choix explicite', () => {
   it('ne casse rien sur une liste vide', () => {
     expect(selectionApresCatalogue('gpt-5.4', [], false)).toBe('gpt-5.4');
   });
+});
+
+/**
+ * B-753 - deux options du sélecteur portaient la même clé React.
+ *
+ * `Select` pose `key={opt.value}`, et `ModelSelector` dérive ses options de la
+ * liste de repli : un identifiant présent deux fois dans `FOURNISSEURS` sort
+ * deux fois du sélecteur, avec l'avertissement « two children with the same
+ * key » et, à l'usage, deux lignes identiques dont une seule est atteignable.
+ * La garde porte sur TOUS les fournisseurs, pas seulement sur celui du bug :
+ * le même copier-coller avait dédoublé `grok-4.5`.
+ */
+describe('Le catalogue de repli ne propose jamais deux fois le même modèle', () => {
+  for (const fournisseur of FOURNISSEURS) {
+    it(`${fournisseur.id} : un identifiant, une seule entrée`, () => {
+      const ids = fournisseur.models.map((modele) => modele.id);
+      const doublons = ids.filter((id, rang) => ids.indexOf(id) !== rang);
+      expect(doublons).toEqual([]);
+    });
+  }
 });
