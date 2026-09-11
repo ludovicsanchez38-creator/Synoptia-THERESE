@@ -69,6 +69,28 @@ describe('lot 8 : les champs gardent leurs identifiants et leurs libellés', () 
     expect(etiquette.className, "le label d'une case est à côté, pas au-dessus").not.toMatch(/\bblock\b/);
   });
 
+  it('la description ne prend pas de poignée de redimensionnement', () => {
+    monter();
+    const description = screen.getByLabelText(/^Description/) as HTMLTextAreaElement;
+    expect(description.tagName).toBe('TEXTAREA');
+    // La primitive rend `resize-y` dès qu'elle n'auto-grandit pas : sur ce
+    // champ, `main` posait `resize-none`, et la poignée n'est pas au design.
+    expect(description.className).toMatch(/\bresize-none\b/);
+    expect(description.className).not.toMatch(/\bresize-y\b/);
+  });
+
+  it('l’aide des participants est reliée au champ, et se lit avant lui', () => {
+    const { container } = monter();
+    const champ = screen.getByLabelText(/^Participants/) as HTMLInputElement;
+    const aide = container.querySelector('#eventform-participants-desc') as HTMLElement;
+    expect(aide, 'la description est rendue par FormField').not.toBeNull();
+    expect(aide.textContent).toBe('Séparez les emails par des virgules');
+    expect(champ.getAttribute('aria-describedby')).toContain('eventform-participants-desc');
+    // Position assumée au design (§ 6) : une consigne de saisie se lit avant
+    // le champ, et `aria-describedby` l'annonce désormais au lecteur d'écran.
+    expect(aide.compareDocumentPosition(champ) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
   it('le titre et le geste d’enregistrement sont ceux du lot', () => {
     monter();
     expect(screen.getByRole('heading', { level: 3, name: 'Nouveau rendez-vous' })).toBeInTheDocument();

@@ -74,6 +74,21 @@ function laSection(container: HTMLElement): HTMLElement {
   return container.querySelector('section') as HTMLElement;
 }
 
+/** Revue du lot 8, point 5 : la même recette que `CalendarPanel.da.test.tsx`,
+ *  posée ici pour qu'elle voie les quatre vues et pas la seule Semaine. Le
+ *  panneau garde la sienne : elle couvre sa barre d'outils. */
+function textesMinusculesDansUnInteractif(racine: HTMLElement): string[] {
+  const fautifs: string[] = [];
+  for (const interactif of racine.querySelectorAll('button, a, input, select, textarea, [role="button"]')) {
+    const visiter = (n: Element) => {
+      if (/\btext-xs\b/.test(classesDUnNoeud(n))) fautifs.push(classesDUnNoeud(n).slice(0, 80));
+      for (const enfant of Array.from(n.children)) visiter(enfant);
+    };
+    visiter(interactif);
+  }
+  return fautifs;
+}
+
 beforeEach(() => {
   vi.useFakeTimers({ shouldAdvanceTime: true });
   vi.setSystemTime(MAINTENANT);
@@ -305,11 +320,40 @@ describe('lot 8 (4) : la grille mois', () => {
     const grille = container.querySelector('div.grid-cols-7') as HTMLElement;
     expect(grille.className).not.toMatch(/\boverflow-/);
     expect(grille.className).toMatch(/\bmin-h-full\b/);
-    expect(grille.className).toMatch(/grid-rows-\[auto_repeat\(6,minmax\(5\.5rem,1fr\)\)\]/);
+    /* Revue du lot 8, point 1 : mesuré dans Chromium sur une reproduction de
+       la structure (carte `flex-1 min-h-0 overflow-y-auto`, grille `min-h-full`).
+       `minmax(5.5rem,1fr)` n'écrase pas la rangée — la hauteur de la grille
+       étant indéterminée, la piste `1fr` monte au max-content — mais elle
+       ÉGALISE les six rangées sur la plus chargée : un seul jour à trois
+       puces impose 260 px de défilement à tout le mois sur une carte de
+       597 px. Et une rangée d'en-têtes en `auto` gonfle de 35 à 84 px sur une
+       fenêtre haute, parce que `align-content: stretch` étire aussi cette
+       piste-là. D'où `max-content` pour l'en-tête, `auto` pour les six
+       semaines, et le plancher rendu à la case comme dans la maquette
+       (`agenda.html:28`) : rangée chargée 137 px, rangée vide 88 px,
+       15 px de défilement au lieu de 260. */
+    expect(grille.className).toMatch(/grid-rows-\[max-content_repeat\(6,auto\)\]/);
     expect(grille.className, 'la carte porte déjà le trait et le rayon').not.toMatch(/\brounded-md\b/);
 
     for (const case_ of [...grille.children].slice(7)) {
-      expect(classesDUnNoeud(case_), 'la hauteur minimale vit sur les rangées').not.toMatch(/min-h-\[5\.5rem\]/);
+      expect(classesDUnNoeud(case_), 'le plancher vit sur la case, comme la maquette').toMatch(/min-h-\[5\.5rem\]/);
+    }
+  });
+
+  it('un seul trait entre les en-têtes et la première semaine', () => {
+    const { container } = render(<CalendarView />);
+    const enfants = [...(container.querySelector('div.grid-cols-7') as HTMLElement).children] as HTMLElement[];
+    for (const entete of enfants.slice(0, 7)) {
+      expect(
+        entete.className,
+        'l’en-tête est collant : sans son propre trait, la séparation disparaît au défilement',
+      ).toMatch(/\bborder-b\b/);
+    }
+    for (const case_ of enfants.slice(7, 14)) {
+      expect(
+        classesDUnNoeud(case_),
+        'la première rangée de cases ne redouble pas le trait de l’en-tête',
+      ).toMatch(/\[&:nth-child\(-n\+14\)\]:border-t-0/);
     }
   });
 
@@ -396,5 +440,62 @@ describe('lot 8 (7) : survol et anneau rentrant', () => {
       expect(interactif.className).toMatch(/\bhover:bg-surface-2\b/);
       expect(interactif.className).toMatch(/focus-visible:outline-offset-\[-3px\]/);
     }
+  });
+});
+
+/* Reprises de la revue adverse du lot 8 : points 3 (le libellé du Jour),
+   5 (la garde de 12 px, qui ne voyait que la Semaine) et 6 (le plancher de la
+   rangée « Journée »). */
+describe('lot 8 (8) : les reprises de la revue', () => {
+  it('jour : le libellé « Toute la journée » se lit en 14 px', () => {
+    semer({ events: [SALON], viewMode: 'day' });
+    const { container } = render(<CalendarView />);
+
+    const libelles = texteEntier(container, /^Toute la journée$/);
+    expect(libelles, 'la rangée « Toute la journée » est rendue').toHaveLength(1);
+    expect(
+      libelles[0].className,
+      'ce libellé court sur toute la largeur : rien ne justifie le 12 px de la gouttière de la Semaine',
+    ).toMatch(/\btext-sm\b/);
+    expect(libelles[0].className).not.toMatch(/\btext-xs\b/);
+  });
+
+  it('semaine : les cellules « Journée » gardent un plancher en pixels', () => {
+    semer({ events: [SALON] });
+    const { container } = render(<CalendarView />);
+
+    const cellules = [...gabarits(container)[1].children].slice(1) as HTMLElement[];
+    expect(cellules, 'sept jours après la gouttière').toHaveLength(7);
+    for (const cellule of cellules) {
+      expect(
+        cellule.className,
+        'la préférence d’accessibilité « Petite » pose 14 px sur <html> : 2 rem y vaudrait 28 px',
+      ).toMatch(/min-h-\[32px\]/);
+      expect(cellule.className).not.toMatch(/min-h-\[2rem\]/);
+    }
+  });
+
+  for (const vue of ['week', 'day', 'month', 'list'] as const) {
+    it(`« ${vue} » : aucun texte de 12 px sous un interactif`, () => {
+      semer({ events: [SEANCE, SALON, CHEVAUCHE_A, CHEVAUCHE_B, COURT], viewMode: vue });
+      const { container } = render(<CalendarView />);
+
+      expect(
+        container.querySelectorAll('button').length,
+        'sans interactif rendu, cette garde ne prouverait rien',
+      ).toBeGreaterThan(0);
+      const fautifs = textesMinusculesDansUnInteractif(container);
+      expect(fautifs, fautifs.join(' | ')).toEqual([]);
+    });
+  }
+
+  it('mois : le « +N autres » reste en 12 px, et hors de tout bouton', () => {
+    semer({ events: [SEANCE, SALON, CHEVAUCHE_A, CHEVAUCHE_B, COURT], viewMode: 'month' });
+    const { container } = render(<CalendarView />);
+
+    const surplus = texteEntier(container, /^\+2 autres$/);
+    expect(surplus, 'cinq rendez-vous le 2 septembre, trois puces et un surplus').toHaveLength(1);
+    expect(surplus[0].className).toMatch(/\btext-xs\b/);
+    expect(surplus[0].closest('button'), 'un texte de 12 px n’a le droit d’exister qu’hors interactif').toBeNull();
   });
 });

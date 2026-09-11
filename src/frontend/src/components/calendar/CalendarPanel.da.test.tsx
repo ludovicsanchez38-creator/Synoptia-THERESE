@@ -292,6 +292,28 @@ describe('lot 8 (8) : le groupe d’actions est poussé à droite', () => {
     expect(parent.contains(geste), 'segments et geste partagent un parent').toBe(true);
     expect(parent.className).toMatch(/\bml-auto\b/);
   });
+
+  it('le repli se déclenche au seuil du lot 1, à 840 px inclus', async () => {
+    await monter();
+    const parent = screen.getByRole('group', { name: "Vue de l'agenda" }).parentElement as HTMLElement;
+    // `Carte.tsx:56` pose `max-[840px]:basis-full` : à 839 px, la largeur de
+    // recette de 840 px ne prouvait pas le repli qu'elle est censée prouver.
+    expect(parent.className).toMatch(/max-\[840px\]:basis-full/);
+    expect(parent.className).not.toMatch(/max-\[839px\]/);
+  });
+});
+
+describe('lot 8 (12) : la table des vues est typée sur le store', () => {
+  it('plus de cast au bord des segments, le type vient du store', () => {
+    const src = source('CalendarPanel.tsx');
+    expect(
+      src,
+      'un cast blanchit la table : une faute de frappe dans un `id` compilerait et casserait `choisirVue` en silence',
+    ).not.toMatch(/as '(month|week|day|list)'/);
+    expect(src, 'le type des vues se dérive du store, il ne se recopie pas').toMatch(
+      /ReturnType<typeof useCalendarStore\.getState>\['viewMode'\]/,
+    );
+  });
 });
 
 describe('lot 8 (9) : le pied qui nomme l’agenda courant', () => {
