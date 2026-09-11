@@ -216,12 +216,12 @@ export function BoardHistoryCard({
             puce={run.status === 'running'
               ? <Spinner taille="bouton" />
               : run.status === 'complete'
-                ? <CheckCircle2 className={ICONE} />
-                : <AlertCircle className={ICONE} />}
+                ? <CheckCircle2 aria-hidden="true" className={ICONE} />
+                : <AlertCircle aria-hidden="true" className={ICONE} />}
             titre={run.question}
             detail={run.phase || run.status}
             coupe
-            droite={<ChevronRight className={ICONE} />}
+            droite={<ChevronRight aria-hidden="true" className={ICONE} />}
             onClick={onOpenCurrent}
           />
         </div>
@@ -271,7 +271,7 @@ export function BoardHistoryCard({
             <Ligne
               key={decision.id}
               domaine="prospects"
-              puce={<History className={ICONE} />}
+              puce={<History aria-hidden="true" className={ICONE} />}
               titre={decision.question}
               detail={decision.recommendation}
               coupe
@@ -284,7 +284,7 @@ export function BoardHistoryCard({
                   <Etiquette ton={tonDuConsensus(decision.confidence)}>
                     {confidenceLabel(decision.confidence)}
                   </Etiquette>
-                  <ChevronRight className={ICONE} />
+                  <ChevronRight aria-hidden="true" className={ICONE} />
                 </>
               }
               onClick={() => onOpenDecision(decision.id)}
@@ -483,7 +483,7 @@ function AdvisorOpinionCard({
   const icone = streaming
     ? <Spinner taille="ligne" />
     : aDuContenu && advisor?.isComplete
-      ? <CheckCircle2 className={`${ICONE} text-success`} />
+      ? <CheckCircle2 aria-hidden="true" className={`${ICONE} text-success`} />
       : pastille;
 
   return (
@@ -591,7 +591,9 @@ function BoardRunView({
       {/* La progression reste au-dessus des cinq cartes : dans un panneau qui
           défile, le seul indicateur vivant ne doit pas tomber sous elles. */}
       {enCours && (
-        <div>
+        /* La teinte de l'accent : c'est la seule zone vivante d'un panneau
+           qui défile, elle ne doit pas se lire comme un blanc. */
+        <div className="rounded-md border border-accent-cyan/30 bg-accent-tint p-3">
           <div className="flex items-center gap-2 text-sm font-semibold text-accent" role="status">
             {run.isSearchingWeb
               ? <Globe aria-hidden="true" className={`${ICONE} animate-pulse`} />
@@ -966,7 +968,8 @@ export function BoardWorkspaceCanvas({
     <div className="flex h-full flex-col">
       {/* `pr-16` : le bouton Fermer est en absolu à droite du bandeau. */}
       <div className="border-b border-border px-5 py-4 pr-16">
-        <h2 className="mt-2 text-xl font-bold tracking-[-0.02em] text-text">Décision</h2>
+        {/* Pas de `mt-2` : il réservait l'écart au sur-titre, parti avec le lot. */}
+        <h2 className="text-xl font-bold tracking-[-0.02em] text-text">Décision</h2>
         <p className="mt-1 text-sm text-text-muted">
           Cinq regards, leurs divergences et une synthèse sauvegardée dans l’historique local.
         </p>

@@ -7,9 +7,19 @@
  *
  *   FRONTEND_URL=http://localhost:1420 node src/frontend/scripts-recette/recette-da-lot7.mjs
  *
- * États forcés par interception : `**\/api/board/decisions*` et
- * `**\/api/board/advisors` par `page.route`, le flux SSE de
- * `**\/api/board/deliberate` par un `window.fetch` de recette posé en
+ * Ouverture : l'écran habillé par le lot 7 est le SCÉNARIO `board` de la
+ * coque (`?prototype=conversation-canvas&scenario=board`,
+ * `ConversationCanvasPrototype.tsx:740` puis `:1823`), pas l'action
+ * `board.open`, qui appelle `toggleBoardPanel` (`actionRegistry.ts:76`) et
+ * ouvre le `BoardPanel` classique — l'écran que la décision 1 du design met
+ * hors lot.
+ *
+ * États forcés par interception : des PRÉDICATS SUR LE CHEMIN, jamais des
+ * globs (leçon des lots 5 et 6, et P1 de la revue du diff). Un
+ * `**\/api/board/decisions*` ne voit pas le détail `/api/board/decisions/{id}`
+ * (une étoile simple vaut `[^/]*`), et un `**\/api/board/decisions**` verrait
+ * en plus les modules Vite servis sous un chemin voisin. Le flux SSE de
+ * `/api/board/deliberate` reste servi par un `window.fetch` de recette posé en
  * `addInitScript`.
  *
  * POURQUOI un fetch de recette et pas `route.fulfill` pour le SSE : `fulfill`
@@ -146,15 +156,29 @@ async function poserLeFluxSSE(page, { evenements, ferme }) {
 }
 
 async function intercepter(page, { liste = LISTE, detail = DECISION, status = 200, delaiMs = 0 } = {}) {
-  await page.route('**/api/board/advisors', (route) => route.fulfill({ json: CONSEILLERS }));
-  await page.route('**/api/board/decisions*', async (route) => {
+  /* Sur une pile jetable, la base est vierge : sans cette route, l'assistant
+     de premier lancement recouvre la coque et la recette meurt avant la
+     première capture. GET seulement : le POST de fin d'assistant n'est
+     jamais joué ici, on le laisse passer. */
+  await page.route((u) => u.pathname === '/api/config/onboarding-complete', async (route) => {
+    if (route.request().method() !== 'GET') {
+      await route.continue();
+      return;
+    }
+    await route.fulfill({ json: { completed: true } });
+  });
+  await page.route((u) => u.pathname === '/api/board/advisors', (route) => route.fulfill({ json: CONSEILLERS }));
+  /* `startsWith` couvre la liste ET le détail `/api/board/decisions/{id}` :
+     c'est le point que le glob manquait, et les huit cas qui ouvrent un
+     détail tapaient le vrai backend. */
+  await page.route((u) => u.pathname.startsWith('/api/board/decisions'), async (route) => {
     if (delaiMs) await new Promise((ok) => setTimeout(ok, delaiMs));
     if (status >= 400) {
       await route.fulfill({ status, json: { detail: 'La base locale des décisions est illisible.' } });
       return;
     }
-    const url = new URL(route.request().url());
-    const estUnDetail = /\/api\/board\/decisions\/[^/]+$/.test(url.pathname);
+    const { pathname } = new URL(route.request().url());
+    const estUnDetail = /\/api\/board\/decisions\/[^/]+$/.test(pathname);
     await route.fulfill({ json: estUnDetail ? detail : liste });
   });
 }
@@ -231,8 +255,15 @@ async function mesurer(page) {
 
     const metaAvis = cartesAvis[0]?.querySelector('p');
     const barre = document.querySelector('[role="progressbar"]');
-    const statut = racine.querySelector('[data-etiquette]');
+    /* Le § 8.3 demande « étiquette de statut (une seule) ». Elle vit dans la
+       meta de la question, c'est-à-dire la `Carte as="section"` du premier
+       `h3` du montage (`CarteQuestion` ouvre `BoardRunView` comme
+       `DecisionDetail`). Comptée sur le canevas entier, la mesure ramasserait
+       aussi la pilule de consensus de la synthèse et les « Avis non rendu » :
+       un détail sain rendrait 2 et se lirait comme un échec. */
     const question = racine.querySelector('h3');
+    const carteQuestion = question?.closest('section') ?? null;
+    const etiquettes = carteQuestion ? [...carteQuestion.querySelectorAll('[data-etiquette]')] : [];
     const synthese = document.querySelector('[data-testid="board-synthesis"]');
     const squelettes = [...document.querySelectorAll('[aria-hidden="true"] > div[class*="animate-"]')].map((b) => Math.round(r(b).width));
 
@@ -264,8 +295,9 @@ async function mesurer(page) {
         : null,
       metaAvisCoupee: metaAvis ? metaAvis.scrollWidth > metaAvis.clientWidth && cs(metaAvis).textOverflow === 'ellipsis' : null,
       barreVisibleSansDefiler: barre ? Math.round(r(barre).top) < window.innerHeight : null,
-      etiquettesDeStatut: racine.querySelectorAll('[data-etiquette]').length,
-      statut: statut?.textContent ?? null,
+      etiquettesDeStatut: etiquettes.length,
+      statut: etiquettes[0]?.textContent ?? null,
+      etiquettesDuMontage: racine.querySelectorAll('[data-etiquette]').length,
       tailleQuestion: question ? cs(question).fontSize : null,
       metaSynthese: synthese?.querySelector('p')?.textContent ?? null,
       iconePhase: (() => {
@@ -280,7 +312,7 @@ async function mesurer(page) {
       nouvelleQuestion: [...document.querySelectorAll('button')].some((b) => b.textContent.trim() === 'Nouvelle question'),
       divergences: [...document.querySelectorAll('h3')].some((h) => /Où les avis divergent/.test(h.textContent)),
       largeursSquelettes: squelettes,
-      margeQuestion: question ? cs(question.closest('section')).padding : null,
+      margeQuestion: carteQuestion ? cs(carteQuestion).padding : null,
       margeAvis: cartesAvis[0] ? cs(cartesAvis[0]).padding : null,
       margeSynthese: synthese ? cs(synthese.querySelector('[class*="pb-4"]')).padding : null,
     };
@@ -433,7 +465,12 @@ async function main() {
         const boite = await rangee.boundingBox();
         // La puce, à gauche du titre : hors du texte, dans la rangée.
         await page.mouse.click(boite.x + 16, boite.y + boite.height / 2);
-        const ouvert = await page.getByTestId('board-decision-detail').isVisible({ timeout: 8000 }).catch(() => false);
+        /* `isVisible({ timeout })` ignore son option et répond tout de suite :
+           la garde rendait `false` même quand le clic étiré marchait. */
+        const ouvert = await page.getByTestId('board-decision-detail')
+          .waitFor({ state: 'visible', timeout: 8000 })
+          .then(() => true)
+          .catch(() => false);
         await capturer(page, 'clic-sur-la-puce-1280-light-16px');
         return { nom: 'clic-sur-la-puce', ouvreLaDecision: ouvert };
       } finally {
