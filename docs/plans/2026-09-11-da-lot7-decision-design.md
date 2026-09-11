@@ -1,6 +1,6 @@
 # DA « Application affinée », lot 7 : l'écran Décision (Board) (design à challenger avant le code)
 
-Version 4, 11/09/2026 01:09, après la revue de la v3 (6 points repris, 0 non repris) ; journal `.cartography-work/reviews/grok-da-lot7-decision-design-v3.log`. Précédent : lot 3 (Tiroir), livré sur `main` ;
+Version 5, 11/09/2026 09:32, après la revue de la v4 (10 points repris, 0 non repris) ; journal `.cartography-work/reviews/opus-da-lot7-decision-design-v4.log`. Précédent : lot 3 (Tiroir), livré sur `main` ;
 cadence : une seule release pour toute la DA (décision Ludo 11/09, 0.72.0-alpha
 porte l'ensemble). Maquette :
 `docs/da/2026-09-05-propositions/maquettes/decision.html` (états `normal`,
@@ -35,7 +35,7 @@ store, aucun parcours ne change.
    hotfix 0.48.1). La maquette est une page à 66 rem : page pleine = P-080.
 3. Les cinq noms officiels restent (L'Analyste, Le Stratège, L'Avocat du
    Diable, Le Pragmatique, Le Visionnaire). Les noms maquette (Financier,
-   Opérationnel, Voix du client, Contradicteur) sont P-0xy.
+   Opérationnel, Voix du client, Contradicteur) sont P-088.
 4. Les portraits (`CharacterPortrait` index 1 à 5) restent l'avatar de
    chaque conseiller (le glyphe lettre de la maquette est un bouche-trou).
 5. La formulation de la maquette remplace les mentions techniques là où
@@ -69,8 +69,27 @@ pas une variante) :
 | Cadre | `section` ombre `rgba`, `data-testid="board-history-card"` | `Carte as="section"` `aria-labelledby="board-history-title"` même testid ; `shadow-sm` |
 | Tête | portrait index 1 + `h2` « Décision » + meta | `CarteTete idTitre="board-history-title"` icône `Gavel` 18 px, titre « Décision » ; meta inchangée : chargement « Lecture de l'historique local » ; `ready` → `libelleDecisionsChargees(n)` (`n >= 30` : « n décisions chargées (total non mesuré) » ; sinon « n décision(s) enregistrée(s) », pluriel `n > 1`) |
 | Actions | boutons maison « Nouvelle question » + `BoutonOuvrirLaVue` | `Button variant="primary" size="md"` « Nouvelle question », `Plus` 18 px, même `onNewBoard` ; `BoutonOuvrirLaVue vue="board"` `className={CLASSE_BOUTON_VUE}`, libellé « Ouvrir Décision » inchangé |
-| Run en cours | bouton `data-testid="board-current-run"`, titre `text-xs` | `<div data-testid="board-current-run">` enveloppe `Ligne` (pas une prop de `Ligne` : `Ligne.tsx:26-35` n'a ni rest props ni `data-testid`) ; `Ligne domaine="prospects"` `onClick={onOpenCurrent}` puce = `Spinner taille="bouton"` (16 px, dans la puce `h-8`, comme lot 2 ; `Spinner` n'a pas 18 px : `ligne` 14, `bouton` 16, `zone` 24, `Spinner.tsx:17-24`) / `CheckCircle2` 18 px / `AlertCircle` 18 px selon `running` / `complete` / autre ; titre = `run.question` en `text-sm` ; detail = `run.phase \|\| run.status` ; `ChevronRight` 18 px muted |
-| Lignes | bouton flex, reco + date `text-xs`, `truncate` | `Ligne domaine="prospects"` puce `History` 18 px, `onClick={() => onOpenDecision(id)}` ; titre = `decision.question` sans `truncate` ; `Ligne.detail` = `decision.recommendation` **seul** (le `p` de `Ligne.tsx:80` a ce textContent exact : le test `getByText(synthesis.recommendation)` de `BoardConversationCard.test.tsx:51-52` reste vert ; une concaténation `reco · date · mode` le casserait, matcher exact par défaut) ; `droite` = `<span className="text-sm text-text-muted">{formatDate(decision.created_at)} · {decision.mode === 'sovereign' ? 'Souverain' : 'Cloud'}</span>` (sans « Mode », scan d'une liste de 5 ; le canevas § 3.1 porte « Mode souverain » / « Mode cloud ») + `Etiquette ton={high → succes, medium → neutre, low → neutre, sinon neutre}>{confidenceLabel(decision.confidence)}</Etiquette>` (jamais `erreur` : un consensus faible est un accord entre avis, revue 30/08, `BoardConversationCard.tsx:64-70` « Consensus faible ») + `ChevronRight` 18 px. Date et mode restent dans la ligne (`droite`) **et** dans la meta du canevas § 3.1 |
+| Run en cours | bouton `data-testid="board-current-run"`, titre `text-xs` | `<div data-testid="board-current-run">` enveloppe `Ligne` (pas une prop de `Ligne` : `Ligne.tsx:26-35` n'a ni rest props ni `data-testid`) ; `Ligne domaine="prospects"` `onClick={onOpenCurrent}` puce = `Spinner taille="bouton"` (16 px, dans la puce `h-8`, comme lot 2 ; `Spinner` n'a pas 18 px : `ligne` 14, `bouton` 16, `zone` 24, `Spinner.tsx:17-24`) / `CheckCircle2` 18 px / `AlertCircle` 18 px selon `running` / `complete` / autre ; titre = `run.question` en `text-sm`, `coupe` (même question longue) ; detail = `run.phase \|\| run.status` ; `ChevronRight` 18 px muted |
+| Lignes | bouton flex, reco + date `text-xs`, `truncate` | `Ligne domaine="prospects"` puce `History` 18 px, `onClick={() => onOpenDecision(id)}` ; titre = `decision.question`, **coupé à une ligne** par la prop `coupe` (ci-dessous, `Ligne` du lot 1) ; `Ligne.detail` = `decision.recommendation` **seul** (le `p` de `Ligne.tsx:80` a ce textContent exact : le test `getByText(synthesis.recommendation)` de `BoardConversationCard.test.tsx:51-52` reste vert ; une concaténation `reco · date · mode` le casserait, matcher exact par défaut) ; `droite` = `<span className="text-sm text-text-muted">{formatDate(decision.created_at)}{decision.mode ? ' · ' + (decision.mode === 'sovereign' ? 'Souverain' : 'Cloud') : ''}</span>` (sans « Mode », scan d'une liste de 5 ; le canevas § 3.1 porte « Mode souverain » / « Mode cloud »). **Segment de mode seulement si `decision.mode` est renseigné** : `BoardDecisionResponse.mode` est optionnel (`board.ts:54`) et aujourd'hui `BoardConversationCard.tsx:130` écrit « Cloud » sur un enregistrement sans mode, donc affirme un fait non mesuré ; aucune assertion ne porte sur cette chaîne (`BoardConversationCard.test.tsx` ne cherche « Souverain » que dans le radiogroup du formulaire, `:74`). Même règle qu'en meta du canevas § 3.1 : la liste et le détail ne donnent pas deux réponses au même enregistrement + `Etiquette ton={high → succes, medium → neutre, low → neutre, sinon neutre}>{confidenceLabel(decision.confidence)}</Etiquette>` (jamais `erreur` : un consensus faible est un accord entre avis, revue 30/08, `BoardConversationCard.tsx:64-70` « Consensus faible ») + `ChevronRight` 18 px. Date et mode restent dans la ligne (`droite`) **et** dans la meta du canevas § 3.1 |
+
+**La seule primitive du lot 1 qui bouge dans ce lot : `Ligne` gagne une prop
+`coupe?: boolean` (défaut `false`), dans le même commit que l'écran.** Sans
+elle, la liste perd la coupe d'aujourd'hui (`BoardConversationCard.tsx:130`,
+`truncate` sur la question **et** sur la reco) : `Ligne.tsx:80` rend le
+détail dans un `p` sans `truncate` et sans classe transmissible, et jusqu'à
+30 rangées de hauteur libre (une question réelle fait 90 caractères, le
+panneau 620 px) rendent la liste inscannable. `coupe` ajoute
+`block w-full truncate` au libellé (le `button` étiré quand la rangée est
+cliquable, le `span` sinon) et `truncate` au `p` du détail. **Jamais
+`relative` sur ce bouton** : son `before:absolute before:inset-0` se cale
+sur la rangée `relative` (`Ligne.tsx:65`) ; le positionner rabattrait le
+pseudo-élément sur le texte et tuerait le clic étiré (P1 de la revue du lot
+1, `Ligne.test.tsx:109-131`). `block w-full` est nécessaire : un `button`
+inline-block à largeur automatique déborde la cellule `1fr` au lieu d'être
+coupé. Défaut `false` : le seul autre composant qui monte `Ligne`
+(`TodayDashboardCard.tsx`, lot 2) ne la passe pas, son rendu et
+`Ligne.test.tsx` sont inchangés. La ligne d'historique Décision la passe,
+le run en cours aussi (même question longue).
 
 ## 2. Le canevas : `BoardWorkspaceCanvas`
 
@@ -85,7 +104,7 @@ passe sous le bouton.
 |---|---|---|
 | Bandeau | `div` `border-b border-border px-5 py-4 pr-16` (`:315`) | **mêmes classes** `px-5 py-4 pr-16` (`pr-16` inclus) |
 | Sur-titre | « Board réel » uppercase 12 px | retiré (mention technique) |
-| `h2` | « Délibération stratégique » / « Décision enregistrée » | « Décision » toujours (pas d'`id` aujourd'hui, on n'en invente pas) |
+| `h2` | « Délibération stratégique » / « Décision enregistrée » | « Décision » toujours (pas d'`id` aujourd'hui, on n'en invente pas) ; **classes inchangées, `text-xl` compris** (`BoardConversationCard.tsx:315` `mt-2 text-xl font-bold tracking-[-0.02em] text-text`) : les sept autres bandeaux de canevas de la coque portent la même chaîne sur leur `h2` (`AtelierConversationCard.tsx:355`, `CalculatorWorkspaceCanvas.tsx:287`, `DeliverablesWorkspaceCanvas.tsx:288`, `EmailConversationCard.tsx:361`, `MeetingConversationCard.tsx:448`, `ContactsMemoryCard.tsx:171`, `InvoiceConversationCard.tsx:699` ; chez Atelier et Board, le `h2` est sur la même ligne que le `div` du bandeau) et les réduire est hors lot ; c'est donc la **question** qui descend d'un cran (§ 3.1, `text-lg`) |
 | Sous-titre | « Cinq regards… » | inchangé |
 
 Ordre du corps, identique à `BoardWorkspaceCanvas.tsx:317-323` : 1) resource
@@ -95,22 +114,49 @@ loading ; 2) resource error ; 3) `showRun` ; 4) formulaire si `new-board` /
 ## 3. Question, statut, synthèse, avis
 
 Ordre dans `BoardRunView` et `DecisionDetail`, de haut en bas : question
-(§ 3.1), synthèse (§ 3.2 : carte pleine si elle existe, **placeholder** si
-`run.status === 'running'` sans `run.synthesis`), avis (§ 3.3), divergences
-(§ 3.4, seulement si une synthèse existe), extraits web, ligne d'usage
-de la synthèse, bandeaux d'état (§ 5), pied d'actions. Extraits et usage
-n'existent aujourd'hui que dans `DecisionDetail` (`BoardConversationCard.tsx:281-283`,
+(§ 3.1), **progression et phase** (§ 5, `BoardRunView` et `run.status ===
+'running'` seulement), synthèse (§ 3.2 : carte pleine si elle existe,
+**placeholder** si `run.status === 'running'` sans `run.synthesis`), avis
+(§ 3.3), divergences (§ 3.4, seulement si une synthèse existe), extraits
+web, ligne d'usage de la synthèse, bandeaux d'état (§ 5), pied d'actions.
+La barre et la phase restent **au-dessus** des avis : juste après la
+`Carte` question et **hors** de cette carte (c'est un état, pas la
+question), avant la carte synthèse, comme aujourd'hui
+(`BoardConversationCard.tsx:173`, immédiatement avant la grille `:175`).
+Pendant un `running`, le seul indicateur vivant ne doit pas tomber sous
+cinq cartes qui coulent, dans un panneau de 620 px à défilement
+(`ConversationCanvasPrototype.tsx:333`). Ce qui reste en bas de § 5, ce
+sont les fins de course (`error`, `persistence_error`, `cancelled`), la
+confirmation d'annulation et le pied. Extraits et usage n'existent
+aujourd'hui que dans `DecisionDetail` (`BoardConversationCard.tsx:281-283`,
 après `SynthesisView`) : ils restent là, mais **après** les divergences et
 **avant** les bandeaux (absents du détail) et le pied. `BoardRunView` n'a
-ni extraits ni usage : question → synthèse → avis → divergences → bandeaux
-§ 5 → pied. La synthèse passe **au-dessus** des avis (critère « présentée
-tôt ») ; les gestionnaires ne changent pas.
+ni extraits ni usage : question → progression (`running`) → synthèse →
+avis → divergences → bandeaux § 5 → pied. La synthèse passe **au-dessus**
+des avis (critère « présentée tôt ») ; les gestionnaires ne changent pas.
+
+Les deux conteneurs **gardent leur `data-testid`** alors que § 3.1 et § 3.3
+réécrivent tout leur intérieur : `data-testid="board-run-view"` sur le `div`
+de `BoardRunView` (`BoardConversationCard.tsx:170`) et
+`data-testid="board-decision-detail"` sur celui de `DecisionDetail` (`:262`).
+Quatre assertions de `BoardConversationCard.test.tsx` passent par
+`board-decision-detail` (`:114`, `:115`, `:140`, `:141`) : les perdre
+casserait la suite pour une raison qui n'a rien à voir avec le lot.
+`board-run-view` n'en porte aucune aujourd'hui et reste quand même (recette
+§ 8 et garde § 6.2).
 
 ### 3.1 Question
 
-`Carte as="section"`. `h3 className="text-xl font-bold leading-6"` = la
+`Carte as="section"`. `h3 className="text-lg font-bold leading-6"` = la
 question (le label uppercase 12 px « Question soumise » / « Décision du … »
-sort : la date va dans la meta). Meta `text-sm font-medium text-text-muted`,
+sort : la date va dans la meta). **`text-lg` (1,125 rem), pas `text-xl`** :
+le `h2` « Décision » du bandeau garde `text-xl` (§ 2, chaîne commune aux sept
+autres canevas de la coque), et un `h3` aussi gros que le `h2` qui le domine
+contredirait le socle (`maquettes/da/base.css:50-51`, `h2` 1,1875 rem,
+`h3` 1 rem). La maquette met la question à 1,25 rem parce qu'elle y est le
+`h1` d'une page de 66 rem (`decision.html:6`, `.question h1`) : la page
+pleine P-080 le rétablira, le panneau de 620 px reste un cran en dessous.
+Meta `text-sm font-medium text-text-muted`,
 segments séparés par « · » :
 
 - **une seule** `Etiquette` de statut (jamais recopiée en bandeau § 5).
@@ -145,12 +191,28 @@ segments séparés par « · » :
   - **`BoardRunView`**, sinon : pas d'étiquette de statut dans la meta
     (échec sans avis, `persistence_error`, `cancelled` : bandeaux § 5
     seulement) ;
-- « Mode souverain » / « Mode cloud » (`run.mode` ou `decision.mode`) :
-  le préfixe « Mode » est **uniquement** dans la meta du canevas (maquette
-  `decision.html:63` « Mode souverain ») ; la ligne d'historique § 1 reste
-  « Souverain » / « Cloud » sans « Mode » (scan, aujourd'hui
-  `BoardConversationCard.tsx:130`) ;
-- « 5 conseillers » ;
+- mode : en `BoardRunView`, **toujours**
+  `run.mode === 'sovereign' ? 'Mode souverain' : 'Mode cloud'`
+  (`BoardRunState.mode` n'est pas optionnel, `usePrototypeBoardData.ts:39` ; le
+  formulaire en pose toujours un, `BoardConversationCard.tsx:193`). En
+  `DecisionDetail`, **le segment n'existe que si `decision.mode` est
+  renseigné** (`BoardDecisionDetail.mode?: string`, `board.ts:74`) : une
+  décision enregistrée avant le suivi du mode sortirait « Mode cloud » par
+  défaut, c'est-à-dire un fait non mesuré affiché comme mesuré. Le préfixe
+  « Mode » reste **uniquement** dans la meta du canevas (maquette
+  `decision.html:63` « Mode souverain ») ; la ligne d'historique § 1 garde
+  « Souverain » / « Cloud » sans « Mode » (scan) **et la même condition
+  d'existence** ;
+- nombre de conseillers : en `BoardRunView`, « 5 conseillers » (les cinq
+  cartes existent par construction, `advisorOrder.map`, § 3.3) ; en
+  `DecisionDetail`, `{decision.opinions.length} conseiller` suivi de `s` si
+  `decision.opinions.length > 1` — `opinions` est la liste réellement
+  sauvegardée (`board.ts:62-72` ; la fixture n'en a qu'une,
+  `BoardConversationCard.test.tsx:22`), et le détail ne doit pas annoncer
+  cinq avis quand il en affiche un (§ 3.3, « on n'invente pas un avis
+  manquant »). `DecisionDetail` n'a aujourd'hui ni l'un ni l'autre segment
+  (`BoardConversationCard.tsx:262-267`) : les deux constantes « 5
+  conseillers » et « Mode cloud » y seraient des inventions du lot ;
 - en `DecisionDetail` seulement : `formatDate(created_at)` (helper actuel,
   « Date inconnue » inchangé) ;
 - en run `complete` seulement, si `run.decisionId` : `Identifiant : {run.decisionId}`
@@ -165,7 +227,17 @@ Pas de durée, pas de « Contexte lu : contact, 2 devis » (P-080).
 `Carte.tsx:52` ; le canevas a déjà le `h2` « Décision », la question un
 `h3` : ordre h2 → h3 → h2 interdit). Tête à la main, mêmes classes que
 `CarteTete` : conteneur `flex flex-wrap items-center gap-3 px-4 pt-4 pb-2` ;
-pas d'icône (v1 n'en demandait pas) ; titre en `h3` « Synthèse » (sans
+**pastille reprise de la maquette** (`decision.html:68`,
+`div.carte-tete > .icone`), recopiée à la main puisque `CarteTete` n'est pas
+monté ici : `<span aria-hidden="true" className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent-tint text-accent">`
+(chaîne exacte de `Carte.tsx:43-50`) contenant
+`<Scale className="h-[18px] w-[18px]" />` (lucide, import à ajouter dans
+`BoardConversationCard.tsx`). Le glyphe de la maquette (axe vertical et deux
+chevrons opposés) n'est pas repris tel quel : son équivalent lucide,
+`ChevronsUpDown`, signifie « trier » ou « déplier » dans une interface, ce
+qu'une pastille décorative ne doit pas laisser croire ; la balance dit la
+pesée des cinq avis et reste dans le registre de l'écran (`Gavel` en tête de
+la carte d'historique § 1). Titre en `h3` « Synthèse » (sans
 classe : `@layer base` 1 rem) ; meta `p className="text-xs font-medium text-text-muted"`
 « Ce que les cinq avis ont en commun, et ce qui les sépare » (chaîne
 maquette `normal`, `decision.html:68`). L'état maquette `partiel` la
@@ -214,8 +286,16 @@ déjà en `strong` ; maquette `decision.html:78` `<b>La Stratège</b>`, pas un
 titre) ; meta `p className="text-sm text-text-muted"`
 = `advisor.provider \|\| info.personality` (run) ou
 `provider · modèle · coût` (détail, `formaterCout`, « provider inconnu » /
-« modèle non mesuré » inchangés). Pastille lettre S/F/O/C hors lot.
-Position Accepte / Refuse : P-0xy. Icônes de tête (run
+« modèle non mesuré » inchangés). **En détail, la meta n'est rendue que si
+`opinion.provider \|\| opinion.model`** : garde actuelle de
+`BoardConversationCard.tsx:273`, conservée telle quelle. Sans elle, une
+décision enregistrée avant le suivi des fournisseurs afficherait
+« provider inconnu · modèle non mesuré » sur chaque carte là où rien n'est
+affiché aujourd'hui, ce qui prend à revers le test « rend le détail
+sauvegardé sans inventer les providers historiques »
+(`BoardConversationCard.test.tsx:106`, fixture sans `provider` ni `model`,
+`:22`). Pastille lettre S/F/O/C hors lot.
+Position Accepte / Refuse : P-088. Icônes de tête (run
 `AdvisorOpinionCard` seulement, à droite du nom) : **dérivées de la table
 du corps ci-dessous**, pas de `isRunning` / `isComplete` seuls.
 Aujourd'hui `:156` : `isRunning` → `Spinner taille="ligne"`, `isComplete`
@@ -239,7 +319,7 @@ restent visibles ». D'où la table, **dérivable**, premier match :
 | contenu non vide, tout autre cas (y compris `isComplete`, `DecisionDetail`, **et** `isRunning: true` coincé après `error` / `persistence_error` / `cancelled`) | `CompactMarkdown className="mt-3 text-sm leading-6"` |
 | `run.status === 'running'` et `isRunning` sans contenu | `Etiquette ton="neutre"` « Réfléchit… » + deux `Squelette` `largeur="w-[80%]"` et `w-[60%]` |
 | `run.status === 'running'` et attente (pas encore dans `run.advisors`) | même squelette, sans étiquette « Réfléchit… » |
-| `run.status !== 'running'` et contenu vide (avis absent, `isRunning` coincé sans texte, ou `isComplete` sans texte) | `Etiquette ton="erreur"` « Avis non rendu » ; **jamais** le squelette ; **pas** de bouton « Redemander cet avis » (P-0xy) |
+| `run.status !== 'running'` et contenu vide (avis absent, `isRunning` coincé sans texte, ou `isComplete` sans texte) | `Etiquette ton="erreur"` « Avis non rendu » ; **jamais** le squelette ; **pas** de bouton « Redemander cet avis » (P-088) |
 
 Icônes de tête, **même table**, premier match (run seulement) :
 
@@ -316,7 +396,12 @@ même ligne ; sans ces deux phrases le code recopie `text-xs` deux fois).
 Confirmation
 `data-testid="board-confirmation"` : textes exactement ceux d'aujourd'hui
 (six appels, Ollama sans repli) ; `Button variant="ghost" size="md"` Annuler ;
-`Button variant="primary" size="md"` « Confirmer et lancer ». Geste :
+`Button variant="primary" size="md"` « Confirmer et lancer »,
+`disabled={run.status === 'running'}` **inchangé**
+(`BoardConversationCard.tsx:253`) : c'est le filet contre un second POST, le
+motif exact des deux P1 du Board souverain. `Button` transmet `disabled` et
+pose `disabled:opacity-50 disabled:cursor-not-allowed` (`Button.tsx:16-24`),
+qui remplace le `disabled:opacity-60` écrit à la main aujourd'hui. Geste :
 `Button variant="primary" size="md"` « Préparer la délibération », `Gavel`
 18 px, même `requestConfirmation`.
 
@@ -329,10 +414,10 @@ ne porte plus que progressbar, phase, bandeaux, boutons.
 |---|---|---|
 | historique, chargement | spinner + « Je consulte les décisions… » | même `div` grille que `SqueletteDeLigne` (`TodayDashboardCard.tsx:71-81`) : `div className="grid grid-cols-[2rem_1fr_auto] items-center gap-3 border-t border-border px-4 py-3"` + `Squelette largeur="w-8" classeBarre="h-8 rounded-sm"` + deux barres `largeur="w-[60%]"` / `largeur="w-[40%]"` ; trois rangées dans un `div aria-hidden="true"` (pas `Ligne` : `Ligne.tsx:26-35` n'a pas de rest props, `aria-hidden` ignoré / refusé par TS) ; puis le texte actuel en `role="status"` `px-4 py-3 text-sm text-text-muted` |
 | historique, erreur | icône + « Historique indisponible » + message + Réessayer + Ouvrir | `Alerte data-testid="board-history-error"` `icone={AlertCircle 18 px}` titre « Historique indisponible », `children` = `resource.error`, `action` = `Button variant="secondary" size="md"` Réessayer ; « Ouvrir Décision » reste en tête (un seul Réessayer) |
-| historique, vide | « Aucune décision enregistrée » + « Convoquer le Board » | `EtatVide data-testid="board-history-empty"` titre et texte actuels, `action` = `Button variant="primary" size="md"` « Convoquer le Board » |
+| historique, vide | « Aucune décision enregistrée » + « Convoquer le Board » | `EtatVide data-testid="board-history-empty"` titre et texte actuels, `action` = `Button variant="primary" size="md"` « Convoquer le Board » ; la `Gavel` d'aujourd'hui (`BoardConversationCard.tsx:124`) est **volontairement abandonnée** : `EtatVide` n'a pas de prop `icone` (`EtatVide.tsx:11-16`) et la glisser dans `children` la mettrait à l'intérieur du `p` du texte (`EtatVide.tsx:22`), au milieu d'une phrase ; le titre porte l'état. Le `data-testid` passe par les rest props (`EtatVide` étend `HTMLAttributes<HTMLDivElement>`) |
 | canevas, chargement resource / décision | spinner + « Chargement du Board… » / « Chargement de la décision… » | mêmes textes en `role="status"`, plus deux `Squelette` |
-| canevas, erreur resource / décision | message + Réessayer | `Alerte` titre = le message actuel, `action` = `Button secondary md` Réessayer (`onRetry` / `onRetryDecision`) |
-| run `running` | barre + phase + N/5 | pas d'`Etiquette` ici (meta § 3.1) ; barre visible `div.mt-2.h-1.5.overflow-hidden.rounded-full.bg-surface` `role="progressbar"` `aria-label="Progression de la délibération"` `aria-valuemin={0}` `aria-valuemax={5}` `aria-valuenow={completed}` `aria-valuetext={`${completed} conseiller${completed > 1 ? 's' : ''} sur 5 terminé${completed > 1 ? 's' : ''}`}` (mêmes `aria-*` qu'aujourd'hui, `BoardConversationCard.tsx:173` ; la maquette n'a pas de barre, l'écran actuel si) ; remplissage `h-full bg-domaine-prospects` `width: ${Math.max(4, completed / 5 * 100)}%` ; phase actuelle en `role="status"` `text-sm` ; bouton `Button variant="danger" size="md"` « Annuler la délibération » |
+| canevas, erreur resource / décision | message + Réessayer | `Alerte icone={<AlertCircle className="h-[18px] w-[18px]" />}` (les deux, comme l'`Alerte` de l'historique : `Alerte` a la prop et ne rend rien sans elle, `Alerte.tsx:31-35` ; aujourd'hui l'icône existe aux deux endroits, `BoardConversationCard.tsx:318` et `:322`), titre = le message actuel, `action` = `Button secondary md` Réessayer (`onRetry` / `onRetryDecision`) |
+| run `running` | barre + phase + N/5 | pas d'`Etiquette` ici (meta § 3.1) ; **place : juste après la `Carte` question et avant la carte synthèse** (§ 3), pas en bas du corps ; le bouton « Annuler la délibération » ci-dessous reste, lui, au pied d'actions en bas (aujourd'hui `BoardConversationCard.tsx:185`) ; barre visible `div.mt-2.h-1.5.overflow-hidden.rounded-full.bg-surface` `role="progressbar"` `aria-label="Progression de la délibération"` `aria-valuemin={0}` `aria-valuemax={5}` `aria-valuenow={completed}` `aria-valuetext={`${completed} conseiller${completed > 1 ? 's' : ''} sur 5 terminé${completed > 1 ? 's' : ''}`}` (mêmes `aria-*` qu'aujourd'hui, `BoardConversationCard.tsx:173` ; la maquette n'a pas de barre, l'écran actuel si) ; remplissage `h-full bg-domaine-prospects` `width: ${Math.max(4, completed / 5 * 100)}%` ; phase actuelle en `role="status"` `text-sm` ; bouton `Button variant="danger" size="md"` « Annuler la délibération » |
 | run `running`, confirmation | `data-testid="board-cancel-confirmation"` | le même `div` (pas `Alerte` : ce n'est pas une erreur), textes conservés ; `Button secondary md` « Continuer en arrière-plan » ; `Button danger md` « Confirmer l'annulation » |
 | run `complete` | bandeau vert + identifiant | pas d'`Etiquette` ici (meta § 3.1 « Décision enregistrée ») ; identifiant déjà dans la meta § 3.1 (`Identifiant : {run.decisionId}`) ; `Button variant="primary" size="md"` « Nouvelle question » `onReset` (pied commun, ci-dessous) |
 | run `error` / `persistence_error` | bandeau `role="alert"` à deux `<p>` | `Alerte` titre = le gras actuel (« Sauvegarde non vérifiée. » / « Délibération incomplète. ») ; `children` = **un seul texte** (les deux phrases concaténées, espace au milieu) : `{run.error}` + « Les avis partiels restent visibles mais aucune conclusion ne doit être considérée comme sauvegardée. » (si `run.error` est vide, la seconde phrase seule). `Alerte` enveloppe `children` dans un seul `<p>` (`Alerte.tsx:38`) : deux `<p>` dans `children` = HTML invalide. Pas de Réessayer (aucun aujourd'hui). Cette `Alerte` n'est **pas** le statut : si `run.status === 'error'` et au moins un avis rendu, le statut est l'`Etiquette ton="attention"` § 3.1, l'`Alerte` se colle **sous** ; si zéro avis, pas d'étiquette, l'`Alerte` « Délibération incomplète. » reste seule. `persistence_error` : pas l'étiquette partielle (ce n'est pas un avis manquant), `Alerte` « Sauvegarde non vérifiée. » seule. Pied : `Button variant="primary" size="md"` « Nouvelle question » `onReset` (aujourd'hui `BoardConversationCard.tsx:185` : `running` ? Annuler : Nouvelle question, donc aussi sur erreur). Le canevas affiche `BoardRunView` tant que `status !== 'idle'` (`:312`) ; sous `xl`, le canevas est un calque `absolute` `max-w-[620px]` (`ConversationCanvasPrototype.tsx:333`, `xl:relative`) qui recouvre la carte (où le même geste existe encore) : sans ce bouton, plus aucun geste dans le panneau. |
@@ -347,21 +432,29 @@ tout run dont `status !== 'running'` (`complete`, `cancelled`, `error` et
 
 ## 6. Gardes mécaniques et tests à aligner
 
-Nouveaux (`BoardConversationCard.da.test.tsx`, rouges d'abord) :
+Nouveaux (`BoardConversationCard.da.test.tsx`, rouges d'abord ; la garde 9
+vit dans `Ligne.test.tsx` : le contrat d'une primitive se teste chez elle) :
 
 1. une ligne d'historique = un seul `button`, grille `2rem 1fr auto`, le
    badge porte `data-etiquette` ; `detail` est exactement
    `decision.recommendation` (pas une concaténation) ; `droite` contient
    `formatDate(decision.created_at)` · « Souverain » ou « Cloud » (sans
-   « Mode ») puis l'`Etiquette` ; `ton` du consensus `low` / `medium` n'est
-   pas `erreur` ; le run en cours porte `data-testid="board-current-run"`
+   « Mode ») puis l'`Etiquette` ; sur une décision **sans** `mode`, `droite`
+   ne contient ni « Souverain » ni « Cloud », et le « · » qui les précède
+   disparaît avec le segment ; titre et détail portent `truncate` (prop
+   `coupe`), le titre porte en plus `block w-full` et **jamais** `relative` ;
+   `ton` du consensus `low` / `medium` n'est pas `erreur` ; le run en cours porte `data-testid="board-current-run"`
    sur le `div` enveloppe, pas sur `Ligne` ;
 2. la synthèse (`board-synthesis`) précède la première carte d'avis dans
    le DOM, en run `complete` avec synthèse, en `DecisionDetail`, **et** en
    run `running` sans synthèse (placeholder « Synthèse en préparation, elle
    arrive après le dernier avis. ») ; pas de `h2` « Synthèse » dans le
-   canevas (tête en `h3`) ; extraits et usage, s'ils existent, viennent
-   après les divergences et avant les bandeaux § 5 ;
+   canevas (tête en `h3`) ; en run `running`, le `role="progressbar"` précède
+   `board-synthesis` dans le DOM, qui précède la première carte d'avis ;
+   extraits et usage, s'ils existent, viennent après les divergences et
+   avant les bandeaux § 5 ; les deux conteneurs portent toujours
+   `data-testid="board-run-view"` (`BoardRunView`) et
+   `data-testid="board-decision-detail"` (`DecisionDetail`) ;
 3. « Réfléchit… » seulement sur un avis `isRunning` sans contenu **et**
    `run.status === 'running'` ; « Avis non rendu » sans bouton « Redemander »
    dès que `run.status !== 'running'` et contenu vide (y compris `isRunning`
@@ -381,7 +474,13 @@ Nouveaux (`BoardConversationCard.da.test.tsx`, rouges d'abord) :
    partielle · 4/5 avis » pour `run.status === 'error'` et 4 avis avec
    contenu non vide ou `isComplete` (N = ce prédicat, pas `completed` seul :
    un 5e avis interrompu avec du texte fait 5/5) ; titres
-   d'erreur de run inchangés ; meta de synthèse = « Ce que les cinq avis
+   d'erreur de run inchangés ; meta de `DecisionDetail` sur la fixture
+   actuelle (une opinion, `mode: 'sovereign'`) = « 1 conseiller » et
+   « Mode souverain », **jamais** « 5 conseillers » ; la même fixture privée
+   de `mode` n'affiche aucun segment de mode (ni « Mode cloud », ni le « · »
+   correspondant) ; deux opinions donnent « 2 conseillers » ; en
+   `BoardRunView`, « 5 conseillers » et « Mode cloud » / « Mode souverain »
+   restent inconditionnels ; meta de synthèse = « Ce que les cinq avis
    ont en commun, et ce qui les sépare » (pas la variante `partiel`) ;
 5. un seul « Réessayer » sur historique erreur, canevas resource erreur,
    canevas décision erreur ; zéro sur vide, chargement, run `complete`,
@@ -400,14 +499,30 @@ Nouveaux (`BoardConversationCard.da.test.tsx`, rouges d'abord) :
    « Prochaines étapes » ; noms d'avis en
    `strong className="block text-sm font-semibold"` (pas `h4`) ; ligne
    « Conseillers réellement configurés » `text-sm font-bold`, noms des
-   portraits `truncate text-sm text-text-muted`.
+   portraits `truncate text-sm text-text-muted` ; la tête de la carte
+   synthèse porte la pastille
+   `grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent-tint text-accent`
+   avec `Scale` 18 px et `aria-hidden="true"` ; les deux `Alerte` du canevas
+   rendent leur `icone` ; « Confirmer et lancer » est `disabled` quand
+   `run.status === 'running'` ; en `DecisionDetail`, une opinion sans
+   `provider` **ni** `model` n'affiche aucune meta (ni « provider inconnu »,
+   ni « modèle non mesuré », ni le « · » qui les sépare).
+9. `Ligne.test.tsx` (primitive, même commit) : `coupe` pose `truncate` sur
+   le `p` du détail et `block w-full truncate` sur le libellé, sans
+   `relative` (le `before:absolute before:inset-0` reste calé sur la rangée,
+   `Ligne.tsx:65`) ; **sans** `coupe`, aucune de ces classes n'apparaît, et
+   les cinq tests existants de `Ligne.test.tsx` (`:19`, `:59`, `:69`, `:102`,
+   `:118`) passent sans modification (le rendu du lot 2 est inchangé).
 
 À aligner dans le même commit, forme seulement :
 `aucuneCouleurEnDur.test.ts` (ajouter `BoardConversationCard.tsx` aux
 sources, l'ombre `rgba` disparaît). `BoardConversationCard.test.tsx` ne
 change pas de chaînes (reco, consensus, extraits, confirmation, plafond 30,
-Markdown `closest('section')` : `Carte as="section"`). Aucune assertion de
-comportement n'est retirée.
+Markdown `closest('section')` : `Carte as="section"`) et ses quatre
+assertions qui passent par `board-decision-detail` (`:114`, `:115`, `:140`,
+`:141`) tiennent parce que le testid est conservé (§ 3). `Ligne.test.tsx`
+gagne la garde 9 et ne perd rien. Aucune assertion de comportement n'est
+retirée.
 
 ## 7. Ce que ce lot ne fait pas
 
@@ -418,7 +533,7 @@ comportement n'est retirée.
   autre question » (on garde « Nouvelle question »), « modifiable tant
   qu'aucune tâche n'est créée » : **P-081**.
 - « Redemander cet avis », positions Accepte / Refuse / sous condition,
-  renommage des cinq conseillers : **P-0xy**.
+  renommage des cinq conseillers : **P-088**.
 - `BoardPanel` et ses sous-composants, scénario `board` de l'en-tête de
   coque (ligne « THÉRÈSE · heure », lot 2), Atelier, autres lots.
 - Aucun changement de données, d'API, de store ni de navigation.
@@ -448,10 +563,32 @@ comportement n'est retirée.
    police. Captures `.cartography-work/validation/da-lot7/`, rapport
    `docs/da/2026-09-11-lot7-recette.md`. Vérifier : synthèse au-dessus des
    avis, Markdown rendu, étiquette de statut (une seule), un seul Réessayer,
-   anneau 3 px sur une ligne, établi visible, composeur non recouvert.
+   anneau 3 px sur une ligne, établi visible, composeur non recouvert, barre
+   de progression visible **sans défiler** pendant un `running` (elle est
+   au-dessus des cinq cartes), rangées d'historique coupées à une ligne
+   (titre et reco) sur une question de 90 caractères, dont **un clic hors du
+   texte du titre** (sur la puce, sur la reco) qui ouvre bien la décision :
+   `coupe` pose `overflow:hidden` sur le libellé, et seule la recette prouve
+   que le `before:absolute before:inset-0` n'en est pas rogné (son bloc
+   conteneur est la rangée `relative`, pas le bouton ; jsdom ne mesure pas
+   ce clip, garde 9 comprise), et un détail à une
+   seule opinion qui annonce « 1 conseiller », pas « 5 conseillers ».
 4. Revue Grok du diff avant le tag, `/release-therese 0.72.0-alpha` avec le
    GO de Ludo (toute la DA, pas ce lot seul).
 
 ## Points non repris
+
+Aucun de la v4. Les 10 points de
+`.cartography-work/reviews/opus-da-lot7-decision-design-v4.log` (1 P1, 3 P2,
+6 P3) sont repris ci-dessus : meta du détail mesurée (§ 3.1), barre et phase
+au-dessus des avis (§ 3 et § 5), testid des deux conteneurs (§ 3 et
+garde 6.2), meta d'avis conditionnelle (§ 3.3), taille de la question
+tranchée à `text-lg` (§ 2 et § 3.1), pastille de synthèse reprise avec
+`Scale` (§ 3.2), icônes des `Alerte` et abandon assumé de la `Gavel` de
+l'état vide (§ 5), `disabled` du bouton de confirmation (§ 4), coupe des
+rangées tranchée par la prop `coupe` de `Ligne` (§ 1 et garde 6.9),
+`P-088` attribué (§ 3.3 et § 7). Seule correction apportée à la revue
+elle-même : `mode?: string` de `BoardDecisionDetail` est en `board.ts:74`,
+pas dans l'intervalle `:60-73` qu'elle cite, ce qui ne change rien au fond.
 
 Aucun de la v3. Les 6 points de `.cartography-work/reviews/grok-da-lot7-decision-design-v3.log` (1 P1, 1 P2, 4 P3) sont repris ci-dessus. Les 9 points de `.cartography-work/reviews/grok-da-lot7-decision-design-v2.log` (2 P1, 2 P2, 5 P3) et les 20 points de `.cartography-work/reviews/grok-da-lot7-decision-design-v1.log` (4 P1, 10 P2, 6 P3) restent repris.
