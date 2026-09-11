@@ -6,6 +6,7 @@ import { fireEvent, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Task } from '../../services/api';
+import { useDemoStore } from '../../stores/demoStore';
 import { useTaskStore } from '../../stores/taskStore';
 
 const api = vi.hoisted(() => ({ listTasks: vi.fn(), deleteTask: vi.fn() }));
@@ -47,6 +48,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   api.listTasks.mockResolvedValue([]);
   api.deleteTask.mockResolvedValue(undefined);
+  useDemoStore.setState({ enabled: false, replacementMap: new Map() });
   poser([RUIZ]);
 });
 
@@ -78,6 +80,23 @@ describe('Lot 6 DA : la rangée de la liste', () => {
     expect(screen.getByRole('button', { name: 'Ouvrir la tâche Relancer Ruiz' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Marquer la tâche Relancer Ruiz terminée' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Supprimer la tâche Relancer Ruiz' })).toBeInTheDocument();
+  });
+
+  /**
+   * Le mode démo masque le texte VISIBLE (`maskText(task.title)`), mais les
+   * trois `aria-label` interpolaient `task.title` brut : le vrai nom du
+   * client sortait par le nom accessible, que lit tout lecteur d'écran et
+   * que rapporte toute capture d'arbre d'accessibilité. Une démonstration
+   * masquée à l'œil et nue à l'oreille.
+   */
+  it('D105 et D106 : en mode démo, les trois noms portent le titre MASQUÉ', () => {
+    useDemoStore.setState({ enabled: true, replacementMap: new Map([['Ruiz', 'Moreau']]) });
+    render(<TaskList />);
+
+    expect(screen.getByRole('button', { name: 'Ouvrir la tâche Relancer Moreau' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Marquer la tâche Relancer Moreau terminée' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Supprimer la tâche Relancer Moreau' })).toBeInTheDocument();
+    expect(screen.queryAllByRole('button', { name: /Ruiz/ })).toEqual([]);
   });
 
   it('un clic sur la rangée, hors des trois commandes, ouvre la tâche', () => {

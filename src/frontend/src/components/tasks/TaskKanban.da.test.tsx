@@ -46,6 +46,23 @@ function conteneurSortable(): HTMLElement {
   return parent;
 }
 
+/**
+ * Marge d'un côté, lue dans la classe : jsdom n'applique aucun CSS, et la
+ * liste défilante n'a pas d'autre source de vérité ici. Échelle Tailwind :
+ * `1` = 0,25 rem = 4 px, donc `p-1.5` vaut 6 px. Ordre de spécificité :
+ * `p-` puis l'axe (`px-`/`py-`) puis la face (`pl-`/`pr-`/`pt-`).
+ */
+function margePx(className: string, cote: 'gauche' | 'droite' | 'haut'): number {
+  const axe = cote === 'haut' ? 'y' : 'x';
+  const face = { gauche: 'l', droite: 'r', haut: 't' }[cote];
+  let px = 0;
+  for (const prefixe of ['p', `p${axe}`, `p${face}`]) {
+    const trouve = className.match(new RegExp(`(?:^|\\s)${prefixe}-(\\d+(?:\\.\\d+)?)(?:\\s|$)`));
+    if (trouve) px = parseFloat(trouve[1]) * 4;
+  }
+  return px;
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   poser([SEULE]);
@@ -81,6 +98,27 @@ describe('Lot 6 DA : têtes de colonnes', () => {
     expect(liste).not.toBeNull();
     expect(liste.className).toMatch(/\b(space-y-2|gap-2)\b/);
     expect(liste.className).toMatch(/\bmin-h-0\b/);
+  });
+
+  /**
+   * Le socle dessine l'anneau À L'EXTÉRIEUR de la boîte : `outline: 3px` à
+   * `outline-offset: 2px` (`src/styles/globals.css:618-621`), soit 5 px
+   * dehors. Le conteneur `useSortable` de la carte est focalisable (dnd-kit
+   * pose `tabIndex: 0` dans `attributes`), et un `overflow-y-auto` rend
+   * l'axe horizontal découpant lui aussi : sans marge, l'anneau est rogné à
+   * gauche, à droite, et en haut pour la première carte. Le `p-2` de la
+   * colonne est HORS du conteneur qui découpe : il n'y peut rien.
+   */
+  it('la liste défilante réserve les 5 px de l’anneau de focus des cartes', () => {
+    render(<TaskKanban />);
+
+    expect(conteneurSortable()).toHaveAttribute('tabindex', '0');
+
+    const liste = screen.getByTestId('task-item').closest('[class*="overflow-y-auto"]') as HTMLElement;
+    expect(liste).not.toBeNull();
+    for (const cote of ['gauche', 'droite', 'haut'] as const) {
+      expect(margePx(liste.className, cote), `${cote} — ${liste.className}`).toBeGreaterThanOrEqual(5);
+    }
   });
 });
 

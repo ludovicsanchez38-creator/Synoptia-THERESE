@@ -10,6 +10,8 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
+import { CHEMINS_LOT6 } from '../../test/fichiersLot6';
+
 const UI = resolve(__dirname);
 const COQUE = resolve(__dirname, '../prototype/ConversationCanvasPrototype.tsx');
 // Lot 2 : la carte du brief consomme les primitives, donc les jetons.
@@ -17,15 +19,10 @@ const BRIEF = resolve(__dirname, '../prototype/TodayDashboardCard.tsx');
 // Lot 3 : le tiroir des conversations, et le catalogue hors TrustCenter.
 const TIROIR = resolve(__dirname, '../prototype/PrototypeConversationDrawer.tsx');
 const CATALOGUE = resolve(__dirname, '../prototype/CapabilityCenter.tsx');
-// Lot 6 : les six composants de l'écran Projets et tâches.
-const LOT6 = [
-  '../tasks/TasksPanel.tsx',
-  '../tasks/TaskKanban.tsx',
-  '../tasks/TaskList.tsx',
-  '../tasks/TaskForm.tsx',
-  '../memory/ProjectsPanel.tsx',
-  '../memory/ProjectsKanban.tsx',
-].map((f) => resolve(__dirname, f));
+// Lot 6 : les six composants de l'écran Projets et tâches. La liste vit dans
+// `src/test/fichiersLot6.ts` : la garde du plancher de taille
+// (`src/test/lot6DA.test.ts`) parcourt exactement les mêmes fichiers.
+const LOT6 = CHEMINS_LOT6;
 
 /** Chemins (relatifs à src/) tolérés, avec la raison. Vide au départ. */
 const LISTE_BLANCHE: Record<string, string> = {

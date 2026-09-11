@@ -88,6 +88,25 @@ describe('Lot 6 DA : le titre manquant est une erreur de champ, pas un bandeau',
     expect(api.createTask).not.toHaveBeenCalled();
   });
 
+  /**
+   * Le message ne tombait qu'à la sauvegarde SUIVANTE : le champ gardait sa
+   * bordure rouge, son `aria-invalid` et sa demande pendant que l'utilisateur
+   * tapait un titre valide sous les yeux. La bordure d'erreur est plus
+   * insistante que l'ancien bandeau : elle doit partir au premier caractère.
+   */
+  it('le message tombe dès que le titre n’est plus vide, sans attendre la sauvegarde', () => {
+    render(<TaskForm />);
+    fireEvent.click(screen.getByRole('button', { name: /Enregistrer/ }));
+    expect(messageDuChamp()?.textContent).toBe(MESSAGE_TITRE);
+
+    const titre = screen.getByLabelText(/Titre/);
+    fireEvent.change(titre, { target: { value: 'Relancer Ruiz' } });
+
+    expect(messageDuChamp()).toBeNull();
+    expect(titre).not.toHaveAttribute('aria-invalid');
+    expect(api.createTask).not.toHaveBeenCalled();
+  });
+
   it('efface le bandeau de sauvegarde : un titre vidé ne laisse pas les deux messages', async () => {
     api.createTask.mockRejectedValueOnce(new Error('Échec de la sauvegarde'));
     render(<TaskForm />);

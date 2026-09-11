@@ -133,6 +133,30 @@ describe('Lot 6 DA : en-tête de TasksPanel', () => {
     expect(container.innerHTML).not.toMatch(/\btaches?\b/i);
   });
 
+  /**
+   * `aria-expanded` parle au lecteur d'écran ; à l'œil, il ne restait que la
+   * rangée dépliée plus bas dans la page. Le bouton actif doit se voir : sur
+   * main, `showFilters` posait `bg-accent-tint text-accent-cyan-ink`.
+   */
+  it('« Filtrer » montre son état actif, pas seulement aria-expanded', async () => {
+    render(<TasksPanel standalone />);
+
+    const filtrer = await screen.findByRole('button', { name: 'Filtrer les tâches' });
+    const auRepos = filtrer.className;
+    expect(auRepos).not.toMatch(/\bbg-accent-tint\b/);
+
+    fireEvent.click(filtrer);
+    expect(filtrer.className).not.toBe(auRepos);
+    expect(filtrer.className).toMatch(/\bbg-accent-tint\b/);
+    // Et le survol ne reprend pas la main : le `hover:bg-surface-2` du
+    // secondaire est une classe PLUS une pseudo-classe, il l'emporte sur
+    // `bg-accent-tint` au moment précis où la souris se pose pour replier.
+    expect(filtrer.className).not.toMatch(/hover:bg-surface-2/);
+
+    fireEvent.click(filtrer);
+    expect(filtrer.className).toBe(auRepos);
+  });
+
   it('« Filtrer » garde son nom accessible et déplie les mêmes listes', async () => {
     render(<TasksPanel standalone />);
 
