@@ -196,7 +196,7 @@ export function EventDetail() {
             <div>
               <p className="text-sm font-medium text-text mb-1">Événement récurrent</p>
               {event.recurrence.map((rule, i) => (
-                <p key={i} className="text-xs text-text-muted font-mono">
+                <p key={i} className="text-sm text-text-muted font-mono">
                   {rule}
                 </p>
               ))}
