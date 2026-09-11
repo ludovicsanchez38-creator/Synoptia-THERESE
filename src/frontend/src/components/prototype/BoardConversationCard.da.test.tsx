@@ -487,6 +487,19 @@ describe('Lot 7 DA : un seul statut, dans la meta de la question', () => {
     expect(pulse).not.toBeNull();
     expect(pulse?.getAttribute('aria-hidden')).toBe('true');
   });
+
+  it('la zone de progression garde le conteneur teinté qu’elle avait', () => {
+    /* Reprise de la revue du diff, point 3 : le bloc phase + barre était une
+       carte teintée avant le lot, laissée en `div` nu sans qu’aucune ligne du
+       design l’autorise. Dans un panneau qui défile, la teinte est ce qui
+       désigne la zone vivante. */
+    canevas({ run: runEnCours(2), target: 'current' });
+    const zone = screen.getByRole('progressbar').parentElement as HTMLElement;
+    const jetons = classes(zone).split(/\s+/);
+    for (const attendu of ['rounded-md', 'border', 'border-accent-cyan/30', 'bg-accent-tint', 'p-3']) {
+      expect(jetons, classes(zone)).toContain(attendu);
+    }
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -552,6 +565,10 @@ describe('Lot 7 DA : la tête du canevas dit « Décision »', () => {
     expect(titre).toBeInTheDocument();
     const bandeau = titre.closest('div') as HTMLElement;
     expect(classes(bandeau)).toBe('border-b border-border px-5 py-4 pr-16');
+    /* Reprise de la revue du diff, point 9 : `mt-2` réservait l’écart au
+       sur-titre « Board réel », parti avec le lot. Il poussait le titre de
+       8 px sans plus rien au-dessus de lui. */
+    expect(classes(titre)).toBe('text-xl font-bold tracking-[-0.02em] text-text');
   });
 });
 
@@ -560,21 +577,55 @@ describe('Lot 7 DA : la tête du canevas dit « Décision »', () => {
 // ---------------------------------------------------------------------------
 
 describe('Lot 7 DA : plancher typographique', () => {
+  const avecSources: BoardDecisionDetail = {
+    ...decision,
+    web_sources: [{ title: 'Article', url: 'https://exemple.test/a', snippet: 'Extrait du moteur' }],
+  };
+
+  /* Le § 6.7 annonce « carte + canevas » et la première écriture de cette
+     garde ne visitait que trois montages (revue du diff, point 4) : ni les
+     deux confirmations, ni le run en cours du canevas, ni les états vide,
+     erreur et chargement n'étaient balayés. Un plancher qui ne balaie pas
+     tout l'écran ne dit rien de l'écran. */
+  const montages: Array<[string, () => ReturnType<typeof render>]> = [
+    ['formulaire', () => canevas()],
+    ['détail avec extraits web', () => detail(avecSources)],
+    ['carte, run en cours', () => carte({ run: runEnCours(2) })],
+    ['canevas, run en cours', () => canevas({ run: runEnCours(2), target: 'current' })],
+    ['canevas, détail en chargement', () => canevas({
+      decisionResource: { status: 'loading', data: null, error: null }, target: decision.id,
+    })],
+    ['canevas, décision en erreur', () => canevas({
+      decisionResource: { status: 'error', data: null, error: 'Décision illisible' }, target: decision.id,
+    })],
+    ['carte, historique vide', () => carte({
+      resource: { status: 'ready', data: { ...workspace, decisions: [] }, error: null },
+    })],
+    ['carte, historique en panne', () => carte({
+      resource: { status: 'error', data: null, error: 'Lecture impossible' },
+    })],
+    ['carte, historique en chargement', () => carte({
+      resource: { status: 'loading', data: null, error: null },
+    })],
+    ['confirmation de lancement', () => {
+      const rendu = canevas();
+      fireEvent.change(screen.getByLabelText('Question stratégique'), { target: { value: QUESTION } });
+      fireEvent.click(screen.getByRole('button', { name: 'Préparer la délibération' }));
+      return rendu;
+    }],
+    ['confirmation d’annulation', () => {
+      const rendu = canevas({ run: runEnCours(2), target: 'current' });
+      fireEvent.click(screen.getByRole('button', { name: 'Annuler la délibération' }));
+      return rendu;
+    }],
+  ];
+
   it('aucune classe text-xs sur un interactif ni dans son sous-arbre', () => {
-    const { container, unmount } = canevas();
-    expect(interactifsSousLePlancher(container as unknown as HTMLElement)).toEqual([]);
-    unmount();
-
-    const avecSources: BoardDecisionDetail = {
-      ...decision,
-      web_sources: [{ title: 'Article', url: 'https://exemple.test/a', snippet: 'Extrait du moteur' }],
-    };
-    const { container: c2, unmount: u2 } = detail(avecSources);
-    expect(interactifsSousLePlancher(c2 as unknown as HTMLElement)).toEqual([]);
-    u2();
-
-    const { container: c3 } = carte({ run: runEnCours(2) });
-    expect(interactifsSousLePlancher(c3 as unknown as HTMLElement)).toEqual([]);
+    for (const [nom, monter] of montages) {
+      const { container, unmount } = monter();
+      expect(interactifsSousLePlancher(container as unknown as HTMLElement), nom).toEqual([]);
+      unmount();
+    }
   });
 });
 
@@ -726,6 +777,38 @@ describe('Lot 7 DA : les primitives portent l’écran', () => {
     expect(classes(bloc)).not.toMatch(/color-error-tint/);
     expect(within(bloc).getByRole('button', { name: 'Confirmer l’annulation' })).toBeInTheDocument();
     expect(within(bloc).getByRole('button', { name: 'Continuer en arrière-plan' })).toBeInTheDocument();
+  });
+
+  it('les glyphes décoratifs des rangées et des têtes d’avis sont masqués', () => {
+    /* Décision 8 : une icône décorative porte `aria-hidden`, sauf celles
+       qu'un `Button` ou une prop `icone` nomme déjà par leur libellé. Les
+       glyphes que ce lot passe en `puce` et en `droite` ne sont ni l'un ni
+       l'autre, et `Ligne` pose l'attribut sur le `span` vide, jamais sur
+       celui qui porte un glyphe (revue du diff, point 6). */
+    const nonMasques = (racine: HTMLElement, zone: string): string[] => {
+      const fautifs: string[] = [];
+      for (const bloc of racine.querySelectorAll(zone)) {
+        for (const svg of bloc.querySelectorAll('svg')) {
+          if (svg.closest('button')) continue;
+          if (!svg.closest('[aria-hidden="true"]')) fautifs.push(classes(svg));
+        }
+      }
+      return fautifs;
+    };
+
+    const montages: Array<[string, string, () => ReturnType<typeof render>]> = [
+      ['carte, run en cours', RANGEE, () => carte({ run: runEnCours(2) })],
+      ['carte, run terminé', RANGEE, () => carte({ run: run({ status: 'complete', decisionId: 'decision-1' }) })],
+      ['carte, run en échec', RANGEE, () => carte({ run: runPartiel(2) })],
+      ['canevas, têtes d’avis', GRILLE_AVIS, () => canevas({ run: runEnCours(2), target: 'current' })],
+    ];
+    const fautifs: string[] = [];
+    for (const [nom, zone, monter] of montages) {
+      const { container, unmount } = monter();
+      for (const c of nonMasques(container as unknown as HTMLElement, zone)) fautifs.push(`${nom} : ${c}`);
+      unmount();
+    }
+    expect(fautifs).toEqual([]);
   });
 
   it('tout glyphe est en 18 px, sauf la roue nommée du Spinner', () => {
