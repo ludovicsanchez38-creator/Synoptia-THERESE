@@ -114,7 +114,7 @@ les deux barres actuelles (`calendarHeader` + `calendarNav`) en une rangée.
 | Période | `<h3 className="capitalize">` + `getNavLabel()` | `<h3 id="agenda-periode" className="text-base font-semibold">` ; jour : `toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })` puis première lettre seule en capitale (lot 2, jamais `capitalize`) ; **aucun suffixe ` (aujourd'hui)`** : `getNavLabel()` n'en a pas aujourd'hui (`CalendarPanel.tsx:333-341`) et la vue Jour en rend déjà un juste en dessous (`CalendarView.tsx:646-648`, § 5) ; semaine : libellé ci-dessous (bornes lundi-dimanche inchangées, `getDay()` + offset actuel) ; mois/liste : mois long + année, première lettre seule en capitale. L'`id` n'est pas décoratif : il **nomme les quatre sections de vue** par `aria-labelledby="agenda-periode"` (§ 3, châssis) |
 | Sélecteur | `<select aria-label="Calendrier affiché">` maison, `Z_LAYER.ONBOARDING` | `Select aria-label="Agenda affiché"` (**le mot change**, lexique : voir la note ci-dessous), `options={calendars.map(c => ({ value: c.id, label: c.summary }))}`, `value={currentCalendarId \|\| ''}`, même `onChange` ; wrapper `relative` + z-index conservé (BUG-049) ; liste vide : aucune option, pas de bouton « créer » (BUG-143) |
 | Sync / ICS | `Button ghost sm` | `Button variant="ghost" size="icon"` ; `aria-label` / `title` conservés (« Synchroniser l'agenda », « Importer un fichier .ics », « Exporter en .ics ») ; `input.hidden` et `disabled={syncing}` inchangés. **L'icône de synchronisation reste rendue dans tous les états**, y compris quand une `Alerte` porte un « Réessayer » : voir § 8, « ce que devient l'icône de synchronisation » |
-| Segments + geste | modes + « Nouvel événement » dans `calendarHeader` (droite) | dans la rangée fusionnée, groupe `className="ml-auto flex flex-wrap gap-2"` (`basis-full` sous 840 px, déjà annoncé sur le conteneur) = `Segments` puis le `Button variant="primary" size="lg"` « Nouveau rendez-vous » ; maquette `.vue-tete .actions{margin-left:auto}` (règle `agenda.html:7`, élément `agenda.html:69`). Sans `ml-auto` le groupe reste collé au sélecteur / sync, pas à droite |
+| Segments + geste | modes + « Nouvel événement » dans `calendarHeader` (droite) | dans la rangée fusionnée, groupe `className="ml-auto flex flex-wrap gap-2 max-[840px]:basis-full"` (le seuil s'écrit `max-[840px]`, **pas** `max-[839px]` : c'est celui de la primitive du lot 1, `Carte.tsx:56`, et 840 px est une largeur de recette — revue du diff, point 4) = `Segments` puis le `Button variant="primary" size="lg"` « Nouveau rendez-vous » ; maquette `.vue-tete .actions{margin-left:auto}` (règle `agenda.html:7`, élément `agenda.html:69`). Sans `ml-auto` le groupe reste collé au sélecteur / sync, pas à droite |
 | Fermer (overlay) | `<button>` sans nom | `Button variant="ghost" size="icon"` `aria-label="Fermer l'agenda"` (absent en `standalone`) |
 | Dialogue (overlay) | `role="dialog"` `aria-modal="true"` `aria-label="Calendrier"` (`CalendarPanel.tsx:617`) | `aria-label="Agenda"` (lexique, note ci-dessous) ; `role`, `aria-modal` et l'ouverture inchangés |
 
@@ -289,7 +289,13 @@ insécable : à 14 px il ne se replie pas, il déborde ou se tronque, quand les
 heures voisines tiennent à 12 px. Aucun interactif n'est concerné (le
 plancher de 14 px porte sur les interactifs), et le plancher absolu de 12 px
 est respecté. Les cellules de jour de cette rangée gardent leur `p-1` et leur
-hauteur minimale (`min-h-[2rem]`, `CalendarView.tsx:437`).
+hauteur minimale **écrite en pixels**, `min-h-[32px]` (c'est ce que porte
+`main`, `CalendarView.tsx:437`). La v5 écrivait `min-h-[2rem]` en appelant
+cela une conservation : ce n'en était pas une, et la phrase est corrigée ici
+(revue du diff, point 6). La préférence d'accessibilité « Petite » pose 14 px
+sur `<html>` (`globals.css:118-122`), où 2 rem ne vaut plus que 28 px : le
+plancher d'une cellule qui peut recevoir un jeton ne suit pas la taille du
+texte à la baisse, il reste en pixels.
 
 **La barre de défilement de la piste ne doit pas décaler les trois
 gabarits.** L'en-tête et la rangée « Journée » sont `shrink-0` hors du
@@ -462,7 +468,7 @@ d'`aria-label` sur son repère. `whileHover` / `scale` retirés.
 
 `Carte as="section" aria-labelledby="agenda-periode" className="flex-1 min-h-0
 overflow-y-auto"` (§ 3.0), et **à l'intérieur** un `div` qui porte la grille :
-`<div className="grid grid-cols-7 min-h-full grid-rows-[auto_repeat(6,minmax(5.5rem,1fr))]">`,
+`<div className="grid grid-cols-7 min-h-full grid-rows-[max-content_repeat(6,auto)]">`,
 **7 en-têtes** puis **42 cases** (49 enfants), lundi d'abord, sans `gap`. La
 grille est un `div` **enfant** de la `Carte`, jamais la `Carte` elle-même :
 `semaineFrancaise.test.tsx:53` sélectionne
@@ -478,11 +484,32 @@ semaine du mois devient invisible **et** inatteignable (aujourd'hui les
 cellules n'ont aucune hauteur minimale et se compriment,
 `CalendarView.tsx:236`). C'est donc la `Carte` qui défile (`overflow-y-auto`),
 et la grille qui la remplit : `min-h-full` lui donne au moins la hauteur
-visible, et `grid-rows-[auto_repeat(6,minmax(5.5rem,1fr))]` fait le reste —
-5,5 rem plancher, `1fr` quand il y a de la place, donc ni vide sous la grille
-sur une fenêtre haute, ni rangée écrasée sur une fenêtre basse. La hauteur
-minimale vit **sur les rangées, pas sur les cases** : `min-h-[5.5rem]` sort de
-la classe des cellules, une seule source pour une seule mesure. Les sept
+visible, et `grid-rows-[max-content_repeat(6,auto)]` fait le reste, le
+plancher de 5,5 rem revenant **sur la case** (`min-h-[5.5rem]`) comme dans la
+maquette (`agenda.html:28`).
+
+**Pourquoi ce n'est plus `minmax(5.5rem,1fr)` (revue du diff, point 1).** La
+revue annonçait des rangées bloquées à 88 px et une case qui déborde de 48 px
+sur la semaine suivante. Mesuré dans Chromium sur une reproduction de la
+structure (carte `flex-1 min-h-0 overflow-y-auto` dans une colonne flex,
+grille `min-h-full`), ce mécanisme-là ne se produit pas : la hauteur de la
+grille reste indéterminée (`min-h-full`, pas `h-full`), et une piste `1fr`
+monte alors jusqu'à la contribution max-content de son contenu. Rien ne
+déborde. Ce qui se produit est une autre faute, et elle coûte plus cher :
+`1fr` **égalise** les six rangées sur la plus chargée. Un seul jour à trois
+puces porte les six rangées de 88 à 137 px, la grille à 857 px dans une carte
+de 597 px, et impose **260 px de défilement** à tout le mois. En `auto`, la
+seule rangée chargée grandit (137 px), les cinq autres restent à 88 px, la
+grille tient en 612 px et il ne reste que 15 px à défiler. Deuxième mesure,
+qui interdit `auto` sur la **rangée d'en-têtes** : `align-content` vaut
+`normal`, donc `stretch`, et l'étirement s'applique à toute piste `auto`,
+en-têtes compris — sur une carte de 957 px, la rangée collante
+« lun. … dim. » passe de 35 à 84 px et mange le haut de la vue pendant le
+défilement. `max-content` n'est pas étirée, `auto` l'est : d'où le gabarit
+`max-content` + six `auto`, qui garde l'en-tête à 35 px aux deux hauteurs et
+remplit toujours la carte sur une fenêtre haute (grille = 957 px, aucune bande
+vide). Ces chiffres viennent d'une sonde, pas de l'application : la recette
+les rejoue sur le cas `mois-1280x640` (§ 11.3). Les sept
 en-têtes portent `sticky top-0 z-10 bg-surface` : ils restent lisibles pendant
 le défilement sans sortir de la grille, donc sans casser le décompte de 49
 enfants (`bg-surface` opaque est obligatoire, sinon les cases défilent
@@ -507,7 +534,16 @@ les sept en-têtes occupent les enfants 1 à 7 et les 42 cases les enfants 8 à
 15, 22, 29, 36, 43), comme la maquette `.mois .case:nth-child(7n+1)
 {border-left:0}` (`agenda.html:29` ; la ligne 28 porte `.mois .case`
 elle-même) ; sans cette exception, le trait de la
-première case double la bordure gauche de la `Carte`. Aucun conteneur
+première case double la bordure gauche de la `Carte`. La classe des cases porte
+aussi `min-h-[5.5rem]` (le plancher, rendu à la case ci-dessus) et
+`[&:nth-child(-n+14)]:border-t-0` : les enfants 8 à 14 sont la **première**
+rangée de cases, et leur `border-t` se superposait au `border-b` des en-têtes,
+deux traits de 1 px l'un sur l'autre sans `gap` pour les séparer (revue du
+diff, point 11 ; la maquette porte le même doublon, `agenda.html:27` et `:28`,
+ce qui rend le rendu fidèle sans le rendre juste). C'est le trait des **cases**
+qui cède, pas celui des en-têtes : ces derniers sont `sticky`, et sans trait
+propre la séparation disparaîtrait sous eux dès le premier pixel de
+défilement. Aucun conteneur
 intermédiaire autour des en-têtes ni des cases : un `display:contents`
 casserait le décompte de 49 enfants du test (§ 9). Hors mois : numéro
 `text-text-muted` sans opacité sur la case (B-414), **littéral conservé tel
@@ -627,7 +663,12 @@ conservé » de la décision 5, la seule que ce document décrive. Tête : retou
 `Button ghost icon` `aria-label="Retour"`
 (B-578) ; titre `h3` « Nouveau rendez-vous » / « Modifier l'événement » ;
 `Button primary md` « Enregistrer » (spinner inchangé). Corps : `FormField`
-+ `Input` / `Textarea`. **`htmlFor` = l'id déjà listé** pour chaque champ
++ `Input` / `Textarea`. La description porte `className="resize-none"`
+(revue du diff, point 8) : sans `autoResize`, la primitive rend `resize-y`
+(`Textarea.tsx:66`) là où `main` posait `resize-none`, et une poignée de
+redimensionnement à la souris n'est pas un geste de ce lot — la laisser
+arriver par la primitive, c'est la faire apparaître sur tous les écrans qui y
+migreront, sans que personne l'ait décidé. **`htmlFor` = l'id déjà listé** pour chaque champ
 (`FormField` n'associe le `<label>` que via `htmlFor`,
 `FormField.tsx:53-55` ; sans lui `getByLabelText` casse) :
 
@@ -671,7 +712,14 @@ garde sa classe actuelle (`EventForm.tsx:307`) à une substitution près :
 `text-accent-cyan-ink` devient `text-accent` (garde (6) du § 9).
 `getByLabelText('Événement sur toute la journée')` conservé.
 Participants : `description="Séparez les emails par des virgules"` (aide
-actuelle). Placeholder titre « Titre de l'événement » conservé (test).
+actuelle), et **elle passe au-dessus du champ**, alors que `main` la rend en
+dessous (`<p className="text-xs text-text-muted mt-1">` après l'`<input>`).
+Le déplacement est assumé ici, il n'était pas écrit (revue du diff, point 7) :
+`FormField` rend la `description` avant le champ (`FormField.tsx:64-70`) et,
+surtout, la **rattache** par `aria-describedby` (`:36-49`) là où le `<p>` de
+`main` n'existait que pour l'œil. Une consigne de saisie se lit avant la
+saisie ; et c'est le prix d'une aide enfin annoncée au lecteur d'écran, pas un
+effet de bord. La garde du § 9 fige cette position. Placeholder titre « Titre de l'événement » conservé (test).
 Placeholder lieu « Atelier, adresse ou lien ».
 
 Erreur : **une seule** `Alerte` `children={formError || guardError}`
@@ -884,7 +932,13 @@ d'accent passent en `text-accent` (§ 3), la case à cocher et le suffixe
 icônes de la fiche (`EventDetail.tsx:153`, `183`, `191`, `210`) passent en
 `text-accent` (§ 7). `bg-instant` et `text-instant`
 restent permis, ce sont les jetons du repère ; (7) overlay : plus de
-`bg-black` ; (8) groupe Segments + « Nouveau rendez-vous » porte `ml-auto` ;
+`bg-black` ; (8) groupe Segments + « Nouveau rendez-vous » porte `ml-auto`
+**et `max-[840px]:basis-full`**, jamais `max-[839px]` (§ 1, point 4 de la
+revue du diff) ; (12) la table `VUES` est typée sur le type de vue du store
+(`ReturnType<typeof useCalendarStore.getState>['viewMode']`) et le fichier ne
+contient **plus aucun cast** `as 'month' | 'week' | 'day' | 'list'` : garde de
+source, parce que c'est `tsc` qui doit attraper la faute de frappe dans un
+`id`, et qu'un cast la blanchissait (point 10) ;
 (9) pied : **aucun pied rendu** quand `calendars: []` et
 `currentCalendarId: null` (l'état monté par
 `src/frontend/src/components/calendar/CalendarPanel.nomsAccessibles.test.tsx:52`),
@@ -925,8 +979,10 @@ correspondant), pas seulement `leftPercent` du helper ; (4) mois : 7
 en-têtes `lun.`…`dim.` + 42 cellules, première = lundi, aujourd'hui en
 `bg-accent-fill` ; **c'est la `Carte` qui défile** (`overflow-y-auto`) et le
 `div.grid-cols-7` ne porte **aucun** `overflow` ; la grille porte `min-h-full`
-et `grid-rows-[auto_repeat(6,minmax(5.5rem,1fr))]`, aucune cellule ne porte
-`min-h-[5.5rem]` ; les sept en-têtes portent `sticky top-0`, un fond opaque et `px-2 py-2 text-left` ;
+et `grid-rows-[max-content_repeat(6,auto)]`, **chaque** cellule porte
+`min-h-[5.5rem]` (§ 4), et la classe des cases porte
+`[&:nth-child(-n+14)]:border-t-0` pendant que les sept en-têtes gardent leur
+`border-b` (trait unique sous l'en-tête, § 4) ; les sept en-têtes portent `sticky top-0`, un fond opaque et `px-2 py-2 text-left` ;
 (5) liste :
 un `<button>` par événement dont le nom accessible **contient** le résumé
 et l'horaire (ou « Toute la journée ») ; droite visuelle « Toute la journée »
@@ -938,7 +994,21 @@ qui porte `aria-labelledby="agenda-periode"` et les classes `flex-1` et
 `overflow-hidden` (coins clippés, § 3.1), Mois et Liste `overflow-y-auto` ; (7) survol et focus : chaque bloc,
 jeton et puce des vues Semaine, Mois et Jour porte `hover:brightness-95`, la
 ligne de la Liste `hover:bg-surface-2`, et tout interactif d'une vue porte
-`focus-visible:outline-offset-[-3px]` (anneau rentrant, § 3.0).
+`focus-visible:outline-offset-[-3px]` (anneau rentrant, § 3.0) ; (8) **les
+reprises de la revue du diff** : au Jour, le libellé de gouttière « Toute la
+journée » porte `text-sm` (§ 5, point 3) ; en Semaine, les cellules de la
+rangée « Journée » portent `min-h-[32px]` et jamais `min-h-[2rem]` (§ 3.1,
+point 6) ; et la garde « aucun `text-xs` dans le sous-arbre d'un interactif »
+est **reprise ici et bouclée sur les quatre `viewMode`**, avec un jeu qui
+sème un rendez-vous horaire, un `all_day` et assez d'événements pour faire
+apparaître le « +N autres » du Mois — la garde (6) du
+`CalendarPanel.da.test.tsx` ne montait que la Semaine et ne voyait donc ni le
+Jour, ni le Mois, ni la Liste (point 5). C'est un **ajout**, pas un
+déplacement : celle du panneau reste, elle est la seule à couvrir la barre
+d'outils. Elle est verte dès le premier tour, et c'est son rôle : elle fige
+une propriété déjà tenue sur trois vues sur quatre, que rien ne surveillait.
+Un contrôle de plus, du même geste : le « +N autres » du Mois **reste** en
+`text-xs` et **hors** de tout `<button>`.
 
 `EventForm.da.test.tsx` : ids des champs encore là, chaque `FormField`
 porte `htmlFor` égal à l'id, `FormField` « Lieu ou visio », case « toute
@@ -950,7 +1020,13 @@ toujours `md`, titre « Nouveau rendez-vous » hors édition, agenda affiché
 **obligation annoncée** : `expect(getByLabelText(/^Titre/)).toBeRequired()` et
 les quatre champs d'horaire de même, `allDay` décochée ; `allDay` cochée, les
 deux heures sortent du DOM (`queryByLabelText(/^Heure de début/)` nul) et les
-trois autres restent requis. Le champ « Agenda » n'est **pas** requis. Les
+trois autres restent requis. Le champ « Agenda » n'est **pas** requis.
+Deux gardes de la revue du diff s'y ajoutent : la description du rendez-vous
+porte `resize-none` et jamais `resize-y` (point 8, § 6) ; l'aide des
+participants est rendue par `FormField`, rattachée au champ par
+`aria-describedby="eventform-participants-desc"` et **placée avant** lui
+(point 7, § 6) — la position devient une propriété tenue par un test, au lieu
+d'un effet de la primitive. Les
 regex sont **ancrées, pas des chaînes exactes** : `FormField` colle
 l'astérisque au libellé (`{label}` puis
 `{required && <span … aria-hidden="true">*</span>}`,
@@ -1069,6 +1145,17 @@ d'en dessous n'aurait rien apporté. Le reste de ce paragraphe énumère ce qui
   quatre champs d'horaire (« Date de début », « Heure de début », « Date de
   fin », « Heure de fin »). **P-083**.
 - `MeetingConversationCard` / scénario `meeting` (autre surface).
+- **Le module partagé de l'anneau rentrant. Reste à faire, au prochain lot**
+  (revue du diff, point 9). La recette
+  `focus-visible:outline focus-visible:outline-[3px]
+  focus-visible:outline-offset-[-3px] focus-visible:outline-ring` est écrite
+  une troisième fois dans un composant (`CalendarView.tsx:28`), après
+  `PrototypeConversationDrawer.tsx:331`, et une variante à décalage positif
+  vit dans `CRMPanel.tsx:225`. Le dépôt a déjà le motif qui convient, le
+  module de classes sans composant (`ui/segments.classes.ts`) : la sortie
+  dans un `ui/anneau.classes.ts` est **inscrite ici sans code**, parce qu'elle
+  touche trois écrans dont deux hors lot, et que la prochaine variation du
+  socle se répercuterait sinon à la main dans n fichiers.
 - Aucun changement de données, d'API, de store ni de navigation.
 
 ## 11. Plan de preuve
@@ -1104,7 +1191,17 @@ d'en dessous n'aurait rien apporté. Le reste de ce paragraphe énumère ce qui
      le quadrillage des heures reste visible sous ce fond (`z-[1]`) ;
    - **en vue Mois sur 640 px de haut**, la sixième semaine s'atteint au
      défilement et les sept en-têtes restent en place ; sur 900 px, aucune
-     bande vide sous la grille à l'intérieur de la carte ;
+     bande vide sous la grille à l'intérieur de la carte. Trois mesures
+     chiffrées à relever sur ce cas, et à écrire dans le rapport de recette,
+     parce qu'elles sont la preuve que jsdom ne peut pas donner (§ 4, revue du
+     diff, point 1) : **(a)** la hauteur de la rangée d'en-têtes, aux deux
+     hauteurs de fenêtre — elle doit rester la même (la sonde donne 35 px, et
+     84 px sur la variante fautive) ; **(b)** la hauteur d'une case chargée de
+     trois puces contre celle d'une case vide de la rangée suivante — elles
+     doivent **différer** (137 contre 88 : c'est la preuve que les rangées ne
+     s'égalisent plus) ; **(c)** `scrollHeight` contre `clientHeight` de la
+     carte — l'écart doit être de l'ordre de quelques dizaines de pixels, pas
+     de deux cent soixante ;
    - **le pied reste sous la grille** aux deux hauteurs, sans être comprimé ni
      emporté par le défilement ;
    - **le survol** d'un bloc, d'une puce et d'une ligne de liste, dans les
@@ -1137,6 +1234,26 @@ d'en dessous n'aurait rien apporté. Le reste de ce paragraphe énumère ce qui
    « remplacement conservé » décrite ici, c'est la choisir de fait.
 
 ## Points non repris
+
+**Revue adverse du diff (11 constats, VERDICT NO-GO) : aucune ligne
+« Non repris ».** Les onze ont été vérifiés dans les fichiers cités. Neuf sont
+repris ici en design et en code, un (2) revient à l'orchestrateur qui tient la
+pile jetable, un (9) est inscrit au « Reste » du § 10 sans code. Un seul
+constat est repris **pour une autre raison que la sienne**, et c'est dit.
+
+| # | Sujet | Ce que la vérification donne | Où c'est repris |
+|---|---|---|---|
+| 1 | P1, cases du Mois qui débordent sur la semaine suivante | **fondé sur la conclusion, faux sur le mécanisme.** Sonde Chromium sur une reproduction de la structure : la grille a une hauteur indéterminée (`min-h-full`, pas `h-full`), donc la piste `1fr` monte jusqu'au max-content et rien ne déborde. Ce que `1fr` fait, c'est **égaliser** les six rangées sur la plus chargée : 137 px partout, grille de 857 px dans une carte de 597, **260 px de défilement** pour un seul jour à trois puces. Et `auto` sur la rangée d'en-têtes la ferait passer de 35 à 84 px sur une fenêtre haute (`align-content: stretch`) | § 4, gabarit `max-content` + six `auto`, plancher `min-h-[5.5rem]` rendu à la case comme la maquette (137 / 88 / 15 px de défilement) ; § 9 `CalendarView.da` (4), deux assertions de forme retournées ; § 11.3, trois mesures chiffrées à relever sur `mois-1280x640` |
+| 2 | P1, plan de preuve non tenu (sabotage, recette) | fondé et non contesté : `.cartography-work/validation` n'existe pas, `docs/da/2026-09-11-lot8-recette.md` non plus | **à l'orchestrateur** : lui seul tient la pile jetable (17393 et 1420) et le sabotage avant le tag. Le § 11.3 lui donne en plus les trois mesures du Mois que la revue aurait dû voir |
+| 3 | P2, « Toute la journée » du Jour resté en `text-xs` | fondé : `CalendarView.tsx:700` contre le § 5 qui écrit `text-sm`, et le renversement du § 3.1 ne vaut que pour la gouttière de 3,5 rem de la Semaine, motif absent ici | code passé en `text-sm` (aucune exemption ajoutée au design) ; § 9 `CalendarView.da` (8) |
+| 4 | P3, repli à `max-[839px]` au lieu de `max-[840px]` | fondé : `Carte.tsx:56` pose `max-[840px]`, et 840 px est une largeur de recette | § 1, seuil écrit littéralement ; code aligné ; § 9 garde (8) |
+| 5 | P3, garde des 12 px aveugle à trois vues sur quatre | fondé, et la faiblesse venait bien du design (§ 9 la plaçait dans le seul `CalendarPanel.da.test.tsx`) | § 9 `CalendarView.da` (8) : garde **ajoutée** et bouclée sur les quatre `viewMode`, celle du panneau conservée pour la barre d'outils |
+| 6 | P3, `min-h-[32px]` devenu `min-h-[2rem]`, présenté comme une conservation | fondé : `main` porte `min-h-[32px]`, et « Petite » pose 14 px sur `<html>` (`globals.css:118-122`) | § 3.1, `min-h-[32px]` rétabli et la phrase corrigée ; § 9 `CalendarView.da` (8) |
+| 7 | P3, aide « Participants » passée au-dessus du champ sans le dire | fondé : `FormField.tsx:64-70` rend la description avant le champ, `main` la rendait après | § 6, position **assumée** et motivée (`aria-describedby`, aide enfin annoncée) ; § 9 `EventForm.da`, garde qui fige la position |
+| 8 | P3, description du rendez-vous devenue redimensionnable | fondé : sans `autoResize`, `Textarea.tsx:66` rend `resize-y` ; `main` posait `resize-none` | § 6, `className="resize-none"` ; § 9 `EventForm.da` |
+| 9 | P3, anneau rentrant recopié une troisième fois | fondé : `CalendarView.tsx:28`, `PrototypeConversationDrawer.tsx:331`, variante `CRMPanel.tsx:225`, motif existant `ui/segments.classes.ts` | § 10, **« Reste », sans code** : la sortie en `ui/anneau.classes.ts` touche deux écrans hors lot, elle se fait au prochain lot |
+| 10 | P3, cast qui blanchit la table des vues | fondé : `VUES` est inféré `{ id: string }[]`, le cast `:530` laisse compiler une faute de frappe | code : type dérivé du store, table annotée, cast remplacé par une recherche dans `VUES` ; § 9 garde (12), de source |
+| 11 | P3, trait doublé sous l'en-tête du Mois | fondé, y compris sur la maquette qui porte le même doublon | § 4, `[&:nth-child(-n+14)]:border-t-0` sur les cases ; l'en-tête garde son `border-b` parce qu'il est `sticky` ; § 9 `CalendarView.da` (4) |
 
 **Revue de la v5 : aucune ligne « Non repris ».** Les six constats du journal
 `.cartography-work/reviews/opus-da-lot8-agenda-design-v5.log` (1-6, VERDICT
