@@ -1,7 +1,8 @@
 # DA « Application affinée », lot 8 : l'écran Agenda (design à challenger avant le code)
 
-Version 5, 11/09/2026 10:25, après la revue de la v4 (12 points repris, 0 non
-repris) ; journal `.cartography-work/reviews/opus-da-lot8-agenda-design-v4.log`. Précédent : lot 3 (Tiroir), sur `main` ; cadence : une
+Version 6, 11/09/2026 12:10, après la revue de la v5 (6 points repris, 0 non
+repris) ; journal `.cartography-work/reviews/opus-da-lot8-agenda-design-v5.log`
+(v4 : `…-v4.log`, 12 repris). Précédent : lot 3 (Tiroir), sur `main` ; cadence : une
 seule release pour toute la DA (décision Ludo 11/09, 0.72.0-alpha porte
 l'ensemble). Maquette :
 `docs/da/2026-09-05-propositions/maquettes/agenda.html` (états `normal`,
@@ -24,12 +25,14 @@ Le panneau Agenda (`CalendarPanel.tsx`, monté `standalone` par la vue
 **sur les états `normal`, `mois` et `erreur`** en consommant les primitives du
 lot 1 (`Carte`, `Segments`, `Alerte`, `EtatVide`, `Squelette`,
 `Etiquette`, `Button`, `Input`, `Select`, `Textarea`, `FormField`) ; les
-mêmes données, les mêmes états, les mêmes destinations. **Deux éléments
-nouveaux apparaissent à l'écran, et ce sont les deux seuls** : le champ
-« Agenda » en lecture seule du formulaire (maquette `agenda.html:101`, § 6)
-et le pied sous la grille qui nomme l'agenda courant (§ 8). Tous deux
-affichent une donnée déjà connue du composant, tous deux sont assumés au
-§ 10, et tout le reste est déjà rendu aujourd'hui. Le `h3` de période ne
+mêmes données, les mêmes états, les mêmes destinations. **Quatre éléments
+nouveaux apparaissent à l'écran, et ce sont les quatre seuls** : le champ
+« Agenda » en lecture seule du formulaire (maquette `agenda.html:101`, § 6),
+le pied sous la grille qui nomme l'agenda courant (§ 8), le bouton
+« Réessayer » des bandeaux (maquette `agenda.html:71`, § 8) et le lieu sur la
+ligne d'horaire des blocs de la Semaine (maquette `agenda.html:78`, § 3.1).
+Les quatre affichent une donnée ou un geste déjà connus du composant, les
+quatre sont assumés au § 10, et tout le reste est déjà rendu aujourd'hui. Le `h3` de période ne
 gagne **pas** de suffixe « (aujourd'hui) » : la vue Jour en porte déjà un
 (`CalendarView.tsx:646-648`, § 5), et deux fois le même mot sur le même
 écran, ce n'est pas un repère, c'est un bruit (§ 1). L'état maquetté
@@ -110,7 +113,7 @@ les deux barres actuelles (`calendarHeader` + `calendarNav`) en une rangée.
 | Nav | `Button ghost sm`, `aria-label` « Période précédente/suivante » | `Button variant="secondary" size="icon"` (mêmes `aria-label` et `title`) ; « Aujourd'hui » `Button variant="secondary" size="md"` |
 | Période | `<h3 className="capitalize">` + `getNavLabel()` | `<h3 id="agenda-periode" className="text-base font-semibold">` ; jour : `toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })` puis première lettre seule en capitale (lot 2, jamais `capitalize`) ; **aucun suffixe ` (aujourd'hui)`** : `getNavLabel()` n'en a pas aujourd'hui (`CalendarPanel.tsx:333-341`) et la vue Jour en rend déjà un juste en dessous (`CalendarView.tsx:646-648`, § 5) ; semaine : libellé ci-dessous (bornes lundi-dimanche inchangées, `getDay()` + offset actuel) ; mois/liste : mois long + année, première lettre seule en capitale. L'`id` n'est pas décoratif : il **nomme les quatre sections de vue** par `aria-labelledby="agenda-periode"` (§ 3, châssis) |
 | Sélecteur | `<select aria-label="Calendrier affiché">` maison, `Z_LAYER.ONBOARDING` | `Select aria-label="Agenda affiché"` (**le mot change**, lexique : voir la note ci-dessous), `options={calendars.map(c => ({ value: c.id, label: c.summary }))}`, `value={currentCalendarId \|\| ''}`, même `onChange` ; wrapper `relative` + z-index conservé (BUG-049) ; liste vide : aucune option, pas de bouton « créer » (BUG-143) |
-| Sync / ICS | `Button ghost sm` | `Button variant="ghost" size="icon"` ; `aria-label` / `title` conservés (« Synchroniser l'agenda », « Importer un fichier .ics », « Exporter en .ics ») ; `input.hidden` inchangé |
+| Sync / ICS | `Button ghost sm` | `Button variant="ghost" size="icon"` ; `aria-label` / `title` conservés (« Synchroniser l'agenda », « Importer un fichier .ics », « Exporter en .ics ») ; `input.hidden` et `disabled={syncing}` inchangés. **L'icône de synchronisation reste rendue dans tous les états**, y compris quand une `Alerte` porte un « Réessayer » : voir § 8, « ce que devient l'icône de synchronisation » |
 | Segments + geste | modes + « Nouvel événement » dans `calendarHeader` (droite) | dans la rangée fusionnée, groupe `className="ml-auto flex flex-wrap gap-2"` (`basis-full` sous 840 px, déjà annoncé sur le conteneur) = `Segments` puis le `Button variant="primary" size="lg"` « Nouveau rendez-vous » ; maquette `.vue-tete .actions{margin-left:auto}` (règle `agenda.html:7`, élément `agenda.html:69`). Sans `ml-auto` le groupe reste collé au sélecteur / sync, pas à droite |
 | Fermer (overlay) | `<button>` sans nom | `Button variant="ghost" size="icon"` `aria-label="Fermer l'agenda"` (absent en `standalone`) |
 | Dialogue (overlay) | `role="dialog"` `aria-modal="true"` `aria-label="Calendrier"` (`CalendarPanel.tsx:617`) | `aria-label="Agenda"` (lexique, note ci-dessous) ; `role`, `aria-modal` et l'ouverture inchangés |
@@ -201,8 +204,9 @@ sans objet.
 - **Chaque vue** est une `Carte as="section" aria-labelledby="agenda-periode"`
   en `flex-1 min-h-0` — `flex-1` pour occuper la place, `min-h-0` parce
   qu'elle est cette fois bien un élément flex. S'y ajoute, par vue : `flex
-  flex-col` pour Semaine (§ 3) et Jour (§ 5), `overflow-y-auto` pour Mois
-  (§ 4) et Liste (§ 5).
+  flex-col overflow-hidden` pour Semaine (§ 3) et Jour (§ 5),
+  `overflow-y-auto` pour Mois (§ 4) et Liste (§ 5). Les quatre clippent donc,
+  et leurs coins arrondis tiennent.
 - **Le pied** (§ 8) est le second enfant de ce conteneur, `shrink-0` : il ne
   se laisse pas comprimer par la carte et ne défile pas avec elle. Le `mt-2`
   annoncé au § 8 devient le `gap-2` du conteneur.
@@ -223,9 +227,10 @@ sans objet.
   focus-visible:outline-offset-[-3px] focus-visible:outline-ring` : blocs de
   la Semaine et du Jour (§ 3, § 5), jetons de journée entière (§ 3, § 5),
   puces du Mois (§ 4), lignes de la Liste (§ 5). Les jetons de journée entière
-  vivent au-dessus du conteneur défilant (`shrink-0`) et rien ne les clippe :
-  ils prennent quand même l'anneau rentrant, pour que le focus se dessine de
-  la même façon sur toute la surface de l'écran plutôt que d'un pixel
+  vivent au-dessus de la piste défilante (`shrink-0`), mais la carte et leur
+  propre rangée clippent l'une comme l'autre (§ 3.1) : l'anneau rentrant leur
+  est donc nécessaire, et il vaut de toute façon pour que le focus se dessine
+  de la même façon sur toute la surface de l'écran plutôt que d'un pixel
   différent selon la rangée. L'anneau reste visible dans
   les trois thèmes, y compris en contraste élevé (`--color-ring: #FFFFFF`,
   `src/frontend/src/styles/globals.css:547`, contre `#0F8FB3` en clair `:57`
@@ -234,11 +239,23 @@ sans objet.
 ### 3.1 La grille semaine
 
 `Carte as="section" aria-labelledby="agenda-periode" className="flex-1
-min-h-0 flex flex-col"` (**sans** `overflow-hidden`). La maquette pose
-`.semaine{overflow:hidden}` (`agenda.html:8`) ; collée sur la carte, elle
-tuerait le scroll interne actuel `flex-1 overflow-y-auto`
-(`CalendarView.tsx:453`). Le scroll reste sur la grille horaire, et l'anneau
-des blocs est rentrant pour cette raison même (§ 3.0).
+min-h-0 flex flex-col overflow-hidden"`, **comme la maquette**
+(`.semaine{overflow:hidden}`, `agenda.html:8`). Cet `overflow-hidden` ne tue
+pas le défilement interne, contrairement à ce que disait la v5 : la zone
+parente `CalendarPanel.tsx:569` clippe **déjà** en `overflow-hidden` et la
+piste horaire `flex-1 overflow-y-auto` (`CalendarView.tsx:453`) défile dessous
+aujourd'hui. Il ne coupe rien non plus au focus, parce que tous les
+interactifs des vues portent l'anneau **rentrant** (§ 3.0) et qu'aucun
+libellé n'est interactif.
+
+**Ce qu'il fait, et c'est la raison de le poser** : il donne aux coins
+`rounded-md` de la `Carte` (`Carte.tsx:20`) de quoi clipper le fond
+`bg-accent-tint` de la cellule d'en-tête du jour courant et les `border-l`
+des sept colonnes. Sans lui, ces aplats et ces traits dépassent du rayon et
+le haut de la carte se rend carré sur une surface arrondie. Le contrôle est à
+la recette (§ 11.3). Même traitement pour la carte du Jour (§ 5), pour la
+même raison ; le Mois et la Liste clippent déjà par leur `overflow-y-auto`
+(§ 4, § 5).
 
 Grille `grid-cols-[3.5rem_repeat(7,1fr)]` (gutter `3.5rem` de la maquette,
 **7** colonnes). **Même gabarit** pour l'en-tête, la rangée « Journée » et
@@ -250,6 +267,47 @@ aujourd'hui, pas collés « mar.1 » comme `agenda.html:75`) : un `div` dont
 le texte entier est `lun.` … `dim.` (`text-sm text-text-muted`) + un nœud
 numéro `text-base font-semibold tabular-nums`. Heures : `text-xs tabular-nums
 text-text-muted` (non interactif, plancher 12 px). Pas de `bg-accent-cyan/5`.
+
+**Le cadrage des cellules d'en-tête est fixé ici, il n'est pas laissé au
+codeur.** Chaque cellule de jour de l'en-tête porte `px-2 py-2 text-left`,
+d'après la maquette (`.semaine .jour-tete{padding:.5rem .6rem}`,
+`agenda.html:10`, cadrage à gauche) ; le `flex-1 text-center py-3`
+d'aujourd'hui (`CalendarView.tsx:406`) tombe avec le gabarit qui le portait.
+Les deux nœuds se suivent donc en colonne, à gauche, comme le `jour-tete` de
+la maquette. La **première** cellule de la rangée « Journée » porte le même
+`py-2 text-left` mais **sans padding horizontal** : elle vit dans la
+gouttière de 3,5 rem, où chaque pixel compte.
+
+**Et le libellé de cette gouttière reste `text-xs`** (`text-xs
+text-text-muted` « Journée »), là où la v5 le passait à `text-sm` : c'est un
+renversement, assumé et porté à la table des reprises. La raison est la
+cohérence de la bande, pas l'esthétique : la même colonne de 3,5 rem porte
+déjà les libellés d'heures en `text-xs` (ci-dessus), et deux échelles de
+texte dans une colonne de 56 px, ce sont deux rythmes dans la même bande. La
+largeur va dans le même sens — « Journée » est un mot sans espace, donc
+insécable : à 14 px il ne se replie pas, il déborde ou se tronque, quand les
+heures voisines tiennent à 12 px. Aucun interactif n'est concerné (le
+plancher de 14 px porte sur les interactifs), et le plancher absolu de 12 px
+est respecté. Les cellules de jour de cette rangée gardent leur `p-1` et leur
+hauteur minimale (`min-h-[2rem]`, `CalendarView.tsx:437`).
+
+**La barre de défilement de la piste ne doit pas décaler les trois
+gabarits.** L'en-tête et la rangée « Journée » sont `shrink-0` hors du
+conteneur défilant (`CalendarView.tsx:396`, `:425`) ; la piste vit dans
+`flex-1 overflow-y-auto` (`:453`). Sur une plateforme à barres classiques
+(Windows, Linux), la barre retire sa largeur aux sept colonnes **du bas
+seulement**, et le trait passant de `border-border/20` à `border-border`
+plein rend l'écart visible. La recette tourne sur macOS, où les barres sont
+en surcouche et où rien ne se voit. Correction : **les trois gabarits portent
+`[scrollbar-gutter:stable]`**, et l'en-tête comme la rangée « Journée »
+portent `overflow-hidden` pour que la propriété s'applique (elle ne vaut que
+pour un conteneur de défilement, et `overflow:hidden` en crée un ;
+`overflow-y-hidden` seul calculerait `overflow-x` en `auto` et pourrait
+rendre une barre horizontale sous un jeton long). Poser la gouttière sur la
+seule piste ne corrigerait rien : elle rendrait l'écart permanent au lieu
+d'intermittent. Ces deux `overflow-hidden` ne clippent rien de plus : les
+jetons de journée entière portent déjà l'anneau rentrant (§ 3.0). Contrôle
+au § 11.3 et garde (1) de `CalendarView.da.test.tsx` (§ 9).
 
 **Les sept colonnes de jour sont séparées par un trait, la gouttière des
 heures non.** Dans les trois gabarits (en-tête, rangée « Journée », piste
@@ -317,13 +375,18 @@ comportement qu'il faut garder. Structure cible :
   blocs.
 
 Les sept `1fr` internes coïncident avec les sept `1fr` de l'en-tête et de la
-rangée « Journée » tant qu'aucun `gap` n'est posé, et aucun des trois n'en
-porte.
+rangée « Journée » tant qu'aucun `gap` n'est posé (aucun des trois n'en
+porte) **et tant que les trois réservent la même gouttière de barre de
+défilement** (`[scrollbar-gutter:stable]`, ci-dessus). Cette piste porte donc
+elle aussi la classe, sur le `div` `grid` extérieur qui défile — c'est-à-dire
+sur le conteneur `flex-1 overflow-y-auto` (`CalendarView.tsx:453`), le seul
+des trois qui soit un conteneur de défilement par son `overflow-y`.
 
 Rangée « Journée » **conservée** au-dessus de la grille horaire
-(`CalendarView.tsx:423-450`) : `grid grid-cols-[3.5rem_repeat(7,1fr)]`,
-première cellule = libellé gutter `text-sm text-text-muted` « Journée »
-(plus `text-xs`), **pas** `w-16` + `flex-1`. `getTimedEventLayout` exige
+(`CalendarView.tsx:423-450`) : `grid grid-cols-[3.5rem_repeat(7,1fr)]
+overflow-hidden [scrollbar-gutter:stable]`, première cellule = libellé
+gutter `text-xs text-text-muted` « Journée » (voir le cadrage ci-dessus),
+**pas** `w-16` + `flex-1`. `getTimedEventLayout` exige
 `start_datetime` / `end_datetime` et retourne `null` sans eux
 (`calendarEventLayout.ts:90-92`) : un `all_day` n'a pas de `top` dans la
 grille horaire. Filtre `allDayByDate` inchangé. Jetons : `<button>`
@@ -382,7 +445,11 @@ la chaîne entière, comme pour le titre), **début et fin conservés**,
 forme `HH:MM à HH:MM` (`formatTime(start_datetime)` + ` à ` +
 `formatTime(end_datetime)`, plus le ` - ` actuel) ; si `location`, même
 ligne, séparateur ` · ` (ex. « 09:00 à 10:30 · sur place » ; sans lieu,
-« 10:00 à 12:00 »). Ligne de l'heure : `bg-instant` conservé (repère, pas
+« 10:00 à 12:00 »). **Le lieu est un des quatre éléments nouveaux de
+l'écran** (§ 10) : la Semaine ne rend aujourd'hui que le résumé et les
+horaires (`CalendarView.tsx:529-535`), et la maquette le porte
+(`agenda.html:78`, « 09:00 à 10:30 · sur place »). C'est la même donnée que
+celle de la fiche et du Jour, sur une ligne qui existait déjà. Ligne de l'heure : `bg-instant` conservé (repère, pas
 une erreur), rendue seulement si `nowLineTop !== null` (garde actuelle
 `CalendarView.tsx:379-382` : aujourd'hui dans la semaine **et** heure dans
 la fenêtre) ; le repère porte `role="img"` `aria-label={`Il est ${HH}:${MM}`}`
@@ -429,7 +496,11 @@ fenêtre basse (§ 11.3). En-têtes :
 nœuds séparés `text-sm text-text-muted`, texte
 entier `lun.` … `dim.` (maquette `.jt`, `agenda.html:85` ; la regex
 d'`etiquettesJours` lit le texte entier) ; ces en-têtes portent `border-b
-border-border` et **aucun** `border-l`. Cellules `p-1.5
+border-border`, **aucun** `border-l`, et `px-2 py-2 text-left` (maquette
+`.mois .jt{padding:.4rem .5rem}`, `agenda.html:27`, cadrage à gauche), même
+cadrage que l'en-tête de la Semaine (§ 3.1) : sans cette consigne, le § 4
+refaisait le gabarit sans dire ce qu'il advenait du `text-center … py-2`
+d'aujourd'hui (`CalendarView.tsx:229`). Cellules `p-1.5
 border-t border-l border-border text-sm` plus `[&:nth-child(7n+1)]:border-l-0` :
 les sept en-têtes occupent les enfants 1 à 7 et les 42 cases les enfants 8 à
 49, donc `7n+1` retombe exactement sur la première case de chaque rangée (8,
@@ -460,9 +531,11 @@ c'est le seul site du dépôt qui interroge ce sélecteur.
 
 **Ces deux vues ont le même châssis que les deux autres** (§ 3.0), elles ne
 sont pas laissées sans racine : Jour = `Carte as="section"
-aria-labelledby="agenda-periode" className="flex-1 min-h-0 flex flex-col"`
+aria-labelledby="agenda-periode" className="flex-1 min-h-0 flex flex-col
+overflow-hidden"`
 (comme la Semaine : le défilement reste sur la piste horaire interne,
-`CalendarView.tsx:671`) ; Liste = `Carte as="section"
+`CalendarView.tsx:671`, et l'`overflow-hidden` de la carte sert à clipper ses
+coins, § 3.1) ; Liste = `Carte as="section"
 aria-labelledby="agenda-periode" className="flex-1 min-h-0 overflow-y-auto"`
 (comme le Mois : c'est la carte qui défile, d'où l'anneau rentrant sur ses
 lignes). Aucune des deux ne garde son `h-full` de racine
@@ -502,11 +575,12 @@ grille (`CalendarView.tsx:652-668`), mêmes jetons `domaine-agenda` que la
 semaine, filtre `allDayEvents` inchangé, libellé gutter `text-sm
 text-text-muted` « Toute la journée ».
 
-Encres d'accent du Jour et de la Liste : le `h3` interne et son suffixe
-« (aujourd'hui) » (`CalendarView.tsx:644` et `647`) ainsi que le `h3` de groupe
-de la Liste (`CalendarView.tsx:114`) quittent `text-accent-cyan-ink` pour
+Encres d'accent du Jour : le `h3` interne et son suffixe « (aujourd'hui) »
+(`CalendarView.tsx:644` et `647`) quittent `text-accent-cyan-ink` pour
 `text-accent` (le suffixe garde `ml-2 text-xs font-normal`, il n'est pas dans
-un interactif).
+un interactif). Le `h3` de groupe de la Liste (`CalendarView.tsx:114`) quitte
+la même encre, et sa chaîne de classe complète est écrite **une seule fois**,
+plus bas dans ce paragraphe (« Groupes par jour »).
 
 Liste : plus de `motion.button` ni `scale` ; **pas** `Ligne`
 (`Ligne.tsx:49-55` : le `<button>` ne contient que `{titre}`, aucune prop
@@ -532,9 +606,11 @@ text-domaine-agenda` ; titre `font-semibold text-text` = `summary` ; si
 formatTime(event.start_datetime!)`. Nom accessible = concaténation des nœuds
 texte (résumé, lieu s'il existe, horaire). Chaîne exacte `Toute la journée`
 (pas « toute la journée »). Vide : `EtatVide
-titre="Aucun événement"`, sans action. Groupes par jour : `h3 className="text-sm
-font-semibold px-4 pt-3 pb-1"` — même `px-4` que les lignes, pour que le titre
-de jour et les rendez-vous qu'il coiffe s'alignent sur la même marge gauche —,
+titre="Aucun événement"`, sans action. Groupes par jour : `h3
+className="text-sm font-semibold text-accent px-4 pt-3 pb-1"`, chaîne
+complète et unique (elle porte l'encre annoncée plus haut) — même `px-4` que
+les lignes, pour que le titre de jour et les rendez-vous qu'il coiffe
+s'alignent sur la même marge gauche —,
 `parseLocalDateKey` conservé, tri descendant
 `b.localeCompare(a)` inchangé (`CalendarView.tsx:101`). L'espacement entre
 groupes vient du `pt-3` du `h3` suivant, plus de `space-y-6` ni de `space-y-2`
@@ -614,9 +690,9 @@ Agenda affiché : `FormField htmlFor="eventform-agenda" label="Agenda"`
 `selectedCalendar` vaut `undefined` dès que `currentCalendarId` est nul
 (`EventForm.tsx:56`), cas nommé par le garde `EventForm.tsx:48` « Aucun
 calendrier sélectionné », et `value={undefined}` ferait basculer un `Input`
-contrôlé en non contrôlé. C'est le **seul élément nouveau de l'écran**
-(maquette `agenda.html:101`) : il rend visible la destination de
-l'enregistrement, qui n'apparaissait jusqu'ici que dans la confirmation
+contrôlé en non contrôlé. C'est **l'un des quatre éléments nouveaux de
+l'écran** (§ 10 ; maquette `agenda.html:101`) : il rend visible la
+destination de l'enregistrement, qui n'apparaissait jusqu'ici que dans la confirmation
 externe (`EventForm.tsx:154`, `162-163`) ; ajout assumé au § 10. **Pas**
 `disabled` : `Input` pose `disabled:opacity-50`, le champ sort de la
 tabulation, souvent non annoncé, valeur non copiable ; la maquette
@@ -657,9 +733,39 @@ ternaire `loading` / `EventForm` / `EventDetail` / `CalendarView`.
 `staleWarning` et `error: null` **sur son propre retour**
 (`calendarErrors.ts:68`) sans effacer l'erreur agendas
 (`CalendarPanel.tsx:180-181` + `215-224`). Aujourd'hui les deux messages sont
-rendus (`CalendarPanel.tsx:428-432` et `562-566`) avec deux « Réessayer » :
-c'est le **doublon de geste** qu'on ferme, pas la péremption qu'on tait. Une
-erreur plus grave ne rend pas la grille moins périmée.
+rendus ensemble (`CalendarPanel.tsx:428-432`, un `<p role="status">` sous le
+titre, et `:562-566`, un `<div role="alert"><p>` au-dessus de la cascade) et
+**aucun des deux ne porte de geste de reprise** : `grep -n "Réessayer"` ne
+rend rien dans les quatre fichiers, et `handleSync` (`:228`) n'a qu'un seul
+appelant, le bouton icône `:457`. Deux bandeaux muets, donc, et un geste qui
+ne vit que dans la barre d'outils.
+
+**Le « Réessayer » est donc un ajout, pas une reprise d'existant** : il vient
+de la maquette (`agenda.html:71`, dans l'alerte), il est l'un des quatre
+éléments nouveaux de l'écran (§ 10), et ce qu'on ferme ici n'est pas un
+doublon qui existerait déjà — c'est le risque de le créer en le posant sur
+deux bandeaux à la fois. Une erreur plus grave ne rend pas pour autant la
+grille moins périmée : d'où le bandeau unique qui dit les deux états.
+
+**Ce que devient l'icône de synchronisation quand un « Réessayer » est à
+l'écran : rien, elle reste.** Les deux appellent la même fonction, et c'est
+voulu : l'icône est un geste permanent de barre d'outils, au même titre
+qu'« Importer » et « Exporter », disponible sur une grille saine où aucun
+bandeau ne s'affiche ; le « Réessayer » est la reprise contextuelle d'un
+échec nommé, et il disparaît avec lui. Retirer l'icône pendant qu'un bandeau
+est affiché ferait varier la barre d'outils selon l'état, ce qui est un
+défaut plus grave que deux chemins vers un même geste. Deux conséquences
+mécaniques : le « Réessayer » d'une `Alerte` porte le même `disabled={syncing}`
+que l'icône (`CalendarPanel.tsx:457`), sinon deux gestes identiques
+affichent deux états ; et la garde « un seul Réessayer » du § 9 compte les
+éléments **nommés « Réessayer »**, l'icône portant `aria-label="Synchroniser
+l'agenda"`.
+
+**Et ce « Réessayer » réessaie bien les deux.** `handleSync`
+(`CalendarPanel.tsx:228-250`) appelle `api.syncCalendar`, **puis**
+`loadCalendars()`, **puis** `loadEvents()` : sur l'`Alerte` fusionnée, dont le
+titre est l'erreur d'agendas et le corps la péremption des événements, le
+geste couvre les deux sources. Rien à changer à la fonction.
 
 | `error && !needsReauth` | `staleWarning` | Ce qui est rendu |
 |---|---|---|
@@ -676,18 +782,18 @@ phrase de conservation du stale **amputée de son préfixe** « Dernier
 rafraîchissement échoué : », soit `Données conservées` suivi de
 ` (synchronisées le ${lastSyncAt formaté})` quand `lastSyncAt` existe et rien
 sinon, `icone={AlertTriangle 18 px}`, **un seul** `action` = `Button
-variant="secondary" size="md"` « Réessayer » → `handleSync` (celui de
-l'erreur, pas le `ghost` du stale). L'utilisateur lit dans le même bandeau que
+variant="secondary" size="md"` « Réessayer » → `handleSync`,
+`disabled={syncing}` (celui de l'erreur, pas le `ghost` du stale). L'utilisateur lit dans le même bandeau que
 l'agenda est en échec **et** que la grille sous ses yeux date.
 
 | État | Aujourd'hui | Cible |
 |---|---|---|
-| chargement | icône `RefreshCw` qui tourne | trois rangées `aria-hidden` façon semaine : chaque rangée `flex items-center gap-2`, un `Squelette classeBarre="h-8 rounded-sm" largeur="w-8"` **puis** un `Squelette classeBarre="h-8 rounded-sm" largeur="w-[60%]"` (`SqueletteProps.largeur` unique, `Squelette.tsx:12,21` : un seul `Squelette` ne porte pas deux largeurs) ; puis `role="status"` « Chargement de l'agenda… » `text-sm text-text-muted` |
+| chargement | icône `RefreshCw` qui tourne | trois rangées `aria-hidden` façon semaine : chaque rangée `flex items-center gap-2`, un `Squelette classeBarre="h-8 rounded-sm" largeur="w-8"` **puis** un `Squelette className="flex-1" classeBarre="h-8 rounded-sm" largeur="w-[60%]"` (`SqueletteProps.largeur` unique, `Squelette.tsx:12,21` : un seul `Squelette` ne porte pas deux largeurs). **Le `className="flex-1"` du second est porteur** (`SqueletteProps.className`, `Squelette.tsx:16`) : la racine de `Squelette` est un `div` sans largeur propre (`:36`), donc en item flex sa taille de base est celle de son contenu, contre laquelle un `w-[60%]` se résout comme `auto` — 60 % de rien fait une barre de zéro pixel. Le seul autre usage du dépôt place la barre en pourcent dans une piste dimensionnée (`TodayDashboardCard.tsx:73-78`, `grid grid-cols-[2rem_1fr_auto]`), `flex-1` joue ici le même rôle. Puis `role="status"` « Chargement de l'agenda… » `text-sm text-text-muted` |
 | `isEventFormOpen` | `EventForm` | § 6 |
 | `currentEventId` | `EventDetail` | § 7 |
 | sinon | `CalendarView` | § 3-5 |
-| cache périmé (`staleWarning`) | `<p role="status" className="text-xs text-warning" data-testid="calendar-stale-warning">` « Dernier rafraîchissement échoué : données conservées… » sous le titre | `Alerte data-testid="calendar-stale-warning"` (la primitive impose `role="alert"`, test lot 2 : un `role` appelant ne l'écrase pas ; la maquette aussi) titre « L'agenda est affiché tel qu'il était. » `children` = texte actuel (un seul horodatage `lastSyncAt`, on n'invente pas 11:20 / 11:50) `icone={AlertTriangle 18 px}` `action` = `Button ghost md` Réessayer → `handleSync` ; enveloppe `px-4 pt-3` ; **hors du ternaire** ; si une erreur agendas coexiste, c'est l'`Alerte` fusionnée ci-dessus qui est rendue, jamais deux bandeaux |
-| erreur totale (`error && !needsReauth`) | bandeau `bg-error/10` au-dessus de la cascade | `Alerte` titre absent, `children` = `error` (403 actionnable conservé, #124), `icone={AlertCircle 18 px}` `action` = `Button secondary md` Réessayer → `handleSync` ; si `staleWarning` coexiste, c'est l'`Alerte` fusionnée ci-dessus (titre = `error`, corps = la conservation) |
+| cache périmé (`staleWarning`) | `<p role="status" className="text-xs text-warning" data-testid="calendar-stale-warning">` « Dernier rafraîchissement échoué : données conservées… » sous le titre | `Alerte data-testid="calendar-stale-warning"` (la primitive impose `role="alert"`, test lot 2 : un `role` appelant ne l'écrase pas ; la maquette aussi) titre « L'agenda est affiché tel qu'il était. » `children` = texte actuel (un seul horodatage `lastSyncAt`, on n'invente pas 11:20 / 11:50) `icone={AlertTriangle 18 px}` `action` = `Button ghost md` Réessayer → `handleSync`, `disabled={syncing}` ; enveloppe `px-4 pt-3` ; **hors du ternaire** ; si une erreur agendas coexiste, c'est l'`Alerte` fusionnée ci-dessus qui est rendue, jamais deux bandeaux |
+| erreur totale (`error && !needsReauth`) | bandeau `bg-error/10` au-dessus de la cascade | `Alerte` titre absent, `children` = `error` (403 actionnable conservé, #124), `icone={AlertCircle 18 px}` `action` = `Button secondary md` Réessayer → `handleSync`, `disabled={syncing}` ; si `staleWarning` coexiste, c'est l'`Alerte` fusionnée ci-dessus (titre = `error`, corps = la conservation) |
 | reauth | bandeau ambre + « Reconnecter » | hors `Alerte` (pas une erreur de lecture) ; `px-4 py-3 border-b border-border bg-warning-tint` (l'utilitaire existe : `--color-warning-tint` est déclaré dans `@theme`, `src/frontend/src/styles/globals.css:141`, contrairement aux teintes restées dans `:root`, B-109) ; texte actuel ; **toute** la couleur d'agent retirée, pas seulement le fond : `text-agent-amber` du paragraphe (`CalendarPanel.tsx:534`) devient `text-warning`, l'icône `AlertTriangle` voisine est déjà `text-warning` (`CalendarPanel.tsx:533`) et ne bouge pas, et le `Button ghost md` « Reconnecter » / « En attente... » + `Spinner` perd la surcharge `className="text-agent-amber hover:text-agent-amber"` (`CalendarPanel.tsx:542`) : un état dit en deux couleurs se lit comme deux états |
 | overlay | `bg-black/60` | `bg-bg/80` (plus de `black`) |
 
@@ -695,16 +801,19 @@ Un seul « Réessayer » à l'écran, dans tous les cas : 1 sur l'`Alerte` stale
 1 sur l'`Alerte` d'erreur totale, 1 sur l'`Alerte` fusionnée quand les deux
 états coexistent, 0 sur chargement, grilles, formulaire, fiche, reauth, vide
 liste (le bandeau reauth garde son « Reconnecter », qui n'est pas un
-« Réessayer »). Jamais deux bandeaux d'erreur ensemble, et jamais un état tu
-parce qu'un autre est plus grave.
+« Réessayer »). Le décompte porte sur les éléments **nommés « Réessayer »** :
+l'icône « Synchroniser l'agenda » de la barre d'outils reste rendue dans tous
+les états, avec son propre nom accessible, pour les raisons dites plus haut.
+Jamais deux bandeaux d'erreur ensemble, et jamais un état tu parce qu'un
+autre est plus grave.
 
 Pied sous la grille (prêt seulement, pas sur formulaire / fiche /
 chargement) : `shrink-0 text-xs font-medium text-text-muted`, second enfant du
 conteneur `h-full flex flex-col gap-2 p-4` de la branche « grille » (§ 3.0 —
 le `gap-2` remplace le `mt-2`, et le `shrink-0` empêche la carte de le
 comprimer). Il n'existe pas aujourd'hui : c'est, avec le champ « Agenda » du
-formulaire, le second des deux seuls éléments nouveaux de l'écran, assumé au
-§ 10. Résumé = calendrier
+formulaire, le bouton « Réessayer » et le lieu de la Semaine, l'un des quatre
+seuls éléments nouveaux de l'écran, assumé au § 10. Résumé = calendrier
 **courant** (`const courant = calendars.find(c => c.id === currentCalendarId)`).
 **Aucun pied du tout si `courant` est `undefined`** : c'est l'état de premier
 lancement, celui que protège BUG-143 (aucune création d'agenda avant geste
@@ -737,7 +846,9 @@ porte `data-testid="calendar-stale-warning"`, dont le **titre contient le
 message 403** et le corps la phrase de conservation, avec **un** seul
 « Réessayer » : ni deux bandeaux, ni une péremption tue ; stale seul appelle
 `handleSync` ; zéro « Réessayer » sur grille saine, reauth, chargement ;
-stale visible aussi formulaire / fiche ouverts (hors ternaire) ; (5)
+stale visible aussi formulaire / fiche ouverts (hors ternaire) ; et, dans les
+trois états à bandeau, le bouton nommé « Synchroniser l'agenda » est **encore
+rendu** (l'icône de barre d'outils ne disparaît pas, § 8) ; (5)
 sélecteur `aria-label="Agenda affiché"` est un `Select`, liste vide
 sans bouton créer, et **plus aucune occurrence de « Calendrier »** dans un
 `aria-label` des quatre fichiers (dialogue compris, `CalendarPanel.tsx:617`) :
@@ -780,7 +891,9 @@ restent permis, ce sont les jetons du repère ; (7) overlay : plus de
 donc ni résumé ni suffixe sur une liste vide ; suffixe « aucun agenda en ligne
 branché » absent si un `provider === 'caldav'` (présent seulement si au moins
 un agenda existe et que tous sont `local`) ; (10) chargement : chaque rangée = deux `Squelette` (`w-8` puis
-`w-[60%]`), pas un seul ; (11) **châssis** : sur la branche « grille », le
+`w-[60%]`), pas un seul, et **le second porte `className="flex-1"`** (sans
+quoi sa barre se rendrait à zéro pixel, § 8) ; (11) **châssis** : sur la
+branche « grille », le
 parent commun de la vue et du pied porte `h-full flex flex-col`, le pied porte
 `shrink-0`, et la zone de contenu (`CalendarPanel.tsx:569`) garde
 `flex-1 overflow-hidden` **inchangé** ; formulaire, fiche et chargement ne
@@ -793,13 +906,19 @@ dès que aujourd'hui est dans la semaine) ; en-tête, rangée « Journée » et
 piste horaire partagent `grid-cols-[3.5rem_repeat(7,1fr)]` (pas de `w-16`
 sur « Journée ») ; les sept colonnes de jour portent `border-l border-border`
 dans les trois gabarits et la gouttière des heures n'en porte aucune ; les
+trois gabarits portent `[scrollbar-gutter:stable]`, et l'en-tête comme la
+rangée « Journée » portent `overflow-hidden` pour que la propriété s'applique
+(§ 3.1) ; les cellules d'en-tête de jour portent `px-2 py-2 text-left` et la
+première cellule de la rangée « Journée » `py-2 text-left` sans padding
+horizontal, son libellé restant `text-xs` ; les
 lignes d'heure portent `z-[1]` et les blocs `z-10` (le fond `bg-surface-2` de
 la colonne du jour ne les efface pas) ; la colonne de la piste du jour courant
 est `bg-surface-2` et **jamais** `bg-accent-tint`, réservé à sa cellule
 d'en-tête ; (2) un bloc = un `button`, titre
 en `text-sm`, résumé entier dans le nom accessible (chaîne non coupée) ;
-horaire `HH:MM à HH:MM` **en semaine et en jour** ; Jour : lieu sur la
-même ligne s'il existe (pas de garde `height > 50`) ; aucun `capitalize`
+horaire `HH:MM à HH:MM` **en semaine et en jour** ; lieu sur la même ligne
+s'il existe, **en semaine comme en jour** (ajout en semaine, § 3.1 ; en jour,
+plus de garde `height > 50`) ; aucun `capitalize`
 sur le `h3` interne Jour ; (3) deux rendez-vous au même créneau : **asserter
 le `style` des deux boutons** (`left: '0%'` et `left: '50%'`, `width`
 correspondant), pas seulement `leftPercent` du helper ; (4) mois : 7
@@ -807,7 +926,7 @@ en-têtes `lun.`…`dim.` + 42 cellules, première = lundi, aujourd'hui en
 `bg-accent-fill` ; **c'est la `Carte` qui défile** (`overflow-y-auto`) et le
 `div.grid-cols-7` ne porte **aucun** `overflow` ; la grille porte `min-h-full`
 et `grid-rows-[auto_repeat(6,minmax(5.5rem,1fr))]`, aucune cellule ne porte
-`min-h-[5.5rem]` ; les sept en-têtes portent `sticky top-0` et un fond opaque ;
+`min-h-[5.5rem]` ; les sept en-têtes portent `sticky top-0`, un fond opaque et `px-2 py-2 text-left` ;
 (5) liste :
 un `<button>` par événement dont le nom accessible **contient** le résumé
 et l'horaire (ou « Toute la journée ») ; droite visuelle « Toute la journée »
@@ -815,7 +934,8 @@ pour un `all_day` ; chaque ligne porte `border-t border-border` et **aucune**
 ne porte `first:border-t-0` (le `h3` de groupe la précède, § 5) ; vide =
 `EtatVide` « Aucun événement » ; (6) **les quatre vues** : la racine est une `section`
 qui porte `aria-labelledby="agenda-periode"` et les classes `flex-1` et
-`min-h-0`, et **aucune ne porte `h-full`** ; (7) survol et focus : chaque bloc,
+`min-h-0`, et **aucune ne porte `h-full`** ; Semaine et Jour portent
+`overflow-hidden` (coins clippés, § 3.1), Mois et Liste `overflow-y-auto` ; (7) survol et focus : chaque bloc,
 jeton et puce des vues Semaine, Mois et Jour porte `hover:brightness-95`, la
 ligne de la Liste `hover:bg-surface-2`, et tout interactif d'une vue porte
 `focus-visible:outline-offset-[-3px]` (anneau rentrant, § 3.0).
@@ -891,7 +1011,7 @@ hors lot.
 
 ## 10. Ce que ce lot ajoute, et ce qu'il ne fait pas
 
-**Ce qu'il ajoute à l'écran**, et ce sont les deux seuls éléments nouveaux.
+**Ce qu'il ajoute à l'écran**, et ce sont les quatre seuls éléments nouveaux.
 
 1. **Le champ « Agenda »** en lecture seule du formulaire (`FormField` +
    `Input readOnly aria-readonly`, § 6 ; maquette `agenda.html:101`). Il rend
@@ -907,14 +1027,31 @@ hors lot.
    donc on lui dit quand il n'en a pas — et c'est exactement pour cela qu'il
    **disparaît entièrement** quand il n'existe aucun agenda du tout (§ 8,
    garde (9) du § 9).
+3. **Le bouton « Réessayer »** des bandeaux (§ 8 ; maquette `agenda.html:71`).
+   Aujourd'hui l'écran n'a aucun geste de reprise : `grep -n "Réessayer"` ne
+   rend rien dans les quatre fichiers, les deux bandeaux existants
+   (`CalendarPanel.tsx:428-432` et `:562-566`) sont muets, et `handleSync`
+   (`:228`) n'a qu'un appelant, l'icône `:457`. Le bouton n'ouvre aucun
+   chemin nouveau — il appelle cette même fonction, qui recharge agendas
+   puis événements — il met le geste là où l'échec est lu. Il est **unique à
+   l'écran** (garde (4) du § 9), et l'icône de barre d'outils reste, avec son
+   propre nom (§ 8).
+4. **Le lieu sur la ligne d'horaire des blocs de la Semaine** (§ 3.1 ;
+   maquette `agenda.html:78`). La Semaine ne rend aujourd'hui que le résumé
+   et les horaires (`CalendarView.tsx:529-535`) ; le lieu est déjà dans la
+   donnée, déjà rendu par la fiche et par le Jour. Au Jour, ce n'est pas un
+   ajout mais un déplacement : le lieu quitte sa ligne propre pour la ligne
+   d'horaire, et perd la garde `layout.height > 50` (`CalendarView.tsx:764`)
+   qui le masquait sur un bloc court.
 
-Ni l'un ni l'autre ne touche les données, le store ou la destination : c'est
-de l'affichage, et les deux se testent (§ 9, `EventForm.da.test.tsx` et
-`CalendarPanel.da.test.tsx`). En revanche le `h3` de période ne gagne **pas**
+Aucun des quatre ne touche les données, le store ou la destination : c'est de
+l'affichage et un geste déjà câblé, et les quatre se testent (§ 9,
+`EventForm.da.test.tsx`, `CalendarPanel.da.test.tsx` et
+`CalendarView.da.test.tsx`). En revanche le `h3` de période ne gagne **pas**
 de suffixe « (aujourd'hui) » (§ 1) : `getNavLabel()` n'en a pas
 (`CalendarPanel.tsx:333-341`), la vue Jour en rend déjà un dix pixels plus bas
-(`CalendarView.tsx:646-648`), et un troisième élément nouveau qui répète le
-deuxième n'aurait rien apporté. Le reste de ce paragraphe énumère ce qui
+(`CalendarView.tsx:646-648`), et un élément nouveau de plus qui répète celui
+d'en dessous n'aurait rien apporté. Le reste de ce paragraphe énumère ce qui
 **n'est pas** fait.
 
 - Panneau latéral 26 rem, grille encore visible pendant la saisie (`.panneau`,
@@ -973,6 +1110,23 @@ deuxième n'aurait rien apporté. Le reste de ce paragraphe énumère ce qui
    - **le survol** d'un bloc, d'une puce et d'une ligne de liste, dans les
      trois thèmes (en contraste élevé le retour de survol ne se voit pas, § 3 ;
      c'est l'anneau de focus qui fait foi, et il doit, lui, se voir partout) ;
+   - **les coins de la carte clippent** : le fond `bg-accent-tint` de la
+     cellule d'en-tête du jour courant et les `border-l` des sept colonnes ne
+     dépassent pas du `rounded-md`, en Semaine comme au Jour (§ 3.1) ;
+   - **les trois gabarits de la Semaine restent alignés quand la piste
+     défile** : le trait de séparation d'une colonne de jour tombe au même x
+     dans l'en-tête, la rangée « Journée » et la piste. Le contrôle vaut sur
+     une plateforme à barres de défilement classiques ; sur macOS, où elles
+     sont en surcouche, il ne prouve rien et la mesure se fait sous Chromium
+     avec les barres forcées (`--force-renderer-accessibility` n'y suffit pas :
+     comparer directement les x des trois traits) ;
+   - **le libellé « Journée » tient dans la gouttière de 3,5 rem**, non
+     tronqué, aux trois tailles de police ;
+   - **le lieu s'affiche sur la ligne d'horaire** d'un bloc de la Semaine et
+     d'un bloc court du Jour (moins de 50 px de haut), sans replier la ligne ;
+   - **le bouton « Réessayer » et l'icône « Synchroniser l'agenda »
+     coexistent** sur les trois états à bandeau, et les deux se désactivent
+     ensemble pendant une synchronisation (§ 8) ;
    - **à montrer à l'humain** : le lexique étendu aux noms accessibles (§ 1),
      `aria-label="Agenda"` sur le dialogue et « Agenda affiché » sur le
      sélecteur. Rien dans le dépôt ne tranchait ce périmètre ; la décision est
@@ -983,6 +1137,28 @@ deuxième n'aurait rien apporté. Le reste de ce paragraphe énumère ce qui
    « remplacement conservé » décrite ici, c'est la choisir de fait.
 
 ## Points non repris
+
+**Revue de la v5 : aucune ligne « Non repris ».** Les six constats du journal
+`.cartography-work/reviews/opus-da-lot8-agenda-design-v5.log` (1-6, VERDICT
+GO) ont été vérifiés un par un dans les fichiers cités, et les six sont
+fondés : six repris, zéro non repris.
+
+| # | Sujet | Preuve vérifiée | Où c'est repris |
+|---|---|---|---|
+| 1 | P2, prémisse du § 8 fausse et compte des éléments nouveaux faux de deux | `grep -n "Réessayer"` ne rend rien sur les quatre fichiers ; `handleSync` (`CalendarPanel.tsx:228`) n'a qu'un appelant, le bouton icône `:457` ; `:428-432` est un `<p role="status">` et `:562-566` un `<div role="alert"><p>`, sans bouton ; la Semaine ne rend que résumé et horaires (`CalendarView.tsx:529-535`) là où la maquette porte le lieu (`agenda.html:78`) | intro (quatre éléments nouveaux), § 3.1 (le lieu assumé), § 8 (prémisse réécrite : deux bandeaux muets, aucun geste de reprise ; « Réessayer » assumé comme ajout ; ce que devient l'icône de synchronisation, et preuve que `handleSync` couvre agendas puis événements), § 6 (contradiction « seul élément nouveau » levée), § 9 gardes (4) et `CalendarView.da` (2), § 10 (les quatre ajouts), § 11.3 |
+| 2 | P2, second squelette rendu à zéro pixel de large | la racine de `Squelette` est `<div aria-hidden className={cn('flex flex-col gap-2', className)}>` (`Squelette.tsx:36`), sans largeur propre ; le seul autre usage du dépôt met la barre en pourcent dans une piste `1fr` (`TodayDashboardCard.tsx:73-78`) | § 8, `className="flex-1"` sur le second `Squelette`, avec le motif chiffré ; § 9 garde (10) |
+| 3 | P3, motif de l'`overflow:hidden` faux, conséquence réelle non dite | `CalendarPanel.tsx:569` clippe déjà en `overflow-hidden` et la piste `:453` défile dessous ; les coins `rounded-md` viennent de `Carte.tsx:20` | § 3.1, `overflow-hidden` **posé** sur la carte comme la maquette, motif remplacé (clipper le fond teinté de l'en-tête et les `border-l`), sûr parce que l'anneau est rentrant (§ 3.0) ; même chose au Jour (§ 5) ; § 9 `CalendarView.da` (6) ; § 11.3 |
+| 4 | P3, barre de défilement de la piste non prise en compte | l'en-tête et la rangée « Journée » sont `shrink-0` hors du conteneur défilant (`CalendarView.tsx:396`, `:425`), la piste est dans `flex-1 overflow-y-auto` (`:453`) ; le trait passe au `border-border` plein (§ 3.1) | § 3.1, `[scrollbar-gutter:stable]` sur **les trois** gabarits (la poser sur la seule piste rendrait l'écart permanent) et `overflow-hidden` sur les deux gabarits hauts pour que la propriété s'applique ; § 9 `CalendarView.da` (1) ; § 11.3, contrôle nommé et sa limite sur macOS |
+| 5 | P3, deux consignes de classe sur le même `h3` | `:535` donnait la chaîne sans couleur, `:506-508` annonçait `text-accent` douze lignes plus haut | § 5, chaîne complète écrite **une seule fois** (`text-sm font-semibold text-accent px-4 pt-3 pb-1`), mention doublonnée retirée du paragraphe des encres |
+| 6 | P3, cellules d'en-tête de la Semaine sans espacement prescrit | le code pose `flex-1 text-center py-3` (`CalendarView.tsx:406`), la maquette `.semaine .jour-tete{padding:.5rem .6rem}` (`agenda.html:10`), cadrage à gauche | § 3.1, `px-2 py-2 text-left` sur les sept cellules d'en-tête, `py-2 text-left` sans padding horizontal sur la première cellule de la rangée « Journée » ; § 4, `px-2 py-2 text-left` sur les sept en-têtes du Mois (même trou, non relevé, comblé ici) ; § 9 `CalendarView.da` (1) et (4) |
+
+**Un renversement de la v5, et un seul.** Le libellé de la gouttière
+« Journée » revient à `text-xs`, là où la v5 le passait à `text-sm` (§ 3.1).
+La raison est la cohérence de la bande : la même colonne de 3,5 rem porte
+déjà les heures en `text-xs`, et deux échelles dans une colonne de 56 px,
+ce sont deux rythmes dans la même bande. La largeur va dans le même sens,
+« Journée » étant un mot insécable. Aucun interactif n'est concerné et le
+plancher de 12 px est respecté. Rien d'autre de la v5 n'est défait.
 
 **Revue de la v4 : aucune ligne « Non repris ».** Les douze constats du
 journal `.cartography-work/reviews/opus-da-lot8-agenda-design-v4.log`
