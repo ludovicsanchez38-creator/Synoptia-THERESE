@@ -17,10 +17,13 @@
  * États forcés par interception : des PRÉDICATS SUR LE CHEMIN, jamais des
  * globs (leçon des lots 5 et 6, et P1 de la revue du diff). Un
  * `**\/api/board/decisions*` ne voit pas le détail `/api/board/decisions/{id}`
- * (une étoile simple vaut `[^/]*`), et un `**\/api/board/decisions**` verrait
- * en plus les modules Vite servis sous un chemin voisin. Le flux SSE de
- * `/api/board/deliberate` reste servi par un `window.fetch` de recette posé en
- * `addInitScript`.
+ * : une étoile simple vaut `[^/]*`, et les huit cas qui ouvrent un détail
+ * tapaient donc le vrai backend. Un `**\/api/board/decisions**` le verrait,
+ * mais un glob attrape aussi ce que sert Vite sous un chemin voisin (au lot 5,
+ * `/src/services/api/invoices.ts` ; ici le module s'appelle `board.ts` et
+ * n'entre pas dans ce motif, ce qui ne rend pas le glob plus sûr pour autant).
+ * Le flux SSE de `/api/board/deliberate` reste servi par un `window.fetch` de
+ * recette posé en `addInitScript`.
  *
  * POURQUOI un fetch de recette et pas `route.fulfill` pour le SSE : `fulfill`
  * envoie un corps complet et ferme la connexion ; le `for await` de
