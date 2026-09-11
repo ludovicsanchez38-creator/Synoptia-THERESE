@@ -1,6 +1,6 @@
 # DA « Application affinée », lot 9 : l'écran Paramètres (design à challenger avant le code)
 
-Version 4, 11/09/2026 09:52, après la revue de la v3 (23 points repris, 0 non repris) ; journal `.cartography-work/reviews/opus-da-lot9-parametres-design-v3.log`.
+Version 5, 11/09/2026 10:40, après la revue de la v4 (19 points repris, 0 non repris) ; journal `.cartography-work/reviews/opus-da-lot9-parametres-design-v4.log`.
 Précédent : lot 3 (Tiroir), sur `main` ; cadence : une
 seule release pour toute la DA (décision Ludo 11/09, 0.72.0-alpha porte
 l'ensemble). Maquette :
@@ -98,9 +98,9 @@ une colonne, rubriques en 3 colonnes.
 | Cadre | `max-w-3xl` `shadow-2xl` `rounded-md` `bg-surface` | `max-w-6xl` (72 rem, `.colonne` de la maquette), `shadow-lg`, mêmes `role` / `aria-label` / testid / `data-active-tab` / `data-requested-tab` ; overlay `data-dialog-backdrop` `bg-black/60` conservé (motif de `DialogShell`, pas un jeton nouveau) |
 | Tête | `<h2 className="text-lg">Paramètres` + fermer | `<h1 id="settings-title">Paramètres</h1>` (registre : `@layer base` pose déjà `font-family: var(--font-family-display)`, `src/frontend/src/styles/globals.css:608-614` ; **pas** `className="font-editorial"`, la maquette est un `h1` sans `.editorial`, `parametres.html:56`, `base.css:48-49`) ; le dialogue passe `aria-labelledby="settings-title"` et **garde** `aria-label="Paramètres"` (filet) ; `Button variant="ghost" size="icon"` `data-testid="settings-close-btn"` `aria-label="Fermer les paramètres"` |
 | Corps | `<div className="flex min-h-0 flex-1 flex-col overflow-hidden sm:flex-row">` (SettingsModal.tsx:784) | `flex min-h-0 flex-1 flex-col overflow-hidden min-[1024px]:flex-row` : **la césure du corps passe de 640 à 1024 px**, sinon entre 640 et 1023 px la nav en grille de 3 colonnes occupe toute la largeur d'une rangée flex et le panneau tombe à zéro (maquette `parametres.html:30` : `.reglages{grid-template-columns:1fr}` sous 1024 px, nav au-dessus) |
-| Nav | `role="tablist"` `aria-label="Rubriques des paramètres"` `flex w-full shrink-0 items-stretch gap-1 overflow-x-auto border-b border-border/30 bg-background/30 p-2 sm:block sm:w-44 sm:overflow-y-auto sm:border-b-0 sm:border-r sm:py-2` (SettingsModal.tsx:786) | mêmes rôle, nom, ids `settings-tab-${id}`, `aria-selected` / `aria-controls` / roving (flèches, Home, End : ici le `tablist` **garde** son roving, c'est le motif APG des onglets ; seule la grille des fournisseurs y renonce, décision 3) ; **aucune** variante `sm:` ne survit, les six passent en `min-[1024px]:` une par une : `w-full min-[1024px]:w-60`, `max-[1023px]:grid max-[1023px]:grid-cols-3 min-[1024px]:block`, `min-[1024px]:overflow-y-auto`, `border-b border-border/30 min-[1024px]:border-b-0`, `min-[1024px]:border-r`, `p-2 min-[1024px]:py-2` (laisser un seul `sm:` fait se croiser les bordures entre 640 et 1023 px : `sm:border-b-0` couperait la bordure basse alors que la nav est encore au-dessus du panneau) ; le premier enfant (bloc Contributeur + `settings-hidden-tabs`, SettingsModal.tsx:787-815) porte `max-[1023px]:col-span-3` et ses cinq `sm:` (`sm:mb-2 sm:min-w-0 sm:border-b sm:border-r-0 sm:px-4 sm:py-3`, SettingsModal.tsx:788) passent eux aussi en `min-[1024px]:` : à 800 px la grille 3 colonnes ne porte que les `role="tab"` ; sans ça le toggle occupe une cellule ; courant : `aria-selected` `bg-accent-tint text-accent font-semibold` (plus de `border-r-2 border-accent-cyan`) ; inactif : `text-text-muted hover:bg-surface-2 hover:text-text` ; `min-h-9 px-3 text-sm` ; icône Lucide 18 px |
+| Nav | `role="tablist"` `aria-label="Rubriques des paramètres"` `flex w-full shrink-0 items-stretch gap-1 overflow-x-auto border-b border-border/30 bg-background/30 p-2 sm:block sm:w-44 sm:overflow-y-auto sm:border-b-0 sm:border-r sm:py-2` (SettingsModal.tsx:786) | mêmes rôle, nom, ids `settings-tab-${id}`, `aria-selected` / `aria-controls` / roving (flèches, Home, End : ici le `tablist` **garde** son roving, c'est le motif APG des onglets ; seule la grille des fournisseurs y renonce, décision 3) ; **aucune** variante `sm:` ne survit, les six passent en `min-[1024px]:` une par une : `w-full min-[1024px]:w-60`, `max-[1023px]:grid max-[1023px]:grid-cols-3 min-[1024px]:block`, `min-[1024px]:overflow-y-auto`, `border-b border-border/30 min-[1024px]:border-b-0`, `min-[1024px]:border-r`, `p-2 min-[1024px]:py-2` (laisser un seul `sm:` fait se croiser les bordures entre 640 et 1023 px : `sm:border-b-0` couperait la bordure basse alors que la nav est encore au-dessus du panneau) ; le premier enfant (bloc Contributeur + `settings-hidden-tabs`, SettingsModal.tsx:787-815) porte `max-[1023px]:col-span-3` et ses cinq `sm:` (`sm:mb-2 sm:min-w-0 sm:border-b sm:border-r-0 sm:px-4 sm:py-3`, SettingsModal.tsx:788) passent eux aussi en `min-[1024px]:` : à 800 px la grille 3 colonnes ne porte que les `role="tab"` ; sans ça le toggle occupe une cellule ; **les cinq `sm:` des boutons d'onglet tombent eux aussi** (revue v4, point 3 : la v4 bornait la garde 1 à :784, :786 et :788, et laissait `text-sm transition-colors sm:w-full sm:gap-3 sm:border-b-0 sm:border-r-2 sm:px-4`, SettingsModal.tsx:830 — donc entre 640 et 1023 px l'onglet courant échangeait sa bordure basse contre une bordure droite alors que la nav est au-dessus du panneau, exactement le croisement de bordures qui justifie la reprise des six `sm:` de la nav). Cible complète du `role="tab"`, **sans aucune bordure** (maquette `.rubriques button{border:0;border-radius:var(--radius-sm)}`, parametres.html:7) : `flex min-h-9 shrink-0 items-center gap-2.5 rounded-sm px-3 py-2 text-left text-sm transition-colors min-[1024px]:w-full` ; courant : `aria-selected` `bg-accent-tint text-accent font-semibold` (plus de `border-b-2 border-accent-cyan` ni de `border-r-2` : la bordure disparaît des deux côtés, c'est le fond teinté qui porte l'état) ; inactif : `text-text-muted hover:bg-surface-2 hover:text-text` (plus de `border-transparent`) ; icône Lucide 18 px |
 | Libellés | Profil, IA, Services, Accessibilité, Outils, Agents, Confidentialité, Avancé, À propos | Profil ; **Service d'IA** ; **Services et connecteurs** ; **Accessibilité et affichage** ; Outils ; Agents ; **Sécurité et confidentialité** ; Avancé ; **À propos et mise à jour** |
-| Mode contributeur | interrupteur 20 px, libellé `text-xs` | interrupteur `w-10 h-6` (`role` natif du `input` `data-testid="ux-mode-toggle"`) dans un `<label>` qui ne contient **que** l'interrupteur et le libellé `text-sm font-medium` « Mode Contributeur » ; l'aide `text-xs text-text-muted` « Fonctions avancées » est un `<p>` **hors** du `label` (garde 7 : pas de `text-xs` dans le sous-arbre d'un interactif) ; `settings-hidden-tabs` inchangé (« Masquées ici : Outils, Agents, Avancé. ») |
+| Mode contributeur | interrupteur 20 px, libellé `text-xs` | piste `w-10 h-6` **et curseur assorti** (revue v4, point 16 : la v4 agrandissait la piste sans toucher au curseur, or `SettingsModal.tsx:798-799` pose une piste `w-9 h-5` avec un curseur `w-4 h-4` en `top-0.5 left-0.5` et une course `peer-checked:translate-x-4` ; dans une piste de 40 x 24 px, un curseur de 16 px laisse 6 px de jeu en bas et 6 px à droite en fin de course, donc il n'est plus centré). Cible : curseur `w-5 h-5` (20 px, comme `.interrupteur::after{width:1.2rem;height:1.2rem}` de parametres.html:26), inset inchangé `top-0.5 left-0.5` (2 px), course `peer-checked:translate-x-4` (16 px : 2 + 20 + 16 = 38 pour 40 px de piste, symétrique aux 2 px de départ). Mêmes valeurs que l'interrupteur du mode démo (§ 5), qui part de `w-11 h-6` / `w-5 h-5` / `translate-x-5` et arrive au même couple. `role` natif du `input` `data-testid="ux-mode-toggle"` ; le `<label>` ne contient **que** l'interrupteur et le libellé `text-sm font-medium` « Mode Contributeur » ; l'aide `text-xs text-text-muted` « Fonctions avancées » est un `<p>` **hors** du `label` (garde 7 : pas de `text-xs` dans le sous-arbre d'un interactif) ; `settings-hidden-tabs` inchangé (« Masquées ici : Outils, Agents, Avancé. ») |
 | Pied | Fermer ghost + Enregistrer primary (onglet profil) | `Button variant="ghost" size="md"` Fermer ; `Button variant="primary" size="md"` `data-testid="settings-save-btn"` : « Enregistrement... » / « Enregistrer », mêmes `disabled` |
 
 ## 2. Alertes et chargement de la coque
@@ -143,10 +143,27 @@ règles, toutes à coder, aucune laissée au codeur :
    valeur du rendu où le bouton a été monté, donc **non vide** par
    construction (sans quoi le bouton n'existerait pas), et la condition
    serait toujours fausse. `loadSettings` **retourne** donc la liste qu'elle
-   vient de poser : elle est déjà `async` et calcule `unavailable` en
-   `SettingsModal.tsx:196-198`, il suffit d'ajouter `return unavailable;`
-   après `setLoadWarnings(unavailable)` (:199) et de typer
-   `Promise<string[]>`. Le handler s'écrit alors
+   vient de poser, **à la fin de la fonction et non au milieu** (revue v4,
+   points 6 et 7). La v4 écrivait « il suffit d'ajouter `return unavailable;`
+   après `setLoadWarnings(unavailable)` (:199) » : ce `setLoadWarnings` est à
+   `SettingsModal.tsx:199`, le `try` qui applique les données commence à
+   `:212`, son `catch` est à `:273` et son `finally { setLoading(false) }` à
+   `:276` — un `return` à :199 sortirait **avant** le `try`, donc plus aucun
+   réglage ne serait appliqué (clés, fournisseur, modèle, profil,
+   préférences) et la modale s'ouvrirait vide. Deuxième défaut de la même
+   ligne : le `catch` de :273-274 ajoute `'données de configuration'` à
+   `loadWarnings` après coup, donc `unavailable` **n'est pas** la liste
+   réellement posée ; si la lecture réussit mais que l'application des
+   données échoue, un `return unavailable` rendrait une liste vide alors que
+   le bandeau reste à l'écran, et le focus partirait sur le `tabpanel`
+   pendant que le bouton qui l'avait est toujours monté — le défaut même que
+   la règle répare. À coder : `unavailable` est calculé en `:196-198` et posé
+   en `:199` ; une variable locale `let restants = unavailable;` le suit ; le
+   `catch` écrit `restants = [...new Set([...restants, 'données de
+   configuration'])]` en même temps qu'il appelle `setLoadWarnings` avec la
+   même valeur (une seule source, pas deux chemins qui divergent) ; et le
+   `return restants;` est la **dernière** instruction de la fonction, après
+   le `finally`. Type : `Promise<string[]>`. Le handler s'écrit alors
    `const restants = await loadSettings(); if (restants.length === 0)
    panneauRef.current?.focus();`. Les autres appelants de `loadSettings`
    (effet d'ouverture, autres Réessayer) ignorent la valeur de retour, rien
@@ -164,7 +181,7 @@ Extension de primitive, testée (`Alerte.tsx`, `Alerte.test.tsx`) : `ton?:
 | chargement | `Spinner taille="zone"` centré | **six** `Squelette` (`largeur="w-full"` `classeBarre="h-16 rounded-sm"`) `aria-hidden` en grille `grid-cols-2 gap-2.5` : trois rangées de deux, **pas** six rangées (12 barres) ; puis `role="status"` `text-sm text-text-muted` « Lecture des réglages… » ; **rien d'autre, sauf** le bandeau `loadWarnings` s'il est non vide (voir les trois règles ci-dessus) |
 | lecture partielle (`loadWarnings`) | bandeau maison `settings-load-warning` `bg-[var(--color-warning-tint)]` | `Alerte ton="attention"` `data-testid="settings-load-warning"` `icone={<AlertCircle className="h-[18px] w-[18px]" />}` ; `titre` : 1 warning → « Ce réglage n’a pas pu être lu : {liste}. » ; N > 1 → « Ces réglages n’ont pas pu être lus : {liste}. » (liste dans le titre, comme aujourd'hui, SettingsModal.tsx:858-859) ; `children` = « Les valeurs affichées ici sont des valeurs par défaut, pas ta configuration réelle. » (**pas** un `children` qui commence par « : {liste} » : `Alerte` enveloppe déjà `children` dans un `<p>` sous le `titre`, Alerte.tsx:37-38) ; `action` = `Button variant="secondary" size="md"` « Réessayer le chargement », `aria-disabled={loading}` + `className="aria-disabled:opacity-50 aria-disabled:cursor-wait"`, `onClick` = « si `loading`, sortir ; sinon `const restants = await loadSettings(); if (restants.length === 0) panneauRef.current?.focus();` » (§ 2, règles 2 et 3 ; `loadSettings` retourne désormais la liste des lectures en échec) |
 | `operationStatus` | `role="status"` teinté info | `p role="status"` `px-4 py-3 text-sm text-info` (pas `Alerte` : ce n'est pas une erreur) |
-| `error` de coque | bandeau + Réessayer si `retryOperation` | `Alerte` (ton défaut `'erreur'`) `icone={AlertCircle 18 px}` `children={error}` ; `action` = `Button variant="ghost" size="md"` « Réessayer » **si** `retryOperation` (même quand `loadWarnings.length > 0` : ce bouton appelle `retryOperation()`, pas `loadSettings`) ; **sauf** si `cleInvalide` : ce refus n'a **qu'une** `Alerte`, dans la carte clé (§ 4), maquette `#alerte-cle` seule (parametres.html:84). `getByRole('alert')` de B-201 vise cette occurrence unique : au modal complet, coque et carte clé ne montent pas la même `error` |
+| `error` de coque | bandeau + Réessayer si `retryOperation` | `Alerte` (ton défaut `'erreur'`) `icone={AlertCircle 18 px}` `children={error}` ; `action` = `Button variant="ghost" size="md"` « Réessayer » **si** `retryOperation` (même quand `loadWarnings.length > 0` : ce bouton appelle `retryOperation()`, pas `loadSettings`) ; **sauf** si `cleInvalide` : ce refus n'a **qu'une** `Alerte`, dans la carte du service (§ 4), maquette `#alerte-cle` seule (parametres.html:84). `getByRole('alert')` de B-201 vise cette occurrence unique : au modal complet, coque et carte du service ne montent pas la même `error` |
 
 **Règle générale, une erreur ne s'annonce qu'une fois** (revue v3, point 7).
 La v3 ne la posait que pour la clé, et le profil la violait : la coque passe
@@ -175,8 +192,22 @@ créneau partagé : **`ProfileTab` ne rend plus `error`**, et la prop `error`
 disparaît de `ProfileTabProps` (`ProfileTab.tsx:36,48` ; `setError` reste,
 elle sert aux remises à zéro). Le `mdError` de la modale THERESE.md
 (`ProfileTab.tsx:179`) est un état local distinct, il ne bouge pas. La seule
-exception à « c'est la coque qui rend » reste `cleInvalide`, où c'est
-l'inverse : la carte clé rend, la coque se tait. Jamais les deux.
+exception **voulue** à « c'est la coque qui rend » reste `cleInvalide`, où
+c'est l'inverse : la carte du service rend, la coque se tait. Jamais les deux.
+
+**Services reste en dette, et ce lot le dit plutôt que de fermer la règle**
+(revue v4, point 14). La v4 annonçait « la seule exception » alors qu'il en
+subsiste une seconde, non voulue celle-là : la coque passe `error={error}` à
+`ServicesTab` (`SettingsModal.tsx:668`, composant monté à :664) et
+`ServicesTab` le rend à son tour dans un `<div role="alert">`
+(`ServicesTab.tsx:87-88`), donc l'onglet Services garde le double montage que
+ce paragraphe déclare fermé pour Profil et pour la clé. Ce lot **ne** touche
+**pas** `ServicesTab` : la rubrique n'est pas maquettée et son restyle est
+hors périmètre (§ 8). La règle est donc close **sur les trois fichiers du
+lot** (`SettingsModal`, `LLMTab`, `ProfileTab`) et laissée ouverte sur
+Services, à reprendre par le lot qui prendra cette rubrique. Rien n'est
+retiré à `ServicesTab`, pas même sa prop `error` : la retirer sans restyler
+la rubrique laisserait un refus muet.
 
 Un Réessayer **par action**, noms distincts, jamais fusionnés : « Réessayer
 le chargement » → `loadSettings` ; « Réessayer » → `retryOperation()`
@@ -245,6 +276,26 @@ littéral `color-mix(` n'apparaît jamais dans le `.tsx`, ce que la garde
 dans `src/frontend/src`, dont `Input.tsx:34`) et **focus** = `outline` plein de
 3 px avec `outline-offset-2`. Les deux peuvent coexister sur la même carte
 sans se confondre : anneau intérieur pâle, contour extérieur net.
+
+**Écart de taille assumé, déclaré ici pour que la recette ne le prenne pas
+pour un défaut** (revue v4, point 11). La maquette pose `.fournisseur
+.quoi{font-size:.75rem}` (parametres.html:18), `.aide{font-size:.75rem}`
+(`base.css:139`) et `.champ label{font-weight:600;font-size:.8125rem}`
+(`base.css:136`) ; ce lot relève les trois à 14 px (`text-sm`) : la ligne
+`.quoi` des quatorze cartes, les aides de champ, les libellés de champ. La
+raison est la règle du lot, posée en tête de document et tenue par la garde 7
+— aucun `text-xs` sur un texte lié à un interactif ni dans le sous-arbre d'un
+interactif —, qui vaut aussi contre la maquette quand les deux se
+contredisent : la ligne `.quoi` vit **dans** le `button` de la carte, l'aide
+et le libellé sont rattachés à leur champ par `aria-describedby` et `htmlFor`.
+C'est le même arbitrage que l'extension n° 3 de `FormField`. Ce qui reste en
+12 px : la `meta` de `CarteTete` (`Carte.tsx:53`, paragraphe hors interactif)
+et l'aide « Fonctions avancées » du mode contributeur, sortie du `<label>`
+exprès (§ 1). Le refus de la césure à 840 px (ci-dessus) n'entre pas en
+conflit avec cet écart : il porte sur une largeur de grille que le socle ne
+prescrit nulle part (`base.css:142` ne vise que `.barre .etat.secondaire` et
+`.recherche`), pas sur une règle de lisibilité.
+
 Titre : `font-semibold` = `provider.name`. Ligne `.quoi` :
 `col-span-2 text-sm text-text-muted`, **une** chaîne, jamais une
 concaténation `description` + compte. Hors Ollama : `provider.description`
@@ -262,12 +313,37 @@ champ) :
 
 Puis, collé à **cette** chaîne, ` · outils pris en charge` seulement si
 `selectedProvider === 'ollama'` **et**
-`const fiche = ollamaStatus.models.find((m) => m.name === selectedModel)`
-est défini **et** `fiche.gere_les_outils === true` (`undefined` n'affiche pas
+`const fiche = ollamaStatus?.models.find((m) => m.name === selectedModel)`
+est défini **et** `fiche.gere_les_outils === true` (**accès optionnel
+obligatoire**, revue v4, point 5 : la v4 écrivait `ollamaStatus.models` sans
+`?.` deux lignes après avoir écrit `ollamaStatus?.models.length ?? 0`, or
+`ollamaStatus` vaut `null` sur un chemin réel — c'est la valeur de secours de
+`loadSetting('statut Ollama', api.getOllamaStatus(), null)`,
+`SettingsModal.tsx:186`, posée dès que la lecture échoue —, donc l'écran
+casserait au rendu à l'instant précis où le bandeau de lecture partielle
+s'affiche ; `LLMTab.tsx:435` écrit déjà `ollamaStatus?.models.find(...)` ;
+`undefined` n'affiche pas
 la mention ; `gere_les_outils !== false` ment hors Ollama, où `find` est
 `undefined` et `undefined !== false` est vrai ;
-`OllamaModel.gere_les_outils?: boolean`, config.ts:241). Droite : étiquettes
-de gauche à droite :
+`OllamaModel.gere_les_outils?: boolean`, config.ts:241).
+
+Droite : **les étiquettes vivent dans un conteneur, jamais nues dans la
+grille** (revue v4, point 4). La carte est une grille
+`grid-cols-[1fr_auto]` : posées en enfants directs, deux ou trois `Etiquette`
+prendraient chacune leur cellule, et à partir de la deuxième elles
+retomberaient en colonne 1 d'une nouvelle rangée — un Anthropic courant et
+muni d'une clé en porte trois (« Recommandé », « Actif », « Clé enregistrée »)
+et la carte perdrait la forme de la maquette, qui n'en montre jamais qu'une
+par fournisseur (parametres.html:74-79, une seule `<span class="etiquette">`
+par `.fournisseur`, la sixième carte portant un `.meta` « + 6 » que ce lot ne
+reprend pas, P-085). Cible : un `div className="flex flex-wrap items-center
+gap-1 justify-self-end"` en colonne 2, qui contient les une à trois
+étiquettes (le `flex-wrap` évite qu'à 800 px trois pilules compriment le nom
+du fournisseur en colonne 1). La ligne `.quoi` garde son `col-span-2`
+(`.fournisseur .quoi{grid-column:1/-1}`, parametres.html:18) et reste sous
+les deux colonnes. Ce conteneur est porté par la garde 2.
+
+Étiquettes, de gauche à droite :
 
 - Anthropic : « Recommandé » `ton="info"` (comme aujourd'hui), à gauche de l'état.
 - si `id === selectedProvider` **et** pas (`id === 'ollama' && !ollamaStatus?.available`) : `ton="succes"` « Actif », **en plus** de l'état de clé, jamais à sa place.
@@ -282,24 +358,63 @@ Un fournisseur courant sans clé porte donc « Actif » **et** « Sans clé »
 seul (pas d'état de clé). Pastilles Check / Key / XCircle retirées (l'étiquette
 porte l'état).
 
-## 4. Carte clé, modèle, effort
+## 4. La carte du service : clé (ou statut Ollama), modèle, effort
 
-Seconde `Carte` si `needsApiKey` (pas Ollama) : **uniquement** la clé (champ,
-succès, refus, lien console). `CarteTete niveau="h3"` (extension de primitive
-n° 2, annoncée en tête de document : `niveau?: 'h2' | 'h3'`, défaut `'h2'`
-pour les têtes de section ; aujourd'hui Carte.tsx:52 pose un `<h2>` figé, et
-`Carte.test.tsx:51-52, 63, 87` le verrouille — d'où le cas `niveau="h3"` à
-ajouter à ce test, § 7) titre =
-`Clé API {currentProviderConfig?.name}` — **accès optionnel conservé, sans
-repli** : `FOURNISSEURS.find(...)` peut rendre `undefined`, c'est déjà ce que
-fait `LLMTab.tsx:247`, et le comportement d'aujourd'hui (titre « Clé API »
-seul) ne change pas. Aucune chaîne de secours n'est inventée : la décision 4
-n'autorise à écrire des mots que pour un état réellement atteignable, or
-cette carte n'est montée que si `needsApiKey`, donc que si le fournisseur
-courant est dans le catalogue. Meta : `hasApiKey` → « La clé est
-chiffrée sur ton ordinateur et n'est jamais affichée en entier. » ; sinon →
-« Nécessaire pour utiliser ce fournisseur ». La maquette titre cette carte
-en `h3` sous le `h2` de section (parametres.html:82).
+**Une seule carte, au nom du service** (revue v4, point 10 : la v4 en faisait
+deux, empilant deux titres quasi homonymes, « Clé API OpenAI » puis
+« OpenAI » ; la maquette n'en montre qu'une, `<article class="carte"
+id="carte-cle"><h3>OpenAI</h3>`, parametres.html:82, qui contient le champ de
+clé `.cle` (:83), l'alerte de refus `#alerte-cle` (:84) puis les
+`.ligne-reglage` Modèle (:85) et Effort (:86) — l'accord cloud de :87 est
+P-086, hors lot). L'alternative de la v4 est donc écartée : **une** `Carte`,
+`CarteTete niveau="h3"`, dont le contenu est, dans cet ordre :
+
+1. la clé, **rendue seulement si `needsApiKey`** (`needsApiKey =
+   selectedProvider !== 'ollama'`, LLMTab.tsx:115) ;
+2. **ou**, pour Ollama, le statut du service local (ci-dessous, point 15 de
+   la revue v4) ;
+3. la rangée Modèle, puis la rangée Effort, aux conditions dites plus bas.
+
+`CarteTete niveau="h3"` est l'extension de primitive n° 2, annoncée en tête
+de document (`niveau?: 'h2' | 'h3'`, défaut `'h2'` pour les têtes de
+section ; aujourd'hui Carte.tsx:52 pose un `<h2>` figé, et `Carte.test.tsx`
+le verrouille en `:63-64` — `getByRole('heading', { level: 2 })` puis
+`titre.tagName` — et en `:87` — `container.querySelector('h2')` —, d'où le
+cas `niveau="h3"` à ajouter à ce test, § 7 ; le renvoi de la v4 à
+« `:51-52, 63` » était faux : `:51` est le `it(...)` et `:63` la première des
+deux assertions, revue v4 point 18).
+
+Titre = `{currentProviderConfig?.name ?? selectedProvider}`. **Le repli est
+nécessaire et n'invente aucun mot** : la v4 écrivait « cette carte n'est
+montée que si `needsApiKey`, donc que si le fournisseur courant est dans le
+catalogue », ce qui est faux — `needsApiKey` ne consulte pas le catalogue, il
+ne teste que `selectedProvider !== 'ollama'` (LLMTab.tsx:115), donc un
+fournisseur venu du serveur et absent de `FOURNISSEURS` monte quand même la
+carte avec `currentProviderConfig` à `undefined` (`PROVIDERS.find(...)`,
+LLMTab.tsx:113). Un titre vide serait un `h3` sans contenu accessible ; on
+retombe donc sur `selectedProvider`, qui est l'identifiant réel renvoyé par
+le serveur, pas une chaîne de secours rédigée (décision 4). L'accès optionnel
+reste posé partout ailleurs où `currentProviderConfig` est lu
+(`keyPlaceholder`, `consoleUrl`, `models`), comme aujourd'hui.
+
+Meta de la carte : `hasApiKey` → « La clé est chiffrée sur ton ordinateur et
+n'est jamais affichée en entier. » ; `needsApiKey` sans clé → « Nécessaire
+pour utiliser ce fournisseur » ; Ollama → **pas de meta** (le statut, qui
+tient la même place, dit déjà l'état du service).
+
+**Le statut Ollama vit dans cette carte** (revue v4, point 15 : la v4
+décrivait deux paragraphes et un bouton sans dire quelle surface les porte,
+alors que le bloc d'aujourd'hui a sa propre tête `<h3 className="font-medium
+text-text">Ollama Local</h3>`, LLMTab.tsx:354, et elle omettait la condition
+d'existence du bouton et son état pendant le test). Cible : ce `h3` maison
+disparaît au profit du titre de la carte (`provider.name` = « Ollama
+(Local) », `catalogueModeles.ts:314`, décision 4 : les noms du catalogue
+restent) ; le `p role="status"` décrit dans le tableau ci-dessous prend la
+place du bloc clé, en tête de carte, **avant** les rangées ; le bouton
+Re-tester garde sa garde `{onRetestOllama && (…)}` (LLMTab.tsx:378 : la prop
+est optionnelle, sans elle il n'y a rien à relancer) et son
+`disabled={retestingOllama}` (:383), plus l'`animate-spin` sur l'icône
+pendant le test, tel quel.
 
 Booléen `cleInvalide` (état de `SettingsModal`, passé à `LLMTab` en
 `cleInvalide?: boolean`, défaut `false` : `LLMTab.refusAnnonce.test.tsx:22-42`,
@@ -321,24 +436,69 @@ sans alerte (WCAG 3.3.1).
 
 | Élément | Aujourd'hui | Cible |
 |---|---|---|
-| Statut | bandeaux « Clé API configurée » / « Aucune clé » / « corrompue » | Les trois **bandeaux** sont retirés : l'étiquette de la grille (§ 3) dit l'état, le refus vit dans l'`Alerte`. **Sauf la consigne de reprise** : si `corruptedKeys.includes(selectedProvider)`, la meta de la `CarteTete` devient « Clé API corrompue - ressaisis-la » (chaîne exacte de `LLMTab.tsx:258`), à la place des deux metas ci-dessus. La v3 ne gardait que l'étiquette « Clé corrompue », donc l'état sans le geste à faire, alors que la décision 4 promet qu'un état sans équivalent maquetté garde ses mots — et la clé corrompue y est nommément citée. L'étiquette de la grille reste « Clé corrompue » : elle porte l'état, la meta porte la consigne |
+| Statut | bandeaux « Clé API configurée » / « Aucune clé » / « corrompue » | Les trois **bandeaux** sont retirés : l'étiquette de la grille (§ 3) dit l'état, le refus vit dans l'`Alerte`. **Sauf la consigne de reprise**, qui garde ses mots **et sa couleur** (revue v4, point 12). La v4 la rangeait dans la `meta` de `CarteTete`, c'est-à-dire en 12 px gris muet (`Carte.tsx:53`, `<p className="text-xs font-medium text-text-muted">`), alors qu'elle est aujourd'hui en 14 px `text-error` avec une icône (`LLMTab.tsx:256-258` : `<XCircle className="w-4 h-4 text-error" />` puis `<span className="text-sm text-error">`) : les mots étaient gardés, leur visibilité non, et la décision 4 cite nommément la clé corrompue parmi les états qui gardent leurs mots. Cible : si `corruptedKeys.includes(selectedProvider)`, un `p className="flex items-center gap-2 px-4 text-sm text-error"` **sous la tête de carte et au-dessus du champ**, avec `XCircle` 18 px `aria-hidden`, texte « Clé API corrompue - ressaisis-la » (chaîne exacte de `LLMTab.tsx:258`). **Aucun rôle**, comme aujourd'hui (`LLMTab.tsx:256-258` n'en porte pas) : ni `role="alert"`, qui ferait relire une annonce assertive à chaque montage de la rubrique pour un état permanent, ni `role="status"`. La différence avec le statut Ollama, qui en reçoit un, tient au bouton Re-tester : ce texte-là est le **résultat d'une action** de l'utilisateur et doit donc être annoncé quand il change, alors que la consigne de clé corrompue est présente dès le montage et ne répond à rien ; pas d'`Alerte` (réservée aux refus et aux échecs d'enregistrement) ; pas de fond teinté (le bandeau disparaît, seule la ligne reste). La `meta` de la carte n'est pas détournée : elle garde « La clé est chiffrée… » ou « Nécessaire pour utiliser ce fournisseur ». L'étiquette de la grille reste « Clé corrompue » : elle porte l'état, cette ligne porte le geste. Hors champ de `erreursAnnoncees.test.ts` : son `CONDITION` (`:41`) ne reconnaît que `{error…&&`, `{erreur…&&`, `{\w*Error…&&` ou `.role === "error")`, et la condition de rendu est ici `corruptedKeys.includes(...)` — la garde 10 étendue ne réclamera donc pas de `role="alert"` sur cette ligne |
 | Champ | `<input id="settings-api-key">` maison + œil `absolute` + « Sauver » | **Pas** de `FormField` : il clone tout enfant (FormField.tsx:41-48), donc ni rangée en enfant unique (l'`aria-invalid` irait sur le `div`) ni `FormField` `flex-1` dans la rangée (le label et l'input formeraient un seul item flex, œil et geste calés à droite du bloc entier). Maquette : `<label for="cle">` puis `<div class="cle">` (parametres.html:19, 83). Cible : `<label htmlFor="settings-api-key" className="block text-sm font-semibold">Clé d'API</label>` puis `.cle` = `div` `className="flex gap-2 items-center"` contenant (1) `div` `className="flex-1 min-w-0"` autour de `Input id="settings-api-key"` `type={showApiKey ? 'text' : 'password'}` `className="font-mono tracking-widest"` `error={Boolean(cleInvalide && error)}` `placeholder={currentProviderConfig?.keyPlaceholder || '...'}` (**placeholder conservé**, LLMTab.tsx:290 : c'est lui qui donne le format attendu de la clé ; et l'accès reste optionnel, `currentProviderConfig` pouvant être `undefined`) (`Input` pose `aria-invalid` + bordure, Input.tsx:27 ; le `relative` d'`Input` est interne, Input.tsx:19, d'où le wrapper `flex-1 min-w-0` plutôt qu'une `className` sur `Input`, qui atterrit sur le `<input>`), (2) `Button variant="ghost" size="icon"` œil `aria-label` / `aria-pressed` conservés (B-526), (3) `Button variant="primary" size="md"` : `hasApiKey` → « Remplacer », sinon « Enregistrer » ; `saving` → `Spinner taille="bouton"` ; `disabled={saving \|\| !apiKeyInput.trim()}` ; Entrée inchangée |
 | Succès | `role="status"` « Clé API enregistrée » | inchangé (B-201) |
 | Refus | `<p role="alert">` + `error` | `Alerte` (ton `'erreur'`) `icone={AlertCircle 18 px}` `children={error}` sans `action` si `cleInvalide` (pas de `retryOperation` sur `handleSaveApiKey`). **Seule** `Alerte` de ce refus : la coque ne le remonte pas (§ 2). B-201 (`LLMTab.refusAnnonce.test.tsx`) passe `cleInvalide={true}` avec `error={REFUS}` |
 | Lien console | `text-xs` | inchangé, `text-sm` |
-| Ollama | bandeau + Re-tester `size="sm"` | **hors** de la carte clé (Ollama n'a pas `needsApiKey`). Indisponible : **pas** d'`Alerte` (revue v3, point 8 : `Alerte.tsx:25` pose `role="alert"` en dur, donc une annonce assertive relue à **chaque** montage de la rubrique, pour un état de service permanent ; aujourd'hui ce bandeau n'a aucun rôle, `LLMTab.tsx:370-375` ; et dans la maquette la seule `role="alert"` est `#alerte-cle`, parametres.html:84, l'indisponibilité y étant une étiquette `e-attention`, :78). Cible : `p role="status"` en teinte attention, `className="px-4 py-3 text-sm text-warning"`, texte = `{ollamaStatus?.error \|\| 'Ollama non disponible'}` **suivi de** « Démarrez Ollama pour utiliser des modèles locaux. » (chaîne de `LLMTab.tsx:358`, la seule qui dit quoi faire ; la v3 la perdait, revue v3 point 18). Disponible : `p role="status"` `className="px-4 py-3 text-sm text-text-muted"` « Ollama connecté ({base_url}) ». Dans les deux cas, `Button variant="ghost" size="icon"` `aria-label="Re-tester la connexion Ollama"` (icône `RefreshCw` seule : `size="icon"` = 36 px, pas `size="md"` `h-9 px-4` autour d'une icône sans nom visible ; LLMTab.tsx:379-381 est aujourd'hui `size="sm"` + icône). L'`Alerte` reste réservée aux refus et aux échecs d'enregistrement |
+| Ollama | `h3` maison « Ollama Local » + bandeau + Re-tester `size="sm"` | **dans la carte du service, à la place du bloc clé** (Ollama n'a pas `needsApiKey`) : un `div className="flex items-center gap-2 px-4 py-3"` qui porte le `p role="status"` et, à sa droite, le bouton Re-tester (**le padding est sur le wrapper, pas sur le `p`** : le laisser aux deux ferait 32 px de marge horizontale, et un `items-start` décalerait le bouton de 36 px par rapport à une première ligne de texte commençant 12 px plus bas) ; le `h3` « Ollama Local » de `LLMTab.tsx:354` disparaît (le titre de la carte le dit), et la ligne « {n} modèle(s) disponible(s) » de `:355-359` aussi (le statut ci-dessous et la ligne `.quoi` de la grille la redisent). Indisponible : **pas** d'`Alerte` (revue v3, point 8 : `Alerte.tsx:25` pose `role="alert"` en dur, donc une annonce assertive relue à **chaque** montage de la rubrique, pour un état de service permanent ; aujourd'hui ce bandeau n'a aucun rôle, `LLMTab.tsx:370-375` ; et dans la maquette la seule `role="alert"` est `#alerte-cle`, parametres.html:84, l'indisponibilité y étant une étiquette `e-attention`, :78). Cible : `p role="status"` en teinte attention, `className="text-sm text-warning"` (sans padding, il est sur le wrapper), texte = `{ollamaStatus?.error \|\| 'Ollama non disponible'}` **suivi de** « Démarrez Ollama pour utiliser des modèles locaux. » (chaîne de `LLMTab.tsx:358`, la seule qui dit quoi faire ; la v3 la perdait, revue v3 point 18). Disponible : `p role="status"` `className="text-sm text-text-muted"` « Ollama connecté ({base_url}) ». Dans les deux cas, `Button variant="ghost" size="icon"` `aria-label="Re-tester la connexion Ollama"` (icône `RefreshCw` seule : `size="icon"` = 36 px, pas `size="md"` `h-9 px-4` autour d'une icône sans nom visible ; LLMTab.tsx:379-381 est aujourd'hui `size="sm"` + icône), **rendu seulement si `onRetestOllama`** (`{onRetestOllama && (…)}`, LLMTab.tsx:378 : la prop est optionnelle et `LLMTab.test.tsx` la rend sans elle), **`disabled={retestingOllama}`** (:383) et `className={retestingOllama ? 'animate-spin' : ''}` sur l'icône, comme aujourd'hui : ces trois-là ne sont pas des détails de style, ce sont la condition d'existence du bouton et son état pendant le test (revue v4, point 15). L'`Alerte` reste réservée aux refus et aux échecs d'enregistrement |
 
-Modèle, effort, Qwen et `LocalModelFeasibility` : **toujours hors** de la
-carte clé, visibles pour Ollama (sinon le sélecteur disparaît avec
-`needsApiKey`). Une `Carte` toujours rendue, `CarteTete niveau="h3"` titre =
-`currentProviderConfig.name` (maquette `h3` « OpenAI » / réglages du modèle,
-parametres.html:82), contenant les deux rangées ; Qwen et la faisabilité à
-la suite, hors de cette carte aussi.
+Les deux rangées (Modèle, Effort) sont **dans la même carte** que la clé ou
+que le statut Ollama, en dessous. **Le champ « modèle hors liste »
+(`showCustomInput`) reste dans la carte lui aussi**, en pleine largeur, entre
+la rangée Modèle et la rangée Effort : il est ouvert par le bouton « Custom »
+de la rangée Modèle, et le mettre après la carte l'éloignerait de son
+déclencheur, ce qui serait un parcours neuf. Seuls **Qwen** et
+**`LocalModelFeasibility`** viennent après la carte, en pleine largeur, comme
+aujourd'hui.
+
+**Ce que devient la sortie anticipée de `ModelSelector`** (revue v4, point
+9). Aujourd'hui `LLMTab.tsx:471` rend `null` dès que
+`availableModels.length === 0 && selectedProvider !== 'ollama'`, et comme
+`EffortSelector` est rendu **à l'intérieur** de `ModelSelector`
+(`LLMTab.tsx:512`), la rangée Effort disparaît avec lui. La v4 écrivait « une
+`Carte` toujours rendue » sans le dire, laissant le codeur trancher. Tranché
+ici, en trois temps :
+
+1. **La `Carte` n'est jamais conditionnée au catalogue.** Elle est montée par
+   `LLMTab`, pas par `ModelSelector`. C'est indispensable depuis que la clé y
+   vit : `availableModels` peut être vide sur un fournisseur qui a pourtant
+   une clé à saisir. Le chemin exact, vérifié : `availableModels =
+   catalogueDynamique ?? (currentProviderConfig?.models || [])`
+   (`LLMTab.tsx:160-162`) ; `chargerCatalogue` rend `null` — jamais `[]` — sur
+   une liste vide comme sur un échec (`catalogueModeles.ts:73` et `:78`),
+   donc le `??` retombe toujours sur le catalogue statique, et le `|| []`
+   final ne se déclenche que pour un `selectedProvider` **absent** de
+   `FOURNISSEURS`. Ce cas est réel (l'identifiant vient du serveur) et c'est
+   précisément celui où `needsApiKey` vaut `true` sans que le catalogue front
+   connaisse le fournisseur : aujourd'hui l'écran montre bien le bloc clé
+   (`LLMTab.tsx:240`, conditionné au seul `needsApiKey`) et pas de sélecteur
+   de modèle (`:471`). Une carte conditionnée au catalogue lui retirerait sa
+   clé — régression franche.
+2. **La sortie anticipée `:471` tombe**, remplacée par une condition posée
+   sur **les deux rangées ensemble** (jamais sur l'une seule : régler un
+   effort sans modèle serait un état neuf, non testé, et `handleChange`
+   partirait avec un modèle vide) : les rangées Modèle et Effort sont rendues
+   si `options.length > 0 || selectedProvider === 'ollama'`, sinon la carte
+   n'a que la clé. Noter le passage de `availableModels.length` à
+   `options.length` : `options` inclut l'entrée du modèle personnalisé (point
+   suivant), donc un modèle hors catalogue enregistré redevient visible là où
+   la condition d'aujourd'hui l'effaçait.
+3. **Le seul `Select` sans option qui subsiste est celui d'Ollama sans modèle
+   installé** (N = 0, service joignable) **et sans modèle sélectionné** : si
+   `selectedModel` est non vide, `isCustomModel` est vrai — `LLMTab.tsx:461`
+   ne restreint pas ce calcul hors Ollama — et l'entrée « (personnalisé) »
+   remplit la liste. Dans le cas vraiment vide, le `Select` reçoit
+   `placeholder="Aucun modèle installé"` (`Select.tsx:45-49` rend le
+   placeholder en `<option value="" disabled>`), ce qui donne un champ nommé,
+   inerte et explicite au lieu d'une liste vide muette. Aucune autre
+   combinaison ne produit un `Select` vide.
 
 | Élément | Aujourd'hui | Cible |
 |---|---|---|
-| Modèle | `<select id="settings-llm-model">` + « Custom » | rangée `grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 py-2.5 border-t border-border px-4` : **rangée 1** — `<label htmlFor="settings-llm-model" className="text-sm font-semibold">Modèle</label>` en colonne 1 (pas un `<b>` : le `Select` n'aurait plus de nom accessible, WCAG 4.1.2 ; `getByLabelText('Modèle')` de `SettingsModal.fournisseurIA.test.tsx:93` et `LLMTab.test.tsx:49`) + `Select id="settings-llm-model"` `options` = `availableModels` en colonne 2 (label `name` + badge entre parenthèses, comme aujourd'hui). **Rangée 2** — le bouton « Custom » (revue v3, point 17 : la v3 ne lui laissait aucune place dans une grille à deux colonnes déjà pleines). Il descend sous le label, en `col-start-1 justify-self-start`, comme l'aide de la maquette (`.ligne-reglage .aide{grid-column:1}`, parametres.html:23) : `Button variant="ghost" size="md"` icône `Plus` 18 px, libellé « Custom » conservé (décision 4), rendu seulement si `selectedProvider !== 'ollama'` (condition d'aujourd'hui, LLMTab.tsx:478). **Sous la rangée**, pleine largeur : le champ « modèle hors liste » quand `showCustomInput`, et le bloc Qwen ; inchangés sauf boutons `md` et `Input` / `FormField` ; Qwen : le bouton d'adresse dit **« Enregistrer l'adresse »** (jamais « Enregistrer » : collision avec la clé si `!hasApiKey` ; `LLMTab.qwen.test.tsx:70` `name: 'Enregistrer'` à aligner) |
-| Effort | `<select id="llm-effort">` | même rangée (`grid-cols-[1fr_auto]`, comme `.ligne-reglage`) ; `<label htmlFor="llm-effort" className="text-sm font-semibold">Effort de raisonnement</label>` + `Select id="llm-effort"` (`getByLabelText('Effort de raisonnement')` et `aria-describedby`, `LLMTab.effortOpenAI.test.tsx:20`) ; sous le label, `p` `id="llm-effort-aide"` `className="text-sm text-text-muted col-start-1"` (`.ligne-reglage .aide{grid-column:1}`, parametres.html:23) : « Appliqué aux modèles qui le gèrent (Claude récents, GPT-5.6, Grok 4.5, modèles Ollama « thinking »). Auto laisse le modèle décider. » (LLMTab.tsx:635-638, conservé ; la maquette dit « Envoyé seulement aux modèles qui le prennent en charge. », parametres.html:87) ; le `Select` a `aria-describedby` qui inclut `llm-effort-aide` **et**, si `mentionOutils`, `llm-effort-outils` ; options et `disabled={saving}` inchangés ; `data-testid="effort-mention-outils"` : `text-sm` (plus `text-xs` sur un texte lié à un interactif) ; **ligne de statut conservée** (revue v3, point 9 : la v3 décrivait la rangée entière sauf elle, et l'enregistrement de l'effort serait devenu muet) : `p role="status" className="col-span-2 mt-2 text-sm text-info"` rendu si `status` est non nul (le `col-span-2` est nécessaire : la rangée est une grille `grid-cols-[1fr_auto]`, sans lui la ligne de statut tomberait en colonne 1 et déplacerait le `Select`), avec ses deux chaînes exactes « Enregistrement de l'effort… » (LLMTab.tsx:602) et « Effort de raisonnement enregistré. » (:610), en `text-sm` et non plus `text-xs` (LLMTab.tsx:664) ; erreur d'effort : `Alerte` `className="col-span-2"` (même raison que la ligne de statut) + `Button variant="ghost" size="md"` « Réessayer l'effort » (`onClick={() => failedEffort && void handleChange(failedEffort)}`, LLMTab.tsx:668) — **toujours** rendu si `failedEffort`, même si la coque a `retryOperation` ou `loadWarnings` |
+| Modèle | `<select id="settings-llm-model">` + « Custom » | rangée `grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 py-2.5 border-t border-border px-4` : **rangée 1** — `<label htmlFor="settings-llm-model" className="text-sm font-semibold">Modèle</label>` en colonne 1 (pas un `<b>` : le `Select` n'aurait plus de nom accessible, WCAG 4.1.2 ; `getByLabelText('Modèle')` de `SettingsModal.fournisseurIA.test.tsx:93` et `LLMTab.test.tsx:49`) + `Select id="settings-llm-model"` `options` en colonne 2. **`options` n'est pas `availableModels`** (revue v4, point 1) : `Select` ne rend que son tableau `options` (`Select.tsx:24` le déstructure, `:50-55` le mappe, et aucun `children` n'est rendu), donc l'`<option value={selectedModel}>{selectedModel} (personnalisé)</option>` que `LLMTab.tsx:502-505` glisse aujourd'hui en enfant du `<select>` n'aurait plus de place, et BUG-084 sortirait de l'écran : avec `isCustomModel` vrai (`LLMTab.tsx:461`, `selectedModel` absent de `availableModels`), la `value` du `select` ne correspondrait à aucune option et le navigateur afficherait la première, c'est-à-dire un modèle qui n'est pas celui enregistré. Cible : `options` est construit en deux morceaux — d'abord `availableModels` transformé en `{ value: m.id, label: m.name + (m.badge ? ' (' + m.badge + ')' : '') }`, ce qui garde le libellé d'aujourd'hui (nom puis badge entre parenthèses) ; puis, **si et seulement si `isCustomModel`**, une entrée de queue `{ value: selectedModel, label: selectedModel + ' (personnalisé)' }`. Sa clé est unique par construction, `isCustomModel` étant faux dès que `selectedModel` figure déjà dans `availableModels`. **Sous la rangée**, pleine largeur, la mention conservée quand `isCustomModel` (`LLMTab.tsx:550-554`) : `p className="flex items-center gap-2 px-4 text-sm text-accent-cyan-ink"` avec `AlertCircle` 18 px `aria-hidden` et « Modèle personnalisé actif : {selectedModel} », en `text-sm` et non plus `text-xs` (elle commente le `Select` qui la précède, donc la règle du § 3 s'applique). **Rangée 2** — le bouton « Custom » (revue v3, point 17 : la v3 ne lui laissait aucune place dans une grille à deux colonnes déjà pleines). Il descend sous le label, en `col-start-1 justify-self-start`, comme l'aide de la maquette (`.ligne-reglage .aide{grid-column:1}`, parametres.html:23) : `Button variant="ghost" size="md"` icône `Plus` 18 px, libellé « Custom » conservé (décision 4), rendu seulement si `selectedProvider !== 'ollama'` (condition d'aujourd'hui, LLMTab.tsx:478). **Sous la rangée Modèle et avant la rangée Effort**, pleine largeur et **dans la carte** : le champ « modèle hors liste » quand `showCustomInput` (il appartient au bouton Custom qui l'ouvre, voir l'intro du § 4) ; **après la carte**, toujours en pleine largeur : le bloc Qwen ; inchangés sauf boutons `md` et `Input` / `FormField` ; Qwen : le bouton d'adresse dit **« Enregistrer l'adresse »** (jamais « Enregistrer » : collision avec la clé si `!hasApiKey` ; `LLMTab.qwen.test.tsx:70` `name: 'Enregistrer'` à aligner) |
+| Effort, la rangée | `<div className="flex items-center justify-between gap-3">` (LLMTab.tsx:630) | **classes écrites en toutes lettres, identiques à celles de la rangée Modèle** (revue v4, point 19 : « même rangée » ne disait pas laquelle, alors que la rangée Modèle en porte six) : `grid grid-cols-[1fr_auto] items-center gap-x-4 gap-y-1 py-2.5 border-t border-border px-4`. **La bordure haute reste sur les deux rangées**, y compris la première : la maquette l'ôte par `.ligne-reglage:first-of-type{border-top:0}` (parametres.html:22), mais `:first-of-type` vise le premier `div` de ses frères, et dans `#carte-cle` ce premier `div` est `.champ` (:83), pas une `.ligne-reglage` — la règle ne s'applique donc à **aucune des deux rangées de `#carte-cle`**, et la rangée Modèle y **a** son filet. (Elle s'applique bien ailleurs dans la maquette, là où une `.ligne-reglage` ouvre la carte : « Ce mois-ci » :89 et « Profil émetteur » :97, deux cartes hors lot, P-086 et § 5.) Même situation dans la carte cible, où la clé ou le statut Ollama précède toujours les rangées : aucun `first:border-t-0`, aucun conteneur ajouté pour en simuler un. |
+| Effort, le contenu | `<select id="llm-effort">` | `<label htmlFor="llm-effort" className="text-sm font-semibold">Effort de raisonnement</label>` + `Select id="llm-effort"` (`getByLabelText('Effort de raisonnement')` et `aria-describedby`, `LLMTab.effortOpenAI.test.tsx:20`) ; sous le label, `p` `id="llm-effort-aide"` `className="text-sm text-text-muted col-start-1"` (`.ligne-reglage .aide{grid-column:1}`, parametres.html:23) : « Appliqué aux modèles qui le gèrent (Claude récents, GPT-5.6, Grok 4.5, modèles Ollama « thinking »). Auto laisse le modèle décider. » (LLMTab.tsx:635-638, conservé ; la maquette dit « Envoyé seulement aux modèles qui le prennent en charge. », parametres.html:87) ; le `Select` a `aria-describedby` qui inclut `llm-effort-aide` **et**, si `mentionOutils`, `llm-effort-outils`, dans cet ordre — donc deux valeurs et **jamais** `undefined` : `'llm-effort-aide'` seul, ou `'llm-effort-aide llm-effort-outils'` (aujourd'hui `LLMTab.tsx:644` écrit `aria-describedby={mentionOutils ? 'llm-effort-outils' : undefined}`, et l'aide de `:635-638` n'a pas d'`id` ; les deux assertions de `LLMTab.effortOpenAI.test.tsx` qui épinglent l'ancienne forme, `:20` et `:33`, sont à aligner sur ces deux chaînes, § 7, revue v4 point 13) ; options et `disabled={saving}` inchangés ; `data-testid="effort-mention-outils"` : `text-sm` (plus `text-xs` sur un texte lié à un interactif) ; **ligne de statut conservée** (revue v3, point 9 : la v3 décrivait la rangée entière sauf elle, et l'enregistrement de l'effort serait devenu muet) : `p role="status" className="col-span-2 mt-2 text-sm text-info"` rendu si `status` est non nul (le `col-span-2` est nécessaire : la rangée est une grille `grid-cols-[1fr_auto]`, sans lui la ligne de statut tomberait en colonne 1 et déplacerait le `Select`), avec ses deux chaînes exactes « Enregistrement de l'effort… » (LLMTab.tsx:602) et « Effort de raisonnement enregistré. » (:610), en `text-sm` et non plus `text-xs` (LLMTab.tsx:664) ; erreur d'effort : `Alerte` `className="col-span-2"` (même raison que la ligne de statut) + `Button variant="ghost" size="md"` « Réessayer l'effort » (`onClick={() => failedEffort && void handleChange(failedEffort)}`, LLMTab.tsx:668) — **toujours** rendu si `failedEffort`, même si la coque a `retryOperation` ou `loadWarnings` |
 
 Pas de jauge « Ce mois-ci », pas d'interrupteur d'accord cloud (P-086).
 `LocalModelFeasibility` inchangé hors classes de couleur en dur s'il en reste.
@@ -404,8 +564,17 @@ Pas de jauge « Ce mois-ci », pas d'interrupteur d'accord cloud (P-086).
   résumé Complet : P-087), mêmes `id` / handlers / placeholders. Ids de
   cette carte : `settings-profile-address`, `settings-profile-siren`,
   `settings-profile-tva`, `settings-profile-siret`, `settings-profile-ape`,
-  `settings-profile-nda`. Libellés conservés (Adresse, SIREN, TVA, SIRET,
-  APE, NDA). Un `id` n'apparaît qu'une fois dans le document.
+  `settings-profile-nda`. **Les six libellés sont recopiés au caractère
+  près** (revue v4, point 17 : la v4 écrivait une liste abrégée — « Adresse,
+  SIREN, TVA, SIRET, APE, NDA » — qui, prise au mot, ferait perdre à l'écran
+  ce que les libellés d'aujourd'hui disent : à quoi sert le SIRET, quelle
+  TVA, quel numéro de déclaration) : « Adresse (facturation) »
+  (`ProfileTab.tsx:309`), « SIREN » (:322), « TVA intracommunautaire » (:333),
+  « SIRET (requis pour facturer) » (:348), « Code APE / NAF » (:359),
+  « N° de déclaration d'activité (organisme de formation) » (:372). Aucun ne
+  change ; ils passent seulement du `<label className="text-xs
+  text-text-muted">` maison au `label` de `FormField`, en `text-sm` (§ 3).
+  Un `id` n'apparaît qu'une fois dans le document.
 - `DemoModeSection` : `data-testid="mode-demo-section"` conservé ; tête en
   `text-sm` ; prose B-131 inchangée ; état actif : `Alerte` n'est pas le bon
   ton, donc `p role="status"` « Mode démo actif - … ».
@@ -441,8 +610,12 @@ Sur le panneau visible, de haut en bas :
    `aria-disabled`, § 2), puis squelettes + « Lecture des réglages… » ;
    `error` et `operationStatus` masqués, même non nuls ;
 2. sinon : `loadWarnings` ; `operationStatus` ; `error` de coque ; corps
-   de la rubrique (IA : grille, carte clé si besoin, Ollama, modèle, effort,
-   Qwen ; Profil : carte identité, carte émetteur, démo).
+   de la rubrique (IA : carte de section avec la grille des quatorze
+   fournisseurs, puis **la carte du service** — clé ou statut Ollama, puis
+   rangée Modèle, champ « modèle hors liste » si `showCustomInput`, puis
+   rangée Effort, quand elles sont rendues (§ 4) —, puis Qwen et
+   `LocalModelFeasibility` hors carte ; Profil : carte identité, carte
+   émetteur, démo).
 
 Réessayer : un bouton par action, noms distincts (§ 2). L'effort ajoute le
 sien dès que `failedEffort` est non nul, **même** si la coque a le sien.
@@ -465,17 +638,40 @@ Nouveaux (`SettingsModal.da.test.tsx`, `LLMTab.da.test.tsx`,
    `settings-tab-ai` / `settings-hidden-tabs` / `ux-mode-toggle` présents ;
    classes de la nav : `max-[1023px]:grid-cols-3`, `min-[1024px]:block` et
    `min-[1024px]:w-60` ; et **aucune** classe commençant par `sm:` dans la
-   `className` du corps (SettingsModal.tsx:784), de la nav (:786) ni de son
-   premier enfant (:788) — assertion sur la chaîne, `/\bsm:/` ne doit rien
-   trouver (revue v3, point 11 : la v3 ne retirait que `sm:w-44` et laissait
-   `sm:flex-row` et cinq autres, donc un panneau écrasé entre 640 et
-   1023 px) ;
+   `className` du corps (SettingsModal.tsx:784), de la nav (:786), de son
+   premier enfant (:788) **ni des boutons `role="tab"` (:830)** — assertion
+   sur la source, lue en texte (revue v3, point 11 : la v3
+   ne retirait que `sm:w-44` et laissait `sm:flex-row` et cinq autres, donc un
+   panneau écrasé entre 640 et 1023 px ; revue v4, point 3 : la v4 bornait la
+   garde à trois lignes et laissait les cinq `sm:` de l'onglet, donc le
+   croisement de bordures qu'elle prétendait fermer). **La garde ne balaie
+   pas tout le fichier** : `SettingsModal.tsx` porte aujourd'hui vingt-quatre
+   classes `sm:`, dont quatre groupes légitimes que ce lot ne touche pas
+   (`sm:max-h-[85vh]` du cadre :773, `sm:px-6 sm:py-4` de la tête :776 et du
+   pied :881, `sm:p-6` du `tabpanel` :849) — un `/\bsm:/` sur la source
+   entière serait rouge pour de mauvaises raisons et pousserait à démonter
+   des paddings sans rapport. La garde énumère donc les **seize** classes des
+   quatre `className` du lot, chacune en `not.toContain` : `sm:flex-row`
+   (:784) ; `sm:block`, `sm:w-44`, `sm:overflow-y-auto`, `sm:border-b-0`,
+   `sm:border-r`, `sm:py-2` (:786) ; `sm:mb-2`, `sm:min-w-0`, `sm:border-b`,
+   `sm:border-r-0`, `sm:px-4`, `sm:py-3` (:788) ; `sm:w-full`, `sm:gap-3`,
+   `sm:border-r-2` (:830). Vérifié le 11/09 : aucune des seize n'apparaît
+   dans les quatre groupes épargnés, la garde ne peut donc pas les
+   confondre. Elle vaut aussi assertion que l'onglet n'a plus de bordure
+   (`border-b-2` et `border-r-2` s'en vont avec elles) ;
 2. une carte fournisseur = un `button` `aria-pressed` (`getByRole('button',
    { pressed: true })` rend la carte courante, et `queryAllByRole('radio')`
    est vide), grille `grid-cols-2` **sans** aucune classe de césure (ni
    `min-[840px]:`, ni `md:`, ni `lg:`) ; l'état porte `data-etiquette` ;
    P-018 : un fournisseur à clé hors sélection reste visible avec « Clé
    enregistrée » ; le courant sans clé porte « Actif » **et** « Sans clé » ;
+   **et les étiquettes d'une même carte ont un parent commun** (revue v4,
+   point 4) : dans le cas à trois pilules (Anthropic courant, muni d'une clé
+   → « Recommandé », « Actif », « Clé enregistrée »), les trois
+   `[data-etiquette]` de la carte ont le **même** `parentElement`, ce parent
+   n'est pas la carte elle-même, et sa `className` porte `justify-self-end`
+   — sans quoi la deuxième et la troisième retomberaient en colonne 1 d'une
+   nouvelle rangée de la grille ;
    la garde 2 est réécrite ici parce que la v3 la laissait prescrire un
    `radio` et une césure à 840 px, en contradiction avec sa propre décision 3
    (revue v3, point 4) — et une garde est ce qui sera codé en rouge, donc ce
@@ -497,6 +693,27 @@ Nouveaux (`SettingsModal.da.test.tsx`, `LLMTab.da.test.tsx`,
    B-201 : `getByRole('alert')` contient le refus, le succès reste « Clé API
    enregistrée » ; Qwen sans clé : un bouton « Enregistrer » (la clé) et un
    bouton « Enregistrer l'adresse », pas deux « Enregistrer » ;
+   4 bis. **la carte du service, une seule et jamais deux** (revue v4, points
+   1, 9, 10, 15) : sur OpenAI avec clé, le panneau IA contient **un** titre de
+   niveau 3, dont le nom accessible est `provider.name` (« OpenAI ») et non
+   « Clé API OpenAI », et le champ `#settings-api-key`, le `Select`
+   `#settings-llm-model` et le `Select` `#llm-effort` sont tous les trois ses
+   descendants ; sur Ollama disponible, le même titre vaut « Ollama (Local) »,
+   le `role="status"` du service est dans la carte et `#settings-api-key` est
+   absent ; **catalogue vide hors Ollama** (`selectedProvider` inconnu de
+   `FOURNISSEURS`, `availableModels` vide, `isCustomModel` faux) : la carte et
+   le champ de clé sont là, les deux `Select` sont absents, et le titre vaut
+   l'identifiant du fournisseur, jamais une chaîne vide ; **modèle hors
+   catalogue** (`selectedModel` absent d'`availableModels`) : le `Select`
+   `#settings-llm-model` contient une `option` de `value` `selectedModel` et
+   de libellé `{selectedModel} (personnalisé)`, la valeur du `select` est
+   bien `selectedModel` — c'est BUG-084, que `Select` casserait sans elle —,
+   et la mention « Modèle personnalisé actif : {selectedModel} » est rendue ;
+   **Ollama sans modèle installé et `selectedModel` vide** : le `Select` du
+   modèle a pour seule option le placeholder « Aucun modèle installé »,
+   désactivé — avec un `selectedModel` périmé non vide, `isCustomModel` est
+   vrai (`LLMTab.tsx:461` ne restreint pas ce calcul hors Ollama) et l'entrée
+   « (personnalisé) » s'y ajoute, ce qui est le comportement voulu ;
 5. hors chargement : « Réessayer le chargement » présent ssi `loadWarnings` ;
    « Réessayer » (nom exact) présent ssi `retryOperation` ; les deux
    coexistent si les deux états sont vrais ; « Réessayer l'effort » présent
@@ -566,11 +783,16 @@ Nouveaux (`SettingsModal.da.test.tsx`, `LLMTab.da.test.tsx`,
 - `SettingsModal.fournisseurIA.test.tsx` — **la principale casse du lot**, et
   la v3 ne citait de ce fichier que `getByLabelText('Modèle')` (revue v3,
   point 5). C'est le test de non-régression de B-225 : il interroge la grille
-  **huit** fois par le rôle `radio`, aux lignes 51, 68, 71, 88, 90, 108, 112,
-  et assène `toHaveAttribute('aria-checked', 'true')` en 51-54. Forme cible :
+  **sept** fois par le rôle `radio`, aux lignes 51, 68, 71, 88, 90, 108 et
+  112, et assène `toHaveAttribute('aria-checked', 'true')` en 51-54. Les deux
+  comptes de la v4 étaient faux (revue v4, point 18) : elle annonçait « huit »
+  en n'en listant que sept, et « sept `fireEvent.click` » alors que **six**
+  portent sur une carte (68, 71, 88, 90, 108, 112) — la septième occurrence du
+  rôle est l'assertion de :51, et le `fireEvent.click` restant du fichier vise
+  `settings-tab-ai` (:49), pas un fournisseur. Forme cible :
   `getByRole('button', { name: /Mistral AI/, pressed: true })` pour
-  l'assertion d'état, `getByRole('button', { name: ... })` pour les sept
-  `fireEvent.click`. Les `getByLabelText('Modèle')` de :93 et :101 ne
+  l'assertion d'état, `getByRole('button', { name: ... })` pour les six
+  `fireEvent.click` de cartes ; le clic de :49 sur l'onglet ne bouge pas. Les `getByLabelText('Modèle')` de :93 et :101 ne
   bougent pas. **Aucune** assertion de comportement (les `setLLMConfig`
   attendus, l'ordre des envois, le modèle retrouvé) n'est touchée. Balayage
   fait : `grep -n "getByRole('radio'\|aria-checked\|role=\"radio\""
@@ -589,26 +811,85 @@ Nouveaux (`SettingsModal.da.test.tsx`, `LLMTab.da.test.tsx`,
   conservés) ;
 - `LLMTab.refusAnnonce.test.tsx` (l'alerte peut être `Alerte`, le rôle et la
   chaîne `REFUS` restent) ;
+- `src/components/prototype/ResponsiveShellContract.test.ts` — **non listé
+  par la v4, et en contradiction frontale avec la garde 1** (revue v4,
+  point 2). Son `:12` exige littéralement
+  `toContain('flex-col overflow-hidden sm:flex-row')` sur
+  `settings/SettingsModal.tsx`, c'est-à-dire exactement la chaîne que le lot
+  supprime : les deux gardes ne peuvent pas être vertes ensemble. Son `:13`
+  exige `toContain('overflow-x-auto')`, dont l'unique occurrence du fichier
+  est la nav (:786), qui n'a pas cette classe dans sa cible (à 800 px elle
+  est une grille de trois colonnes, elle ne défile plus
+  horizontalement). Nouvelles expressions, à même intention (« empile les
+  parcours denses avant leurs breakpoints ») : `:12` devient
+  `toContain('flex-col overflow-hidden min-[1024px]:flex-row')`, `:13`
+  devient `toContain('max-[1023px]:grid-cols-3')`. Les six autres assertions
+  du même `it` (WelcomeStep, ContactsMemoryCard, CapabilityCenter) et le
+  second `it` ne bougent pas ;
 - `LLMTab.effortOpenAI.test.tsx` (`effort-mention-outils`,
-  `getByLabelText('Effort de raisonnement')`, `aria-describedby`) ;
+  `getByLabelText('Effort de raisonnement')`) — **avec les deux valeurs
+  cibles écrites** (revue v4, point 13 : la v4 rangeait ce fichier en
+  « forme seulement » sans les donner, alors que l'ajout systématique de
+  `llm-effort-aide` casse ses deux assertions d'`aria-describedby`) : `:20`
+  passe de `toHaveAttribute('aria-describedby', 'llm-effort-outils')` à
+  `toHaveAttribute('aria-describedby', 'llm-effort-aide llm-effort-outils')`,
+  et `:33` passe de `not.toHaveAttribute('aria-describedby')` à
+  `toHaveAttribute('aria-describedby', 'llm-effort-aide')`. Les assertions de
+  contenu de la mention (:18, :19, :26) et les trois cas de présence ou
+  d'absence de `effort-mention-outils` ne bougent pas ;
 - `LLMTab.test.tsx` (`getByLabelText('Modèle')`) ;
 - `LLMTab.qwen.test.tsx` (`name: 'Enregistrer l'adresse'`) ;
 - `modeDemoPerimetre.test.tsx` (prose B-131 ; il importe `DemoModeSection`,
   qui gagne `role="switch"` et un nom) ;
 - `Alerte.test.tsx` (ton `'attention'` : `bg-[var(--color-warning-tint)]`,
   titre `text-warning` ; le défaut reste `'erreur'`) ;
-- `Carte.test.tsx` — extension de primitive n° 2 (revue v3, point 16) : ses
-  trois assertions verrouillent le `h2` (`:51-52` `getByRole('heading',
-  { level: 2 })` et `titre.tagName`, `:63` le libellé du cas icône, `:87`
-  `container.querySelector('h2')`). Elles restent telles quelles, le défaut
-  de `niveau` étant `'h2'` ; on **ajoute** un cas `niveau="h3"` qui vérifie
+- `Carte.test.tsx` — extension de primitive n° 2 (revue v3, point 16), avec
+  les renvois corrigés (revue v4, point 18 : la v4 citait « `:51-52`
+  `getByRole('heading', { level: 2 })` et `titre.tagName`, `:63` le libellé
+  du cas icône », ce qui désigne les mauvaises lignes). Les trois assertions
+  qui verrouillent le `h2` sont en `:63` (`getByRole('heading', { level: 2,
+  name: 'Agenda de la semaine' })`), `:64` (`titre.tagName` vaut `'H2'`) et
+  `:87` (`container.querySelector('h2')`) ; `:51` est le `it(...)` et `:50` le
+  `describe('CarteTete')`. Elles restent telles quelles, le défaut de
+  `niveau` étant `'h2'` ; on **ajoute** un cas `niveau="h3"` qui vérifie
   `getByRole('heading', { level: 3 })` et que `idTitre` est bien posé dessus ;
 - `FormField.test.tsx:95-96` — extension de primitive n° 3 : les deux
   `toMatch(/text-xs/)` (description et message d'erreur) deviennent
   `toMatch(/text-sm/)`. Assertions de classe, pas de comportement ; le
   rattachement `aria-describedby` testé ailleurs dans le fichier ne bouge pas.
 
-Aucune assertion de comportement n'est retirée. Onboarding (`Sauver` de
+**Les gardes de source qui lisent les trois fichiers, une par une** (revue
+v4, points 2 et 8 : deux d'entre elles manquaient à la v4, et une garde de
+source laissée en contradiction avec une garde du design rend la porte
+impossible à passer). Balayage fait le 11/09 :
+`grep -rln "settings/SettingsModal.tsx\|settings/LLMTab.tsx\|settings/ProfileTab.tsx" src --include='*.test.ts*'` dans
+`src/frontend` rend **quatre** fichiers, et seulement quatre :
+
+1. `components/prototype/ResponsiveShellContract.test.ts` — à aligner (:12 et
+   :13, ci-dessus) ;
+2. `test/lot12.test.ts:47-50` (B-454, « une erreur sans action de reprise
+   atteint quand même l'écran ») — **à ne pas toucher : c'est le design qui
+   s'y plie** (revue v4, point 8). Il exige `not.toMatch(/\{error &&
+   retryOperation && \(/)` puis `toMatch(/\{error && \(/)` sur
+   `SettingsModal.tsx` ; or le § 2 retire l'`Alerte` de coque quand
+   `cleInvalide`, ce qui s'écrirait spontanément `{error && !cleInvalide && (`
+   et ferait rougir la seconde assertion. Forme prescrite, qui garde le
+   littéral : `{error && (\n  cleInvalide ? null : <Alerte … />\n)}`. Le test
+   reste vert sans être modifié d'un caractère, et sa propriété (une erreur
+   sans reprise atteint l'écran) reste vraie ;
+3. `test/lot11.test.ts:84-86` (B-421, « le squelette de la modale Paramètres
+   réserve la hauteur du contenu ») —
+   `not.toMatch(/justify-center h-32">\s*\n\s*<Spinner/)` : garde **négative**
+   que le lot rend plus vraie encore, puisque le `Spinner taille="zone"` cède
+   la place aux six `Squelette` (§ 2). Rien à aligner ;
+4. `test/lot13.test.ts:48-52` (B-526, un interrupteur de visibilité par champ
+   de clé) — `toMatch(/clesVisibles/)` sur `SettingsModal.tsx` ; l'état
+   `clesVisibles` est celui de `ServicesTab`, que ce lot ne touche pas, et le
+   `not.toMatch(/showApiKey/)` de :52 porte sur `ServicesTab.tsx`, pas sur
+   `LLMTab.tsx`, où l'œil de la clé garde son `showApiKey`. Rien à aligner.
+
+Aucune autre garde de source ne lit ces trois fichiers. Aucune assertion de
+comportement n'est retirée. Onboarding (`Sauver` de
 `LLMStep`, `Nom complet *` de `ProfileStep`) hors lot.
 
 ## 8. Ce que ce lot ne fait pas
@@ -674,6 +955,22 @@ Aucune assertion de comportement n'est retirée. Onboarding (`Sauver` de
      seul pour les trois ; et sur « lecture en échec », cliquer « Réessayer le
      chargement » ne fait pas sauter le focus au `body` (le vérifier au
      clavier, pas à la souris) ;
+   - **une seule carte de service**, au nom du fournisseur, contenant la clé
+     (ou le statut Ollama) puis les rangées Modèle et Effort : pas deux
+     titres quasi homonymes empilés (revue v4, point 10) ; sur Ollama, le
+     titre de carte a remplacé le `h3` « Ollama Local » et le bouton
+     Re-tester tourne pendant le test ;
+   - **modèle hors catalogue** : forcer `/api/config/llm` avec un `model` que
+     le catalogue ne contient pas, vérifier que le `Select` affiche bien
+     « {modèle} (personnalisé) » **sélectionné** (et non le premier de la
+     liste) et que la mention « Modèle personnalisé actif » est sous la
+     rangée — c'est BUG-084, que la bascule vers `Select` casserait sans
+     l'option ajoutée (revue v4, point 1) ;
+   - **fournisseur inconnu du catalogue** : forcer `/api/config/llm` avec un
+     `provider` absent de `FOURNISSEURS` et vérifier que la carte existe
+     encore, avec son champ de clé et un titre non vide ;
+   - clé corrompue : la consigne « Clé API corrompue - ressaisis-la » reste
+     en rouge et lisible sous la tête de carte, pas en gris de méta ;
    - clé jamais en clair une fois enregistrée ; dollars absents de l'onglet IA
      (ils restent dans Avancé) ; overlay `fixed inset-0` (décision 1,
      BUG-156) recouvre établi et composeur : les juger **derrière**
@@ -682,6 +979,37 @@ Aucune assertion de comportement n'est retirée. Onboarding (`Sauver` de
    GO de Ludo (toute la DA, pas ce lot seul).
 
 ## Points non repris
+
+**Revue de la v4 (19 points) : aucun non repris.** Les dix-neuf sont fondés,
+preuve relue une par une dans le code avant correction, et chacun a laissé
+une trace nommée dans le corps du document (« revue v4, point n »). Répartis :
+§ 1 pour les points 3 et 16, § 2 pour les points 6, 7 et 14, § 3 pour les
+points 4, 5 et 11, § 4 pour les points 1, 9, 10, 12, 15 et 19, § 5 pour le
+point 17, § 7 pour les points 2, 8, 13 et 18, § 9 pour la recette des quatre
+états nouveaux.
+
+**Trois renvois de la revue elle-même sont décalés d'une ou plusieurs
+lignes ; le constat reste vrai dans les trois cas, et la v5 cite la ligne
+juste** (relevé ici plutôt que corrigé en silence) :
+
+- point 9, `EffortSelector` est rendu en `LLMTab.tsx:512`, pas :509 (la
+  condition de sortie anticipée est bien en `:471`) ;
+- point 11, la maquette pose `.aide{font-size:.75rem}` en `base.css:139` et
+  `.champ label{…font-size:.8125rem}` en `:136`, pas :148 et :145 (le fichier
+  visé est `docs/da/2026-09-05-propositions/maquettes/da/base.css`, celui-là
+  même dont le § 5 cite correctement `:140-142`) ;
+- point 8, l'en-tête vise `test/lot12.test.ts:48` ; le `it` de B-454 est en
+  `:47` et les deux assertions en `:49-50`, comme la preuve du point le dit
+  elle-même.
+
+**Deux vérifications faites en v5 qui ne venaient d'aucun point de la revue**,
+et qui ont corrigé le design en chemin : le balayage des gardes de source a
+rendu **quatre** fichiers et non deux (`lot11.test.ts` et `lot13.test.ts`
+s'ajoutent à `ResponsiveShellContract.test.ts` et `lot12.test.ts` ; les deux
+nouveaux restent verts, § 7) ; et la garde 1 ne peut pas balayer
+`SettingsModal.tsx` entier à la recherche de `sm:`, quatre groupes de classes
+`sm:` légitimes subsistant hors du périmètre du lot (:773, :776, :849, :881)
+— la garde énumère donc seize classes nommées.
 
 **Revue de la v3 (23 points) : aucun non repris.** Les 23 sont fondés, preuve
 relue une par une avant correction, dans la maquette
@@ -694,7 +1022,8 @@ relue une par une avant correction, dans la maquette
 664`, `ProfileTab.tsx:36, 48, 179, 402-407, 418-420, 447-458`), les règles
 (`docs/rules/RULES-DESIGN.md:385`), les gardes
 (`lexique.test.ts:3-6, 29-38`, `erreursAnnoncees.test.ts:43, 65, 99`,
-`aucuneCouleurEnDur.test.ts:47`, `Carte.test.tsx:51-52, 63, 87`,
+`aucuneCouleurEnDur.test.ts:47`, `Carte.test.tsx:63-64, 87` (renvoi corrigé
+en v5, revue v4 point 18 : la v3 et la v4 écrivaient « :51-52, 63 »),
 `FormField.test.tsx:95-96`) et les tests cités
 (`SettingsModal.fournisseurIA.test.tsx:51-54, 68, 71, 88, 90, 93, 101, 108,
 112`, `tests/e2e/stories/parcours-05-settings.spec.ts:202`).
