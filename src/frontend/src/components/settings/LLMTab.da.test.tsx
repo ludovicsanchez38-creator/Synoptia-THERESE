@@ -319,6 +319,28 @@ describe('lot 9, garde 5 : « Réessayer l’effort » porte son propre nom', ()
     expect(screen.queryByRole('button', { name: 'Réessayer' })).toBeNull();
   });
 
+  // Revue du diff, point 4 : l'`Alerte` et son geste étaient conditionnés à
+  // `error`, alors que `failedEffort` seul dit qu'il y a quelque chose à
+  // rejouer. La lecture de l'effort qui échoue AU MONTAGE pose `error` sans
+  // `failedEffort` : le bouton s'affichait et ne faisait rien
+  // (`onClick={() => failedEffort && …}`). L'annonce reste, le geste inerte part.
+  it('une lecture d’effort en échec annonce, sans bouton de reprise inerte', async () => {
+    const api = await import('../../services/api');
+    vi.mocked(api.getLLMConfig).mockRejectedValueOnce(
+      new Error('Effort de raisonnement indisponible.'),
+    );
+
+    rendre({ selectedProvider: 'openai', selectedModel: 'gpt-5.6-luna', apiKeys: { openai: true } });
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Effort de raisonnement indisponible.',
+    );
+    expect(
+      screen.queryByRole('button', { name: 'Réessayer l’effort' }),
+      'un bouton de reprise sans effort à rejouer',
+    ).toBeNull();
+  });
+
   it('sans échec d’effort, aucun bouton de reprise', async () => {
     rendre({ selectedProvider: 'openai', selectedModel: 'gpt-5.6-luna', apiKeys: { openai: true } });
     await screen.findByLabelText('Effort de raisonnement');

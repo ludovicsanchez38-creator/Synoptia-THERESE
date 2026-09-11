@@ -12,6 +12,12 @@
  * La garde source (`lib/erreursAnnoncees.test.ts`) empêche la dérive de
  * revenir ; ce test-ci mesure la seule chose qu'un balayage de texte ne peut
  * pas voir : ce que l'arbre d'accessibilité rend vraiment.
+ *
+ * Lot 9 : la condition de ce refus est devenue `{cleInvalide && error && (`.
+ * La garde source ne la voyait plus -- sa `CONDITION` n'acceptait pas de garde
+ * devant `error` -- et affirmait donc une couverture qu'elle n'avait plus.
+ * Elle a été élargie au garde optionnel (revue du diff, point 2) : les deux
+ * gardes tiennent de nouveau ensemble, la source et le rendu.
  */
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';

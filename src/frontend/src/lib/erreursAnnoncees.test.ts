@@ -38,7 +38,12 @@ import { describe, expect, it } from 'vitest';
 
 const RACINE = path.join(__dirname, '..');
 // B-361 : une branche de liste `if (msg.role === "error")` est une condition d'erreur aussi.
-const CONDITION = /\{\s*(error|erreur|\w*Error)\s*&&\s*\(?|\.role === "error"\)\s*\{/;
+// Lot 9, revue du diff (point 2) : la condition peut porter un GARDE devant
+// elle -- `{cleInvalide && error && (` dans `LLMTab`. Sans le groupe optionnel,
+// la regle cessait de voir le site meme pour lequel B-201 l'avait ecrite : la
+// couverture se retrecissait en silence, ce qui est exactement la maniere dont
+// la derive revient.
+const CONDITION = /\{\s*(?:\w+\s*&&\s*)?(error|erreur|\w*Error)\s*&&\s*\(?|\.role === "error"\)\s*\{/;
 const FOND_ERREUR = /bg-error\/10|bg-red-500\/10|color-error-tint/;
 // Lot 9 : `<Alerte>` porte son role="alert" dans Alerte.tsx:25, pas dans la
 // balise scannee ici. Sans cet ajout, chaque site d'appel de la primitive

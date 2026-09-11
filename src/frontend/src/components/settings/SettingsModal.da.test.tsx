@@ -11,7 +11,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { SettingsModal } from './SettingsModal';
@@ -203,9 +203,10 @@ describe('lot 9, garde 2 : le chargement montre six squelettes, pas un spinner',
     expect(grille?.querySelectorAll('[aria-hidden="true"]').length).toBe(6);
   });
 
-  it('pendant le chargement, error et operationStatus sont tus', () => {
-    // `loadSettings` ne vide pas `error` au début : un refus précédent
-    // resterait affiché sous les squelettes.
+  it('pendant le chargement, `operationStatus` est tu', () => {
+    // Le jumeau de cette garde, pour `error`, est un test de RENDU : il vit
+    // dans « garde 4 » (revue du diff, point 5). Celle-ci ne regarde que
+    // `operationStatus`, et son nom le dit maintenant.
     const src = source('SettingsModal.tsx');
     expect(src).toMatch(/!loading && operationStatus|operationStatus && !loading/);
   });
@@ -363,6 +364,83 @@ describe('lot 9, garde 4 : une erreur ne s’annonce qu’une fois', () => {
     expect(alertes[0]).toHaveTextContent('Le service a refusé');
     // `cleInvalide` est faux : le champ de clé ne se déclare pas invalide.
     expect(document.getElementById('settings-api-key')).not.toHaveAttribute('aria-invalid');
+  });
+
+  // Revue du diff, point 1 : « une fois » ne veut pas dire « zéro fois ».
+  // Quand la coque se tait sur `cleInvalide`, il faut que la carte du service
+  // parle -- or elle ne rend son alerte que dans la branche `needsApiKey`.
+  // Ollama joignable et VIDE est le seul état qui traverse les deux silences :
+  // son catalogue est vide (`catalogueModeles.ts:316`, `models: []`) et
+  // `ollamaModels` ne se remplit que si le service annonce au moins un modèle
+  // (`SettingsModal.tsx:268`), donc `defaultModel` est vide et tout le bloc qui
+  // remet l'erreur à zéro est sauté.
+  it('un refus de clé suivi d’un passage sur Ollama sans modèle reste annoncé', async () => {
+    const api = await import('../../services/api');
+    vi.mocked(api.getOllamaStatus).mockResolvedValueOnce({
+      available: true,
+      base_url: 'http://127.0.0.1:11434',
+      models: [],
+      error: null,
+    } as never);
+
+    await ouvrir('ai');
+    await waitFor(() => expect(document.getElementById('settings-api-key')).not.toBeNull());
+
+    const champ = document.getElementById('settings-api-key') as HTMLInputElement;
+    fireEvent.change(champ, { target: { value: 'mauvaise-clé' } });
+    fireEvent.keyDown(champ, { key: 'Enter' });
+
+    const REFUS = 'La clé API doit commencer par "sk-ant-"';
+    await waitFor(() => expect(screen.getAllByRole('alert')).toHaveLength(1));
+    expect(screen.getAllByRole('alert')[0]).toHaveTextContent(REFUS);
+
+    const grille = screen.getByRole('group', { name: 'Choix du service d’IA' });
+    const carteOllama = within(grille).getByRole('button', { name: /Ollama/ });
+    expect(carteOllama).not.toBeDisabled();
+    fireEvent.click(carteOllama);
+    await waitFor(() => expect(carteOllama).toHaveAttribute('aria-pressed', 'true'));
+
+    // L'erreur est toujours posée : elle doit être rendue QUELQUE PART.
+    const alertes = screen.getAllByRole('alert');
+    expect(alertes, 'le refus de clé n’est plus rendu nulle part').toHaveLength(1);
+    expect(alertes[0]).toHaveTextContent(REFUS);
+  });
+
+  // Revue du diff, point 5 : la garde de source voisine promettait « error et
+  // operationStatus sont tus » et ne vérifiait que le second. Celle-ci naît
+  // VERTE -- le `loading ||` est déjà là (`SettingsModal.tsx:957`) -- et on le
+  // dit : elle ferme la porte au lieu de la prouver ouverte. Vérifiée par
+  // sabotage le 11/09 (retrait du `loading ||` : rouge, « Le service a refusé »
+  // réapparaît sous les squelettes).
+  it('pendant la relecture, l’erreur de la coque se tait pour de bon (rendu)', async () => {
+    const api = await import('../../services/api');
+    vi.mocked(api.getApiKeysWithCorrupted).mockRejectedValueOnce(new Error('lecture refusée'));
+    vi.mocked(api.setLLMConfig).mockRejectedValueOnce(new Error('Le service a refusé'));
+
+    await ouvrir('ai');
+    await waitFor(() => expect(document.getElementById('settings-api-key')).not.toBeNull());
+    fireEvent.click(
+      within(screen.getByRole('group', { name: 'Choix du service d’IA' })).getByRole('button', {
+        name: /Mistral AI/,
+      }),
+    );
+    await waitFor(() =>
+      expect(
+        screen.getAllByRole('alert').some((a) => a.textContent?.includes('Le service a refusé')),
+      ).toBe(true),
+    );
+
+    // La relecture ne rend jamais la main : on reste dans l'état `loading`.
+    vi.mocked(api.getApiKeysWithCorrupted).mockReturnValueOnce(new Promise(() => {}) as never);
+    const bouton = screen.getByRole('button', { name: 'Réessayer le chargement' });
+    fireEvent.click(bouton);
+    await waitFor(() => expect(bouton).toHaveAttribute('aria-disabled', 'true'));
+
+    const alertes = screen.getAllByRole('alert');
+    expect(
+      alertes.map((a) => a.getAttribute('data-testid')),
+      'une alerte autre que le bandeau de lecture partielle survit au chargement',
+    ).toEqual(['settings-load-warning']);
   });
 });
 
