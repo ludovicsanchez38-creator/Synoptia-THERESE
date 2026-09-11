@@ -569,5 +569,5 @@ dernier enfant VISIBLE (le dernier enfant DOM était un wrapper vide).
 
 ## Moteur packagé lancé à la main : `PORT` ignoré, écoute sur 17293 (11/09/2026)
 
-- **Contexte** : smoke post-release de la 0.72.0. `PORT=17593 THERESE.app/Contents/MacOS/backend` a écouté sur 17293, le port de l'application réelle, pendant 45 s (données jetables, application de Ludo non lancée).
+- **Contexte** : smoke post-release de la 0.72.0. `PORT=17593 THERESE.app/Contents/MacOS/backend` a écouté sur 17293 pendant 45 s (données jetables, application de Ludo non lancée) : le point d'entrée du sidecar (`src/backend/main.py:271`) lit `--port` avec 17293 en dur et ignore toute variable d'environnement.
 - **Règle** : imiter le sidecar (`src-tauri/src/lib.rs`) : `--host 127.0.0.1 --port 17593` et `THERESE_PORT=17593`, `THERESE_DATA_DIR` jetable, puis lire `Uvicorn running on http://…` au journal avant d'attendre `/health`. Si le journal dit 17293, tuer tout de suite.
