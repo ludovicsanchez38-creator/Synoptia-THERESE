@@ -17,6 +17,15 @@ const BRIEF = resolve(__dirname, '../prototype/TodayDashboardCard.tsx');
 // Lot 3 : le tiroir des conversations, et le catalogue hors TrustCenter.
 const TIROIR = resolve(__dirname, '../prototype/PrototypeConversationDrawer.tsx');
 const CATALOGUE = resolve(__dirname, '../prototype/CapabilityCenter.tsx');
+// Lot 6 : les six composants de l'écran Projets et tâches.
+const LOT6 = [
+  '../tasks/TasksPanel.tsx',
+  '../tasks/TaskKanban.tsx',
+  '../tasks/TaskList.tsx',
+  '../tasks/TaskForm.tsx',
+  '../memory/ProjectsPanel.tsx',
+  '../memory/ProjectsKanban.tsx',
+].map((f) => resolve(__dirname, f));
 
 /** Chemins (relatifs à src/) tolérés, avec la raison. Vide au départ. */
 const LISTE_BLANCHE: Record<string, string> = {
@@ -29,7 +38,7 @@ function sources(): string[] {
   const fichiers = (readdirSync(UI, { recursive: true }) as string[])
     .filter((f) => /\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f))
     .map((f) => join(UI, f));
-  return [...fichiers, COQUE, BRIEF, TIROIR, CATALOGUE];
+  return [...fichiers, COQUE, BRIEF, TIROIR, CATALOGUE, ...LOT6];
 }
 
 function contenuPourGarde(fichier: string): string {
@@ -45,6 +54,11 @@ function contenuPourGarde(fichier: string): string {
 // mot) ; on ancre sur « pas une lettre avant », ce qui garde `rgba(` dans
 // une valeur arbitraire Tailwind.
 const COULEUR_EN_DUR = /#[0-9A-Fa-f]{3,8}\b|(?<![A-Za-z])rgba?\(|(?<![A-Za-z])hsla?\(|\bcolor-mix\(/;
+// Lot 6 : le motif ci-dessus ne voit NI `bg-black/60` (TasksPanel, overlay)
+// NI `bg-gray-500/10` (TaskKanban, priorité basse) - ce sont des palettes
+// Tailwind brutes, pas des notations de couleur. Sur les six fichiers du lot,
+// on les refuse aussi : les voiles passent à `bg-text/35`.
+const PALETTE_BRUTE = /\bbg-black\/|\bbg-gray-/;
 const COMMENTAIRE = /^\s*(\/\/|\*|\/\*)/;
 
 const court = (f: string) => f.slice(f.lastIndexOf('/src/') + 5);
@@ -58,6 +72,17 @@ describe('aucune couleur en dur dans les primitives ni la coque', () => {
       contenu.split('\n').forEach((ligne, i) => {
         if (COMMENTAIRE.test(ligne)) return;
         if (COULEUR_EN_DUR.test(ligne)) fautifs.push(`${court(f)}:${i + 1}`);
+      });
+    }
+    expect(fautifs).toEqual([]);
+  });
+
+  it('ni palette Tailwind brute sur l’écran Projets et tâches', () => {
+    const fautifs: string[] = [];
+    for (const f of LOT6) {
+      readFileSync(f, 'utf-8').split('\n').forEach((ligne, i) => {
+        if (COMMENTAIRE.test(ligne)) return;
+        if (PALETTE_BRUTE.test(ligne)) fautifs.push(`${court(f)}:${i + 1}`);
       });
     }
     expect(fautifs).toEqual([]);

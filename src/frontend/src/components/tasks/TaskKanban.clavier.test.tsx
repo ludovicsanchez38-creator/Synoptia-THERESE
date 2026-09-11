@@ -85,4 +85,21 @@ describe('B-209 - les commandes de la carte Kanban existent aussi au clavier', (
     fireEvent.blur(carte(), { relatedTarget: document.body });
     expect(screen.queryByRole('button', { name: 'Marquer terminé' })).toBeNull();
   });
+
+  /**
+   * DA lot 6 : la rangée de commandes reste MONTÉE, cachée par `invisible` et
+   * `aria-hidden`, pour que la hauteur de la carte ne bouge pas au survol. Le
+   * Tab de la carte vers « Marquer terminé » passe donc par un `blur` dont la
+   * `relatedTarget` est le bouton lui-même : sans la garde `contains`, la
+   * cible du focus se retirerait de l'arbre d'accessibilité sous la main.
+   */
+  it('passer de la carte à sa commande ne la fait pas disparaître', () => {
+    render(<TaskKanban />);
+    fireEvent.focus(carte());
+
+    const bouton = screen.getByRole('button', { name: 'Marquer terminé' });
+    fireEvent.blur(carte(), { relatedTarget: bouton });
+
+    expect(screen.queryByRole('button', { name: 'Marquer terminé' })).not.toBeNull();
+  });
 });
