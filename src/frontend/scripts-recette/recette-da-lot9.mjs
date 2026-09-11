@@ -116,6 +116,9 @@ async function ouvrirParametres(page, onglet = 'profile') {
       onglet,
       { timeout: 10000 },
     );
+    // `transition-colors` : le fond de l'onglet met ~150 ms à suivre la classe ; sans cette
+    // attente la capture montre l'ancien onglet encore teinté (constaté le 11/09).
+    await page.waitForTimeout(300);
   }
 }
 
