@@ -145,6 +145,33 @@ describe('lot 8 (1) : la grille semaine', () => {
     }
   });
 
+  it('la piste horaire porte les mêmes sept traits, et son repère ne traverse pas la gouttière', () => {
+    semer({ events: [SEANCE] });
+    const { container } = render(<CalendarView />);
+
+    const piste = gabarits(container).at(-1) as HTMLElement;
+    const enfants = [...piste.children] as HTMLElement[];
+    expect(enfants, 'la gouttière des heures, puis les sept jours en un seul bloc').toHaveLength(2);
+    expect(enfants[0].className, 'la gouttière ne porte pas de trait').not.toMatch(/\bborder-l\b/);
+
+    const zoneDesJours = enfants[1];
+    expect(zoneDesJours.className).toMatch(/col-start-2/);
+    expect(zoneDesJours.className).toMatch(/col-span-7/);
+    expect(zoneDesJours.className, "c'est lui qui positionne le repère").toMatch(/\brelative\b/);
+
+    const colonnes = [...zoneDesJours.querySelectorAll(':scope > div')].filter((d) =>
+      /\bborder-l\b/.test(classesDUnNoeud(d)),
+    );
+    expect(colonnes, 'sept colonnes de jour').toHaveLength(7);
+    for (const colonne of colonnes) {
+      expect(classesDUnNoeud(colonne)).toMatch(/\bborder-border\b/);
+      expect(classesDUnNoeud(colonne)).not.toMatch(/border-border\/\d/);
+    }
+
+    const repere = container.querySelector('[role="img"]') as HTMLElement;
+    expect(zoneDesJours.contains(repere), 'le repère vit hors de la gouttière des heures').toBe(true);
+  });
+
   it('le jour courant : teinte d’accent en tête, surface 2 sur la colonne', () => {
     semer({ events: [SEANCE] });
     const { container } = render(<CalendarView />);
