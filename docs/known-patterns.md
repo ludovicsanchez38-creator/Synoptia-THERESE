@@ -550,3 +550,19 @@ tient au-dessus du composeur même sans dégagement, et le sabotage
 (`paddingBottom: 0`) passait. Mesurer aussi l'invariant mécanique
 (`paddingBottom` du fil ≥ hauteur du fond du composeur), et cibler le
 dernier enfant VISIBLE (le dernier enfant DOM était un wrapper vide).
+
+## Playwright : un glob `**/api/x**` attrape aussi le module Vite `/src/services/api/x.ts` (11/09/2026)
+
+- **Contexte** : recettes DA des lots 5 et 6. `page.route('**/api/invoices**', …)` interceptait la requête réseau ET le chargement du module `/src/services/api/invoices.ts` servi par Vite ; la coque ne démarrait jamais (`TimeoutError` sur `window.__therese`).
+- **Règle** : toujours un prédicat sur le chemin, `page.route((u) => u.pathname.startsWith('/api/invoices'), …)`, jamais un glob sur `api/`.
+- **Idem** : `getByRole('button', { name: 'Liste' })` est ambigu dès qu'un segment et un bouton portent le même nom ; cibler le `role="group"` nommé puis `exact: true`.
+
+## Capture pendant une `transition-colors` : l'ancien onglet reste teinté (11/09/2026)
+
+- **Contexte** : recette du lot 9 (Paramètres). La capture prise juste après `waitForFunction(data-active-tab)` montrait deux onglets actifs : la transition de couleur de l'ancien était encore en vol.
+- **Règle** : attendre 300 ms après un changement d'onglet avant de mesurer ou de capturer ; une sonde de focus programmatique peut aussi lire `outline 0px` (limite d'instrument, à confirmer au clavier).
+
+## Bouton de texte mesuré à 20 px : `min-h-9`, pas `h-9` (11/09/2026)
+
+- **Contexte** : lots 6 et 7 (« Ouvrir la tâche », nom du projet, « Client »). Un bouton sans hauteur explicite fait la hauteur de sa ligne (20 px) ; la garde qui exemptait « tout bouton sans classe de hauteur » laissait passer le défaut.
+- **Règle** : `min-h-9` sur les boutons de texte, et la garde vérifie `/\bmin-h-9\b/` ; à police 14 px, `h-9` mesure 32 px (effet rem), ce n'est pas un défaut.
