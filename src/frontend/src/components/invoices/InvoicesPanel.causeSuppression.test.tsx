@@ -70,7 +70,7 @@ const facture: Invoice = {
 
 async function demanderLaSuppression() {
   render(<InvoicesPanel standalone />);
-  await screen.findByText('FAC-001');
+  await screen.findAllByText('FAC-001');
   fireEvent.click(screen.getByTitle('Supprimer'));
   const dialogue = await screen.findByRole('dialog', { name: 'Confirmer la suppression' });
   fireEvent.click(within(dialogue).getByRole('button', { name: 'Supprimer' }));

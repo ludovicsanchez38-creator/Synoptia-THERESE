@@ -86,11 +86,11 @@ describe('B-010 : un statut hors catalogue n’empêche pas le rendu', () => {
 
     // La ligne saine est intacte... (« Brouillon » est aussi un bouton de
     // filtre, d'où la recherche dans la ligne et non dans tout l'écran)
-    expect(within(saine).getByText('FAC-001')).toBeInTheDocument();
+    expect(within(saine).getAllByText('FAC-001').length).toBeGreaterThan(0);
     expect(within(saine).getByText('Brouillon')).toBeInTheDocument();
 
     // ... et l'inconnue s'affiche avec ce que la base contient, faute de mieux.
-    expect(within(inconnue).getByText('FAC-002')).toBeInTheDocument();
+    expect(within(inconnue).getAllByText('FAC-002').length).toBeGreaterThan(0);
     expect(within(inconnue).getByText('partiellement_paye')).toBeInTheDocument();
   });
 });

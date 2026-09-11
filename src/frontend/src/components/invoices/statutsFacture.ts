@@ -1,27 +1,16 @@
 /**
- * Libellés et icônes des statuts de pièce. Source unique pour les filtres
- * du panneau ; plus de couleur ni de pastille.
+ * Libellés des statuts de pièce. Source unique pour les filtres du panneau ;
+ * plus de couleur, plus de pastille, et plus d'icône : personne ne la lisait
+ * (l'icône du statut inconnu est un `FileText` posé par le composant).
  */
-import {
-  ArrowRightLeft,
-  Ban,
-  CheckCircle2,
-  Clock,
-  FileText,
-  Mail,
-  ThumbsDown,
-  AlertCircle,
-  type LucideIcon,
-} from 'lucide-react';
-
-export const STATUS_CONFIG: Record<string, { label: string; icon: LucideIcon }> = {
-  draft: { label: 'Brouillon', icon: FileText },
-  sent: { label: 'Envoyée', icon: Mail },
-  accepted: { label: 'Accepté', icon: CheckCircle2 },
-  refused: { label: 'Refusé', icon: ThumbsDown },
-  expired: { label: 'Expiré', icon: Clock },
-  paid: { label: 'Payée', icon: CheckCircle2 },
-  overdue: { label: 'En retard', icon: AlertCircle },
-  converted: { label: 'Converti', icon: ArrowRightLeft },
-  cancelled: { label: 'Annulée', icon: Ban },
+export const STATUS_CONFIG: Record<string, { label: string }> = {
+  draft: { label: 'Brouillon' },
+  sent: { label: 'Envoyée' },
+  accepted: { label: 'Accepté' },
+  refused: { label: 'Refusé' },
+  expired: { label: 'Expiré' },
+  paid: { label: 'Payée' },
+  overdue: { label: 'En retard' },
+  converted: { label: 'Converti' },
+  cancelled: { label: 'Annulée' },
 };

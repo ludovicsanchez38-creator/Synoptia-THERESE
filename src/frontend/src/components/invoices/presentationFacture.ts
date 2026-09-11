@@ -17,9 +17,13 @@ export function dateListe(iso: string): string {
 export function sousLignePiece(invoice: Invoice): string {
   if (invoice.document_type === 'devis') return 'Devis';
   if (invoice.document_type === 'avoir') return 'Avoir';
-  const mois = new Intl.DateTimeFormat('fr-FR', { month: 'long' }).format(
-    new Date(invoice.issue_date),
-  );
+  // `Intl.DateTimeFormat().format()` LÈVE `RangeError: Invalid time value` sur
+  // une date invalide, là où `toLocaleDateString` rendait « Invalid Date ».
+  // Appelée pour chaque rangée, une seule `issue_date` hors norme emportait
+  // le panneau entier dans le GlobalErrorBoundary (scénario B-010).
+  const d = new Date(invoice.issue_date);
+  if (Number.isNaN(d.getTime())) return 'Facture';
+  const mois = d.toLocaleDateString('fr-FR', { month: 'long' });
   return `Facture · ${mois}`;
 }
 
@@ -88,7 +92,7 @@ export function cellulesStatut(invoice: Invoice): {
 
   if (invoice.status === 'cancelled') {
     return {
-      envoi: { ton: 'neutre', texte: 'Annulée' },
+      envoi: { ton: 'neutre', texte: masculin(invoice.document_type) ? 'Annulé' : 'Annulée' },
       paiement: { texte: 'Sans objet' },
       echeance: { texte: due, muted: true },
     };
@@ -139,9 +143,21 @@ export function cellulesStatut(invoice: Invoice): {
     };
   }
 
+  if (invoice.status === 'sent') {
+    return {
+      envoi: { ton: 'info', texte: envoye },
+      paiement: { ton: 'attention', texte: avoir ? 'Impayé' : 'Impayée' },
+      echeance: { texte: due },
+    };
+  }
+
+  // Couple type/statut non décrit par le tableau du design (une facture ou un
+  // avoir `accepted`, `refused`, `expired`, `converted` : statuts présents en
+  // base, non filtrables hors devis). Affirmer un impayé mentirait ; on replie
+  // sur le libellé réel du statut, en ton neutre.
   return {
     envoi: { ton: 'info', texte: envoye },
-    paiement: { ton: 'attention', texte: avoir ? 'Impayé' : 'Impayée' },
+    paiement: { ton: 'neutre', texte: STATUS_CONFIG[invoice.status].label },
     echeance: { texte: due },
   };
 }

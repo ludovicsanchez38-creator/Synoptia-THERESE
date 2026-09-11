@@ -62,7 +62,7 @@ describe('B-218 : la cause renvoyée par le serveur arrive à l’écran', () =>
     mockGenerateInvoicePDF.mockRejectedValue(new Error(CAUSE_SERVEUR));
     render(<InvoicesPanel standalone />);
 
-    await screen.findByText('FAC-001');
+    await screen.findAllByText('FAC-001');
     fireEvent.click(screen.getByTitle('Générer et ouvrir le PDF'));
 
     await waitFor(() => {
@@ -80,7 +80,7 @@ describe('B-218 : la cause renvoyée par le serveur arrive à l’écran', () =>
     mockGenerateInvoicePDF.mockRejectedValue(new Error(''));
     render(<InvoicesPanel standalone />);
 
-    await screen.findByText('FAC-001');
+    await screen.findAllByText('FAC-001');
     fireEvent.click(screen.getByTitle('Générer et ouvrir le PDF'));
 
     await waitFor(() => {

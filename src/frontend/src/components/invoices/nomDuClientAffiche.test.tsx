@@ -148,7 +148,11 @@ describe('B-018 : la liste Devis et factures affiche vraiment le client', () => 
     mockListInvoices.mockResolvedValue([{ ...facture, id: 'inv-2', contact_name: null }]);
     render(<InvoicesPanel standalone />);
 
-    expect(await screen.findByText('FACT-2026-001')).toBeInTheDocument();
+    // Depuis la reprise du point 3 de la revue du diff, la référence est
+    // écrite DEUX fois quand le client manque : dans la colonne Pièce, et
+    // dans la commande d'ouverture, qui rendait sinon un bouton vide.
+    expect((await screen.findAllByText('FACT-2026-001')).length).toBeGreaterThan(0);
+    expect(screen.getByRole('button', { name: 'FACT-2026-001' })).toBeInTheDocument();
     expect(screen.queryByText(/Garcia/)).not.toBeInTheDocument();
   });
 });

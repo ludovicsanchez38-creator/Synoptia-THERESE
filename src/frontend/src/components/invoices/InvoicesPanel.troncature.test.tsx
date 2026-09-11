@@ -86,9 +86,9 @@ describe('B-003 : la troncature suit la liste affichée, pas le dernier chargeme
     render(<InvoicesPanel standalone />);
 
     // Le chargement du panneau atteint le plafond : l'avertissement est juste.
-    // Le compteur est fait de plusieurs nœuds texte dans un même
-    // <p data-testid="invoices-compteur"> : on garde l'élément, React
-    // réutilise le nœud d'un rendu à l'autre.
+    // Le compteur est une chaîne unique dans le
+    // <p data-testid="invoices-compteur"> : on garde l'élément, React le
+    // réutilise d'un rendu à l'autre.
     const compteur = await screen.findByText('100+ pièces');
     expect(screen.getByText(/Liste incomplète/)).toBeInTheDocument();
 

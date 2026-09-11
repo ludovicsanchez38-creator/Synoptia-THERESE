@@ -544,12 +544,18 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
           )}
 
           {!invoice && (
-            <Segments
-              label="Type de document"
-              valeur={documentType}
-              options={OPTIONS_TYPE_DOCUMENT}
-              onChange={(id) => setDocumentType(id as 'devis' | 'facture' | 'avoir')}
-            />
+            <div className="space-y-1.5">
+              {/* `Segments` n'expose son `label` qu'en `aria-label` : sans ce
+                  <span>, Devis / Facture / Avoir restaient le seul champ du
+                  formulaire sans intitulé lisible. Motif du § 2 du design. */}
+              <span className="block text-sm font-semibold text-text">Type de document</span>
+              <Segments
+                label="Type de document"
+                valeur={documentType}
+                options={OPTIONS_TYPE_DOCUMENT}
+                onChange={(id) => setDocumentType(id as 'devis' | 'facture' | 'avoir')}
+              />
+            </div>
           )}
 
           <div className="grid grid-cols-2 gap-4">
@@ -721,12 +727,12 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
                 })}
               </tbody>
             </table>
-            <p className="mt-2">
+            <div className="mt-2">
               <Button variant="ghost" size="md" type="button" onClick={addLine}>
                 <Plus className="h-[18px] w-[18px]" />
                 Ajouter une ligne
               </Button>
-            </p>
+            </div>
           </div>
 
           <FormField label="Notes" htmlFor="notes">

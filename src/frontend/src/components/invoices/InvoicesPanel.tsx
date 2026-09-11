@@ -405,7 +405,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
               <tr
                 key={invoice.id}
                 data-testid="invoice-item"
-                className="hover:[&>td]:bg-surface-2"
+                className="cursor-pointer hover:[&>td]:bg-surface-2"
                 onClick={() => handleEdit(invoice)}
               >
                 <td className="px-4 py-2.5 border-b border-border align-middle">
@@ -420,10 +420,12 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
                       e.stopPropagation();
                       handleEdit(invoice);
                     }}
-                    className="font-semibold text-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+                    className="inline-flex min-h-9 items-center font-semibold text-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
                     aria-label={invoice.contact_name ? undefined : invoice.invoice_number}
                   >
-                    {invoice.contact_name ?? ''}
+                    {invoice.contact_name || (
+                      <span className="text-text-muted">{invoice.invoice_number}</span>
+                    )}
                   </button>
                 </td>
                 <td className="px-4 py-2.5 border-b border-border align-middle">
@@ -456,34 +458,36 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
                   {montantAvecDevise(invoice.total_ttc, invoice.currency)}
                 </td>
                 <td className="px-4 py-2.5 border-b border-border align-middle">
-                  <Button
-                    variant="ghost"
-                    size="md"
-                    type="button"
-                    title="Générer et ouvrir le PDF"
-                    aria-label="Générer et ouvrir le PDF"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      void handleGeneratePDF(invoice);
-                    }}
-                  >
-                    PDF
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="md"
-                    type="button"
-                    className="text-error"
-                    title="Supprimer"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      handleDeleteInvoice(invoice);
-                    }}
-                  >
-                    Supprimer
-                  </Button>
+                  <div className="flex items-center justify-end gap-2">
+                    <Button
+                      variant="ghost"
+                      size="md"
+                      type="button"
+                      title="Générer et ouvrir le PDF"
+                      aria-label="Générer et ouvrir le PDF"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        void handleGeneratePDF(invoice);
+                      }}
+                    >
+                      PDF
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="md"
+                      type="button"
+                      className="text-error"
+                      title="Supprimer"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleDeleteInvoice(invoice);
+                      }}
+                    >
+                      Supprimer
+                    </Button>
+                  </div>
                 </td>
               </tr>
             );

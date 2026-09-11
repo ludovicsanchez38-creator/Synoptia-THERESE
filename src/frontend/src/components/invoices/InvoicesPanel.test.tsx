@@ -69,7 +69,7 @@ describe('InvoicesPanel suppression', () => {
   it('n appelle pas l API de suppression avant la confirmation explicite', async () => {
     render(<InvoicesPanel standalone />);
 
-    await screen.findByText('FAC-001');
+    await screen.findAllByText('FAC-001');
 
     fireEvent.click(screen.getByTitle('Supprimer'));
 
@@ -87,7 +87,7 @@ describe('InvoicesPanel suppression', () => {
   it('supprime seulement après clic sur confirmer', async () => {
     render(<InvoicesPanel standalone />);
 
-    await screen.findByText('FAC-001');
+    await screen.findAllByText('FAC-001');
     fireEvent.click(screen.getByTitle('Supprimer'));
     const dialog = await screen.findByRole('dialog', { name: 'Confirmer la suppression' });
     fireEvent.click(within(dialog).getByRole('button', { name: 'Supprimer' }));
@@ -104,7 +104,7 @@ describe('InvoicesPanel suppression', () => {
       </form>
     );
 
-    await screen.findByText('FAC-001');
+    await screen.findAllByText('FAC-001');
 
     fireEvent.click(screen.getByTitle('Supprimer'));
 
@@ -124,7 +124,7 @@ describe('InvoicesPanel suppression', () => {
   it('génère puis ouvre réellement le PDF local', async () => {
     render(<InvoicesPanel standalone />);
 
-    await screen.findByText('FAC-001');
+    await screen.findAllByText('FAC-001');
     fireEvent.click(screen.getByTitle('Générer et ouvrir le PDF'));
 
     await waitFor(() => {
@@ -136,7 +136,7 @@ describe('InvoicesPanel suppression', () => {
   it('ne présente pas un envoi email que le backend ne sait pas encore exécuter', async () => {
     render(<InvoicesPanel standalone />);
 
-    await screen.findByText('FAC-001');
+    await screen.findAllByText('FAC-001');
     expect(screen.queryByTitle('Envoyer par email')).not.toBeInTheDocument();
   });
 
@@ -164,7 +164,7 @@ describe('InvoicesPanel - lot F plafond silencieux', () => {
 
   it('envoie le filtre Payée au serveur plutôt que de trier le seau des 50 plus récentes', async () => {
     render(<InvoicesPanel standalone />);
-    await screen.findByText('FAC-001');
+    await screen.findAllByText('FAC-001');
 
     fireEvent.click(screen.getByRole('button', { name: 'Payée' }));
 

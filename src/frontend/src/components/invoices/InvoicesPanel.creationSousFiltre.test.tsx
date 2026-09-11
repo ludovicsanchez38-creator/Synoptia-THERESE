@@ -45,13 +45,13 @@ describe('InvoicesPanel : création sous un filtre de statut (B-569)', () => {
 
   it('le document créé est visible : le filtre de statut est levé', async () => {
     render(<InvoicesPanel standalone />);
-    await screen.findByText('FACT-2026-002');
+    await screen.findAllByText('FACT-2026-002');
     fireEvent.click(screen.getByRole('button', { name: /Nouvelle facture|Nouveau devis/ }));
     mockListInvoices.mockResolvedValue([factureEnRetard, devisCree]);
 
     fireEvent.click(screen.getByTestId('simuler-creation-devis'));
 
-    await waitFor(() => expect(screen.getByText('DEV-2026-020')).toBeInTheDocument());
+    await waitFor(() => expect(screen.getAllByText('DEV-2026-020').length).toBeGreaterThan(0));
     expect(useInvoiceStore.getState().filters.status).toBe('all');
   });
 });
