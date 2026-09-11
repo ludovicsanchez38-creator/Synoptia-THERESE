@@ -395,7 +395,17 @@ describe('Lot 5 DA : plancher, jetons, hauteurs', () => {
     const panneau = await screen.findByTestId('invoices-panel');
     expect(interactifsSousLePlancher(panneau)).toEqual([]);
 
-    for (const fichier of ['InvoicesPanel.tsx', 'InvoiceForm.tsx']) {
+    // Point 1 de la revue du diff : la logique de statut a migré vers
+    // `presentationFacture.ts` et `statutsFacture.ts`, c'est-à-dire vers les
+    // fichiers d'où `text-agent-amber` et `bg-agent-purple/20` viennent de
+    // sortir. `components/ui/aucuneCouleurEnDur.test.ts` ne balaie pas ce
+    // dossier : la garde doit les nommer ici.
+    for (const fichier of [
+      'InvoicesPanel.tsx',
+      'InvoiceForm.tsx',
+      'presentationFacture.ts',
+      'statutsFacture.ts',
+    ]) {
       const source = readFileSync(join(__dirname, fichier), 'utf8');
       const fautifs: string[] = [];
       source.split('\n').forEach((ligne, i) => {
@@ -411,20 +421,65 @@ describe('Lot 5 DA : plancher, jetons, hauteurs', () => {
     }
   });
 
-  it('Nouveau devis est h-11 ; les autres Button du panneau sont h-9 (hors Segments)', async () => {
+  it('Nouveau devis est h-11 ; les autres Button du panneau sont h-9 (hors Segments et commande client)', async () => {
     poser([piece()]);
     render(<InvoicesPanel standalone />);
-    await screen.findByTestId('invoice-item');
+    const rangees = await screen.findAllByTestId('invoice-item');
     const geste = screen.getByRole('button', { name: /Nouveau devis|Nouvelle facture/ });
     expect(geste.className).toMatch(/\bh-11\b/);
+
+    // Point 2 de la revue du diff : sauter tout bouton SANS classe de hauteur
+    // exemptait précisément le défaut visé (`cn` = `twMerge`, la classe
+    // appelante efface le `h-9` du primitive). La seule exception est
+    // nominative : la commande client (B-208) est un <button> texte, pas le
+    // primitive `Button` ; sa hauteur est tenue par le test dédié.
+    const commandesClient = new Set<Element | null>(
+      rangees.map((rangee) => rangee.querySelectorAll('td')[1]?.querySelector('button') ?? null),
+    );
+    expect(commandesClient.has(null)).toBe(false);
+    expect(commandesClient.size).toBe(rangees.length);
 
     for (const bouton of screen.getAllByRole('button')) {
       if (bouton.closest('[role="group"]')) continue;
       if (bouton === geste) continue;
-      // Commande client (B-208) : <button> texte, pas le primitive Button.
-      if (!/\bh-9\b|\bh-11\b|\bh-8\b/.test(bouton.className)) continue;
+      if (commandesClient.has(bouton)) continue;
       expect(bouton.className, bouton.textContent ?? '').toMatch(/\bh-9\b/);
-      expect(bouton.className).not.toMatch(/\bh-11\b/);
+      expect(bouton.className, bouton.textContent ?? '').not.toMatch(/\bh-11\b/);
     }
+  });
+
+  it('sans client, la commande porte le numéro en muted et la hauteur de la rangée', async () => {
+    // Point 3 de la revue du diff : `{invoice.contact_name ?? ''}` rendait un
+    // bouton VIDE dès que le client manque (fixture `sansClient` du dépôt), et
+    // l'anneau `focus-visible` se dessinait sur du vide (WCAG 2.4.7). Le cas
+    // `contact_name: ''` est le même trou, décalé : `??` le laisse passer.
+    poser([
+      piece({ id: 'sans', invoice_number: 'FAC-777', contact_name: null }),
+      piece({ id: 'vide', invoice_number: 'FAC-778', contact_name: '' }),
+    ]);
+    render(<InvoicesPanel standalone />);
+    const rangees = await screen.findAllByTestId('invoice-item');
+    expect(rangees).toHaveLength(2);
+
+    for (const [rang, numero] of [
+      [0, 'FAC-777'],
+      [1, 'FAC-778'],
+    ] as const) {
+      const commande = within(rangees[rang]).getByRole('button', { name: numero });
+      expect(commande.textContent?.trim(), numero).toBe(numero);
+      expect(commande.className, numero).toMatch(/\bmin-h-9\b/);
+      const muted = commande.querySelector('.text-text-muted');
+      expect(muted, numero).not.toBeNull();
+      expect(muted!.textContent, numero).toBe(numero);
+    }
+  });
+
+  it('la rangée reste cliquable et le dit au pointeur', async () => {
+    // Point 12 : le `tr` garde `onClick={() => handleEdit(invoice)}` mais avait
+    // perdu le `cursor-pointer` que portait la carte.
+    poser([piece()]);
+    render(<InvoicesPanel standalone />);
+    const rangee = await screen.findByTestId('invoice-item');
+    expect(rangee.className).toMatch(/\bcursor-pointer\b/);
   });
 });

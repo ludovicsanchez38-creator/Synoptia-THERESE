@@ -167,6 +167,20 @@ describe('Lot 5 DA : Segments, noms, ids', () => {
     expect(screen.getByRole('button', { name: 'Avoir' })).toHaveAttribute('aria-pressed', 'false');
   });
 
+  it('le libellé « Type de document » est visible au-dessus des Segments', async () => {
+    // Point 4 de la revue du diff : `Segments` n'expose son `label` qu'en
+    // `aria-label` (`Segments.tsx:27`), il ne rend aucun texte. Le <label>
+    // visible de main avait disparu de l'écran, seul champ du formulaire sans
+    // intitulé lisible. Motif du § 2 : un <span> au-dessus du groupe.
+    render(<InvoiceForm invoice={null} onClose={vi.fn()} onSave={vi.fn()} />);
+    const groupe = await screen.findByRole('group', { name: 'Type de document' });
+    const libelle = screen.getByText('Type de document');
+    expect(libelle).not.toBe(groupe);
+    expect(libelle.tagName).toBe('SPAN');
+    expect(libelle.className).toMatch(/\btext-sm\b/);
+    expect(groupe.contains(libelle)).toBe(false);
+  });
+
   it('Fermer et Supprimer la ligne 1 restent nommés, icônes 18 px', async () => {
     render(<InvoiceForm invoice={null} onClose={vi.fn()} onSave={vi.fn()} />);
     const fermer = await screen.findByRole('button', { name: 'Fermer' });
