@@ -1,6 +1,6 @@
 # DA « Application affinée », lot 7 : l'écran Décision (Board) (design à challenger avant le code)
 
-Version 5, 11/09/2026 09:32, après la revue de la v4 (10 points repris, 0 non repris) ; journal `.cartography-work/reviews/opus-da-lot7-decision-design-v4.log`. Précédent : lot 3 (Tiroir), livré sur `main` ;
+Version 6, 11/09/2026 10:04, après la revue de la v5 (8 points repris, 0 non repris) ; journal `.cartography-work/reviews/opus-da-lot7-decision-design-v5.log`. Précédent : lot 3 (Tiroir), livré sur `main` ;
 cadence : une seule release pour toute la DA (décision Ludo 11/09, 0.72.0-alpha
 porte l'ensemble). Maquette :
 `docs/da/2026-09-05-propositions/maquettes/decision.html` (états `normal`,
@@ -76,9 +76,22 @@ pas une variante) :
 `coupe?: boolean` (défaut `false`), dans le même commit que l'écran.** Sans
 elle, la liste perd la coupe d'aujourd'hui (`BoardConversationCard.tsx:130`,
 `truncate` sur la question **et** sur la reco) : `Ligne.tsx:80` rend le
-détail dans un `p` sans `truncate` et sans classe transmissible, et jusqu'à
-30 rangées de hauteur libre (une question réelle fait 90 caractères, le
-panneau 620 px) rendent la liste inscannable. `coupe` ajoute
+détail dans un `p` sans `truncate` et sans classe transmissible.
+**Les deux chiffres de la v5 étaient faux** (revue v5, point 6) : la carte
+n'affiche pas trente rangées mais **cinq** (`BoardConversationCard.tsx:90`,
+`resource.data.decisions.slice(0, 5)`, le plafond de 30 portant sur la
+ressource chargée, pas sur la liste rendue), et elle ne vit pas dans le
+panneau de 620 px mais dans la colonne principale
+(`ConversationCanvasPrototype.tsx:1823` la monte dans le bloc `:1688`,
+`max-w-[760px]` canevas ouvert, `max-w-colonne` sinon ; les 620 px sont le
+canevas, `:333`). La prop ne tient donc ni sur un volume de liste ni sur
+une largeur de panneau : **elle tient sur ce qu'elle préserve**. Sans
+elle, une question réelle de 90 caractères et sa recommandation prennent
+deux à trois lignes chacune dans une rangée de 760 px au plus (canevas
+ouvert ; `max-w-colonne` sinon), les cinq rangées
+cessent d'être de même hauteur, les dates de `droite` ne s'alignent plus,
+et la coupe qui existe aujourd'hui (`:130`) est perdue au passage à
+`Ligne`. `coupe` ajoute
 `block w-full truncate` au libellé (le `button` étiré quand la rangée est
 cliquable, le `span` sinon) et `truncate` au `p` du détail. **Jamais
 `relative` sur ce bouton** : son `before:absolute before:inset-0` se cale
@@ -147,7 +160,18 @@ casserait la suite pour une raison qui n'a rien à voir avec le lot.
 
 ### 3.1 Question
 
-`Carte as="section"`. `h3 className="text-lg font-bold leading-6"` = la
+`Carte as="section" className="p-4"`. **Marge intérieure explicite** :
+`Carte` n'en pose aucune (`Carte.tsx:20`, `bg-surface border border-border
+rounded-md shadow-sm` et rien d'autre), donc sans classe la carte colle son
+texte au bord. `p-4` = les 16 px d'aujourd'hui
+(`BoardConversationCard.tsx:171` et `:263`) et les 16 px horizontaux de
+`CarteTete` (`px-4`, `Carte.tsx:42`), la seule tête montée dans ce lot
+(§ 1). La maquette met 16 px en haut et 24 px sur les côtés
+(`decision.html:5`, `.question{padding:var(--espace-3) var(--espace-4)}`,
+`base.css:13` `--espace-3: 1rem`, `--espace-4: 1.5rem`) : c'est la
+respiration d'une page de 66 rem, elle revient avec P-080, le panneau de
+620 px garde 16 px sur les quatre côtés.
+`h3 className="text-lg font-bold leading-6"` = la
 question (le label uppercase 12 px « Question soumise » / « Décision du … »
 sort : la date va dans la meta). **`text-lg` (1,125 rem), pas `text-xl`** :
 le `h2` « Décision » du bandeau garde `text-xl` (§ 2, chaîne commune aux sept
@@ -231,34 +255,90 @@ Pas de durée, pas de « Contexte lu : contact, 2 devis » (P-080).
 `div.carte-tete > .icone`), recopiée à la main puisque `CarteTete` n'est pas
 monté ici : `<span aria-hidden="true" className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent-tint text-accent">`
 (chaîne exacte de `Carte.tsx:43-50`) contenant
-`<Scale className="h-[18px] w-[18px]" />` (lucide, import à ajouter dans
-`BoardConversationCard.tsx`). Le glyphe de la maquette (axe vertical et deux
-chevrons opposés) n'est pas repris tel quel : son équivalent lucide,
+`<Gavel className="h-[18px] w-[18px]" />` (lucide, **déjà importé**,
+`BoardConversationCard.tsx:9`). Le glyphe de la maquette (axe vertical et
+deux chevrons opposés) n'est pas repris tel quel : son équivalent lucide,
 `ChevronsUpDown`, signifie « trier » ou « déplier » dans une interface, ce
-qu'une pastille décorative ne doit pas laisser croire ; la balance dit la
-pesée des cinq avis et reste dans le registre de l'écran (`Gavel` en tête de
-la carte d'historique § 1). Titre en `h3` « Synthèse » (sans
+qu'une pastille décorative ne doit pas laisser croire. **La v5 mettait
+`Scale` ici ; le motif qui écarte `ChevronsUpDown` l'écarte aussi** (revue
+v5, point 5) : `Scale` porte déjà un sens dans l'application, et dans le
+**même groupe** `decide` (`CapabilityCenter.tsx:262`, `id: 'legal', group:
+'decide', title: 'Références juridiques', icon: Scale`). Une balance en tête
+de la synthèse d'une Décision renverrait au juridique. Le glyphe de
+Décision est `Gavel` partout ailleurs (`CapabilityCenter.tsx:250`
+`id: 'decision-board'`, `components/chat/CommandPalette.tsx:67`
+`'board.open'`, `lib/etabli.ts:16`), et ce design l'emploie déjà en tête de
+la carte d'historique (§ 1) et sur « Préparer la délibération » (§ 4). Le
+répéter sur la pastille ne crée pas d'ambiguïté : la pastille est le glyphe
+de **domaine**, pas un bouton (`Carte.tsx:5-6`, « c'est le glyphe de
+domaine, pas un bouton ») ; elle dit « cette carte appartient à Décision ».
+Titre en `h3` « Synthèse » (sans
 classe : `@layer base` 1 rem) ; meta `p className="text-xs font-medium text-text-muted"`
-« Ce que les cinq avis ont en commun, et ce qui les sépare » (chaîne
-maquette `normal`, `decision.html:68`). L'état maquette `partiel` la
-change (`decision.html` script l.96 : « Ce que les quatre avis rendus ont
-en commun ; le Contradicteur n'a pas répondu ») : **on ne suit pas** ;
-en `error` avec avis manquant, garder cette meta `normal` (pas de
-synthèse provisoire sans API).
+« **Ce que les avis ont en commun, et ce qui les sépare** » : chaîne
+maquette `normal` (`decision.html:68`) **privée de son nombre** (revue v5,
+point 1). La v5 écrivait « les cinq avis » dans les trois montages, y
+compris sous un `DecisionDetail` à une seule opinion (fixture
+`BoardConversationCard.test.tsx:22`, montée en détail par le test `:106`)
+et sous un run partiel à quatre avis, et `decision.synthesis` n'est pas
+optionnel (`board.ts:73`), donc cette carte s'affiche **toujours** en
+détail. C'est exactement ce que § 3.1 interdit trente lignes plus haut
+(« le détail ne doit pas annoncer cinq avis quand il en affiche un ») et ce
+que la recette § 8 vérifie (« un détail à une seule opinion qui annonce
+« 1 conseiller » »). Le N de § 3.1 n'est pas réemployé ici non plus : le
+compte est déjà dans l'étiquette de statut **et** dans le segment
+« N conseiller(s) » de la meta de question ; une troisième occurrence du
+même chiffre sur le même écran n'ajoute rien et fait un troisième endroit
+à tenir juste. La formule sans nombre est vraie des trois états. L'état
+maquette `partiel` récrit la phrase entière (`decision.html` script l.97 :
+« Ce que les quatre avis rendus ont en commun ; le Contradicteur n'a pas
+répondu ») : **on ne suit pas** ; en `error` avec avis manquant, même meta
+(pas de synthèse provisoire sans API).
+
+**Marge intérieure du corps, écrite une fois pour les deux montages qui
+rendent quelque chose** : `px-4 pb-4` sur le conteneur du corps, soit 16 px
+sur les côtés et en bas et **rien en haut**, la tête recopiée ci-dessus
+finissant déjà par `pb-2`. C'est la maquette telle quelle
+(`decision.html:10`, `.synthese .texte-synthese{padding:0 var(--espace-3)
+var(--espace-3)}`, `--espace-3: 1rem`, `base.css:13`), et le placeholder
+prend la même valeur (la maquette lui donne `padding:var(--espace-3)` en
+attribut `style`, `decision.html:75` : mêmes 16 px). Sans cette classe, les
+deux corps collent au bord : `Carte` ne pose aucune marge (`Carte.tsx:20`).
 
 Trois montages, un seul `data-testid="board-synthesis"` :
 
 1. **`run.status === 'running'` et pas de `run.synthesis`** (état maquette
-   `encours`, `decision.html:75` `#attente`, script `:94`) : `Carte as="article"
+   `encours`, `decision.html:75` `#attente`, script `:95`) : `Carte as="article"
    className="border-l-[3px] border-l-accent-fill"`, tête ci-dessus, corps
+   `<div className="px-4 pb-4">` contenant
    `<p className="text-sm text-text-muted">Synthèse en préparation, elle arrive après le dernier avis.</p>`
    + deux `Squelette` `largeur="w-[80%]"` et `largeur="w-[60%]"` (comme
    `.attente .chargement`, `decision.html:31-32`). Pas un trou.
 2. **`run.synthesis` ou `decision.synthesis` existe** : même `Carte as="article"
-   className="border-l-[3px] border-l-accent-fill"`, même tête. Bloc
-   recommandation : `bg-accent-tint rounded-sm p-3`,
-   `<b className="text-accent">{synthesis.recommendation}</b>` (toute la
-   reco, **sans** préfixe « Recommandation : »). Sous la reco :
+   className="border-l-[3px] border-l-accent-fill"`, même tête, corps
+   `<div className="px-4 pb-4">`. Bloc recommandation, **icône et intitulé
+   repris de la maquette** (revue v5, point 7) : conteneur
+   `flex items-start gap-3 rounded-sm bg-accent-tint p-3`, puis
+   `<Check aria-hidden="true" className="h-[18px] w-[18px] shrink-0 text-accent" />`
+   (lucide `Check`, le tracé `M20 6L9 17l-5-5` de la maquette,
+   `decision.html:70` ; **import à ajouter**, le bloc `lucide-react` de
+   `BoardConversationCard.tsx:4-18` a `CheckCircle2` mais pas `Check`), puis
+   `<p className="text-sm"><span className="font-semibold text-accent">Recommandation : </span><b className="text-accent">{synthesis.recommendation}</b></p>`.
+   **L'intitulé est un élément frère du `<b>`, jamais concaténé à la
+   donnée** : le `textContent` du `<b>` reste exactement
+   `synthesis.recommendation`. C'est la condition qui garde les assertions
+   vertes : `getByText(synthesis.recommendation)`
+   (`BoardConversationCard.test.tsx:51-52`, carte d'historique, matcher
+   exact) et les deux `toHaveTextContent` du détail (`:114-115`,
+   sous-chaîne, indifférents au préfixe). La v5 retirait les deux sans le
+   dire, alors que l'écran d'aujourd'hui affiche bien le mot
+   (`BoardConversationCard.tsx:143`, `<div className="text-xs font-semibold
+   uppercase tracking-[0.12em] text-success">Recommandation</div>`) et que
+   la maquette l'écrit dans le gras (« Recommandation : accepter, à deux
+   conditions. »). Ce qui **est** abandonné ici, volontairement : le
+   sur-titre uppercase 12 px (forme, remplacée par l'intitulé en ligne, et
+   `text-xs` de toute façon proscrit § 6.7 s'il tombait dans un sous-arbre
+   interactif) et la teinte `success` du bloc actuel, la maquette posant
+   `accent-tint`. Sous la reco :
    `Etiquette ton={high → succes, medium → neutre, low → neutre, sinon neutre}>{confidenceLabel(synthesis.confidence)}</Etiquette>`
    (le badge actuel de `SynthesisView`, `BoardConversationCard.tsx:143` ;
    il reste aussi sur la ligne d'historique). Consensus : `h4 className="text-sm font-bold text-text"`
@@ -276,11 +356,32 @@ Trois montages, un seul `data-testid="board-synthesis"` :
 Grille `grid grid-cols-1 sm:grid-cols-2 gap-3` (le panneau fait 620 px, pas
 de 3e colonne). Cinq cartes dans `advisorOrder` pour le run ; pour le
 détail, `decision.opinions` tel quel (on n'invente pas un avis manquant).
-Chaque avis : `Carte as="section"` (le test Markdown fait `closest('section')`).
+Chaque avis : `Carte as="section" className="p-3"` (le test Markdown fait
+`closest('section')`). **Marge intérieure** : `p-3`, les 12 px
+d'aujourd'hui (`BoardConversationCard.tsx:155` pour le run, `:270` pour le
+détail), `Carte` n'en posant aucune (`Carte.tsx:20`). La maquette met 16 px
+(`decision.html:16`, `.avis .carte{padding:var(--espace-3)}`) sur une
+grille `minmax(16rem,1fr)` dans une page de 66 rem ; ici la grille est à
+deux colonnes dans un panneau de 620 px, où 16 px de chaque côté prennent
+sur un texte déjà étroit. Les 16 px reviennent avec la page pleine (P-080).
 Tête : portrait `h-8 w-8 rounded-full` sans bordure ni ombre ; **pas de
-`h4`** (sinon le `h3` « Où les avis divergent » § 3.4 vient après des
-`h4` : même rupture d'ordre que h2 après h3, § 3.2 « ordre h2 → h3 → h2
-interdit »). Nom = `strong className="block text-sm font-semibold"` =
+`h4` pour le nom**. La raison écrite en v5 était fausse (revue v5,
+point 2) : le `h3` « Où les avis divergent » de § 3.4 ne vient pas « après
+des non-titres », et remonter d'un `h4` à un `h3` entre deux blocs frères
+ne casse aucun plan. La vraie rupture est **à l'intérieur** de la carte :
+`CompactMarkdown` rend `h1`, `h2` **et** `h3` Markdown en `<h3>`
+(`CompactMarkdown.tsx:11-13`, `mb-2 mt-3 text-sm font-bold first:mt-0`), et
+un avis en contient, voir la fixture `BoardConversationCard.test.tsx:124`
+(`'### Points de vigilance…'`), assertion `getByRole('heading', { name:
+'Points de vigilance' })` `:134`. Un nom en `h4` serait donc le titre d'une
+carte **dominé** par les titres de son propre contenu. Conséquence assumée
+par écrit : les cinq `h4` du run (`BoardConversationCard.tsx:156`) sortent
+du plan du document. Le plan de l'écran reste h2 (« Décision », bandeau
+§ 2) → h3 (question § 3.1, « Synthèse » § 3.2, titres Markdown des avis,
+« Où les avis divergent » § 3.4) ; les noms se repèrent au portrait et à la
+graisse, comme dans le détail d'aujourd'hui (`:273`, déjà un `strong`) et
+dans la maquette (`decision.html:78`, `<b>La Stratège</b>`).
+Nom = `strong className="block text-sm font-semibold"` =
 `info.name` / `opinion.name` (détail actuel `BoardConversationCard.tsx:273`
 déjà en `strong` ; maquette `decision.html:78` `<b>La Stratège</b>`, pas un
 titre) ; meta `p className="text-sm text-text-muted"`
@@ -347,16 +448,22 @@ rendu », pas « Réfléchit… » ; le même run avec contenu non vide affiche
 
 Après la grille, **seulement si** `run.synthesis` ou `decision.synthesis`
 existe (donc **masqué** tant que `run.status === 'running'` sans synthèse ;
-maquette `encours` masque `#divergences`, `decision.html:94`) :
+maquette `encours` masque `#divergences`, `decision.html:95`) :
 
 - si `divergence_points.length > 0` : `h3 text-base` « Où les avis
   divergent », liste `text-sm` des points (plus dans la carte synthèse) ;
 - si vide : le même `h3`, puis « Aucune divergence enregistrée. » inchangé.
 
-Ce `h3` vient **après des non-titres** (noms d'avis en `strong` / `p`,
-§ 3.3 ; maquette `decision.html:78` `<b>La Stratège</b>` puis l.86
-`<h3>Où les avis divergent</h3>`), pas après des `h4` d'avis. Les `h4`
-« Consensus » / « Prochaines étapes » restent **à l'intérieur** de
+Ce `h3` est **au même rang que les autres `h3` de l'écran** : celui de la
+question (§ 3.1), celui de la tête de synthèse (§ 3.2), et ceux que
+`CompactMarkdown` produit à l'intérieur des cartes d'avis
+(`CompactMarkdown.tsx:11-13`, `h1`/`h2`/`h3` Markdown rendus en `<h3>`).
+La v5 écrivait qu'il venait « après des non-titres, pas après des `h4`
+d'avis » : c'est faux (revue v5, point 2), il vient après des `h3`, et ce
+n'est pas un défaut, deux `h3` successifs sont des frères. La maquette met
+le même titre au même rang (`decision.html:86` `<h3>Où les avis
+divergent</h3>`, après les cartes `:78` dont le nom est un `<b>`). Les
+`h4` « Consensus » / « Prochaines étapes » restent **à l'intérieur** de
 l'article synthèse (sous le `h3` « Synthèse »). Pas de `h3` divergences
 tant qu'il n'y a pas de synthèse (le message « Aucune divergence
 enregistrée. » pendant `running` serait faux).
@@ -417,7 +524,7 @@ ne porte plus que progressbar, phase, bandeaux, boutons.
 | historique, vide | « Aucune décision enregistrée » + « Convoquer le Board » | `EtatVide data-testid="board-history-empty"` titre et texte actuels, `action` = `Button variant="primary" size="md"` « Convoquer le Board » ; la `Gavel` d'aujourd'hui (`BoardConversationCard.tsx:124`) est **volontairement abandonnée** : `EtatVide` n'a pas de prop `icone` (`EtatVide.tsx:11-16`) et la glisser dans `children` la mettrait à l'intérieur du `p` du texte (`EtatVide.tsx:22`), au milieu d'une phrase ; le titre porte l'état. Le `data-testid` passe par les rest props (`EtatVide` étend `HTMLAttributes<HTMLDivElement>`) |
 | canevas, chargement resource / décision | spinner + « Chargement du Board… » / « Chargement de la décision… » | mêmes textes en `role="status"`, plus deux `Squelette` |
 | canevas, erreur resource / décision | message + Réessayer | `Alerte icone={<AlertCircle className="h-[18px] w-[18px]" />}` (les deux, comme l'`Alerte` de l'historique : `Alerte` a la prop et ne rend rien sans elle, `Alerte.tsx:31-35` ; aujourd'hui l'icône existe aux deux endroits, `BoardConversationCard.tsx:318` et `:322`), titre = le message actuel, `action` = `Button secondary md` Réessayer (`onRetry` / `onRetryDecision`) |
-| run `running` | barre + phase + N/5 | pas d'`Etiquette` ici (meta § 3.1) ; **place : juste après la `Carte` question et avant la carte synthèse** (§ 3), pas en bas du corps ; le bouton « Annuler la délibération » ci-dessous reste, lui, au pied d'actions en bas (aujourd'hui `BoardConversationCard.tsx:185`) ; barre visible `div.mt-2.h-1.5.overflow-hidden.rounded-full.bg-surface` `role="progressbar"` `aria-label="Progression de la délibération"` `aria-valuemin={0}` `aria-valuemax={5}` `aria-valuenow={completed}` `aria-valuetext={`${completed} conseiller${completed > 1 ? 's' : ''} sur 5 terminé${completed > 1 ? 's' : ''}`}` (mêmes `aria-*` qu'aujourd'hui, `BoardConversationCard.tsx:173` ; la maquette n'a pas de barre, l'écran actuel si) ; remplissage `h-full bg-domaine-prospects` `width: ${Math.max(4, completed / 5 * 100)}%` ; phase actuelle en `role="status"` `text-sm` ; bouton `Button variant="danger" size="md"` « Annuler la délibération » |
+| run `running` | barre + phase + N/5 | pas d'`Etiquette` ici (meta § 3.1) ; **place : juste après la `Carte` question et avant la carte synthèse** (§ 3), pas en bas du corps ; le bouton « Annuler la délibération » ci-dessous reste, lui, au pied d'actions en bas (aujourd'hui `BoardConversationCard.tsx:185`) ; barre visible `div.mt-2.h-1.5.overflow-hidden.rounded-full.bg-surface` `role="progressbar"` `aria-label="Progression de la délibération"` `aria-valuemin={0}` `aria-valuemax={5}` `aria-valuenow={completed}` `aria-valuetext={`${completed} conseiller${completed > 1 ? 's' : ''} sur 5 terminé${completed > 1 ? 's' : ''}`}` (mêmes `aria-*` qu'aujourd'hui, `BoardConversationCard.tsx:173` ; la maquette n'a pas de barre, l'écran actuel si) ; remplissage `h-full bg-domaine-prospects` `width: ${Math.max(4, completed / 5 * 100)}%` ; **le compteur visible « N/5 conseillers terminés » d'aujourd'hui (`BoardConversationCard.tsx:173`, `<div className="mt-1 text-right text-xs text-text-muted">`) n'est pas repris** (revue v5, point 4) : le même N est déjà dans l'étiquette « Délibération en cours · N/5 avis » (§ 3.1), à quelques pixels au-dessus, et dans l'`aria-valuetext` de la barre pour qui ne voit pas l'image ; trois affichages d'un seul compte font trois endroits à tenir juste ; phase actuelle en `role="status"` `text-sm`, **avec son icône reprise** (revue v5, point 4) : `<Globe aria-hidden="true" className="h-[18px] w-[18px] animate-pulse" />` si `run.isSearchingWeb`, sinon `<Spinner taille="bouton" />`, sachant que `Spinner` n'a pas de 18 px (`ligne` 14, `bouton` 16, `zone` 24, `Spinner.tsx:17-24`), `bouton` est la plus proche et déjà celle du § 1 ; **sans `annonce`** dans les deux cas : `Spinner` rend alors un `Loader2 aria-hidden="true"` (`Spinner.tsx:54-58`) et la phase du `role="status"` dit déjà « Recherche web en cours » (`usePrototypeBoardData.ts:155`), une seconde annonce ferait doublon ; bouton `Button variant="danger" size="md"` « Annuler la délibération », **icône reprise en 18 px** : `<Square className="h-[18px] w-[18px] fill-current" />` (aujourd'hui 14 px, `BoardConversationCard.tsx:185` ; 18 px est la taille d'icône de bouton de tout le lot, `Plus` § 1, `Gavel` § 4) |
 | run `running`, confirmation | `data-testid="board-cancel-confirmation"` | le même `div` (pas `Alerte` : ce n'est pas une erreur), textes conservés ; `Button secondary md` « Continuer en arrière-plan » ; `Button danger md` « Confirmer l'annulation » |
 | run `complete` | bandeau vert + identifiant | pas d'`Etiquette` ici (meta § 3.1 « Décision enregistrée ») ; identifiant déjà dans la meta § 3.1 (`Identifiant : {run.decisionId}`) ; `Button variant="primary" size="md"` « Nouvelle question » `onReset` (pied commun, ci-dessous) |
 | run `error` / `persistence_error` | bandeau `role="alert"` à deux `<p>` | `Alerte` titre = le gras actuel (« Sauvegarde non vérifiée. » / « Délibération incomplète. ») ; `children` = **un seul texte** (les deux phrases concaténées, espace au milieu) : `{run.error}` + « Les avis partiels restent visibles mais aucune conclusion ne doit être considérée comme sauvegardée. » (si `run.error` est vide, la seconde phrase seule). `Alerte` enveloppe `children` dans un seul `<p>` (`Alerte.tsx:38`) : deux `<p>` dans `children` = HTML invalide. Pas de Réessayer (aucun aujourd'hui). Cette `Alerte` n'est **pas** le statut : si `run.status === 'error'` et au moins un avis rendu, le statut est l'`Etiquette ton="attention"` § 3.1, l'`Alerte` se colle **sous** ; si zéro avis, pas d'étiquette, l'`Alerte` « Délibération incomplète. » reste seule. `persistence_error` : pas l'étiquette partielle (ce n'est pas un avis manquant), `Alerte` « Sauvegarde non vérifiée. » seule. Pied : `Button variant="primary" size="md"` « Nouvelle question » `onReset` (aujourd'hui `BoardConversationCard.tsx:185` : `running` ? Annuler : Nouvelle question, donc aussi sur erreur). Le canevas affiche `BoardRunView` tant que `status !== 'idle'` (`:312`) ; sous `xl`, le canevas est un calque `absolute` `max-w-[620px]` (`ConversationCanvasPrototype.tsx:333`, `xl:relative`) qui recouvre la carte (où le même geste existe encore) : sans ce bouton, plus aucun geste dans le panneau. |
@@ -480,8 +587,16 @@ vit dans `Ligne.test.tsx` : le contrat d'une primitive se teste chez elle) :
    de `mode` n'affiche aucun segment de mode (ni « Mode cloud », ni le « · »
    correspondant) ; deux opinions donnent « 2 conseillers » ; en
    `BoardRunView`, « 5 conseillers » et « Mode cloud » / « Mode souverain »
-   restent inconditionnels ; meta de synthèse = « Ce que les cinq avis
-   ont en commun, et ce qui les sépare » (pas la variante `partiel`) ;
+   restent inconditionnels ; **meta de synthèse = « Ce que les avis ont en
+   commun, et ce qui les sépare », la même chaîne dans les trois montages**
+   (run `running` sans synthèse, run `complete`, `DecisionDetail` à une
+   opinion) : elle ne contient **aucun nombre** : ni « cinq », ni
+   « quatre », ni la variante `partiel` de la maquette ; pendant un run
+   `running`, la zone de progression **ne répète pas le compte** (aucun
+   texte « conseillers terminés » dans le DOM, le N ne vit que dans
+   l'étiquette et dans `aria-valuetext`) et porte l'icône de phase
+   (`Globe` si `run.isSearchingWeb`, sinon le `Loader2` du `Spinner`), sans
+   `role="status"` ni `aria-label` propre à l'icône ;
 5. un seul « Réessayer » sur historique erreur, canevas resource erreur,
    canevas décision erreur ; zéro sur vide, chargement, run `complete`,
    run `error` ; « Nouvelle question » présent sur run `complete`,
@@ -502,7 +617,18 @@ vit dans `Ligne.test.tsx` : le contrat d'une primitive se teste chez elle) :
    portraits `truncate text-sm text-text-muted` ; la tête de la carte
    synthèse porte la pastille
    `grid h-8 w-8 shrink-0 place-items-center rounded-full bg-accent-tint text-accent`
-   avec `Scale` 18 px et `aria-hidden="true"` ; les deux `Alerte` du canevas
+   avec **`Gavel`** 18 px et `aria-hidden="true"` (jamais `Scale`, pris par
+   « Références juridiques », `CapabilityCenter.tsx:262`) ; **les trois
+   marges intérieures sont posées** : `p-4` sur la `Carte` question,
+   `px-4 pb-4` sur le corps de la carte synthèse (les **deux** montages,
+   placeholder compris), `p-3` sur chaque `Carte` d'avis ; aucune de ces
+   trois surfaces ne doit sortir avec la seule chaîne de `Carte`
+   (`bg-surface border border-border rounded-md shadow-sm`, `Carte.tsx:20`) ;
+   le bloc recommandation porte
+   `flex items-start gap-3 rounded-sm bg-accent-tint p-3`, une icône
+   `Check` 18 px `aria-hidden="true"` et l'intitulé « Recommandation : »
+   dans un élément **distinct** du `<b>`, dont le `textContent` reste
+   exactement `synthesis.recommendation` ; les deux `Alerte` du canevas
    rendent leur `icone` ; « Confirmer et lancer » est `disabled` quand
    `run.status === 'running'` ; en `DecisionDetail`, une opinion sans
    `provider` **ni** `model` n'affiche aucune meta (ni « provider inconnu »,
@@ -528,7 +654,7 @@ retirée.
 
 - Page pleine 66 rem, fil d'Ariane « Décisions › Décision du … », durée,
   « Contexte lu : contact, 2 devis, agenda » : le canevas reste le panneau
-  620 px. Fonctionnalité : **P-080** (numéro à attribuer par l'orchestrateur).
+  620 px. Fonctionnalité : **P-080**.
 - « Copier », « Créer les tâches », « Exporter en Markdown », « Poser une
   autre question » (on garde « Nouvelle question »), « modifiable tant
   qu'aucune tâche n'est créée » : **P-081**.
@@ -573,10 +699,46 @@ retirée.
    conteneur est la rangée `relative`, pas le bouton ; jsdom ne mesure pas
    ce clip, garde 9 comprise), et un détail à une
    seule opinion qui annonce « 1 conseiller », pas « 5 conseillers ».
+   Vérifier aussi, sur les trois états : la meta de synthèse **sans
+   nombre** (cinq avis rendus, délibération 2/5, partiel à quatre : la même
+   phrase) ; l'icône de phase à gauche de la phase, `Globe` pulsé pendant
+   « Recherche web en cours » et roue sinon, **sans** « N/5 conseillers
+   terminés » sous la barre ; la coche et l'intitulé
+   « Recommandation : » devant la recommandation, sur un fond
+   `accent-tint` ; et les trois marges (question, corps de synthèse, cartes
+   d'avis), dont aucune ne doit laisser le texte toucher le bord.
 4. Revue Grok du diff avant le tag, `/release-therese 0.72.0-alpha` avec le
    GO de Ludo (toute la DA, pas ce lot seul).
 
 ## Points non repris
+
+Aucun de la v5. Les 8 points de
+`.cartography-work/reviews/opus-da-lot7-decision-design-v5.log` (1 P1,
+1 P2, 6 P3) sont repris ci-dessus : meta de synthèse sans nombre et
+garde 6.4 retournée (§ 3.2 et § 6.4, point 1), prémisse des titres
+récrite et sortie assumée des cinq `h4` du run (§ 3.3 et § 3.4, point 2),
+marges intérieures des trois surfaces tranchées et mises sous garde
+(§ 3.1 `p-4`, § 3.2 `px-4 pb-4`, § 3.3 `p-3`, garde 6.8, point 3),
+compteur de progression repris par l'étiquette et icônes de phase et
+d'annulation reprises (§ 5 et garde 6.4, point 4), pastille de synthèse
+passée de `Scale` à `Gavel` (§ 3.2 et garde 6.8, point 5), justification
+de `coupe` récrite sur pièces (§ 1, point 6), icône `Check` et intitulé
+« Recommandation : » repris (§ 3.2 et garde 6.8, point 7), parenthèse du
+numéro de portail retirée (§ 7, point 8). S'y ajoutent trois précisions de
+détail, qui ne changent rien au fond. **Deux corrigent le design** sans que
+la revue les ait demandées : la citation de `decision.synthesis`, absente
+de la v5, que la revue donne en `board.ts:73` ; et les trois renvois au
+script de la maquette, décalés d'une ligne (la revue en avait relevé un,
+les deux autres se sont vus au passage), corrigés en `decision.html:95`
+pour `encours`, `:97` pour `partiel`, `:95` pour le masquage de
+`#divergences`. **La troisième précise la revue** : les trois numéros du
+lot **sont** enregistrés, au registre du portail de la boucle
+(`.app-loop/proposals.json`), qui vit **hors dépôt git**, d'où leur
+absence du `grep` sur `docs/` que cite la revue. Seul point de la v5 sur lequel le
+design tranche autrement que la correction proposée : au point 1, la revue
+offrait « retirer le nombre **ou** réemployer le N de § 3.1 » ; c'est la
+première branche qui est prise, et le § 3.2 dit pourquoi (le compte vit
+déjà dans l'étiquette de statut et dans le segment « N conseiller(s) »).
 
 Aucun de la v4. Les 10 points de
 `.cartography-work/reviews/opus-da-lot7-decision-design-v4.log` (1 P1, 3 P2,
@@ -584,7 +746,9 @@ Aucun de la v4. Les 10 points de
 au-dessus des avis (§ 3 et § 5), testid des deux conteneurs (§ 3 et
 garde 6.2), meta d'avis conditionnelle (§ 3.3), taille de la question
 tranchée à `text-lg` (§ 2 et § 3.1), pastille de synthèse reprise avec
-`Scale` (§ 3.2), icônes des `Alerte` et abandon assumé de la `Gavel` de
+`Scale` (§ 3.2 ; **remplacée par `Gavel` en v6**, point 5 de la revue de la
+v5 : `Scale` est déjà « Références juridiques » dans le même groupe
+`decide`), icônes des `Alerte` et abandon assumé de la `Gavel` de
 l'état vide (§ 5), `disabled` du bouton de confirmation (§ 4), coupe des
 rangées tranchée par la prop `coupe` de `Ligne` (§ 1 et garde 6.9),
 `P-088` attribué (§ 3.3 et § 7). Seule correction apportée à la revue
