@@ -1201,7 +1201,14 @@ d'en dessous n'aurait rien apporté. Le reste de ce paragraphe énumère ce qui
      doivent **différer** (137 contre 88 : c'est la preuve que les rangées ne
      s'égalisent plus) ; **(c)** `scrollHeight` contre `clientHeight` de la
      carte — l'écart doit être de l'ordre de quelques dizaines de pixels, pas
-     de deux cent soixante ;
+     de deux cent soixante ; **(d)** un **seul** trait de 1 px entre la rangée
+     d'en-têtes et la première semaine (§ 4, point 11). Les trois premières
+     mesures ne verraient pas un `border-t-0` qui ne s'appliquerait pas, et
+     jsdom ne compile pas la feuille : les six classes de ces reprises sont
+     bien émises par Tailwind (vérifié dans le CSS construit,
+     `grid-template-rows:max-content repeat(6,auto)`, `nth-child(-n+14)`,
+     `min-height:5.5rem`, `min-height:32px`, `resize:none`, `840px` et plus
+     aucun `839px`), mais c'est l'œil qui dit si le trait est simple ;
    - **le pied reste sous la grille** aux deux hauteurs, sans être comprimé ni
      emporté par le défilement ;
    - **le survol** d'un bloc, d'une puce et d'une ligne de liste, dans les
