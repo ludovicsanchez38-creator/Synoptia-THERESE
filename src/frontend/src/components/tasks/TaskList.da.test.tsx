@@ -74,6 +74,18 @@ describe('Lot 6 DA : la rangée de la liste', () => {
     expect(within(rangee).queryByText('Moyenne')).toBeNull();
   });
 
+  /**
+   * Recette du lot 6 : la commande « Ouvrir la tâche » est un bouton texte
+   * de 21 px, comme l'était le bouton Client du lot 5 (revue, point 3) :
+   * une cible plus basse que tout le reste de l'écran. `min-h-9` la met à
+   * la hauteur de la rangée sans changer le texte.
+   */
+  it('la commande « Ouvrir la tâche » a la hauteur des autres interactifs (min-h-9)', () => {
+    render(<TaskList />);
+    const bouton = screen.getByRole('button', { name: 'Ouvrir la tâche Relancer Ruiz' });
+    expect(bouton.className).toMatch(/\bmin-h-9\b/);
+  });
+
   it('D105 et D106 : ouvrir, cocher et supprimer gardent leurs noms', () => {
     render(<TaskList />);
 

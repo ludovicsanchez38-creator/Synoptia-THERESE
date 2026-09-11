@@ -64,6 +64,13 @@ describe('Lot 6 DA : les têtes des quatre groupes', () => {
 });
 
 describe('Lot 6 DA : la carte de projet', () => {
+  it('le bouton du nom a la hauteur des autres interactifs (min-h-9), même sans description', () => {
+    monter();
+    const bouton = screen.getByText('Projet Alpha').closest('button');
+    expect(bouton).not.toBeNull();
+    expect(bouton!.className).toMatch(/\bmin-h-9\b/);
+  });
+
   it('un clic sur le nom ouvre toujours le projet', () => {
     const { onSelect } = monter();
 

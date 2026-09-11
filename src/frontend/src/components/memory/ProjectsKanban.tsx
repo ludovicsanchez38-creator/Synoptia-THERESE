@@ -332,7 +332,7 @@ function ProjectCard({ project, onSelect, onDelete, isOverlay, showDragHandle }:
         {/* Clickable area */}
         <button
           onClick={() => onSelect(project)}
-          className="flex-1 min-w-0 text-left"
+          className="flex-1 min-w-0 min-h-9 text-left"
         >
           <div className="flex items-center gap-2">
             <p className="text-sm font-semibold text-text truncate">{project.name}</p>

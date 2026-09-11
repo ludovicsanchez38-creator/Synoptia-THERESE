@@ -172,7 +172,7 @@ export function TaskList() {
                     aria-label={`Ouvrir la tâche ${maskText(task.title)}`}
                     onClick={(e) => { e.stopPropagation(); handleTaskClick(task.id); }}
                     className={cn(
-                      'relative z-10 font-semibold text-left',
+                      'relative z-10 min-h-9 font-semibold text-left',
                       isDone ? 'line-through text-text-muted' : 'text-text',
                     )}
                   >
