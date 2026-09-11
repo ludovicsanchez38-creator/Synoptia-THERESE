@@ -425,10 +425,19 @@ Posé `true` uniquement dans `handleSaveApiKey` (vide « Entre une clé API »,
 préfixe `La clé API doit commencer par "${providerConfig.keyPrefix}"`, catch
 de `setApiKey`). Remis à `false` à **chaque** `setError(null)` : saisie du
 champ `#settings-api-key` (LLMTab.tsx:281-284), `selectTab`
-(SettingsModal.tsx:720), `handleSelectProvider` (SettingsModal.tsx:454),
-début de `handleSaveApiKey` avant l'appel, succès, et tout autre
-`setError(null)` (Groq, Brave, dossier, profil, Ollama, ToolsPanel, stats,
-recherche web, extraction). Les `setError(...)` de `setLLMConfig`
+(SettingsModal.tsx:720), début de `handleSaveApiKey` avant l'appel, succès,
+et tout autre `setError(null)` (Groq, Brave, dossier, profil, Ollama,
+ToolsPanel, stats, recherche web, extraction). **Plus une remise à zéro
+explicite, en tête de `handleSelectProvider` et hors de son
+`if (defaultModel)`** (revue du diff, point 1) : ce `setError(null)`-là vit
+à l'intérieur du bloc, et `defaultModel` est vide pour le seul fournisseur
+à catalogue vide, Ollama (`catalogueModeles.ts:316`), quand `ollamaModels`
+l'est aussi -- c'est-à-dire un Ollama joignable sans modèle tiré. Sur ce
+chemin, un refus de clé antérieur gardait `cleInvalide` vrai alors que
+`needsApiKey` devenait faux : la carte du service ne montait plus son
+alerte, la coque se taisait, et l'erreur n'était rendue **nulle part**.
+`setCleInvalide(false)` en tête rend l'annonce à la coque sans toucher à
+`error`. Les `setError(...)` de `setLLMConfig`
 (fournisseur, modèle), Groq, Brave, dossier, profil, Ollama, ToolsPanel,
 stats, recherche web, extraction **ne** posent **pas** `cleInvalide`.
 `Input error={cleInvalide}` (donc `aria-invalid`) **seulement** tant que
@@ -528,8 +537,17 @@ Pas de jauge « Ce mois-ci », pas d'interrupteur d'accord cloud (P-086).
   `nowrap` par défaut). Le cas est tenu des deux côtés : la garde 6 pour la
   classe, la recette pour le rendu (§ 9).
 - Première `Carte`, grille `grid grid-cols-1 min-[1024px]:grid-cols-2 gap-x-4`
-  `px-4 pb-4` : **uniquement** l'identité, chaque champ = `FormField` +
-  `Input`, **mêmes `id`**, mêmes `placeholder`, mêmes handlers.
+  **`gap-y-4`** `px-4 pb-4` : **uniquement** l'identité, chaque champ =
+  `FormField` + `Input`, **mêmes `id`**, mêmes `placeholder`, mêmes handlers.
+  **La gouttière verticale est aussi nécessaire que l'horizontale** (revue du
+  diff, point 3) : `FormField` n'espace que l'intérieur d'un champ
+  (`space-y-1.5`) et n'a aucune marge basse, donc `gap-x-4` seul colle le
+  libellé d'une rangée au champ de la rangée précédente -- « Entreprise »
+  contre « Nom complet ». La maquette obtient cet espace par
+  `.champ{margin-bottom:var(--espace-3)}` (`maquettes/da/base.css:135`), que
+  `.grille-2{gap:0 var(--espace-3)}` (:140) lui laisse exprès ; ici c'est la
+  grille qui le porte, `--espace-3` valant 1 rem (base.css:13). **Même classe
+  sur la grille de la carte émetteur.**
   **1024 px, pas 840** (revue v3, point 2) : le socle fait tomber `.grille-2`
   à une colonne sous 1024 px (`base.css:140-141`), et le seul `840` de
   `base.css` (:142) ne concerne que `.barre .etat.secondaire` et
@@ -589,8 +607,24 @@ Pas de jauge « Ce mois-ci », pas d'interrupteur d'accord cloud (P-086).
   change ; ils passent seulement du `<label className="text-xs
   text-text-muted">` maison au `label` de `FormField`, en `text-sm` (§ 3).
   Un `id` n'apparaît qu'une fois dans le document.
-- `DemoModeSection` : `data-testid="mode-demo-section"` conservé ; tête en
-  `text-sm` ; prose B-131 inchangée ; état actif : `Alerte` n'est pas le bon
+- `DemoModeSection` : **troisième `Carte` de la rubrique, comme ses deux
+  voisines** (revue du diff, point 7) : `Carte as="section"`
+  `aria-labelledby="settings-demo-title"` `data-testid="mode-demo-section"`
+  (le testid reste, `Carte` propage ses props) + `CarteTete`
+  `idTitre="settings-demo-title"` icône `Eye` 18 px, titre « Mode Démo » au
+  niveau **h2** par défaut. La v6 laissait ici un `h3` « tête en `text-sm` »
+  hérité d'un plan où les trois titres de la rubrique étaient trois `h3`
+  frères : une fois « Profil » et « Profil émetteur des factures » passés en
+  h2, ce `h3` faisait du mode démo une **sous-section de la facturation**
+  pour qui navigue par titres. Le `niveau` ajouté à `CarteTete` sert au cas
+  inverse (une carte imbriquée), pas à celui-ci. Conséquences assumées : la
+  phrase « Remplace par des personas fictifs les noms, sociétés et e-mails de
+  tes fiches contacts » devient le `meta` de la tête (12 px, exactement comme
+  le meta des deux cartes voisines, et hors du sous-arbre d'un interactif
+  donc hors de la règle du § 3) ; l'interrupteur passe en `actions`, ce qui
+  lui fait prendre une ligne entière sous le titre en dessous de 840 px
+  (`max-[840px]:basis-full` de `CarteTete`). Prose B-131 inchangée, dans le
+  corps de la carte (`px-4 pb-4`) ; état actif : `Alerte` n'est pas le bon
   ton, donc `p role="status"` « Mode démo actif - … ».
   **L'interrupteur reçoit son rôle et son nom en même temps que sa taille**
   (revue v3, point 20) : aujourd'hui `ProfileTab.tsx:447-458` est un
