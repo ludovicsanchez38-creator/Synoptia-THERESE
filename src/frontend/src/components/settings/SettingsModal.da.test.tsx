@@ -276,6 +276,38 @@ describe('lot 9, garde 5 : un Réessayer par action, jamais un pour trois', () =
   });
 });
 
+describe('lot 9, garde 5 : pendant la relecture, le bouton reste mais ne repart pas', () => {
+  // Écrite APRÈS le code, et verte du premier coup : la garde 5 du design la
+  // prescrit, les autres cas de la garde étaient rouges, celui-ci ne l'a jamais
+  // été. Il ferme la porte au lieu de la prouver ouverte, et on le dit.
+  it('un second clic pendant `loading` n’appelle pas `loadSettings` une fois de plus', async () => {
+    const api = await import('../../services/api');
+    vi.mocked(api.getApiKeysWithCorrupted).mockRejectedValueOnce(new Error('lecture refusée'));
+
+    await ouvrir();
+    const bouton = await screen.findByRole('button', { name: 'Réessayer le chargement' });
+    expect(vi.mocked(api.getApiKeysWithCorrupted)).toHaveBeenCalledTimes(1);
+
+    // La relecture ne rend jamais la main : on reste dans l'état `loading`.
+    vi.mocked(api.getApiKeysWithCorrupted).mockReturnValueOnce(new Promise(() => {}));
+    fireEvent.click(bouton);
+    await waitFor(() => expect(bouton).toHaveAttribute('aria-disabled', 'true'));
+
+    // Le bandeau n'a pas été vidé : le bouton est toujours là, et il a le focus
+    // s'il l'avait. C'est tout l'objet de la règle.
+    expect(bouton).toBeInTheDocument();
+    expect(bouton.hasAttribute('disabled')).toBe(false);
+
+    fireEvent.click(bouton);
+    fireEvent.click(bouton);
+    expect(vi.mocked(api.getApiKeysWithCorrupted)).toHaveBeenCalledTimes(2);
+
+    // Pendant la relecture, les autres reprises se taisent.
+    expect(screen.queryByRole('button', { name: 'Réessayer' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Réessayer l’effort' })).toBeNull();
+  });
+});
+
 describe('lot 9, garde 5 bis : le focus survit à la reprise du chargement', () => {
   it('« Réessayer le chargement » ne porte jamais `disabled`, seulement `aria-disabled`', () => {
     // Un `disabled` posé sur l'élément qui a le focus le renvoie au `body` :
