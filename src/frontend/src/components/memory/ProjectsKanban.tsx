@@ -30,6 +30,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Project } from '../../services/api';
+import { useDemoMask } from '../../hooks';
 import { accessibiliteGlisserDeposer } from '../../lib/accessibiliteGlisserDeposer';
 import { Button } from '../ui/Button';
 import { EtatVide } from '../ui/EtatVide';
@@ -315,6 +316,15 @@ interface ProjectCardProps {
 }
 
 function ProjectCard({ project, onSelect, onDelete, isOverlay, showDragHandle }: ProjectCardProps) {
+  // B-752 : le masque du mode démo s'arrêtait aux tâches et aux contacts. Les
+  // projets arrivent BRUTS du panneau, et cette carte est le seul endroit où
+  // leur nom est rendu - ici pour les cartes de la liste comme pour celle du
+  // `DragOverlay`. Le nom accessible de la corbeille passe par le masque au
+  // même titre que le texte visible : un nom masqué à l'œil et nu à l'oreille
+  // ne masque rien (même reprise que `TaskList`, D105 et D106).
+  const { maskText } = useDemoMask();
+  const nom = maskText(project.name);
+
   return (
     <div
       // `group` porte la révélation de la corbeille : sans lui, elle reste à
@@ -341,7 +351,7 @@ function ProjectCard({ project, onSelect, onDelete, isOverlay, showDragHandle }:
           className="flex-1 min-w-0 min-h-9 text-left"
         >
           <div className="flex items-center gap-2">
-            <p className="text-sm font-semibold text-text truncate">{project.name}</p>
+            <p className="text-sm font-semibold text-text truncate">{nom}</p>
             {project.budget != null && project.budget > 0 && (
               <span className="text-xs text-text-muted flex-shrink-0">
                 {formatCurrency(project.budget)}
@@ -349,7 +359,7 @@ function ProjectCard({ project, onSelect, onDelete, isOverlay, showDragHandle }:
             )}
           </div>
           {project.description && (
-            <p className="text-sm text-text-muted truncate mt-0.5">{project.description}</p>
+            <p className="text-sm text-text-muted truncate mt-0.5">{maskText(project.description)}</p>
           )}
         </button>
 
@@ -361,7 +371,7 @@ function ProjectCard({ project, onSelect, onDelete, isOverlay, showDragHandle }:
             variant="ghost"
             size="icon"
             onClick={(e) => { e.stopPropagation(); onDelete(project); }}
-            aria-label={`Supprimer ${project.name}`}
+            aria-label={`Supprimer ${nom}`}
             title="Supprimer"
           >
             <Trash2 className="h-[18px] w-[18px]" />
