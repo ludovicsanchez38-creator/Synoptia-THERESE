@@ -82,7 +82,10 @@ function semer(etat: Record<string, unknown> = {}) {
 
 async function monter() {
   const rendu = render(<CalendarPanel standalone />);
-  await waitFor(() => expect(screen.getByText('Agenda')).toBeInTheDocument());
+  // `{ selector: 'p' }` : le formulaire porte un `<label>Agenda</label>`, et
+  // un `getByText` nu se mettrait à trouver deux nœuds le jour où le panneau
+  // s'ouvrirait directement sur lui.
+  await waitFor(() => expect(screen.getByText('Agenda', { selector: 'p' })).toBeInTheDocument());
   for (let tour = 0; tour < 6; tour++) {
     await act(async () => { await Promise.resolve(); });
   }

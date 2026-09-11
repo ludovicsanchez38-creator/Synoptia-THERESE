@@ -328,6 +328,11 @@ async function main() {
   // L'horloge est posée sur l'instant de la maquette : sans elle, « aujourd'hui »
   // serait le jour du run, la colonne teintée changerait de place et le repère
   // de l'heure sortirait de la fenêtre 8-20 la moitié du temps.
+  // `context.clock` demande Playwright >= 1.45 ; le dépôt est en 1.58.2.
+  // Les trois cas d'erreur supposent que le `detail` JSON remonte dans le
+  // message levé : c'est le cas (`services/api/calendar.ts:129-131`,
+  // `throw new Error(data.detail || …)`), sans quoi `classifyCalendarError` ne
+  // verrait jamais « Google Calendar » et le bandeau fusionné ne se rendrait pas.
   await context.clock.install({ time: new Date(`${AUJOURDHUI}T11:48:00`) });
   const page = await context.newPage();
   const rapport = [];
