@@ -711,20 +711,25 @@ export function EffortSelector({
         {/* `col-span-2` : la rangée est une grille à deux colonnes, sans lui
             ces deux blocs tomberaient en colonne 1 et déplaceraient le Select. */}
         {status && <p role="status" className="col-span-2 mt-2 text-sm text-info">{status}</p>}
+        {/* L'`Alerte` suit `error` : l'échec de LECTURE au montage (« Effort de
+            raisonnement indisponible. ») doit être annoncé lui aussi. Le
+            GESTE, lui, suit `failedEffort` : sans valeur à rejouer, le bouton
+            appelait `failedEffort && …` et ne faisait rien -- une reprise
+            inerte, promesse pire que pas de bouton du tout. */}
         {error && (
           <Alerte
             className="col-span-2 mt-2"
             icone={<AlertCircle className="h-[18px] w-[18px]" />}
-            action={(
+            action={failedEffort ? (
               <Button
                 variant="ghost"
                 size="md"
                 type="button"
-                onClick={() => failedEffort && void handleChange(failedEffort)}
+                onClick={() => void handleChange(failedEffort)}
               >
                 Réessayer l’effort
               </Button>
-            )}
+            ) : undefined}
           >
             {error}
           </Alerte>

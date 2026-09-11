@@ -237,8 +237,14 @@ export function ProfileTab({
           )}
         </div>
 
-        {/* Deux colonnes à partir de 1024 px, comme `.grille-2` du socle. */}
-        <div className="grid grid-cols-1 min-[1024px]:grid-cols-2 gap-x-4 px-4 pb-4">
+        {/* Deux colonnes à partir de 1024 px, comme `.grille-2` du socle. La
+            gouttière VERTICALE est aussi nécessaire que l'horizontale :
+            `FormField` n'espace que l'intérieur d'un champ et n'a aucune marge
+            basse, donc sans `gap-y-4` le libellé d'une rangée colle au champ
+            de la rangée du dessus. La maquette pose cet espace sur le champ
+            (`.champ{margin-bottom:var(--espace-3)}`), ce que `.grille-2` lui
+            laisse exprès ; ici c'est la grille qui le porte. */}
+        <div className="grid grid-cols-1 min-[1024px]:grid-cols-2 gap-x-4 gap-y-4 px-4 pb-4">
           <FormField label="Nom complet" htmlFor="settings-profile-name" required>
             <Input
               id="settings-profile-name"
@@ -347,7 +353,7 @@ export function ProfileTab({
           </FormField>
         </div>
 
-        <div className="grid grid-cols-1 min-[1024px]:grid-cols-2 gap-x-4 px-4 pb-4">
+        <div className="grid grid-cols-1 min-[1024px]:grid-cols-2 gap-x-4 gap-y-4 px-4 pb-4">
           <FormField label="SIREN" htmlFor="settings-profile-siren">
             <Input
               id="settings-profile-siren"
@@ -416,55 +422,62 @@ export function DemoModeSection() {
   const isMac = navigator.platform.toUpperCase().indexOf('MAC') >= 0;
 
   return (
-    <div className="space-y-3 pt-4 border-t border-border/30" data-testid="mode-demo-section">
-      <div className="flex items-center gap-3">
-        <div className="w-10 h-10 rounded-sm flex items-center justify-center bg-accent-tint border-[1.5px] border-[var(--btn-ink)]">
-          <Eye className="w-5 h-5 text-accent-cyan-ink" />
-        </div>
-        <div className="flex-1">
-          <h3 className="text-sm font-semibold text-text">Mode Démo</h3>
-          <p className="text-sm text-text-muted">
-            Remplace par des personas fictifs les noms, sociétés et e-mails de tes fiches contacts
-          </p>
-        </div>
-        {/* Sans `type`, ce bouton valait `submit` ; sans rôle ni nom, le
-            lecteur d'écran annonçait « bouton », sans dire quoi ni dans quel
-            état. Piste 40 x 24 et curseur 20, comme l'interrupteur du mode
-            contributeur. */}
-        <button
-          type="button"
-          role="switch"
-          aria-checked={demoEnabled}
-          aria-label="Mode démo"
-          onClick={toggleDemo}
-          className={`relative w-10 h-6 rounded-full transition-colors ${
-            demoEnabled ? 'bg-accent' : 'bg-border'
-          }`}
-        >
-          <span
-            className={`absolute top-0.5 left-0.5 w-5 h-5 bg-ink-on-fill rounded-full transition-transform ${
-              demoEnabled ? 'translate-x-4' : 'translate-x-0'
+    // Troisième carte de la rubrique, comme « Profil » et « Profil émetteur
+    // des factures » : un `h3` laissé ici faisait du mode démo une
+    // SOUS-section de la facturation pour qui navigue par titres, les deux
+    // autres titres étant passés en `h2` avec `CarteTete`.
+    <Carte
+      as="section"
+      aria-labelledby="settings-demo-title"
+      className="space-y-3 pb-4"
+      data-testid="mode-demo-section"
+    >
+      {/* Sans `type`, l'interrupteur valait `submit` ; sans rôle ni nom, le
+          lecteur d'écran annonçait « bouton », sans dire quoi ni dans quel
+          état. Piste 40 x 24 et curseur 20, comme l'interrupteur du mode
+          contributeur. En `actions`, il prend une ligne entière sous le titre
+          en dessous de 840 px plutôt que de le comprimer. */}
+      <CarteTete
+        idTitre="settings-demo-title"
+        icone={<Eye className="h-[18px] w-[18px]" />}
+        titre="Mode Démo"
+        meta="Remplace par des personas fictifs les noms, sociétés et e-mails de tes fiches contacts"
+        actions={(
+          <button
+            type="button"
+            role="switch"
+            aria-checked={demoEnabled}
+            aria-label="Mode démo"
+            onClick={toggleDemo}
+            className={`relative w-10 h-6 rounded-full transition-colors ${
+              demoEnabled ? 'bg-accent' : 'bg-border'
             }`}
-          />
-        </button>
-      </div>
+          >
+            <span
+              className={`absolute top-0.5 left-0.5 w-5 h-5 bg-ink-on-fill rounded-full transition-transform ${
+                demoEnabled ? 'translate-x-4' : 'translate-x-0'
+              }`}
+            />
+          </button>
+        )}
+      />
 
       {/* B-131 : le masque est bâti depuis les fiches contacts (et les projets
           quand une vue les a chargés). Un nom propre qu'aucune fiche ne porte
           lui est invisible, et l'utilisateur qui filme sa démonstration n'avait
           aucun moyen de le savoir : le réglage promettait « les données
           clients », sans dire où la promesse s'arrête. */}
-      <p className="text-sm text-text-muted">
+      <p className="px-4 text-sm text-text-muted">
         Ce qui reste en clair : ce que tu as tapé toi-même ailleurs. Un nom de société
         écrit à la main dans le titre d'une tâche ou d'une conversation n'est dans aucune
         fiche contact, donc le masque ne le connaît pas. Relis l'écran avant de filmer.
       </p>
 
       {demoEnabled && (
-        <p role="status" className="text-sm text-accent-cyan-ink">
+        <p role="status" className="px-4 text-sm text-accent-cyan-ink">
           Mode démo actif - {isMac ? '⌘' : 'Ctrl'}⇧D pour basculer
         </p>
       )}
-    </div>
+    </Carte>
   );
 }

@@ -72,8 +72,12 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
    * Lui seul pose `aria-invalid` sur le champ et déporte l'alerte dans la
    * carte du service (la coque se tait alors : une erreur ne s'annonce qu'une
    * fois). Il retombe à chaque `setError(null)` -- saisie du champ, changement
-   * d'onglet, de fournisseur, succès -- sans qu'aucun des trente-cinq sites
-   * d'appel ait à le savoir : une seule source, tous les chemins couverts.
+   * d'onglet, succès -- sans qu'aucun des trente-cinq sites d'appel ait à le
+   * savoir. UN chemin ne passe pas par `setError(null)` et doit donc le
+   * remettre à zéro lui-même : `handleSelectProvider`, dont le `setError(null)`
+   * vit dans le bloc conditionné au modèle par défaut, vide sur un Ollama
+   * joignable et sans modèle. La revue du diff l'a trouvé ; on ne prétend plus
+   * ici que la seule source suffit.
    */
   const [cleInvalide, setCleInvalide] = useState(false);
   function setError(message: string | null) {
@@ -303,10 +307,15 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
     } catch (err) {
       restants = [...new Set([...restants, 'données de configuration'])];
       setLoadWarnings(restants);
-      // Les deux setters natifs plutôt que `setError` : `loadSettings` ne doit
-      // référencer aucune valeur instable, sinon l'effet d'ouverture réclame
-      // une dépendance qu'il ne peut pas prendre sans boucler. Une lecture qui
-      // échoue n'est jamais un refus de clé.
+      // Les deux setters natifs plutôt que `setError` : une lecture qui échoue
+      // n'est JAMAIS un refus de clé, et `setError(message)` ne remet pas
+      // `cleInvalide` à faux quand `message` est non nul -- un refus de clé
+      // antérieur survivrait donc à cette erreur-ci et déporterait son alerte
+      // dans la carte du service. Le couple écrit ici dit les deux choses en
+      // même temps. (La raison affichée jusqu'ici -- une dépendance que
+      // l'effet d'ouverture ne pourrait pas prendre -- était fausse : cet
+      // effet ne liste pas `loadSettings`, et `setError` ne ferme sur aucune
+      // valeur changeante.)
       setErrorBrut(err instanceof Error ? err.message : 'La configuration chargée est inutilisable.');
       setCleInvalide(false);
     } finally {
@@ -470,6 +479,15 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
     const previousProvider = selectedProvider;
     const previousModel = selectedModel;
     setSelectedProvider(provider);
+    // Hors du `if (defaultModel)` plus bas, et avant tout le reste : changer
+    // de fournisseur n'est jamais un refus de clé. `defaultModel` est vide
+    // pour le seul fournisseur à catalogue vide, Ollama, quand `ollamaModels`
+    // l'est aussi (service joignable, aucun modèle tiré) ; le bloc était donc
+    // sauté, `cleInvalide` restait vrai et `needsApiKey` devenait faux : la
+    // carte du service ne montait plus son alerte, la coque se taisait, et
+    // l'erreur n'était rendue NULLE PART. On ne touche pas à `error` : la
+    // coque la reprend.
+    setCleInvalide(false);
 
     const providerConfig = PROVIDERS.find(p => p.id === provider);
     let defaultModel = providerConfig?.models[0]?.id || '';
