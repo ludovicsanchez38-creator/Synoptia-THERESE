@@ -37,9 +37,16 @@ import { useStatusStore } from '../../stores/statusStore';
 import { Z_LAYER } from '../../styles/z-layers';
 import { Spinner } from '../ui/Spinner';
 
+/** Le type de vue, dérivé du store et non recopié : le jour où la liste des
+ *  vues change là-bas, elle change ici sans intervention. */
+type ModeDeVue = ReturnType<typeof useCalendarStore.getState>['viewMode'];
+
 /** Les quatre vues, dans l'ordre visuel de la maquette ; les identifiants
- *  restent ceux du store. */
-const VUES = [
+ *  restent ceux du store — et l'annotation le prouve désormais à la
+ *  compilation : sans elle, `VUES` s'inférait en `{ id: string }[]`, une faute
+ *  de frappe dans un `id` compilait et cassait `choisirVue` en silence
+ *  (revue du diff, point 10). */
+const VUES: { id: ModeDeVue; label: string }[] = [
   { id: 'day', label: 'Jour' },
   { id: 'week', label: 'Semaine' },
   { id: 'month', label: 'Mois' },
@@ -353,7 +360,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
    *  de période changeait. Le formulaire, lui, n'est PAS fermé ici : il porte
    *  une saisie non enregistrée que son propre « Annuler » ne jette qu'après
    *  confirmation. */
-  function choisirVue(mode: 'month' | 'week' | 'day' | 'list') {
+  function choisirVue(mode: ModeDeVue) {
     setViewMode(mode);
     setCurrentEvent(null);
   }
@@ -522,12 +529,17 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
 
       {/* `ml-auto` : sans lui le groupe reste collé au sélecteur, pas à droite.
           Sous 840 px il prend une ligne entière sous le titre. */}
-      <div className="ml-auto flex flex-wrap gap-2 max-[839px]:basis-full">
+      <div className="ml-auto flex flex-wrap gap-2 max-[840px]:basis-full">
         <Segments
           label="Vue de l'agenda"
           options={VUES}
           valeur={viewMode}
-          onChange={(id) => choisirVue(id as 'month' | 'week' | 'day' | 'list')}
+          /* `Segments` rend un `id: string` : la table le retraduit en mode de
+             vue au lieu d'un cast, qui aurait rendu la garde de typage inerte. */
+          onChange={(id) => {
+            const vue = VUES.find((v) => v.id === id);
+            if (vue) choisirVue(vue.id);
+          }}
         />
         <Button variant="primary" size="lg" onClick={handleNewEvent}>
           <Plus aria-hidden="true" className="w-[18px] h-[18px] mr-2" />

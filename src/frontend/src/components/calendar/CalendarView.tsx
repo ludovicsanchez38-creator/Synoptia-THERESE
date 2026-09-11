@@ -250,10 +250,19 @@ function MonthView({
     // C'est la CARTE qui défile, et la grille qui la remplit : six rangées de
     // 5,5 rem valent 33 rem, que la zone de contenu clippe en overflow-hidden.
     // Sans cela, sur une fenêtre courte, la dernière semaine devenait invisible
-    // ET inatteignable. `min-h-full` + `1fr` évitent la bande vide sur une
-    // fenêtre haute.
+    // ET inatteignable.
+    //
+    // Revue du diff, point 1 : `minmax(5.5rem,1fr)` n'écrasait pas les rangées
+    // (la hauteur de la grille est indéterminée, une piste `1fr` monte alors au
+    // max-content) mais les ÉGALISAIT sur la plus chargée — un seul jour à
+    // trois puces portait les six rangées à 137 px et imposait 260 px de
+    // défilement à tout le mois. En `auto`, seule la rangée chargée grandit.
+    // L'en-tête, lui, reste en `max-content` : `align-content` vaut `stretch`,
+    // qui étire toute piste `auto`, en-tête compris (35 px devenaient 84 px sur
+    // une fenêtre haute). Le plancher de 5,5 rem revient sur la case, comme
+    // dans la maquette (`agenda.html:28`).
     <Carte as="section" aria-labelledby="agenda-periode" className="flex-1 min-h-0 overflow-y-auto">
-      <div className="grid grid-cols-7 min-h-full grid-rows-[auto_repeat(6,minmax(5.5rem,1fr))]">
+      <div className="grid grid-cols-7 min-h-full grid-rows-[max-content_repeat(6,auto)]">
         {/* Sept en-têtes, puis quarante-deux cases : 49 enfants directs, sans
             conteneur intermédiaire (un `display:contents` casserait le décompte
             et le `nth-child(7n+1)` des bordures). */}
@@ -275,7 +284,13 @@ function MonthView({
           return (
             <div
               key={index}
-              className="grid gap-1 content-start p-1.5 border-t border-l border-border text-sm [&:nth-child(7n+1)]:border-l-0"
+              /* `[&:nth-child(-n+14)]:border-t-0` : les enfants 8 à 14 sont la
+                 première rangée de cases, dont le trait haut se superposait au
+                 `border-b` des en-têtes (deux traits de 1 px, revue du diff,
+                 point 11). C'est celui des cases qui cède : l'en-tête est
+                 `sticky`, sans trait propre la séparation disparaîtrait sous
+                 lui au premier pixel de défilement. */
+              className="grid gap-1 content-start p-1.5 min-h-[5.5rem] border-t border-l border-border text-sm [&:nth-child(7n+1)]:border-l-0 [&:nth-child(-n+14)]:border-t-0"
             >
               {/* B-414 : hors mois, l'encre atténuée reste lisible (AA), sans opacité sur la cellule. */}
               <div
@@ -474,7 +489,12 @@ function WeekView({
             return (
               <div
                 key={i}
-                className={`border-l border-border p-1 min-h-[2rem] ${isToday ? 'bg-surface-2' : ''}`}
+                /* Plancher en PIXELS, pas en rem (revue du diff, point 6) :
+                   la préférence « Petite » pose 14 px sur <html>
+                   (`globals.css:118-122`), où 2 rem ne vaudrait plus que
+                   28 px. Une cellule qui peut recevoir un jeton ne suit pas la
+                   taille du texte à la baisse. */
+                className={`border-l border-border p-1 min-h-[32px] ${isToday ? 'bg-surface-2' : ''}`}
               >
                 {dayAllDay.map((event) => (
                   <button
@@ -697,7 +717,10 @@ function DayView({
       {/* Bannière événements journée entière */}
       {allDayEvents.length > 0 && (
         <div className="px-6 py-2 border-b border-border shrink-0">
-          <div className="text-xs text-text-muted mb-1">Toute la journée</div>
+          {/* 14 px : ce libellé court sur toute la largeur de la vue, il ne
+              cohabite pas avec les heures dans une colonne de 3,5 rem — le
+              renversement du § 3.1 ne le concerne pas (revue du diff, point 3). */}
+          <div className="text-sm text-text-muted mb-1">Toute la journée</div>
           <div className="space-y-1">
             {allDayEvents.map((event) => (
               <button

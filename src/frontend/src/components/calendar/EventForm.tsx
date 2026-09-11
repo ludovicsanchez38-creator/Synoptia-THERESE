@@ -371,8 +371,13 @@ export function EventForm() {
 
         {/* Description */}
         <FormField label="Description" htmlFor="eventform-description">
+          {/* `resize-none` : sans `autoResize`, la primitive rend `resize-y`
+              (`Textarea.tsx:66`) et ferait apparaître une poignée que `main`
+              n'avait pas et que le design ne demande pas (revue du diff,
+              point 8). */}
           <Textarea
             id="eventform-description"
+            className="resize-none"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Description de l'événement"
