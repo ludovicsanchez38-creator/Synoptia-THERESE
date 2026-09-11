@@ -86,4 +86,19 @@ describe('CarteTete', () => {
     expect(pastille?.className).toMatch(/\bw-8\b/);
     expect(container.querySelector('h2')).toHaveTextContent('Titre');
   });
+
+  // Lot 9 : la carte du service d'IA vit SOUS le h2 de sa section. Un h2
+  // imbrique dans un h2 casse le plan du document pour qui navigue par titres.
+  it('niveau="h3" : le titre descend d’un cran et garde son idTitre', () => {
+    const { container } = render(
+      <Carte as="section" aria-labelledby="carte-service">
+        <CarteTete niveau="h3" idTitre="carte-service" titre="OpenAI" />
+      </Carte>,
+    );
+
+    const titre = screen.getByRole('heading', { level: 3, name: 'OpenAI' });
+    expect(titre.tagName).toBe('H3');
+    expect(titre).toHaveAttribute('id', 'carte-service');
+    expect(container.querySelector('h2')).toBeNull();
+  });
 });

@@ -25,6 +25,16 @@ const CATALOGUE = resolve(__dirname, '../prototype/CapabilityCenter.tsx');
 const LOT6 = CHEMINS_LOT6;
 // Lot 7 : l'écran Décision consomme les primitives, donc les jetons.
 const DECISION = resolve(__dirname, '../prototype/BoardConversationCard.tsx');
+// Lot 9 : les trois fichiers de la rubrique Parametres. C'est un CLIQUET, pas
+// une preuve : verifie le 11/09, aucun des trois ne porte de hex, rgb(), hsl()
+// ni color-mix() aujourd'hui. L'extension ne rougit donc pas avant le code,
+// elle empeche une regression pendant le restyle -- et elle ne voit pas les
+// classes Tailwind brutes, que seule la relecture attrape.
+const LOT9 = [
+  resolve(__dirname, '../settings/SettingsModal.tsx'),
+  resolve(__dirname, '../settings/LLMTab.tsx'),
+  resolve(__dirname, '../settings/ProfileTab.tsx'),
+];
 
 /** Chemins (relatifs à src/) tolérés, avec la raison. Vide au départ. */
 const LISTE_BLANCHE: Record<string, string> = {
@@ -37,7 +47,7 @@ function sources(): string[] {
   const fichiers = (readdirSync(UI, { recursive: true }) as string[])
     .filter((f) => /\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f))
     .map((f) => join(UI, f));
-  return [...fichiers, COQUE, BRIEF, TIROIR, CATALOGUE, ...LOT6, DECISION];
+  return [...fichiers, COQUE, BRIEF, TIROIR, CATALOGUE, ...LOT6, DECISION, ...LOT9];
 }
 
 function contenuPourGarde(fichier: string): string {

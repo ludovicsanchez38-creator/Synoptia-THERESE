@@ -40,7 +40,10 @@ const RACINE = path.join(__dirname, '..');
 // B-361 : une branche de liste `if (msg.role === "error")` est une condition d'erreur aussi.
 const CONDITION = /\{\s*(error|erreur|\w*Error)\s*&&\s*\(?|\.role === "error"\)\s*\{/;
 const FOND_ERREUR = /bg-error\/10|bg-red-500\/10|color-error-tint/;
-const ANNONCE = /role="alert"|aria-live=/;
+// Lot 9 : `<Alerte>` porte son role="alert" dans Alerte.tsx:25, pas dans la
+// balise scannee ici. Sans cet ajout, chaque site d'appel de la primitive
+// serait compte comme un bandeau MUET.
+const ANNONCE = /role="alert"|aria-live=|<Alerte\b/;
 
 function fichiersSources(dossier: string): string[] {
   return readdirSync(dossier).flatMap((entree) => {
@@ -62,7 +65,11 @@ function baliseOuvrante(lignes: string[], j: number): string {
 }
 
 /** Marqueurs qui font d'un élément un message d'erreur, fond teinté ou non. */
-const MARQUEUR_ERREUR = /bg-error\/10|bg-red-500\/10|color-error-tint|text-error|text-red-[0-9]/;
+// Lot 9 : `<Alerte>` ne porte aucune classe de couleur (elles vivent dans la
+// primitive). Sans cet ajout, le site d'appel ne serait meme pas EXAMINE et la
+// propriete resterait vraie par construction : la garde deviendrait aveugle.
+// Les deux motifs vont ensemble, jamais l'un sans l'autre.
+const MARQUEUR_ERREUR = /bg-error\/10|bg-red-500\/10|color-error-tint|text-error|text-red-[0-9]|<Alerte\b/;
 
 /**
  * La première balise ouvrante rendue par la condition de la ligne `i`,

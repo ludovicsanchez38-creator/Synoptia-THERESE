@@ -92,7 +92,11 @@ describe('FormField', () => {
     expect(libelle?.className).toMatch(/font-semibold/);
     expect(libelle?.className).not.toMatch(/font-medium/);
 
-    expect(screen.getByText('En pourcentage').className).toMatch(/text-xs/);
-    expect(screen.getByRole('alert').className).toMatch(/text-xs/);
+    // Lot 9 : ces deux textes sont rattaches au champ par aria-describedby,
+    // donc lies a un interactif : la regle du lot leur interdit 12 px.
+    expect(screen.getByText('En pourcentage').className).toMatch(/text-sm/);
+    expect(screen.getByText('En pourcentage').className).not.toMatch(/text-xs/);
+    expect(screen.getByRole('alert').className).toMatch(/text-sm/);
+    expect(screen.getByRole('alert').className).not.toMatch(/text-xs/);
   });
 });

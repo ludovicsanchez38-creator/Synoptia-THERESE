@@ -44,4 +44,31 @@ describe('Alerte', () => {
     const icone = screen.getByTestId('icone-alerte');
     expect(icone.parentElement).toHaveAttribute('aria-hidden', 'true');
   });
+
+  // Lot 9 : la lecture partielle des reglages n'est pas une erreur, c'est un
+  // avertissement. Le teinter en rouge dirait au lecteur que quelque chose a
+  // casse, alors que l'ecran fonctionne avec des valeurs par defaut.
+  it('ton « attention » : teinte d’avertissement, titre en warning, toujours role="alert"', () => {
+    const { container } = render(
+      <Alerte ton="attention" titre="Ce réglage n’a pas pu être lu : clés API.">
+        Les valeurs affichées ici sont des valeurs par défaut.
+      </Alerte>,
+    );
+
+    const alerte = screen.getByRole('alert');
+    expect(alerte.className).toContain('bg-[var(--color-warning-tint)]');
+    expect(alerte.className).toMatch(/border-warning\/30/);
+    expect(alerte.className).not.toContain('bg-[var(--color-error-tint)]');
+    expect(alerte.className).not.toMatch(/border-error\/30/);
+
+    const titre = container.querySelector('b');
+    expect(titre?.className).toMatch(/text-warning/);
+    expect(titre?.className).not.toMatch(/text-error/);
+  });
+
+  it('le ton par défaut reste « erreur »', () => {
+    const { container } = render(<Alerte titre="Refusé">Détail</Alerte>);
+    expect(screen.getByRole('alert').className).toContain('bg-[var(--color-error-tint)]');
+    expect(container.querySelector('b')?.className).toMatch(/text-error/);
+  });
 });
