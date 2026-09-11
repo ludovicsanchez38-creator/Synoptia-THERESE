@@ -89,20 +89,22 @@ const CONTACT = {
   company: null,
 };
 
+// Les motifs sont des prédicats sur le chemin : le glob `**/api/invoices**` attrapait aussi le
+// module Vite `/src/services/api/invoices.ts` et la coque ne démarrait jamais (11/09/2026).
 async function intercepter(page, { pieces = QUATRE, profil = { is_complete: true, missing: [] }, delayMs = 0, status = 200 } = {}) {
   await page.unrouteAll({ behavior: 'ignoreErrors' });
   return Promise.all([
-    page.route('**/api/config/onboarding-complete', async (route) => {
+    page.route((u) => u.pathname === '/api/config/onboarding-complete', async (route) => {
       if (route.request().method() === 'GET') {
         await route.fulfill({ json: { completed: true } });
         return;
       }
       await route.continue();
     }),
-    page.route('**/api/invoices/billing/profile-status', async (route) => {
+    page.route((u) => u.pathname === '/api/invoices/billing/profile-status', async (route) => {
       await route.fulfill({ json: profil });
     }),
-    page.route('**/api/invoices**', async (route) => {
+    page.route((u) => u.pathname.startsWith('/api/invoices'), async (route) => {
       const url = route.request().url();
       if (url.includes('billing/profile-status')) {
         await route.fulfill({ json: profil });
@@ -119,14 +121,14 @@ async function intercepter(page, { pieces = QUATRE, profil = { is_complete: true
       }
       await route.fulfill({ json: pieces });
     }),
-    page.route('**/api/memory/contacts**', async (route) => {
+    page.route((u) => u.pathname.startsWith('/api/memory/contacts'), async (route) => {
       await route.fulfill({ json: [CONTACT] });
     }),
   ]);
 }
 
 async function ouvrirDevis(page) {
-  await page.goto(FRONTEND, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${FRONTEND}/?prototype=conversation-canvas&scenario=today`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => Boolean(window.__therese?.runAction), null, { timeout: 20000 });
   await page.evaluate(() => window.__therese.runAction('invoices.open'));
   await page.waitForSelector('[data-testid="invoices-panel"]', { timeout: 15000 });
