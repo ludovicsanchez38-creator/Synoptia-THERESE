@@ -5,20 +5,27 @@
  * (BUG-104 : le bouton « Projet » du header ouvrait les Contacts, et le kanban
  * des projets n'était plus rendu nulle part). Liste + kanban par statut avec
  * drag & drop, création/édition via ProjectModal, suppression avec confirmation.
+ *
+ * DA « Application affinée », lot 6 (11/09/2026) : en-tête sans pastille,
+ * quatre états sur les primitives, colonne de la coque (56 rem) au lieu d'une
+ * largeur maison.
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Plus, Briefcase } from 'lucide-react';
+import { AlertCircle, Plus } from 'lucide-react';
 import * as api from '../../services/api';
 import type { Project } from '../../services/api';
+import { Alerte } from '../ui/Alerte';
 import { Button } from '../ui/Button';
+import { Carte } from '../ui/Carte';
+import { EtatVide } from '../ui/EtatVide';
+import { Squelette } from '../ui/Squelette';
 import { Z_LAYER } from '../../styles/z-layers';
 import { pushEscapeHandler } from '../../lib/escapeStack';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { useStatusStore } from '../../stores/statusStore';
 import { ProjectsKanban } from './ProjectsKanban';
 import { ProjectModal } from './ProjectModal';
-import { Spinner } from '../ui/Spinner';
 
 /**
  * B-098 : plafond DUR du GET projets (`limit` borné à 200 côté serveur, 201
@@ -138,57 +145,75 @@ export function ProjectsPanel() {
 
   return (
     <div className="flex-1 min-w-0 overflow-y-auto">
-      <div className="max-w-[760px] mx-auto px-5 py-6">
+      <div className="px-4 py-4">
         {/* En-tête */}
-        <div className="flex items-center justify-between mb-5">
-          <div className="flex items-center gap-2.5">
-            <span className="w-9 h-9 rounded-md grid place-items-center bg-accent-tint text-accent-cyan-ink">
-              <Briefcase className="w-5 h-5" />
-            </span>
-            <div>
-              {/* B-241 : la coque `PrototypeUnifiedViewCanvas` pose déjà le titre de
-                  la vue, et en fait le nom accessible de la région. Ce libellé reste
-                  visible mais n'est plus un titre : deux titres de même texte, c'est
-                  un plan de page qui ment. */}
-              <p className="text-lg font-bold text-text leading-tight">Projets</p>
-              <p className="text-xs text-text-muted">
-                {projects.length}{listeTronquee ? '+' : ''} projet{projects.length > 1 ? 's' : ''}
-              </p>
-              {listeTronquee && (
-                <p role="alert" className="text-xs text-warning">
-                  Liste incomplète : seuls les {PLAFOND_PROJETS} premiers projets
-                  sont affichés, d'autres existent.
-                </p>
-              )}
-            </div>
+        <div className="flex flex-wrap items-end gap-3 mb-3">
+          <div className="min-w-0">
+            {/* B-241 : la coque `PrototypeUnifiedViewCanvas` pose déjà le titre de
+                la vue, et en fait le nom accessible de la région. Ce libellé reste
+                visible mais n'est plus un titre : deux titres de même texte, c'est
+                un plan de page qui ment. */}
+            <p className="text-lg font-semibold text-text">Projets</p>
+            <p className="text-sm text-text-muted">
+              {projects.length}{listeTronquee ? '+' : ''} projet{projects.length > 1 ? 's' : ''}
+            </p>
           </div>
-          <Button variant="primary" size="sm" onClick={handleNew}>
-            <Plus className="w-4 h-4 mr-1.5" />
+          <Button variant="primary" size="md" className="ml-auto" onClick={handleNew}>
+            <Plus className="h-[18px] w-[18px] mr-2" />
             Nouveau projet
           </Button>
         </div>
 
+        {/* La troncature n'est pas une erreur : la liste affichée est juste,
+            elle est seulement incomplète. Pas d'`Alerte`, réservée à la panne. */}
+        {listeTronquee && (
+          <p role="alert" className="text-sm text-warning px-4 py-2 bg-[var(--color-warning-tint)] rounded-sm mb-3">
+            Liste incomplète : seuls les {PLAFOND_PROJETS} premiers projets
+            sont affichés, d'autres existent.
+          </p>
+        )}
+
         {/* Contenu */}
         {loading ? (
-          <div className="flex items-center justify-center gap-2 py-16 text-sm text-text-muted">
-            <Spinner taille="zone" className="text-accent-cyan-ink" /> Chargement des projets…
+          <div>
+            {[0, 1, 2].map((i) => (
+              <div key={i} aria-hidden="true" className="flex gap-3 items-center px-4 py-3 border-t border-border">
+                <Squelette largeur="w-8" classeBarre="h-8 rounded-sm" />
+                <div className="flex-1 min-w-0 flex flex-col gap-2">
+                  <Squelette largeur="w-[60%]" />
+                  <Squelette largeur="w-[40%]" />
+                </div>
+              </div>
+            ))}
+            {/* Frère des rangées muettes : coller ce texte dans l'une d'elles
+                ferait tomber l'annonce. */}
+            <p role="status" className="px-4 py-3 text-sm text-text-muted">
+              Chargement des projets…
+            </p>
           </div>
         ) : error ? (
-          <div className="py-10 text-center">
-            <p className="text-sm text-text-muted">{error}</p>
-            <Button variant="ghost" size="sm" className="mt-3" onClick={load}>
-              Réessayer
-            </Button>
-          </div>
+          <Alerte
+            titre={error}
+            icone={<AlertCircle className="h-[18px] w-[18px]" />}
+            action={(
+              <Button variant="secondary" size="md" onClick={load}>
+                Réessayer
+              </Button>
+            )}
+          />
+        ) : projects.length === 0 ? (
+          /* Le geste « Nouveau projet » est déjà en tête : l'état vide ne le
+             redouble pas. */
+          <EtatVide titre="Aucun projet" />
         ) : (
-          <div className="rounded-md border border-border/40 bg-surface/40 overflow-hidden">
+          <Carte as="section" className="overflow-hidden">
             <ProjectsKanban
               projects={projects}
               onSelect={handleSelect}
               onDelete={setDeleteTarget}
               onStatusChange={handleStatusChange}
             />
-          </div>
+          </Carte>
         )}
       </div>
 
@@ -206,13 +231,13 @@ export function ProjectsPanel() {
       {/* Confirmation de suppression */}
       {deleteTarget && (
         <div
-          className={`fixed inset-0 ${Z_LAYER.MODAL} flex items-center justify-center bg-black/50 p-4`}
+          className={`fixed inset-0 ${Z_LAYER.MODAL} flex items-center justify-center bg-text/35 p-4`}
           role="dialog"
           aria-modal="true"
           aria-labelledby="delete-project-title"
           ref={dialogRef}
         >
-          <div className="w-full max-w-sm rounded-md border border-border bg-surface p-5 shadow-xl">
+          <div className="w-full max-w-sm rounded-md border border-border bg-surface p-5 shadow-lg">
             <h2 id="delete-project-title" className="text-base font-semibold text-text">
               Supprimer le projet ?
             </h2>
@@ -220,10 +245,10 @@ export function ProjectsPanel() {
               « {deleteTarget.name} » sera supprimé. Cette action est définitive.
             </p>
             <div className="flex justify-end gap-2 mt-5">
-              <Button variant="ghost" size="sm" autoFocus onClick={() => setDeleteTarget(null)}>
+              <Button variant="ghost" size="md" autoFocus onClick={() => setDeleteTarget(null)}>
                 Annuler
               </Button>
-              <Button variant="danger" size="sm" onClick={confirmDelete}>
+              <Button variant="danger" size="md" onClick={confirmDelete}>
                 Supprimer
               </Button>
             </div>

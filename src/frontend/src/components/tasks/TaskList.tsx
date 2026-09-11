@@ -3,19 +3,27 @@
  *
  * Vue liste des tâches.
  * Phase 3 - Tasks/Todos
+ *
+ * DA « Application affinée », lot 6 (11/09/2026) : rangées en grille
+ * `2.25rem 1fr auto`, même barre de priorité que les colonnes, état vide sur
+ * `EtatVide`. `Ligne` n'est pas montée : sa puce cliquable et sa corbeille
+ * seraient recouvertes par le `before:inset-0` de son titre.
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
 import { CheckCircle2, Circle, Clock, AlertCircle, Trash2 } from 'lucide-react';
 import { useTaskStore } from '../../stores/taskStore';
 import type { Task } from '../../services/api';
 import * as api from '../../services/api';
 import { useDemoMask } from '../../hooks';
 import { Button } from '../ui/Button';
+import { Etiquette } from '../ui/Etiquette';
+import { EtatVide } from '../ui/EtatVide';
+import { cn } from '../../lib/utils';
 import { isPastParisCivilDate } from '../../lib/civilDate';
 import { useStatusStore } from '../../stores/statusStore';
 import { pushEscapeHandler } from '../../lib/escapeStack';
+import { CLASSE_BARRE_PRIORITE, barrePriorite } from './prioriteBarre';
 
 export function TaskList() {
   const { tasks, searchQuery, setCurrentTask, setIsTaskFormOpen, updateTask, removeTask } =
@@ -80,13 +88,6 @@ export function TaskList() {
     setIsTaskFormOpen(true);
   }
 
-  const priorityColors = {
-    urgent: 'text-error',
-    high: 'text-agent-amber',
-    medium: 'text-agent-blue',
-    low: 'text-text-muted',
-  };
-
   if (filteredTasks.length === 0) {
     /* Un écran vide est le moment où l'on a le PLUS besoin d'être guidé :
        c'est souvent la première fois qu'on l'ouvre. « Aucune tâche » seul au
@@ -94,21 +95,13 @@ export function TaskList() {
        création existait, mais dans la barre du haut, loin du regard. */
     const filtre = searchQuery.trim();
     return (
-      <div className="flex h-full items-center justify-center px-6">
-        <div className="max-w-sm text-center">
-          <CheckCircle2 className="mx-auto h-9 w-9 text-text-muted" />
-          <p className="mt-3 text-base font-semibold text-text">
-            {filtre ? 'Aucune tâche ne correspond' : 'Aucune tâche pour l’instant'}
-          </p>
-          <p className="mt-1 text-sm leading-5 text-text-muted">
-            {filtre
-              ? `Rien ne correspond à « ${filtre} ». Essaie un autre mot, ou crée cette tâche.`
-              : 'Note ce que tu ne veux pas oublier : Thérèse le gardera avec le reste de ton contexte.'}
-          </p>
+      <EtatVide
+        className="h-full flex flex-col items-center justify-center"
+        titre={filtre ? 'Aucune tâche ne correspond' : 'Aucune tâche pour l’instant'}
+        action={(
           <Button
             variant="primary"
-            size="sm"
-            className="mt-4"
+            size="md"
             onClick={() => {
               setCurrentTask(null);
               setIsTaskFormOpen(true);
@@ -116,162 +109,142 @@ export function TaskList() {
           >
             Créer une tâche
           </Button>
-        </div>
-      </div>
+        )}
+      >
+        {filtre
+          ? `Rien ne correspond à « ${filtre} ». Essaie un autre mot, ou crée cette tâche.`
+          : 'Note ce que tu ne veux pas oublier : Thérèse le gardera avec le reste de ton contexte.'}
+      </EtatVide>
     );
   }
 
   return (
-    <div className="h-full overflow-y-auto px-6 py-4">
-      <div className="space-y-2">
-        {filteredTasks.map((task) => {
-          const isOverdue = Boolean(
-            task.due_date
-              && isPastParisCivilDate(task.due_date)
-              && !['done', 'cancelled'].includes(task.status),
-          );
-          const isDone = task.status === 'done';
+    <div className="h-full overflow-y-auto">
+      {filteredTasks.map((task) => {
+        const isOverdue = Boolean(
+          task.due_date
+            && isPastParisCivilDate(task.due_date)
+            && !['done', 'cancelled'].includes(task.status),
+        );
+        const isDone = task.status === 'done';
+        const barre = barrePriorite(task.priority);
 
-          return (
-            <motion.div
-              key={task.id}
-              /* B-151 : repère par élément pour les protocoles (`qsa`). */
-              data-testid="task-item"
-              whileHover={{ scale: 1.005 }}
-              whileTap={{ scale: 0.995 }}
-              onClick={() => handleTaskClick(task.id)}
-              className={`p-4 bg-surface-elevated/60 hover:bg-surface-elevated rounded-md border border-border/30 cursor-pointer transition-colors ${
-                isDone ? 'opacity-60' : ''
-              }`}
+        return (
+          <div
+            key={task.id}
+            /* B-151 : repère par élément pour les protocoles (`qsa`). */
+            data-testid="task-item"
+            /* D105 : la rangée s'ouvre à la souris ; au clavier, c'est le titre
+               qui porte l'action, avec un nom. Pas de rôle ni de tabIndex ici :
+               deux arrêts de tabulation pour un même geste. */
+            onClick={() => handleTaskClick(task.id)}
+            className="grid grid-cols-[2.25rem_1fr_auto] gap-3 items-start px-4 py-3 border-t border-border hover:bg-surface-2 relative cursor-pointer transition-colors"
+          >
+            {/* Cocher */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative z-10"
+              onClick={(e) => handleToggleComplete(task, e)}
+              aria-label={task.status === 'done' ? `Rouvrir la tâche ${task.title}` : `Marquer la tâche ${task.title} terminée`}
             >
-              <div className="flex items-start gap-3">
-                {/* Checkbox */}
-                <button
-                  onClick={(e) => handleToggleComplete(task, e)}
-                  aria-label={task.status === 'done' ? `Rouvrir la tâche ${task.title}` : `Marquer la tâche ${task.title} terminée`}
-                  className="mt-0.5 shrink-0 hover:scale-110 transition-transform"
+              {isDone ? (
+                <CheckCircle2 className="h-[18px] w-[18px] text-success" />
+              ) : (
+                <Circle className="h-[18px] w-[18px] text-text-muted" />
+              )}
+            </Button>
+
+            {/* Corps */}
+            <div className="flex items-start gap-2 min-w-0">
+              {barre && (
+                <span role="img" aria-label={barre.nom} className={cn(CLASSE_BARRE_PRIORITE, barre.classe)} />
+              )}
+
+              <div className="min-w-0 flex-1">
+                <div className="flex items-start gap-2">
+                  <button
+                    type="button"
+                    aria-label={`Ouvrir la tâche ${task.title}`}
+                    onClick={(e) => { e.stopPropagation(); handleTaskClick(task.id); }}
+                    className={cn(
+                      'relative z-10 font-semibold text-left',
+                      isDone ? 'line-through text-text-muted' : 'text-text',
+                    )}
+                  >
+                    {maskText(task.title)}
+                  </button>
+                  {task.status === 'in_progress' && (
+                    <Clock aria-hidden="true" className="h-[18px] w-[18px] shrink-0 text-info" />
+                  )}
+                </div>
+
+                {/* Description. B-134 : c'est le CORPS de la rangée, pas une
+                    métadonnée. À 12 px comme la priorité et l'échéance,
+                    l'écran n'avait plus de hiérarchie. */}
+                {task.description && (
+                  <p className="text-sm text-text-muted line-clamp-1">
+                    {maskText(task.description)}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Droite */}
+            <div className="flex items-center gap-2 relative z-10">
+              {isOverdue && <Etiquette ton="erreur">En retard</Etiquette>}
+
+              {task.due_date && (
+                <span className="text-xs font-medium text-text-muted">
+                  {new Date(task.due_date).toLocaleDateString('fr-FR', {
+                    day: 'numeric',
+                    month: 'short',
+                    year: 'numeric',
+                  })}
+                </span>
+              )}
+
+              {task.tags && task.tags.map((tag) => (
+                <span
+                  key={tag}
+                  className="px-2 py-0.5 text-xs bg-accent-tint text-accent-cyan-ink rounded-sm"
                 >
-                  {isDone ? (
-                    <CheckCircle2 className="w-5 h-5 text-agent-green" />
-                  ) : (
-                    <Circle className="w-5 h-5 text-text-muted" />
-                  )}
-                </button>
+                  {tag}
+                </span>
+              ))}
 
-                {/* Content */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between gap-3 mb-1">
-                    <h4
-                      className={`text-sm font-medium ${
-                        isDone ? 'line-through text-text-muted' : 'text-text'
-                      }`}
-                    >
-                      {/* D105 : la carte s'ouvre à la souris ; au clavier, c'est
-                          le titre qui porte l'action, avec un nom. */}
-                      <button
-                        type="button"
-                        aria-label={`Ouvrir la tâche ${task.title}`}
-                        onClick={(e) => { e.stopPropagation(); handleTaskClick(task.id); }}
-                        className="text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-cyan rounded-sm"
-                      >
-                        {maskText(task.title)}
-                      </button>
-                    </h4>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={(e) => handleDelete(task, e)}
+                title="Supprimer"
+                aria-label={`Supprimer la tâche ${task.title}`}
+              >
+                <Trash2 className="h-[18px] w-[18px]" />
+              </Button>
+            </div>
 
-                    {/* Priority & Status */}
-                    <div className="flex items-center gap-2 shrink-0">
-                      {task.status === 'in_progress' && (
-                        <Clock className="w-4 h-4 text-agent-blue" />
-                      )}
-                      {isOverdue && <AlertCircle className="w-4 h-4 text-error" />}
-                      <span
-                        className={`text-xs font-medium ${
-                          priorityColors[task.priority as keyof typeof priorityColors]
-                        }`}
-                      >
-                        {task.priority === 'urgent' && 'Urgent'}
-                        {task.priority === 'high' && 'Haute'}
-                        {task.priority === 'medium' && 'Moyenne'}
-                        {task.priority === 'low' && 'Basse'}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Description. B-134 : c'est le CORPS de la carte, pas une
-                      métadonnée. À 12 px comme la priorité et l'échéance,
-                      l'écran n'avait plus de hiérarchie : 387 textes à 12 px
-                      contre 85 à 14 px sur le seul écran des tâches. */}
-                  {task.description && (
-                    <p className="text-sm text-text-muted line-clamp-1 mb-2">
-                      {maskText(task.description)}
-                    </p>
-                  )}
-
-                  {/* Footer */}
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-3">
-                      {/* Due Date */}
-                      {task.due_date && (
-                        <span
-                          className={`text-xs ${
-                            isOverdue ? 'text-error font-medium' : 'text-text-muted'
-                          }`}
-                        >
-                          {new Date(task.due_date).toLocaleDateString('fr-FR', {
-                            day: 'numeric',
-                            month: 'short',
-                            year: 'numeric',
-                          })}
-                        </span>
-                      )}
-
-                      {/* Tags */}
-                      {task.tags && task.tags.length > 0 && (
-                        <div className="flex gap-1">
-                          {task.tags.map((tag) => (
-                            <span
-                              key={tag}
-                              className="px-2 py-0.5 text-xs bg-accent-tint text-accent-cyan-ink rounded-sm"
-                            >
-                              {tag}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Delete Button */}
-                    <button
-                      onClick={(e) => handleDelete(task, e)}
-                      className="p-1 hover:bg-error/20 rounded-sm transition-colors"
-                      title="Supprimer"
-                      aria-label={`Supprimer la tâche ${task.title}`}
-                    >
-                      <Trash2 className="w-4 h-4 text-text-muted hover:text-error" />
-                    </button>
-                  </div>
+            {tacheASupprimer?.id === task.id && (
+              /* Ce n'est pas une erreur : pas d'`Alerte`, donc pas de
+                 `role="alert"` - la question est déjà sous les yeux. */
+              <div
+                className="col-span-3 flex items-center gap-2 rounded-sm border border-error/30 bg-[var(--color-error-tint)] px-3 py-3"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <AlertCircle aria-hidden="true" className="h-[18px] w-[18px] text-error shrink-0" />
+                <div className="flex-1">
+                  <p className="text-sm font-semibold text-error">Supprimer « {maskText(task.title)} » ?</p>
+                  <p className="text-xs text-error">Cette action est irréversible.</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="ghost" size="md" onClick={() => setTacheASupprimer(null)}>Conserver la tâche</Button>
+                  <Button variant="danger" size="md" onClick={confirmerLaSuppression}>Supprimer définitivement</Button>
                 </div>
               </div>
-              {tacheASupprimer?.id === task.id && (
-                <div
-                  className="mt-3 flex items-center gap-2 rounded-md border border-error/20 bg-[var(--color-error-tint)] px-3 py-3"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <AlertCircle className="w-4 h-4 text-error shrink-0" />
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-error">Supprimer « {maskText(task.title)} » ?</p>
-                    <p className="text-xs text-error">Cette action est irréversible.</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="sm" onClick={() => setTacheASupprimer(null)}>Conserver la tâche</Button>
-                    <Button variant="danger" size="sm" onClick={confirmerLaSuppression}>Supprimer définitivement</Button>
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          );
-        })}
-      </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }

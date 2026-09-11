@@ -4,11 +4,14 @@
  * Vue Kanban avec colonnes Todo/In Progress/Done.
  * Drag & Drop via @dnd-kit.
  * Phase 3 - Tasks/Todos
+ *
+ * DA « Application affinée », lot 6 (11/09/2026) : grille de trois colonnes
+ * (deux sous 1023 px, sur deux rangées `1fr`), têtes en `Etiquette`, priorité
+ * en barre nommée, commandes dans le flux de la carte.
  */
 
 import { useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
-import { CheckCircle2, Circle, Clock, AlertCircle, GripVertical } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, GripVertical } from 'lucide-react';
 import {
   DndContext,
   DragOverlay,
@@ -34,11 +37,15 @@ import { useDemoMask } from '../../hooks';
 import { isPastParisCivilDate } from '../../lib/civilDate';
 import { accessibiliteGlisserDeposer } from '../../lib/accessibiliteGlisserDeposer';
 import { useStatusStore } from '../../stores/statusStore';
+import { Etiquette, type TonEtiquette } from '../ui/Etiquette';
+import { Button } from '../ui/Button';
+import { cn } from '../../lib/utils';
+import { CLASSE_BARRE_PRIORITE, barrePriorite } from './prioriteBarre';
 
-const COLUMNS = [
-  { id: 'todo', label: 'À faire', icon: Circle, color: 'text-text-muted' },
-  { id: 'in_progress', label: 'En cours', icon: Clock, color: 'text-agent-blue' },
-  { id: 'done', label: 'Terminé', icon: CheckCircle2, color: 'text-agent-green' },
+const COLUMNS: { id: string; label: string; ton: TonEtiquette }[] = [
+  { id: 'todo', label: 'À faire', ton: 'neutre' },
+  { id: 'in_progress', label: 'En cours', ton: 'info' },
+  { id: 'done', label: 'Terminé', ton: 'succes' },
 ];
 
 export function TaskKanban() {
@@ -150,7 +157,10 @@ export function TaskKanban() {
       onDragCancel={() => setActiveTask(null)}
       accessibility={accessibilite}
     >
-      <div className="h-full flex gap-4 p-6 overflow-x-auto">
+      {/* Lot 6 : la maquette s'arrête à DEUX colonnes sous 1023 px, jamais une.
+          Les deux rangées `1fr` gardent « Terminé » dans le viewport et
+          laissent les listes défiler chacune de son côté. */}
+      <div className="grid grid-cols-3 max-[1023px]:grid-cols-2 max-[1023px]:grid-rows-2 max-[1023px]:auto-rows-fr gap-3 p-4 h-full min-h-0">
         {COLUMNS.map((column) => (
           <DroppableColumn key={column.id} column={column} count={tasksByStatus[column.id].length}>
             <SortableContext
@@ -209,19 +219,20 @@ function DroppableColumn({ column, count, children }: DroppableColumnProps) {
   return (
     <div
       ref={setNodeRef}
-      className={`flex-1 min-w-[300px] flex flex-col bg-background/20 rounded-md transition-colors ${
-        isOver ? 'ring-2 ring-ring/50 bg-accent-cyan/5' : ''
-      }`}
+      className={cn(
+        'flex flex-col gap-2 bg-surface-2 rounded-md p-2 min-h-0 transition-colors',
+        isOver && 'ring-2 ring-ring/50 bg-accent-tint',
+      )}
     >
-      {/* Column Header */}
-      <div className="px-4 py-3 border-b border-border/30 flex items-center gap-2">
-        <column.icon className={`w-5 h-5 ${column.color}`} />
-        <h3 className="text-sm font-medium text-text">{column.label}</h3>
-        <span className="ml-auto text-xs text-text-muted">{count}</span>
-      </div>
+      {/* Column Header. Le h3 reste : c'est le plan de l'écran, et la maquette
+          l'écrit ainsi (`projets.html:66`). */}
+      <h3 className="flex items-center gap-2 px-2 py-1 text-sm">
+        <Etiquette ton={column.ton}>{column.label}</Etiquette>
+        <span className="ml-auto text-sm tabular-nums text-text-muted">{count}</span>
+      </h3>
 
       {/* Tasks */}
-      <div className="flex-1 overflow-y-auto p-3 space-y-2">{children}</div>
+      <div className="flex-1 min-h-0 overflow-y-auto space-y-2">{children}</div>
     </div>
   );
 }
@@ -309,131 +320,131 @@ function TaskCard({ task, onClick, onStatusChange, isOverlay, showDragHandle, co
   const [survol, setSurvol] = useState(false);
   const showActions = survol || commandesRevelees;
 
-  const priorityColors = {
-    urgent: 'bg-error/10 text-error border-error/20',
-    high: 'bg-agent-amber/10 text-agent-amber border-agent-amber/20',
-    medium: 'bg-agent-blue/10 text-agent-blue border-agent-blue/20',
-    low: 'bg-gray-500/10 text-text-muted border-gray-500/20',
-  };
+  const barre = barrePriorite(task.priority);
 
   const isOverdue = Boolean(
     task.due_date
       && isPastParisCivilDate(task.due_date)
       && !['done', 'cancelled'].includes(task.status),
   );
+  const isDone = task.status === 'done';
 
   return (
-    <motion.div
+    <div
       /* B-151 : repère par élément pour les protocoles (`qsa`). Pas sur la
          carte de survol du drag, qui doublerait le comptage. */
       data-testid={isOverlay ? undefined : 'task-item'}
-      whileHover={isOverlay ? undefined : { scale: 1.02 }}
-      whileTap={isOverlay ? undefined : { scale: 0.98 }}
       onMouseEnter={() => setSurvol(true)}
       onMouseLeave={() => setSurvol(false)}
-      className={`p-3 bg-surface-elevated/60 hover:bg-surface-elevated rounded-md border border-border/30 cursor-pointer transition-colors relative ${
-        isOverlay ? 'shadow-xl ring-2 ring-ring/30' : ''
-      }`}
+      className={cn(
+        'relative bg-surface border border-border rounded-sm p-3 cursor-pointer transition-colors',
+        isOverlay && 'shadow-lg ring-2 ring-ring/30',
+      )}
       onClick={onClick}
     >
       {/* Poignée (repère visuel : toute la carte est draggable) */}
       {showDragHandle && (
-        <div className="absolute top-3 left-1 text-text-muted hover:text-text-muted">
+        <div className="absolute top-3 left-1 text-text-muted">
           <GripVertical className="w-4 h-4" />
         </div>
       )}
 
       <div className={showDragHandle ? 'pl-5' : ''}>
-        {/* Priority Badge */}
-        <div className="flex items-center gap-2 mb-2">
-          <span
-            className={`px-2 py-0.5 text-xs rounded-sm border ${
-              priorityColors[task.priority as keyof typeof priorityColors]
-            }`}
-          >
-            {task.priority === 'urgent' && 'Urgent'}
-            {task.priority === 'high' && 'Haute'}
-            {task.priority === 'medium' && 'Moyenne'}
-            {task.priority === 'low' && 'Basse'}
-          </span>
-          {isOverdue && (
-            <span className="flex items-center gap-1 text-xs text-error">
-              <AlertCircle className="w-3 h-3" />
-              En retard
-            </span>
+        <div className="flex items-start gap-2">
+          {/* Lot 6 : la priorité est un aplat nommé, plus un mot. `role="img"`
+              est obligatoire : sans rôle, l'`aria-label` n'expose rien. */}
+          {barre && (
+            <span role="img" aria-label={barre.nom} className={cn(CLASSE_BARRE_PRIORITE, barre.classe)} />
           )}
+
+          <div className="min-w-0 flex-1">
+            <h4 className={cn('font-semibold text-sm', isDone ? 'line-through text-text-muted' : 'text-text')}>
+              {maskTextFn ? maskTextFn(task.title) : task.title}
+            </h4>
+
+            {/* Description. B-134 : corps de la carte, pas une métadonnée - cf TaskList. */}
+            {task.description && (
+              <p className="text-sm text-text-muted line-clamp-2 mt-1">{maskTextFn ? maskTextFn(task.description) : task.description}</p>
+            )}
+
+            {/* Pied : retard, échéance, étiquettes - les métadonnées de la maquette. */}
+            {(isOverdue || task.due_date || (task.tags && task.tags.length > 0)) && (
+              <div className="flex flex-wrap items-center gap-2 mt-2">
+                {isOverdue && <Etiquette ton="erreur">En retard</Etiquette>}
+
+                {task.due_date && (
+                  <span className="text-xs font-medium text-text-muted">
+                    {new Date(task.due_date).toLocaleDateString('fr-FR', {
+                      day: 'numeric',
+                      month: 'short',
+                    })}
+                  </span>
+                )}
+
+                {task.tags && task.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="px-2 py-0.5 text-xs bg-accent-tint text-accent-cyan-ink rounded-sm"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Title */}
-        <h4 className="text-sm font-medium text-text mb-1">{maskTextFn ? maskTextFn(task.title) : task.title}</h4>
-
-        {/* Description. B-134 : corps de la carte, pas une métadonnée - cf TaskList. */}
-        {task.description && (
-          <p className="text-sm text-text-muted line-clamp-2 mb-2">{maskTextFn ? maskTextFn(task.description) : task.description}</p>
-        )}
-
-        {/* Due Date */}
-        {task.due_date && (
-          <p className="text-xs text-text-muted">
-            {new Date(task.due_date).toLocaleDateString('fr-FR', {
-              day: 'numeric',
-              month: 'short',
-            })}
-          </p>
-        )}
-
-        {/* Tags */}
-        {task.tags && task.tags.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-2">
-            {task.tags.map((tag) => (
-              <span
-                key={tag}
-                className="px-2 py-0.5 text-xs bg-accent-tint text-accent-cyan-ink rounded-sm"
+        {/* Quick Actions. Lot 6 : la rangée vit dans le FLUX et reste montée,
+            pour que la hauteur de la carte ne saute pas au survol. Cachée,
+            elle l'est par `invisible` (pas `opacity-0`, interdit autour d'un
+            bouton par focusVisibleSurActions ; pas `hidden`, qui reprendrait
+            la hauteur) ET par `aria-hidden`, seul à la retirer de l'arbre
+            d'accessibilité - jsdom n'applique aucun CSS. */}
+        {!isOverlay && (
+          <div
+            aria-hidden={!showActions}
+            className={cn(
+              'flex items-center gap-1 mt-2',
+              !showActions && 'invisible pointer-events-none',
+            )}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {task.status !== 'in_progress' && (
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Marquer en cours"
+                title="Marquer en cours"
+                onClick={() => onStatusChange('in_progress')}
               >
-                {tag}
-              </span>
-            ))}
+                <Clock className="h-[18px] w-[18px]" />
+              </Button>
+            )}
+            {task.status !== 'done' && (
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Marquer terminé"
+                title="Marquer terminé"
+                onClick={() => onStatusChange('done')}
+              >
+                <CheckCircle2 className="h-[18px] w-[18px]" />
+              </Button>
+            )}
+            {task.status === 'done' && (
+              <Button
+                variant="ghost"
+                size="icon"
+                aria-label="Rouvrir"
+                title="Rouvrir"
+                onClick={() => onStatusChange('todo')}
+              >
+                <Circle className="h-[18px] w-[18px]" />
+              </Button>
+            )}
           </div>
         )}
       </div>
-
-      {/* Quick Actions (on hover) */}
-      {showActions && !isOverlay && (
-        <motion.div
-          initial={{ opacity: 0, y: -5 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="absolute top-2 right-2 flex items-center gap-1 bg-surface/90 backdrop-blur-sm rounded-md p-1 border border-border/50"
-          onClick={(e) => e.stopPropagation()}
-        >
-          {task.status !== 'in_progress' && (
-            <button
-              onClick={() => onStatusChange('in_progress')}
-              className="p-1 hover:bg-agent-blue/20 rounded-sm transition-colors"
-              title="Marquer en cours"
-            >
-              <Clock className="w-3 h-3 text-agent-blue" />
-            </button>
-          )}
-          {task.status !== 'done' && (
-            <button
-              onClick={() => onStatusChange('done')}
-              className="p-1 hover:bg-agent-green/20 rounded-sm transition-colors"
-              title="Marquer terminé"
-            >
-              <CheckCircle2 className="w-3 h-3 text-agent-green" />
-            </button>
-          )}
-          {task.status === 'done' && (
-            <button
-              onClick={() => onStatusChange('todo')}
-              className="p-1 hover:bg-gray-500/20 rounded-sm transition-colors"
-              title="Rouvrir"
-            >
-              <Circle className="w-3 h-3 text-text-muted" />
-            </button>
-          )}
-        </motion.div>
-      )}
-    </motion.div>
+    </div>
   );
 }

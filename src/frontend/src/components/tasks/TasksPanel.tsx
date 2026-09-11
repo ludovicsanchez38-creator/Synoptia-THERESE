@@ -3,16 +3,24 @@
  *
  * Panel principal pour gérer les tâches.
  * Phase 3 - Tasks/Todos
+ *
+ * DA « Application affinée », lot 6 (11/09/2026) : l'en-tête, les filtres et
+ * les états prennent la forme de la maquette `projets.html` en consommant les
+ * primitives du lot 1. Mêmes données, mêmes états, mêmes destinations.
  */
 
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Plus, ListTodo, LayoutGrid, RefreshCw, Filter } from 'lucide-react';
+import { X, Plus, RefreshCw, Filter, AlertCircle } from 'lucide-react';
 import { useTaskStore } from '../../stores/taskStore';
 import { TaskKanban } from './TaskKanban';
 import { TaskList } from './TaskList';
 import { TaskForm } from './TaskForm';
+import { Alerte } from '../ui/Alerte';
 import { Button } from '../ui/Button';
+import { Segments } from '../ui/Segments';
+import { Select } from '../ui/Select';
+import { Squelette } from '../ui/Squelette';
 import { useDemoMask } from '../../hooks';
 import * as api from '../../services/api';
 import { Z_LAYER } from '../../styles/z-layers';
@@ -21,6 +29,39 @@ interface TasksPanelProps {
   isOpen?: boolean;
   onClose?: () => void;
   standalone?: boolean;
+}
+
+const OPTIONS_STATUT = [
+  { value: '', label: 'Tous les statuts' },
+  { value: 'todo', label: 'À faire' },
+  { value: 'in_progress', label: 'En cours' },
+  { value: 'done', label: 'Terminé' },
+  { value: 'cancelled', label: 'Annulé' },
+];
+
+const OPTIONS_PRIORITE = [
+  { value: '', label: 'Toutes les priorités' },
+  { value: 'urgent', label: 'Urgent' },
+  { value: 'high', label: 'Haute' },
+  { value: 'medium', label: 'Moyenne' },
+  { value: 'low', label: 'Basse' },
+];
+
+/** Trois rangées muettes pendant le premier chargement (§ 8 du design). */
+function RangeesSquelette() {
+  return (
+    <>
+      {[0, 1, 2].map((i) => (
+        <div key={i} aria-hidden="true" className="flex gap-3 items-center px-4 py-3 border-t border-border">
+          <Squelette largeur="w-8" classeBarre="h-8 rounded-sm" />
+          <div className="flex-1 min-w-0 flex flex-col gap-2">
+            <Squelette largeur="w-[60%]" />
+            <Squelette largeur="w-[40%]" />
+          </div>
+        </div>
+      ))}
+    </>
+  );
 }
 
 export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelProps) {
@@ -116,166 +157,135 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
   if (!effectiveOpen) return null;
 
   const tasksHeader = (
-    <div className="px-6 py-4 border-b border-border/30 flex items-center justify-between">
-      <div className="flex items-center gap-4">
-        <div className="w-10 h-10 rounded-sm bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
-          <ListTodo className="w-5 h-5 text-accent" />
-        </div>
-        <div>
-          {/* B-241 : la coque `PrototypeUnifiedViewCanvas` pose déjà le titre de
-              la vue, et en fait le nom accessible de la région. Ce libellé reste
-              visible mais n'est plus un titre : deux titres de même texte, c'est
-              un plan de page qui ment. */}
-          <p className="text-lg font-semibold text-text">Tâches</p>
-          <p className="text-sm text-text-muted">{tasks.length} tâche{tasks.length > 1 ? 's' : ''}</p>
-        </div>
+    <div className="flex flex-wrap items-end gap-3 px-4 pt-4 pb-2">
+      <div className="min-w-0">
+        {/* B-241 : la coque `PrototypeUnifiedViewCanvas` pose déjà le titre de
+            la vue, et en fait le nom accessible de la région. Ce libellé reste
+            visible mais n'est plus un titre : deux titres de même texte, c'est
+            un plan de page qui ment. */}
+        <p className="text-lg font-semibold text-text">Tâches</p>
+        <p className="text-sm text-text-muted">{tasks.length} tâche{tasks.length > 1 ? 's' : ''}</p>
       </div>
 
-      <div className="flex items-center gap-2">
-        {/* View Mode Toggle */}
-        <div className="flex items-center gap-1 bg-background/60 rounded-md p-1">
-          <button
-            onClick={() => setViewMode('kanban')}
-            className={`p-2 rounded-sm transition-colors ${
-              viewMode === 'kanban'
-                ? 'bg-accent-tint text-accent-cyan-ink'
-                : 'text-text-muted hover:text-text'
-            }`}
-            aria-label="Afficher les tâches en kanban"
-            title="Kanban"
-          >
-            <LayoutGrid className="w-4 h-4" />
-          </button>
-          <button
-            onClick={() => setViewMode('list')}
-            className={`p-2 rounded-sm transition-colors ${
-              viewMode === 'list'
-                ? 'bg-accent-tint text-accent-cyan-ink'
-                : 'text-text-muted hover:text-text'
-            }`}
-            aria-label="Afficher les tâches en liste"
-            title="Liste"
-          >
-            <ListTodo className="w-4 h-4" />
-          </button>
-        </div>
+      <div className="ml-auto flex flex-wrap items-center gap-2 max-[840px]:basis-full max-[840px]:ml-0">
+        {/* Lot 6 : la bascule de vue est un groupe de segments nommé. Les ids
+            du store ne bougent pas ; les libellés sont ceux de la maquette. */}
+        <Segments
+          label="Vue des tâches"
+          options={[
+            { id: 'kanban', label: 'Colonnes' },
+            { id: 'list', label: 'Liste' },
+          ]}
+          valeur={viewMode}
+          onChange={(id) => setViewMode(id as 'kanban' | 'list')}
+        />
 
         {/* B-209 : une commande réduite à son icône n'a aucun nom à annoncer.
             Le libellé va sur le bouton, pas sur l'icône décorative. */}
         <Button
-          variant="ghost"
-          size="sm"
+          variant="secondary"
+          size="md"
           aria-label="Filtrer les tâches"
           aria-expanded={showFilters}
           onClick={() => setShowFilters(!showFilters)}
-          className={showFilters ? 'bg-accent-tint text-accent-cyan-ink' : ''}
         >
-          <Filter className="w-4 h-4" />
+          <Filter className="h-[18px] w-[18px] mr-2" />
+          Filtrer
         </Button>
 
-        <Button variant="ghost" size="sm" aria-label="Rafraîchir les tâches" onClick={loadTasks}>
-          <RefreshCw className="w-4 h-4" />
+        <Button variant="ghost" size="icon" aria-label="Rafraîchir les tâches" onClick={loadTasks}>
+          <RefreshCw className="h-[18px] w-[18px]" />
         </Button>
 
-        <Button variant="primary" size="sm" onClick={handleNewTask}>
-          <Plus className="w-4 h-4 mr-2" />
+        <Button variant="primary" size="md" onClick={handleNewTask}>
+          <Plus className="h-[18px] w-[18px] mr-2" />
           Nouvelle tâche
         </Button>
 
         {!standalone && (
-          <button
-            onClick={onClose}
-            aria-label="Fermer les tâches"
-            className="p-2 hover:bg-border/30 rounded-md transition-colors"
-          >
-            <X className="w-5 h-5 text-text-muted" />
-          </button>
+          <Button variant="ghost" size="icon" aria-label="Fermer les tâches" onClick={onClose}>
+            <X className="h-[18px] w-[18px]" />
+          </Button>
         )}
       </div>
     </div>
   );
 
   const tasksFilters = showFilters ? (
-    <div className="px-6 py-3 border-b border-border/30 flex items-center gap-4">
-      <select aria-label="Filtrer par statut"
+    <div className="flex flex-wrap items-center gap-3 px-4 py-3 border-b border-border">
+      <Select
+        aria-label="Filtrer par statut"
         value={filterStatus || ''}
         onChange={(e) => setFilterStatus(e.target.value || null)}
-        className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
-      >
-        <option value="">Tous les statuts</option>
-        <option value="todo">À faire</option>
-        <option value="in_progress">En cours</option>
-        <option value="done">Terminé</option>
-        <option value="cancelled">Annulé</option>
-      </select>
+        options={OPTIONS_STATUT}
+        className="w-auto"
+      />
 
-      <select aria-label="Filtrer par priorité"
+      <Select
+        aria-label="Filtrer par priorité"
         value={filterPriority || ''}
         onChange={(e) => setFilterPriority(e.target.value || null)}
-        className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
-      >
-        <option value="">Toutes les priorités</option>
-        <option value="urgent">Urgent</option>
-        <option value="high">Haute</option>
-        <option value="medium">Moyenne</option>
-        <option value="low">Basse</option>
-      </select>
+        options={OPTIONS_PRIORITE}
+        className="w-auto"
+      />
 
       {projects.length > 0 && (
-        <select aria-label="Filtrer par projet"
+        <Select
+          aria-label="Filtrer par projet"
           value={filterProjectId || ''}
           onChange={(e) => setFilterProjectId(e.target.value || null)}
-          className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
-        >
-          <option value="">Tous les projets</option>
-          {projects.map((p) => (
-            <option key={p.id} value={p.id}>{p.name}</option>
-          ))}
-        </select>
+          options={[
+            { value: '', label: 'Tous les projets' },
+            ...projects.map((p) => ({ value: p.id, label: p.name })),
+          ]}
+          className="w-auto"
+        />
       )}
 
       {availableTags.length > 0 && (
-        <select aria-label="Filtrer par étiquette"
+        <Select
+          aria-label="Filtrer par étiquette"
           value={filterTag || ''}
           onChange={(e) => setFilterTag(e.target.value || null)}
-          className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
-        >
-          <option value="">Tous les tags</option>
-          {availableTags.map((t) => (
-            <option key={t} value={t}>{t}</option>
-          ))}
-        </select>
+          options={[
+            { value: '', label: 'Tous les tags' },
+            ...availableTags.map((t) => ({ value: t, label: t })),
+          ]}
+          className="w-auto"
+        />
       )}
 
       {(filterStatus || filterPriority || filterProjectId || filterTag) && (
-        <button
+        <Button
+          variant="ghost"
+          size="md"
           onClick={() => {
             setFilterStatus(null);
             setFilterPriority(null);
             setFilterProjectId(null);
             setFilterTag(null);
           }}
-          className="text-sm text-accent-cyan-ink hover:underline"
         >
           Réinitialiser
-        </button>
+        </Button>
       )}
     </div>
   ) : null;
 
   const tasksContent = (
     <>
+      {/* B-532 et revue v4 du design : le bandeau est un FRÈRE de la cascade,
+          jamais une branche qui l'exclut - sinon un échec de rafraîchissement
+          effacerait le formulaire ouvert ou la liste en cache. */}
       {error && (
-        <div role="alert" className="mx-6 mt-4 px-3 py-2 bg-error/10 border border-error/20 rounded-md">
-          <p className="text-sm text-error">{error}</p>
-        </div>
+        <Alerte className="mx-4 mt-2" icone={<AlertCircle className="h-[18px] w-[18px]" />}>
+          {error}
+        </Alerte>
       )}
 
       <div className="flex-1 overflow-hidden">
         {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <RefreshCw className="w-8 h-8 animate-spin text-accent-cyan-ink" />
-          </div>
+          <RangeesSquelette />
         ) : isTaskFormOpen ? (
           <TaskForm />
         ) : viewMode === 'kanban' ? (
@@ -308,7 +318,8 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-black/60 backdrop-blur-md"
+          // Lot 6 : le voile de la coque DA, pas une palette Tailwind brute.
+          className="absolute inset-0 bg-text/35 backdrop-blur-md"
           onClick={onClose}
         />
 
@@ -320,7 +331,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="relative w-full h-full max-w-7xl max-h-[90vh] mx-4 bg-surface/95 backdrop-blur-xl border border-border/50 rounded-md shadow-2xl overflow-hidden flex flex-col"
+          className="relative w-full h-full max-w-7xl max-h-[90vh] mx-4 bg-surface border border-border rounded-md shadow-lg overflow-hidden flex flex-col"
           onClick={(e) => e.stopPropagation()}
         >
           {tasksHeader}

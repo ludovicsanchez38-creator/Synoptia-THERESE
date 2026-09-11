@@ -3,15 +3,42 @@
  *
  * Formulaire pour créer ou éditer une tâche.
  * Phase 3 - Tasks/Todos
+ *
+ * DA « Application affinée », lot 6 (11/09/2026) : les six champs passent par
+ * `FormField` et les primitives ; le titre manquant devient une erreur DE
+ * CHAMP (la `.erreur-champ` de la maquette), et non plus le bandeau réservé
+ * aux échecs de sauvegarde.
  */
 
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { ChevronLeft, Save } from 'lucide-react';
+import { AlertCircle, ChevronLeft, Save } from 'lucide-react';
 import { useTaskStore } from '../../stores/taskStore';
+import { Alerte } from '../ui/Alerte';
 import { Button } from '../ui/Button';
+import { FormField } from '../ui/FormField';
+import { Input } from '../ui/Input';
+import { Select } from '../ui/Select';
+import { Textarea } from '../ui/Textarea';
 import * as api from '../../services/api';
 import { Spinner } from '../ui/Spinner';
+
+/** Le message exact de la maquette (`projets.html:53`). */
+const ERREUR_TITRE_MANQUANT = "Ajoute un titre : c'est la seule chose obligatoire.";
+
+const OPTIONS_STATUT = [
+  { value: 'todo', label: 'À faire' },
+  { value: 'in_progress', label: 'En cours' },
+  { value: 'done', label: 'Terminé' },
+  { value: 'cancelled', label: 'Annulé' },
+];
+
+const OPTIONS_PRIORITE = [
+  { value: 'low', label: 'Basse' },
+  { value: 'medium', label: 'Moyenne' },
+  { value: 'high', label: 'Haute' },
+  { value: 'urgent', label: 'Urgent' },
+];
 
 export function TaskForm() {
   const {
@@ -33,6 +60,10 @@ export function TaskForm() {
   const [tagsInput, setTagsInput] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Lot 6 : l'erreur du champ est un état DISTINCT du bandeau. Avec un seul
+  // état, un échec de sauvegarde suivi d'un titre vidé laissait les deux
+  // messages à l'écran, ou remplaçait l'un par l'autre au hasard de l'ordre.
+  const [erreurTitre, setErreurTitre] = useState<string | null>(null);
 
   const isEditing = !!currentTaskId;
   const task = tasks.find((t) => t.id === currentTaskId);
@@ -57,10 +88,14 @@ export function TaskForm() {
 
   async function handleSave() {
     if (!title.trim()) {
-      setError('Ajoute un titre');
+      // Les deux ensemble : le bandeau d'un échec précédent tombe, le champ
+      // porte seul la demande.
+      setError(null);
+      setErreurTitre(ERREUR_TITRE_MANQUANT);
       return;
     }
 
+    setErreurTitre(null);
     setSaving(true);
     setError(null);
 
@@ -127,20 +162,15 @@ export function TaskForm() {
       className="h-full flex flex-col"
     >
       {/* Header */}
-      <div className="px-6 py-4 border-b border-border/30 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleCancel}
-            className="p-2 hover:bg-border/30 rounded-md transition-colors"
-          >
-            <ChevronLeft className="w-5 h-5 text-text-muted" />
-          </button>
-          <h3 className="text-lg font-semibold text-text">
-            {isEditing ? 'Modifier la tâche' : 'Nouvelle tâche'}
-          </h3>
-        </div>
+      <div className="flex flex-wrap items-center gap-3 px-4 pt-4 pb-2">
+        <Button variant="ghost" size="icon" aria-label="Retour" onClick={handleCancel}>
+          <ChevronLeft className="h-[18px] w-[18px]" />
+        </Button>
+        <h3 className="text-lg font-semibold text-text">
+          {isEditing ? 'Modifier la tâche' : 'Nouvelle tâche'}
+        </h3>
 
-        <Button variant="primary" size="sm" onClick={handleSave} disabled={saving}>
+        <Button variant="primary" size="md" className="ml-auto" onClick={handleSave} disabled={saving}>
           {saving ? (
             <>
               <Spinner taille="bouton" className="mr-2" />
@@ -148,7 +178,7 @@ export function TaskForm() {
             </>
           ) : (
             <>
-              <Save className="w-4 h-4 mr-2" />
+              <Save className="h-[18px] w-[18px] mr-2" />
               Enregistrer
             </>
           )}
@@ -156,93 +186,85 @@ export function TaskForm() {
       </div>
 
       {/* Form */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
+        {/* Réservée aux échecs de sauvegarde : un titre manquant se dit sous
+            son champ, pas dans un bandeau. */}
         {error && (
-          <div role="alert" className="px-3 py-2 bg-error/10 border border-error/20 rounded-md">
-            <p className="text-sm text-error">{error}</p>
-          </div>
+          <Alerte icone={<AlertCircle className="h-[18px] w-[18px]" />}>{error}</Alerte>
         )}
 
-        {/* Title */}
-        <div>
-          <label htmlFor="taskform-titre" className="text-sm text-text-muted mb-2 block">Titre *</label>
-          <input id="taskform-titre"
+        <FormField
+          label="Titre"
+          htmlFor="taskform-titre"
+          required
+          error={erreurTitre ?? undefined}
+        >
+          <Input
+            id="taskform-titre"
             type="text"
             required
             aria-required="true"
+            error={Boolean(erreurTitre)}
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Titre de la tâche"
-            className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50"
           />
-        </div>
+        </FormField>
 
-        {/* Description */}
-        <div>
-          <label htmlFor="taskform-description" className="text-sm text-text-muted mb-2 block">Description</label>
-          <textarea id="taskform-description"
+        <FormField label="Description" htmlFor="taskform-description">
+          <Textarea
+            id="taskform-description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Description de la tâche"
             rows={4}
-            className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted resize-none focus:outline-none focus:ring-2 focus:ring-ring/50"
+            className="resize-none"
           />
-        </div>
+        </FormField>
 
-        {/* Status & Priority */}
+        {/* Statut et Priorité restent côte à côte. */}
         <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="taskform-statut" className="text-sm text-text-muted mb-2 block">Statut</label>
-            <select id="taskform-statut"
+          <FormField label="Statut" htmlFor="taskform-statut">
+            <Select
+              id="taskform-statut"
               value={status}
               onChange={(e) => setStatus(e.target.value)}
-              className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
-            >
-              <option value="todo">À faire</option>
-              <option value="in_progress">En cours</option>
-              <option value="done">Terminé</option>
-              <option value="cancelled">Annulé</option>
-            </select>
-          </div>
+              options={OPTIONS_STATUT}
+            />
+          </FormField>
 
-          <div>
-            <label htmlFor="taskform-priorite" className="text-sm text-text-muted mb-2 block">Priorité</label>
-            <select id="taskform-priorite"
+          <FormField label="Priorité" htmlFor="taskform-priorite">
+            <Select
+              id="taskform-priorite"
               value={priority}
               onChange={(e) => setPriority(e.target.value)}
-              className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
-            >
-              <option value="low">Basse</option>
-              <option value="medium">Moyenne</option>
-              <option value="high">Haute</option>
-              <option value="urgent">Urgent</option>
-            </select>
-          </div>
+              options={OPTIONS_PRIORITE}
+            />
+          </FormField>
         </div>
 
-        {/* Due Date */}
-        <div>
-          <label htmlFor="taskform-date-limite" className="text-sm text-text-muted mb-2 block">Date limite</label>
-          <input id="taskform-date-limite"
+        <FormField label="Date limite" htmlFor="taskform-date-limite">
+          <Input
+            id="taskform-date-limite"
             type="date"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
-            className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
           />
-        </div>
+        </FormField>
 
-        {/* Tags */}
-        <div>
-          <label htmlFor="taskform-tags" className="text-sm text-text-muted mb-2 block">Tags</label>
-          <input id="taskform-tags"
+        <FormField
+          label="Tags"
+          htmlFor="taskform-tags"
+          description="Séparez les tags par des virgules"
+        >
+          <Input
+            id="taskform-tags"
             type="text"
             value={tagsInput}
             onChange={(e) => setTagsInput(e.target.value)}
             placeholder="design, urgent, client"
-            className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50"
           />
-          <p className="text-xs text-text-muted mt-1">Séparez les tags par des virgules</p>
-        </div>
+        </FormField>
 
         {/* Project (optional, future feature) */}
         {/* <div>
@@ -250,10 +272,8 @@ export function TaskForm() {
           <select id="taskform-projet-lie"
             value={projectId}
             onChange={(e) => setProjectId(e.target.value)}
-            className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
           >
             <option value="">Aucun</option>
-            // Map projects here
           </select>
         </div> */}
       </div>

@@ -3,14 +3,14 @@
  *
  * Vue Kanban verticale pour les projets dans la sidebar droite (420px).
  * Sections empilees par statut avec drag & drop via @dnd-kit.
+ *
+ * DA « Application affinée », lot 6 (11/09/2026) : les quatre têtes sont des
+ * `Etiquette` avec un compte nu ; la couleur du groupe passe par l'étiquette,
+ * plus par un fond d'agent.
  */
 
 import { useMemo, useState } from 'react';
-import { motion } from 'framer-motion';
-import {
-  Circle, Clock, CheckCircle2, XCircle,
-  GripVertical, Trash2, Briefcase, ChevronRight,
-} from 'lucide-react';
+import { GripVertical, Trash2, ChevronRight } from 'lucide-react';
 import {
   DndContext,
   DragOverlay,
@@ -31,17 +31,21 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import type { Project } from '../../services/api';
 import { accessibiliteGlisserDeposer } from '../../lib/accessibiliteGlisserDeposer';
+import { Button } from '../ui/Button';
+import { EtatVide } from '../ui/EtatVide';
+import { Etiquette, type TonEtiquette } from '../ui/Etiquette';
+import { cn } from '../../lib/utils';
 
 // =============================================================================
 // CONSTANTES
 // =============================================================================
 
-const STATUS_COLUMNS = [
-  { id: 'active', label: 'Actif', icon: Circle, color: 'text-success', bg: 'bg-agent-green/10', border: 'border-agent-green/20' },
-  { id: 'on_hold', label: 'En attente', icon: Clock, color: 'text-agent-amber', bg: 'bg-agent-amber/10', border: 'border-agent-amber/20' },
-  { id: 'completed', label: 'Terminé', icon: CheckCircle2, color: 'text-info', bg: 'bg-agent-blue/10', border: 'border-agent-blue/20' },
-  { id: 'cancelled', label: 'Annulé', icon: XCircle, color: 'text-error', bg: 'bg-error/10', border: 'border-error/20' },
-] as const;
+const STATUS_COLUMNS: { id: string; label: string; ton: TonEtiquette }[] = [
+  { id: 'active', label: 'Actif', ton: 'succes' },
+  { id: 'on_hold', label: 'En attente', ton: 'attention' },
+  { id: 'completed', label: 'Terminé', ton: 'info' },
+  { id: 'cancelled', label: 'Annulé', ton: 'erreur' },
+];
 
 const COLUMN_IDS = STATUS_COLUMNS.map((c) => c.id);
 
@@ -111,7 +115,7 @@ export function ProjectsKanban({ projects, onSelect, onDelete, onStatusChange }:
     // Determine target column
     let targetColumn: string | null = null;
 
-    if (COLUMN_IDS.includes(over.id as typeof COLUMN_IDS[number])) {
+    if (COLUMN_IDS.includes(over.id as string)) {
       targetColumn = over.id as string;
     } else {
       // Dropped on a project card - find its column
@@ -135,12 +139,9 @@ export function ProjectsKanban({ projects, onSelect, onDelete, onStatusChange }:
   }
 
   if (projects.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center h-32 text-text-muted">
-        <Briefcase className="w-8 h-8 mb-2 opacity-50" />
-        <p className="text-sm">Aucun projet</p>
-      </div>
-    );
+    // Filet : l'état vide de l'utilisateur vit dans le panneau, qui ne monte
+    // même pas ce kanban. Ici, c'est le montage isolé (tests, réemploi).
+    return <EtatVide titre="Aucun projet" />;
   }
 
   // B-217 : consignes et annonces en français, par les noms - un projet
@@ -160,7 +161,7 @@ export function ProjectsKanban({ projects, onSelect, onDelete, onStatusChange }:
       onDragCancel={() => setActiveProject(null)}
       accessibility={accessibilite}
     >
-      <div className="divide-y divide-border/30">
+      <div className="divide-y divide-border">
         {STATUS_COLUMNS.map((column) => (
           <DroppableStatusGroup
             key={column.id}
@@ -204,16 +205,13 @@ function DroppableStatusGroup({ column, projects, onSelect, onDelete }: Droppabl
   return (
     <div
       ref={setNodeRef}
-      className={`transition-colors ${isOver ? 'bg-accent-cyan/5' : ''}`}
+      className={cn('transition-colors', isOver && 'bg-accent-tint')}
     >
-      {/* Section Header */}
-      <div className={`flex items-center gap-2 px-3 py-2 ${column.bg}`}>
-        <column.icon className={`w-4 h-4 ${column.color} ${column.id === 'active' ? 'fill-current' : ''}`} />
-        {/* P-046 (Karim, c4) : même casse que le kanban des tâches (casse de phrase du lexique), plus de capitales. */}
-        <span className={`text-xs font-semibold ${column.color}`}>
-          {column.label}
-        </span>
-        <span className="ml-auto text-xs text-text-muted">({projects.length})</span>
+      {/* Section Header. P-046 (Karim, c4) : même casse que le kanban des
+          tâches (casse de phrase du lexique), plus de capitales. */}
+      <div className="flex items-center gap-2 px-3 py-2">
+        <Etiquette ton={column.ton}>{column.label}</Etiquette>
+        <span className="ml-auto text-sm tabular-nums text-text-muted">{projects.length}</span>
       </div>
 
       {/* Project Cards */}
@@ -222,9 +220,10 @@ function DroppableStatusGroup({ column, projects, onSelect, onDelete }: Droppabl
         strategy={verticalListSortingStrategy}
       >
         {projects.length === 0 ? (
-          <div className={`flex items-center justify-center h-12 text-xs text-text-muted transition-colors ${
-            isOver ? 'bg-accent-tint text-accent-cyan-ink' : ''
-          }`}>
+          <div className={cn(
+            'flex items-center justify-center h-12 text-sm text-text-muted transition-colors',
+            isOver && 'bg-accent-tint text-accent-cyan-ink',
+          )}>
             Glisser ici
           </div>
         ) : (
@@ -307,17 +306,18 @@ interface ProjectCardProps {
 
 function ProjectCard({ project, onSelect, onDelete, isOverlay, showDragHandle }: ProjectCardProps) {
   return (
-    <motion.div
-      whileHover={isOverlay ? undefined : { scale: 1.01 }}
-      whileTap={isOverlay ? undefined : { scale: 0.99 }}
-      className={`mx-2 my-1 px-3 py-2 rounded-md border border-border/30 bg-surface/60 hover:bg-surface transition-colors group ${
-        isOverlay ? 'shadow-xl ring-2 ring-ring/30 bg-surface' : ''
-      }`}
+    <div
+      // `group` porte la révélation de la corbeille : sans lui, elle reste à
+      // opacité 0 au survol comme au focus.
+      className={cn(
+        'mx-2 my-1 px-3 py-2 rounded-sm border border-border bg-surface transition-colors group',
+        isOverlay && 'shadow-lg ring-2 ring-ring/30',
+      )}
     >
       <div className="flex items-center gap-2">
         {/* Poignée (repère visuel : toute la carte est draggable) */}
         {showDragHandle && (
-          <div className="text-text-muted group-hover:text-text-muted flex-shrink-0">
+          <div className="text-text-muted flex-shrink-0">
             <GripVertical className="w-4 h-4" />
           </div>
         )}
@@ -328,7 +328,7 @@ function ProjectCard({ project, onSelect, onDelete, isOverlay, showDragHandle }:
           className="flex-1 min-w-0 text-left"
         >
           <div className="flex items-center gap-2">
-            <p className="text-sm font-medium text-text truncate">{project.name}</p>
+            <p className="text-sm font-semibold text-text truncate">{project.name}</p>
             {project.budget != null && project.budget > 0 && (
               <span className="text-xs text-text-muted flex-shrink-0">
                 {formatCurrency(project.budget)}
@@ -336,24 +336,27 @@ function ProjectCard({ project, onSelect, onDelete, isOverlay, showDragHandle }:
             )}
           </div>
           {project.description && (
-            <p className="text-xs text-text-muted truncate mt-0.5">{project.description}</p>
+            <p className="text-sm text-text-muted truncate mt-0.5">{project.description}</p>
           )}
         </button>
 
-        {/* Actions (hover) */}
+        {/* Actions (hover). `group-focus-within` va toujours de pair avec
+            `group-hover` : au clavier, le focus se poserait sinon sur un
+            bouton invisible (E1). */}
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity flex-shrink-0">
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={(e) => { e.stopPropagation(); onDelete(project); }}
-            className="grid h-8 w-8 place-items-center rounded-md hover:bg-error/20 text-text-muted hover:text-error transition-colors"
             aria-label={`Supprimer ${project.name}`}
             title="Supprimer"
           >
-            <Trash2 className="w-3.5 h-3.5" />
-          </button>
-          <ChevronRight className="w-3.5 h-3.5 text-text-muted" />
+            <Trash2 className="h-[18px] w-[18px]" />
+          </Button>
+          <ChevronRight aria-hidden="true" className="w-3.5 h-3.5 text-text-muted" />
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }
 
