@@ -267,6 +267,7 @@ function SortableTaskCard({ task, onClick, onStatusChange, maskTextFn }: Sortabl
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
@@ -282,9 +283,19 @@ function SortableTaskCard({ task, onClick, onStatusChange, maskTextFn }: Sortabl
   // la carte, pas seulement la poignée - sinon attraper la carte par son
   // corps ne démarre aucun drag. Les clics simples (ouvrir, quick actions)
   // restent distingués du drag par l'activationConstraint (distance 8px).
+  // B-750 : sans `setActivatorNodeRef`, `activatorNode.current` reste `null`
+  // et la garde du KeyboardSensor (`event.target !== activator`, cf
+  // `@dnd-kit/core/dist/core.esm.js`) ne s'applique JAMAIS : le capteur
+  // écoutait tout le sous-arbre, si bien qu'Entrée ou Espace sur « Marquer
+  // terminé » saisissait la carte et confisquait l'activation du bouton. Le
+  // nœud activateur est l'enveloppe elle-même, celle qui porte les écouteurs
+  // et le focus : la frappe partie d'elle ouvre bien un glisser, celle partie
+  // d'une commande revient au bouton. Le PointerSensor, lui, n'a pas de
+  // garde d'activateur : le glisser à la souris depuis le corps de la carte
+  // (BUG-041, seuil de 8 px) reste intact.
   return (
     <div
-      ref={setNodeRef}
+      ref={(noeud) => { setNodeRef(noeud); setActivatorNodeRef(noeud); }}
       style={style}
       className="cursor-grab active:cursor-grabbing"
       {...attributes}

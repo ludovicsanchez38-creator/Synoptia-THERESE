@@ -262,6 +262,7 @@ function SortableProjectCard({ project, onSelect, onDelete }: SortableProjectCar
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
@@ -278,9 +279,14 @@ function SortableProjectCard({ project, onSelect, onDelete }: SortableProjectCar
   // par son corps ne démarre aucun drag. Les clics simples (ouvrir,
   // supprimer) restent distingués du drag par l'activationConstraint
   // (distance 8px) du PointerSensor.
+  // B-750 : même défaut que le kanban des tâches. Tant que
+  // `setActivatorNodeRef` n'est pas appelé, la garde du KeyboardSensor
+  // (`event.target !== activator`) ne s'applique pas et le capteur saisit la
+  // carte sur un Entrée parti du bouton du nom ou de la corbeille. L'enveloppe
+  // est le nœud activateur : elle porte déjà les écouteurs et le focus.
   return (
     <div
-      ref={setNodeRef}
+      ref={(noeud) => { setNodeRef(noeud); setActivatorNodeRef(noeud); }}
       style={style}
       className="cursor-grab active:cursor-grabbing"
       {...attributes}

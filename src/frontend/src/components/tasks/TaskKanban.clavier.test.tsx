@@ -103,3 +103,58 @@ describe('B-209 - les commandes de la carte Kanban existent aussi au clavier', (
     expect(screen.queryByRole('button', { name: 'Marquer terminé' })).not.toBeNull();
   });
 });
+
+/**
+ * B-750 - Entrée sur une commande révélée démarre un GLISSER, pas le bouton.
+ *
+ * Le `KeyboardSensor` de dnd-kit écoute `onKeyDown` sur le conteneur
+ * `useSortable`, et un keydown parti d'un bouton de la carte y remonte. La
+ * seule garde prévue par la bibliothèque compare la cible à l'`activatorNode`
+ * (`@dnd-kit/core/dist/core.esm.js`, autour de `event.target !== activator`) :
+ * tant que `setActivatorNodeRef` n'est jamais appelé, `activatorNode.current`
+ * vaut `null`, la garde ne s'applique pas, et le capteur saisit la carte en
+ * appelant `event.preventDefault()`.
+ *
+ * Recette du dépôt principal, `.cartography-work/validation/da-lot6/
+ * apres-mesures.json`, cas `entree-sur-commande` : zéro requête, titre rendu
+ * deux fois (la carte de survol du glisser), focus retombé sur `body`.
+ *
+ * jsdom n'implémente pas l'activation par défaut d'un bouton au clavier, et
+ * le projet n'a pas `user-event` : le clic que le navigateur émet après un
+ * keydown NON empêché est rejoué à la main. C'est exactement ce que le
+ * `preventDefault` du capteur supprime chez l'utilisateur.
+ */
+describe('B-750 - Entrée sur une commande active le bouton, sans glisser', () => {
+  beforeEach(() => {
+    vi.mocked(api.updateTask).mockClear();
+  });
+
+  it('Entrée sur « Marquer terminé » termine la tâche et ne saisit pas la carte', () => {
+    render(<TaskKanban />);
+    fireEvent.focus(carte());
+
+    const bouton = screen.getByRole('button', { name: 'Marquer terminé' });
+    const nonEmpeche = fireEvent.keyDown(bouton, { key: 'Enter', code: 'Enter' });
+
+    // Le capteur n'a pas confisqué la frappe : le navigateur activerait le bouton.
+    expect(nonEmpeche).toBe(true);
+    fireEvent.click(bouton);
+    expect(api.updateTask).toHaveBeenCalledWith(TACHE.id, { status: 'done' });
+
+    // Aucun glisser : le `DragOverlay` doublerait le titre de la tâche.
+    expect(screen.getAllByText(TACHE.title)).toHaveLength(1);
+  });
+
+  it('Espace sur « Marquer en cours » passe la tâche en cours, sans glisser', () => {
+    render(<TaskKanban />);
+    fireEvent.focus(carte());
+
+    const bouton = screen.getByRole('button', { name: 'Marquer en cours' });
+    const nonEmpeche = fireEvent.keyDown(bouton, { key: ' ', code: 'Space' });
+
+    expect(nonEmpeche).toBe(true);
+    fireEvent.click(bouton);
+    expect(api.updateTask).toHaveBeenCalledWith(TACHE.id, { status: 'in_progress' });
+    expect(screen.getAllByText(TACHE.title)).toHaveLength(1);
+  });
+});
