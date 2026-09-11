@@ -33,7 +33,14 @@ describe('contrat de thème de la coque 0.40', () => {
   it('conserve les portraits générés pour les identités principales', () => {
     const combined = componentSources.map(({ source }) => source).join('\n');
     expect(combined).toContain("url('/prototype/therese-character-atlas-v1.png')");
-    expect(combined.match(/<CharacterPortrait/g)?.length ?? 0).toBeGreaterThanOrEqual(11);
+    /* DA lot 7 (11/09/2026) : 11 -> 10. La tête de la carte d'historique de
+       Décision portait le portrait n° 1 en guise d'icône ; elle porte
+       désormais le glyphe de domaine `Gavel` de `CarteTete`, comme l'Accueil
+       porte `Sparkles` depuis le lot 2. Les portraits qui disent une
+       identité restent tous : les cinq conseillers (deux montages) et
+       l'avatar de la coque. Garde de forme, alignée, aucune assertion de
+       comportement retirée. */
+    expect(combined.match(/<CharacterPortrait/g)?.length ?? 0).toBeGreaterThanOrEqual(10);
   });
 
   it('interdit les anciens statuts Tailwind et les tailles inférieures à 12 px', () => {

@@ -30,6 +30,16 @@ export interface LigneProps {
   detail?: string;
   droite?: ReactNode;
   dense?: boolean;
+  /**
+   * Lot 7 : coupe le libellé ET le détail à une ligne, pour une liste dont
+   * les rangées doivent garder la même hauteur (l'historique de Décision).
+   * `block w-full` est nécessaire : un bouton inline-block à largeur
+   * automatique déborde la cellule `1fr` au lieu d'être coupé. Jamais
+   * `relative` dessus : le `before:absolute before:inset-0` se cale sur la
+   * rangée, le positionner rabattrait le pseudo-élément sur le texte et
+   * tuerait le clic étiré (P1 de la revue du lot 1).
+   */
+  coupe?: boolean;
   onClick?: MouseEventHandler<HTMLButtonElement>;
   className?: string;
 }
@@ -41,20 +51,25 @@ export function Ligne({
   detail,
   droite,
   dense = false,
+  coupe = false,
   onClick,
   className,
 }: LigneProps) {
   const cliquable = onClick != null;
+  const coupeDuLibelle = coupe ? 'block w-full truncate' : undefined;
   const libelle = cliquable ? (
     <button
       type="button"
       onClick={onClick}
-      className="font-semibold text-left text-text before:absolute before:inset-0 before:content-['']"
+      className={cn(
+        "font-semibold text-left text-text before:absolute before:inset-0 before:content-['']",
+        coupeDuLibelle,
+      )}
     >
       {titre}
     </button>
   ) : (
-    <span className="font-semibold text-text">{titre}</span>
+    <span className={cn('font-semibold text-text', coupeDuLibelle)}>{titre}</span>
   );
 
   return (
@@ -77,7 +92,9 @@ export function Ligne({
       </span>
       <div className="min-w-0">
         {libelle}
-        {detail ? <p className="text-sm text-text-muted">{detail}</p> : null}
+        {detail ? (
+          <p className={cn('text-sm text-text-muted', coupe && 'truncate')}>{detail}</p>
+        ) : null}
       </div>
       {droite != null ? (
         <div className={cn('flex items-center gap-2 text-text-muted', cliquable &&

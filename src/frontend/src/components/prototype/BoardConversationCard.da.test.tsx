@@ -136,6 +136,14 @@ function classes(n: Element): string {
   return typeof svg === 'object' && svg && 'baseVal' in svg ? svg.baseVal : '';
 }
 
+/**
+ * Un fond posé sur l'élément, pas le `hover:bg-surface-2` que `Ligne` porte
+ * pour toutes ses rangées : on découpe en jetons et on ignore les variantes.
+ */
+function porteUnFond(n: Element): boolean {
+  return classes(n).split(/\s+/).some((jeton) => /^bg-/.test(jeton));
+}
+
 function precede(a: Element, b: Element): boolean {
   return Boolean(a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING);
 }
@@ -233,10 +241,10 @@ describe('Lot 7 DA : les rangées de l’historique sont des Ligne', () => {
     expect(classes(screen.getByTestId('board-history-card'))).toMatch(/\boverflow-hidden\b/);
 
     const enveloppe = screen.getByTestId('board-current-run');
-    expect(classes(enveloppe)).not.toMatch(/\bbg-/);
+    expect(porteUnFond(enveloppe)).toBe(false);
     const rangee = enveloppe.querySelector(RANGEE) as HTMLElement;
     expect(rangee).not.toBeNull();
-    expect(classes(rangee)).not.toMatch(/\bbg-/);
+    expect(porteUnFond(rangee)).toBe(false);
     expect(rangee.getAttribute('data-testid')).toBeNull();
   });
 });
@@ -695,6 +703,7 @@ describe('Lot 7 DA : les primitives portent l’écran', () => {
 
   it('la confirmation de lancement garde ses deux gestes', () => {
     canevas();
+    fireEvent.change(screen.getByLabelText('Question stratégique'), { target: { value: QUESTION } });
     fireEvent.click(screen.getByRole('button', { name: 'Préparer la délibération' }));
     const bloc = screen.getByTestId('board-confirmation');
     expect(within(bloc).getByRole('button', { name: 'Annuler' })).toBeInTheDocument();
@@ -738,7 +747,10 @@ describe('Lot 7 DA : les primitives portent l’écran', () => {
         if (!/h-\[18px\]/.test(c) || !/w-\[18px\]/.test(c)) fautifs.push(c);
       }
       expect(fautifs).toEqual([]);
-      for (const bouton of container.querySelectorAll('button')) {
+      /* Les `Button` de la DA sont en `inline-flex` : une icône y colle au
+         libellé sans `gap`. Les cartes du radiogroup empilent leur contenu,
+         elles ne sont pas concernées. */
+      for (const bouton of container.querySelectorAll('button[class*="inline-flex"]')) {
         if (bouton.querySelector('svg') && (bouton.textContent ?? '').trim().length > 0) {
           expect(classes(bouton), bouton.textContent ?? '').toMatch(/\bgap-/);
         }
