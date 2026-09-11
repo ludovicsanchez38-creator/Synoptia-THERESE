@@ -130,3 +130,49 @@ describe('Ligne : la zone de droite ne mange pas le clic', () => {
     }
   });
 });
+
+/**
+ * DA lot 7 (`docs/plans/2026-09-11-da-lot7-decision-design.md`, § 1 et
+ * garde 6.9) : la liste des décisions coupe ses rangées à une ligne, ce que
+ * `Ligne` ne savait pas faire — le détail est rendu dans un `p` sans classe
+ * transmissible. `coupe` ajoute `block w-full truncate` au libellé et
+ * `truncate` au détail, et surtout **jamais** `relative` sur le bouton : son
+ * `before:absolute before:inset-0` se cale sur la rangée, le positionner
+ * rabattrait le pseudo-élément sur le texte et tuerait le clic étiré (P1 de
+ * la revue du lot 1). jsdom ne mesure pas la coupe : la garde porte sur les
+ * classes, la preuve visuelle sur la recette.
+ */
+describe('Ligne : la prop coupe', () => {
+  const LONG = 'Faut-il accepter la mission du Garage Benali à 840 € en trois semaines ?';
+
+  it('coupe le libellé cliquable et le détail, sans positionner le bouton', () => {
+    render(<Ligne titre={LONG} detail="Accepter, à deux conditions." onClick={() => {}} coupe />);
+
+    const titre = screen.getByRole('button', { name: LONG });
+    expect(titre.className).toMatch(/\bblock\b/);
+    expect(titre.className).toMatch(/\bw-full\b/);
+    expect(titre.className).toMatch(/\btruncate\b/);
+    expect(titre.className).not.toMatch(/\brelative\b/);
+    expect(titre.className).toMatch(/before:absolute/);
+    expect(titre.className).toMatch(/before:inset-0/);
+
+    expect(screen.getByText('Accepter, à deux conditions.').className).toMatch(/\btruncate\b/);
+  });
+
+  it('coupe aussi un libellé non cliquable', () => {
+    render(<Ligne titre={LONG} detail="Sans geste." coupe />);
+    const titre = screen.getByText(LONG);
+    expect(titre.tagName).toBe('SPAN');
+    expect(titre.className).toMatch(/\bblock\b/);
+    expect(titre.className).toMatch(/\bw-full\b/);
+    expect(titre.className).toMatch(/\btruncate\b/);
+  });
+
+  it('sans coupe, aucune de ces classes n’apparaît', () => {
+    render(<Ligne titre={LONG} detail="Accepter, à deux conditions." onClick={() => {}} />);
+    const titre = screen.getByRole('button', { name: LONG });
+    expect(titre.className).not.toMatch(/\btruncate\b/);
+    expect(titre.className).not.toMatch(/\bw-full\b/);
+    expect(screen.getByText('Accepter, à deux conditions.').className).not.toMatch(/\btruncate\b/);
+  });
+});

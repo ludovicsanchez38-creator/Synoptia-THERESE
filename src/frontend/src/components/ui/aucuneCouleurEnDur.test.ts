@@ -23,6 +23,8 @@ const CATALOGUE = resolve(__dirname, '../prototype/CapabilityCenter.tsx');
 // `src/test/fichiersLot6.ts` : la garde du plancher de taille
 // (`src/test/lot6DA.test.ts`) parcourt exactement les mêmes fichiers.
 const LOT6 = CHEMINS_LOT6;
+// Lot 7 : l'écran Décision consomme les primitives, donc les jetons.
+const DECISION = resolve(__dirname, '../prototype/BoardConversationCard.tsx');
 
 /** Chemins (relatifs à src/) tolérés, avec la raison. Vide au départ. */
 const LISTE_BLANCHE: Record<string, string> = {
@@ -35,7 +37,7 @@ function sources(): string[] {
   const fichiers = (readdirSync(UI, { recursive: true }) as string[])
     .filter((f) => /\.tsx?$/.test(f) && !/\.test\.tsx?$/.test(f))
     .map((f) => join(UI, f));
-  return [...fichiers, COQUE, BRIEF, TIROIR, CATALOGUE, ...LOT6];
+  return [...fichiers, COQUE, BRIEF, TIROIR, CATALOGUE, ...LOT6, DECISION];
 }
 
 function contenuPourGarde(fichier: string): string {
