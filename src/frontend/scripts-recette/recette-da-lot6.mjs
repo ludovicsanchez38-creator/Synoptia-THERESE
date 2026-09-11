@@ -83,6 +83,8 @@ const PROJET = (i) => ({
 const TROIS_PROJETS = [PROJET(0), PROJET(1), PROJET(2)];
 const DEUX_CENTS = Array.from({ length: 200 }, (_, i) => PROJET(i));
 
+// Prédicats sur le chemin : le glob `**/api/tasks**` attrapait le module Vite
+// `/src/services/api/tasks.ts` et la coque ne démarrait jamais (même défaut que le lot 5).
 async function intercepter(page, {
   taches = CINQ,
   projets = TROIS_PROJETS,
@@ -92,14 +94,14 @@ async function intercepter(page, {
 } = {}) {
   await page.unrouteAll({ behavior: 'ignoreErrors' });
   return Promise.all([
-    page.route('**/api/config/onboarding-complete', async (route) => {
+    page.route((u) => u.pathname === '/api/config/onboarding-complete', async (route) => {
       if (route.request().method() === 'GET') {
         await route.fulfill({ json: { completed: true } });
         return;
       }
       await route.continue();
     }),
-    page.route('**/api/tasks**', async (route) => {
+    page.route((u) => u.pathname.startsWith('/api/tasks'), async (route) => {
       if (route.request().method() !== 'GET') {
         await route.continue();
         return;
@@ -111,7 +113,7 @@ async function intercepter(page, {
       }
       await route.fulfill({ json: taches });
     }),
-    page.route('**/api/memory/projects**', async (route) => {
+    page.route((u) => u.pathname.startsWith('/api/memory/projects'), async (route) => {
       if (route.request().method() !== 'GET') {
         await route.continue();
         return;
@@ -123,14 +125,14 @@ async function intercepter(page, {
       }
       await route.fulfill({ json: projets });
     }),
-    page.route('**/api/memory/contacts**', async (route) => {
+    page.route((u) => u.pathname.startsWith('/api/memory/contacts'), async (route) => {
       await route.fulfill({ json: [] });
     }),
   ]);
 }
 
 async function ouvrir(page, action, selecteur) {
-  await page.goto(FRONTEND, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${FRONTEND}/?prototype=conversation-canvas&scenario=today`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => Boolean(window.__therese?.runAction), null, { timeout: 20000 });
   await page.evaluate((a) => window.__therese.runAction(a), action);
   if (selecteur) await page.waitForSelector(selecteur, { timeout: 15000 });
@@ -250,7 +252,7 @@ async function casTaches(page, { largeur, theme, hc, fontPx, vue = 'kanban' }) {
   await intercepter(page);
   await ouvrirTaches(page);
   await poserApparence(page, { theme, hc, fontPx });
-  await page.getByRole('button', { name: vue === 'kanban' ? 'Colonnes' : 'Liste' }).click();
+  await page.getByRole('group', { name: 'Vue des tâches' }).getByRole('button', { name: vue === 'kanban' ? 'Colonnes' : 'Liste', exact: true }).click();
   await page.waitForSelector('[data-testid="task-item"]');
   const nom = `taches-${vue}-${largeur}-${theme}${hc ? '-hc' : ''}-${fontPx}px`;
   await capturer(page, nom);
@@ -303,7 +305,7 @@ async function main() {
     // --- Liste vide
     await intercepter(page, { taches: [] });
     await ouvrirTaches(page);
-    await page.getByRole('button', { name: 'Liste' }).click();
+    await page.getByRole('button', { name: 'Liste', exact: true }).click();
     await page.getByRole('heading', { name: 'Aucune tâche pour l’instant' }).waitFor();
     await capturer(page, 'taches-vide-1280-light-16px');
     rapport.push({ nom: 'taches-vide', ...(await mesurer(page, RACINE_TACHES)) });
@@ -352,13 +354,13 @@ async function main() {
     // --- Panne des projets : un seul Réessayer
     await page.setViewportSize({ width: 1280, height: 900 });
     await intercepter(page, { statutProjets: 500 });
-    await ouvrir(page, 'projets.open', '[role="alert"]');
+    await ouvrir(page, 'projects.open', '[role="alert"]');
     await capturer(page, 'projets-panne-1280-light-16px');
     rapport.push({ nom: 'projets-panne', ...(await mesurer(page, RACINE_PROJETS)) });
 
     // --- Chargement lent des projets : l'attente s'annonce
     await intercepter(page, { projets: TROIS_PROJETS, delaiMs: 8000 });
-    const attente = ouvrir(page, 'projets.open', null);
+    const attente = ouvrir(page, 'projects.open', null);
     await page.waitForSelector('[role="status"]', { timeout: 5000 }).catch(() => {});
     await capturer(page, 'projets-chargement-1280-light-16px');
     rapport.push({
@@ -400,7 +402,10 @@ async function main() {
     await ouvrirTaches(page);
     page.on('request', espion);
     const commande = page.getByRole('button', { name: 'Marquer terminé' }).first();
-    await page.locator('[data-testid="task-item"]').first().evaluate((el) => el.parentElement.focus());
+    // La commande « Marquer terminé » vit sur les cartes du kanban : passer en Colonnes,
+    // puis focaliser l'enveloppe sortable de dnd-kit (tabindex 0) qui la révèle.
+    await page.getByRole('group', { name: 'Vue des tâches' }).getByRole('button', { name: 'Colonnes', exact: true }).click();
+    await page.locator('[aria-roledescription="sortable"]').first().focus();
     await commande.focus();
     const titreAvantEntree = await page.getByText(CINQ[0].title, { exact: true }).count();
     await page.keyboard.press('Enter');
