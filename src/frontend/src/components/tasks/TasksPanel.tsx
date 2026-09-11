@@ -181,10 +181,14 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
         />
 
         {/* B-209 : une commande réduite à son icône n'a aucun nom à annoncer.
-            Le libellé va sur le bouton, pas sur l'icône décorative. */}
+            Le libellé va sur le bouton, pas sur l'icône décorative.
+            L'état actif reste VISIBLE : `aria-expanded` ne parle qu'au lecteur
+            d'écran, et la rangée dépliée est plus bas dans la page. Classe
+            d'état conservée de l'écran d'avant. */}
         <Button
           variant="secondary"
           size="md"
+          className={showFilters ? 'bg-accent-tint text-accent-cyan-ink hover:bg-accent-tint' : undefined}
           aria-label="Filtrer les tâches"
           aria-expanded={showFilters}
           onClick={() => setShowFilters(!showFilters)}

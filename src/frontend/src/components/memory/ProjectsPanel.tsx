@@ -7,8 +7,12 @@
  * drag & drop, création/édition via ProjectModal, suppression avec confirmation.
  *
  * DA « Application affinée », lot 6 (11/09/2026) : en-tête sans pastille,
- * quatre états sur les primitives, colonne de la coque (56 rem) au lieu d'une
- * largeur maison.
+ * quatre états sur les primitives, pleine largeur de la coque au lieu d'une
+ * largeur maison, comme les autres panneaux (CRM, Factures, Agenda, Mémoire).
+ * Pas « la colonne de 56 rem » : `--container-colonne` n'est consommé que par
+ * la colonne de conversation (`ConversationCanvasPrototype.tsx:1688`), l'autre
+ * branche du ternaire, et la coque ne borne rien
+ * (`PrototypeUnifiedViewCanvas.tsx:50`).
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';

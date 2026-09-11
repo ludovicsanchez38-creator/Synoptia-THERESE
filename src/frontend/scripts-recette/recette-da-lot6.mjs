@@ -158,6 +158,12 @@ async function mesurer(page, racineSelecteur) {
     const textesSous12 = [];
     const interactifsSous14 = [];
     const hauteursBoutons = [];
+    // Les segments sont un groupe compact : ils suivent leur primitive, et le
+    // plancher de 14 px les dispense. Les EFFACER de l'échantillon de hauteurs
+    // effaçait aussi ce qu'il fallait voir : ils sont sous le geste de 36 px de
+    // la DA (`rounded-full px-3 py-1 text-sm`, soit 28 px). On les mesure donc
+    // à part, au lieu de les faire disparaître du rapport.
+    const segments = [];
     const visiter = (n) => {
       if (n.nodeType !== 1) return;
       const el = n;
@@ -167,17 +173,20 @@ async function mesurer(page, racineSelecteur) {
         textesSous12.push({ texte: el.textContent.trim().slice(0, 40), px: Math.round(px * 10) / 10 });
       }
       if (el.matches('button, input, select, textarea, a, [role="button"]')) {
-        // Les segments sont un groupe compact : ils suivent leur primitive.
-        if (px < 14 - 0.05 && !el.closest('[role="group"]')) {
+        const dansUnGroupe = Boolean(el.closest('[role="group"]'));
+        // L'exemption des segments ne vaut QUE pour le plancher de taille.
+        if (px < 14 - 0.05 && !dansUnGroupe) {
           interactifsSous14.push({ texte: (el.textContent || el.getAttribute('aria-label') || '').trim().slice(0, 40), px });
         }
-        if (el.tagName === 'BUTTON' && !el.closest('[role="group"]')) {
+        if (el.tagName === 'BUTTON') {
           const r = el.getBoundingClientRect();
           if (r.height > 0) {
-            hauteursBoutons.push({
+            const mesure = {
               nom: (el.getAttribute('aria-label') || el.textContent || '').trim().slice(0, 40),
               h: Math.round(r.height),
-            });
+            };
+            if (dansUnGroupe) segments.push({ ...mesure, px: Math.round(px * 10) / 10 });
+            else hauteursBoutons.push(mesure);
           }
         }
       }
@@ -204,6 +213,7 @@ async function mesurer(page, racineSelecteur) {
       textesSous12,
       interactifsSous14,
       hauteursBoutons,
+      segments,
       colonnesDeLaGrille: colonnes,
       rangeesDeLaGrille: rangees,
       listesDefilantes,

@@ -225,14 +225,23 @@ function DroppableColumn({ column, count, children }: DroppableColumnProps) {
       )}
     >
       {/* Column Header. Le h3 reste : c'est le plan de l'écran, et la maquette
-          l'écrit ainsi (`projets.html:66`). */}
-      <h3 className="flex items-center gap-2 px-2 py-1 text-sm">
+          l'écrit ainsi (`projets.html:66`). Police et graisse sont POSÉES, pas
+          héritées : le socle donne au `h3` la display et 700 (`globals.css:607`
+          et `:616`), la tête jumelle de `ProjectsKanban` est un `div` qui reste
+          en police de corps à 400. Le compte suit la maquette
+          (`.col h3 .compte{font-weight:500}`, `projets.html:12`). */}
+      <h3 className="flex items-center gap-2 px-2 py-1 text-sm font-editorial tracking-[-0.01em]">
         <Etiquette ton={column.ton}>{column.label}</Etiquette>
-        <span className="ml-auto text-sm tabular-nums text-text-muted">{count}</span>
+        <span className="ml-auto text-sm font-medium tabular-nums text-text-muted">{count}</span>
       </h3>
 
-      {/* Tasks */}
-      <div className="flex-1 min-h-0 overflow-y-auto space-y-2">{children}</div>
+      {/* Tasks. `p-1.5` : l'anneau du socle se dessine DEHORS (`outline: 3px`
+          à `outline-offset: 2px`, `globals.css:618-621`), le conteneur
+          `useSortable` d'une carte est focalisable, et `overflow-y-auto` rend
+          l'axe horizontal découpant lui aussi. Sans marge ici, l'anneau est
+          rogné à gauche, à droite, et en haut pour la première carte. Le `p-2`
+          de la colonne est hors du conteneur qui découpe : il n'y peut rien. */}
+      <div className="flex-1 min-h-0 overflow-y-auto space-y-2 p-1.5">{children}</div>
     </div>
   );
 }
@@ -336,8 +345,13 @@ function TaskCard({ task, onClick, onStatusChange, isOverlay, showDragHandle, co
       data-testid={isOverlay ? undefined : 'task-item'}
       onMouseEnter={() => setSurvol(true)}
       onMouseLeave={() => setSurvol(false)}
+      /* Pas de `transition-colors` : aucune couleur ne change. La maquette ne
+         pose aucun `:hover` sur `.tache` (`projets.html:13`), et un
+         `hover:bg-surface-2` fondrait la carte dans sa colonne, qui est
+         justement en `bg-surface-2`. Le retour au survol reste la révélation
+         des commandes. */
       className={cn(
-        'relative bg-surface border border-border rounded-sm p-3 cursor-pointer transition-colors',
+        'relative bg-surface border border-border rounded-sm p-3 cursor-pointer',
         isOverlay && 'shadow-lg ring-2 ring-ring/30',
       )}
       onClick={onClick}

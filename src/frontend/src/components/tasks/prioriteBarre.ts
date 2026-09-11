@@ -30,9 +30,11 @@ const BARRES: Record<string, BarrePriorite> = {
 export const CLASSE_BARRE_PRIORITE = 'w-1 h-[1.1rem] rounded-sm shrink-0';
 
 /**
- * `null` pour une priorité inconnue : on n'invente pas de nom. L'écran
- * n'affichait déjà rien dans ce cas (aucune des quatre branches ne
- * correspondait), il continue de ne rien affirmer.
+ * `null` pour une priorité inconnue : on n'invente pas de nom. Avant, le
+ * kanban affichait dans ce cas une pastille bordée VIDE (`px-2 py-0.5 text-xs
+ * rounded-sm border` sans classe de couleur ni texte) et la liste ne montrait
+ * rien. Ne rien afficher vaut mieux qu'une pastille vide, et c'est désormais
+ * le même silence dans les deux vues.
  */
 export function barrePriorite(priorite: string | null | undefined): BarrePriorite | null {
   if (!priorite) return null;

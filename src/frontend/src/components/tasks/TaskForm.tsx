@@ -206,7 +206,13 @@ export function TaskForm() {
             aria-required="true"
             error={Boolean(erreurTitre)}
             value={title}
-            onChange={(e) => setTitle(e.target.value)}
+            onChange={(e) => {
+              setTitle(e.target.value);
+              // La demande tombe dès que le titre n'est plus vide : sinon le
+              // champ garde sa bordure rouge, son `aria-invalid` et son
+              // message pendant qu'on tape un titre valide sous les yeux.
+              if (e.target.value.trim()) setErreurTitre(null);
+            }}
             placeholder="Titre de la tâche"
           />
         </FormField>

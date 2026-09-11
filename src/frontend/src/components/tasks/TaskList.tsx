@@ -140,13 +140,17 @@ export function TaskList() {
             onClick={() => handleTaskClick(task.id)}
             className="grid grid-cols-[2.25rem_1fr_auto] gap-3 items-start px-4 py-3 border-t border-border hover:bg-surface-2 relative cursor-pointer transition-colors"
           >
-            {/* Cocher */}
+            {/* Cocher. Les trois `aria-label` de la rangée passent par
+                `maskText`, comme le texte visible : sans lui, le mode démo
+                masquait l'écran et laissait le vrai nom du client dans le NOM
+                ACCESSIBLE, que lit un lecteur d'écran et que rapporte toute
+                capture d'arbre d'accessibilité. */}
             <Button
               variant="ghost"
               size="icon"
               className="relative z-10"
               onClick={(e) => handleToggleComplete(task, e)}
-              aria-label={task.status === 'done' ? `Rouvrir la tâche ${task.title}` : `Marquer la tâche ${task.title} terminée`}
+              aria-label={task.status === 'done' ? `Rouvrir la tâche ${maskText(task.title)}` : `Marquer la tâche ${maskText(task.title)} terminée`}
             >
               {isDone ? (
                 <CheckCircle2 className="h-[18px] w-[18px] text-success" />
@@ -165,7 +169,7 @@ export function TaskList() {
                 <div className="flex items-start gap-2">
                   <button
                     type="button"
-                    aria-label={`Ouvrir la tâche ${task.title}`}
+                    aria-label={`Ouvrir la tâche ${maskText(task.title)}`}
                     onClick={(e) => { e.stopPropagation(); handleTaskClick(task.id); }}
                     className={cn(
                       'relative z-10 font-semibold text-left',
@@ -218,7 +222,7 @@ export function TaskList() {
                 size="icon"
                 onClick={(e) => handleDelete(task, e)}
                 title="Supprimer"
-                aria-label={`Supprimer la tâche ${task.title}`}
+                aria-label={`Supprimer la tâche ${maskText(task.title)}`}
               >
                 <Trash2 className="h-[18px] w-[18px]" />
               </Button>

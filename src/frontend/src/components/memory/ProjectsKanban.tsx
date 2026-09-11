@@ -208,10 +208,14 @@ function DroppableStatusGroup({ column, projects, onSelect, onDelete }: Droppabl
       className={cn('transition-colors', isOver && 'bg-accent-tint')}
     >
       {/* Section Header. P-046 (Karim, c4) : même casse que le kanban des
-          tâches (casse de phrase du lexique), plus de capitales. */}
-      <div className="flex items-center gap-2 px-3 py-2">
+          tâches (casse de phrase du lexique), plus de capitales. Même POLICE
+          et même GRAISSE aussi : la tête jumelle est un `h3`, à qui le socle
+          donne la display et `letter-spacing: -0.01em` (`globals.css:607-611`)
+          ; ce `div` les prend explicitement. Compte à 500, comme la maquette
+          (`.col h3 .compte{font-weight:500}`, `projets.html:12`). */}
+      <div className="flex items-center gap-2 px-3 py-2 text-sm font-editorial tracking-[-0.01em]">
         <Etiquette ton={column.ton}>{column.label}</Etiquette>
-        <span className="ml-auto text-sm tabular-nums text-text-muted">{projects.length}</span>
+        <span className="ml-auto text-sm font-medium tabular-nums text-text-muted">{projects.length}</span>
       </div>
 
       {/* Project Cards */}
@@ -308,9 +312,12 @@ function ProjectCard({ project, onSelect, onDelete, isOverlay, showDragHandle }:
   return (
     <div
       // `group` porte la révélation de la corbeille : sans lui, elle reste à
-      // opacité 0 au survol comme au focus.
+      // opacité 0 au survol comme au focus. Pas de `transition-colors` : la
+      // carte n'a plus aucune couleur qui change (la maquette ne pose pas de
+      // `:hover` sur une carte) ; le retour au survol, c'est la corbeille qui
+      // apparaît, et elle a sa propre `transition-opacity`.
       className={cn(
-        'mx-2 my-1 px-3 py-2 rounded-sm border border-border bg-surface transition-colors group',
+        'mx-2 my-1 px-3 py-2 rounded-sm border border-border bg-surface group',
         isOverlay && 'shadow-lg ring-2 ring-ring/30',
       )}
     >
