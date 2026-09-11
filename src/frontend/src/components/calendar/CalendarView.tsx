@@ -7,17 +7,51 @@
 
 import { useMemo, useEffect, useRef } from 'react';
 import { clesDeJoursCouverts, localDateKey, parseLocalDateKey } from '../../lib/civilDate';
-import { motion } from 'framer-motion';
 import { useCalendarStore } from '../../stores/calendarStore';
 import type { CalendarEvent } from '../../services/api';
 import { getVisibleHourRange } from './calendarHours';
 import { getTimedEventLayout } from './calendarEventLayout';
 import { trierLesEvenementsDuJour } from '../../lib/ordreDesEvenements';
+import { Carte } from '../ui/Carte';
+import { EtatVide } from '../ui/EtatVide';
 
 /** B-247 : la semaine française commence le LUNDI. Une seule liste pour les
  *  deux vues — le Mois et la Semaine tenaient chacun la leur, et le Mois avait
- *  gardé la convention américaine (dimanche d'abord). */
-const ETIQUETTES_JOURS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+ *  gardé la convention américaine (dimanche d'abord).
+ *  DA lot 8 : la maquette écrit « lun. » … « dim. » (`agenda.html:75`, `:85`). */
+const ETIQUETTES_JOURS = ['lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.', 'dim.'];
+
+/* DA « Application affinée », lot 8 (§ 3.0) : partout où un conteneur défile,
+   l'anneau du socle (3 px, offset 2, soit 5 px hors boîte) serait coupé. Les
+   interactifs des quatre vues portent donc un anneau RENTRANT, et le même
+   partout, pour que le focus se dessine pareil sur toute la surface. */
+const ANNEAU_RENTRANT =
+  'focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-[-3px] focus-visible:outline-ring';
+
+/* Les trois gabarits de la Semaine partagent la colonne de gouttière et les
+   sept `1fr`. Ils réservent aussi la même gouttière de barre de défilement :
+   sans elle, seule la piste (le seul des trois à défiler) perdrait la largeur
+   de la barre sur une plateforme à barres classiques, et ses sept traits ne
+   tomberaient plus sous ceux de l'en-tête (§ 3.1). */
+const GABARIT_SEMAINE = 'grid grid-cols-[3.5rem_repeat(7,1fr)]';
+const GOUTTIERE_STABLE = '[scrollbar-gutter:stable]';
+
+/* Un rendez-vous est un objet du domaine « agenda » : teinte, encre et bord
+   du domaine, jamais le cyan ni le magenta d'accent. `hover:brightness-95`
+   est le motif déjà posé sur une surface teintée (`Button variant="danger"`). */
+const CLASSE_BLOC =
+  `absolute z-10 rounded-sm border-l-[3px] border-domaine-agenda bg-domaine-agenda-tint text-domaine-agenda px-2 py-0.5 text-left overflow-hidden hover:brightness-95 ${ANNEAU_RENTRANT}`;
+const CLASSE_JETON =
+  `w-full text-left text-sm truncate border-l-[3px] border-domaine-agenda bg-domaine-agenda-tint text-domaine-agenda px-2 py-0.5 rounded-sm hover:brightness-95 ${ANNEAU_RENTRANT}`;
+const CLASSE_PUCE =
+  `w-full text-left text-sm truncate border-l-2 border-domaine-agenda bg-domaine-agenda-tint text-domaine-agenda px-1.5 py-0.5 rounded-sm hover:brightness-95 ${ANNEAU_RENTRANT}`;
+
+/** L'horaire d'un bloc : « 09:00 à 10:30 », plus le lieu sur la même ligne
+ *  quand il existe (maquette `agenda.html:78`). */
+function horaireDuBloc(event: CalendarEvent): string {
+  const plage = `${formatTime(event.start_datetime!)} à ${formatTime(event.end_datetime!)}`;
+  return event.location ? `${plage} · ${event.location}` : plage;
+}
 
 /** Index de la colonne d'un jour dans une semaine qui commence au lundi
  *  (`getDay()` rend 0 pour dimanche). */
@@ -102,54 +136,45 @@ function ListView({
   }, [events]);
 
   return (
-    <div className="h-full overflow-y-auto px-6 py-4">
+    <Carte as="section" aria-labelledby="agenda-periode" className="flex-1 min-h-0 overflow-y-auto">
       {groupedEvents.length === 0 ? (
-        <div className="flex items-center justify-center h-full">
-          <p className="text-text-muted">Aucun événement</p>
-        </div>
+        <EtatVide titre="Aucun événement" />
       ) : (
-        <div className="space-y-6">
-          {groupedEvents.map(([date, evts]) => (
-            <div key={date}>
-              <h3 className="text-sm font-medium text-accent-cyan-ink mb-3">
-                {parseLocalDateKey(date).toLocaleDateString('fr-FR', {
-                  weekday: 'long',
-                  day: 'numeric',
-                  month: 'long',
-                })}
-              </h3>
-              <div className="space-y-2">
-                {evts.map((event) => (
-                  <motion.button
-                    key={event.id}
-                    whileHover={{ scale: 1.01 }}
-                    whileTap={{ scale: 0.99 }}
-                    onClick={() => onEventClick(event.id)}
-                    className="w-full text-left p-4 bg-surface-elevated/60 hover:bg-surface-elevated rounded-md border border-border/30 transition-colors"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-medium text-text truncate">
-                          {event.summary}
-                        </h4>
-                        {event.location && (
-                          <p className="text-xs text-text-muted mt-1">{event.location}</p>
-                        )}
-                      </div>
-                      <div className="text-xs text-text-muted shrink-0">
-                        {event.all_day
-                          ? 'Toute la journée'
-                          : formatTime(event.start_datetime!)}
-                      </div>
-                    </div>
-                  </motion.button>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
+        groupedEvents.map(([date, evts]) => (
+          <div key={date}>
+            {/* Le titre de jour partage le `px-4` de ses lignes : les deux
+                s'alignent sur la même marge gauche. L'écart entre groupes vient
+                de son `pt-3`, plus d'un `space-y-*` concurrent. */}
+            <h3 className="text-sm font-semibold text-accent px-4 pt-3 pb-1">
+              {parseLocalDateKey(date).toLocaleDateString('fr-FR', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+              })}
+            </h3>
+            {evts.map((event) => (
+              <button
+                key={event.id}
+                type="button"
+                onClick={() => onEventClick(event.id)}
+                className={`w-full text-left grid grid-cols-[2rem_1fr_auto] gap-3 items-center px-4 py-3 border-t border-border hover:bg-surface-2 ${ANNEAU_RENTRANT}`}
+              >
+                <span aria-hidden="true" className="h-8 w-8 rounded-sm bg-domaine-agenda-tint text-domaine-agenda" />
+                <span className="min-w-0">
+                  <span className="block font-semibold text-text truncate">{event.summary}</span>
+                  {event.location && (
+                    <span className="block text-sm text-text-muted truncate">{event.location}</span>
+                  )}
+                </span>
+                <span className="text-text-muted">
+                  {event.all_day ? 'Toute la journée' : formatTime(event.start_datetime!)}
+                </span>
+              </button>
+            ))}
+          </div>
+        ))
       )}
-    </div>
+    </Carte>
   );
 }
 
@@ -222,18 +247,25 @@ function MonthView({
   const todayStr = localDateKey(today);
 
   return (
-    <div className="h-full flex flex-col p-6">
-      {/* Week days header */}
-      <div className="grid grid-cols-7 gap-2 mb-2">
+    // C'est la CARTE qui défile, et la grille qui la remplit : six rangées de
+    // 5,5 rem valent 33 rem, que la zone de contenu clippe en overflow-hidden.
+    // Sans cela, sur une fenêtre courte, la dernière semaine devenait invisible
+    // ET inatteignable. `min-h-full` + `1fr` évitent la bande vide sur une
+    // fenêtre haute.
+    <Carte as="section" aria-labelledby="agenda-periode" className="flex-1 min-h-0 overflow-y-auto">
+      <div className="grid grid-cols-7 min-h-full grid-rows-[auto_repeat(6,minmax(5.5rem,1fr))]">
+        {/* Sept en-têtes, puis quarante-deux cases : 49 enfants directs, sans
+            conteneur intermédiaire (un `display:contents` casserait le décompte
+            et le `nth-child(7n+1)` des bordures). */}
         {weekDays.map((day) => (
-          <div key={day} className="text-center text-sm font-medium text-text-muted py-2">
+          <div
+            key={day}
+            className="sticky top-0 z-10 bg-surface px-2 py-2 text-left text-sm text-text-muted border-b border-border"
+          >
             {day}
           </div>
         ))}
-      </div>
 
-      {/* Calendar grid */}
-      <div className="flex-1 grid grid-cols-7 gap-2 overflow-hidden">
         {days.map((day, index) => {
           const dateKey = localDateKey(day);
           const dayEvents = eventsByDate[dateKey] || [];
@@ -243,33 +275,38 @@ function MonthView({
           return (
             <div
               key={index}
-              className={`border border-border/30 rounded-md p-2 overflow-hidden ${
-                isCurrentMonth ? 'bg-surface-elevated/40' : 'bg-background/20'
-              } ${isToday ? 'ring-2 ring-ring' : ''}`}
+              className="grid gap-1 content-start p-1.5 border-t border-l border-border text-sm [&:nth-child(7n+1)]:border-l-0"
             >
               {/* B-414 : hors mois, l'encre atténuée reste lisible (AA), sans opacité sur la cellule. */}
-              <div className={`text-sm font-medium mb-1 ${isCurrentMonth ? 'text-text' : 'text-text-muted'}`}>{day.getDate()}</div>
-              <div className="space-y-1">
-                {dayEvents.slice(0, 3).map((event) => (
-                  <button
-                    key={event.id}
-                    onClick={() => onEventClick(event.id)}
-                    className="w-full text-left px-2 py-1 bg-accent-cyan/10 hover:bg-accent-cyan/20 rounded-sm text-sm text-text truncate transition-colors"
-                  >
-                    {event.summary}
-                  </button>
-                ))}
-                {dayEvents.length > 3 && (
-                  <div className="text-xs text-text-muted px-2">
-                    +{dayEvents.length - 3} autre{dayEvents.length - 3 > 1 ? 's' : ''}
-                  </div>
-                )}
+              <div
+                className={`font-medium ${
+                  isToday
+                    ? 'h-[1.4rem] w-[1.4rem] rounded-full bg-accent-fill text-accent-ink grid place-items-center'
+                    : isCurrentMonth ? 'text-text' : 'text-text-muted'
+                }`}
+              >
+                {day.getDate()}
               </div>
+              {dayEvents.slice(0, 3).map((event) => (
+                <button
+                  key={event.id}
+                  type="button"
+                  onClick={() => onEventClick(event.id)}
+                  className={CLASSE_PUCE}
+                >
+                  {event.summary}
+                </button>
+              ))}
+              {dayEvents.length > 3 && (
+                <div className="text-xs text-text-muted px-1.5">
+                  +{dayEvents.length - 3} autre{dayEvents.length - 3 > 1 ? 's' : ''}
+                </div>
+              )}
             </div>
           );
         })}
       </div>
-    </div>
+    </Carte>
   );
 }
 
@@ -386,16 +423,19 @@ function WeekView({
   const weekDayLabels = ETIQUETTES_JOURS;
 
   return (
-    <motion.div
-      className="h-full flex flex-col"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.2 }}
+    // L'`overflow-hidden` vient de la maquette (`.semaine{overflow:hidden}`) :
+    // il ne tue pas le défilement interne (la zone parente clippe déjà et la
+    // piste défile dessous), il donne aux coins arrondis de quoi clipper le
+    // fond teinté de l'en-tête et les traits des sept colonnes.
+    <Carte
+      as="section"
+      aria-labelledby="agenda-periode"
+      className="flex-1 min-h-0 flex flex-col overflow-hidden"
     >
       {/* En-tête colonnes */}
-      <div className="flex border-b border-border/30 shrink-0">
-        {/* Colonne heures (gutter) */}
-        <div className="w-16 shrink-0" />
+      <div className={`${GABARIT_SEMAINE} ${GOUTTIERE_STABLE} shrink-0 overflow-hidden border-b border-border`}>
+        {/* Colonne heures (gutter) : aucune bordure, elle n'est pas un jour */}
+        <div />
         {/* Colonnes jours */}
         {weekDates.map((date, i) => {
           const dateStr = localDateKey(date);
@@ -403,14 +443,14 @@ function WeekView({
           return (
             <div
               key={i}
-              className={`flex-1 text-center py-3 border-l border-border/20 ${
-                isToday ? 'bg-accent-cyan/5' : ''
+              className={`px-2 py-2 text-left border-l border-border ${
+                isToday ? 'bg-accent-tint' : ''
               }`}
             >
-              <div className="text-xs text-text-muted">{weekDayLabels[i]}</div>
+              <div className="text-sm text-text-muted">{weekDayLabels[i]}</div>
               <div
-                className={`text-lg font-semibold mt-0.5 ${
-                  isToday ? 'text-accent-cyan-ink' : 'text-text'
+                className={`text-base font-semibold tabular-nums ${
+                  isToday ? 'text-accent' : 'text-text'
                 }`}
               >
                 {date.getDate()}
@@ -420,25 +460,28 @@ function WeekView({
         })}
       </div>
 
-      {/* Bannière événements journée entière */}
+      {/* Bannière événements journée entière : MÊME gabarit que l'en-tête et
+          que la piste, sans quoi les jetons tombent sous le mauvais jour. */}
       {hasAnyAllDay && (
-        <div className="flex border-b border-border/30 shrink-0">
-          <div className="w-16 shrink-0 flex items-center justify-center">
-            <span className="text-xs text-text-muted">Journée</span>
-          </div>
+        <div className={`${GABARIT_SEMAINE} ${GOUTTIERE_STABLE} shrink-0 overflow-hidden border-b border-border`}>
+          {/* 12 px comme les heures de la même gouttière : deux échelles dans
+              une colonne de 3,5 rem, ce sont deux rythmes dans la même bande. */}
+          <div className="py-2 text-left text-xs text-text-muted">Journée</div>
           {weekDates.map((date, i) => {
             const dateStr = localDateKey(date);
+            const isToday = dateStr === todayStr;
             const dayAllDay = allDayByDate[dateStr] || [];
             return (
               <div
                 key={i}
-                className="flex-1 border-l border-border/20 p-1 min-h-[32px]"
+                className={`border-l border-border p-1 min-h-[2rem] ${isToday ? 'bg-surface-2' : ''}`}
               >
                 {dayAllDay.map((event) => (
                   <button
                     key={event.id}
+                    type="button"
                     onClick={() => onEventClick(event.id)}
-                    className="w-full text-left px-2 py-0.5 bg-accent-magenta/20 hover:bg-accent-magenta/30 rounded-sm text-sm text-text truncate transition-colors mb-0.5"
+                    className={`${CLASSE_JETON} mb-0.5`}
                   >
                     {event.summary}
                   </button>
@@ -450,30 +493,33 @@ function WeekView({
       )}
 
       {/* Grille horaire scrollable */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto overflow-x-hidden">
-        <div className="flex relative" style={{ height: weekHours.length * HOUR_HEIGHT_PX }}>
+      <div ref={scrollRef} className={`flex-1 overflow-y-auto overflow-x-hidden ${GOUTTIERE_STABLE}`}>
+        <div className={GABARIT_SEMAINE} style={{ height: weekHours.length * HOUR_HEIGHT_PX }}>
           {/* Colonne heures */}
-          <div className="w-16 shrink-0 relative">
+          <div className="relative">
             {weekHours.map((hour) => (
               <div
                 key={hour}
                 className="absolute w-full text-right pr-3"
                 style={{ top: (hour - weekStartHour) * HOUR_HEIGHT_PX - 8 }}
               >
-                <span className="text-xs text-text-muted">
+                <span className="text-xs tabular-nums text-text-muted">
                   {String(hour).padStart(2, '0')}:00
                 </span>
               </div>
             ))}
           </div>
 
-          {/* Colonnes jours */}
-          <div className="flex-1 flex relative">
-            {/* Lignes horizontales des heures */}
+          {/* Les sept colonnes de jour en UN SEUL bloc : c'est lui qui porte
+              `relative`, donc les lignes d'heure et le repère de l'heure
+              s'étendent sur les sept jours et JAMAIS sur la gouttière. */}
+          <div className="col-start-2 col-span-7 relative grid grid-cols-7">
+            {/* Lignes horizontales des heures. `z-[1]` : le fond opaque
+                `bg-surface-2` de la colonne du jour les effacerait sinon. */}
             {weekHours.map((hour) => (
               <div
                 key={hour}
-                className="absolute left-0 right-0 border-t border-border/15"
+                className="absolute left-0 right-0 z-[1] border-t border-border"
                 style={{ top: (hour - weekStartHour) * HOUR_HEIGHT_PX }}
               />
             ))}
@@ -485,6 +531,8 @@ function WeekView({
                 test des couleurs le nomme comme exception. */}
             {nowLineTop !== null && (
               <div
+                role="img"
+                aria-label={`Il est ${String(currentHour).padStart(2, '0')}:${String(currentMinute).padStart(2, '0')}`}
                 className="absolute left-0 right-0 z-20 pointer-events-none"
                 style={{ top: nowLineTop }}
               >
@@ -505,21 +553,18 @@ function WeekView({
               return (
                 <div
                   key={colIndex}
-                  className={`flex-1 relative border-l border-border/20 ${
-                    isToday ? 'bg-accent-cyan/5' : ''
-                  }`}
+                  className={`relative border-l border-border ${isToday ? 'bg-surface-2' : ''}`}
                 >
                   {dayEvents.map((event) => {
                     const layout = dayLayoutByEventId[event.id];
                     if (!layout) return null;
 
                     return (
-                      <motion.button
+                      <button
                         key={event.id}
-                        initial={{ opacity: 0, scale: 0.95 }}
-                        animate={{ opacity: 1, scale: 1 }}
+                        type="button"
                         onClick={() => onEventClick(event.id)}
-                        className="absolute bg-accent-cyan/20 hover:bg-accent-cyan/30 border-l-2 border-accent-cyan rounded-r px-2 py-1 text-left overflow-hidden transition-colors z-10"
+                        className={CLASSE_BLOC}
                         style={{
                           top: layout.top,
                           height: Math.max(layout.height, 20),
@@ -527,13 +572,12 @@ function WeekView({
                           width: `${layout.widthPercent}%`,
                         }}
                       >
-                        <div className="text-xs font-medium text-text truncate">
-                          {event.summary}
-                        </div>
-                        <div className="text-xs text-text-muted truncate">
-                          {formatTime(event.start_datetime!)} - {formatTime(event.end_datetime!)}
-                        </div>
-                      </motion.button>
+                        <div className="text-sm font-semibold truncate">{event.summary}</div>
+                        {/* `truncate` porteur : sans lui « 09:00 à 10:30 · sur
+                            place » replierait sur trois lignes dans une colonne
+                            de 105 px. Le DOM garde la chaîne entière. */}
+                        <div className="text-sm truncate">{horaireDuBloc(event)}</div>
+                      </button>
                     );
                   })}
                 </div>
@@ -542,7 +586,7 @@ function WeekView({
           </div>
         </div>
       </div>
-    </motion.div>
+    </Carte>
   );
 }
 
@@ -633,32 +677,34 @@ function DayView({
   });
 
   return (
-    <motion.div
-      className="h-full flex flex-col"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.2 }}
+    <Carte
+      as="section"
+      aria-labelledby="agenda-periode"
+      className="flex-1 min-h-0 flex flex-col overflow-hidden"
     >
-      {/* En-tête jour */}
-      <div className="px-6 py-3 border-b border-border/30 shrink-0">
-        <h3 className={`text-base font-semibold capitalize ${isToday ? 'text-accent-cyan-ink' : 'text-text'}`}>
+      {/* En-tête jour. Le `h3#agenda-periode` du panneau porte déjà la date
+          civile complète : celui-ci reste le titre de la grille Jour, et c'est
+          lui — et lui seul — qui porte le suffixe « (aujourd'hui) ». */}
+      <div className="px-6 py-3 border-b border-border shrink-0">
+        <h3 className={`text-base font-semibold ${isToday ? 'text-accent' : 'text-text'}`}>
           {dayLabel}
           {isToday && (
-            <span className="ml-2 text-xs font-normal text-accent-cyan-ink">(aujourd'hui)</span>
+            <span className="ml-2 text-xs font-normal text-accent">(aujourd'hui)</span>
           )}
         </h3>
       </div>
 
       {/* Bannière événements journée entière */}
       {allDayEvents.length > 0 && (
-        <div className="px-6 py-2 border-b border-border/30 shrink-0">
+        <div className="px-6 py-2 border-b border-border shrink-0">
           <div className="text-xs text-text-muted mb-1">Toute la journée</div>
           <div className="space-y-1">
             {allDayEvents.map((event) => (
               <button
                 key={event.id}
+                type="button"
                 onClick={() => onEventClick(event.id)}
-                className="w-full text-left px-3 py-1.5 bg-accent-magenta/20 hover:bg-accent-magenta/30 rounded-sm text-sm text-text transition-colors"
+                className={CLASSE_JETON}
               >
                 {event.summary}
               </button>
@@ -670,7 +716,8 @@ function DayView({
       {/* Grille horaire scrollable */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto">
         <div className="flex relative px-2" style={{ height: dayHours.length * DAY_SLOT_HEIGHT_PX }}>
-          {/* Colonne heures */}
+          {/* Colonne heures : une seule colonne à aligner, le gabarit `flex` et
+              la gouttière `w-16` restent ceux d'aujourd'hui. */}
           <div className="w-16 shrink-0 relative">
             {dayHours.map((hour) => (
               <div
@@ -678,7 +725,7 @@ function DayView({
                 className="absolute w-full text-right pr-3"
                 style={{ top: (hour - dayStartHour) * DAY_SLOT_HEIGHT_PX - 8 }}
               >
-                <span className="text-xs text-text-muted">
+                <span className="text-xs tabular-nums text-text-muted">
                   {String(hour).padStart(2, '0')}:00
                 </span>
               </div>
@@ -690,24 +737,25 @@ function DayView({
                 className="absolute w-full text-right pr-3"
                 style={{ top: (hour - dayStartHour) * DAY_SLOT_HEIGHT_PX + DAY_SLOT_HEIGHT_PX / 2 - 8 }}
               >
-                <span className="text-xs text-text-muted">
+                <span className="text-xs tabular-nums text-text-muted">
                   {String(hour).padStart(2, '0')}:30
                 </span>
               </div>
             ))}
           </div>
 
-          {/* Zone événements */}
-          <div className="flex-1 relative">
+          {/* Zone événements. Aucun fond de colonne ici (la vue entière EST le
+              jour), donc rien à faire remonter au-dessus : pas de `z-[1]`. */}
+          <div className="flex-1 relative border-l border-border">
             {/* Lignes heures */}
             {dayHours.map((hour) => (
               <div
                 key={hour}
-                className="absolute left-0 right-0 border-t border-border/20"
+                className="absolute left-0 right-0 border-t border-border"
                 style={{ top: (hour - dayStartHour) * DAY_SLOT_HEIGHT_PX }}
               />
             ))}
-            {/* Lignes demi-heures */}
+            {/* Lignes demi-heures : repère secondaire, il reste en retrait */}
             {dayHours.map((hour) => (
               <div
                 key={`half-line-${hour}`}
@@ -742,12 +790,11 @@ function DayView({
               if (!layout) return null;
 
               return (
-                <motion.button
+                <button
                   key={event.id}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
+                  type="button"
                   onClick={() => onEventClick(event.id)}
-                  className="absolute bg-accent-cyan/20 hover:bg-accent-cyan/30 border-l-2 border-accent-cyan rounded-r px-3 py-2 text-left overflow-hidden transition-colors z-10"
+                  className={CLASSE_BLOC}
                   style={{
                     top: layout.top,
                     height: Math.max(layout.height, 24),
@@ -755,24 +802,17 @@ function DayView({
                     width: `${layout.widthPercent}%`,
                   }}
                 >
-                  <div className="text-sm font-medium text-text truncate">
-                    {event.summary}
-                  </div>
-                  <div className="text-xs text-text-muted">
-                    {formatTime(event.start_datetime!)} - {formatTime(event.end_datetime!)}
-                  </div>
-                  {event.location && layout.height > 50 && (
-                    <div className="text-xs text-text-muted mt-0.5 truncate">
-                      {event.location}
-                    </div>
-                  )}
-                </motion.button>
+                  <div className="text-sm font-semibold truncate">{event.summary}</div>
+                  {/* Le lieu tient sur la ligne d'horaire, sans garde de
+                      hauteur : un bloc court n'a plus à taire où il se passe. */}
+                  <div className="text-sm truncate">{horaireDuBloc(event)}</div>
+                </button>
               );
             })}
           </div>
         </div>
       </div>
-    </motion.div>
+    </Carte>
   );
 }
 

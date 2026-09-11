@@ -321,6 +321,13 @@ describe('lot 8 (10) : le chargement', () => {
     let libere: (v: unknown) => void = () => {};
     api.listCalendars.mockReturnValue(new Promise((r) => { libere = r; }));
     semer({ calendars: [], currentCalendarId: null, events: [] });
+    // Un compte déjà là : sans lui, `getEmailAuthStatus` retombe sur une liste
+    // vide et coupe le chargement avant que la liste d'agendas n'arrive.
+    useEmailStore.setState({
+      accounts: [{ id: 'a1', email: 'ludo@example.fr', provider: 'gmail' }],
+      currentAccountId: 'a1',
+      needsReauth: false,
+    } as never);
     const { container } = render(<CalendarPanel standalone />);
     await waitFor(() => expect(container.querySelectorAll('[aria-hidden="true"]').length).toBeGreaterThan(0));
 
@@ -333,7 +340,7 @@ describe('lot 8 (10) : le chargement', () => {
       expect(barres).toHaveLength(2);
       expect(barres[1].className, 'le second squelette porte flex-1').toMatch(/\bflex-1\b/);
     }
-    expect(screen.getByRole('status').textContent).toMatch(/Chargement de l’agenda/);
+    expect(screen.getByRole('status').textContent).toMatch(/Chargement de l['’]agenda/);
     await act(async () => { libere([]); });
   });
 });

@@ -72,10 +72,14 @@ function ficheVisible(): boolean {
 /** Un marqueur PROPRE à chaque grille : sans lui, un panneau vide (fiche
  *  rangée, rien rendu à la place) passerait pour un retour à la grille. */
 const MARQUEURS: Record<string, () => boolean> = {
-  Mois: () => screen.queryAllByText('Mer').length > 0,
-  Semaine: () => screen.queryAllByText('Mer').length > 0,
+  // DA lot 8 : les jours s'écrivent « mer. », et la ligne de la Liste est un
+  // bouton dont le nom concatène résumé, lieu et horaire — une égalité stricte
+  // sur le résumé seul ne le trouverait plus.
+  Mois: () => screen.queryAllByText('mer.').length > 0,
+  Semaine: () => screen.queryAllByText('mer.').length > 0,
   Jour: () => screen.queryAllByText('06:00').length > 0,
-  Liste: () => screen.queryByRole('heading', { level: 4, name: RESUME }) !== null,
+  Liste: () =>
+    screen.queryByRole('button', { name: (nom) => nom.includes(RESUME) }) !== null,
 };
 
 describe('B-238 : choisir une vue ramène toujours la grille', () => {

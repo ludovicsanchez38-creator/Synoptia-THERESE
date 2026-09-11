@@ -6,13 +6,16 @@
  */
 
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { ChevronLeft, Save } from 'lucide-react';
 import { localDateKey } from '../../lib/civilDate';
 import { useCalendarStore } from '../../stores/calendarStore';
 import { useEmailStore } from '../../stores/emailStore';
 import { useGuardedAction } from '../../hooks/useGuardedAction';
+import { Alerte } from '../ui/Alerte';
 import { Button } from '../ui/Button';
+import { FormField } from '../ui/FormField';
+import { Input } from '../ui/Input';
+import { Textarea } from '../ui/Textarea';
 import { useExternalActionConfirmation } from '../app/useExternalActionConfirmation';
 import * as api from '../../services/api';
 import { Spinner } from '../ui/Spinner';
@@ -241,28 +244,19 @@ export function EventForm() {
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: 20 }}
-      animate={{ opacity: 1, x: 0 }}
-      exit={{ opacity: 0, x: 20 }}
-      className="h-full flex flex-col"
-    >
+    <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-border/30 flex items-center justify-between">
+      <div className="px-6 py-4 border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <button
-            onClick={handleCancel}
-            aria-label="Retour"
-            className="p-2 hover:bg-border/30 rounded-md transition-colors"
-          >
-            <ChevronLeft className="w-5 h-5 text-text-muted" />
-          </button>
+          <Button variant="ghost" size="icon" onClick={handleCancel} aria-label="Retour">
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
           <h3 className="text-lg font-semibold text-text">
-            {isEditing ? "Modifier l'événement" : "Nouvel événement"}
+            {isEditing ? "Modifier l'événement" : 'Nouveau rendez-vous'}
           </h3>
         </div>
 
-        <Button variant="primary" size="sm" onClick={handleSave} disabled={saving}>
+        <Button variant="primary" size="md" onClick={handleSave} disabled={saving}>
           {saving ? (
             <>
               <Spinner taille="bouton" className="mr-2" />
@@ -279,32 +273,37 @@ export function EventForm() {
 
       {/* Form */}
       <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4">
+        {/* Un seul bandeau pour les deux sources : `formError` (saisie) et
+            `guardError` (aucun agenda sélectionné). `FormField error` en
+            rendrait un second, avec son propre `role="alert"`. */}
         {error && (
-          <div role="alert" className="px-3 py-2 bg-error/10 border border-error/20 rounded-md">
-            <p className="text-sm text-error">{error}</p>
-          </div>
+          <Alerte>{error}</Alerte>
         )}
 
-        {/* Summary */}
-        <div>
-          <label htmlFor="eventform-titre" className="text-sm text-text-muted mb-2 block">Titre *</label>
-          <input id="eventform-titre"
+        {/* Summary. L'astérisque de `FormField` est `aria-hidden` : c'est
+            l'attribut `required` de l'`Input` qui porte l'obligation jusqu'au
+            lecteur d'écran. Aucune validation native n'entre par là, il n'y a
+            pas de `<form>` et l'enregistrement passe par `onClick`. */}
+        <FormField label="Titre" htmlFor="eventform-titre" required>
+          <Input
+            id="eventform-titre"
             type="text"
+            required
             value={summary}
             onChange={(e) => setSummary(e.target.value)}
             placeholder="Titre de l'événement"
-            className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50"
           />
-        </div>
+        </FormField>
 
-        {/* All Day Toggle */}
+        {/* All Day Toggle : hors `FormField`, dont le label est un bloc
+            au-dessus du champ. Le libellé d'une case va à côté. */}
         <div className="flex items-center gap-3">
           <input
             type="checkbox"
             id="all-day"
             checked={allDay}
             onChange={(e) => setAllDay(e.target.checked)}
-            className="w-4 h-4 rounded-sm border-border/50 bg-background/60 text-accent-cyan-ink focus:ring-2 focus:ring-ring/50"
+            className="w-4 h-4 rounded-sm border-border/50 bg-background/60 text-accent focus:ring-2 focus:ring-ring/50"
           />
           <label htmlFor="all-day" className="text-sm text-text cursor-pointer">
             Événement sur toute la journée
@@ -312,92 +311,104 @@ export function EventForm() {
         </div>
 
         {/* Start Date/Time */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="eventform-date-de-debut" className="text-sm text-text-muted mb-2 block">Date de début *</label>
-            <input id="eventform-date-de-debut"
+        <div className="grid grid-cols-2 max-[1023px]:grid-cols-1 gap-4">
+          <FormField label="Date de début" htmlFor="eventform-date-de-debut" required>
+            <Input
+              id="eventform-date-de-debut"
               type="date"
+              required
               value={startDate}
               onChange={(e) => setStartDate(e.target.value)}
-              className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
             />
-          </div>
+          </FormField>
           {!allDay && (
-            <div>
-              <label htmlFor="eventform-heure-de-debut" className="text-sm text-text-muted mb-2 block">Heure de début *</label>
-              <input id="eventform-heure-de-debut"
+            <FormField label="Heure de début" htmlFor="eventform-heure-de-debut" required>
+              <Input
+                id="eventform-heure-de-debut"
                 type="time"
+                required
                 value={startTime}
                 onChange={(e) => setStartTime(e.target.value)}
-                className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
               />
-            </div>
+            </FormField>
           )}
         </div>
 
         {/* End Date/Time */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="eventform-date-de-fin" className="text-sm text-text-muted mb-2 block">Date de fin *</label>
-            <input id="eventform-date-de-fin"
+        <div className="grid grid-cols-2 max-[1023px]:grid-cols-1 gap-4">
+          <FormField label="Date de fin" htmlFor="eventform-date-de-fin" required>
+            <Input
+              id="eventform-date-de-fin"
               type="date"
+              required
               value={endDate}
               onChange={(e) => setEndDate(e.target.value)}
-              className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
             />
-          </div>
+          </FormField>
           {!allDay && (
-            <div>
-              <label htmlFor="eventform-heure-de-fin" className="text-sm text-text-muted mb-2 block">Heure de fin *</label>
-              <input id="eventform-heure-de-fin"
+            <FormField label="Heure de fin" htmlFor="eventform-heure-de-fin" required>
+              <Input
+                id="eventform-heure-de-fin"
                 type="time"
+                required
                 value={endTime}
                 onChange={(e) => setEndTime(e.target.value)}
-                className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
               />
-            </div>
+            </FormField>
           )}
         </div>
 
         {/* Location */}
-        <div>
-          <label htmlFor="eventform-lieu" className="text-sm text-text-muted mb-2 block">Lieu</label>
-          <input id="eventform-lieu"
+        <FormField label="Lieu ou visio" htmlFor="eventform-lieu">
+          <Input
+            id="eventform-lieu"
             type="text"
             value={location}
             onChange={(e) => setLocation(e.target.value)}
-            placeholder="Lieu de l'événement"
-            className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50"
+            placeholder="Atelier, adresse ou lien"
           />
-        </div>
+        </FormField>
 
         {/* Description */}
-        <div>
-          <label htmlFor="eventform-description" className="text-sm text-text-muted mb-2 block">Description</label>
-          <textarea id="eventform-description"
+        <FormField label="Description" htmlFor="eventform-description">
+          <Textarea
+            id="eventform-description"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Description de l'événement"
             rows={4}
-            className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted resize-none focus:outline-none focus:ring-2 focus:ring-ring/50"
           />
-        </div>
+        </FormField>
 
         {/* Attendees */}
-        <div>
-          <label htmlFor="eventform-participants" className="text-sm text-text-muted mb-2 block">Participants</label>
-          <input id="eventform-participants"
+        <FormField
+          label="Participants"
+          htmlFor="eventform-participants"
+          description="Séparez les emails par des virgules"
+        >
+          <Input
+            id="eventform-participants"
             type="text"
             value={attendeesInput}
             onChange={(e) => setAttendeesInput(e.target.value)}
             placeholder="email1@example.com, email2@example.com"
-            className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50"
           />
-          <p className="text-xs text-text-muted mt-1">
-            Séparez les emails par des virgules
-          </p>
-        </div>
+        </FormField>
+
+        {/* Agenda : la destination de l'enregistrement, jusqu'ici visible dans
+            la seule confirmation externe. Lecture seule et non `disabled` : un
+            champ désactivé sort de la tabulation et sa valeur ne se copie pas.
+            Le `?? ''` garde l'`Input` contrôlé quand aucun agenda n'est choisi. */}
+        <FormField label="Agenda" htmlFor="eventform-agenda">
+          <Input
+            id="eventform-agenda"
+            type="text"
+            readOnly
+            aria-readonly="true"
+            value={selectedCalendar?.summary ?? ''}
+          />
+        </FormField>
       </div>
-    </motion.div>
+    </div>
   );
 }

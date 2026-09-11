@@ -196,7 +196,7 @@ describe('lot 8 (1) : la grille semaine', () => {
       /\bborder-t\b/.test(d.className) && /\babsolute\b/.test(d.className),
     );
     expect(lignes.length).toBeGreaterThan(0);
-    for (const ligne of lignes) expect(ligne.className).toMatch(/\bz-\[1\]\b/);
+    for (const ligne of lignes) expect(ligne.className).toMatch(/(^| )z-\[1\]( |$)/);
 
     const bloc = screen.getByRole('button', { name: /Séance 1/ });
     expect(bloc.className).toMatch(/\bz-10\b/);

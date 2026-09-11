@@ -16,6 +16,7 @@ import {
   RefreshCw,
   ChevronLeft,
   ChevronRight,
+  AlertCircle,
   AlertTriangle,
   ExternalLink,
   Download,
@@ -27,10 +28,38 @@ import { EventForm } from './EventForm';
 import { EventDetail } from './EventDetail';
 import { classifyCalendarError } from './calendarErrors';
 import { Button } from '../ui/Button';
+import { Alerte } from '../ui/Alerte';
+import { Segments } from '../ui/Segments';
+import { Select } from '../ui/Select';
+import { Squelette } from '../ui/Squelette';
 import * as api from '../../services/api';
 import { useStatusStore } from '../../stores/statusStore';
 import { Z_LAYER } from '../../styles/z-layers';
 import { Spinner } from '../ui/Spinner';
+
+/** Les quatre vues, dans l'ordre visuel de la maquette ; les identifiants
+ *  restent ceux du store. */
+const VUES = [
+  { id: 'day', label: 'Jour' },
+  { id: 'week', label: 'Semaine' },
+  { id: 'month', label: 'Mois' },
+  { id: 'list', label: 'Liste' },
+];
+
+/** Première lettre en capitale, jamais `capitalize` : la classe CSS
+ *  capitaliserait chaque mot (« Mercredi 2 Septembre 2026 »). */
+function capitaleInitiale(texte: string): string {
+  return texte.charAt(0).toUpperCase() + texte.slice(1);
+}
+
+/** « 1er » le premier du mois, le nombre décimal sinon. */
+function jourDuMois(date: Date): string {
+  return date.getDate() === 1 ? '1er' : String(date.getDate());
+}
+
+function moisLong(date: Date): string {
+  return date.toLocaleDateString('fr-FR', { month: 'long' });
+}
 
 interface CalendarPanelProps {
   isOpen?: boolean;
@@ -329,15 +358,20 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
     setCurrentEvent(null);
   }
 
-  /** Libellé de navigation adapté au mode de vue */
+  /** Libellé de navigation adapté au mode de vue. La semaine s'écrit en
+   *  toutes lettres (« Semaine du 1er au 7 septembre 2026 ») : `month: 'short'`
+   *  donnait « 31 août - 6 sept. 2026 », deux abréviations pour une période
+   *  qu'on lit à voix haute. Les bornes lundi-dimanche ne changent pas. */
   function getNavLabel(): string {
     if (viewMode === 'day') {
-      return selectedDate.toLocaleDateString('fr-FR', {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      });
+      return capitaleInitiale(
+        selectedDate.toLocaleDateString('fr-FR', {
+          weekday: 'long',
+          day: 'numeric',
+          month: 'long',
+          year: 'numeric',
+        }),
+      );
     }
     if (viewMode === 'week') {
       // Calculer lundi et dimanche de la semaine
@@ -348,12 +382,18 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
       const sunday = new Date(monday);
       sunday.setDate(monday.getDate() + 6);
 
-      const fmtStart = monday.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
-      const fmtEnd = sunday.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' });
-      return `${fmtStart} - ${fmtEnd}`;
+      const debut = jourDuMois(monday);
+      const fin = jourDuMois(sunday);
+      if (monday.getFullYear() !== sunday.getFullYear()) {
+        return `Semaine du ${debut} ${moisLong(monday)} ${monday.getFullYear()} au ${fin} ${moisLong(sunday)} ${sunday.getFullYear()}`;
+      }
+      if (monday.getMonth() !== sunday.getMonth()) {
+        return `Semaine du ${debut} ${moisLong(monday)} au ${fin} ${moisLong(sunday)} ${sunday.getFullYear()}`;
+      }
+      return `Semaine du ${debut} au ${fin} ${moisLong(monday)} ${monday.getFullYear()}`;
     }
     // month / list
-    return selectedDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+    return capitaleInitiale(selectedDate.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' }));
   }
 
   async function handleReauthorize() {
@@ -409,137 +449,114 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
 
   if (!effectiveOpen) return null;
 
-  // Contenu interne partagé entre les deux modes
+  // Contenu interne partagé entre les deux modes.
+  // Une SEULE rangée : les deux barres d'hier (titre et navigation) portaient
+  // deux fois la même bordure et coupaient l'écran en trois avant la grille.
   const calendarHeader = (
-    <div className="px-6 py-4 border-b border-border/30 flex items-center justify-between">
-      <div className="flex items-center gap-4">
-        <div className="w-10 h-10 rounded-sm bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
-          <CalendarIcon className="w-5 h-5 text-accent" />
-        </div>
-        <div>
-          {/* B-241 : la coque `PrototypeUnifiedViewCanvas` pose déjà le titre de
-              la vue, et en fait le nom accessible de la région. Ce libellé reste
-              visible mais n'est plus un titre : deux titres de même texte, c'est
-              un plan de page qui ment. */}
-          <p className="text-lg font-semibold text-text">Agenda</p>
-          {currentAccount && (
-            <p className="text-sm text-text-muted">{currentAccount.email}</p>
-          )}
-          {staleWarning && (
-            <p role="status" className="text-xs text-warning" data-testid="calendar-stale-warning">
-              Dernier rafraîchissement échoué : données conservées{lastSyncAt ? ` (synchronisées le ${new Date(lastSyncAt).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })})` : ''}.
-            </p>
-          )}
-        </div>
+    <div className="flex flex-wrap items-center gap-3 px-4 pt-4 pb-3 border-b border-border">
+      <div className="w-8 h-8 rounded-full bg-accent-tint text-accent flex items-center justify-center shrink-0">
+        <CalendarIcon aria-hidden="true" className="w-[18px] h-[18px]" />
       </div>
-
-      <div className="flex items-center gap-2">
-        {/* View Mode */}
-        <div className="flex items-center gap-1 bg-background/60 rounded-md p-1">
-          {(['month', 'week', 'day', 'list'] as const).map((mode) => (
-            <button
-              key={mode}
-              onClick={() => choisirVue(mode)}
-              className={`px-3 py-1 text-sm rounded-sm transition-colors ${
-                viewMode === mode
-                  ? 'bg-accent-tint text-accent-cyan-ink'
-                  : 'text-text-muted hover:text-text'
-              }`}
-            >
-              {mode === 'month' && 'Mois'}
-              {mode === 'week' && 'Semaine'}
-              {mode === 'day' && 'Jour'}
-              {mode === 'list' && 'Liste'}
-            </button>
-          ))}
-        </div>
-
-        <Button variant="ghost" size="sm" onClick={handleSync} disabled={syncing} aria-label="Synchroniser l'agenda" title="Synchroniser l'agenda">
-          <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
-        </Button>
-
-        <Button variant="ghost" size="sm" onClick={() => icsInputRef.current?.click()} aria-label="Importer un fichier .ics" title="Importer un fichier .ics">
-          <Upload className="w-4 h-4" />
-        </Button>
-        <input
-          ref={(el) => { icsInputRef.current = el; }}
-          type="file"
-          accept=".ics"
-          className="hidden"
-          onChange={handleImportICS}
-        />
-
-        <Button variant="ghost" size="sm" onClick={handleExportICS} title="Exporter en .ics">
-          <Download className="w-4 h-4" />
-        </Button>
-
-        <Button variant="primary" size="sm" onClick={handleNewEvent}>
-          <Plus className="w-4 h-4 mr-2" />
-          Nouvel événement
-        </Button>
-
-        {!standalone && (
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-border/30 rounded-md transition-colors"
-          >
-            <X className="w-5 h-5 text-text-muted" />
-          </button>
+      <div>
+        {/* B-241 : la coque `PrototypeUnifiedViewCanvas` pose déjà le titre de
+            la vue, et en fait le nom accessible de la région. Ce libellé reste
+            visible mais n'est plus un titre : deux titres de même texte, c'est
+            un plan de page qui ment. */}
+        <p className="text-lg font-semibold text-text">Agenda</p>
+        {currentAccount && (
+          <p className="text-sm text-text-muted">{currentAccount.email}</p>
         )}
       </div>
-    </div>
-  );
 
-  const calendarNav = (
-    <div className="px-6 py-3 border-b border-border/30 flex items-center justify-between">
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="sm" onClick={handlePrevious} aria-label="Période précédente" title="Période précédente">
+        <Button variant="secondary" size="icon" onClick={handlePrevious} aria-label="Période précédente" title="Période précédente">
           <ChevronLeft className="w-4 h-4" />
         </Button>
-        <Button variant="ghost" size="sm" onClick={handleNext} aria-label="Période suivante" title="Période suivante">
-          <ChevronRight className="w-4 h-4" />
-        </Button>
-        <Button variant="ghost" size="sm" onClick={handleToday}>
+        <Button variant="secondary" size="md" onClick={handleToday}>
           Aujourd'hui
+        </Button>
+        <Button variant="secondary" size="icon" onClick={handleNext} aria-label="Période suivante" title="Période suivante">
+          <ChevronRight className="w-4 h-4" />
         </Button>
       </div>
 
-      <h3 className="text-lg font-semibold text-text capitalize">
+      {/* L'`id` n'est pas décoratif : il nomme les quatre sections de vue par
+          `aria-labelledby`, donc le nom suit toujours le libellé affiché. */}
+      <h3 id="agenda-periode" className="text-base font-semibold text-text">
         {getNavLabel()}
       </h3>
 
-      {/* Calendar Selector
-          BUG-049 : le dropdown passait derrière les autres composants sur Windows/Linux.
+      {/* BUG-049 : le dropdown passait derrière les autres composants sur Windows/Linux.
           Cause : stacking context bas (body overflow:hidden + conteneur sans z-index).
           Fix : wrapper relative z-[100] force le dropdown au-dessus de toute la pile CSS. */}
       <div className={`relative ${Z_LAYER.ONBOARDING}`}>
-        <select aria-label="Calendrier affiché"
+        <Select
+          aria-label="Agenda affiché"
           value={currentCalendarId || ''}
           onChange={(e) => setCurrentCalendar(e.target.value)}
-          className="px-3 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
-        >
-          {calendars.map((cal) => (
-            <option key={cal.id} value={cal.id}>
-              {cal.summary}
-            </option>
-          ))}
-        </select>
+          options={calendars.map((cal) => ({ value: cal.id, label: cal.summary }))}
+        />
       </div>
+
+      {/* L'icône de synchronisation reste rendue dans TOUS les états, y compris
+          sous un bandeau qui porte « Réessayer » : c'est le geste permanent de
+          la barre d'outils, l'autre est la reprise contextuelle d'un échec. */}
+      <Button variant="ghost" size="icon" onClick={handleSync} disabled={syncing} aria-label="Synchroniser l'agenda" title="Synchroniser l'agenda">
+        <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
+      </Button>
+
+      <Button variant="ghost" size="icon" onClick={() => icsInputRef.current?.click()} aria-label="Importer un fichier .ics" title="Importer un fichier .ics">
+        <Upload className="w-4 h-4" />
+      </Button>
+      <input
+        ref={(el) => { icsInputRef.current = el; }}
+        type="file"
+        accept=".ics"
+        className="hidden"
+        onChange={handleImportICS}
+      />
+
+      <Button variant="ghost" size="icon" onClick={handleExportICS} aria-label="Exporter en .ics" title="Exporter en .ics">
+        <Download className="w-4 h-4" />
+      </Button>
+
+      {/* `ml-auto` : sans lui le groupe reste collé au sélecteur, pas à droite.
+          Sous 840 px il prend une ligne entière sous le titre. */}
+      <div className="ml-auto flex flex-wrap gap-2 max-[839px]:basis-full">
+        <Segments
+          label="Vue de l'agenda"
+          options={VUES}
+          valeur={viewMode}
+          onChange={(id) => choisirVue(id as 'month' | 'week' | 'day' | 'list')}
+        />
+        <Button variant="primary" size="lg" onClick={handleNewEvent}>
+          <Plus aria-hidden="true" className="w-[18px] h-[18px] mr-2" />
+          Nouveau rendez-vous
+        </Button>
+      </div>
+
+      {!standalone && (
+        <Button variant="ghost" size="icon" onClick={onClose} aria-label="Fermer l'agenda">
+          <X className="w-4 h-4" />
+        </Button>
+      )}
     </div>
   );
 
   const reauthBanner = needsReauth ? (
-    <div className="px-4 py-2 bg-agent-amber/10 border-b border-agent-amber/20 flex items-center gap-3">
+    // Un état dit en deux couleurs se lit comme deux états : tout passe par les
+    // jetons d'attention, plus rien par l'ambre d'agent.
+    <div className="px-4 py-3 border-b border-border bg-warning-tint flex items-center gap-3">
       <AlertTriangle className="w-4 h-4 text-warning shrink-0" />
-      <p className="text-sm text-agent-amber flex-1">
+      <p className="text-sm text-warning flex-1">
         Connexion Google expirée. Reconnecte-toi pour synchroniser le calendrier.
       </p>
       <Button
         variant="ghost"
-        size="sm"
+        size="md"
         onClick={handleReauthorize}
         disabled={reauthing}
-        className="text-agent-amber hover:text-agent-amber shrink-0"
+        className="shrink-0"
       >
         {reauthing ? (
           <>
@@ -556,27 +573,107 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
     </div>
   ) : null;
 
+  // Les deux états ne s'excluent pas tout seuls : `loadCalendars` peut laisser
+  // une erreur d'agendas (403) et relever `calendarsReady`, pendant que
+  // `loadEvents` pose `staleWarning` sans effacer cette erreur. Quand les deux
+  // coexistent, un SEUL bandeau les dit tous les deux : ni deux « Réessayer »,
+  // ni une péremption tue parce qu'une erreur est plus grave.
+  const horodatageDeSync = lastSyncAt
+    ? ` (synchronisées le ${new Date(lastSyncAt).toLocaleString('fr-FR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })})`
+    : '';
+  const erreurTotale = error && !needsReauth ? error : null;
+  const reprise = (variante: 'ghost' | 'secondary') => (
+    <Button variant={variante} size="md" onClick={handleSync} disabled={syncing}>
+      Réessayer
+    </Button>
+  );
+
+  let bandeau: React.ReactNode = null;
+  if (erreurTotale && staleWarning) {
+    bandeau = (
+      <div className="px-4 pt-3">
+        <Alerte
+          data-testid="calendar-stale-warning"
+          titre={erreurTotale}
+          icone={<AlertTriangle className="w-[18px] h-[18px]" />}
+          action={reprise('secondary')}
+        >
+          {`Données conservées${horodatageDeSync}.`}
+        </Alerte>
+      </div>
+    );
+  } else if (staleWarning) {
+    bandeau = (
+      <div className="px-4 pt-3">
+        <Alerte
+          data-testid="calendar-stale-warning"
+          titre="L'agenda est affiché tel qu'il était."
+          icone={<AlertTriangle className="w-[18px] h-[18px]" />}
+          action={reprise('ghost')}
+        >
+          {`Dernier rafraîchissement échoué : données conservées${horodatageDeSync}.`}
+        </Alerte>
+      </div>
+    );
+  } else if (erreurTotale) {
+    bandeau = (
+      <div className="px-4 pt-3">
+        <Alerte
+          icone={<AlertCircle className="w-[18px] h-[18px]" />}
+          action={reprise('secondary')}
+        >
+          {erreurTotale}
+        </Alerte>
+      </div>
+    );
+  }
+
+  // Le pied ne se rend QUE sur la grille, et seulement s'il existe un agenda
+  // courant : sur une liste vide (premier lancement, BUG-143), annoncer
+  // « aucun agenda en ligne branché » nommerait une absence là où il n'y a
+  // aucun agenda du tout.
+  const agendaCourant = calendars.find((cal) => cal.id === currentCalendarId);
+  const aucunAgendaEnLigne =
+    calendars.length > 0 && !calendars.some((cal) => cal.provider !== 'local');
+  const piedDeGrille = agendaCourant ? (
+    <p className="shrink-0 text-xs font-medium text-text-muted">
+      {agendaCourant.provider === 'local'
+        ? `Agenda local « ${agendaCourant.summary} »`
+        : agendaCourant.summary}
+      {aucunAgendaEnLigne ? ' · aucun agenda en ligne branché' : ''}
+    </p>
+  ) : null;
+
   const calendarContent = (
     <>
-      {/* Error */}
-      {error && !needsReauth && (
-        <div role="alert" className="mx-6 mt-4 px-3 py-2 bg-error/10 border border-error/20 rounded-md">
-          <p className="text-sm text-error">{error}</p>
-        </div>
-      )}
+      {bandeau}
 
       {/* Content */}
       <div className="flex-1 overflow-hidden">
         {loading ? (
-          <div className="flex items-center justify-center h-full">
-            <RefreshCw className="w-8 h-8 animate-spin text-accent-cyan-ink" />
+          <div className="h-full p-4 space-y-2">
+            {[0, 1, 2].map((rangee) => (
+              <div key={rangee} className="flex items-center gap-2">
+                <Squelette classeBarre="h-8 rounded-sm" largeur="w-8" />
+                {/* `flex-1` porteur : la racine de `Squelette` n'a pas de
+                    largeur propre, et un `w-[60%]` contre une largeur de
+                    contenu se résout à zéro pixel. */}
+                <Squelette className="flex-1" classeBarre="h-8 rounded-sm" largeur="w-[60%]" />
+              </div>
+            ))}
+            <p role="status" className="text-sm text-text-muted">Chargement de l'agenda…</p>
           </div>
         ) : isEventFormOpen ? (
           <EventForm />
         ) : currentEventId ? (
           <EventDetail />
         ) : (
-          <CalendarView />
+          // Conteneur PROPRE à la branche « grille » : le formulaire, la fiche
+          // et le chargement gardent leurs paddings et n'en héritent pas un second.
+          <div className="h-full flex flex-col gap-2 p-4">
+            <CalendarView />
+            {piedDeGrille}
+          </div>
         )}
       </div>
     </>
@@ -590,7 +687,6 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
       <div data-testid="calendar-panel" className="flex-1 min-h-0 flex flex-col bg-bg">
         {calendarHeader}
         {reauthBanner}
-        {calendarNav}
         {calendarContent}
       </div>
     );
@@ -605,7 +701,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="absolute inset-0 bg-black/60 backdrop-blur-md"
+          className="absolute inset-0 bg-bg/80 backdrop-blur-md"
           onClick={onClose}
         />
 
@@ -614,7 +710,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
           ref={dialogRef}
           role="dialog"
           aria-modal="true"
-          aria-label="Calendrier"
+          aria-label="Agenda"
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
@@ -623,7 +719,6 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
         >
           {calendarHeader}
           {reauthBanner}
-          {calendarNav}
           {calendarContent}
         </motion.div>
       </div>

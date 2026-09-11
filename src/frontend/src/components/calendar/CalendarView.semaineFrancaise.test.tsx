@@ -17,14 +17,15 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { useCalendarStore } from '../../stores/calendarStore';
 import { CalendarView } from './CalendarView';
 
-const SEMAINE_FRANCAISE = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+// DA lot 8 : la maquette écrit les jours en abrégé pointé (`agenda.html:75`).
+const SEMAINE_FRANCAISE = ['lun.', 'mar.', 'mer.', 'jeu.', 'ven.', 'sam.', 'dim.'];
 
 /** Les étiquettes de jour, dans l'ordre du document : un div dont le texte
  *  ENTIER est un nom de jour abrégé. */
 function etiquettesJours(container: HTMLElement): string[] {
   return [...container.querySelectorAll('div')]
     .map((element) => element.textContent?.trim() ?? '')
-    .filter((texte) => /^(Lun|Mar|Mer|Jeu|Ven|Sam|Dim)$/.test(texte));
+    .filter((texte) => /^(lun|mar|mer|jeu|ven|sam|dim)\.$/.test(texte));
 }
 
 describe('B-247 : la vue Mois commence le lundi comme la vue Semaine', () => {
@@ -50,10 +51,13 @@ describe('B-247 : la vue Mois commence le lundi comme la vue Semaine', () => {
   it('la première cellule du mois est le lundi 31 août, pas le dimanche 30', () => {
     const { container } = render(<CalendarView />);
 
+    // DA lot 8 : une seule grille, celle de la maquette — sept en-têtes puis
+    // quarante-deux cases, 49 enfants d'un même `div.grid-cols-7`.
     const grilles = container.querySelectorAll('div.grid-cols-7');
-    expect(grilles.length).toBe(2); // en-tête + grille
-    const cellules = [...grilles[1].children];
-    expect(cellules.length).toBe(42); // 6 semaines : sans ça, rien n'est prouvé
+    expect(grilles.length).toBe(1);
+    const enfants = [...grilles[0].children];
+    expect(enfants.length).toBe(49); // 7 en-têtes + 6 semaines : sans ça, rien n'est prouvé
+    const cellules = enfants.slice(7);
 
     const troisPremiers = cellules
       .slice(0, 3)
