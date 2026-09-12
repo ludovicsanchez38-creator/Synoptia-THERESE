@@ -2346,6 +2346,48 @@ class TestBUG113_RaccourciBureauLegacyDoublon:
         )
 
 
+class TestBUG180_RaccourciBureauMultiContexte:
+    """BUG-180 : une MAJ currentUser ne peut pas toujours supprimer le
+    raccourci THERESE.lnk du bureau commun sans élévation. Windows affiche alors
+    le raccourci commun et le raccourci utilisateur comme deux icônes.
+    """
+
+    def _hook_content(self):
+        hook_path = (
+            Path(__file__).resolve().parent.parent
+            / "src"
+            / "frontend"
+            / "src-tauri"
+            / "installer-hooks.nsh"
+        )
+        return hook_path.read_text(encoding="utf-8-sig")
+
+    def test_hook_garde_un_seul_raccourci_si_la_purge_commune_est_refusee(self):
+        content = self._hook_content()
+        common_context = content.index("SetShellVarContext all")
+        common_delete = content.index(
+            'Delete "$DESKTOP\\THERESE.lnk"', common_context
+        )
+        target_check = content.index(
+            '!insertmacro IsShortcutTarget "$DESKTOP\\THERESE.lnk" '
+            '"$INSTDIR\\${MAINBINARYNAME}.exe"',
+            common_delete,
+        )
+        user_context = content.index("SetShellVarContext current", target_check)
+        user_delete = content.index(
+            'Delete "$DESKTOP\\THERESE.lnk"', user_context
+        )
+
+        assert common_context < common_delete < target_check < user_context < user_delete
+        assert "Pop $0" in content[target_check:user_context], (
+            "Le résultat du contrôle de cible doit alimenter la condition de repli"
+        )
+        assert "${If} $0 = 1" in content[target_check:user_delete], (
+            "Le raccourci utilisateur ne doit être supprimé que si le raccourci "
+            "commun restant vise exactement le binaire installé"
+        )
+
+
 class TestVoiceLocalOption:
     """Voix locale souveraine STT/TTS, OPTIONNELLE (faster-whisper + Piper).
 

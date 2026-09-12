@@ -14,14 +14,32 @@
 ; utilisateur ET bureau commun, au cas ou une vieille installation machine
 ; en aurait laisse un). L'installation courante est perUser (installMode
 ; par defaut de Tauri) : son raccourci frais vit dans le bureau utilisateur
-; sous le nom "THERESE.lnk" et n'est pas touche par ces suppressions.
+; sous le nom "THERESE.lnk" et n'est pas touche quand la purge commune aboutit.
+;
+; BUG-180 : un installeur currentUser n'a pas toujours le droit de supprimer
+; le raccourci du bureau commun. Delete echoue alors silencieusement et
+; l'Explorateur affiche a la fois ce raccourci commun et celui de l'utilisateur.
+; Apres la tentative de purge, si le raccourci commun subsiste ET pointe bien
+; vers le binaire installe, on conserve celui-ci et supprime son doublon dans
+; le bureau utilisateur. Le test de cible evite de sacrifier le raccourci frais
+; au profit d'un raccourci commun obsolete ou sans rapport avec cette install.
 
 !macro NSIS_HOOK_POSTINSTALL
-  ; Purge des raccourcis bureau legacy en doublon (BUG-113).
+  ; Purge des raccourcis bureau legacy en doublon (BUG-113, BUG-180).
   Delete "$DESKTOP\THÉRÈSE.lnk"
   SetShellVarContext all
   Delete "$DESKTOP\THERESE.lnk"
   Delete "$DESKTOP\THÉRÈSE.lnk"
+
+  ; Une suppression dans le bureau commun peut etre refusee sans elevation.
+  ; Ne retirer le raccourci utilisateur que si le commun restant vise la meme
+  ; installation : il reste ainsi exactement un raccourci fonctionnel.
+  !insertmacro IsShortcutTarget "$DESKTOP\THERESE.lnk" "$INSTDIR\${MAINBINARYNAME}.exe"
+  Pop $0
+  ${If} $0 = 1
+    SetShellVarContext current
+    Delete "$DESKTOP\THERESE.lnk"
+  ${EndIf}
   SetShellVarContext current
 !macroend
 
