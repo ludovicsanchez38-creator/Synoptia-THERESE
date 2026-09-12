@@ -123,6 +123,9 @@ def chiffrement(monkeypatch, tmp_path):
     module.EncryptionService._fernet = None
     module.EncryptionService._using_keychain = False
     monkeypatch.setattr(module, "KEY_FILE", tmp_path / ".encryption_key")
+    # Cette fixture exerce volontairement les branches Keychain. Le chemin
+    # pytest est jetable et serait désormais exclu en production par B-748.
+    monkeypatch.setattr(module, "_est_dossier_temporaire", lambda _path: False)
     monkeypatch.setattr(module, "_try_keyring_available", lambda: True)
     trousseau = FauxTrousseau()
     monkeypatch.setitem(sys.modules, "keyring", trousseau)

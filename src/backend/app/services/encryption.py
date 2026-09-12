@@ -11,6 +11,7 @@ Sprint 2 - PERF-2.10: Keychain support pour la cle de chiffrement
 import base64
 import logging
 import os
+import tempfile
 import threading
 from pathlib import Path
 from typing import Optional
@@ -58,6 +59,28 @@ def _compte_trousseau(data_dir: Path | None = None) -> str:
 
 
 KEYCHAIN_ACCOUNT = _compte_trousseau()
+
+
+def _est_dossier_temporaire(data_dir: Path) -> bool:
+    """Détecte les profils jetables qui ne doivent jamais toucher au trousseau.
+
+    Les tests, démos et smokes isolent leurs données sous le dossier temporaire
+    du système. Leur clé vit déjà avec ces données dans ``.encryption_key`` :
+    créer en plus un compte Keychain par chemin laisse des centaines d'entrées
+    orphelines après disparition du dossier.
+    """
+    try:
+        cible = data_dir.expanduser().resolve()
+        racines = {Path(tempfile.gettempdir()).expanduser().resolve()}
+        # Sur macOS ``gettempdir()`` vise /private/var/folders/.../T alors que
+        # les smokes explicites utilisent aussi /tmp (résolu en /private/tmp).
+        if os.name != "nt":
+            racines.add(Path("/tmp").resolve())
+        return any(cible == racine or racine in cible.parents for racine in racines)
+    except (OSError, RuntimeError):
+        # Une cible impossible à résoudre n'est pas réputée jetable : ne pas
+        # affaiblir silencieusement le stockage d'un vrai profil.
+        return False
 
 
 def _try_keyring_available() -> bool:
@@ -119,8 +142,9 @@ class EncryptionService:
         contient une cle differente, on prefere le fichier backup (la cle
         Keychain a pu etre re-generee suite a un changement de signature binaire).
         """
-        # 1. Essayer le keychain (Sprint 2 - PERF-2.10)
-        if _try_keyring_available():
+        # 1. Essayer le keychain (Sprint 2 - PERF-2.10), sauf pour un profil
+        # jetable : il ne doit laisser aucune donnée hors de son dossier.
+        if not _est_dossier_temporaire(THERESE_DIR) and _try_keyring_available():
             keychain_key = self._get_key_from_keychain()
 
             if keychain_key:
