@@ -35,6 +35,9 @@ import { pushEscapeHandler } from '../../lib/escapeStack';
 import { DocumentCreateModal } from './DocumentCreateModal';
 import { DocumentWorkspace } from './DocumentWorkspace';
 import { Spinner } from '../ui/Spinner';
+import { Alerte } from '../ui/Alerte';
+import { EtatVide } from '../ui/EtatVide';
+import { Etiquette } from '../ui/Etiquette';
 
 // =============================================================================
 // PROGRESSION
@@ -61,7 +64,7 @@ function DocumentProgress({ total, validated }: DocumentProgressProps) {
       >
         <div className="h-full bg-success transition-[width] duration-300" style={{ width: `${pct}%` }} />
       </div>
-      <span className="text-xs text-text-muted whitespace-nowrap">{label}</span>
+      <span className="text-sm text-text-muted whitespace-nowrap">{label}</span>
     </div>
   );
 }
@@ -92,19 +95,11 @@ function DocumentCard({ document, onOpen }: DocumentCardProps) {
     >
       <div className="flex items-center gap-2 min-w-0">
         <p className="text-sm font-medium text-text truncate">{document.title}</p>
-        <span
-          className={`shrink-0 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide rounded-sm border ${
-            isTermine
-              ? 'text-success border-success/30 bg-success/10'
-              : sansTrame
-                ? 'text-text-muted border-border bg-surface'
-                : 'text-warning border-warning/30 bg-warning/10'
-          }`}
-        >
+        <Etiquette ton={isTermine ? 'succes' : sansTrame ? 'neutre' : 'attention'}>
           {etiquette}
-        </span>
+        </Etiquette>
       </div>
-      {document.brief && <p className="text-xs text-text-muted truncate mt-1">{document.brief}</p>}
+      {document.brief && <p className="text-sm text-text-muted truncate mt-1">{document.brief}</p>}
       <div className="mt-3">
         <DocumentProgress total={document.sections_total} validated={document.sections_validees} />
       </div>
@@ -210,11 +205,11 @@ export function DocumentsList() {
 
   return (
     <div className="flex-1 min-h-0 flex flex-col bg-bg overflow-y-auto" data-testid="documents-list">
-      <div className="max-w-[760px] w-full mx-auto px-5 py-6">
+      <div className="w-full px-5 py-6">
         {/* En-tête */}
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
           <div className="flex items-center gap-2.5">
-            <span className="w-9 h-9 rounded-sm grid place-items-center bg-accent-tint text-accent-cyan-ink border-[1.5px] border-[var(--btn-ink)]">
+            <span className="w-9 h-9 rounded-sm grid place-items-center bg-accent-tint text-accent border border-accent">
               <FileText className="w-5 h-5" />
             </span>
             <div>
@@ -223,40 +218,39 @@ export function DocumentsList() {
                   visible mais n'est plus un titre : deux titres de même texte, c'est
                   un plan de page qui ment. */}
               <p className="text-lg font-bold text-text leading-tight">Documents</p>
-              <p className="text-xs text-text-muted">
+              <p className="text-sm text-text-muted">
                 {documents.length} document{documents.length > 1 ? 's' : ''}
               </p>
             </div>
           </div>
-          <Button variant="primary" size="sm" onClick={() => setModalOpen(true)}>
+          <Button variant="primary" size="md" className="max-[840px]:basis-full" onClick={() => setModalOpen(true)}>
             <Plus className="w-4 h-4 mr-1.5" />
             Nouveau document
           </Button>
         </div>
 
         {error && (
-          <div role="alert" className="mb-4 px-3 py-2 rounded-sm border border-error/30 bg-error/10 text-sm text-error">
-            {error}
-          </div>
+          <Alerte className="mb-4">{error}</Alerte>
         )}
 
         {/* Contenu */}
         {isLoading && documents.length === 0 ? (
           <div className="flex items-center justify-center gap-2 py-16 text-sm text-text-muted">
-            <Spinner taille="zone" className="text-accent-cyan-ink" />
+            <Spinner taille="zone" className="text-accent" />
             Chargement des documents...
           </div>
         ) : documents.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 py-16 text-center">
-            <FileText className="w-8 h-8 text-text-muted" />
-            <p className="text-sm text-text-muted max-w-xs">
-              Crée ton premier document pour démarrer une proposition, un dossier ou un rapport structuré.
-            </p>
-            <Button variant="primary" size="sm" onClick={() => setModalOpen(true)}>
-              <Plus className="w-4 h-4 mr-1.5" />
-              Nouveau document
-            </Button>
-          </div>
+          <EtatVide
+            titre="Aucun document"
+            action={(
+              <Button variant="primary" size="md" onClick={() => setModalOpen(true)}>
+                <Plus className="w-4 h-4 mr-1.5" />
+                Nouveau document
+              </Button>
+            )}
+          >
+            Crée ton premier document pour démarrer une proposition, un dossier ou un rapport structuré.
+          </EtatVide>
         ) : (
           <div className="space-y-2">
             {documents.map((doc) => (

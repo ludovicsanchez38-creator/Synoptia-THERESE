@@ -8,7 +8,7 @@
  * mute qu'après succès - anti-faux-succès, cf. commentaire du store D1).
  */
 import { useEffect, useRef, useState } from 'react';
-import { X, FileText, Briefcase } from 'lucide-react';
+import { X, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../ui/Button';
 import { modalVariants, overlayVariants } from '../../lib/animations';
@@ -17,6 +17,11 @@ import { useDocumentStore } from '../../stores/documentStore';
 import { listProjects, type Project } from '../../services/api';
 import { Z_LAYER } from '../../styles/z-layers';
 import { Spinner } from '../ui/Spinner';
+import { Alerte } from '../ui/Alerte';
+import { FormField } from '../ui/FormField';
+import { Input } from '../ui/Input';
+import { Select } from '../ui/Select';
+import { Textarea } from '../ui/Textarea';
 
 interface DocumentCreateModalProps {
   isOpen: boolean;
@@ -111,7 +116,7 @@ export function DocumentCreateModal({ isOpen, onClose, onCreated }: DocumentCrea
             animate="animate"
             exit="exit"
             transition={{ duration: 0.2 }}
-            className={`fixed inset-0 bg-black/60 backdrop-blur-sm ${Z_LAYER.MODAL}`}
+            className={`fixed inset-0 bg-text/35 backdrop-blur-sm ${Z_LAYER.MODAL}`}
             onClick={onClose}
           />
 
@@ -125,17 +130,17 @@ export function DocumentCreateModal({ isOpen, onClose, onCreated }: DocumentCrea
             initial="initial"
             animate="animate"
             exit="exit"
-            className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-surface border border-border rounded-md shadow-2xl ${Z_LAYER.MODAL} max-h-[85vh] overflow-hidden flex flex-col`}
+            className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-lg bg-surface border border-border rounded-md ${Z_LAYER.MODAL} max-h-[85vh] overflow-hidden flex flex-col`}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-sm bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
-                  <FileText className="w-5 h-5 text-accent-cyan-ink" />
+                <div className="w-10 h-10 rounded-sm bg-accent-tint border border-accent flex items-center justify-center">
+                  <FileText className="w-5 h-5 text-accent" />
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold text-text">Nouveau document</h2>
-                  <p className="text-xs text-text-muted">Proposition, dossier ou rapport structuré</p>
+                  <p className="text-sm text-text-muted">Proposition, dossier ou rapport structuré</p>
                 </div>
               </div>
               <Button variant="ghost" size="icon" onClick={onClose} aria-label="Fermer">
@@ -145,11 +150,8 @@ export function DocumentCreateModal({ isOpen, onClose, onCreated }: DocumentCrea
 
             {/* Content */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="document-title" className="text-sm text-text-muted">
-                  Titre <span className="text-error">*</span>
-                </label>
-                <input
+              <FormField label="Titre" htmlFor="document-title" required>
+                <Input
                   id="document-title"
                   type="text"
                   value={title}
@@ -158,67 +160,52 @@ export function DocumentCreateModal({ isOpen, onClose, onCreated }: DocumentCrea
                     setFormError(null);
                   }}
                   placeholder="Proposition commerciale - Client X"
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
                   autoFocus
                 />
-              </div>
+              </FormField>
 
-              <div className="space-y-2">
-                <label htmlFor="document-brief" className="text-sm text-text-muted">
-                  Brief
-                </label>
-                <textarea
+              <FormField label="Brief" htmlFor="document-brief">
+                <Textarea
                   id="document-brief"
                   value={brief}
                   onChange={(e) => setBrief(e.target.value)}
                   placeholder="Objectif, contexte, destinataire..."
                   rows={4}
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors resize-none"
                 />
-              </div>
+              </FormField>
 
-              <div className="space-y-2">
-                <label htmlFor="document-project" className="text-sm text-text-muted flex items-center gap-2">
-                  <Briefcase className="w-4 h-4" />
-                  Projet lié (optionnel)
-                </label>
+              <FormField label="Projet lié (optionnel)" htmlFor="document-project">
                 {projectsUnavailable ? (
-                  <p className="px-4 py-2.5 bg-background/40 border border-border/40 rounded-md text-sm text-text-muted">
+                  <p className="px-4 py-2.5 bg-surface-2 border border-border rounded-sm text-sm text-text-muted">
                     Projets indisponibles - le document sera créé sans projet lié.
                   </p>
                 ) : (
-                  <select
+                  <Select
                     id="document-project"
                     value={projectId}
                     onChange={(e) => setProjectId(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:border-accent-cyan/50 transition-colors"
                     disabled={loadingProjects}
-                  >
-                    <option value="">Aucun projet</option>
-                    {projects.map((project) => (
-                      <option key={project.id} value={project.id}>
-                        {project.name}
-                      </option>
-                    ))}
-                  </select>
+                    options={[
+                      { value: '', label: 'Aucun projet' },
+                      ...projects.map((project) => ({ value: project.id, label: project.name })),
+                    ]}
+                  />
                 )}
                 {loadingProjects && (
-                  <p className="text-xs text-text-muted flex items-center gap-1">
+                  <p role="status" className="text-sm text-text-muted flex items-center gap-1">
                     <Spinner taille="ligne" />
                     Chargement des projets...
                   </p>
                 )}
-              </div>
+              </FormField>
 
               {formError && (
-                <div role="alert" className="flex items-center gap-2 px-3 py-2 bg-error/10 border border-error/20 rounded-md">
-                  <span className="text-sm text-error">{formError}</span>
-                </div>
+                <Alerte>{formError}</Alerte>
               )}
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-border/50 shrink-0">
+            <div className="flex flex-wrap items-center justify-end gap-3 px-6 py-4 border-t border-border/50 shrink-0 max-[840px]:justify-stretch [&>button]:max-[840px]:flex-1">
               <Button variant="ghost" onClick={onClose}>
                 Annuler
               </Button>

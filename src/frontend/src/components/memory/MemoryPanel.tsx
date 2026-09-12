@@ -9,7 +9,7 @@ import { Etiquette } from '../ui/Etiquette';
 import { Input } from '../ui/Input';
 import { Ligne } from '../ui/Ligne';
 import { Squelette } from '../ui/Squelette';
-import { CLASSES_SEGMENTS, classeSegment } from '../ui/segments.classes';
+import { Segments } from '../ui/Segments';
 import { sidebarVariants, overlayVariants } from '../../lib/animations';
 import * as api from '../../services/api';
 import type { MemoryScope, RGPDStatsResponse } from '../../services/api';
@@ -375,18 +375,17 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                   onChange={(e) => setSearchQuery(e.target.value)}
                   data-testid="memory-search-input"
                 />
-                <div role="group" className={CLASSES_SEGMENTS}>
-                  {(['all', 'global', 'project', 'conversation'] as const).map((scope) => (
-                    <button
-                      key={scope}
-                      type="button"
-                      onClick={() => setScopeFilter(scope)}
-                      className={classeSegment(scopeFilter === scope)}
-                    >
-                      {scope === 'all' ? 'Tout' : scope === 'global' ? 'Global' : scope === 'project' ? 'Projet' : 'Conv.'}
-                    </button>
-                  ))}
-                </div>
+                <Segments
+                  label="Périmètre des contacts"
+                  valeur={scopeFilter}
+                  onChange={(scope) => setScopeFilter(scope as MemoryScope | 'all')}
+                  options={[
+                    { id: 'all', label: 'Tout' },
+                    { id: 'global', label: 'Global' },
+                    { id: 'project', label: 'Projet' },
+                    { id: 'conversation', label: 'Conv.' },
+                  ]}
+                />
               </div>
             )}
 
@@ -445,14 +444,14 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className={`absolute inset-0 bg-black/60 flex items-center justify-center p-4 ${Z_LAYER.MODAL_NESTED}`}
+                  className={`absolute inset-0 bg-text/35 flex items-center justify-center p-4 ${Z_LAYER.MODAL_NESTED}`}
                   onClick={() => { setDeleteConfirm(null); setDeleteError(null); }}
                 >
                   <motion.div
-                    initial={{ scale: 0.95, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.95, opacity: 0 }}
-                    className="bg-surface border border-border rounded-md p-5 w-full max-w-sm shadow-xl"
+                    initial={{ y: 8, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: 8, opacity: 0 }}
+                    className="bg-surface border border-border rounded-md p-5 w-full max-w-sm"
                     onClick={(e) => e.stopPropagation()}
                   >
                     <div className="flex items-center gap-3 mb-4">
@@ -468,10 +467,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                       Les projets et fichiers associés seront aussi supprimés.
                     </p>
                     {deleteError && (
-                      <div role="alert" className="flex items-center gap-2 px-3 py-2 mb-4 bg-error/10 border border-error/20 rounded-md">
-                        <AlertCircle className="w-4 h-4 text-error shrink-0" />
-                        <span className="text-sm text-error">{deleteError}</span>
-                      </div>
+                      <Alerte className="mb-4" icone={<AlertCircle className="w-4 h-4" />}>{deleteError}</Alerte>
                     )}
                     <div className="flex gap-2">
                       <Button
@@ -510,21 +506,21 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
-                  className={`absolute inset-0 bg-black/60 flex items-center justify-center p-4 ${Z_LAYER.MODAL_NESTED}`}
+                  className={`absolute inset-0 bg-text/35 flex items-center justify-center p-4 ${Z_LAYER.MODAL_NESTED}`}
                   onClick={() => { setRgpdAction(null); setAnonymizeReason(''); }}
                 >
                   <motion.div
-                    initial={{ scale: 0.95, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0.95, opacity: 0 }}
-                    className="bg-surface border border-border rounded-md p-5 w-full max-w-sm shadow-xl"
+                    initial={{ y: 8, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    exit={{ y: 8, opacity: 0 }}
+                    className="bg-surface border border-border rounded-md p-5 w-full max-w-sm"
                     onClick={(e) => e.stopPropagation()}
                   >
                     {rgpdAction.type === 'export' && (
                       <>
                         <div className="flex items-center gap-3 mb-4">
-                          <div className="w-10 h-10 rounded-full bg-accent-cyan/20 flex items-center justify-center">
-                            <Download className="w-5 h-5 text-accent-cyan-ink" />
+                          <div className="w-10 h-10 rounded-full bg-accent-tint flex items-center justify-center">
+                            <Download className="w-5 h-5 text-accent" />
                           </div>
                           <div>
                             <h3 className="text-base font-semibold text-text">Export RGPD</h3>
@@ -573,12 +569,11 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                         </p>
                         <div className="mb-4">
                           <label htmlFor="memorypanel-raison-de-l-anonymisation" className="block text-sm font-medium text-text mb-1">Raison de l'anonymisation *</label>
-                          <input id="memorypanel-raison-de-l-anonymisation"
+                          <Input id="memorypanel-raison-de-l-anonymisation"
                             type="text"
                             value={anonymizeReason}
                             onChange={(e) => setAnonymizeReason(e.target.value)}
                             placeholder="Ex: Demande du contact, fin de relation..."
-                            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-error/50"
                           />
                         </div>
                         <div className="flex gap-2">
@@ -586,8 +581,8 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                             Annuler
                           </Button>
                           <Button
-                            variant="primary"
-                            className="flex-1 bg-error hover:bg-error"
+                            variant="danger"
+                            className="flex-1"
                             onClick={() => handleRGPDAnonymize(rgpdAction.contact, anonymizeReason)}
                             disabled={rgpdActionLoading || !anonymizeReason.trim()}
                           >
@@ -607,8 +602,8 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                     {rgpdAction.type === 'renew' && (
                       <>
                         <div className="flex items-center gap-3 mb-4">
-                          <div className="w-10 h-10 rounded-full bg-agent-green/20 flex items-center justify-center">
-                            <RefreshCw className="w-5 h-5 text-agent-green" />
+                          <div className="w-10 h-10 rounded-full bg-[var(--color-success-tint)] flex items-center justify-center">
+                            <RefreshCw className="w-5 h-5 text-success" />
                           </div>
                           <div>
                             <h3 className="text-base font-semibold text-text">Renouveler le consentement</h3>
@@ -624,7 +619,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                           </Button>
                           <Button
                             variant="primary"
-                            className="flex-1 bg-agent-green hover:bg-agent-green"
+                            className="flex-1"
                             onClick={() => handleRGPDRenewConsent(rgpdAction.contact)}
                             disabled={rgpdActionLoading}
                           >
@@ -708,7 +703,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
             animate="animate"
             exit="exit"
             transition={{ duration: 0.2 }}
-            className={`fixed inset-0 bg-black/40 backdrop-blur-sm ${Z_LAYER.BACKDROP}`}
+            className={`fixed inset-0 bg-text/35 backdrop-blur-sm ${Z_LAYER.BACKDROP}`}
             onClick={onClose}
           />
 
@@ -719,7 +714,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
             animate="animate"
             exit="exit"
             data-testid="memory-panel"
-            className={`fixed right-0 top-0 bottom-0 w-[420px] bg-surface border-l border-border ${Z_LAYER.MODAL} flex flex-col shadow-2xl`}
+            className={`fixed right-0 top-0 bottom-0 w-[420px] max-w-full bg-surface border-l border-border ${Z_LAYER.MODAL} flex flex-col`}
           >
             {panelBody}
           </motion.div>
@@ -780,62 +775,72 @@ function ContactsList({
               <>
                 <RGPDBadge contact={contact} />
                 <div className="relative">
-                  <button
+                  <Button
                     type="button"
+                    variant="ghost"
+                    size="icon"
                     onClick={(e) => { e.stopPropagation(); setOpenMenuId(openMenuId === contact.id ? null : contact.id); }}
-                    className="p-1.5 rounded-md hover:bg-accent-tint text-text-muted hover:text-accent-cyan-ink transition-colors"
+                    className="text-text-muted"
                     aria-label="Actions RGPD"
                     title="Actions RGPD"
                   >
                     <Shield className="w-4 h-4" />
-                  </button>
+                  </Button>
                   <AnimatePresence>
                     {openMenuId === contact.id && (
                       <motion.div
-                        initial={{ opacity: 0, scale: 0.95, y: -5 }}
-                        animate={{ opacity: 1, scale: 1, y: 0 }}
-                        exit={{ opacity: 0, scale: 0.95, y: -5 }}
-                        className={`absolute right-0 top-full mt-1 w-48 bg-surface border border-border rounded-md shadow-xl ${Z_LAYER.DROPDOWN} py-1 pointer-events-auto`}
+                        initial={{ opacity: 0, y: -5 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -5 }}
+                        className={`absolute right-0 top-full mt-1 w-56 bg-surface border border-border rounded-md ${Z_LAYER.DROPDOWN} py-1 pointer-events-auto`}
                         onClick={(e) => e.stopPropagation()}
                       >
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="md"
                           onClick={() => { onRGPDAction('export', contact); setOpenMenuId(null); }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text hover:bg-background/40 transition-colors"
+                          className="w-full justify-start rounded-none text-text"
                         >
-                          <Download className="w-4 h-4 text-accent-cyan-ink" />
+                          <Download className="w-4 h-4 text-accent" />
                           Exporter (Art. 20)
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="md"
                           onClick={() => { onRGPDAction('renew', contact); setOpenMenuId(null); }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-text hover:bg-background/40 transition-colors"
+                          className="w-full justify-start rounded-none text-text"
                         >
-                          <RefreshCw className="w-4 h-4 text-agent-green" />
+                          <RefreshCw className="w-4 h-4 text-success" />
                           Renouveler consentement
-                        </button>
+                        </Button>
                         <div className="border-t border-border/50 my-1" />
-                        <button
+                        <Button
                           type="button"
+                          variant="ghost"
+                          size="md"
                           onClick={() => { onRGPDAction('anonymize', contact); setOpenMenuId(null); }}
-                          className="w-full flex items-center gap-2 px-3 py-2 text-sm text-error hover:bg-error/10 transition-colors"
+                          className="w-full justify-start rounded-none text-error"
                         >
                           <UserX className="w-4 h-4" />
                           Anonymiser (Art. 17)
-                        </button>
+                        </Button>
                       </motion.div>
                     )}
                   </AnimatePresence>
                 </div>
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
+                  size="icon"
                   onClick={(e) => { e.stopPropagation(); onDelete(contact); }}
-                  className="p-1.5 rounded-md hover:bg-error/20 text-text-muted hover:text-error transition-colors"
+                  className="text-text-muted hover:text-error"
                   aria-label={`Supprimer ${titre === 'Sans nom' ? 'le contact' : titre}`}
                   title="Supprimer"
                 >
                   <Trash2 className="w-4 h-4" />
-                </button>
+                </Button>
                 <ChevronRight className="w-4 h-4 text-text-muted" />
               </>
             }
@@ -903,4 +908,3 @@ function getInitials(firstName?: string | null, lastName?: string | null): strin
   const last = lastName?.charAt(0)?.toUpperCase() || '';
   return first + last || '?';
 }
-

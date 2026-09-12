@@ -5,9 +5,10 @@
  */
 
 import { motion, AnimatePresence } from 'framer-motion';
-import { Upload, File, FileText, FileCode, FileImage } from 'lucide-react';
+import { Upload, File, FileText, FileCode, FileImage, X } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { Z_LAYER } from '../../styles/z-layers';
+import { Button } from '../ui/Button';
 
 export interface DropZoneProps {
   isDragging: boolean;
@@ -46,19 +47,19 @@ export function DropZone({ isDragging, className }: DropZoneProps) {
           transition={{ duration: 0.15 }}
           className={cn(
             'absolute inset-0', Z_LAYER.MODAL, 'flex items-center justify-center',
-            'bg-background/90 backdrop-blur-sm',
+            'bg-bg/90 backdrop-blur-sm',
             className
           )}
         >
           <motion.div
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
+            initial={{ y: 8, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 8, opacity: 0 }}
             transition={{ duration: 0.2 }}
             className={cn(
               'flex flex-col items-center justify-center gap-4 p-12',
-              'rounded-md border-2 border-dashed border-accent-cyan/50',
-              'bg-surface/50'
+              'rounded-md border-2 border-dashed border-accent',
+              'bg-surface'
             )}
           >
             <motion.div
@@ -71,7 +72,7 @@ export function DropZone({ isDragging, className }: DropZoneProps) {
                 ease: 'easeInOut',
               }}
             >
-              <Upload className="w-16 h-16 text-accent-cyan-ink" />
+              <Upload className="w-16 h-16 text-accent" />
             </motion.div>
 
             <div className="text-center">
@@ -114,14 +115,14 @@ export function InlineDropZone({ isDragging, className }: InlineDropZoneProps) {
           exit={{ opacity: 0, height: 0 }}
           transition={{ duration: 0.15 }}
           className={cn(
-            'overflow-hidden rounded-md border border-dashed border-accent-cyan/50',
-            'bg-accent-cyan/5 mb-2',
+            'overflow-hidden rounded-md border border-dashed border-accent',
+            'bg-accent-tint mb-2',
             className
           )}
         >
           <div className="flex items-center justify-center gap-2 py-3 px-4">
-            <Upload className="w-4 h-4 text-accent-cyan-ink" />
-            <span className="text-sm text-accent-cyan-ink">
+            <Upload className="w-4 h-4 text-accent" />
+            <span className="text-sm text-accent">
               Déposez ici pour joindre
             </span>
           </div>
@@ -162,9 +163,9 @@ export function FileChip({
 
   return (
     <motion.div
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9 }}
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: 4 }}
       className={cn(
         'inline-flex items-center gap-2 px-3 py-1.5 rounded-md',
         'bg-surface-elevated border border-border',
@@ -180,28 +181,17 @@ export function FileChip({
         </span>
       )}
       {onRemove && (
-        <button
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
           onClick={onRemove}
-          className={cn(
-            'flex-shrink-0 p-0.5 rounded-sm hover:bg-error/20',
-            'text-text-muted hover:text-error transition-colors'
-          )}
+          className="flex-shrink-0 text-text-muted hover:text-error"
+          aria-label={`Retirer ${name}`}
           title="Retirer"
         >
-          <svg
-            className="w-3 h-3"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
+          <X className="w-4 h-4" aria-hidden="true" />
+        </Button>
       )}
     </motion.div>
   );

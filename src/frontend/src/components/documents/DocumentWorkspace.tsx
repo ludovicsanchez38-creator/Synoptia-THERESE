@@ -48,6 +48,7 @@ import { OutlineTree } from './OutlineTree';
 import { SectionEditor } from './SectionEditor';
 import { PistesPanel } from './PistesPanel';
 import { Spinner } from '../ui/Spinner';
+import { Etiquette } from '../ui/Etiquette';
 
 export interface DocumentWorkspaceProps {
   documentId: string;
@@ -147,8 +148,8 @@ export function DocumentWorkspace({ documentId, onBack }: DocumentWorkspaceProps
 
   return (
     <div className="flex-1 min-h-0 flex flex-col bg-bg" data-testid="document-workspace">
-      <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-border/40 shrink-0" data-testid="atelier-entete">
-        <div className="flex items-center gap-3 min-w-0">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-border shrink-0" data-testid="atelier-entete">
+        <div className="flex flex-wrap items-center gap-3 min-w-0">
           <Button variant="ghost" size="sm" onClick={handleBack}>
             <ArrowLeft className="w-4 h-4 mr-1.5" />
             Retour aux documents
@@ -156,17 +157,17 @@ export function DocumentWorkspace({ documentId, onBack }: DocumentWorkspaceProps
           {doc && <p className="text-sm font-medium text-text truncate">{doc.title}</p>}
         </div>
         {doc && (
-          <div className="flex items-center gap-2 shrink-0">
+          <div className="flex flex-wrap items-center gap-2 shrink-0 max-[840px]:basis-full">
             {/* P-056 : une génération annulée est une fin neutre, dite ici. */}
             {outlineNotice && (
-              <span role="status" className="max-w-xs truncate px-2.5 py-1 rounded-sm border border-border bg-surface-2 text-xs text-text-muted" title={outlineNotice}>
-                {outlineNotice}
+              <span role="status" className="max-w-xs truncate" title={outlineNotice}>
+                <Etiquette>{outlineNotice}</Etiquette>
               </span>
             )}
             {/* B-630 : l'erreur d'export s'affiche ici, à côté du geste, et nulle part ailleurs. */}
             {exportError && (
-              <span role="alert" className="max-w-xs truncate px-2.5 py-1 rounded-sm border border-error/30 bg-error/10 text-xs text-error" title={exportError}>
-                {exportError}
+              <span role="alert" className="max-w-xs truncate" title={exportError}>
+                <Etiquette ton="erreur">{exportError}</Etiquette>
               </span>
             )}
             <Button variant="ghost" size="sm" onClick={() => handleExport('md')} disabled={exportingFormat !== null}>

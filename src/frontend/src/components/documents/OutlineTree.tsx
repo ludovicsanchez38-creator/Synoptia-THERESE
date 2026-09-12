@@ -35,25 +35,29 @@ import { computeReorderPayload } from './reorderPayload';
 import { accessibiliteGlisserDeposer } from '../../lib/accessibiliteGlisserDeposer';
 import { useDemoMask } from '../../hooks';
 import { Spinner } from '../ui/Spinner';
+import { Alerte } from '../ui/Alerte';
+import { EtatVide } from '../ui/EtatVide';
+import { Etiquette } from '../ui/Etiquette';
+import { Input } from '../ui/Input';
+import { Segments } from '../ui/Segments';
+import { Textarea } from '../ui/Textarea';
 
 // =============================================================================
 // STATUTS (tags carrés theme-aware)
 // =============================================================================
 
-const STATUS_META: Record<DocumentSection['status'], { label: string; className: string }> = {
-  vide: { label: 'Vide', className: 'text-text-muted border-border/40 bg-surface' },
-  brouillon: { label: 'Brouillon', className: 'text-warning border-warning/30 bg-warning/10' },
-  validee: { label: 'Validée', className: 'text-success border-success/30 bg-success/10' },
+const STATUS_META: Record<DocumentSection['status'], { label: string; ton: 'neutre' | 'attention' | 'succes' }> = {
+  vide: { label: 'Vide', ton: 'neutre' },
+  brouillon: { label: 'Brouillon', ton: 'attention' },
+  validee: { label: 'Validée', ton: 'succes' },
 };
 
 function StatusTag({ status }: { status: DocumentSection['status'] }) {
   const meta = STATUS_META[status];
   return (
-    <span
-      className={`shrink-0 px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide rounded-sm border ${meta.className}`}
-    >
+    <Etiquette ton={meta.ton}>
       {meta.label}
-    </span>
+    </Etiquette>
   );
 }
 
@@ -143,7 +147,7 @@ export function OutlineTree({
   return (
     <div className="flex flex-col h-full" data-testid="outline-tree">
       <div className="flex items-center justify-between gap-2 px-3 py-2.5 border-b border-border/40 shrink-0">
-        <h2 className="text-xs font-semibold uppercase tracking-wide text-text-muted">Trame</h2>
+        <h2 className="text-sm font-semibold uppercase tracking-wide text-text-muted">Trame</h2>
         <Button variant="ghost" size="sm" onClick={() => setAddingSection((v) => !v)}>
           <Plus className="w-4 h-4 mr-1" />
           Ajouter une section
@@ -151,55 +155,35 @@ export function OutlineTree({
       </div>
 
       {error && (
-        <div role="alert" className="mx-3 mt-2 px-3 py-2 rounded-sm border border-error/30 bg-error/10 text-xs text-error">
-          {error}
-        </div>
+        <Alerte className="mx-3 mt-2">{error}</Alerte>
       )}
 
       {addingSection && (
         <div className="mx-3 mt-2 p-3 rounded-md border border-border/40 bg-surface/60 space-y-2">
-          <input
+          <Input
             type="text"
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
             placeholder="Titre de la section"
             aria-label="Titre de la nouvelle section"
-            className="w-full px-2.5 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
             autoFocus
           />
-          <textarea
+          <Textarea
             value={newBrief}
             onChange={(e) => setNewBrief(e.target.value)}
             placeholder="Consigne (optionnel)"
             aria-label="Consigne de la nouvelle section"
             rows={2}
-            className="w-full px-2.5 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors resize-none"
           />
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-text-muted">Niveau</span>
-            <button
-              type="button"
-              onClick={() => setNewDepth(0)}
-              className={`px-2 py-1 text-sm rounded-sm border transition-colors ${
-                newDepth === 0
-                  ? 'border-accent-cyan text-accent-cyan-ink bg-accent-tint'
-                  : 'border-border/40 text-text-muted'
-              }`}
-            >
-              Niveau 1
-            </button>
-            <button
-              type="button"
-              onClick={() => setNewDepth(1)}
-              className={`px-2 py-1 text-sm rounded-sm border transition-colors ${
-                newDepth === 1
-                  ? 'border-accent-cyan text-accent-cyan-ink bg-accent-tint'
-                  : 'border-border/40 text-text-muted'
-              }`}
-            >
-              Niveau 2
-            </button>
-          </div>
+          <Segments
+            label="Niveau de la section"
+            valeur={String(newDepth)}
+            onChange={(value) => setNewDepth(value === '1' ? 1 : 0)}
+            options={[
+              { id: '0', label: 'Niveau 1' },
+              { id: '1', label: 'Niveau 2' },
+            ]}
+          />
           <div className="flex items-center justify-end gap-2 pt-1">
             <Button variant="ghost" size="sm" onClick={resetForm}>
               Annuler
@@ -217,21 +201,25 @@ export function OutlineTree({
              local), l'état vide mentait. Un état de travail nommé le remplace. */
           <div role="status" className="flex flex-col items-center justify-center gap-2 py-10 px-4 text-center">
             <Spinner taille="bouton" />
-            <p className="text-xs font-medium text-text">Génération de la trame en cours…</p>
-            <p className="text-xs text-text-muted">Avec un modèle local, cela peut prendre plusieurs minutes. Les sections apparaîtront ici.</p>
+            <p className="text-sm font-medium text-text">Génération de la trame en cours…</p>
+            <p className="text-sm text-text-muted">Avec un modèle local, cela peut prendre plusieurs minutes. Les sections apparaîtront ici.</p>
           </div>
         ) : sortedSections.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 py-10 px-4 text-center">
-            <p className="text-xs text-text-muted">Aucune section pour l&apos;instant.</p>
-            <Button variant="secondary" size="sm" onClick={onGenerateOutline} disabled={isLoading}>
-              {isLoading ? (
-                <Spinner taille="bouton" className="mr-1.5" />
-              ) : (
-                <Sparkles className="w-4 h-4 mr-1.5" />
-              )}
-              Générer la trame
-            </Button>
-          </div>
+          <EtatVide
+            titre="Aucune section pour l'instant"
+            action={(
+              <Button variant="secondary" size="md" onClick={onGenerateOutline} disabled={isLoading}>
+                {isLoading ? (
+                  <Spinner taille="bouton" className="mr-1.5" />
+                ) : (
+                  <Sparkles className="w-4 h-4 mr-1.5" />
+                )}
+                Générer la trame
+              </Button>
+            )}
+          >
+            Génère une trame ou ajoute une section manuellement.
+          </EtatVide>
         ) : (
           <DndContext
             sensors={sensors}
@@ -319,9 +307,9 @@ function SectionRow({ section, isActive, isOverlay, onSelect }: SectionRowProps)
     <div
       className={`mx-2 my-0.5 rounded-md border transition-colors ${
         isOverlay
-          ? 'shadow-xl ring-2 ring-ring/30 bg-surface border-border'
+          ? 'ring-2 ring-ring/30 bg-surface border-border'
           : isActive
-          ? 'border-accent-cyan/50 bg-accent-cyan/10'
+          ? 'border-accent bg-accent-tint'
           : 'border-transparent hover:bg-surface/60 hover:border-border/40'
       }`}
       style={{ paddingLeft: section.depth * 16 }}

@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, Briefcase, Trash2, AlertCircle, Users, Upload, FileText, FileSpreadsheet, File } from 'lucide-react';
+import { X, Briefcase, Trash2, AlertCircle, Upload, FileText, FileSpreadsheet, File } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../ui/Button';
 import { modalVariants, overlayVariants } from '../../lib/animations';
@@ -8,6 +8,12 @@ import { Z_LAYER } from '../../styles/z-layers';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { ProjectSyncSection } from './ProjectSyncSection';
 import { Spinner } from '../ui/Spinner';
+import { Alerte } from '../ui/Alerte';
+import { FormField } from '../ui/FormField';
+import { Input } from '../ui/Input';
+import { Segments } from '../ui/Segments';
+import { Select } from '../ui/Select';
+import { Textarea } from '../ui/Textarea';
 
 interface ProjectModalProps {
   isOpen: boolean;
@@ -37,10 +43,10 @@ const initialFormData: FormData = {
 };
 
 const STATUS_OPTIONS = [
-  { value: 'active', label: 'Actif', color: 'bg-success/20 text-success border-success/30' },
-  { value: 'on_hold', label: 'En attente', color: 'bg-warning/20 text-warning border-warning/30' },
-  { value: 'completed', label: 'Terminé', color: 'bg-info/20 text-info border-info/30' },
-  { value: 'cancelled', label: 'Annulé', color: 'bg-error/20 text-error border-error/30' },
+  { id: 'active', label: 'Actif' },
+  { id: 'on_hold', label: 'En attente' },
+  { id: 'completed', label: 'Terminé' },
+  { id: 'cancelled', label: 'Annulé' },
 ];
 
 export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModalProps) {
@@ -130,7 +136,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
   }
 
   function getFileIcon(ext: string) {
-    if (['.md', '.txt', '.docx', '.pdf'].includes(ext)) return <FileText className="w-4 h-4 text-accent-cyan-ink" />;
+    if (['.md', '.txt', '.docx', '.pdf'].includes(ext)) return <FileText className="w-4 h-4 text-accent" />;
     if (['.xlsx', '.csv'].includes(ext)) return <FileSpreadsheet className="w-4 h-4 text-agent-green" />;
     return <File className="w-4 h-4 text-text-muted" />;
   }
@@ -265,7 +271,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
             animate="animate"
             exit="exit"
             transition={{ duration: 0.2 }}
-            className={`fixed inset-0 bg-black/60 backdrop-blur-sm ${Z_LAYER.MODAL}`}
+            className={`fixed inset-0 bg-text/35 backdrop-blur-sm ${Z_LAYER.MODAL}`}
             onClick={onClose}
           />
 
@@ -279,19 +285,19 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
             initial="initial"
             animate="animate"
             exit="exit"
-            className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-surface border border-border rounded-md shadow-2xl ${Z_LAYER.MODAL} max-h-[85vh] overflow-hidden flex flex-col`}
+            className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-lg bg-surface border border-border rounded-md ${Z_LAYER.MODAL} max-h-[85vh] overflow-hidden flex flex-col`}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-sm bg-domaine-factures-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
-                  <Briefcase className="w-5 h-5 text-accent-magenta-ink" />
+                <div className="w-10 h-10 rounded-sm bg-accent-tint border border-accent flex items-center justify-center">
+                  <Briefcase className="w-5 h-5 text-accent" />
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold text-text">
                     {isEditing ? 'Modifier le projet' : 'Nouveau projet'}
                   </h2>
-                  <p className="text-xs text-text-muted">
+                  <p className="text-sm text-text-muted">
                     {isEditing ? 'Modifie les informations du projet' : 'Crée un nouveau projet'}
                   </p>
                 </div>
@@ -304,104 +310,73 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
             {/* Content - Scrollable */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {/* Name */}
-              <div className="space-y-2">
-                <label htmlFor="projectmodal-nom-du-projet" className="text-sm text-text-muted">
-                  Nom du projet <span className="text-error">*</span>
-                </label>
-                <input id="projectmodal-nom-du-projet"
+              <FormField label="Nom du projet" htmlFor="projectmodal-nom-du-projet" required>
+                <Input id="projectmodal-nom-du-projet"
                   type="text"
                   value={formData.name}
                   onChange={(e) => handleChange('name', e.target.value)}
                   placeholder="Refonte site web"
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
                 />
-              </div>
+              </FormField>
 
               {/* Description */}
-              <div className="space-y-2">
-                <label htmlFor="projectmodal-description" className="text-sm text-text-muted">Description</label>
-                <textarea id="projectmodal-description"
+              <FormField label="Description" htmlFor="projectmodal-description">
+                <Textarea id="projectmodal-description"
                   value={formData.description}
                   onChange={(e) => handleChange('description', e.target.value)}
                   placeholder="Description du projet..."
                   rows={3}
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors resize-none"
                 />
-              </div>
+              </FormField>
 
               {/* Status */}
-              <div className="space-y-2">
-                <label className="text-sm text-text-muted">Statut</label>
-                <div className="flex flex-wrap gap-2">
-                  {STATUS_OPTIONS.map((option) => (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => handleChange('status', option.value)}
-                      className={`px-3 py-1.5 rounded-md text-sm font-medium border transition-all ${
-                        formData.status === option.value
-                          ? option.color
-                          : 'bg-background/40 text-text-muted border-border/50 hover:border-border'
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
+              <Segments
+                label="Statut"
+                options={STATUS_OPTIONS}
+                valeur={formData.status}
+                onChange={(value) => handleChange('status', value)}
+              />
 
               {/* Contact link */}
-              <div className="space-y-2">
-                <label htmlFor="projectmodal-contact-associe" className="text-sm text-text-muted flex items-center gap-2">
-                  <Users className="w-4 h-4" />
-                  Contact associé
-                </label>
-                <select id="projectmodal-contact-associe"
+              <FormField label="Contact associé" htmlFor="projectmodal-contact-associe">
+                <Select id="projectmodal-contact-associe"
                   value={formData.contact_id}
                   onChange={(e) => handleChange('contact_id', e.target.value)}
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:border-accent-cyan/50 transition-colors"
                   disabled={loadingContacts}
-                >
-                  <option value="">Aucun contact</option>
-                  {contacts.map((contact) => (
-                    <option key={contact.id} value={contact.id}>
-                      {getContactDisplayName(contact)}
-                    </option>
-                  ))}
-                </select>
+                  options={[
+                    { value: '', label: 'Aucun contact' },
+                    ...contacts.map((contact) => ({ value: contact.id, label: getContactDisplayName(contact) })),
+                  ]}
+                />
                 {loadingContacts && (
-                  <p className="text-xs text-text-muted flex items-center gap-1">
+                  <p role="status" className="text-sm text-text-muted flex items-center gap-1">
                     <Spinner taille="ligne" />
                     Chargement des contacts...
                   </p>
                 )}
-              </div>
+              </FormField>
 
               {/* Budget */}
-              <div className="space-y-2">
-                <label htmlFor="projectmodal-budget" className="text-sm text-text-muted">Budget (€)</label>
-                <input id="projectmodal-budget"
+              <FormField label="Budget (€)" htmlFor="projectmodal-budget">
+                <Input id="projectmodal-budget"
                   type="number"
                   value={formData.budget}
                   onChange={(e) => handleChange('budget', e.target.value)}
                   placeholder="5000"
                   min="0"
                   step="100"
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
                 />
-              </div>
+              </FormField>
 
               {/* Notes */}
-              <div className="space-y-2">
-                <label htmlFor="projectmodal-notes" className="text-sm text-text-muted">Notes</label>
-                <textarea id="projectmodal-notes"
+              <FormField label="Notes" htmlFor="projectmodal-notes">
+                <Textarea id="projectmodal-notes"
                   value={formData.notes}
                   onChange={(e) => handleChange('notes', e.target.value)}
                   placeholder="Notes internes sur le projet..."
                   rows={3}
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors resize-none"
                 />
-              </div>
+              </FormField>
 
               {/* Dossier synchronisé (0.45) - visible uniquement en édition */}
               {isEditing && project && (
@@ -426,23 +401,25 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                       {projectFiles.map((f) => (
                         <div
                           key={f.id}
-                          className="flex items-center gap-2 px-3 py-2 bg-background/40 rounded-md border border-border/30"
+                          className="flex items-center gap-2 px-3 py-2 bg-surface-2 rounded-md border border-border"
                         >
                           {getFileIcon(f.extension)}
                           <span className="flex-1 text-sm text-text truncate">{f.name}</span>
                           <span className="text-xs text-text-muted">{formatFileSize(f.size)}</span>
-                          <button
+                          <Button
                             type="button"
+                            variant="ghost"
+                            size="icon"
                             onClick={(event) => {
                               boutonSuppressionRef.current = event.currentTarget;
                               setFichierASupprimer(f);
                             }}
-                            className="p-1 rounded-sm hover:bg-error/10 text-text-muted hover:text-error transition-colors"
+                            className="text-text-muted hover:text-error"
                             aria-label={`Supprimer le fichier ${f.name}`}
                             title={`Supprimer le fichier ${f.name}`}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
-                          </button>
+                          </Button>
                         </div>
                       ))}
                     </div>
@@ -458,7 +435,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                   />
                   <Button
                     variant="ghost"
-                    className="w-full border border-dashed border-border/50 hover:border-accent-cyan/50"
+                    className="w-full border border-dashed border-border"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={uploadingFile}
                   >
@@ -472,23 +449,18 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
               )}
 
               {/* Tags */}
-              <div className="space-y-2">
-                <label htmlFor="projectmodal-tags-separes-par-des-virgule" className="text-sm text-text-muted">Tags (séparés par des virgules)</label>
-                <input id="projectmodal-tags-separes-par-des-virgule"
+              <FormField label="Tags (séparés par des virgules)" htmlFor="projectmodal-tags-separes-par-des-virgule">
+                <Input id="projectmodal-tags-separes-par-des-virgule"
                   type="text"
                   value={formData.tags}
                   onChange={(e) => handleChange('tags', e.target.value)}
                   placeholder="web, design, urgent"
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
                 />
-              </div>
+              </FormField>
 
               {/* Error */}
               {error && (
-                <div role="alert" className="flex items-center gap-2 px-3 py-2 bg-error/10 border border-error/20 rounded-md">
-                  <AlertCircle className="w-4 h-4 text-error shrink-0" />
-                  <span className="text-sm text-error">{error}</span>
-                </div>
+                <Alerte icone={<AlertCircle className="w-4 h-4" />}>{error}</Alerte>
               )}
 
               {/* Suppression d'un fichier joint : confirmation en ligne */}
@@ -499,9 +471,9 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                     <p className="text-sm text-error font-medium">
                       Supprimer « {fichierASupprimer.name} » ?
                     </p>
-                    <p className="text-xs text-error">Cette action est irréversible.</p>
+                    <p className="text-sm text-error">Cette action est irréversible.</p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     {/* Pas « Annuler » : le formulaire en a déjà un, et deux
                         boutons du même nom à l'écran ne disent pas ce qu'ils
                         annulent - ni à l'œil, ni au lecteur d'écran. */}
@@ -525,9 +497,9 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                   <AlertCircle className="w-4 h-4 text-error shrink-0" />
                   <div className="flex-1">
                     <p className="text-sm text-error font-medium">Supprimer ce projet ?</p>
-                    <p className="text-xs text-error">Cette action est irréversible.</p>
+                    <p className="text-sm text-error">Cette action est irréversible.</p>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
                     <Button
                       variant="ghost"
                       size="sm"
@@ -549,7 +521,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-between px-6 py-4 border-t border-border/50 shrink-0">
+            <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 border-t border-border/50 shrink-0">
               <div>
                 {isEditing && !showDeleteConfirm && (
                   <Button
@@ -562,7 +534,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                   </Button>
                 )}
               </div>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3 max-[840px]:basis-full [&>button]:max-[840px]:flex-1">
                 <Button variant="ghost" onClick={onClose}>
                   Annuler
                 </Button>

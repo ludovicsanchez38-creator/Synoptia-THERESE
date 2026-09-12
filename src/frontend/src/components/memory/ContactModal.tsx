@@ -8,6 +8,10 @@ import { useContactsStore } from '../../stores/contactsStore';
 import { Z_LAYER } from '../../styles/z-layers';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { Spinner } from '../ui/Spinner';
+import { Alerte } from '../ui/Alerte';
+import { FormField } from '../ui/FormField';
+import { Input } from '../ui/Input';
+import { Textarea } from '../ui/Textarea';
 
 interface ContactModalProps {
   isOpen: boolean;
@@ -152,7 +156,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
             animate="animate"
             exit="exit"
             transition={{ duration: 0.2 }}
-            className={`fixed inset-0 bg-black/60 backdrop-blur-sm ${Z_LAYER.MODAL}`}
+            className={`fixed inset-0 bg-text/35 backdrop-blur-sm ${Z_LAYER.MODAL}`}
             onClick={onClose}
           />
 
@@ -166,19 +170,19 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
             initial="initial"
             animate="animate"
             exit="exit"
-            className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-surface border border-border rounded-md shadow-2xl ${Z_LAYER.MODAL} max-h-[85vh] overflow-hidden flex flex-col`}
+            className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[calc(100%-2rem)] max-w-lg bg-surface border border-border rounded-md ${Z_LAYER.MODAL} max-h-[85vh] overflow-hidden flex flex-col`}
           >
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-sm bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
+                <div className="w-10 h-10 rounded-sm bg-accent-tint border border-accent flex items-center justify-center">
                   <User className="w-5 h-5 text-accent" />
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold text-text">
                     {isEditing ? 'Modifier le contact' : 'Nouveau contact'}
                   </h2>
-                  <p className="text-xs text-text-muted">
+                  <p className="text-sm text-text-muted">
                     {isEditing ? 'Modifie les informations du contact' : 'Ajoute un nouveau contact à ta mémoire'}
                   </p>
                 </div>
@@ -192,108 +196,89 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {/* Name row */}
               <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <label htmlFor="contactmodal-prenom" className="text-sm text-text-muted">Prénom</label>
-                  <input id="contactmodal-prenom"
+                <FormField label="Prénom" htmlFor="contactmodal-prenom">
+                  <Input id="contactmodal-prenom"
                     type="text"
                     value={formData.first_name}
                     onChange={(e) => handleChange('first_name', e.target.value)}
                     placeholder="Jean"
-                    className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
                   />
-                </div>
-                <div className="space-y-2">
-                  <label htmlFor="contactmodal-nom" className="text-sm text-text-muted">Nom</label>
-                  <input id="contactmodal-nom"
+                </FormField>
+                <FormField label="Nom" htmlFor="contactmodal-nom">
+                  <Input id="contactmodal-nom"
                     type="text"
                     value={formData.last_name}
                     onChange={(e) => handleChange('last_name', e.target.value)}
                     placeholder="Dupont"
-                    className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
                   />
-                </div>
+                </FormField>
               </div>
 
               {/* Company */}
-              <div className="space-y-2">
-                <label htmlFor="contactmodal-entreprise" className="text-sm text-text-muted">Entreprise</label>
-                <input id="contactmodal-entreprise"
+              <FormField label="Entreprise" htmlFor="contactmodal-entreprise">
+                <Input id="contactmodal-entreprise"
                   type="text"
                   value={formData.company}
                   onChange={(e) => handleChange('company', e.target.value)}
                   placeholder="Synoptïa"
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
                 />
-              </div>
+              </FormField>
 
               {/* Email */}
-              <div className="space-y-2">
-                <label htmlFor="contactmodal-email" className="text-sm text-text-muted">Email</label>
-                <input id="contactmodal-email"
+              <FormField label="Email" htmlFor="contactmodal-email">
+                <Input id="contactmodal-email"
                   type="email"
                   value={formData.email}
                   onChange={(e) => handleChange('email', e.target.value)}
                   placeholder="jean@example.com"
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
                 />
-              </div>
+              </FormField>
 
               {/* Phone */}
-              <div className="space-y-2">
-                <label htmlFor="contactmodal-telephone" className="text-sm text-text-muted">Téléphone</label>
-                <input id="contactmodal-telephone"
+              <FormField label="Téléphone" htmlFor="contactmodal-telephone">
+                <Input id="contactmodal-telephone"
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => handleChange('phone', e.target.value)}
                   placeholder="Numéro de téléphone"
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
                 />
-              </div>
+              </FormField>
 
               {/* Adresse — B2 : sans elle, un devis part avec un destinataire
                   vide. Le champ existait en base et n'était saisissable nulle
                   part. */}
-              <div className="space-y-2">
-                <label htmlFor="contactmodal-adresse" className="text-sm text-text-muted">Adresse</label>
-                <input id="contactmodal-adresse"
+              <FormField label="Adresse" htmlFor="contactmodal-adresse">
+                <Input id="contactmodal-adresse"
                   type="text"
                   value={formData.address}
                   onChange={(e) => handleChange('address', e.target.value)}
                   placeholder="Numéro et rue, code postal, ville"
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
                 />
-              </div>
+              </FormField>
 
               {/* Notes */}
-              <div className="space-y-2">
-                <label htmlFor="contactmodal-notes" className="text-sm text-text-muted">Notes</label>
-                <textarea id="contactmodal-notes"
+              <FormField label="Notes" htmlFor="contactmodal-notes">
+                <Textarea id="contactmodal-notes"
                   value={formData.notes}
                   onChange={(e) => handleChange('notes', e.target.value)}
                   placeholder="Informations complémentaires..."
                   rows={3}
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors resize-none"
                 />
-              </div>
+              </FormField>
 
               {/* Tags */}
-              <div className="space-y-2">
-                <label htmlFor="contactmodal-tags-separes-par-des-virgule" className="text-sm text-text-muted">Tags (séparés par des virgules)</label>
-                <input id="contactmodal-tags-separes-par-des-virgule"
+              <FormField label="Tags (séparés par des virgules)" htmlFor="contactmodal-tags-separes-par-des-virgule">
+                <Input id="contactmodal-tags-separes-par-des-virgule"
                   type="text"
                   value={formData.tags}
                   onChange={(e) => handleChange('tags', e.target.value)}
                   placeholder="client, prospect, partenaire"
-                  className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
                 />
-              </div>
+              </FormField>
 
               {/* Error */}
               {error && (
-                <div role="alert" className="flex items-center gap-2 px-3 py-2 bg-error/10 border border-error/20 rounded-md">
-                  <AlertCircle className="w-4 h-4 text-error shrink-0" />
-                  <span className="text-sm text-error">{error}</span>
-                </div>
+                <Alerte icone={<AlertCircle className="w-4 h-4" />}>{error}</Alerte>
               )}
 
               {/* Delete confirmation */}
@@ -302,7 +287,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
                   <AlertCircle className="w-4 h-4 text-error shrink-0" />
                   <div className="flex-1">
                     <p className="text-sm text-error font-medium">Supprimer ce contact ?</p>
-                    <p className="text-xs text-error">Cette action est irréversible.</p>
+                    <p className="text-sm text-error">Cette action est irréversible.</p>
                   </div>
                   <div className="flex gap-2">
                     <Button
@@ -326,7 +311,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
             </div>
 
             {/* Footer */}
-            <div className="flex items-center justify-between px-6 py-4 border-t border-border/50 shrink-0">
+            <div className="flex flex-wrap items-center justify-between gap-3 px-6 py-4 border-t border-border/50 shrink-0">
               <div>
                 {isEditing && !showDeleteConfirm && (
                   <Button
@@ -339,7 +324,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
                   </Button>
                 )}
               </div>
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3 max-[840px]:basis-full [&>button]:max-[840px]:flex-1">
                 <Button variant="ghost" onClick={onClose}>
                   Annuler
                 </Button>

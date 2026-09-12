@@ -39,16 +39,21 @@ import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { AlertCircle, CheckCircle2, FileEdit, RotateCcw, Sparkles } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { Alerte } from '../ui/Alerte';
+import { EtatVide } from '../ui/EtatVide';
+import { Etiquette } from '../ui/Etiquette';
+import { Input } from '../ui/Input';
+import { Textarea } from '../ui/Textarea';
 import type { DocumentSection, SectionUpdateRequest } from '../../services/api/documents';
 
 // =============================================================================
 // STATUTS (mêmes tags carrés theme-aware que OutlineTree)
 // =============================================================================
 
-const STATUS_META: Record<DocumentSection['status'], { label: string; className: string }> = {
-  vide: { label: 'Vide', className: 'text-text-muted border-border/40 bg-surface' },
-  brouillon: { label: 'Brouillon', className: 'text-warning border-warning/30 bg-warning/10' },
-  validee: { label: 'Validée', className: 'text-success border-success/30 bg-success/10' },
+const STATUS_META: Record<DocumentSection['status'], { label: string; ton: 'neutre' | 'attention' | 'succes' }> = {
+  vide: { label: 'Vide', ton: 'neutre' },
+  brouillon: { label: 'Brouillon', ton: 'attention' },
+  validee: { label: 'Validée', ton: 'succes' },
 };
 
 // =============================================================================
@@ -70,7 +75,7 @@ const markdownComponents: Components = {
   },
   a({ href, children }) {
     return (
-      <a href={href} target="_blank" rel="noopener noreferrer" className="text-accent-cyan-ink hover:underline">
+      <a href={href} target="_blank" rel="noopener noreferrer" className="text-accent hover:underline">
         {children}
       </a>
     );
@@ -85,7 +90,7 @@ const markdownComponents: Components = {
     return <h3 className="text-base font-bold mb-2 mt-3 first:mt-0">{children}</h3>;
   },
   blockquote({ children }) {
-    return <blockquote className="border-l-4 border-accent-cyan/50 pl-4 my-3 text-text-muted italic">{children}</blockquote>;
+    return <blockquote className="border-l-4 border-accent pl-4 my-3 text-text-muted italic">{children}</blockquote>;
   },
   hr() {
     return <hr className="my-4 border-border" />;
@@ -105,7 +110,7 @@ const markdownComponents: Components = {
         </pre>
       );
     }
-    return <code className="px-1.5 py-0.5 rounded-sm bg-bg text-accent-cyan-ink text-sm font-mono">{children}</code>;
+    return <code className="px-1.5 py-0.5 rounded-sm bg-bg text-accent text-sm font-mono">{children}</code>;
   },
   table({ children }) {
     return (
@@ -236,26 +241,28 @@ export function SectionEditor({
             </p>
             {/* P-056 : un levier d'arrêt, visible tant que ça tourne. */}
             {onAnnulerTrame && (
-              <button
-                type="button"
+              <Button
+                variant="secondary"
+                size="md"
                 onClick={onAnnulerTrame}
                 disabled={arretDemande}
-                className="mt-3 rounded-md border border-border px-3 py-1.5 text-sm font-semibold text-text-muted hover:text-text disabled:opacity-60"
+                className="mt-3"
               >
                 {arretDemande ? 'Arrêt demandé…' : 'Annuler la génération'}
-              </button>
+              </Button>
             )}
           </div>
         </div>
       );
     }
     return (
-      <div className="flex-1 min-h-0 flex items-center justify-center text-center px-6" data-testid="section-editor-empty">
-        <div>
-          <FileEdit className="w-8 h-8 text-text-muted mx-auto mb-2" />
-          <p className="text-sm text-text-muted">Sélectionne une section dans la trame pour la rédiger.</p>
-        </div>
-      </div>
+      <EtatVide
+        titre="Aucune section sélectionnée"
+        className="flex-1 min-h-0 flex flex-col items-center justify-center"
+        data-testid="section-editor-empty"
+      >
+        Sélectionne une section dans la trame pour la rédiger.
+      </EtatVide>
     );
   }
 
@@ -316,20 +323,22 @@ export function SectionEditor({
       {/* Titre + consigne (PATCH au blur) */}
       <div className="px-5 py-4 border-b border-border/40 space-y-3 shrink-0">
         <div className="flex items-center gap-2">
-          <input
-            value={titleDraft}
-            onChange={(e) => setTitleDraft(e.target.value)}
-            onBlur={handleTitleBlur}
-            placeholder="Titre de la section"
-            aria-label="Titre de la section"
-            disabled={isStreaming}
-            className="flex-1 min-w-0 px-2.5 py-1.5 bg-transparent text-lg font-semibold text-text focus:outline-none focus:bg-background/40 rounded-md transition-colors disabled:opacity-60"
-          />
-          <span className={`shrink-0 px-2 py-0.5 text-xs font-semibold uppercase tracking-wide rounded-sm border ${meta.className}`}>
+          <div className="flex-1 min-w-0">
+            <Input
+              value={titleDraft}
+              onChange={(e) => setTitleDraft(e.target.value)}
+              onBlur={handleTitleBlur}
+              placeholder="Titre de la section"
+              aria-label="Titre de la section"
+              disabled={isStreaming}
+              className="text-lg font-semibold"
+            />
+          </div>
+          <Etiquette ton={meta.ton}>
             {meta.label}
-          </span>
+          </Etiquette>
         </div>
-        <textarea
+        <Textarea
           value={briefDraft}
           onChange={(e) => setBriefDraft(e.target.value)}
           onBlur={handleBriefBlur}
@@ -337,22 +346,23 @@ export function SectionEditor({
           aria-label="Consigne de la section"
           rows={2}
           disabled={isStreaming}
-          className="w-full px-2.5 py-1.5 bg-background/40 border border-border/40 rounded-md text-sm text-text-muted placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors resize-none disabled:opacity-60"
         />
       </div>
 
       {/* Erreur causale + Reprendre */}
       {error && (
-        <div role="alert" className="mx-5 mt-4 flex items-center justify-between gap-3 px-3 py-2 rounded-sm border border-error/30 bg-error/10 shrink-0">
-          <span className="flex items-center gap-2 text-sm text-error min-w-0">
-            <AlertCircle className="w-4 h-4 shrink-0" />
-            <span className="truncate">{error}</span>
-          </span>
-          <Button variant="ghost" size="sm" onClick={handleResume} className="shrink-0">
-            <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
-            Reprendre
-          </Button>
-        </div>
+        <Alerte
+          className="mx-5 mt-4 shrink-0"
+          icone={<AlertCircle className="w-4 h-4" />}
+          action={(
+            <Button variant="secondary" size="md" onClick={handleResume}>
+              <RotateCcw className="w-3.5 h-3.5 mr-1.5" />
+              Reprendre
+            </Button>
+          )}
+        >
+          {error}
+        </Alerte>
       )}
 
       {/* Contenu : texte brut pendant le stream, markdown rendu sinon */}
@@ -368,13 +378,13 @@ export function SectionEditor({
               {/* B-633 : un modèle local peut raisonner plusieurs minutes avant
                   d'écrire. Le statut dit ce qui se passe, et une synthèse
                   vocale a enfin quelque chose à lire. */}
-              <p role="status" className="mb-2 text-xs text-text-muted not-prose">
+              <p role="status" className="mb-2 text-sm text-text-muted not-prose">
                 {section.content
                   ? 'Rédaction en cours…'
                   : 'Rédaction lancée : le modèle prépare le texte, aucun mot reçu pour l’instant. Avec un modèle local, cela peut prendre plusieurs minutes.'}
               </p>
               {section.content}
-              <span className="inline-block w-0.5 h-5 bg-accent-cyan animate-pulse ml-1 rounded-full align-text-bottom" />
+              <span className="inline-block w-0.5 h-5 bg-accent animate-pulse ml-1 rounded-full align-text-bottom" />
             </div>
           ) : section.content ? (
             <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>
@@ -400,13 +410,12 @@ export function SectionEditor({
           Rédiger / Retoucher / Valider */}
       <div className="px-5 py-3.5 border-t border-border/40 shrink-0 space-y-2">
         <div>
-          <input
+          <Input
             ref={instructionRef}
             value={instruction}
             onChange={(e) => setInstruction(e.target.value)}
             placeholder="Instruction de retouche (ex. plus concis, ajouter un exemple...)"
             aria-label="Instruction de retouche"
-            className="w-full px-2.5 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 transition-colors"
             disabled={isStreaming}
           />
         </div>

@@ -34,6 +34,10 @@ import { staggerContainer, staggerItem, fadeIn } from '../../lib/animations';
 import { buildBrowserPathFromParts, getParentBrowserPath, isWindowsPath, normalizeBrowserPath } from './fileBrowserPaths';
 import { estIndexable } from '../../lib/formatsIndexables';
 import { Spinner } from '../ui/Spinner';
+import { Alerte } from '../ui/Alerte';
+import { EtatVide } from '../ui/EtatVide';
+import { Etiquette } from '../ui/Etiquette';
+import { Input } from '../ui/Input';
 
 export interface FileEntry {
   name: string;
@@ -300,13 +304,13 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
   return (
     <div className={cn('flex flex-col h-full', className)}>
       {/* Toolbar */}
-      <div className="flex items-center gap-2 p-3 border-b border-border/50">
+      <div className="flex flex-wrap items-center gap-2 p-3 border-b border-border">
         <Button
           variant="ghost"
           size="icon"
           onClick={goHome}
           title="Répertoire personnel"
-          className="h-8 w-8"
+          aria-label="Répertoire personnel"
         >
           <Home className="w-4 h-4" />
         </Button>
@@ -316,7 +320,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
           size="icon"
           onClick={goUp}
           title="Remonter"
-          className="h-8 w-8"
+          aria-label="Remonter"
           disabled={!getParentBrowserPath(currentPath)}
         >
           <FolderUp className="w-4 h-4" />
@@ -327,7 +331,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
           size="icon"
           onClick={() => loadDirectory(currentPath)}
           title="Actualiser"
-          className="h-8 w-8"
+          aria-label="Actualiser"
         >
           <RefreshCw className={cn('w-4 h-4', loading && 'animate-spin')} />
         </Button>
@@ -337,7 +341,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
           size="icon"
           onClick={openFolderPicker}
           title="Ouvrir un dossier"
-          className="h-8 w-8"
+          aria-label="Ouvrir un dossier"
         >
           <HardDrive className="w-4 h-4" />
         </Button>
@@ -345,38 +349,39 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
         <div className="flex-1" />
 
         {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-2 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-muted" />
-          <input aria-label="Filtrer les fichiers"
+        <div className="w-44 max-[840px]:basis-full max-[840px]:w-full">
+          <Input aria-label="Filtrer les fichiers"
             type="text"
             placeholder="Filtrer..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-32 pl-7 pr-2 py-1 text-sm bg-background/60 border border-border/50 rounded-md text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50"
+            icon={<Search className="w-4 h-4" />}
           />
         </div>
       </div>
 
       {/* Breadcrumb */}
       <div className="flex items-center gap-1 px-3 py-2 text-sm text-text-muted overflow-x-auto border-b border-border/30">
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          size="sm"
           onClick={goHome}
           aria-label="Dossier racine"
-          className="min-h-8 px-2 rounded-sm hover:text-accent-cyan-ink transition-colors"
         >
           ~
-        </button>
+        </Button>
         {pathParts.map((part, index) => (
           <span key={index} className="flex items-center">
             <ChevronRight className="w-3 h-3 mx-1 flex-shrink-0" />
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => navigateTo(buildBrowserPathFromParts(pathParts.slice(0, index + 1), isWindowsCurrentPath))}
-              className="hover:text-accent-cyan-ink transition-colors truncate max-w-[100px]"
+              className="truncate max-w-[120px]"
               title={part}
             >
               {part}
-            </button>
+            </Button>
           </span>
         ))}
       </div>
@@ -385,32 +390,29 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
       <AnimatePresence>
         {error && (
           <motion.div
-            role="alert"
             variants={fadeIn}
             initial="initial"
             animate="animate"
             exit="exit"
-            className="mx-3 mt-2 p-2 rounded-md bg-error/10 border border-error/20 flex items-center gap-2"
+            className="mx-3 mt-2"
           >
-            <AlertCircle className="w-4 h-4 text-error flex-shrink-0" />
-            <p className="text-xs text-error">{error}</p>
-            {pathToAuthorize && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="ml-auto shrink-0"
-                onClick={openFolderPicker}
-              >
-                Autoriser ce dossier
-              </Button>
-            )}
+            <Alerte
+              icone={<AlertCircle className="w-4 h-4" />}
+              action={pathToAuthorize ? (
+                <Button variant="secondary" size="md" onClick={openFolderPicker}>
+                  Autoriser ce dossier
+                </Button>
+              ) : undefined}
+            >
+              {error}
+            </Alerte>
           </motion.div>
         )}
       </AnimatePresence>
 
       {indexStatus && (
-        <p role="status" className="mx-3 mt-2 text-xs font-medium text-success">
-          {indexStatus}
+        <p role="status" className="mx-3 mt-2">
+          <Etiquette ton="succes">{indexStatus}</Etiquette>
         </p>
       )}
 
@@ -418,15 +420,13 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
       <div className="flex-1 overflow-y-auto">
         {loading ? (
           <div className="flex items-center justify-center h-32">
-            <Spinner taille="zone" className="text-accent-cyan-ink" />
+            <Spinner taille="zone" className="text-accent" />
           </div>
         ) : filteredEntries.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-32 text-text-muted">
-            <Folder className="w-8 h-8 mb-2 opacity-50" />
-            <p className="text-sm">
-              {searchQuery ? 'Aucun résultat' : 'Dossier vide'}
-            </p>
-          </div>
+          <EtatVide
+            titre={searchQuery ? 'Aucun résultat' : 'Dossier vide'}
+            className="h-32 flex flex-col items-center justify-center"
+          />
         ) : (
           <motion.div
             variants={staggerContainer}
@@ -447,7 +447,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
                   key={entry.path}
                   variants={staggerItem}
                   className={cn(
-                    'flex items-center gap-2 px-3 py-2 hover:bg-background/40 transition-colors group',
+                    'flex items-center gap-2 px-3 py-2 hover:bg-surface-2 transition-colors group',
                     isIndexing && 'opacity-50'
                   )}
                 >
@@ -468,7 +468,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
                     {/* Icon */}
                     <div className={cn(
                       'flex-shrink-0',
-                      entry.isDirectory ? 'text-accent-cyan-ink' : 'text-text-muted'
+                      entry.isDirectory ? 'text-accent' : 'text-text-muted'
                     )}>
                       <Icon className="w-4 h-4" />
                     </div>
@@ -480,12 +480,12 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
                         <p className="text-xs text-text-muted">{formatSize(entry.size)}</p>
                       )}
                       {indexed && (
-                        <p className="text-xs font-medium text-success">
+                        <Etiquette ton="succes" className="mt-1">
                           Indexé
                           {indexed.chunk_count != null
                             ? ` · ${indexed.chunk_count} fragment${indexed.chunk_count > 1 ? 's' : ''}`
                             : ''}
-                        </p>
+                        </Etiquette>
                       )}
                     </div>
                   </button>
@@ -496,7 +496,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
                       variant="ghost"
                       size="icon"
                       className={cn(
-                        'h-7 w-7 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity',
+                        'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-opacity',
                         isIndexing && 'opacity-100'
                       )}
                       onClick={(e) => {

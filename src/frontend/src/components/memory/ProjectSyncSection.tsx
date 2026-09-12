@@ -13,6 +13,9 @@ import * as api from '../../services/api';
 import { MARQUEUR_DELAI } from '../../services/api/core';
 import { Button } from '../ui/Button';
 import { Spinner } from '../ui/Spinner';
+import { Alerte } from '../ui/Alerte';
+import { Carte } from '../ui/Carte';
+import { Input } from '../ui/Input';
 
 interface Props {
   projectId: string;
@@ -180,7 +183,7 @@ export function ProjectSyncSection({ projectId }: Props) {
   const dernier = etat?.dernier_plan;
 
   return (
-    <div className="space-y-3 p-3 rounded-sm border-[1.5px] border-border bg-surface">
+    <Carte as="section" className="space-y-3 p-3">
       <div className="flex items-center gap-2">
         <FolderSync className="w-4 h-4 text-accent" />
         <h4 className="text-sm font-medium text-text">Dossier synchronisé</h4>
@@ -188,19 +191,20 @@ export function ProjectSyncSection({ projectId }: Props) {
 
       {!etat?.racine ? (
         <div className="space-y-2">
-          <p className="text-xs text-text-muted">
+          <p className="text-sm text-text-muted">
             Attache un dossier local : THÉRÈSE proposera un plan d'indexation à
             chaque synchronisation, et n'appliquera jamais rien sans ton accord.
           </p>
-          <div className="flex gap-2">
-            <input
-              aria-label="Chemin du dossier à synchroniser"
-              type="text"
-              value={chemin}
-              onChange={(e) => setChemin(e.target.value)}
-              placeholder="/Users/toi/Documents/mon-projet"
-              className="flex-1 px-3 py-2 text-sm rounded-sm border-[1.5px] border-border bg-background text-text placeholder:text-text-muted focus:outline-none focus:border-accent"
-            />
+          <div className="flex flex-wrap gap-2">
+            <div className="min-w-0 flex-1 max-[840px]:basis-full">
+              <Input
+                aria-label="Chemin du dossier à synchroniser"
+                type="text"
+                value={chemin}
+                onChange={(e) => setChemin(e.target.value)}
+                placeholder="/Users/toi/Documents/mon-projet"
+              />
+            </div>
             <Button
               size="sm"
               onClick={() => void attacher()}
@@ -213,20 +217,22 @@ export function ProjectSyncSection({ projectId }: Props) {
       ) : (
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2">
-            <code className="text-xs text-text-muted truncate">{etat.racine}</code>
-            <button
+            <code className="text-sm text-text-muted truncate">{etat.racine}</code>
+            <Button
               type="button"
+              variant="ghost"
+              size="icon"
               onClick={() => void delier()}
               disabled={occupe !== null}
-              className="text-text-muted hover:text-error disabled:opacity-40 disabled:pointer-events-none"
+              className="text-text-muted hover:text-error"
               aria-label="Délier le dossier"
               title="Délier (ne retire rien de l'index)"
             >
               <Unlink className="w-4 h-4" />
-            </button>
+            </Button>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
               variant="secondary"
@@ -251,7 +257,7 @@ export function ProjectSyncSection({ projectId }: Props) {
           </div>
 
           {plan && (
-            <div className="text-xs text-text-muted space-y-1" data-testid="sync-plan">
+            <div className="text-sm text-text-muted space-y-1" data-testid="sync-plan">
               <p>
                 {plan.nb_indexer} à indexer, {plan.nb_reindexer} à réindexer,{' '}
                 {plan.nb_retirer} à retirer, {plan.nb_inchanges} inchangés
@@ -273,7 +279,7 @@ export function ProjectSyncSection({ projectId }: Props) {
           )}
 
           {occupe === 'apply' && (
-            <p className="text-xs text-text-muted" role="status">
+            <p className="text-sm text-text-muted" role="status">
               Synchronisation en cours…
               {etat?.run?.progression != null && (
                 <> {Math.round(etat.run.progression * 100)} %</>
@@ -282,7 +288,7 @@ export function ProjectSyncSection({ projectId }: Props) {
           )}
 
           {journal.length > 0 && occupe === null && (
-            <div className="text-xs text-text-muted space-y-0.5" data-testid="sync-journal">
+            <div className="text-sm text-text-muted space-y-0.5" data-testid="sync-journal">
               <p className="font-medium">Dernières opérations :</p>
               <ul className="max-h-24 overflow-y-auto">
                 {journal.map((o) => (
@@ -297,7 +303,7 @@ export function ProjectSyncSection({ projectId }: Props) {
           )}
 
           {dernier && !plan && occupe !== 'apply' && (
-            <p className="text-xs text-text-muted">
+            <p className="text-sm text-text-muted">
               Dernière synchronisation : {dernier.etat === 'applique'
                 ? 'appliquée'
                 : dernier.etat === 'applique_partiel'
@@ -309,8 +315,8 @@ export function ProjectSyncSection({ projectId }: Props) {
       )}
 
       {erreur && (
-        <p className="text-xs text-error" role="alert">{erreur}</p>
+        <Alerte>{erreur}</Alerte>
       )}
-    </div>
+    </Carte>
   );
 }

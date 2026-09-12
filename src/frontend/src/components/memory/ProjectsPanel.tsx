@@ -162,7 +162,7 @@ export function ProjectsPanel() {
               {projects.length}{listeTronquee ? '+' : ''} projet{projects.length > 1 ? 's' : ''}
             </p>
           </div>
-          <Button variant="primary" size="md" className="ml-auto" onClick={handleNew}>
+          <Button variant="primary" size="md" className="ml-auto max-[840px]:basis-full max-[840px]:ml-0" onClick={handleNew}>
             <Plus className="h-[18px] w-[18px] mr-2" />
             Nouveau projet
           </Button>
@@ -241,14 +241,14 @@ export function ProjectsPanel() {
           aria-labelledby="delete-project-title"
           ref={dialogRef}
         >
-          <div className="w-full max-w-sm rounded-md border border-border bg-surface p-5 shadow-lg">
+          <div className="w-full max-w-sm rounded-md border border-border bg-surface p-5">
             <h2 id="delete-project-title" className="text-base font-semibold text-text">
               Supprimer le projet ?
             </h2>
             <p className="text-sm text-text-muted mt-2">
               « {deleteTarget.name} » sera supprimé. Cette action est définitive.
             </p>
-            <div className="flex justify-end gap-2 mt-5">
+            <div className="flex flex-wrap justify-end gap-2 mt-5">
               <Button variant="ghost" size="md" autoFocus onClick={() => setDeleteTarget(null)}>
                 Annuler
               </Button>
