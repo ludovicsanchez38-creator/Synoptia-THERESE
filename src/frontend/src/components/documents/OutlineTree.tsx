@@ -33,6 +33,7 @@ import { Button } from '../ui/Button';
 import type { DocumentSection, SectionCreateRequest, SectionsReorderItem } from '../../services/api/documents';
 import { computeReorderPayload } from './reorderPayload';
 import { accessibiliteGlisserDeposer } from '../../lib/accessibiliteGlisserDeposer';
+import { useDemoMask } from '../../hooks';
 import { Spinner } from '../ui/Spinner';
 
 // =============================================================================
@@ -85,6 +86,7 @@ export function OutlineTree({
   onCreateSection,
   onGenerateOutline,
 }: OutlineTreeProps) {
+  const { maskText } = useDemoMask();
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [addingSection, setAddingSection] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -96,7 +98,10 @@ export function OutlineTree({
   // B-217 : une section annoncée par son identifiant ne dit rien. Les
   // consignes anglaises de dnd-kit non plus, dans une application française.
   const accessibilite = accessibiliteGlisserDeposer(
-    (id) => sections.find((section) => section.id === id)?.title ?? null,
+    (id) => {
+      const section = sections.find((item) => item.id === id);
+      return section ? maskText(section.title) : null;
+    },
   );
   const draggingSection = useMemo(
     () => sortedSections.find((s) => s.id === draggingId) ?? null,
@@ -265,7 +270,15 @@ interface SortableSectionRowProps {
 }
 
 function SortableSectionRow({ section, isActive, onSelect }: SortableSectionRowProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: section.id });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: section.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -278,7 +291,13 @@ function SortableSectionRow({ section, isActive, onSelect }: SortableSectionRowP
   // simple (sélection) reste distingué du drag par l'activationConstraint
   // (distance 8px) du PointerSensor, pas par une zone de listener réduite.
   return (
-    <div ref={setNodeRef} style={style} className="cursor-grab active:cursor-grabbing" {...attributes} {...listeners}>
+    <div
+      ref={(node) => { setNodeRef(node); setActivatorNodeRef(node); }}
+      style={style}
+      className="cursor-grab active:cursor-grabbing"
+      {...attributes}
+      {...listeners}
+    >
       <SectionRow section={section} isActive={isActive} onSelect={onSelect} />
     </div>
   );

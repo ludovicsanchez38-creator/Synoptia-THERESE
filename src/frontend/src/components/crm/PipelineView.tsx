@@ -32,6 +32,7 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import { pushEscapeHandler } from '../../lib/escapeStack';
 import { accessibiliteGlisserDeposer } from '../../lib/accessibiliteGlisserDeposer';
+import { useDemoMask } from '../../hooks';
 import type { ContactResponse } from '../../services/api';
 
 const PIPELINE_STAGES = PIPELINE_ETAPES;
@@ -43,6 +44,7 @@ interface PipelineViewProps {
 }
 
 export function PipelineView({ contacts, onContactClick, onStageChange }: PipelineViewProps) {
+  const { maskText } = useDemoMask();
   const [contactsByStage, setContactsByStage] = useState<Record<string, ContactResponse[]>>({});
   const [activeContact, setActiveContact] = useState<ContactResponse | null>(null);
 
@@ -88,7 +90,8 @@ export function PipelineView({ contacts, onContactClick, onStageChange }: Pipeli
   function nomDuContact(contactId: string): string {
     const contact = contacts.find((c) => c.id === contactId);
     if (!contact) return 'Contact';
-    return [contact.first_name, contact.last_name].filter(Boolean).join(' ') || 'Contact';
+    const nom = [contact.first_name, contact.last_name].filter(Boolean).join(' ') || 'Contact';
+    return maskText(nom);
   }
 
   function libelleDuStage(stageId: string | null): string | null {
@@ -216,6 +219,7 @@ function SortableContactCard({ contact, onClick }: SortableContactCardProps) {
     attributes,
     listeners,
     setNodeRef,
+    setActivatorNodeRef,
     transform,
     transition,
     isDragging,
@@ -228,7 +232,12 @@ function SortableContactCard({ contact, onClick }: SortableContactCardProps) {
   };
 
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div
+      ref={(node) => { setNodeRef(node); setActivatorNodeRef(node); }}
+      style={style}
+      {...attributes}
+      {...listeners}
+    >
       <ContactCard
         contact={contact}
         onClick={onClick}

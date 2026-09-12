@@ -142,11 +142,11 @@ export function TaskKanban() {
   // B-217 : sans ce bloc, dnd-kit sert ses consignes ANGLAISES par défaut et
   // annonce les objets par leur identifiant technique. `over.id` désigne
   // aussi bien une carte qu'une colonne : les deux passent par ici.
-  const accessibilite = accessibiliteGlisserDeposer((id) =>
-    tasks.find((task) => task.id === id)?.title
-      ?? COLUMNS.find((column) => column.id === id)?.label
-      ?? null,
-  );
+  const accessibilite = accessibiliteGlisserDeposer((id) => {
+    const task = tasks.find((item) => item.id === id);
+    if (task) return maskText(task.title);
+    return COLUMNS.find((column) => column.id === id)?.label ?? null;
+  });
 
   return (
     <DndContext

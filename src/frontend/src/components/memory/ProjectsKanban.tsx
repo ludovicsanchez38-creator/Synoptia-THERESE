@@ -72,6 +72,7 @@ interface ProjectsKanbanProps {
 // =============================================================================
 
 export function ProjectsKanban({ projects, onSelect, onDelete, onStatusChange }: ProjectsKanbanProps) {
+  const { maskText } = useDemoMask();
   const [activeProject, setActiveProject] = useState<Project | null>(null);
 
   const sensors = useSensors(
@@ -147,11 +148,11 @@ export function ProjectsKanban({ projects, onSelect, onDelete, onStatusChange }:
 
   // B-217 : consignes et annonces en français, par les noms - un projet
   // annoncé par son UUID ne désigne rien à l'oreille.
-  const accessibilite = accessibiliteGlisserDeposer((id) =>
-    projects.find((project) => project.id === id)?.name
-      ?? STATUS_COLUMNS.find((column) => column.id === id)?.label
-      ?? null,
-  );
+  const accessibilite = accessibiliteGlisserDeposer((id) => {
+    const project = projects.find((item) => item.id === id);
+    if (project) return maskText(project.name);
+    return STATUS_COLUMNS.find((column) => column.id === id)?.label ?? null;
+  });
 
   return (
     <DndContext
