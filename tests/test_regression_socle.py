@@ -170,6 +170,50 @@ class TestCleDeSecours:
         assert module.KEY_FILE.exists(), "le fichier reste une sauvegarde après migration"
 
 
+class TestB748ProfilTemporaireSansTrousseau:
+    def test_un_data_dir_temporaire_necrit_jamais_dans_le_trousseau(
+        self, monkeypatch, tmp_path
+    ):
+        from app.services import encryption as module
+
+        profil_temporaire = tmp_path / "profil-isole"
+        fichier_cle = profil_temporaire / ".encryption_key"
+        trousseau = FauxTrousseau()
+
+        assert module._compte_trousseau(Path.home() / ".therese") == "encryption-key", (
+            "le profil réel doit conserver le compte Keychain historique"
+        )
+
+        monkeypatch.setenv("THERESE_DATA_DIR", str(profil_temporaire))
+        monkeypatch.setattr(module._settings, "data_dir", profil_temporaire)
+        monkeypatch.setattr(module, "THERESE_DIR", profil_temporaire)
+        monkeypatch.setattr(module, "KEY_FILE", fichier_cle)
+        monkeypatch.setattr(
+            module, "KEYCHAIN_ACCOUNT", module._compte_trousseau(profil_temporaire)
+        )
+        monkeypatch.setattr(module, "_try_keyring_available", lambda: True)
+        monkeypatch.setitem(sys.modules, "keyring", trousseau)
+        module.EncryptionService._instance = None
+        module.EncryptionService._fernet = None
+        module.EncryptionService._using_keychain = False
+
+        try:
+            service = module.EncryptionService()
+            chiffre = service.encrypt("secret temporaire")
+
+            assert service.decrypt(chiffre) == "secret temporaire"
+            assert fichier_cle.exists(), (
+                "un profil temporaire doit créer sa clé locale .encryption_key"
+            )
+            assert trousseau.ecrits == [], (
+                "THERESE_DATA_DIR temporaire ne doit jamais appeler keyring.set_password"
+            )
+        finally:
+            module.EncryptionService._instance = None
+            module.EncryptionService._fernet = None
+            module.EncryptionService._using_keychain = False
+
+
 # ---------------------------------------------------------------- schémas
 
 
