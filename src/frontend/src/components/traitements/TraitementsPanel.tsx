@@ -14,6 +14,7 @@ import { pushEscapeHandler } from '../../lib/escapeStack';
 import type { Traitement } from '../../services/api';
 import { useProcessingTasksStore } from '../../stores/processingTasksStore';
 import { Spinner } from '../ui/Spinner';
+import { Alerte, Button, EtatVide } from '../ui';
 
 const LIBELLES_ETAT: Record<Traitement['state'], string> = {
   queued: 'En file',
@@ -45,22 +46,23 @@ export function TraitementsPanel() {
     >
       <div className="mb-2 flex items-center justify-between">
         <h3 className="text-sm font-semibold text-text">Travaux récents</h3>
-        <button
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
           onClick={fermer}
           aria-label="Fermer les travaux"
-          className="text-text-muted hover:text-text"
         >
           <X className="h-4 w-4" />
-        </button>
+        </Button>
       </div>
 
       {erreur && (
-        <p className="mb-2 text-xs text-error" role="alert">{erreur}</p>
+        <Alerte className="mb-2" titre="Chargement incomplet">{erreur}</Alerte>
       )}
 
       {traitements.length === 0 && !erreur && (
-        <p className="text-xs text-text-muted">Aucun travail récent.</p>
+        <EtatVide titre="Aucun travail récent." className="py-6" />
       )}
 
       <ul className="max-h-80 space-y-2 overflow-y-auto">
@@ -82,15 +84,17 @@ export function TraitementsPanel() {
                   {t.label}
                 </span>
                 {t.can_cancel && !arretDemande && (
-                  <button
+                  <Button
                     type="button"
+                    variant="secondary"
+                    size="sm"
                     onClick={() => void annuler(t.id)}
                     aria-label={`Arrêter ${t.label}`}
-                    className="flex items-center gap-1 rounded-sm border border-border px-1.5 py-0.5 text-sm text-text-muted hover:border-error hover:text-error"
+                    className="hover:border-error hover:text-error"
                   >
                     <Square className="h-3 w-3" />
                     Arrêter
-                  </button>
+                  </Button>
                 )}
               </div>
               <p className="mt-1 text-xs text-text-muted">

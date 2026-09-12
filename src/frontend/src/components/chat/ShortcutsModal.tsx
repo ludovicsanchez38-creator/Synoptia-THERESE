@@ -2,6 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Keyboard } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { DialogShell } from '../ui/DialogShell';
+import { Button, Carte } from '../ui';
 
 interface ShortcutsModalProps {
   isOpen: boolean;
@@ -83,8 +84,7 @@ export function ShortcutsModal({ isOpen, onClose }: ShortcutsModalProps) {
             transition={{ duration: 0.2, ease: [0.23, 1, 0.32, 1] }}
             className={cn(
               'w-full max-w-2xl mx-4',
-              'bg-surface/95 backdrop-blur-xl border border-border/50 rounded-md',
-              'shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)]',
+              'bg-surface border border-border rounded-md shadow-lg',
               'overflow-hidden'
             )}
             onClick={(e) => e.stopPropagation()}
@@ -92,31 +92,33 @@ export function ShortcutsModal({ isOpen, onClose }: ShortcutsModalProps) {
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
               <div className="flex items-center gap-3">
-                <div className="w-8 h-8 rounded-md bg-accent-cyan/20 flex items-center justify-center">
-                  <Keyboard className="w-4 h-4 text-accent-cyan-ink" />
+                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent-tint">
+                  <Keyboard className="h-4 w-4 text-accent" />
                 </div>
                 <h2 className="text-lg font-semibold text-text">Raccourcis clavier</h2>
               </div>
-              <button
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
                 onClick={onClose}
-                className="p-1.5 rounded-md hover:bg-surface-elevated transition-colors"
+                aria-label="Fermer les raccourcis clavier"
               >
                 <X className="w-5 h-5 text-text-muted" />
-              </button>
+              </Button>
             </div>
 
             {/* Content */}
             <div className="p-6 max-h-[70vh] overflow-y-auto">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {SHORTCUT_GROUPS.map((group, groupIndex) => (
-                  <motion.div
+                  <Carte
+                    as="section"
                     key={group.title}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: groupIndex * 0.05 }}
+                    className="p-4"
                   >
-                    <h3 className="text-sm font-medium text-accent-cyan-ink mb-3 flex items-center gap-2">
-                      <span className="w-1.5 h-1.5 rounded-full bg-accent-cyan shadow-[0_0_6px_rgba(34,211,238,0.5)]" />
+                    <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-accent">
+                      <span className="h-1.5 w-1.5 rounded-full bg-accent" />
                       {group.title}
                     </h3>
                     <div className="space-y-2">
@@ -142,7 +144,7 @@ export function ShortcutsModal({ isOpen, onClose }: ShortcutsModalProps) {
                                     'min-w-[24px] h-6 px-1.5 inline-flex items-center justify-center',
                                     'rounded-sm bg-bg border border-border/50',
                                     'text-xs font-mono text-text',
-                                    'shadow-[0_1px_2px_rgba(0,0,0,0.2)]'
+                                    'shadow-sm'
                                   )}
                                 >
                                   {key}
@@ -153,7 +155,7 @@ export function ShortcutsModal({ isOpen, onClose }: ShortcutsModalProps) {
                         </motion.div>
                       ))}
                     </div>
-                  </motion.div>
+                  </Carte>
                 ))}
               </div>
             </div>

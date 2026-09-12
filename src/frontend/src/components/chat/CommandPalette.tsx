@@ -31,6 +31,7 @@ import { cn } from '../../lib/utils';
 import { getActions, runAction } from '../../lib/actionRegistry';
 import { Z_LAYER } from '../../styles/z-layers';
 import { classerCommandes } from '../../lib/classerCommandes';
+import { Button, EtatVide, Input } from '../ui';
 
 export interface Command {
   id: string;
@@ -194,33 +195,33 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
             transition={{ duration: reduceMotion ? 0 : 0.2, ease: [0.23, 1, 0.32, 1] }}
             className={cn(
               'relative w-full max-w-lg',
-              'bg-surface/95 backdrop-blur-xl border border-border/50 rounded-md',
-              'shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5),0_0_40px_rgba(34,211,238,0.1)]',
+              'bg-surface border border-border rounded-md shadow-lg',
               'overflow-hidden'
             )}
             onClick={(e) => e.stopPropagation()}
           >
         {/* Search input */}
-        <div className="flex items-center gap-3 px-4 py-3 border-b border-border">
-          <Search className="w-5 h-5 text-text-muted flex-shrink-0" />
-          <input aria-label="Rechercher une commande"
-            ref={inputRef}
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder="Rechercher une commande..."
-            className={cn(
-              'flex-1 bg-transparent text-text placeholder:text-text-muted',
-              'focus:outline-none text-sm'
-            )}
-          />
-          <button
+        <div className="flex items-center gap-3 border-b border-border px-4 py-3">
+          <div className="min-w-0 flex-1">
+            <Input aria-label="Rechercher une commande"
+              ref={inputRef}
+              type="text"
+              icon={<Search className="h-5 w-5" />}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Rechercher une commande..."
+            />
+          </div>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
             onClick={onClose}
-            className="p-1 rounded-sm hover:bg-surface-elevated transition-colors"
+            aria-label="Fermer la palette de commandes"
           >
             <X className="w-4 h-4 text-text-muted" />
-          </button>
+          </Button>
         </div>
 
         {/* Commands list */}
@@ -229,9 +230,8 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="px-4 py-8 text-center text-text-muted text-sm"
             >
-              Aucune commande trouvée
+              <EtatVide titre="Aucune commande trouvée" className="px-4 py-8" />
             </motion.div>
           ) : (
             filteredCommands.map((cmd, index) => (
@@ -241,10 +241,10 @@ export function CommandPalette({ isOpen, onClose }: CommandPaletteProps) {
                 animate={{ opacity: 1, x: 0 }}
                 transition={reduceMotion ? { duration: 0 } : { delay: index * 0.03 }}
                 className={cn(
-                  'w-full flex items-center gap-3 px-4 py-2.5',
-                  'text-left transition-all duration-150',
+                  'flex min-h-11 w-full items-center gap-3 px-4 py-2.5',
+                  'text-left transition-colors duration-150',
                   index === selectedIndex
-                    ? 'bg-accent-tint text-accent-cyan-ink shadow-[inset_0_0_20px_rgba(34,211,238,0.05)]'
+                    ? 'bg-accent-tint text-accent'
                     : 'hover:bg-surface-elevated/50 text-text'
                 )}
                 onClick={() => cmd.action()}

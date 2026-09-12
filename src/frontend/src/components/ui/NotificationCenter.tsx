@@ -22,6 +22,9 @@ import { useAccessibilityStore } from "../../stores/accessibilityStore";
 import { useNavigationStore, type AppView } from "../../stores/navigationStore";
 import { cn } from "../../lib/utils";
 import type { AppNotification } from "../../services/api/notifications";
+import { Button } from "./Button";
+import { EtatVide } from "./EtatVide";
+import { Spinner } from "./Spinner";
 
 // Icone par type de notification
 function NotificationIcon({ type }: { type: AppNotification["type"] }) {
@@ -159,17 +162,20 @@ function NotificationItem({ notification }: { notification: AppNotification }) {
             {timeAgo(notification.created_at)}
           </span>
           {actionUrl && notification.action_label && cibleDeNotification(actionUrl) && (
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
               onClick={(e) => {
                 e.stopPropagation();
                 if (!notification.is_read) markAsRead(notification.id);
                 ouvrirLaCible(actionUrl);
               }}
-              className="flex items-center gap-1 text-sm font-medium text-accent-cyan-ink hover:underline transition-colors"
+              className="text-accent"
             >
               <ExternalLink className="w-3 h-3" />
               {notification.action_label}
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -222,9 +228,12 @@ export function NotificationCenter() {
   return (
     <div className="relative" ref={panelRef}>
       {/* Bouton cloche */}
-      <button
+      <Button
+        type="button"
+        variant="ghost"
+        size="icon"
         onClick={toggle}
-        className="relative w-8 h-8 flex items-center justify-center rounded-md hover:bg-surface-elevated/80 transition-colors"
+        className="relative"
         title="Notifications"
         // B-282 : `title` seul ne nommait ce bouton que par la voie de dernier
         // recours du calcul de nom, et il ne s'affiche jamais au clavier. Le
@@ -247,7 +256,7 @@ export function NotificationCenter() {
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}
-      </button>
+      </Button>
 
       {/* Dropdown panel */}
       <AnimatePresence>
@@ -257,45 +266,45 @@ export function NotificationCenter() {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={reduceMotion ? { opacity: 0 } : { opacity: 0, y: -8, scale: 0.95 }}
             transition={{ duration: reduceMotion ? 0 : 0.15 }}
-            className={`fixed right-4 top-16 w-[380px] max-h-[480px] bg-bg/95 backdrop-blur-xl border border-border/60 rounded-md shadow-2xl z-[90] overflow-hidden flex flex-col`}
+            className="fixed right-4 top-16 z-[90] flex max-h-[480px] w-[380px] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-md border border-border bg-surface shadow-lg"
           >
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
               <h3 className="text-sm font-semibold text-text">Notifications</h3>
               <div className="flex items-center gap-2">
                 {unreadCount > 0 && (
-                  <button
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
                     onClick={markAllRead}
-                    className="flex items-center gap-1 text-sm text-accent-cyan-ink hover:underline transition-colors"
+                    className="text-accent"
                     title="Tout marquer comme lu"
                   >
                     <CheckCheck className="w-3.5 h-3.5" />
                     Tout lu
-                  </button>
+                  </Button>
                 )}
-                <button
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
                   onClick={close}
-                  className="p-1 hover:bg-surface-elevated rounded-sm transition-colors"
+                  aria-label="Fermer les notifications"
                 >
                   <X className="w-3.5 h-3.5 text-text-muted" />
-                </button>
+                </Button>
               </div>
             </div>
 
             {/* Liste */}
             <div className="flex-1 overflow-y-auto p-2 space-y-1">
               {isLoading && notifications.length === 0 ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="w-5 h-5 border-2 border-accent-cyan/30 border-t-accent-cyan rounded-full animate-spin" />
+                <div className="flex items-center justify-center py-8" role="status" aria-label="Chargement des notifications">
+                  <Spinner taille="zone" />
                 </div>
               ) : notifications.length === 0 ? (
-                <div className="flex flex-col items-center justify-center py-8 text-text-muted">
-                  <Bell className="w-8 h-8 mb-2 opacity-30" />
-                  <p className="text-sm">Aucune notification</p>
-                  <p className="text-xs mt-1 opacity-60">
-                    Tout est sous controle !
-                  </p>
-                </div>
+                <EtatVide titre="Aucune notification" className="py-8"><Bell className="mx-auto mb-2 h-8 w-8 opacity-30" />Tout est sous contrôle.</EtatVide>
               ) : (
                 <AnimatePresence>
                   {notifications.map((notif) => (
