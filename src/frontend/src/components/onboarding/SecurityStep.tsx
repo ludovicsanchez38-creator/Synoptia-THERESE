@@ -16,6 +16,9 @@ import { grantCloudConsent } from '../../lib/consent';
 import type { LLMProvider } from '../../services/api';
 import { libelleDuFournisseur } from '../../lib/libellesFournisseurs';
 import { TEXTES_ONBOARDING } from './textes';
+import { Alerte } from '../ui/Alerte';
+import { Button } from '../ui/Button';
+import { Carte } from '../ui/Carte';
 
 interface SecurityStepProps {
   provider: LLMProvider | null;
@@ -94,16 +97,13 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
       </div>
 
       {/* Alert banner */}
-      <div className="flex items-start gap-3 p-4 rounded-md bg-[var(--color-warning-tint)] border border-warning/40">
-        <AlertTriangle className="w-5 h-5 text-warning flex-shrink-0 mt-0.5" />
-        <div className="text-sm">
-          <p className="text-warning font-medium">Important</p>
-          <p className="text-warning mt-1">
-            Les agents IA peuvent exécuter des commandes et agir via les tools que tu actives.
-            Commence avec le minimum de permissions nécessaires.
-          </p>
-        </div>
-      </div>
+      <Alerte
+        ton="attention"
+        titre="Important"
+        icone={<AlertTriangle className="h-5 w-5 text-warning" />}
+      >
+        Les agents IA peuvent exécuter des commandes et agir via les tools que tu actives. Commence avec le minimum de permissions nécessaires.
+      </Alerte>
 
       {/* Risks list */}
       <div className="space-y-2 max-h-[280px] overflow-y-auto px-2">
@@ -118,7 +118,7 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
               aria-expanded={isExpanded}
               aria-controls={`security-detail-${index}`}
               className={cn(
-                'w-full text-left p-3 rounded-md border transition-all',
+                'min-h-9 w-full rounded-md border p-3 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                 'hover:bg-surface-2',
                 isExpanded ? 'bg-surface-2' : 'bg-transparent',
                 'border-border'
@@ -137,7 +137,7 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-text">{risk.title}</span>
                     <span className={cn(
-                      'text-xs px-2 py-0.5 rounded-sm',
+                      'rounded-sm px-2 py-0.5 text-sm',
                       severityColors[risk.severity]
                     )}>
                       {severityLabels[risk.severity]}
@@ -192,27 +192,24 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
           </p>
         </div>
       </label> : (
-        <div className="flex items-start gap-3 rounded-md border border-accent-cyan/30 bg-accent-cyan/10 p-4" data-testid="local-security-notice">
+        <Carte className="flex items-start gap-3 p-4" data-testid="local-security-notice">
           <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-accent-cyan-ink" />
           <div className="text-sm"><p className="font-medium text-text">Parcours local sans consentement cloud</p><p className="mt-1 text-text-muted">{provider === 'ollama' ? 'Ollama traite les messages sur cette machine.' : 'Aucun fournisseur cloud n’est activé pour le moment.'} Un accord distinct sera demandé au premier usage cloud réel, avec le fournisseur et les données transmis.</p></div>
-        </div>
+        </Carte>
       )}
 
       {/* Navigation */}
-      <div className="flex gap-3 pt-2">
-        <button
+      <div className="flex flex-wrap gap-3 pt-2">
+        <Button
+          variant="secondary"
           onClick={onBack}
           data-testid="onboarding-prev-btn"
-          className={cn(
-            'flex-1 px-4 py-3 rounded-md font-medium',
-            'bg-surface border border-border',
-            'text-text hover:bg-surface-elevated',
-            'transition-colors'
-          )}
+          className="flex-1"
         >
           Retour
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="primary"
           onClick={() => {
             if (cloudEnabled && provider) {
               // B-016 : la finalité 'llm' ne couvre pas les documents
@@ -227,18 +224,11 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
           }}
           disabled={cloudEnabled && !acknowledged}
           data-testid="onboarding-next-btn"
-          className={cn(
-            'flex-1 flex items-center justify-center gap-2',
-            'px-4 py-3 rounded-md font-medium',
-            'transition-all',
-            (!cloudEnabled || acknowledged)
-              ? 'bg-accent-fill text-accent-ink hover:bg-accent-fill/90'
-              : 'bg-surface text-text-muted cursor-not-allowed opacity-50'
-          )}
+          className="flex-1"
         >
           <CheckCircle2 className="w-5 h-5" />
           <span>J'ai compris, continuer</span>
-        </button>
+        </Button>
       </div>
     </motion.div>
   );

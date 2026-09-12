@@ -10,6 +10,8 @@ import { PartyPopper, Check, User, Cpu, FolderOpen, Sparkles, AlertCircle, Refre
 import * as api from '../../services/api';
 import { libelleDuFournisseur } from '../../lib/libellesFournisseurs';
 import { Button } from '../ui/Button';
+import { Alerte } from '../ui/Alerte';
+import { Carte } from '../ui/Carte';
 
 interface CompleteStepProps {
   onComplete: () => void;
@@ -141,13 +143,13 @@ export function CompleteStep({ onComplete, onBack, llmSkipped = false, serviceIa
       <div className="flex flex-1 flex-col items-center text-center overflow-y-auto min-h-0 w-full">
       {/* Celebration Animation */}
       <motion.div
-        initial={{ scale: 0, rotate: -180 }}
-        animate={{ scale: 1, rotate: 0 }}
+        initial={{ opacity: 0, rotate: -180 }}
+        animate={{ opacity: 1, rotate: 0 }}
         transition={{ type: 'spring', stiffness: 200, delay: 0.2 }}
         className="mb-8"
       >
-        <div className="w-24 h-24 rounded-md bg-accent-cyan/10 flex items-center justify-center border border-border/30">
-          <PartyPopper className="w-12 h-12 text-accent-cyan-ink" />
+        <div className="flex h-24 w-24 items-center justify-center rounded-full bg-accent-tint">
+          <PartyPopper className="h-12 w-12 text-accent" />
         </div>
       </motion.div>
 
@@ -179,18 +181,17 @@ export function CompleteStep({ onComplete, onBack, llmSkipped = false, serviceIa
           </div>
         )}
         {!loading && summaryUnavailable.length > 0 && (
-          <div role="alert" className="rounded-md border border-warning/40 bg-[var(--color-warning-tint)] p-4 text-left text-sm text-warning">
-            <p><strong>Récapitulatif partiel.</strong> Indisponible{summaryUnavailable.length > 1 ? 's' : ''} : {summaryUnavailable.join(', ')}.</p>
-            <button type="button" onClick={() => void loadSummary()} className="mt-2 rounded-md border border-warning px-3 py-2 font-semibold">Réessayer</button>
-          </div>
+          <Alerte
+            ton="attention"
+            titre="Récapitulatif partiel"
+            className="text-left"
+            action={<Button variant="secondary" size="sm" onClick={() => void loadSummary()}>Réessayer</Button>}
+          >Indisponible{summaryUnavailable.length > 1 ? 's' : ''} : {summaryUnavailable.join(', ')}.</Alerte>
         )}
-        {!loading && summaryItems.map((item, index) => (
-          <motion.div
+        {!loading && summaryItems.map((item) => (
+          <Carte
             key={item.title}
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.6 + index * 0.1 }}
-            className="flex items-center gap-3 p-4 rounded-md bg-background/40 border border-border/30 text-left"
+            className="flex items-center gap-3 p-4 text-left"
             data-testid={`summary-${item.title.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-')}`}
             data-configured={item.configured ? 'true' : 'false'}
           >
@@ -209,16 +210,14 @@ export function CompleteStep({ onComplete, onBack, llmSkipped = false, serviceIa
                 {item.unavailable ? 'Indisponible' : item.value}
               </p>
             </div>
-          </motion.div>
+          </Carte>
         ))}
       </motion.div>
 
       {/* Tips */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.9 }}
-        className="mb-6 p-3 rounded-md bg-accent-cyan/5 border border-accent-cyan/20 text-left w-full max-w-md"
+      <Carte
+        as="section"
+        className="mb-6 w-full max-w-md p-3 text-left"
       >
         <div className="flex items-center gap-2 mb-2">
           <Sparkles className="w-4 h-4 text-accent-cyan-ink" />
@@ -227,34 +226,21 @@ export function CompleteStep({ onComplete, onBack, llmSkipped = false, serviceIa
         <p className="text-xs text-text-muted">
           Tu peux à tout moment modifier ces paramètres dans les Paramètres (raccourci {settingsShortcut}+,).
         </p>
-      </motion.div>
+      </Carte>
 
       {/* Error */}
       {error && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-4 p-3 rounded-md bg-[var(--color-error-tint)] border border-error/40 text-left w-full max-w-md"
-          role="alert"
-        >
-          <div className="flex items-center gap-2">
-            <AlertCircle className="w-4 h-4 text-error shrink-0" />
-            <span className="text-sm text-error flex-1">{error}</span>
-            <button
-              onClick={handleRetry}
-              className="flex items-center gap-1 text-sm text-error hover:text-error transition-colors"
-            >
-              <RefreshCw className="w-3 h-3" />
-              Réessayer
-            </button>
-          </div>
-        </motion.div>
+        <Alerte
+          className="mb-4 w-full max-w-md text-left"
+          icone={<AlertCircle className="h-4 w-4 text-error" />}
+          action={<Button variant="secondary" size="sm" onClick={handleRetry}><RefreshCw className="h-3 w-3" />Réessayer</Button>}
+        >{error}</Alerte>
       )}
 
       </div>
 
       {/* Footer épinglé - toujours visible */}
-      <div className="flex justify-between w-full pt-4 mt-4 border-t border-border/30 shrink-0">
+      <div className="mt-4 flex w-full shrink-0 flex-wrap justify-between gap-3 border-t border-border pt-4">
         <Button variant="ghost" onClick={onBack} data-testid="onboarding-prev-btn">
           Retour
         </Button>

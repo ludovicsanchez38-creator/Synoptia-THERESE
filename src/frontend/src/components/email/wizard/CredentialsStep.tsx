@@ -6,9 +6,13 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Key, ChevronLeft, CheckCircle, AlertCircle, Upload } from 'lucide-react';
+import { Key, ChevronLeft, Upload } from 'lucide-react';
 import { Button } from '../../ui/Button';
 import * as api from '../../../services/api';
+import { Alerte } from '../../ui/Alerte';
+import { Carte } from '../../ui/Carte';
+import { FormField } from '../../ui/FormField';
+import { Input } from '../../ui/Input';
 
 interface CredentialsStepProps {
   clientId: string;
@@ -108,7 +112,7 @@ export function CredentialsStep({
       className="space-y-6"
     >
       <div className="text-center space-y-2">
-        <div className="w-12 h-12 rounded-sm bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center mx-auto mb-2">
+        <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-accent-tint">
           <Key className="w-6 h-6 text-accent-cyan-ink" />
         </div>
         <h3 className="text-lg font-semibold text-text">Entre tes identifiants</h3>
@@ -118,81 +122,43 @@ export function CredentialsStep({
       </div>
 
       {/* ID client */}
-      <div>
-        <label htmlFor="clientId" className="text-sm text-text-muted mb-2 block">
-          ID client
-        </label>
-        <div className="relative">
-          <input
+      <FormField
+        label="ID client"
+        htmlFor="clientId"
+        description={validation.clientId?.valid ? validation.clientId.message : undefined}
+        error={validation.clientId && !validation.clientId.valid ? validation.clientId.message : undefined}
+      >
+          <Input
             id="clientId"
             type="text"
             value={clientId}
             onChange={(e) => onChange('clientId', e.target.value)}
             placeholder="123456789-abc...apps.googleusercontent.com"
-            className="w-full px-4 py-3 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50"
+            error={validation.clientId?.valid === false}
           />
-          {validation.clientId && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-              {validation.clientId.valid ? (
-                <CheckCircle className="w-5 h-5 text-agent-green" />
-              ) : (
-                <AlertCircle className="w-5 h-5 text-error" />
-              )}
-            </div>
-          )}
-        </div>
-        {validation.clientId && (
-          <p
-            className={`text-xs mt-1 ${
-              validation.clientId.valid ? 'text-agent-green' : 'text-error'
-            }`}
-          >
-            {validation.clientId.message}
-          </p>
-        )}
-      </div>
+      </FormField>
 
       {/* Code secret du client */}
-      <div>
-        <label htmlFor="clientSecret" className="text-sm text-text-muted mb-2 block">
-          Code secret du client
-        </label>
-        <div className="relative">
-          <input
+      <FormField
+        label="Code secret du client"
+        htmlFor="clientSecret"
+        description={validation.clientSecret?.valid ? validation.clientSecret.message : undefined}
+        error={validation.clientSecret && !validation.clientSecret.valid ? validation.clientSecret.message : undefined}
+      >
+          <Input
             id="clientSecret"
             type="password"
             value={clientSecret}
             onChange={(e) => onChange('clientSecret', e.target.value)}
             placeholder="GOCSPX-..."
-            className="w-full px-4 py-3 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50"
+            error={validation.clientSecret?.valid === false}
           />
-          {validation.clientSecret && (
-            <div className="absolute right-3 top-1/2 -translate-y-1/2">
-              {validation.clientSecret.valid ? (
-                <CheckCircle className="w-5 h-5 text-agent-green" />
-              ) : (
-                <AlertCircle className="w-5 h-5 text-error" />
-              )}
-            </div>
-          )}
-        </div>
-        {validation.clientSecret && (
-          <p
-            className={`text-xs mt-1 ${
-              validation.clientSecret.valid ? 'text-agent-green' : 'text-error'
-            }`}
-          >
-            {validation.clientSecret.message}
-          </p>
-        )}
-        {validationError && (
-          <p role="alert" className="text-sm text-error">{validationError}</p>
-        )}
-      </div>
+      </FormField>
+      {validationError && <Alerte>{validationError}</Alerte>}
 
       {/* Import credentials.json + Info */}
-      <div className="p-4 bg-accent-cyan/10 border border-accent-cyan/20 rounded-md space-y-3">
-        <div className="flex items-center justify-between">
+      <Carte as="section" className="space-y-3 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-text-muted">
             <strong className="text-text">Astuce :</strong> Tu peux importer directement le fichier <code className="text-accent-cyan-ink">credentials.json</code> téléchargé depuis Google Cloud Console.
           </p>
@@ -214,12 +180,12 @@ export function CredentialsStep({
           </Button>
         </div>
         {importError && (
-          <p role="alert" className="text-xs text-error">{importError}</p>
+          <Alerte>{importError}</Alerte>
         )}
-      </div>
+      </Carte>
 
       {/* Actions */}
-      <div className="flex gap-3">
+      <div className="flex flex-wrap gap-3 max-[840px]:items-stretch">
         <Button variant="ghost" size="md" onClick={onBack} className="flex-1">
           <ChevronLeft className="w-4 h-4 mr-2" />
           Retour

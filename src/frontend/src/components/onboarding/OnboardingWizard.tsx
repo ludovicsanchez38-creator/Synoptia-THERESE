@@ -189,9 +189,9 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
             role="dialog"
             aria-modal="true"
             aria-labelledby="onboarding-title"
-            initial={{ scale: 0.95, opacity: 0, y: 20 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.95, opacity: 0, y: 20 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
             transition={{ type: 'spring', stiffness: 300, damping: 30 }}
             data-testid="onboarding-wizard"
             className="relative my-6 flex max-h-[calc(100vh-3rem)] w-full min-w-0 max-w-2xl flex-col overflow-hidden rounded-md border border-border/50 bg-surface shadow-2xl"
@@ -207,10 +207,7 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
                   <li key={step.id} className="flex min-w-0 items-center justify-center" aria-current={index === currentStep ? 'step' : undefined}>
                     <span className="sr-only">{step.title}</span>
                     {/* Step Circle */}
-                    <motion.div
-                      initial={false}
-                      animate={{ scale: index === currentStep ? 1.1 : 1 }}
-                      transition={{ duration: 0.2 }}
+                    <div
                       className={`flex h-7 w-7 items-center justify-center rounded-full border-2 sm:h-8 sm:w-8 ${
                         etatDeLEtape(index, currentStep, llmSkipped ? [2] : []) === 'faite'
                           ? 'border-accent-fill bg-accent-fill text-accent-ink'
@@ -230,18 +227,12 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
                       ) : (
                         <span className="text-xs font-medium">{index + 1}</span>
                       )}
-                    </motion.div>
+                    </div>
 
                     {/* Connector Line */}
                     {index < STEPS.length - 1 && (
                       <div className="mx-1 hidden h-0.5 w-12 sm:block">
-                        <motion.div
-                          initial={{ scaleX: 0 }}
-                          animate={{ scaleX: index < currentStep ? 1 : 0 }}
-                          transition={{ duration: 0.3 }}
-                          className="h-full bg-accent-cyan origin-left"
-                        />
-                        <div className="h-full bg-border/30 -mt-0.5" />
+                        <div className={`h-full transition-colors ${index < currentStep ? 'bg-accent-fill' : 'bg-border'}`} />
                       </div>
                     )}
                   </li>

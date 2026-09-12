@@ -9,6 +9,10 @@ import { useState, useEffect } from 'react';
 import { Send, X, Paperclip, ChevronDown, ChevronUp } from 'lucide-react';
 import { useEmailStore } from '../../stores/emailStore';
 import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
+import { Textarea } from '../ui/Textarea';
+import { FormField } from '../ui/FormField';
+import { Alerte } from '../ui/Alerte';
 import { useExternalActionConfirmation } from '../app/useExternalActionConfirmation';
 import * as api from '../../services/api';
 import { Spinner } from '../ui/Spinner';
@@ -185,124 +189,122 @@ export function EmailCompose() {
   return (
     <div className="flex-1 flex flex-col">
       {/* Header */}
-      <div className="px-6 py-4 border-b border-border/30 flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-6 py-4">
         <h3 className="text-lg font-semibold text-text">Nouveau message</h3>
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={handleCancel}
-          className="p-2 hover:bg-border/30 rounded-md transition-colors"
+          aria-label="Fermer la composition"
         >
           <X className="w-5 h-5 text-text-muted" />
-        </button>
+        </Button>
       </div>
 
       {/* Form */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Recipients */}
-        <div className="px-6 py-3 border-b border-border/30">
-          <div className="flex items-center gap-3">
-            <label className="text-sm text-text-muted w-16">À</label>
-            <input aria-label="Destinataire"
+        <div className="border-b border-border px-6 py-3">
+          <div className="flex flex-wrap items-end gap-3">
+            <FormField label="À" htmlFor="emailcompose-destinataire" className="min-w-0 flex-1">
+            <Input id="emailcompose-destinataire" aria-label="Destinataire"
               type="text"
               value={toInput}
               onChange={(e) => setToInput(e.target.value)}
               placeholder="destinataire@example.com, ..."
-              className="flex-1 px-3 py-2 bg-transparent text-sm text-text placeholder:text-text-muted focus:outline-none"
             />
-            <button
+            </FormField>
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={() => setShowCcBcc(!showCcBcc)}
-              className="text-sm text-text-muted hover:text-accent-cyan-ink transition-colors flex items-center gap-1"
+              aria-expanded={showCcBcc}
             >
               Cc/Cci
               {showCcBcc ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-            </button>
+            </Button>
           </div>
         </div>
 
         {/* CC / BCC */}
         {showCcBcc && (
           <>
-            <div className="px-6 py-3 border-b border-border/30">
-              <div className="flex items-center gap-3">
-                <label htmlFor="emailcompose-cc" className="text-sm text-text-muted w-16">Cc</label>
-                <input id="emailcompose-cc"
+            <div className="border-b border-border px-6 py-3">
+              <FormField label="Cc" htmlFor="emailcompose-cc">
+                <Input id="emailcompose-cc"
                   type="text"
                   value={ccInput}
                   onChange={(e) => setCcInput(e.target.value)}
                   placeholder="copie@example.com, ..."
-                  className="flex-1 px-3 py-2 bg-transparent text-sm text-text placeholder:text-text-muted focus:outline-none"
                 />
-              </div>
+              </FormField>
             </div>
-            <div className="px-6 py-3 border-b border-border/30">
-              <div className="flex items-center gap-3">
-                <label htmlFor="emailcompose-cci" className="text-sm text-text-muted w-16">Cci</label>
-                <input id="emailcompose-cci"
+            <div className="border-b border-border px-6 py-3">
+              <FormField label="Cci" htmlFor="emailcompose-cci">
+                <Input id="emailcompose-cci"
                   type="text"
                   value={bccInput}
                   onChange={(e) => setBccInput(e.target.value)}
                   placeholder="copie cachée@example.com, ..."
-                  className="flex-1 px-3 py-2 bg-transparent text-sm text-text placeholder:text-text-muted focus:outline-none"
                 />
-              </div>
+              </FormField>
             </div>
           </>
         )}
 
         {/* Subject */}
-        <div className="px-6 py-3 border-b border-border/30">
-          <div className="flex items-center gap-3">
-            <label htmlFor="emailcompose-objet" className="text-sm text-text-muted w-16">Objet</label>
-            <input id="emailcompose-objet"
+        <div className="border-b border-border px-6 py-3">
+          <FormField label="Objet" htmlFor="emailcompose-objet">
+            <Input id="emailcompose-objet"
               type="text"
               value={draftSubject}
               onChange={(e) => setDraftSubject(e.target.value)}
               placeholder="Objet du message"
-              className="flex-1 px-3 py-2 bg-transparent text-sm text-text placeholder:text-text-muted focus:outline-none"
             />
-          </div>
+          </FormField>
         </div>
 
         {/* Body */}
         <div className="flex-1 overflow-hidden">
-          <textarea
+          <Textarea
             aria-label="Corps du message"
             value={draftBody}
             onChange={(e) => setDraftBody(e.target.value)}
             placeholder="Écris ton message..."
-            className="w-full h-full px-6 py-4 bg-transparent text-sm text-text placeholder:text-text-muted resize-none focus:outline-none"
+            className="h-full resize-none rounded-none border-0 px-6 py-4 focus:ring-inset"
           />
         </div>
       </div>
 
       {/* Confirmation d'abandon */}
       {showCancelConfirm && (
-        <div className="px-6 py-3 bg-agent-amber/10 border-t border-agent-amber/20 flex items-center gap-3">
-          <p className="text-sm text-agent-amber flex-1">Abandonner ce brouillon ?</p>
-          <button
+        <div className="flex flex-wrap items-center gap-3 border-t border-warning/30 bg-[var(--color-warning-tint)] px-6 py-3">
+          <p className="min-w-0 flex-1 text-sm text-text">Abandonner ce brouillon ?</p>
+          <Button
+            variant="danger"
+            size="sm"
             onClick={confirmCancel}
-            className="px-3 py-1.5 text-sm bg-error/20 text-error hover:bg-error/30 rounded-md transition-colors"
           >
             Oui, abandonner
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setShowCancelConfirm(false)}
-            className="px-3 py-1.5 text-sm text-text-muted hover:text-text transition-colors"
           >
             Non, continuer
-          </button>
+          </Button>
         </div>
       )}
 
       {/* Actions */}
       <div className="px-6 py-4 border-t border-border/30">
         {error && (
-          <div role="alert" className="mb-3 px-3 py-2 bg-error/10 border border-error/20 rounded-md">
-            <p className="text-sm text-error">{error}</p>
-          </div>
+          <Alerte className="mb-3">{error}</Alerte>
         )}
 
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center justify-between gap-3 max-[840px]:items-stretch">
+          <div className="flex flex-wrap items-center gap-2 max-[840px]:basis-full">
             <Button variant="primary" size="sm" onClick={handleSend} disabled={sending}>
               {sending ? (
                 <>

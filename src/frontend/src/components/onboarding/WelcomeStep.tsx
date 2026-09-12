@@ -7,6 +7,8 @@
 import { motion } from 'framer-motion';
 import { CharacterPortrait } from '../prototype/DecisionMissionPrototype';
 import { Brain, Shield, Zap } from 'lucide-react';
+import { Button } from '../ui/Button';
+import { Carte } from '../ui/Carte';
 
 interface WelcomeStepProps {
   onNext: () => void;
@@ -41,8 +43,8 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
     >
       {/* Logo and Title */}
       <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         transition={{ delay: 0.1, type: 'spring', stiffness: 300 }}
         className="mb-6 sm:mb-8"
       >
@@ -65,34 +67,31 @@ export function WelcomeStep({ onNext }: WelcomeStepProps) {
         transition={{ delay: 0.3 }}
         className="mb-8 grid w-full max-w-2xl grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-6"
       >
-        {features.map((feature, index) => (
-          <motion.div
+        {features.map((feature) => (
+          <Carte
+            as="section"
             key={feature.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 + index * 0.1 }}
-            className="p-4 rounded-md bg-background/40 border border-border/30"
+            className="p-4"
           >
-            <div className="w-10 h-10 rounded-md bg-accent-cyan/10 flex items-center justify-center mb-3 mx-auto">
-              <feature.icon className="w-5 h-5 text-accent-cyan-ink" />
+            <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-accent-tint">
+              <feature.icon className="h-5 w-5 text-accent" />
             </div>
             <h3 className="font-medium text-text text-sm mb-1">{feature.title}</h3>
             <p className="text-text-muted text-xs">{feature.description}</p>
-          </motion.div>
+          </Carte>
         ))}
       </motion.div>
 
       {/* CTA */}
-      <motion.button
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.7 }}
+      <Button
+        variant="primary"
+        size="lg"
         onClick={onNext}
         data-testid="onboarding-next-btn"
-        className="px-8 py-3 rounded-md bg-accent-fill text-accent-ink font-medium hover:bg-accent-fill/90 transition-colors"
+        className="px-8"
       >
         Commencer la configuration
-      </motion.button>
+      </Button>
     </motion.div>
   );
 }

@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import { Mail, Server, ShieldCheck, Zap } from 'lucide-react';
 import type { EmailProvider } from './EmailSetupWizard';
 import type { GoogleCredentials } from '../../../services/api';
+import { Carte } from '../../ui/Carte';
 
 interface ChoiceStepProps {
   onSelect: (provider: EmailProvider) => void;
@@ -34,7 +35,7 @@ export function ChoiceStep({ onSelect, mcpCredentials }: ChoiceStepProps) {
       </div>
 
       {mcpCredentials && (
-        <div className="p-4 bg-accent-cyan/10 border border-accent-cyan/20 rounded-md">
+        <Carte as="section" className="p-4">
           <div className="flex items-start gap-3">
             <Zap className="w-5 h-5 text-accent-cyan-ink shrink-0 mt-0.5" />
             <div className="space-y-1">
@@ -45,26 +46,24 @@ export function ChoiceStep({ onSelect, mcpCredentials }: ChoiceStepProps) {
               </p>
             </div>
           </div>
-        </div>
+        </Carte>
       )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Gmail OAuth */}
         <motion.button
           onClick={() => onSelect('gmail')}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="relative p-6 bg-background/40 border-2 border-accent-cyan/30 rounded-md hover:border-accent-cyan/60 transition-all group text-left"
+          className="relative min-h-9 rounded-md border border-border bg-surface p-6 text-left text-sm transition-colors hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           {/* US-012 : « Recommandé » retiré - ce chemin exige de créer un
               projet Google Cloud, ce qui était l'impasse n°1 des testeurs */}
           <div className="absolute top-3 right-3">
-            <span className="px-2 py-1 text-xs font-medium bg-surface text-text-muted rounded-sm">
+            <span className="rounded-sm bg-surface px-2 py-1 text-sm font-medium text-text-muted">
               Avancé
             </span>
           </div>
 
-          <div className="w-12 h-12 rounded-sm bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-accent-tint">
             <Mail className="w-6 h-6 text-accent-cyan-ink" />
           </div>
 
@@ -75,15 +74,15 @@ export function ChoiceStep({ onSelect, mcpCredentials }: ChoiceStepProps) {
 
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-text-muted">
-              <ShieldCheck className="w-4 h-4 text-agent-green" />
+              <ShieldCheck className="w-4 h-4 text-success" />
               <span>Très sécurisé (OAuth PKCE)</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-text-muted">
-              <ShieldCheck className="w-4 h-4 text-agent-green" />
+              <ShieldCheck className="w-4 h-4 text-success" />
               <span>Officiel Google</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-text-muted">
-              <ShieldCheck className="w-4 h-4 text-agent-green" />
+              <ShieldCheck className="w-4 h-4 text-success" />
               <span>Révocable à tout moment</span>
             </div>
           </div>
@@ -92,17 +91,15 @@ export function ChoiceStep({ onSelect, mcpCredentials }: ChoiceStepProps) {
         {/* SMTP Classique */}
         <motion.button
           onClick={() => onSelect('smtp')}
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="relative p-6 bg-background/40 border-2 border-accent-cyan/30 rounded-md hover:border-accent-cyan/60 transition-all group text-left"
+          className="relative min-h-9 rounded-md border border-border bg-surface p-6 text-left text-sm transition-colors hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <div className="absolute top-3 right-3">
-            <span className="px-2 py-1 text-xs font-medium bg-accent-tint text-accent-cyan-ink rounded-sm">
+            <span className="rounded-sm bg-accent-tint px-2 py-1 text-sm font-medium text-accent-cyan-ink">
               Recommandé
             </span>
           </div>
 
-          <div className="w-12 h-12 rounded-sm bg-text-muted/15 border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+          <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-surface-2">
             <Server className="w-6 h-6 text-text-muted" />
           </div>
 
@@ -113,15 +110,15 @@ export function ChoiceStep({ onSelect, mcpCredentials }: ChoiceStepProps) {
 
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-sm text-text-muted">
-              <ShieldCheck className="w-4 h-4 text-agent-green" />
+              <ShieldCheck className="w-4 h-4 text-success" />
               <span>Prêt en 2 minutes, sans projet Google Cloud</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-text-muted">
-              <ShieldCheck className="w-4 h-4 text-agent-green" />
+              <ShieldCheck className="w-4 h-4 text-success" />
               <span>Compatible tous providers</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-text-muted">
-              <ShieldCheck className="w-4 h-4 text-agent-green" />
+              <ShieldCheck className="w-4 h-4 text-success" />
               <span>Mot de passe chiffré localement</span>
             </div>
           </div>
@@ -130,7 +127,7 @@ export function ChoiceStep({ onSelect, mcpCredentials }: ChoiceStepProps) {
 
       {/* US-012 : le chemin Gmail SANS créer de projet Google Cloud doit être
           visible - c'était l'impasse n°1 des testeurs alpha */}
-      <div className="p-4 bg-accent-cyan/10 border border-accent-cyan/20 rounded-md">
+      <Carte as="section" className="p-4">
         <p className="text-sm text-text-muted">
           <strong className="text-text">Gmail sans prise de tête :</strong> choisis « SMTP / IMAP
           classique », sélectionne le preset Gmail et utilise un{' '}
@@ -140,7 +137,7 @@ export function ChoiceStep({ onSelect, mcpCredentials }: ChoiceStepProps) {
           ceux qui préfèrent un accès API complet (elle demande de créer ses propres
           identifiants OAuth dans Google Cloud Console).
         </p>
-      </div>
+      </Carte>
     </motion.div>
   );
 }

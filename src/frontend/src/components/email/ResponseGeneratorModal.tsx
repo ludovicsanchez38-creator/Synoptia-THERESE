@@ -13,6 +13,12 @@ import * as api from '../../services/api';
 import { Z_LAYER } from '../../styles/z-layers';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { Spinner } from '../ui/Spinner';
+import { Alerte } from '../ui/Alerte';
+import { Button } from '../ui/Button';
+import { Carte } from '../ui/Carte';
+import { FormField } from '../ui/FormField';
+import { Segments } from '../ui/Segments';
+import { Textarea } from '../ui/Textarea';
 
 interface ResponseGeneratorModalProps {
   isOpen: boolean;
@@ -143,17 +149,17 @@ export function ResponseGeneratorModal({
             role="dialog"
             aria-modal="true"
             aria-label="Génération de réponse email"
-            initial={{ opacity: 0, scale: 0.95, y: 20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 20 }}
             className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 ${Z_LAYER.MODAL_NESTED} w-full max-w-3xl`}
           >
-            <div className="bg-surface border border-text-muted/20 rounded-md shadow-2xl p-6">
+            <Carte className="p-6">
               {/* Header */}
               <div className="flex items-start justify-between mb-6">
                 <div className="flex items-center gap-3">
-                  <div className="p-2 rounded-sm bg-accent-tint border-[1.5px] border-[var(--btn-ink)]">
-                    <Sparkles className="w-5 h-5 text-accent-cyan-ink" />
+                  <div className="rounded-full bg-accent-tint p-2">
+                    <Sparkles className="h-5 w-5 text-accent" />
                   </div>
                   <div>
                     <h2 className="text-lg font-semibold text-text">
@@ -164,118 +170,86 @@ export function ResponseGeneratorModal({
                     </p>
                   </div>
                 </div>
-                <button
+                <Button
+                  variant="ghost"
+                  size="icon"
                   onClick={onClose}
-                  className="text-text-muted hover:text-text transition-colors"
+                  aria-label="Fermer la génération de réponse"
                 >
                   <X className="w-5 h-5" />
-                </button>
+                </Button>
               </div>
 
               {/* Options */}
-              <div className="grid grid-cols-2 gap-4 mb-6">
+              <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {/* Tone */}
-                <div>
-                  <label className="block text-sm font-medium text-text mb-2">
-                    Ton
-                  </label>
-                  <div className="space-y-2">
-                    {TONE_OPTIONS.map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={() => setTone(option.value)}
-                        className={`w-full text-left px-3 py-2 rounded-md border transition-all ${
-                          tone === option.value
-                            ? 'border-accent-cyan bg-accent-cyan/10'
-                            : 'border-text-muted/20 hover:border-text-muted/40'
-                        }`}
-                      >
-                        <div className="font-medium text-sm text-text">
-                          {option.label}
-                        </div>
-                        <div className="text-xs text-text-muted">
-                          {option.description}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-text">Ton</p>
+                  <Segments
+                    label="Ton de la réponse"
+                    options={TONE_OPTIONS.map((option) => ({ id: option.value, label: option.label }))}
+                    valeur={tone}
+                    onChange={(value) => setTone(value as Tone)}
+                    className="flex-wrap"
+                  />
+                  <p className="text-sm text-text-muted">{TONE_OPTIONS.find((option) => option.value === tone)?.description}</p>
                 </div>
 
                 {/* Length */}
-                <div>
-                  <label className="block text-sm font-medium text-text mb-2">
-                    Longueur
-                  </label>
-                  <div className="space-y-2">
-                    {LENGTH_OPTIONS.map((option) => (
-                      <button
-                        key={option.value}
-                        onClick={() => setLength(option.value)}
-                        className={`w-full text-left px-3 py-2 rounded-md border transition-all ${
-                          length === option.value
-                            ? 'border-accent-magenta bg-accent-magenta/10'
-                            : 'border-text-muted/20 hover:border-text-muted/40'
-                        }`}
-                      >
-                        <div className="font-medium text-sm text-text">
-                          {option.label}
-                        </div>
-                        <div className="text-xs text-text-muted">
-                          {option.description}
-                        </div>
-                      </button>
-                    ))}
-                  </div>
+                <div className="space-y-2">
+                  <p className="text-sm font-semibold text-text">Longueur</p>
+                  <Segments
+                    label="Longueur de la réponse"
+                    options={LENGTH_OPTIONS.map((option) => ({ id: option.value, label: option.label }))}
+                    valeur={length}
+                    onChange={(value) => setLength(value as Length)}
+                    className="flex-wrap"
+                  />
+                  <p className="text-sm text-text-muted">{LENGTH_OPTIONS.find((option) => option.value === length)?.description}</p>
                 </div>
               </div>
 
               {/* BUG-171 : la cause de l'échec, à sa place — et un bouton
                   pour réessayer sans fermer la fenêtre. */}
               {erreur && (
-                <div
-                  className="mb-4 flex items-start gap-2 rounded-md border border-error/40 bg-[var(--color-error-tint)] px-3 py-3"
-                  role="alert"
-                >
-                  <span className="flex-1 text-sm text-error">{erreur}</span>
-                  <button
-                    type="button"
+                <Alerte
+                  className="mb-4"
+                  action={<Button
+                    variant="secondary"
+                    size="sm"
                     onClick={() => void generateResponse()}
                     disabled={isGenerating}
-                    className="shrink-0 text-sm font-semibold text-text underline underline-offset-2 disabled:opacity-50"
                   >
                     Réessayer
-                  </button>
-                </div>
+                  </Button>}
+                >{erreur}</Alerte>
               )}
 
               {/* Draft */}
-              <div className="mb-6">
-                <label className="block text-sm font-medium text-text mb-2">
-                  Brouillon
-                </label>
-                <textarea aria-label="Brouillon de réponse"
+              <FormField label="Brouillon" htmlFor="email-response-draft" className="mb-6">
+                <Textarea id="email-response-draft" aria-label="Brouillon de réponse"
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
                   disabled={isGenerating}
                   placeholder="Génération en cours..."
-                  className="w-full h-64 px-4 py-3 bg-background border border-text-muted/20 rounded-md text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring resize-none font-mono text-sm"
+                  className="h-64 resize-none font-mono"
                 />
-              </div>
+              </FormField>
 
               {/* Actions */}
-              <div className="flex items-center justify-end gap-3">
-                <button
+              <div className="flex flex-wrap items-center justify-end gap-3 max-[840px]:justify-start">
+                <Button
+                  variant="ghost"
                   onClick={onClose}
-                  className="px-4 py-2 text-text-muted hover:text-text transition-colors"
                 >
                   Annuler
-                </button>
+                </Button>
 
                 {hasGenerated && (
-                  <button
+                  <Button
+                    variant="secondary"
                     onClick={handleRegenerate}
                     disabled={isGenerating}
-                    className="flex items-center gap-2 px-4 py-2 bg-text-muted/10 hover:bg-text-muted/20 text-text rounded-md transition-colors disabled:opacity-50"
                   >
                     {isGenerating ? (
                       <Spinner taille="bouton" />
@@ -283,19 +257,19 @@ export function ResponseGeneratorModal({
                       <RefreshCw className="w-4 h-4" />
                     )}
                     Régénérer
-                  </button>
+                  </Button>
                 )}
 
-                <button
+                <Button
+                  variant="primary"
                   onClick={handleUse}
                   disabled={!hasGenerated || isGenerating}
-                  className="flex items-center gap-2 px-4 py-2 bg-accent-fill text-accent-ink rounded-md hover:bg-accent-cyan/90 transition-colors disabled:opacity-50"
                 >
                   <Check className="w-4 h-4" />
                   Utiliser
-                </button>
+                </Button>
               </div>
-            </div>
+            </Carte>
           </motion.div>
         </>
       )}

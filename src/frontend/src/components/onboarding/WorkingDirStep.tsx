@@ -11,6 +11,8 @@ import { open } from '@tauri-apps/plugin-dialog';
 import * as api from '../../services/api';
 import { Button } from '../ui/Button';
 import { Spinner } from '../ui/Spinner';
+import { Alerte } from '../ui/Alerte';
+import { Carte } from '../ui/Carte';
 
 interface WorkingDirStepProps {
   onNext: () => void;
@@ -95,8 +97,8 @@ export function WorkingDirStep({ onNext, onBack }: WorkingDirStepProps) {
     >
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-md bg-accent-cyan/10 flex items-center justify-center">
-          <FolderOpen className="w-5 h-5 text-accent-cyan-ink" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-tint">
+          <FolderOpen className="h-5 w-5 text-accent" />
         </div>
         <div>
           <h2 className="text-xl font-semibold text-text">Dossier de travail</h2>
@@ -107,14 +109,14 @@ export function WorkingDirStep({ onNext, onBack }: WorkingDirStepProps) {
       {/* Content */}
       <div className="flex-1 flex flex-col items-center justify-center text-center">
         <motion.div
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           transition={{ delay: 0.1 }}
           className="w-full max-w-md"
         >
           {/* Icon */}
-          <div className="w-20 h-20 rounded-md bg-accent-cyan/10 flex items-center justify-center mb-6 mx-auto border border-border/30">
-            <FolderOpen className="w-10 h-10 text-accent-cyan-ink" />
+          <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-accent-tint">
+            <FolderOpen className="h-10 w-10 text-accent" />
           </div>
 
           {/* Description */}
@@ -132,41 +134,28 @@ export function WorkingDirStep({ onNext, onBack }: WorkingDirStepProps) {
 
           {/* Current directory display */}
           {lectureImpossible ? (
-            <div role="alert" className="mb-6 px-4 py-3 bg-[var(--color-warning-tint)] border border-warning/40 rounded-md">
-              <div className="flex items-center gap-2 justify-center">
-                <AlertCircle className="w-4 h-4 text-warning" />
-                <span className="text-sm text-warning">Configuration du dossier illisible : le serveur n’a pas répondu. Tu peux quand même en choisir un.</span>
-              </div>
-            </div>
+            <Alerte ton="attention" className="mb-6 text-left" icone={<AlertCircle className="h-4 w-4 text-warning" />}>Configuration du dossier illisible : le serveur n’a pas répondu. Tu peux quand même en choisir un.</Alerte>
           ) : workingDir && dossierDisparu ? (
-            <div role="alert" className="mb-6">
-              <div className="flex items-center gap-2 px-4 py-3 bg-[var(--color-warning-tint)] border border-warning/40 rounded-md">
-                <AlertCircle className="w-4 h-4 text-warning" />
-                <span className="text-sm text-warning">Dossier configuré mais introuvable : choisis-en un autre.</span>
-              </div>
-              <div className="mt-2 p-3 bg-background/40 rounded-md border border-border/30">
+            <div className="mb-6">
+              <Alerte ton="attention" className="text-left" icone={<AlertCircle className="h-4 w-4 text-warning" />}>Dossier configuré mais introuvable : choisis-en un autre.</Alerte>
+              <Carte className="mt-2 p-3">
                 <p className="text-xs text-text font-mono truncate" title={workingDir}>{workingDir}</p>
-              </div>
+              </Carte>
             </div>
           ) : workingDir ? (
             <div className="mb-6">
-              <div className="flex items-center gap-2 px-4 py-3 bg-[var(--color-success-tint)] border border-success/40 rounded-md">
+              <div className="flex items-center gap-2 rounded-md border border-success/30 bg-[var(--color-success-tint)] px-4 py-3">
                 <Check className="w-4 h-4 text-success" />
                 <span className="text-sm text-success">Dossier configuré</span>
               </div>
-              <div className="mt-2 p-3 bg-background/40 rounded-md border border-border/30">
+              <Carte className="mt-2 p-3">
                 <p className="text-xs text-text font-mono truncate" title={workingDir}>
                   {workingDir}
                 </p>
-              </div>
+              </Carte>
             </div>
           ) : (
-            <div className="mb-6 px-4 py-3 bg-[var(--color-warning-tint)] border border-warning/40 rounded-md">
-              <div className="flex items-center gap-2 justify-center">
-                <AlertCircle className="w-4 h-4 text-warning" />
-                <span className="text-sm text-warning">Aucun dossier configuré</span>
-              </div>
-            </div>
+            <Alerte ton="attention" className="mb-6 text-left" icone={<AlertCircle className="h-4 w-4 text-warning" />}>Aucun dossier configuré</Alerte>
           )}
 
           {/* Select button */}
@@ -191,20 +180,17 @@ export function WorkingDirStep({ onNext, onBack }: WorkingDirStepProps) {
 
           {/* Error */}
           {error && (
-            <div className="mt-4 flex items-center gap-2 px-3 py-2 bg-[var(--color-error-tint)] border border-error/40 rounded-md" role="alert">
-              <AlertCircle className="w-4 h-4 text-error" />
-              <span className="text-sm text-error">{error}</span>
-            </div>
+            <Alerte className="mt-4 text-left" icone={<AlertCircle className="h-4 w-4 text-error" />}>{error}</Alerte>
           )}
         </motion.div>
       </div>
 
       {/* Footer */}
-      <div className="flex justify-between pt-4 border-t border-border/30">
+      <div className="flex flex-wrap justify-between gap-3 border-t border-border pt-4">
         <Button variant="ghost" onClick={onBack} data-testid="onboarding-prev-btn">
           Retour
         </Button>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3 max-[840px]:basis-full">
           <Button variant="ghost" onClick={onNext} data-testid="onboarding-skip-btn">
             Passer
           </Button>

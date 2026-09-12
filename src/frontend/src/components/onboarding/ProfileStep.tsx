@@ -11,6 +11,10 @@ import { open } from '@tauri-apps/plugin-dialog';
 import * as api from '../../services/api';
 import { Button } from '../ui/Button';
 import { Spinner } from '../ui/Spinner';
+import { Alerte } from '../ui/Alerte';
+import { FormField } from '../ui/FormField';
+import { Input } from '../ui/Input';
+import { Textarea } from '../ui/Textarea';
 
 interface ProfileStepProps {
   onNext: () => void;
@@ -139,17 +143,17 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
       className="flex flex-col px-8 py-6"
     >
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-md bg-accent-cyan/10 flex items-center justify-center">
-            <User className="w-5 h-5 text-accent-cyan-ink" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-tint">
+            <User className="h-5 w-5 text-accent" />
           </div>
           <div>
             <h2 className="text-xl font-semibold text-text">Ton profil</h2>
             <p className="text-sm text-text-muted">THÉRÈSE utilisera ces infos pour mieux te répondre</p>
           </div>
         </div>
-        <Button variant="ghost" size="sm" onClick={handleImportClaudeMd} disabled={loading}>
+        <Button variant="ghost" size="sm" onClick={handleImportClaudeMd} disabled={loading} className="max-[840px]:basis-full max-[840px]:justify-start">
           <Upload className="w-4 h-4 mr-2" />
           Importer THÉRÈSE.md
         </Button>
@@ -162,15 +166,13 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
 
       {/* Form */}
       <div className="space-y-4 flex-1 overflow-y-auto">
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="profile-name" className="text-xs text-text-muted mb-1 block">Nom complet *</label>
-            <input
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField label="Nom complet" htmlFor="profile-name" required error={nomEnFaute && error ? error : undefined}>
+            <Input
               id="profile-name"
               type="text"
+              aria-label="Nom complet *"
               aria-required="true"
-              aria-invalid={nomEnFaute && error ? true : undefined}
-              aria-describedby={nomEnFaute && error ? 'profile-step-erreur' : undefined}
               value={profileForm.name}
               onChange={(e) => {
                 setProfileForm((prev) => ({ ...prev, name: e.target.value }));
@@ -178,109 +180,92 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
                 setSaveState('idle');
               }}
               placeholder="Ton nom complet"
-              className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring"
+              error={nomEnFaute && Boolean(error)}
             />
-          </div>
-          <div>
-            <label htmlFor="profile-nickname" className="text-xs text-text-muted mb-1 block">Surnom</label>
-            <input
+          </FormField>
+          <FormField label="Surnom" htmlFor="profile-nickname">
+            <Input
               id="profile-nickname"
               type="text"
               value={profileForm.nickname}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, nickname: e.target.value }))}
               placeholder="Ton surnom"
-              className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring"
             />
-          </div>
+          </FormField>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="profile-company" className="text-xs text-text-muted mb-1 block">Entreprise</label>
-            <input
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField label="Entreprise" htmlFor="profile-company">
+            <Input
               id="profile-company"
               type="text"
               value={profileForm.company}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, company: e.target.value }))}
               placeholder="Ton entreprise"
-              className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring"
             />
-          </div>
-          <div>
-            <label htmlFor="profile-role" className="text-xs text-text-muted mb-1 block">Rôle</label>
-            <input
+          </FormField>
+          <FormField label="Rôle" htmlFor="profile-role">
+            <Input
               id="profile-role"
               type="text"
               value={profileForm.role}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, role: e.target.value }))}
               placeholder="Ton rôle"
-              className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring"
             />
-          </div>
+          </FormField>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label htmlFor="profile-email" className="text-xs text-text-muted mb-1 block">Email</label>
-            <input
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <FormField label="Email" htmlFor="profile-email">
+            <Input
               id="profile-email"
               type="email"
               value={profileForm.email}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, email: e.target.value }))}
               placeholder="ton@email.com"
-              className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring"
             />
-          </div>
-          <div>
-            <label htmlFor="profile-location" className="text-xs text-text-muted mb-1 block">Localisation</label>
-            <input
+          </FormField>
+          <FormField label="Localisation" htmlFor="profile-location">
+            <Input
               id="profile-location"
               type="text"
               value={profileForm.location}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, location: e.target.value }))}
               placeholder="Ta ville"
-              className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring"
             />
-          </div>
+          </FormField>
         </div>
 
-        <div>
-          <label htmlFor="profile-context" className="text-xs text-text-muted mb-1 block">
-            Contexte additionnel
-          </label>
-          <p className="text-xs text-text-muted mb-1.5">
-            Ces informations sont injectées dans le contexte de l'IA pour personnaliser ses réponses.
-          </p>
-          <textarea
+        <FormField
+          label="Contexte additionnel"
+          htmlFor="profile-context"
+          description="Ces informations sont injectées dans le contexte de l'IA pour personnaliser ses réponses."
+        >
+          <Textarea
             id="profile-context"
             value={profileForm.context}
             onChange={(e) => setProfileForm((prev) => ({ ...prev, context: e.target.value }))}
             placeholder="Ex : Je propose des formations IA pour TPE. Mon offre phare est FORGER (490 € HT, 2h30)..."
             rows={3}
-            className="w-full px-3 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+            className="resize-none"
           />
-        </div>
+        </FormField>
 
         {/* Error */}
-        {error && (
-          <div id="profile-step-erreur" className="flex items-center gap-2 px-3 py-2 bg-[var(--color-error-tint)] border border-error/40 rounded-md" role="alert">
-            <AlertCircle className="w-4 h-4 text-error" />
-            <span className="text-sm text-error">{error}</span>
-          </div>
-        )}
+        {error && !nomEnFaute && <Alerte id="profile-step-erreur" icone={<AlertCircle className="h-4 w-4 text-error" />}>{error}</Alerte>}
         {saveState === 'success' && (
-          <div className="flex items-center gap-2 px-3 py-2 bg-[var(--color-success-tint)] border border-success/40 rounded-md" role="status">
+          <div className="flex items-center gap-2 rounded-md border border-success/30 bg-[var(--color-success-tint)] px-3 py-2" role="status">
             <span className="text-sm text-success">Profil enregistré. L’onboarding ne se relancera pas au prochain démarrage.</span>
           </div>
         )}
       </div>
 
       {/* Footer */}
-      <div className="flex justify-between mt-6 pt-4 border-t border-border/30">
+      <div className="mt-6 flex flex-wrap justify-between gap-3 border-t border-border pt-4">
         <Button variant="ghost" onClick={onBack} disabled={loading || saveState === 'success'} data-testid="onboarding-prev-btn">
           Retour
         </Button>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3 max-[840px]:basis-full">
           <Button variant="ghost" onClick={handleSkip} disabled={loading || saveState === 'success'} data-testid="onboarding-skip-btn">
             Passer
           </Button>

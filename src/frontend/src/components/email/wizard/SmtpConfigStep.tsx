@@ -19,6 +19,10 @@ import {
 import { Button } from '../../ui/Button';
 import * as api from '../../../services/api';
 import { Spinner } from '../../ui/Spinner';
+import { Alerte } from '../../ui/Alerte';
+import { FormField } from '../../ui/FormField';
+import { Input } from '../../ui/Input';
+import { Select } from '../../ui/Select';
 
 interface SmtpConfigStepProps {
   onBack: () => void;
@@ -198,7 +202,7 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
       className="space-y-5"
     >
       <div className="text-center space-y-2">
-        <div className="w-12 h-12 rounded-sm bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center mx-auto">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-accent-tint">
           <Server className="w-6 h-6 text-accent-cyan-ink" />
         </div>
         <h3 className="text-lg font-semibold text-text">Configuration SMTP/IMAP</h3>
@@ -209,79 +213,73 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
 
       {/* Provider selector */}
       {providers.length > 0 && (
-        <div className="space-y-1.5">
-          <label htmlFor="smtp-provider" className="text-sm text-text-muted">Fournisseur email</label>
-          <select
+        <FormField label="Fournisseur email" htmlFor="smtp-provider">
+          <Select
             id="smtp-provider"
             value={selectedProvider}
             onChange={(e) => handleProviderSelect(e.target.value)}
-            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
-          >
-            <option value="">Sélectionner un fournisseur...</option>
-            {providers.map((p) => (
-              <option key={p.name} value={p.name}>
-                {p.name}
-              </option>
-            ))}
-            <option value="custom">Autre (configuration manuelle)</option>
-          </select>
-        </div>
+            placeholder="Sélectionner un fournisseur..."
+            options={[
+              ...providers.map((provider) => ({ value: provider.name, label: provider.name })),
+              { value: 'custom', label: 'Autre (configuration manuelle)' },
+            ]}
+          />
+        </FormField>
       )}
 
       {/* Email + Password */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <label htmlFor="smtp-email" className="text-sm text-text-muted">Adresse email *</label>
-          <input
+        <FormField label="Adresse email" htmlFor="smtp-email" required>
+          <Input
             id="smtp-email"
             type="email"
+            aria-label="Adresse email *"
             value={form.email}
             onChange={(e) => updateField('email', e.target.value)}
             placeholder="toi@exemple.fr"
-            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50"
           />
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor="smtp-password" className="text-sm text-text-muted">Mot de passe / App password *</label>
+        </FormField>
+        <FormField label="Mot de passe / App password" htmlFor="smtp-password" required>
           <div className="relative">
-            <input
+            <Input
               id="smtp-password"
               type={showPassword ? 'text' : 'password'}
+              aria-label="Mot de passe / App password *"
               value={form.password}
               onChange={(e) => updateField('password', e.target.value)}
               placeholder="Mot de passe applicatif"
-              className="w-full px-3 py-2 pr-11 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50"
+              className="pr-11"
             />
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               type="button"
               aria-controls="smtp-password"
               aria-label={showPassword ? 'Masquer le mot de passe' : 'Afficher le mot de passe'}
               aria-pressed={showPassword}
               onClick={() => setShowPassword((prev) => !prev)}
-              className="absolute inset-y-0 right-0 px-3 text-text-muted transition-colors hover:text-text"
+              className="absolute inset-y-0 right-0"
             >
               {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-            </button>
+            </Button>
           </div>
-        </div>
+        </FormField>
       </div>
 
       {/* IMAP Config */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <label htmlFor="smtp-imap-host" className="text-sm text-text-muted">Serveur IMAP *</label>
-          <input
+        <FormField label="Serveur IMAP" htmlFor="smtp-imap-host" required>
+          <Input
             id="smtp-imap-host"
             type="text"
+            aria-label="Serveur IMAP *"
             value={form.imap_host}
             onChange={(e) => updateField('imap_host', e.target.value)}
             placeholder="imap.exemple.fr"
-            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50"
           />
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor="smtp-imap-port" className="text-sm text-text-muted">Port IMAP</label>
-          <select
+        </FormField>
+        <FormField label="Port IMAP" htmlFor="smtp-imap-port">
+          <Select
             id="smtp-imap-port"
             value={!portsPersonnalises.imap && IMAP_PORT_OPTIONS.some((o) => o.value === form.imap_port) ? String(form.imap_port) : 'custom'}
             onChange={(e) => {
@@ -292,15 +290,13 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
               setPortsPersonnalises((p) => ({ ...p, imap: false }));
               updateField('imap_port', parseInt(e.target.value));
             }}
-            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
-          >
-            {IMAP_PORT_OPTIONS.map((o) => (
-              <option key={o.value} value={String(o.value)}>{o.label}</option>
-            ))}
-            <option value="custom">Autre : {form.imap_port}</option>
-          </select>
+            options={[
+              ...IMAP_PORT_OPTIONS.map((option) => ({ value: String(option.value), label: option.label })),
+              { value: 'custom', label: `Autre : ${form.imap_port}` },
+            ]}
+          />
           {(portsPersonnalises.imap || !IMAP_PORT_OPTIONS.some((o) => o.value === form.imap_port)) && (
-            <input
+            <Input
               id="smtp-imap-port-custom"
               type="number"
               min={1}
@@ -308,28 +304,26 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
               aria-label="Port IMAP personnalisé"
               value={form.imap_port}
               onChange={(e) => updateField('imap_port', parseInt(e.target.value) || 0)}
-              className="mt-1.5 w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
+              className="mt-1.5"
             />
           )}
-        </div>
+        </FormField>
       </div>
 
       {/* SMTP Config */}
       <div className="grid grid-cols-2 gap-3">
-        <div className="space-y-1.5">
-          <label htmlFor="smtp-smtp-host" className="text-sm text-text-muted">Serveur SMTP *</label>
-          <input
+        <FormField label="Serveur SMTP" htmlFor="smtp-smtp-host" required>
+          <Input
             id="smtp-smtp-host"
             type="text"
+            aria-label="Serveur SMTP *"
             value={form.smtp_host}
             onChange={(e) => updateField('smtp_host', e.target.value)}
             placeholder="smtp.exemple.fr"
-            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50"
           />
-        </div>
-        <div className="space-y-1.5">
-          <label htmlFor="smtp-smtp-port" className="text-sm text-text-muted">Port SMTP</label>
-          <select
+        </FormField>
+        <FormField label="Port SMTP" htmlFor="smtp-smtp-port">
+          <Select
             id="smtp-smtp-port"
             value={!portsPersonnalises.smtp && SMTP_PORT_OPTIONS.some((o) => o.value === form.smtp_port) ? String(form.smtp_port) : 'custom'}
             onChange={(e) => {
@@ -346,15 +340,13 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
                 setError(null);
               }
             }}
-            className="w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
-          >
-            {SMTP_PORT_OPTIONS.map((o) => (
-              <option key={o.value} value={String(o.value)}>{o.label}</option>
-            ))}
-            <option value="custom">Autre : {form.smtp_port}</option>
-          </select>
+            options={[
+              ...SMTP_PORT_OPTIONS.map((option) => ({ value: String(option.value), label: option.label })),
+              { value: 'custom', label: `Autre : ${form.smtp_port}` },
+            ]}
+          />
           {(portsPersonnalises.smtp || !SMTP_PORT_OPTIONS.some((o) => o.value === form.smtp_port)) && (
-            <input
+            <Input
               id="smtp-smtp-port-custom"
               type="number"
               min={1}
@@ -362,10 +354,10 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
               aria-label="Port SMTP personnalisé"
               value={form.smtp_port}
               onChange={(e) => updateField('smtp_port', parseInt(e.target.value) || 0)}
-              className="mt-1.5 w-full px-3 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring/50"
+              className="mt-1.5"
             />
           )}
-        </div>
+        </FormField>
       </div>
 
       {/* TLS toggle */}
@@ -381,43 +373,33 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
 
       {/* Incohérence port/mode : dite AVANT le test, au lieu d'un faux timeout après */}
       {smtpSecurityMismatch(form.smtp_port, form.smtp_use_tls) && (
-        <div className="p-3 bg-agent-amber/10 border border-agent-amber/20 rounded-md">
-          <div className="flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 text-warning mt-0.5 shrink-0" />
-            <span className="text-sm text-warning">
-              {smtpSecurityMismatch(form.smtp_port, form.smtp_use_tls)}
-            </span>
-          </div>
-        </div>
+        <Alerte ton="attention" icone={<AlertCircle className="h-4 w-4 text-warning" />}>
+          {smtpSecurityMismatch(form.smtp_port, form.smtp_use_tls)}
+        </Alerte>
       )}
 
       {/* Error */}
       {error && (
-        <div role="alert" className="p-3 bg-error/10 border border-error/20 rounded-md">
-          <div className="flex items-start gap-2">
-            <AlertCircle className="w-4 h-4 text-error mt-0.5 shrink-0" />
-            <span className="text-sm text-error">{error}</span>
-          </div>
-        </div>
+        <Alerte icone={<AlertCircle className="h-4 w-4 text-error" />}>{error}</Alerte>
       )}
 
       {/* Test result */}
       {testResult && (
         <div
-          className={`p-3 rounded-md border ${
+          className={`rounded-md border p-3 ${
             testResult.success
-              ? 'bg-agent-green/10 border-agent-green/20'
-              : 'bg-error/10 border-error/20'
+              ? 'bg-[var(--color-success-tint)] border-success/30'
+              : 'bg-[var(--color-error-tint)] border-error/30'
           }`}
         >
           <div className="flex items-center gap-2">
             {testResult.success ? (
-              <Check className="w-4 h-4 text-agent-green" />
+              <Check className="w-4 h-4 text-success" />
             ) : (
               <AlertCircle className="w-4 h-4 text-error" />
             )}
             <span
-              className={`text-sm ${testResult.success ? 'text-agent-green' : 'text-error'}`}
+              className={`text-sm ${testResult.success ? 'text-success' : 'text-error'}`}
             >
               {testResult.message}
             </span>
@@ -426,13 +408,13 @@ export function SmtpConfigStep({ onBack, onSuccess }: SmtpConfigStepProps) {
       )}
 
       {/* Actions */}
-      <div className="flex items-center justify-between pt-2">
+      <div className="flex flex-wrap items-center justify-between gap-3 pt-2 max-[840px]:items-stretch">
         <Button variant="ghost" size="sm" onClick={onBack}>
           <ArrowLeft className="w-4 h-4 mr-1" />
           Retour
         </Button>
 
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 max-[840px]:basis-full">
           <Button
             variant="secondary"
             size="sm"

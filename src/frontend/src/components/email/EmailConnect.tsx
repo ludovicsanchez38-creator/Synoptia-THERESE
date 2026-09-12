@@ -10,6 +10,10 @@ import { Mail, ExternalLink, AlertCircle } from 'lucide-react';
 import { Button } from '../ui/Button';
 import * as api from '../../services/api';
 import { Spinner } from '../ui/Spinner';
+import { Alerte } from '../ui/Alerte';
+import { Carte } from '../ui/Carte';
+import { FormField } from '../ui/FormField';
+import { Input } from '../ui/Input';
 
 interface EmailConnectProps {
   onSuccess: () => void;
@@ -58,11 +62,11 @@ export function EmailConnect({ onSuccess }: EmailConnectProps) {
 
   return (
     <div className="flex-1 overflow-y-auto p-8">
-      <div className="max-w-md w-full mx-auto space-y-6 py-4">
+      <Carte className="mx-auto w-full max-w-md space-y-6 p-6">
         {/* Header */}
         <div className="text-center space-y-3">
-          <div className="w-16 h-16 rounded-md bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center mx-auto">
-            <Mail className="w-8 h-8 text-accent-cyan-ink" />
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-accent-tint">
+            <Mail className="h-8 w-8 text-accent" />
           </div>
           <h3 className="text-2xl font-semibold text-text">Connecter Gmail</h3>
           <p className="text-text-muted">
@@ -71,7 +75,7 @@ export function EmailConnect({ onSuccess }: EmailConnectProps) {
         </div>
 
         {/* Instructions */}
-        <div className="p-4 bg-accent-cyan/10 border border-accent-cyan/20 rounded-md space-y-2">
+        <div className="space-y-2 rounded-md border border-border bg-surface-2 p-4">
           <p className="text-sm text-text font-medium">Configuration requise :</p>
           <ol className="text-sm text-text-muted space-y-1 list-decimal list-inside">
             <li>
@@ -94,40 +98,33 @@ export function EmailConnect({ onSuccess }: EmailConnectProps) {
 
         {/* Form */}
         <div className="space-y-4">
-          <div>
-            <label htmlFor="emailconnect-id-client" className="text-sm text-text-muted mb-2 block">ID client</label>
-            <input id="emailconnect-id-client"
+          <FormField label="ID client" htmlFor="emailconnect-id-client">
+            <Input id="emailconnect-id-client"
               type="text"
               value={clientId}
               onChange={(e) => setClientId(e.target.value)}
               placeholder="123456789-abc...apps.googleusercontent.com"
-              className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50"
               disabled={loading}
             />
-          </div>
+          </FormField>
 
-          <div>
-            <label htmlFor="emailconnect-code-secret-du-client" className="text-sm text-text-muted mb-2 block">Code secret du client</label>
-            <input id="emailconnect-code-secret-du-client"
+          <FormField label="Code secret du client" htmlFor="emailconnect-code-secret-du-client">
+            <Input id="emailconnect-code-secret-du-client"
               type="password"
               value={clientSecret}
               onChange={(e) => setClientSecret(e.target.value)}
               placeholder="GOCSPX-..."
-              className="w-full px-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50"
               disabled={loading}
             />
-          </div>
+          </FormField>
 
           {error && (
-            <div role="alert" className="flex items-center gap-2 p-3 bg-error/10 border border-error/20 rounded-md">
-              <AlertCircle className="w-4 h-4 text-error shrink-0" />
-              <p className="text-sm text-error">{error}</p>
-            </div>
+            <Alerte icone={<AlertCircle className="h-4 w-4 text-error" />}>{error}</Alerte>
           )}
 
           {authUrl && (
-            <div className="flex items-center gap-2 p-3 bg-agent-green/10 border border-agent-green/20 rounded-md">
-              <p className="text-sm text-agent-green">
+            <div role="status" className="flex items-center gap-2 rounded-md border border-success/30 bg-[var(--color-success-tint)] p-3">
+              <p className="text-sm text-success">
                 Fenêtre d'autorisation ouverte. Suis les instructions.
               </p>
             </div>
@@ -160,7 +157,7 @@ export function EmailConnect({ onSuccess }: EmailConnectProps) {
           <br />
           THÉRÈSE ne les transmet jamais à des tiers.
         </p>
-      </div>
+      </Carte>
     </div>
   );
 }

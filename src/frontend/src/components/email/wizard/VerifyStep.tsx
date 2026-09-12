@@ -167,13 +167,15 @@ export function VerifyStep({ clientId, clientSecret, onBack, onSuccess }: Verify
           </p>
 
           {authUrl && (
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={openAuthUrlManually}
-              className="inline-flex items-center gap-2 text-sm text-accent-cyan-ink hover:underline transition-colors mt-2"
+              className="mt-2"
             >
               <ExternalLink className="w-3 h-3" />
               Rouvrir la page d'autorisation Google
-            </button>
+            </Button>
           )}
 
           {/* URI exacte à ajouter dans Google Cloud Console (prévention redirect_uri_mismatch) */}
@@ -190,11 +192,11 @@ export function VerifyStep({ clientId, clientSecret, onBack, onSuccess }: Verify
 
           {/* BUG-Gmail-403 : conseils si Google affiche 403 access_denied */}
           <details className="mt-2 text-left">
-            <summary className="text-xs text-text-muted cursor-pointer hover:text-text-muted transition-colors">
+            <summary className="cursor-pointer text-sm text-text-muted transition-colors hover:text-text">
               Google affiche une erreur 403 ?
             </summary>
-            <div className="mt-2 p-3 bg-agent-amber/5 border border-agent-amber/20 rounded-md space-y-1.5 text-xs text-text-muted">
-              <p className="font-medium text-agent-amber">Causes fréquentes :</p>
+            <div className="mt-2 space-y-1.5 rounded-md border border-warning/30 bg-[var(--color-warning-tint)] p-3 text-sm text-text-muted">
+              <p className="font-medium text-warning">Causes fréquentes :</p>
               <p>• <strong className="text-text">App en mode Test</strong> : ajoute ton email dans Google Cloud Console → Écran de consentement OAuth → Utilisateurs de test.</p>
               <p>• <strong className="text-text">APIs non activées</strong> : active "Gmail API" et "Google Calendar API" dans la Bibliothèque de ton projet.</p>
               <p>• <strong className="text-text">Redirect URI manquante</strong> : copie l'URI ci-dessus dans OAuth → URIs de redirection autorisées.</p>
@@ -213,12 +215,12 @@ export function VerifyStep({ clientId, clientSecret, onBack, onSuccess }: Verify
       {/* Success */}
       {state === 'success' && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           className="text-center space-y-4"
         >
-          <div className="w-16 h-16 rounded-full bg-agent-green/20 flex items-center justify-center mx-auto">
-            <CheckCircle className="w-8 h-8 text-agent-green" />
+          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[var(--color-success-tint)]">
+            <CheckCircle className="w-8 h-8 text-success" />
           </div>
           <h3 className="text-lg font-semibold text-text">Connexion réussie !</h3>
           <p className="text-sm text-text-muted">
@@ -242,8 +244,8 @@ export function VerifyStep({ clientId, clientSecret, onBack, onSuccess }: Verify
       {/* Error */}
       {state === 'error' && (
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           className="text-center space-y-4"
         >
           <div className="w-16 h-16 rounded-full bg-error/20 flex items-center justify-center mx-auto">
@@ -254,8 +256,8 @@ export function VerifyStep({ clientId, clientSecret, onBack, onSuccess }: Verify
 
           {/* Si redirect_uri_mismatch, afficher l'URI exacte à copier dans Google Cloud */}
           {(error?.includes('redirect_uri_mismatch') || error?.includes('redirect_uri')) && redirectUri && (
-            <div className="p-3 bg-agent-amber/10 border border-agent-amber/30 rounded-md text-left space-y-1">
-              <p className="text-xs font-medium text-agent-amber">
+            <div className="space-y-1 rounded-md border border-warning/30 bg-[var(--color-warning-tint)] p-3 text-left">
+              <p className="text-sm font-medium text-warning">
                 Ajoute cette URI dans Google Cloud Console → OAuth → URIs de redirection autorisées :
               </p>
               <code className="block text-xs text-text bg-background/60 px-2 py-1 rounded-sm font-mono break-all select-all">

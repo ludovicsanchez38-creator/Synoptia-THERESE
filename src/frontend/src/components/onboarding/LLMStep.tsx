@@ -14,6 +14,9 @@ import { Button } from '../ui/Button';
 import { LocalModelFeasibility } from '../llm/LocalModelFeasibility';
 import { handleRovingFocus } from '../../lib/rovingFocus';
 import { Spinner } from '../ui/Spinner';
+import { Alerte } from '../ui/Alerte';
+import { FormField } from '../ui/FormField';
+import { Input } from '../ui/Input';
 
 interface LLMStepProps {
   onNext: (provider: api.LLMProvider | null) => void;
@@ -323,8 +326,8 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
     >
       {/* Header */}
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-md bg-accent-cyan/10 flex items-center justify-center">
-          <Cpu className="w-5 h-5 text-accent-cyan-ink" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-accent-tint">
+          <Cpu className="h-5 w-5 text-accent" />
         </div>
         <div>
           <h2 className="text-xl font-semibold text-text">{TEXTES_ONBOARDING.choixServiceIA.titre}</h2>
@@ -358,10 +361,10 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
               onClick={() => handleSelectProvider(provider.id)}
               onKeyDown={(event) => handleRovingFocus(event, '[role="radio"]', 'vertical')}
               disabled={!isAvailable && provider.id === 'ollama'}
-              className={`w-full flex items-center gap-3 p-3 rounded-md border transition-all text-left focus:outline-none focus:ring-2 focus:ring-ring ${
+              className={`flex min-h-9 w-full items-center gap-3 rounded-md border p-3 text-left text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-ring ${
                 isSelected
-                  ? 'bg-accent-cyan/10 border-accent-cyan/50'
-                  : 'bg-background/40 border-border/50 hover:border-border'
+                  ? 'bg-accent-tint border-accent'
+                  : 'bg-surface border-border hover:bg-surface-2'
               } ${!isAvailable && provider.id === 'ollama' ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               <div
@@ -379,22 +382,22 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="text-sm font-medium text-text">{provider.name}</span>
                   {provider.id === 'anthropic' && (
-                    <span className="px-2 py-0.5 rounded-sm text-xs font-medium bg-accent-tint text-accent-cyan-ink">
+                    <span className="rounded-sm bg-accent-tint px-2 py-0.5 text-sm font-medium text-accent-cyan-ink">
                       Recommandé
                     </span>
                   )}
                   {provider.id === 'ollama' && !isAvailable && (
-                    <span className="px-2 py-0.5 rounded-sm text-xs font-medium bg-[var(--color-error-tint)] text-error">
+                    <span className="rounded-sm bg-[var(--color-error-tint)] px-2 py-0.5 text-sm font-medium text-error">
                       Non disponible
                     </span>
                   )}
                   {ollamaNonMesure && (
-                    <span className="px-2 py-0.5 rounded-sm text-xs font-medium bg-[var(--color-warning-tint)] text-warning">
+                    <span className="rounded-sm bg-[var(--color-warning-tint)] px-2 py-0.5 text-sm font-medium text-warning">
                       Non vérifié
                     </span>
                   )}
                 </div>
-                <p className="text-xs text-text-muted mt-0.5">{provider.description}</p>
+                <p className="mt-0.5 text-sm text-text-muted">{provider.description}</p>
               </div>
               {provider.id !== 'ollama' && (
                 <div className={`shrink-0 ${providerHasKey ? 'text-success' : 'text-text-muted'}`}>
@@ -421,7 +424,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
               <div className="flex gap-2">
                 <div className="relative flex-1">
                   <label htmlFor="llm-api-key" className="sr-only">Clé API {currentProviderConfig?.name}</label>
-                  <input
+                  <Input
                     id="llm-api-key"
                     aria-invalid={erreurDuChampCle && error ? true : undefined}
                     aria-describedby={erreurDuChampCle && error ? 'llm-api-key-erreur' : undefined}
@@ -438,17 +441,19 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
                       }
                     }}
                     placeholder={currentProviderConfig?.keyPlaceholder || 'Clé API...'}
-                    className="w-full px-4 py-2.5 pr-10 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring transition-colors font-mono"
+                    className="pr-10 font-mono"
                   />
-                  <button
+                  <Button
+                    variant="ghost"
+                    size="icon"
                     type="button"
                     onClick={() => setShowApiKey(!showApiKey)}
                     aria-label={showApiKey ? 'Masquer la clé API' : 'Afficher la clé API'}
                     aria-pressed={showApiKey}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-muted hover:text-text transition-colors"
+                    className="absolute right-0 top-1/2 -translate-y-1/2"
                   >
                     {showApiKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                  </button>
+                  </Button>
                 </div>
                 <Button
                   variant="primary"
@@ -471,7 +476,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
               )}
 
               {currentProviderConfig?.consoleUrl && (
-                <p className="text-xs text-text-muted">
+                <p className="text-sm text-text-muted">
                   Obtiens ta clé sur{' '}
                   <a
                     href={currentProviderConfig.consoleUrl}
@@ -498,23 +503,20 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
       {/* Adresse d'espace de travail Qwen (dette 0.43.4) : l'URL contient
           l'identifiant du compte - sans elle, le fournisseur ne répond pas. */}
       {selectedProvider === 'qwen' && (
-        <div className="mb-6">
-          <label htmlFor="qwen-base-url" className="text-sm text-text-muted mb-2 block">
-            Adresse de ton espace de travail
-          </label>
-          <input
+        <FormField
+          label="Adresse de ton espace de travail"
+          htmlFor="qwen-base-url"
+          description="Dans Alibaba Model Studio, copie l'adresse « compatible-mode/v1 » de ton espace de travail. Elle est indispensable pour continuer."
+          className="mb-6"
+        >
+          <Input
             id="qwen-base-url"
             type="url"
             value={baseUrlInput}
             onChange={(e) => setBaseUrlInput(e.target.value)}
             placeholder="https://ton-espace.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1"
-            className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
           />
-          <p className="text-xs text-text-muted mt-2">
-            Dans Alibaba Model Studio, copie l'adresse « compatible-mode/v1 » de ton
-            espace de travail. Elle est indispensable pour continuer.
-          </p>
-        </div>
+        </FormField>
       )}
 
       {/* Model Selection */}
@@ -572,51 +574,44 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
             Ollama n'a pas répondu. S'il n'était pas encore lancé, démarre-le
             puis revérifie : inutile de recommencer l'installation.
           </p>
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="sm"
             onClick={() => void loadState()}
-            className="mt-3 text-sm font-semibold text-text underline underline-offset-2"
+            className="mt-3"
           >
             Revérifier la disponibilité
-          </button>
+          </Button>
         </div>
       )}
 
       {/* Error */}
       {loadError && (
-        <div className="mb-6 rounded-md border border-warning/30 bg-[var(--color-warning-tint)] px-3 py-3" role="alert">
-          <div className="flex items-start gap-2 text-sm text-warning">
-            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-            <span className="flex-1">{loadError}</span>
-          </div>
-          <button type="button" onClick={() => void loadState()} className="mt-3 text-sm font-semibold text-text underline underline-offset-2">
-            Réessayer la vérification
-          </button>
-        </div>
+        <Alerte
+          ton="attention"
+          className="mb-6"
+          icone={<AlertCircle className="h-4 w-4 text-warning" />}
+          action={<Button variant="secondary" size="sm" onClick={() => void loadState()}>Réessayer la vérification</Button>}
+        >{loadError}</Alerte>
       )}
       {error && !erreurDuChampCle && (
-        <div className="flex items-center gap-2 px-3 py-2 mb-6 bg-[var(--color-error-tint)] border border-error/40 rounded-md" role="alert">
-          <AlertCircle className="w-4 h-4 text-error" />
-          <span className="text-sm text-error">{error}</span>
-        </div>
+        <Alerte className="mb-6" icone={<AlertCircle className="h-4 w-4 text-error" />}>{error}</Alerte>
       )}
 
       {/* Warning if no API key configured */}
       {needsApiKey && !hasApiKey && (
-        <div className="flex items-center gap-2 px-3 py-2 mb-4 bg-[var(--color-warning-tint)] border border-warning/40 rounded-md">
-          <AlertTriangle className="w-4 h-4 text-warning shrink-0" />
-          <span className="text-sm text-warning">
-            Sans clé API, THÉRÈSE ne pourra pas fonctionner. Configure une clé ou utilise Ollama.
-          </span>
+        <div className="mb-4 flex items-center gap-2 rounded-md border border-warning/30 bg-[var(--color-warning-tint)] px-4 py-3">
+          <AlertTriangle aria-hidden="true" className="h-4 w-4 shrink-0 text-warning" />
+          <span className="text-sm text-text">Sans clé API, THÉRÈSE ne pourra pas fonctionner. Configure une clé ou utilise Ollama.</span>
         </div>
       )}
 
       {/* Footer */}
-      <div className="flex justify-between pt-4 border-t border-border/30">
+      <div className="flex flex-wrap justify-between gap-3 border-t border-border pt-4">
         <Button variant="ghost" onClick={onBack} disabled={configuring} data-testid="onboarding-prev-btn">
           Retour
         </Button>
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3 max-[840px]:basis-full">
           <Button variant="ghost" onClick={() => void handlePlusTard()} disabled={configuring} data-testid="onboarding-skip-btn">
             Configurer plus tard
           </Button>

@@ -10,6 +10,7 @@ import { Bot, Check, ChevronLeft, ExternalLink, HelpCircle, X } from 'lucide-rea
 import { Button } from '../../ui/Button';
 import * as api from '../../../services/api';
 import ReactMarkdown from 'react-markdown';
+import { Carte } from '../../ui/Carte';
 
 interface GuideStepProps {
   provider: 'gmail' | 'smtp';
@@ -57,7 +58,7 @@ export function GuideStep({ provider, onHasProjectChange, onBack }: GuideStepPro
       className="space-y-6"
     >
       <div className="text-center space-y-2">
-        <div className="w-12 h-12 rounded-sm bg-accent-tint border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center mx-auto mb-2">
+        <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-accent-tint">
           <HelpCircle className="w-6 h-6 text-accent-cyan-ink" />
         </div>
         <h3 className="text-lg font-semibold text-text">
@@ -73,9 +74,7 @@ export function GuideStep({ provider, onHasProjectChange, onBack }: GuideStepPro
         <div className="space-y-3">
           <motion.button
             onClick={() => handleSelect(true)}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="w-full p-4 bg-background/40 border-2 border-border/30 rounded-md hover:border-accent-cyan/60 transition-all text-left"
+            className="min-h-9 w-full rounded-md border border-border bg-surface p-4 text-left text-sm transition-colors hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <p className="text-base font-medium text-text"><Check className="inline w-4 h-4 mr-1 align-text-bottom" aria-hidden="true" />Oui, j'ai déjà des identifiants</p>
             <p className="text-sm text-text-muted mt-1">
@@ -85,9 +84,7 @@ export function GuideStep({ provider, onHasProjectChange, onBack }: GuideStepPro
 
           <motion.button
             onClick={() => handleSelect(false)}
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="w-full p-4 bg-background/40 border-2 border-border/30 rounded-md hover:border-accent-cyan/60 transition-all text-left"
+            className="min-h-9 w-full rounded-md border border-border bg-surface p-4 text-left text-sm transition-colors hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <p className="text-base font-medium text-text"><X className="inline w-4 h-4 mr-1 align-text-bottom" aria-hidden="true" />Non, guide-moi</p>
             <p className="text-sm text-text-muted mt-1">
@@ -107,7 +104,7 @@ export function GuideStep({ provider, onHasProjectChange, onBack }: GuideStepPro
           animate={{ opacity: 1, y: 0 }}
           className="space-y-4"
         >
-          <div className="p-4 bg-accent-cyan/10 border border-accent-cyan/20 rounded-md">
+          <Carte as="section" className="p-4">
             {loading ? (
               <p className="text-sm text-text-muted">Génération du guide...</p>
             ) : (
@@ -131,9 +128,9 @@ export function GuideStep({ provider, onHasProjectChange, onBack }: GuideStepPro
                 </ReactMarkdown>
               </div>
             )}
-          </div>
+          </Carte>
 
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-3 max-[840px]:items-stretch">
             <Button variant="ghost" size="md" onClick={onBack} className="flex-1">
               <ChevronLeft className="w-4 h-4 mr-2" />
               Retour

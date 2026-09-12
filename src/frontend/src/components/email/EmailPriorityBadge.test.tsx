@@ -16,6 +16,6 @@ describe('EmailPriorityBadge : pastille dessinée', () => {
     const pastille = container.querySelector('span[aria-hidden="true"]');
     expect(pastille).not.toBeNull();
     expect(pastille?.className).toMatch(/rounded-full/);
-    expect(pastille?.className).toMatch(/bg-(error|agent-amber|agent-green)/);
+    expect(pastille?.className).toMatch(/bg-(error|warning|success)/);
   });
 });

@@ -13,6 +13,10 @@ import { EmailPriorityBadge } from './EmailPriorityBadge';
 import { mapEmailList } from '../prototype/emailReadModels';
 import { useExternalActionConfirmation } from '../app/useExternalActionConfirmation';
 import { Spinner } from '../ui/Spinner';
+import { Alerte } from '../ui/Alerte';
+import { Button } from '../ui/Button';
+import { EtatVide } from '../ui/EtatVide';
+import { Input } from '../ui/Input';
 
 interface EmailListProps {
   accountId: string;
@@ -312,21 +316,18 @@ export function EmailList({ accountId }: EmailListProps) {
     <div className="w-96 shrink-0 min-w-0 border-r border-border/30 flex flex-col">
       {/* Search */}
       <div className="p-4 border-b border-border/30">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-          <input aria-label="Rechercher dans les messages"
+        <Input aria-label="Rechercher dans les messages"
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Rechercher..."
-            className="w-full pl-10 pr-4 py-2 bg-background/60 border border-border/50 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring/50"
+            icon={<Search className="h-4 w-4" />}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 loadMessages();
               }
             }}
           />
-        </div>
       </div>
 
       {/* Messages */}
@@ -340,22 +341,16 @@ export function EmailList({ accountId }: EmailListProps) {
         )}
         {/* BUG-061: Erreur non-bloquante quand on a du cache */}
         {error && messages.length > 0 && (
-          <div role="alert" className="absolute top-0 left-0 right-0 z-10 flex items-center justify-center py-2 bg-error/10 backdrop-blur-sm border-b border-error/20">
-            <span className="text-sm font-medium text-error">{error}</span>
-          </div>
+          <Alerte className="absolute left-0 right-0 top-0 z-10 rounded-none py-2">{error}</Alerte>
         )}
         {loading ? (
           <div className="flex items-center justify-center py-8">
             <Spinner taille="zone" className="text-accent-cyan-ink" />
           </div>
         ) : error && messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
-            <p className="text-sm text-error">{error}</p>
-          </div>
+          <Alerte className="m-4">{error}</Alerte>
         ) : messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
-            <p className="text-sm text-text-muted">Aucun message</p>
-          </div>
+          <EtatVide titre="Aucun message">Cette rubrique ne contient aucun message.</EtatVide>
         ) : (
           <div className="divide-y divide-border/30">
             {messages.map((message) => {
@@ -375,7 +370,7 @@ export function EmailList({ accountId }: EmailListProps) {
                 >
                 <button
                   onClick={() => setCurrentMessage(message.id)}
-                  className="w-full text-left px-4 py-3 hover:bg-border/10 transition-colors"
+                  className="min-h-9 w-full px-4 py-3 text-left text-sm transition-colors hover:bg-surface-2 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
                 >
                   <div className="flex items-start justify-between gap-2 mb-1">
                     <div className="flex items-center gap-2 flex-1 min-w-0">
@@ -398,7 +393,7 @@ export function EmailList({ accountId }: EmailListProps) {
                     </div>
                     {/* Bouton supprimer (visible au hover, remplace la date) */}
                     <span
-                      className="text-xs text-text-muted shrink-0 group-hover:invisible group-focus-within:invisible"
+                      className="shrink-0 text-sm text-text-muted group-hover:invisible group-focus-within:invisible"
                     >
                       {formatDate(message.date)}
                     </span>
@@ -417,7 +412,7 @@ export function EmailList({ accountId }: EmailListProps) {
                     )}
                   </div>
 
-                  <p className="text-xs text-text-muted line-clamp-2">{message.snippet}</p>
+                  <p className="line-clamp-2 text-sm text-text-muted">{message.snippet}</p>
                 </button>
                 {/* Frère du bouton de ligne : atteignable au clavier (l'opacité
                     le montre au survol comme au focus ; `hidden` l'aurait
@@ -425,7 +420,7 @@ export function EmailList({ accountId }: EmailListProps) {
                 <button
                   type="button"
                   onClick={(e) => handleTrash(e, message.id)}
-                  className="absolute right-4 top-3 inline-flex shrink-0 rounded-sm p-0.5 opacity-0 pointer-events-none transition-opacity group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto focus-visible:opacity-100 focus-visible:pointer-events-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="absolute right-4 top-3 inline-flex min-h-9 min-w-9 shrink-0 items-center justify-center rounded-sm text-sm opacity-0 pointer-events-none transition-opacity group-hover:opacity-100 group-hover:pointer-events-auto group-focus-within:opacity-100 group-focus-within:pointer-events-auto focus-visible:opacity-100 focus-visible:pointer-events-auto focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   title="Supprimer"
                   aria-label={`Supprimer le message « ${message.subject || '(Sans objet)'} »`}
                 >
@@ -436,13 +431,14 @@ export function EmailList({ accountId }: EmailListProps) {
             })}
             {hasMore && (
               <div className="p-3">
-                <button
-                  type="button"
+                <Button
+                  variant="secondary"
+                  size="sm"
                   onClick={() => void loadMore()}
-                  className="w-full px-3 py-2 rounded-md text-sm bg-surface-elevated text-text hover:bg-surface-elevated/70"
+                  className="w-full"
                 >
                   Charger la suite
-                </button>
+                </Button>
               </div>
             )}
           </div>

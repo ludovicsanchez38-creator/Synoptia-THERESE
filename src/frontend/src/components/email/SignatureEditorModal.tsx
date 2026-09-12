@@ -22,6 +22,11 @@ import { pushEscapeHandler } from '../../lib/escapeStack';
 import { Z_LAYER } from '../../styles/z-layers';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { Spinner } from '../ui/Spinner';
+import { Alerte } from '../ui/Alerte';
+import { Button } from '../ui/Button';
+import { Carte } from '../ui/Carte';
+import { FormField } from '../ui/FormField';
+import { Textarea } from '../ui/Textarea';
 
 interface SignatureEditorModalProps {
   accountId: string;
@@ -145,16 +150,16 @@ export function SignatureEditorModal({ accountId, accountEmail, onClose }: Signa
         role="dialog"
         aria-modal="true"
         aria-label="Signature email"
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
         className={`fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 ${Z_LAYER.MODAL} w-full max-w-3xl`}
       >
-        <div className="bg-surface border border-text-muted/20 rounded-md shadow-2xl p-6">
+        <Carte className="p-6">
           {/* En-tête */}
           <div className="flex items-start justify-between mb-6">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-md bg-accent-cyan/10">
-                <Mail className="w-5 h-5 text-accent-cyan-ink" />
+              <div className="rounded-full bg-accent-tint p-2">
+                <Mail className="h-5 w-5 text-accent" />
               </div>
               <div>
                 <h2 className="text-lg font-semibold text-text">Signature email</h2>
@@ -165,13 +170,14 @@ export function SignatureEditorModal({ accountId, accountEmail, onClose }: Signa
                 </p>
               </div>
             </div>
-            <button
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={onClose}
-              className="text-text-muted hover:text-text transition-colors"
               aria-label="Fermer"
             >
               <X className="w-5 h-5" />
-            </button>
+            </Button>
           </div>
 
           {loading ? (
@@ -180,21 +186,18 @@ export function SignatureEditorModal({ accountId, accountEmail, onClose }: Signa
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="signature-html" className="block text-sm font-medium text-text mb-2">
-                    HTML
-                  </label>
-                  <textarea
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <FormField label="HTML" htmlFor="signature-html">
+                  <Textarea
                     id="signature-html"
                     disabled={loading || loadFailed}
                     ref={textareaRef}
                     value={html}
                     onChange={(e) => setHtml(e.target.value)}
                     placeholder={'<p>Marie Exemple<br/>Exemple SARL</p>'}
-                    className="w-full h-64 px-4 py-3 bg-background border border-text-muted/20 rounded-md text-text placeholder:text-text-muted focus:outline-none focus:ring-2 focus:ring-ring resize-none font-mono text-sm"
+                    className="h-64 resize-none font-mono"
                   />
-                </div>
+                </FormField>
                 <div>
                   <span id="signature-preview-label" className="block text-sm font-medium text-text mb-2">
                     Aperçu
@@ -202,26 +205,26 @@ export function SignatureEditorModal({ accountId, accountEmail, onClose }: Signa
                   <div
                     role="region"
                     aria-labelledby="signature-preview-label"
-                    className="w-full h-64 px-4 py-3 bg-background border border-text-muted/20 rounded-md overflow-auto text-sm text-text [&_a]:text-accent-cyan-ink [&_a]:underline"
+                    className="h-64 w-full overflow-auto rounded-sm border border-border bg-surface px-4 py-3 text-sm text-text [&_a]:text-accent-cyan-ink [&_a]:underline"
                     dangerouslySetInnerHTML={{ __html: preview }}
                   />
                 </div>
               </div>
 
-              {notice && <p className="mt-3 text-sm text-agent-amber">{notice}</p>}
-              {error && <p role="alert" className="mt-3 text-sm text-error">{error}</p>}
+              {notice && <Alerte ton="attention" className="mt-3">{notice}</Alerte>}
+              {error && <Alerte className="mt-3">{error}</Alerte>}
 
-              <div className="flex items-center justify-end gap-3 mt-6">
-                <button
+              <div className="mt-6 flex flex-wrap items-center justify-end gap-3 max-[840px]:justify-start">
+                <Button
+                  variant="ghost"
                   onClick={onClose}
-                  className="px-4 py-2 bg-text-muted/10 hover:bg-text-muted/20 text-text rounded-md transition-colors"
                 >
                   Annuler
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="primary"
                   onClick={handleSave}
                   disabled={saving || loadFailed}
-                  className="flex items-center gap-2 px-4 py-2 bg-accent-fill text-accent-ink rounded-md hover:bg-accent-cyan/90 transition-colors disabled:opacity-50"
                 >
                   {saving ? (
                     <Spinner taille="bouton" />
@@ -229,11 +232,11 @@ export function SignatureEditorModal({ accountId, accountEmail, onClose }: Signa
                     <Check className="w-4 h-4" />
                   ) : null}
                   {saved ? 'Enregistré' : 'Enregistrer'}
-                </button>
+                </Button>
               </div>
             </>
           )}
-        </div>
+        </Carte>
       </motion.div>
     </>,
     document.body

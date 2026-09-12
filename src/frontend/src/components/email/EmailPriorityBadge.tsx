@@ -22,18 +22,18 @@ const PRIORITY_CONFIG = {
     border: 'border-error/30',
   },
   medium: {
-    dot: 'bg-agent-amber',
+    dot: 'bg-warning',
     text: 'Important',
-    color: 'text-agent-amber',
-    bg: 'bg-agent-amber/10',
-    border: 'border-agent-amber/30',
+    color: 'text-warning',
+    bg: 'bg-[var(--color-warning-tint)]',
+    border: 'border-warning/30',
   },
   low: {
-    dot: 'bg-agent-green',
+    dot: 'bg-success',
     text: 'Normal',
-    color: 'text-agent-green',
-    bg: 'bg-agent-green/10',
-    border: 'border-agent-green/30',
+    color: 'text-success',
+    bg: 'bg-[var(--color-success-tint)]',
+    border: 'border-success/30',
   },
 };
 

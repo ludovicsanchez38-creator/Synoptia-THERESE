@@ -18,6 +18,7 @@ import { SmtpConfigStep } from './SmtpConfigStep';
 import * as api from '../../../services/api';
 import { Z_LAYER } from '../../../styles/z-layers';
 import { useDialogFocusTrap } from '../../../hooks/useDialogFocusTrap';
+import { Button } from '../../ui/Button';
 
 interface EmailSetupWizardProps {
   onComplete: () => void;
@@ -103,13 +104,13 @@ export function EmailSetupWizard({ onComplete, onCancel }: EmailSetupWizardProps
         role="dialog"
         aria-modal="true"
         aria-label="Configuration Email"
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
         className="relative w-full max-w-2xl bg-surface border border-border/50 rounded-md shadow-2xl overflow-hidden"
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-border/50">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-6 py-4">
           <div>
             <h2 className="text-xl font-semibold text-text">Configuration Email</h2>
             <p className="text-sm text-text-muted">
@@ -118,13 +119,14 @@ export function EmailSetupWizard({ onComplete, onCancel }: EmailSetupWizardProps
                 : 'Choix du mode de connexion'}
             </p>
           </div>
-          <button
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={onCancel}
-            className="p-2 hover:bg-background/60 rounded-md transition-colors"
             aria-label="Fermer"
           >
             <X className="w-5 h-5 text-text-muted" />
-          </button>
+          </Button>
         </div>
 
         {/* Progress bar */}
@@ -142,7 +144,7 @@ export function EmailSetupWizard({ onComplete, onCancel }: EmailSetupWizardProps
           }
         >
           <motion.div
-            className="h-full bg-gradient-to-r from-accent-cyan to-accent-magenta"
+            className="h-full bg-accent-fill"
             initial={{ width: '0%' }}
             animate={{ width: `${progressPercent}%` }}
             transition={{ duration: 0.3 }}

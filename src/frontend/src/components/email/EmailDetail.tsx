@@ -27,6 +27,10 @@ import { sanitizeEmailHtml } from '../../lib/sanitizeEmailHtml';
 import { useExternalActionConfirmation } from '../app/useExternalActionConfirmation';
 import { Spinner } from '../ui/Spinner';
 import { texteDuCorps } from '../../lib/texteDuCorpsEmail';
+import { Alerte } from '../ui/Alerte';
+import { EtatVide } from '../ui/EtatVide';
+import { FormField } from '../ui/FormField';
+import { Input } from '../ui/Input';
 
 interface EmailDetailProps {
   accountId: string;
@@ -246,7 +250,7 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
   if (!message) {
     return (
       <div className="flex-1 min-w-0 overflow-hidden flex items-center justify-center">
-        <p className="text-text-muted">Message introuvable</p>
+        <EtatVide titre="Message introuvable">Sélectionne un autre message dans la liste.</EtatVide>
       </div>
     );
   }
@@ -256,15 +260,17 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
 
       {/* Header */}
       <div className="px-6 py-4 border-b border-border/30">
-        <div className="flex items-center justify-between mb-4">
-          <button
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+          <Button
+            variant="ghost"
+            size="icon"
             onClick={() => setCurrentMessage(null)}
-            className="p-2 hover:bg-border/30 rounded-md transition-colors"
+            aria-label="Revenir à la liste des messages"
           >
             <ChevronLeft className="w-5 h-5 text-text-muted" />
-          </button>
+          </Button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 max-[840px]:basis-full">
             <Button variant="ghost" size="sm" onClick={toggleStar}>
               <Star
                 className={`w-4 h-4 ${message.is_starred ? 'fill-yellow-400 text-warning' : ''}`}
@@ -331,15 +337,15 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
             return (
               <>
                 {hasBlockedImages && (
-                  <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-surface-2 px-3 py-2 text-xs text-text-muted">
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-md border border-border bg-surface-2 px-3 py-2 text-sm text-text-muted">
                     <span>Les images distantes sont bloquées pour protéger ta vie privée.</span>
-                    <button
-                      type="button"
+                    <Button
+                      variant="secondary"
+                      size="sm"
                       onClick={() => setImagesAllowedFor(`${accountId}:${messageId}`)}
-                      className="rounded-md border border-border px-2.5 py-1 font-semibold text-text hover:bg-surface"
                     >
                       Afficher les images
-                    </button>
+                    </Button>
                   </div>
                 )}
                 <div
@@ -365,9 +371,7 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
 
       {/* Erreur suppression */}
       {trashError && (
-        <div role="alert" className="mx-6 mb-2 px-3 py-2 bg-error/10 border border-error/20 rounded-md shrink-0">
-          <p className="text-xs text-error">{trashError}</p>
-        </div>
+        <Alerte className="mx-6 mb-2 shrink-0">{trashError}</Alerte>
       )}
 
       {followUpFeedback && (
@@ -409,18 +413,16 @@ export function EmailDetail({ accountId, messageId }: EmailDetailProps) {
           sortait du volet au lieu d'entrer dans le formulaire (RULES-DESIGN
           §9.2, WCAG 2.4.3). */}
       {showFollowUpForm && (
-        <div className="mx-6 mb-3 mt-1 shrink-0 rounded-md border border-border/40 bg-surface-elevated/30 p-3" data-testid="email-follow-up-form">
+        <div className="mx-6 mb-3 mt-1 shrink-0 rounded-md border border-border bg-surface p-3" data-testid="email-follow-up-form">
           <div className="grid gap-3 sm:grid-cols-[180px_1fr]">
-            <label className="text-xs font-medium text-text-muted">
-              Échéance
-              <input aria-label="Échéance de la relance" type="date" value={followUpDate} onChange={(event) => setFollowUpDate(event.target.value)} className="mt-1.5 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text" />
-            </label>
-            <label className="text-xs font-medium text-text-muted">
-              Note
-              <input aria-label="Note de la relance" value={followUpNote} onChange={(event) => setFollowUpNote(event.target.value)} placeholder="Ce qu’il faudra vérifier ou demander…" className="mt-1.5 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-text" />
-            </label>
+            <FormField label="Échéance" htmlFor="email-follow-up-date">
+              <Input id="email-follow-up-date" aria-label="Échéance de la relance" type="date" value={followUpDate} onChange={(event) => setFollowUpDate(event.target.value)} />
+            </FormField>
+            <FormField label="Note" htmlFor="email-follow-up-note">
+              <Input id="email-follow-up-note" aria-label="Note de la relance" value={followUpNote} onChange={(event) => setFollowUpNote(event.target.value)} placeholder="Ce qu’il faudra vérifier ou demander…" />
+            </FormField>
           </div>
-          <div className="mt-3 flex justify-end gap-2"><Button variant="ghost" size="sm" onClick={() => setShowFollowUpForm(false)}>Annuler</Button><Button variant="primary" size="sm" onClick={() => void handleCreateFollowUp()} disabled={!followUpDate || followUpSaving}>{followUpSaving ? <Spinner taille="ligne" className="mr-1.5" /> : <CalendarClock className="mr-1.5 h-3.5 w-3.5" />}Créer la relance</Button></div>
+          <div className="mt-3 flex flex-wrap justify-end gap-2 max-[840px]:justify-start"><Button variant="ghost" size="sm" onClick={() => setShowFollowUpForm(false)}>Annuler</Button><Button variant="primary" size="sm" onClick={() => void handleCreateFollowUp()} disabled={!followUpDate || followUpSaving}>{followUpSaving ? <Spinner taille="ligne" className="mr-1.5" /> : <CalendarClock className="mr-1.5 h-3.5 w-3.5" />}Créer la relance</Button></div>
         </div>
       )}
 
