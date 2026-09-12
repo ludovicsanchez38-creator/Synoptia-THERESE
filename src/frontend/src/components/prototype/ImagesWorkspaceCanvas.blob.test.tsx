@@ -58,6 +58,7 @@ describe('B-756 - aperçu authentifié du studio Images', () => {
       expect(api.fetchImageObjectUrl).toHaveBeenCalledWith(
         'http://localhost/image/image-protegee',
       );
+      expect(api.fetchImageObjectUrl).toHaveBeenCalledTimes(1);
     });
 
     await waitFor(() => {
@@ -69,5 +70,16 @@ describe('B-756 - aperçu authentifié du studio Images', () => {
     await waitFor(() => {
       expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:image-protegee');
     });
+  });
+
+  it('remplace une vignette illisible par un état explicite', async () => {
+    api.fetchImageObjectUrl.mockRejectedValueOnce(new Error('Image absente'));
+
+    render(<ImagesWorkspaceCanvas onClose={vi.fn()} />);
+
+    expect(await screen.findAllByRole('img', {
+      name: 'Aperçu indisponible : Un atelier lumineux',
+    })).toHaveLength(2);
+    expect(screen.queryByAltText('Un atelier lumineux')).not.toBeInTheDocument();
   });
 });

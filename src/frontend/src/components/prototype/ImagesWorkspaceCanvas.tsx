@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import {
   downloadGeneratedImage,
+  fetchImageObjectUrl,
   generateImage,
   getImageDownloadUrl,
   getImageStatus,
@@ -57,6 +58,8 @@ export function ImagesWorkspaceCanvas({ onClose }: { onClose: () => void }) {
   const [errorContext, setErrorContext] = useState<'load' | 'generation' | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [selected, setSelected] = useState<ImageResponse | null>(null);
+  const [imageObjectUrls, setImageObjectUrls] = useState<Record<string, string>>({});
+  const [unavailableImageIds, setUnavailableImageIds] = useState<Set<string>>(new Set());
   const generationLocked = useRef(false);
   const dialogRef = useRef<HTMLElement>(null);
   const confirmationRef = useRef<HTMLDivElement>(null);
@@ -106,6 +109,40 @@ export function ImagesWorkspaceCanvas({ onClose }: { onClose: () => void }) {
   useEffect(() => {
     void refresh();
   }, []);
+
+  // B-756 : `/api/images/download/:id` est protégé par X-Therese-Token.
+  // Un `src` nu ne peut pas porter cet en-tête et toutes les vignettes de la
+  // 0.72 apparaissaient cassées. Chaque image est donc chargée par fetch
+  // authentifié, exposée via une URL objet locale, puis révoquée au prochain
+  // historique ou au démontage.
+  useEffect(() => {
+    let cancelled = false;
+    const objectUrls = new Set<string>();
+
+    setImageObjectUrls({});
+    setUnavailableImageIds(new Set());
+
+    void Promise.all(images.map(async (image) => {
+      try {
+        const objectUrl = await fetchImageObjectUrl(getImageDownloadUrl(image.id));
+        if (cancelled) {
+          URL.revokeObjectURL(objectUrl);
+          return;
+        }
+        objectUrls.add(objectUrl);
+        setImageObjectUrls((current) => ({ ...current, [image.id]: objectUrl }));
+      } catch {
+        if (!cancelled) {
+          setUnavailableImageIds((current) => new Set(current).add(image.id));
+        }
+      }
+    }));
+
+    return () => {
+      cancelled = true;
+      objectUrls.forEach((url) => URL.revokeObjectURL(url));
+    };
+  }, [images]);
 
   const activeProvider = useMemo(
     () => PROVIDERS.find((item) => item.id === provider) ?? PROVIDERS[0],
@@ -182,6 +219,51 @@ export function ImagesWorkspaceCanvas({ onClose }: { onClose: () => void }) {
     }
   }
 
+  function markImageUnavailable(imageId: string) {
+    const objectUrl = imageObjectUrls[imageId];
+    if (objectUrl) URL.revokeObjectURL(objectUrl);
+    setImageObjectUrls((current) => {
+      const next = { ...current };
+      delete next[imageId];
+      return next;
+    });
+    setUnavailableImageIds((current) => new Set(current).add(imageId));
+  }
+
+  function renderImagePreview(image: ImageResponse, className: string) {
+    const objectUrl = imageObjectUrls[image.id];
+    if (objectUrl) {
+      return (
+        <img
+          src={objectUrl}
+          alt={image.prompt}
+          className={className}
+          onError={() => markImageUnavailable(image.id)}
+        />
+      );
+    }
+    if (unavailableImageIds.has(image.id)) {
+      return (
+        <div
+          role="img"
+          aria-label={`Aperçu indisponible : ${image.prompt}`}
+          className={`${className} grid place-items-center bg-surface-2 p-3 text-center text-sm text-text-muted`}
+        >
+          <span><ImageIcon className="mx-auto mb-2 h-7 w-7 opacity-40" />Aperçu indisponible</span>
+        </div>
+      );
+    }
+    return (
+      <div
+        role="status"
+        aria-label={`Chargement de l’aperçu : ${image.prompt}`}
+        className={`${className} grid place-items-center bg-surface-2 text-text-muted`}
+      >
+        <Spinner taille="bouton" />
+      </div>
+    );
+  }
+
   return (
     <aside ref={dialogRef} role="region" aria-labelledby="images-workspace-title" tabIndex={-1} className="absolute inset-y-0 right-0 z-20 flex h-full w-full flex-col border-l border-border bg-surface-2 shadow-[-18px_0_45px_rgba(16,28,54,0.12)] sm:w-[calc(100%-48px)] xl:relative xl:w-[62%] xl:min-w-[720px] xl:shadow-none" data-testid="images-workspace-canvas">
       <header className="flex shrink-0 items-start gap-3 border-b border-border bg-surface px-5 py-4 pr-16">
@@ -224,7 +306,7 @@ export function ImagesWorkspaceCanvas({ onClose }: { onClose: () => void }) {
 
         <section className="min-h-0 overflow-y-auto p-5">
           <div className="flex items-center justify-between gap-3"><div><h3 className="text-sm font-bold text-text">Historique réel</h3><p className="mt-0.5 text-sm text-text-muted">{images.length} image{images.length > 1 ? 's' : ''} chargée{images.length > 1 ? 's' : ''} sur 50 maximum</p></div><button type="button" onClick={() => void refresh()} disabled={loading} className="grid h-11 w-11 place-items-center rounded-sm border border-border bg-surface text-text-muted" aria-label="Actualiser l’historique"><RefreshCw className={`h-3.5 w-3.5 ${loading ? 'animate-spin' : ''}`} /></button></div>
-          {loading ? <div className="grid min-h-64 place-items-center text-sm text-text-muted" role="status"><Spinner taille="zone" className="mb-2" />Chargement des images…</div> : images.length === 0 ? <div className="mt-5 grid min-h-64 place-items-center rounded-md border border-dashed border-border bg-surface text-center text-sm text-text-muted"><div><ImageIcon className="mx-auto mb-2 h-8 w-8 opacity-40" />Aucune image générée pour le moment.</div></div> : <><div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3" aria-label="Historique des images">{images.map((image) => <button key={image.id} type="button" aria-pressed={selected?.id === image.id} onClick={() => { setSelected(image); setDownloadError(null); }} className={`overflow-hidden rounded-md border bg-surface text-left ${selected?.id === image.id ? 'border-text ring-2 ring-accent/30' : 'border-border'}`}><img src={getImageDownloadUrl(image.id)} alt={image.prompt} className="aspect-square w-full object-cover" /><span className="block truncate px-2 py-2 text-sm font-medium text-text">{image.prompt}</span></button>)}</div>{selected && <div className="mt-4 rounded-md border border-border bg-surface p-4" data-testid="selected-generated-image"><img src={getImageDownloadUrl(selected.id)} alt={selected.prompt} className="max-h-[420px] w-full rounded-md object-contain" /><div className="mt-3 flex items-start gap-3"><div className="min-w-0 flex-1"><p className="text-sm font-semibold leading-5 text-text">{selected.prompt}</p><p className="mt-1 text-sm text-text-muted">{selected.provider} · {formatDate(selected.created_at)}</p></div><button type="button" onClick={() => void saveSelectedImage()} className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-sm border border-text bg-surface px-3 py-2 text-sm font-semibold text-text"><Download className="h-3.5 w-3.5" />Enregistrer</button></div>{downloadError && <div role="alert" className="mt-3 rounded-md border border-error/40 bg-[var(--color-error-tint)] p-3 text-sm text-error"><p>{downloadError}</p><button type="button" onClick={() => void saveSelectedImage()} className="mt-2 rounded-md border border-error px-3 py-2 font-semibold">Réessayer</button></div>}</div>}</>}
+          {loading ? <div className="grid min-h-64 place-items-center text-sm text-text-muted" role="status"><Spinner taille="zone" className="mb-2" />Chargement des images…</div> : images.length === 0 ? <div className="mt-5 grid min-h-64 place-items-center rounded-md border border-dashed border-border bg-surface text-center text-sm text-text-muted"><div><ImageIcon className="mx-auto mb-2 h-8 w-8 opacity-40" />Aucune image générée pour le moment.</div></div> : <><div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3" aria-label="Historique des images">{images.map((image) => <button key={image.id} type="button" aria-pressed={selected?.id === image.id} onClick={() => { setSelected(image); setDownloadError(null); }} className={`overflow-hidden rounded-md border bg-surface text-left ${selected?.id === image.id ? 'border-text ring-2 ring-accent/30' : 'border-border'}`}>{renderImagePreview(image, 'aspect-square w-full object-cover')}<span className="block truncate px-2 py-2 text-sm font-medium text-text">{image.prompt}</span></button>)}</div>{selected && <div className="mt-4 rounded-md border border-border bg-surface p-4" data-testid="selected-generated-image">{renderImagePreview(selected, 'max-h-[420px] min-h-64 w-full rounded-md object-contain')}<div className="mt-3 flex items-start gap-3"><div className="min-w-0 flex-1"><p className="text-sm font-semibold leading-5 text-text">{selected.prompt}</p><p className="mt-1 text-sm text-text-muted">{selected.provider} · {formatDate(selected.created_at)}</p></div><button type="button" onClick={() => void saveSelectedImage()} className="inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-sm border border-text bg-surface px-3 py-2 text-sm font-semibold text-text"><Download className="h-3.5 w-3.5" />Enregistrer</button></div>{downloadError && <div role="alert" className="mt-3 rounded-md border border-error/40 bg-[var(--color-error-tint)] p-3 text-sm text-error"><p>{downloadError}</p><button type="button" onClick={() => void saveSelectedImage()} className="mt-2 rounded-md border border-error px-3 py-2 font-semibold">Réessayer</button></div>}</div>}</>}
         </section>
       </div>
     </aside>
