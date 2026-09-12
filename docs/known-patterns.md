@@ -433,6 +433,22 @@ tenu 5 min 42 une heure plus tôt (run 34280441437). L'étape passe à
 vrai blocage. Deux expirations sur trois runs de la journée justifiaient la
 marge.
 
+## Linux : ne pas rejouer `src/backend/tests` depuis la suite qui le collecte (12/09/2026)
+
+Le gate de release 0.73 (`34716221537`) a échoué alors que la CI de `main`, sur
+le même commit, était verte. Le cas B-306
+`test_le_dossier_src_backend_tests_tient_seul` relançait les tests de
+`src/backend/tests/` dans un enfant, depuis une commande qui collectait déjà
+cette racine. Sur le runner de release, l'enfant a atteint 77 % puis a dépassé
+sa borne de 170 s ; le parent a ensuite terminé ses autres tests.
+
+Appliquer sur Linux la séparation déjà validée sous Windows : un job autonome
+exécute directement `src/backend/tests/`, en parallèle ; le job principal lance
+`tests/` en excluant uniquement le cas runtime récursif. Les collectes par
+fichier restent actives. Ne pas relever seulement la borne du sous-processus :
+cela repousse le défaut dans le plafond global de 12 minutes et conserve une
+exécution dupliquée sans valeur supplémentaire.
+
 ## asyncio : une tâche annulée avant son premier pas n'entre jamais dans son `try` (09/09/2026)
 
 Revue COCO de la 0.69.0, finding 3. `task.cancel()` sur une tâche qui n'a

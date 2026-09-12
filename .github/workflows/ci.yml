@@ -34,6 +34,45 @@ jobs:
         # on garde ce contrat (sinon le lint des tests dérive en silence).
         run: ruff check src/backend/ tests/
 
+  # B-306 : prouver l'autonomie de cette seconde racine directement, dans un
+  # job séparé. La relancer depuis un test de la suite principale doublait le
+  # coût et a dépassé sa borne de 170 s sur le gate release 34716221537.
+  backend-autonomous:
+    name: Backend autonome (Python)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      THERESE_ENV: test
+      TRANSFORMERS_OFFLINE: "1"
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Installer dépendances système
+        run: sudo apt-get update && sudo apt-get install -y libmagic1
+
+      - name: Installer UV et dépendances
+        run: pip install uv && uv sync --dev
+
+      - name: Tests backend autonomes (pytest)
+        run: uv run pytest src/backend/tests/ -q --timeout=60 -p no:cacheprovider --junitxml=pytest-backend-autonomous.xml
+        timeout-minutes: 12
+
+      - name: Archiver le junit autonome
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-backend-autonomous-${{ github.sha }}
+          path: pytest-backend-autonomous.xml
+          if-no-files-found: ignore
+          retention-days: 7
+
   backend-tests:
     name: Tests Backend (Python)
     runs-on: ubuntu-latest
@@ -70,7 +109,10 @@ jobs:
           # 04/09/2026 : la suite a atteint 97 % avant d etre coupee au
           # plafond historique de 8 min. Le seuil de session passe a 12 min ;
           # le timeout de 30 s par test continue de detecter les vrais blocages.
-          timeout 720 uv run pytest tests/ src/backend/tests/ --ignore=tests/e2e -q --timeout=30 -p no:cacheprovider --junitxml=pytest-ci.xml
+          # `src/backend/tests/` tourne directement dans le job parallèle
+          # backend-autonomous. Ici, on garde ses collectes fichier par fichier
+          # mais on écarte le seul cas qui relancerait toute cette racine.
+          timeout 720 uv run pytest tests/ --ignore=tests/e2e -q --timeout=30 -p no:cacheprovider -k "not test_le_dossier_src_backend_tests_tient_seul" --junitxml=pytest-ci.xml
           EXIT_CODE=$?
           set -e
           if [ $EXIT_CODE -eq 124 ]; then
