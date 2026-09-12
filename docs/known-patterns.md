@@ -587,3 +587,13 @@ dernier enfant VISIBLE (le dernier enfant DOM était un wrapper vide).
 
 - **Contexte** : smoke post-release de la 0.72.0. `PORT=17593 THERESE.app/Contents/MacOS/backend` a écouté sur 17293 pendant 45 s (données jetables, application de Ludo non lancée) : le point d'entrée du sidecar (`src/backend/main.py:271`) lit `--port` avec 17293 en dur et ignore toute variable d'environnement.
 - **Règle** : imiter le sidecar (`src-tauri/src/lib.rs`) : `--host 127.0.0.1 --port 17593` et `THERESE_PORT=17593`, `THERESE_DATA_DIR` jetable, puis lire `Uvicorn running on http://…` au journal avant d'attendre `/health`. Si le journal dit 17293, tuer tout de suite.
+
+## API Discord : `urllib` sans User-Agent peut recevoir un 403 vide (12/09/2026)
+
+- **Contexte** : changelog de la 0.73.0. Le bot Katia accédait bien à
+  `#changelog`, mais un POST avec le User-Agent par défaut de `urllib` recevait
+  un HTTP 403 sans corps avant Discord. Le même jeton et le même canal
+  répondaient 200 avec `curl`.
+- **Règle** : les scripts de publication Discord doivent envoyer un User-Agent
+  explicite, par exemple `DiscordBot (https://synoptia.fr, 1.0)`, puis relire
+  chaque message par son identifiant. Ne jamais sortir le jeton du VPS.
