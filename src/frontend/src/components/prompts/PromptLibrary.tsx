@@ -8,7 +8,8 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, ChevronDown, ChevronRight, X, ArrowLeft, Copy, Check } from 'lucide-react';
-import { Button } from '../ui/Button';
+import { Alerte, Button, EtatVide, Etiquette, Input } from '../ui';
+import { Spinner } from '../ui/Spinner';
 import {
   getPromptLibrary,
   searchPromptLibrary,
@@ -72,7 +73,7 @@ function HighlightedPrompt({ text }: { text: string }) {
         part.startsWith('{') && part.endsWith('}') ? (
           <span
             key={i}
-            className="inline-block bg-accent-tint text-accent-cyan-ink px-1 rounded-sm font-medium"
+            className="inline-block rounded-sm bg-accent-tint px-1 font-medium text-accent"
           >
             {part}
           </span>
@@ -127,7 +128,7 @@ function PromptCard({
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="group bg-surface border border-border/30 rounded-md p-4 hover:border-accent-cyan/30 hover:shadow-[0_0_15px_rgba(34,211,238,0.08)] transition-all duration-200 cursor-pointer"
+      className="group cursor-pointer rounded-md border border-border bg-surface p-4 shadow-sm transition-colors hover:border-accent"
       onClick={() => setExpanded(!expanded)}
     >
       <div className="flex items-start justify-between gap-3">
@@ -136,14 +137,17 @@ function PromptCard({
           <p className="text-xs text-text-muted mt-1 line-clamp-2">{prompt.description}</p>
         </div>
         <div className="flex items-center gap-1 flex-shrink-0">
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
             onClick={handleCopy}
-            className="p-1.5 rounded-md text-text-muted hover:text-accent-cyan-ink hover:bg-accent-tint transition-colors opacity-80 group-hover:opacity-100 group-focus-within:opacity-100"
             title="Copier le prompt"
+            aria-label="Copier le prompt"
             data-copie={copied ? 'ok' : copieEchouee ? 'echec' : 'idle'}
           >
             {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-          </button>
+          </Button>
           {copieEchouee && (
             <span role="status" className="text-xs text-error">Copie impossible : le presse-papiers est refusé.</span>
           )}
@@ -154,7 +158,7 @@ function PromptCard({
               e.stopPropagation();
               onSelect(prompt);
             }}
-            className="text-sm text-accent-cyan-ink hover:bg-accent-tint opacity-80 group-hover:opacity-100 group-focus-within:opacity-100"
+            className="text-sm"
           >
             Utiliser
           </Button>
@@ -164,12 +168,7 @@ function PromptCard({
       {/* Tags */}
       <div className="flex flex-wrap gap-1 mt-2">
         {prompt.tags.slice(0, 4).map((tag) => (
-          <span
-            key={tag}
-            className="text-xs px-1.5 py-0.5 rounded-sm bg-surface/50 text-text-muted border border-border/20"
-          >
-            {tag}
-          </span>
+          <Etiquette key={tag}>{tag}</Etiquette>
         ))}
       </div>
 
@@ -225,12 +224,14 @@ function CategoryAccordion({
   useEffect(() => { setIsOpen(defaultOpen); }, [defaultOpen]);
 
   return (
-    <div className="border border-border/20 rounded-md overflow-hidden bg-bg/80">
+    <div className="overflow-hidden rounded-md border border-border bg-surface shadow-sm">
       <button
+        type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full flex items-center gap-3 px-4 py-3 hover:bg-surface/30 transition-colors text-left"
+        className="flex min-h-11 w-full items-center gap-3 px-4 py-3 text-left transition-colors hover:bg-surface-2"
+        aria-expanded={isOpen}
       >
-        <span className="text-accent-cyan-ink">
+        <span className="text-accent">
           {CATEGORY_ICONS[category.category] || CATEGORY_ICONS.email}
         </span>
         <span className="flex-1 font-medium text-sm text-text">{category.label}</span>
@@ -373,17 +374,20 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 20 }}
       transition={{ duration: 0.25 }}
-      className="flex flex-col h-full bg-bg"
+      className="flex h-full flex-col bg-bg"
     >
       {/* Header */}
-      <div className="flex items-center gap-3 px-5 py-4 border-b border-border/30">
-        <button
+      <div className="flex items-center gap-3 border-b border-border px-5 py-4">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
           onClick={onClose}
-          className="p-1.5 rounded-md text-text-muted hover:text-text hover:bg-surface/50 transition-colors"
           title="Retour"
+          aria-label="Retour au chat"
         >
           <ArrowLeft className="w-5 h-5" />
-        </button>
+        </Button>
         <div className="flex-1">
           <h2 className="text-lg font-semibold text-text">Bibliothèque de prompts</h2>
           <p className="text-xs text-text-muted mt-0.5">
@@ -399,25 +403,28 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
       </div>
 
       {/* Barre de recherche */}
-      <div className="px-5 py-3 border-b border-border/20">
+      <div className="border-b border-border px-5 py-3">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-          <input aria-label="Rechercher un prompt"
+          <Input aria-label="Rechercher un prompt"
             ref={searchInputRef}
             type="text"
+            icon={<Search className="h-4 w-4" />}
             value={searchQuery}
             onChange={(e) => handleSearchChange(e.target.value)}
             placeholder="Rechercher un prompt (ex : relance, LinkedIn, CGV...)"
-            className="w-full pl-10 pr-10 py-2.5 bg-surface/50 border border-border/30 rounded-md text-sm text-text placeholder:text-text-muted focus:outline-none focus:border-accent-cyan/50 focus:ring-1 focus:ring-ring/20 transition-colors"
+            className="pr-12"
           />
           {searchQuery && (
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
               onClick={() => handleSearchChange('')}
               aria-label="Effacer la recherche"
-              className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded-sm text-text-muted hover:text-text transition-colors"
+              className="absolute right-1 top-1/2 -translate-y-1/2"
             >
               <X className="w-4 h-4" />
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -425,42 +432,24 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
       {/* Contenu */}
       <div className="flex-1 overflow-y-auto px-5 py-4">
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <div className="w-6 h-6 border-2 border-accent-cyan/30 border-t-accent-cyan rounded-full animate-spin" />
+          <div className="flex items-center justify-center py-12" role="status" aria-label="Chargement de la bibliothèque">
+            <Spinner taille="zone" />
           </div>
         ) : searchError ? (
-          <div className="text-center py-12">
-            <p className="text-sm text-error" role="alert">{searchError}</p>
-          </div>
+          <Alerte titre="Recherche impossible">{searchError}</Alerte>
         ) : error ? (
-          <div className="text-center py-12">
-            <p className="text-sm text-error">{error}</p>
-            <Button
+          <Alerte
+            titre="Bibliothèque indisponible"
+            action={<Button
               variant="secondary"
               size="sm"
-              className="mt-4"
               onClick={() => void chargerLaBibliotheque()}
             >
               Réessayer
-            </Button>
-          </div>
+            </Button>}
+          >{error}</Alerte>
         ) : displayedCategories.length === 0 ? (
-          <div className="text-center py-12">
-            {searchQuery.trim() ? (
-              <>
-                <p className="text-sm text-text-muted">
-                  Aucun prompt trouvé pour "{searchQuery}"
-                </p>
-                <p className="text-xs text-text-muted mt-1">
-                  Essaie avec d'autres mots-clés
-                </p>
-              </>
-            ) : (
-              <p className="text-sm text-text-muted">
-                La bibliothèque de prompts est vide ou indisponible.
-              </p>
-            )}
-          </div>
+          <EtatVide titre={searchQuery.trim() ? `Aucun prompt trouvé pour « ${searchQuery} »` : 'Bibliothèque vide'}>{searchQuery.trim() ? 'Essaie avec d’autres mots-clés.' : 'La bibliothèque de prompts est vide ou indisponible.'}</EtatVide>
         ) : (
           <div className="grid gap-4">
             {displayedCategories.map((category, index) => (
