@@ -341,7 +341,7 @@ export function EmailList({ accountId }: EmailListProps) {
         )}
         {/* BUG-061: Erreur non-bloquante quand on a du cache */}
         {error && messages.length > 0 && (
-          <Alerte className="absolute left-0 right-0 top-0 z-10 rounded-none py-2">{error}</Alerte>
+          <Alerte className="absolute left-0 right-0 top-0 z-10 rounded-sm py-2">{error}</Alerte>
         )}
         {loading ? (
           <div className="flex items-center justify-center py-8">

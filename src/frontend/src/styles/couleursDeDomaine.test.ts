@@ -238,9 +238,6 @@ describe('lot 5 : plus une seule couleur brute', () => {
     // couleur littérale fait rougir, et une réparation aussi (il faut alors
     // retirer sa ligne d'ici).
     const DETTE_INLINE = [
-      'components/atelier/AgentChat.tsx : backgroundColor: isUser ? "rgba(34, 211, 238, 0.1)"',
-      "components/atelier/AgentMessageBubble.tsx : backgroundColor: isUser ? 'rgba(34, 211, 238, 0.1)'",
-      "components/atelier/CodeReviewPanel.tsx : backgroundColor: line.startsWith('+') && !line.startsWith('+++') ? 'rgba(34, 1",
       "components/ui/UpdateBanner.tsx : background: 'rgba(34, 211, 238, 0.2)'",
       "components/ui/UpdateBanner.tsx : background: 'rgba(34, 211, 238, 0.2)'",
       "components/ui/UpdateBanner.tsx : background: 'rgba(34, 211, 238, 0.2)'",

@@ -161,7 +161,7 @@ export function SessionList() {
 
       {/* D195 : liste pleine et rafraîchissement en panne, la panne se dit quand même. */}
       {error && visibleSessions.length > 0 && (
-        <Alerte className="rounded-none border-x-0 border-t-0 px-3 py-2 text-sm">{error}</Alerte>
+        <Alerte className="rounded-sm border-x-0 border-t-0 px-3 py-2 text-sm">{error}</Alerte>
       )}
 
       {/* List */}
@@ -219,7 +219,7 @@ export function SessionList() {
                     variant="ghost"
                     onClick={() => selectSession(session.id)}
                     aria-label={`Ouvrir la session ${session.instruction}`}
-                    className="h-auto w-full flex-col items-stretch rounded-none px-3 py-2.5 pr-12 text-left font-normal hover:bg-transparent"
+                    className="h-auto w-full flex-col items-stretch rounded-sm px-3 py-2.5 pr-12 text-left font-normal hover:bg-transparent"
                   >
                   <div className="flex items-center gap-2">
                     <span

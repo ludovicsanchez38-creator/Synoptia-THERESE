@@ -271,7 +271,7 @@ export function EmailCompose() {
             value={draftBody}
             onChange={(e) => setDraftBody(e.target.value)}
             placeholder="Écris ton message..."
-            className="h-full resize-none rounded-none border-0 px-6 py-4 focus:ring-inset"
+            className="h-full resize-none rounded-sm border-0 px-6 py-4 focus:ring-inset"
           />
         </div>
       </div>

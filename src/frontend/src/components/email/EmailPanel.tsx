@@ -368,7 +368,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
         {needsReauth && (
           <Alerte
             ton="attention"
-            className="rounded-none border-x-0 border-t-0"
+            className="rounded-sm border-x-0 border-t-0"
             icone={<AlertTriangle className="h-4 w-4 text-warning" />}
             action={<Button
               variant="ghost"
@@ -610,7 +610,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
         {needsReauth && (
           <Alerte
             ton="attention"
-            className="rounded-none border-x-0 border-t-0"
+            className="rounded-sm border-x-0 border-t-0"
             icone={<AlertTriangle className="h-4 w-4 text-warning" />}
             action={<Button
               variant="ghost"

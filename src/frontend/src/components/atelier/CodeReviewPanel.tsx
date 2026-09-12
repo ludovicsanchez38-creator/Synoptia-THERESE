@@ -120,7 +120,7 @@ export function CodeReviewPanel() {
                 onClick={() => setExpandedFile(
                   expandedFile === file.file_path ? null : file.file_path
                 )}
-                className="h-auto w-full justify-start gap-2 rounded-none px-4 py-2 text-left"
+                className="h-auto w-full justify-start gap-2 rounded-sm px-4 py-2 text-left"
               >
                 {expandedFile === file.file_path ? (
                   <ChevronDown size={14} className="text-text-muted" />

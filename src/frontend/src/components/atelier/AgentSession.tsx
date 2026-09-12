@@ -174,7 +174,7 @@ function ToolCallBlock({
         type="button"
         variant="ghost"
         onClick={() => setExpanded(!expanded)}
-        className="h-auto w-full justify-start gap-2 rounded-none px-3 py-1.5 text-left text-text-muted"
+        className="h-auto w-full justify-start gap-2 rounded-sm px-3 py-1.5 text-left text-text-muted"
       >
         <Wrench size={12} className="flex-shrink-0 text-agent-amber/70" />
         <span className="flex-1 truncate font-medium">{toolName}</span>
