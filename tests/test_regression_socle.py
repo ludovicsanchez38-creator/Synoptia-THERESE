@@ -317,10 +317,16 @@ class TestCouts:
 
 class TestClesApi:
     @pytest.mark.asyncio
-    async def test_une_cle_illisible_est_signalee_comme_corrompue(self, client, db_session):
+    async def test_une_cle_illisible_est_signalee_comme_corrompue(
+        self, client, db_session, monkeypatch
+    ):
         from app.models.entities import Preference
         from app.services.encryption import encrypt_value
 
+        # B-759 : une clé du poste rend volontairement le fournisseur
+        # disponible et court-circuite le signal « coffre corrompu ». Ce test
+        # doit mesurer la base, indépendamment de l'environnement du lanceur.
+        monkeypatch.delenv("OPENAI_API_KEY", raising=False)
         jeton = encrypt_value("sk-valide")
         abime = jeton[:-6] + "AAAAA="  # base64 correct, signature fausse : indéchiffrable
         db_session.add(Preference(key="openai_api_key", value=abime, category="llm"))
