@@ -2352,7 +2352,7 @@ class TestBUG180_RaccourciBureauMultiContexte:
     le raccourci commun et le raccourci utilisateur comme deux icônes.
     """
 
-    def _hook_content(self):
+    def _hook_path(self):
         hook_path = (
             Path(__file__).resolve().parent.parent
             / "src"
@@ -2360,32 +2360,98 @@ class TestBUG180_RaccourciBureauMultiContexte:
             / "src-tauri"
             / "installer-hooks.nsh"
         )
-        return hook_path.read_text(encoding="utf-8-sig")
+        return hook_path
 
-    def test_hook_garde_un_seul_raccourci_si_la_purge_commune_est_refusee(self):
-        content = self._hook_content()
-        common_context = content.index("SetShellVarContext all")
-        common_delete = content.index(
-            'Delete "$DESKTOP\\THERESE.lnk"', common_context
-        )
-        target_check = content.index(
-            '!insertmacro IsShortcutTarget "$DESKTOP\\THERESE.lnk" '
-            '"$INSTDIR\\${MAINBINARYNAME}.exe"',
-            common_delete,
-        )
-        user_context = content.index("SetShellVarContext current", target_check)
-        user_delete = content.index(
-            'Delete "$DESKTOP\\THERESE.lnk"', user_context
+    def _execute_postinstall(self, *, common_target: str, deny_common_delete: bool):
+        """Exécute le sous-ensemble NSIS utilisé par le hook sur deux bureaux.
+
+        Ce harnais vérifie l'effet de la macro plutôt que la présence de chaînes :
+        contexte shell, suppression éventuellement refusée, contrôle de cible,
+        pile NSIS et branche conditionnelle sont réellement interprétés.
+        """
+        installed_target = r"C:\Program Files\THERESE\therese.exe"
+        shortcuts = {
+            "current/THERESE.lnk": installed_target,
+            "all/THERESE.lnk": common_target,
+        }
+        denied = {"all/THERESE.lnk"} if deny_common_delete else set()
+        context = "current"
+        stack: list[str] = []
+        variables: dict[str, str] = {}
+        conditions = [True]
+        in_macro = False
+
+        def expand(value: str) -> str:
+            if value.startswith("$DESKTOP\\"):
+                return f"{context}/{value.split(chr(92), 1)[1]}"
+            return value.replace(
+                "$INSTDIR\\${MAINBINARYNAME}.exe", installed_target
+            )
+
+        with self._hook_path().open(encoding="utf-8-sig") as source:
+            for raw_line in source:
+                line = raw_line.strip()
+                if line == "!macro NSIS_HOOK_POSTINSTALL":
+                    in_macro = True
+                    continue
+                if not in_macro:
+                    continue
+                if line == "!macroend":
+                    break
+                if not line or line.startswith(";"):
+                    continue
+                if line.startswith("${If} "):
+                    variable, expected = line[len("${If} "):].split(" = ", 1)
+                    conditions.append(conditions[-1] and variables.get(variable) == expected)
+                    continue
+                if line == "${EndIf}":
+                    conditions.pop()
+                    continue
+                if not conditions[-1]:
+                    continue
+                if line.startswith("SetShellVarContext "):
+                    context = line.rsplit(" ", 1)[1]
+                elif line.startswith('Delete "'):
+                    shortcut = expand(line.removeprefix('Delete "').removesuffix('"'))
+                    if shortcut not in denied:
+                        shortcuts.pop(shortcut, None)
+                elif line.startswith("!insertmacro IsShortcutTarget "):
+                    arguments = line.removeprefix("!insertmacro IsShortcutTarget ")
+                    shortcut_arg, target_arg = arguments[1:-1].split('" "', 1)
+                    shortcut = expand(shortcut_arg)
+                    stack.append("1" if shortcuts.get(shortcut) == expand(target_arg) else "0")
+                elif line.startswith("Pop "):
+                    variables[line.removeprefix("Pop ")] = stack.pop()
+                else:
+                    raise AssertionError(f"Instruction NSIS non prise en charge : {line}")
+
+        return shortcuts
+
+    def test_un_doublon_disparait_si_la_purge_commune_est_refusee(self):
+        installed_target = r"C:\Program Files\THERESE\therese.exe"
+        shortcuts = self._execute_postinstall(
+            common_target=installed_target,
+            deny_common_delete=True,
         )
 
-        assert common_context < common_delete < target_check < user_context < user_delete
-        assert "Pop $0" in content[target_check:user_context], (
-            "Le résultat du contrôle de cible doit alimenter la condition de repli"
+        assert shortcuts == {"all/THERESE.lnk": installed_target}
+
+    def test_un_doublon_disparait_si_la_purge_commune_est_autorisee(self):
+        installed_target = r"C:\Program Files\THERESE\therese.exe"
+        shortcuts = self._execute_postinstall(
+            common_target=installed_target,
+            deny_common_delete=False,
         )
-        assert "${If} $0 = 1" in content[target_check:user_delete], (
-            "Le raccourci utilisateur ne doit être supprimé que si le raccourci "
-            "commun restant vise exactement le binaire installé"
+
+        assert shortcuts == {"current/THERESE.lnk": installed_target}
+
+    def test_une_cible_commune_differente_ne_supprime_pas_le_raccourci_courant(self):
+        shortcuts = self._execute_postinstall(
+            common_target=r"D:\Ancienne installation\therese.exe",
+            deny_common_delete=True,
         )
+
+        assert set(shortcuts) == {"all/THERESE.lnk", "current/THERESE.lnk"}
 
 
 class TestVoiceLocalOption:
