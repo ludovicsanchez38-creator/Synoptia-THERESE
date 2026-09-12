@@ -89,6 +89,7 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
   const [progress, setProgress] = useState(0);
   const [appVersion, setAppVersion] = useState<string | null>(null);
   const apiBaseReady = useRef(false);
+  const fatalSidecarError = useRef(false);
   const reducedMotion = prefersReducedMotion();
 
   // Charger la version de l'app (tauri.conf.json)
@@ -110,6 +111,10 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
     import('@tauri-apps/api/event')
       .then(({ listen }) => {
         listen<string>('sidecar-error', (event) => {
+          // B-757 : l'erreur est fatale pour CE démarrage. Le polling vit dans
+          // un autre effet ; ce ref partagé l'arrête et interdit un onReady
+          // tardif si le health check déjà parti finit par répondre 200.
+          fatalSidecarError.current = true;
           setError(
             `Le moteur n'a pas pu démarrer :\n${event.payload}\n\nDans le Terminal :\nxattr -cr /Applications/THÉRÈSE.app\npuis relancez l'app.`
           );
@@ -137,7 +142,7 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
         apiBaseReady.current = true;
       }
 
-      while (!cancelled) {
+      while (!cancelled && !fatalSidecarError.current) {
         const elapsed = Date.now() - startTime;
 
         // Timeout
@@ -171,14 +176,14 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
 
         // Check
         const healthy = await checkHealth();
-        if (healthy && !cancelled) {
+        if (healthy && !cancelled && !fatalSidecarError.current) {
           setProgress(100);
           setMessage('Prêt !');
           // F-09 : effacer la progression du dock macOS
           void setDockProgress(100);
           // Petit délai pour l'animation
           await new Promise((r) => setTimeout(r, 300));
-          if (!cancelled) onReady();
+          if (!cancelled && !fatalSidecarError.current) onReady();
           return;
         }
 

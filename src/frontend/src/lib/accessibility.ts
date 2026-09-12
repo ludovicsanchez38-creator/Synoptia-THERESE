@@ -112,6 +112,9 @@ export function getFocusableElements(container: HTMLElement): HTMLElement[] {
  * Trap focus within a container (for modals).
  */
 export function createFocusTrap(container: HTMLElement): () => void {
+  const previouslyFocused = document.activeElement instanceof HTMLElement
+    ? document.activeElement
+    : null;
   const focusableElements = getFocusableElements(container);
   const firstElement = focusableElements[0];
   const lastElement = focusableElements[focusableElements.length - 1];
@@ -137,7 +140,10 @@ export function createFocusTrap(container: HTMLElement): () => void {
   container.addEventListener('keydown', handleKeyDown);
   firstElement?.focus();
 
-  return () => container.removeEventListener('keydown', handleKeyDown);
+  return () => {
+    container.removeEventListener('keydown', handleKeyDown);
+    if (previouslyFocused?.isConnected) previouslyFocused.focus();
+  };
 }
 
 /**
