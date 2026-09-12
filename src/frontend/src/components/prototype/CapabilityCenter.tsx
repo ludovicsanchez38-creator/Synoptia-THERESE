@@ -469,8 +469,8 @@ function TrustRow({ icon, title, value }: { icon: ReactNode; title: string; valu
     <div className="flex items-start gap-3 rounded-md px-2 py-2.5 hover:bg-surface-2">
       <span className="mt-0.5 grid h-7 w-7 shrink-0 place-items-center rounded-sm bg-accent-tint text-accent">{icon}</span>
       <span className="min-w-0 flex-1">
-        <span className="block text-xs font-semibold text-text">{title}</span>
-        <span className="mt-0.5 block text-xs leading-4 text-text-muted">{value}</span>
+        <span className="block text-sm font-semibold text-text">{title}</span>
+        <span className="mt-0.5 block text-sm leading-5 text-text-muted">{value}</span>
       </span>
     </div>
   );
@@ -507,19 +507,19 @@ export function TrustCenter({
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: -8, opacity: 0 }}
         onClick={(event) => event.stopPropagation()}
-        className="absolute left-4 right-4 top-[62px] overflow-hidden rounded-md border border-border bg-surface shadow-[0_24px_70px_rgba(16,28,54,0.22)] sm:left-auto sm:w-[360px]"
+        className="absolute left-4 right-4 top-[62px] overflow-hidden rounded-md border border-border bg-surface shadow-lg sm:left-auto sm:w-[380px]"
       >
         <div className="flex items-start gap-3 border-b border-border bg-accent-tint px-4 py-4">
-          <span className="grid h-9 w-9 place-items-center rounded-md border border-accent-cyan/30 bg-surface text-accent">
+          <span className="grid h-9 w-9 place-items-center rounded-full bg-surface text-accent shadow-sm">
             <ShieldCheck className="h-[18px] w-[18px]" />
           </span>
           <div className="min-w-0 flex-1">
             <div className="text-sm font-semibold text-text">Centre de confiance</div>
             <div className="mt-0.5 text-xs leading-4 text-text-muted">Thérèse explique ce qu’elle utilise avant d’agir.</div>
           </div>
-          <button type="button" data-dialog-autofocus onClick={onClose} aria-label="Fermer le centre de confiance" className="grid h-7 w-7 place-items-center rounded-sm text-text-muted hover:bg-surface">
+          <Button type="button" variant="ghost" size="icon" data-dialog-autofocus onClick={onClose} aria-label="Fermer le centre de confiance">
             <X className="h-3.5 w-3.5" />
-          </button>
+          </Button>
         </div>
         <div className="p-2">
           <TrustRow icon={<Database className="h-3.5 w-3.5" />} title="Données" value="Données métier conservées localement ; secrets protégés par le trousseau système." />
@@ -529,8 +529,8 @@ export function TrustCenter({
           <TrustRow icon={<ShieldCheck className="h-3.5 w-3.5" />} title="RGPD" value="Export global et droits par contact accessibles depuis Confidentialité et le CRM." />
         </div>
         <div className="grid grid-cols-2 gap-2 border-t border-border bg-surface-2 p-3">
-          <button type="button" onClick={onOpenPrivacy} className="rounded-md border border-border bg-surface px-3 py-2 text-sm font-semibold text-text hover:border-border">Confidentialité</button>
-          <button type="button" onClick={onOpenAdvanced} className="rounded-md border border-accent-fill bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink">Paramètres</button>
+          <Button type="button" variant="secondary" onClick={onOpenPrivacy}>Confidentialité</Button>
+          <Button type="button" onClick={onOpenAdvanced}>Paramètres</Button>
         </div>
       </motion.section>
     </motion.div>

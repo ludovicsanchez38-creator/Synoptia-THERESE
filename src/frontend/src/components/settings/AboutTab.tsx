@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { RefreshCw, Download, CheckCircle, ExternalLink, Info, MessageSquareWarning } from 'lucide-react';
-import { Button } from '../ui/Button';
+import { Alerte, Button, Carte, Etiquette } from '../ui';
 import { useBackendStore } from '../../hooks/useBackend';
 import { checkHealth } from '../../services/api';
 
@@ -130,7 +130,7 @@ export function AboutTab() {
   return (
     <div className="space-y-6">
       {/* Version actuelle */}
-      <div className="bg-surface/50 rounded-md p-5 border border-border/30">
+      <Carte as="section" className="p-5">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 rounded-sm bg-accent-fill border-[1.5px] border-[var(--btn-ink)] flex items-center justify-center">
             <span className="text-lg font-bold text-accent-ink">T</span>
@@ -148,18 +148,18 @@ export function AboutTab() {
           </div>
           <div className="bg-bg/50 rounded-md px-3 py-2">
             <span className="text-text-muted">Phase</span>
-            <span className="ml-2 text-accent-cyan-ink font-medium">Alpha</span>
+            <Etiquette className="ml-2">Alpha</Etiquette>
           </div>
         </div>
-      </div>
+      </Carte>
 
       {/* Sélecteur réversible de l'interface, appliqué au prochain bootstrap. */}
 
       {/* US-012 : communauté et retours - le testeur alpha doit pouvoir
           signaler un bug sans connaître l'URL Discord par coeur */}
-      <div className="bg-surface/50 rounded-md p-5 border border-border/30">
+      <Carte as="section" className="p-5">
         <h4 className="text-sm font-medium text-text mb-3 flex items-center gap-2">
-          <MessageSquareWarning className="w-4 h-4 text-accent-cyan-ink" />
+          <MessageSquareWarning className="w-4 h-4 text-accent" />
           Un bug ? Une idée ?
         </h4>
         <p className="text-sm text-text-muted mb-3">
@@ -176,12 +176,12 @@ export function AboutTab() {
           <ExternalLink className="w-4 h-4 mr-2" />
           Rejoindre le Discord / Signaler un bug
         </Button>
-      </div>
+      </Carte>
 
       {/* Vérification des mises à jour */}
-      <div className="bg-surface/50 rounded-md p-5 border border-border/30">
+      <Carte as="section" className="p-5">
         <h4 className="text-sm font-medium text-text mb-3 flex items-center gap-2">
-          <RefreshCw className="w-4 h-4 text-accent-cyan-ink" />
+          <RefreshCw className="w-4 h-4 text-accent" />
           Mises à jour
         </h4>
 
@@ -216,8 +216,8 @@ export function AboutTab() {
           {/* Résultat : mise à jour disponible */}
           {updateStatus === 'update-available' && latestRelease && (
             <div className="space-y-3">
-              <div className="bg-accent-cyan/10 border border-accent-cyan/30 rounded-md p-3">
-                <p className="text-sm text-accent-cyan-ink font-medium mb-1">
+              <div className="rounded-md border border-accent-cyan/30 bg-accent-tint p-3">
+                <p className="mb-1 text-sm font-medium text-accent">
                   Nouvelle version disponible : {latestRelease.tag_name}
                 </p>
                 <p className="text-xs text-text-muted">
@@ -259,12 +259,10 @@ export function AboutTab() {
 
           {/* Résultat : erreur */}
           {updateStatus === 'error' && (
-            <div className="text-sm text-error bg-[var(--color-error-tint)] rounded-md px-3 py-2">
-              Impossible de vérifier : {errorMsg}
-            </div>
+            <Alerte titre="Impossible de vérifier">{errorMsg}</Alerte>
           )}
         </div>
-      </div>
+      </Carte>
 
       {/* Crédits */}
       <div className="text-center text-xs text-text-muted space-y-1">
