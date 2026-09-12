@@ -6,6 +6,8 @@
 
 import React, { useState, useRef } from 'react';
 import { Send, Square } from 'lucide-react';
+import { Button } from '../ui/Button';
+import { Textarea } from '../ui/Textarea';
 
 interface Props {
   onSend: (message: string) => void;
@@ -35,7 +37,7 @@ export function AgentInput({ onSend, onCancel, isStreaming, placeholder }: Props
 
   return (
     <div className="flex items-end gap-2 border-t border-border bg-bg px-3 py-2.5">
-      <textarea aria-label="Message à l’agent"
+      <Textarea aria-label="Message à l’agent"
         ref={inputRef}
         value={value}
         onChange={(e) => setValue(e.target.value)}
@@ -43,8 +45,7 @@ export function AgentInput({ onSend, onCancel, isStreaming, placeholder }: Props
         placeholder={placeholder || 'Décris ce que tu veux...'}
         disabled={isStreaming}
         rows={1}
-        className="flex-1 resize-none rounded-md border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-text-muted outline-none transition focus:border-agent-purple/50 disabled:opacity-50"
-        style={{ minHeight: '38px', maxHeight: '120px' }}
+        className="max-h-[120px] flex-1 resize-none"
         onInput={(e) => {
           const target = e.target as HTMLTextAreaElement;
           target.style.height = 'auto';
@@ -53,22 +54,28 @@ export function AgentInput({ onSend, onCancel, isStreaming, placeholder }: Props
       />
 
       {isStreaming ? (
-        <button
+        <Button
+          type="button"
+          variant="danger"
+          size="icon"
           onClick={onCancel}
-          className="flex h-9 w-9 items-center justify-center rounded-md bg-error/20 text-error transition hover:bg-error/30"
           title="Annuler"
+          aria-label="Annuler"
         >
           <Square size={16} />
-        </button>
+        </Button>
       ) : (
-        <button
+        <Button
+          type="button"
+          variant="primary"
+          size="icon"
           onClick={handleSubmit}
           disabled={!value.trim()}
-          className="flex h-9 w-9 items-center justify-center rounded-md bg-agent-purple/20 text-agent-purple transition hover:bg-agent-purple/30 disabled:opacity-30 disabled:hover:bg-agent-purple/20"
           title="Envoyer"
+          aria-label="Envoyer"
         >
           <Send size={16} />
-        </button>
+        </Button>
       )}
     </div>
   );

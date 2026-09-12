@@ -10,6 +10,10 @@ import { useMemo, useState } from 'react';
 
 import { Button } from '../ui/Button';
 import { Spinner } from '../ui/Spinner';
+import { Input } from '../ui/Input';
+import { Select } from '../ui/Select';
+import { Textarea } from '../ui/Textarea';
+import { FormField } from '../ui/FormField';
 
 /**
  * Types pour les champs de formulaire
@@ -81,15 +85,17 @@ export function DynamicSkillForm({
       className="flex flex-col h-full"
     >
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6 pb-4 border-b border-border">
-        <button
+      <div className="flex flex-wrap items-center gap-3 mb-6 pb-4 border-b border-border">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
           onClick={onBack}
           disabled={isSubmitting}
-          className="p-2 hover:bg-surface rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           aria-label="Retour"
         >
           <ArrowLeft className="w-5 h-5 text-text-muted" />
-        </button>
+        </Button>
         <div>
           <h3 className="text-lg font-semibold text-text">{skillName}</h3>
           <p className="text-sm text-text-muted">Remplis les champs ci-dessous</p>
@@ -105,88 +111,69 @@ export function DynamicSkillForm({
               30/08/2026 : « le cadre de saisie est tronqué à gauche ». */}
           <div className="flex-1 overflow-y-auto space-y-5 px-2">
           {Object.entries(schema).map(([key, field]) => (
-            <div key={key}>
-              <label
-                htmlFor={`field-${key}`}
-                className="block text-sm font-medium text-text mb-1.5"
-              >
-                {field.label}
-                {field.required && <span className="text-error ml-1">*</span>}
-              </label>
+            <FormField
+              key={key}
+              label={field.label}
+              htmlFor={`field-${key}`}
+              required={field.required}
+              description={field.help_text || undefined}
+            >
 
               {/* Text input */}
               {field.type === 'text' && (
-                <input
+                <Input
                   id={`field-${key}`}
                   type="text"
                   value={inputs[key] || ''}
                   onChange={(e) => setInputs({ ...inputs, [key]: e.target.value })}
                   placeholder={field.placeholder}
                   disabled={isSubmitting}
-                  className="w-full px-3 py-2 bg-surface text-text rounded-md border border-border focus:border-accent-cyan focus:ring-2 focus:ring-ring/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  aria-describedby={field.help_text ? `help-${key}` : undefined}
                 />
               )}
 
               {/* Textarea */}
               {field.type === 'textarea' && (
-                <textarea
+                <Textarea
                   id={`field-${key}`}
                   value={inputs[key] || ''}
                   onChange={(e) => setInputs({ ...inputs, [key]: e.target.value })}
                   placeholder={field.placeholder}
                   rows={4}
                   disabled={isSubmitting}
-                  className="w-full px-3 py-2 bg-surface text-text rounded-md border border-border focus:border-accent-cyan focus:ring-2 focus:ring-ring/20 transition-all resize-y min-h-[100px] disabled:opacity-50 disabled:cursor-not-allowed"
-                  aria-describedby={field.help_text ? `help-${key}` : undefined}
+                  className="min-h-[100px] resize-y"
                 />
               )}
 
               {/* Select */}
               {field.type === 'select' && (
-                <select
+                <Select
                   id={`field-${key}`}
                   value={inputs[key] || field.default || ''}
                   onChange={(e) => setInputs({ ...inputs, [key]: e.target.value })}
                   disabled={isSubmitting}
-                  className="w-full px-3 py-2 bg-surface text-text rounded-md border border-border focus:border-accent-cyan focus:ring-2 focus:ring-ring/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  aria-describedby={field.help_text ? `help-${key}` : undefined}
-                >
-                  {!field.required && <option value="">-- Choisir --</option>}
-                  {field.options?.map((opt) => (
-                    <option key={opt} value={opt}>
-                      {opt}
-                    </option>
-                  ))}
-                </select>
+                  placeholder={!field.required ? '-- Choisir --' : undefined}
+                  options={(field.options || []).map((opt) => ({ value: opt, label: opt }))}
+                />
               )}
 
               {/* Number input */}
               {field.type === 'number' && (
-                <input
+                <Input
                   id={`field-${key}`}
                   type="number"
                   value={inputs[key] || ''}
                   onChange={(e) => setInputs({ ...inputs, [key]: e.target.value })}
                   placeholder={field.placeholder}
                   disabled={isSubmitting}
-                  className="w-full px-3 py-2 bg-surface text-text rounded-md border border-border focus:border-accent-cyan focus:ring-2 focus:ring-ring/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                  aria-describedby={field.help_text ? `help-${key}` : undefined}
                 />
               )}
 
-              {/* Help text */}
-              {field.help_text && (
-                <p id={`help-${key}`} className="mt-1.5 text-xs text-text-muted">
-                  {field.help_text}
-                </p>
-              )}
-            </div>
+            </FormField>
           ))}
         </div>
 
         {/* Footer Actions */}
-        <div className="flex gap-3 mt-6 pt-4 border-t border-border">
+        <div className="flex flex-wrap gap-3 mt-6 pt-4 border-t border-border">
           <Button
             type="button"
             variant="secondary"

@@ -22,6 +22,9 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useOpenClawStore } from "../../stores/openclawStore";
 import { useAccessibilityStore } from "../../stores/accessibilityStore";
 import { announceToScreenReader } from "../../lib/accessibility";
+import { Button } from "../ui/Button";
+import { Textarea } from "../ui/Textarea";
+import { EtatVide } from "../ui/EtatVide";
 
 /** Detecte si un message est une "action" Katia (email, fichier, etc.) */
 function isActionMessage(content: string): boolean {
@@ -89,14 +92,17 @@ function CopyButton({ text }: { text: string }) {
   };
 
   return (
-    <button
+    <Button
+      type="button"
+      variant="ghost"
+      size="icon"
       onClick={handleCopy}
-      className="rounded-sm p-0.5 text-text-muted transition hover:bg-surface-2 hover:text-text-muted"
+      className="h-8 w-8"
       title="Copier le message"
       aria-label="Copier le message"
     >
       {copied ? <Check size={12} className="text-agent-green" /> : <Copy size={12} />}
-    </button>
+    </Button>
   );
 }
 
@@ -184,12 +190,12 @@ export function AgentChat() {
 
   if (!activeSessionId || !activeSession) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-3 px-8 text-center">
-        <Headphones size={32} className="text-agent-purple/30" />
-        <p className="text-xs text-text-muted">
-          Selectionnez une session ou lancez une nouvelle tache.
-        </p>
-      </div>
+      <EtatVide
+        titre="Aucune session sélectionnée"
+        className="flex flex-1 flex-col items-center justify-center"
+      >
+        Selectionnez une session ou lancez une nouvelle tache.
+      </EtatVide>
     );
   }
 
@@ -204,7 +210,7 @@ export function AgentChat() {
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       {/* Session header */}
-      <div className="flex items-center justify-between border-b border-border px-3 py-2">
+      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-3 py-2">
         <div className="flex-1 min-w-0">
           <p className="truncate text-xs font-medium text-text">
             {activeSession.instruction.length > 80
@@ -219,23 +225,27 @@ export function AgentChat() {
           </p>
         </div>
         <div className="flex items-center gap-1 ml-2">
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
             onClick={refreshActiveSession}
-            className="rounded-sm p-1 text-text-muted transition hover:bg-surface-2 hover:text-text-muted"
             title="Rafraichir"
             aria-label="Rafraichir la session"
           >
             <RefreshCw size={12} />
-          </button>
+          </Button>
           {activeSession.status === "running" && (
-            <button
+            <Button
+              type="button"
+              variant="danger"
+              size="icon"
               onClick={() => cancelSession(activeSessionId)}
-              className="rounded-sm p-1 text-error transition hover:bg-error/10 hover:text-error"
               title="Annuler la session"
               aria-label="Annuler la session"
             >
               <XCircle size={14} />
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -304,25 +314,13 @@ export function AgentChat() {
                         </div>
                       )}
                       <div
-                        className={`rounded-md px-3 py-2 text-sm leading-relaxed ${
+                        className={`rounded-md px-3 py-2 text-sm leading-relaxed text-text ${
                           isAction
-                            ? "border border-agent-amber/20 bg-agent-amber/5"
-                            : ""
+                            ? "border border-warning/30 border-l-2 bg-[var(--color-warning-tint)]"
+                            : isUser
+                              ? "bg-accent-tint"
+                              : "border-l-2 border-accent bg-surface-2"
                         }`}
-                        style={
-                          isAction
-                            ? {
-                                borderLeft: "2px solid #F59E0B",
-                                color: "var(--color-text)",
-                              }
-                            : {
-                                backgroundColor: isUser
-                                  ? "rgba(34, 211, 238, 0.1)"
-                                  : "rgba(168, 85, 247, 0.1)",
-                                borderLeft: isUser ? "none" : "2px solid #A855F7",
-                                color: "var(--color-text)",
-                              }
-                        }
                       >
                         <span style={{ whiteSpace: "pre-wrap" }}>{msg.content}</span>
                       </div>
@@ -352,7 +350,7 @@ export function AgentChat() {
       {/* Input (only if session is running) */}
       {activeSession.status === "running" && (
         <div className="flex items-end gap-2 border-t border-border bg-bg px-3 py-2.5">
-          <textarea aria-label="Message à l’agent"
+          <Textarea aria-label="Message à l’agent"
             ref={inputRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
@@ -360,8 +358,7 @@ export function AgentChat() {
             placeholder="Envoyer un message a Katia..."
             disabled={isSending}
             rows={1}
-            className="flex-1 resize-none rounded-md border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-text-muted outline-none transition focus:border-agent-purple/50 disabled:opacity-50"
-            style={{ minHeight: "38px", maxHeight: "120px" }}
+            className="max-h-[120px] flex-1 resize-none"
             onInput={(e) => {
               const target = e.target as HTMLTextAreaElement;
               target.style.height = "auto";
@@ -369,22 +366,27 @@ export function AgentChat() {
             }}
           />
           {isSending ? (
-            <button
-              className="flex h-9 w-9 items-center justify-center rounded-md bg-surface-2 text-text-muted"
+            <Button
+              type="button"
+              variant="secondary"
+              size="icon"
               disabled
+              aria-label="Envoi en cours"
             >
               <Square size={16} className="animate-pulse" />
-            </button>
+            </Button>
           ) : (
-            <button
+            <Button
+              type="button"
+              variant="primary"
+              size="icon"
               onClick={handleSend}
               disabled={!input.trim()}
-              className="flex h-9 w-9 items-center justify-center rounded-md bg-agent-purple/20 text-agent-purple transition hover:bg-agent-purple/30 disabled:opacity-30"
               title="Envoyer"
               aria-label="Envoyer le message"
             >
               <Send size={16} />
-            </button>
+            </Button>
           )}
         </div>
       )}

@@ -7,6 +7,7 @@
 import React from 'react';
 import { FileText, Search, Code, TestTube, Eye, Check } from 'lucide-react';
 import type { MissionPhase } from '../../services/api/agents';
+import { cn } from '../../lib/utils';
 
 const STEPS: { phase: MissionPhase; label: string; icon: React.ReactNode }[] = [
   { phase: 'spec', label: 'Spec', icon: <FileText size={14} /> },
@@ -35,28 +36,15 @@ export function MissionStepper({ currentPhase }: Props) {
         return (
           <React.Fragment key={step.phase}>
             {i > 0 && (
-              <div
-                className="h-px flex-1"
-                style={{
-                  backgroundColor: isDone ? 'var(--color-agent-purple)' : 'var(--color-border)',
-                }}
-              />
+              <div className={cn('h-px flex-1', isDone ? 'bg-accent' : 'bg-border')} />
             )}
             <div
-              className="flex items-center gap-1 rounded-sm px-2 py-1 text-xs font-medium transition-all"
-              style={{
-                backgroundColor: isActive
-                  ? 'color-mix(in srgb, var(--color-agent-purple) 20%, transparent)'
-                  : isDone
-                    ? 'color-mix(in srgb, var(--color-agent-purple) 10%, transparent)'
-                    : 'var(--color-surface-elevated)',
-                color: isActive
-                  ? 'var(--color-agent-purple)'
-                  : isDone
-                    ? 'var(--color-agent-purple)'
-                    : '#6B7280',
-                border: isActive ? '1px solid color-mix(in srgb, var(--color-agent-purple) 30%, transparent)' : '1px solid transparent',
-              }}
+              className={cn(
+                'flex items-center gap-1 rounded-sm border px-2 py-1 text-xs font-medium transition-colors',
+                isActive && 'border-accent/30 bg-accent-tint text-accent',
+                isDone && 'border-transparent bg-surface-2 text-accent',
+                !isActive && !isDone && 'border-transparent bg-surface text-text-muted',
+              )}
             >
               {isDone ? <Check size={12} /> : step.icon}
               <span className="hidden sm:inline">{step.label}</span>

@@ -22,6 +22,8 @@ import { AgentSession } from "./AgentSession";
 import { MissionStepper } from "./MissionStepper";
 import { CodeReviewPanel } from "./CodeReviewPanel";
 import { Z_LAYER } from "../../styles/z-layers";
+import { Button } from "../ui/Button";
+import { EtatVide } from "../ui/EtatVide";
 
 export function AtelierPanel() {
   const {
@@ -183,12 +185,11 @@ export function AtelierPanel() {
   return (
     <div
       ref={racineRef}
-      className={`fixed right-0 top-0 ${Z_LAYER.MODAL} flex h-full flex-col border-l border-border bg-bg shadow-2xl`}
-      style={{ width: "480px" }}
+      className={`fixed right-0 top-0 ${Z_LAYER.MODAL} flex h-full w-[480px] max-w-full flex-col border-l border-border bg-bg shadow-sm`}
     >
       {/* Header */}
       <div className="flex flex-col border-b border-border">
-        <div className="flex items-center justify-between px-4 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3">
           <div className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-md bg-agent-purple/20">
               <Zap size={14} className="text-agent-purple" />
@@ -197,7 +198,7 @@ export function AtelierPanel() {
           </div>
 
           {/* Navigation */}
-          <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center gap-1 max-[840px]:basis-full max-[840px]:order-3">
             <NavButton
               active={activeView === "chat"}
               onClick={() => setActiveView("chat")}
@@ -232,12 +233,16 @@ export function AtelierPanel() {
             )}
           </div>
 
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
             onClick={handleClose}
-            className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted transition hover:bg-surface-2 hover:text-text"
+            className="h-8 w-8"
+            aria-label="Fermer l’Atelier"
           >
             <X size={16} />
-          </button>
+          </Button>
         </div>
 
         {/* BUG-111 : Badges modèles Katia & Zézette (masqués en vue Agents) */}
@@ -245,7 +250,8 @@ export function AtelierPanel() {
           <div className="flex items-center gap-2 px-4 pb-2 text-xs text-text-muted">
             {katiaModel && (
               <span
-                className={`rounded-sm px-1.5 py-0.5 ${indisponible(katiaModel) ? "bg-warning/10 text-warning" : "bg-agent-purple/10 text-agent-purple"}`}
+                data-etiquette=""
+                className={`inline-flex rounded-full px-2 py-0.5 text-sm font-semibold ${indisponible(katiaModel) ? "bg-[var(--color-warning-tint)] text-warning" : "bg-[var(--color-info-tint)] text-info"}`}
                 title={indisponible(katiaModel) ? TITRE_INDISPONIBLE : undefined}
               >
                 Katia: {katiaModel}{indisponible(katiaModel) && " · non disponible"}
@@ -253,7 +259,8 @@ export function AtelierPanel() {
             )}
             {zezetteModel && (
               <span
-                className={`rounded-sm px-1.5 py-0.5 ${indisponible(zezetteModel) ? "bg-warning/10 text-warning" : "bg-agent-amber/10 text-agent-amber"}`}
+                data-etiquette=""
+                className={`inline-flex rounded-full px-2 py-0.5 text-sm font-semibold ${indisponible(zezetteModel) ? "bg-[var(--color-warning-tint)] text-warning" : "bg-surface-2 text-text-muted"}`}
                 title={indisponible(zezetteModel) ? TITRE_INDISPONIBLE : undefined}
               >
                 Zézette: {zezetteModel}{indisponible(zezetteModel) && " · non disponible"}
@@ -286,16 +293,16 @@ export function AtelierPanel() {
 
             {/* Input */}
             {pendingMessage && (
-              <div className="mx-3 mb-2 rounded-md border border-agent-amber/40 bg-agent-amber/10 p-3 text-xs text-text" data-testid="classic-atelier-confirmation">
+              <div className="mx-3 mb-2 rounded-md border border-warning/30 bg-[var(--color-warning-tint)] p-3 text-sm text-text" data-testid="classic-atelier-confirmation">
                 <div className="font-semibold">Confirmer la mission de code</div>
                 <p className="mt-1 leading-relaxed text-text-muted">
                   Katia et Zézette pourront lire le dépôt, transmettre les extraits utiles au modèle configuré,
                   écrire dans un worktree isolé et lancer les commandes de vérification autorisées.
                   L&apos;application sur main demandera une autre confirmation.
                 </p>
-                <div className="mt-3 flex justify-end gap-2">
-                  <button type="button" onClick={() => setPendingMessage(null)} className="rounded-md border border-border px-3 py-1.5 font-medium text-text-muted">Retour</button>
-                  <button type="button" onClick={() => { const message = pendingMessage; setPendingMessage(null); void runMission(message); }} className="rounded-md bg-success px-3 py-1.5 font-semibold text-ink-on-fill">Confirmer et lancer</button>
+                <div className="mt-3 flex flex-wrap justify-end gap-2">
+                  <Button type="button" variant="secondary" onClick={() => setPendingMessage(null)}>Retour</Button>
+                  <Button type="button" variant="primary" onClick={() => { const message = pendingMessage; setPendingMessage(null); void runMission(message); }}>Confirmer et lancer</Button>
                 </div>
               </div>
             )}
@@ -311,9 +318,7 @@ export function AtelierPanel() {
         {activeView === "mission" && (
           <div ref={scrollRef} className="flex-1 overflow-y-auto py-2">
             {messages.length === 0 ? (
-              <div className="flex h-full items-center justify-center text-sm text-text-muted">
-                Aucune mission en cours
-              </div>
+              <EtatVide titre="Aucune mission en cours" className="flex h-full flex-col items-center justify-center" />
             ) : (
               messages.map((msg) => (
                 <AgentMessageBubble key={msg.id} message={msg} />
@@ -360,20 +365,24 @@ function NavButton({
   pulse?: boolean;
 }) {
   return (
-    <button
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
       onClick={onClick}
-      className={`relative flex items-center gap-1 rounded-md px-2 py-1 text-sm font-medium transition ${
+      aria-pressed={active}
+      className={`relative gap-1 ${
         active
-          ? "bg-agent-purple/20 text-agent-purple"
-          : "text-text-muted hover:bg-surface-2 hover:text-text-muted"
+          ? "bg-accent-tint text-accent"
+          : "text-text-muted"
       }`}
     >
       {icon}
       {label}
       {pulse && (
-        <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-agent-amber animate-pulse" />
+        <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full bg-warning animate-pulse" />
       )}
-    </button>
+    </Button>
   );
 }
 
@@ -388,15 +397,12 @@ function EmptyState() {
           <Wrench size={24} className="text-agent-amber" />
         </div>
       </div>
-      <div>
-        <h3 className="mb-1 text-sm font-semibold text-text">
-          Bienvenue dans l&apos;Atelier
-        </h3>
-        <p className="text-xs leading-relaxed text-text-muted">
+      <EtatVide titre="Bienvenue dans l’Atelier" className="p-0">
+        <span className="text-sm leading-relaxed text-text-muted">
           Katia te guide et comprend tes besoins. Zézette implémente les
           changements. Posez une question ou demandez une amélioration.
-        </p>
-      </div>
+        </span>
+      </EtatVide>
     </div>
   );
 }

@@ -2,6 +2,7 @@ import { motion } from 'framer-motion';
 import type { LucideIcon } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { jetonDePastille } from './pastilleDeCarte';
+import { Button } from '../ui/Button';
 
 interface ActionCardProps {
   icon: LucideIcon;
@@ -16,7 +17,7 @@ export function ActionCard({ icon: Icon, title, description, onClick, index, var
   const isPersonnaliser = variant === 'personnaliser';
 
   return (
-    <motion.button
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{
@@ -24,20 +25,18 @@ export function ActionCard({ icon: Icon, title, description, onClick, index, var
         delay: index * 0.05,
         ease: [0.4, 0, 0.2, 1],
       }}
-      whileHover={isPersonnaliser ? {} : { scale: 1.02, y: -2 }}
-      whileTap={isPersonnaliser ? {} : { scale: 0.98 }}
-      onClick={isPersonnaliser ? undefined : onClick}
-      disabled={isPersonnaliser}
-      className={cn(
-        'group relative flex flex-col items-start p-4 rounded-md',
-        'bg-surface-elevated/60 backdrop-blur-sm',
-        'transition-all duration-200 text-left',
-        'focus:outline-none focus:ring-2 focus:ring-ring/30',
-        isPersonnaliser
-          ? 'border-2 border-dashed border-border/40 cursor-default opacity-70'
-          : 'border-[1.5px] border-border hover:border-[var(--btn-ink)] hover:shadow-[var(--shadow-card)]'
-      )}
+      className="h-full"
     >
+      <Button
+        type="button"
+        variant="secondary"
+        onClick={isPersonnaliser ? undefined : onClick}
+        disabled={isPersonnaliser}
+        className={cn(
+          'group relative h-full w-full flex-col items-start justify-start p-4 text-left',
+          isPersonnaliser && 'cursor-default border-dashed opacity-70',
+        )}
+      >
       {/* Badge Bientôt */}
       {isPersonnaliser && (
         <span className="absolute top-2.5 right-2.5 px-1.5 py-0.5 rounded-sm text-xs font-medium bg-accent-tint text-accent-cyan-ink border border-accent-cyan/20">
@@ -63,9 +62,10 @@ export function ActionCard({ icon: Icon, title, description, onClick, index, var
       </h3>
 
       {/* Description */}
-      <p className={cn('relative text-xs mt-1 line-clamp-2', isPersonnaliser ? 'text-text-muted' : 'text-text-muted')}>
+      <p className="relative mt-1 line-clamp-2 text-sm font-normal text-text-muted">
         {description}
       </p>
-    </motion.button>
+      </Button>
+    </motion.div>
   );
 }

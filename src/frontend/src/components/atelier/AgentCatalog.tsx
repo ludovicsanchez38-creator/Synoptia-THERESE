@@ -16,6 +16,10 @@ import { motion } from "framer-motion";
 import { getAgentProfiles, getAgentConfig } from "../../services/api/agents";
 import type { AgentProfile, AgentModelInfo } from "../../services/api/agents";
 import { Spinner } from "../ui/Spinner";
+import { Button } from "../ui/Button";
+import { Input } from "../ui/Input";
+import { Alerte } from "../ui/Alerte";
+import { EtatVide } from "../ui/EtatVide";
 
 /** Couleurs par ID agent (fallback si le backend ne les fournit pas) */
 const COLOR_MAP: Record<string, { border: string; bg: string; text: string }> = {
@@ -192,26 +196,25 @@ export function AgentCatalog({ onSelectAgent }: Props) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center gap-3">
         <Spinner taille="zone" className="text-text-muted" />
-        <p className="text-xs text-text-muted">Chargement des agents...</p>
+        <p className="text-sm text-text-muted">Chargement des agents...</p>
       </div>
     );
   }
 
   if (error && profiles.length === 0) {
     return (
-      <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-        <AlertCircle size={24} className="text-error" />
-        <p className="text-xs text-error">{error}</p>
-      </div>
+      <EtatVide titre="Catalogue indisponible" className="flex flex-1 flex-col items-center justify-center">
+        {error}
+      </EtatVide>
     );
   }
 
   return (
     <div className="flex flex-1 flex-col overflow-y-auto px-4 py-6">
       {error && (
-        <div role="alert" className="mb-4 rounded-md border border-error/30 bg-error/10 px-3 py-2 text-xs text-error">
+        <Alerte className="mb-4" titre="Catalogue partiel" icone={<AlertCircle size={18} />}>
           {error}
-        </div>
+        </Alerte>
       )}
       {/* Header */}
       <div className="mb-5 text-center">
@@ -221,7 +224,7 @@ export function AgentCatalog({ onSelectAgent }: Props) {
         <h3 className="mb-1 text-sm font-semibold text-text">
           Choisis un agent
         </h3>
-        <p className="text-xs text-text-muted">
+        <p className="text-sm text-text-muted">
           Chaque agent est spécialisé dans un domaine. Sélectionne celui qui correspond à ta tâche.
         </p>
       </div>
@@ -240,7 +243,7 @@ export function AgentCatalog({ onSelectAgent }: Props) {
                 setCustomModel("");
                 localStorage.removeItem(CUSTOM_MODEL_STORAGE_KEY);
               }}
-              className="flex-1 bg-transparent text-sm text-text outline-none [&>optgroup]:bg-[#131B35] [&>option]:bg-[#131B35]"
+              className="min-h-9 flex-1 bg-transparent text-sm text-text outline-none [&>optgroup]:bg-surface [&>option]:bg-surface"
             >
               {Object.entries(
                 availableModels.reduce<Record<string, AgentModelInfo[]>>((acc, m) => {
@@ -262,32 +265,37 @@ export function AgentCatalog({ onSelectAgent }: Props) {
           {/* Champ libre pour modele OpenRouter personnalise (SUG-030) */}
           <div className="flex items-center gap-2 rounded-md border border-border bg-surface px-3 py-2">
             <span className="shrink-0 text-xs text-agent-cyan/70">OR</span>
-            <input aria-label="Modèle personnalisé"
-              type="text"
-              value={customModel}
-              onChange={(e) => {
-                const val = e.target.value;
-                setCustomModel(val);
-                if (val.trim()) {
-                  localStorage.setItem(CUSTOM_MODEL_STORAGE_KEY, val.trim());
-                } else {
-                  localStorage.removeItem(CUSTOM_MODEL_STORAGE_KEY);
-                }
-              }}
-              placeholder="ex: meta-llama/llama-4-maverick:free"
-              className="flex-1 bg-transparent text-sm text-text placeholder:text-text-muted outline-none"
-            />
+            <div className="flex-1">
+              <Input aria-label="Modèle personnalisé"
+                type="text"
+                value={customModel}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setCustomModel(val);
+                  if (val.trim()) {
+                    localStorage.setItem(CUSTOM_MODEL_STORAGE_KEY, val.trim());
+                  } else {
+                    localStorage.removeItem(CUSTOM_MODEL_STORAGE_KEY);
+                  }
+                }}
+                placeholder="ex: meta-llama/llama-4-maverick:free"
+                className="min-h-0 border-0 bg-transparent p-0 focus:ring-0"
+              />
+            </div>
             {customModel.trim() && (
-              <button
+              <Button
                 type="button"
+                variant="ghost"
+                size="icon"
                 onClick={() => {
                   setCustomModel("");
                   localStorage.removeItem(CUSTOM_MODEL_STORAGE_KEY);
                 }}
-                className="shrink-0 text-sm text-text-muted hover:text-error transition-colors"
+                className="h-8 w-8 shrink-0"
+                aria-label="Effacer le modèle personnalisé"
               >
                 ✕
-              </button>
+              </Button>
             )}
           </div>
           {customModel.trim() && (
@@ -304,17 +312,22 @@ export function AgentCatalog({ onSelectAgent }: Props) {
           const colors = COLOR_MAP[profile.color] || DEFAULT_COLOR;
 
           return (
-            <motion.button
+            <motion.div
               key={profile.id}
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.25, delay: index * 0.06 }}
-              onClick={() => onSelectAgent(profile.id, customModel.trim() || selectedModel || undefined)}
-              className={`group flex flex-col items-center gap-2 rounded-md border ${colors.border} bg-surface p-4 text-center transition-all hover:border-agent-cyan/50 hover:bg-surface-elevated`}
+              className="h-full"
             >
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => onSelectAgent(profile.id, customModel.trim() || selectedModel || undefined)}
+                className={`group h-full w-full flex-col items-center justify-start gap-2 p-4 text-center ${colors.border}`}
+              >
               {/* Icone */}
               <div
-                className={`flex h-10 w-10 items-center justify-center rounded-md ${colors.bg} transition-transform group-hover:scale-110`}
+                className={`flex h-10 w-10 items-center justify-center rounded-md ${colors.bg}`}
               >
                 {(() => {
                   const IconComponent = PROFILE_ICONS[profile.id];
@@ -325,12 +338,12 @@ export function AgentCatalog({ onSelectAgent }: Props) {
               </div>
 
               {/* Nom */}
-              <span className={`text-xs font-semibold ${colors.text}`}>
+              <span className={`text-sm font-semibold ${colors.text}`}>
                 {profile.name}
               </span>
 
               {/* Description */}
-              <span className="text-xs leading-snug text-text-muted">
+              <span className="text-sm font-normal leading-snug text-text-muted">
                 {profile.description}
               </span>
 
@@ -338,7 +351,8 @@ export function AgentCatalog({ onSelectAgent }: Props) {
               <span className="mt-auto text-xs text-text-muted">
                 {profile.tools.length} outil{profile.tools.length > 1 ? "s" : ""}
               </span>
-            </motion.button>
+              </Button>
+            </motion.div>
           );
         })}
       </div>

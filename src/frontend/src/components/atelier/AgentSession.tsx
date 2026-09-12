@@ -21,6 +21,10 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { getAgentProfiles, streamAgentSpawn } from "../../services/api/agents";
 import type { SpawnAgentStreamChunk, AgentProfile } from "../../services/api/agents";
+import { Button } from "../ui/Button";
+import { Textarea } from "../ui/Textarea";
+import { Alerte } from "../ui/Alerte";
+import { Etiquette } from "../ui/Etiquette";
 
 // ============================================================
 // Types
@@ -46,7 +50,7 @@ interface AgentSessionMessage {
  * dans la couleur de texte par defaut au lieu de leur accent.
  *
  * L'attenuation a 80 % n'a PAS ete retablie en classe litterale : composee sur
- * le fond clair (#F3F6FC) elle donne 4,42:1 pour le cyan comme pour le vert,
+ * le fond clair de référence elle donne 4,42:1 pour le cyan comme pour le vert,
  * sous les 4,5:1 qu'exige RULES-DESIGN section 1.2 pour du texte de 12 px ; et
  * pour le profil inconnu, une opacite sur le jeton de texte secondaire tombe
  * sous une regle deja testee par opaciteSurLeTexte.test.ts. La mention porte
@@ -166,9 +170,11 @@ function ToolCallBlock({
 
   return (
     <div className="mx-3 my-1.5 rounded-md border border-border bg-surface-2">
-      <button
+      <Button
+        type="button"
+        variant="ghost"
         onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center gap-2 px-3 py-1.5 text-left text-sm text-text-muted transition hover:bg-surface-elevated"
+        className="h-auto w-full justify-start gap-2 rounded-none px-3 py-1.5 text-left text-text-muted"
       >
         <Wrench size={12} className="flex-shrink-0 text-agent-amber/70" />
         <span className="flex-1 truncate font-medium">{toolName}</span>
@@ -179,7 +185,7 @@ function ToolCallBlock({
             <ChevronRight size={12} className="flex-shrink-0 text-text-muted" />
           )
         )}
-      </button>
+      </Button>
       <AnimatePresence>
         {expanded && toolResult && (
           <motion.div
@@ -439,14 +445,18 @@ export function AgentSession({ profileId, model, onBack }: Props) {
   return (
     <div className="flex flex-1 flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center gap-2 border-b border-border px-3 py-2.5">
-        <button
+      <div className="flex flex-wrap items-center gap-2 border-b border-border px-3 py-2.5">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
           onClick={onBack}
-          className="flex h-7 w-7 items-center justify-center rounded-md text-text-muted transition hover:bg-surface-2 hover:text-text"
+          className="h-8 w-8"
           title="Retour au catalogue"
+          aria-label="Retour au catalogue"
         >
           <ArrowLeft size={16} />
-        </button>
+        </Button>
 
         {/* Icone agent */}
         <div
@@ -462,16 +472,16 @@ export function AgentSession({ profileId, model, onBack }: Props) {
 
         {/* Badge modele */}
         {activeModel && (
-          <span className="ml-auto rounded-sm bg-surface-2 px-1.5 py-0.5 text-xs text-text-muted">
+          <Etiquette className="ml-auto" ton="neutre">
             {activeModel}
-          </span>
+          </Etiquette>
         )}
       </div>
 
       {profilIntrouvable && (
-        <p role="alert" className="mx-3 mt-2 rounded-md border border-error/40 bg-[var(--color-error-tint)] p-3 text-sm text-error">
+        <Alerte className="mx-3 mt-2" titre="Profil introuvable">
           Profil d’agent « {profileId} » introuvable, ni sur le serveur ni dans la liste locale. Reviens à la liste et choisis un autre agent.
-        </p>
+        </Alerte>
       )}
 
       {/* Messages */}
@@ -505,12 +515,11 @@ export function AgentSession({ profileId, model, onBack }: Props) {
                 return (
                   <motion.div
                     key={msg.id}
-                    role="alert"
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
-                    className="mx-3 my-1.5 rounded-md border border-error/20 bg-error/5 px-3 py-2 text-xs text-error"
+                    className="mx-3 my-1.5"
                   >
-                    {msg.content}
+                    <Alerte>{msg.content}</Alerte>
                   </motion.div>
                 );
               }
@@ -581,22 +590,22 @@ export function AgentSession({ profileId, model, onBack }: Props) {
       {/* Input */}
       {pendingInstruction && (
         <div role="alert" aria-label="Confirmer l’appel de l’agent" className="border-t border-border bg-bg px-3 pt-3" data-testid="agent-profile-confirmation">
-          <div className="rounded-md border border-agent-amber/40 bg-agent-amber/10 p-3 text-xs text-text">
+          <div className="rounded-md border border-warning/30 bg-[var(--color-warning-tint)] p-3 text-sm text-text">
             <div className="font-semibold">Confirmer l&apos;appel de cet agent expérimental</div>
             <p className="mt-1 leading-relaxed text-text-muted">
               Modèle : {activeModel || "non identifié"}. Outils déclarés : {profile?.tools.join(", ") || "aucun"}.
               Les extraits utiles et ta demande peuvent être transmis au fournisseur du modèle.
               Cet échange n&apos;est pas conservé après fermeture.
             </p>
-            <div className="mt-3 flex justify-end gap-2">
-              <button type="button" onClick={() => setPendingInstruction(null)} className="rounded-md border border-border px-3 py-1.5 font-medium text-text-muted">Retour</button>
-              <button type="button" onClick={confirmSend} className="rounded-md bg-success px-3 py-1.5 font-semibold text-ink-on-fill">Confirmer l&apos;appel</button>
+            <div className="mt-3 flex flex-wrap justify-end gap-2">
+              <Button type="button" variant="secondary" onClick={() => setPendingInstruction(null)}>Retour</Button>
+              <Button type="button" variant="primary" onClick={confirmSend}>Confirmer l&apos;appel</Button>
             </div>
           </div>
         </div>
       )}
       <div className="flex items-end gap-2 border-t border-border bg-bg px-3 py-2.5">
-        <textarea aria-label="Message à l’agent"
+        <Textarea aria-label="Message à l’agent"
           ref={inputRef}
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
@@ -608,8 +617,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
           }
           disabled={isStreaming || profilIntrouvable}
           rows={1}
-          className="flex-1 resize-none rounded-md border border-border bg-surface px-3 py-2 text-sm text-text placeholder:text-text-muted outline-none transition focus:border-agent-cyan/50 disabled:opacity-50"
-          style={{ minHeight: "38px", maxHeight: "120px" }}
+          className="max-h-[120px] flex-1 resize-none"
           onInput={(e) => {
             const target = e.target as HTMLTextAreaElement;
             target.style.height = "auto";
@@ -618,22 +626,28 @@ export function AgentSession({ profileId, model, onBack }: Props) {
         />
 
         {isStreaming ? (
-          <button
+          <Button
+            type="button"
+            variant="danger"
+            size="icon"
             onClick={handleCancel}
-            className="flex h-9 w-9 items-center justify-center rounded-md bg-error/20 text-error transition hover:bg-error/30"
             title="Annuler"
+            aria-label="Annuler"
           >
             <Square size={16} />
-          </button>
+          </Button>
         ) : (
-          <button
+          <Button
+            type="button"
+            variant="primary"
+            size="icon"
             onClick={handleSend}
             disabled={!inputValue.trim() || profilIntrouvable}
-            className="flex h-9 w-9 items-center justify-center rounded-md bg-agent-cyan/20 text-agent-cyan transition hover:bg-agent-cyan/30 disabled:opacity-30 disabled:hover:bg-agent-cyan/20"
             title="Envoyer"
+            aria-label="Envoyer"
           >
             <Send size={16} />
-          </button>
+          </Button>
         )}
       </div>
     </div>
@@ -658,8 +672,8 @@ function InitialPrompt({
   return (
     <div className="flex h-full flex-col items-center justify-center gap-4 px-8 text-center">
       <motion.div
-        initial={{ scale: 0.8, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}
         className={`flex h-14 w-14 items-center justify-center rounded-md ${colors.bg} text-2xl`}
       >

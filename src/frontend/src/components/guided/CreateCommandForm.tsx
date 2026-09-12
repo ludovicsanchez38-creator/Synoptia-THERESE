@@ -9,8 +9,12 @@ import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Save } from 'lucide-react';
 import { Button } from '../ui/Button';
-import { cn } from '../../lib/utils';
 import { Spinner } from '../ui/Spinner';
+import { Input } from '../ui/Input';
+import { Select } from '../ui/Select';
+import { Textarea } from '../ui/Textarea';
+import { FormField } from '../ui/FormField';
+import { Alerte } from '../ui/Alerte';
 import { slugDeCommande } from '../../lib/slugDeCommande';
 
 interface CreateCommandFormProps {
@@ -83,16 +87,17 @@ export function CreateCommandForm({ onSubmit, onBack, initialContent, initialDes
       className="w-full max-w-lg"
     >
       {/* Header */}
-      <div className="flex items-center gap-3 mb-6">
-        <button
+      <div className="flex flex-wrap items-center gap-3 mb-6">
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
           onClick={onBack}
           aria-label="Retour"
           title="Retour"
-          className="flex items-center justify-center w-8 h-8 rounded-md bg-surface-elevated hover:bg-surface-elevated/80 text-text-muted hover:text-text transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
-        </button>
+        </Button>
         <div>
           <h3 className="text-lg font-semibold text-text">Créer une commande</h3>
           <p className="text-xs text-text-muted">Définis un raccourci personnalisé pour THÉRÈSE</p>
@@ -102,110 +107,73 @@ export function CreateCommandForm({ onSubmit, onBack, initialContent, initialDes
       {/* Form */}
       <div className="space-y-4">
         {/* Nom */}
-        <div>
-          <label htmlFor="cmd-name" className="block text-sm font-medium text-text mb-1">
-            Nom *
-          </label>
-          <input
+        <FormField label="Nom" htmlFor="cmd-name" required>
+          <Input
             id="cmd-name"
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="Ex: brief-client"
-            className={cn(
-              'w-full px-3 py-2 rounded-md text-sm',
-              'bg-surface-elevated border border-border text-text',
-              'placeholder:text-text-muted',
-              'focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-accent-cyan/50'
-            )}
           />
           {name && (
             <p className="text-xs text-text-muted mt-1">
               Slug : /{slugDeCommande(name)}
             </p>
           )}
-        </div>
+        </FormField>
 
         {/* Description */}
-        <div>
-          <label htmlFor="cmd-desc" className="block text-sm font-medium text-text mb-1">
-            Description
-          </label>
-          <input
+        <FormField label="Description" htmlFor="cmd-desc">
+          <Input
             id="cmd-desc"
             type="text"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             placeholder="Ex : Génère un brief pour un nouveau client"
-            className={cn(
-              'w-full px-3 py-2 rounded-md text-sm',
-              'bg-surface-elevated border border-border text-text',
-              'placeholder:text-text-muted',
-              'focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-accent-cyan/50'
-            )}
           />
-        </div>
+        </FormField>
 
         {/* Aperçu de la réponse capturée */}
         {capturedPreview && (
-          <div className="px-3 py-2 rounded-md bg-accent-cyan/5 border border-accent-cyan/20">
-            <p className="text-xs font-medium text-accent-cyan-ink mb-1">Réponse capturée</p>
-            <p className="text-xs text-text-muted line-clamp-4">{capturedPreview}</p>
+          <div className="rounded-md border border-info/30 bg-[var(--color-info-tint)] px-3 py-2">
+            <p className="mb-1 text-sm font-medium text-info">Réponse capturée</p>
+            <p className="line-clamp-4 text-sm text-text-muted">{capturedPreview}</p>
           </div>
         )}
 
         {/* Catégorie + Icon */}
         <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label htmlFor="cmd-category" className="block text-sm font-medium text-text mb-1">
-              Catégorie
-            </label>
-            <select
+          <FormField label="Catégorie" htmlFor="cmd-category">
+            <Select
               id="cmd-category"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className={cn(
-                'w-full px-3 py-2 rounded-md text-sm',
-                'bg-surface-elevated border border-border text-text',
-                'focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-accent-cyan/50'
-              )}
-            >
-              {CATEGORY_OPTIONS.map((opt) => (
-                <option key={opt} value={opt}>
-                  {opt.charAt(0).toUpperCase() + opt.slice(1)}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="cmd-icon" className="block text-sm font-medium text-text mb-1">
-              Icône (emoji)
-            </label>
-            <input
+              options={CATEGORY_OPTIONS.map((opt) => ({
+                value: opt,
+                label: opt.charAt(0).toUpperCase() + opt.slice(1),
+              }))}
+            />
+          </FormField>
+          <FormField label="Icône (emoji)" htmlFor="cmd-icon">
+            <Input
               id="cmd-icon"
               type="text"
               value={icon}
               onChange={(e) => setIcon(e.target.value)}
               placeholder="Ex: />"
               maxLength={4}
-              className={cn(
-                'w-full px-3 py-2 rounded-md text-sm',
-                'bg-surface-elevated border border-border text-text',
-                'placeholder:text-text-muted',
-                'focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-accent-cyan/50'
-              )}
             />
-          </div>
+          </FormField>
         </div>
 
         {/* Show on home */}
         <div className="flex items-center gap-3">
-          <input
+          <Input
             id="cmd-home"
             type="checkbox"
             checked={showOnHome}
             onChange={(e) => setShowOnHome(e.target.checked)}
-            className="w-4 h-4 rounded-sm border-border bg-surface-elevated text-accent-cyan-ink focus:ring-ring/30"
+            className="h-4 min-h-4 w-4 p-0"
           />
           <label htmlFor="cmd-home" className="text-sm text-text">
             Afficher sur la page d'accueil
@@ -213,34 +181,24 @@ export function CreateCommandForm({ onSubmit, onBack, initialContent, initialDes
         </div>
 
         {/* Contenu / Prompt */}
-        <div>
-          <label htmlFor="cmd-content" className="block text-sm font-medium text-text mb-1">
-            Prompt / Contenu *
-          </label>
-          <textarea
+        <FormField label="Prompt / Contenu" htmlFor="cmd-content" required>
+          <Textarea
             id="cmd-content"
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder="Écris le prompt que THÉRÈSE utilisera quand cette commande sera déclenchée..."
             rows={6}
-            className={cn(
-              'w-full px-3 py-2 rounded-md text-sm resize-none',
-              'bg-surface-elevated border border-border text-text',
-              'placeholder:text-text-muted',
-              'focus:outline-none focus:ring-2 focus:ring-ring/30 focus:border-accent-cyan/50'
-            )}
+            className="resize-none"
           />
-        </div>
+        </FormField>
 
         {/* Error */}
         {error && (
-          <div role="alert" className="px-3 py-2 rounded-md bg-error/10 border border-error/20 text-sm text-error">
-            {error}
-          </div>
+          <Alerte titre="Commande non enregistrée">{error}</Alerte>
         )}
 
         {/* Submit */}
-        <div className="flex justify-end gap-3 pt-2">
+        <div className="flex flex-wrap justify-end gap-3 pt-2">
           <Button variant="ghost" onClick={onBack} disabled={isSubmitting}>
             Annuler
           </Button>

@@ -11,6 +11,7 @@ import {
 import type { FileFormat } from './actionData';
 import { cn } from '../../lib/utils';
 import { Spinner } from '../ui/Spinner';
+import { Button } from '../ui/Button';
 
 export type SkillExecutionStatus = 'idle' | 'generating' | 'success' | 'error';
 
@@ -98,14 +99,14 @@ export function SkillExecutionPanel({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20, scale: 0.95 }}
-      animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -20, scale: 0.95 }}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
       className={cn(
         'relative w-full max-w-md mx-auto',
         'bg-surface-elevated rounded-md border border-border',
-        'overflow-hidden shadow-xl'
+        'overflow-hidden shadow-sm'
       )}
     >
       {/* Gradient background */}
@@ -118,16 +119,16 @@ export function SkillExecutionPanel({
       <div className="relative p-6">
         {/* Close button */}
         {onClose && status !== 'generating' && (
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
             onClick={onClose}
-            className={cn(
-              'absolute top-4 right-4 p-1.5 rounded-md',
-              'text-text-muted hover:text-text',
-              'hover:bg-surface-2 transition-colors'
-            )}
+            className="absolute right-4 top-4"
+            aria-label="Fermer"
           >
             <X className="w-4 h-4" />
-          </button>
+          </Button>
         )}
 
         {/* Icon + Status */}
@@ -144,9 +145,9 @@ export function SkillExecutionPanel({
               {status === 'generating' && (
                 <motion.div
                   key="loading"
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
                   className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-surface flex items-center justify-center"
                 >
                   <Spinner taille="bouton" className="text-accent-cyan-ink" />
@@ -155,9 +156,9 @@ export function SkillExecutionPanel({
               {status === 'success' && (
                 <motion.div
                   key="success"
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
                   className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-success flex items-center justify-center"
                 >
                   <Check className="w-3.5 h-3.5 text-ink-on-fill" />
@@ -166,9 +167,9 @@ export function SkillExecutionPanel({
               {status === 'error' && (
                 <motion.div
                   key="error"
-                  initial={{ opacity: 0, scale: 0 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
                   className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-error flex items-center justify-center"
                 >
                   <X className="w-3.5 h-3.5 text-ink-on-fill" />
@@ -235,7 +236,7 @@ export function SkillExecutionPanel({
           >
             <div className="h-1.5 bg-surface-2 rounded-full overflow-hidden">
               <motion.div
-                className="h-full bg-gradient-to-r from-accent-cyan to-accent-magenta"
+                className="h-full bg-accent-fill"
                 initial={{ x: '-100%' }}
                 animate={{ x: '100%' }}
                 transition={{
@@ -250,45 +251,31 @@ export function SkillExecutionPanel({
         )}
 
         {/* Action buttons */}
-        <div className="flex gap-3">
+        <div className="flex flex-wrap gap-3">
           {status === 'success' && onDownload && (
-            <motion.button
+            <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={onDownload}
-              className={cn(
-                'flex-1 flex items-center justify-center gap-2',
-                'px-4 py-3 rounded-md font-medium',
-                'bg-accent-fill hover:opacity-90',
-                'text-accent-ink shadow-lg shadow-accent-cyan/20',
-                'hover:shadow-accent-cyan/30 transition-all'
-              )}
+              className="min-w-32 flex-1"
             >
-              <Download className="w-4 h-4" />
-              Télécharger
-            </motion.button>
+              <Button type="button" variant="primary" onClick={onDownload} className="w-full">
+                <Download className="mr-2 w-4 h-4" />
+                Télécharger
+              </Button>
+            </motion.div>
           )}
 
           {status === 'error' && onRetry && (
-            <motion.button
+            <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={onRetry}
-              className={cn(
-                'flex-1 flex items-center justify-center gap-2',
-                'px-4 py-3 rounded-md font-medium',
-                'bg-surface border border-border',
-                'text-text hover:bg-surface-elevated',
-                'transition-colors'
-              )}
+              className="min-w-32 flex-1"
             >
-              <RefreshCw className="w-4 h-4" />
-              Réessayer
-            </motion.button>
+              <Button type="button" variant="secondary" onClick={onRetry} className="w-full">
+                <RefreshCw className="mr-2 w-4 h-4" />
+                Réessayer
+              </Button>
+            </motion.div>
           )}
         </div>
       </div>

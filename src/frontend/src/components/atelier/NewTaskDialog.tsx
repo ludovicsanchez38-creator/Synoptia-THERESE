@@ -11,6 +11,10 @@ import { useOpenClawStore } from "../../stores/openclawStore";
 import { Z_LAYER } from "../../styles/z-layers";
 import { useDialogFocusTrap } from "../../hooks/useDialogFocusTrap";
 import { Spinner } from "../ui/Spinner";
+import { Button } from "../ui/Button";
+import { Textarea } from "../ui/Textarea";
+import { FormField } from "../ui/FormField";
+import { Alerte } from "../ui/Alerte";
 
 export function NewTaskDialog() {
   const { isNewTaskOpen, closeNewTask, dispatchTask, isDispatching, openclawConnected, runningCount, maxAgents } =
@@ -48,17 +52,17 @@ export function NewTaskDialog() {
   };
 
   return (
-    <div className={`fixed inset-0 ${Z_LAYER.MODAL_NESTED} flex items-center justify-center bg-black/50 backdrop-blur-sm`}>
+    <div className={`fixed inset-0 ${Z_LAYER.MODAL_NESTED} flex items-center justify-center bg-text/35`}>
       <div
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
         aria-label="Nouvelle tâche pour Katia"
-        className="mx-4 w-full max-w-lg rounded-md border border-border bg-bg shadow-2xl"
+        className="mx-4 w-full max-w-lg rounded-md border border-border bg-surface shadow-sm"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between border-b border-border px-5 py-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-5 py-3">
           <div className="flex items-center gap-2">
             <div className="flex h-7 w-7 items-center justify-center rounded-md bg-agent-purple/20">
               <Zap size={14} className="text-agent-purple" />
@@ -67,60 +71,65 @@ export function NewTaskDialog() {
               Nouvelle tâche pour Katia
             </span>
           </div>
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
             onClick={closeNewTask}
-            className="rounded-md p-1.5 text-text-muted transition hover:bg-surface-2 hover:text-text"
+            aria-label="Fermer"
           >
             <X size={16} />
-          </button>
+          </Button>
         </div>
 
         {/* Body */}
         <div className="px-5 py-4">
           {!openclawConnected && (
-            <div className="mb-3 rounded-md border border-agent-amber/20 bg-agent-amber/10 px-3 py-2 text-xs text-agent-amber">
+            <Alerte ton="attention" className="mb-3" titre="OpenClaw déconnecté">
               OpenClaw n&apos;est pas connecté. Vérifie que le gateway tourne.
-            </div>
+            </Alerte>
           )}
 
-          <label className="mb-2 block text-xs font-medium text-text-muted">
-            Que veux-tu que Katia fasse ?
-          </label>
-          <textarea aria-label="Instruction de la mission"
+          <FormField label="Que veux-tu que Katia fasse ?" htmlFor="mission-instruction">
+          <Textarea aria-label="Instruction de la mission"
+            id="mission-instruction"
             ref={textareaRef}
             value={instruction}
             onChange={(e) => setInstruction(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Ex: Envoie un email de relance à Jean Dupont pour la facture F-2024-042..."
             rows={4}
-            className="w-full resize-none rounded-md border border-border bg-surface px-3 py-2.5 text-sm text-text placeholder:text-text-muted outline-none transition focus:border-agent-purple/50"
+            className="resize-none"
             disabled={isDispatching}
           />
+          </FormField>
           <p className="mt-1.5 text-xs text-text-muted">
             Katia peut envoyer des emails, créer des factures, gérer le CRM et plus encore.
             <span className="ml-1 text-text-muted">Cmd+Entrée</span> pour lancer.
           </p>
 
           {isMaxReached && (
-            <div className="mt-2 rounded-md border border-agent-amber/20 bg-agent-amber/10 px-3 py-2 text-xs text-agent-amber">
+            <Alerte ton="attention" className="mt-2" titre="Limite atteinte">
               Tu as déjà {maxAgents} agents en cours. Attends qu&apos;un se termine ou annule-en un.
-            </div>
+            </Alerte>
           )}
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-end gap-2 border-t border-border px-5 py-3">
-          <button
+        <div className="flex flex-wrap items-center justify-end gap-2 border-t border-border px-5 py-3">
+          <Button
+            type="button"
+            variant="secondary"
             onClick={closeNewTask}
-            className="rounded-md px-3 py-1.5 text-sm font-medium text-text-muted transition hover:bg-surface-2"
             disabled={isDispatching}
           >
             Annuler
-          </button>
-          <button
+          </Button>
+          <Button
+            type="button"
+            variant="primary"
             onClick={handleSubmit}
             disabled={!instruction.trim() || isDispatching || !openclawConnected || isMaxReached}
-            className="flex items-center gap-1.5 rounded-md bg-agent-purple/20 px-4 py-1.5 text-sm font-medium text-agent-purple transition hover:bg-agent-purple/30 disabled:opacity-40 disabled:cursor-not-allowed"
           >
             {isDispatching ? (
               <>
@@ -133,7 +142,7 @@ export function NewTaskDialog() {
                 Lancer
               </>
             )}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

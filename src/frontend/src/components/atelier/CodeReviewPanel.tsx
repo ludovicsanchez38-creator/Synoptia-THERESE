@@ -10,6 +10,10 @@ import { Check, X, ChevronDown, ChevronRight, FileText, Plus, Minus } from 'luci
 import { useAtelierStore } from '../../stores/atelierStore';
 import { approveTask, rejectTask, getAgentTask, getTaskDiff } from '../../services/api/agents';
 import type { DiffFile } from '../../services/api/agents';
+import { cn } from '../../lib/utils';
+import { Button } from '../ui/Button';
+import { Etiquette } from '../ui/Etiquette';
+import { EtatVide } from '../ui/EtatVide';
 
 export function CodeReviewPanel() {
   const { currentMission } = useAtelierStore();
@@ -70,9 +74,7 @@ export function CodeReviewPanel() {
 
   if (!currentMission) {
     return (
-      <div className="flex h-full items-center justify-center text-sm text-text-muted">
-        Aucune mission en cours
-      </div>
+      <EtatVide titre="Aucune mission en cours" className="flex h-full flex-col items-center justify-center" />
     );
   }
 
@@ -112,11 +114,13 @@ export function CodeReviewPanel() {
         ) : (
           diffFiles.map((file) => (
             <div key={file.file_path} className="border-b border-border">
-              <button
+              <Button
+                type="button"
+                variant="ghost"
                 onClick={() => setExpandedFile(
                   expandedFile === file.file_path ? null : file.file_path
                 )}
-                className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm transition hover:bg-surface-2"
+                className="h-auto w-full justify-start gap-2 rounded-none px-4 py-2 text-left"
               >
                 {expandedFile === file.file_path ? (
                   <ChevronDown size={14} className="text-text-muted" />
@@ -127,37 +131,25 @@ export function CodeReviewPanel() {
                 <span className="flex-1 truncate text-text">
                   {file.file_path}
                 </span>
-                <span className={`text-xs ${
-                  file.change_type === 'added' ? 'text-agent-green' :
-                  file.change_type === 'deleted' ? 'text-error' :
-                  'text-agent-amber'
-                }`}>
+                <Etiquette ton={file.change_type === 'added' ? 'succes' : file.change_type === 'deleted' ? 'erreur' : 'attention'}>
                   {file.change_type === 'added' ? 'nouveau' :
                    file.change_type === 'deleted' ? 'supprimé' :
                    'modifié'}
-                </span>
-              </button>
+                </Etiquette>
+              </Button>
 
               {expandedFile === file.file_path && file.diff_hunk && (
-                <div className="overflow-x-auto bg-[#0a0f1e] px-4 py-2">
+                <div className="overflow-x-auto bg-surface-2 px-4 py-2">
                   <pre className="text-xs leading-5">
                     {file.diff_hunk.split('\n').map((line, i) => (
                       <div
                         key={i}
-                        style={{
-                          backgroundColor:
-                            line.startsWith('+') && !line.startsWith('+++')
-                              ? 'rgba(34, 197, 94, 0.1)'
-                              : line.startsWith('-') && !line.startsWith('---')
-                                ? 'rgba(239, 68, 68, 0.1)'
-                                : 'transparent',
-                          color:
-                            line.startsWith('+') && !line.startsWith('+++')
-                              ? '#4ade80'
-                              : line.startsWith('-') && !line.startsWith('---')
-                                ? '#f87171'
-                                : '#B6C7DA',
-                        }}
+                        className={cn(
+                          line.startsWith('+') && !line.startsWith('+++') && 'bg-[var(--color-success-tint)] text-success',
+                          line.startsWith('-') && !line.startsWith('---') && 'bg-[var(--color-error-tint)] text-error',
+                          !(line.startsWith('+') && !line.startsWith('+++')) &&
+                            !(line.startsWith('-') && !line.startsWith('---')) && 'text-text-muted',
+                        )}
                       >
                         {line}
                       </div>
@@ -177,7 +169,7 @@ export function CodeReviewPanel() {
         </div>
       ) : confirmation ? (
         <div className="border-t border-border px-4 py-3">
-          <div className="rounded-md border border-agent-amber/40 bg-agent-amber/10 p-3 text-xs text-text">
+          <div className="rounded-md border border-warning/30 bg-[var(--color-warning-tint)] p-3 text-sm text-text">
             <div className="font-semibold">
               {confirmation === 'approve'
                 ? 'Appliquer ces changements sur main ?'
@@ -186,10 +178,11 @@ export function CodeReviewPanel() {
             <p className="mt-1 text-text-muted">
               Le succès ne sera affiché qu&apos;après confirmation du backend.
             </p>
-            <div className="mt-3 flex justify-end gap-2">
-              <button type="button" onClick={() => setConfirmation(null)} className="rounded-md border border-border px-3 py-1.5 font-medium text-text-muted">Retour</button>
-              <button
+            <div className="mt-3 flex flex-wrap justify-end gap-2">
+              <Button type="button" variant="secondary" onClick={() => setConfirmation(null)}>Retour</Button>
+              <Button
                 type="button"
+                variant={confirmation === 'approve' ? 'primary' : 'danger'}
                 disabled={actionPending !== null}
                 onClick={() => {
                   const action = confirmation;
@@ -197,31 +190,33 @@ export function CodeReviewPanel() {
                   if (action === 'approve') void handleApprove();
                   else void handleReject();
                 }}
-                className="rounded-md bg-success px-3 py-1.5 font-semibold text-ink-on-fill disabled:opacity-50"
               >
                 Confirmer l&apos;action
-              </button>
+              </Button>
             </div>
           </div>
         </div>
       ) : (
-        <div className="flex gap-3 border-t border-border px-4 py-3">
-          <button
+        <div className="flex flex-wrap gap-3 border-t border-border px-4 py-3">
+          <Button
+            type="button"
+            variant="primary"
             onClick={() => setConfirmation('approve')}
             disabled={actionPending !== null}
-            className="flex flex-1 items-center justify-center gap-2 rounded-md bg-agent-green/20 px-4 py-2.5 text-sm font-medium text-agent-green transition hover:bg-agent-green/30 disabled:opacity-50"
+            className="min-w-48 flex-1"
           >
             <Check size={16} />
             {actionPending === 'approve' ? 'Application...' : 'Appliquer les changements'}
-          </button>
-          <button
+          </Button>
+          <Button
+            type="button"
+            variant="danger"
             onClick={() => setConfirmation('reject')}
             disabled={actionPending !== null}
-            className="flex items-center justify-center gap-2 rounded-md bg-error/10 px-4 py-2.5 text-sm font-medium text-error transition hover:bg-error/20 disabled:opacity-50"
           >
             <X size={16} />
             {actionPending === 'reject' ? 'Refus...' : 'Refuser'}
-          </button>
+          </Button>
         </div>
       )}
     </div>

@@ -26,7 +26,7 @@ describe('P-090 lot 10C : contrat DA des écrans agents', () => {
       ['couleur hexadécimale', /#[\da-fA-F]{6}(?:[\da-fA-F]{2})?\b/],
       ['couleur rgb ou color-mix', /\brgba?\(|\bhsla?\(|\bcolor-mix\(/],
       ['dégradé', /\b(?:bg-)?gradient-/],
-      ['ombre forte ou arbitraire', /\bshadow-(?:xl|2xl|agent[^\s'\"]*|\[[^\]]+\])/],
+      ['ombre forte ou arbitraire', /\bshadow-(?:xl|2xl|agent[^\s'"]*|\[[^\]]+\])/],
       ['effet de scale', /\bscale(?::|-[\d[])/],
       ['transition globale', /\btransition-all\b/],
     ];
@@ -76,7 +76,7 @@ describe('P-090 lot 10C : contrat DA des écrans agents', () => {
   it('conserve les deux commandes de session comme boutons frères', () => {
     const source = readComponent('atelier', 'SessionList.tsx');
     expect(source).not.toMatch(/<motion\.button\b/);
-    expect(source).toContain('aria-label="Ouvrir la session');
+    expect(source).toMatch(/aria-label=\{`Ouvrir la session/);
     expect(source).toContain('aria-label="Annuler cette session"');
     expect(source).toContain('aria-label="Relancer cette tache"');
   });

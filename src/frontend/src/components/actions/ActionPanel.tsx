@@ -21,6 +21,13 @@ import { usePanneauCouvrant } from '../../hooks/usePanneauCouvrant';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { VoilePanneau } from '../prototype/VoilePanneau';
 import { CompactMarkdown } from '../ui/CompactMarkdown';
+import { Button } from '../ui/Button';
+import { Input } from '../ui/Input';
+import { Select } from '../ui/Select';
+import { FormField } from '../ui/FormField';
+import { Alerte } from '../ui/Alerte';
+import { EtatVide } from '../ui/EtatVide';
+import { Etiquette } from '../ui/Etiquette';
 
 /** Mapping icone -> composant Lucide */
 const ICON_MAP: Record<string, LucideIcon> = {
@@ -59,21 +66,19 @@ function AgentCard({
   const colorClass = CATEGORY_COLORS[agent.category] || 'text-agent-cyan';
 
   return (
-    <motion.button
-      data-agent-id={agent.id}
+    <motion.div
       initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      whileHover={{ scale: 1.01 }}
-      whileTap={{ scale: 0.99 }}
-      onClick={() => onSelect(agent)}
-      className={cn(
-        'w-full text-left p-4 rounded-md',
-        'bg-surface/60 hover:bg-surface-elevated border border-border hover:border-border',
-        'transition-colors duration-150',
-        'group cursor-pointer',
-      )}
+      className="w-full"
     >
-      <div className="flex items-start gap-3">
+      <Button
+        type="button"
+        variant="secondary"
+        data-agent-id={agent.id}
+        onClick={() => onSelect(agent)}
+        className="group h-auto w-full items-stretch justify-start p-4 text-left"
+      >
+      <div className="flex w-full items-start gap-3">
         <div className={cn('p-2 rounded-md bg-surface-2', colorClass)}>
           <IconComp size={20} />
         </div>
@@ -87,20 +92,21 @@ function AgentCard({
               className="text-text-muted group-hover:text-text transition-colors flex-shrink-0"
             />
           </div>
-          <p className="text-xs text-text-muted mt-1 line-clamp-2">
+          <p className="text-sm font-normal text-text-muted mt-1 line-clamp-2">
             {agent.description}
           </p>
           <div className="flex items-center gap-2 mt-2">
-            <span className="text-xs text-text-muted bg-surface-2 px-2 py-0.5 rounded-sm">
+            <Etiquette ton="neutre">
               {agent.steps_count} étapes
-            </span>
-            <span className={cn('text-xs px-2 py-0.5 rounded-sm bg-surface-2', colorClass)}>
+            </Etiquette>
+            <Etiquette ton="info" className={colorClass}>
               {CATEGORY_LABELS[agent.category] || agent.category}
-            </span>
+            </Etiquette>
           </div>
         </div>
       </div>
-    </motion.button>
+      </Button>
+    </motion.div>
   );
 }
 
@@ -142,15 +148,16 @@ function ParamsForm({
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center gap-3 p-4 border-b border-border">
-        <button
+      <div className="flex flex-wrap items-center gap-3 p-4 border-b border-border">
+        <Button
           type="button"
+          variant="ghost"
+          size="icon"
           aria-label="Retour au catalogue"
           onClick={onBack}
-          className="p-1 rounded-sm hover:bg-surface-2 text-text-muted hover:text-text"
         >
           <ChevronRight size={16} className="rotate-180" />
-        </button>
+        </Button>
         <div className={cn('p-2 rounded-md bg-surface-2', colorClass)}>
           <IconComp size={18} />
         </div>
@@ -162,69 +169,46 @@ function ParamsForm({
 
       {/* Form */}
       <form onSubmit={handleSubmit} className="flex-1 flex flex-col p-4 gap-4">
-        <p className="text-xs text-text-muted">{agent.description}</p>
+        <p className="text-sm text-text-muted">{agent.description}</p>
         {error && (
-          <div role="alert" className="rounded-md border border-error/20 bg-error/5 px-3 py-2 text-xs text-error">
-            Lancement impossible : {error}
-          </div>
+          <Alerte titre="Lancement impossible">
+            {error}
+          </Alerte>
         )}
 
         {agent.params.map((param) => (
-          <div key={param.id} className="space-y-1.5">
-            <label className="text-xs font-medium text-text-muted">
-              {param.label}
-              {param.required && <span className="text-error ml-1">*</span>}
-            </label>
+          <FormField key={param.id} label={param.label} htmlFor={`action-param-${param.id}`} required={param.required}>
             {param.type === 'select' ? (
-              <select aria-label={param.label}
+              <Select aria-label={param.label}
+                id={`action-param-${param.id}`}
                 value={values[param.id] || ''}
                 onChange={(e) =>
                   setValues((prev) => ({ ...prev, [param.id]: e.target.value }))
                 }
-                className={cn(
-                  'w-full px-3 py-2 rounded-md text-sm',
-                  'bg-bg border border-border text-text',
-                  'focus:border-ring focus:outline-none',
-                )}
-              >
-                <option value="">Choisir...</option>
-                {param.options.map((opt) => (
-                  <option key={opt} value={opt}>
-                    {opt}
-                  </option>
-                ))}
-              </select>
+                placeholder="Choisir..."
+                options={param.options.map((opt) => ({ value: opt, label: opt }))}
+              />
             ) : (
-              <input aria-label={param.label}
+              <Input aria-label={param.label}
+                id={`action-param-${param.id}`}
                 type="text"
                 value={values[param.id] || ''}
                 onChange={(e) =>
                   setValues((prev) => ({ ...prev, [param.id]: e.target.value }))
                 }
                 placeholder={param.placeholder}
-                className={cn(
-                  'w-full px-3 py-2 rounded-md text-sm',
-                  'bg-bg border border-border text-text',
-                  'placeholder:text-text-muted',
-                  'focus:border-ring focus:outline-none',
-                )}
               />
             )}
-          </div>
+          </FormField>
         ))}
 
         <div className="flex-1" />
 
-        <button
+        <Button
           type="submit"
+          variant="primary"
           disabled={!isValid || isLoading}
-          className={cn(
-            'w-full py-2.5 rounded-md text-sm font-medium',
-            'bg-accent-fill text-accent-ink hover:opacity-90',
-            'disabled:opacity-40 disabled:cursor-not-allowed',
-            'transition-colors duration-150',
-            'flex items-center justify-center gap-2',
-          )}
+          className="w-full"
         >
           {isLoading ? (
             <Spinner taille="bouton" />
@@ -232,7 +216,7 @@ function ParamsForm({
             <Play size={16} />
           )}
           Lancer
-        </button>
+        </Button>
       </form>
     </div>
   );
@@ -278,9 +262,9 @@ function TaskProgress({
 
   const statusColor = {
     pending: 'text-warning',
-    running: 'text-agent-cyan',
+    running: 'text-accent',
     cancel_requested: 'text-warning',
-    completed: 'text-agent-green',
+    completed: 'text-success',
     cancelled: 'text-text-muted',
     error: 'text-error',
   }[task.status];
@@ -288,35 +272,35 @@ function TaskProgress({
   return (
     <div className="flex flex-col h-full">
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-border">
+      <div className="flex flex-wrap items-center justify-between gap-2 p-4 border-b border-border">
         <div>
           <h3 className="text-sm font-medium text-text">{task.agent_name}</h3>
-          <span className={cn('text-xs', statusColor)}>{statusLabel}</span>
+          <span className={cn('text-sm', statusColor)}>{statusLabel}</span>
         </div>
         {isRunning ? (
-          <button
+          <Button
+            type="button"
+            variant="danger"
             onClick={onCancel}
-            className={cn(
-              'flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm',
-              'bg-error/10 text-error hover:bg-error/20',
-              'transition-colors',
-            )}
           >
-            <Square size={12} />
+            <Square size={14} className="mr-2" />
             Annuler
-          </button>
+          </Button>
         ) : isStopping ? (
           <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs text-warning">
             <Spinner taille="ligne" />
             Arrêt en cours
           </span>
         ) : (
-          <button
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
             onClick={onClose}
-            className="p-1 rounded-sm hover:bg-surface-2 text-text-muted"
+            aria-label="Fermer"
           >
             <X size={16} />
-          </button>
+          </Button>
         )}
       </div>
 
@@ -326,7 +310,7 @@ function TaskProgress({
           <motion.div
             className={cn(
               'h-full rounded-full',
-              isDone ? 'bg-agent-green' : isError ? 'bg-error' : 'bg-accent-fill',
+              isDone ? 'bg-success' : isError ? 'bg-error' : 'bg-accent-fill',
             )}
             initial={{ width: 0 }}
             animate={{ width: `${Math.round(progression * 100)}%` }}
@@ -362,8 +346,8 @@ function StepItem({ step, index: _index }: { step: TaskStep; index: number }) {
 
   const statusIcon = {
     pending: <Clock size={14} className="text-text-muted" />,
-    running: <Spinner taille="ligne" className="text-agent-cyan" />,
-    completed: <CheckCircle2 size={14} className="text-agent-green" />,
+    running: <Spinner taille="ligne" className="text-accent" />,
+    completed: <CheckCircle2 size={14} className="text-success" />,
     skipped: <Clock size={14} className="text-text-muted" />,
     error: <AlertCircle size={14} className="text-error" />,
   }[step.status];
@@ -380,20 +364,22 @@ function StepItem({ step, index: _index }: { step: TaskStep; index: number }) {
       className={cn(
         'rounded-md border transition-colors',
         step.status === 'running'
-          ? 'border-agent-cyan/20 bg-agent-cyan/5'
+          ? 'border-accent/30 bg-accent-tint'
           : step.status === 'completed'
-          ? 'border-agent-green/10 bg-agent-green/5'
+          ? 'border-success/30 bg-[var(--color-success-tint)]'
           : step.status === 'error'
-          ? 'border-error/10 bg-error/5'
+          ? 'border-error/30 bg-[var(--color-error-tint)]'
           : 'border-border bg-transparent',
       )}
     >
-      <button
+      <Button
+        type="button"
+        variant="ghost"
         onClick={() => setExpanded(!expanded)}
-        className="w-full flex items-center gap-2 p-3 text-left"
+        className="h-auto w-full justify-start gap-2 p-3 text-left"
       >
         {statusIcon}
-        <span className="text-xs text-text-muted flex-1">{step.label}</span>
+        <span className="text-sm font-normal text-text-muted flex-1">{step.label}</span>
         <ChevronRight
           size={12}
           className={cn(
@@ -401,7 +387,7 @@ function StepItem({ step, index: _index }: { step: TaskStep; index: number }) {
             expanded && 'rotate-90',
           )}
         />
-      </button>
+      </Button>
       <AnimatePresence>
         {expanded && step.content && (
           <motion.div
@@ -414,7 +400,7 @@ function StepItem({ step, index: _index }: { step: TaskStep; index: number }) {
             <div className="px-3 pb-3 pt-0">
               <CompactMarkdown
                 className={cn(
-                  'text-xs leading-5 text-text-muted',
+                  'text-sm leading-5 text-text-muted',
                   'max-h-40 overflow-y-auto',
                   'bg-bg/50 rounded-md p-2',
                 )}
@@ -427,7 +413,7 @@ function StepItem({ step, index: _index }: { step: TaskStep; index: number }) {
       </AnimatePresence>
       {step.error && (
         <div className="px-3 pb-3">
-          <p className="text-xs text-error">{step.error}</p>
+          <p className="text-sm text-error">{step.error}</p>
         </div>
       )}
     </div>
@@ -525,26 +511,29 @@ export function ActionPanel() {
       // B-362 : deux commandes, deux boutons frères ; un contrôle focalisable
       // imbriqué dans un bouton est invalide et double l'arrêt de tabulation.
       return (
-        <div className="fixed bottom-4 right-4 z-50 flex items-center rounded-full bg-surface border border-agent-cyan/30 shadow-lg shadow-agent-cyan/10 animate-pulse">
-          <button
+        <div className="fixed bottom-4 right-4 z-50 flex items-center rounded-full border border-border bg-surface shadow-sm animate-pulse">
+          <Button
             type="button"
+            variant="ghost"
             onClick={() => openPanel()}
-            className="flex items-center gap-2 rounded-full py-2 pl-4 pr-3 text-sm text-agent-cyan hover:bg-surface-elevated transition-colors"
+            className="rounded-full pl-4 pr-3"
           >
             <Spinner taille="ligne" />
             {activeTask.status === 'cancel_requested'
               ? `${activeTask.agent_name || 'Action'} - Arrêt en cours...`
               : `${activeTask.agent_name || 'Action'} en cours...`}
-          </button>
+          </Button>
           {activeTask.status !== 'cancel_requested' && (
-            <button
+            <Button
               type="button"
+              variant="danger"
+              size="icon"
               aria-label="Annuler l'action"
               onClick={() => cancelAction(activeTask.task_id)}
-              className="mr-2 p-1 rounded-full bg-error/20 text-error hover:bg-error/30"
+              className="mr-2 h-8 w-8 rounded-full"
             >
-              <Square size={10} />
-            </button>
+              <Square size={14} />
+            </Button>
           )}
         </div>
       );
@@ -566,22 +555,25 @@ export function ActionPanel() {
           'fixed right-0 top-0 bottom-0 z-50',
           'w-[380px] max-w-[90vw]',
           'bg-bg border-l border-border',
-          'flex flex-col shadow-2xl',
+          'flex flex-col shadow-sm',
         )}
       >
         {/* Header global */}
         {showList && (
-          <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+          <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-border">
             <div className="flex items-center gap-2">
               <Zap size={16} className="text-accent-cyan-ink" />
               <h2 className="text-sm font-medium text-text">Actions</h2>
             </div>
-            <button
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
               onClick={closePanel}
-              className="p-1 rounded-sm hover:bg-surface-2 text-text-muted hover:text-text"
+              aria-label="Fermer les actions"
             >
               <X size={16} />
-            </button>
+            </Button>
           </div>
         )}
 
@@ -607,28 +599,22 @@ export function ActionPanel() {
               ))}
 
               {error && !isLoading && (
-                <div role="alert" className="rounded-md border border-error/20 bg-error/5 px-3 py-3 text-sm text-error">
-                  <p>Impossible de charger les actions : {error}</p>
-                  <button
-                    type="button"
-                    onClick={() => void loadAgents()}
-                    className="mt-2 rounded-sm border border-border px-3 py-1.5 text-sm font-semibold text-text"
-                  >
-                    Réessayer
-                  </button>
-                </div>
+                <Alerte
+                  titre="Impossible de charger les actions"
+                  action={<Button type="button" variant="secondary" size="sm" onClick={() => void loadAgents()}>Réessayer</Button>}
+                >
+                  {error}
+                </Alerte>
               )}
 
               {/* B-374 : un échec de chargement n'est pas une liste vide. */}
               {agents.length === 0 && !isLoading && !error && (
-                <p className="text-sm text-text-muted text-center py-8">
-                  Aucune action disponible.
-                </p>
+                <EtatVide titre="Aucune action disponible" />
               )}
 
               {isLoading && (
                 <div className="flex justify-center py-8">
-                  <Spinner taille="zone" className="text-text-muted" />
+                  <Spinner taille="zone" className="text-text-muted" annonce="Chargement des actions" />
                 </div>
               )}
             </div>

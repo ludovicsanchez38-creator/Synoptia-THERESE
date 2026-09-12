@@ -1,8 +1,7 @@
 /**
  * THÉRÈSE v2 - Agent Message Bubble
  *
- * Bulle de message pour les agents avec avatar et badge coloré.
- * Thérèse = violet (#A855F7), Zézette = orange (#F59E0B).
+ * Bulle de message pour les agents avec avatar et badge sémantique.
  */
 
 import React from 'react';
@@ -11,26 +10,26 @@ import type { AgentMessage } from '../../stores/atelierStore';
 
 const AGENT_STYLES: Record<string, { color: string; bg: string; icon: React.ReactNode; label: string }> = {
   katia: {
-    color: 'var(--color-agent-purple)',
-    bg: 'rgba(168, 85, 247, 0.1)',
+    color: 'text-accent',
+    bg: 'bg-accent-tint',
     icon: <Headphones size={14} />,
     label: 'Katia',
   },
   zezette: {
-    color: 'var(--color-agent-amber)',
-    bg: 'rgba(245, 158, 11, 0.1)',
+    color: 'text-warning',
+    bg: 'bg-[var(--color-warning-tint)]',
     icon: <Wrench size={14} />,
     label: 'Zézette',
   },
   user: {
-    color: 'var(--color-agent-cyan)',
-    bg: 'rgba(34, 211, 238, 0.1)',
+    color: 'text-accent',
+    bg: 'bg-accent-tint',
     icon: <User size={14} />,
     label: 'Toi',
   },
   system: {
-    color: 'var(--color-text-muted)',
-    bg: 'rgba(107, 114, 128, 0.08)',
+    color: 'text-text-muted',
+    bg: 'bg-surface-2',
     icon: <Info size={14} />,
     label: 'Système',
   },
@@ -49,7 +48,7 @@ export function AgentMessageBubble({ message }: Props) {
   if (isSystem && (message.type === 'tool_use' || message.type === 'test_result')) {
     return (
       <div className="flex items-center gap-2 px-3 py-1.5 text-xs text-text-muted opacity-70">
-        <span style={{ color: style.color }}>{style.icon}</span>
+        <span className={style.color}>{style.icon}</span>
         <span>{message.content}</span>
       </div>
     );
@@ -58,14 +57,7 @@ export function AgentMessageBubble({ message }: Props) {
   // Carte de handoff
   if (message.type === 'handoff') {
     return (
-      <div
-        className="mx-3 my-2 rounded-md p-3 text-sm"
-        style={{
-          background: 'linear-gradient(135deg, rgba(168,85,247,0.15), rgba(245,158,11,0.15))',
-          borderLeft: '3px solid',
-          borderImage: 'linear-gradient(to bottom, #A855F7, #F59E0B) 1',
-        }}
-      >
+      <div className="mx-3 my-2 rounded-md border-l-2 border-accent bg-surface-2 p-3 text-sm">
         <div className="mb-1 flex items-center gap-2 text-xs font-medium text-text-muted">
           <Headphones size={12} className="text-agent-purple" />
           <span>Katia transmet à Zézette</span>
@@ -79,10 +71,7 @@ export function AgentMessageBubble({ message }: Props) {
   return (
     <div className={`flex gap-2.5 px-3 py-2 ${isUser ? 'flex-row-reverse' : ''}`}>
       {/* Avatar */}
-      <div
-        className="mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full"
-        style={{ backgroundColor: style.bg, color: style.color }}
-      >
+      <div className={`mt-0.5 flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full ${style.bg} ${style.color}`}>
         {style.icon}
       </div>
 
@@ -90,10 +79,7 @@ export function AgentMessageBubble({ message }: Props) {
       <div className={`max-w-[85%] ${isUser ? 'text-right' : ''}`}>
         {/* Badge agent */}
         {!isUser && (
-          <div
-            className="mb-0.5 text-xs font-medium"
-            style={{ color: style.color }}
-          >
+          <div className={`mb-0.5 text-xs font-medium ${style.color}`}>
             {style.label}
           </div>
         )}
@@ -103,13 +89,7 @@ export function AgentMessageBubble({ message }: Props) {
             une couleur claire figée. Sur fond de bulle à faible opacité en thème
             clair, un texte clair figé donnait « blanc sur blanc » (réponse de
             l'agent codeur invisible). Le token s'adapte clair/sombre. */}
-        <div
-          className="rounded-md px-3 py-2 text-sm leading-relaxed text-text"
-          style={{
-            backgroundColor: isUser ? 'rgba(34, 211, 238, 0.1)' : style.bg,
-            borderLeft: isUser ? 'none' : `2px solid ${style.color}`,
-          }}
-        >
+        <div className={`rounded-md px-3 py-2 text-sm leading-relaxed text-text ${isUser ? 'bg-accent-tint' : `${style.bg} border-l-2 border-border`}`}>
           <span style={{ whiteSpace: 'pre-wrap' }}>{message.content}</span>
           {message.isStreaming && (
             <span className="ml-1 inline-block h-3 w-1.5 animate-pulse rounded-sm bg-current opacity-60" />

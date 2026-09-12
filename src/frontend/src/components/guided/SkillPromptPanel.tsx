@@ -3,6 +3,8 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Sparkles, FileText, Presentation, Table, ImageIcon } from 'lucide-react';
 import type { SubOption, FileFormat } from './actionData';
 import { cn } from '../../lib/utils';
+import { Button } from '../ui/Button';
+import { Textarea } from '../ui/Textarea';
 
 interface SkillPromptPanelProps {
   option: SubOption;
@@ -82,20 +84,16 @@ export function SkillPromptPanel({ option, onGenerate, onBack }: SkillPromptPane
       className="w-full max-w-lg mx-auto"
     >
       {/* Header with back button */}
-      <div className="flex items-center gap-3 mb-6">
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+      <div className="flex flex-wrap items-center gap-3 mb-6">
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
           onClick={onBack}
-          className={cn(
-            'p-2 rounded-md',
-            'bg-surface-elevated border border-border',
-            'text-text-muted hover:text-text',
-            'transition-colors'
-          )}
+          aria-label="Retour"
         >
           <ArrowLeft className="w-4 h-4" />
-        </motion.button>
+        </Button>
 
         <div className="flex items-center gap-3">
           <div className={cn(
@@ -120,11 +118,10 @@ export function SkillPromptPanel({ option, onGenerate, onBack }: SkillPromptPane
       <div className={cn(
         'rounded-md border border-border',
         'bg-surface-elevated/80 backdrop-blur-sm',
-        'focus-within:border-accent-cyan/50',
-        'focus-within:shadow-[0_0_20px_rgba(34,211,238,0.1)]',
-        'transition-all duration-200'
+        'focus-within:border-accent',
+        'transition-colors duration-200'
       )}>
-        <textarea aria-label="Consigne"
+        <Textarea aria-label="Consigne"
           ref={textareaRef}
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
@@ -134,13 +131,13 @@ export function SkillPromptPanel({ option, onGenerate, onBack }: SkillPromptPane
           className={cn(
             'w-full p-4 bg-transparent resize-none',
             'text-text placeholder:text-text-muted',
-            'focus:outline-none',
+            'border-0 focus:ring-0',
             'text-sm leading-relaxed'
           )}
         />
 
         {/* Footer with hints and generate button */}
-        <div className="flex items-center justify-between px-4 py-3 border-t border-border/50">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t border-border/50">
           <p className="text-xs text-text-muted">
             <kbd className="px-1.5 py-0.5 rounded-sm bg-surface text-text-muted">
               {navigator.platform.toUpperCase().indexOf('MAC') >= 0 ? '⌘' : 'Ctrl'}
@@ -150,23 +147,15 @@ export function SkillPromptPanel({ option, onGenerate, onBack }: SkillPromptPane
             <span className="ml-2">pour générer</span>
           </p>
 
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
+          <Button
+            type="button"
+            variant="primary"
             onClick={handleGenerate}
             disabled={!prompt.trim()}
-            className={cn(
-              'flex items-center gap-2 px-4 py-2 rounded-md',
-              'font-medium text-sm',
-              'bg-accent-fill hover:opacity-90',
-              'text-accent-ink shadow-lg shadow-accent-cyan/20',
-              'hover:shadow-accent-cyan/30 transition-all',
-              'disabled:opacity-50 disabled:cursor-not-allowed'
-            )}
           >
-            <Sparkles className="w-4 h-4" />
+            <Sparkles className="mr-2 w-4 h-4" />
             Générer
-          </motion.button>
+          </Button>
         </div>
       </div>
 
@@ -175,19 +164,16 @@ export function SkillPromptPanel({ option, onGenerate, onBack }: SkillPromptPane
         <p className="text-xs text-text-muted font-medium">Exemples :</p>
         <div className="flex flex-wrap gap-2">
           {(isImage ? getImageSuggestions() : getSuggestions(format)).map((suggestion, i) => (
-            <button
+            <Button
+              type="button"
+              variant="secondary"
+              size="sm"
               key={i}
               onClick={() => setPrompt(suggestion)}
-              className={cn(
-                'px-3 py-1.5 rounded-md text-sm',
-                'bg-surface border border-border',
-                'text-text-muted hover:text-text',
-                'hover:border-accent-cyan/30',
-                'transition-colors'
-              )}
+              className="h-auto min-h-8 whitespace-normal py-1.5 text-left font-normal"
             >
               {suggestion}
-            </button>
+            </Button>
           ))}
         </div>
       </div>
