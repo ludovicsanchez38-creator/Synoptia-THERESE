@@ -800,7 +800,7 @@ function ContactsList({
                           variant="ghost"
                           size="md"
                           onClick={() => { onRGPDAction('export', contact); setOpenMenuId(null); }}
-                          className="w-full justify-start rounded-none text-text"
+                          className="w-full justify-start text-text"
                         >
                           <Download className="w-4 h-4 text-accent" />
                           Exporter (Art. 20)
@@ -810,7 +810,7 @@ function ContactsList({
                           variant="ghost"
                           size="md"
                           onClick={() => { onRGPDAction('renew', contact); setOpenMenuId(null); }}
-                          className="w-full justify-start rounded-none text-text"
+                          className="w-full justify-start text-text"
                         >
                           <RefreshCw className="w-4 h-4 text-success" />
                           Renouveler consentement
@@ -821,7 +821,7 @@ function ContactsList({
                           variant="ghost"
                           size="md"
                           onClick={() => { onRGPDAction('anonymize', contact); setOpenMenuId(null); }}
-                          className="w-full justify-start rounded-none text-error"
+                          className="w-full justify-start text-error"
                         >
                           <UserX className="w-4 h-4" />
                           Anonymiser (Art. 17)

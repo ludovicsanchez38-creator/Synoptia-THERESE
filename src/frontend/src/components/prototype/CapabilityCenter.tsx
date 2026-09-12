@@ -507,7 +507,7 @@ export function TrustCenter({
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: -8, opacity: 0 }}
         onClick={(event) => event.stopPropagation()}
-        className="absolute left-4 right-4 top-[62px] overflow-hidden rounded-md border border-border bg-surface shadow-lg sm:left-auto sm:w-[380px]"
+        className="absolute left-4 right-4 top-[62px] overflow-hidden rounded-md border border-border bg-surface shadow-lg sm:left-auto sm:w-[360px]"
       >
         <div className="flex items-start gap-3 border-b border-border bg-accent-tint px-4 py-4">
           <span className="grid h-9 w-9 place-items-center rounded-full bg-surface text-accent shadow-sm">
