@@ -11,6 +11,7 @@ import { useAtelierStore } from '../../stores/atelierStore';
 import { approveTask, rejectTask, getAgentTask, getTaskDiff } from '../../services/api/agents';
 import type { DiffFile } from '../../services/api/agents';
 import { cn } from '../../lib/utils';
+import { Alerte } from '../ui/Alerte';
 import { Button } from '../ui/Button';
 import { Etiquette } from '../ui/Etiquette';
 import { EtatVide } from '../ui/EtatVide';
@@ -25,10 +26,13 @@ export function CodeReviewPanel() {
   const [confirmation, setConfirmation] = useState<'approve' | 'reject' | null>(null);
   const [totalAdd, setTotalAdd] = useState(0);
   const [totalDel, setTotalDel] = useState(0);
+  // B-767 : un diff qui n'a pas pu être chargé n'est pas un diff vide.
+  const [diffIndisponible, setDiffIndisponible] = useState(false);
 
   useEffect(() => {
     if (currentMission?.taskId) {
       setIsLoading(true);
+      setDiffIndisponible(false);
       getTaskDiff(currentMission.taskId)
         .then((diff) => {
           setDiffFiles(diff.files);
@@ -36,7 +40,11 @@ export function CodeReviewPanel() {
           setTotalDel(diff.total_deletions);
         })
         .catch(() => {
-          // Le diff n'est peut-être pas encore prêt
+          // Le diff n'est peut-être pas encore prêt : on le dit, on n'applique rien.
+          setDiffFiles([]);
+          setTotalAdd(0);
+          setTotalDel(0);
+          setDiffIndisponible(true);
         })
         .finally(() => setIsLoading(false));
     }
@@ -93,6 +101,11 @@ export function CodeReviewPanel() {
       )}
 
       {/* Résumé des changements */}
+      {diffIndisponible ? (
+        <Alerte className="mx-4 my-3" titre="Modifications indisponibles">
+          Les modifications n’ont pas pu être chargées. Réessaie dans un instant avant d’appliquer quoi que ce soit.
+        </Alerte>
+      ) : (
       <div className="border-b border-border px-4 py-2">
         <div className="flex items-center gap-3 text-xs text-text-muted">
           <span className="flex items-center gap-1 text-agent-green">
@@ -104,6 +117,7 @@ export function CodeReviewPanel() {
           <span>{diffFiles.length} fichier{diffFiles.length > 1 ? 's' : ''} touché{diffFiles.length > 1 ? 's' : ''}</span>
         </div>
       </div>
+      )}
 
       {/* Liste des fichiers */}
       <div className="flex-1 overflow-y-auto">
@@ -202,7 +216,7 @@ export function CodeReviewPanel() {
             type="button"
             variant="primary"
             onClick={() => setConfirmation('approve')}
-            disabled={actionPending !== null}
+            disabled={actionPending !== null || isLoading || diffIndisponible}
             className="min-w-48 flex-1"
           >
             <Check size={16} />
