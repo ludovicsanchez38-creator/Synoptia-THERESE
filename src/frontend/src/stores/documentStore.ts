@@ -260,8 +260,15 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
     // génération suivie ne doit ni remplacer le suivi (le 409 du second
     // effaçait le bouton d'annulation du premier), ni partir sur le réseau.
     const dejaSuivie = get().outlineGeneration;
-    if (dejaSuivie && dejaSuivie.documentId === documentId) {
-      set({ outlineNotice: 'Une génération de trame est déjà en cours pour ce document.' });
+    if (dejaSuivie) {
+      // B-903 : le suivi est unique ; un lancement depuis un AUTRE document
+      // remplaçait celui de la première génération, dont l'arrêt devenait
+      // injoignable. Une seule trame suivie à la fois, quel que soit le document.
+      set({
+        outlineNotice: dejaSuivie.documentId === documentId
+          ? 'Une génération de trame est déjà en cours pour ce document.'
+          : 'Une génération de trame est déjà en cours pour un autre document. Attends sa fin ou arrête-la.',
+      });
       return;
     }
     const taskId = crypto.randomUUID();
