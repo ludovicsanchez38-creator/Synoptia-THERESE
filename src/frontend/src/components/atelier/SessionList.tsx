@@ -6,7 +6,7 @@
  * boutons Annuler/Relancer, filtre 24h, animation framer-motion.
  */
 
-import React, { useEffect, useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { RefreshCw, Plus, X, RotateCcw } from "lucide-react";
 import { useOpenClawStore } from "../../stores/openclawStore";
@@ -92,9 +92,18 @@ export function SessionList() {
     cancelSession(sessionId);
   };
 
-  const handleRetry = (e: React.MouseEvent, instruction: string) => {
+  // B-779 : comme les autres entrées vers dispatchTask, la relance se neutralise
+  // le temps de l'envoi ; un double clic ne relance pas deux fois.
+  const [relanceEnCours, setRelanceEnCours] = useState(false);
+  const handleRetry = async (e: React.MouseEvent, instruction: string) => {
     e.stopPropagation();
-    dispatchTask(instruction);
+    if (relanceEnCours) return;
+    setRelanceEnCours(true);
+    try {
+      await dispatchTask(instruction);
+    } finally {
+      setRelanceEnCours(false);
+    }
   };
 
   const itemVariants = reduceMotion
@@ -281,7 +290,8 @@ export function SessionList() {
                       type="button"
                       variant="ghost"
                       size="icon"
-                      onClick={(e) => handleRetry(e, session.instruction)}
+                      onClick={(e) => void handleRetry(e, session.instruction)}
+                      disabled={relanceEnCours}
                       className="absolute right-2 top-2 h-8 w-8 text-warning"
                       title="Relancer cette tache"
                       aria-label="Relancer cette tache"
