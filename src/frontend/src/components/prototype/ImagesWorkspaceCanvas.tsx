@@ -48,6 +48,7 @@ export function ImagesWorkspaceCanvas({ onClose }: { onClose: () => void }) {
   const [providerStatus, setProviderStatus] = useState<ImageProviderStatus | null>(null);
   const [images, setImages] = useState<ImageResponse[]>([]);
   const [provider, setProvider] = useState<ImageProvider>('gpt-image-2');
+  const moteurInitialise = useRef(false);
   const [prompt, setPrompt] = useState('');
   const [size, setSize] = useState<'1024x1024' | '1536x1024' | '1024x1536'>('1024x1024');
   const [quality, setQuality] = useState<'low' | 'medium' | 'high'>('medium');
@@ -98,7 +99,14 @@ export function ImagesWorkspaceCanvas({ onClose }: { onClose: () => void }) {
       setSelected((current) => current ?? history.images[0] ?? null);
       const active = PROVIDERS.find((item) => item.id === status.active_provider && status[item.availability]);
       const firstAvailable = PROVIDERS.find((item) => status[item.availability]);
-      if (active || firstAvailable) setProvider((active || firstAvailable)!.id);
+      // B-766 : au premier chargement, le moteur suit le statut serveur ; ensuite,
+      // « Actualiser » garde le moteur choisi à la main tant qu'il reste disponible.
+      setProvider((courant) => {
+        const courantDisponible = moteurInitialise.current && PROVIDERS.some((item) => item.id === courant && status[item.availability]);
+        if (courantDisponible) return courant;
+        return (active || firstAvailable)?.id ?? courant;
+      });
+      moteurInitialise.current = true;
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Impossible de charger le studio Images.');
       setErrorContext('load');
