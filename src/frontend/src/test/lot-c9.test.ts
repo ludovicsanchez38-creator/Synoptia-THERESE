@@ -23,6 +23,8 @@ describe('lot c9 - gardes de source', () => {
     expect(filet).toMatch(/__thereseMonte/);
     expect(filet).toMatch(/location\.reload\(\)/);
     expect(filet).toMatch(/-webkit-app-region:no-drag/);
-    expect(lire('main.tsx')).toMatch(/__thereseMonte = true/);
+    // B-821 : posé au montage réel (App), pas avant createRoot.
+    expect(lire('App.tsx')).toMatch(/useEffect\(\(\) => \{\n\s+\(window as unknown as \{ __thereseMonte\?: boolean \}\)\.__thereseMonte = true;/);
+    expect(lire('main.tsx')).not.toMatch(/__thereseMonte/);
   });
 });

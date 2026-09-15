@@ -29,6 +29,13 @@ const IS_TAURI_PRODUCTION = '__TAURI__' in window && !import.meta.env.DEV;
 // Factures/CRM/Mémoire sont des vues/panneaux de la fenêtre principale (content-swap).
 
 function ApplicationBootstrap() {
+  // B-805 / B-821 : le filet de démarrage (public/demarrage-filet.js) attend ce
+  // drapeau ; posé ici, au montage réel, et non avant createRoot (un App qui
+  // lèverait au premier rendu laissait le drapeau vrai et le filet muet).
+  useEffect(() => {
+    (window as unknown as { __thereseMonte?: boolean }).__thereseMonte = true;
+  }, []);
+
   const [backendReady, setBackendReady] = useState(!IS_TAURI_PRODUCTION);
   const [isReady, setIsReady] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
