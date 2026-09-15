@@ -187,9 +187,17 @@ class GitService:
         """Ajoute les fichiers et crée un commit. Retourne le hash ou None."""
         if files:
             for f in files:
-                await self._run("add", f)
+                code, out, err = await self._run("add", f)
+                if code != 0:
+                    # B-852 : un chemin erroné échouait en silence, puis
+                    # « nothing to commit » faisait conclure à une mission vide.
+                    logger.error(f"git add {f} échoué : {err}")
+                    raise GitCommitEchoue(f"git n'a pas pu ajouter « {f} » : {(err or out).strip()}")
         else:
-            await self._run("add", "-A")
+            code, out, err = await self._run("add", "-A")
+            if code != 0:
+                logger.error(f"git add -A échoué : {err}")
+                raise GitCommitEchoue(f"git n'a pas pu ajouter les fichiers : {(err or out).strip()}")
 
         code, out, err = await self._run("commit", "-m", message)
         if code != 0:
@@ -250,7 +258,13 @@ class GitService:
         return out if code == 0 else ""
 
     async def merge(self, branch: str, into: str = "main") -> bool:
-        """Merge une branche dans la branche cible."""
+        """Merge une branche dans la branche cible.
+
+        En cas d'échec, l'arbre de travail revient sur la branche de départ
+        (B-853) : après l'abort, l'appelant se croyait encore sur sa branche
+        d'agent alors qu'il était resté sur la cible.
+        """
+        depart = await self.current_branch()
         # Checkout la branche cible
         if not await self.checkout(into):
             return False
@@ -259,6 +273,8 @@ class GitService:
         if code != 0:
             logger.error(f"Merge {branch} → {into} échoué : {err}")
             await self._run("merge", "--abort")
+            if depart and depart != into:
+                await self.checkout(depart)
             return False
         return True
 
