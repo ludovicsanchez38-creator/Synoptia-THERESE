@@ -65,6 +65,10 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
 
   // Cache-first : si le store a déjà des données (localStorage), pas de spinner
   const hasCachedAccounts = accounts.length > 0 && !!currentAccountId;
+  // B-784 : la sonde de réautorisation lit le compte COURANT à chaque tick, pas
+  // celui capturé au démarrage (l'utilisateur peut changer de compte pendant les 5 min).
+  const compteCourantRef = useRef(currentAccountId);
+  compteCourantRef.current = currentAccountId;
   const [loading, setLoading] = useState(!hasCachedAccounts);
   const [error, setError] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
@@ -211,7 +215,9 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
         }
         try {
           // Tester si les labels se chargent (= token valide)
-          await api.listEmailLabels(currentAccountId);
+          const compte = compteCourantRef.current;
+          if (!compte) return;
+          await api.listEmailLabels(compte);
           if (pollRef.current) clearInterval(pollRef.current);
           setNeedsReauth(false);
           setReauthing(false);
