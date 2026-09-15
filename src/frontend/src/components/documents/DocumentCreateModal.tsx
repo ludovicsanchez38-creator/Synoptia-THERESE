@@ -49,6 +49,8 @@ export function DocumentCreateModal({ isOpen, onClose, onCreated }: DocumentCrea
   // Échap reste géré par la pile unifiée (cascade Échap de la coque / escapeStack du parent).
   const dialogRef = useRef<HTMLDivElement>(null);
   useDialogFocusTrap(dialogRef, { active: isOpen });
+  const ouverteRef = useRef(isOpen);
+  ouverteRef.current = isOpen;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -97,6 +99,9 @@ export function DocumentCreateModal({ isOpen, onClose, onCreated }: DocumentCrea
 
     setSaving(false);
 
+    // B-765 : si la modale a été fermée pendant l'appel (Échap de la coque),
+    // la réponse tardive n'ouvre pas l'atelier dans le dos de l'utilisateur.
+    if (!ouverteRef.current) return;
     if (created) {
       onCreated?.(created.id);
       onClose();
@@ -117,7 +122,7 @@ export function DocumentCreateModal({ isOpen, onClose, onCreated }: DocumentCrea
             exit="exit"
             transition={{ duration: 0.2 }}
             className={`fixed inset-0 bg-text/35 backdrop-blur-sm ${Z_LAYER.MODAL}`}
-            onClick={onClose}
+            onClick={saving ? undefined : onClose}
           />
 
           {/* Modal */}
@@ -143,7 +148,7 @@ export function DocumentCreateModal({ isOpen, onClose, onCreated }: DocumentCrea
                   <p className="text-sm text-text-muted">Proposition, dossier ou rapport structuré</p>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" onClick={onClose} aria-label="Fermer">
+              <Button variant="ghost" size="icon" onClick={onClose} aria-label="Fermer" disabled={saving}>
                 <X className="w-5 h-5" />
               </Button>
             </div>
@@ -206,7 +211,7 @@ export function DocumentCreateModal({ isOpen, onClose, onCreated }: DocumentCrea
 
             {/* Footer */}
             <div className="flex flex-wrap items-center justify-end gap-3 px-6 py-4 border-t border-border/50 shrink-0 max-[840px]:justify-stretch [&>button]:max-[840px]:flex-1">
-              <Button variant="ghost" onClick={onClose}>
+              <Button variant="ghost" onClick={onClose} disabled={saving}>
                 Annuler
               </Button>
               <Button variant="primary" onClick={handleSubmit} disabled={saving}>
