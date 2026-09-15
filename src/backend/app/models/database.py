@@ -4,6 +4,7 @@ THÉRÈSE v2 - Database Connection
 SQLite database setup with SQLModel.
 """
 
+import asyncio
 import logging
 import sqlite3
 from pathlib import Path
@@ -1169,13 +1170,18 @@ async def get_session() -> AsyncGenerator[AsyncSession, None]:
     if AsyncSessionLocal is None:
         raise RuntimeError("Database not initialized. Call init_db() first.")
 
-    async with AsyncSessionLocal() as session:
-        try:
-            yield session
-            await session.commit()
-        except Exception:
-            await session.rollback()
-            raise
+    session = AsyncSessionLocal()
+    try:
+        yield session
+        await session.commit()
+    except Exception:
+        await session.rollback()
+        raise
+    finally:
+        # B-806 : quand le client abandonne un flux, la tâche est annulée et
+        # `await session.close()` était interrompu : la connexion aiosqlite
+        # n'était jamais rendue au pool. Le shield laisse la fermeture aboutir.
+        await asyncio.shield(session.close())
 
 
 def get_sync_session() -> Session:
@@ -1210,10 +1216,12 @@ async def get_session_context():
     if AsyncSessionLocal is None:
         raise RuntimeError("Database not initialized. Call init_db() first.")
 
-    async with AsyncSessionLocal() as session:
-        try:
-            yield session
-            await session.commit()
-        except Exception:
-            await session.rollback()
-            raise
+    session = AsyncSessionLocal()
+    try:
+        yield session
+        await session.commit()
+    except Exception:
+        await session.rollback()
+        raise
+    finally:
+        await asyncio.shield(session.close())  # B-806
