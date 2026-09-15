@@ -69,6 +69,10 @@ export function WorkingDirStep({ onNext, onBack }: WorkingDirStepProps) {
     try {
       const result = await api.setWorkingDirectory(selected);
       setWorkingDir(result.path);
+      // B-771 : un dossier retenu par le serveur existe ; l'avertissement
+      // « configuré mais introuvable » de l'ancien chemin n'a plus lieu d'être.
+      setDossierDisparu(false);
+      setLectureImpossible(false);
     } catch (err) {
       // Le serveur refuse en anglais (« Path does not exist ») : c'est un
       // message de journal, pas un message d'écran.
