@@ -155,7 +155,9 @@ async def auto_purge_expired_contacts() -> dict[str, int]:
                         Notification.created_at > now - timedelta(days=7),
                     )
                 )
-                if existing.scalar_one_or_none():
+                # B-878 : deux notifications pour le même contact faisaient
+                # lever MultipleResultsFound et avortaient toute la campagne.
+                if existing.scalars().first():
                     continue
 
                 purge_date = contact.last_interaction or contact.updated_at or contact.created_at
@@ -187,10 +189,8 @@ async def auto_purge_expired_contacts() -> dict[str, int]:
                         Notification.action_url == f"/crm/contacts/{contact.id}",
                     )
                 )
-                if existing.scalar_one_or_none():
+                if existing.scalars().first():
                     continue
-
-                display_name = contact.display_name
 
                 # Anonymiser
                 contact.first_name = "[ANONYMISÉ]"
@@ -200,6 +200,7 @@ async def auto_purge_expired_contacts() -> dict[str, int]:
                 contact.notes = None
                 contact.tags = None
                 contact.company = "[ANONYMISÉ]"
+                contact.address = None  # B-880 : l'adresse postale restait en clair
                 contact.stage = "archive"
                 contact.extra_data = None
                 contact.updated_at = now
@@ -225,7 +226,9 @@ async def auto_purge_expired_contacts() -> dict[str, int]:
                 # Notification
                 notif = Notification(
                     title="Contact anonymisé (RGPD)",
-                    message=f"{display_name} a été anonymisé automatiquement (inactif depuis {retention_months} mois)",
+                    # B-880 : la notification survit à l'effacement, elle ne
+                    # porte donc plus le nom de la personne.
+                    message=f"Un contact a été anonymisé automatiquement (inactif depuis {retention_months} mois)",
                     type="info",
                     source="rgpd_purge_done",
                     action_url=f"/crm/contacts/{contact.id}",
