@@ -98,7 +98,10 @@ export function TraitementsPanel() {
                 )}
               </div>
               <p className="mt-1 text-xs text-text-muted">
-                {arretDemande && t.state !== 'cancelled'
+                {/* B-764 : un traitement terminé, en échec ou interrompu après une
+                    demande d'arrêt se dit tel quel ; « Arrêt demandé » ne vaut que
+                    tant qu'il tourne encore. */}
+                {arretDemande && (enCours || t.state === 'cancel_requested')
                   ? LIBELLES_ETAT.cancel_requested
                   : LIBELLES_ETAT[t.state]}
                 {t.step ? ` - ${t.step}` : ''}
