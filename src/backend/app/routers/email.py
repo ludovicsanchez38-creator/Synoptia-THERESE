@@ -1316,7 +1316,18 @@ async def send_email(
             bcc=request.bcc or [],
             is_html=is_html,
         )
-        message_id = await provider.send_message(send_req)
+        # B-819 : comme les branches IMAP, une panne SMTP se dit en 502 nommé,
+        # le détail technique reste au journal.
+        try:
+            message_id = await provider.send_message(send_req)
+        except HTTPException:
+            raise
+        except Exception as e:
+            logger.error(f"SMTP send_message failed for {account.email}: {e}")
+            raise HTTPException(
+                status_code=502,
+                detail=message_pour_ecran(e, ou="avec le serveur SMTP"),
+            )
         return {"id": message_id, "labelIds": ["SENT"]}
     else:
         gmail = await get_gmail_service_for_account(account_id, session)
