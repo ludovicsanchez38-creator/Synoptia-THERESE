@@ -252,6 +252,13 @@ export function AgentSession({ profileId, model, onBack }: Props) {
   const [isStreaming, setIsStreaming] = useState(false);
   const [inputValue, setInputValue] = useState("");
   const [activeModel, setActiveModel] = useState<string>(model || profile?.default_model || "");
+  // B-777 : le modèle initial venait de la table locale, avant l'arrivée du profil
+  // serveur ; il suit le serveur tant que ni l'appelant ni le flux ne l'ont fixé.
+  const modeleFixeParLeFlux = useRef(false);
+  useEffect(() => {
+    if (model || modeleFixeParLeFlux.current) return;
+    if (serverProfile?.default_model) setActiveModel(serverProfile.default_model);
+  }, [serverProfile, model]);
   const [needsInitialPrompt, setNeedsInitialPrompt] = useState(true);
   const [pendingInstruction, setPendingInstruction] = useState<string | null>(null);
 
@@ -336,6 +343,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
     switch (chunk.type) {
       case "agent_start":
         if (chunk.model) {
+          modeleFixeParLeFlux.current = true;
           setActiveModel(chunk.model);
         }
         break;
@@ -593,7 +601,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
           <div className="rounded-md border border-warning/30 bg-[var(--color-warning-tint)] p-3 text-sm text-text">
             <div className="font-semibold">Confirmer l&apos;appel de cet agent expérimental</div>
             <p className="mt-1 leading-relaxed text-text-muted">
-              Modèle : {activeModel || "non identifié"}. Outils déclarés : {profile?.tools.join(", ") || "aucun"}.
+              Modèle : {activeModel || "non identifié"}. Outils déclarés : {serverProfile ? (serverProfile.tools.join(", ") || "aucun") : "non confirmés par le serveur"}.
               Les extraits utiles et ta demande peuvent être transmis au fournisseur du modèle.
               Cet échange n&apos;est pas conservé après fermeture.
             </p>
