@@ -1,10 +1,10 @@
 # Protocole de test - Persona A1 : Sophie Martin, graphiste freelance
 
-> **Correction du 01/09/2026, sélecteurs d'onglets.** Ce protocole visait
-> `settings-tab-ai` et `settings-tab-privacy`, deux onglets qui n'existent pas :
-> les onglets réels sont `ai` (fournisseurs et clés) et `privacy`
-> (confidentialité, où vit l'export RGPD). Les étapes concernées ne pouvaient
-> donc rien trouver, et un pas qui ne trouve rien ne prouve rien.
+> **Correction du 01/09/2026, revue le 16/09/2026 (relecteurs U1/U3, cycle 9).**
+> Les onglets de la fenêtre Paramètres n'ont pas de `data-testid` : ils portent
+> l'identifiant `settings-tab-<id>` (`#settings-tab-ai`, `#settings-tab-privacy`).
+> Les étapes 14 et 48 visent ces identifiants. Le bouton Board du header a été
+> démonté (B-327) : l'étape 44 ouvre le Board par `?panel=board`, comme A3.
 
 > **Réécriture du 07/09/2026 (B-327).** Les étapes 13, 21 à 23 et 48 pilotaient
 > l'application par `button[aria-label="Paramètres"]` et les `sidebar-*` : deux surfaces que la
@@ -301,8 +301,8 @@ mkdir -p /tmp/therese-tests
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `find` -> `[data-testid="settings-tab-ai"]`
-2. `click` -> `[data-testid="settings-tab-ai"]`
+1. `find` -> `#settings-tab-ai`
+2. `click` -> `#settings-tab-ai`
 3. `wait_for` -> contenu de l'onglet LLM visible (max 2s)
 4. `screenshot` -> `/tmp/therese-tests/A1-14_settings_llm_tab.png`
 
@@ -927,11 +927,8 @@ mkdir -p /tmp/therese-tests
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `navigate` -> `http://localhost:1420`
-2. `wait_for` -> page principale chargée (max 5s)
-3. `find` -> bouton Board dans le header (icône Gavel ou texte "Board")
-4. `click` -> bouton Board
-5. `wait_for` -> `[data-testid="board-panel"]` visible (max 5s)
+1. `navigate` -> `http://localhost:1420/?panel=board`
+2. `wait_for` -> `[data-testid="board-panel"]` visible (max 5s)
 6. `screenshot` -> `/tmp/therese-tests/A1-44_board_panel.png`
 
 **Résultat attendu** : Le panneau Board IA s'ouvre. L'interface affiche un champ de saisie pour poser une question aux conseillers IA. Le mode de délibération est sélectionnable (rapide, approfondi, etc.). Les 5 conseillers sont présentés ou décrits. L'ambiance est "conseil d'administration privé".
@@ -1018,9 +1015,9 @@ mkdir -p /tmp/therese-tests
 **Actions Chrome MCP** :
 1. `javascript_tool` -> `window.__therese.runAction('settings.open')`
 2. `wait_for` -> `[data-testid="settings-modal"]` visible (max 3s)
-3. `find` -> `[data-testid="settings-tab-privacy"]`
-4. `find` -> `[data-testid="settings-tab-privacy"]`
-5. `click` -> `[data-testid="settings-tab-privacy"]`
+3. `find` -> `#settings-tab-privacy`
+4. `find` -> `#settings-tab-privacy`
+5. `click` -> `#settings-tab-privacy`
 6. `wait_for` -> contenu onglet Data visible (max 2s)
 7. `screenshot` -> `/tmp/therese-tests/A1-48_settings_data_tab.png`
 8. `find` -> bouton "Exporter" ou "Export RGPD" ou "Télécharger mes données"
