@@ -72,9 +72,11 @@ export function EventForm() {
       } else {
         const start = new Date(event.start_datetime!);
         const end = new Date(event.end_datetime!);
-        setStartDate(start.toISOString().split('T')[0]);
+        // B-901 : `toISOString()` rend la date UTC alors que l'heure est
+        // locale : un rendez-vous à 00:30 s'ouvrait à la date de la veille.
+        setStartDate(localDateKey(start));
         setStartTime(start.toTimeString().slice(0, 5));
-        setEndDate(end.toISOString().split('T')[0]);
+        setEndDate(localDateKey(end));
         setEndTime(end.toTimeString().slice(0, 5));
       }
 
