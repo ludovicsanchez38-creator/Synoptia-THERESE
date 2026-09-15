@@ -17,6 +17,7 @@ Design V2.1 challengé deux fois. Les règles qui ne se devinent pas :
   directe, SSE paresseux, tâche de fond) n'ont ni la même session, ni le
   même sens de `CancelledError`.
 """
+import asyncio
 import logging
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -157,7 +158,11 @@ class TraitementHandle:
         sans masquer le fait que la ligne n'a pas été fermée).
         """
         assert etat in EtatTache.terminaux(), etat
-        await self._ecrire_etat_terminal(etat, error=error)
+        # B-811 : appelé dans le `finally` d'un flux annulé (« Arrêter la
+        # réponse »), l'écriture était elle-même interrompue par CancelledError
+        # et la tâche restait « cancel_requested » pour toujours. Le shield
+        # laisse l'écriture aboutir, quoi qu'il arrive à la tâche appelante.
+        await asyncio.shield(self._ecrire_etat_terminal(etat, error=error))
 
 
 async def creer_traitement(
