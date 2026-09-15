@@ -215,6 +215,10 @@ interface SortableContactCardProps {
 }
 
 function SortableContactCard({ contact, onClick }: SortableContactCardProps) {
+  const { maskText: masquer } = useDemoMask();
+  // B-877 : le conteneur triable garde pour nom le seul nom du contact ; sans
+  // cela, le bouton « Ouvrir la fiche » entrerait dans son nom calculé.
+  const nomAccessible = masquer([contact.first_name, contact.last_name].filter(Boolean).join(' ') || 'Contact');
   const {
     attributes,
     listeners,
@@ -237,6 +241,7 @@ function SortableContactCard({ contact, onClick }: SortableContactCardProps) {
       style={style}
       {...attributes}
       {...listeners}
+      aria-label={nomAccessible}
     >
       <ContactCard
         contact={contact}
@@ -289,6 +294,21 @@ function ContactCard({ contact, onClick, isOverlay }: ContactCardProps) {
 
       {contact.email && (
         <p className="text-sm text-text-muted truncate">{masquer(contact.email)}</p>
+      )}
+
+      {/* B-877 : un vrai bouton pour ouvrir la fiche au clavier ; le conteneur
+          dnd-kit réserve Entrée et Espace au glisser, d'où l'arrêt de la
+          propagation. Pas sur la carte de survol du drag. */}
+      {!isOverlay && (
+        <button
+          type="button"
+          onClick={(e) => { e.stopPropagation(); onClick(); }}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); }}
+          onPointerDown={(e) => e.stopPropagation()}
+          className="mt-2 inline-flex min-h-6 items-center rounded-sm border border-border px-2 text-sm text-text-muted hover:text-text focus-visible:outline-2 focus-visible:outline-accent"
+        >
+          Ouvrir la fiche
+        </button>
       )}
 
       <div className="flex flex-wrap gap-2 items-center text-sm text-text-muted mt-2">
