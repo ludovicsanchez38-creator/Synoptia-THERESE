@@ -7,6 +7,7 @@ SQLite database setup with SQLModel.
 import asyncio
 import logging
 import sqlite3
+from contextlib import closing
 from pathlib import Path
 from typing import Any, AsyncGenerator
 
@@ -73,8 +74,10 @@ def ensure_invoice_legacy_columns(
     target_columns = columns or tuple(INVOICE_LEGACY_COLUMN_DEFINITIONS.keys())
     added_columns: list[str] = []
 
-    # US-014 : db_connect pose la clé SQLCipher si la base est chiffrée
-    with db_connect(db_path) as conn:
+    # US-014 : db_connect pose la clé SQLCipher si la base est chiffrée.
+    # B-840 : `with conn` ne ferme pas une connexion sqlite3, il gère la
+    # transaction ; `closing()` comme les deux autres appelants.
+    with closing(db_connect(db_path)) as conn:
         cursor = conn.execute("PRAGMA table_info(invoices)")
         existing_columns = {row[1] for row in cursor.fetchall()}
         if not existing_columns:
