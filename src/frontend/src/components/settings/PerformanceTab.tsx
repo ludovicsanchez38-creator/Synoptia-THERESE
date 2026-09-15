@@ -174,12 +174,16 @@ export function PerformanceTab() {
         <div className="space-y-3 pt-4 border-t border-border/30">
           <div className="flex items-center justify-between">
             <div>
-              <h4 className="text-sm font-medium text-text">Mode économie d'énergie</h4>
+              <h4 id="mode-economie-energie" className="text-sm font-medium text-text">Mode économie d'énergie</h4>
               <p className="text-xs text-text-muted">
                 Réduit les vérifications et animations pour économiser la batterie
               </p>
             </div>
             <button
+              type="button"
+              role="switch"
+              aria-checked={status.power.battery_saver_mode}
+              aria-labelledby="mode-economie-energie"
               onClick={handleToggleBatterySaver}
               className={`relative w-11 h-6 rounded-full transition-colors ${
                 status.power.battery_saver_mode ? 'bg-accent' : 'bg-border'
