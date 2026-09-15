@@ -4,8 +4,9 @@
  * Génère dynamiquement un formulaire basé sur le schéma d'un skill.
  */
 
+import { open } from '@tauri-apps/plugin-dialog';
 import { motion } from 'framer-motion';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, FolderOpen } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { Button } from '../ui/Button';
@@ -129,6 +130,40 @@ export function DynamicSkillForm({
                   placeholder={field.placeholder}
                   disabled={isSubmitting}
                 />
+              )}
+
+              {/* B-762 : un champ « file » n'avait aucun rendu, « Générer » restait
+                  désactivé pour analyze-xlsx et analyze-pdf. Chemin saisi ou
+                  choisi par le sélecteur natif ; hors Tauri, la saisie reste possible. */}
+              {field.type === 'file' && (
+                <div className="flex flex-wrap gap-2">
+                  <Input
+                    id={`field-${key}`}
+                    type="text"
+                    className="min-w-0 flex-1"
+                    value={inputs[key] || ''}
+                    onChange={(e) => setInputs({ ...inputs, [key]: e.target.value })}
+                    placeholder={field.placeholder || 'Chemin du fichier'}
+                    disabled={isSubmitting}
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    disabled={isSubmitting}
+                    onClick={async () => {
+                      try {
+                        const choisi = await open({ multiple: false, directory: false });
+                        if (typeof choisi === 'string' && choisi) setInputs((prev) => ({ ...prev, [key]: choisi }));
+                      } catch (err) {
+                        // Pont natif absent (navigateur) : la saisie manuelle reste ouverte.
+                        console.warn('Sélecteur de fichier indisponible :', err);
+                      }
+                    }}
+                  >
+                    <FolderOpen className="mr-1 h-4 w-4" />
+                    Parcourir
+                  </Button>
+                </div>
               )}
 
               {/* Textarea */}
