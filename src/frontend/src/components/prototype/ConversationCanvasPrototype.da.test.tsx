@@ -115,7 +115,8 @@ describe('La coque prend la forme de la DA', () => {
     expect(etat.className).toMatch(/\bmin-w-0\b/);
     expect(etat.className).toMatch(/\boverflow-hidden\b/);
     const rechercher = screen.getByText('Rechercher', { selector: 'span' });
-    expect(rechercher.className).toMatch(/max-\[840px\]:hidden/);
+    // B-761 (cycle 9) : le mot se replie visuellement mais reste dans le nom accessible.
+    expect(rechercher.className).toMatch(/max-\[840px\]:sr-only/);
   });
 
   it('la colonne et le composeur partagent la largeur de 56 rem', () => {

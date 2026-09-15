@@ -655,8 +655,7 @@ function CommandPalette({
                   <span className="min-w-0 flex-1"><span className="block text-sm font-semibold text-text">{action.label}</span><span className="block truncate text-xs text-text-muted">{action.description}</span></span>
                   {/* B-229 : le registre stocke la lettre SEULE ('I', '⇧C', ','),
                       qui ne déclenche rien sans modificateur (useKeyboardShortcuts
-                      sort par `if (!modKey) return`). On préfixe au RENDU, comme
-                      components/chat/CommandPalette.tsx, plutôt que dans le
+                      sort par `if (!modKey) return`). On préfixe au RENDU, plutôt que dans le
                       registre : ShortcutsModal y compose sa propre forme. */}
                   {action.shortcut && <kbd className="rounded-sm bg-bg px-1.5 py-0.5 text-xs text-text-muted">{`${isMac ? '⌘' : 'Ctrl+'}${action.shortcut}`}</kbd>}
                 </button>;
@@ -1585,7 +1584,9 @@ export function ConversationCanvasPrototype() {
               className="hidden h-9 items-center gap-2 rounded-full border border-border bg-surface px-3 text-sm text-text-muted hover:bg-surface-2 md:flex"
             >
               <Search className="h-3.5 w-3.5" />
-              <span className="max-[840px]:hidden">Rechercher</span>
+              {/* B-761 : sous 840 px le mot reste dans le nom accessible (sr-only),
+                  au lieu de disparaître du DOM et de laisser un bouton nommé « ⌘K ». */}
+              <span className="max-[840px]:sr-only">Rechercher</span>
               <kbd className="rounded-sm bg-bg px-1.5 py-0.5 text-xs text-text-muted">{isMacPlatform() ? '⌘K' : 'Ctrl+K'}</kbd>
             </button>
             <TraitementsIndicator />
