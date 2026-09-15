@@ -186,7 +186,10 @@ export function DynamicSkillForm({
                   value={inputs[key] || field.default || ''}
                   onChange={(e) => setInputs({ ...inputs, [key]: e.target.value })}
                   disabled={isSubmitting}
-                  placeholder={!field.required ? '-- Choisir --' : undefined}
+                  // B-856 : sans cette ligne, un select obligatoire sans valeur
+                  // par défaut affichait sa première option alors que la valeur
+                  // restait vide : « Générer » grisé sans choix apparent à faire.
+                  placeholder="-- Choisir --"
                   options={(field.options || []).map((opt) => ({ value: opt, label: opt }))}
                 />
               )}
