@@ -1809,6 +1809,20 @@ async def classify_email(
     }
 
 
+
+def ligne_de_contexte_du_fil(tm: Any) -> list[str]:
+    """Trois lignes de contexte pour un message du fil (date/expéditeur, sujet, extrait).
+
+    B-799 : `tm.snippet or tm.body_plain[:200]` levait TypeError sur un corps texte
+    absent, et l'exception avalée faisait perdre tout le contexte du fil.
+    """
+    extrait = tm.snippet or (tm.body_plain or "")[:200]
+    return [
+        f"[{tm.date.strftime('%Y-%m-%d %H:%M')}] De: {tm.from_name or tm.from_email}",
+        f"Sujet: {tm.subject}",
+        f"{extrait}",
+    ]
+
 @router.post("/messages/{message_id}/generate-response")
 async def generate_email_response(
     message_id: str,
@@ -1862,9 +1876,7 @@ async def generate_email_response(
         if thread_messages:
             thread_lines = []
             for tm in thread_messages:
-                thread_lines.append(f"[{tm.date.strftime('%Y-%m-%d %H:%M')}] De: {tm.from_name or tm.from_email}")
-                thread_lines.append(f"Sujet: {tm.subject}")
-                thread_lines.append(f"{tm.snippet or tm.body_plain[:200]}")
+                thread_lines.extend(ligne_de_contexte_du_fil(tm))
                 thread_lines.append("---")
             thread_context = "\n".join(thread_lines)
     except Exception as e:
