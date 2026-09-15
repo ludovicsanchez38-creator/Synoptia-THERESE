@@ -330,8 +330,9 @@ NE génère PAS de code Python. Écris directement les tableaux de données.
         left_align = Alignment(horizontal='left', vertical='center')
 
         # Titre du document (ligne 1)
+        # B-825 : sans en-tête, len([]) donnait end_column=0 (fusion invalide).
         ws.merge_cells(start_row=1, start_column=1,
-                      end_row=1, end_column=len(data.get("headers", ["A"])))
+                      end_row=1, end_column=max(1, len(data.get("headers") or [])))
         title_cell = ws.cell(row=1, column=1)
         title_cell.value = data.get("title", title)
         title_cell.font = Font(name="Outfit", size=16, bold=True,
