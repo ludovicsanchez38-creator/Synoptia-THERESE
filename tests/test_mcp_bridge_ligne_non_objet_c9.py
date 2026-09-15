@@ -16,3 +16,13 @@ def test_un_objet_json_rpc_est_accepte() -> None:
     assert decoder_requete('{"jsonrpc": "2.0", "id": 1, "method": "initialize"}') == {
         "jsonrpc": "2.0", "id": 1, "method": "initialize",
     }
+
+
+@pytest.mark.asyncio
+async def test_params_null_ne_leve_pas() -> None:
+    """B-837 (cycle 9) : `"params": null` rendait None, et `.get` levait hors du try."""
+    from app.services.mcp_therese_server import handle_request
+
+    reponse = await handle_request({"jsonrpc": "2.0", "id": 7, "method": "tools/call", "params": None})
+    assert isinstance(reponse, dict)
+    assert reponse.get("id") == 7

@@ -424,7 +424,8 @@ async def handle_request(request: dict[str, Any]) -> dict[str, Any]:
     """
     method = request.get("method", "")
     req_id = request.get("id")
-    params = request.get("params", {})
+    # B-837 : `"params": null` est un JSON-RPC valide ; None doit valoir « aucun paramètre ».
+    params = request.get("params") or {}
 
     if method == "initialize":
         return {
