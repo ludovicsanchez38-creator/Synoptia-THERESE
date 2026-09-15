@@ -22,4 +22,8 @@ describe('Panneaux guidés - B-776, valeur hors catalogue sans plantage', () => 
     ).not.toThrow();
     expect(screen.getByText(/dalle-9/)).toBeInTheDocument();
   });
+
+  it('SkillExecutionPanel : un format absent au repos ne casse pas le libellé (B-828)', () => {
+    expect(() => render(<SkillExecutionPanel skillId="x" format={undefined as never} status="idle" onClose={vi.fn()} />)).not.toThrow();
+  });
 });

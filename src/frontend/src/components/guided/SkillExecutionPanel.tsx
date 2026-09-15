@@ -199,7 +199,7 @@ export function SkillExecutionPanel({
             {status === 'generating' && 'THÉRÈSE prépare ton document'}
             {status === 'success' && config.description}
             {status === 'error' && (error || 'Une erreur est survenue')}
-            {status === 'idle' && `Créer un fichier ${format.toUpperCase()}`}
+            {status === 'idle' && `Créer un fichier ${String(format ?? '').toUpperCase()}`}
           </p>
         </div>
 
