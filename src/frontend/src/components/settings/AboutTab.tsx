@@ -108,8 +108,10 @@ export function AboutTab() {
 
   function openReleasePage() {
     // Utiliser le shell Tauri pour ouvrir dans le navigateur
+    // B-763 : return open(...) - sans lui, le rejet d'open() hors Tauri n'atteignait
+    // jamais le catch et le repli window.open ne tournait pas (cf. openDownload).
     import('@tauri-apps/plugin-shell').then(({ open }) => {
-      open(latestRelease?.html_url || RELEASES_URL);
+      return open(latestRelease?.html_url || RELEASES_URL);
     }).catch(() => {
       window.open(latestRelease?.html_url || RELEASES_URL, '_blank');
     });
