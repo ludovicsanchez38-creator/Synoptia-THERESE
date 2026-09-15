@@ -99,6 +99,7 @@ export function EmailList({ accountId }: EmailListProps) {
     }
     setError(null);
 
+    let repriseProgrammee = false;
     try {
       const labelIds = currentLabelId ? [currentLabelId] : undefined;
       const result = await api.listEmailMessages(accountId, {
@@ -167,6 +168,9 @@ export function EmailList({ accountId }: EmailListProps) {
         const delay = retryCountRef.current * 1500; // 1.5s, 3s, 4.5s
         console.log(`[Email] Retry ${retryCountRef.current}/3 dans ${delay}ms...`);
         isLoadingRef.current = false;
+        // B-826 : une tentative est programmée, l'état de chargement tient
+        // jusqu'à elle ; sinon « Aucun message » s'affichait entre deux essais.
+        repriseProgrammee = true;
         retryTimerRef.current = setTimeout(() => {
           retryTimerRef.current = null;
           if (!controller.signal.aborted) void loadMessages();
@@ -195,7 +199,7 @@ export function EmailList({ accountId }: EmailListProps) {
         }
       }
     } finally {
-      if (!controller.signal.aborted) {
+      if (!controller.signal.aborted && !repriseProgrammee) {
         setLoading(false);
         setRefreshing(false);
       }
