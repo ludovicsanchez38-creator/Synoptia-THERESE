@@ -15,4 +15,14 @@ describe('lot c9 - gardes de source', () => {
     expect(reset, 'effet de réinitialisation à l’ouverture introuvable').not.toBeNull();
     expect(reset![1]).toMatch(/setServiceIaConserve\(null\)/);
   });
+
+  it('B-805 : un filet hors bundle offre une issue si React ne monte jamais', () => {
+    const index = readFileSync(resolve(__dirname, '..', '..', 'index.html'), 'utf8');
+    expect(index).toMatch(/<script src="\/demarrage-filet\.js"><\/script>/);
+    const filet = readFileSync(resolve(__dirname, '..', '..', 'public', 'demarrage-filet.js'), 'utf8');
+    expect(filet).toMatch(/__thereseMonte/);
+    expect(filet).toMatch(/location\.reload\(\)/);
+    expect(filet).toMatch(/-webkit-app-region:no-drag/);
+    expect(lire('main.tsx')).toMatch(/__thereseMonte = true/);
+  });
 });

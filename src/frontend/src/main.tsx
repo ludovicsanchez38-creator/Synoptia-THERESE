@@ -16,6 +16,8 @@ import '@fontsource/jetbrains-mono/latin-400.css';
 import '@fontsource/jetbrains-mono/latin-500.css';
 import './styles/globals.css';
 
+// B-805 : signale au filet de démarrage (public/demarrage-filet.js) que le bundle a monté.
+(window as unknown as { __thereseMonte?: boolean }).__thereseMonte = true;
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
