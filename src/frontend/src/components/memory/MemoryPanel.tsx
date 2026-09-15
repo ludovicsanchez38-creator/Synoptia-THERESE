@@ -108,7 +108,8 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
   // le serveur ; quand la liste est tronquée, le périmètre se demande au serveur.
   const [contactsDuPerimetre, setContactsDuPerimetre] = useState<api.Contact[] | null>(null);
   useEffect(() => {
-    if (!isOpen || scopeFilter === 'all' || !contactsTronques) {
+    // (relecture S4) la vue plein écran passe par effectiveOpen, pas isOpen.
+    if (!effectiveOpen || scopeFilter === 'all' || !contactsTronques) {
       setContactsDuPerimetre(null);
       return;
     }
@@ -117,7 +118,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
       .then((liste) => { if (!annule) setContactsDuPerimetre(liste); })
       .catch(() => { if (!annule) setContactsDuPerimetre(null); });
     return () => { annule = true; };
-  }, [isOpen, scopeFilter, contactsTronques]);
+  }, [effectiveOpen, scopeFilter, contactsTronques]);
 
   // E3-06: Delete state
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'contact'; id: string; name: string } | null>(null);

@@ -44,4 +44,12 @@ describe('MemoryPanel - B-780, périmètre demandé au serveur quand la liste es
     expect(await screen.findByText(/Zoé Projet/)).toBeInTheDocument();
     expect(screen.queryByText(/Contact 0/)).toBeNull();
   });
+
+  it('en vue plein écran (standalone, isOpen absent), le périmètre se demande aussi au serveur', async () => {
+    render(<MemoryPanel standalone onClose={vi.fn()} />);
+    await screen.findByText(/Contact 0/);
+    fireEvent.click(screen.getByRole('button', { name: 'Projet' }));
+    await waitFor(() => expect(mockListContactsWithScope).toHaveBeenCalledWith(0, PLAFOND_CONTACTS, 'project'));
+    expect(await screen.findByText(/Zoé Projet/)).toBeInTheDocument();
+  });
 });
