@@ -20,6 +20,8 @@ Convention : un test par bug, nommé test_BUGXXX_description.
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
+import os
+
 import pytest
 
 # Chemins sources
@@ -79,9 +81,12 @@ class TestBUG110_UpdateBloquee:
                 # Si installMode est défini, il ne doit pas être "quiet"
                 assert windows_config["installMode"] != "quiet", \
                     "installMode 'quiet' peut échouer silencieusement - utiliser 'passive' ou 'basicUi'"
+    @pytest.mark.skipif(
+        not os.environ.get("THERESE_TESTS_RESEAU"),
+        reason="Test réseau : poser THERESE_TESTS_RESEAU=1 pour l'exécuter (B-782 : un skip inconditionnel laissait soixante lignes mortes)",
+    )
     def test_updater_endpoint_availability(self):
         """Test que l'endpoint de mise à jour est accessible et retourne du JSON valide"""
-        pytest.skip("Test réseau désactivé - nécessite connectivité internet")
         import json
 
         import requests
@@ -629,7 +634,7 @@ class TestBUGOpenRouter403MessageErreur:
                     events.append(event)
                 return events
 
-        events = asyncio.new_event_loop().run_until_complete(run())
+        events = asyncio.run(run())
         assert events, "Aucun événement reçu"
         err_event = events[0]
         assert err_event.type == "error"
@@ -661,7 +666,7 @@ class TestBUGOpenRouter403MessageErreur:
                     events.append(event)
                 return events
 
-        events = asyncio.new_event_loop().run_until_complete(run())
+        events = asyncio.run(run())
         err_event = events[0]
         assert err_event.type == "error"
         assert "403" in (err_event.content or "") or "crédit" in (err_event.content or "").lower()
@@ -686,7 +691,7 @@ class TestBUGOpenRouter403MessageErreur:
                     events.append(event)
                 return events
 
-        events = asyncio.new_event_loop().run_until_complete(run())
+        events = asyncio.run(run())
         err_event = events[0]
         assert err_event.type == "error"
         assert "invalid" in (err_event.content or "").lower() or "invalide" in (err_event.content or "").lower() or "clé" in (err_event.content or "").lower()
@@ -711,7 +716,7 @@ class TestBUGOpenRouter403MessageErreur:
                     events.append(event)
                 return events
 
-        events = asyncio.new_event_loop().run_until_complete(run())
+        events = asyncio.run(run())
         assert events, "Une 429 doit produire un événement d erreur exploitable"
         err_event = events[0]
         assert err_event.type == "error"
@@ -2028,7 +2033,7 @@ class TestStreamResponseRaiseOnError:
             StreamEvent(type="error", content="boom provider"),
         )
         # Défaut raise_on_error=False : l'erreur est avalée, on garde le texte.
-        chunks = asyncio.get_event_loop().run_until_complete(self._collect(call()))
+        chunks = asyncio.run(self._collect(call()))
         assert chunks == ["bonjour"]
     def test_raise_on_error_propagates(self):
         import asyncio
@@ -2040,7 +2045,7 @@ class TestStreamResponseRaiseOnError:
             StreamEvent(type="error", content="boom provider"),
         )
         with pytest.raises(RuntimeError, match="boom provider"):
-            asyncio.get_event_loop().run_until_complete(self._collect(call(raise_on_error=True)))
+            asyncio.run(self._collect(call(raise_on_error=True)))
 
 
 class TestMCPToolCallServerId:
