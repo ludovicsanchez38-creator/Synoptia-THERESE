@@ -25,7 +25,9 @@ describe('BoardPanel - B-876, une décision de l’Historique s’ouvre au clavi
   beforeEach(() => {
     vi.clearAllMocks();
     apiMocks.listBoardDecisions.mockResolvedValue([{ id: 'd1', question: 'Passer ma société en SASU ?', recommendation: 'Oui', confidence: 'high', created_at: '2026-09-01T10:00:00Z' }]);
-    apiMocks.getBoardDecision.mockResolvedValue({ id: 'd1', question: 'Passer ma société en SASU ?', opinions: [], synthesis: { recommendation: 'Oui', confidence: 'high', reasoning: '', risks: [], next_steps: [] }, created_at: '2026-09-01T10:00:00Z' });
+    // Forme complète de BoardDecisionDetail : une synthèse sans consensus_points
+    // faisait lever SynthesisCard après la fin du test (erreur non gérée vitest).
+    apiMocks.getBoardDecision.mockResolvedValue({ id: 'd1', question: 'Passer ma société en SASU ?', opinions: [], synthesis: { consensus_points: [], divergence_points: [], recommendation: 'Oui', confidence: 'high', next_steps: [] }, created_at: '2026-09-01T10:00:00Z' });
   });
 
   it('la carte est un bouton nommé par sa question, Entrée l’ouvre', async () => {
