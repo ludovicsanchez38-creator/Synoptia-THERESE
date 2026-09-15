@@ -26,7 +26,6 @@ const COUVERTS = [
   'memory/ProjectModal.tsx',
   'crm/CRMPanel.tsx',
   'email/EmailCompose.tsx',
-  'email/EmailConnect.tsx',
   'invoices/InvoiceForm.tsx',
   'rfc/RFCCapture.tsx',
   'settings/CRMSyncPanel.tsx',

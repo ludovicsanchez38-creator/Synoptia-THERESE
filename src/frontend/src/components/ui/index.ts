@@ -19,7 +19,6 @@ export { Segments, type SegmentsProps, type OptionSegment } from './Segments';
 export { Squelette, type SqueletteProps } from './Squelette';
 export { Textarea, type TextareaProps } from './Textarea';
 export { Notifications } from './Notifications';
-export { NotificationCenter } from './NotificationCenter';
 export { GlobalErrorBoundary } from './GlobalErrorBoundary';
 export { ConnectionStatus } from './ConnectionStatus';
 export { SideToggle } from './SideToggle';

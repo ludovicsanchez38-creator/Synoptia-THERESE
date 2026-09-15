@@ -61,12 +61,9 @@ describe('lot 12 - gardes de régression', () => {
     expect(lire('hooks/useDialogFocusTrap.ts')).toMatch(/audio\[controls\][^,]*, video\[controls\]/);
   });
 
-  it("B-472 : le bouton d'action d'une notification navigue vers sa cible", () => {
-    const src = lire('components/ui/NotificationCenter.tsx');
-    expect(src).toMatch(/ouvrirLaCible\(actionUrl\)/);
-    expect(src).not.toMatch(/Navigation via action_url possible ici/);
-  });
 
+  // B-472 et B-485 (cycle 9, B-760) : le centre de notifications, monté par le seul
+  // ChatHeader que personne ne rendait, a été retiré avec ses gardes.
   it('B-473 : le bouton Rafraîchir du panneau Email signale un échec', () => {
     const src = lire('components/email/EmailPanel.tsx');
     expect(src).toMatch(/async function loadLabels\(accountId: string\): Promise<boolean>/);
@@ -85,11 +82,6 @@ describe('lot 12 - gardes de régression', () => {
     expect(src).toMatch(/file_name: maskText\(/);
   });
 
-  it('B-485 : le centre de notifications ne triple pas ses annonces', () => {
-    const src = lire('components/ui/NotificationCenter.tsx');
-    expect(src).not.toMatch(/announceToScreenReader\(/);
-    expect((src.match(/aria-live="polite"/g) ?? []).length).toBe(1);
-  });
 
   it('B-490 : le sondage OAuth du CRM est annulé au démontage et parle quand il expire', () => {
     const src = lire('components/settings/CRMSyncPanel.tsx');

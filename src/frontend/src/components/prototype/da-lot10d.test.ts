@@ -8,10 +8,8 @@ const FILES = [
   'components/prototype/ImagesWorkspaceCanvas.tsx',
   'components/prototype/CalculatorWorkspaceCanvas.tsx',
   'components/prototype/DeliverablesWorkspaceCanvas.tsx',
-  'components/chat/CommandPalette.tsx',
   'components/chat/ShortcutsModal.tsx',
   'components/traitements/TraitementsPanel.tsx',
-  'components/ui/NotificationCenter.tsx',
   'components/prompts/PromptLibrary.tsx',
   'components/prototype/CapabilityCenter.tsx',
   'components/settings/AboutTab.tsx',
@@ -42,7 +40,9 @@ describe('lot 10D DA : espaces de travail et panneaux transverses', () => {
   });
 
   it('fait reposer les cinq canevas sur les primitives partagées', () => {
-    for (const { file, source } of sources.slice(0, 5)) {
+    expect(sources.filter(({ file }) => /WorkspaceCanvas\.tsx$/.test(file))).toHaveLength(5);
+    // B-783 : les canevas se reconnaissent à leur nom, pas à leur rang dans la liste.
+    for (const { file, source } of sources.filter(({ file }) => /WorkspaceCanvas\.tsx$/.test(file))) {
       expect(source, file).toMatch(/import \{[^}]*Button[^}]*\} from '\.\.\/ui';/s);
     }
   });

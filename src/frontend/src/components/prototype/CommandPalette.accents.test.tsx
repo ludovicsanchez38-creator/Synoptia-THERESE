@@ -25,7 +25,6 @@ import { usePanelStore } from '../../stores/panelStore';
 import { usePersonalisationStore } from '../../stores/personalisationStore';
 import { _clearEscapeHandlers } from '../../lib/escapeStack';
 import { ConversationCanvasPrototype } from './ConversationCanvasPrototype';
-import { CommandPalette as PaletteHistorique } from '../chat/CommandPalette';
 
 vi.mock('../../services/api/voice', async (importOriginal) => ({
   ...(await importOriginal<object>()),
@@ -113,14 +112,6 @@ describe('B-211 - la recherche replie les accents', () => {
     ).toBe(true);
   });
 
-  it('la palette historique de components/chat replie aussi', () => {
-    render(<PaletteHistorique isOpen onClose={() => {}} />);
-    const champ = screen.getByRole('textbox', { name: 'Rechercher une commande' });
-
-    fireEvent.change(champ, { target: { value: 'tache' } });
-    expect(screen.queryByText('Ouvrir les Tâches')).not.toBeNull();
-
-    fireEvent.change(champ, { target: { value: 'decision' } });
-    expect(screen.queryByText('Décision')).not.toBeNull();
-  });
+  // B-760 (cycle 9) : la palette historique de components/chat, montée par personne,
+  // a été retirée ; seule la palette de la coque reste.
 });

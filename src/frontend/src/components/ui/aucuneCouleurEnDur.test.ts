@@ -3,7 +3,7 @@
  * coque ne connaissent que des jetons.
  *
  * Bornée à `components/ui/**` et au fichier de la coque : les couleurs de
- * marque des fournisseurs (`AdvisorCard`) et le SVG de `ChatHeader` sont
+ * marque des fournisseurs (`AdvisorCard`) et le SVG de l’ancien `ChatHeader` (retiré au cycle 9) étaient
  * légitimes, un rouge dessus serait du bruit, pas une preuve.
  */
 import { readdirSync, readFileSync } from 'node:fs';

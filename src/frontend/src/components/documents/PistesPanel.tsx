@@ -13,7 +13,7 @@
  *
  * Badge compteur : rond (dette DA connue - seuls les tags de STATUT sont des
  * carrés `rounded-sm`, les compteurs restent ronds, cf. le badge cloche de
- * `NotificationCenter.tsx`) mais en tokens sémantiques (bg-accent-fill /
+ * l’ancien `NotificationCenter.tsx`, retiré au cycle 9) mais en tokens sémantiques (bg-accent-fill /
  * text-accent-ink), jamais la couleur brute Tailwind que porte ce précédent.
  *
  * Pistes explorées/ignorées : conservées (jamais supprimées), reléguées dans

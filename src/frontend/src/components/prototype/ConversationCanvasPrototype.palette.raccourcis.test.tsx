@@ -6,7 +6,7 @@
  * préfixée du modificateur - `useKeyboardShortcuts` sort par `if (!modKey)
  * return` avant toute correspondance de lettre, donc « I » tout court ne
  * déclenche rien. Les deux autres consommateurs le savent et préfixent :
- * `components/chat/CommandPalette.tsx` compose `${mod}${a.shortcut}`, et
+ * l’ancienne palette de components/chat (retirée au cycle 9) composait `${mod}${a.shortcut}`, et
  * `ShortcutsModal` écrit « ⌘ + I » pour Devis et factures.
  *
  * La palette réellement rendue par la coque, elle, rendait `action.shortcut`

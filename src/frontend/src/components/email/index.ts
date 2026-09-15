@@ -5,7 +5,6 @@
  */
 
 export { EmailPanel } from './EmailPanel';
-export { EmailConnect } from './EmailConnect';
 export { EmailList } from './EmailList';
 export { EmailDetail } from './EmailDetail';
 export { EmailCompose } from './EmailCompose';
