@@ -279,6 +279,12 @@ export function AgentSession({ profileId, model, onBack }: Props) {
   }, [serverProfile, model]);
   const [needsInitialPrompt, setNeedsInitialPrompt] = useState(true);
   const [pendingInstruction, setPendingInstruction] = useState<string | null>(null);
+  // B-874 : la carte de confirmation contient les boutons de décision ; c'est un
+  // alertdialog (comme au Board), et le focus y entre à son apparition.
+  const confirmationRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (pendingInstruction) confirmationRef.current?.focus();
+  }, [pendingInstruction]);
 
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -624,7 +630,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
 
       {/* Input */}
       {pendingInstruction && (
-        <div role="alert" aria-label="Confirmer l’appel de l’agent" className="border-t border-border bg-bg px-3 pt-3" data-testid="agent-profile-confirmation">
+        <div ref={confirmationRef} tabIndex={-1} role="alertdialog" aria-label="Confirmer l’appel de l’agent" className="border-t border-border bg-bg px-3 pt-3" data-testid="agent-profile-confirmation">
           <div className="rounded-md border border-warning/30 bg-[var(--color-warning-tint)] p-3 text-sm text-text">
             <div className="font-semibold">Confirmer l&apos;appel de cet agent expérimental</div>
             <p className="mt-1 leading-relaxed text-text-muted">

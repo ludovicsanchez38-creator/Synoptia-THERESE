@@ -3,6 +3,10 @@
  * div sans rôle. Le bandeau d'erreur voisin (B-361) porte role="alert" ; la
  * carte, qui interrompt le flux pour demander une validation, doit être
  * annoncée et repérable de la même façon.
+ *
+ * B-874 (cycle 9, relecteur U4) : `role="alert"` convient à un texte, pas à
+ * une carte qui contient les boutons de décision ; le Board porte
+ * `role="alertdialog"` pour la même situation, et le focus doit y entrer.
  */
 import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -20,13 +24,14 @@ vi.mock('../../services/api/agents', () => ({
 import { AgentSession } from './AgentSession';
 
 describe('AgentSession : carte de confirmation annoncée (B-355)', () => {
-  it('la carte porte un rôle alert et un nom explicite', async () => {
+  it('la carte est un alertdialog nommé qui reçoit le focus', async () => {
     render(<AgentSession profileId="researcher" onBack={vi.fn()} />);
     fireEvent.change(screen.getByLabelText(/Message à l/), { target: { value: 'Analyse ce site' } });
     fireEvent.click(screen.getByTitle('Envoyer'));
 
-    const carte = await screen.findByRole('alert', { name: /Confirmer l’appel de l’agent/ });
+    const carte = await screen.findByRole('alertdialog', { name: /Confirmer l’appel de l’agent/ });
     expect(carte).toHaveAttribute('data-testid', 'agent-profile-confirmation');
-    expect(screen.getByRole('button', { name: /^Retour$/ }).closest('[role="alert"]')).toBe(carte);
+    expect(screen.getByRole('button', { name: /^Retour$/ }).closest('[role="alertdialog"]')).toBe(carte);
+    expect(carte.contains(document.activeElement)).toBe(true);
   });
 });
