@@ -64,9 +64,10 @@ class ProjectSyncRoot(SQLModel, table=True):
     project_id: str = Field(unique=True, index=True)
     # Chemin CANONIQUE (resolve). L'exclusivité (unicité, non-imbrication,
     # samefile) se vérifie dans la section critique du service, sous le
-    # verrou global - PAS par une contrainte SQL : un tombeau (`detachee`)
-    # conserve son dernier chemin pour l'audit, et une contrainte unique
-    # empêcherait un autre projet de reprendre un dossier délié.
+    # verrou global. Côté SQL, seul l'index unique PARTIEL ci-dessus tient
+    # (racines actives) : un tombeau (`detachee`) conserve son dernier chemin
+    # pour l'audit, et une contrainte unique pleine empêcherait un autre
+    # projet de reprendre un dossier délié.
     racine: str
     # Identité du volume (st_dev) au rattachement : un montage débranché ne
     # doit JAMAIS produire un plan de retrait massif (fail-closed).
