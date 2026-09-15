@@ -877,8 +877,8 @@ mkdir -p /tmp/therese-tests
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `find` -> `[data-testid="settings-btn"]`
-2. `click` -> `[data-testid="settings-btn"]`
+1. `find` -> `button[aria-label="Paramètres"]`
+2. `click` -> `button[aria-label="Paramètres"]`
 3. `wait_for` -> `[data-testid="settings-modal"]` visible (max 3s)
 4. `screenshot` -> `/tmp/therese-tests/A2-41_settings_open.png`
 5. `find` -> `[data-testid="settings-tab-profile"]` (ou premier onglet Profil)
@@ -1023,7 +1023,6 @@ sidebar-new-conversation-btn
 sidebar-search-input
 sidebar-conversation-list
 sidebar-conversation-item
-settings-btn
 settings-modal
 settings-tab-profile
 settings-close-btn

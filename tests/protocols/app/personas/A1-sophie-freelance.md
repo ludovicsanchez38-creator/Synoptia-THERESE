@@ -7,7 +7,7 @@
 > donc rien trouver, et un pas qui ne trouve rien ne prouve rien.
 
 > **Réécriture du 07/09/2026 (B-327).** Les étapes 13, 21 à 23 et 48 pilotaient
-> l'application par `settings-btn` et les `sidebar-*` : deux surfaces que la
+> l'application par `button[aria-label="Paramètres"]` et les `sidebar-*` : deux surfaces que la
 > coque conversationnelle ne monte plus (`ConversationSidebar` et `ChatHeader`
 > n'ont aucun importeur hors de leurs propres tests). Elles passent désormais
 > par le registre d'actions que l'application expose (`window.__therese.runAction`,

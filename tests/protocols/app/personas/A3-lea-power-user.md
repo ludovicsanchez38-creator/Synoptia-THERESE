@@ -277,7 +277,7 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 3. `screenshot` -> `/tmp/therese-tests/A3-11_settings_open.png`
 4. `javascript_tool` -> `document.querySelector('[data-testid="settings-modal"]') !== null`
 
-**Résultat attendu** : Le raccourci Ctrl+, ouvre le modal Settings. Si le raccourci ne fonctionne pas, fallback : cliquer sur `[data-testid="settings-btn"]`. Le modal s'ouvre avec animation. L'onglet par défaut (Profil) est sélectionné.
+**Résultat attendu** : Le raccourci Ctrl+, ouvre le modal Settings. Si le raccourci ne fonctionne pas, fallback : cliquer sur `button[aria-label="Paramètres"]`. Le modal s'ouvre avec animation. L'onglet par défaut (Profil) est sélectionné.
 **États testés** : loaded
 **Si FAIL** : Screenshot `/tmp/therese-tests/A3-11_settings_open.png`
 
@@ -1307,8 +1307,8 @@ Si la base est vierge, exécuter le protocole A1 d'abord ou injecter des donnée
 **URL** : http://localhost:1420
 
 **Actions Chrome MCP** :
-1. `find` -> `[data-testid="settings-btn"]`
-2. `click` -> `[data-testid="settings-btn"]`
+1. `find` -> `button[aria-label="Paramètres"]`
+2. `click` -> `button[aria-label="Paramètres"]`
 3. `wait_for` -> `[data-testid="settings-modal"]` visible (max 3s)
 4. `find` -> `[data-testid="settings-tab-privacy"]`
 5. `click` -> `[data-testid="settings-tab-privacy"]`
@@ -1490,7 +1490,6 @@ sidebar-new-conversation-btn
 sidebar-search-input
 sidebar-conversation-list
 sidebar-conversation-item
-settings-btn
 settings-modal
 settings-tab-profile
 settings-tab-ai
