@@ -14,7 +14,7 @@ from datetime import UTC, datetime, timedelta
 
 from app.models.database import get_session_context
 from app.models.entities import Activity, Contact, EmailMessage, Notification
-from sqlmodel import select
+from sqlmodel import or_, select
 
 logger = logging.getLogger(__name__)
 
@@ -119,7 +119,10 @@ async def auto_purge_expired_contacts() -> dict[str, int]:
             result = await session.execute(
                 select(Contact).where(
                     Contact.purge_excluded == False,  # noqa: E712
-                    Contact.first_name != "[ANONYMISÉ]",  # Pas déjà anonymisés
+                    # Pas déjà anonymisés. B-841 : un `!=` seul écarte aussi les
+                    # prénoms NULL (comparaison SQL jamais vraie), donc un contact
+                    # sans prénom échappait pour toujours à la purge.
+                    or_(Contact.first_name.is_(None), Contact.first_name != "[ANONYMISÉ]"),
                 )
             )
             contacts = result.scalars().all()
@@ -155,9 +158,11 @@ async def auto_purge_expired_contacts() -> dict[str, int]:
                 if existing.scalar_one_or_none():
                     continue
 
-                purge_date = (contact.last_interaction or contact.updated_at or contact.created_at)
+                purge_date = contact.last_interaction or contact.updated_at or contact.created_at
                 if purge_date:
-                    purge_date_str = (purge_date + timedelta(days=retention_months * 30)).strftime("%d/%m/%Y")
+                    purge_date_str = (purge_date + timedelta(days=retention_months * 30)).strftime(
+                        "%d/%m/%Y"
+                    )
                 else:
                     purge_date_str = "bientôt"
 
