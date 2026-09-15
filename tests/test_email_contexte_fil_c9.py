@@ -32,3 +32,9 @@ def test_le_corps_texte_est_tronque_a_200_caracteres() -> None:
 
 def test_l_extrait_prime_sur_le_corps() -> None:
     assert ligne_de_contexte_du_fil(_message(snippet="résumé", body_plain="corps"))[2] == "résumé"
+
+
+def test_sans_date_la_ligne_reste_lisible() -> None:
+    """B-820 (cycle 9) : `tm.date.strftime` sans garde sur une date absente."""
+    lignes = ligne_de_contexte_du_fil(_message(date=None))
+    assert lignes[0] == "[date inconnue] De: Camille"

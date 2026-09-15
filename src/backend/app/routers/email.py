@@ -1817,8 +1817,10 @@ def ligne_de_contexte_du_fil(tm: Any) -> list[str]:
     absent, et l'exception avalée faisait perdre tout le contexte du fil.
     """
     extrait = tm.snippet or (tm.body_plain or "")[:200]
+    # B-820 : `date` est traitée comme nullable ailleurs dans ce routeur.
+    horodatage = tm.date.strftime("%Y-%m-%d %H:%M") if tm.date else "date inconnue"
     return [
-        f"[{tm.date.strftime('%Y-%m-%d %H:%M')}] De: {tm.from_name or tm.from_email}",
+        f"[{horodatage}] De: {tm.from_name or tm.from_email}",
         f"Sujet: {tm.subject}",
         f"{extrait}",
     ]
