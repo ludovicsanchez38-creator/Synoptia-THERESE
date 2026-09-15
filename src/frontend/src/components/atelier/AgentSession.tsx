@@ -392,11 +392,18 @@ export function AgentSession({ profileId, model, onBack }: Props) {
       case "tool_result":
         // Mettre a jour le dernier tool_call avec le resultat
         setMessages((prev) => {
-          let lastToolIdx = -1;
-          for (let i = prev.length - 1; i >= 0; i--) {
-            if (prev[i].role === "tool_call" && prev[i].toolName === chunk.tool_name) {
-              lastToolIdx = i;
-              break;
+          // B-832 : le résultat va au PREMIER appel du même outil encore sans
+          // résultat (deux appels identiques dans un tour recevaient tous deux
+          // le dernier résultat) ; repli sur le dernier appel du nom.
+          let lastToolIdx = prev.findIndex(
+            (m) => m.role === "tool_call" && m.toolName === chunk.tool_name && m.toolResult === undefined,
+          );
+          if (lastToolIdx < 0) {
+            for (let i = prev.length - 1; i >= 0; i--) {
+              if (prev[i].role === "tool_call" && prev[i].toolName === chunk.tool_name) {
+                lastToolIdx = i;
+                break;
+              }
             }
           }
           if (lastToolIdx >= 0) {
