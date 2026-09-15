@@ -91,20 +91,24 @@ function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
 // US-A11Y-01: Keyboard navigation helpers
 // ============================================================
 
+
 /**
  * Get all focusable elements within a container.
+ *
+ * B-800 (cycle 9) : `button:not([disabled])` rattrapait un bouton en
+ * `tabindex="-1"` que la clause `[tabindex]:not([tabindex="-1"])` croyait
+ * exclure (motif B-618, corrigé dans useDialogFocusTrap, encore présent ici).
  */
 export function getFocusableElements(container: HTMLElement): HTMLElement[] {
   const focusableSelector = [
-    'a[href]',
-    'button:not([disabled])',
-    'input:not([disabled])',
-    'select:not([disabled])',
-    'textarea:not([disabled])',
+    'a[href]:not([tabindex="-1"])',
+    'button:not([disabled]):not([tabindex="-1"])',
+    'input:not([disabled]):not([tabindex="-1"])',
+    'select:not([disabled]):not([tabindex="-1"])',
+    'textarea:not([disabled]):not([tabindex="-1"])',
     '[tabindex]:not([tabindex="-1"])',
-    '[contenteditable="true"]',
+    '[contenteditable="true"]:not([tabindex="-1"])',
   ].join(', ');
-
   return Array.from(container.querySelectorAll<HTMLElement>(focusableSelector));
 }
 
@@ -284,14 +288,6 @@ export function announceToScreenReader(
 // US-A11Y-05: Focus visible styles
 // ============================================================
 
-/**
- * CSS-in-JS focus visible styles.
- */
-export const focusVisibleStyles = {
-  outline: '2px solid #22D3EE',
-  outlineOffset: '2px',
-  borderRadius: '4px',
-};
 
 /**
  * Tailwind classes for focus visible.
