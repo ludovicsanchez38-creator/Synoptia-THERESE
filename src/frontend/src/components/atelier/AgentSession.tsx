@@ -9,6 +9,7 @@
  */
 
 import React, { useState, useRef, useEffect, useCallback } from "react";
+import { pushEscapeHandler } from "../../lib/escapeStack";
 import {
   ArrowLeft,
   Send,
@@ -284,6 +285,11 @@ export function AgentSession({ profileId, model, onBack }: Props) {
   const confirmationRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (pendingInstruction) confirmationRef.current?.focus();
+  }, [pendingInstruction]);
+  // B-896 : Échap vaut « Retour », fail-closed.
+  useEffect(() => {
+    if (!pendingInstruction) return;
+    return pushEscapeHandler(() => setPendingInstruction(null));
   }, [pendingInstruction]);
 
   const scrollRef = useRef<HTMLDivElement>(null);

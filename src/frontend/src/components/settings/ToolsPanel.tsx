@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { pushEscapeHandler } from '../../lib/escapeStack';
 import {
   Wrench,
   Plus,
@@ -203,6 +204,11 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
   const [showAddServer, setShowAddServer] = useState(false);
   const [showPresets, setShowPresets] = useState(false);
   const [serverToDelete, setServerToDelete] = useState<string | null>(null);
+  // B-896 : Échap vaut « Annuler » sur la question de suppression.
+  useEffect(() => {
+    if (!serverToDelete) return;
+    return pushEscapeHandler(() => setServerToDelete(null));
+  }, [serverToDelete]);
   const [installingPreset, setInstallingPreset] = useState<string | null>(null);
   const [presetToConfig, setPresetToConfig] = useState<api.MCPPreset | null>(null);
   const [presetFilter, setPresetFilter] = useState('');
