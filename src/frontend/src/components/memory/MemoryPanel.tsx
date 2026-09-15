@@ -15,7 +15,7 @@ import * as api from '../../services/api';
 import type { MemoryScope, RGPDStatsResponse } from '../../services/api';
 import { useDemoMask } from '../../hooks';
 import { useStatusStore } from '../../stores/statusStore';
-import { useContactsStore } from '../../stores/contactsStore';
+import { PLAFOND_CONTACTS, useContactsStore } from '../../stores/contactsStore';
 import { useNavigationStore } from '../../stores/navigationStore';
 import { pushEscapeHandler } from '../../lib/escapeStack';
 import { Z_LAYER } from '../../styles/z-layers';
@@ -104,6 +104,21 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
   }, [rechercheDemandee]);
   // E3-05: Scope filter state
   const [scopeFilter, setScopeFilter] = useState<MemoryScope | 'all'>('all');
+  // B-780 : le périmètre était filtré côté client sur une liste déjà tronquée par
+  // le serveur ; quand la liste est tronquée, le périmètre se demande au serveur.
+  const [contactsDuPerimetre, setContactsDuPerimetre] = useState<api.Contact[] | null>(null);
+  useEffect(() => {
+    if (!isOpen || scopeFilter === 'all' || !contactsTronques) {
+      setContactsDuPerimetre(null);
+      return;
+    }
+    let annule = false;
+    api.listContactsWithScope(0, PLAFOND_CONTACTS, scopeFilter as never)
+      .then((liste) => { if (!annule) setContactsDuPerimetre(liste); })
+      .catch(() => { if (!annule) setContactsDuPerimetre(null); });
+    return () => { annule = true; };
+  }, [isOpen, scopeFilter, contactsTronques]);
+
   // E3-06: Delete state
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: 'contact'; id: string; name: string } | null>(null);
   const [deleting, setDeleting] = useState(false);
@@ -279,7 +294,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
   // P5 : pendant une recherche on affiche les résultats sémantiques (searchResults),
   // sinon la liste complète du store. Le scope est filtré côté client.
   const isSearching = searchQuery.trim().length > 0;
-  const baseContacts = isSearching ? (searchResults ?? []) : contacts;
+  const baseContacts = isSearching ? (searchResults ?? []) : (contactsDuPerimetre ?? contacts);
   const scopedContacts = scopeFilter === 'all'
     ? baseContacts
     : baseContacts.filter((c) => c.scope === scopeFilter);
