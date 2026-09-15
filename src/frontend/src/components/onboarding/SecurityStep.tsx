@@ -116,7 +116,6 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
               key={index}
               onClick={() => setExpanded(isExpanded ? null : index)}
               aria-expanded={isExpanded}
-              aria-controls={`security-detail-${index}`}
               className={cn(
                 'min-h-9 w-full rounded-md border p-3 text-left text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
                 'hover:bg-surface-2',
@@ -143,16 +142,17 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
                       {severityLabels[risk.severity]}
                     </span>
                   </div>
+                  {/* B-768 : le détail vit DANS le bouton (pas d'aria-controls
+                      vers un élément absent), et un bouton n'abrite pas de <p>. */}
                   {isExpanded && (
-                    <motion.p
-                      id={`security-detail-${index}`}
+                    <motion.span
                       initial={{ opacity: 0, height: 0 }}
                       animate={{ opacity: 1, height: 'auto' }}
                       exit={{ opacity: 0, height: 0 }}
-                      className="text-sm text-text-muted mt-2"
+                      className="block text-sm text-text-muted mt-2"
                     >
                       {risk.description}
-                    </motion.p>
+                    </motion.span>
                   )}
                 </div>
               </div>

@@ -18,11 +18,13 @@ describe('lot 11 - accessibilité, jetons et robustesse frontend', () => {
     expect(src).toMatch(/aria-labelledby="delete-project-title"[\s\S]*?ref=\{dialogRef\}|ref=\{dialogRef\}[\s\S]*?aria-labelledby="delete-project-title"/);
   });
 
-  it('B-403 : le bouton de dépliage sécurité annonce son état et son contenu', () => {
+  it('B-403 : le bouton de dépliage sécurité annonce son état et porte son contenu', () => {
+    // B-768 (cycle 9) : le détail vit dans le bouton ; un aria-controls vers un
+    // identifiant absent quand le risque est replié n'annonçait rien de vrai.
     const src = lire('components/onboarding/SecurityStep.tsx');
     expect(src).toMatch(/aria-expanded=\{isExpanded\}/);
-    expect(src).toMatch(/aria-controls=\{`security-detail-\$\{index\}`\}/);
-    expect(src).toMatch(/id=\{`security-detail-\$\{index\}`\}/);
+    expect(src).not.toMatch(/aria-controls=\{`security-detail-/);
+    expect(src).not.toMatch(/<motion\.p/);
   });
 
   it('B-406 : le stepper de mission ne peint plus de RGBA littéral', () => {
