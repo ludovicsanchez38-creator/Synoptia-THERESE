@@ -50,3 +50,23 @@ async def test_la_fermeture_de_session_survit_a_l_annulation(monkeypatch) -> Non
         await tache
 
     await asyncio.wait_for(termine.wait(), timeout=1)
+
+
+@pytest.mark.asyncio
+async def test_get_session_context_survit_aussi_a_l_annulation(monkeypatch) -> None:
+    """Relecture T5 : le shield jumeau de get_session_context n'était exercé nulle part."""
+    termine = asyncio.Event()
+    monkeypatch.setattr(database, "AsyncSessionLocal", lambda: FausseSession(termine, 0.05))
+
+    async def consommer():
+        async with database.get_session_context() as session:
+            assert session is not None
+            await asyncio.sleep(10)
+
+    tache = asyncio.create_task(consommer())
+    await asyncio.sleep(0.01)
+    tache.cancel()
+    with pytest.raises(asyncio.CancelledError):
+        await tache
+
+    await asyncio.wait_for(termine.wait(), timeout=1)

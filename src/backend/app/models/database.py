@@ -944,6 +944,27 @@ def get_database_url(async_mode: bool = True) -> str:
     return f"sqlite:///{db_path}"
 
 
+
+def poser_index_racine_active(conn: Any) -> bool:
+    """Pose l'index unique « une racine active = un projet », sans bloquer le démarrage.
+
+    B-831 : créé hors de tout try, l'index faisait échouer init_db dès qu'une
+    base ancienne portait deux racines actives identiques. On le dit au journal
+    et on démarre ; l'invariant sera posé au prochain démarrage sans doublon.
+    """
+    try:
+        conn.exec_driver_sql(
+            "CREATE UNIQUE INDEX IF NOT EXISTS uq_sync_root_racine_active "
+            "ON project_sync_roots(racine) WHERE detachee = 0"
+        )
+        return True
+    except Exception as e:
+        logger.warning(
+            "Index unique des racines de synchronisation non posé (doublons hérités ?) : %s", e
+        )
+        return False
+
+
 async def init_db() -> None:
     """Initialize database connection and create tables."""
     global sync_engine, async_engine, AsyncSessionLocal
@@ -1092,10 +1113,7 @@ async def init_db() -> None:
     # L'invariant « une racine active = un projet » se pose donc ICI,
     # idempotent, à chaque démarrage.
     with sync_engine.connect() as conn:
-        conn.exec_driver_sql(
-            "CREATE UNIQUE INDEX IF NOT EXISTS uq_sync_root_racine_active "
-            "ON project_sync_roots(racine) WHERE detachee = 0"
-        )
+        poser_index_racine_active(conn)
         # 0.46 : le panneau trie et la retention filtre par created_at.
         conn.exec_driver_sql(
             "CREATE INDEX IF NOT EXISTS ix_processing_tasks_created_at "
