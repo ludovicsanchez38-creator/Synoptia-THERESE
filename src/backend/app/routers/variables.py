@@ -11,6 +11,7 @@ import logging
 
 from app.models.database import get_session
 from app.models.entities import Variable
+from app.models.schemas import HorodatageUTC
 from app.services.variables_service import (
     VariableError,
     VariableExistante,
@@ -45,7 +46,8 @@ class VariableResponse(BaseModel):
     kind: str
     value: str | list[str]
     description: str | None = None
-    updated_at: str
+    # B-851 : un instant relu de SQLite est naïf ; l'alias lui rend son fuseau en JSON.
+    updated_at: HorodatageUTC
 
 
 def _to_response(variable: Variable) -> VariableResponse:
@@ -54,7 +56,7 @@ def _to_response(variable: Variable) -> VariableResponse:
         kind=variable.kind,
         value=variable.parsed_value,
         description=variable.description,
-        updated_at=variable.updated_at.isoformat(),
+        updated_at=variable.updated_at,
     )
 
 
