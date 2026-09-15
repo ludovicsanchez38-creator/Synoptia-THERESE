@@ -17,6 +17,7 @@ Chaque tool fait un appel HTTP vers l API locale THÉRÈSE.
 """
 
 import asyncio
+import codecs
 import json
 import logging
 import os
@@ -279,6 +280,28 @@ TOOL_ROUTES = {
 
 
 
+
+class DecodeurDeLignes:
+    """Assemble des blocs d'octets en lignes complètes, sans casser un caractère.
+
+    B-818 : `data.decode("utf-8")` bloc par bloc levait UnicodeDecodeError quand
+    un caractère multi-octets tombait sur la frontière de 4096 octets.
+    """
+
+    def __init__(self) -> None:
+        self._decodeur = codecs.getincrementaldecoder("utf-8")()
+        self._tampon = ""
+
+    def ajouter(self, data: bytes) -> list[str]:
+        self._tampon += self._decodeur.decode(data)
+        lignes: list[str] = []
+        while "\n" in self._tampon:
+            ligne, self._tampon = self._tampon.split("\n", 1)
+            ligne = ligne.strip()
+            if ligne:
+                lignes.append(ligne)
+        return lignes
+
 def decoder_requete(line: str) -> dict[str, Any] | None:
     """Décode une ligne JSON-RPC ; rend None (et journalise) si elle n'est pas un objet.
 
@@ -488,22 +511,15 @@ async def run_stdio_server() -> None:
     protocol = asyncio.StreamReaderProtocol(reader)
     await asyncio.get_running_loop().connect_read_pipe(lambda: protocol, sys.stdin.buffer)
 
-    buffer = ""
+    decodeur = DecodeurDeLignes()
     while True:
         try:
             data = await reader.read(4096)
             if not data:
                 break
 
-            buffer += data.decode("utf-8")
-
             # Traiter chaque ligne JSON complète
-            while "\n" in buffer:
-                line, buffer = buffer.split("\n", 1)
-                line = line.strip()
-                if not line:
-                    continue
-
+            for line in decodeur.ajouter(data):
                 request = decoder_requete(line)
                 if request is None:
                     continue
