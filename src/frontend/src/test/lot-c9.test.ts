@@ -27,4 +27,8 @@ describe('lot c9 - gardes de source', () => {
     expect(lire('App.tsx')).toMatch(/useEffect\(\(\) => \{\n\s+\(window as unknown as \{ __thereseMonte\?: boolean \}\)\.__thereseMonte = true;/);
     expect(lire('main.tsx')).not.toMatch(/__thereseMonte/);
   });
+
+  it('B-839 : aucune infobulle n’invite à cliquer un bouton désactivé (Réglages > Outils)', () => {
+    expect(lire('components/settings/ToolsPanel.tsx')).not.toMatch(/cliquer pour démarrer/);
+  });
 });

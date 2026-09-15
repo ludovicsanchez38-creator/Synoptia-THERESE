@@ -157,7 +157,7 @@ function PresetCategory({
                         {isInstalling && <Spinner taille="bouton" className="text-accent-cyan-ink" />}
                         {!isInstalling && runningServer && <Check className="w-4 h-4 text-success" />}
                         {!isInstalling && isInstalled && !runningServer && (
-                          <span title="Installé mais inactif - cliquer pour démarrer">
+                          <span title="Installé mais inactif : à démarrer depuis les connecteurs">
                             <AlertCircle className="w-4 h-4 text-warning" />
                           </span>
                         )}
