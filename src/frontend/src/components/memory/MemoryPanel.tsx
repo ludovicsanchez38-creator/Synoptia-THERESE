@@ -877,8 +877,8 @@ function RGPDBadge({ contact }: { contact: api.Contact }) {
   const fullLabels: Record<string, string> = {
     consentement: 'Consentement',
     contrat: 'Contrat',
-    interet_legitime: 'Interet legitime',
-    obligation_legale: 'Obligation legale',
+    interet_legitime: 'Intérêt légitime',
+    obligation_legale: 'Obligation légale',
   };
 
   const tonsBase: Record<string, 'succes' | 'info' | 'neutre'> = {
