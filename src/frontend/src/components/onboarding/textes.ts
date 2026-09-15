@@ -52,7 +52,7 @@ export const TEXTES_ONBOARDING = {
       id: 'voix',
       title: 'Transcription vocale',
       description:
-        'L’audio est envoyé à Groq pour transcription. Ne dicte pas d’informations confidentielles.',
+        'L’audio est envoyé à Groq pour transcription, sauf si la dictée locale (Whisper) est choisie dans Réglages > Confidentialité. Ne dicte pas d’informations confidentielles.',
       severity: 'medium',
     },
   ] as const satisfies readonly RisqueOnboarding[],
