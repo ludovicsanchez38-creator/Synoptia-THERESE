@@ -69,7 +69,12 @@ export function EmailInboxCard({
             <div className="text-xs text-text-muted">
               {resource.status === 'ready' && resource.data.currentAccount
                 ? `${unreadCount} non lu${unreadCount > 1 ? 's' : ''}${resource.data.listeIncomplete ? ' parmi les 30 plus récents' : ''} · ${resource.data.currentAccount.email}`
-                : 'Ta boîte connectée'}
+                : resource.status === 'loading'
+                  ? 'Chargement…'
+                  : resource.status === 'error'
+                    ? 'Messagerie indisponible'
+                    // B-810 : sans compte, ne pas promettre une boîte connectée.
+                    : 'Aucune messagerie branchée'}
             </div>
           </div>
         </div>
