@@ -76,6 +76,8 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
       setDirection(1);
       setConfiguredProvider(null);
       setLlmSkipped(false);
+      // B-772 : l'avertissement « service d'IA conservé » ne survit pas à une réouverture.
+      setServiceIaConserve(null);
     }
   }, [isOpen]);
 
