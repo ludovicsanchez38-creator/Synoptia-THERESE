@@ -86,6 +86,8 @@ class PerplexityProvider(BaseProvider):
                 # quand même émettre "done" (sinon chat.py reste bloqué en
                 # attente indéfiniment de ce signal).
                 done_emitted = False
+                # B-796 : distinguer une réponse coupée (length) d'une réponse achevée.
+                has_content = False
 
                 async for line in response.aiter_lines():
                     if line.startswith("data: "):
@@ -111,6 +113,7 @@ class PerplexityProvider(BaseProvider):
 
                                 # Handle text content
                                 if content := delta.get("content"):
+                                    has_content = True
                                     yield StreamEvent(type="text", content=content)
 
                                 # Handle tool calls
@@ -155,6 +158,17 @@ class PerplexityProvider(BaseProvider):
 
                                 elif finish_reason == "stop":
                                     pending_stop_reason = "stop"
+
+                                elif finish_reason == "length":
+                                    # B-796 : une réponse coupée ne se présente pas comme achevée.
+                                    pending_stop_reason = "length"
+                                    if not has_content:
+                                        logger.warning("Perplexity: finish_reason=length sans contenu (budget tokens épuisé)")
+                                        yield StreamEvent(
+                                            type="error",
+                                            content="Le modèle a épuisé son budget de tokens sans produire de réponse. "
+                                            "Essayez avec un prompt plus court ou augmentez max_tokens.",
+                                        )
 
                         except json.JSONDecodeError:
                             continue
