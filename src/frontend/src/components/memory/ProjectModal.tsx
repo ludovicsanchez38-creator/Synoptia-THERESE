@@ -302,7 +302,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                   </p>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" onClick={onClose}>
+              <Button variant="ghost" size="icon" onClick={onClose} aria-label="Fermer">
                 <X className="w-5 h-5" />
               </Button>
             </div>
@@ -311,7 +311,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
               {/* Name */}
               <FormField label="Nom du projet" htmlFor="projectmodal-nom-du-projet" required>
-                <Input id="projectmodal-nom-du-projet"
+                <Input id="projectmodal-nom-du-projet" data-dialog-autofocus
                   type="text"
                   value={formData.name}
                   onChange={(e) => handleChange('name', e.target.value)}

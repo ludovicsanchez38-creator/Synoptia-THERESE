@@ -187,7 +187,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
                   </p>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" onClick={onClose}>
+              <Button variant="ghost" size="icon" onClick={onClose} aria-label="Fermer">
                 <X className="w-5 h-5" />
               </Button>
             </div>
@@ -197,7 +197,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
               {/* Name row */}
               <div className="grid grid-cols-2 gap-4">
                 <FormField label="Prénom" htmlFor="contactmodal-prenom">
-                  <Input id="contactmodal-prenom"
+                  <Input id="contactmodal-prenom" data-dialog-autofocus
                     type="text"
                     value={formData.first_name}
                     onChange={(e) => handleChange('first_name', e.target.value)}
