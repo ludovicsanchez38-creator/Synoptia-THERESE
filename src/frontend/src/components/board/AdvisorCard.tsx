@@ -24,6 +24,11 @@ const ADVISOR_ICONS: Record<AdvisorRole, LucideIcon> = {
   visionary: Rocket,
 };
 
+/** Teinte d'une couleur exprimée en variable CSS : `pourcent` % de la couleur sur transparent. */
+function teinte(couleur: string, pourcent: number): string {
+  return `color-mix(in srgb, ${couleur} ${pourcent}%, transparent)`;
+}
+
 interface AdvisorCardProps {
   role: AdvisorRole;
   name: string;
@@ -85,12 +90,14 @@ export function AdvisorCard({
         'bg-surface-elevated/80 backdrop-blur-sm',
         isComplete ? 'border-border' : 'border-border/50',
       )}
+      // B-793 : `color` est une variable CSS (var(--color-agent-*)) ; une opacité se
+      // dérive par color-mix, jamais par un suffixe hexadécimal.
       style={{
         borderColor: isLoading ? color : isComplete ? color : undefined,
         boxShadow: isLoading
-          ? `0 0 24px ${color}30, inset 0 0 12px ${color}08`
+          ? `0 0 24px ${teinte(color, 19)}, inset 0 0 12px ${teinte(color, 3)}`
           : isComplete
-            ? `0 0 20px ${color}20`
+            ? `0 0 20px ${teinte(color, 12)}`
             : undefined,
       }}
     >
@@ -102,10 +109,10 @@ export function AdvisorCard({
             isLoading && 'animate-pulse',
           )}
           style={{
-            backgroundColor: `${color}15`,
-            outline: `2px solid ${isLoading ? color : `${color}40`}`,
+            backgroundColor: `${teinte(color, 8)}`,
+            outline: `2px solid ${isLoading ? color : `${teinte(color, 25)}`}`,
             outlineOffset: '2px',
-            boxShadow: isLoading ? `0 0 16px ${color}40` : undefined,
+            boxShadow: isLoading ? `0 0 16px ${teinte(color, 25)}` : undefined,
           }}
         >
           <Icon className="w-6 h-6" style={{ color }} />
