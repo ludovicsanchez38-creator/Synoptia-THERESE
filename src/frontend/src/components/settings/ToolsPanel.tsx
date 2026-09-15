@@ -58,6 +58,12 @@ function PresetCategory({
   defaultCollapsed = false,
 }: PresetCategoryProps) {
   const [collapsed, setCollapsed] = useState(defaultCollapsed);
+  // B-871 : le repli n'était qu'un état initial ; une recherche saisie après
+  // le montage qui ne ramène que des presets avancés laissait un en-tête
+  // replié et aucune carte. Un filtre déplie, la fin du filtre replie.
+  useEffect(() => {
+    setCollapsed(defaultCollapsed);
+  }, [defaultCollapsed]);
   const panelId = `mcp-preset-category-${category}`;
 
   return (
@@ -421,8 +427,12 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
 
   async function refreshStatus() {
     try {
-      const statusData = await api.getMCPStatus();
+      // B-875 : le scrutin d'un serveur « starting » relit aussi la liste,
+      // sinon la condition d'arrêt ne devenait jamais fausse et la carte
+      // restait « démarrage » à vie.
+      const [statusData, serversData] = await Promise.all([api.getMCPStatus(), api.listMCPServers()]);
       setStatus(statusData);
+      setServers(serversData);
     } catch {
       // Ignore
     }
