@@ -8,6 +8,7 @@ et l'installe dans ~/.therese/tools/.
 
 import json
 import logging
+import re
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
@@ -54,6 +55,22 @@ class ToolInstaller:
         self._tools_dir = Path(settings.data_dir) / "tools"
         self._tools_dir.mkdir(parents=True, exist_ok=True)
 
+    def _chemin_outil(self, tool_id: str) -> Path | None:
+        """B-794 : un identifiant d'outil est un seul segment sûr, jamais un chemin.
+
+        « ../victime », « / » ou « a/../b » sortaient du dossier des outils, et
+        ``uninstall_tool`` y appliquait ``shutil.rmtree``.
+        """
+        if not tool_id or not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]{0,63}", tool_id):
+            return None
+        if tool_id in {".", ".."}:
+            return None
+        base = self._tools_dir.resolve()
+        chemin = (base / tool_id).resolve()
+        if chemin.parent != base:
+            return None
+        return chemin
+
     @property
     def tools_dir(self) -> Path:
         """Répertoire des outils installés."""
@@ -90,7 +107,13 @@ class ToolInstaller:
         Returns:
             ToolInstallResult avec succès/erreur
         """
-        tool_dir = self._tools_dir / tool_id
+        tool_dir = self._chemin_outil(tool_id)
+        if tool_dir is None:
+            return ToolInstallResult(
+                success=False,
+                tool_id=tool_id,
+                error="Identifiant d'outil invalide (lettres, chiffres, tirets et points seulement)",
+            )
 
         # 1. Valider la sécurité du code
         is_valid, error_msg = validate_code(code)
@@ -205,8 +228,8 @@ params = json.loads({params_json!r})
         Returns:
             True si désinstallé, False si non trouvé
         """
-        tool_dir = self._tools_dir / tool_id
-        if not tool_dir.exists():
+        tool_dir = self._chemin_outil(tool_id)
+        if tool_dir is None or not tool_dir.exists():
             return False
 
         # Supprimer le répertoire et son contenu
@@ -230,8 +253,8 @@ params = json.loads({params_json!r})
         Returns:
             Tuple (succès, message)
         """
-        tool_dir = self._tools_dir / tool_id
-        if not tool_dir.exists():
+        tool_dir = self._chemin_outil(tool_id)
+        if tool_dir is None or not tool_dir.exists():
             return False, f"Outil {tool_id} non trouvé"
 
         manifest = json.loads((tool_dir / "manifest.json").read_text(encoding="utf-8"))
