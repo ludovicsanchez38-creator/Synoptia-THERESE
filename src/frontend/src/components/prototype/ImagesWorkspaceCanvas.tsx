@@ -130,36 +130,64 @@ export function ImagesWorkspaceCanvas({ onClose }: { onClose: () => void }) {
   // B-756 : `/api/images/download/:id` est protégé par X-Therese-Token.
   // Un `src` nu ne peut pas porter cet en-tête et toutes les vignettes de la
   // 0.72 apparaissaient cassées. Chaque image est donc chargée par fetch
-  // authentifié, exposée via une URL objet locale, puis révoquée au prochain
-  // historique ou au démontage.
+  // authentifié et exposée via une URL objet locale.
+  //
+  // B-862 : les URL objets vivent dans une table par identifiant. Une
+  // génération n'ajoute qu'une image au tableau ; sans cette table, l'effet
+  // révoquait puis re-téléchargeait toutes les vignettes (jusqu'à cinquante)
+  // à chaque nouvelle image. Seules les images disparues sont révoquées, et
+  // tout est révoqué au démontage.
+  const vignettesRef = useRef<Map<string, string>>(new Map());
+  const vignettesEnCoursRef = useRef<Set<string>>(new Set());
+  const idsCourantsRef = useRef<Set<string>>(new Set());
+  const demonteRef = useRef(false);
+
   useEffect(() => {
-    let cancelled = false;
-    const objectUrls = new Set<string>();
+    const ids = new Set(images.map((image) => image.id));
+    idsCourantsRef.current = ids;
 
-    setImageObjectUrls({});
-    setUnavailableImageIds(new Set());
+    for (const [id, url] of Array.from(vignettesRef.current.entries())) {
+      if (!ids.has(id)) {
+        URL.revokeObjectURL(url);
+        vignettesRef.current.delete(id);
+      }
+    }
+    setImageObjectUrls(Object.fromEntries(vignettesRef.current));
+    setUnavailableImageIds((current) => new Set(Array.from(current).filter((id) => ids.has(id))));
 
-    void Promise.all(images.map(async (image) => {
+    const manquantes = images.filter(
+      (image) => !vignettesRef.current.has(image.id) && !vignettesEnCoursRef.current.has(image.id),
+    );
+    void Promise.all(manquantes.map(async (image) => {
+      vignettesEnCoursRef.current.add(image.id);
       try {
         const objectUrl = await fetchImageObjectUrl(getImageDownloadUrl(image.id));
-        if (cancelled) {
+        if (demonteRef.current || !idsCourantsRef.current.has(image.id)) {
           URL.revokeObjectURL(objectUrl);
           return;
         }
-        objectUrls.add(objectUrl);
+        vignettesRef.current.set(image.id, objectUrl);
         setImageObjectUrls((current) => ({ ...current, [image.id]: objectUrl }));
       } catch {
-        if (!cancelled) {
+        if (!demonteRef.current && idsCourantsRef.current.has(image.id)) {
           setUnavailableImageIds((current) => new Set(current).add(image.id));
         }
+      } finally {
+        vignettesEnCoursRef.current.delete(image.id);
       }
     }));
-
-    return () => {
-      cancelled = true;
-      objectUrls.forEach((url) => URL.revokeObjectURL(url));
-    };
   }, [images]);
+
+  useEffect(() => {
+    const vignettes = vignettesRef.current;
+    const demonte = demonteRef;
+    demonte.current = false;
+    return () => {
+      demonte.current = true;
+      vignettes.forEach((url) => URL.revokeObjectURL(url));
+      vignettes.clear();
+    };
+  }, []);
 
   const activeProvider = useMemo(
     () => PROVIDERS.find((item) => item.id === provider) ?? PROVIDERS[0],
