@@ -128,14 +128,20 @@ function PromptCard({
     <motion.div
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      className="group cursor-pointer rounded-md border border-border bg-surface p-4 shadow-sm transition-colors hover:border-accent"
-      onClick={() => setExpanded(!expanded)}
+      className="group rounded-md border border-border bg-surface p-4 shadow-sm transition-colors hover:border-accent"
     >
       <div className="flex items-start justify-between gap-3">
-        <div className="flex-1 min-w-0">
+        {/* B-823 : le dépliage est un vrai bouton (clavier, aria-expanded), pas
+            un clic sur la carte entière. */}
+        <button
+          type="button"
+          aria-expanded={expanded}
+          onClick={() => setExpanded(!expanded)}
+          className="flex-1 min-w-0 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
           <h4 className="text-sm font-medium text-text truncate">{prompt.title}</h4>
           <p className="text-xs text-text-muted mt-1 line-clamp-2">{prompt.description}</p>
-        </div>
+        </button>
         <div className="flex items-center gap-1 flex-shrink-0">
           <Button
             type="button"
@@ -463,7 +469,9 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
               <CategoryAccordion
                 // Cycle 6 (Sophie, sophie-02) : une nouvelle recherche remonte
                 // l'accordéon, donc rouvre une catégorie repliée à la main.
-                key={`${category.category}-${searchResults !== null ? searchQuery : ''}`}
+                // B-823 : la clé suit la requête AFFICHÉE (resultsQuery), pas la frappe,
+                // sinon l'accordéon se remontait à chaque caractère saisi.
+                key={`${category.category}-${searchResults !== null ? resultsQuery : ''}`}
                 category={category}
                 onSelectPrompt={handleSelect}
                 defaultOpen={searchResults !== null || index === 0}
