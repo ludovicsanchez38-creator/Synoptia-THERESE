@@ -402,6 +402,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
   }, []);
 
   const handleViewDecision = useCallback(async (id: string) => {
+    setHistoryError(null);
     try {
       const decision = await getBoardDecision(id);
       setViewingDecision({
@@ -412,16 +413,21 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
       setViewState('viewing');
     } catch (error) {
       console.error('Failed to load decision:', error);
+      // B-900 : l'échec était muet ; la liste, elle, dit sa panne (B-873).
+      setHistoryError('Impossible d’ouvrir cette décision. Réessaie dans un instant.');
+      setViewState('history');
     }
   }, []);
 
   const handleDeleteDecision = useCallback(async (id: string) => {
+    setHistoryError(null);
     try {
       await deleteBoardDecision(id);
       setDecisions((prev) => prev.filter((d) => d.id !== id));
       setDecisionASupprimer(null);
     } catch (error) {
       console.error('Failed to delete decision:', error);
+      setHistoryError('Impossible de supprimer cette décision. Réessaie dans un instant.');
     }
   }, []);
 
@@ -717,16 +723,23 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                       <div className="flex items-center justify-center py-12">
                         <Spinner taille="zone" className="text-text-muted" />
                       </div>
-                    ) : historyError ? (
-                      <Alerte
-                        titre="Historique indisponible"
-                        action={<Button variant="secondary" size="sm" onClick={handleShowHistory}>Réessayer</Button>}
-                      >{historyError}</Alerte>
-                    ) : decisions.length === 0 ? (
-                      <p className="text-center text-text-muted py-12">
-                        Aucune décision enregistrée
-                      </p>
                     ) : (
+                      <>
+                        {/* B-873 / B-900 : la panne se dit ; une liste déjà
+                            chargée reste visible sous l'alerte d'une action ratée. */}
+                        {historyError && (
+                          <Alerte
+                            titre={decisions.length === 0 ? 'Historique indisponible' : 'Action impossible'}
+                            action={decisions.length === 0 ? <Button variant="secondary" size="sm" onClick={handleShowHistory}>Réessayer</Button> : undefined}
+                            className="mb-4"
+                          >{historyError}</Alerte>
+                        )}
+                        {decisions.length === 0 && !historyError && (
+                          <p className="text-center text-text-muted py-12">
+                            Aucune décision enregistrée
+                          </p>
+                        )}
+                        {decisions.length > 0 && (
                       <div className="space-y-3">
                         {decisions.map((decision) => (
                           <div
@@ -790,6 +803,8 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                           </div>
                         ))}
                       </div>
+                        )}
+                      </>
                     )}
                   </motion.div>
                 )}
