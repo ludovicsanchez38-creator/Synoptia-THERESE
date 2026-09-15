@@ -17,6 +17,14 @@ import {
   ChevronDown,
   ChevronRight,
   Bot,
+  BarChart3,
+  CalendarDays,
+  Code2,
+  Palette,
+  PenLine,
+  Search,
+  User,
+  type LucideIcon,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { getAgentProfiles, streamAgentSpawn } from "../../services/api/agents";
@@ -97,6 +105,16 @@ const DEFAULT_COLOR = {
 };
 
 /** Profils par defaut (identiques a AgentCatalog) */
+/** B-827 : avatars en icônes SVG (charte), plus d'emoji ; repli sur Bot. */
+const ICONES_PROFILS: Record<string, LucideIcon> = {
+  researcher: Search,
+  writer: PenLine,
+  analyst: BarChart3,
+  planner: CalendarDays,
+  coder: Code2,
+  creative: Palette,
+};
+
 const PROFILE_MAP: Record<string, AgentProfile> = {
   researcher: {
     id: "researcher",
@@ -470,7 +488,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
         <div
           className={`flex h-7 w-7 items-center justify-center rounded-md ${colors.bg} text-sm`}
         >
-          {profile?.icon || <Bot size={14} />}
+          {(() => { const Icone = ICONES_PROFILS[profileId] ?? Bot; return <Icone size={14} aria-hidden="true" />; })()}
         </div>
 
         {/* Nom agent */}
@@ -495,7 +513,7 @@ export function AgentSession({ profileId, model, onBack }: Props) {
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto py-2">
         {messages.length === 0 && !isStreaming ? (
-          <InitialPrompt
+          <InitialPrompt outils={serverProfile ? serverProfile.tools : profilCharge ? null : []}
             profile={profile}
             colors={colors}
             show={needsInitialPrompt}
@@ -550,7 +568,9 @@ export function AgentSession({ profileId, model, onBack }: Props) {
                         : `${colors.bg}`
                     } text-sm`}
                   >
-                    {isUser ? "👤" : profile?.icon || "🤖"}
+                    {isUser
+                      ? <User className="h-3.5 w-3.5" aria-hidden="true" />
+                      : (() => { const Icone = ICONES_PROFILS[profileId] ?? Bot; return <Icone className="h-3.5 w-3.5" aria-hidden="true" />; })()}
                   </div>
 
                   {/* Contenu */}
@@ -670,10 +690,13 @@ function InitialPrompt({
   profile,
   colors,
   show,
+  outils,
 }: {
   profile: AgentProfile | undefined;
   colors: { accent: string; bg: string };
   show: boolean;
+  /** Outils accordés par le serveur ; null tant qu'ils ne sont pas confirmés. */
+  outils: string[] | null;
 }) {
   if (!show || !profile) return null;
 
@@ -685,7 +708,7 @@ function InitialPrompt({
         transition={{ duration: 0.3 }}
         className={`flex h-14 w-14 items-center justify-center rounded-md ${colors.bg} text-2xl`}
       >
-        {profile.icon}
+        {(() => { const Icone = ICONES_PROFILS[profile.id] ?? Bot; return <Icone className="h-6 w-6" aria-hidden="true" />; })()}
       </motion.div>
       <div>
         <h3 className={`mb-1 text-sm font-semibold ${colors.accent}`}>
@@ -696,7 +719,11 @@ function InitialPrompt({
         </p>
       </div>
       <div className="flex flex-wrap justify-center gap-1.5">
-        {profile.tools.map((tool) => (
+        {/* B-778 (suite, relecture S5) : les outils annoncés sont ceux du serveur. */}
+        {outils === null && (
+          <span className="text-xs text-text-muted">Outils non confirmés par le serveur</span>
+        )}
+        {(outils ?? []).map((tool) => (
           <span
             key={tool}
             className="rounded-sm bg-surface-2 px-2 py-0.5 text-xs text-text-muted"
