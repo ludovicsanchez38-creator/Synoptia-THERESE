@@ -475,7 +475,7 @@ function CommandPalette({
   }, [query, visibleCapabilities]);
   const scenarioCount = query ? 0 : ACTIONS_ETABLI.length;
   const optionCount = scenarioCount + visibleCapabilities.length + visibleActions.length;
-  const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
+  const isMac = isMacPlatform();
 
   useEffect(() => {
     // B-637 : la sélection initiale vise la meilleure correspondance toutes
@@ -792,8 +792,10 @@ export function ConversationCanvasPrototype() {
   }, []);
   const { resource: contactsResource, refresh: refreshContacts } = useContactsResource();
   const [scenario, setScenario] = useState<Scenario>(initialScenario);
+  // B-860 : même règle que `chooseScenario`, sinon `?scenario=email` laissait
+  // le canevas fermé là où « Écrire » ouvre une rédaction libre.
   const [canvasOpen, setCanvasOpen] = useState(
-    initialScenario !== 'today' && initialScenario !== 'email' && initialScenario !== 'invoice' && initialScenario !== 'board',
+    initialScenario !== 'today' && initialScenario !== 'invoice' && initialScenario !== 'board',
   );
   const [calculatorOpen, setCalculatorOpen] = useState(false);
   const [deliverablesOpen, setDeliverablesOpen] = useState(false);
@@ -869,7 +871,7 @@ export function ConversationCanvasPrototype() {
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | 'new-devis' | null>(null);
   // Entrée 10 : pendant exact de 'new-devis'. « Écrire » ouvre une rédaction,
   // là où il menait à « Messages à consulter ».
-  const [redactionLibre, setRedactionLibre] = useState(false);
+  const [redactionLibre, setRedactionLibre] = useState(initialScenario === 'email');
   const [selectedBoardTarget, setSelectedBoardTarget] = useState<BoardTarget>(null);
   const [selectedAtelierTarget, setSelectedAtelierTarget] = useState<AtelierTarget>(
     initialScenario === 'atelier' ? 'new-mission' : null,
