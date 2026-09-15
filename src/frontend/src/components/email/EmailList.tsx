@@ -238,6 +238,12 @@ export function EmailList({ accountId }: EmailListProps) {
     const token = pageToken;
     if (!token || isLoadingRef.current) return;
     isLoadingRef.current = true;
+    // B-855 : la page suivante appartient à la rubrique qui l'a demandée. Le
+    // changement de compte ou de rubrique annule ce contrôleur (effet
+    // ci-dessus) ; une réponse arrivée après est ignorée au lieu d'être
+    // collée sous les messages d'une autre rubrique.
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
     try {
       const labelIds = currentLabelId ? [currentLabelId] : undefined;
       const result = await api.listEmailMessages(accountId, {
@@ -246,6 +252,7 @@ export function EmailList({ accountId }: EmailListProps) {
         query: searchQuery || undefined,
         pageToken: token,
       });
+      if (controller.signal.aborted) return;
       const deja = new Set(useEmailStore.getState().messages.map((m) => m.id));
       const mapped = mapEmailList(
         result.messages,
@@ -255,10 +262,11 @@ export function EmailList({ accountId }: EmailListProps) {
       setPageToken(result.nextPageToken ?? null);
       setHasMore(Boolean(result.nextPageToken));
     } catch (err) {
+      if (controller.signal.aborted) return;
       console.error('[Email] Échec chargement page suivante:', err);
       setError('Impossible de charger la suite.');
     } finally {
-      isLoadingRef.current = false;
+      if (!controller.signal.aborted) isLoadingRef.current = false;
     }
   }
 
