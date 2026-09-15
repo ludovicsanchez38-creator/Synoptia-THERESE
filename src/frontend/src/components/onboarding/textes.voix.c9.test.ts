@@ -4,6 +4,9 @@
  * locale existe (Réglages > Confidentialité : « La dictée reste possible en
  * 100 % local »). Le catalogue annonce « Whisper et Piper » pour la même
  * fonction : la fiche contredisait le reste de l'application.
+ *
+ * B-886 (relecteur U2) : la fenêtre s'appelle « Paramètres » (h1, bouton du
+ * rail), pas « Réglages » : la fiche renvoie vers le nom affiché.
  */
 import { describe, expect, it } from 'vitest';
 
@@ -16,5 +19,7 @@ describe('textes de mise en route - B-859, la fiche voix connaît la dictée loc
     expect(voix).toBeDefined();
     expect(voix!.description).toMatch(/Groq/);
     expect(voix!.description).toMatch(/local/i);
+    expect(voix!.description).toMatch(/Paramètres/);
+    expect(voix!.description).not.toMatch(/Réglages/);
   });
 });
