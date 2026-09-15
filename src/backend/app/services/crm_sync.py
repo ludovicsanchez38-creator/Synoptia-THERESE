@@ -629,7 +629,9 @@ async def ensure_valid_crm_token(session: AsyncSession) -> str | None:
                 EmailAccount.client_secret.isnot(None),
             )
         )
-        email_account = email_result.scalar_one_or_none()
+        # B-838 : deux comptes Gmail avec identifiants faisaient lever
+        # MultipleResultsFound hors de tout try ; le premier compte suffit.
+        email_account = email_result.scalars().first()
         if email_account and email_account.client_id and email_account.client_secret:
             try:
                 client_id = decrypt_value(email_account.client_id)
