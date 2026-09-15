@@ -1227,6 +1227,20 @@ async def get_message(
                 status_code=502,
                 detail=message_pour_ecran(e, ou="avec le serveur IMAP"),
             )
+        # B-836 : le message lu est mis en cache comme côté Gmail ; sans cela,
+        # generate-response, PATCH /priority et link-contact (qui lisent la base)
+        # répondaient 404 sur tout compte IMAP.
+        cache_imap = await session.get(EmailMessage, dto.id)
+        nouveau = _message_cache_depuis_dto(dto, account_id)
+        if cache_imap is not None and cache_imap.account_id == account_id:
+            for champ in ('subject', 'snippet', 'from_email', 'from_name', 'to_emails', 'cc_emails',
+                          'bcc_emails', 'date', 'internal_date', 'body_plain', 'body_html',
+                          'is_read', 'is_starred', 'labels'):
+                if hasattr(nouveau, champ):
+                    setattr(cache_imap, champ, getattr(nouveau, champ))
+        elif cache_imap is None:
+            session.add(nouveau)
+        await session.commit()
         # body_html est déjà assaini au niveau du provider IMAP (_imap_to_dto).
         return {
             'id': dto.id,
