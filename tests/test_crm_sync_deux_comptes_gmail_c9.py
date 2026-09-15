@@ -23,7 +23,10 @@ async def test_deux_comptes_gmail_ne_font_pas_planter_le_rafraichissement(db_ses
         async def refresh_access_token(self, *a, **k):
             raise RuntimeError("pas de réseau dans ce test")
 
-    monkeypatch.setattr(crm_sync, "get_oauth_service", lambda: FauxOAuth(), raising=False)
+    # Relecture U1 (c9) : crm_sync importe get_oauth_service dans le corps de la
+    # fonction ; la doublure vit donc sur app.services.oauth, sinon elle est inerte.
+    import app.services.oauth as oauth
+    monkeypatch.setattr(oauth, "get_oauth_service", lambda: FauxOAuth())
 
     # Avant la correction : MultipleResultsFound levée avant même d'atteindre le refresh.
     jeton = await crm_sync.ensure_valid_crm_token(db_session)

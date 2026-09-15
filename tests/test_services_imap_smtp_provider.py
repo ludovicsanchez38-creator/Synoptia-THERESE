@@ -250,10 +250,16 @@ class TestB060RemplacerUnBrouillonImap:
         from unittest.mock import MagicMock
 
         mailbox = MagicMock()
-        mailbox.folder.list.return_value = [
-            MagicMock(**{"name": "INBOX"}),
-            MagicMock(**{"name": "Drafts"}),
-        ]
+        # Relecture U1 (c9) : `MagicMock(name=...)` nomme la doublure, il ne
+        # pose pas l'attribut `.name` ; on le pose explicitement.
+        dossiers = []
+        for nom, flags in (("INBOX", ()), ("Drafts", ("\\Drafts",))):
+            dossier = MagicMock()
+            dossier.name = nom
+            dossier.flags = flags
+            dossier.delim = "/"
+            dossiers.append(dossier)
+        mailbox.folder.list.return_value = dossiers
         mailbox.append.return_value = reponse_append
         cm = MagicMock()
         cm.__enter__ = MagicMock(return_value=mailbox)
