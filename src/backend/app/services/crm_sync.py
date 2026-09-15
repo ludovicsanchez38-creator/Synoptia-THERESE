@@ -198,8 +198,10 @@ class CRMSyncService:
             try:
                 contact, created = await upsert_contact(self.session, row, safe_get=True)
                 # Champ specifique au sync service : last_interaction
+                # B-883 : une colonne vide ne gomme pas une date posée localement.
                 last_interaction = parse_datetime(row.get("LastInteraction", ""))
-                contact.last_interaction = last_interaction
+                if last_interaction is not None:
+                    contact.last_interaction = last_interaction
                 if created:
                     stats.contacts_created += 1
                 else:
