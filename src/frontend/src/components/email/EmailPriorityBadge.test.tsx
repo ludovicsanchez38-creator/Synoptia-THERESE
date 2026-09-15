@@ -7,7 +7,8 @@ import { describe, expect, it } from 'vitest';
 
 import { EmailPriorityBadge } from './EmailPriorityBadge';
 
-const EMOJI = /[\u{1F300}-\u{1FAFF}]/u;
+// B-769 : le bloc U+2600-27BF (pictogrammes, ✨ U+2728) échappait à la garde.
+const EMOJI = /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u;
 
 describe('EmailPriorityBadge : pastille dessinée', () => {
   it.each(['high', 'medium', 'low'] as const)("%s : aucun emoji, une pastille décorative", (priority) => {

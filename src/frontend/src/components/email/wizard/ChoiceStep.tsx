@@ -29,7 +29,7 @@ export function ChoiceStep({ onSelect, mcpCredentials }: ChoiceStepProps) {
         </h3>
         <p className="text-sm text-text-muted">
           {mcpCredentials
-            ? '✨ Super ! J\'ai trouvé tes credentials Google MCP'
+            ? 'Super ! J\'ai trouvé tes identifiants Google MCP'
             : 'Choisis la méthode qui te convient le mieux'}
         </p>
       </div>
