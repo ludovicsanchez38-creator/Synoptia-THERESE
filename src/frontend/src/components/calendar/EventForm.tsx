@@ -262,8 +262,8 @@ export function EventForm() {
         {abandonDemande && (
           <div className="flex flex-wrap items-center gap-2 rounded-sm border border-warning/40 bg-[var(--color-warning-tint)] px-3 py-2">
             <p className="text-sm font-semibold text-text">Abandonner les modifications ?</p>
-            <Button variant="ghost" size="sm" onClick={() => setAbandonDemande(false)}>Continuer la saisie</Button>
-            <Button variant="danger" size="sm" onClick={abandonner}>Abandonner</Button>
+            <Button variant="ghost" size="md" onClick={() => setAbandonDemande(false)}>Continuer la saisie</Button>
+            <Button variant="danger" size="md" onClick={abandonner}>Abandonner</Button>
           </div>
         )}
 
