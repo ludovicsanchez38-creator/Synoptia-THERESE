@@ -241,6 +241,10 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
     // tardif rechargerait un document qu'on vient de quitter).
     draftAbortController?.abort();
     draftAbortController = null;
+    // B-919 : le suivi de trame est unique (B-903) ; fermer le document sans
+    // demander l'arrêt laissait ce suivi bloquer toute génération, sans
+    // bouton d'arrêt à l'écran.
+    if (get().outlineGeneration) void get().cancelOutline();
     set({ currentDocument: null, sectionActive: null, error: null, draftError: null, exportError: null, outlineNotice: null, isStreaming: false });
   },
 
