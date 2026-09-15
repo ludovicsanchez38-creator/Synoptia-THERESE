@@ -337,6 +337,10 @@ export function EmailList({ accountId }: EmailListProps) {
             icon={<Search className="h-4 w-4" />}
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
+                // B-897 : une page suivante en vol ne doit pas avaler la
+                // recherche ; elle est annulée et la recherche part.
+                abortControllerRef.current?.abort();
+                isLoadingRef.current = false;
                 loadMessages();
               }
             }}
