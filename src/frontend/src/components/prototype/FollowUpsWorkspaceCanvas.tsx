@@ -126,7 +126,8 @@ export function FollowUpsWorkspaceCanvas({
   async function saveEdit(item: EmailFollowUp) {
     if (!editingDate) return;
     const saved = await mutate(item.id, () => updateFollowUp(item.id, {
-      due_date: `${editingDate}T09:00:00`,
+      // B-781 : jour civil seul ; le moteur pose l'heure de relance (civil_time.HEURE_DE_RELANCE).
+      due_date: editingDate,
       note: editingNote.trim(),
     }));
     if (saved) setEditingId(null);

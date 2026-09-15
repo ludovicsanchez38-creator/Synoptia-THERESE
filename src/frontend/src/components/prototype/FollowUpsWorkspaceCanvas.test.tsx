@@ -43,7 +43,9 @@ describe('FollowUpsWorkspaceCanvas', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
     await waitFor(() => expect(updateFollowUp).toHaveBeenLastCalledWith(
       followUp.id,
-      expect.objectContaining({ due_date: '2026-07-20T09:00:00' }),
+      // B-781 (cycle 9) : l'écran ne collecte qu'un jour civil ; l'heure de relance
+      // (HEURE_DE_RELANCE) est posée par le moteur, jamais recopiée côté client.
+      expect.objectContaining({ due_date: '2026-07-20' }),
     ));
 
     fireEvent.click(screen.getByRole('button', { name: 'Supprimer Proposition à valider' }));
