@@ -103,9 +103,12 @@ class TestSendUsesSameSecurityAsTest:
 
         # B-807 (cycle 9) : send_message recopie le message dans « Envoyés » par IMAP ;
         # sans ce double, le test ouvrait une vraie socket vers un serveur inexistant.
-        with patch.object(provider, "_connect_mailbox"), patch(
-            "app.services.email.imap_smtp_provider.aiosmtplib.send", new=AsyncMock()
-        ) as mock_send:
+        with (
+            patch.object(provider, "_connect_mailbox"),
+            patch(
+                "app.services.email.imap_smtp_provider.aiosmtplib.send", new=AsyncMock()
+            ) as mock_send,
+        ):
             await provider.send_message(request)
 
         kwargs = mock_send.call_args.kwargs
@@ -118,9 +121,12 @@ class TestSendUsesSameSecurityAsTest:
         provider = make_provider(smtp_port=587, smtp_use_tls=True)
         request = SendEmailRequest(to=["dest@exemple.fr"], subject="Test", body="Corps")
 
-        with patch.object(provider, "_connect_mailbox"), patch(
-            "app.services.email.imap_smtp_provider.aiosmtplib.send", new=AsyncMock()
-        ) as mock_send:
+        with (
+            patch.object(provider, "_connect_mailbox"),
+            patch(
+                "app.services.email.imap_smtp_provider.aiosmtplib.send", new=AsyncMock()
+            ) as mock_send,
+        ):
             await provider.send_message(request)
 
         kwargs = mock_send.call_args.kwargs
@@ -132,10 +138,16 @@ class TestSendUsesSameSecurityAsTest:
         provider = make_provider(smtp_port=465, smtp_use_tls=True)  # combinaison incohérente
         request = SendEmailRequest(to=["dest@exemple.fr"], subject="Test", body="Corps")
 
-        with patch(
-            "app.services.email.imap_smtp_provider.aiosmtplib.send",
-            new=AsyncMock(side_effect=asyncio.TimeoutError()),
-        ), pytest.raises(RuntimeError) as exc:
+        # Relecture V2 (c9) : même doublure que B-807, sinon une recopie IMAP
+        # ordonnée avant l'envoi ouvrirait une vraie connexion.
+        with (
+            patch.object(provider, "_connect_mailbox"),
+            patch(
+                "app.services.email.imap_smtp_provider.aiosmtplib.send",
+                new=AsyncMock(side_effect=asyncio.TimeoutError()),
+            ),
+            pytest.raises(RuntimeError) as exc,
+        ):
             await provider.send_message(request)
 
         assert "465" in str(exc.value)
@@ -150,9 +162,10 @@ class TestConnectionTimeoutMessage:
 
         # IMAP OK (mocké), SMTP timeout : le message doit expliquer
         # l'inversion port/mode, pas juste « délai dépassé ».
-        with patch.object(provider, "_connect_mailbox"), patch(
-            "app.services.email.imap_smtp_provider.aiosmtplib.SMTP"
-        ) as mock_smtp_cls:
+        with (
+            patch.object(provider, "_connect_mailbox"),
+            patch("app.services.email.imap_smtp_provider.aiosmtplib.SMTP") as mock_smtp_cls,
+        ):
             mock_smtp_cls.return_value.connect = AsyncMock(side_effect=asyncio.TimeoutError())
             result = await provider.test_connection()
 
@@ -211,9 +224,13 @@ class TestStarredFlaggedCriteria:
         from app.services.email.imap_smtp_provider import ImapSmtpProvider
 
         return ImapSmtpProvider(
-            email_address="t@example.org", password="x",
-            imap_host="imap.example.org", imap_port=993,
-            smtp_host="smtp.example.org", smtp_port=465, smtp_use_tls=True,
+            email_address="t@example.org",
+            password="x",
+            imap_host="imap.example.org",
+            imap_port=993,
+            smtp_host="smtp.example.org",
+            smtp_port=465,
+            smtp_use_tls=True,
         )
 
     @pytest.mark.asyncio
@@ -268,9 +285,7 @@ class TestB060RemplacerUnBrouillonImap:
 
     @staticmethod
     def _demande() -> SendEmailRequest:
-        return SendEmailRequest(
-            to=["client@example.org"], subject="Corrigé", body="Bonjour"
-        )
+        return SendEmailRequest(to=["client@example.org"], subject="Corrigé", body="Bonjour")
 
     def test_l_uid_du_serveur_est_lu_dans_la_reponse_append(self):
         assert ImapSmtpProvider._uid_appendu(("OK", [b"[APPENDUID 3 4243] done"])) == "4243"

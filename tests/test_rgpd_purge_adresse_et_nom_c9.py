@@ -46,3 +46,4 @@ async def test_l_adresse_est_effacee_et_la_notification_ne_nomme_personne(db_ses
     )
     assert len(notifs) == 1
     assert "Paul" not in notifs[0].message and "Blanc" not in notifs[0].message, notifs[0].message
+    assert "Lilas" not in notifs[0].message and "Manosque" not in notifs[0].message

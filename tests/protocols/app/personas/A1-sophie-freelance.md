@@ -1077,8 +1077,8 @@ chat-voice-btn
 prototype-conversation-drawer
 prototype-conversation-list
 settings-modal
-settings-tab-ai
-settings-tab-privacy
+#settings-tab-ai (identifiant, pas data-testid)
+#settings-tab-privacy (identifiant, pas data-testid)
 settings-close-btn
 settings-save-btn
 memory-panel
