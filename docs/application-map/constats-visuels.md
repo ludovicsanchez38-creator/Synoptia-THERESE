@@ -1,6 +1,8 @@
 # Constats DA, UI, UX, accessibilite
 
 
+> Cycle 9 (15/09/2026, B-760) : le centre de notifications (`ui/NotificationCenter`), son magasin, `chat/ChatHeader`, la palette historique `chat/CommandPalette` et `email/EmailConnect` n'étaient montés par aucun composant de production et ont été retirés ; les constats qui les visaient sont sans objet.
+
 ## Axe accessibility
 
 - (bug_candidate) Aucun des dix composants de production du lot ne porte role status ni aria-live, alors que le dépôt applique largement la convention ailleurs. L'indicateur de frappe et la carte de confirmation sont les deux cas qui comptent : le premier est un pur état d'attente, le second apparaît de façon asynchrone pour valider un envoi irréversible. — preuve : Mesuré : 0 occurrence de aria-live ou role="status" dans ToolConfirmationCard.tsx, TypingIndicator.tsx, CRMPanel.tsx, ActivityTimeline.tsx, DeliverablesList.tsx, PipelineView.tsx, DocumentsList.tsx, DocumentWorkspace.tsx, DocumentCreateModal.tsx et ListeDesPrestations.tsx, contre 60 occurrences dans le frontend (SplashScreen.tsx:245, SidecarStatusBanner.tsx:37-38, UpdateBanner.tsx:198-199, Notifications.tsx:53-54, NotificationCenter.tsx:211 et 228, entre autres). Le voisin immédiat VoiceDictationButton.tsx:113-114 les porte bien, et Spinner.test.tsx:29-34 garde même contre une double annonce. _(rapport WP-062)_

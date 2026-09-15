@@ -208,7 +208,6 @@
 - src/frontend/src/components/chat/ChatInput.sources.test.tsx
 - src/frontend/src/components/chat/ChatInput.test.tsx
 - src/frontend/src/components/chat/ChatInput.tsx
-- src/frontend/src/components/chat/CommandPalette.tsx
 - src/frontend/src/components/chat/ConversationMemoryChip.tsx
 - src/frontend/src/components/chat/ConversationProjectPicker.tsx
 - src/frontend/src/components/chat/EntitySuggestion.tsx
@@ -227,7 +226,6 @@
 - src/frontend/src/components/documents/PistesPanel.test.tsx
 - src/frontend/src/components/documents/PistesPanel.tsx
 - src/frontend/src/components/documents/SectionEditor.tsx
-- src/frontend/src/components/email/EmailConnect.tsx
 - src/frontend/src/components/email/EmailDetail.test.tsx
 - src/frontend/src/components/email/EmailDetail.tsx
 - src/frontend/src/components/email/EmailList.tsx
@@ -323,7 +321,6 @@
 - src/frontend/src/components/tasks/TasksPanel.tsx
 - src/frontend/src/components/traitements/TraitementsPanel.tsx
 - src/frontend/src/components/ui/CompactMarkdown.tsx
-- src/frontend/src/components/ui/NotificationCenter.tsx
 - src/frontend/src/components/ui/Notifications.test.tsx
 - src/frontend/src/components/ui/Notifications.tsx
 - src/frontend/src/components/ui/Select.tsx

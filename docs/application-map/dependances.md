@@ -616,8 +616,6 @@
 - `src/frontend/src/components/calendar/calendarErrors.test.ts` → `src/frontend/src/components/calendar/calendarErrors.ts` : 
 - `src/frontend/src/components/calendar/calendarEventLayout.ts` → `src/frontend/src/lib/civilDate.ts` : 
 - `src/frontend/src/components/chat/ActionChips.tsx` → `src/frontend/src/components/chat/actionChipsData.ts` : 
-- `src/frontend/src/components/chat/ChatHeader.test.tsx` → `src/frontend/src/components/chat/ChatHeader.tsx` : 
-- `src/frontend/src/components/chat/ChatHeader.tsx` → `src/frontend/src/hooks/useUXMode` : 
 - `src/frontend/src/components/chat/ChatInput.annulation.test.tsx` → `src/frontend/src/components/chat/ActionChips.tsx` : 
 - `src/frontend/src/components/chat/ChatInput.annulation.test.tsx` → `src/frontend/src/components/chat/ChatInput.tsx` : 
 - `src/frontend/src/components/chat/ChatInput.image.test.tsx` → `src/frontend/src/components/chat/ChatInput.tsx` : 
@@ -637,9 +635,6 @@
 - `src/frontend/src/components/chat/ChatInput.tsx` → `src/frontend/src/lib/rattachementConversation.ts` : 
 - `src/frontend/src/components/chat/ChatInput.tsx` → `src/frontend/src/stores/calendarStore` : 
 - `src/frontend/src/components/chat/ChatInput.tsx` → `src/frontend/src/stores/emailStore` : 
-- `src/frontend/src/components/chat/CommandPalette.tsx` → `src/frontend/src/lib/actionRegistry` : 
-- `src/frontend/src/components/chat/CommandPalette.tsx` → `src/frontend/src/lib/actionRegistry.ts` : 
-- `src/frontend/src/components/chat/CommandPalette.tsx` → `src/frontend/src/lib/replierPourRecherche.ts` : 
 - `src/frontend/src/components/chat/ConversationMemoryChip.tsx` → `src/frontend/src/stores/contactsStore` : 
 - `src/frontend/src/components/chat/ConversationProjectPicker.tsx` → `src/frontend/src/lib/rattachementConversation` : 
 - `src/frontend/src/components/chat/ConversationProjectPicker.tsx` → `src/frontend/src/lib/rattachementConversation.ts` : 
@@ -905,7 +900,6 @@
 - `src/frontend/src/components/prototype/CapabilityCenter.tsx` → `src/frontend/src/lib/deepLinks.ts` : 
 - `src/frontend/src/components/prototype/CapabilityCenter.tsx` → `src/frontend/src/lib/rovingFocus.ts` : 
 - `src/frontend/src/components/prototype/CapabilityCenter.tsx` → `src/frontend/src/stores/navigationStore.ts` : 
-- `src/frontend/src/components/prototype/CommandPalette.accents.test.tsx` → `src/frontend/src/components/chat/CommandPalette.tsx` : 
 - `src/frontend/src/components/prototype/CommandPalette.accents.test.tsx` → `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` : 
 - `src/frontend/src/components/prototype/ContactsMemoryCard.tsx` → `src/frontend/src/stores/contactsStore.ts` : 
 - `src/frontend/src/components/prototype/ConversationCanvasPrototype.palette.focus.test.tsx` → `src/frontend/src/lib/escapeStack.ts` : 
@@ -1103,9 +1097,6 @@
 - `src/frontend/src/components/ui/DialogShell.tsx` → `src/frontend/src/hooks/useDialogFocusTrap.ts` : 
 - `src/frontend/src/components/ui/FormField.tsx` → `src/frontend/src/lib/utils.ts` : 
 - `src/frontend/src/components/ui/GlobalErrorBoundary.tsx` → `src/frontend/src/lib/sanitizeError.ts` : 
-- `src/frontend/src/components/ui/NotificationCenter.tsx` → `src/frontend/src/lib/accessibility.ts` : 
-- `src/frontend/src/components/ui/NotificationCenter.tsx` → `src/frontend/src/stores/navigationStore.ts` : 
-- `src/frontend/src/components/ui/NotificationCenter.tsx` → `src/frontend/src/stores/notificationStore.ts` : 
 - `src/frontend/src/components/ui/Notifications.test.tsx` → `src/frontend/src/hooks/useDialogFocusTrap.ts` : 
 - `src/frontend/src/components/ui/Notifications.tsx` → `src/frontend/src/lib/accessibility.ts` : 
 - `src/frontend/src/components/ui/Notifications.tsx` → `src/frontend/src/stores/statusStore.ts` : 
@@ -1368,7 +1359,6 @@
 - `src/frontend/src/stores/invoiceStore.ts` → `zustand/middleware` : 
 - `src/frontend/src/stores/navigationStore.test.ts` → `src/frontend/src/lib/actionRegistry.ts` : 
 - `src/frontend/src/stores/navigationStore.ts` → `src/frontend/src/stores/personalisationStore.ts` : 
-- `src/frontend/src/stores/notificationStore.ts` → `src/frontend/src/services/api/notifications.ts` : 
 - `src/frontend/src/stores/openclawStore.ts` → `src/frontend/src/services/api/agents.ts` : 
 - `src/frontend/src/stores/panelStore.ts` → `src/frontend/src/lib/deepLinks.ts` : 
 - `src/frontend/src/stores/personalisationStore.reglageSansEffet.test.ts` → `src/frontend/src/services/api/personalisation.ts` : 
