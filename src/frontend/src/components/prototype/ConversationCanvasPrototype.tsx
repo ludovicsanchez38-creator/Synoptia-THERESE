@@ -709,6 +709,32 @@ function leTiroirALeFocus(): boolean {
  * pendant ce délai le focus est encore dans le tiroir. Sans cette garde, le
  * raccourci B-645 fermait le tiroir et laissait la modale ouverte (S1-3).
  */
+/** B-816 : de quoi retrouver le déclencheur d'une vue embarquée une fois l'accueil remonté. */
+interface MemoireDuDeclencheur { tag: string; testid: string | null; label: string | null; texte: string }
+
+function memoriserLeDeclencheur(element: Element | null): MemoireDuDeclencheur | null {
+  if (!(element instanceof HTMLElement) || element === document.body) return null;
+  return {
+    tag: element.tagName.toLowerCase(),
+    testid: element.getAttribute('data-testid'),
+    label: element.getAttribute('aria-label'),
+    texte: (element.textContent || '').trim(),
+  };
+}
+
+function retrouverLeDeclencheur(memoire: MemoireDuDeclencheur): HTMLElement | null {
+  if (memoire.testid) {
+    const parTestid = document.querySelector<HTMLElement>(`[data-testid="${CSS.escape(memoire.testid)}"]`);
+    if (parTestid) return parTestid;
+  }
+  const candidats = Array.from(document.querySelectorAll<HTMLElement>(memoire.tag));
+  return (
+    candidats.find((c) => memoire.label !== null && c.getAttribute('aria-label') === memoire.label)
+    ?? candidats.find((c) => memoire.texte !== '' && (c.textContent || '').trim() === memoire.texte)
+    ?? null
+  );
+}
+
 function uneModaleDeLaCoqueEstDemandee(): boolean {
   const ps = usePanelStoreDirect.getState();
   return Boolean(
@@ -858,6 +884,19 @@ export function ConversationCanvasPrototype() {
   const [chatOpen, setChatOpen] = useState(false);
   const [chatInitialPrompt, setChatInitialPrompt] = useState<string | null>(null);
   const [embeddedView, setEmbeddedView] = useState<Exclude<AppView, 'chat'> | null>(null);
+  // B-816 : au retour d'une vue embarquée, le focus revient au déclencheur
+  // (comme pour les canevas, le panneau Travaux et les Paramètres).
+  // L'accueil est démonté pendant la vue : on ne garde pas le nœud (il sera
+  // détaché) mais de quoi retrouver son équivalent une fois l'accueil remonté.
+  const declencheurDeVueRef = useRef<MemoireDuDeclencheur | null>(null);
+  useEffect(() => {
+    if (embeddedView !== null) return;
+    const memoire = declencheurDeVueRef.current;
+    if (!memoire) return;
+    declencheurDeVueRef.current = null;
+    const minuteur = setTimeout(() => retrouverLeDeclencheur(memoire)?.focus(), 0);
+    return () => clearTimeout(minuteur);
+  }, [embeddedView]);
   const [userSlashCommands, setUserSlashCommands] = useState<SlashCommand[]>([]);
   const conversationScrollRef = useRef<HTMLDivElement>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
@@ -1038,6 +1077,9 @@ export function ConversationCanvasPrototype() {
   };
   const openEmbeddedView = (view: Exclude<AppView, 'chat'>) => {
     if (blockStreamingNavigation()) return;
+    if (embeddedView === null) {
+      declencheurDeVueRef.current = memoriserLeDeclencheur(document.activeElement);
+    }
     setChatOpen(false);
     setChatInitialPrompt(null);
     setCanvasOpen(false);
@@ -1085,6 +1127,11 @@ export function ConversationCanvasPrototype() {
     // en dépendance : la demande en attente est rejouée dès que le flux finit.
     if (isStreaming) return;
     derniereVueRef.current = viewDemandee;
+    // B-816 : la navigation venue du store (actions rapides, registre) ouvre
+    // aussi une vue embarquée ; le déclencheur est l'élément encore focalisé.
+    if (viewDemandee !== null && embeddedView === null) {
+      declencheurDeVueRef.current = memoriserLeDeclencheur(document.activeElement);
+    }
     if (viewDemandee === null) {
       // Retour à l'accueil : le store ne désigne plus aucune vue, l'écran
       // doit suivre. Sans cette branche, fermer par le store laissait la
