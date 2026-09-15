@@ -17,10 +17,9 @@ coque Rust, configuration Tauri). Le détail, test par test :
 Convention : un test par bug, nommé test_BUGXXX_description.
 """
 
+import os
 from pathlib import Path
 from unittest.mock import MagicMock, patch
-
-import os
 
 import pytest
 
