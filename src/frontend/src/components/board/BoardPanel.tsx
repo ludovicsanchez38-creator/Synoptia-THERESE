@@ -23,6 +23,7 @@ import {
   listBoardDecisions,
   getBoardDecision,
   deleteBoardDecision,
+  getOllamaStatus,
   type AdvisorRole,
   type BoardSynthesis,
   type BoardDecisionResponse,
@@ -120,35 +121,19 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
   // du chemin canonique d'annulation.
   const processingTaskIdRef = useRef<string | null>(null);
 
-  // Check Ollama availability
+  // Sonde Ollama par le moteur (B-842). Un `fetch` direct vers
+  // localhost:11434 ignorait l'adresse configurée dans Réglages : un Ollama
+  // distant était déclaré absent et le mode souverain restait grisé.
   const checkOllama = useCallback(() => {
-    // `Promise.resolve` + try/catch : le sondage d'Ollama ne doit jamais faire
-    // planter le montage du Board. Le `.catch()` final ne rattrape que le rejet
-    // ASYNCHRONE ; un `fetch` absent, instrumenté ou levant de façon synchrone
-    // jetterait une TypeError non capturée depuis l'effet de montage.
-    try {
-      Promise.resolve(fetch('http://localhost:11434/api/tags'))
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.models?.length > 0) {
-          setOllamaAvailable(true);
-          setOllamaModels(
-            data.models
-              .map((m: { name: string; size: number; details?: { parameter_size?: string } }) => ({
-                name: m.name,
-                size: m.size || 0,
-                paramSize: m.details?.parameter_size,
-              }))
-              .sort((a: { size: number }, b: { size: number }) => a.size - b.size)
-          );
-        } else {
-          setOllamaAvailable(false);
-        }
+    getOllamaStatus()
+      .then((statut) => {
+        const modeles = (statut.models ?? [])
+          .map((m) => ({ name: m.name, size: m.size ?? 0 }))
+          .sort((a, b) => a.size - b.size);
+        setOllamaAvailable(statut.available && modeles.length > 0);
+        setOllamaModels(modeles);
       })
-        .catch(() => setOllamaAvailable(false));
-    } catch {
-      setOllamaAvailable(false);
-    }
+      .catch(() => setOllamaAvailable(false));
   }, []);
 
   useEffect(() => {

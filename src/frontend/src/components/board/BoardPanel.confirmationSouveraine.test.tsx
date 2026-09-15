@@ -8,7 +8,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../services/api', async () => {
   const reel = await vi.importActual<typeof import('../../services/api')>('../../services/api');
-  return { ...reel, streamDeliberation: vi.fn(), listBoardDecisions: vi.fn().mockResolvedValue([]) };
+  return {
+    ...reel,
+    streamDeliberation: vi.fn(),
+    listBoardDecisions: vi.fn().mockResolvedValue([]),
+    // B-842 : le Board sonde Ollama par le moteur, plus par un fetch direct.
+    getOllamaStatus: vi.fn().mockResolvedValue({
+      available: true,
+      base_url: 'http://127.0.0.1:11434',
+      models: [{ name: 'qwen3:8b', size: 5, modified_at: null, digest: null }],
+      error: null,
+    }),
+  };
 });
 vi.mock('../../lib/consent', () => ({ hasCloudConsent: () => true }));
 
@@ -16,7 +27,7 @@ import { BoardPanel } from './BoardPanel';
 
 describe('B-642 : la confirmation décrit le mode réellement choisi', () => {
   beforeEach(() => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ json: async () => ({ models: [{ name: 'qwen3:8b', size: 5 }] }) }));
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ json: async () => ({ models: [] }) }));
   });
 
   it('en mode souverain, elle parle d’Ollama local et pas de crédits cloud', async () => {
