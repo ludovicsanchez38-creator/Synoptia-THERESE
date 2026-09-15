@@ -597,3 +597,14 @@ dernier enfant VISIBLE (le dernier enfant DOM était un wrapper vide).
 - **Règle** : les scripts de publication Discord doivent envoyer un User-Agent
   explicite, par exemple `DiscordBot (https://synoptia.fr, 1.0)`, puis relire
   chaque message par son identifiant. Ne jamais sortir le jeton du VPS.
+
+## Cycle 9 (15/09/2026)
+
+- **Une pile jetable est une copie : les correctifs ne s'y voient pas tout seuls.** La pile c9 est un worktree détaché à `b6e6f5ed` ; une preuve Playwright jouée dessus après un correctif dans `main` reste rouge tant que le fichier n'y est pas recopié (`cp` du fichier, ou `git -C /tmp/therese-demo-c9 reset --hard main` quand aucun persona ne l'utilise). Symptôme vu : `recette-rechercher-800` rouge à 800 px après la correction B-761.
+- **Une capture visuelle « identique » se prend après stabilisation.** À 0,8 s après `networkidle`, l'entrée de l'assistant anime encore : deux captures à 400 ms d'écart différaient de 27 000 pixels sans qu'aucun défaut n'existe. Capturer toutes les 500 ms jusqu'à deux empreintes SHA-256 identiques (2,5 s mesurées), et consigner le délai (`calibrate-browser-c9.mjs`).
+- **`display:none` sort un mot du nom accessible ; `sr-only` l'y garde.** Sous 840 px, `max-[840px]:hidden` sur « Rechercher » laissait un bouton nommé « ⌘K » (B-761). jsdom n'applique pas les media queries : ce genre de défaut ne se prouve qu'en navigateur réel (`scripts-recette/recette-rechercher-800.mjs`).
+- **Un flux annulé par le client interrompt `session.close()`.** BaseHTTPMiddleware annule la tâche ; sans `asyncio.shield`, la connexion aiosqlite n'est jamais rendue au pool et le GC la ramasse (`sqlalchemy.pool ERROR non-checked-in connection`). Se lit dans le journal JSON du moteur, pas dans les tests (B-806).
+- **`timeout` n'existe pas sur macOS.** La commande pytest de la CI (`timeout 720 uv run pytest …`) sort en 0 sans rien lancer ; utiliser `gtimeout` (coreutils) ou rien en local, et vérifier que le JUnit attendu existe avant de lire un résultat.
+- **Un test qui passe avant le correctif ne prouve rien : le candidat est rejeté, le test reste en garde.** B-792 (reconnexion du hook backend) : le rendu du store est flushé avant que `connect` n'arme le minuteur, la relance survit ; la « correction » a été retirée et le test conservé comme garde de comportement.
+- **Une couleur en variable CSS ne prend pas de suffixe hexadécimal.** `${color}30` sur `var(--color-agent-cyan)` est une couleur invalide que le navigateur abandonne (halo, anneau) ; dériver l'opacité par `color-mix(in srgb, var(--x) 19%, transparent)` (B-793).
+- **Le validateur de carte exige un second lecteur sur l'échantillon de défi (10 %) même quand la couverture est à 100 %.** 95 fichiers l'attendaient au cycle 9 : quatre contre-lecteurs Opus en une passe, puis `arbitrate-divergence` sur chaque paire d'invariants sans mot commun (19, toutes des facettes distinctes).
