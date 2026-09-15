@@ -267,6 +267,9 @@ export function ImagesWorkspaceCanvas({ onClose }: { onClose: () => void }) {
   function markImageUnavailable(imageId: string) {
     const objectUrl = imageObjectUrls[imageId];
     if (objectUrl) URL.revokeObjectURL(objectUrl);
+    // B-895 : sortir aussi la vignette de la table, sinon la prochaine
+    // génération la remettait à l'écran avec son URL révoquée.
+    vignettesRef.current.delete(imageId);
     setImageObjectUrls((current) => {
       const next = { ...current };
       delete next[imageId];
