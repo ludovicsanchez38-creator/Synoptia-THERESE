@@ -426,7 +426,7 @@ export function EmailMessageCanvas({
                 <select
                   aria-label="Ton du brouillon"
                   value={tone}
-                  onChange={(event) => { setTone(event.target.value as EmailTone); markDraftDirty(); }}
+                  onChange={(event) => { setTone(event.target.value as EmailTone); }}
                   className="rounded-sm border border-border bg-surface-2 px-2 py-1.5 text-sm text-text"
                 >
                   <option value="formal">Formel</option>
@@ -436,7 +436,7 @@ export function EmailMessageCanvas({
                 <select
                   aria-label="Longueur du brouillon"
                   value={length}
-                  onChange={(event) => { setLength(event.target.value as EmailLength); markDraftDirty(); }}
+                  onChange={(event) => { setLength(event.target.value as EmailLength); }}
                   className="rounded-sm border border-border bg-surface-2 px-2 py-1.5 text-sm text-text"
                 >
                   <option value="short">Court</option>
