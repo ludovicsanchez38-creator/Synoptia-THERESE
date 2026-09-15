@@ -254,5 +254,8 @@ async def auto_purge_expired_contacts() -> dict[str, int]:
 
     except Exception as e:
         logger.error(f"Erreur purge RGPD automatique: {e}")
+        # B-894 : un commit qui échoue n'a rien écrit ; les compteurs
+        # incrémentés au fil de la boucle mentiraient à l'appelant.
+        results = {"notifications": 0, "anonymisations": 0}
 
     return results
