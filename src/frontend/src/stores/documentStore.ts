@@ -285,11 +285,18 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
       }));
     } catch (e: any) {
       const annulee = e?.code === 'outline_cancelled';
+      // B-830 : juste après une annulation, le moteur peut encore refuser (409
+      // outline_in_progress) : c'est une fin neutre à dire, pas une panne.
+      const dejaEnCours = e?.code === 'outline_in_progress';
       set((s) => ({
         isLoading: encoreLaMienne(s) ? false : s.isLoading,
         outlineGeneration: encoreLaMienne(s) ? null : s.outlineGeneration,
-        outlineNotice: annulee ? 'Génération de la trame annulée.' : s.outlineNotice,
-        error: annulee ? s.error : e?.message || 'Impossible de générer la trame.',
+        outlineNotice: annulee
+          ? 'Génération de la trame annulée.'
+          : dejaEnCours
+            ? 'Une génération de trame est déjà en cours pour ce document.'
+            : s.outlineNotice,
+        error: annulee || dejaEnCours ? s.error : e?.message || 'Impossible de générer la trame.',
       }));
     }
   },
