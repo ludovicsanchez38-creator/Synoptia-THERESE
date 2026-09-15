@@ -381,7 +381,9 @@ export function CapabilityCenter({
                   id={`capability-group-${group.id}`}
                   type="button"
                   role="tab"
-                  aria-selected={selectedGroup === group.id}
+                  // B-857 : pendant une recherche l'onglet ne filtre plus rien ;
+                  // l'attribut suit la même règle que la mise en avant visuelle.
+                  aria-selected={selected}
                   aria-controls="capability-results-panel"
                   tabIndex={selectedGroup === group.id ? 0 : -1}
                   onKeyDown={(event) => handleRovingFocus(
