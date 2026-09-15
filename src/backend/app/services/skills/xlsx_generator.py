@@ -281,6 +281,9 @@ NE génère PAS de code Python. Écris directement les tableaux de données.
                         try:
                             if "." in cell:
                                 processed.append(float(cell))
+                            elif len(cell) > 1 and cell.startswith("0"):
+                                # B-797 : « 04100 » est un code postal, pas 4100.
+                                processed.append(cell)
                             else:
                                 processed.append(int(cell))
                         except ValueError:
