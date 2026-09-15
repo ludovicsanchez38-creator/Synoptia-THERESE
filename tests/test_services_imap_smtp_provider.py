@@ -101,7 +101,11 @@ class TestSendUsesSameSecurityAsTest:
         provider = make_provider(smtp_port=465, smtp_use_tls=False)
         request = SendEmailRequest(to=["dest@exemple.fr"], subject="Test", body="Corps")
 
-        with patch("app.services.email.imap_smtp_provider.aiosmtplib.send", new=AsyncMock()) as mock_send:
+        # B-807 (cycle 9) : send_message recopie le message dans « Envoyés » par IMAP ;
+        # sans ce double, le test ouvrait une vraie socket vers un serveur inexistant.
+        with patch.object(provider, "_connect_mailbox"), patch(
+            "app.services.email.imap_smtp_provider.aiosmtplib.send", new=AsyncMock()
+        ) as mock_send:
             await provider.send_message(request)
 
         kwargs = mock_send.call_args.kwargs
@@ -114,7 +118,9 @@ class TestSendUsesSameSecurityAsTest:
         provider = make_provider(smtp_port=587, smtp_use_tls=True)
         request = SendEmailRequest(to=["dest@exemple.fr"], subject="Test", body="Corps")
 
-        with patch("app.services.email.imap_smtp_provider.aiosmtplib.send", new=AsyncMock()) as mock_send:
+        with patch.object(provider, "_connect_mailbox"), patch(
+            "app.services.email.imap_smtp_provider.aiosmtplib.send", new=AsyncMock()
+        ) as mock_send:
             await provider.send_message(request)
 
         kwargs = mock_send.call_args.kwargs
