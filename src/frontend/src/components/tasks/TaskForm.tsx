@@ -146,12 +146,16 @@ export function TaskForm() {
     }
   }
 
+  // B-872 : plus de confirm() natif (D62/D106) ; la question se pose dans le
+  // formulaire, fail-closed.
+  const [abandonDemande, setAbandonDemande] = useState(false);
   function handleCancel() {
-    if (confirm('Abandonner les modifications ?')) {
-      clearDraft();
-      setIsTaskFormOpen(false);
-      setCurrentTask(null);
-    }
+    setAbandonDemande(true);
+  }
+  function abandonner() {
+    clearDraft();
+    setIsTaskFormOpen(false);
+    setCurrentTask(null);
   }
 
   return (
@@ -169,6 +173,13 @@ export function TaskForm() {
         <h3 className="text-lg font-semibold text-text">
           {isEditing ? 'Modifier la tâche' : 'Nouvelle tâche'}
         </h3>
+        {abandonDemande && (
+          <div className="flex w-full flex-wrap items-center gap-2 rounded-sm border border-warning/40 bg-[var(--color-warning-tint)] px-3 py-2">
+            <p className="flex-1 text-sm font-semibold text-text">Abandonner les modifications ?</p>
+            <Button variant="ghost" size="sm" onClick={() => setAbandonDemande(false)}>Continuer la saisie</Button>
+            <Button variant="danger" size="sm" onClick={abandonner}>Abandonner</Button>
+          </div>
+        )}
 
         <Button variant="primary" size="md" className="ml-auto" onClick={handleSave} disabled={saving}>
           {saving ? (
