@@ -11,6 +11,7 @@ import {
   FileDown,
 } from 'lucide-react';
 import { Button } from '../ui/Button';
+import { Alerte } from '../ui/Alerte';
 import { DeliberationView } from './DeliberationView';
 import { ModeSelector, type BoardMode } from './ModeSelector';
 import { AdvisorArcLayout } from './AdvisorArcLayout';
@@ -101,6 +102,10 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
   const [isSynthesizing, setIsSynthesizing] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [decisions, setDecisions] = useState<BoardDecisionResponse[]>([]);
+  // B-873 : une panne de l'Historique n'est pas un carnet vide.
+  const [historyError, setHistoryError] = useState<string | null>(null);
+  // B-872 : plus de confirm() natif (D62/D106) ; la suppression se confirme en ligne.
+  const [decisionASupprimer, setDecisionASupprimer] = useState<string | null>(null);
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [viewingDecision, setViewingDecision] = useState<{
     question: string;
@@ -382,12 +387,15 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
 
   const handleShowHistory = useCallback(async () => {
     setLoadingHistory(true);
+    setHistoryError(null);
+    setDecisionASupprimer(null);
     setViewState('history');
     try {
       const list = await listBoardDecisions(20);
       setDecisions(list);
     } catch (error) {
       console.error('Failed to load history:', error);
+      setHistoryError('Impossible de charger l’historique des décisions.');
     } finally {
       setLoadingHistory(false);
     }
@@ -407,13 +415,11 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
     }
   }, []);
 
-  const handleDeleteDecision = useCallback(async (id: string, e: React.MouseEvent) => {
-    e.stopPropagation(); // Don't trigger view
-    if (!confirm('Supprimer cette décision ?')) return;
-
+  const handleDeleteDecision = useCallback(async (id: string) => {
     try {
       await deleteBoardDecision(id);
       setDecisions((prev) => prev.filter((d) => d.id !== id));
+      setDecisionASupprimer(null);
     } catch (error) {
       console.error('Failed to delete decision:', error);
     }
@@ -711,6 +717,11 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                       <div className="flex items-center justify-center py-12">
                         <Spinner taille="zone" className="text-text-muted" />
                       </div>
+                    ) : historyError ? (
+                      <Alerte
+                        titre="Historique indisponible"
+                        action={<Button variant="secondary" size="sm" onClick={handleShowHistory}>Réessayer</Button>}
+                      >{historyError}</Alerte>
                     ) : decisions.length === 0 ? (
                       <p className="text-center text-text-muted py-12">
                         Aucune décision enregistrée
@@ -720,6 +731,9 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                         {decisions.map((decision) => (
                           <div
                             key={decision.id}
+                            role="button"
+                            tabIndex={0}
+                            aria-label={decision.question}
                             className={cn(
                               'relative p-4 rounded-md',
                               'bg-surface-elevated border border-border',
@@ -727,6 +741,11 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                               'group cursor-pointer'
                             )}
                             onClick={() => handleViewDecision(decision.id)}
+                            // B-876 : la carte s'ouvre aussi au clavier.
+                            onKeyDown={(e) => {
+                              if (e.target !== e.currentTarget) return;
+                              if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handleViewDecision(decision.id); }
+                            }}
                           >
                             <p className="font-medium text-text mb-1 line-clamp-2 pr-8">
                               {decision.question}
@@ -742,9 +761,22 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                                 Confiance {decision.confidence}
                               </span>
                             </div>
+                            {decisionASupprimer === decision.id && (
+                              <div
+                                className="mt-3 flex flex-wrap items-center gap-2 rounded-sm border border-error/30 bg-[var(--color-error-tint)] px-3 py-2"
+                                onClick={(e) => e.stopPropagation()}
+                                onKeyDown={(e) => e.stopPropagation()}
+                              >
+                                <p className="flex-1 text-sm font-semibold text-error">Supprimer cette décision ? Cette action est irréversible.</p>
+                                <Button variant="ghost" size="sm" onClick={() => setDecisionASupprimer(null)}>Conserver la décision</Button>
+                                <Button variant="danger" size="sm" onClick={() => void handleDeleteDecision(decision.id)}>Supprimer définitivement</Button>
+                              </div>
+                            )}
                             {/* Delete button */}
                             <button
-                              onClick={(e) => handleDeleteDecision(decision.id, e)}
+                              type="button"
+                              onClick={(e) => { e.stopPropagation(); setDecisionASupprimer(decision.id); }}
+                              onKeyDown={(e) => e.stopPropagation()}
                               className={cn(
                                 'absolute top-3 right-3 p-2 rounded-md',
                                 'text-text-muted hover:text-error',
