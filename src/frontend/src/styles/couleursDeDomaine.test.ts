@@ -22,7 +22,8 @@ const SOURCES: string[] = [];
   for (const e of readdirSync(dossier, { withFileTypes: true })) {
     const chemin = join(dossier, e.name);
     if (e.isDirectory()) collecter(chemin);
-    else if (/\.tsx$/.test(e.name) && !/\.test\.tsx$/.test(e.name)) SOURCES.push(chemin);
+    // B-783 : le code de production en .ts (lib/, services/, stores/) est balayé aussi.
+    else if (/\.tsx?$/.test(e.name) && !/\.test\.tsx?$/.test(e.name) && !/\.d\.ts$/.test(e.name)) SOURCES.push(chemin);
   }
 })(RACINE);
 
