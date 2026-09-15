@@ -260,6 +260,7 @@ const SCORE_AIDE =
   "Score de potentiel commercial, calculé depuis les informations du contact et son étape dans le pipeline. Plus il est haut, plus le prospect est chaud. L'échelle n'est pas plafonnée.";
 
 function ContactCard({ contact, onClick, isOverlay }: ContactCardProps) {
+  const { maskText: masquer } = useDemoMask();
   return (
     <motion.div
       /* B-151 : repère par élément pour les protocoles (`qsa`). Pas sur la
@@ -276,16 +277,18 @@ function ContactCard({ contact, onClick, isOverlay }: ContactCardProps) {
         isOverlay && 'outline outline-2 outline-dashed outline-accent outline-offset-2 bg-accent-tint',
       )}
     >
+      {/* B-845 : en démonstration, la carte passe par le même masque que
+          l'annonce de déplacement ; sinon le vrai client restait à l'écran. */}
       <div className="font-semibold">
-        {contact.first_name} {contact.last_name}
+        {masquer([contact.first_name, contact.last_name].filter(Boolean).join(' '))}
       </div>
 
       {contact.company && (
-        <p className="text-sm text-text-muted truncate">{contact.company}</p>
+        <p className="text-sm text-text-muted truncate">{masquer(contact.company)}</p>
       )}
 
       {contact.email && (
-        <p className="text-sm text-text-muted truncate">{contact.email}</p>
+        <p className="text-sm text-text-muted truncate">{masquer(contact.email)}</p>
       )}
 
       <div className="flex flex-wrap gap-2 items-center text-sm text-text-muted mt-2">
