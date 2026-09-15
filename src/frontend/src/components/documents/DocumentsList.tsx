@@ -171,6 +171,14 @@ export function DocumentsList() {
     setWorkspaceOpenId(null);
   }, []);
 
+  // B-817 : l'atelier ouvert s'inscrit sur la pile Échap unifiée. Sans cela, la
+  // cascade de la coque passait directement au retour de vue et un seul Échap
+  // refermait l'atelier ET la liste Documents.
+  useEffect(() => {
+    if (workspaceOpenId === null) return;
+    return pushEscapeHandler(handleBackToList);
+  }, [workspaceOpenId, handleBackToList]);
+
   // BUG-154 : le document créé restait dans la liste, sans trame et sans que
   // rien ne le dise. Demander « un plan de test » doit produire un plan :
   // on ouvre l'atelier et on enchaîne la génération de la trame, dont l'état
