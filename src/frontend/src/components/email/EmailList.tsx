@@ -282,7 +282,8 @@ export function EmailList({ accountId }: EmailListProps) {
       } catch (err: any) {
         console.error('Failed to trash message:', err);
         const msg = err?.message || '';
-        if (msg.includes('expired') || msg.includes('revoked') || msg.includes('Token')) {
+        // B-774 : le 401 vaut session expirée ici comme dans le détail (EmailDetail).
+        if (msg.includes('expired') || msg.includes('revoked') || msg.includes('401') || msg.includes('Token')) {
           setError('Connexion Gmail expirée - reconnecte-toi.');
           setNeedsReauth(true);
           setTimeout(() => setError(null), 5000);
