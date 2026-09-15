@@ -289,6 +289,7 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
   const [totalResults, setTotalResults] = useState(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const rechercheCourante = useRef(0);
 
   // Chargement initial. B-474 : relançable depuis « Réessayer », qui
   // rechargeait toute la fenêtre.
@@ -332,6 +333,7 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
     }
 
     if (!value.trim()) {
+      rechercheCourante.current += 1;
       setSearchResults(null);
       setResultsQuery('');
       setTotalResults(0);
@@ -339,14 +341,19 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
       return;
     }
 
+    // B-775 : chaque recherche porte un numéro ; une réponse arrivée après une
+    // recherche plus récente est ignorée (la requête partie n'est pas annulable).
+    const numero = ++rechercheCourante.current;
     searchTimeoutRef.current = setTimeout(async () => {
       try {
         const data = await searchPromptLibrary(value.trim());
+        if (numero !== rechercheCourante.current) return;
         setSearchResults(data.categories);
         setTotalResults(data.total);
         setResultsQuery(value.trim());
         setSearchError(null);
       } catch {
+        if (numero !== rechercheCourante.current) return;
         // Revue 30/08 : garder les anciens résultats sous le nouveau
         // libellé faisait croire que la nouvelle requête avait abouti.
         setSearchResults(null);
