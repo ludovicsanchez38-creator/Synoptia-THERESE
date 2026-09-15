@@ -403,7 +403,8 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
         </Button>
         <div className="flex-1">
           <h2 className="text-lg font-semibold text-text">Bibliothèque de prompts</h2>
-          <p className="text-xs text-text-muted mt-0.5">
+          {/* B-858 : région polie, sinon le compte de résultats n'est jamais annoncé. */}
+          <p className="text-xs text-text-muted mt-0.5" aria-live="polite">
             {loading
               ? 'Chargement...'
               : searchError
