@@ -61,12 +61,21 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
   }, []);
 
   async function handleImportClaudeMd() {
+    let selected: string | string[] | null;
     try {
-      const selected = await open({
+      selected = await open({
         multiple: false,
         filters: [{ name: 'Markdown', extensions: ['md'] }],
       });
-
+    } catch (err) {
+      // B-773 : le pont natif n'a pas répondu. Son exception (« Cannot read
+      // properties of undefined (reading 'invoke') ») n'est pas un message d'écran.
+      console.error('Ouverture du sélecteur de fichier impossible:', err);
+      setNomEnFaute(false);
+      setError('La fenêtre de choix du fichier ne s’est pas ouverte. Redémarre THÉRÈSE, puis réessaie.');
+      return;
+    }
+    try {
       if (selected && typeof selected === 'string') {
         setLoading(true);
         setError(null);

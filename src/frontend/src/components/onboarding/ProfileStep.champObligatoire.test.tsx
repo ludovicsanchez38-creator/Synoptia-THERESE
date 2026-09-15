@@ -92,11 +92,12 @@ describe('ProfileStep — le champ obligatoire annonce son état', () => {
     });
 
     // Le message d'import est bien affiché : sans cette assertion, le test
-    // serait vert parce que rien ne s'est passé.
-    expect(screen.getByRole('alert')).toHaveTextContent('Import impossible');
+    // serait vert parce que rien ne s'est passé. B-773 (cycle 9) : la panne du
+    // sélecteur natif se dit en français, jamais par le texte de l'exception.
+    expect(screen.getByRole('alert')).toHaveTextContent(/fenêtre de choix du fichier/);
     const designe = champ.getAttribute('aria-describedby');
     const message = designe ? document.getElementById(designe) : null;
-    expect(message?.textContent ?? '').not.toMatch(/Import impossible/);
+    expect(message?.textContent ?? '').not.toMatch(/fenêtre de choix du fichier/);
   });
 
   it('ne s’approprie pas non plus le message d’un enregistrement raté', async () => {
