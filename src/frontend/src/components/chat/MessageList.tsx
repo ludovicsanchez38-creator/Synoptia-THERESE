@@ -52,11 +52,18 @@ function ListHeader() {
 
 function ListFooter() {
   const isStreaming = useChatStore((state) => state.isStreaming);
+  // B-812 : dès que la bulle d'assistant en flux existe, elle EST l'emplacement
+  // de la réponse ; l'indicateur « Réflexion... » ne s'y ajoute plus.
+  const bulleEnFlux = useChatStore((state) => {
+    const conversation = state.conversations.find((c) => c.id === state.currentConversationId);
+    const dernier = conversation?.messages[conversation.messages.length - 1];
+    return dernier?.role === 'assistant' && Boolean(dernier.isStreaming);
+  });
   const reduceMotion = useAccessibilityStore((s) => s.reduceMotion);
   return (
     <div className="max-w-3xl mx-auto px-4 pb-4">
       <AnimatePresence>
-        {isStreaming && (
+        {isStreaming && !bulleEnFlux && (
           <motion.div
             initial={reduceMotion ? false : { opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
