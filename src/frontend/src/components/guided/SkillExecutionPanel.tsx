@@ -94,7 +94,15 @@ export function SkillExecutionPanel({
   // _skillId et _downloadUrl réservés pour usage futur (preview, etc.)
   void _skillId;
   void _downloadUrl;
-  const config = formatConfig[format];
+  // B-776 : un format hors catalogue (valeur venue du serveur) dégrade l'affichage,
+  // il ne fait pas planter le panneau.
+  const config = formatConfig[format] ?? {
+    icon: FileText,
+    color: 'text-text-muted',
+    bgTint: 'bg-surface-2',
+    label: `Fichier ${format}`,
+    description: 'Format non reconnu, téléchargement possible',
+  };
   const FormatIcon = config.icon;
 
   return (

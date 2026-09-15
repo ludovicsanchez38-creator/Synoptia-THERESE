@@ -77,7 +77,13 @@ export function ImageGenerationPanel({
   onClose,
   onUse,
 }: ImageGenerationPanelProps) {
-  const config = providerConfig[provider];
+  // B-776 : un fournisseur hors catalogue dégrade l'affichage sans exception.
+  const config = providerConfig[provider] ?? {
+    color: 'text-text-muted',
+    bgTint: 'bg-surface-2',
+    label: String(provider),
+    description: 'Fournisseur non reconnu',
+  };
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   // US-001 : l'image est chargee via un fetch authentifie (en-tete X-Therese-Token)
