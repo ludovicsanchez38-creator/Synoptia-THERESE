@@ -126,7 +126,9 @@ class ToolInstaller:
 
         # 2. Tester dans le sandbox
         import tempfile
-        test_output = Path(tempfile.mktemp(suffix=f".{output_format}"))
+        # B-824 : mktemp ne réserve pas le nom ; un fichier réel est créé puis rendu.
+        with tempfile.NamedTemporaryFile(suffix=f".{output_format}", delete=False) as fichier_test:
+            test_output = Path(fichier_test.name)
         try:
             # Préparer le code de test avec les paramètres fictifs
             test_params = test_input or {}
@@ -271,7 +273,9 @@ params = json.loads({params_json!r})
                 test_input = {}
 
         import tempfile
-        test_output = Path(tempfile.mktemp(suffix=f".{output_format}"))
+        # B-824 : mktemp ne réserve pas le nom ; un fichier réel est créé puis rendu.
+        with tempfile.NamedTemporaryFile(suffix=f".{output_format}", delete=False) as fichier_test:
+            test_output = Path(fichier_test.name)
         try:
             params_json = json.dumps(test_input, ensure_ascii=False, default=str)
             test_code = f"""
