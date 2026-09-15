@@ -278,6 +278,23 @@ TOOL_ROUTES = {
 }
 
 
+
+def decoder_requete(line: str) -> dict[str, Any] | None:
+    """Décode une ligne JSON-RPC ; rend None (et journalise) si elle n'est pas un objet.
+
+    B-798 : une ligne JSON valide mais non-objet (`[]`, `"x"`) levait AttributeError
+    hors du try et arrêtait le pont au lieu de sauter la ligne.
+    """
+    try:
+        request = json.loads(line)
+    except json.JSONDecodeError:
+        logger.warning("JSON invalide: %s", line[:200])
+        return None
+    if not isinstance(request, dict):
+        logger.warning("Requête JSON-RPC ignorée (pas un objet): %s", line[:200])
+        return None
+    return request
+
 async def _call_therese_api(
     method: str,
     path: str,
@@ -487,10 +504,8 @@ async def run_stdio_server() -> None:
                 if not line:
                     continue
 
-                try:
-                    request = json.loads(line)
-                except json.JSONDecodeError:
-                    logger.warning("JSON invalide: %s", line[:200])
+                request = decoder_requete(line)
+                if request is None:
                     continue
 
                 response = await handle_request(request)
