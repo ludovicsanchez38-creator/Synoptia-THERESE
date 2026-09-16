@@ -145,7 +145,15 @@ describe('InvoicesPanel suppression', () => {
     render(<InvoicesPanel standalone />);
 
     expect(await screen.findByRole('alert')).toHaveTextContent(/Impossible de charger les factures/i);
-    expect(screen.queryByText('Aucune facture')).toBeNull();
+    expect(screen.queryByText('Aucun devis ni facture')).toBeNull();
+  });
+
+  it('audit release : filtre Avoirs → le bouton de création dit « Nouvelle facture » (un avoir se crée depuis une facture)', async () => {
+    mockListInvoices.mockResolvedValue([]);
+    render(<InvoicesPanel standalone />);
+    await screen.findByText('Aucun devis ni facture');
+    fireEvent.click(screen.getByRole('button', { name: /Avoirs/ }));
+    expect(screen.getByRole('button', { name: /^Nouvelle facture$/ })).toBeInTheDocument();
   });
 });
 

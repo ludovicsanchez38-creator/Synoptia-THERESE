@@ -238,7 +238,8 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
         <Button variant="primary" size="lg" type="button" onClick={handleCreateNew}>
           <Plus className="h-[18px] w-[18px]" />
           {/* P-015 : la surface s'appelle « Devis et factures », ses actions nomment les deux objets. */}
-          {filters.document_type === 'devis' ? 'Nouveau devis' : filters.document_type === 'facture' ? 'Nouvelle facture' : 'Nouveau devis ou facture'}
+          {/* Audit 0.74 : sous le filtre Avoirs, le formulaire s'ouvre sur une facture (un avoir en découle) : le bouton le dit. */}
+          {filters.document_type === 'devis' ? 'Nouveau devis' : filters.document_type ? 'Nouvelle facture' : 'Nouveau devis ou facture'}
         </Button>
 
         {!standalone && (
