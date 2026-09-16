@@ -22,9 +22,10 @@ import { effortTransmisSansOutils, modeleOpenAIRaisonnant } from '../../lib/effo
 export type { FournisseurConfig as ProviderConfig } from '../../lib/catalogueModeles';
 export { FOURNISSEURS as PROVIDERS } from '../../lib/catalogueModeles';
 
+import { Spinner } from '../ui/Spinner';
+
 /** P-085 : fournisseurs secondaires, regroupés derrière « Autres » dans la grille. */
 const SECONDAIRES = new Set(['deepseek', 'glm', 'kimi', 'qwen', 'minimax', 'infomaniak']);
-import { Spinner } from '../ui/Spinner';
 
 // Configuration des providers de génération d'images
 export interface ImageProviderConfig {
@@ -127,11 +128,15 @@ export function LLMTab({
 }: LLMTabProps) {
   const currentProviderConfig = PROVIDERS.find(p => p.id === selectedProvider);
   // P-085 : six fournisseurs secondaires regroupés derrière « Autres ».
-  const secondaireVisibleDEmblee = SECONDAIRES.has(selectedProvider) || [...SECONDAIRES].some((id) => Boolean(apiKeys[id]));
-  const [autresDeplies, setAutresDeplies] = useState(secondaireVisibleDEmblee);
-  useEffect(() => { if (secondaireVisibleDEmblee) setAutresDeplies(true); }, [secondaireVisibleDEmblee]);
-  const fournisseursAffiches = autresDeplies ? PROVIDERS : PROVIDERS.filter((p) => !SECONDAIRES.has(p.id));
-  const secondairesMasques = autresDeplies ? [] : PROVIDERS.filter((p) => SECONDAIRES.has(p.id));
+  // Audit 0.74 : un secondaire courant ou muni d'une clé reste TOUJOURS dans la
+  // grille (la grille montre ce qui est en service) ; seuls les autres se replient.
+  const [autresDeplies, setAutresDeplies] = useState(false);
+  const secondairesRepliables = PROVIDERS.filter(
+    (p) => SECONDAIRES.has(p.id) && p.id !== selectedProvider && !apiKeys[p.id],
+  );
+  const fournisseursAffiches = autresDeplies
+    ? PROVIDERS
+    : PROVIDERS.filter((p) => !secondairesRepliables.some((s) => s.id === p.id));
   const hasApiKey = apiKeys[selectedProvider] === true;
   const needsApiKey = selectedProvider !== 'ollama';
 
@@ -251,6 +256,7 @@ export function LLMTab({
             seule que le clavier saute, au lieu de sortir la grille entière du
             clavier quand Ollama est à la fois courant et indisponible. */}
         <div
+          id="llm-fournisseurs-grille"
           role="group"
           aria-label="Choix du service d’IA"
           className="grid grid-cols-2 gap-2.5 px-4 pb-4"
@@ -287,27 +293,23 @@ export function LLMTab({
               </button>
             );
           })}
-          {/* P-085 : les fournisseurs secondaires attendent derrière « Autres »,
-              sauf si l'un d'eux est courant ou muni d'une clé. */}
-          {secondairesMasques.length > 0 && (
+          {/* P-085 : les fournisseurs secondaires attendent derrière « Autres ».
+              Audit 0.74 : UNE bascule persistante (même nœud, même place), sinon
+              le focus clavier tombait sur body à chaque clic (le défaut de B-641). */}
+          {secondairesRepliables.length > 0 && (
             <button
               type="button"
-              aria-expanded={false}
-              onClick={() => setAutresDeplies(true)}
-              className="grid grid-cols-[1fr_auto] gap-x-2.5 gap-y-0.5 p-3 rounded-sm border border-border text-left text-sm min-h-9 hover:bg-surface-2 focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-ring"
+              aria-expanded={autresDeplies}
+              aria-controls="llm-fournisseurs-grille"
+              onClick={() => setAutresDeplies((v) => !v)}
+              className="grid grid-cols-[1fr_auto] gap-x-2.5 gap-y-0.5 p-3 rounded-sm border border-border text-left text-sm min-h-9 hover:bg-surface-2 focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-ring"
             >
-              <span className="min-w-0 font-semibold text-text">Autres (+{secondairesMasques.length})</span>
-              <span className="col-span-2 text-sm text-text-muted">{secondairesMasques.map((f) => f.name).join(', ')}</span>
-            </button>
-          )}
-          {autresDeplies && SECONDAIRES.size > 0 && (
-            <button
-              type="button"
-              aria-expanded={true}
-              onClick={() => setAutresDeplies(false)}
-              className="col-span-2 justify-self-start text-sm text-text-muted hover:text-text focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-ring rounded-sm px-1"
-            >
-              Réduire les autres services
+              <span className="min-w-0 font-semibold text-text">
+                {autresDeplies ? 'Réduire les autres services' : `Autres (+${secondairesRepliables.length})`}
+              </span>
+              <span className="col-span-2 text-sm text-text-muted">
+                {autresDeplies ? 'Replier ' : ''}{secondairesRepliables.map((f) => f.name).join(', ')}
+              </span>
             </button>
           )}
         </div>
