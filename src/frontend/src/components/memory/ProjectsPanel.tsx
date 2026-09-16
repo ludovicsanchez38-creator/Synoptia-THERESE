@@ -206,9 +206,19 @@ export function ProjectsPanel() {
             )}
           />
         ) : projects.length === 0 ? (
-          /* Le geste « Nouveau projet » est déjà en tête : l'état vide ne le
-             redouble pas. */
-          <EtatVide titre="Aucun projet" />
+          /* P-064 : comme Documents, l'état vide explique et propose le geste. */
+          <EtatVide
+            data-testid="projets-etat-vide"
+            titre="Aucun projet"
+            action={(
+              <Button variant="primary" size="md" onClick={handleNew}>
+                <Plus className="h-[18px] w-[18px] mr-2" />
+                Nouveau projet
+              </Button>
+            )}
+          >
+            Crée ton premier projet pour rassembler les contacts, documents et tâches d’une même affaire.
+          </EtatVide>
         ) : (
           <Carte as="section" className="overflow-hidden">
             <ProjectsKanban

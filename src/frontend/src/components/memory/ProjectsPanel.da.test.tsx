@@ -5,7 +5,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { Project } from '../../services/api';
@@ -120,5 +120,16 @@ describe('Lot 6 DA : les états de ProjectsPanel', () => {
     expect(annonce).not.toHaveAttribute('aria-hidden', 'true');
     expect(dansUnSousArbreMuet(annonce.parentElement)).toBe(false);
     expect(rangeesSquelette(container)).toHaveLength(3);
+  });
+});
+
+describe('P-064 : l’état vide de Projets explique et propose un geste, comme Documents', () => {
+  it('sans projet : une phrase d’explication et un bouton « Nouveau projet » dans l’état vide', async () => {
+    mockListProjects.mockResolvedValue([]);
+    render(<ProjectsPanel />);
+    const vide = (await screen.findByRole('heading', { level: 3, name: 'Aucun projet' })).closest('[data-testid="projets-etat-vide"]') as HTMLElement | null;
+    expect(vide).not.toBeNull();
+    expect(vide!.textContent).toMatch(/Crée ton premier projet/);
+    expect(within(vide!).getByRole('button', { name: /Nouveau projet/ })).toBeInTheDocument();
   });
 });
