@@ -42,3 +42,11 @@ describe('ShortcutsModal - glyphe modificateur selon la plateforme', () => {
     expect(document.body.textContent).toContain('⌘');
   });
 });
+
+describe('P-095 : un raccourci se nomme par ce qu’il fait, pas par un prénom interne', () => {
+  it('⌘⇧K ne dit plus « Katia » mais nomme l’action', () => {
+    render(<ShortcutsModal isOpen onClose={() => {}} />);
+    expect(screen.queryByText(/Katia/)).toBeNull();
+    expect(screen.getByText(/Écrire à l’agent de l’Atelier/)).toBeInTheDocument();
+  });
+});

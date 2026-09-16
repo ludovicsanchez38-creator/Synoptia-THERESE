@@ -52,7 +52,8 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
     title: 'Outils',
     shortcuts: [
       { keys: '⌘ + ⇧ + A', description: 'Améliorer THÉRÈSE' },
-      { keys: '⌘ + ⇧ + K', description: 'Katia - nouvelle tâche' },
+      // P-095 : nommer par ce que fait le raccourci, pas par le prénom interne de l'agent.
+      { keys: '⌘ + ⇧ + K', description: 'Écrire à l’agent de l’Atelier' },
       { keys: '⌘ + ⇧ + C', description: 'Agenda' },
       { keys: '⌘ + ⇧ + F', description: 'Rechercher dans les Contacts' },
       { keys: '⌘ + ⇧ + D', description: 'Mode démonstration' },
