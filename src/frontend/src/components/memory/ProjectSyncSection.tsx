@@ -81,6 +81,7 @@ export function ProjectSyncSection({ projectId }: Props) {
   const attacher = async () => {
     setOccupe('racine');
     setErreur(null);
+    setInfo(null);
     try {
       await api.definirRacineSync(projectId, chemin.trim());
       setChemin('');
@@ -103,7 +104,8 @@ export function ProjectSyncSection({ projectId }: Props) {
     try {
       await api.retirerRacineSync(projectId);
       setPlan(null);
-      setInfo('Dossier délié. Les documents déjà indexés restent consultables dans la mémoire ; pour les retirer, passe par la purge du projet.');
+      // Audit 0.74 : nommer le geste qui existe (la liste des fichiers de la fiche du projet), pas une « purge » introuvable.
+      setInfo('Dossier délié. Les documents déjà indexés restent consultables dans la mémoire ; pour les retirer, supprime-les depuis la fiche du projet.');
       await charger();
     } catch (e) {
       // D4 : sans catch, l'échec partait en promesse rejetée et l'écran
@@ -118,6 +120,7 @@ export function ProjectSyncSection({ projectId }: Props) {
   const preparer = async () => {
     setOccupe('plan');
     setErreur(null);
+    setInfo(null);
     setPlan(null);
     try {
       const p = await api.preparerPlanSync(projectId);
@@ -136,6 +139,7 @@ export function ProjectSyncSection({ projectId }: Props) {
     if (!plan) return;
     setOccupe('apply');
     setErreur(null);
+    setInfo(null);
     try {
       await api.appliquerPlanSync(projectId, plan.id);
       // 202 : suivre l'avancement par l'état - sondage BORNÉ (revue jalon,

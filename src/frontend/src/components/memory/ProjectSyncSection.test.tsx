@@ -308,5 +308,23 @@ describe('P-027 : délier un dossier dit que l’index garde les documents', () 
     fireEvent.click(await screen.findByRole('button', { name: /Délier/i }));
     await waitFor(() => expect(apiMocks.retirerRacineSync).toHaveBeenCalledWith('p1'));
     expect(await screen.findByTestId('sync-info')).toHaveTextContent(/documents déjà indexés restent/i);
+    // Audit release : la consigne nomme un geste qui existe, pas une « purge du projet ».
+    expect(screen.getByTestId('sync-info')).not.toHaveTextContent(/purge du projet/);
+    expect(screen.getByTestId('sync-info')).toHaveTextContent(/fiche du projet/);
+  });
+
+  it('le statut « Dossier délié » disparaît dès qu’on attache un nouveau dossier (audit release)', async () => {
+    apiMocks.etatSync.mockResolvedValueOnce({ racine: '/Users/ludo/Clients/Martin', generation: 1, dernier_plan: null })
+      .mockResolvedValue({ racine: null, generation: null, dernier_plan: null });
+    apiMocks.journalSync.mockResolvedValue([]);
+    apiMocks.retirerRacineSync.mockResolvedValue(undefined);
+    apiMocks.definirRacineSync.mockImplementation(() => new Promise(() => {}));
+    render(<ProjectSyncSection projectId="p1" />);
+    fireEvent.click(await screen.findByRole('button', { name: /Délier/i }));
+    await screen.findByTestId('sync-info');
+    fireEvent.change(await screen.findByLabelText(/Dossier/i), { target: { value: '/Users/ludo/Clients/Roux' } });
+    fireEvent.click(screen.getByRole('button', { name: /Attacher|Lier/i }));
+    await waitFor(() => expect(apiMocks.definirRacineSync).toHaveBeenCalled());
+    expect(screen.queryByTestId('sync-info')).toBeNull();
   });
 });
