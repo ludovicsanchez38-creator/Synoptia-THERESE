@@ -382,8 +382,8 @@ describe('Lot 5 DA : états dans la Carte', () => {
     render(<InvoicesPanel standalone />);
     const vide = await screen.findByTestId('invoices-empty');
     expect(vide.closest('section')).not.toBeNull();
-    expect(within(vide).getByRole('heading', { name: 'Aucune facture' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Créer une facture' })).toBeInTheDocument();
+    expect(within(vide).getByRole('heading', { name: 'Aucun devis ni facture' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Créer un devis ou une facture' })).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Réessayer' })).toBeNull();
   });
 });

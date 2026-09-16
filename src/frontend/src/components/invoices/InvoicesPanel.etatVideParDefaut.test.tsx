@@ -24,8 +24,9 @@ describe('B-646 : état vide sans filtre effectif', () => {
 
   it('avec Statut = Toutes, propose de créer une facture au lieu d’accuser un filtre', async () => {
     render(<InvoicesPanel standalone />);
-    expect(await screen.findByText('Aucune facture')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /Créer une facture/ })).toBeInTheDocument();
+    // P-015 : la surface s'appelle « Devis et factures », ses actions nomment les deux objets.
+    expect(await screen.findByText('Aucun devis ni facture')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /Créer un devis ou une facture/ })).toBeInTheDocument();
     expect(screen.queryByText(/ne correspond à ce filtre/)).toBeNull();
   });
 
@@ -33,5 +34,12 @@ describe('B-646 : état vide sans filtre effectif', () => {
     useInvoiceStore.setState({ filters: { status: 'paid' } } as never);
     render(<InvoicesPanel standalone />);
     expect(await screen.findByText(/ne correspond à ce filtre/)).toBeInTheDocument();
+  });
+});
+
+describe('P-015 : sans filtre de type, le geste nomme les deux objets', () => {
+  it('le bouton principal dit « Nouveau devis ou facture »', async () => {
+    render(<InvoicesPanel standalone />);
+    expect(await screen.findByRole('button', { name: /Nouveau devis ou facture/ })).toBeInTheDocument();
   });
 });

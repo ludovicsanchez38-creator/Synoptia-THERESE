@@ -237,7 +237,8 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
       <div className="ml-auto flex flex-wrap gap-2 max-[840px]:basis-full max-[840px]:ml-0">
         <Button variant="primary" size="lg" type="button" onClick={handleCreateNew}>
           <Plus className="h-[18px] w-[18px]" />
-          {filters.document_type === 'devis' ? 'Nouveau devis' : 'Nouvelle facture'}
+          {/* P-015 : la surface s'appelle « Devis et factures », ses actions nomment les deux objets. */}
+          {filters.document_type === 'devis' ? 'Nouveau devis' : filters.document_type === 'facture' ? 'Nouvelle facture' : 'Nouveau devis ou facture'}
         </Button>
 
         {!standalone && (
@@ -363,10 +364,10 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
       return (
         <EtatVide
           data-testid="invoices-empty"
-          titre="Aucune facture"
+          titre="Aucun devis ni facture"
           action={
             <Button variant="primary" size="md" type="button" onClick={handleCreateNew}>
-              Créer une facture
+              Créer un devis ou une facture
             </Button>
           }
         />
