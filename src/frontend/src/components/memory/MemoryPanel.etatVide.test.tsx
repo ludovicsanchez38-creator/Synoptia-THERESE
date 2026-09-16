@@ -11,7 +11,7 @@
  * Ce test exige que les trois phrases diffèrent, que la recherche soit citée
  * et qu'un moyen d'effacer le filtre soit offert ET fonctionne.
  */
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useContactsStore } from '../../stores/contactsStore';
@@ -161,5 +161,26 @@ describe('B-240 : l’état vide dit laquelle des trois causes s’applique', ()
 
     fireEvent.click(screen.getByRole('button', { name: /Voir tous les périmètres/i }));
     expect(await screen.findByText('Marie Lefevre')).toBeInTheDocument();
+  });
+});
+
+describe('P-093 : un carnet vraiment vide explique et propose un geste', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockListContactsWithScope.mockResolvedValue([]);
+    mockGetRGPDStats.mockResolvedValue(null);
+    useStatusStore.setState({ notifications: [] });
+    poserLeCarnet([]);
+  });
+
+  it('sans contact ni filtre : une phrase d’explication et « Ajouter un contact » qui appelle onNewContact', async () => {
+    const onNewContact = vi.fn();
+    render(<MemoryPanel standalone onNewContact={onNewContact} />);
+    const texte = await attendreEtatVide();
+    expect(texte).toMatch(/Aucun contact/);
+    expect(texte).toMatch(/carnet|premier contact/i);
+    const vide = screen.getByTestId('contacts-etat-vide');
+    fireEvent.click(within(vide).getByRole('button', { name: /Ajouter un contact/ }));
+    expect(onNewContact).toHaveBeenCalled();
   });
 });

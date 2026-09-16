@@ -30,6 +30,9 @@ interface EtatVideContacts {
   message: string;
   /** Absent quand il n'y a aucun filtre à lever : le carnet est vraiment vide. */
   actionLabel?: string;
+  /** P-093 : carnet vraiment vide, une explication et le geste de création. */
+  explication?: string;
+  actionKind?: 'lever-filtres' | 'nouveau-contact';
 }
 
 /**
@@ -63,7 +66,12 @@ function decrireEtatVideContacts(
       actionLabel: 'Voir tous les périmètres',
     };
   }
-  return { message: 'Aucun contact' };
+  return {
+    message: 'Aucun contact',
+    explication: 'Ton carnet est vide. Ajoute un premier contact, ou importe-les depuis un tableur.',
+    actionLabel: 'Ajouter un contact',
+    actionKind: 'nouveau-contact',
+  };
 }
 
 interface MemoryPanelProps {
@@ -439,6 +447,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                   contacts={displayContacts}
                   etatVide={etatVideContacts}
                   onLeverLesFiltres={leverLesFiltresContacts}
+                  onNouveauContact={onNewContact}
                   onSelect={(c) => onEditContact?.(c)}
                   onDelete={(c) => {
                     setDeleteError(null);
@@ -745,6 +754,7 @@ function ContactsList({
   contacts,
   etatVide,
   onLeverLesFiltres,
+  onNouveauContact,
   onSelect,
   onDelete,
   onRGPDAction,
@@ -752,6 +762,7 @@ function ContactsList({
   contacts: api.Contact[];
   etatVide: EtatVideContacts;
   onLeverLesFiltres: () => void;
+  onNouveauContact?: () => void;
   onSelect: (contact: api.Contact) => void;
   onDelete: (contact: api.Contact) => void;
   onRGPDAction: (type: 'export' | 'anonymize' | 'renew', contact: api.Contact) => void;
@@ -764,13 +775,21 @@ function ContactsList({
         data-testid="contacts-etat-vide"
         titre={etatVide.message}
         action={
-          etatVide.actionLabel ? (
+          etatVide.actionKind === 'nouveau-contact' ? (
+            onNouveauContact ? (
+              <Button variant="primary" size="md" onClick={onNouveauContact}>
+                {etatVide.actionLabel}
+              </Button>
+            ) : undefined
+          ) : etatVide.actionLabel ? (
             <Button variant="ghost" size="md" onClick={onLeverLesFiltres}>
               {etatVide.actionLabel}
             </Button>
           ) : undefined
         }
-      />
+      >
+        {etatVide.explication}
+      </EtatVide>
     );
   }
 
