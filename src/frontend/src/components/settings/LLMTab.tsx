@@ -21,6 +21,9 @@ import { effortTransmisSansOutils, modeleOpenAIRaisonnant } from '../../lib/effo
 // du backend. Ré-exports pour ne pas casser les importeurs existants.
 export type { FournisseurConfig as ProviderConfig } from '../../lib/catalogueModeles';
 export { FOURNISSEURS as PROVIDERS } from '../../lib/catalogueModeles';
+
+/** P-085 : fournisseurs secondaires, regroupés derrière « Autres » dans la grille. */
+const SECONDAIRES = new Set(['deepseek', 'glm', 'kimi', 'qwen', 'minimax', 'infomaniak']);
 import { Spinner } from '../ui/Spinner';
 
 // Configuration des providers de génération d'images
@@ -123,6 +126,12 @@ export function LLMTab({
   retestingOllama = false,
 }: LLMTabProps) {
   const currentProviderConfig = PROVIDERS.find(p => p.id === selectedProvider);
+  // P-085 : six fournisseurs secondaires regroupés derrière « Autres ».
+  const secondaireVisibleDEmblee = SECONDAIRES.has(selectedProvider) || [...SECONDAIRES].some((id) => Boolean(apiKeys[id]));
+  const [autresDeplies, setAutresDeplies] = useState(secondaireVisibleDEmblee);
+  useEffect(() => { if (secondaireVisibleDEmblee) setAutresDeplies(true); }, [secondaireVisibleDEmblee]);
+  const fournisseursAffiches = autresDeplies ? PROVIDERS : PROVIDERS.filter((p) => !SECONDAIRES.has(p.id));
+  const secondairesMasques = autresDeplies ? [] : PROVIDERS.filter((p) => SECONDAIRES.has(p.id));
   const hasApiKey = apiKeys[selectedProvider] === true;
   const needsApiKey = selectedProvider !== 'ollama';
 
@@ -246,7 +255,7 @@ export function LLMTab({
           aria-label="Choix du service d’IA"
           className="grid grid-cols-2 gap-2.5 px-4 pb-4"
         >
-          {PROVIDERS.map((provider) => {
+          {fournisseursAffiches.map((provider) => {
             const indisponible = provider.id === 'ollama' && !ollamaStatus?.available;
             const courant = selectedProvider === provider.id;
 
@@ -278,6 +287,29 @@ export function LLMTab({
               </button>
             );
           })}
+          {/* P-085 : les fournisseurs secondaires attendent derrière « Autres »,
+              sauf si l'un d'eux est courant ou muni d'une clé. */}
+          {secondairesMasques.length > 0 && (
+            <button
+              type="button"
+              aria-expanded={false}
+              onClick={() => setAutresDeplies(true)}
+              className="grid grid-cols-[1fr_auto] gap-x-2.5 gap-y-0.5 p-3 rounded-sm border border-border text-left text-sm min-h-9 hover:bg-surface-2 focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-ring"
+            >
+              <span className="min-w-0 font-semibold text-text">Autres (+{secondairesMasques.length})</span>
+              <span className="col-span-2 text-sm text-text-muted">{secondairesMasques.map((f) => f.name).join(', ')}</span>
+            </button>
+          )}
+          {autresDeplies && SECONDAIRES.size > 0 && (
+            <button
+              type="button"
+              aria-expanded={true}
+              onClick={() => setAutresDeplies(false)}
+              className="col-span-2 justify-self-start text-sm text-text-muted hover:text-text focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-ring rounded-sm px-1"
+            >
+              Réduire les autres services
+            </button>
+          )}
         </div>
       </Carte>
 

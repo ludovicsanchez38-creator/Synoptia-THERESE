@@ -68,10 +68,13 @@ beforeEach(() => {
 });
 
 describe('lot 9, garde 2 : la grille des fournisseurs', () => {
-  it('quatorze boutons `aria-pressed`, aucun radio, aucun radiogroup', () => {
+  it('quatorze boutons `aria-pressed` une fois « Autres » déplié, aucun radio, aucun radiogroup', () => {
     rendre();
 
     const groupe = screen.getByRole('group', { name: 'Choix du service d’IA' });
+    // P-085 : six fournisseurs secondaires attendent derrière « Autres (+6) ».
+    expect(groupe.querySelectorAll('button[aria-pressed]')).toHaveLength(PROVIDERS.length - 6);
+    fireEvent.click(screen.getByRole('button', { name: /Autres \(\+6\)/ }));
     const cartes = groupe.querySelectorAll('button[aria-pressed]');
     expect(cartes).toHaveLength(PROVIDERS.length);
     expect(screen.queryAllByRole('radio')).toHaveLength(0);
@@ -170,7 +173,9 @@ describe('lot 9, garde 2 bis : le clavier de la grille', () => {
     });
 
     const groupe = screen.getByRole('group', { name: 'Choix du service d’IA' });
-    const cartes = Array.from(groupe.querySelectorAll('button'));
+    // P-085 : déplier « Autres » pour compter les quatorze cartes.
+    fireEvent.click(screen.getByRole('button', { name: /Autres \(\+6\)/ }));
+    const cartes = Array.from(groupe.querySelectorAll('button[aria-pressed]'));
     const ollama = cartes.find((c) => /Ollama/.test(c.textContent ?? ''));
     expect(ollama).toBeDefined();
     expect(ollama).toBeDisabled();
