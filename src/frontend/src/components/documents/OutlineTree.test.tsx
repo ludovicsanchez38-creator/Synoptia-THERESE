@@ -239,3 +239,22 @@ describe('OutlineTree', () => {
     expect(onGenerateOutline).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('P-063 : un titre tronqué reste lisible en entier', () => {
+  it('chaque titre de section porte une infobulle title avec le titre complet', () => {
+    const long = 'Analyse détaillée des besoins du client et cadrage fonctionnel de la proposition';
+    render(
+      <OutlineTree
+        sections={[makeSection({ id: 's-long', title: long, order: 10 })]}
+        activeSectionId={null}
+        isLoading={false}
+        error={null}
+        onSelect={vi.fn()}
+        onReorder={vi.fn()}
+        onCreateSection={vi.fn()}
+        onGenerateOutline={vi.fn()}
+      />,
+    );
+    expect(screen.getByTitle(long)).toBeInTheDocument();
+  });
+});

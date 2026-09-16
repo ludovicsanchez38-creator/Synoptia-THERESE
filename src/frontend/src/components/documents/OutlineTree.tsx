@@ -316,7 +316,8 @@ function SectionRow({ section, isActive, isOverlay, onSelect }: SectionRowProps)
     >
       <button type="button" onClick={() => onSelect?.(section.id)} className="w-full flex items-center gap-2 px-2.5 py-2 text-left">
         <GripVertical className="w-3.5 h-3.5 text-text-muted shrink-0" />
-        <span className="text-sm text-text truncate flex-1 min-w-0">{section.title}</span>
+        {/* P-063 : un titre tronqué reste lisible en entier (infobulle). */}
+        <span className="text-sm text-text truncate flex-1 min-w-0" title={section.title}>{section.title}</span>
         <StatusTag status={section.status} />
       </button>
     </div>
