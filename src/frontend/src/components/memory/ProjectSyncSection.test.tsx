@@ -297,3 +297,16 @@ describe('D5 : un délai déguisé en annulation reste un délai', () => {
     expect(message.textContent?.toLowerCase()).toContain('interrompue');
   });
 });
+
+describe('P-027 : délier un dossier dit que l’index garde les documents', () => {
+  it('après « Délier », un statut explique que les documents déjà indexés restent consultables', async () => {
+    apiMocks.etatSync.mockResolvedValueOnce({ racine: '/Users/ludo/Clients/Martin', generation: 1, dernier_plan: null })
+      .mockResolvedValue({ racine: null, generation: null, dernier_plan: null });
+    apiMocks.journalSync.mockResolvedValue([]);
+    apiMocks.retirerRacineSync.mockResolvedValue(undefined);
+    render(<ProjectSyncSection projectId="p1" />);
+    fireEvent.click(await screen.findByRole('button', { name: /Délier/i }));
+    await waitFor(() => expect(apiMocks.retirerRacineSync).toHaveBeenCalledWith('p1'));
+    expect(await screen.findByTestId('sync-info')).toHaveTextContent(/documents déjà indexés restent/i);
+  });
+});

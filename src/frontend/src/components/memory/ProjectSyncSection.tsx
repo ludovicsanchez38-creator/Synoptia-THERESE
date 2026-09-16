@@ -56,6 +56,8 @@ export function ProjectSyncSection({ projectId }: Props) {
   const [chemin, setChemin] = useState('');
   const [occupe, setOccupe] = useState<string | null>(null);
   const [erreur, setErreur] = useState<string | null>(null);
+  // P-027 : délier ne retire rien de l'index, c'est un choix ; on le dit.
+  const [info, setInfo] = useState<string | null>(null);
   const [journal, setJournal] = useState<api.SyncOperation[]>([]);
   const sondage = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -97,9 +99,11 @@ export function ProjectSyncSection({ projectId }: Props) {
   const delier = async () => {
     setOccupe('racine');
     setErreur(null);
+    setInfo(null);
     try {
       await api.retirerRacineSync(projectId);
       setPlan(null);
+      setInfo('Dossier délié. Les documents déjà indexés restent consultables dans la mémoire ; pour les retirer, passe par la purge du projet.');
       await charger();
     } catch (e) {
       // D4 : sans catch, l'échec partait en promesse rejetée et l'écran
@@ -316,6 +320,9 @@ export function ProjectSyncSection({ projectId }: Props) {
 
       {erreur && (
         <Alerte>{erreur}</Alerte>
+      )}
+      {info && (
+        <p className="text-sm text-text-muted" role="status" data-testid="sync-info">{info}</p>
       )}
     </Carte>
   );
