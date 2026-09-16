@@ -3,7 +3,7 @@
  * caractères ») était annoncée sous le titre « Studio Images indisponible »,
  * comme une panne de service.
  */
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ImagesWorkspaceCanvas } from './ImagesWorkspaceCanvas';
 import { getImageStatus, listGeneratedImages } from '../../services/api/images';
@@ -37,5 +37,20 @@ describe('ImagesWorkspaceCanvas - B-814, le titre de l’alerte nomme ce qui man
     const alerte = await screen.findByRole('alert');
     expect(alerte).toHaveTextContent(/Moteur à configurer/);
     expect(alerte).not.toHaveTextContent(/indisponible/);
+  });
+});
+
+describe('P-062 : le refus sans moteur dit où configurer', () => {
+  it('l’alerte « Moteur à configurer » porte un bouton vers Paramètres > Services et connecteurs', async () => {
+    const { usePanelStore } = await import('../../stores/panelStore');
+    usePanelStore.setState({ showSettings: false, requestedSettingsTab: null } as never);
+    render(<ImagesWorkspaceCanvas onClose={vi.fn()} />);
+    await waitFor(() => expect(getImageStatus).toHaveBeenCalled());
+    fireEvent.change(screen.getByLabelText('Description du visuel'), { target: { value: 'Un atelier lumineux au matin' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Préparer la génération' }));
+    const alerte = await screen.findByRole('alert');
+    fireEvent.click(within(alerte).getByRole('button', { name: /Ouvrir les Paramètres/ }));
+    expect(usePanelStore.getState().showSettings).toBe(true);
+    expect(usePanelStore.getState().requestedSettingsTab).toBe('services');
   });
 });

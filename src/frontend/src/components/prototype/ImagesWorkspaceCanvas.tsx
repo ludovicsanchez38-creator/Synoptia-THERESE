@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { usePanelStore } from '../../stores/panelStore';
 import {
   AlertCircle,
   Download,
@@ -348,7 +349,7 @@ export function ImagesWorkspaceCanvas({ onClose }: { onClose: () => void }) {
 
           <div className="mt-4 rounded-md border border-accent-cyan/30 bg-accent-tint p-3 text-sm leading-5 text-accent"><ShieldCheck className="mr-1 inline h-4 w-4" />La demande sera transmise au moteur choisi. Rien ne part avant confirmation.</div>
           </fieldset>
-          {error && <Alerte id="image-generation-error" className="mt-3" titre={titreDeLErreur(errorContext, errorField)} icone={<AlertCircle className="h-4 w-4" />} action={errorContext ? <Button type="button" variant="secondary" onClick={() => errorContext === 'load' ? void refresh() : requestGeneration()}>Réessayer</Button> : undefined}>{error}</Alerte>}
+          {error && <Alerte id="image-generation-error" className="mt-3" titre={titreDeLErreur(errorContext, errorField)} icone={<AlertCircle className="h-4 w-4" />} action={errorContext ? <Button type="button" variant="secondary" onClick={() => errorContext === 'load' ? void refresh() : requestGeneration()}>Réessayer</Button> : errorField === 'provider' ? <Button type="button" variant="secondary" onClick={() => usePanelStore.getState().openSettings('services')}>Ouvrir les Paramètres, Services et connecteurs</Button> : undefined}>{error}</Alerte>}
           {confirmationSnapshot ? <div ref={confirmationRef} className="mt-4" data-testid="image-generation-confirmation"><Alerte ton="attention" titre={`Confirmer la génération avec ${confirmationSnapshot.providerLabel} ?`} action={<div className="flex flex-wrap justify-end gap-2"><Button type="button" variant="secondary" onClick={() => setConfirmationSnapshot(null)}>Annuler</Button><Button type="button" onClick={() => void confirmGeneration()} disabled={pending}>Confirmer et générer</Button></div>}><span className="font-semibold">Prompt : {confirmationSnapshot.request.prompt}</span><br />Format {confirmationSnapshot.request.size}, qualité {confirmationSnapshot.request.quality}. Cette action peut consommer un crédit du fournisseur.{!hasCloudConsent('images', confirmationSnapshot.request.provider) ? <> En confirmant ce premier usage cloud, tu consens à transmettre ces données à {confirmationSnapshot.providerLabel}.</> : null}</Alerte></div> : <Button type="button" size="lg" onClick={requestGeneration} disabled={pending || loading} className="mt-4 w-full">{pending ? <Spinner taille="bouton" /> : <Sparkles className="h-4 w-4" />}{pending ? 'Génération en cours…' : 'Préparer la génération'}</Button>}
         </section>
 
