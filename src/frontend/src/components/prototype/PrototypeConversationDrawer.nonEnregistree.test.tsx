@@ -72,3 +72,25 @@ describe('P-070 : le tiroir montre l’aperçu du dernier message', () => {
     expect(screen.getByText(/Voici une proposition de devis pour la mission Martin/)).toBeInTheDocument();
   });
 });
+
+describe('audit release 0.74 : le tiroir respecte le mode démonstration', () => {
+  it('titre et aperçu passent par le masque', async () => {
+    const { useDemoStore } = await import('../../stores/demoStore');
+    useDemoStore.setState({ enabled: true, replacementMap: new Map([['Martin', 'Bernard'], ['Devis Martin', 'Devis Bernard']]) });
+    useChatStore.setState({
+      conversations: [{
+        id: 'c-1', title: 'Devis Martin', createdAt: new Date(), updatedAt: new Date(), synced: true,
+        messages: [
+          { id: 'm1', role: 'user', content: 'Prépare le devis', timestamp: new Date() },
+          { id: 'm2', role: 'assistant', content: 'Voici une proposition pour **Martin** en trois lots.', timestamp: new Date() },
+        ],
+      } as never],
+      currentConversationId: null,
+    });
+    render(<PrototypeConversationDrawer onClose={vi.fn()} onOpenChat={vi.fn()} />);
+    expect(screen.getByText('Devis Bernard')).toBeInTheDocument();
+    expect(screen.getByText(/Voici une proposition pour Bernard en trois lots/)).toBeInTheDocument();
+    expect(screen.queryByText(/Martin/)).toBeNull();
+    useDemoStore.setState({ enabled: false, replacementMap: new Map() });
+  });
+});

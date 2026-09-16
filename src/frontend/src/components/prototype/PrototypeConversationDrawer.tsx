@@ -3,6 +3,7 @@ import { FileDown, MoreHorizontal, Pencil, Plus, Search, Trash2, X } from 'lucid
 import { motion, useIsPresent } from 'framer-motion';
 import { useChatStore, type Conversation } from '../../stores/chatStore';
 import { aUnBrouillonLocal } from '../../hooks/useAutosave';
+import { useDemoMask } from '../../hooks/useDemoMask';
 import { Alerte } from '../ui/Alerte';
 import { Button } from '../ui/Button';
 import { EtatVide } from '../ui/EtatVide';
@@ -75,12 +76,16 @@ function groupConversations(conversations: Conversation[]): Array<[string, Conve
   return [...groups.entries()];
 }
 
-/** P-070 : premiers mots du dernier message, sur une ligne. */
+/** P-070 : premiers mots du dernier message, sur une ligne. Audit 0.74 : on
+ * coupe AVANT de normaliser (le tiroir se re-rend à chaque morceau de flux),
+ * on retire le gras et le code Markdown, et une conversation à un seul message
+ * n'a pas d'aperçu : il répéterait le titre, qui en est déduit. */
 function apercuDuDernierMessage(conversation: { title?: string; messages?: Array<{ content?: string }> }): string {
-  const dernier = conversation.messages?.[conversation.messages.length - 1];
-  const texte = (dernier?.content ?? '').replace(/\s+/g, ' ').trim();
-  // Un aperçu identique au titre (titre déduit du premier message) serait du bruit.
-  if (!texte || texte === conversation.title) return '';
+  const messages = conversation.messages ?? [];
+  if (messages.length <= 1) return '';
+  const brut = (messages[messages.length - 1]?.content ?? '').slice(0, 400);
+  const texte = brut.replace(/\*\*|__|`+/g, '').replace(/^[#>\s]+/, '').replace(/\s+/g, ' ').trim();
+  if (!texte) return '';
   return texte.length > 90 ? `${texte.slice(0, 90)}…` : texte;
 }
 
@@ -96,6 +101,7 @@ export function PrototypeConversationDrawer({
   const [editingTitle, setEditingTitle] = useState('');
   const [deleteConfirmationId, setDeleteConfirmationId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { maskText } = useDemoMask();
   const drawerRef = useRef<HTMLElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const menuTriggerRef = useRef<HTMLButtonElement>(null);
@@ -301,7 +307,9 @@ export function PrototypeConversationDrawer({
             <div className="px-2 py-1.5 text-xs font-semibold uppercase tracking-wider text-text-muted">
               {label}
             </div>
-            {items.map((conversation) => (
+            {items.map((conversation) => {
+              const apercu = maskText(apercuDuDernierMessage(conversation));
+              return (
               <div key={conversation.id} className="relative mb-1">
                 {editingId === conversation.id ? (
                   <div className="rounded-md border border-accent bg-surface p-2">
@@ -341,22 +349,20 @@ export function PrototypeConversationDrawer({
                         currentConversationId === conversation.id ? 'bg-accent-tint' : 'hover:bg-surface-2',
                       )}
                     >
-                      <b className="truncate text-sm font-semibold">{conversation.title || 'Nouvelle conversation'}</b>
+                      <b className="truncate text-sm font-semibold">{maskText(conversation.title || 'Nouvelle conversation')}</b>
                       <span className="text-sm tabular-nums text-text-muted">{updatedLabel(conversation.updatedAt)}</span>
                       <span className="col-span-2 truncate text-sm text-text-muted">
                         {compteMessages(conversation)}{conversation.synced ? '' : ' · non enregistrée'}
                       </span>
-                      {/* P-070 : l'aperçu du dernier message, quand il est chargé. */}
-                      {apercuDuDernierMessage(conversation) && (
-                        <span className="col-span-2 truncate text-sm text-text-muted">{apercuDuDernierMessage(conversation)}</span>
-                      )}
+                      {/* P-070 : l'aperçu du dernier message, quand il est chargé (masqué en démo). */}
+                      {apercu && <span className="col-span-2 truncate text-sm text-text-muted">{apercu}</span>}
                     </button>
                     <Button
                       ref={menuId === conversation.id ? menuTriggerRef : undefined}
                       variant="ghost"
                       size="icon"
                       type="button"
-                      aria-label={`Actions pour ${conversation.title}`}
+                      aria-label={`Actions pour ${maskText(conversation.title)}`}
                       aria-haspopup="menu"
                       aria-expanded={menuId === conversation.id}
                       aria-controls={`conversation-menu-${conversation.id}`}
@@ -368,11 +374,12 @@ export function PrototypeConversationDrawer({
                     >
                       <MoreHorizontal className="h-[18px] w-[18px]" />
                     </Button>
-                    {menuId === conversation.id && <div ref={menuRef} id={`conversation-menu-${conversation.id}`} role="menu" aria-label={`Actions pour ${conversation.title}`} onKeyDown={handleMenuKeyDown} className="absolute right-2 top-11 z-10 w-44 rounded-md border border-border bg-surface py-1 shadow-xl" data-testid="conversation-actions-menu"><button role="menuitem" tabIndex={-1} type="button" onClick={() => { setEditingId(conversation.id); setEditingTitle(conversation.title); setMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-text hover:bg-surface-2"><Pencil className="h-3.5 w-3.5" />Renommer</button><button role="menuitem" tabIndex={-1} type="button" onClick={() => void exportConversation(conversation.id, 'md').catch(() => setError('L’export Markdown a échoué.'))} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-text hover:bg-surface-2"><FileDown className="h-3.5 w-3.5" />Exporter en Markdown</button><button role="menuitem" tabIndex={-1} type="button" onClick={() => void exportConversation(conversation.id, 'docx').catch(() => setError('L’export Word a échoué.'))} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-text hover:bg-surface-2"><FileDown className="h-3.5 w-3.5" />Exporter en Word</button><button role="menuitem" tabIndex={-1} type="button" onClick={() => { setDeleteConfirmationId(conversation.id); setMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-error hover:bg-[var(--color-error-tint)]"><Trash2 className="h-3.5 w-3.5" />Supprimer</button></div>}
+                    {menuId === conversation.id && <div ref={menuRef} id={`conversation-menu-${conversation.id}`} role="menu" aria-label={`Actions pour ${maskText(conversation.title)}`} onKeyDown={handleMenuKeyDown} className="absolute right-2 top-11 z-10 w-44 rounded-md border border-border bg-surface py-1 shadow-xl" data-testid="conversation-actions-menu"><button role="menuitem" tabIndex={-1} type="button" onClick={() => { setEditingId(conversation.id); setEditingTitle(conversation.title); setMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-text hover:bg-surface-2"><Pencil className="h-3.5 w-3.5" />Renommer</button><button role="menuitem" tabIndex={-1} type="button" onClick={() => void exportConversation(conversation.id, 'md').catch(() => setError('L’export Markdown a échoué.'))} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-text hover:bg-surface-2"><FileDown className="h-3.5 w-3.5" />Exporter en Markdown</button><button role="menuitem" tabIndex={-1} type="button" onClick={() => void exportConversation(conversation.id, 'docx').catch(() => setError('L’export Word a échoué.'))} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-text hover:bg-surface-2"><FileDown className="h-3.5 w-3.5" />Exporter en Word</button><button role="menuitem" tabIndex={-1} type="button" onClick={() => { setDeleteConfirmationId(conversation.id); setMenuId(null); }} className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-error hover:bg-[var(--color-error-tint)]"><Trash2 className="h-3.5 w-3.5" />Supprimer</button></div>}
                   </>
                 )}
               </div>
-            ))}
+              );
+            })}
           </section>
         ))}
       </div>
