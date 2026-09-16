@@ -30,6 +30,7 @@ vi.mock('../../services/api', () => ({
   },
 }));
 vi.mock('../../services/api/variables', () => ({
+  jetonsMalFormes: () => [],
   hasVariableTokens: (t: string) => /\{[a-z_]+\}/.test(t),
   compterVariables: (t: string) => (t.match(/\{[a-z_]+\}/g) ?? []).length,
   previewVariables: vi.fn().mockResolvedValue({

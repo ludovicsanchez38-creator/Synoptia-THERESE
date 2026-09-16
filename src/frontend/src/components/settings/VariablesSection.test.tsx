@@ -13,6 +13,7 @@ import {
 } from '../../services/api/variables';
 
 vi.mock('../../services/api/variables', () => ({
+  jetonsMalFormes: () => [],
   listVariables: vi.fn(),
   createVariable: vi.fn(),
   replaceVariable: vi.fn(),

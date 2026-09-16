@@ -102,6 +102,22 @@ export function hasVariableTokens(text: string): boolean {
 
 const MOTIF_JETON = /\{[a-z0-9_]{1,32}\}/g;
 
+/** P-061 : jetons entre accolades qui ressemblent à une variable sans en
+ * respecter la forme ({mauvais-nom}, {2eme sujet}). Exclus : les jetons
+ * valides, les accolades doublées `{{…}}` et la syntaxe d'action `{action: …}`. */
+export function jetonsMalFormes(text: string): string[] {
+  const out: string[] = [];
+  for (const m of text.matchAll(/\{([^{}\n]{1,40})\}/g)) {
+    if (m.index === undefined) continue;
+    if (text[m.index - 1] === '{' || text[m.index + m[0].length] === '}') continue;
+    const contenu = m[1];
+    if (/^[a-z0-9_]{1,32}$/.test(contenu)) continue;
+    if (/^action\s*:/.test(contenu)) continue;
+    out.push(m[0]);
+  }
+  return out;
+}
+
 /** Nombre de jetons {nom} substituables. B-446 : sans assertion arrière, que
  * les WebKit antérieurs à 16.4 (cible `safari14`) refusent à l'ANALYSE du
  * module ; une accolade doublée `{{nom}}` n'est pas un jeton. */

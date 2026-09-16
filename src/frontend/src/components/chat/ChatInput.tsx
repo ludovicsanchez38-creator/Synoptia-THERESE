@@ -25,6 +25,7 @@ import {
   previewVariables,
   type VariablesPreview,
   compterVariables,
+  jetonsMalFormes,
 } from '../../services/api/variables';
 import { FormulaireVariables } from './FormulaireVariables';
 import { useToolConfirmationStore } from '../../stores/toolConfirmationStore';
@@ -1163,6 +1164,19 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           envoie (exécution locale, allowlist backend). */}
       {!modelUnavailable && !input && !isStreaming && (currentConversation()?.messages?.length ?? 0) === 0 && (
         <ActionChips onInsert={(text) => setInput(text)} />
+      )}
+
+      {/* P-061 : un jeton qui ressemble à une variable sans en respecter la
+          forme partait tel quel, sans un mot. */}
+      {jetonsMalFormes(input).length > 0 && (
+        <div
+          data-testid="variables-mal-formees-chip"
+          className="flex flex-wrap items-center gap-2 mb-2 px-3 py-1.5 rounded-md text-xs bg-surface-elevated/60 border border-border/40 text-warning"
+        >
+          <span>
+            Ignoré{jetonsMalFormes(input).length > 1 ? 's' : ''} : {jetonsMalFormes(input).join(', ')} · un nom de variable s’écrit en lettres minuscules, chiffres et _ (ex. {'{nom_client}'})
+          </span>
+        </div>
       )}
 
       {/* Chantier 4 : aperçu de résolution des variables {nom} */}
