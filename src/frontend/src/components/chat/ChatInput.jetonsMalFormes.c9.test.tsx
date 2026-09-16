@@ -48,6 +48,9 @@ describe('ChatInput - P-061, un jeton mal formé est signalé', () => {
     const puce = await screen.findByTestId('variables-mal-formees-chip');
     expect(puce).toHaveTextContent(/{mauvais-nom}/);
     expect(puce).toHaveTextContent(/{2eme sujet}/);
-    expect(puce).toHaveTextContent(/lettres minuscules, chiffres et _/);
+    expect(puce).toHaveTextContent(/Pas une variable/);
+    expect(puce).toHaveTextContent(/envoyé tel quel/);
+    expect(puce).toHaveTextContent(/tiret bas/);
+    expect(puce).not.toHaveTextContent(/Ignoré/);
   });
 });

@@ -3,6 +3,7 @@ import {
   useRef,
   useCallback,
   useEffect,
+  useMemo,
   type KeyboardEvent,
   type ChangeEvent,
 } from 'react';
@@ -102,6 +103,8 @@ function SavedIndicator({ savedAt }: { savedAt: Date }) {
 
 export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId, onInitialPromptConsumed, userCommands }: ChatInputProps) {
   const [input, setInput] = useState('');
+  // P-061 : calculé une fois par saisie (audit 0.74 : trois parcours par rendu).
+  const jetonsRates = useMemo(() => jetonsMalFormes(input), [input]);
   const [pendingSkillId, setPendingSkillId] = useState<string | undefined>(undefined);
   const [showSlashMenu, setShowSlashMenu] = useState(false);
   const [slashMenuIndex, setSlashMenuIndex] = useState(0);
@@ -1168,13 +1171,13 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
 
       {/* P-061 : un jeton qui ressemble à une variable sans en respecter la
           forme partait tel quel, sans un mot. */}
-      {jetonsMalFormes(input).length > 0 && (
+      {jetonsRates.length > 0 && (
         <div
           data-testid="variables-mal-formees-chip"
           className="flex flex-wrap items-center gap-2 mb-2 px-3 py-1.5 rounded-md text-xs bg-surface-elevated/60 border border-border/40 text-warning"
         >
           <span>
-            Ignoré{jetonsMalFormes(input).length > 1 ? 's' : ''} : {jetonsMalFormes(input).join(', ')} · un nom de variable s’écrit en lettres minuscules, chiffres et _ (ex. {'{nom_client}'})
+            Pas une variable : {jetonsRates.join(', ')} (envoyé tel quel) · un nom de variable s’écrit en lettres minuscules, chiffres et tiret bas (ex. {'{nom_client}'})
           </span>
         </div>
       )}

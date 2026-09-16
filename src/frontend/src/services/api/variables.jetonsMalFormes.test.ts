@@ -13,4 +13,12 @@ describe('jetonsMalFormes', () => {
   it('ignore les jetons valides, les accolades doublées et la syntaxe {action: …}', () => {
     expect(jetonsMalFormes('{nom_client} {{litteral}} {action: relance}')).toEqual([]);
   });
+  it('audit release : du JSON, du code ou du CSS collés ne sont pas des variables ratées', () => {
+    expect(jetonsMalFormes('Voici le JSON : {"a": 1, "b": "x"}')).toEqual([]);
+    expect(jetonsMalFormes('function f() { return x; }')).toEqual([]);
+    expect(jetonsMalFormes('.btn {margin: 0}')).toEqual([]);
+  });
+  it('audit release : un presque-nom avec majuscule ou tiret est signalé', () => {
+    expect(jetonsMalFormes('Relance {Nom_Client} et {nom-client}')).toEqual(['{Nom_Client}', '{nom-client}']);
+  });
 });
