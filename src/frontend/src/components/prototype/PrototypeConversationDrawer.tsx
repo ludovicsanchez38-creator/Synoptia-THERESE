@@ -75,6 +75,15 @@ function groupConversations(conversations: Conversation[]): Array<[string, Conve
   return [...groups.entries()];
 }
 
+/** P-070 : premiers mots du dernier message, sur une ligne. */
+function apercuDuDernierMessage(conversation: { title?: string; messages?: Array<{ content?: string }> }): string {
+  const dernier = conversation.messages?.[conversation.messages.length - 1];
+  const texte = (dernier?.content ?? '').replace(/\s+/g, ' ').trim();
+  // Un aperçu identique au titre (titre déduit du premier message) serait du bruit.
+  if (!texte || texte === conversation.title) return '';
+  return texte.length > 90 ? `${texte.slice(0, 90)}…` : texte;
+}
+
 export function PrototypeConversationDrawer({
   onClose,
   onOpenChat,
@@ -337,6 +346,10 @@ export function PrototypeConversationDrawer({
                       <span className="col-span-2 truncate text-sm text-text-muted">
                         {compteMessages(conversation)}{conversation.synced ? '' : ' · non enregistrée'}
                       </span>
+                      {/* P-070 : l'aperçu du dernier message, quand il est chargé. */}
+                      {apercuDuDernierMessage(conversation) && (
+                        <span className="col-span-2 truncate text-sm text-text-muted">{apercuDuDernierMessage(conversation)}</span>
+                      )}
                     </button>
                     <Button
                       ref={menuId === conversation.id ? menuTriggerRef : undefined}

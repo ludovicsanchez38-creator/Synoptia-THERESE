@@ -55,3 +55,20 @@ describe('PrototypeConversationDrawer : une conversation non enregistrée le dit
     expect(screen.getAllByText(/non enregistrée/).length).toBe(1);
   });
 });
+
+describe('P-070 : le tiroir montre l’aperçu du dernier message', () => {
+  it('sous le titre, les premiers mots du dernier message', () => {
+    useChatStore.setState({
+      conversations: [{
+        id: 'c-1', title: 'Devis Martin', createdAt: new Date(), updatedAt: new Date(), synced: true,
+        messages: [
+          { id: 'm1', role: 'user', content: 'Prépare le devis Martin', timestamp: new Date() },
+          { id: 'm2', role: 'assistant', content: 'Voici une proposition de devis pour la mission Martin, en trois lots.', timestamp: new Date() },
+        ],
+      } as never],
+      currentConversationId: null,
+    });
+    render(<PrototypeConversationDrawer onClose={vi.fn()} onOpenChat={vi.fn()} />);
+    expect(screen.getByText(/Voici une proposition de devis pour la mission Martin/)).toBeInTheDocument();
+  });
+});
