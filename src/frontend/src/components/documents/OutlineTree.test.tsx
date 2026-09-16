@@ -258,3 +258,25 @@ describe('P-063 : un titre tronqué reste lisible en entier', () => {
     expect(screen.getByTitle(long)).toBeInTheDocument();
   });
 });
+
+describe('audit release 0.74 : le titre visible et son infobulle passent par le masque démo', () => {
+  it('en démonstration, le vrai nom ne reste ni dans le texte ni dans title', async () => {
+    const { useDemoStore } = await import('../../stores/demoStore');
+    useDemoStore.setState({ enabled: true, replacementMap: new Map([['Martin', 'Bernard']]) });
+    render(
+      <OutlineTree
+        sections={[makeSection({ id: 's-m', title: 'Proposition pour Martin', order: 10 })]}
+        activeSectionId={null}
+        isLoading={false}
+        error={null}
+        onSelect={vi.fn()}
+        onReorder={vi.fn()}
+        onCreateSection={vi.fn()}
+        onGenerateOutline={vi.fn()}
+      />,
+    );
+    expect(screen.getByTitle('Proposition pour Bernard')).toBeInTheDocument();
+    expect(screen.queryByText(/Martin/)).toBeNull();
+    useDemoStore.setState({ enabled: false, replacementMap: new Map() });
+  });
+});
