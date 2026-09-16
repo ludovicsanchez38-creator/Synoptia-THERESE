@@ -211,7 +211,7 @@ export function ProjectsPanel() {
             data-testid="projets-etat-vide"
             titre="Aucun projet"
             action={(
-              <Button variant="primary" size="md" onClick={handleNew}>
+              <Button type="button" variant="primary" size="md" onClick={handleNew}>
                 <Plus className="h-[18px] w-[18px] mr-2" />
                 Nouveau projet
               </Button>

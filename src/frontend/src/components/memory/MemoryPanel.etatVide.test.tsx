@@ -179,8 +179,11 @@ describe('P-093 : un carnet vraiment vide explique et propose un geste', () => {
     const texte = await attendreEtatVide();
     expect(texte).toMatch(/Aucun contact/);
     expect(texte).toMatch(/carnet|premier contact/i);
+    // Audit release : l'import qui existe est le vCard, pas « un tableur » ; le geste garde son nom « Nouveau contact ».
+    expect(texte).toMatch(/vCard|\.vcf/);
+    expect(texte).not.toMatch(/tableur/);
     const vide = screen.getByTestId('contacts-etat-vide');
-    fireEvent.click(within(vide).getByRole('button', { name: /Ajouter un contact/ }));
+    fireEvent.click(within(vide).getByRole('button', { name: /^Nouveau contact/ }));
     expect(onNewContact).toHaveBeenCalled();
   });
 });

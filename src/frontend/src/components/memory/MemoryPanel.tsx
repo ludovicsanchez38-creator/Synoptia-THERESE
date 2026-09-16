@@ -68,8 +68,8 @@ function decrireEtatVideContacts(
   }
   return {
     message: 'Aucun contact',
-    explication: 'Ton carnet est vide. Ajoute un premier contact, ou importe-les depuis un tableur.',
-    actionLabel: 'Ajouter un contact',
+    explication: 'Ton carnet est vide. Ajoute un premier contact, ou importe un fichier vCard (.vcf) exporté de ton carnet d’adresses.',
+    actionLabel: 'Nouveau contact',
     actionKind: 'nouveau-contact',
   };
 }
@@ -777,7 +777,7 @@ function ContactsList({
         action={
           etatVide.actionKind === 'nouveau-contact' ? (
             onNouveauContact ? (
-              <Button variant="primary" size="md" onClick={onNouveauContact}>
+              <Button type="button" variant="primary" size="md" onClick={onNouveauContact}>
                 {etatVide.actionLabel}
               </Button>
             ) : undefined
