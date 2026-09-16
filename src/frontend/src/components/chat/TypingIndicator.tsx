@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { Bot, Sparkles } from 'lucide-react';
 
-export function TypingIndicator() {
+export function TypingIndicator({ modeleLocal = false }: { modeleLocal?: boolean } = {}) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -38,6 +38,8 @@ export function TypingIndicator() {
             ))}
           </div>
           <span className="text-xs text-text-muted ml-1">Réflexion...</span>
+          {/* P-094 : même repère que l'atelier documentaire (B-627). */}
+          {modeleLocal && <span className="text-xs text-text-muted ml-2">Avec un modèle local, cela peut prendre plusieurs minutes.</span>}
         </div>
       </div>
     </motion.div>

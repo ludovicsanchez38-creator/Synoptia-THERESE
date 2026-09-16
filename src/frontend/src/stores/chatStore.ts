@@ -79,6 +79,8 @@ interface ChatStore {
   conversations: Conversation[];
   currentConversationId: string | null;
   isStreaming: boolean;
+  /** P-094 : fournisseur courant du chat (posé par ChatInput), pour prévenir qu'un modèle local est lent. */
+  fournisseurCourant: string | null;
   queuedPrompt: string | null;
   /** Lot F : le listing a été coupé au plafond. */
   conversationsTruncated: boolean;
@@ -99,6 +101,7 @@ interface ChatStore {
   setMessageMetadata: (id: string, usage?: MessageUsage, uncertainty?: MessageUncertainty) => void;
   setMessageSkillFile: (id: string, skillFile: MessageSkillFile) => void;
   setStreaming: (isStreaming: boolean) => void;
+  setFournisseurCourant: (fournisseur: string | null) => void;
   setQueuedPrompt: (prompt: string | null) => void;
   clearCurrentConversation: () => void;
 
@@ -119,6 +122,7 @@ export const useChatStore = create<ChatStore>()(
       conversations: [],
       currentConversationId: null,
       isStreaming: false,
+      fournisseurCourant: null,
       queuedPrompt: null,
       conversationsTruncated: false,
 
@@ -334,6 +338,7 @@ export const useChatStore = create<ChatStore>()(
       },
 
       setStreaming: (isStreaming) => set({ isStreaming }),
+      setFournisseurCourant: (fournisseur) => set({ fournisseurCourant: fournisseur }),
 
       setQueuedPrompt: (prompt) => set({ queuedPrompt: prompt }),
 

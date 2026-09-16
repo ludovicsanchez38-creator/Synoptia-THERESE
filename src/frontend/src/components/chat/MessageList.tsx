@@ -52,6 +52,7 @@ function ListHeader() {
 
 function ListFooter() {
   const isStreaming = useChatStore((state) => state.isStreaming);
+  const fournisseurCourant = useChatStore((state) => state.fournisseurCourant);
   // B-812 : dès que la bulle d'assistant en flux existe, elle EST l'emplacement
   // de la réponse ; l'indicateur « Réflexion... » ne s'y ajoute plus.
   const bulleEnFlux = useChatStore((state) => {
@@ -69,7 +70,7 @@ function ListFooter() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
           >
-            <TypingIndicator />
+            <TypingIndicator modeleLocal={fournisseurCourant === 'ollama'} />
           </motion.div>
         )}
       </AnimatePresence>

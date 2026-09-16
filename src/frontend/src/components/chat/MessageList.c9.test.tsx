@@ -37,3 +37,21 @@ describe('MessageList - B-812, un seul emplacement de réponse pendant l’atten
     expect(screen.getByText(/Réflexion/)).toBeInTheDocument();
   });
 });
+
+describe('P-094 : un modèle local prévient que l’attente peut être longue', () => {
+  it('avec Ollama comme fournisseur courant, l’indicateur ajoute le repère de durée', () => {
+    useChatStore.setState({ conversations: [conversation([
+      { id: 'm1', role: 'user', content: 'Que peux-tu faire ?', timestamp: new Date() },
+    ])], fournisseurCourant: 'ollama' } as never);
+    render(<MessageList />);
+    expect(screen.getByText(/Avec un modèle local, cela peut prendre plusieurs minutes/)).toBeInTheDocument();
+  });
+
+  it('avec un fournisseur cloud, pas de repère de durée', () => {
+    useChatStore.setState({ conversations: [conversation([
+      { id: 'm1', role: 'user', content: 'Que peux-tu faire ?', timestamp: new Date() },
+    ])], fournisseurCourant: 'anthropic' } as never);
+    render(<MessageList />);
+    expect(screen.queryByText(/plusieurs minutes/)).toBeNull();
+  });
+});

@@ -186,6 +186,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       .then((cfg) => {
         setCurrentModel(cfg.model);
         setCurrentProvider(cfg.provider);
+        useChatStore.getState().setFournisseurCourant(cfg.provider ?? null);
         setAvailableModels(cfg.available_models || []);
         setModelAvailable(cfg.available !== false);
       })
