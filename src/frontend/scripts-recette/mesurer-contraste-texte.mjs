@@ -24,6 +24,16 @@ export function mesurerContrasteTexte({ selector = 'body' } = {}) {
     return style.content !== 'none' && style.content !== 'normal'
       && style.display !== 'none' && style.visibility !== 'hidden';
   };
+  const pseudoTexteStyle = (element, pseudo, base) => {
+    // ::first-line et ::first-letter changent le texte existant sans avoir
+    // de content. Leur géométrie partielle n'est pas modélisée ici.
+    const style = getComputedStyle(element, pseudo);
+    const background = parse(style.backgroundColor);
+    return ['color', 'webkitTextFillColor', 'fontSize', 'fontWeight', 'fontFamily',
+      'fontStyle', 'textShadow', 'webkitTextStrokeWidth', 'webkitTextStrokeColor']
+      .some(property => style[property] !== base[property])
+      || !background || background[3] > 0 || style.backgroundImage !== 'none';
+  };
   const results = [];
   const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
   let node;
@@ -56,6 +66,8 @@ export function mesurerContrasteTexte({ selector = 'body' } = {}) {
       if (current.textShadow !== 'none') reasons.add('ombre-de-texte');
       if (current.boxShadow.includes('inset')) reasons.add('ombre-interieure');
       if (pseudoPresent(ancestor, '::before') || pseudoPresent(ancestor, '::after')) reasons.add('pseudo-element');
+      if (pseudoTexteStyle(ancestor, '::first-line', current)
+        || pseudoTexteStyle(ancestor, '::first-letter', current)) reasons.add('pseudo-texte-style');
       // Une animation peut changer la couleur ou l'opacité après l'échantillon.
       if (ancestor.getAnimations().some(animation => animation.playState === 'running')) reasons.add('animation-en-cours');
       if (opaqueBackground) continue;
