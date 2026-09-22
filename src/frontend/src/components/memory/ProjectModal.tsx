@@ -67,6 +67,9 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
   const [fichiersTronques, setFichiersTronques] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Une ouverture constitue un contexte distinct, même pour le même projet.
+  const fichiersContexteRef = useRef(0);
+  const fichiersRequeteRef = useRef(0);
 
   const isEditing = !!project;
 
@@ -75,56 +78,74 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
   const dialogRef = useRef<HTMLDivElement>(null);
   useDialogFocusTrap(dialogRef, { active: isOpen });
 
-  // Load contacts for linking
-  useEffect(() => {
-    if (isOpen) {
-      loadContacts();
-      if (project) {
-        loadProjectFiles(project.id);
-      } else {
-        setProjectFiles([]);
-      }
-    }
-  }, [isOpen, project]);
-
-  async function loadProjectFiles(projectId: string) {
+  const loadProjectFiles = useCallback(async (projectId: string, contexte: number) => {
+    if (contexte !== fichiersContexteRef.current) return;
+    const requete = ++fichiersRequeteRef.current;
     try {
       const { files, truncated } = await api.listProjectFiles(projectId);
+      if (contexte !== fichiersContexteRef.current || requete !== fichiersRequeteRef.current) return;
       setProjectFiles(files);
       setFichiersTronques(truncated);
     } catch (err) {
-      console.error('Erreur chargement fichiers projet :', err);
+      if (contexte === fichiersContexteRef.current && requete === fichiersRequeteRef.current) {
+        console.error('Erreur chargement fichiers projet :', err);
+      }
     }
-  }
+  }, []);
+
+  // Load contacts for linking
+  useEffect(() => {
+    if (isOpen) loadContacts();
+  }, [isOpen]);
+
+  const projectId = project?.id;
+  useEffect(() => {
+    const contexte = ++fichiersContexteRef.current;
+    setProjectFiles([]);
+    setFichiersTronques(false);
+    setUploadingFile(false);
+    if (isOpen && projectId) void loadProjectFiles(projectId, contexte);
+    return () => { fichiersContexteRef.current += 1; };
+  }, [isOpen, projectId, loadProjectFiles]);
 
   const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files?.length || !project) return;
 
+    const contexte = fichiersContexteRef.current;
     setUploadingFile(true);
     setError(null);
     try {
       for (const file of Array.from(files)) {
+        if (contexte !== fichiersContexteRef.current) return;
         await api.uploadProjectFile(file, project.id);
       }
-      await loadProjectFiles(project.id);
+      await loadProjectFiles(project.id, contexte);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erreur lors de l'upload");
+      if (contexte === fichiersContexteRef.current) {
+        setError(err instanceof Error ? err.message : "Erreur lors de l'upload");
+      }
     } finally {
-      setUploadingFile(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      if (contexte === fichiersContexteRef.current) {
+        setUploadingFile(false);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+      }
     }
-  }, [project]);
+  }, [project, loadProjectFiles]);
 
   async function confirmerSuppressionFichier() {
     const cible = fichierASupprimer;
     if (!cible) return;
+    const contexte = fichiersContexteRef.current;
     try {
       await api.deleteFile(cible.id);
+      if (contexte !== fichiersContexteRef.current) return;
       setProjectFiles((prev) => prev.filter((f) => f.id !== cible.id));
       setFichierASupprimer(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Erreur suppression fichier');
+      if (contexte === fichiersContexteRef.current) {
+        setError(err instanceof Error ? err.message : 'Erreur suppression fichier');
+      }
     }
   }
 
