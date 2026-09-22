@@ -21,7 +21,11 @@ import { Input } from '../ui/Input';
 
 interface Props {
   projectId: string;
+  /** Masque local du parent, notamment avant le peuplement du store démo. */
+  maskDisplayText?: (text: string) => string;
 }
+
+interface ContexteSync { projectId: string }
 
 /**
  * Ce que l'écran dit d'un échec (D4, D5).
@@ -52,8 +56,9 @@ function messageDEchec(e: unknown, action: string): string {
   return e instanceof Error ? e.message : action;
 }
 
-export function ProjectSyncSection({ projectId }: Props) {
-  const { enabled: modeDemo, maskText } = useDemoMask();
+export function ProjectSyncSection({ projectId, maskDisplayText }: Props) {
+  const { enabled: modeDemo, maskText: masqueGlobal } = useDemoMask();
+  const maskText = maskDisplayText ?? masqueGlobal;
   const [etat, setEtat] = useState<api.SyncEtat | null>(null);
   const [chargement, setChargement] = useState(true);
   const [erreurLecture, setErreurLecture] = useState<string | null>(null);
@@ -66,141 +71,191 @@ export function ProjectSyncSection({ projectId }: Props) {
   const [journal, setJournal] = useState<api.SyncOperation[]>([]);
   const sondage = useRef<ReturnType<typeof setInterval> | null>(null);
   const lectureCourante = useRef(0);
+  const contexteCourant = useRef<ContexteSync | null>(null);
+  const contexteDuPlan = useRef<ContexteSync | null>(null);
+  const estCourant = useCallback((contexte: ContexteSync | null) => (
+    contexte !== null && contexteCourant.current === contexte
+  ), []);
 
-  const charger = useCallback(async () => {
+  const charger = useCallback(async (contexte = contexteCourant.current) => {
+    if (!contexte || !estCourant(contexte)) return null;
     const lecture = ++lectureCourante.current;
     setChargement(true);
     setErreurLecture(null);
     try {
-      const e = await api.etatSync(projectId);
-      if (lecture === lectureCourante.current) setEtat(e);
+      const e = await api.etatSync(contexte.projectId);
+      if (!estCourant(contexte) || lecture !== lectureCourante.current) return null;
+      setEtat(e);
       return e;
     } catch (e) {
-      if (lecture === lectureCourante.current) {
+      if (estCourant(contexte) && lecture === lectureCourante.current) {
         setErreurLecture(messageDEchec(e, 'Impossible de lire le dossier synchronisé.'));
       }
       return null;
     } finally {
-      if (lecture === lectureCourante.current) setChargement(false);
+      if (estCourant(contexte) && lecture === lectureCourante.current) setChargement(false);
     }
-  }, [projectId]);
+  }, [estCourant]);
 
   useEffect(() => {
+    // L'identité du contexte distingue aussi A -> B -> A : aucun retour de
+    // la première ouverture de A ne peut piloter la seconde.
+    const contexte = { projectId };
+    contexteCourant.current = contexte;
+    contexteDuPlan.current = null;
     setEtat(null);
-    void charger();
+    setPlan(null);
+    setJournal([]);
+    setChemin('');
+    setInfo(null);
+    setErreur(null);
+    setOccupe(null);
+    void charger(contexte);
     return () => {
+      contexteCourant.current = null;
       lectureCourante.current += 1;
       if (sondage.current) clearInterval(sondage.current);
+      sondage.current = null;
     };
-  }, [charger]);
+  }, [projectId, charger]);
 
   const attacher = async () => {
-    if (useDemoStore.getState().enabled) return;
+    const contexte = contexteCourant.current;
+    if (useDemoStore.getState().enabled || !contexte || contexte.projectId !== projectId) return;
     setOccupe('racine');
     setErreur(null);
     setInfo(null);
     try {
       await api.definirRacineSync(projectId, chemin.trim());
+      if (!estCourant(contexte)) return;
       setChemin('');
-      await charger();
+      await charger(contexte);
     } catch (e) {
+      if (!estCourant(contexte)) return;
       setErreur(messageDEchec(e, "Impossible d'attacher ce dossier"));
       // Quand le client abandonne, le serveur poursuit : la racine peut être
       // posée alors qu'on affiche un échec. On relit l'état plutôt que de
       // laisser l'écran mentir.
-      await charger().catch(() => undefined);
+      await charger(contexte);
     } finally {
-      setOccupe(null);
+      if (estCourant(contexte)) setOccupe(null);
     }
   };
 
   const delier = async () => {
-    if (useDemoStore.getState().enabled) return;
+    const contexte = contexteCourant.current;
+    if (useDemoStore.getState().enabled || !contexte || contexte.projectId !== projectId) return;
     setOccupe('racine');
     setErreur(null);
     setInfo(null);
     try {
       await api.retirerRacineSync(projectId);
+      if (!estCourant(contexte)) return;
+      contexteDuPlan.current = null;
       setPlan(null);
       // Audit 0.74 : nommer le geste qui existe (la liste des fichiers de la fiche du projet), pas une « purge » introuvable.
       setInfo('Dossier délié. Les documents déjà indexés restent consultables dans la mémoire ; pour les retirer, supprime-les depuis la fiche du projet.');
-      await charger();
+      await charger(contexte);
     } catch (e) {
+      if (!estCourant(contexte)) return;
       // D4 : sans catch, l'échec partait en promesse rejetée et l'écran
       // gardait un dossier que le serveur n'avait pas délié.
       setErreur(messageDEchec(e, 'Impossible de délier ce dossier'));
-      await charger().catch(() => undefined);
+      await charger(contexte);
     } finally {
-      setOccupe(null);
+      if (estCourant(contexte)) setOccupe(null);
     }
   };
 
   const preparer = async () => {
-    if (useDemoStore.getState().enabled) return;
+    const contexte = contexteCourant.current;
+    if (useDemoStore.getState().enabled || !contexte || contexte.projectId !== projectId) return;
     setOccupe('plan');
     setErreur(null);
     setInfo(null);
+    contexteDuPlan.current = null;
     setPlan(null);
     try {
       const p = await api.preparerPlanSync(projectId);
+      if (!estCourant(contexte)) return;
+      contexteDuPlan.current = contexte;
       setPlan(p);
-      await charger();
+      await charger(contexte);
     } catch (e) {
+      if (!estCourant(contexte)) return;
       setErreur(
         messageDEchec(e, 'Aucun plan produit, réessaie.'),
       );
     } finally {
-      setOccupe(null);
+      if (estCourant(contexte)) setOccupe(null);
     }
   };
 
   const appliquer = async () => {
-    if (useDemoStore.getState().enabled || !plan) return;
+    const contexte = contexteCourant.current;
+    if (useDemoStore.getState().enabled || !plan || !contexte
+      || contexte.projectId !== projectId || contexteDuPlan.current !== contexte) return;
     setOccupe('apply');
     setErreur(null);
     setInfo(null);
     try {
       await api.appliquerPlanSync(projectId, plan.id);
+      if (!estCourant(contexte)) return;
       // 202 : suivre l'avancement par l'état - sondage BORNÉ (revue jalon,
       // B7) : cinq erreurs consécutives ou vingt minutes arrêtent la boucle
       // avec un message, jamais un spinner éternel.
       let erreursConsecutives = 0;
       let ticks = 0;
-      sondage.current = setInterval(async () => {
+      let lectureEnCours = false;
+      const timer = setInterval(async () => {
+        if (!estCourant(contexte)) return;
         ticks += 1;
+        if (lectureEnCours) return;
+        lectureEnCours = true;
+        const lecture = ++lectureCourante.current;
         let e: api.SyncEtat | null = null;
         try {
           e = await api.etatSync(projectId);
+          if (!estCourant(contexte) || lecture !== lectureCourante.current) return;
           setEtat(e);
           erreursConsecutives = 0;
         } catch {
+          if (!estCourant(contexte) || lecture !== lectureCourante.current) return;
           erreursConsecutives += 1;
+        } finally {
+          lectureEnCours = false;
         }
         const etatPlan = e?.dernier_plan?.etat;
         const termine = etatPlan && etatPlan !== 'propose' && etatPlan !== 'en_cours';
         const aBout = erreursConsecutives >= 5 || ticks >= 1200;
         if (termine || aBout) {
-          if (sondage.current) clearInterval(sondage.current);
+          clearInterval(timer);
+          if (sondage.current === timer) sondage.current = null;
           setOccupe(null);
+          contexteDuPlan.current = null;
           setPlan(null);
           if (aBout && !termine) {
             setErreur(
               "Impossible de suivre la synchronisation - vérifie l'état du projet.",
             );
           } else {
-            void chargerJournal();
+            void chargerJournal(contexte);
           }
         }
       }, 1000);
+      sondage.current = timer;
     } catch (e) {
+      if (!estCourant(contexte)) return;
       setOccupe(null);
       setErreur(e instanceof Error ? e.message : "L'application a échoué");
     }
   };
 
-  const chargerJournal = async () => {
+  const chargerJournal = async (contexte: ContexteSync) => {
+    if (!estCourant(contexte)) return;
     try {
-      const j = await api.journalSync(projectId);
+      const j = await api.journalSync(contexte.projectId);
+      if (!estCourant(contexte)) return;
       setJournal(j.operations.slice(0, 10));
     } catch {
       // le journal est un confort : son échec ne masque pas le résultat
