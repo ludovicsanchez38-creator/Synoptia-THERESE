@@ -11,6 +11,8 @@ import { FolderSync, Play, RefreshCw, Unlink } from 'lucide-react';
 
 import * as api from '../../services/api';
 import { MARQUEUR_DELAI } from '../../services/api/core';
+import { useDemoMask } from '../../hooks/useDemoMask';
+import { useDemoStore } from '../../stores/demoStore';
 import { Button } from '../ui/Button';
 import { Spinner } from '../ui/Spinner';
 import { Alerte } from '../ui/Alerte';
@@ -51,7 +53,10 @@ function messageDEchec(e: unknown, action: string): string {
 }
 
 export function ProjectSyncSection({ projectId }: Props) {
+  const { enabled: modeDemo, maskText } = useDemoMask();
   const [etat, setEtat] = useState<api.SyncEtat | null>(null);
+  const [chargement, setChargement] = useState(true);
+  const [erreurLecture, setErreurLecture] = useState<string | null>(null);
   const [plan, setPlan] = useState<api.SyncPlan | null>(null);
   const [chemin, setChemin] = useState('');
   const [occupe, setOccupe] = useState<string | null>(null);
@@ -60,25 +65,37 @@ export function ProjectSyncSection({ projectId }: Props) {
   const [info, setInfo] = useState<string | null>(null);
   const [journal, setJournal] = useState<api.SyncOperation[]>([]);
   const sondage = useRef<ReturnType<typeof setInterval> | null>(null);
+  const lectureCourante = useRef(0);
 
   const charger = useCallback(async () => {
+    const lecture = ++lectureCourante.current;
+    setChargement(true);
+    setErreurLecture(null);
     try {
       const e = await api.etatSync(projectId);
-      setEtat(e);
+      if (lecture === lectureCourante.current) setEtat(e);
       return e;
-    } catch {
+    } catch (e) {
+      if (lecture === lectureCourante.current) {
+        setErreurLecture(messageDEchec(e, 'Impossible de lire le dossier synchronisé.'));
+      }
       return null;
+    } finally {
+      if (lecture === lectureCourante.current) setChargement(false);
     }
   }, [projectId]);
 
   useEffect(() => {
+    setEtat(null);
     void charger();
     return () => {
+      lectureCourante.current += 1;
       if (sondage.current) clearInterval(sondage.current);
     };
   }, [charger]);
 
   const attacher = async () => {
+    if (useDemoStore.getState().enabled) return;
     setOccupe('racine');
     setErreur(null);
     setInfo(null);
@@ -98,6 +115,7 @@ export function ProjectSyncSection({ projectId }: Props) {
   };
 
   const delier = async () => {
+    if (useDemoStore.getState().enabled) return;
     setOccupe('racine');
     setErreur(null);
     setInfo(null);
@@ -118,6 +136,7 @@ export function ProjectSyncSection({ projectId }: Props) {
   };
 
   const preparer = async () => {
+    if (useDemoStore.getState().enabled) return;
     setOccupe('plan');
     setErreur(null);
     setInfo(null);
@@ -136,7 +155,7 @@ export function ProjectSyncSection({ projectId }: Props) {
   };
 
   const appliquer = async () => {
-    if (!plan) return;
+    if (useDemoStore.getState().enabled || !plan) return;
     setOccupe('apply');
     setErreur(null);
     setInfo(null);
@@ -197,7 +216,24 @@ export function ProjectSyncSection({ projectId }: Props) {
         <h4 className="text-sm font-medium text-text">Dossier synchronisé</h4>
       </div>
 
-      {!etat?.racine ? (
+      {modeDemo && (
+        <p className="text-sm text-text-muted">
+          Dossier en lecture seule. Désactive le mode démo pour le modifier.
+        </p>
+      )}
+
+      {erreurLecture && (
+        <Alerte
+          titre="Dossier synchronisé indisponible"
+          action={<Button variant="secondary" size="sm" onClick={() => void charger()} disabled={chargement}>Réessayer</Button>}
+        >
+          {maskText(erreurLecture)}
+        </Alerte>
+      )}
+
+      {etat === null ? (
+        chargement && <p role="status" className="flex items-center gap-2 text-sm text-text-muted"><Spinner taille="ligne" />Chargement du dossier synchronisé…</p>
+      ) : !etat.racine ? (
         <div className="space-y-2">
           <p className="text-sm text-text-muted">
             Attache un dossier local : THÉRÈSE proposera un plan d'indexation à
@@ -208,7 +244,8 @@ export function ProjectSyncSection({ projectId }: Props) {
               <Input
                 aria-label="Chemin du dossier à synchroniser"
                 type="text"
-                value={chemin}
+                value={maskText(chemin)}
+                disabled={modeDemo}
                 onChange={(e) => setChemin(e.target.value)}
                 placeholder="/Users/toi/Documents/mon-projet"
               />
@@ -216,7 +253,7 @@ export function ProjectSyncSection({ projectId }: Props) {
             <Button
               size="sm"
               onClick={() => void attacher()}
-              disabled={occupe !== null || !chemin.trim()}
+              disabled={modeDemo || occupe !== null || !chemin.trim()}
             >
               {occupe === 'racine' ? <Spinner taille="bouton" /> : 'Attacher'}
             </Button>
@@ -225,13 +262,13 @@ export function ProjectSyncSection({ projectId }: Props) {
       ) : (
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2">
-            <code className="text-sm text-text-muted truncate">{etat.racine}</code>
+            <code className="text-sm text-text-muted truncate">{maskText(etat.racine)}</code>
             <Button
               type="button"
               variant="ghost"
               size="icon"
               onClick={() => void delier()}
-              disabled={occupe !== null}
+              disabled={modeDemo || occupe !== null}
               className="text-text-muted hover:text-error"
               aria-label="Délier le dossier"
               title="Délier (ne retire rien de l'index)"
@@ -245,7 +282,7 @@ export function ProjectSyncSection({ projectId }: Props) {
               size="sm"
               variant="secondary"
               onClick={() => void preparer()}
-              disabled={occupe !== null}
+              disabled={modeDemo || occupe !== null}
             >
               {occupe === 'plan'
                 ? <Spinner taille="bouton" />
@@ -255,7 +292,7 @@ export function ProjectSyncSection({ projectId }: Props) {
               <Button
                 size="sm"
                 onClick={() => void appliquer()}
-                disabled={occupe !== null}
+                disabled={modeDemo || occupe !== null}
               >
                 {occupe === 'apply'
                   ? <Spinner taille="bouton" />
@@ -278,7 +315,7 @@ export function ProjectSyncSection({ projectId }: Props) {
                   {plan.operations.slice(0, 50).map((o) => (
                     <li key={o.id} className="truncate">
                       <span className="uppercase text-xs mr-1">{o.type}</span>
-                      {o.chemin.split('/').pop()}
+                      {maskText(o.chemin.split('/').pop() ?? '')}
                     </li>
                   ))}
                 </ul>
@@ -302,8 +339,8 @@ export function ProjectSyncSection({ projectId }: Props) {
                 {journal.map((o) => (
                   <li key={o.id} className="truncate">
                     <span className="uppercase text-xs mr-1">{o.type}</span>
-                    {o.chemin.split('/').pop()}
-                    <span className="ml-1">({o.etat}{o.erreur ? ` - ${o.erreur}` : ''})</span>
+                    {maskText(o.chemin.split('/').pop() ?? '')}
+                    <span className="ml-1">({o.etat}{o.erreur ? ` - ${maskText(o.erreur)}` : ''})</span>
                   </li>
                 ))}
               </ul>
@@ -323,7 +360,7 @@ export function ProjectSyncSection({ projectId }: Props) {
       )}
 
       {erreur && (
-        <Alerte>{erreur}</Alerte>
+        <Alerte>{maskText(erreur)}</Alerte>
       )}
       {info && (
         <p className="text-sm text-text-muted" role="status" data-testid="sync-info">{info}</p>

@@ -24,6 +24,7 @@ import {
 import { grantCloudConsent, hasCloudConsent } from '../../lib/consent';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { usePanneauCouvrant } from '../../hooks/usePanneauCouvrant';
+import { useDemoMask } from '../../hooks/useDemoMask';
 import { Alerte, Button, Carte, EtatVide, Select, Textarea } from '../ui';
 import { Spinner } from '../ui/Spinner';
 
@@ -54,6 +55,7 @@ function titreDeLErreur(contexte: 'load' | 'generation' | null, champ: 'prompt' 
 }
 
 export function ImagesWorkspaceCanvas({ onClose }: { onClose: () => void }) {
+  const { maskText } = useDemoMask();
   const [providerStatus, setProviderStatus] = useState<ImageProviderStatus | null>(null);
   const [images, setImages] = useState<ImageResponse[]>([]);
   const [provider, setProvider] = useState<ImageProvider>('gpt-image-2');
@@ -285,7 +287,7 @@ export function ImagesWorkspaceCanvas({ onClose }: { onClose: () => void }) {
       return (
         <img
           src={objectUrl}
-          alt={image.prompt}
+          alt={maskText(image.prompt)}
           className={className}
           onError={() => markImageUnavailable(image.id)}
         />
@@ -295,7 +297,7 @@ export function ImagesWorkspaceCanvas({ onClose }: { onClose: () => void }) {
       return (
         <div
           role="img"
-          aria-label={`Aperçu indisponible : ${image.prompt}`}
+          aria-label={`Aperçu indisponible : ${maskText(image.prompt)}`}
           className={`${className} grid place-items-center bg-surface-2 p-3 text-center text-sm text-text-muted`}
         >
           <span><ImageIcon className="mx-auto mb-2 h-7 w-7 opacity-40" />Aperçu indisponible</span>
@@ -305,7 +307,7 @@ export function ImagesWorkspaceCanvas({ onClose }: { onClose: () => void }) {
     return (
       <div
         role="status"
-        aria-label={`Chargement de l’aperçu : ${image.prompt}`}
+        aria-label={`Chargement de l’aperçu : ${maskText(image.prompt)}`}
         className={`${className} grid place-items-center bg-surface-2 text-text-muted`}
       >
         <Spinner taille="bouton" />
@@ -350,12 +352,12 @@ export function ImagesWorkspaceCanvas({ onClose }: { onClose: () => void }) {
           <div className="mt-4 rounded-md border border-accent-cyan/30 bg-accent-tint p-3 text-sm leading-5 text-accent"><ShieldCheck className="mr-1 inline h-4 w-4" />La demande sera transmise au moteur choisi. Rien ne part avant confirmation.</div>
           </fieldset>
           {error && <Alerte id="image-generation-error" className="mt-3" titre={titreDeLErreur(errorContext, errorField)} icone={<AlertCircle className="h-4 w-4" />} action={errorContext ? <Button type="button" variant="secondary" onClick={() => errorContext === 'load' ? void refresh() : requestGeneration()}>Réessayer</Button> : errorField === 'provider' ? <Button type="button" variant="secondary" onClick={() => usePanelStore.getState().openSettings('services')}>Ouvrir les Paramètres (Services et connecteurs)</Button> : undefined}>{error}</Alerte>}
-          {confirmationSnapshot ? <div ref={confirmationRef} className="mt-4" data-testid="image-generation-confirmation"><Alerte ton="attention" titre={`Confirmer la génération avec ${confirmationSnapshot.providerLabel} ?`} action={<div className="flex flex-wrap justify-end gap-2"><Button type="button" variant="secondary" onClick={() => setConfirmationSnapshot(null)}>Annuler</Button><Button type="button" onClick={() => void confirmGeneration()} disabled={pending}>Confirmer et générer</Button></div>}><span className="font-semibold">Prompt : {confirmationSnapshot.request.prompt}</span><br />Format {confirmationSnapshot.request.size}, qualité {confirmationSnapshot.request.quality}. Cette action peut consommer un crédit du fournisseur.{!hasCloudConsent('images', confirmationSnapshot.request.provider) ? <> En confirmant ce premier usage cloud, tu consens à transmettre ces données à {confirmationSnapshot.providerLabel}.</> : null}</Alerte></div> : <Button type="button" size="lg" onClick={requestGeneration} disabled={pending || loading} className="mt-4 w-full">{pending ? <Spinner taille="bouton" /> : <Sparkles className="h-4 w-4" />}{pending ? 'Génération en cours…' : 'Préparer la génération'}</Button>}
+          {confirmationSnapshot ? <div ref={confirmationRef} className="mt-4" data-testid="image-generation-confirmation"><Alerte ton="attention" titre={`Confirmer la génération avec ${confirmationSnapshot.providerLabel} ?`} action={<div className="flex flex-wrap justify-end gap-2"><Button type="button" variant="secondary" onClick={() => setConfirmationSnapshot(null)}>Annuler</Button><Button type="button" onClick={() => void confirmGeneration()} disabled={pending}>Confirmer et générer</Button></div>}><span className="font-semibold">Prompt : {maskText(confirmationSnapshot.request.prompt)}</span><br />Format {confirmationSnapshot.request.size}, qualité {confirmationSnapshot.request.quality}. Cette action peut consommer un crédit du fournisseur.{!hasCloudConsent('images', confirmationSnapshot.request.provider) ? <> En confirmant ce premier usage cloud, tu consens à transmettre ces données à {confirmationSnapshot.providerLabel}.</> : null}</Alerte></div> : <Button type="button" size="lg" onClick={requestGeneration} disabled={pending || loading} className="mt-4 w-full">{pending ? <Spinner taille="bouton" /> : <Sparkles className="h-4 w-4" />}{pending ? 'Génération en cours…' : 'Préparer la génération'}</Button>}
         </section>
 
         <section className="min-h-0 overflow-y-auto p-5">
           <div className="flex items-center justify-between gap-3"><div><h3 className="text-sm font-bold text-text">Historique réel</h3><p className="mt-0.5 text-sm text-text-muted">{images.length} image{images.length > 1 ? 's' : ''} chargée{images.length > 1 ? 's' : ''} sur 50 maximum</p></div><Button type="button" variant="secondary" size="icon" onClick={() => void refresh()} disabled={loading} aria-label="Actualiser l’historique"><RefreshCw className={`h-[18px] w-[18px] ${loading ? 'animate-spin' : ''}`} /></Button></div>
-          {loading ? <div className="grid min-h-64 place-items-center text-sm text-text-muted" role="status"><Spinner taille="zone" className="mb-2" />Chargement des images…</div> : images.length === 0 ? <EtatVide className="mt-5 grid min-h-64 place-items-center rounded-md border border-dashed border-border bg-surface" titre="Aucune image générée"><ImageIcon className="mx-auto mb-2 h-8 w-8 opacity-40" />Les prochains visuels apparaîtront ici.</EtatVide> : <><div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3" aria-label="Historique des images">{images.map((image) => <button key={image.id} type="button" aria-pressed={selected?.id === image.id} onClick={() => { setSelected(image); setDownloadError(null); }} className={`overflow-hidden rounded-md border bg-surface text-left transition-colors hover:bg-surface-2 ${selected?.id === image.id ? 'border-accent ring-[3px] ring-ring/30' : 'border-border'}`}>{renderImagePreview(image, 'aspect-square w-full object-cover')}<span className="block truncate px-2 py-2 text-sm font-medium text-text">{image.prompt}</span></button>)}</div>{selected && <Carte className="mt-4 p-4" data-testid="selected-generated-image">{renderImagePreview(selected, 'max-h-[420px] min-h-64 w-full rounded-md object-contain')}<div className="mt-3 flex flex-wrap items-start gap-3"><div className="min-w-0 flex-1"><p className="text-sm font-semibold leading-5 text-text">{selected.prompt}</p><p className="mt-1 text-sm text-text-muted">{selected.provider} · {formatDate(selected.created_at)}</p></div><Button type="button" variant="secondary" size="lg" onClick={() => void saveSelectedImage()} className="shrink-0"><Download className="h-[18px] w-[18px]" />Enregistrer</Button></div>{downloadError && <Alerte className="mt-3" titre="Enregistrement impossible" action={<Button type="button" variant="secondary" onClick={() => void saveSelectedImage()}>Réessayer</Button>}>{downloadError}</Alerte>}</Carte>}</>}
+          {loading ? <div className="grid min-h-64 place-items-center text-sm text-text-muted" role="status"><Spinner taille="zone" className="mb-2" />Chargement des images…</div> : images.length === 0 ? <EtatVide className="mt-5 grid min-h-64 place-items-center rounded-md border border-dashed border-border bg-surface" titre="Aucune image générée"><ImageIcon className="mx-auto mb-2 h-8 w-8 opacity-40" />Les prochains visuels apparaîtront ici.</EtatVide> : <><div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3" aria-label="Historique des images">{images.map((image) => <button key={image.id} type="button" aria-pressed={selected?.id === image.id} onClick={() => { setSelected(image); setDownloadError(null); }} className={`overflow-hidden rounded-md border bg-surface text-left transition-colors hover:bg-surface-2 ${selected?.id === image.id ? 'border-accent ring-[3px] ring-ring/30' : 'border-border'}`}>{renderImagePreview(image, 'aspect-square w-full object-cover')}<span className="block truncate px-2 py-2 text-sm font-medium text-text">{maskText(image.prompt)}</span></button>)}</div>{selected && <Carte className="mt-4 p-4" data-testid="selected-generated-image">{renderImagePreview(selected, 'max-h-[420px] min-h-64 w-full rounded-md object-contain')}<div className="mt-3 flex flex-wrap items-start gap-3"><div className="min-w-0 flex-1"><p className="text-sm font-semibold leading-5 text-text">{maskText(selected.prompt)}</p><p className="mt-1 text-sm text-text-muted">{selected.provider} · {formatDate(selected.created_at)}</p></div><Button type="button" variant="secondary" size="lg" onClick={() => void saveSelectedImage()} className="shrink-0"><Download className="h-[18px] w-[18px]" />Enregistrer</Button></div>{downloadError && <Alerte className="mt-3" titre="Enregistrement impossible" action={<Button type="button" variant="secondary" onClick={() => void saveSelectedImage()}>Réessayer</Button>}>{downloadError}</Alerte>}</Carte>}</>}
         </section>
       </div>
     </aside>

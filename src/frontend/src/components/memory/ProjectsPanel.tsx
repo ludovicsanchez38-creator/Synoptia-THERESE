@@ -27,6 +27,7 @@ import { Squelette } from '../ui/Squelette';
 import { Z_LAYER } from '../../styles/z-layers';
 import { pushEscapeHandler } from '../../lib/escapeStack';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
+import { useDemoMask } from '../../hooks/useDemoMask';
 import { useStatusStore } from '../../stores/statusStore';
 import { ProjectsKanban } from './ProjectsKanban';
 import { ProjectModal } from './ProjectModal';
@@ -40,6 +41,7 @@ import { ProjectModal } from './ProjectModal';
 const PLAFOND_PROJETS = 200;
 
 export function ProjectsPanel() {
+  const { maskText } = useDemoMask();
   const [projects, setProjects] = useState<Project[]>([]);
   const [listeTronquee, setListeTronquee] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -256,7 +258,7 @@ export function ProjectsPanel() {
               Supprimer le projet ?
             </h2>
             <p className="text-sm text-text-muted mt-2">
-              « {deleteTarget.name} » sera supprimé. Cette action est définitive.
+              « {maskText(deleteTarget.name)} » sera supprimé. Cette action est définitive.
             </p>
             <div className="flex flex-wrap justify-end gap-2 mt-5">
               <Button variant="ghost" size="md" autoFocus onClick={() => setDeleteTarget(null)}>
