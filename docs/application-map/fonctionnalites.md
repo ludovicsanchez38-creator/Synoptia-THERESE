@@ -693,6 +693,7 @@
 - **?** Comportement du modele :  _(rapport WP-073)_
 - **?** Composeur de conversation :  _(rapport WP-061-c3-R12)_
 - **?** Composeur du chat :  _(rapport WP-061-c6-R02)_
+- **?** Composeur flottant et indice stable :  _(rapport WP-066-c10-b947-b)_
 - **?** Composeur, envoi et reprise du chat :  _(rapport WP-061-c10-A1)_
 - **?** Composition d'un e-mail avec confirmation d'envoi :  _(rapport WP-063-c9-D2)_
 - **?** Comptabilite des jetons et des couts :  _(rapport WP-C-025-c6-R06)_
@@ -927,6 +928,7 @@
 - **?** Coque desktop et mise a jour :  _(rapport WP-060-c4-D05)_
 - **?** Coque desktop, confirmations, catalogue agent et board :  _(rapport WP-060-c8-codex-a)_
 - **?** Coque et distribution Tauri :  _(rapport WP-060-c10-C1)_
+- **?** Coque et parcours conversationnels :  _(rapport WP-066-c10-b947-a)_
 - **?** Coque unifiee (accueil conversationnel) :  _(rapport WP-066-c4-R08)_
 - **?** Coque unifiee (accueil, parcours, canevas) :  _(rapport WP-066-c9u-U2)_
 - **?** Coque unifiee THERESE :  _(rapport WP-066)_
@@ -1052,6 +1054,7 @@
 - **?** Décision et découverte :  _(rapport WP-DIFF-030-c8-codex-c)_
 - **?** Décodage robuste du flux d'entrée :  _(rapport WP-053-c9v-V2)_
 - **?** Découverte d'Ollama par le moteur :  _(rapport WP-DIFF-044-c9v-V2)_
+- **?** Défilement sous le composeur flottant :  _(rapport WP-066-c10-b947-a)_
 - **?** Délais d'attente du parcours de configuration :  _(rapport WP-072-c9-D3)_
 - **?** Délibération du Board :  _(rapport WP-060-c9u-U4)_
 - **?** Délibération du Board :  _(rapport WP-060-c9v-V4)_
@@ -1851,6 +1854,7 @@
 - **?** Navigation déterministe demandée par le backend :  _(rapport WP-070)_
 - **?** Navigation par vues :  _(rapport WP-074)_
 - **?** Navigation par vues embarquees :  _(rapport WP-074-c6-R06)_
+- **?** Navigation unifiee avec contexte metier :  _(rapport WP-066-c10-b947-b)_
 - **?** Navigation web :  _(rapport WP-055-c4-D02)_
 - **?** Navigation web automatisee :  _(rapport WP-048)_
 - **?** Navigation web automatisee et calculateurs :  _(rapport WP-051)_
@@ -1863,6 +1867,7 @@
 - **?** Nom du client à l'écran et statuts par type de document :  _(rapport WP-C-027-c2-D02)_
 - **?** Noms accessibles sans jargon :  _(rapport WP-071)_
 - **?** Non-régression comportementale du socle backend :  _(rapport WP-DIFF-027-c8-zero-check-b)_
+- **?** Non-régression de géométrie du composeur :  _(rapport WP-085-c10-b947-a)_
 - **?** Non-régression par le comportement :  _(rapport WP-DIFF-027-c6-R04)_
 - **?** Note de rendez-vous au CRM :  _(rapport WP-066)_
 - **?** Notification de prévention 30 jours avant :  _(rapport WP-054-c9u-U1)_
@@ -2000,6 +2005,8 @@
 - **?** Parcours de recette du persona A1 :  _(rapport WP-086-c9v-V5)_
 - **?** Parcours de recette « journée type d'un consultant » :  _(rapport WP-086-c4-D03)_
 - **?** Parcours debutant App (A1 Sophie) :  _(rapport WP-086)_
+- **?** Parcours des capacites dans la coque :  _(rapport WP-085-c10-b947-b)_
+- **?** Parcours du catalogue :  _(rapport WP-085-c10-b947-a)_
 - **?** Parcours du prototype conversationnel (backend simule) :  _(rapport WP-085)_
 - **?** Parcours guidé d'accueil (GUIDED_ACTIONS) :  _(rapport WP-064)_
 - **?** Parcours guidé d'actions à l'accueil de la conversation :  _(rapport WP-064-c2-D07)_
@@ -2373,6 +2380,7 @@
 - **?** Registre unifié des commandes :  _(rapport WP-073-c6-D04)_
 - **?** Reglages d'accessibilite globaux :  _(rapport WP-060-c4-R09)_
 - **?** Reglages par defaut du moteur LLM et des embeddings :  _(rapport WP-047-c9-R4)_
+- **?** Regressions B-320 et B-947 :  _(rapport WP-085-c10-b947-b)_
 - **?** Regressions metier (CRM, facturation, agenda, RGPD) :  _(rapport WP-082-c9-R4)_
 - **?** Rejeu des tours d'outils :  _(rapport WP-053-c3-R07)_
 - **?** Rejeu du jeton après relance du moteur :  _(rapport WP-C-027)_

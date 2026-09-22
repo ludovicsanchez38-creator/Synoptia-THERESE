@@ -30,7 +30,13 @@
 - `.github/workflows/tests-windows.yml` → `src/backend/tests` :
 - `.github/workflows/tests-windows.yml` → `src/backend/tests/` :
 - `.github/workflows/tests-windows.yml` → `tests/ et src/backend/tests/` :
+- `B-947` → `prototype-composer-backdrop` :
+- `B-947` → `prototype-composer-backdrop et prototype-conversation-scroll` :
 - `ChatInput.jetonsMalFormes.c9.test.tsx` → `variables.ts` :
+- `ContextCanvas` → `useDialogFocusTrap/usePanneauCouvrant` :
+- `ConversationCanvasPrototype` → `IndiceDeDefilement` :
+- `ConversationCanvasPrototype` → `navigationStore` :
+- `ConversationCanvasPrototype` → `useNavigationStore` :
 - `ImagesWorkspaceCanvas` → `services/api/images` :
 - `InvoicesPanel` → `services/api` :
 - `InvoicesPanel` → `useInvoiceStore` :
@@ -44,8 +50,11 @@
 - `Squelette.tsx` → `globals.css` :
 - `WP-084 (les 18 fichiers)` → `tests/conftest.py` :
 - `chatStore` → `debouncedStorage` :
+- `chooseCapability` → `CapabilityCenter` :
 - `composants prototype` → `stores, API et primitives UI` :
 - `custom-protocol` → `tauri/custom-protocol` :
+- `installReadOnlyShell` → `BACKEND_URL` :
+- `installReadOnlyShell` → `backend jetable BACKEND_URL` :
 - `libellesFournisseurs.ts` → `LLMProvider` :
 - `lot3` → `frontières HTTP` :
 - `lot4` → `ImapSmtpProvider et voice_local` :

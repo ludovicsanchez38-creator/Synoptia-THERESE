@@ -10,7 +10,7 @@
 ## Doubles lectures manquantes (0)
 
 
-## Invariants divergents, a arbitrer (136)
+## Invariants divergents, a arbitrer (135)
 
 - scripts/check-app-version-sync.py: aucun mot commun entre les invariants de codex-map-challenge-a:c8-challenge-a-wp-046-b42ae547-efdd-4832-ada6-26a38fc715ed, orchestrateur:wp046-orchestrateur
 - src/backend/app/data/capacites.json: aucun mot commun entre les invariants de codex-challenge-b:c8-challenge-b-wp-047-20260912, lecteur-D04:c4-D04-WP-047, wp047-lecteur1:wp047-lecteur1
@@ -115,7 +115,6 @@
 - src/frontend/src/test/a11y.test.tsx: aucun mot commun entre les invariants de lecteur-D04:c4-D04-WP-074, wp074-lecteur1:wp074-lecteur1
 - tests/e2e/stories/parcours-01-premier-lancement.spec.ts: aucun mot commun entre les invariants de codex-map-challenge-a:c8-challenge-a-wp-085-df02c48c-ad45-4570-8549-bb07c1e25f85, lecteur-R22:c3-R22-WP-085
 - tests/e2e/stories/parcours-06-navigation.spec.ts: aucun mot commun entre les invariants de lecteur-D11:c2-D11-WP-085, lecteur-M10:c2-M10-WP-085
-- tests/e2e/stories/parcours-08-capacites-prototype.spec.ts: aucun mot commun entre les invariants de claude-map-t1:c9t-t1-wp-085-14cc91d1-e8fd-42e2-b9ea-3e7dfe05130b, codex-map-b:c8-codex-b-wp-085-20260912
 - tests/protocols/README.md: aucun mot commun entre les invariants de codex-challenge-b:c8-challenge-b-wp-086-20260912, lecteur-R04:c6-R04-WP-086
 - tests/test_action_agents.py: aucun mot commun entre les invariants de lecteur-D03:c4-D03-WP-078, wp078-lecteur1:wp078-lecteur1
 - tests/test_board_sonde_catalogue.py: aucun mot commun entre les invariants de codex-challenge-b:c8-challenge-b-wp-078-20260912, wp078-lecteur1:wp078-lecteur1

@@ -547,6 +547,7 @@
 - [?] La sonde Ollama du panneau capte-t-elle aussi le rejet asynchrone, ou seulement l'échec synchrone couvert ici ? _(rapport WP-060-c9v-V1)_
 - [?] La sonde de derive du Board tourne-t-elle reellement une fois par jour en cloud, et avec quelle cle quand plusieurs fournisseurs sont configures ? Le test remet _etat_catalogue et _date_derniere_sonde a zero et supprime cinq variables d'environnement pour isoler Gemini. _(rapport WP-DIFF-012-c3-R27)_
 - [?] La sonde de dérive du catalogue garde son état au niveau du MODULE : on ignore si un redémarrage du sidecar la relance à chaque lancement de l'application, et donc si la limite d'une sonde par jour tient en usage réel. _(rapport WP-051-c3-R05)_
+- [?] La stabilité persiste-t-elle sur moteur WebKit/Tauri natif et avec des paramètres de zoom ou de typographie non standards ? _(rapport WP-066-c10-b947-a)_
 - [?] La substitution PROCESS-GLOBALE de aiosqlite.core.sqlite3 par sqlcipher3.dbapi2 (database.py L733) a-t-elle un autre consommateur d'aiosqlite dans le processus, aujourd'hui ou apres l'ajout d'un second moteur async ? _(rapport WP-C-025)_
 - [?] La substitution process-globale de aiosqlite.core.sqlite3 par sqlcipher3.dbapi2 n'est jamais restauree par close_db : un second moteur async apparu depuis en subit-il l'effet ? _(rapport WP-C-025-c4-R04)_
 - [?] La suite Playwright passe-t-elle aujourd'hui ? 192 tests sont collectes, mais aucun n'a ete execute pendant cette lecture. _(rapport WP-085)_
@@ -1172,6 +1173,7 @@
 - [?] Le registre window.__therese.runAction expose-t-il encore les trois actions employées (settings.open, chat.new, conversations.toggle) sous ces noms exacts ? _(rapport WP-086-c9v-V5)_
 - [?] Le rendu des images distantes est-il bloqué côté frontend pour les corps assainis par `sanitize_html` ? _(rapport WP-052-c4-D04)_
 - [?] Le rendu double de React (StrictMode ou rendu concurrent) provoque-t-il réellement une double exécution de la branche 'navigate' ou 'action_agent' de CommandExecutor ? _(rapport WP-064-c3-R14)_
+- [?] Le rendu et le focus sont-ils identiques dans les binaires Tauri et avec lecteur d'ecran natif ? _(rapport WP-066-c10-b947-b)_
 - [?] Le renommage types -> entity_types cote client suppose que le serveur attend bien le singulier ; la conversion pluriel/singulier est-elle exhaustive pour tous les types de memoire, au-dela de contact et project ? _(rapport WP-DIFF-003-c2-M14)_
 - [?] Le renvoi `shared/chrome-mcp-patterns.md` désigne-t-il bien tests/protocols/shared/chrome-mcp-patterns.md ? Écrit depuis server/personas/, le chemin relatif ne résout pas. _(rapport WP-C-031-c2-D06)_
 - [?] Le repertoire de travail pose par POST /api/config/working-directory est-il ensuite borne par validate_file_path, ou ouvre-t-il l'acces a toute l'arborescence choisie ? _(rapport WP-049)_
@@ -1342,6 +1344,7 @@
 - [?] Les appelants de extract_text et chunk_text les exécutent-ils hors de la boucle d'événements, comme l'exige le correctif BUG-155 ? _(rapport WP-052-c6-D02)_
 - [?] Les appelants de requestExternalAction attrapent-ils eux-mêmes l'échec de leur action, ce qui rendrait sans effet l'absence de catch dans confirm() ? _(rapport WP-060-c6-D04)_
 - [?] Les assertions clavier et propagation d’événement passent-elles dans le navigateur de la release ? _(rapport WP-DIFF-006-c8-critical-b)_
+- [?] Les assertions de navigation sont-elles equivalentes avec les vrais fournisseurs cloud et donnees metier ? _(rapport WP-085-c10-b947-b)_
 - [?] Les assertions de texte source (inspect.getsource / read_text) sont-elles réellement satisfaites par un commentaire dans les modules visés aujourd'hui, ou seulement par du code exécuté ? _(rapport WP-081)_
 - [?] Les assertions passent-elles actuellement dans les environnements d’intégration et les binaires publiés ? _(rapport WP-DIFF-055-c10-repair-a)_
 - [?] Les autres fournisseurs OpenAI-compatibles (OpenAI, OpenRouter, Mistral, DeepSeek, Infomaniak, Grok) propagent-ils eux aussi stop_reason « length » ou la réparation B-796 est-elle restée cantonnée à Perplexity ? _(rapport WP-DIFF-038-c9s-S4)_
@@ -1723,6 +1726,7 @@
 - [?] Quel appelant monte DynamicSkillForm et lui donne-t-il une key dérivée du skill ? _(rapport WP-063-c9t-T2)_
 - [?] Quel appelant renseigne le parametre local de check_limits, et l'avertissement « hors grille tarifaire » remonte-t-il jusqu'a l'ecran ? _(rapport WP-C-025-c4-D01)_
 - [?] Quel appelant utilise `POST /api/crm/sync/import` (`import_crm_data`) : la docstring evoque un apport « via MCP Claude Code », mais aucun module frontend de ce lot ne l'appelle. _(rapport WP-049-c3-R04)_
+- [?] Quel backend et quelles mutations de préparation sont choisis par les helpers dans une exécution externe ? _(rapport WP-085-c10-b947-a)_
 - [?] Quel chemin HTTP porte api.deleteEvent, et le contexte de compte e-mail transmis depuis EventDetail est-il le bon discriminant quand plusieurs agendas coexistent ? _(rapport WP-061-c2-M03)_
 - [?] Quel chemin réel produit le symptôme de Léa (fichier écrit sans carte) puisque les trois chemins couverts émettent la carte ? _(rapport WP-079-c2-D05)_
 - [?] Quel comportement attend-on d'un événement « toute la journée » dont la fin est inclusive, côté fournisseur Google et CalDAV ? _(rapport WP-061-c9w-W2)_
