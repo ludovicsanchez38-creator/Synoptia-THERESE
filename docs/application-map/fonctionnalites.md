@@ -10,6 +10,7 @@
 - **?** Acces clavier des listes (e-mails, fichiers) :  _(rapport WP-DIFF-009-c3-R26)_
 - **?** Accessibilite : noms accessibles, focus et annonces francaises :  _(rapport WP-DIFF-008-c3-R24)_
 - **?** Accessibilite du glisser-deposer :  _(rapport WP-DIFF-009-c3-R25)_
+- **?** Accessibilité : réduction des mouvements du chat :  _(rapport WP-062-c10-repair-b)_
 - **?** Accueil :  _(rapport WP-064-c9t-T4)_
 - **?** Accueil - brief du jour et mise en route :  _(rapport WP-072-c3-R17)_
 - **?** Accueil - etape Securite et confidentialite :  _(rapport WP-C-027-c3-D02)_
@@ -120,6 +121,7 @@
 - **?** Amorce du bundle :  _(rapport WP-072-c9t-T3)_
 - **?** Amorçage de l'interface :  _(rapport WP-060-c3-R12)_
 - **?** Amorçage du backend :  _(rapport WP-047-c3-R01)_
+- **?** Analyse bornée du contraste DOM RGB(A) :  _(rapport WP-DIFF-055-c10-repair-a)_
 - **?** Ancrage de recherche web du fournisseur :  _(rapport WP-053)_
 - **?** Ancrage des selecteurs de protocole dans l'interface :  _(rapport WP-DIFF-010-c3-R26)_
 - **?** Ancrage juridique des réponses :  _(rapport WP-052)_
@@ -262,6 +264,7 @@
 - **?** Atelier local, missions Katia et Zézette :  _(rapport WP-067)_
 - **?** Atelier vocal (transcription et synthèse locales) :  _(rapport WP-067-c6-D03)_
 - **?** Atlas des portraits :  _(rapport WP-066)_
+- **?** Attente locale et mouvements réduits :  _(rapport WP-DIFF-055-c10-repair-b)_
 - **?** Aucun champ de saisie anonyme :  _(rapport WP-070)_
 - **?** Aucune invitation à cliquer un bouton désactivé :  _(rapport WP-DIFF-037-c9v-V2)_
 - **?** Audit de dependances bloquant a exceptions nommees :  _(rapport WP-C-004-c9-R4)_
@@ -460,6 +463,7 @@
 - **?** Capacités ACL de la webview Tauri :  _(rapport WP-057-c2-D10)_
 - **?** Capture d'une commande RFC :  _(rapport WP-067-c2-M15)_
 - **?** Capture micro :  _(rapport WP-057-c2-D11)_
+- **?** Carnet Contacts et confirmations RGPD :  _(rapport WP-064-c10-repair-a)_
 - **?** Carnet de contacts :  _(rapport WP-064-c3-R14)_
 - **?** Carnet de contacts :  _(rapport WP-064-c4-R10)_
 - **?** Carnet de contacts :  _(rapport WP-064-c6-R06)_
@@ -753,6 +757,7 @@
 - **?** Confirmation humaine des actions sensibles :  _(rapport WP-062-c2-D09)_
 - **?** Confirmation humaine des outils sensibles :  _(rapport WP-054-c9-D3)_
 - **?** Confirmation humaine des outils sensibles :  _(rapport WP-062-c2-M12)_
+- **?** Confirmations accessibles dans la coque :  _(rapport WP-DIFF-055-c10-repair-b)_
 - **?** Conformite RGPD des contacts :  _(rapport WP-047)_
 - **?** Conformite RGPD des contacts :  _(rapport WP-073-c9t-T1)_
 - **?** Conformité RGPD des contacts :  _(rapport WP-050-c4-D03)_
@@ -807,6 +812,7 @@
 - **?** Contacts CRM :  _(rapport WP-050)_
 - **?** Contacts CRM :  _(rapport WP-072)_
 - **?** Contacts et projets (mémoire) :  _(rapport WP-073-c2-M15)_
+- **?** Contacts, projets, démo et synchronisation :  _(rapport WP-064-c10-repair-b)_
 - **?** Conteneur des panneaux et modales :  _(rapport WP-061)_
 - **?** Contexte d'un fil de discussion e-mail :  _(rapport WP-DIFF-038-c9s-S4)_
 - **?** Contexte d'un fil de messagerie :  _(rapport WP-DIFF-038-c9t-T2)_
@@ -885,6 +891,7 @@
 - **?** Contrôles de fenêtre par plateforme :  _(rapport WP-069-c4-D04)_
 - **?** Conversation :  _(rapport WP-049-c4-R01)_
 - **?** Conversation :  _(rapport WP-061-c4-R07)_
+- **?** Conversation : fil virtualisé et attente locale :  _(rapport WP-061-c10-repair-b)_
 - **?** Conversation avec le modele :  _(rapport WP-049-c3-R03)_
 - **?** Conversation avec un agent :  _(rapport WP-060-c9t-T3)_
 - **?** Conversation avec un agent de l'atelier :  _(rapport WP-C-026-c9s-S4)_
@@ -1215,6 +1222,7 @@
 - **?** Facturation - génération du PDF conforme :  _(rapport WP-C-029-c2-M11)_
 - **?** Facturation - liste et cycle de vie des documents :  _(rapport WP-C-026)_
 - **?** Facturation - moteur et pieces :  _(rapport WP-C-025-c4-D01)_
+- **?** Facturation : confirmation et reprise clavier :  _(rapport WP-C-026-c10-repair-b)_
 - **?** Facturation : devise des documents et PDF conforme :  _(rapport WP-C-025-c2-D04)_
 - **?** Facturation : numerotation des devis et factures :  _(rapport WP-DIFF-013-c3-R27)_
 - **?** Facturation : panneau Devis et factures + formulaire :  _(rapport WP-C-026-c2-D01)_
@@ -1253,18 +1261,21 @@
 - **?** Fiche des raccourcis clavier :  _(rapport WP-062-c9-R3)_
 - **?** Fiche du skill tableur :  _(rapport WP-055-c4-D02)_
 - **?** Fiche projet :  _(rapport WP-064)_
+- **?** Fiche projet, fichiers contextualisés et consultation démo :  _(rapport WP-064-c10-repair-a)_
 - **?** Fiches contacts :  _(rapport WP-073)_
 - **?** Fiches contacts et cloison de périmètre :  _(rapport WP-050-c2-M04)_
 - **?** Fiches de skills bureautiques (orphelines) :  _(rapport WP-055)_
 - **?** Fiches projets :  _(rapport WP-073)_
 - **?** Fichier temporaire du generateur d'outils :  _(rapport WP-DIFF-042-c9t-T3)_
 - **?** Fichiers d'un projet :  _(rapport WP-073)_
+- **?** Fichiers et synchronisation par contexte :  _(rapport WP-DIFF-055-c10-repair-b)_
 - **?** Fichiers générés visibles dans le chat :  _(rapport WP-078-c4-D03)_
 - **?** Fichiers joints d'un projet :  _(rapport WP-064)_
 - **?** Fichiers locaux, depot et indexation :  _(rapport WP-063-c9-R1)_
 - **?** Fil d'activites du CRM nommant ses contacts :  _(rapport WP-DIFF-008-c9t-T1)_
 - **?** Fil de conversation : rendu markdown et etats d'echec :  _(rapport WP-DIFF-008-c3-R24)_
 - **?** Fil de conversation du chat :  _(rapport WP-061-c3-R13)_
+- **?** Fil de conversation et repère de durée locale :  _(rapport WP-061-c10-repair-a)_
 - **?** Fil de conversation virtualise :  _(rapport WP-061-c9t-T3)_
 - **?** Fil de la mise en route :  _(rapport WP-DIFF-025-c6-R08)_
 - **?** Fil des activités du CRM :  _(rapport WP-DIFF-021-c6-D03)_
@@ -1420,6 +1431,7 @@
 - **?** Gestes RGPD sur un contact :  _(rapport WP-064-c9s-S4)_
 - **?** Gestion des connecteurs :  _(rapport WP-068-c9u-U4)_
 - **?** Gestion des devis, factures et avoirs :  _(rapport WP-C-026-c10-C1)_
+- **?** Gestion des devis/factures et suppression confirmée :  _(rapport WP-C-026-c10-repair-a)_
 - **?** Gestion des erreurs reseau (US-ERR) :  _(rapport WP-071)_
 - **?** Gestion des projets :  _(rapport WP-064-c10-A1)_
 - **?** Gestion des serveurs MCP (API) :  _(rapport WP-083-c2-D04)_
@@ -1548,6 +1560,7 @@
 - **?** Indicateur d'attente unique :  _(rapport WP-069)_
 - **?** Indicateur de chargement unique :  _(rapport WP-069-c6-D04)_
 - **?** Indicateur de réflexion :  _(rapport WP-062-c10-B1)_
+- **?** Indicateur de réflexion adapté au mouvement réduit :  _(rapport WP-062-c10-repair-a)_
 - **?** Indice de defilement de l'accueil :  _(rapport WP-DIFF-021-c4-R10)_
 - **?** Indice port et mode de sécurité :  _(rapport WP-084-c9u-U1)_
 - **?** Initialisation et configuration du backend :  _(rapport WP-047-c8-codex-a)_
@@ -1607,6 +1620,7 @@
 - **?** Kanban des taches :  _(rapport WP-DIFF-009-c4-D05)_
 - **?** Kanban des tâches :  _(rapport WP-068-c2-M11)_
 - **?** Kanban des tâches :  _(rapport WP-068-c8-zero-a)_
+- **?** Kanban projets et confirmation de suppression masquée :  _(rapport WP-064-c10-repair-a)_
 - **?** Lancement du moteur backend en sidecar :  _(rapport WP-057)_
 - **?** Lancement du sidecar Python :  _(rapport WP-059)_
 - **?** Lancement du sidecar backend :  _(rapport WP-057-c2-D11)_
@@ -1723,6 +1737,7 @@
 - **?** Messages d'erreur des fournisseurs LLM :  _(rapport WP-DIFF-013-c3-R27)_
 - **?** Messages d'erreur et de refus instructifs :  _(rapport WP-081)_
 - **?** Messages et dossiers :  _(rapport WP-050-c4-R02)_
+- **?** Mesure contrastes RGB(A) :  _(rapport WP-DIFF-055-c10-repair-b)_
 - **?** Mesure d'ordre dans le code, commentaires exclus :  _(rapport WP-DIFF-004-c9-D3)_
 - **?** Mesure de contraste AA des jetons :  _(rapport WP-074-c9-R4)_
 - **?** Mesure de contraste WCAG :  _(rapport WP-070-c9-D2)_
@@ -1801,6 +1816,7 @@
 - **?** Mode démo :  _(rapport WP-074)_
 - **?** Mode démo (masquage cosmétique des identités) :  _(rapport WP-074-c9t-T2)_
 - **?** Mode démo (masquage des données réelles) :  _(rapport WP-074-c3-R17)_
+- **?** Mode démo et données originales :  _(rapport WP-DIFF-055-c10-repair-b)_
 - **?** Mode démonstration :  _(rapport WP-069-c4-D04)_
 - **?** Mode démonstration :  _(rapport WP-DIFF-029-c9-D1)_
 - **?** Mode démonstration (masquage des données) :  _(rapport WP-071-c2-M15)_
@@ -2279,11 +2295,15 @@
 - **?** Reautorisation d'un compte Gmail expire :  _(rapport WP-063-c9-D2)_
 - **?** Recapitulatif de fin de mise en route :  _(rapport WP-DIFF-024-c9-D2)_
 - **?** Recette DA de la coque (lots 1 et 2) :  _(rapport WP-DIFF-030-c9s-S1)_
+- **?** Recette de contraste Mémoire :  _(rapport WP-DIFF-053-c10-repair-b)_
 - **?** Recette de contraste de la vue Mémoire :  _(rapport WP-DIFF-053-c10-B1)_
+- **?** Recette de coque cycle 10 en clair et sombre :  _(rapport WP-DIFF-055-c10-repair-a)_
 - **?** Recette du nom accessible sous 840 px (B-761) :  _(rapport WP-DIFF-037-c9s-S2)_
 - **?** Recette manuelle de l'administration THERESE Server :  _(rapport WP-C-031-c3-R22)_
 - **?** Recette manuelle du persona DSI / Admin (THÉRÈSE Server) :  _(rapport WP-C-031-c6-D02)_
 - **?** Recette manuelle persona A3 (power user) :  _(rapport WP-086-c3-E01)_
+- **?** Recette navigateur attente locale et mouvement réduit :  _(rapport WP-DIFF-055-c10-repair-a)_
+- **?** Recette partielle de contraste Contacts :  _(rapport WP-DIFF-053-c10-repair-a)_
 - **?** Recette persona A1 :  _(rapport WP-086-c9w-W2)_
 - **?** Recette persona A1 (première utilisatrice non technicienne) :  _(rapport WP-086-c2-M08)_
 - **?** Recettes E2E CRM, paramètres et capacités :  _(rapport WP-085-c8-codex-b)_
@@ -2484,6 +2504,17 @@
 - **?** Réglages et chemins de données du backend :  _(rapport WP-047-c6-D04)_
 - **?** Réglages et gestion des tâches :  _(rapport WP-068-c8-codex-b)_
 - **?** Régression B-919 : fermer le document arrête la trame suivie :  _(rapport WP-DIFF-051-c9x-X1)_
+- **?** Régression clavier de suppression de facture :  _(rapport WP-DIFF-054-c10-repair-a)_
+- **?** Régression clavier des quatre confirmations Contacts :  _(rapport WP-DIFF-055-c10-repair-a)_
+- **?** Régression consultation démo du projet à froid :  _(rapport WP-DIFF-055-c10-repair-a)_
+- **?** Régression des continuations sync inter-projets :  _(rapport WP-DIFF-055-c10-repair-a)_
+- **?** Régression des retours fichiers A/B et close/reopen :  _(rapport WP-DIFF-055-c10-repair-a)_
+- **?** Régression durée locale avec bulle assistant vide :  _(rapport WP-DIFF-055-c10-repair-a)_
+- **?** Régression focus suppression facture :  _(rapport WP-DIFF-054-c10-repair-b)_
+- **?** Régression nom masqué de confirmation kanban :  _(rapport WP-DIFF-055-c10-repair-a)_
+- **?** Régression prompts masqués et requête réelle :  _(rapport WP-DIFF-055-c10-repair-a)_
+- **?** Régression sync inconnue, panne et réessai :  _(rapport WP-DIFF-055-c10-repair-a)_
+- **?** Régression sync masquée en lecture seule :  _(rapport WP-DIFF-055-c10-repair-a)_
 - **?** Réinitialisation à la réouverture de l'assistant :  _(rapport WP-DIFF-037-c9v-V2)_
 - **?** Réponse conversationnelle en flux :  _(rapport WP-049-c2-M02)_
 - **?** Résilience des hooks et stores :  _(rapport WP-DIFF-031-c8-codex-c)_
@@ -2644,7 +2675,9 @@
 - **?** Studio Images :  _(rapport WP-066-c9t-T2)_
 - **?** Studio Images :  _(rapport WP-066-c9v-V3)_
 - **?** Studio Images (génération et historique) :  _(rapport WP-066-c9w-W1)_
+- **?** Studio Images : affichage démo et confirmation :  _(rapport WP-066-c10-repair-b)_
 - **?** Studio Images authentifié :  _(rapport WP-066-c8-zero-a)_
+- **?** Studio Images et instantané de génération confirmé :  _(rapport WP-066-c10-repair-a)_
 - **?** Studio Images, vignettes conservées :  _(rapport WP-DIFF-044-c9v-V1)_
 - **?** Suggestion d'entités détectées :  _(rapport WP-061-c3-R12)_
 - **?** Suggestion prédictive en grisé :  _(rapport WP-070)_
@@ -2718,6 +2751,7 @@
 - **?** Synchronisation de dossier projet :  _(rapport WP-047)_
 - **?** Synchronisation des contacts sans perte de date :  _(rapport WP-DIFF-047-c9v-V1)_
 - **?** Synchronisation des conversations :  _(rapport WP-069)_
+- **?** Synchronisation explicite par plan contextualisé :  _(rapport WP-064-c10-repair-a)_
 - **?** Synchronisation planifiée d’un dossier projet :  _(rapport WP-064-c10-A1)_
 - **?** Synthese vocale locale :  _(rapport WP-073)_
 - **?** Synthese vocale locale Piper :  _(rapport WP-DIFF-013-c3-R28)_
@@ -2816,6 +2850,7 @@
 - **?** Tâches et todos :  _(rapport WP-050)_
 - **?** Tâches locales :  _(rapport WP-050-c3-R05)_
 - **?** Téléchargement et suppression des images générées :  _(rapport WP-DIFF-012-c6-D03)_
+- **?** Témoins de contraste et d’indétermination :  _(rapport WP-DIFF-055-c10-repair-a)_
 - **?** Un bouton nomme sa destination :  _(rapport WP-067-c9-D4)_
 - **?** Un contrôle de protocole doit pouvoir échouer :  _(rapport WP-DIFF-010-c9-D4)_
 - **?** Un echec reseau reste visible dans le fil :  _(rapport WP-DIFF-008-c9t-T1)_

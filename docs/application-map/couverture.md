@@ -1,7 +1,7 @@
 # Couverture et limites de la carte
 
 - Couverture validee : 100.0 %
-- Fichiers attendus : 1575
+- Fichiers attendus : 1589
 - Validation `passed` : True
 
 ## Fichiers non lus (0)
@@ -10,7 +10,7 @@
 ## Doubles lectures manquantes (0)
 
 
-## Invariants divergents, a arbitrer (134)
+## Invariants divergents, a arbitrer (136)
 
 - scripts/check-app-version-sync.py: aucun mot commun entre les invariants de codex-map-challenge-a:c8-challenge-a-wp-046-b42ae547-efdd-4832-ada6-26a38fc715ed, orchestrateur:wp046-orchestrateur
 - src/backend/app/data/capacites.json: aucun mot commun entre les invariants de codex-challenge-b:c8-challenge-b-wp-047-20260912, lecteur-D04:c4-D04-WP-047, wp047-lecteur1:wp047-lecteur1
@@ -54,9 +54,11 @@
 - src/frontend/src/components/invoices/InvoicesPanel.chargementEchoue.test.tsx: aucun mot commun entre les invariants de codex-map-b:c8-codex-b-wp-diff-006-20260912, codex-map-critical-a:c8-critical-a-wp-diff-006-c5aa5f66-502d-48e4-9869-1e03ad30e6b1
 - src/frontend/src/components/invoices/InvoicesPanel.creationSousFiltre.test.tsx: aucun mot commun entre les invariants de codex-map-b:c8-codex-b-wp-diff-020-20260912, codex-map-c-critical:c8-critical-c-wp-diff-020-685f58be1dcb
 - src/frontend/src/components/invoices/InvoicesPanel.cycle6.test.tsx: aucun mot commun entre les invariants de codex-map-b:c8-codex-b-wp-diff-028-20260912, codex-map-critical-a:c8-critical-a-wp-diff-028-c00fb1f2-68d8-41cf-84b8-30e284469e31
+- src/frontend/src/components/invoices/InvoicesPanel.focusSuppression.c10.test.tsx: aucun mot commun entre les invariants de astra-c10-repair-a:c10-repair-a-WP-DIFF-054, astra-c10-repair-b:c10-repair-b-WP-DIFF-054
 - src/frontend/src/components/invoices/presentationFacture.ts: aucun mot commun entre les invariants de codex-map-b:c8-codex-b-wp-diff-028-20260912, codex-map-c-critical:c8-critical-c-wp-diff-028-7e832ba69f63
 - src/frontend/src/components/invoices/statutsFacture.ts: aucun mot commun entre les invariants de codex-map-b:c8-codex-b-wp-diff-028-20260912, codex-map-critical-a:c8-critical-a-wp-diff-028-c00fb1f2-68d8-41cf-84b8-30e284469e31
 - src/frontend/src/components/memory/MemoryPanel.focusRecherche.test.tsx: aucun mot commun entre les invariants de codex-map-c-challenge:c8-challenge-c-wp-diff-024-ec21a80adff8, lecteur-R05:c6-R05-WP-DIFF-024
+- src/frontend/src/components/memory/ProjectModal.tsx: aucun mot commun entre les invariants de astra-c10-repair-a:c10-repair-a-WP-064, astra-c10-repair-b:c10-repair-b-WP-064
 - src/frontend/src/components/memory/ProjectsKanban.demo.test.tsx: aucun mot commun entre les invariants de claude-map-d1:c9-d1-wp-diff-029-f8f08e17-4426-453e-9c6f-55b385266648, codex-map-c:cycle8-wp-diff-029-ae29ea45-1eac-4722-b93c-b7035672a8a5
 - src/frontend/src/components/onboarding/SecurityStep.c9.test.tsx: aucun mot commun entre les invariants de claude-map-s1:c9s-s1-wp-diff-036-dcaa1b5b-a01c-467f-9c77-56b21b8f730b, claude-map-s5:c9s-s5-wp-diff-036-1859713b-f9b9-43bd-b08b-827bd98a9d77
 - src/frontend/src/components/prompts/PromptLibrary.cycle6.test.tsx: aucun mot commun entre les invariants de codex-challenge-b:c8-challenge-b-wp-diff-030-20260912, codex-map-c:cycle8-wp-diff-030-d9ea9e37-747f-47e1-8914-7619d8f5abe8
@@ -150,7 +152,7 @@
 ## Disparus depuis l'inventaire (0)
 
 
-## Lus sur une version anterieure (551)
+## Lus sur une version anterieure (552)
 
 - .github/workflows/ci.yml
 - .github/workflows/release.yml
@@ -278,6 +280,7 @@
 - src/frontend/index.html
 - src/frontend/package-lock.json
 - src/frontend/package.json
+- src/frontend/scripts-recette/recette-contraste-memoire.mjs
 - src/frontend/src-tauri/Cargo.lock
 - src/frontend/src-tauri/Cargo.toml
 - src/frontend/src-tauri/capabilities/default.json

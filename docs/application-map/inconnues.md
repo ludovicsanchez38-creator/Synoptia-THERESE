@@ -68,6 +68,8 @@
 - [?] Ces trois suites sont-elles vertes a HEAD 8d1be509 ? La mission interdit de lancer les tests. _(rapport WP-080-c3-R19)_
 - [?] Ces trois suites sont-elles vertes a HEAD 8d1be509 ? La mission interdit de lancer les tests. _(rapport WP-081-c3-R19)_
 - [?] Ces vingt-sept fichiers tournent-ils tous en CI, et sur quelles plateformes ? _(rapport WP-DIFF-027-c6-R04)_
+- [?] Cette lecture seule ne prouve pas une génération réelle de modèle local ni le comportement des longs historiques dans le binaire distribué. _(rapport WP-061-c10-repair-b)_
+- [?] Cette recette ne certifie ni tous les écrans, ni les recouvrements, ni les contenus non textuels. _(rapport WP-DIFF-053-c10-repair-b)_
 - [?] Changer la devise d'un document DÉJÀ enregistré convertit-il les montants côté serveur, ou seulement l'étiquette ? Le formulaire laisse le sélecteur actif à l'édition sans avertissement. _(rapport WP-C-026-c3-R08)_
 - [?] Chaque point d’entrée correspond-il encore à une surface réellement accessible dans la release ? _(rapport WP-047-c8-challenge-b)_
 - [?] ChatHeader rend-il le bouton Documents indépendamment de la présence du callback ? _(rapport WP-061-c3-D03)_
@@ -229,6 +231,7 @@
 - [?] InvoiceForm pose role=dialog aria-modal=true sans importer de piège de focus ni de gestion d'Échap : un parent (PrototypeUnifiedViewCanvas, InvoicesPanel) fournit-il l'isolation clavier ? _(rapport WP-C-026-c2-D01)_
 - [?] InvoicesPanel.test.tsx couvre-t-il le changement de type avec statut conservé et le statut inconnu ? _(rapport WP-C-026-c2-R1)_
 - [?] InvoicesPanel.tsx (hors lot) utilise-t-il encore un envoi par email ou un bouton « Envoyer » ? Le mock de sendInvoiceByEmail dans son test suggère un ancien usage. _(rapport WP-C-027-c2-D02)_
+- [?] JSDOM ne reproduit pas le comportement complet du moteur natif de focus/inert et des animations de fermeture. _(rapport WP-DIFF-054-c10-repair-b)_
 - [?] L'API Anthropic peut-elle terminer un flux SSE sans envoyer `message_stop` (coupure réseau en fin de génération, arrêt côté serveur) ? De la réponse dépend la sévérité réelle du `done` manquant. _(rapport WP-053-c3-R07)_
 - [?] L'API refuse-t-elle bien un jeton absent par un 401 portant `message` et `code`, forme attendue par la ligne 330 ? _(rapport WP-053-c9s-S1)_
 - [?] L'URL de téléchargement rendue par l'export d'une conversation utilise l'identifiant complet alors que le fichier écrit ne porte que ses huit premiers caractères : le point de téléchargement retrouve-t-il réellement le fichier par glob dans tous les cas ? _(rapport WP-049-c4-R01)_
@@ -372,6 +375,7 @@
 - [?] La colonne purge_excluded peut-elle valoir NULL sur une base migree ? Le modele declare un defaut False cote Python, ce qui ne dit rien des lignes creees avant l'ajout de la colonne. _(rapport WP-054-c9v-V5)_
 - [?] La colonne « Duree Chrome MCP » evoquee dans la docstring est-elle encore presente dans le README, et si oui qui la verifie ? _(rapport WP-DIFF-013-c4-D05)_
 - [?] La commande de chat annoncée par la section Variables ({action: variable creer nom "valeur"}) existe-t-elle réellement ? _(rapport WP-068)_
+- [?] La compatibilité native WebView avec les changements MediaQueryList n’est pas prouvée par la lecture du composant. _(rapport WP-062-c10-repair-b)_
 - [?] La configuration vitest active-t-elle unstubGlobals ou restoreMocks entre les tests ? _(rapport WP-DIFF-024-c9v-V2)_
 - [?] La configuration vitest active-t-elle unstubGlobals ou restoreMocks, ce qui neutraliserait le risque de fuite du faux fetch ? _(rapport WP-DIFF-024-c9-D2)_
 - [?] La configuration vitest du dépôt active-t-elle restoreMocks et unstubGlobals entre fichiers ? C'est ce qui décide si la doublure de la fonction de requête fuit au-delà de ce fichier. _(rapport WP-DIFF-029-c9t-T2)_
@@ -422,6 +426,7 @@
 - [?] La fixture db_session partage-t-elle bien la session utilisée par get_session_context dans le service ? _(rapport WP-DIFF-047-c9w-W2)_
 - [?] La forme complète de la réponse posée en l.30 (synthesis avec consensus_points, divergence_points, next_steps) correspond-elle au contrat réel de l'API backend, ou seulement à ce que SynthesisCard sait consommer ? _(rapport WP-DIFF-046-c9y-Y1)_
 - [?] La forme modale du panneau e-mail est-elle encore atteignable depuis l'application, ou seule la vue plein écran l'est ? _(rapport WP-063-c9s-S4)_
+- [?] La frontière produit du mode démo est-elle volontairement différente entre fiche projet et confirmation du panneau ? _(rapport WP-064-c10-repair-a)_
 - [?] La garantie de balayage posee le 27/08 (chaque bandeau d'erreur porte role=alert) couvre-t-elle ce motif, c'est-a-dire un texte en text-error hors bandeau, ou seulement les bandeaux encadres ? _(rapport WP-065-c4-R05)_
 - [?] La garantie « aucun terminer() nu hors du helper » vaut pour le routeur board ; existe-t-il ailleurs (chat, documents) des appels à `handle.terminer()` sans le même filet ? _(rapport WP-078-c6-D03)_
 - [?] La garde `estCoteACote()` lue une seule fois à l'ouverture du chat et l'effet qui suit `panneauCouvrant` couvrent-ils tous les ordres de gestes (ouvrir large, rétrécir, rouvrir) sans laisser `inert` sur la conversation ? _(rapport WP-066-c9u-U4)_
@@ -490,6 +495,7 @@
 - [?] La protection est-elle bien un asyncio.shield dans database.py, et couvre-t-elle aussi le rollback avant la fermeture ? _(rapport WP-DIFF-041-c9t-T3)_
 - [?] La protection « un admin ne peut pas se désactiver lui-même » existe-t-elle côté serveur, ou seulement sous forme d'un attribut disabled dans l'interface ? La distinction décide si l'étape 13 est un contrôle ou une manipulation risquée. _(rapport WP-C-031-c2-D06)_
 - [?] La préférence prefers-reduced-motion ou l'option d'accessibilité de THÉRÈSE neutralise-t-elle l'animation ailleurs dans la pile ? _(rapport WP-062-c10-B1)_
+- [?] La préférence système est-elle relayée de façon équivalente dans toutes les WebViews de distribution ? _(rapport WP-062-c10-repair-a)_
 - [?] La purge RGPD testée ici couvre-t-elle aussi les variables stockées hors base (aucune n'existe a priori) ? _(rapport WP-084-c4-R11)_
 - [?] La purge des commandes utilisateur touche-t-elle un jour la vraie Corbeille du poste ? `purger_tout` efface les .md de `settings.data_dir/commands/user`, son repli `.trash`, puis les depots listes dans son index de corbeille. _(rapport WP-DIFF-022-c4-R09)_
 - [?] La purge vectorielle rend un nombre de vecteurs purgés qui est journalisé mais jamais renvoyé au client : on ignore si l'interface sait distinguer une purge en échec d'une purge à zéro vecteur. _(rapport WP-050-c3-R05)_
@@ -831,6 +837,7 @@
 - [?] Le contrat du flux SSE du chat (noms et formes des evenements) est-il conforme entre le client et routers/chat.py ? _(rapport WP-073)_
 - [?] Le contrat « available » d'un fournisseur cloud doit-il valoir vrai des qu'une cle est enregistree, sans aucune verification, alors que le meme champ exige un modele reellement disponible pour Ollama ? _(rapport WP-083-c4-R09)_
 - [?] Le contrôle de génération est-il branché au démarrage réel de l'application (appel de controlerGenerationAuDemarrage), et où son verdict est-il montré à l'utilisateur ? _(rapport WP-070-c6-D03)_
+- [?] Le contrôle du champ fichier couvre-t-il le comportement natif de re-sélection ? _(rapport WP-DIFF-055-c10-repair-a)_
 - [?] Le corps HTML rendu par `_gmail_to_dto` est-il bien celui déjà assaini par nh3 ? Le commentaire de dette du 08/07 dit que la désinfection a été posée dans `format_message_for_storage`, mais ce module ne le vérifie pas et rend `body_html` tel quel. _(rapport WP-052-c6-R07)_
 - [?] Le corps `{code, message}` du 409 de réorganisation est-il bien celui produit par `documents.py`, avec les mêmes noms de champs ? _(rapport WP-072-c6-R08)_
 - [?] Le correctif B-653 (session rendue hors du scope annule) est-il verifie quelque part de bout en bout, avec une vraie connexion aiosqlite et une deconnexion client reelle, ou seulement par ces trois tests a `AsyncMock` ? _(rapport WP-DIFF-026-c6-R03)_
@@ -980,6 +987,7 @@
 - [?] Le lock epingle-t-il vite a 7.3.6 exactement, comme l'exige la lecon B-064 (« Vite 7.3.6 unique ») ? _(rapport WP-056-c9-R4)_
 - [?] Le lot D (export RGPD complet) est-il fusionné ? Si oui le xfail strict doit être retiré, sinon la CI passera au rouge en XPASS. _(rapport WP-C-025-c2-R1)_
 - [?] Le lot WP-083 compte 31 fichiers dans le manifeste et ce rapport n'en couvre que 6, ceux qui ont changé ou sont apparus depuis la carte du 31/08. La validation du lot accepte-t-elle un `files_read` partiel, ou faut-il fusionner ce rapport différentiel avec le rapport WP-083 du premier cycle ? _(rapport WP-083-c2-M05)_
+- [?] Le lot ciblé ne vérifie pas dynamiquement l’ordre des réponses de listInvoices sous changements rapides de filtres. _(rapport WP-C-026-c10-repair-b)_
 - [?] Le lot ne contient aucun test d'accessibilité, de DA ou d'UI : est-ce une lacune de ce paquet ou l'interface est-elle couverte ailleurs ? _(rapport WP-081)_
 - [?] Le magasin `contactsStore` expose-t-il bien `truncated` a `true` des que le plafond est atteint, condition de la reprise serveur du perimetre ? _(rapport WP-064-c9t-T4)_
 - [?] Le magasin actionsStore possede deux tests dedies (sondage et insertResult) : couvrent-ils le cas d'une tache deja finale a l'arrivee, ou seulement la transition ? _(rapport WP-073-c3-D04)_
@@ -1000,12 +1008,14 @@
 - [?] Le marqueur imap_reel est-il déclaré et désélectionné par défaut dans la configuration pytest ? _(rapport WP-084-c9v-V2)_
 - [?] Le marqueur imap_reel est-il déselectionné par défaut dans la configuration pytest du dépôt ? _(rapport WP-084-c9w-W2)_
 - [?] Le masquage couvre-t-il toutes les données imbriquées et les libellés accessibles du brief ? _(rapport WP-DIFF-003-c8-codex-b)_
+- [?] Le masquage porte sur les prompts textuels et noms accessibles, pas sur les informations éventuellement visibles dans les pixels des images. _(rapport WP-066-c10-repair-b)_
 - [?] Le masque de demonstration s'applique-t-il aussi au champ source affiche en etiquette (ligne 301), qui n'est pas passe par masquer() ? Selon le contenu de ce champ, il peut porter un nom d'entreprise. _(rapport WP-062-c9u-U2)_
 - [?] Le masque de démonstration a-t-il vocation à couvrir les activités, ou l'écran des activités est-il volontairement hors périmètre du mode démonstration ? _(rapport WP-062-c3-R13)_
 - [?] Le masque de démonstration couvre le titre et le détail, mais pas le libellé de repli ni les pastilles de sources. Ces textes peuvent-ils contenir une donnée nominative ? _(rapport WP-066-c2-M15)_
 - [?] Le masque de démonstration est-il appliqué aux cinq autres sections du TodayDashboardCard ? _(rapport WP-DIFF-003-c3-D06)_
 - [?] Le masque de démonstration est-il désormais appliqué dans `ProjectsKanban` lui-même ou dans `ProjectsPanel` qui lui passe des projets déjà masqués ? La docstring décrit l'état AVANT correctif, le test ne distingue pas les deux implantations. _(rapport WP-DIFF-029-c9-D1)_
 - [?] Le masque de démonstration s'applique-t-il aussi aux attributs d'accessibilité des cartes du pipeline (aria-label, title) ? _(rapport WP-DIFF-044-c9v-V3)_
+- [?] Le masque de présentation remplace les entités connues et ne constitue pas une anonymisation exhaustive de toute information libre saisie dans un projet. _(rapport WP-064-c10-repair-b)_
 - [?] Le menu affiche chaque commande sous la forme /{cmd.name} (SlashCommandsMenu.tsx:386) alors que douze des noms statiques contiennent une espace, et detectSlashCommand ferme le menu à la première espace (l.414, seule condition d'affichage en ChatInput.tsx:405). Un utilisateur qui recopie « /ouvrir email » perd-il le menu en cours de frappe ? _(rapport WP-062)_
 - [?] Le message 403 compare par `classifyCalendarError` est-il toujours produit avec la casse « Google Calendar » par le backend, sur les deux chemins (calendriers et evenements) ? _(rapport WP-061-c6-R02)_
 - [?] Le message backend d'un 403 Google Calendar contient-il littéralement la capitale « Google Calendar » attendue ligne 62 de calendarErrors.ts ? _(rapport WP-061-c2-D07)_
@@ -1135,6 +1145,7 @@
 - [?] Le prototype conversation-canvas est-il accessible autrement que par un parametre d'URL, et est-il livre aux utilisateurs ? _(rapport WP-085-c3-D05)_
 - [?] Le provisionnement automatique du calendrier local se rejoue-t-il à chaque montage après un échec, au risque de créer plusieurs calendriers ? _(rapport WP-066-c3-D03)_
 - [?] Le périmètre couvre-t-il aussi les autres chemins d'entrée de fichiers (téléversement d'une pièce jointe de projet, lecture de contenu, fichier joint à un message), ou seulement POST /api/files/index ? _(rapport WP-DIFF-027-c6-D04)_
+- [?] Le périmètre mesuré correspond-il aux contenus et thèmes réellement présents lors de l’exécution ? _(rapport WP-DIFF-053-c10-repair-a)_
 - [?] Le raccourci Cmd+O / Ctrl+O annonce par l'infobulle du trombone est-il reellement branche ailleurs (useKeyboardShortcuts) ? _(rapport WP-061-c4-R07)_
 - [?] Le raccourci annonce par le registre est-il verifie contre le gestionnaire clavier reel ? _(rapport WP-061-c9-R3)_
 - [?] Le raccourci d'attachement annonce dans l'infobulle est-il reellement branche quelque part ? _(rapport WP-061)_
@@ -1178,6 +1189,7 @@
 - [?] Le repli sans jeton d'api-endpoints.spec.ts peut-il masquer une regression reelle en production de test ? _(rapport WP-085)_
 - [?] Le repli silencieux de validate_section (resume remplace par les 300 premiers caracteres quand le LLM echoue) est-il signale a l'ecran ? _(rapport WP-050-c6-D01)_
 - [?] Le repli « calendrier local » proposé pour un compte IMAP est-il un vrai calendrier persisté ou un objet de synthèse ? Le test se contente de vérifier qu'au moins une entrée est marquée primary. _(rapport WP-083-c3-R21)_
+- [?] Le retour de focus reste-t-il identique dans les WebViews macOS et Windows réellement distribuées ? _(rapport WP-C-026-c10-repair-a)_
 - [?] Le retour de listEmailMessages porte-t-il toujours nextPageToken, ou le drapeau listeIncomplete se rabat-il en pratique sur le seul seuil de 30 messages ? _(rapport WP-067-c3-R16)_
 - [?] Le retour du filet post-boucle des fournisseurs OpenAI-compatibles porte-t-il aussi l'usage quand celui-ci est arrive AVANT la coupure, ou seulement le stop_reason ? _(rapport WP-081-c4-R10)_
 - [?] Le retour du focus au déclencheur après la fermeture d'une vue embarquée fonctionne-t-il quand le déclencheur n'a ni identifiant de test ni libellé accessible (repli sur le texte exact) ? _(rapport WP-066-c9t-T2)_
@@ -1279,6 +1291,7 @@
 - [?] Le test vérifie-t-il que la base est réellement restée intacte, ou seulement le dictionnaire rendu ? _(rapport WP-DIFF-050-c9w-W2)_
 - [?] Le test xfail tests/test_routers_board.py:99 est-il encore justifie (« SSE streaming test requires full DB init ») alors que la fixture client entre bien dans le lifespan de test ? _(rapport WP-083)_
 - [?] Le test « Input focus handling » de useKeyboardShortcuts.test.ts échouerait-il si l'évènement portait ctrlKey ? La chaîne de faits est mesurée (platform vide, ctrlKey absent, garde ligne 53), mais l'échec attendu est une déduction : je n'ai pas modifié le test, étant en lecture seule. _(rapport WP-070)_
+- [?] Le texte de durée reste-t-il perceptible avec une conversation très longue et toutes les configurations de défilement ? _(rapport WP-061-c10-repair-a)_
 - [?] Le texte de l'état vide des tâches contient-il une phrase d'explication distincte du bouton, et laquelle ? _(rapport WP-068-c3-D03)_
 - [?] Le texte de substitution des images est-il rendu par CompactMarkdown lui-meme ou par un composant d'image partage, et la meme politique vaut-elle pour les images locales (fichiers du profil) ? _(rapport WP-DIFF-016-c9t-T1)_
 - [?] Le texte exact de la confirmation souveraine est-il partagé avec un autre écran, par exemple le consentement cloud ? _(rapport WP-DIFF-024-c9v-V2)_
@@ -1323,12 +1336,14 @@
 - [?] Les `data-testid` des neuf tables existent-ils réellement dans l'application Server ? _(rapport WP-C-031-c6-R09)_
 - [?] Les adresses, commandes, volumes et durées correspondent-ils encore au dispositif de recette actuel ? _(rapport WP-086-c8-challenge-b)_
 - [?] Les annonces, tailles et choix de modèle restent-ils cohérents dans la release au zoom 200 % ? _(rapport WP-DIFF-009-c8-challenge-b)_
+- [?] Les aperçus authentifiés, téléchargements natifs et la génération payante fonctionnent-ils sur les fournisseurs réels ? _(rapport WP-066-c10-repair-a)_
 - [?] Les appelants de GitService.commit (swarm, runtime des agents) attrapent-ils GitCommitEchoue, ou l'exception remonte-t-elle jusqu'à l'écran de l'Atelier ? _(rapport WP-051-c9u-U1)_
 - [?] Les appelants de date_civile_paris passent-ils des instants aware, ou des datetime naifs relus de SQLite ? _(rapport WP-DIFF-002-c4-D05)_
 - [?] Les appelants de extract_text et chunk_text les exécutent-ils hors de la boucle d'événements, comme l'exige le correctif BUG-155 ? _(rapport WP-052-c6-D02)_
 - [?] Les appelants de requestExternalAction attrapent-ils eux-mêmes l'échec de leur action, ce qui rendrait sans effet l'absence de catch dans confirm() ? _(rapport WP-060-c6-D04)_
 - [?] Les assertions clavier et propagation d’événement passent-elles dans le navigateur de la release ? _(rapport WP-DIFF-006-c8-critical-b)_
 - [?] Les assertions de texte source (inspect.getsource / read_text) sont-elles réellement satisfaites par un commentaire dans les modules visés aujourd'hui, ou seulement par du code exécuté ? _(rapport WP-081)_
+- [?] Les assertions passent-elles actuellement dans les environnements d’intégration et les binaires publiés ? _(rapport WP-DIFF-055-c10-repair-a)_
 - [?] Les autres fournisseurs OpenAI-compatibles (OpenAI, OpenRouter, Mistral, DeepSeek, Infomaniak, Grok) propagent-ils eux aussi stop_reason « length » ou la réparation B-796 est-elle restée cantonnée à Perplexity ? _(rapport WP-DIFF-038-c9s-S4)_
 - [?] Les autres fournisseurs affichent-ils tous un nom public et une finalité cohérente dans le consentement ? _(rapport WP-DIFF-028-c8-critical-b)_
 - [?] Les autres fournisseurs compatibles OpenAI (DeepSeek, Infomaniak, Perplexity, Mistral) ont-ils la même garantie d'un seul événement d'erreur sur un arrêt sans contenu, ou seule la classe OpenRouter est-elle couverte ? _(rapport WP-DIFF-032-c9-D1)_
@@ -1388,6 +1403,7 @@
 - [?] Les comportements décrits par cette contre-lecture se reproduisent-ils dans l’application intégrée ? _(rapport WP-DIFF-027-c8-challenge-c)_
 - [?] Les comportements décrits par cette contre-lecture se reproduisent-ils dans l’application intégrée ? _(rapport WP-DIFF-029-c8-challenge-c)_
 - [?] Les comportements décrits par cette contre-lecture se reproduisent-ils dans l’application intégrée ? _(rapport WP-DIFF-030-c8-challenge-c)_
+- [?] Les comportements simulés de Tab, inert et Échap correspondent-ils à la coque native ? _(rapport WP-DIFF-054-c10-repair-a)_
 - [?] Les composants du panneau E-mail traduisent-ils les Error anglaises d'email.ts avant affichage, ou les rendent-ils telles quelles ? _(rapport WP-073-c3-R17)_
 - [?] Les composants paresseux renvoient-ils null tant que `isOpen` est faux, ou exécutent-ils du travail (souscriptions, chargements) dès leur montage silencieux ? _(rapport WP-061-c4-D04)_
 - [?] Les composants qui affichent l'heure d'un message reconstruisent-ils une Date, ou supposent-ils l'objet ? La reponse decide de la gravite du risque de rehydratation. _(rapport WP-073-c9t-T1)_
@@ -1401,6 +1417,7 @@
 - [?] Les contacts créés par les autres chemins (outils de chat, extraction d'entités, synchronisation Sheets) enregistrent-ils l'adresse email en minuscules ? _(rapport WP-052)_
 - [?] Les contacts passes a PipelineView sont-ils deja masques par le mode demonstration en amont (CRMPanel), ou le masquage n'existe-t-il que dans les annonces de glisse ? _(rapport WP-062-c9t-T1)_
 - [?] Les contenus rendus par CompactMarkdown contiennent-ils en pratique des tableaux GFM ? _(rapport WP-DIFF-016-c3-D07)_
+- [?] Les contrastes indéterminés et surfaces hors fixtures sont-ils visuellement satisfaisants ? _(rapport WP-DIFF-055-c10-repair-a)_
 - [?] Les contrats de focus et d’annonce restent-ils identiques dans les WebView macOS, Windows et Linux packagées ? _(rapport WP-070-c8-zero-check-b)_
 - [?] Les correctifs surveillés par ces deux lots ont-ils, pour certains, un test de comportement ailleurs (double couverture), ou la garde textuelle est-elle leur seule protection ? _(rapport WP-DIFF-021-c6-D03)_
 - [?] Les couvertures annoncees par les commentaires du fichier (par exemple "le comportement reel est couvert par test_fencing_traitement (F6)") existent-elles toujours dans les fichiers cites ? _(rapport WP-082-c2-M01)_
@@ -1485,6 +1502,7 @@
 - [?] Les numéros de ligne des symboles enregistrés dans l'inventaire pour ce fichier sont décalés de 30 par rapport au contenu réel (adminLink annoncé ligne 199, présent ligne 229 ; isDisabled annoncé 343, présent 373), soit exactement la taille du préambule ajouté le 01/09/2026, alors que le sha256 et le compte de 914 lignes correspondent au fichier actuel. L'extraction des symboles est-elle antérieure au dernier rafraîchissement de l'inventaire ? _(rapport WP-C-031-c2-D06)_
 - [?] Les onglets tools, agents et advanced sont-ils effectivement absents du DOM pendant le parcours 05, ce qui ferait echouer six de ses quatorze scenarios ? _(rapport WP-085)_
 - [?] Les onze appelants actuels de log_activity commitent-ils tous AVANT de journaliser, ce dont depend l'absence d'effet observable du correctif B-028 ? _(rapport WP-DIFF-011-c3-R26)_
+- [?] Les opérations serveur poursuivies après navigation et les particularités des disques réseau respectent-elles les résultats affichés ? _(rapport WP-064-c10-repair-a)_
 - [?] Les outils cités par les profils (`search_codebase`, `git_status`, `run_command`) existent-ils tous côté exécution des agents ? _(rapport WP-051-c6-R08)_
 - [?] Les pages HTML de retour OAuth sont-elles couvertes par un test qui vérifie l'échappement des paramètres rendus ? _(rapport WP-050-c9s-S3)_
 - [?] Les pastilles « Clé API configurée », « Clé OK » et « Dictée vocale active » reposent sur la présence d'une clé enregistrée : le backend valide-t-il la clé à l'enregistrement, ou seulement son préfixe côté interface ? _(rapport WP-068)_
@@ -1540,6 +1558,7 @@
 - [?] Les tables planning_resources et task_allocations sont creees par la migration mais aucune route du lot A ne les lit ni ne les ecrit : sont-elles du socle en avance de phase ou une fonctionnalite orpheline ? _(rapport WP-DIFF-015-c3-R28)_
 - [?] Les temoins nommes par les phases d'erreur de A3 (chat-model-unavailable, calendar-stale-warning, today-dashboard-error, contacts-memory-error, today-dashboard-indisponible) sont-ils tous poses dans le code ? _(rapport WP-086-c9t-T1)_
 - [?] Les tests P1 « cross-session » (etape 12 : l'utilisateur desactive ne peut plus se connecter) et « apres refresh » (etape 11 : persistence du role) n'ont aucune procedure. Le protocole les enonce comme des attendus sans dire comment ouvrir une seconde session ni quand rafraichir, alors que l'etape 42 previent qu'une interruption laisse des comptes desactives derriere elle. _(rapport WP-C-031)_
+- [?] Les tests de ce lot simulent les frontières API ; les recettes locales ne constituent pas une preuve de publication ou un contrôle de tous les scénarios natifs. _(rapport WP-DIFF-055-c10-repair-b)_
 - [?] Les tests de cloisonnement passent le perimetre en argument a execute_memory_tool. Qui calcule reellement ce couple dans l'application, et une valeur nulle inattendue y est-elle possible ? La garde par arbre syntaxique n'exclut que le litteral None ecrit en dur. _(rapport WP-083-c6-D01)_
 - [?] Les tests du lot (PrivacyTab.test.tsx, VoiceLocalSection.test.tsx, TaskKanban.test.tsx, SettingsModal.test.ts) couvrent-ils la disparition des taches annulees et l'arret du sondage sur erreur ? _(rapport WP-068-c4-R08)_
 - [?] Les tests du lot (contactsStore.test.ts, demoStore.rehydratation.test.ts) couvrent-ils la course de deux recherches concurrentes et l'absence de projets dans la table armee par toggle ? _(rapport WP-074-c4-R08)_
@@ -1847,6 +1866,7 @@
 - [?] Quels dialectes Markdown et formes de tableaux sont contractuellement pris en charge ? _(rapport WP-054-c8-challenge-b)_
 - [?] Quels domaines peuvent apparaître dans le tableau indisponibles renvoyé par setup-status, et la casse ou l'orthographe attendue par SetupChecklist correspond-elle exactement à celles du backend ? _(rapport WP-064-c2-D07)_
 - [?] Quels identifiants de modèles DeepSeek le catalogue propose-t-il aujourd'hui ? Le module lu ne code aucun nom de modèle, or la note de version 0.43.4 signale que `deepseek-chat` et `deepseek-reasoner` ont disparu de l'API. _(rapport WP-053-c6-R07)_
+- [?] Quels noms peuvent être masqués avant peuplement de la table démo ? _(rapport WP-066-c10-repair-a)_
 - [?] Quels outils de TOOLS sont paginés en plus de list_contacts, et leurs descriptions portent-elles l'avertissement de troncature ? _(rapport WP-080-c4-R11)_
 - [?] Quels prefixes et quelles cles sans prefixe purgeLocalPersistence connait-il exactement ? Le test en verifie six, mais la liste vit dans le module de production. _(rapport WP-071-c9t-T3)_
 - [?] Quels sont les data-testid réels des onglets des réglages dans le composant de la modale, et l'en-tête de correction du 01/09 est-il encore juste ? _(rapport WP-086-c9u-U1)_
