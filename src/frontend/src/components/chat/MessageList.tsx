@@ -70,10 +70,17 @@ function ListFooter() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0 }}
           >
-            <TypingIndicator modeleLocal={fournisseurCourant === 'ollama'} />
+            <TypingIndicator />
           </motion.div>
         )}
       </AnimatePresence>
+      {/* B-942 : le repère appartient à l'attente du fil, y compris lorsque
+          la bulle assistant vide remplace l'indicateur (B-812). */}
+      {isStreaming && fournisseurCourant === 'ollama' && (
+        <p className="text-xs text-text-muted mt-2">
+          Avec un modèle local, cela peut prendre plusieurs minutes.
+        </p>
+      )}
     </div>
   );
 }

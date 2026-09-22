@@ -1,12 +1,26 @@
+import { useSyncExternalStore } from 'react';
 import { motion } from 'framer-motion';
 import { Bot, Sparkles } from 'lucide-react';
+import { useAccessibilityStore } from '../../stores/accessibilityStore';
 
-export function TypingIndicator({ modeleLocal = false }: { modeleLocal?: boolean } = {}) {
+const preferenceSysteme = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+function suivrePreferenceSysteme(onChange: () => void) {
+  const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
+  preference.addEventListener('change', onChange);
+  return () => preference.removeEventListener('change', onChange);
+}
+
+export function TypingIndicator() {
+  const preferenceApp = useAccessibilityStore((state) => state.reduceMotion);
+  const preferenceOS = useSyncExternalStore(suivrePreferenceSysteme, preferenceSysteme, () => false);
+  const reduceMotion = preferenceApp || preferenceOS;
+  const pointClassName = 'w-2 h-2 bg-accent-cyan rounded-full shadow-[0_0_8px_rgba(34,211,238,0.5)]';
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={reduceMotion ? false : { opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
+      exit={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: -10 }}
+      transition={reduceMotion ? { duration: 0 } : undefined}
       className="flex gap-3"
     >
       {/* Avatar with glow */}
@@ -19,10 +33,14 @@ export function TypingIndicator({ modeleLocal = false }: { modeleLocal?: boolean
         <div className="flex items-center gap-2">
           <Sparkles className="w-3 h-3 text-accent-cyan-ink" />
           <div className="flex items-center gap-1.5">
-            {[0, 1, 2].map((i) => (
+            {/* MotionConfig neutralise les transformations, pas l'opacité.
+                B-937 : de vrais éléments statiques évitent toute pulsation. */}
+            {[0, 1, 2].map((i) => reduceMotion ? (
+              <div key={i} className={pointClassName} />
+            ) : (
               <motion.div
                 key={i}
-                className="w-2 h-2 bg-accent-cyan rounded-full shadow-[0_0_8px_rgba(34,211,238,0.5)]"
+                className={pointClassName}
                 animate={{
                   y: [0, -8, 0],
                   opacity: [0.4, 1, 0.4],
@@ -38,8 +56,6 @@ export function TypingIndicator({ modeleLocal = false }: { modeleLocal?: boolean
             ))}
           </div>
           <span className="text-xs text-text-muted ml-1">Réflexion...</span>
-          {/* P-094 : même repère que l'atelier documentaire (B-627). */}
-          {modeleLocal && <span className="text-xs text-text-muted ml-2">Avec un modèle local, cela peut prendre plusieurs minutes.</span>}
         </div>
       </div>
     </motion.div>
