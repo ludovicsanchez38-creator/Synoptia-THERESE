@@ -48,6 +48,18 @@ describe('B-940 : les fichiers restent attachés au projet affiché', () => {
     expect(screen.queryByRole('button', { name: 'Supprimer le fichier fichier-A.pdf' })).toBeNull();
   });
 
+  it('réinitialise le champ natif pour permettre de choisir le même fichier dans B', async () => {
+    api.listProjectFiles.mockResolvedValue(liste('fichier'));
+    const { container, rerender } = render(<ProjectModal {...props} project={projet('A')} />);
+    await screen.findByText('fichier.pdf');
+    const input = container.querySelector<HTMLInputElement>('input[type=file]')!;
+    // jsdom ne possède pas de sélecteur natif. La preuve Chromium indépendante
+    // utilise une vraie sélection ; ici on vérifie la remise à zéro du champ.
+    Object.defineProperty(input, 'value', { configurable: true, writable: true, value: 'C:\\fakepath\\devis.pdf' });
+    rerender(<ProjectModal {...props} project={projet('B')} />);
+    expect(input.value).toBe('');
+  });
+
   it('ignore une lecture achevée après fermeture puis réouverture du même projet', async () => {
     const ancienne = attente<ReturnType<typeof liste>>();
     api.listProjectFiles.mockReturnValueOnce(ancienne.promise).mockResolvedValue(liste('version-courante'));

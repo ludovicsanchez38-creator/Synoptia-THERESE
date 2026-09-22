@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { X, Briefcase, Trash2, AlertCircle, Upload, FileText, FileSpreadsheet, File } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../ui/Button';
@@ -14,6 +14,9 @@ import { Input } from '../ui/Input';
 import { Segments } from '../ui/Segments';
 import { Select } from '../ui/Select';
 import { Textarea } from '../ui/Textarea';
+import { useDemoMask } from '../../hooks/useDemoMask';
+import { useDemoStore } from '../../stores/demoStore';
+import { buildReplacementMap, maskText as appliquerMasque } from '../../lib/demoMask';
 
 interface ProjectModalProps {
   isOpen: boolean;
@@ -50,6 +53,7 @@ const STATUS_OPTIONS = [
 ];
 
 export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModalProps) {
+  const { enabled: demoEnabled, replacementMap, maskContact, maskProject } = useDemoMask();
   const [formData, setFormData] = useState<FormData>(initialFormData);
   const [contacts, setContacts] = useState<api.Contact[]>([]);
   const [saving, setSaving] = useState(false);
@@ -63,6 +67,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
   const [fichierASupprimer, setFichierASupprimer] = useState<api.FileMetadata | null>(null);
   const boutonSuppressionRef = useRef<HTMLButtonElement | null>(null);
   const [loadingContacts, setLoadingContacts] = useState(false);
+  const [contactsCharges, setContactsCharges] = useState(false);
   const [projectFiles, setProjectFiles] = useState<api.FileMetadata[]>([]);
   const [fichiersTronques, setFichiersTronques] = useState(false);
   const [uploadingFile, setUploadingFile] = useState(false);
@@ -70,6 +75,18 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
   // Une ouverture constitue un contexte distinct, même pour le même projet.
   const fichiersContexteRef = useRef(0);
   const fichiersRequeteRef = useRef(0);
+
+  const masqueLocal = useMemo(() => new Map([
+    ...replacementMap,
+    ...buildReplacementMap(contacts, project ? [project] : []),
+  ]), [replacementMap, contacts, project]);
+  const maskText = useCallback((texte: string) => {
+    if (!demoEnabled || !texte) return texte;
+    // Une ouverture à froid ne peut pas attendre le masque global d'une autre
+    // vue. Tant que les contacts sont inconnus, aucun texte libre n'est révélé.
+    if (!contactsCharges) return 'Contenu masqué en mode démo';
+    return appliquerMasque(texte, masqueLocal);
+  }, [demoEnabled, contactsCharges, masqueLocal]);
 
   const isEditing = !!project;
 
@@ -104,20 +121,21 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
     setProjectFiles([]);
     setFichiersTronques(false);
     setUploadingFile(false);
+    if (fileInputRef.current) fileInputRef.current.value = '';
     if (isOpen && projectId) void loadProjectFiles(projectId, contexte);
     return () => { fichiersContexteRef.current += 1; };
   }, [isOpen, projectId, loadProjectFiles]);
 
   const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files?.length || !project) return;
+    if (!files?.length || !project || useDemoStore.getState().enabled) return;
 
     const contexte = fichiersContexteRef.current;
     setUploadingFile(true);
     setError(null);
     try {
       for (const file of Array.from(files)) {
-        if (contexte !== fichiersContexteRef.current) return;
+        if (contexte !== fichiersContexteRef.current || useDemoStore.getState().enabled) return;
         await api.uploadProjectFile(file, project.id);
       }
       await loadProjectFiles(project.id, contexte);
@@ -135,7 +153,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
 
   async function confirmerSuppressionFichier() {
     const cible = fichierASupprimer;
-    if (!cible) return;
+    if (!cible || useDemoStore.getState().enabled) return;
     const contexte = fichiersContexteRef.current;
     try {
       await api.deleteFile(cible.id);
@@ -169,10 +187,12 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
   }
 
   async function loadContacts() {
+    setContactsCharges(false);
     setLoadingContacts(true);
     try {
       const data = await api.listContacts();
       setContacts(data);
+      setContactsCharges(true);
     } catch (err) {
       console.error('Failed to load contacts:', err);
     } finally {
@@ -208,11 +228,13 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
   }, [isOpen, project]);
 
   function handleChange(field: keyof FormData, value: string) {
+    if (demoEnabled) return;
     setFormData((prev) => ({ ...prev, [field]: value }));
     setError(null);
   }
 
   async function handleSave() {
+    if (useDemoStore.getState().enabled) return;
     // Validation
     if (!formData.name.trim()) {
       setError('Le nom du projet est requis');
@@ -257,7 +279,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
   }
 
   async function handleDelete() {
-    if (!project) return;
+    if (!project || useDemoStore.getState().enabled) return;
 
     setDeleting(true);
     setError(null);
@@ -301,7 +323,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
             ref={dialogRef}
             role="dialog"
             aria-modal="true"
-            aria-label={isEditing ? 'Modifier le projet' : 'Nouveau projet'}
+            aria-label={demoEnabled && isEditing ? 'Consulter le projet' : isEditing ? 'Modifier le projet' : 'Nouveau projet'}
             variants={modalVariants}
             initial="initial"
             animate="animate"
@@ -316,10 +338,10 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold text-text">
-                    {isEditing ? 'Modifier le projet' : 'Nouveau projet'}
+                    {demoEnabled && isEditing ? 'Consulter le projet' : isEditing ? 'Modifier le projet' : 'Nouveau projet'}
                   </h2>
                   <p className="text-sm text-text-muted">
-                    {isEditing ? 'Modifie les informations du projet' : 'Crée un nouveau projet'}
+                    {demoEnabled ? 'Aperçu masqué en lecture seule' : isEditing ? 'Modifie les informations du projet' : 'Crée un nouveau projet'}
                   </p>
                 </div>
               </div>
@@ -330,11 +352,17 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
 
             {/* Content - Scrollable */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {demoEnabled && (
+                <Alerte ton="attention" titre="Mode démo : lecture seule">
+                  Désactive le mode démo dans les paramètres pour modifier ce projet.
+                </Alerte>
+              )}
               {/* Name */}
               <FormField label="Nom du projet" htmlFor="projectmodal-nom-du-projet" required>
                 <Input id="projectmodal-nom-du-projet" data-dialog-autofocus
                   type="text"
-                  value={formData.name}
+                  value={demoEnabled && formData.name ? maskProject({ id: project?.id ?? '', name: formData.name }).name : formData.name}
+                  readOnly={demoEnabled}
                   onChange={(e) => handleChange('name', e.target.value)}
                   placeholder="Refonte site web"
                 />
@@ -343,7 +371,8 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
               {/* Description */}
               <FormField label="Description" htmlFor="projectmodal-description">
                 <Textarea id="projectmodal-description"
-                  value={formData.description}
+                  value={maskText(formData.description)}
+                  readOnly={demoEnabled}
                   onChange={(e) => handleChange('description', e.target.value)}
                   placeholder="Description du projet..."
                   rows={3}
@@ -351,22 +380,24 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
               </FormField>
 
               {/* Status */}
-              <Segments
-                label="Statut"
-                options={STATUS_OPTIONS}
-                valeur={formData.status}
-                onChange={(value) => handleChange('status', value)}
-              />
+              <fieldset disabled={demoEnabled}>
+                <Segments
+                  label="Statut"
+                  options={STATUS_OPTIONS}
+                  valeur={formData.status}
+                  onChange={(value) => handleChange('status', value)}
+                />
+              </fieldset>
 
               {/* Contact link */}
               <FormField label="Contact associé" htmlFor="projectmodal-contact-associe">
                 <Select id="projectmodal-contact-associe"
                   value={formData.contact_id}
                   onChange={(e) => handleChange('contact_id', e.target.value)}
-                  disabled={loadingContacts}
+                  disabled={loadingContacts || demoEnabled}
                   options={[
                     { value: '', label: 'Aucun contact' },
-                    ...contacts.map((contact) => ({ value: contact.id, label: getContactDisplayName(contact) })),
+                    ...contacts.map((contact) => ({ value: contact.id, label: getContactDisplayName(maskContact(contact)) })),
                   ]}
                 />
                 {loadingContacts && (
@@ -382,6 +413,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                 <Input id="projectmodal-budget"
                   type="number"
                   value={formData.budget}
+                  readOnly={demoEnabled}
                   onChange={(e) => handleChange('budget', e.target.value)}
                   placeholder="5000"
                   min="0"
@@ -392,7 +424,8 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
               {/* Notes */}
               <FormField label="Notes" htmlFor="projectmodal-notes">
                 <Textarea id="projectmodal-notes"
-                  value={formData.notes}
+                  value={maskText(formData.notes)}
+                  readOnly={demoEnabled}
                   onChange={(e) => handleChange('notes', e.target.value)}
                   placeholder="Notes internes sur le projet..."
                   rows={3}
@@ -401,7 +434,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
 
               {/* Dossier synchronisé (0.45) - visible uniquement en édition */}
               {isEditing && project && (
-                <ProjectSyncSection projectId={project.id} />
+                <ProjectSyncSection projectId={project.id} maskDisplayText={maskText} />
               )}
 
               {/* Fichiers du projet (visible uniquement en édition) */}
@@ -425,19 +458,20 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                           className="flex items-center gap-2 px-3 py-2 bg-surface-2 rounded-md border border-border"
                         >
                           {getFileIcon(f.extension)}
-                          <span className="flex-1 text-sm text-text truncate">{f.name}</span>
+                          <span className="flex-1 text-sm text-text truncate">{maskText(f.name)}</span>
                           <span className="text-xs text-text-muted">{formatFileSize(f.size)}</span>
                           <Button
                             type="button"
                             variant="ghost"
                             size="icon"
+                            disabled={demoEnabled}
                             onClick={(event) => {
                               boutonSuppressionRef.current = event.currentTarget;
                               setFichierASupprimer(f);
                             }}
                             className="text-text-muted hover:text-error"
-                            aria-label={`Supprimer le fichier ${f.name}`}
-                            title={`Supprimer le fichier ${f.name}`}
+                            aria-label={`Supprimer le fichier ${maskText(f.name)}`}
+                            title={`Supprimer le fichier ${maskText(f.name)}`}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </Button>
@@ -453,12 +487,13 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                     accept=".md,.txt,.csv,.xlsx,.pdf,.docx"
                     onChange={handleFileUpload}
                     className="hidden"
+                    disabled={demoEnabled}
                   />
                   <Button
                     variant="ghost"
                     className="w-full border border-dashed border-border"
                     onClick={() => fileInputRef.current?.click()}
-                    disabled={uploadingFile}
+                    disabled={uploadingFile || demoEnabled}
                   >
                     {uploadingFile ? (
                       <><Spinner taille="bouton" className="mr-2" />Upload en cours...</>
@@ -473,7 +508,8 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
               <FormField label="Tags (séparés par des virgules)" htmlFor="projectmodal-tags-separes-par-des-virgule">
                 <Input id="projectmodal-tags-separes-par-des-virgule"
                   type="text"
-                  value={formData.tags}
+                  value={maskText(formData.tags)}
+                  readOnly={demoEnabled}
                   onChange={(e) => handleChange('tags', e.target.value)}
                   placeholder="web, design, urgent"
                 />
@@ -481,7 +517,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
 
               {/* Error */}
               {error && (
-                <Alerte icone={<AlertCircle className="w-4 h-4" />}>{error}</Alerte>
+                <Alerte icone={<AlertCircle className="w-4 h-4" />}>{maskText(error)}</Alerte>
               )}
 
               {/* Suppression d'un fichier joint : confirmation en ligne */}
@@ -490,7 +526,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                   <AlertCircle className="w-4 h-4 text-error shrink-0" />
                   <div className="flex-1">
                     <p className="text-sm text-error font-medium">
-                      Supprimer « {fichierASupprimer.name} » ?
+                      Supprimer « {maskText(fichierASupprimer.name)} » ?
                     </p>
                     <p className="text-sm text-error">Cette action est irréversible.</p>
                   </div>
@@ -505,6 +541,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                       variant="danger"
                       size="sm"
                       onClick={confirmerSuppressionFichier}
+                      disabled={demoEnabled}
                     >
                       Supprimer définitivement
                     </Button>
@@ -532,7 +569,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                       variant="danger"
                       size="sm"
                       onClick={handleDelete}
-                      disabled={deleting}
+                      disabled={deleting || demoEnabled}
                     >
                       {deleting ? <Spinner taille="bouton" /> : 'Supprimer'}
                     </Button>
@@ -549,6 +586,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                     variant="ghost"
                     className="text-error hover:text-error hover:bg-error/10"
                     onClick={() => setShowDeleteConfirm(true)}
+                    disabled={demoEnabled}
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
                     Supprimer
@@ -562,7 +600,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                 <Button
                   variant="primary"
                   onClick={handleSave}
-                  disabled={saving}
+                  disabled={saving || demoEnabled}
                 >
                   {saving ? (
                     <>
