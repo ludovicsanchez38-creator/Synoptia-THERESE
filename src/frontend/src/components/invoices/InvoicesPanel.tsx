@@ -6,7 +6,7 @@
  */
 
 import { montantAvecDevise } from '../../lib/devise';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle, FileText, Plus, X } from 'lucide-react';
 import { filtresAvecType, statutsProposesPour, useInvoiceStore } from '../../stores/invoiceStore';
@@ -16,6 +16,7 @@ import { InvoiceForm } from './InvoiceForm';
 import { cn } from '../../lib/utils';
 import { Z_LAYER } from '../../styles/z-layers';
 import { pushEscapeHandler } from '../../lib/escapeStack';
+import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { Alerte } from '../ui/Alerte';
 import { Button } from '../ui/Button';
 import { Carte } from '../ui/Carte';
@@ -63,6 +64,16 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null);
   const [deletingInvoice, setDeletingInvoice] = useState<Invoice | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const deleteDialogRef = useRef<HTMLDivElement>(null);
+  useDialogFocusTrap(deleteDialogRef, {
+    active: Boolean(deletingInvoice) && (standalone || isInvoicePanelOpen),
+    isolateBackground: true,
+  });
+  // Pendant l'appel, les deux boutons sont désactivés : le conteneur garde
+  // le focus et retient Tab jusqu'au retour de l'API.
+  useEffect(() => {
+    if (isDeleting) deleteDialogRef.current?.focus();
+  }, [isDeleting]);
 
   // #287 : « Supprimer la facture ? » prend Échap sur la pile ; sinon la touche
   // remonte à la coque, qui replie toute la vue Facturer.
@@ -514,11 +525,17 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
     >
       <div className="absolute inset-0 bg-black/60" />
       <div
+        ref={deleteDialogRef}
         role="dialog"
         aria-modal="true"
         aria-label="Confirmer la suppression"
+        aria-busy={isDeleting}
+        tabIndex={-1}
         className="relative w-full max-w-md mx-4 p-6 bg-surface border border-border rounded-md shadow-sm space-y-4"
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={(e) => {
+          if (isDeleting && e.key === 'Tab') e.preventDefault();
+        }}
       >
         <h3 className="text-lg font-semibold text-text">Supprimer la facture ?</h3>
         <p className="text-sm text-text-muted">

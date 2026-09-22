@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, type RefObject } from 'react';
 import { X, Plus, Search, ChevronRight, Trash2, AlertCircle, Shield, Download, Upload, UserX, RefreshCw, AlertTriangle } from 'lucide-react';
 import { Spinner } from '../ui/Spinner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -18,6 +18,7 @@ import { useStatusStore } from '../../stores/statusStore';
 import { PLAFOND_CONTACTS, useContactsStore } from '../../stores/contactsStore';
 import { useNavigationStore } from '../../stores/navigationStore';
 import { pushEscapeHandler } from '../../lib/escapeStack';
+import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { Z_LAYER } from '../../styles/z-layers';
 
 const LIBELLES_PERIMETRE: Record<MemoryScope, string> = {
@@ -141,6 +142,29 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
   } | null>(null);
   const [rgpdActionLoading, setRgpdActionLoading] = useState(false);
   const [anonymizeReason, setAnonymizeReason] = useState('');
+  const deleteDialogRef = useRef<HTMLDivElement>(null);
+  const rgpdDialogRef = useRef<HTMLDivElement>(null);
+  const rgpdButtons = useRef(new Map<string, HTMLButtonElement>());
+  const rgpdFocusReturn = useRef<string | null>(null);
+  useDialogFocusTrap(deleteDialogRef, {
+    active: effectiveOpen && Boolean(deleteConfirm),
+    isolateBackground: true,
+  });
+  useDialogFocusTrap(rgpdDialogRef, {
+    active: effectiveOpen && Boolean(rgpdAction),
+    isolateBackground: true,
+  });
+  useEffect(() => {
+    if (deleting) deleteDialogRef.current?.focus();
+    if (rgpdActionLoading) rgpdDialogRef.current?.focus();
+  }, [deleting, rgpdActionLoading]);
+  useEffect(() => {
+    if (rgpdAction || loading || !rgpdFocusReturn.current) return;
+    // Après anonymisation/renouvellement, loadData remonte la liste. Le
+    // bouton mémorisé par le piège n'existe plus : retrouver celui du contact.
+    rgpdButtons.current.get(rgpdFocusReturn.current)?.focus();
+    rgpdFocusReturn.current = null;
+  }, [rgpdAction, loading]);
   const { enabled: demoEnabled, maskContact, populateMap } = useDemoMask();
   const vcfInputRef = { current: null as HTMLInputElement | null };
 
@@ -198,6 +222,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
   useEffect(() => {
     if (!deleteConfirm && !rgpdAction) return;
     return pushEscapeHandler(() => {
+      if (deleting || rgpdActionLoading) return;
       if (rgpdAction) {
         setRgpdAction(null);
         setAnonymizeReason('');
@@ -206,7 +231,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
         setDeleteError(null);
       }
     });
-  }, [deleteConfirm, rgpdAction]);
+  }, [deleteConfirm, rgpdAction, deleting, rgpdActionLoading]);
 
   async function loadData() {
     setLoading(true);
@@ -457,7 +482,11 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                       name: [c.first_name, c.last_name].filter(Boolean).join(' ') || c.company || 'Contact'
                     });
                   }}
-                  onRGPDAction={(type, contact) => setRgpdAction({ type, contact })}
+                  rgpdButtons={rgpdButtons}
+                  onRGPDAction={(type, contact) => {
+                    rgpdFocusReturn.current = contact.id;
+                    setRgpdAction({ type, contact });
+                  }}
                 />
               )}
             </div>
@@ -470,14 +499,25 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   className={`absolute inset-0 bg-text/35 flex items-center justify-center p-4 ${Z_LAYER.MODAL_NESTED}`}
-                  onClick={() => { setDeleteConfirm(null); setDeleteError(null); }}
+                  onClick={() => {
+                    if (!deleting) { setDeleteConfirm(null); setDeleteError(null); }
+                  }}
                 >
                   <motion.div
+                    ref={deleteDialogRef}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label="Supprimer le contact ?"
+                    aria-busy={deleting}
+                    tabIndex={-1}
                     initial={{ y: 8, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     exit={{ y: 8, opacity: 0 }}
                     className="bg-surface border border-border rounded-md p-5 w-full max-w-sm"
                     onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => {
+                      if (deleting && e.key === 'Tab') e.preventDefault();
+                    }}
                   >
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-10 h-10 rounded-full bg-error/20 flex items-center justify-center">
@@ -532,14 +572,27 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                   animate={{ opacity: 1 }}
                   exit={{ opacity: 0 }}
                   className={`absolute inset-0 bg-text/35 flex items-center justify-center p-4 ${Z_LAYER.MODAL_NESTED}`}
-                  onClick={() => { setRgpdAction(null); setAnonymizeReason(''); }}
+                  onClick={() => {
+                    if (!rgpdActionLoading) { setRgpdAction(null); setAnonymizeReason(''); }
+                  }}
                 >
                   <motion.div
+                    ref={rgpdDialogRef}
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={rgpdAction.type === 'export' ? 'Export RGPD'
+                      : rgpdAction.type === 'anonymize' ? 'Anonymisation RGPD'
+                        : 'Renouveler le consentement'}
+                    aria-busy={rgpdActionLoading}
+                    tabIndex={-1}
                     initial={{ y: 8, opacity: 0 }}
                     animate={{ y: 0, opacity: 1 }}
                     exit={{ y: 8, opacity: 0 }}
                     className="bg-surface border border-border rounded-md p-5 w-full max-w-sm"
                     onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => {
+                      if (rgpdActionLoading && e.key === 'Tab') e.preventDefault();
+                    }}
                   >
                     {rgpdAction.type === 'export' && (
                       <>
@@ -556,7 +609,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                           Exporter toutes les données de <strong>{rgpdAction.contact.first_name} {rgpdAction.contact.last_name}</strong> au format JSON.
                         </p>
                         <div className="flex gap-2">
-                          <Button variant="ghost" className="flex-1" onClick={() => setRgpdAction(null)}>
+                          <Button variant="ghost" className="flex-1" onClick={() => setRgpdAction(null)} disabled={rgpdActionLoading}>
                             Annuler
                           </Button>
                           <Button
@@ -596,13 +649,14 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                           <label htmlFor="memorypanel-raison-de-l-anonymisation" className="block text-sm font-medium text-text mb-1">Raison de l'anonymisation *</label>
                           <Input id="memorypanel-raison-de-l-anonymisation"
                             type="text"
+                            disabled={rgpdActionLoading}
                             value={anonymizeReason}
                             onChange={(e) => setAnonymizeReason(e.target.value)}
                             placeholder="Ex: Demande du contact, fin de relation..."
                           />
                         </div>
                         <div className="flex gap-2">
-                          <Button variant="ghost" className="flex-1" onClick={() => { setRgpdAction(null); setAnonymizeReason(''); }}>
+                          <Button variant="ghost" className="flex-1" onClick={() => { setRgpdAction(null); setAnonymizeReason(''); }} disabled={rgpdActionLoading}>
                             Annuler
                           </Button>
                           <Button
@@ -639,7 +693,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                           Le consentement de <strong>{rgpdAction.contact.first_name} {rgpdAction.contact.last_name}</strong> sera prolongé de 3 ans à partir d'aujourd'hui.
                         </p>
                         <div className="flex gap-2">
-                          <Button variant="ghost" className="flex-1" onClick={() => setRgpdAction(null)}>
+                          <Button variant="ghost" className="flex-1" onClick={() => setRgpdAction(null)} disabled={rgpdActionLoading}>
                             Annuler
                           </Button>
                           <Button
@@ -758,6 +812,7 @@ function ContactsList({
   onSelect,
   onDelete,
   onRGPDAction,
+  rgpdButtons,
 }: {
   contacts: api.Contact[];
   etatVide: EtatVideContacts;
@@ -766,8 +821,17 @@ function ContactsList({
   onSelect: (contact: api.Contact) => void;
   onDelete: (contact: api.Contact) => void;
   onRGPDAction: (type: 'export' | 'anonymize' | 'renew', contact: api.Contact) => void;
+  rgpdButtons: RefObject<Map<string, HTMLButtonElement>>;
 }) {
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+
+  function ouvrirActionRGPD(type: 'export' | 'anonymize' | 'renew', contact: api.Contact) {
+    // Le menu se démonte à l'ouverture : offrir au piège de focus un point
+    // de retour durable, propre au contact concerné.
+    rgpdButtons.current.get(contact.id)?.focus();
+    onRGPDAction(type, contact);
+    setOpenMenuId(null);
+  }
 
   if (contacts.length === 0) {
     return (
@@ -811,6 +875,10 @@ function ContactsList({
                 <RGPDBadge contact={contact} />
                 <div className="relative">
                   <Button
+                    ref={(button) => {
+                      if (button) rgpdButtons.current.set(contact.id, button);
+                      else rgpdButtons.current.delete(contact.id);
+                    }}
                     type="button"
                     variant="ghost"
                     size="icon"
@@ -834,7 +902,7 @@ function ContactsList({
                           type="button"
                           variant="ghost"
                           size="md"
-                          onClick={() => { onRGPDAction('export', contact); setOpenMenuId(null); }}
+                          onClick={() => ouvrirActionRGPD('export', contact)}
                           className="w-full justify-start text-text"
                         >
                           <Download className="w-4 h-4 text-accent" />
@@ -844,7 +912,7 @@ function ContactsList({
                           type="button"
                           variant="ghost"
                           size="md"
-                          onClick={() => { onRGPDAction('renew', contact); setOpenMenuId(null); }}
+                          onClick={() => ouvrirActionRGPD('renew', contact)}
                           className="w-full justify-start text-text"
                         >
                           <RefreshCw className="w-4 h-4 text-success" />
@@ -855,7 +923,7 @@ function ContactsList({
                           type="button"
                           variant="ghost"
                           size="md"
-                          onClick={() => { onRGPDAction('anonymize', contact); setOpenMenuId(null); }}
+                          onClick={() => ouvrirActionRGPD('anonymize', contact)}
                           className="w-full justify-start text-error"
                         >
                           <UserX className="w-4 h-4" />
