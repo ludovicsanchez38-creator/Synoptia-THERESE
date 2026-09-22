@@ -1988,7 +1988,12 @@ export function ConversationCanvasPrototype() {
                 data-testid="prototype-composer-backdrop"
               >
                 {/* B-562 : tant que le fil n'est pas au bout, on le dit. */}
-                <IndiceDeDefilement cible={conversationScrollRef} />
+                {/* B-947 : l'indice occupe les 48 px déjà réservés en haut.
+                    Hors flux, sa visibilité ne redimensionne plus le fond et
+                    ne réinjecte pas 38 px dans le dégagement mesuré du fil. */}
+                <div className="pointer-events-none absolute inset-x-0 top-2.5">
+                  <IndiceDeDefilement cible={conversationScrollRef} />
+                </div>
                 <div className={`pointer-events-auto mx-auto transition-[max-width] duration-200 ${canvasOpen ? 'max-w-[760px]' : 'max-w-colonne'}`}>
                   <div data-testid="composeur-carte" className="rounded-md border border-border bg-surface p-2 shadow-lg focus-within:border-accent focus-within:ring-[3px] focus-within:ring-ring/30">
                     {/* DA lot 1 : l'établi (cinq verbes) vit au bord du composeur,

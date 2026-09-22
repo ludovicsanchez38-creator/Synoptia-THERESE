@@ -257,6 +257,52 @@ test.describe('Prototype conversationnel - parcours unifiés des capacités', ()
     }
   });
 
+  test('B-947 : l’indice de défilement ne redimensionne pas le fond du composeur', async ({ page }) => {
+    await page.setViewportSize({ width: 1063, height: 739 });
+    await page.evaluate(() => document.fonts.ready);
+    const fil = page.getByTestId('prototype-conversation-scroll');
+    const fond = page.getByTestId('prototype-composer-backdrop');
+    const indice = page.getByRole('button', { name: 'Voir la suite' });
+    await fil.evaluate(element => { element.scrollTop = 0; });
+    await expect(indice).toBeVisible();
+    const hauteurAvecIndice = await fond.evaluate(element => element.getBoundingClientRect().height);
+
+    // Vrai clic : la disparition de l'indice ne doit pas changer la hauteur
+    // observée, sinon padding -> scrollHeight -> indice forme une boucle.
+    await indice.click();
+    await expect(indice).toBeHidden();
+    const hauteurSansIndice = await fond.evaluate(element => element.getBoundingClientRect().height);
+    expect(hauteurSansIndice).toBe(hauteurAvecIndice);
+    await expect.poll(() => fil.evaluate(element =>
+      element.scrollHeight - element.scrollTop - element.clientHeight,
+    )).toBeLessThanOrEqual(24);
+
+    // Mesures atomiques pendant plusieurs images : une simple attente du
+    // premier instant vert masquerait l'alternance 269/283 <-> 307/245.
+    const mesures = await page.evaluate(async () => {
+      const scroll = document.querySelector<HTMLElement>('[data-testid="prototype-conversation-scroll"]')!;
+      const backdrop = document.querySelector<HTMLElement>('[data-testid="prototype-composer-backdrop"]')!;
+      const carte = document.querySelector<HTMLElement>('[data-testid="composeur-carte"]')!;
+      const resultat = [];
+      for (let image = 0; image < 12; image++) {
+        await new Promise(requestAnimationFrame);
+        const enfants = [...scroll.firstElementChild!.children].filter(element => element.getBoundingClientRect().height > 0);
+        resultat.push({
+          hauteur: backdrop.getBoundingClientRect().height,
+          degagement: parseFloat(getComputedStyle(scroll).paddingBottom),
+          basDuContenu: enfants.at(-1)!.getBoundingClientRect().bottom,
+          hautDeLaCarte: carte.getBoundingClientRect().top,
+        });
+      }
+      return resultat;
+    });
+    for (const mesure of mesures) {
+      expect(mesure.hauteur).toBe(hauteurAvecIndice);
+      expect(mesure.degagement).toBeGreaterThanOrEqual(mesure.hauteur);
+      expect(mesure.basDuContenu).toBeLessThanOrEqual(mesure.hautDeLaCarte);
+    }
+  });
+
   test('Tâches ouvre la vraie vue dans la coquille unifiée', async ({ page }) => {
     await chooseCapability(page, 'Tâches');
 
