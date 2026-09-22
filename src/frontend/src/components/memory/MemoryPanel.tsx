@@ -144,6 +144,8 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
   const [anonymizeReason, setAnonymizeReason] = useState('');
   const deleteDialogRef = useRef<HTMLDivElement>(null);
   const rgpdDialogRef = useRef<HTMLDivElement>(null);
+  const rechercheRef = useRef<HTMLInputElement>(null);
+  const retourSuppressionRef = useRef<HTMLDivElement | null>(null);
   const rgpdButtons = useRef(new Map<string, HTMLButtonElement>());
   const rgpdFocusReturn = useRef<string | null>(null);
   useDialogFocusTrap(deleteDialogRef, {
@@ -158,6 +160,16 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
     if (deleting) deleteDialogRef.current?.focus();
     if (rgpdActionLoading) rgpdDialogRef.current?.focus();
   }, [deleting, rgpdActionLoading]);
+  useEffect(() => {
+    const origine = retourSuppressionRef.current;
+    if (deleteConfirm || !origine) return;
+    retourSuppressionRef.current = null;
+    // La ligne et son bouton ont disparu après succès ; la recherche demeure
+    // un point de reprise, même lorsque le carnet est désormais vide.
+    if (effectiveOpen && (document.activeElement === document.body || origine.contains(document.activeElement))) {
+      rechercheRef.current?.focus();
+    }
+  }, [deleteConfirm, effectiveOpen]);
   useEffect(() => {
     if (rgpdAction || loading || !rgpdFocusReturn.current) return;
     // Après anonymisation/renouvellement, loadData remonte la liste. Le
@@ -311,10 +323,13 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
   async function handleDelete() {
     if (!deleteConfirm) return;
 
+    const origine = deleteDialogRef.current;
     setDeleting(true);
     setDeleteError(null);
     try {
       await api.deleteContactWithCascade(deleteConfirm.id, true);
+      retourSuppressionRef.current = origine?.isConnected && origine === deleteDialogRef.current
+        && origine.contains(document.activeElement) ? origine : null;
       removeLocal(deleteConfirm.id);
       setDeleteConfirm(null);
     } catch (error) {
@@ -416,6 +431,7 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
             {(
               <div className="p-3 border-b border-border/30 space-y-2">
                 <Input
+                  ref={rechercheRef}
                   type="search"
                   icon={<Search size={18} />}
                   aria-label="Retrouver un contact"

@@ -65,8 +65,11 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
   const [deletingInvoice, setDeletingInvoice] = useState<Invoice | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const deleteDialogRef = useRef<HTMLDivElement>(null);
+  const creationRef = useRef<HTMLButtonElement>(null);
+  const retourSuppressionRef = useRef<HTMLDivElement | null>(null);
+  const effectiveOpen = standalone || isInvoicePanelOpen;
   useDialogFocusTrap(deleteDialogRef, {
-    active: Boolean(deletingInvoice) && (standalone || isInvoicePanelOpen),
+    active: Boolean(deletingInvoice) && effectiveOpen,
     isolateBackground: true,
   });
   // Pendant l'appel, les deux boutons sont désactivés : le conteneur garde
@@ -74,6 +77,16 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
   useEffect(() => {
     if (isDeleting) deleteDialogRef.current?.focus();
   }, [isDeleting]);
+  useEffect(() => {
+    const origine = retourSuppressionRef.current;
+    if (deletingInvoice || !origine) return;
+    retourSuppressionRef.current = null;
+    // Le bouton de la ligne supprimée n'existe plus. Reprendre sur l'action
+    // persistante, après le retrait d'inert, sauf si le focus a changé de vue.
+    if (effectiveOpen && (document.activeElement === document.body || origine.contains(document.activeElement))) {
+      creationRef.current?.focus();
+    }
+  }, [deletingInvoice, effectiveOpen]);
 
   // #287 : « Supprimer la facture ? » prend Échap sur la pile ; sinon la touche
   // remonte à la coque, qui replie toute la vue Facturer.
@@ -83,8 +96,6 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
       if (!isDeleting) setDeletingInvoice(null);
     });
   }, [deletingInvoice, isDeleting]);
-
-  const effectiveOpen = standalone || isInvoicePanelOpen;
 
   // Lot F : recharger quand le filtre change. Avant, le filtre tournait
   // dans les 50 plus récentes : « Payée » vide alors que mille payées
@@ -163,9 +174,13 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
   async function confirmDeleteInvoice() {
     if (!deletingInvoice) return;
 
+    const origine = deleteDialogRef.current;
     setIsDeleting(true);
     try {
       await deleteInvoice(deletingInvoice.id);
+      // Une réponse tardive ne déplace pas le focus d'une autre vue/modale.
+      retourSuppressionRef.current = origine?.isConnected && origine === deleteDialogRef.current
+        && origine.contains(document.activeElement) ? origine : null;
       removeInvoice(deletingInvoice.id);
       setDeletingInvoice(null);
     } catch (error) {
@@ -246,7 +261,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
       </div>
 
       <div className="ml-auto flex flex-wrap gap-2 max-[840px]:basis-full max-[840px]:ml-0">
-        <Button variant="primary" size="lg" type="button" onClick={handleCreateNew}>
+        <Button ref={creationRef} variant="primary" size="lg" type="button" onClick={handleCreateNew}>
           <Plus className="h-[18px] w-[18px]" />
           {/* P-015 : la surface s'appelle « Devis et factures », ses actions nomment les deux objets. */}
           {/* Audit 0.74 : sous le filtre Avoirs, le formulaire s'ouvre sur une facture (un avoir en découle) : le bouton le dit. */}

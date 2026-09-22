@@ -182,6 +182,30 @@ describe('B-941 : confirmations Contacts et RGPD', () => {
     await waitFor(() => expect(api.deleteContactWithCascade).toHaveBeenCalledExactlyOnceWith('contact-c10', true));
   });
 
+  it('reprend sur la recherche après suppression du dernier contact', async () => {
+    await ouvrirLaConfirmation(parcours[0]);
+    const dialogue = screen.getByRole('dialog', { name: 'Supprimer le contact ?' });
+    fireEvent.click(within(dialogue).getByRole('button', { name: 'Supprimer' }));
+    await waitFor(() => expect(dialogue).not.toBeInTheDocument());
+    expect(screen.getByRole('searchbox', { name: 'Retrouver un contact' })).toHaveFocus();
+  });
+
+  it('ne reprend pas le focus si les Contacts ont fermé pendant la suppression', async () => {
+    let terminer!: () => void;
+    api.deleteContactWithCascade.mockReturnValue(new Promise<void>((resolve) => { terminer = resolve; }));
+    const vue = render(<><button type="button">Autre vue</button><MemoryPanel isOpen /></>);
+    const declencheur = await screen.findByRole('button', { name: 'Supprimer Sophie Garcia' });
+    declencheur.focus();
+    fireEvent.click(declencheur);
+    const dialogue = await screen.findByRole('dialog', { name: 'Supprimer le contact ?' });
+    fireEvent.click(within(dialogue).getByRole('button', { name: 'Supprimer' }));
+    vue.rerender(<><button type="button">Autre vue</button><MemoryPanel isOpen={false} /></>);
+    const autreVue = screen.getByRole('button', { name: 'Autre vue' });
+    autreVue.focus();
+    await act(async () => { terminer(); });
+    expect(autreVue).toHaveFocus();
+  });
+
   it('exige une raison et une confirmation explicite avant anonymisation', async () => {
     await ouvrirLaConfirmation(parcours[2]);
     aucuneMutation();

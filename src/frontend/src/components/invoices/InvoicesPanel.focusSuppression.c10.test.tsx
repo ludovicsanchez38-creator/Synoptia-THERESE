@@ -86,6 +86,30 @@ describe('B-938 : confirmation de suppression de facture au clavier', () => {
     await waitFor(() => expect(dialogue).not.toBeInTheDocument());
   });
 
+  it('reprend sur la création après suppression de la dernière facture', async () => {
+    const { dialogue } = await ouvrirLaConfirmation();
+    fireEvent.click(within(dialogue).getByRole('button', { name: 'Supprimer' }));
+    await waitFor(() => expect(dialogue).not.toBeInTheDocument());
+    expect(screen.getByRole('button', { name: 'Nouveau devis ou facture' })).toHaveFocus();
+  });
+
+  it('ne reprend pas le focus si le panneau a fermé pendant la suppression', async () => {
+    let terminer!: () => void;
+    deleteInvoice.mockReturnValue(new Promise<void>((resolve) => { terminer = resolve; }));
+    render(<><button type="button">Autre vue</button><InvoicesPanel /></>);
+    const declencheur = await screen.findByTitle('Supprimer');
+    declencheur.focus();
+    fireEvent.click(declencheur);
+    const dialogue = await screen.findByRole('dialog', { name: 'Confirmer la suppression' });
+    fireEvent.click(within(dialogue).getByRole('button', { name: 'Supprimer' }));
+    act(() => useInvoiceStore.getState().setIsInvoicePanelOpen(false));
+    const autreVue = screen.getByRole('button', { name: 'Autre vue' });
+    autreVue.focus();
+    await act(async () => { terminer(); });
+    expect(autreVue).toHaveFocus();
+    expect(screen.queryByTestId('invoices-panel')).not.toBeInTheDocument();
+  });
+
   it('isole le fond pendant la confirmation et le réactive à la fermeture', async () => {
     const { declencheur, dialogue, annuler } = await ouvrirLaConfirmation();
     expect(declencheur.closest('[inert]')).not.toBeNull();
