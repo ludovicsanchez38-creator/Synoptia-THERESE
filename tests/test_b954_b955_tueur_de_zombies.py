@@ -19,6 +19,11 @@ import sys
 import types
 from pathlib import Path
 
+# Importé ici, avant toute simulation de sys.frozen : sous gel, l'import de
+# main.py écrit un diagnostic dans ~/.therese/logs (BUG-009). Relevé par la
+# seconde revue Codex (R-3) : lancé seul, le test B-954 l'aurait écrit dans
+# le vrai profil.
+import main as point_d_entree  # noqa: E402
 import pytest
 
 BUNDLE = "/usr/lib/THERESE/binaries/backend-libs/_internal"
@@ -31,6 +36,9 @@ def maison(monkeypatch, tmp_path: Path) -> Path:
     (maison / ".therese" / "qdrant").mkdir(parents=True)
     (maison / ".therese" / "qdrant" / ".lock").write_text("", encoding="utf-8")
     monkeypatch.setattr(Path, "home", classmethod(lambda cls: maison))
+    # expanduser lit HOME (POSIX) ou USERPROFILE (Windows), pas Path.home.
+    monkeypatch.setenv("HOME", str(maison))
+    monkeypatch.setenv("USERPROFILE", str(maison))
     monkeypatch.setattr(sys, "platform", "linux")
     return maison
 
@@ -53,8 +61,6 @@ class TestB955VerrouDuProfilEffectif:
         (donnees / "qdrant" / ".lock").write_text("", encoding="utf-8")
         monkeypatch.setenv("THERESE_DATA_DIR", str(donnees))
         _intercepter(monkeypatch)
-        import main as point_d_entree
-
         point_d_entree._kill_zombie_backends()
 
         assert not (donnees / "qdrant" / ".lock").exists(), "le verrou du profil effectif est nettoyé"
@@ -63,8 +69,6 @@ class TestB955VerrouDuProfilEffectif:
     def test_sans_therese_data_dir_le_profil_par_defaut_est_nettoye(self, maison, monkeypatch):
         monkeypatch.delenv("THERESE_DATA_DIR", raising=False)
         _intercepter(monkeypatch)
-        import main as point_d_entree
-
         point_d_entree._kill_zombie_backends()
 
         assert not (maison / ".therese" / "qdrant" / ".lock").exists()
@@ -77,8 +81,6 @@ class TestB954PgrepSansBibliothequesDuBundle:
         monkeypatch.setenv("LD_LIBRARY_PATH", f"{BUNDLE}:{ORIGINE}")
         monkeypatch.setenv("LD_LIBRARY_PATH_ORIG", ORIGINE)
         appels = _intercepter(monkeypatch)
-        import main as point_d_entree
-
         point_d_entree._kill_zombie_backends()
 
         pgrep = [kwargs for commande, kwargs in appels if commande[0] == "pgrep"]
