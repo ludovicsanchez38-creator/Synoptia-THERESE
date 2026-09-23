@@ -87,3 +87,43 @@ async def test_b964_un_outil_du_schema_reste_execute(tmp_path: Path):
         "write_file", {"file_path": "ok.txt", "content": "oui"}
     )
     assert (tmp_path / "ok.txt").read_text(encoding="utf-8") == "oui", ecrit
+
+
+# ---------------------------------------------------------------- B-965
+
+
+class _GrepSimule:
+    def __init__(self, sortie: str, erreur: str, code: int) -> None:
+        self._sortie, self._erreur, self.returncode, self.pid = sortie, erreur, code, 4242
+
+    async def communicate(self):
+        return self._sortie.encode(), self._erreur.encode()
+
+
+@pytest.mark.parametrize("separateur_de_grep", ["/", "\\"])
+async def test_b965_aucune_forme_de_la_racine_n_atteint_le_modele(tmp_path: Path, monkeypatch, separateur_de_grep):
+    """Sixième revue Codex : sous Windows, grep peut écrire la racine avec d'autres
+    séparateurs que ceux de Python ; aucune forme ne doit passer."""
+    from app.services.agents import tools as module_outils
+
+    racine = str(tmp_path)
+    variante = racine.replace("/", separateur_de_grep)
+    grep = _GrepSimule(
+        sortie=f"{variante}{separateur_de_grep}a.py:1:cible = 1\n",
+        erreur=f"grep: {variante}{separateur_de_grep}b.py: Permission denied\n",
+        code=2,
+    )
+
+    async def faux_exec(*args, **kwargs):
+        return grep
+
+    monkeypatch.setattr(module_outils.asyncio, "create_subprocess_exec", faux_exec)
+    avec_resultat = await AgentToolExecutor(racine).search_codebase("cible", "*.py")
+    assert "a.py:1:cible = 1" in avec_resultat, avec_resultat
+    assert racine not in avec_resultat and variante not in avec_resultat, avec_resultat
+
+    grep._sortie = ""
+    sans_resultat = await AgentToolExecutor(racine).search_codebase("cible", "*.py")
+    assert sans_resultat.startswith("Erreur"), sans_resultat
+    assert "Permission denied" in sans_resultat, sans_resultat
+    assert racine not in sans_resultat and variante not in sans_resultat, sans_resultat

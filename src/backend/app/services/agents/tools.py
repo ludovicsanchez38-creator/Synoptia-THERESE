@@ -176,6 +176,22 @@ class AgentToolExecutor:
         except Exception as e:
             return f"Erreur : {e}"
 
+    def _sans_racine(self, texte: str) -> str:
+        """Retire la racine du dépôt d'un texte destiné au modèle (B-965).
+
+        grep peut écrire la racine avec d'autres séparateurs que ceux de Python
+        (sous Windows, « C:/... » contre « C:\\... ») : toutes les formes sont
+        retirées, préfixe de chemin d'abord, mention isolée ensuite.
+        """
+        if not self.source_path:
+            return texte
+        formes: set[str] = set()
+        for racine in (str(self.source_path), str(self.source_path.resolve())):
+            formes |= {racine, racine.replace("\\", "/"), racine.replace("/", "\\")}
+        for forme in sorted(formes, key=len, reverse=True):
+            texte = texte.replace(forme + "/", "").replace(forme + "\\", "").replace(forme, ".")
+        return texte
+
     async def search_codebase(
         self, pattern: str, glob_filter: str = "*.py", max_results: int = 20
     ) -> str:
@@ -211,18 +227,15 @@ class AgentToolExecutor:
             if code >= 2 and not output:
                 # B-962 : grep rend 1 quand rien ne correspond, 2 sur une erreur
                 # (motif invalide) ; une erreur n'est pas « Aucun résultat ».
-                # B-963 : sans chemin absolu dans ce que lit le modèle.
-                detail = stderr.decode("utf-8", errors="replace")
-                for racine in {str(self.source_path.resolve()), str(self.source_path)}:
-                    detail = detail.replace(racine + os.sep, "").replace(racine, ".")
-                detail = detail.strip()[:300]
+                # B-963, B-965 : sans chemin absolu dans ce que lit le modèle.
+                detail = self._sans_racine(stderr.decode("utf-8", errors="replace")).strip()[:300]
                 return f"Erreur : la recherche a échoué ({detail or f'code {code}'})"
             if not output:
                 return f"Aucun résultat pour '{pattern}' dans {glob_filter}"
             # Rendre les chemins relatifs
             lines = []
             for line in output.split("\n")[:max_results]:
-                line = line.replace(str(self.source_path) + "/", "")
+                line = self._sans_racine(line)
                 lines.append(line)
             if code >= 2:
                 # B-963 : GNU grep sort en 2 dès qu'un fichier est illisible, même
