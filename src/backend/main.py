@@ -202,10 +202,14 @@ def _kill_zombie_backends():
             time.sleep(3)
     else:
         try:
+            # B-954 : pgrep est un outil du poste, pas du bundle (voir B-949).
+            from app.services.sous_processus import environnement_outils_systeme
+
             result = subprocess.run(
                 ["pgrep", "-f", r"backend.*--host.*127\.0\.0\.1"],
                 capture_output=True, text=True, timeout=5,
                 stdin=subprocess.DEVNULL,
+                env=environnement_outils_systeme(),
             )
             pids = []
             for line in result.stdout.splitlines():
@@ -233,8 +237,13 @@ def _kill_zombie_backends():
         except Exception:
             pass
 
-    # Nettoyer le fichier .lock Qdrant
-    lock_file = Path.home() / ".therese" / "qdrant" / ".lock"
+    # Nettoyer le fichier .lock Qdrant du dossier de données effectif.
+    # B-955 : le chemin était ~/.therese en dur ; un profil THERESE_DATA_DIR
+    # (tests, démo, E2E) nettoyait le verrou du profil réel. Même règle que
+    # config.py : THERESE_DATA_DIR, sinon ~/.therese.
+    dossier_donnees = os.environ.get("THERESE_DATA_DIR")
+    racine = Path(dossier_donnees) if dossier_donnees else Path.home() / ".therese"
+    lock_file = racine / "qdrant" / ".lock"
     if lock_file.exists():
         try:
             lock_file.unlink()
