@@ -12,9 +12,13 @@
  * fausse. Elle ne l'est plus que si la saisie a changé ; tant que l'état de
  * référence est inconnu (fiche pas encore chargée), elle l'est toujours,
  * comme le voulait le choix fail-closed de B-872.
+ *
+ * B-978 : le formulaire s'inscrit aussi dans le registre des saisies en
+ * cours, que la coque consulte avant toute autre sortie de la vue.
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { pushEscapeHandler } from '../lib/escapeStack';
+import { inscrireSaisieEnCours } from '../lib/saisieEnCours';
 
 export function useAbandonDeSaisie({
   modifie,
@@ -45,6 +49,18 @@ export function useAbandonDeSaisie({
         else demanderAbandon();
       }),
     [demanderAbandon],
+  );
+
+  // B-978 : les autres sorties de la vue (Retour d'en-tête, rail, palette)
+  // consultent ce registre avant de démonter le formulaire.
+  useEffect(
+    () =>
+      inscrireSaisieEnCours(() => {
+        if (!etat.current.modifie) return false;
+        setAbandonDemande(true);
+        return true;
+      }),
+    [],
   );
 
   return { abandonDemande, demanderAbandon, continuerSaisie };

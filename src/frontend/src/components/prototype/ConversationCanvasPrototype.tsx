@@ -117,6 +117,7 @@ import { ACTIONS_ETABLI, ICONES_ETABLI, PLACEHOLDER_COMPOSEUR, TITRES_ETABLI } f
 import { actionsDeLEtabli } from '../../lib/etabliDePremierLancement';
 import { actionsAuRepos, sansLesDestinationsDesCapacites } from '../../lib/paletteAuRepos';
 import { fetchSetupStatus, type SetupStatus } from '../../services/api/dashboard';
+import { sortieRetenueParUneSaisie } from '../../lib/saisieEnCours';
 
 type Scenario = 'today' | 'memory' | 'email' | 'meeting' | 'invoice' | 'board' | 'atelier';
 type RightPanelTool = 'calculator' | 'deliverables' | 'images' | 'follow-ups' | 'voice';
@@ -948,7 +949,9 @@ export function ConversationCanvasPrototype() {
     // BUG-139 : lire l'état VIVANT du store, pas la valeur capturée au dernier
     // rendu - la navigation déterministe s'exécute juste après la fin du flux,
     // avant le re-rendu, et se faisait refuser par une fermeture périmée.
-    if (!useChatStore.getState().isStreaming) return false;
+    // B-978 : un formulaire modifié retient aussi la sortie ; il pose alors
+    // lui-même sa question « Abandonner les modifications ? ».
+    if (!useChatStore.getState().isStreaming) return sortieRetenueParUneSaisie();
     useStatusStore.getState().addNotification({
       type: 'warning',
       title: 'Réponse en cours',
@@ -1235,6 +1238,8 @@ export function ConversationCanvasPrototype() {
 
   const collapseEmbeddedView = useCallback(() => {
     if (!embeddedView) return;
+    // B-978 : le « Retour » d'en-tête démontait un formulaire modifié sans question.
+    if (sortieRetenueParUneSaisie()) return;
     setEmbeddedView(null);
     // Remédiation NO-GO J0 : sans retour dans le store, `activeView` restait
     // sur la vue fermée. Rejouer la même action devenait un no-op
