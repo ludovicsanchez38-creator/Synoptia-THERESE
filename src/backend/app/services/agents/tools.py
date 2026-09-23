@@ -240,14 +240,16 @@ class AgentToolExecutor:
                 "--exclude-dir=.git",
                 "--exclude-dir=.venv",
                 "--exclude-dir=node_modules",
-                # B-969 : mêmes interdits que read_file (_validate_path). Placés
-                # APRÈS --include : pour GNU grep, la dernière règle qui
-                # correspond l'emporte.
-                "--exclude=.env*",
-                "--exclude=*.key",
-                "--exclude=*.pem",
-                "--exclude=*.p12",
-                "--exclude=*.pfx",
+                # B-969 : mêmes interdits que read_file (_validate_path), qui
+                # compare en minuscules : motifs insensibles à la casse. Placés
+                # APRÈS --include : pour GNU grep et BSD grep, la dernière règle
+                # qui correspond l'emporte (ugrep donne toujours la priorité à
+                # l'exclusion).
+                "--exclude=.[eE][nN][vV]*",
+                "--exclude=*.[kK][eE][yY]",
+                "--exclude=*.[pP][eE][mM]",
+                "--exclude=*.[pP]12",
+                "--exclude=*.[pP][fF][xX]",
                 # B-957 : -e, sinon un motif qui commence par « - » devient une option.
                 "-e",
                 pattern,

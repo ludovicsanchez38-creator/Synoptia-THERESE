@@ -25,7 +25,12 @@ from app.services.agents.tools import AgentToolExecutor
 def appels(monkeypatch):
     vus: list[tuple[str, dict]] = []
 
-    def service(provider_name, **kwargs):
+    # Même signature que la vraie fonction (revue R-2 : pas de **kwargs).
+    def service(provider_name, model_override=None, effort_override=None,
+                max_tokens_override=None, bascule_circuit=True):
+        kwargs = {"model_override": model_override}
+        if bascule_circuit is not True:
+            kwargs["bascule_circuit"] = bascule_circuit
         vus.append((provider_name, kwargs))
         return ("service", provider_name)
 
@@ -52,7 +57,14 @@ def test_b968_un_agent_cloud_garde_la_bascule_par_defaut(appels, modele):
 @pytest.mark.skipif(shutil.which("grep") is None, reason="grep requis")
 @pytest.mark.parametrize(
     ("chemin", "filtre"),
-    [(".env.yaml", "*.yaml"), ("config/.env.local.json", "*.json"), (".env.py", "*.py")],
+    [
+        (".env.yaml", "*.yaml"),
+        ("config/.env.local.json", "*.json"),
+        (".env.py", "*.py"),
+        # Dixième revue Codex (R-1) : read_file compare en minuscules.
+        (".ENV.yaml", "*.yaml"),
+        (".Env.py", "*.py"),
+    ],
 )
 async def test_b969_la_recherche_ne_lit_pas_un_fichier_sensible(tmp_path: Path, chemin: str, filtre: str):
     sensible = tmp_path / chemin

@@ -28,7 +28,9 @@ def fournisseurs(monkeypatch):
     demandes: list[str] = []
     indisponibles: set[str] = set()
 
-    def service(provider_name, model_override=None, **_options):
+    # Même signature que la vraie fonction (revue R-2 : pas de **kwargs).
+    def service(provider_name, model_override=None, effort_override=None,
+                max_tokens_override=None, bascule_circuit=True):
         demandes.append(provider_name)
         return None if provider_name in indisponibles else ("service", provider_name, model_override)
 
