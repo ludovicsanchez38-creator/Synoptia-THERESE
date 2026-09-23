@@ -8,6 +8,7 @@ Phase 2 - Calendar
 Local First - Multi-Provider
 """
 
+import asyncio
 import json
 import logging
 import re
@@ -181,6 +182,10 @@ async def _get_provider_for_calendar(
 # =============================================================================
 
 
+# B-976 : sérialise la création du calendrier local par défaut.
+_CREATION_CALENDRIER_PAR_DEFAUT = asyncio.Lock()
+
+
 @router.get("/calendars")
 async def list_calendars(
     account_id: str | None = Query(None, description="Email account ID (optional for local calendars)"),
@@ -265,11 +270,21 @@ async def list_calendars(
     if create_default and not calendars and (not account_id or non_google_account) and provider in (None, "local"):
         from app.services.calendar.local_provider import LocalCalendarProvider
 
-        local = LocalCalendarProvider(session)
-        await local.create_calendar(
-            name="Mon calendrier",
-            description="Calendrier local créé automatiquement (aucun compte connecté)",
-        )
+        # B-976 : « lire puis créer si vide » sans verrou créait N calendriers,
+        # tous principaux, pour N lectures simultanées (double effet de
+        # StrictMode au premier affichage de l'Agenda). Le moteur est un seul
+        # processus (sidecar) : un verrou asyncio sérialise la décision. La
+        # transaction de lecture est close avant de relire, sinon SQLite
+        # resterait sur l'instantané qui ne voit pas la création concurrente.
+        async with _CREATION_CALENDRIER_PAR_DEFAUT:
+            await session.commit()
+            existants = (await session.execute(statement)).scalars().all()
+            if not existants:
+                local = LocalCalendarProvider(session)
+                await local.create_calendar(
+                    name="Mon calendrier",
+                    description="Calendrier local créé automatiquement (aucun compte connecté)",
+                )
         result = await session.execute(statement)
         calendars = result.scalars().all()
 
