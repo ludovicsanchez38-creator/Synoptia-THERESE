@@ -25,7 +25,14 @@ def depot_par_un_lien(tmp_path: Path) -> Path:
     (reel / "src" / "module.py").write_text("VALEUR = 1\n", encoding="utf-8")
     (reel / "LISEZMOI.md").write_text("titre\n", encoding="utf-8")
     lien = tmp_path / "var"
-    lien.symlink_to(tmp_path / "private", target_is_directory=True)
+    try:
+        lien.symlink_to(tmp_path / "private", target_is_directory=True)
+    except OSError as exc:
+        # Revue Codex R-6 : sous Windows, créer un lien exige un privilège ou le
+        # mode développeur (erreur 1314). Seul ce cas est sauté.
+        if getattr(exc, "winerror", None) == 1314:
+            pytest.skip("liens symboliques indisponibles sur ce poste Windows")
+        raise
     return lien / "depot"
 
 
@@ -38,7 +45,8 @@ async def test_b961_list_directory_par_un_lien_liste_le_depot(depot_par_un_lien:
 async def test_b961_list_directory_d_un_sous_dossier_par_un_lien(depot_par_un_lien: Path):
     sortie = await AgentToolExecutor(str(depot_par_un_lien)).list_directory("src")
     assert not sortie.startswith("Erreur"), sortie
-    assert "src/module.py" in sortie, sortie
+    # Revue Codex R-5 : séparateur du système (src\module.py sous Windows).
+    assert str(Path("src") / "module.py") in sortie, sortie
 
 
 @pytest.mark.skipif(shutil.which("grep") is None, reason="grep requis")
