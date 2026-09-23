@@ -207,11 +207,16 @@ class AgentToolExecutor:
             )
             stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=15.0)
             output = stdout.decode("utf-8", errors="replace").strip()
-            if (proc.returncode or 0) >= 2:
+            code = proc.returncode or 0
+            if code >= 2 and not output:
                 # B-962 : grep rend 1 quand rien ne correspond, 2 sur une erreur
                 # (motif invalide) ; une erreur n'est pas « Aucun résultat ».
-                detail = stderr.decode("utf-8", errors="replace").strip()[:300]
-                return f"Erreur : la recherche a échoué ({detail or f'code {proc.returncode}'})"
+                # B-963 : sans chemin absolu dans ce que lit le modèle.
+                detail = stderr.decode("utf-8", errors="replace")
+                for racine in {str(self.source_path.resolve()), str(self.source_path)}:
+                    detail = detail.replace(racine + os.sep, "").replace(racine, ".")
+                detail = detail.strip()[:300]
+                return f"Erreur : la recherche a échoué ({detail or f'code {code}'})"
             if not output:
                 return f"Aucun résultat pour '{pattern}' dans {glob_filter}"
             # Rendre les chemins relatifs
@@ -219,6 +224,10 @@ class AgentToolExecutor:
             for line in output.split("\n")[:max_results]:
                 line = line.replace(str(self.source_path) + "/", "")
                 lines.append(line)
+            if code >= 2:
+                # B-963 : GNU grep sort en 2 dès qu'un fichier est illisible, même
+                # avec des correspondances ; on les rend, en le signalant.
+                lines.append("(certains fichiers n'ont pas pu être lus)")
             return "\n".join(lines)
         except asyncio.TimeoutError:
             if proc is not None and proc.returncode is None:

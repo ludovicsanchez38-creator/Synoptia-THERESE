@@ -109,6 +109,16 @@ class AgentRuntime:
 
     async def _execute_tool(self, name: str, args: dict[str, Any]) -> str:
         """Exécute un outil et retourne le résultat."""
+        # B-964 : seul un outil du schéma remis à l'agent s'exécute. Katia reçoit
+        # des outils en lecture seule sur le vrai dépôt, sans garde de branche :
+        # un write_file ou run_command émis par son modèle ne doit pas passer.
+        autorises = {
+            (outil.get("function") or {}).get("name") or outil.get("name")
+            for outil in (self.tools_schema or [])
+        }
+        if name not in autorises:
+            logger.warning(f"Agent {self.config.id} : outil hors schéma refusé : {name}")
+            return f"Outil non autorisé pour cet agent : {name}"
         executor = self.tool_executor
         try:
             if name == "web_search":
