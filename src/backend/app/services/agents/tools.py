@@ -176,21 +176,49 @@ class AgentToolExecutor:
         except Exception as e:
             return f"Erreur : {e}"
 
-    def _sans_racine(self, texte: str) -> str:
-        """Retire la racine du dépôt d'un texte destiné au modèle (B-965).
+    def _formes_de_racine(self) -> tuple[str, ...]:
+        """Préfixes de la racine du dépôt tels que grep peut les écrire (B-965).
 
-        grep peut écrire la racine avec d'autres séparateurs que ceux de Python
-        (sous Windows, « C:/... » contre « C:\\... ») : toutes les formes sont
-        retirées, préfixe de chemin d'abord, mention isolée ensuite.
+        Racine brute et résolue, séparateurs « / » et « \\ » (sous Windows, grep
+        peut écrire « C:/... » quand Python écrit « C:\\... »). Calculées une
+        fois par recherche, les plus longues d'abord.
         """
         if not self.source_path:
-            return texte
+            return ()
         formes: set[str] = set()
         for racine in (str(self.source_path), str(self.source_path.resolve())):
-            formes |= {racine, racine.replace("\\", "/"), racine.replace("/", "\\")}
-        for forme in sorted(formes, key=len, reverse=True):
-            texte = texte.replace(forme + "/", "").replace(forme + "\\", "").replace(forme, ".")
-        return texte
+            for variante in (racine, racine.replace("\\", "/"), racine.replace("/", "\\")):
+                base = variante.rstrip("/\\")
+                for separateur in ("/", "\\"):
+                    formes.add(base + separateur)
+        return tuple(sorted(formes, key=len, reverse=True))
+
+    @staticmethod
+    def _relatif_en_tete(ligne: str, formes: tuple[str, ...]) -> str:
+        """Retire la racine seulement quand elle PRÉFIXE la ligne (chemin de grep).
+
+        Septième revue Codex (R-2) : un remplacement dans toute la ligne réécrivait
+        aussi le code cité et les dossiers voisins (« /tmp/repository » devenait
+        « .sitory » pour la racine « /tmp/repo »).
+        """
+        for forme in formes:
+            if ligne.startswith(forme):
+                return ligne[len(forme):]
+        return ligne
+
+    @staticmethod
+    def _message_de_grep(stderr: str) -> str:
+        """Message d'erreur de grep sans chemin : « grep: <chemin>: <message> »
+        devient « <message> » (B-963, B-965). Aucun chemin n'atteint le modèle."""
+        messages = []
+        for ligne in stderr.splitlines():
+            ligne = ligne.strip()
+            if not ligne:
+                continue
+            if ligne.startswith("grep:"):
+                ligne = ligne[len("grep:"):].strip()
+            messages.append(ligne.rsplit(": ", 1)[-1])
+        return " ; ".join(dict.fromkeys(messages))
 
     async def search_codebase(
         self, pattern: str, glob_filter: str = "*.py", max_results: int = 20
@@ -228,14 +256,15 @@ class AgentToolExecutor:
                 # B-962 : grep rend 1 quand rien ne correspond, 2 sur une erreur
                 # (motif invalide) ; une erreur n'est pas « Aucun résultat ».
                 # B-963, B-965 : sans chemin absolu dans ce que lit le modèle.
-                detail = self._sans_racine(stderr.decode("utf-8", errors="replace")).strip()[:300]
+                detail = self._message_de_grep(stderr.decode("utf-8", errors="replace"))[:300]
                 return f"Erreur : la recherche a échoué ({detail or f'code {code}'})"
             if not output:
                 return f"Aucun résultat pour '{pattern}' dans {glob_filter}"
             # Rendre les chemins relatifs
+            formes = self._formes_de_racine()
             lines = []
             for line in output.split("\n")[:max_results]:
-                line = self._sans_racine(line)
+                line = self._relatif_en_tete(line, formes)
                 lines.append(line)
             if code >= 2:
                 # B-963 : GNU grep sort en 2 dès qu'un fichier est illisible, même

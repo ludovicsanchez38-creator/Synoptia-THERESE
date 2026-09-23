@@ -127,3 +127,27 @@ async def test_b965_aucune_forme_de_la_racine_n_atteint_le_modele(tmp_path: Path
     assert sans_resultat.startswith("Erreur"), sans_resultat
     assert "Permission denied" in sans_resultat, sans_resultat
     assert racine not in sans_resultat and variante not in sans_resultat, sans_resultat
+
+
+async def _chercher_avec_sortie(monkeypatch, racine: str, sortie: str, erreur: str = "", code: int = 0) -> str:
+    from app.services.agents import tools as module_outils
+
+    async def faux_exec(*args, **kwargs):
+        return _GrepSimule(sortie, erreur, code)
+
+    monkeypatch.setattr(module_outils.asyncio, "create_subprocess_exec", faux_exec)
+    return await AgentToolExecutor(racine).search_codebase("motif", "*.py")
+
+
+async def test_b965_seul_le_prefixe_de_chemin_est_retire_pas_le_code(tmp_path: Path, monkeypatch):
+    """Septième revue Codex (R-2) : la racine citée DANS une ligne de code, ou un
+    dossier voisin qui commence pareil, ne doit pas être réécrit."""
+    racine = str(tmp_path / "repo")
+    ligne = f"{racine}/a.py:1:cache = '{racine}sitory/x' ; autre = '{racine}'"
+    sortie = await _chercher_avec_sortie(monkeypatch, racine, ligne + "\n")
+    assert sortie == f"a.py:1:cache = '{racine}sitory/x' ; autre = '{racine}'", sortie
+
+
+async def test_b965_une_racine_courte_ne_touche_que_le_prefixe(monkeypatch):
+    sortie = await _chercher_avec_sortie(monkeypatch, "/", "/src/a.py:1:x = 8 / 2\n")
+    assert sortie == "src/a.py:1:x = 8 / 2", sortie
