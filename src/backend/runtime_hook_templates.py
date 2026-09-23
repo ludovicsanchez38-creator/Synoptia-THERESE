@@ -9,7 +9,9 @@ L'OS ne peut pas résoudre '..' si le répertoire intermédiaire n'existe pas.
 
 Ce hook crée les répertoires vides nécessaires avant tout import.
 BUG-052 : sur Linux .deb, _MEIPASS pointe vers /usr/lib/ (lecture seule).
-On catch PermissionError et on ignore - les dirs sont créés par le packaging.
+On catch PermissionError et on ignore : depuis B-948, backend.spec embarque un
+témoin dans chacun de ces dossiers (repertoires_bundle.py), qui existent donc
+déjà dans le bundle. Garder cette liste identique à REPERTOIRES_REQUIS.
 """
 
 import os

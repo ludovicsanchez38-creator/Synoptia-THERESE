@@ -1,0 +1,7 @@
+Fichier témoin embarqué par backend.spec (B-948).
+
+Sa seule présence fait exister ce dossier dans le bundle PyInstaller, y compris
+quand le bundle est installé en lecture seule (paquet .deb sous /usr/lib).
+python-docx et python-pptx ouvrent leurs gabarits par un chemin qui traverse ce
+dossier (par exemple docx/parts/../templates/default-footer.xml).
+Voir src/backend/repertoires_bundle.py.

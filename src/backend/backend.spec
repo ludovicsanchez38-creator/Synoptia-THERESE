@@ -112,6 +112,16 @@ datas += collect_data_files("pptx")
 # résolvent via __file__ + '..' (ex: docx/parts/../templates/default-footer.xml).
 # Or PyInstaller met les modules dans PYZ, donc docx/parts/ n'existe pas sur disque.
 # Le runtime hook runtime_hook_templates.py crée ces répertoires vides au démarrage.
+# B-948 (23/09/2026) : sauf quand le bundle est en lecture seule (paquet .deb
+# sous /usr/lib), où le hook échoue en silence depuis BUG-052 et où la
+# génération DOCX tombait sur FileNotFoundError. On embarque donc un témoin dans
+# chacun de ces répertoires : ils existent dans tout bundle.
+_mod_rep = importlib.util.spec_from_file_location(
+    "repertoires_bundle", os.path.join(backend_dir, "repertoires_bundle.py")
+)
+_repertoires_bundle = importlib.util.module_from_spec(_mod_rep)
+_mod_rep.loader.exec_module(_repertoires_bundle)
+datas += _repertoires_bundle.datas_repertoires_requis()
 
 # Voix locale souveraine (0.27) : STT faster-whisper (ctranslate2 natif) +
 # TTS Piper (onnxruntime + données espeak-ng). Embarquées UNIQUEMENT si le
