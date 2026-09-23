@@ -168,7 +168,9 @@ class AgentToolExecutor:
                     lines.append(f"... et {len(list(resolved.iterdir())) - max_entries} autres")
                     break
                 prefix = "📁 " if entry.is_dir() else "📄 "
-                rel = entry.relative_to(self.source_path)
+                # B-961 : entrées résolues par _validate_path, donc racine résolue
+                # aussi (dépôt désigné par un lien, /var -> /private/var sous macOS).
+                rel = entry.relative_to(self.source_path.resolve())
                 lines.append(f"{prefix}{rel}")
             return "\n".join(lines)
         except Exception as e:
@@ -203,8 +205,13 @@ class AgentToolExecutor:
                 env=environnement_outils_systeme(),  # B-949
                 start_new_session=os.name == "posix",
             )
-            stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=15.0)
+            stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=15.0)
             output = stdout.decode("utf-8", errors="replace").strip()
+            if (proc.returncode or 0) >= 2:
+                # B-962 : grep rend 1 quand rien ne correspond, 2 sur une erreur
+                # (motif invalide) ; une erreur n'est pas « Aucun résultat ».
+                detail = stderr.decode("utf-8", errors="replace").strip()[:300]
+                return f"Erreur : la recherche a échoué ({detail or f'code {proc.returncode}'})"
             if not output:
                 return f"Aucun résultat pour '{pattern}' dans {glob_filter}"
             # Rendre les chemins relatifs
