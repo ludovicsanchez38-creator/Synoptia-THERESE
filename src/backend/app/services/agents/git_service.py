@@ -12,6 +12,8 @@ import re
 import signal
 from pathlib import Path
 
+from app.services.sous_processus import environnement_outils_systeme
+
 logger = logging.getLogger(__name__)
 
 
@@ -73,6 +75,7 @@ class GitService:
                 *cmd,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
+                env=environnement_outils_systeme(),  # B-949
                 start_new_session=os.name == "posix",
             )
             stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)

@@ -11,6 +11,8 @@ import os
 import signal
 from pathlib import Path
 
+from app.services.sous_processus import environnement_outils_systeme
+
 logger = logging.getLogger(__name__)
 
 # Commandes autorisées pour run_command
@@ -196,6 +198,7 @@ class AgentToolExecutor:
                 str(self.source_path),
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
+                env=environnement_outils_systeme(),  # B-949
                 start_new_session=os.name == "posix",
             )
             stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=15.0)
@@ -280,7 +283,7 @@ class AgentToolExecutor:
                 cwd=str(self.source_path),
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
-                env={**os.environ, "PYTHONDONTWRITEBYTECODE": "1"},
+                env=environnement_outils_systeme(PYTHONDONTWRITEBYTECODE="1"),  # B-949
                 start_new_session=os.name == "posix",
             )
             stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=120.0)
