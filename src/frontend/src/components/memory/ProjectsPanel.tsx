@@ -261,7 +261,9 @@ export function ProjectsPanel() {
               « {maskText(deleteTarget.name)} » sera supprimé. Cette action est définitive.
             </p>
             <div className="flex flex-wrap justify-end gap-2 mt-5">
-              <Button variant="ghost" size="md" autoFocus onClick={() => setDeleteTarget(null)}>
+              {/* B-975 : `data-dialog-autofocus` et non `autoFocus` (piège B-278 :
+                  posé avant la capture du déclencheur, Échap rendait le focus à BODY). */}
+              <Button variant="ghost" size="md" data-dialog-autofocus onClick={() => setDeleteTarget(null)}>
                 Annuler
               </Button>
               <Button variant="danger" size="md" onClick={confirmDelete}>

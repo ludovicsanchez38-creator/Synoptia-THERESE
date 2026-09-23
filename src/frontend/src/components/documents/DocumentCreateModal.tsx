@@ -165,7 +165,9 @@ export function DocumentCreateModal({ isOpen, onClose, onCreated }: DocumentCrea
                     setFormError(null);
                   }}
                   placeholder="Proposition commerciale - Client X"
-                  autoFocus
+                  // B-975 : pas d'`autoFocus` (piège B-278) : le hook de focus le pose
+                  // après avoir mémorisé le déclencheur.
+                  data-dialog-autofocus
                 />
               </FormField>
 
