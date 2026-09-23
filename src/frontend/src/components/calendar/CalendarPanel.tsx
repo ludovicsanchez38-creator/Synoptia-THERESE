@@ -505,10 +505,13 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
         {getNavLabel()}
       </h3>
 
-      {/* BUG-049 : le dropdown passait derrière les autres composants sur Windows/Linux.
-          Cause : stacking context bas (body overflow:hidden + conteneur sans z-index).
-          Fix : wrapper relative z-[100] force le dropdown au-dessus de toute la pile CSS. */}
-      <div className={`relative ${Z_LAYER.ONBOARDING}`}>
+      {/* B-1021 (BUG-181) : l'enveloppe portait la couche de l'onboarding
+          (`z-[100]`, posée pour BUG-049), au-dessus des modales, de la palette
+          et des toasts : le sélecteur restait peint sur les Paramètres, la
+          palette, la Décision et « Aperçu avant action ». Un `<select>` natif
+          ouvre sa liste hors de la pile CSS : aucune couche n'est nécessaire,
+          le sélecteur suit l'ordre normal de la barre. */}
+      <div className="relative">
         <Select
           aria-label="Agenda affiché"
           value={currentCalendarId || ''}

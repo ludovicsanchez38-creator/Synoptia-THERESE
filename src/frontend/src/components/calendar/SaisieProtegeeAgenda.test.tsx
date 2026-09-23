@@ -205,3 +205,18 @@ describe('B-998 : une fiche jamais chargée ne s’enregistre pas', () => {
     expect(api.createEvent).not.toHaveBeenCalled();
   });
 });
+
+describe('B-1021 (BUG-181) : aucune couche de la barre de l’Agenda au-dessus des modales', () => {
+  it('le sélecteur « Agenda affiché » et ses ancêtres du panneau ne portent pas de couche supérieure à celle des modales', async () => {
+    await monter();
+    const { Z_LAYER } = await import('../../styles/z-layers');
+    const auDessusDesModales = new Set<string>([Z_LAYER.MODAL_NESTED, Z_LAYER.WIZARD, Z_LAYER.COMMAND_PALETTE, Z_LAYER.TOAST, Z_LAYER.ONBOARDING, Z_LAYER.ONBOARDING_TOP]);
+    const selecteur = screen.getByRole('combobox', { name: 'Agenda affiché' });
+    const panneau = screen.getByTestId('calendar-panel');
+    const couches: string[] = [];
+    for (let n: HTMLElement | null = selecteur; n && n !== panneau; n = n.parentElement) {
+      for (const classe of Array.from(n.classList)) if (auDessusDesModales.has(classe)) couches.push(classe);
+    }
+    expect(couches).toEqual([]);
+  });
+});
