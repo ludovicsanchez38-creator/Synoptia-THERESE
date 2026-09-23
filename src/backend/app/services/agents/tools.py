@@ -194,6 +194,8 @@ class AgentToolExecutor:
                 "--exclude-dir=.git",
                 "--exclude-dir=.venv",
                 "--exclude-dir=node_modules",
+                # B-957 : -e, sinon un motif qui commence par « - » devient une option.
+                "-e",
                 pattern,
                 str(self.source_path),
                 stdout=asyncio.subprocess.PIPE,

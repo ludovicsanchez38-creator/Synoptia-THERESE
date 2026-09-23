@@ -16,6 +16,9 @@ from app.services.sous_processus import environnement_outils_systeme
 
 logger = logging.getLogger(__name__)
 
+#: B-958 : code rendu par _run quand git ne peut pas être lancé (absent du PATH).
+GIT_INJOIGNABLE = 127
+
 
 async def _stop_process(proc: asyncio.subprocess.Process) -> None:
     """Arrête git et ses éventuels descendants sur POSIX."""
@@ -93,6 +96,11 @@ class GitService:
             if proc is not None and proc.returncode is None:
                 await _stop_process(proc)
             return 1, "", "Timeout"
+        except OSError as exc:
+            # B-958 : git absent du PATH (fréquent sous Windows) ou non
+            # exécutable. Ce n'est pas une réponse de git : 127, comme un shell.
+            logger.warning(f"Git injoignable : {exc}")
+            return GIT_INJOIGNABLE, "", f"git injoignable : {exc.strerror or exc}"
 
     async def is_repo(self) -> bool | None:
         """Vérifie si le chemin est un dépôt git. `None` = contrôle non concluant.
@@ -109,7 +117,7 @@ class GitService:
         code, _, stderr = await self._run("rev-parse", "--is-inside-work-tree")
         if code == 0:
             return True
-        if stderr == "Timeout":
+        if stderr == "Timeout" or code == GIT_INJOIGNABLE:
             return None
         return False
 
