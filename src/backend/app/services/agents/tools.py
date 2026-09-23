@@ -333,7 +333,10 @@ class AgentToolExecutor:
         """Affiche le diff des changements en cours."""
         if not self._git:
             return "Erreur : service git non disponible"
-        diff = await self._git.diff()
+        ok, diff = await self._git.diff_ou_echec()
+        if not ok:
+            # B-960 : un échec de git n'est pas un diff vide.
+            return f"Erreur : échec de git diff : {diff}"
         if len(diff) > 10000:
             return diff[:10000] + f"\n\n... diff tronqué ({len(diff)} chars total)"
         return diff or "Aucun diff"

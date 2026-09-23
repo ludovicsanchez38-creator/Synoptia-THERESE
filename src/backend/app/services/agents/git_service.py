@@ -232,6 +232,17 @@ class GitService:
         code, out, _ = await self._run("diff", f"{base}...{head}")
         return out if code == 0 else ""
 
+    async def diff_ou_echec(self, base: str = "main", head: str = "HEAD") -> tuple[bool, str]:
+        """Comme `diff`, mais distingue un échec de git d'un diff vide (B-960).
+
+        `diff` rend "" dans les deux cas ; l'outil des agents affichait alors
+        « Aucun diff » pour une base introuvable ou un git injoignable.
+        """
+        code, out, err = await self._run("diff", f"{base}...{head}")
+        if code == 0:
+            return True, out
+        return False, err or f"code de sortie {code}"
+
     async def diff_stat(self, base: str = "main", head: str = "HEAD") -> str:
         """Retourne le diff stat (résumé des fichiers changés)."""
         code, out, _ = await self._run("diff", "--stat", f"{base}...{head}")
