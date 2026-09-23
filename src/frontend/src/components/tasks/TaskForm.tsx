@@ -41,6 +41,9 @@ const OPTIONS_PRIORITE = [
   { value: 'urgent', label: 'Urgent' },
 ];
 
+/** Marqueur de l'effet de chargement : le formulaire est en création. */
+const NOUVELLE_TACHE = '(nouvelle tâche)';
+
 export function TaskForm() {
   const {
     tasks,
@@ -94,6 +97,18 @@ export function TaskForm() {
         task.due_date ? task.due_date.split('T')[0] : '', task.project_id || '',
         task.tags ? task.tags.join(', ') : '',
       ]));
+    } else if (!isEditing && tacheChargeeRef.current !== NOUVELLE_TACHE) {
+      // B-989 : « Nouvelle tâche » pendant une modification gardait les champs
+      // de la tâche ouverte, et l'enregistrement créait une copie. Le passage
+      // à une création repart d'un formulaire vierge (la première ouverture
+      // l'est déjà).
+      const dejaOuvert = tacheChargeeRef.current !== null;
+      tacheChargeeRef.current = NOUVELLE_TACHE;
+      if (dejaOuvert) {
+        setTitle(''); setDescription(''); setStatus('todo'); setPriority('medium');
+        setDueDate(''); setProjectId(''); setTagsInput('');
+        setReference(JSON.stringify(['', '', 'todo', 'medium', '', '', '']));
+      }
     }
   }, [isEditing, task]);
 
@@ -103,6 +118,13 @@ export function TaskForm() {
       // porte seul la demande.
       setError(null);
       setErreurTitre(ERREUR_TITRE_MANQUANT);
+      return;
+    }
+
+    // B-998 : une tâche jamais chargée ne s'enregistre pas, ses valeurs par
+    // défaut écraseraient la vraie tâche.
+    if (isEditing && tacheChargeeRef.current !== currentTaskId) {
+      setError('La tâche n’est pas encore chargée : réessaie dans un instant.');
       return;
     }
 
@@ -116,7 +138,10 @@ export function TaskForm() {
         .map((t) => t.trim())
         .filter((t) => t);
 
-      if (isEditing && task) {
+      // B-998 : la modification suit l'identifiant ouvert, pas la présence de
+      // la tâche dans `tasks` : un filtre la retirait de la liste et
+      // l'enregistrement créait une copie.
+      if (isEditing && currentTaskId) {
         // Update existing task
         const request: api.UpdateTaskRequest = {
           title,
@@ -128,8 +153,8 @@ export function TaskForm() {
           tags: tags.length > 0 ? tags : undefined,
         };
 
-        const updated = await api.updateTask(task.id, request);
-        updateTaskInStore(task.id, updated);
+        const updated = await api.updateTask(currentTaskId, request);
+        updateTaskInStore(currentTaskId, updated);
       } else {
         // Create new task
         const request: api.CreateTaskRequest = {
@@ -168,7 +193,7 @@ export function TaskForm() {
   const modifie =
     reference === null ||
     JSON.stringify([title, description, status, priority, dueDate, projectId, tagsInput]) !== reference;
-  const { abandonDemande, demanderAbandon: handleCancel, continuerSaisie, racineSaisie } = useAbandonDeSaisie({ modifie, abandonner });
+  const { abandonDemande, demanderAbandon: handleCancel, continuerSaisie, racineSaisie, questionRef } = useAbandonDeSaisie({ modifie, abandonner });
 
   return (
     <motion.div
@@ -187,8 +212,8 @@ export function TaskForm() {
           {isEditing ? 'Modifier la tâche' : 'Nouvelle tâche'}
         </h3>
         {abandonDemande && (
-          <div className="flex w-full flex-wrap items-center gap-2 rounded-sm border border-warning/40 bg-[var(--color-warning-tint)] px-3 py-2">
-            <p className="flex-1 text-sm font-semibold text-text">Abandonner les modifications ?</p>
+          <div ref={questionRef} className="flex w-full flex-wrap items-center gap-2 rounded-sm border border-warning/40 bg-[var(--color-warning-tint)] px-3 py-2">
+            <p role="alert" className="flex-1 text-sm font-semibold text-text">Abandonner les modifications ?</p>
             <Button variant="ghost" size="md" onClick={continuerSaisie}>Continuer la saisie</Button>
             <Button variant="danger" size="md" onClick={abandonner}>Abandonner</Button>
           </div>

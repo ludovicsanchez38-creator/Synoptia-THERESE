@@ -66,10 +66,43 @@ export function EventForm() {
   // B-979 : une fois par rendez-vous ouvert, pas à chaque nouvel objet de la
   // liste (même garde que #189 dans TaskForm) : une synchronisation qui
   // remplaçait `events` réécrivait la saisie en cours et sa référence.
+  // B-990 : la clé suit l'identifiant ouvert, pas la présence de la fiche
+  // dans `events` : changer de période rechargeait une liste sans elle, le
+  // formulaire reprenait les dates du jour, puis réécrivait toute la saisie
+  // au retour de la fiche.
+  // B-989 : passer d'une modification à « Nouveau rendez-vous » repart d'un
+  // formulaire vierge (titre, lieu, description, participants compris).
   const ficheChargeeRef = useRef<string | null>(null);
   useEffect(() => {
-    const cle = isEditing ? (event ? `evenement:${event.id}` : null) : 'nouveau';
-    if (cle !== null && ficheChargeeRef.current === cle) return;
+    const cle = isEditing ? `evenement:${currentEventId}` : 'nouveau';
+    if (ficheChargeeRef.current === cle) return;
+    const nouveauCreneau = (): [string, string, string, string] => {
+      const now = new Date();
+      const fin = new Date(now.getTime() + 60 * 60 * 1000);
+      // La date de FIN se déduit de l'instant de fin, pas de la date du jour :
+      // à 23 h 30, début + 1 h tombe le LENDEMAIN. Figer la date de fin sur
+      // aujourd'hui rendait la fin antérieure au début, et la validation
+      // refusait toute création entre 23 h et minuit.
+      //
+      // `localDateKey` plutôt que `toISOString()` : ce dernier rend la date
+      // UTC alors que l'heure affichée est locale — un décalage d'un jour en
+      // UTC+ (dates civiles, BUG-144).
+      return [localDateKey(now), now.toTimeString().slice(0, 5), localDateKey(fin), fin.toTimeString().slice(0, 5)];
+    };
+    if (isEditing && !event) {
+      // Fiche à modifier pas encore arrivée : créneau par défaut UNE fois,
+      // sans référence (la question reste posée, fail-closed).
+      const attente = `attente:${currentEventId}`;
+      if (ficheChargeeRef.current === attente) return;
+      ficheChargeeRef.current = attente;
+      const [debutDate, debutHeure, finDate, finHeure] = nouveauCreneau();
+      setStartDate(debutDate);
+      setStartTime(debutHeure);
+      setEndDate(finDate);
+      setEndTime(finHeure);
+      setReference(null);
+      return;
+    }
     ficheChargeeRef.current = cle;
     // B-974 : les valeurs posées ici sont aussi l'état de référence.
     let valeurs: [string, string, string, string, string, string, string, boolean, string];
@@ -94,51 +127,36 @@ export function EventForm() {
         debutDate, debutHeure, finDate, finHeure, event.all_day, participants,
       ];
     } else {
-      // New event: default to today
-      const now = new Date();
-      const fin = new Date(now.getTime() + 60 * 60 * 1000);
-      // La date de FIN se déduit de l'instant de fin, pas de la date du jour :
-      // à 23 h 30, début + 1 h tombe le LENDEMAIN. Figer la date de fin sur
-      // aujourd'hui rendait la fin antérieure au début, et la validation
-      // refusait toute création entre 23 h et minuit.
-      //
-      // `localDateKey` plutôt que `toISOString()` : ce dernier rend la date
-      // UTC alors que l'heure affichée est locale — un décalage d'un jour en
-      // UTC+ (dates civiles, BUG-144).
-      valeurs = [
-        '', '', '', localDateKey(now), now.toTimeString().slice(0, 5),
-        localDateKey(fin), fin.toTimeString().slice(0, 5), false, '',
-      ];
+      const [debutDate, debutHeure, finDate, finHeure] = nouveauCreneau();
+      valeurs = ['', '', '', debutDate, debutHeure, finDate, finHeure, false, ''];
     }
     const [titre, desc, lieu, debutDate, debutHeure, finDate, finHeure, journee, participants] = valeurs;
-    if (isEditing && event) {
-      setSummary(titre);
-      setDescription(desc);
-      setLocation(lieu);
-      setAllDay(journee);
-      setStartDate(debutDate);
-      setEndDate(finDate);
-      // B-982 : heures posées même vides (toute la journée). Une fiche arrivée
-      // après l'ouverture gardait sinon l'heure par défaut, et la saisie
-      // différait de sa référence sans qu'on ait rien touché.
-      setStartTime(debutHeure);
-      setEndTime(finHeure);
-      if (participants) setAttendeesInput(participants);
-    } else {
-      setStartDate(debutDate);
-      setStartTime(debutHeure);
-      setEndDate(finDate);
-      setEndTime(finHeure);
-    }
-    // Fiche à modifier pas encore trouvée : valeurs par défaut comme avant,
-    // mais pas de référence (la question reste posée, fail-closed).
-    setReference(isEditing && !event ? null : JSON.stringify(valeurs));
-  }, [isEditing, event]);
+    // B-982 : tous les champs sont posés, heures vides comprises (toute la
+    // journée) : un champ laissé tel quel faisait différer la saisie de sa
+    // référence sans qu'on ait rien touché.
+    setSummary(titre);
+    setDescription(desc);
+    setLocation(lieu);
+    setAllDay(journee);
+    setStartDate(debutDate);
+    setStartTime(debutHeure);
+    setEndDate(finDate);
+    setEndTime(finHeure);
+    setAttendeesInput(participants);
+    setReference(JSON.stringify(valeurs));
+  }, [isEditing, event, currentEventId]);
 
   async function handleSave() {
     // Validation formulaire (avant les guards)
     if (!summary.trim()) {
       setFormError('Ajoute un titre');
+      return;
+    }
+
+    // B-998 : une fiche jamais chargée ne s'enregistre pas, ses valeurs par
+    // défaut écraseraient le vrai rendez-vous.
+    if (isEditing && ficheChargeeRef.current !== `evenement:${currentEventId}`) {
+      setFormError('Le rendez-vous n’est pas encore chargé : réessaie dans un instant.');
       return;
     }
 
@@ -206,7 +224,10 @@ export function EventForm() {
       ],
     }, async () => {
       await execute(async () => {
-        if (isEditing && event) {
+        // B-998 : la modification suit l'identifiant ouvert, pas la présence
+        // de la fiche dans `events` : hors de la période affichée, elle
+        // manquait à la liste et l'enregistrement créait un doublon.
+        if (isEditing && currentEventId) {
           // Update existing event
           const request: api.UpdateEventRequest = {
             summary,
@@ -227,13 +248,13 @@ export function EventForm() {
           }
 
           const updated = await api.updateEvent(
-            event.id,
+            currentEventId,
             request,
             currentCalendarId,
             currentAccountId || undefined
           );
-          updateEventInStore(event.id, updated);
-          setCurrentEvent(event.id);
+          updateEventInStore(currentEventId, updated);
+          setCurrentEvent(currentEventId);
         } else {
           // Create new event
           const request: api.CreateEventRequest = {
@@ -281,7 +302,7 @@ export function EventForm() {
   const modifie =
     reference === null ||
     JSON.stringify([summary, description, location, startDate, startTime, endDate, endTime, allDay, attendeesInput]) !== reference;
-  const { abandonDemande, demanderAbandon: handleCancel, continuerSaisie, racineSaisie } = useAbandonDeSaisie({ modifie, abandonner });
+  const { abandonDemande, demanderAbandon: handleCancel, continuerSaisie, racineSaisie, questionRef } = useAbandonDeSaisie({ modifie, abandonner });
 
   return (
     <div ref={racineSaisie} className="h-full flex flex-col">
@@ -296,8 +317,8 @@ export function EventForm() {
           </h3>
         </div>
         {abandonDemande && (
-          <div className="flex flex-wrap items-center gap-2 rounded-sm border border-warning/40 bg-[var(--color-warning-tint)] px-3 py-2">
-            <p className="text-sm font-semibold text-text">Abandonner les modifications ?</p>
+          <div ref={questionRef} className="flex flex-wrap items-center gap-2 rounded-sm border border-warning/40 bg-[var(--color-warning-tint)] px-3 py-2">
+            <p role="alert" className="text-sm font-semibold text-text">Abandonner les modifications ?</p>
             <Button variant="ghost" size="md" onClick={continuerSaisie}>Continuer la saisie</Button>
             <Button variant="danger" size="md" onClick={abandonner}>Abandonner</Button>
           </div>

@@ -24,6 +24,7 @@ import { Squelette } from '../ui/Squelette';
 import { useDemoMask } from '../../hooks';
 import * as api from '../../services/api';
 import { Z_LAYER } from '../../styles/z-layers';
+import { sortieRetenueParUneSaisie } from '../../lib/saisieEnCours';
 
 interface TasksPanelProps {
   isOpen?: boolean;
@@ -72,6 +73,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
     filterPriority,
     filterProjectId,
     isTaskFormOpen,
+    currentTaskId,
     setTasks,
     setCurrentTask,
     setIsTaskFormOpen,
@@ -150,6 +152,10 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
   }
 
   function handleNewTask() {
+    // B-989 : en modification, une tâche modifiée retient ce changement de
+    // fiche (la question d'abandon est posée) ; sinon le formulaire repart
+    // vierge. En création, le bouton ne change rien et ne demande rien.
+    if (isTaskFormOpen && currentTaskId && sortieRetenueParUneSaisie()) return;
     setCurrentTask(null);
     setIsTaskFormOpen(true);
   }
@@ -288,7 +294,9 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
       )}
 
       <div className="flex-1 overflow-hidden">
-        {loading ? (
+        {/* B-988 : un chargement (rafraîchir, filtrer) ne démonte jamais un
+            formulaire ouvert : la saisie en cours disparaissait sans question. */}
+        {loading && !isTaskFormOpen ? (
           <RangeesSquelette />
         ) : isTaskFormOpen ? (
           <TaskForm />

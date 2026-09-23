@@ -36,6 +36,7 @@ import * as api from '../../services/api';
 import { useStatusStore } from '../../stores/statusStore';
 import { Z_LAYER } from '../../styles/z-layers';
 import { Spinner } from '../ui/Spinner';
+import { sortieRetenueParUneSaisie } from '../../lib/saisieEnCours';
 
 /** Le type de vue, dérivé du store et non recopié : le jour où la liste des
  *  vues change là-bas, elle change ici sans intervention. */
@@ -286,6 +287,10 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
   }
 
   function handleNewEvent() {
+    // B-989 : en modification, un rendez-vous modifié retient ce changement
+    // de fiche (la question d'abandon est posée) ; sinon le formulaire repart
+    // vierge. En création, le bouton ne change rien et ne demande rien.
+    if (isEventFormOpen && currentEventId && sortieRetenueParUneSaisie()) return;
     setCurrentEvent(null);
     setIsEventFormOpen(true);
   }
@@ -662,7 +667,8 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
 
       {/* Content */}
       <div className="flex-1 overflow-hidden">
-        {loading ? (
+        {/* B-988 : un chargement ne démonte jamais un formulaire ouvert. */}
+        {loading && !isEventFormOpen ? (
           <div className="h-full p-4 space-y-2">
             {[0, 1, 2].map((rangee) => (
               <div key={rangee} className="flex items-center gap-2">

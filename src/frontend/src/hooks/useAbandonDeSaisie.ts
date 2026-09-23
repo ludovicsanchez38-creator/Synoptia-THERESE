@@ -20,6 +20,15 @@
  * recouvre le formulaire, son Échap décline pour que la coque ferme cette
  * surface. Le formulaire expose `racineSaisie` pour reconnaître la modale qui
  * l'héberge (panneau Tâches ou Agenda) d'une modale posée par-dessus.
+ *
+ * B-995 : la question s'annonce (`role="alert"` porté par le formulaire) et
+ * prend le focus sur « Continuer la saisie » ; répondre « continuer » rend le
+ * focus là où il était.
+ *
+ * B-996 : à la fermeture du formulaire (abandon, retour, enregistrement), le
+ * focus qui tombait sur la page revient au déclencheur (« Nouvelle tâche »,
+ * « Nouveau rendez-vous ») ou, s'il a disparu, au premier contrôle du
+ * panneau qui hébergeait le formulaire.
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { pushEscapeHandler } from '../lib/escapeStack';
@@ -37,6 +46,8 @@ export function useAbandonDeSaisie({
 }) {
   const [abandonDemande, setAbandonDemande] = useState(false);
   const racineSaisie = useRef<HTMLDivElement | null>(null);
+  const questionRef = useRef<HTMLDivElement | null>(null);
+  const retourFocusRef = useRef<HTMLElement | null>(null);
   const etat = useRef({ modifie, abandonDemande, abandonner });
   useLayoutEffect(() => {
     etat.current = { modifie, abandonDemande, abandonner };
@@ -71,5 +82,37 @@ export function useAbandonDeSaisie({
     [],
   );
 
-  return { abandonDemande, demanderAbandon, continuerSaisie, racineSaisie };
+  // B-995 : focus sur la question à son apparition, retour à sa disparition.
+  useEffect(() => {
+    if (abandonDemande) {
+      const actif = document.activeElement;
+      retourFocusRef.current = actif instanceof HTMLElement && actif !== document.body ? actif : null;
+      questionRef.current?.querySelector<HTMLElement>('button')?.focus();
+      return;
+    }
+    const retour = retourFocusRef.current;
+    retourFocusRef.current = null;
+    if (retour?.isConnected) retour.focus();
+  }, [abandonDemande]);
+
+  // B-996 : le déclencheur est l'élément focalisé à l'ouverture du formulaire.
+  useEffect(() => {
+    const actif = document.activeElement;
+    const declencheur = actif instanceof HTMLElement && actif !== document.body ? actif : null;
+    const panneau = racineSaisie.current?.parentElement?.closest<HTMLElement>(
+      '[role="dialog"], [data-testid="tasks-panel"], [data-testid="calendar-panel"], [data-embedded-view]',
+    ) ?? null;
+    return () => {
+      setTimeout(() => {
+        const perdu = !document.activeElement || document.activeElement === document.body;
+        if (!perdu) return;
+        if (declencheur?.isConnected) { declencheur.focus(); return; }
+        if (panneau?.isConnected) {
+          panneau.querySelector<HTMLElement>('button:not([disabled]), [href], input:not([disabled]), [tabindex]:not([tabindex="-1"])')?.focus();
+        }
+      }, 0);
+    };
+  }, []);
+
+  return { abandonDemande, demanderAbandon, continuerSaisie, racineSaisie, questionRef };
 }
