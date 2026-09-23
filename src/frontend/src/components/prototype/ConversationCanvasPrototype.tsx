@@ -871,6 +871,14 @@ export function ConversationCanvasPrototype() {
   useEffect(() => {
     setHeureDAffichage(heureCourante());
   }, [scenario]);
+  // B-981 (BUG-182 résiduel) : sur l'accueil, « Rafraîchi à » suit aussi
+  // chaque lecture réussie du brief (« Accueil » depuis l'accueil,
+  // « Réessayer », retour sur la fenêtre), pas seulement un changement de
+  // scénario. Hors accueil, un rafraîchissement du brief en arrière-plan ne
+  // touche pas l'heure du contenu affiché.
+  useEffect(() => {
+    if (scenario === 'today' && todayResource.status === 'ready') setHeureDAffichage(heureCourante());
+  }, [scenario, todayResource]);
   const [drawerSurface, setDrawerSurface] = useState<PrototypeConversationDrawerSurface>('history');
   const [commandOpen, setCommandOpen] = useState(false);
   const [capabilityCenterOpen, setCapabilityCenterOpen] = useState(false);
