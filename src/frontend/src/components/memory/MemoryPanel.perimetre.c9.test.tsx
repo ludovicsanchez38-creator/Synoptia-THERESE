@@ -3,6 +3,13 @@
  * tronquée par le serveur (plafond) : un périmètre pouvait paraître vide alors
  * que des fiches existaient au-delà du plafond. Quand la liste est tronquée,
  * le périmètre se demande au serveur.
+ *
+ * P-101 (acceptée par Ludo, Telegram 23/09 17h12) et B-953 : la liste
+ * « pleine » était simulée par PLAFOND_CONTACTS fiches rendues dans jsdom,
+ * 3 à 5 s par test, au-delà de la borne de 5 s dès que la machine était
+ * chargée. Ce qui déclenche la demande au serveur est le drapeau `truncated`
+ * du store, pas le nombre de fiches affichées : trois fiches suffisent, la
+ * borne ne bouge pas.
  */
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -29,7 +36,7 @@ describe('MemoryPanel - B-780, périmètre demandé au serveur quand la liste es
     vi.clearAllMocks();
     useStatusStore.setState({ notifications: [] });
     useContactsStore.setState({
-      contacts: Array.from({ length: PLAFOND_CONTACTS }, (_, i) => contact(i, 'global')) as never,
+      contacts: Array.from({ length: 3 }, (_, i) => contact(i, 'global')) as never,
       searchResults: null, loading: false, selectedContactId: null, truncated: true,
       fetchContacts: vi.fn().mockResolvedValue(undefined),
     } as never);
