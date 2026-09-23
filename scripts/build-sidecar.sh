@@ -66,6 +66,34 @@ echo "📁 Copie du binaire dans Tauri..."
 
 mkdir -p "$TAURI_BINARIES"
 
+# B-950 (23/09/2026) : sous Linux, backend.spec produit un dossier onedir
+# (BUG-044), pas un binaire unique. Même traitement que release.yml : un
+# wrapper shell comme sidecar, et le contenu du dossier dans backend-libs/.
+if [[ "$TARGET_TRIPLE" == *"linux"* ]]; then
+    ONEDIR="$BACKEND_DIR/dist/backend"
+    if [ ! -d "$ONEDIR" ] || [ ! -f "$ONEDIR/backend" ]; then
+        echo "❌ Sortie onedir introuvable : $ONEDIR/backend"
+        exit 1
+    fi
+    LIBS_DIR="$TAURI_BINARIES/backend-libs"
+    WRAPPER="$TAURI_BINARIES/backend-$TARGET_TRIPLE"
+    rm -rf "$LIBS_DIR"
+    mkdir -p "$LIBS_DIR"
+    cp -r "$ONEDIR/." "$LIBS_DIR/"
+    chmod +x "$LIBS_DIR/backend"
+    printf '%s\n' \
+        '#!/bin/sh' \
+        '# THERESE - wrapper backend Linux (PyInstaller onedir, BUG-044)' \
+        '# THERESE_BACKEND_LIBS est passe par lib.rs via app.path().resource_dir()' \
+        'LIBS_DIR="${THERESE_BACKEND_LIBS:-$(cd "$(dirname "$0")" && pwd)/backend-libs}"' \
+        'exec "$LIBS_DIR/backend" "$@"' \
+        > "$WRAPPER"
+    chmod +x "$WRAPPER"
+    echo "✅ Sidecar prêt : $WRAPPER (onedir : $LIBS_DIR)"
+    echo "   Taille : $(du -sh "$LIBS_DIR" | cut -f1)"
+    exit 0
+fi
+
 BINARY_NAME="backend"
 # Sur Windows, l'exécutable a une extension .exe
 if [[ "$TARGET_TRIPLE" == *"windows"* ]]; then
