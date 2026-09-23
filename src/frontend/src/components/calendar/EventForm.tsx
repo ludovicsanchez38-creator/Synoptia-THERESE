@@ -6,6 +6,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useAbandonDeSaisie } from '../../hooks/useAbandonDeSaisie';
 import { ChevronLeft, Save } from 'lucide-react';
 import { localDateKey } from '../../lib/civilDate';
 import { useCalendarStore } from '../../stores/calendarStore';
@@ -46,6 +47,9 @@ export function EventForm() {
   const [allDay, setAllDay] = useState(false);
   const [attendeesInput, setAttendeesInput] = useState('');
   const [formError, setFormError] = useState<string | null>(null);
+  // B-974 : état de référence de la saisie, fixé par l'effet de chargement
+  // (valeurs par défaut d'un nouveau rendez-vous, ou fiche modifiée).
+  const [reference, setReference] = useState<string | null>(null);
 
   const { execute, error: guardError, loading: guardLoading, clearError } = useGuardedAction([
     { check: currentCalendarId, message: 'Aucun calendrier sélectionné. Choisis un calendrier dans le menu déroulant.' },
@@ -60,29 +64,28 @@ export function EventForm() {
 
   // Load event data for editing
   useEffect(() => {
+    // B-974 : les valeurs posées ici sont aussi l'état de référence.
+    let valeurs: [string, string, string, string, string, string, string, boolean, string];
     if (isEditing && event) {
-      setSummary(event.summary || '');
-      setDescription(event.description || '');
-      setLocation(event.location || '');
-      setAllDay(event.all_day);
-
-      if (event.all_day) {
-        setStartDate(event.start_date || '');
-        setEndDate(event.end_date || '');
-      } else {
+      let debutDate = event.start_date || '';
+      let debutHeure = '';
+      let finDate = event.end_date || '';
+      let finHeure = '';
+      if (!event.all_day) {
         const start = new Date(event.start_datetime!);
         const end = new Date(event.end_datetime!);
         // B-901 : `toISOString()` rend la date UTC alors que l'heure est
         // locale : un rendez-vous à 00:30 s'ouvrait à la date de la veille.
-        setStartDate(localDateKey(start));
-        setStartTime(start.toTimeString().slice(0, 5));
-        setEndDate(localDateKey(end));
-        setEndTime(end.toTimeString().slice(0, 5));
+        debutDate = localDateKey(start);
+        debutHeure = start.toTimeString().slice(0, 5);
+        finDate = localDateKey(end);
+        finHeure = end.toTimeString().slice(0, 5);
       }
-
-      if (event.attendees && event.attendees.length > 0) {
-        setAttendeesInput(event.attendees.join(', '));
-      }
+      const participants = event.attendees && event.attendees.length > 0 ? event.attendees.join(', ') : '';
+      valeurs = [
+        event.summary || '', event.description || '', event.location || '',
+        debutDate, debutHeure, finDate, finHeure, event.all_day, participants,
+      ];
     } else {
       // New event: default to today
       const now = new Date();
@@ -95,11 +98,33 @@ export function EventForm() {
       // `localDateKey` plutôt que `toISOString()` : ce dernier rend la date
       // UTC alors que l'heure affichée est locale — un décalage d'un jour en
       // UTC+ (dates civiles, BUG-144).
-      setStartDate(localDateKey(now));
-      setStartTime(now.toTimeString().slice(0, 5));
-      setEndDate(localDateKey(fin));
-      setEndTime(fin.toTimeString().slice(0, 5));
+      valeurs = [
+        '', '', '', localDateKey(now), now.toTimeString().slice(0, 5),
+        localDateKey(fin), fin.toTimeString().slice(0, 5), false, '',
+      ];
     }
+    const [titre, desc, lieu, debutDate, debutHeure, finDate, finHeure, journee, participants] = valeurs;
+    if (isEditing && event) {
+      setSummary(titre);
+      setDescription(desc);
+      setLocation(lieu);
+      setAllDay(journee);
+      setStartDate(debutDate);
+      setEndDate(finDate);
+      if (!journee) {
+        setStartTime(debutHeure);
+        setEndTime(finHeure);
+      }
+      if (participants) setAttendeesInput(participants);
+    } else {
+      setStartDate(debutDate);
+      setStartTime(debutHeure);
+      setEndDate(finDate);
+      setEndTime(finHeure);
+    }
+    // Fiche à modifier pas encore trouvée : valeurs par défaut comme avant,
+    // mais pas de référence (la question reste posée, fail-closed).
+    setReference(isEditing && !event ? null : JSON.stringify(valeurs));
   }, [isEditing, event]);
 
   async function handleSave() {
@@ -234,11 +259,8 @@ export function EventForm() {
   }
 
   // B-872 : plus de confirm() natif (D62/D106) ; la question se pose dans le
-  // formulaire, fail-closed.
-  const [abandonDemande, setAbandonDemande] = useState(false);
-  function handleCancel() {
-    setAbandonDemande(true);
-  }
+  // formulaire. B-973, B-974 : seulement si la saisie a changé, et Échap y
+  // répond au lieu de fermer la vue (useAbandonDeSaisie).
   function abandonner() {
     clearDraft();
     setIsEventFormOpen(false);
@@ -248,6 +270,10 @@ export function EventForm() {
       setCurrentEvent(null);
     }
   }
+  const modifie =
+    reference === null ||
+    JSON.stringify([summary, description, location, startDate, startTime, endDate, endTime, allDay, attendeesInput]) !== reference;
+  const { abandonDemande, demanderAbandon: handleCancel, continuerSaisie } = useAbandonDeSaisie({ modifie, abandonner });
 
   return (
     <div className="h-full flex flex-col">
@@ -264,7 +290,7 @@ export function EventForm() {
         {abandonDemande && (
           <div className="flex flex-wrap items-center gap-2 rounded-sm border border-warning/40 bg-[var(--color-warning-tint)] px-3 py-2">
             <p className="text-sm font-semibold text-text">Abandonner les modifications ?</p>
-            <Button variant="ghost" size="md" onClick={() => setAbandonDemande(false)}>Continuer la saisie</Button>
+            <Button variant="ghost" size="md" onClick={continuerSaisie}>Continuer la saisie</Button>
             <Button variant="danger" size="md" onClick={abandonner}>Abandonner</Button>
           </div>
         )}

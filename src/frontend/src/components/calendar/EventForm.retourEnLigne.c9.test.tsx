@@ -27,6 +27,8 @@ describe('EventForm - B-872, abandonner se confirme en ligne', () => {
 
   it('« Retour » pose la question dans le formulaire ; « Abandonner » ferme', () => {
     render(<PrototypeExternalActionConfirmationProvider><EventForm /></PrototypeExternalActionConfirmationProvider>);
+    // B-974 (cycle 11) : la question n'est posée que si la saisie a changé.
+    fireEvent.change(screen.getByLabelText(/Titre/), { target: { value: 'Rendez-vous Ruiz' } });
     fireEvent.click(screen.getByRole('button', { name: 'Retour' }));
     expect(useCalendarStore.getState().isEventFormOpen).toBe(true);
     expect(screen.getByText(/Abandonner les modifications/)).toBeInTheDocument();

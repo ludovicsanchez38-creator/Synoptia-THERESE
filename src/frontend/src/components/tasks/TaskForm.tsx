@@ -22,6 +22,7 @@ import { Select } from '../ui/Select';
 import { Textarea } from '../ui/Textarea';
 import * as api from '../../services/api';
 import { Spinner } from '../ui/Spinner';
+import { useAbandonDeSaisie } from '../../hooks/useAbandonDeSaisie';
 
 /** Le message exact de la maquette (`projets.html:53`). */
 const ERREUR_TITRE_MANQUANT = "Ajoute un titre : c'est la seule chose obligatoire.";
@@ -73,6 +74,11 @@ export function TaskForm() {
   // l'objet (un rafraîchissement de la liste pendant la saisie réécrivait
   // les six champs avec les valeurs du serveur).
   const tacheChargeeRef = useRef<string | null>(null);
+  // B-974 : état de référence de la saisie ; null tant que la fiche à
+  // modifier n'est pas chargée (la question reste alors posée).
+  const [reference, setReference] = useState<string | null>(() =>
+    currentTaskId ? null : JSON.stringify(['', '', 'todo', 'medium', '', '', '']),
+  );
   useEffect(() => {
     if (isEditing && task && tacheChargeeRef.current !== task.id) {
       tacheChargeeRef.current = task.id;
@@ -83,6 +89,11 @@ export function TaskForm() {
       setDueDate(task.due_date ? task.due_date.split('T')[0] : '');
       setProjectId(task.project_id || '');
       setTagsInput(task.tags ? task.tags.join(', ') : '');
+      setReference(JSON.stringify([
+        task.title, task.description || '', task.status, task.priority,
+        task.due_date ? task.due_date.split('T')[0] : '', task.project_id || '',
+        task.tags ? task.tags.join(', ') : '',
+      ]));
     }
   }, [isEditing, task]);
 
@@ -147,16 +158,17 @@ export function TaskForm() {
   }
 
   // B-872 : plus de confirm() natif (D62/D106) ; la question se pose dans le
-  // formulaire, fail-closed.
-  const [abandonDemande, setAbandonDemande] = useState(false);
-  function handleCancel() {
-    setAbandonDemande(true);
-  }
+  // formulaire. B-973, B-974 : seulement si la saisie a changé, et Échap y
+  // répond au lieu de fermer la vue (useAbandonDeSaisie).
   function abandonner() {
     clearDraft();
     setIsTaskFormOpen(false);
     setCurrentTask(null);
   }
+  const modifie =
+    reference === null ||
+    JSON.stringify([title, description, status, priority, dueDate, projectId, tagsInput]) !== reference;
+  const { abandonDemande, demanderAbandon: handleCancel, continuerSaisie } = useAbandonDeSaisie({ modifie, abandonner });
 
   return (
     <motion.div
@@ -176,7 +188,7 @@ export function TaskForm() {
         {abandonDemande && (
           <div className="flex w-full flex-wrap items-center gap-2 rounded-sm border border-warning/40 bg-[var(--color-warning-tint)] px-3 py-2">
             <p className="flex-1 text-sm font-semibold text-text">Abandonner les modifications ?</p>
-            <Button variant="ghost" size="md" onClick={() => setAbandonDemande(false)}>Continuer la saisie</Button>
+            <Button variant="ghost" size="md" onClick={continuerSaisie}>Continuer la saisie</Button>
             <Button variant="danger" size="md" onClick={abandonner}>Abandonner</Button>
           </div>
         )}
