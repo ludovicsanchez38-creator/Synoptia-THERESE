@@ -70,4 +70,34 @@ describe('BUG-182 : l’heure dit quand le contenu affiché est apparu', () => {
 
     await waitFor(() => expect(screen.getByTestId('accueil-jour').textContent).toContain('Rafraîchi à 06:11'));
   }, 30000);
+
+  it('B-997 : une relecture du brief en échec ne refixe pas « Rafraîchi à »', async () => {
+    vi.useFakeTimers({ toFake: ['Date'], shouldAdvanceTime: true });
+    vi.setSystemTime(new Date(2026, 8, 23, 4, 11));
+    const dashboard = await import('../../services/api/dashboard');
+    const { useChatStore } = await import('../../stores/chatStore');
+    const { useNavigationStore } = await import('../../stores/navigationStore');
+    const { _clearEscapeHandlers } = await import('../../lib/escapeStack');
+    const { ConversationCanvasPrototype } = await import('./ConversationCanvasPrototype');
+
+    _clearEscapeHandlers();
+    useChatStore.setState({ conversations: [], currentConversationId: null, isStreaming: false });
+    useNavigationStore.setState({ activeView: null, history: [] } as never);
+    window.history.replaceState({}, '', '/?interface=conversation-canvas');
+
+    render(<ConversationCanvasPrototype />);
+    await waitFor(() => expect(screen.getByTestId('accueil-jour').textContent).toContain('Rafraîchi à 04:11'));
+
+    vi.mocked(dashboard.fetchTodayDashboard).mockRejectedValue(new Error('moteur injoignable'));
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /^Retrouver/ })); });
+    vi.setSystemTime(new Date(2026, 8, 23, 6, 11));
+    const appelsAvant = vi.mocked(dashboard.fetchTodayDashboard).mock.calls.length;
+    await act(async () => {
+      fireEvent.click(screen.getAllByRole('button', { name: /^Accueil$/ })[0]);
+    });
+    await waitFor(() => expect(vi.mocked(dashboard.fetchTodayDashboard).mock.calls.length).toBeGreaterThan(appelsAvant));
+    for (let tour = 0; tour < 6; tour++) { await act(async () => { await Promise.resolve(); }); }
+    expect(screen.getByTestId('accueil-jour').textContent).toContain('Rafraîchi à 04:11');
+    expect(screen.getByTestId('accueil-jour').textContent).not.toContain('06:11');
+  }, 30000);
 });

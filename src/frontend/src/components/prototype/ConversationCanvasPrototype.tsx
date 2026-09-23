@@ -698,6 +698,11 @@ function CommandPalette({
  * s'inscrire dans l'une des deux — il n'y a pas de troisième endroit.
  */
 /** B-645 (Nadia, c4) : le tiroir des conversations tient-il le focus ? */
+/** B-992 : le tiroir signale un overlay interne ouvert (menu, renommage, confirmation). */
+function leTiroirAUnOverlayOuvert(): boolean {
+  return Boolean(document.querySelector('[aria-labelledby="prototype-conversation-drawer-title"][data-overlay-interne="true"]'));
+}
+
 function leTiroirALeFocus(): boolean {
   const tiroir = document.querySelector('[aria-labelledby="prototype-conversation-drawer-title"]');
   return Boolean(tiroir && document.activeElement && tiroir.contains(document.activeElement));
@@ -868,8 +873,11 @@ export function ConversationCanvasPrototype() {
      deux heures plus tard affichait encore l'heure du lancement. Chaque
      apparition d'un contenu (changement de scénario) refixe l'heure. */
   const [heureDAffichage, setHeureDAffichage] = useState(heureCourante);
+  // B-997 : l'accueil n'est refixé que par une lecture RÉUSSIE du brief
+  // (effet suivant) ; une relecture en échec garde l'heure des données
+  // réellement affichées, à côté de l'alerte « Brief indisponible ».
   useEffect(() => {
-    setHeureDAffichage(heureCourante());
+    if (scenario !== 'today') setHeureDAffichage(heureCourante());
   }, [scenario]);
   // B-981 (BUG-182 résiduel) : sur l'accueil, « Rafraîchi à » suit aussi
   // chaque lecture réussie du brief (« Accueil » depuis l'accueil,
@@ -1148,6 +1156,16 @@ export function ConversationCanvasPrototype() {
     // changé, aucun rattrapage n'aurait lieu à la fin du flux. D'où `isStreaming`
     // en dépendance : la demande en attente est rejouée dès que le flux finit.
     if (isStreaming) return;
+    // B-994 : une vue posée dans le store (registre, accueil, commandes)
+    // pendant qu'un formulaire modifié la retient : la question est posée et
+    // le store revient à la vue affichée, sinon il garderait une vue
+    // fantôme (« Retour » rouvrait ensuite la mauvaise vue).
+    if (embeddedView !== null && viewDemandee !== embeddedView && sortieRetenueParUneSaisie()) {
+      const navigation = useNavigationStore.getState();
+      if (navigation.history.at(-1) === embeddedView) navigation.goBack();
+      else useNavigationStore.setState({ activeView: embeddedView });
+      return;
+    }
     derniereVueRef.current = viewDemandee;
     // B-816 : la navigation venue du store (actions rapides, registre) ouvre
     // aussi une vue embarquée ; le déclencheur est l'élément encore focalisé.
@@ -1341,7 +1359,13 @@ export function ConversationCanvasPrototype() {
         // conversations (⌘B), le premier Échap fermait le panneau et laissait
         // le tiroir avec son focus. La surface qui tient le focus se ferme
         // d'abord.
-        if (drawerOpen && leTiroirALeFocus() && !uneModaleDeLaCoqueEstDemandee()) { closeConversationDrawer(); return; }
+        if (drawerOpen && leTiroirALeFocus() && !uneModaleDeLaCoqueEstDemandee()) {
+          // B-992 : un menu, un renommage ou une confirmation du tiroir se
+          // ferme d'abord ; le tiroir au prochain Échap.
+          if (leTiroirAUnOverlayOuvert() && runTopEscapeHandler()) return;
+          closeConversationDrawer();
+          return;
+        }
         if (consommeEchapUnifie()) return;
         if (commandOpen) closeCommandPalette();
         else if (capabilityCenterOpen) closeCapabilityCenter();
@@ -1542,6 +1566,9 @@ export function ConversationCanvasPrototype() {
     };
     const view = viewByAction[actionId];
     if (view) {
+      // B-994 : la garde passe AVANT `runAction`, qui pose la vue dans le
+      // store : retenue, la demande laissait sinon une vue fantôme.
+      if (view !== embeddedView && blockStreamingNavigation()) return;
       runAction(actionId);
       openEmbeddedView(view);
       return;

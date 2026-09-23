@@ -24,6 +24,7 @@ import {
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { usePanneauCouvrant } from '../../hooks/usePanneauCouvrant';
 import { pushEscapeHandler } from '../../lib/escapeStack';
+import { sortieRetenueParUneSaisie } from '../../lib/saisieEnCours';
 
 interface PrototypeConversationDrawerProps {
   onClose: () => void;
@@ -210,15 +211,24 @@ export function PrototypeConversationDrawer({
     return true;
   };
 
+  // B-991 : la saisie en cours est consultée AVANT toute mutation des stores.
+  // Retenue (formulaire modifié, question posée), le tiroir se ferme pour la
+  // laisser voir, et rien d'autre ne bouge.
+  const saisieRetenue = () => {
+    if (!sortieRetenueParUneSaisie()) return false;
+    onClose();
+    return true;
+  };
+
   const startConversation = () => {
-    if (rejectLockedNavigation()) return;
+    if (rejectLockedNavigation() || saisieRetenue()) return;
     createConversation();
     onClose();
     onOpenChat();
   };
 
   const openConversation = (id: string) => {
-    if (rejectLockedNavigation()) return;
+    if (rejectLockedNavigation() || saisieRetenue()) return;
     loadConversation(id);
     onClose();
     onOpenChat();
@@ -257,6 +267,9 @@ export function PrototypeConversationDrawer({
       // restent volontairement actifs. Forme des six frères : une région nommée.
       role="region"
       aria-labelledby="prototype-conversation-drawer-title"
+      // B-992 : la coque lit ce marqueur pour fermer d'abord le menu, le
+      // renommage ou la confirmation, avant le tiroir lui-même.
+      data-overlay-interne={overlayInterne ? 'true' : undefined}
       tabIndex={-1}
       initial={{ x: -24, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
