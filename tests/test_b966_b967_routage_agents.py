@@ -1,10 +1,12 @@
 """B-966 et B-967 (cycle 11, 23/09/2026) : routage des modèles des agents.
 
-B-966 (sécurité) : `_get_llm_for_model` testait « / » (OpenRouter) avant « : »
-(Ollama), puis, si Ollama ne répondait pas, les préfixes cloud. Un modèle local
-au format Hugging Face d'Ollama (`hf.co/…:Q4_K_M`) partait chez OpenRouter dès
-qu'une clé OpenRouter existait, et `qwen3.5:9b` (local) chez Qwen cloud quand
-Ollama était arrêté : le contexte de l'agent quittait la machine.
+B-966 (sécurité, ATTÉNUÉ, décision en attente) : `_get_llm_for_model` testait
+« / » (OpenRouter) avant « : » (Ollama), puis, si Ollama ne répondait pas, les
+préfixes cloud. Un modèle local au format Hugging Face d'Ollama (`hf.co/…:Q4`)
+partait chez OpenRouter dès qu'une clé existait, et `qwen3.5:9b` (local) chez
+Qwen cloud quand Ollama était arrêté. Ces deux cas sont fermés ; les autres
+(noms locaux sans « hf.co/ » hors catalogue, bascule du disjoncteur vers un
+cloud) demandent de conserver le fournisseur avec le modèle : non testés ici.
 
 B-967 : `codestral-2508` et `deepseek-v4-*`, proposés par l'Atelier, ne
 correspondaient à aucun préfixe et retombaient en silence sur le modèle
@@ -37,7 +39,7 @@ def fournisseurs(monkeypatch):
 
 @pytest.mark.parametrize(
     "modele",
-    ["hf.co/bartowski/Llama-3.2-1B-Instruct-GGUF:Q4_K_M", "compte/mon-modele:latest", "qwen3.5:9b"],
+    ["hf.co/bartowski/Llama-3.2-1B-Instruct-GGUF:Q4_K_M", "qwen3.5:9b"],
 )
 def test_b966_un_modele_local_reste_local(fournisseurs, modele):
     demandes, _ = fournisseurs
@@ -56,6 +58,8 @@ def test_b966_ollama_arrete_ne_bascule_pas_vers_un_cloud_homonyme(fournisseurs):
     ("modele", "fournisseur"),
     [
         ("meta-llama/llama-3.1-8b-instruct:free", "openrouter"),
+        # Huitième revue Codex (R-6) : variante et preset OpenRouter combinés.
+        ("anthropic/claude-sonnet-4-6:nitro@preset/revue", "openrouter"),
         ("anthropic/claude-opus-5", "openrouter"),
         ("nvidia/nemotron-3-super-120b-a12b", "openrouter"),
         ("claude-opus-5", "anthropic"),

@@ -31,14 +31,6 @@ class AgentEvent:
     tool_result: str | None = None
 
 
-# B-966 : variantes qu'OpenRouter accole à un identifiant « vendeur/modèle »
-# (meta-llama/…:free). Toute autre étiquette après « : » est une étiquette
-# Ollama (qwen3.5:9b, hf.co/…:Q4_K_M) : en cas de doute, on reste en local.
-_VARIANTES_OPENROUTER = frozenset(
-    {"free", "beta", "extended", "thinking", "online", "nitro", "floor", "exacto"}
-)
-
-
 def _fournisseur_du_catalogue(model_id: str) -> str | None:
     """Fournisseur déclaré par AVAILABLE_MODELS pour cet identifiant (B-967)."""
     from app.services.agents.config import AVAILABLE_MODELS
@@ -49,13 +41,17 @@ def _fournisseur_du_catalogue(model_id: str) -> str | None:
     return None
 
 
-def _est_un_modele_local(model_id: str) -> bool:
-    """B-966 : vrai pour un identifiant Ollama, y compris au format Hugging Face."""
-    if model_id.lower().startswith(("hf.co/", "huggingface.co/")):
-        return True
-    if ":" not in model_id:
-        return False
-    return model_id.rsplit(":", 1)[1].lower() not in _VARIANTES_OPENROUTER
+def _est_un_modele_hugging_face_local(model_id: str) -> bool:
+    """B-966 (atténuation) : « hf.co/… » est la forme Ollama des modèles tirés de
+    Hugging Face ; ce n'est jamais un identifiant OpenRouter.
+
+    Huitième revue Codex : deviner « local » d'après la ponctuation ne garantit
+    rien (« qwen3.5 » sans étiquette, alias local « equipe/assistant:free »,
+    presets OpenRouter « …:nitro@preset/x »). Seul ce préfixe sans ambiguïté est
+    reconnu ici ; le confinement complet demande de conserver le fournisseur
+    avec le modèle choisi (décision en attente, B-966).
+    """
+    return model_id.lower().startswith(("hf.co/", "huggingface.co/"))
 
 
 def _get_llm_for_model(model_id: str):
@@ -84,12 +80,14 @@ def _get_llm_for_model(model_id: str):
         "minimax-": "minimax",
     }
 
-    # B-966, B-967 : le catalogue des agents, puis la reconnaissance d'un modèle
-    # local, AVANT toute règle de nommage cloud. Un modèle local ne part jamais
-    # chez un autre fournisseur : si Ollama ne répond pas, repli principal
-    # documenté, jamais OpenRouter ni un préfixe cloud homonyme (« qwen »).
+    # B-967 : le catalogue des agents connaît le fournisseur de ses modèles.
+    # B-966 (atténuation) : un modèle local du catalogue ou au format hf.co ne
+    # part pas chez un fournisseur homonyme (OpenRouter, « qwen » cloud) ; si
+    # Ollama manque, repli principal documenté. Limites connues, en attente de
+    # décision : noms locaux hors catalogue sans « hf.co/ », bascule du
+    # disjoncteur vers un cloud, repli principal lui-même cloud.
     fournisseur = _fournisseur_du_catalogue(model_id)
-    if fournisseur is None and _est_un_modele_local(model_id):
+    if fournisseur is None and _est_un_modele_hugging_face_local(model_id):
         fournisseur = "ollama"
     if fournisseur is not None:
         svc = get_llm_service_for_provider(fournisseur, model_override=model_id)
