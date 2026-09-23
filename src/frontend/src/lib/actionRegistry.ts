@@ -11,11 +11,12 @@
  * hors React. La palette mappe id -> icône de son côté.
  */
 
-import { useNavigationStore } from '../stores/navigationStore';
+import { useNavigationStore, type AppView } from '../stores/navigationStore';
 import { usePanelStore } from '../stores/panelStore';
 import { useChatStore } from '../stores/chatStore';
 import { useActionsStore } from '../stores/actionsStore';
 import { useDocumentStore } from '../stores/documentStore';
+import { sortieRetenueParUneSaisie } from './saisieEnCours';
 
 export type ActionGroup = 'Chat' | 'Mémoire' | 'Navigation' | 'Réglages' | 'Actions';
 
@@ -87,10 +88,35 @@ export function getActions(): AppAction[] {
   return APP_ACTIONS;
 }
 
+/**
+ * B-1003 : vue que chaque action de navigation fait quitter pour une autre
+ * (`null` = l'accueil). Une saisie modifiée en cours retient ces actions AVANT
+ * leur exécution : « Accueil » vidait sinon l'historique et « Nouveau
+ * document » laissait une demande de modale en attente.
+ */
+const VUE_DES_ACTIONS: Record<string, AppView | null> = {
+  'home.open': null,
+  'memory.open': 'memory',
+  'memory.search': 'memory',
+  'crm.open': 'crm',
+  'email.open': 'email',
+  'calendar.open': 'calendar',
+  'tasks.open': 'tasks',
+  'invoices.open': 'invoices',
+  'projects.open': 'projects',
+  'files.open': 'files',
+  'documents.open': 'documents',
+  'documents.new': 'documents',
+};
+
 /** Déclenche une action par son id. Retourne false si l'id est inconnu (sans planter). */
 export function runAction(id: string): boolean {
   const action = APP_ACTIONS.find((a) => a.id === id);
   if (!action) return false;
+  if (id in VUE_DES_ACTIONS && VUE_DES_ACTIONS[id] !== nav().activeView && sortieRetenueParUneSaisie()) {
+    // La saisie pose elle-même sa question ; rien ne bouge.
+    return true;
+  }
   action.run();
   return true;
 }

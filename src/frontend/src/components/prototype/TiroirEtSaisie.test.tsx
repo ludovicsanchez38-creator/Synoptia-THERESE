@@ -45,10 +45,13 @@ describe('B-991 : le tiroir consulte la saisie en cours avant de naviguer', () =
     const garde = vi.fn(() => true);
     inscrireSaisieEnCours(garde);
     const onOpenChat = vi.fn();
-    render(<PrototypeConversationDrawer onClose={vi.fn()} onOpenChat={onOpenChat} />);
+    const onClose = vi.fn();
+    render(<PrototypeConversationDrawer onClose={onClose} onOpenChat={onOpenChat} />);
 
     fireEvent.click(screen.getByRole('button', { name: /^Préparation rendez-vous réel/ }));
-    expect(garde).toHaveBeenCalled();
+    expect(garde).toHaveBeenCalledTimes(1);
+    // Le tiroir se ferme pour laisser voir la question posée par le formulaire.
+    expect(onClose).toHaveBeenCalledTimes(1);
     expect(useChatStore.getState().currentConversationId).toBeNull();
     expect(useNavigationStore.getState().activeView).toBe('tasks');
     expect(onOpenChat).not.toHaveBeenCalled();
@@ -111,5 +114,42 @@ describe('B-994 : une navigation posée dans le store respecte la saisie en cour
     await act(async () => { runAction('memory.open'); });
     await waitFor(() => expect(vueAffichee()).toBe('memory'));
     expect(useNavigationStore.getState().activeView).toBe('memory');
+  });
+});
+
+describe('B-1004 : demander la vue déjà affichée ne pose pas la question', () => {
+  it('« Ouvrir les Tâches » depuis la vue Tâches avec une saisie retenue : aucune question', async () => {
+    useNavigationStore.setState({ activeView: null, history: [] } as never);
+    render(<ConversationCanvasPrototype />);
+    await act(async () => { runAction('tasks.open'); });
+    await waitFor(() => expect(screen.getByTestId('conversation-canvas-prototype').getAttribute('data-embedded-view')).toBe('tasks'));
+    const garde = vi.fn(() => true);
+    inscrireSaisieEnCours(garde);
+    await act(async () => { window.dispatchEvent(new CustomEvent('therese:client-action', { detail: { actionId: 'tasks.open' } })); });
+    expect(garde).not.toHaveBeenCalled();
+    expect(screen.getByTestId('conversation-canvas-prototype').getAttribute('data-embedded-view')).toBe('tasks');
+  });
+});
+
+describe('B-1008 : Échap dans le renommage du tiroir n’annule que le renommage', () => {
+  it('le champ se ferme, le tiroir reste ouvert', async () => {
+    useNavigationStore.setState({ activeView: 'chat', history: [] } as never);
+    render(<ConversationCanvasPrototype />);
+    await act(async () => { runAction('conversations.toggle'); });
+    await waitFor(() => screen.getByTestId('prototype-conversation-drawer'));
+    fireEvent.click(screen.getByRole('button', { name: 'Actions pour Préparation rendez-vous réel' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Renommer' }));
+    const champ = screen.getByLabelText('Nouveau titre');
+    // Dans Chromium, React rend entre deux écouteurs : la coque voyait alors
+    // un tiroir sans overlay et le fermait. jsdom ne rejoue pas ce rendu
+    // intermédiaire ; on mesure donc que l'Échap déjà traité par le champ
+    // n'atteint plus l'écouteur de la coque.
+    const surWindow = vi.fn();
+    window.addEventListener('keydown', surWindow);
+    await act(async () => { fireEvent.keyDown(champ, { key: 'Escape' }); });
+    window.removeEventListener('keydown', surWindow);
+    expect(surWindow).not.toHaveBeenCalled();
+    expect(screen.queryByLabelText('Nouveau titre')).toBeNull();
+    expect(screen.queryByTestId('prototype-conversation-drawer')).not.toBeNull();
   });
 });

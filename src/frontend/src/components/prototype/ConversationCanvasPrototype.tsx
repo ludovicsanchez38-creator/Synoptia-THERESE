@@ -873,20 +873,18 @@ export function ConversationCanvasPrototype() {
      deux heures plus tard affichait encore l'heure du lancement. Chaque
      apparition d'un contenu (changement de scénario) refixe l'heure. */
   const [heureDAffichage, setHeureDAffichage] = useState(heureCourante);
-  // B-997 : l'accueil n'est refixé que par une lecture RÉUSSIE du brief
-  // (effet suivant) ; une relecture en échec garde l'heure des données
-  // réellement affichées, à côté de l'alerte « Brief indisponible ».
   useEffect(() => {
-    if (scenario !== 'today') setHeureDAffichage(heureCourante());
+    setHeureDAffichage(heureCourante());
   }, [scenario]);
-  // B-981 (BUG-182 résiduel) : sur l'accueil, « Rafraîchi à » suit aussi
-  // chaque lecture réussie du brief (« Accueil » depuis l'accueil,
-  // « Réessayer », retour sur la fenêtre), pas seulement un changement de
-  // scénario. Hors accueil, un rafraîchissement du brief en arrière-plan ne
-  // touche pas l'heure du contenu affiché.
+  // B-981, B-997, B-1007 : « Rafraîchi à » de l'accueil a sa PROPRE heure,
+  // celle de la dernière lecture réussie du brief (« Accueil » depuis
+  // l'accueil, « Réessayer », retour sur la fenêtre). Partagée avec l'heure
+  // des autres scénarios, elle annonçait l'heure d'un passage par
+  // « Retrouver », ou d'une relecture en échec, sur des données plus anciennes.
+  const [heureDuBrief, setHeureDuBrief] = useState(heureCourante);
   useEffect(() => {
-    if (scenario === 'today' && todayResource.status === 'ready') setHeureDAffichage(heureCourante());
-  }, [scenario, todayResource]);
+    if (todayResource.status === 'ready') setHeureDuBrief(heureCourante());
+  }, [todayResource]);
   const [drawerSurface, setDrawerSurface] = useState<PrototypeConversationDrawerSurface>('history');
   const [commandOpen, setCommandOpen] = useState(false);
   const [capabilityCenterOpen, setCapabilityCenterOpen] = useState(false);
@@ -1566,9 +1564,12 @@ export function ConversationCanvasPrototype() {
     };
     const view = viewByAction[actionId];
     if (view) {
+      // B-1004 : la vue est déjà affichée : l'action garde ses effets propres
+      // (demande de modale, focus de recherche), sans navigation ni question.
+      if (view === embeddedView) { runAction(actionId); return; }
       // B-994 : la garde passe AVANT `runAction`, qui pose la vue dans le
       // store : retenue, la demande laissait sinon une vue fantôme.
-      if (view !== embeddedView && blockStreamingNavigation()) return;
+      if (blockStreamingNavigation()) return;
       runAction(actionId);
       openEmbeddedView(view);
       return;
@@ -1799,7 +1800,7 @@ export function ConversationCanvasPrototype() {
                       <p className="mt-1 text-sm leading-6 text-text-muted">
                         J’ai regroupé ce qui mérite ton attention. Tu peux agir ici, sans chercher le bon module.
                       </p>
-                      <p data-testid="accueil-jour" className="mt-1 text-xs font-medium text-text-muted">{ligneDuJour(todayResource.data ?? null, heureDAffichage)}</p>
+                      <p data-testid="accueil-jour" className="mt-1 text-xs font-medium text-text-muted">{ligneDuJour(todayResource.data ?? null, heureDuBrief)}</p>
                     </div>
                   </div>
                   ) : (

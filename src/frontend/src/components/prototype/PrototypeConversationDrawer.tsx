@@ -334,7 +334,13 @@ export function PrototypeConversationDrawer({
                       onChange={(event) => setEditingTitle(event.target.value)}
                       onKeyDown={(event) => {
                         if (event.key === 'Enter') void saveTitle(conversation);
-                        if (event.key === 'Escape') setEditingId(null);
+                        if (event.key === 'Escape') {
+                          // B-1008 : l'Échap est traité ici ; propagé, il
+                          // atteignait la coque APRÈS le rendu qui retire le
+                          // renommage, et fermait aussi le tiroir.
+                          event.stopPropagation();
+                          setEditingId(null);
+                        }
                       }}
                     />
                     <div className="mt-2 flex justify-end gap-2">

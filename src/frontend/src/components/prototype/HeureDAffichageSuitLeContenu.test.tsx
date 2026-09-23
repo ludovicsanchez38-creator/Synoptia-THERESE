@@ -88,7 +88,14 @@ describe('BUG-182 : l’heure dit quand le contenu affiché est apparu', () => {
     render(<ConversationCanvasPrototype />);
     await waitFor(() => expect(screen.getByTestId('accueil-jour').textContent).toContain('Rafraîchi à 04:11'));
 
+    // Les lectures initiales encore en vol aboutissent AVANT le changement
+    // d'heure : une lecture réussie à 05:00 afficherait légitimement 05:00.
+    await act(async () => { await Promise.allSettled(vi.mocked(dashboard.fetchTodayDashboard).mock.results.map((r) => r.value)); });
+    await act(async () => { await new Promise((fin) => setTimeout(fin, 20)); });
+    expect(screen.getByTestId('accueil-jour').textContent).toContain('Rafraîchi à 04:11');
     vi.mocked(dashboard.fetchTodayDashboard).mockRejectedValue(new Error('moteur injoignable'));
+    // B-1007 : « Retrouver » ouvert à une autre minute que la lecture du brief.
+    vi.setSystemTime(new Date(2026, 8, 23, 5, 0));
     await act(async () => { fireEvent.click(screen.getByRole('button', { name: /^Retrouver/ })); });
     vi.setSystemTime(new Date(2026, 8, 23, 6, 11));
     const appelsAvant = vi.mocked(dashboard.fetchTodayDashboard).mock.calls.length;
@@ -99,5 +106,6 @@ describe('BUG-182 : l’heure dit quand le contenu affiché est apparu', () => {
     for (let tour = 0; tour < 6; tour++) { await act(async () => { await Promise.resolve(); }); }
     expect(screen.getByTestId('accueil-jour').textContent).toContain('Rafraîchi à 04:11');
     expect(screen.getByTestId('accueil-jour').textContent).not.toContain('06:11');
+    expect(screen.getByTestId('accueil-jour').textContent).not.toContain('05:00');
   }, 30000);
 });
