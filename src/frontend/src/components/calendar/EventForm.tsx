@@ -118,10 +118,11 @@ export function EventForm() {
       setAllDay(journee);
       setStartDate(debutDate);
       setEndDate(finDate);
-      if (!journee) {
-        setStartTime(debutHeure);
-        setEndTime(finHeure);
-      }
+      // B-982 : heures posées même vides (toute la journée). Une fiche arrivée
+      // après l'ouverture gardait sinon l'heure par défaut, et la saisie
+      // différait de sa référence sans qu'on ait rien touché.
+      setStartTime(debutHeure);
+      setEndTime(finHeure);
       if (participants) setAttendeesInput(participants);
     } else {
       setStartDate(debutDate);

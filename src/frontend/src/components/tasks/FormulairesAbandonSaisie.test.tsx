@@ -186,3 +186,29 @@ describe('EventForm : Échap sous une modale posée par-dessus (B-980)', () => {
     expect(screen.getByText(/Abandonner les modifications/)).toBeTruthy();
   });
 });
+
+describe('EventForm : rendez-vous « toute la journée » arrivé après l’ouverture (B-982)', () => {
+  beforeEach(() => {
+    _clearEscapeHandlers();
+    useCalendarStore.setState({
+      calendars: [{ id: 'calendar-1', account_id: null, summary: 'Mon calendrier', description: null, timezone: 'Europe/Paris', primary: true, provider: 'local', synced_at: null }] as never,
+      currentCalendarId: 'calendar-1', currentEventId: 'evt-1', events: [], isEventFormOpen: true, draftEvent: {},
+    });
+  });
+  afterEach(() => _clearEscapeHandlers());
+
+  it('aucun champ touché : « Retour » ferme sans question', () => {
+    render(<PrototypeExternalActionConfirmationProvider><EventForm /></PrototypeExternalActionConfirmationProvider>);
+    act(() => {
+      useCalendarStore.setState({ events: [{
+        id: 'evt-1', calendar_id: 'calendar-1', summary: 'Séminaire', description: null, location: null,
+        start_datetime: null, end_datetime: null, start_date: '2026-09-24', end_date: '2026-09-24',
+        all_day: true, attendees: [], recurrence: null, status: 'confirmed',
+      }] as never });
+    });
+    expect(screen.getByLabelText(/Titre/)).toHaveValue('Séminaire');
+    fireEvent.click(screen.getByRole('button', { name: 'Retour' }));
+    expect(screen.queryByText(/Abandonner les modifications/)).toBeNull();
+    expect(useCalendarStore.getState().isEventFormOpen).toBe(false);
+  });
+});
