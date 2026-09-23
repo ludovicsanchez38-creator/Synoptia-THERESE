@@ -9,7 +9,6 @@ import {
   Clock3,
   FileCheck2,
   ListTodo,
-  PanelRightClose,
   Receipt,
   RefreshCw,
   ShieldCheck,
@@ -28,6 +27,7 @@ import { usePanneauCouvrant } from '../../hooks/usePanneauCouvrant';
 import { handleRovingFocus } from '../../lib/rovingFocus';
 import { Spinner } from '../ui/Spinner';
 import { Alerte, Button, Carte, EtatVide, Input, Select } from '../ui';
+import { BoutonFermerLePanneau } from './BoutonFermerLePanneau';
 
 type DeliverableStatus = 'all' | 'a_faire' | 'en_cours' | 'en_revision' | 'valide';
 
@@ -280,7 +280,7 @@ export function DeliverablesWorkspaceCanvas({
 
   return (
     <aside ref={dialogRef} role="region" aria-labelledby="deliverables-workspace-title" tabIndex={-1} className="absolute inset-y-0 right-0 z-20 flex h-full w-full max-w-[650px] flex-col border-l border-border bg-surface-2 shadow-lg sm:w-[calc(100%-48px)] xl:relative xl:w-[45%] xl:min-w-[460px] xl:shadow-none" data-testid="deliverables-workspace-canvas">
-      <Button type="button" variant="secondary" size="icon" onClick={onClose} aria-label="Fermer le suivi client" className="absolute right-4 top-3.5 z-30"><PanelRightClose className="h-4 w-4" /></Button>
+      <BoutonFermerLePanneau onClose={onClose} nom="Fermer le suivi client" />
       <header className="border-b border-border px-5 py-4 pr-16">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-text-muted"><FileCheck2 className="h-3.5 w-3.5" />Suivi local unifié</div>
         <h2 id="deliverables-workspace-title" data-dialog-autofocus tabIndex={-1} className="mt-2 text-xl font-bold tracking-[-0.02em] text-text outline-none">Livrables et suivi client</h2>

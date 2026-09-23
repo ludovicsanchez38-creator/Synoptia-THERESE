@@ -2,7 +2,6 @@ import { useMemo, useRef, useState } from 'react';
 import {
   Calculator,
   ChevronRight,
-  PanelRightClose,
   ShieldCheck,
 } from 'lucide-react';
 import {
@@ -22,6 +21,7 @@ import { usePanneauCouvrant } from '../../hooks/usePanneauCouvrant';
 import { handleRovingFocus } from '../../lib/rovingFocus';
 import { Spinner } from '../ui/Spinner';
 import { Alerte, Button, Carte, Input, Select, Textarea } from '../ui';
+import { BoutonFermerLePanneau } from './BoutonFermerLePanneau';
 
 type CalculatorId = 'roi' | 'ice' | 'rice' | 'npv' | 'break-even';
 type CalculatorResult =
@@ -282,7 +282,7 @@ export function CalculatorWorkspaceCanvas({ onClose }: { onClose: () => void }) 
 
   return (
     <aside ref={dialogRef} role="region" aria-labelledby="calculator-workspace-title" tabIndex={-1} className="absolute inset-y-0 right-0 z-20 flex h-full w-full max-w-[620px] flex-col border-l border-border bg-surface-2 shadow-lg sm:w-[calc(100%-48px)] xl:relative xl:w-[43%] xl:min-w-[440px] xl:shadow-none" data-testid="calculator-workspace-canvas">
-      <Button type="button" variant="secondary" size="icon" onClick={onClose} aria-label="Fermer les calculateurs" className="absolute right-3 top-3 z-30"><PanelRightClose className="h-4 w-4" /></Button>
+      <BoutonFermerLePanneau onClose={onClose} nom="Fermer les calculateurs" position="right-3 top-3" />
       <header className="border-b border-border px-5 py-4 pr-16">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-text-muted"><Calculator className="h-3.5 w-3.5" />Moteurs déterministes</div>
         <h2 id="calculator-workspace-title" data-dialog-autofocus tabIndex={-1} className="mt-2 text-xl font-bold tracking-[-0.02em] text-text outline-none">Calculateurs vérifiables</h2>

@@ -11,14 +11,24 @@ import { PanelRightClose } from 'lucide-react';
  * Extrait en composant pour qu'un test puisse le RENDRE plutôt que relire un
  * attribut dans la coque de 1800 lignes.
  */
-export function BoutonFermerLePanneau({ onClose }: { onClose: () => void }) {
+export function BoutonFermerLePanneau({
+  onClose,
+  nom = 'Fermer ce panneau',
+  position = 'right-4 top-3.5',
+}: {
+  onClose: () => void;
+  /** BUG-183 : nom accessible propre au panneau (« Fermer le suivi client »…). */
+  nom?: string;
+  /** Position dans le coin du panneau, reprise de l'ancien bouton à icône seule. */
+  position?: string;
+}) {
   return (
     <button
       type="button"
       onClick={onClose}
-      aria-label="Fermer ce panneau"
-      title="Fermer ce panneau"
-      className="absolute right-4 top-3.5 z-30 inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 py-2 text-sm font-semibold text-text-muted shadow-sm hover:text-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      aria-label={nom}
+      title={nom}
+      className={`absolute ${position} z-30 inline-flex items-center gap-1.5 rounded-md border border-border bg-surface px-2.5 py-2 text-sm font-semibold text-text-muted shadow-sm hover:text-text focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent`}
     >
       <PanelRightClose className="h-4 w-4" />
       <span>Fermer</span>

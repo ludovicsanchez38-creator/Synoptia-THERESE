@@ -3,7 +3,6 @@ import {
   AlertCircle,
   FileAudio,
   Mic,
-  PanelRightClose,
   Play,
   ShieldCheck,
   Upload,
@@ -20,6 +19,7 @@ import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { usePanneauCouvrant } from '../../hooks/usePanneauCouvrant';
 import { Alerte, Button, Carte, Textarea } from '../ui';
 import { Spinner } from '../ui/Spinner';
+import { BoutonFermerLePanneau } from './BoutonFermerLePanneau';
 
 const AUDIO_PERIME_MESSAGE =
   'L’audio correspondait au texte précédent. Génère-le à nouveau pour entendre la nouvelle version.';
@@ -146,7 +146,7 @@ export function VoiceWorkspaceCanvas({
     <aside ref={dialogRef} role="region" aria-labelledby="voice-workspace-title" tabIndex={-1} className="absolute inset-y-0 right-0 z-20 flex h-full w-full flex-col border-l border-border bg-surface-2 shadow-lg sm:w-[calc(100%-48px)] xl:relative xl:w-[62%] xl:min-w-[720px] xl:shadow-none" data-testid="voice-workspace-canvas">
       <header className="relative shrink-0 border-b border-border bg-surface px-5 py-4 pr-16">
         <div className="flex items-start gap-3"><span className="grid h-9 w-9 place-items-center rounded-md border border-border bg-domaine-prospects-tint text-domaine-prospects shadow-sm"><Mic className="h-4 w-4" /></span><div><h2 id="voice-workspace-title" data-dialog-autofocus tabIndex={-1} className="text-lg font-bold text-text outline-none">Voix et transcription</h2><p className="mt-0.5 text-xs text-text-muted">Importer un enregistrement, le transcrire, puis poursuivre dans le chat.</p></div></div>
-        <Button type="button" variant="secondary" size="icon" onClick={onClose} aria-label="Fermer l’espace Voix" className="absolute right-3 top-3 text-text-muted"><PanelRightClose className="h-[18px] w-[18px]" /></Button>
+        <BoutonFermerLePanneau onClose={onClose} nom="Fermer l’espace Voix" position="right-3 top-3" />
       </header>
 
       {statusError && <Alerte ton="attention" className="mx-4 mt-3" titre="Statut vocal indisponible" action={<Button type="button" variant="secondary" onClick={() => void loadStatus()}>Réessayer</Button>}>{statusError}</Alerte>}

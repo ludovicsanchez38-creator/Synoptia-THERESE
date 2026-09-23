@@ -5,7 +5,6 @@ import {
   CalendarClock,
   CheckCircle2,
   Mail,
-  PanelRightClose,
   Pencil,
   RefreshCw,
   Trash2,
@@ -23,6 +22,7 @@ import { parisDateKey } from '../../lib/civilDate';
 import { handleRovingFocus } from '../../lib/rovingFocus';
 import { Alerte, Button, Carte, EtatVide, Input } from '../ui';
 import { Spinner } from '../ui/Spinner';
+import { BoutonFermerLePanneau } from './BoutonFermerLePanneau';
 
 const FILTERS: Array<{ id: 'all' | FollowUpStatus; label: string }> = [
   { id: 'all', label: 'Toutes' },
@@ -154,7 +154,7 @@ export function FollowUpsWorkspaceCanvas({
           <span className="grid h-9 w-9 place-items-center rounded-md border border-border bg-[var(--color-warning-tint)] text-warning shadow-sm"><Bell className="h-4 w-4" /></span>
           <div><h2 id="follow-ups-workspace-title" data-dialog-autofocus tabIndex={-1} className="text-lg font-bold text-text outline-none">Relances et alertes</h2><p className="mt-0.5 text-xs text-text-muted">Échéances réelles liées aux emails, modifiables sans quitter le fil.</p></div>
         </div>
-        <Button type="button" variant="secondary" size="icon" onClick={onClose} aria-label="Fermer les relances" className="absolute right-4 top-4 text-text-muted"><PanelRightClose className="h-[18px] w-[18px]" /></Button>
+        <BoutonFermerLePanneau onClose={onClose} nom="Fermer les relances" position="right-4 top-4" />
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col p-5">

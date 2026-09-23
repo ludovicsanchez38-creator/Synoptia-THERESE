@@ -4,7 +4,6 @@ import {
   AlertCircle,
   Download,
   Image as ImageIcon,
-  PanelRightClose,
   RefreshCw,
   ShieldCheck,
   Sparkles,
@@ -27,6 +26,7 @@ import { usePanneauCouvrant } from '../../hooks/usePanneauCouvrant';
 import { useDemoMask } from '../../hooks/useDemoMask';
 import { Alerte, Button, Carte, EtatVide, Select, Textarea } from '../ui';
 import { Spinner } from '../ui/Spinner';
+import { BoutonFermerLePanneau } from './BoutonFermerLePanneau';
 
 const PROVIDERS: Array<{ id: ImageProvider; label: string; availability: keyof ImageProviderStatus }> = [
   { id: 'gpt-image-2', label: 'GPT Image 2', availability: 'openai_available' },
@@ -323,7 +323,7 @@ export function ImagesWorkspaceCanvas({ onClose }: { onClose: () => void }) {
           <h2 id="images-workspace-title" data-dialog-autofocus tabIndex={-1} className="text-lg font-bold text-text outline-none">Studio Images</h2>
           <p className="mt-0.5 text-xs text-text-muted">Génération réelle, aperçu local et historique conservé.</p>
         </div>
-        <Button type="button" variant="secondary" size="icon" onClick={onClose} aria-label="Fermer le studio Images" className="absolute right-3 top-3 text-text-muted"><PanelRightClose className="h-[18px] w-[18px]" /></Button>
+        <BoutonFermerLePanneau onClose={onClose} nom="Fermer le studio Images" position="right-3 top-3" />
       </header>
 
       <div className="grid min-h-0 flex-1 lg:grid-cols-[minmax(300px,0.8fr)_minmax(360px,1.2fr)]">
