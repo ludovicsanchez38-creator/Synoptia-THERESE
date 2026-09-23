@@ -73,6 +73,40 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  # B-948 / B-956 (cycle 11, 23/09/2026) : le paquet .deb installe le bundle
+  # PyInstaller en lecture seule sous /usr/lib. Cette contre-épreuve construit
+  # deux bundles réels (sans puis avec les témoins de répertoires) et génère un
+  # DOCX avec pied de page depuis un bundle non inscriptible. Trop lente pour la
+  # borne de 30 s de la suite principale, elle a son propre job.
+  bundle-linux-lecture-seule:
+    name: Bundle PyInstaller en lecture seule (Linux)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      THERESE_ENV: test
+      TRANSFORMERS_OFFLINE: "1"
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Installer dépendances système
+        run: sudo apt-get update && sudo apt-get install -y libmagic1
+
+      - name: Installer UV et dépendances
+        run: pip install uv && uv sync --dev
+
+      - name: Contre-épreuve B-948 (bundle réel en lecture seule)
+        env:
+          THERESE_TESTS_PYINSTALLER: "1"
+        run: uv run pytest tests/test_b948_repertoires_bundle.py -q --timeout=600 -p no:cacheprovider
+        timeout-minutes: 12
+
   backend-tests:
     name: Tests Backend (Python)
     runs-on: ubuntu-latest

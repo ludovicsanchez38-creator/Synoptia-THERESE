@@ -73,6 +73,31 @@ class TestB948Structure:
         for src, _dest in datas:
             assert Path(src).is_file(), src
 
+    def test_un_job_ci_linux_execute_la_contre_epreuve_reelle(self):
+        """B-956 (revue Codex du diff) : sans job qui pose la variable, la preuve
+        comportementale ne tournait nulle part en CI."""
+        import re
+
+        import yaml
+
+        jobs = yaml.safe_load((RACINE / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8"))["jobs"]
+        candidats = []
+        for nom, job in jobs.items():
+            if "ubuntu" not in str(job.get("runs-on", "")):
+                continue
+            env_job = {str(k): str(v) for k, v in (job.get("env") or {}).items()}
+            for etape in job.get("steps", []):
+                commande = str(etape.get("run", ""))
+                env = {**env_job, **{str(k): str(v) for k, v in (etape.get("env") or {}).items()}}
+                if "test_b948_repertoires_bundle.py" in commande and (
+                    env.get("THERESE_TESTS_PYINSTALLER") == "1" or "THERESE_TESTS_PYINSTALLER=1" in commande
+                ):
+                    borne = re.search(r"--timeout=(\d+)", commande)
+                    candidats.append((nom, int(borne.group(1)) if borne else None))
+        assert candidats, "aucun job Linux ne lance la contre-épreuve avec THERESE_TESTS_PYINSTALLER=1"
+        for nom, borne in candidats:
+            assert borne is not None and borne >= 300, f"{nom} : --timeout trop court pour deux constructions PyInstaller"
+
 
 # ------------------------------------------------------------ comportement réel
 
