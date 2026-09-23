@@ -96,14 +96,20 @@ export function useAbandonDeSaisie({
   }, [abandonDemande]);
 
   // B-996 : le déclencheur est l'élément focalisé à l'ouverture du formulaire.
+  // B-1009 : `monte` écarte le faux démontage du double montage de StrictMode,
+  // qui déplaçait le focus sur le premier contrôle du panneau.
+  const monte = useRef(false);
   useEffect(() => {
+    monte.current = true;
     const actif = document.activeElement;
     const declencheur = actif instanceof HTMLElement && actif !== document.body ? actif : null;
     const panneau = racineSaisie.current?.parentElement?.closest<HTMLElement>(
       '[role="dialog"], [data-testid="tasks-panel"], [data-testid="calendar-panel"], [data-embedded-view]',
     ) ?? null;
     return () => {
+      monte.current = false;
       setTimeout(() => {
+        if (monte.current) return;
         const perdu = !document.activeElement || document.activeElement === document.body;
         if (!perdu) return;
         if (declencheur?.isConnected) { declencheur.focus(); return; }

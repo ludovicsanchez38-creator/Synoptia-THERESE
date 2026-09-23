@@ -8,6 +8,7 @@
  * B-989 (R-2) : « Nouvelle tâche » pendant la modification d'une tâche
  * passait en création sans question, avec les champs de la tâche ouverte.
  */
+import { StrictMode } from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -147,5 +148,20 @@ describe('B-998 : enregistrer une tâche sortie de la liste par un filtre', () =
     await waitFor(() => expect(mockUpdateTask).toHaveBeenCalled());
     expect(mockUpdateTask.mock.calls[0][0]).toBe('tache-1');
     expect(mockCreateTask).not.toHaveBeenCalled();
+  });
+});
+
+describe('B-1009 : le double montage de StrictMode ne déplace pas le focus', () => {
+  it('ouverture du formulaire : le minuteur de B-996 ne s’exécute pas pour un faux démontage', async () => {
+    const { TaskForm } = await import('./TaskForm');
+    poser([], null);
+    (document.activeElement as HTMLElement | null)?.blur();
+    render(
+      <StrictMode>
+        <div data-testid="tasks-panel"><button type="button">Colonnes</button><TaskForm /></div>
+      </StrictMode>,
+    );
+    await act(async () => { await new Promise((fin) => setTimeout(fin, 20)); });
+    expect(screen.getByRole('button', { name: 'Colonnes' })).not.toHaveFocus();
   });
 });

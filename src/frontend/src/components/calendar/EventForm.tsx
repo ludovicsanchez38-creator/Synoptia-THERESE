@@ -59,6 +59,8 @@ export function EventForm() {
   const saving = guardLoading;
 
   const isEditing = !!currentEventId;
+  // B-1005 : la liste VIVANTE (après un rechargement de période), pas celle du rendu.
+  const ficheDansLaListe = () => useCalendarStore.getState().events.some((evt) => evt.id === currentEventId);
   const event = events.find((evt) => evt.id === currentEventId);
   const selectedCalendar = calendars.find((calendar) => calendar.id === currentCalendarId);
 
@@ -254,7 +256,9 @@ export function EventForm() {
             currentAccountId || undefined
           );
           updateEventInStore(currentEventId, updated);
-          setCurrentEvent(currentEventId);
+          // B-1005 : hors de la période affichée, la fiche n'est pas dans la
+          // liste : sa vue de détail dirait « Événement introuvable ».
+          setCurrentEvent(ficheDansLaListe() ? currentEventId : null);
         } else {
           // Create new event
           const request: api.CreateEventRequest = {
@@ -293,7 +297,7 @@ export function EventForm() {
   function abandonner() {
     clearDraft();
     setIsEventFormOpen(false);
-    if (isEditing) {
+    if (isEditing && ficheDansLaListe()) {
       setCurrentEvent(currentEventId);
     } else {
       setCurrentEvent(null);

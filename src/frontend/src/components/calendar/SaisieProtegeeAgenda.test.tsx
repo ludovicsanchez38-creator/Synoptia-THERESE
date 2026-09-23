@@ -141,3 +141,67 @@ describe('B-998 : enregistrer une modification dont la fiche est hors de la list
     expect(api.createEvent).not.toHaveBeenCalled();
   });
 });
+
+describe('B-1005 : quitter un rendez-vous sorti de la période affichée', () => {
+  async function horsPeriode() {
+    await monter();
+    fireEvent.change(titre(), { target: { value: 'Séance 1 · Garage Benali, reportée' } });
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Période suivante' })); });
+    for (let tour = 0; tour < 6; tour++) { await act(async () => { await Promise.resolve(); }); }
+    await waitFor(() => expect(useCalendarStore.getState().events).toHaveLength(0));
+  }
+
+  it('après l’enregistrement, retour à la grille (pas de fiche « introuvable »)', async () => {
+    api.updateEvent.mockResolvedValue({ ...(RENDEZ_VOUS as object), summary: 'Séance 1 · Garage Benali, reportée' });
+    await horsPeriode();
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: /^Confirmer la/ })); });
+    await waitFor(() => expect(useCalendarStore.getState().isEventFormOpen).toBe(false));
+    expect(screen.queryByText('Événement introuvable')).toBeNull();
+    expect(useCalendarStore.getState().currentEventId).toBeNull();
+  });
+
+  it('après « Abandonner », retour à la grille', async () => {
+    await horsPeriode();
+    fireEvent.click(screen.getByRole('button', { name: 'Retour' }));
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Abandonner' })); });
+    expect(useCalendarStore.getState().isEventFormOpen).toBe(false);
+    expect(screen.queryByText('Événement introuvable')).toBeNull();
+    expect(useCalendarStore.getState().currentEventId).toBeNull();
+  });
+});
+
+describe('B-1006 : choisir Jour, Semaine, Mois ou Liste pendant une modification', () => {
+  it('fiche modifiée : la question est posée, la saisie et la fiche restent', async () => {
+    await monter();
+    fireEvent.change(titre(), { target: { value: 'Séance 1 · Garage Benali, reportée' } });
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Semaine' })); });
+    expect(screen.getByText(/Abandonner les modifications/)).toBeInTheDocument();
+    expect(titre()).toHaveValue('Séance 1 · Garage Benali, reportée');
+    expect(useCalendarStore.getState().currentEventId).toBe('evt-1');
+  });
+
+  it('fiche intacte : le formulaire se range et la grille s’affiche dans la vue choisie', async () => {
+    await monter();
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Semaine' })); });
+    expect(useCalendarStore.getState().isEventFormOpen).toBe(false);
+    expect(useCalendarStore.getState().viewMode).toBe('week');
+    expect(screen.queryByLabelText(/Titre/)).toBeNull();
+  });
+});
+
+describe('B-998 : une fiche jamais chargée ne s’enregistre pas', () => {
+  it('rendez-vous absent de la liste depuis l’ouverture : « Enregistrer » refuse, sans appel', async () => {
+    api.listEvents.mockResolvedValue([]);
+    useCalendarStore.setState({ events: [] } as never);
+    render(<PrototypeExternalActionConfirmationProvider><CalendarPanel standalone /></PrototypeExternalActionConfirmationProvider>);
+    await waitFor(() => expect(screen.getByLabelText(/Titre/)).toBeInTheDocument());
+    for (let tour = 0; tour < 6; tour++) { await act(async () => { await Promise.resolve(); }); }
+    fireEvent.change(titre(), { target: { value: 'Titre tapé avant le chargement' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Enregistrer' }));
+    expect(screen.getByText(/pas encore chargé/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^Confirmer la/ })).toBeNull();
+    expect(api.updateEvent).not.toHaveBeenCalled();
+    expect(api.createEvent).not.toHaveBeenCalled();
+  });
+});

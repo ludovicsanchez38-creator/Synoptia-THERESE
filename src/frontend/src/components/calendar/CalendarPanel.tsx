@@ -89,6 +89,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
     setEvents,
     setCurrentEvent,
     setIsEventFormOpen,
+    clearDraft,
     setViewMode,
     setSelectedDate,
     setLastSyncAt,
@@ -362,11 +363,17 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
    *  un changement de `viewMode`. La cascade de rendu donne la priorité à
    *  `currentEventId` (la fiche) : après une création, `EventForm` la pose, et
    *  les quatre boutons ne ramenaient donc jamais la grille — seul l'intitulé
-   *  de période changeait. Le formulaire, lui, n'est PAS fermé ici : il porte
-   *  une saisie non enregistrée que son propre « Annuler » ne jette qu'après
-   *  confirmation. */
+   *  de période changeait.
+   *  B-1006 : un formulaire ouvert passait en « Nouveau rendez-vous » vide et
+   *  la saisie était perdue sans question. Modifié, il retient le geste (la
+   *  question d'abandon est posée) ; intact, il se range avec la surface. */
   function choisirVue(mode: ModeDeVue) {
+    if (isEventFormOpen && sortieRetenueParUneSaisie()) return;
     setViewMode(mode);
+    if (isEventFormOpen) {
+      clearDraft();
+      setIsEventFormOpen(false);
+    }
     setCurrentEvent(null);
   }
 
