@@ -12,17 +12,12 @@ non concluant » que promet BUG-163.
 
 from __future__ import annotations
 
-import shutil
 from pathlib import Path
 
 import pytest
 from app.services.agents import git_service as module_git
 from app.services.agents.git_service import GitService
 from app.services.agents.tools import AgentToolExecutor
-
-# Revue Codex R-4 : seuls les tests de search_codebase dépendent de grep ; les
-# tests B-958 simulent git absent et doivent tourner aussi sur un poste sans grep.
-grep_requis = pytest.mark.skipif(shutil.which("grep") is None, reason="grep requis")
 
 
 @pytest.fixture
@@ -38,7 +33,6 @@ def depot(tmp_path: Path) -> Path:
     return source
 
 
-@grep_requis
 @pytest.mark.parametrize("motif", ["--timeout", "-> None"])
 async def test_un_motif_qui_commence_par_un_tiret_est_cherche_tel_quel(depot: Path, motif: str):
     sortie = await AgentToolExecutor(str(depot)).search_codebase(motif, "*.py")
@@ -46,7 +40,6 @@ async def test_un_motif_qui_commence_par_un_tiret_est_cherche_tel_quel(depot: Pa
     assert motif in sortie, sortie
 
 
-@grep_requis
 async def test_un_motif_ordinaire_fonctionne_toujours(depot: Path):
     sortie = await AgentToolExecutor(str(depot)).search_codebase("def lire", "*.py")
     assert "reglages.py:2:" in sortie, sortie

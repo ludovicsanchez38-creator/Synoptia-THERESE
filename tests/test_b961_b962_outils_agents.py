@@ -11,7 +11,6 @@ invalide (code 2) s'affichait « Aucun résultat ».
 
 from __future__ import annotations
 
-import shutil
 from pathlib import Path
 
 import pytest
@@ -49,7 +48,6 @@ async def test_b961_list_directory_d_un_sous_dossier_par_un_lien(depot_par_un_li
     assert str(Path("src") / "module.py") in sortie, sortie
 
 
-@pytest.mark.skipif(shutil.which("grep") is None, reason="grep requis")
 async def test_b962_un_motif_invalide_est_une_erreur(tmp_path: Path):
     (tmp_path / "a.py").write_text("x = [1]\n", encoding="utf-8")
     sortie = await AgentToolExecutor(str(tmp_path)).search_codebase("[", "*.py")
@@ -57,7 +55,6 @@ async def test_b962_un_motif_invalide_est_une_erreur(tmp_path: Path):
     assert sortie.startswith("Erreur"), sortie
 
 
-@pytest.mark.skipif(shutil.which("grep") is None, reason="grep requis")
 async def test_b962_aucune_correspondance_reste_aucun_resultat(tmp_path: Path):
     (tmp_path / "a.py").write_text("x = 1\n", encoding="utf-8")
     sortie = await AgentToolExecutor(str(tmp_path)).search_codebase("introuvable", "*.py")
