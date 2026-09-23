@@ -58,6 +58,9 @@ function mergeContactsById(primary: Contact[], extra: Contact[]): Contact[] {
   return [...primary, ...extra.filter((c) => !seen.has(c.id))];
 }
 
+/** B-977 : numéro de la dernière recherche lancée. */
+let derniereRecherche = 0;
+
 export const useContactsStore = create<ContactsStore>((set, get) => ({
   contacts: [],
   searchResults: null,
@@ -102,9 +105,14 @@ export const useContactsStore = create<ContactsStore>((set, get) => ({
   },
 
   search: async (query) => {
+    // B-977 : seule la dernière recherche lancée écrit son résultat. Une
+    // réponse arrivée en retard (recherche sémantique lente) remplaçait la
+    // liste de la requête en cours.
+    const numero = ++derniereRecherche;
+    const toujoursCourante = () => numero === derniereRecherche;
     const q = query.trim();
     if (!q) {
-      set({ searchResults: null });
+      set({ searchResults: null, loading: false });
       return;
     }
     set({ loading: true });
@@ -136,10 +144,10 @@ export const useContactsStore = create<ContactsStore>((set, get) => ({
         .map((id) => byId.get(id))
         .filter((c): c is Contact => !!c);
       // Hybride : matches locaux d'abord, puis hits sémantiques non déjà présents.
-      set({ searchResults: mergeContactsById(local, semantic), loading: false });
+      if (toujoursCourante()) set({ searchResults: mergeContactsById(local, semantic), loading: false });
     } catch {
       // Sémantique indisponible : la recherche reste utilisable via le filtre local.
-      set({ searchResults: local, loading: false });
+      if (toujoursCourante()) set({ searchResults: local, loading: false });
     }
   },
 
