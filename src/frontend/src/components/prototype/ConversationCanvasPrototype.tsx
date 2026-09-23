@@ -758,6 +758,10 @@ function consommeEchapUnifie(): boolean {
   return false;
 }
 
+function heureCourante(): string {
+  return new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+
 export function ConversationCanvasPrototype() {
   const theme = useAccessibilityStore((state) => state.theme);
   const highContrast = useAccessibilityStore((state) => state.highContrast);
@@ -857,10 +861,15 @@ export function ConversationCanvasPrototype() {
   } = usePrototypeAtelierData(scenario === 'atelier');
   const [drawerOpen, setDrawerOpen] = useState(false);
   /* L'heure du contenu affiché, figée à son apparition : une horloge qui
-     défile attirerait l'œil sans rien apprendre de plus. */
-  const [heureDAffichage] = useState(() =>
-    new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }),
-  );
+     défile attirerait l'œil sans rien apprendre de plus.
+     BUG-182 (Dr_logic-3D, 23/09) : elle était figée au MONTAGE du canevas, qui
+     ne se remonte pas quand on change de vue ; « Contacts et mémoire » ouvert
+     deux heures plus tard affichait encore l'heure du lancement. Chaque
+     apparition d'un contenu (changement de scénario) refixe l'heure. */
+  const [heureDAffichage, setHeureDAffichage] = useState(heureCourante);
+  useEffect(() => {
+    setHeureDAffichage(heureCourante());
+  }, [scenario]);
   const [drawerSurface, setDrawerSurface] = useState<PrototypeConversationDrawerSurface>('history');
   const [commandOpen, setCommandOpen] = useState(false);
   const [capabilityCenterOpen, setCapabilityCenterOpen] = useState(false);
