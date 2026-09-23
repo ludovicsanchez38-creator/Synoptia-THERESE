@@ -110,3 +110,33 @@ describe('EventForm : Échap et question d’abandon (B-973, B-974)', () => {
     expect(useCalendarStore.getState().isEventFormOpen).toBe(true);
   });
 });
+
+describe('EventForm : un rechargement de la liste n’écrase pas la saisie (B-979)', () => {
+  const evenement = {
+    id: 'evt-1', calendar_id: 'calendar-1', summary: 'Point Ruiz', description: null, location: null,
+    start_datetime: '2026-09-24T09:00:00', end_datetime: '2026-09-24T10:00:00', start_date: null, end_date: null,
+    all_day: false, attendees: ['a@exemple.invalid'], recurrence: null, status: 'confirmed',
+  };
+  beforeEach(() => {
+    _clearEscapeHandlers();
+    useCalendarStore.setState({
+      calendars: [{ id: 'calendar-1', account_id: null, summary: 'Mon calendrier', description: null, timezone: 'Europe/Paris', primary: true, provider: 'local', synced_at: null }] as never,
+      currentCalendarId: 'calendar-1', currentEventId: 'evt-1', events: [evenement] as never, isEventFormOpen: true, draftEvent: {},
+    });
+  });
+  afterEach(() => _clearEscapeHandlers());
+
+  it('la saisie survit au rafraîchissement, et la question reste posée', () => {
+    render(<PrototypeExternalActionConfirmationProvider><EventForm /></PrototypeExternalActionConfirmationProvider>);
+    expect(screen.getByLabelText(/Titre/)).toHaveValue('Point Ruiz');
+    fireEvent.change(screen.getByLabelText(/Titre/), { target: { value: 'Point Ruiz, reporté' } });
+
+    // Synchronisation : même rendez-vous, nouvel objet (et participants vidés côté serveur).
+    act(() => { useCalendarStore.setState({ events: [{ ...evenement, attendees: [] }] as never }); });
+
+    expect(screen.getByLabelText(/Titre/)).toHaveValue('Point Ruiz, reporté');
+    fireEvent.click(screen.getByRole('button', { name: 'Retour' }));
+    expect(screen.getByText(/Abandonner les modifications/)).toBeInTheDocument();
+    expect(useCalendarStore.getState().isEventFormOpen).toBe(true);
+  });
+});

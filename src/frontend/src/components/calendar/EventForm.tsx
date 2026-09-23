@@ -5,7 +5,7 @@
  * Phase 2 - Calendar
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAbandonDeSaisie } from '../../hooks/useAbandonDeSaisie';
 import { ChevronLeft, Save } from 'lucide-react';
 import { localDateKey } from '../../lib/civilDate';
@@ -62,8 +62,15 @@ export function EventForm() {
   const event = events.find((evt) => evt.id === currentEventId);
   const selectedCalendar = calendars.find((calendar) => calendar.id === currentCalendarId);
 
-  // Load event data for editing
+  // Load event data for editing.
+  // B-979 : une fois par rendez-vous ouvert, pas à chaque nouvel objet de la
+  // liste (même garde que #189 dans TaskForm) : une synchronisation qui
+  // remplaçait `events` réécrivait la saisie en cours et sa référence.
+  const ficheChargeeRef = useRef<string | null>(null);
   useEffect(() => {
+    const cle = isEditing ? (event ? `evenement:${event.id}` : null) : 'nouveau';
+    if (cle !== null && ficheChargeeRef.current === cle) return;
+    ficheChargeeRef.current = cle;
     // B-974 : les valeurs posées ici sont aussi l'état de référence.
     let valeurs: [string, string, string, string, string, string, string, boolean, string];
     if (isEditing && event) {
