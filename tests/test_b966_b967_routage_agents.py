@@ -28,7 +28,7 @@ def fournisseurs(monkeypatch):
     demandes: list[str] = []
     indisponibles: set[str] = set()
 
-    def service(provider_name, model_override=None):
+    def service(provider_name, model_override=None, **_options):
         demandes.append(provider_name)
         return None if provider_name in indisponibles else ("service", provider_name, model_override)
 

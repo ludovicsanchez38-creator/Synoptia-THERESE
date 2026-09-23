@@ -240,6 +240,14 @@ class AgentToolExecutor:
                 "--exclude-dir=.git",
                 "--exclude-dir=.venv",
                 "--exclude-dir=node_modules",
+                # B-969 : mêmes interdits que read_file (_validate_path). Placés
+                # APRÈS --include : pour GNU grep, la dernière règle qui
+                # correspond l'emporte.
+                "--exclude=.env*",
+                "--exclude=*.key",
+                "--exclude=*.pem",
+                "--exclude=*.p12",
+                "--exclude=*.pfx",
                 # B-957 : -e, sinon un motif qui commence par « - » devient une option.
                 "-e",
                 pattern,

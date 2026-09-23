@@ -54,6 +54,16 @@ def _est_un_modele_hugging_face_local(model_id: str) -> bool:
     return model_id.lower().startswith(("hf.co/", "huggingface.co/"))
 
 
+def _sans_bascule_si_local(fournisseur: str) -> dict[str, bool]:
+    """B-968 : un agent sur modèle local ne bascule jamais vers le cloud.
+
+    Avec la bascule par défaut, deux échecs d'Ollama ouvraient le disjoncteur et
+    le prompt de l'agent partait en silence chez un fournisseur cloud configuré.
+    Comme le Board (bascule_circuit=False), l'échec d'Ollama remonte.
+    """
+    return {"bascule_circuit": False} if fournisseur == "ollama" else {}
+
+
 def _get_llm_for_model(model_id: str):
     """Obtient un LLMService pour un model ID spécifique.
 
@@ -90,7 +100,9 @@ def _get_llm_for_model(model_id: str):
     if fournisseur is None and _est_un_modele_hugging_face_local(model_id):
         fournisseur = "ollama"
     if fournisseur is not None:
-        svc = get_llm_service_for_provider(fournisseur, model_override=model_id)
+        svc = get_llm_service_for_provider(
+            fournisseur, model_override=model_id, **_sans_bascule_si_local(fournisseur)
+        )
         return svc or get_llm_service()
 
     # Modèles OpenRouter (contiennent "/" comme nvidia/nemotron-3-super-120b-a12b)
@@ -101,7 +113,9 @@ def _get_llm_for_model(model_id: str):
 
     # Modèles locaux Ollama (contiennent ":" comme qwen3:32b)
     if ":" in model_id:
-        svc = get_llm_service_for_provider("ollama", model_override=model_id)
+        svc = get_llm_service_for_provider(
+            "ollama", model_override=model_id, **_sans_bascule_si_local("ollama")
+        )
         if svc:
             return svc
 

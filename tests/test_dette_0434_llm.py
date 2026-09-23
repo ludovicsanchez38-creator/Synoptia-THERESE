@@ -121,7 +121,9 @@ class TestLesAgentsRoutentLesNouveauxFournisseurs:
 
         demandes: list[str] = []
 
-        def espion(provider_name, model_override=None):
+        # B-968 : la vraie fonction accepte aussi bascule_circuit ; la doublure
+        # suit sa signature (l'assertion, elle, ne change pas).
+        def espion(provider_name, model_override=None, **_options):
             demandes.append(provider_name)
             return object()  # n'importe quoi de non-None : le routage s'arrête là
 
