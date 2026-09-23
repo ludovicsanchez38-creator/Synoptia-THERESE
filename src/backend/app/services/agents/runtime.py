@@ -31,6 +31,33 @@ class AgentEvent:
     tool_result: str | None = None
 
 
+# B-966 : variantes qu'OpenRouter accole à un identifiant « vendeur/modèle »
+# (meta-llama/…:free). Toute autre étiquette après « : » est une étiquette
+# Ollama (qwen3.5:9b, hf.co/…:Q4_K_M) : en cas de doute, on reste en local.
+_VARIANTES_OPENROUTER = frozenset(
+    {"free", "beta", "extended", "thinking", "online", "nitro", "floor", "exacto"}
+)
+
+
+def _fournisseur_du_catalogue(model_id: str) -> str | None:
+    """Fournisseur déclaré par AVAILABLE_MODELS pour cet identifiant (B-967)."""
+    from app.services.agents.config import AVAILABLE_MODELS
+
+    for modele in AVAILABLE_MODELS:
+        if modele.get("id") == model_id:
+            return str(modele.get("provider") or "") or None
+    return None
+
+
+def _est_un_modele_local(model_id: str) -> bool:
+    """B-966 : vrai pour un identifiant Ollama, y compris au format Hugging Face."""
+    if model_id.lower().startswith(("hf.co/", "huggingface.co/")):
+        return True
+    if ":" not in model_id:
+        return False
+    return model_id.rsplit(":", 1)[1].lower() not in _VARIANTES_OPENROUTER
+
+
 def _get_llm_for_model(model_id: str):
     """Obtient un LLMService pour un model ID spécifique.
 
@@ -56,6 +83,17 @@ def _get_llm_for_model(model_id: str):
         "qwen": "qwen",
         "minimax-": "minimax",
     }
+
+    # B-966, B-967 : le catalogue des agents, puis la reconnaissance d'un modèle
+    # local, AVANT toute règle de nommage cloud. Un modèle local ne part jamais
+    # chez un autre fournisseur : si Ollama ne répond pas, repli principal
+    # documenté, jamais OpenRouter ni un préfixe cloud homonyme (« qwen »).
+    fournisseur = _fournisseur_du_catalogue(model_id)
+    if fournisseur is None and _est_un_modele_local(model_id):
+        fournisseur = "ollama"
+    if fournisseur is not None:
+        svc = get_llm_service_for_provider(fournisseur, model_override=model_id)
+        return svc or get_llm_service()
 
     # Modèles OpenRouter (contiennent "/" comme nvidia/nemotron-3-super-120b-a12b)
     if "/" in model_id:
