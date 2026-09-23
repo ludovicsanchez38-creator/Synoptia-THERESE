@@ -83,8 +83,10 @@ async def test_le_nombre_de_resultats_est_borne(tmp_path: Path):
 
 
 async def test_les_dossiers_exclus_ne_sont_pas_parcourus(tmp_path: Path):
-    for dossier in (".git", ".venv", "node_modules", "Node_Modules"):
-        (tmp_path / dossier).mkdir()
+    # La variante de casse vit dans un sous-dossier : sous Windows (NTFS,
+    # insensible à la casse), `Node_Modules` et `node_modules` sont le même nom.
+    for dossier in (".git", ".venv", "node_modules", "src/Node_Modules"):
+        (tmp_path / dossier).mkdir(parents=True)
         (tmp_path / dossier / "a.py").write_text("cible = 'exclu'\n", encoding="utf-8")
     (tmp_path / "garde.py").write_text("cible = 'garde'\n", encoding="utf-8")
     sortie = await AgentToolExecutor(str(tmp_path)).search_codebase("cible", "*.py")
