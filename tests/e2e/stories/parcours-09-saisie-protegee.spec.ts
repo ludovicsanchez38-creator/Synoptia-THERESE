@@ -50,6 +50,18 @@ test.describe('Parcours 09 - Saisie protégée', () => {
       });
     }
 
+    test(`${formulaire.modifie} : Échap sous les Réglages ferme les Réglages, pas le formulaire`, async ({ page }) => {
+      const texte = `Saisie ${formulaire.nom} sous les Réglages`;
+      const titre = await commencerUneSaisie(page, formulaire.vue, formulaire.bouton, texte);
+      await page.getByRole('button', { name: 'Paramètres', exact: true }).first().click();
+      const reglages = page.getByRole('dialog').first();
+      await expect(reglages).toBeVisible({ timeout: 10000 });
+      await page.keyboard.press('Escape');
+      await expect(page.getByRole('dialog')).toHaveCount(0, { timeout: 5000 });
+      await expect(page.getByText(/Abandonner les modifications/)).toHaveCount(0);
+      await expect(titre).toHaveValue(texte);
+    });
+
     test(`${formulaire.vierge} : le Retour d’en-tête quitte sans question`, async ({ page }) => {
       await ouvrirLaSurface(page, formulaire.vue);
       await page.getByRole('button', { name: formulaire.bouton }).first().click();

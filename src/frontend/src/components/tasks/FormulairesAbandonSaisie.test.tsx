@@ -140,3 +140,49 @@ describe('EventForm : un rechargement de la liste n’écrase pas la saisie (B-9
     expect(useCalendarStore.getState().isEventFormOpen).toBe(true);
   });
 });
+
+describe('TaskForm : Échap sous une surface de la coque (B-980)', () => {
+  beforeEach(async () => {
+    _clearEscapeHandlers();
+    useTaskStore.setState({ tasks: [], currentTaskId: null, isTaskFormOpen: true, searchQuery: '' });
+  });
+  afterEach(async () => {
+    _clearEscapeHandlers();
+    const { usePanelStore } = await import('../../stores/panelStore');
+    usePanelStore.setState({ showSettings: false } as never);
+  });
+
+  it('Réglages ouverts : le formulaire laisse passer Échap et ne bouge pas', async () => {
+    const { usePanelStore } = await import('../../stores/panelStore');
+    render(<TaskForm />);
+    fireEvent.change(screen.getByLabelText(/Titre/), { target: { value: 'Relancer Ruiz' } });
+    act(() => { usePanelStore.setState({ showSettings: true } as never); });
+    expect(echap()).toBe(false);
+    expect(screen.queryByText(/Abandonner les modifications/)).toBeNull();
+    expect(useTaskStore.getState().isTaskFormOpen).toBe(true);
+  });
+});
+
+describe('EventForm : Échap sous une modale posée par-dessus (B-980)', () => {
+  beforeEach(() => { _clearEscapeHandlers(); });
+  afterEach(() => { _clearEscapeHandlers(); document.querySelectorAll('[data-test-modale-dessus]').forEach((n) => n.remove()); });
+
+  it('une modale distincte ouverte (palette, centre) : le formulaire laisse passer Échap', () => {
+    render(<PrototypeExternalActionConfirmationProvider><EventForm /></PrototypeExternalActionConfirmationProvider>);
+    fireEvent.change(screen.getByLabelText(/Titre/), { target: { value: 'Visite chantier' } });
+    const modale = document.createElement('div');
+    modale.setAttribute('role', 'dialog');
+    modale.setAttribute('aria-modal', 'true');
+    modale.setAttribute('data-test-modale-dessus', '');
+    document.body.appendChild(modale);
+    expect(echap()).toBe(false);
+    expect(screen.queryByText(/Abandonner les modifications/)).toBeNull();
+  });
+
+  it('la modale qui contient le formulaire ne le fait pas décliner', () => {
+    render(<div role="dialog" aria-modal="true"><PrototypeExternalActionConfirmationProvider><EventForm /></PrototypeExternalActionConfirmationProvider></div>);
+    fireEvent.change(screen.getByLabelText(/Titre/), { target: { value: 'Visite chantier' } });
+    expect(echap()).toBe(true);
+    expect(screen.getByText(/Abandonner les modifications/)).toBeTruthy();
+  });
+});

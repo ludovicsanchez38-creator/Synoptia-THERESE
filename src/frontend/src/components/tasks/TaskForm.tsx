@@ -168,10 +168,11 @@ export function TaskForm() {
   const modifie =
     reference === null ||
     JSON.stringify([title, description, status, priority, dueDate, projectId, tagsInput]) !== reference;
-  const { abandonDemande, demanderAbandon: handleCancel, continuerSaisie } = useAbandonDeSaisie({ modifie, abandonner });
+  const { abandonDemande, demanderAbandon: handleCancel, continuerSaisie, racineSaisie } = useAbandonDeSaisie({ modifie, abandonner });
 
   return (
     <motion.div
+      ref={racineSaisie}
       initial={{ opacity: 0, x: 20 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 20 }}

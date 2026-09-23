@@ -10,12 +10,18 @@
  * Solution : un composant qui ouvre un tel overlay PUSH un handler ici (et le POP
  * au démontage). La cascade Échap de la coque déclenche le handler le plus en
  * avant AVANT toute autre priorité. Pile LIFO : le dernier overlay ouvert est le premier fermé.
+ *
+ * B-980 : un handler peut DÉCLINER en renvoyant `false` (formulaire recouvert
+ * par une surface de la coque qui, elle, n'est pas dans la pile). La cascade
+ * continue alors vers ses priorités suivantes. Un handler qui ne renvoie rien a agi.
  */
 
-const handlers: Array<() => void> = [];
+type EscapeHandler = () => void | boolean;
+
+const handlers: EscapeHandler[] = [];
 
 /** Enregistre un handler Échap (overlay le plus en avant). Retourne la désinscription. */
-export function pushEscapeHandler(handler: () => void): () => void {
+export function pushEscapeHandler(handler: EscapeHandler): () => void {
   handlers.push(handler);
   return () => {
     const i = handlers.lastIndexOf(handler);
@@ -23,12 +29,11 @@ export function pushEscapeHandler(handler: () => void): () => void {
   };
 }
 
-/** Déclenche le handler le plus récent s'il existe. Retourne true s'il a agi. */
+/** Déclenche le handler le plus récent s'il existe. Retourne true s'il a agi (false s'il a décliné). */
 export function runTopEscapeHandler(): boolean {
   const handler = handlers[handlers.length - 1];
   if (!handler) return false;
-  handler();
-  return true;
+  return handler() !== false;
 }
 
 /** Réinitialise la pile (tests uniquement). */

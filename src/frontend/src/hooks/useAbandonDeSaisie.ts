@@ -15,9 +15,15 @@
  *
  * B-978 : le formulaire s'inscrit aussi dans le registre des saisies en
  * cours, que la coque consulte avant toute autre sortie de la vue.
+ *
+ * B-980 : tant qu'une surface de la coque (Réglages, fiche, palette, centre…)
+ * recouvre le formulaire, son Échap décline pour que la coque ferme cette
+ * surface. Le formulaire expose `racineSaisie` pour reconnaître la modale qui
+ * l'héberge (panneau Tâches ou Agenda) d'une modale posée par-dessus.
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { pushEscapeHandler } from '../lib/escapeStack';
+import { uneModaleDistincteEstOuverte, uneSurfaceDeLaCoqueEstOuverte } from '../lib/surfacesDeLaCoque';
 import { inscrireSaisieEnCours } from '../lib/saisieEnCours';
 
 export function useAbandonDeSaisie({
@@ -30,6 +36,7 @@ export function useAbandonDeSaisie({
   abandonner: () => void;
 }) {
   const [abandonDemande, setAbandonDemande] = useState(false);
+  const racineSaisie = useRef<HTMLDivElement | null>(null);
   const etat = useRef({ modifie, abandonDemande, abandonner });
   useLayoutEffect(() => {
     etat.current = { modifie, abandonDemande, abandonner };
@@ -45,6 +52,7 @@ export function useAbandonDeSaisie({
   useEffect(
     () =>
       pushEscapeHandler(() => {
+        if (uneSurfaceDeLaCoqueEstOuverte() || uneModaleDistincteEstOuverte(racineSaisie.current)) return false;
         if (etat.current.abandonDemande) setAbandonDemande(false);
         else demanderAbandon();
       }),
@@ -63,5 +71,5 @@ export function useAbandonDeSaisie({
     [],
   );
 
-  return { abandonDemande, demanderAbandon, continuerSaisie };
+  return { abandonDemande, demanderAbandon, continuerSaisie, racineSaisie };
 }

@@ -280,10 +280,10 @@ export function EventForm() {
   const modifie =
     reference === null ||
     JSON.stringify([summary, description, location, startDate, startTime, endDate, endTime, allDay, attendeesInput]) !== reference;
-  const { abandonDemande, demanderAbandon: handleCancel, continuerSaisie } = useAbandonDeSaisie({ modifie, abandonner });
+  const { abandonDemande, demanderAbandon: handleCancel, continuerSaisie, racineSaisie } = useAbandonDeSaisie({ modifie, abandonner });
 
   return (
-    <div className="h-full flex flex-col">
+    <div ref={racineSaisie} className="h-full flex flex-col">
       {/* Header */}
       <div className="px-6 py-4 border-b border-border flex items-center justify-between">
         <div className="flex items-center gap-3">
