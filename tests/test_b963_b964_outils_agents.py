@@ -14,7 +14,6 @@ son modèle (modèle local, injection) y aurait écrit.
 from __future__ import annotations
 
 import os
-import shutil
 import sys
 from pathlib import Path
 
@@ -23,14 +22,12 @@ from app.services.agents.config import AgentConfig
 from app.services.agents.runtime import AgentRuntime
 from app.services.agents.tools import THERESE_TOOLS, ZEZETTE_TOOLS, AgentToolExecutor
 
-grep_requis = pytest.mark.skipif(shutil.which("grep") is None, reason="grep requis")
 permissions_posix = pytest.mark.skipif(
     sys.platform == "win32" or (hasattr(os, "geteuid") and os.geteuid() == 0),
     reason="chmod 000 ne rend pas un fichier illisible ici",
 )
 
 
-@grep_requis
 @permissions_posix
 async def test_b963_un_fichier_illisible_ne_fait_pas_perdre_les_resultats(tmp_path: Path):
     (tmp_path / "a.py").write_text("cible = 1\n", encoding="utf-8")
@@ -45,7 +42,6 @@ async def test_b963_un_fichier_illisible_ne_fait_pas_perdre_les_resultats(tmp_pa
     assert str(tmp_path) not in sortie, "aucun chemin absolu ne doit être montré au modèle"
 
 
-@grep_requis
 async def test_b963_une_erreur_sans_resultat_ne_montre_pas_de_chemin_absolu(tmp_path: Path):
     (tmp_path / "a.py").write_text("x = [1]\n", encoding="utf-8")
     sortie = await AgentToolExecutor(str(tmp_path)).search_codebase("[", "*.py")
@@ -90,64 +86,59 @@ async def test_b964_un_outil_du_schema_reste_execute(tmp_path: Path):
 
 
 # ---------------------------------------------------------------- B-965
+# Ces tests simulaient la sortie de grep (préfixes de racine avec « / » ou « \ »).
+# La recherche est faite en Python depuis le 23/09/2026 : ils vérifient le même
+# comportement, aucun chemin absolu vers le modèle et le code cité intact, sur
+# de vrais fichiers.
 
 
-class _GrepSimule:
-    def __init__(self, sortie: str, erreur: str, code: int) -> None:
-        self._sortie, self._erreur, self.returncode, self.pid = sortie, erreur, code, 4242
-
-    async def communicate(self):
-        return self._sortie.encode(), self._erreur.encode()
-
-
-@pytest.mark.parametrize("separateur_de_grep", ["/", "\\"])
-async def test_b965_aucune_forme_de_la_racine_n_atteint_le_modele(tmp_path: Path, monkeypatch, separateur_de_grep):
-    """Sixième revue Codex : sous Windows, grep peut écrire la racine avec d'autres
-    séparateurs que ceux de Python ; aucune forme ne doit passer."""
+async def test_b965_aucune_forme_de_la_racine_n_atteint_le_modele(tmp_path: Path, monkeypatch):
+    """Sixième revue Codex : aucune forme de la racine ne doit passer, ni dans
+    les résultats ni dans le message d'un fichier illisible (le message
+    d'OSError contient le chemin complet)."""
     from app.services.agents import tools as module_outils
 
     racine = str(tmp_path)
-    variante = racine.replace("/", separateur_de_grep)
-    grep = _GrepSimule(
-        sortie=f"{variante}{separateur_de_grep}a.py:1:cible = 1\n",
-        erreur=f"grep: {variante}{separateur_de_grep}b.py: Permission denied\n",
-        code=2,
-    )
+    (tmp_path / "a.py").write_text("cible = 1\n", encoding="utf-8")
+    (tmp_path / "b.py").write_text("cible = 2\n", encoding="utf-8")
+    lire = module_outils._lire_octets
 
-    async def faux_exec(*args, **kwargs):
-        return grep
+    def illisible(chemin: str, *args):
+        if chemin.endswith("b.py"):
+            raise PermissionError(13, "Permission denied", chemin)
+        return lire(chemin, *args)
 
-    monkeypatch.setattr(module_outils.asyncio, "create_subprocess_exec", faux_exec)
+    monkeypatch.setattr(module_outils, "_lire_octets", illisible)
+    formes = {racine, racine.replace("\\", "/"), racine.replace("/", "\\")}
+
     avec_resultat = await AgentToolExecutor(racine).search_codebase("cible", "*.py")
     assert "a.py:1:cible = 1" in avec_resultat, avec_resultat
-    assert racine not in avec_resultat and variante not in avec_resultat, avec_resultat
+    assert "(certains fichiers n'ont pas pu être lus)" in avec_resultat, avec_resultat
+    assert not any(forme in avec_resultat for forme in formes), avec_resultat
 
-    grep._sortie = ""
+    (tmp_path / "a.py").unlink()
     sans_resultat = await AgentToolExecutor(racine).search_codebase("cible", "*.py")
     assert sans_resultat.startswith("Erreur"), sans_resultat
     assert "Permission denied" in sans_resultat, sans_resultat
-    assert racine not in sans_resultat and variante not in sans_resultat, sans_resultat
+    assert not any(forme in sans_resultat for forme in formes), sans_resultat
 
 
-async def _chercher_avec_sortie(monkeypatch, racine: str, sortie: str, erreur: str = "", code: int = 0) -> str:
-    from app.services.agents import tools as module_outils
-
-    async def faux_exec(*args, **kwargs):
-        return _GrepSimule(sortie, erreur, code)
-
-    monkeypatch.setattr(module_outils.asyncio, "create_subprocess_exec", faux_exec)
-    return await AgentToolExecutor(racine).search_codebase("motif", "*.py")
-
-
-async def test_b965_seul_le_prefixe_de_chemin_est_retire_pas_le_code(tmp_path: Path, monkeypatch):
+async def test_b965_seul_le_prefixe_de_chemin_est_retire_pas_le_code(tmp_path: Path):
     """Septième revue Codex (R-2) : la racine citée DANS une ligne de code, ou un
     dossier voisin qui commence pareil, ne doit pas être réécrit."""
-    racine = str(tmp_path / "repo")
-    ligne = f"{racine}/a.py:1:cache = '{racine}sitory/x' ; autre = '{racine}'"
-    sortie = await _chercher_avec_sortie(monkeypatch, racine, ligne + "\n")
-    assert sortie == f"a.py:1:cache = '{racine}sitory/x' ; autre = '{racine}'", sortie
+    depot = tmp_path / "repo"
+    depot.mkdir()
+    racine = str(depot)
+    code = f"cache = '{racine}sitory/x' ; autre = '{racine}'"
+    (depot / "a.py").write_text(code + "\n", encoding="utf-8")
+    sortie = await AgentToolExecutor(racine).search_codebase("cache", "*.py")
+    assert sortie == f"a.py:1:{code}", sortie
 
 
-async def test_b965_une_racine_courte_ne_touche_que_le_prefixe(monkeypatch):
-    sortie = await _chercher_avec_sortie(monkeypatch, "/", "/src/a.py:1:x = 8 / 2\n")
+async def test_b965_le_chemin_relatif_s_ecrit_pareil_sur_tous_les_systemes(tmp_path: Path):
+    """Remplace le test de la racine courte « / » : chemin relatif avec « / »
+    sous Windows aussi, et le « / » du code laissé tel quel."""
+    (tmp_path / "src").mkdir()
+    (tmp_path / "src" / "a.py").write_text("x = 8 / 2\n", encoding="utf-8")
+    sortie = await AgentToolExecutor(str(tmp_path)).search_codebase("8 / 2", "*.py")
     assert sortie == "src/a.py:1:x = 8 / 2", sortie

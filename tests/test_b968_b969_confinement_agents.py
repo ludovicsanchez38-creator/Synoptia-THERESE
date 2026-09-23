@@ -12,7 +12,6 @@ modèle, alors que read_file refuse ces fichiers.
 
 from __future__ import annotations
 
-import shutil
 from pathlib import Path
 
 import pytest
@@ -54,7 +53,6 @@ def test_b968_un_agent_cloud_garde_la_bascule_par_defaut(appels, modele):
     assert options.get("bascule_circuit", True) is True, options
 
 
-@pytest.mark.skipif(shutil.which("grep") is None, reason="grep requis")
 @pytest.mark.parametrize(
     ("chemin", "filtre"),
     [

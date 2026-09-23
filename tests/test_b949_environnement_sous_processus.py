@@ -88,11 +88,14 @@ def _ld_effectif(kwargs: dict) -> str | None:
     return (env if env is not None else dict(os.environ)).get("LD_LIBRARY_PATH")
 
 
-async def test_la_recherche_grep_des_agents_n_herite_pas_du_bundle(moteur_fige, monkeypatch, tmp_path: Path):
+async def test_la_recherche_des_agents_ne_lance_aucun_outil_du_poste(moteur_fige, monkeypatch, tmp_path: Path):
+    """La recherche lançait grep ; elle est faite en Python depuis le 23/09/2026
+    (CI Windows) : plus aucun outil du poste, donc rien à hériter du bundle."""
     appels = _intercepter(monkeypatch, module_outils)
-    await AgentToolExecutor(str(tmp_path)).search_codebase("motif", "*.py")
-    assert appels, "grep n'a pas été lancé"
-    assert _ld_effectif(appels[0]) == ORIGINE
+    (tmp_path / "a.py").write_text("motif = 1\n", encoding="utf-8")
+    sortie = await AgentToolExecutor(str(tmp_path)).search_codebase("motif", "*.py")
+    assert sortie == "a.py:1:motif = 1", sortie
+    assert appels == [], "la recherche ne doit lancer aucun processus"
 
 
 async def test_les_commandes_autorisees_des_agents_n_heritent_pas_du_bundle(moteur_fige, monkeypatch, tmp_path: Path):

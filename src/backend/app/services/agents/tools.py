@@ -6,11 +6,20 @@ Chaque outil est une fonction async qui retourne un résultat string.
 """
 
 import asyncio
+import fnmatch
 import logging
 import os
 import signal
+import stat
+import threading
+import time
+from dataclasses import dataclass, field
 from pathlib import Path
 
+# `regex` plutôt que `re` : un motif émis par le modèle comme `(x+x+)+y` fait
+# mouliner `re` sans fin, et un fil d'exécution ne s'annule pas. `regex` accepte
+# un délai. Déjà livré avec transformers, déclaré explicitement dans pyproject.
+import regex
 from app.services.sous_processus import environnement_outils_systeme
 
 logger = logging.getLogger(__name__)
@@ -46,6 +55,268 @@ ALLOWED_SEARCH_GLOBS = {
     "*.yaml",
     "*.yml",
 }
+
+# Recherche des agents (search_codebase), faite en Python et non plus par grep :
+# sous Windows, le grep de Git développait lui-même `*.py` contre le dossier
+# courant et ne trouvait rien (CI Windows, run 35903233291).
+DOSSIERS_EXCLUS_RECHERCHE = frozenset({".git", ".venv", "node_modules"})
+SUFFIXES_SENSIBLES = frozenset({".key", ".pem", ".p12", ".pfx"})
+TAILLE_MAX_FICHIER_RECHERCHE = 5 * 1024 * 1024
+DELAI_RECHERCHE_S = 15.0
+MAX_RESULTATS_RECHERCHE = 200
+
+
+def _nom_de_fichier_sensible(nom: str) -> bool:
+    """Fichier que ni read_file ni search_codebase ne rendent (B-969).
+
+    Comparé en minuscules : `.ENV.yaml` ou `CLE.PEM` restent des secrets."""
+    nom = nom.lower()
+    return nom.startswith(".env") or Path(nom).suffix in SUFFIXES_SENSIBLES
+
+
+class _DelaiDepasse(Exception):
+    """La recherche a dépassé son délai ou a été abandonnée."""
+
+
+@dataclass
+class _ResultatRecherche:
+    lignes: list[str] = field(default_factory=list)
+    # Messages du système sans chemin : aucun chemin absolu n'atteint le modèle
+    # (B-963, B-965).
+    erreurs: list[str] = field(default_factory=list)
+    trop_volumineux: bool = False
+
+
+def _message_sans_chemin(exc: OSError) -> str:
+    return exc.strerror or type(exc).__name__
+
+
+# Sans suivre un lien final, sans bloquer sur une FIFO (drapeaux absents : 0).
+_OUVERTURE_RECHERCHE = (
+    os.O_RDONLY
+    | getattr(os, "O_NOFOLLOW", 0)
+    | getattr(os, "O_NONBLOCK", 0)
+    | getattr(os, "O_BINARY", 0)
+)
+
+
+def _lire_octets(chemin: str, limite: int, identite: tuple[int, int] | None = None) -> bytes | None:
+    """Contenu du fichier, ou None s'il dépasse `limite` octets.
+
+    Entre le contrôle du parcours et l'ouverture, un autre processus peut
+    remplacer le fichier, ou son dossier, par un lien vers l'extérieur du dépôt.
+    On n'ouvre donc pas un lien final, et le fichier ouvert doit être celui qui
+    a été contrôlé (`identite` = périphérique et inode relevés au parcours)."""
+    descripteur = os.open(chemin, _OUVERTURE_RECHERCHE)
+    with os.fdopen(descripteur, "rb") as fichier:
+        etat = os.fstat(fichier.fileno())
+        if not stat.S_ISREG(etat.st_mode) or (
+            identite is not None and (etat.st_dev, etat.st_ino) != identite
+        ):
+            raise OSError(0, "fichier remplacé pendant la recherche")
+        contenu = fichier.read(limite + 1)
+    return None if len(contenu) > limite else contenu
+
+
+def _est_un_lien(entree: os.DirEntry[str]) -> bool:
+    """Lien symbolique ou jonction Windows : jamais suivi, comme `grep -r`."""
+    if entree.is_symlink():
+        return True
+    est_jonction = getattr(entree, "is_junction", None)  # Python 3.12+
+    if est_jonction is not None:
+        return bool(est_jonction())
+    jonction = getattr(stat, "IO_REPARSE_TAG_MOUNT_POINT", None)
+    return jonction is not None and getattr(entree.stat(follow_symlinks=False), "st_reparse_tag", 0) == jonction
+
+
+def _identite(etat: os.stat_result) -> tuple[int, int]:
+    return (etat.st_dev, etat.st_ino)
+
+
+def _identite_entree(entree: os.DirEntry[str]) -> tuple[int, int]:
+    """Périphérique et inode d'une entrée, lien non suivi.
+
+    Sous Windows, DirEntry.stat laisse l'inode à zéro : il vient alors de
+    os.lstat, sinon aucun remplacement ne serait détectable."""
+    etat = entree.stat(follow_symlinks=False)
+    if not etat.st_ino:
+        etat = os.lstat(entree.path)
+    return _identite(etat)
+
+
+def _etat_dossier(chemin: str, est_racine: bool) -> os.stat_result:
+    # La racine peut être désignée par un lien (B-961) ; un sous-dossier jamais.
+    return os.stat(chemin) if est_racine else os.lstat(chemin)
+
+
+def _dossier_remplace() -> OSError:
+    return OSError(0, "dossier remplacé pendant la recherche")
+
+
+def _verifier_dossier(chemin: str, est_racine: bool, identite: tuple[int, int]) -> None:
+    """Le dossier est toujours celui qui a été contrôlé.
+
+    Le type compte autant que l'inode : un lien créé juste après la
+    suppression du dossier récupère souvent son numéro d'inode (ext4)."""
+    etat = _etat_dossier(chemin, est_racine)
+    if not stat.S_ISDIR(etat.st_mode) or _identite(etat) != identite:
+        raise _dossier_remplace()
+
+
+def _rechercher(
+    racine: str,
+    pattern: str,
+    glob_filter: str,
+    max_results: int,
+    echeance: float,
+    arret: threading.Event,
+) -> _ResultatRecherche:
+    """Parcourt le dépôt ligne à ligne, hors de la boucle asyncio.
+
+    Mêmes règles que l'ancien `grep -rn` : dossiers exclus, fichiers sensibles
+    écartés, liens non suivis, binaires (octet nul) ignorés. S'arrête au
+    nombre de résultats, à l'échéance ou quand `arret` est posé."""
+    motif = regex.compile(pattern)
+    resultat = _ResultatRecherche()
+    # Pile (chemin, préfixe relatif, identité attendue) : parcours en
+    # profondeur, trié par nom. Un autre processus peut remplacer un dossier ou
+    # un fichier par un lien vers l'extérieur pendant le parcours : chaque
+    # dossier est comparé à l'identité relevée chez son parent, avant et après
+    # son listage, puis encore après l'ouverture de chacun de ses fichiers.
+    a_parcourir: list[tuple[str, str, tuple[int, int] | None]] = [(racine, "", None)]
+    while a_parcourir:
+        dossier, prefixe, attendue = a_parcourir.pop()
+        est_racine = attendue is None
+        try:
+            avant = _etat_dossier(dossier, est_racine)
+            identite_dossier = _identite(avant)
+            if not stat.S_ISDIR(avant.st_mode) or (
+                attendue is not None and identite_dossier != attendue
+            ):
+                raise _dossier_remplace()
+            with os.scandir(dossier) as contenu_du_dossier:
+                entrees = sorted(contenu_du_dossier, key=lambda entree: entree.name)
+            _verifier_dossier(dossier, est_racine, identite_dossier)
+        except OSError as exc:
+            resultat.erreurs.append(_message_sans_chemin(exc))
+            continue
+        sous_dossiers: list[tuple[str, str, tuple[int, int] | None]] = []
+        for entree in entrees:
+            if arret.is_set() or time.monotonic() >= echeance:
+                raise _DelaiDepasse
+            relatif = prefixe + entree.name
+            try:
+                if _est_un_lien(entree):
+                    continue
+                if entree.is_dir(follow_symlinks=False):
+                    if entree.name.lower() not in DOSSIERS_EXCLUS_RECHERCHE:
+                        sous_dossiers.append((entree.path, relatif + "/", _identite_entree(entree)))
+                    continue
+                if (
+                    not entree.is_file(follow_symlinks=False)
+                    or not fnmatch.fnmatchcase(entree.name, glob_filter)
+                    or _nom_de_fichier_sensible(entree.name)
+                ):
+                    continue
+                if entree.stat(follow_symlinks=False).st_size > TAILLE_MAX_FICHIER_RECHERCHE:
+                    resultat.trop_volumineux = True
+                    continue
+                octets = _lire_octets(entree.path, TAILLE_MAX_FICHIER_RECHERCHE, _identite_entree(entree))
+                _verifier_dossier(dossier, est_racine, identite_dossier)
+            except OSError as exc:
+                resultat.erreurs.append(_message_sans_chemin(exc))
+                continue
+            if octets is None:
+                resultat.trop_volumineux = True
+                continue
+            if not octets or b"\x00" in octets:
+                continue  # vide, ou binaire : jamais lu
+            try:
+                texte = octets.decode("utf-8").removesuffix("\n")
+            except UnicodeDecodeError:
+                continue  # pas du texte UTF-8 : binaire, comme pour grep en locale UTF-8
+            for numero, ligne in enumerate(texte.split("\n"), start=1):
+                ligne = ligne.removesuffix("\r")
+                restant = echeance - time.monotonic()
+                if restant <= 0 or arret.is_set():
+                    raise _DelaiDepasse
+                try:
+                    trouve = motif.search(ligne, timeout=restant)
+                except TimeoutError as exc:
+                    raise _DelaiDepasse from exc
+                if trouve:
+                    resultat.lignes.append(f"{relatif}:{numero}:{ligne}")
+                    if len(resultat.lignes) >= max_results:
+                        return resultat
+        a_parcourir.extend(reversed(sous_dossiers))
+    return resultat
+
+
+class _RecherchesBloquees(Exception):
+    """Trop de recherches précédentes sont encore bloquées dans une lecture."""
+
+
+# grep bloqué sur un lecteur réseau était tué ; un fil Python ne peut pas l'être.
+# Chaque recherche a donc son fil démon : bloqué, il n'occupe pas le pool partagé
+# de l'application (asyncio.to_thread) et ne retient pas sa fermeture. Au-delà de
+# ce plafond de fils encore vivants PAR DÉPÔT, la recherche est refusée plutôt
+# qu'empilée ; un partage figé ne bloque pas les autres dépôts. La racine sert de
+# clé telle quelle : la résoudre toucherait le disque figé depuis la boucle.
+MAX_RECHERCHES_EN_VOL = 4
+_recherches_en_vol: dict[str, threading.BoundedSemaphore] = {}
+_verrou_recherches_en_vol = threading.Lock()
+
+
+def _places_de_recherche(racine: str) -> threading.BoundedSemaphore:
+    with _verrou_recherches_en_vol:
+        places = _recherches_en_vol.get(racine)
+        if places is None:
+            places = _recherches_en_vol[racine] = threading.BoundedSemaphore(MAX_RECHERCHES_EN_VOL)
+        return places
+
+
+async def _rechercher_dans_un_fil_demon(
+    racine: str,
+    pattern: str,
+    glob_filter: str,
+    max_results: int,
+    echeance: float,
+    arret: threading.Event,
+) -> _ResultatRecherche:
+    places = _places_de_recherche(racine)
+    if not places.acquire(blocking=False):
+        raise _RecherchesBloquees
+    boucle = asyncio.get_running_loop()
+    futur: asyncio.Future[_ResultatRecherche] = boucle.create_future()
+
+    def rendre(resultat: _ResultatRecherche | None, erreur: BaseException | None) -> None:
+        if futur.done():  # délai dépassé ou annulation : plus personne n'attend
+            return
+        if erreur is not None:
+            futur.set_exception(erreur)
+        elif resultat is not None:
+            futur.set_result(resultat)
+
+    def executer() -> None:
+        resultat: _ResultatRecherche | None = None
+        erreur: BaseException | None = None
+        try:
+            resultat = _rechercher(racine, pattern, glob_filter, max_results, echeance, arret)
+        except BaseException as exc:
+            erreur = exc
+        finally:
+            places.release()
+        try:
+            boucle.call_soon_threadsafe(rendre, resultat, erreur)
+        except RuntimeError:
+            pass  # boucle déjà fermée : l'application s'arrête
+
+    try:
+        threading.Thread(target=executer, name="recherche-agents", daemon=True).start()
+    except BaseException:
+        places.release()
+        raise
+    return await futur
 
 
 async def _stop_process(proc: asyncio.subprocess.Process) -> None:
@@ -120,9 +391,7 @@ class AgentToolExecutor:
         if not resolved.is_relative_to(self.source_path.resolve()):
             raise PermissionError(f"Chemin hors du source tree : {file_path}")
         lowered_parts = {part.lower() for part in requested.parts}
-        if ".git" in lowered_parts or requested.name.lower().startswith(".env"):
-            raise PermissionError(f"Fichier sensible interdit : {file_path}")
-        if requested.suffix.lower() in {".key", ".pem", ".p12", ".pfx"}:
+        if ".git" in lowered_parts or _nom_de_fichier_sensible(requested.name):
             raise PermissionError(f"Fichier sensible interdit : {file_path}")
         return resolved
 
@@ -176,121 +445,62 @@ class AgentToolExecutor:
         except Exception as e:
             return f"Erreur : {e}"
 
-    def _formes_de_racine(self) -> tuple[str, ...]:
-        """Préfixes de la racine du dépôt tels que grep peut les écrire (B-965).
-
-        Racine brute et résolue, séparateurs « / » et « \\ » (sous Windows, grep
-        peut écrire « C:/... » quand Python écrit « C:\\... »). Calculées une
-        fois par recherche, les plus longues d'abord.
-        """
-        if not self.source_path:
-            return ()
-        formes: set[str] = set()
-        for racine in (str(self.source_path), str(self.source_path.resolve())):
-            for variante in (racine, racine.replace("\\", "/"), racine.replace("/", "\\")):
-                base = variante.rstrip("/\\")
-                for separateur in ("/", "\\"):
-                    formes.add(base + separateur)
-        return tuple(sorted(formes, key=len, reverse=True))
-
-    @staticmethod
-    def _relatif_en_tete(ligne: str, formes: tuple[str, ...]) -> str:
-        """Retire la racine seulement quand elle PRÉFIXE la ligne (chemin de grep).
-
-        Septième revue Codex (R-2) : un remplacement dans toute la ligne réécrivait
-        aussi le code cité et les dossiers voisins (« /tmp/repository » devenait
-        « .sitory » pour la racine « /tmp/repo »).
-        """
-        for forme in formes:
-            if ligne.startswith(forme):
-                return ligne[len(forme):]
-        return ligne
-
-    @staticmethod
-    def _message_de_grep(stderr: str) -> str:
-        """Message d'erreur de grep sans chemin : « grep: <chemin>: <message> »
-        devient « <message> » (B-963, B-965). Aucun chemin n'atteint le modèle."""
-        messages = []
-        for ligne in stderr.splitlines():
-            ligne = ligne.strip()
-            if not ligne:
-                continue
-            if ligne.startswith("grep:"):
-                ligne = ligne[len("grep:"):].strip()
-            messages.append(ligne.rsplit(": ", 1)[-1])
-        return " ; ".join(dict.fromkeys(messages))
-
     async def search_codebase(
         self, pattern: str, glob_filter: str = "*.py", max_results: int = 20
     ) -> str:
-        """Recherche un pattern dans le code source via grep."""
+        """Recherche un motif (expression régulière) dans le code source.
+
+        Faite en Python, sans lancer grep : le résultat ne dépend plus du poste
+        (grep absent, ou grep de Git sous Windows qui développait `*.py`)."""
         if not self.source_path:
             return self._NO_SOURCE_MSG
         if glob_filter not in ALLOWED_SEARCH_GLOBS:
             return f"Erreur : filtre de recherche non autorisé : {glob_filter}"
-        proc: asyncio.subprocess.Process | None = None
+        arret = threading.Event()
         try:
-            proc = await asyncio.create_subprocess_exec(
-                "grep",
-                "-rn",
-                "--include",
-                glob_filter,
-                "-m",
-                str(max_results),
-                "--exclude-dir=.git",
-                "--exclude-dir=.venv",
-                "--exclude-dir=node_modules",
-                # B-969 : mêmes interdits que read_file (_validate_path), qui
-                # compare en minuscules : motifs insensibles à la casse. Placés
-                # APRÈS --include : pour GNU grep et BSD grep, la dernière règle
-                # qui correspond l'emporte (ugrep donne toujours la priorité à
-                # l'exclusion).
-                "--exclude=.[eE][nN][vV]*",
-                "--exclude=*.[kK][eE][yY]",
-                "--exclude=*.[pP][eE][mM]",
-                "--exclude=*.[pP]12",
-                "--exclude=*.[pP][fF][xX]",
-                # B-957 : -e, sinon un motif qui commence par « - » devient une option.
-                "-e",
-                pattern,
-                str(self.source_path),
-                stdout=asyncio.subprocess.PIPE,
-                stderr=asyncio.subprocess.PIPE,
-                env=environnement_outils_systeme(),  # B-949
-                start_new_session=os.name == "posix",
+            limite = max(1, min(int(max_results), MAX_RESULTATS_RECHERCHE))
+            echeance = time.monotonic() + DELAI_RECHERCHE_S
+            # Hors de la boucle asyncio (BUG-155). Le délai de wait_for couvre
+            # un disque qui ne répond plus ; l'échéance, un motif trop coûteux.
+            resultat = await asyncio.wait_for(
+                _rechercher_dans_un_fil_demon(
+                    str(self.source_path), pattern, glob_filter, limite, echeance, arret
+                ),
+                timeout=DELAI_RECHERCHE_S + 1.0,
             )
-            stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=15.0)
-            output = stdout.decode("utf-8", errors="replace").strip()
-            code = proc.returncode or 0
-            if code >= 2 and not output:
-                # B-962 : grep rend 1 quand rien ne correspond, 2 sur une erreur
-                # (motif invalide) ; une erreur n'est pas « Aucun résultat ».
-                # B-963, B-965 : sans chemin absolu dans ce que lit le modèle.
-                detail = self._message_de_grep(stderr.decode("utf-8", errors="replace"))[:300]
-                return f"Erreur : la recherche a échoué ({detail or f'code {code}'})"
-            if not output:
-                return f"Aucun résultat pour '{pattern}' dans {glob_filter}"
-            # Rendre les chemins relatifs
-            formes = self._formes_de_racine()
-            lines = []
-            for line in output.split("\n")[:max_results]:
-                line = self._relatif_en_tete(line, formes)
-                lines.append(line)
-            if code >= 2:
-                # B-963 : GNU grep sort en 2 dès qu'un fichier est illisible, même
-                # avec des correspondances ; on les rend, en le signalant.
-                lines.append("(certains fichiers n'ont pas pu être lus)")
-            return "\n".join(lines)
-        except asyncio.TimeoutError:
-            if proc is not None and proc.returncode is None:
-                await _stop_process(proc)
+        except (_DelaiDepasse, asyncio.TimeoutError):
             return "Erreur : timeout de recherche"
+        except _RecherchesBloquees:
+            return (
+                "Erreur : recherche refusée, des recherches précédentes sont encore "
+                "bloquées dans une lecture de fichier (disque lent ou injoignable)"
+            )
+        except regex.error as exc:
+            # B-962 : un motif invalide est une erreur, pas « Aucun résultat ».
+            # La syntaxe est celle de Python, plus celle de grep : le dire.
+            return (
+                f"Erreur : la recherche a échoué (motif invalide : {str(exc)[:200]} ; "
+                "syntaxe Python, échapper un caractère spécial littéral : \\( \\[ \\{ \\. \\+)"
+            )
         except asyncio.CancelledError:
-            if proc is not None and proc.returncode is None:
-                await _stop_process(proc)
             raise
         except Exception as e:
             return f"Erreur de recherche : {e}"
+        finally:
+            # Le fil s'arrête à son prochain point de contrôle (annulation, délai).
+            arret.set()
+
+        if not resultat.lignes and resultat.erreurs:
+            # B-963 : rien trouvé et des fichiers illisibles, c'est un échec.
+            detail = " ; ".join(dict.fromkeys(resultat.erreurs))[:300]
+            return f"Erreur : la recherche a échoué ({detail})"
+        lignes = resultat.lignes or [f"Aucun résultat pour '{pattern}' dans {glob_filter}"]
+        if resultat.lignes and resultat.erreurs:
+            # B-963 : les correspondances trouvées ailleurs sont rendues.
+            lignes.append("(certains fichiers n'ont pas pu être lus)")
+        if resultat.trop_volumineux:
+            lignes.append("(certains fichiers trop volumineux n'ont pas été parcourus)")
+        return "\n".join(lignes)
 
     # --- Outils d'écriture (Zézette uniquement) ---
 
@@ -571,7 +781,7 @@ THERESE_TOOLS = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "pattern": {"type": "string", "description": "Pattern à rechercher (regex)"},
+                    "pattern": {"type": "string", "description": "Pattern à rechercher (regex, syntaxe Python : échapper ( et [ littéraux)"},
                     "glob_filter": {
                         "type": "string",
                         "description": "Filtre de fichiers (défaut: *.py)",
@@ -642,7 +852,7 @@ ZEZETTE_TOOLS = [
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "pattern": {"type": "string", "description": "Pattern à rechercher (regex)"},
+                    "pattern": {"type": "string", "description": "Pattern à rechercher (regex, syntaxe Python : échapper ( et [ littéraux)"},
                     "glob_filter": {
                         "type": "string",
                         "description": "Filtre de fichiers (défaut: *.py)",

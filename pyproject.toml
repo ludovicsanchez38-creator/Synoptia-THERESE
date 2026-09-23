@@ -60,6 +60,8 @@ dependencies = [
     # Security - HTML sanitization (email signatures, user content)
     "nh3>=0.2.14",
     "sqlcipher3>=0.6.2",
+    # Recherche des agents : expressions régulières avec délai (déjà tiré par transformers)
+    "regex>=2024.11.6",
 ]
 
 [project.optional-dependencies]
