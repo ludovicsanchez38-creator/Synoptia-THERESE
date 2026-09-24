@@ -543,7 +543,7 @@ class TestLesProjetsAussi:
 
 
 class TestLeRagRetrouveLesSouvenirsDeSaConversation:
-    def test_le_filtre_accepte_le_perimetre_de_conversation(self):
+    def test_le_filtre_accepte_le_perimetre_de_conversation(self, monkeypatch):
         """Régression relevée en revue : un contact validé depuis la
         conversation était invisible du RAG dans cette même conversation.
 
@@ -553,7 +553,8 @@ class TestLeRagRetrouveLesSouvenirsDeSaConversation:
 
         from app.services import qdrant as module
 
-        module.embed_text = lambda _t: [0.0] * 768
+        # B-1184 : par monkeypatch, rétabli à la fin du test (règle B-597).
+        monkeypatch.setattr(module, "embed_text", lambda _t: [0.0] * 768)
         service = module.QdrantService.__new__(module.QdrantService)
         faux_client = MagicMock()
         faux_client.query_points.return_value = MagicMock(points=[])
@@ -640,12 +641,13 @@ class TestLeModeTransversalNOuvrePasLesAutresConversations:
             "le mode transversal ne voit pas les dossiers : il ment aussi"
         )
 
-    def test_le_filtre_vectoriel_cloisonne_aussi_le_mode_transversal(self):
+    def test_le_filtre_vectoriel_cloisonne_aussi_le_mode_transversal(self, monkeypatch):
         from unittest.mock import MagicMock
 
         from app.services import qdrant as module
 
-        module.embed_text = lambda _t: [0.0] * 768
+        # B-1184 : par monkeypatch, rétabli à la fin du test (règle B-597).
+        monkeypatch.setattr(module, "embed_text", lambda _t: [0.0] * 768)
         service = module.QdrantService.__new__(module.QdrantService)
         faux = MagicMock()
         faux.query_points.return_value = MagicMock(points=[])
