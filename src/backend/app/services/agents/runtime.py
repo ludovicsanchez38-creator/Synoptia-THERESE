@@ -236,7 +236,14 @@ class AgentRuntime:
 
         # Obtenir le service LLM (avec le bon modèle pour cet agent)
         model_id = self.model_override or self.config.default_model
-        llm_service = _get_llm_for_model(model_id)
+        try:
+            llm_service = _get_llm_for_model(model_id)
+        except ErreurPourEcran as exc:
+            # P-103 : un modèle local indisponible est un échec explicite ; il
+            # se dit dans le flux de l'agent au lieu de le couper (essaim) ou
+            # de partir en trace au gestionnaire général (route d'un agent).
+            yield AgentEvent(type="error", content=str(exc))
+            return
         if not llm_service:
             yield AgentEvent(
                 type="error",

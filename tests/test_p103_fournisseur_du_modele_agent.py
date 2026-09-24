@@ -104,3 +104,18 @@ async def test_un_choix_local_ancien_sans_fournisseur_est_relu_avec_lui(client, 
     assert (await client.put("/api/agents/config", json={"katia_model": "qwen3.5"})).status_code == 200
     config = (await client.get("/api/agents/config")).json()
     assert config["katia_model"] == "ollama:qwen3.5"
+
+
+async def test_l_echec_explicite_devient_un_evenement_d_erreur_de_l_agent(monkeypatch):
+    """Revue c12 : `_service_local` lève ErreurPourEcran ; dans `runtime.run`,
+    l'exception coupait le flux (essaim) ou partait au gestionnaire général
+    avec une trace. Elle devient un AgentEvent d'erreur, message intact."""
+    from app.services.agents.config import AgentConfig
+    from app.services.agents.runtime import AgentRuntime
+
+    monkeypatch.setattr(module_llm, "get_llm_service_for_provider", lambda *a, **k: None)
+    config = AgentConfig(id="katia", name="Katia", description="Test", system_prompt="Tu aides.", default_model="ollama:qwen3.5")
+    runtime = AgentRuntime(config, tool_executor=None, tools_schema=[], model_override="ollama:qwen3.5")
+    evenements = [e async for e in runtime.run("Bonjour")]
+    assert [e.type for e in evenements] == ["error"], evenements
+    assert "en ligne" in evenements[0].content
