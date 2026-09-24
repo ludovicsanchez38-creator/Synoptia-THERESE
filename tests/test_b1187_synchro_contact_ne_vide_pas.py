@@ -98,3 +98,16 @@ async def test_mesure_une_etape_hors_pipeline_venue_du_tableur(client):
     assert apres["stage"] in {
         "contact", "discovery", "proposition", "signature", "delivery", "active", "archive"
     }, f"étape stockée après synchro : {apres['stage']!r}"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("cellule", ["élevé", "1e999", "-40", "250"])
+async def test_un_score_illisible_ou_hors_bornes_ne_remplace_pas_le_score(client, cellule):
+    """B-1213 : suite de B-1187. Une cellule Score illisible remplaçait le
+    score enregistré par 50, et un score hors de 0 à 100 était recopié tel
+    quel (jumeau de B-1165)."""
+    cid = (await _fiche_pleine(client))["id"]
+    resp = await client.post("/api/crm/sync/import", json={"clients": [{"ID": cid, "Score": cellule}]})
+    assert resp.status_code == 200, resp.text
+    apres = (await client.get(f"/api/memory/contacts/{cid}")).json()
+    assert apres["score"] == 80, (cellule, apres["score"])

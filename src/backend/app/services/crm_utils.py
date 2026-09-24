@@ -9,6 +9,7 @@ Utilise par crm.py (router), crm_sync.py (service) et crm_import.py (service).
 
 import json
 import logging
+import math
 import unicodedata
 from datetime import UTC, datetime
 from typing import get_args
@@ -165,6 +166,20 @@ def parse_score(value: str | int | float | None, default: int = 50) -> int:
         return default
 
 
+def score_du_tableur(valeur: object) -> int | None:
+    """B-1213 : score lisible et compris entre 0 et 100, sinon None."""
+    texte = str(valeur).strip() if valeur is not None else ""
+    if not texte:
+        return None
+    try:
+        nombre = float(texte)
+    except ValueError:
+        return None
+    if not math.isfinite(nombre) or not 0 <= nombre <= 100:
+        return None
+    return int(nombre)
+
+
 def parse_budget(value: str | int | float | None) -> float | None:
     """Parse un budget depuis une valeur quelconque."""
     if value is None:
@@ -273,11 +288,9 @@ async def upsert_contact(
         full_name = row.get("Nom", "").strip()
     first_name, last_name = split_name(full_name)
 
-    # Parser le score
-    score_raw = row.get("Score", "50")
-    if isinstance(score_raw, str):
-        score_raw = score_raw.strip() if score_raw else "50"
-    score = parse_score(score_raw)
+    # B-1213 : un score illisible ou hors de 0 à 100 ne vaut rien (jumeau de
+    # B-1165) ; il ne remplace pas le score enregistré.
+    score_lu = score_du_tableur(row.get("Score"))
 
     # Parser les tags
     tags_raw = row.get("Tags", "")
@@ -307,7 +320,6 @@ async def upsert_contact(
     # une étape inconnue ne remplace pas la valeur enregistrée.
     etape_cellule = (_get("Stage") or "").lower()
     etape = etape_cellule if etape_cellule in ETAPES_PIPELINE else None
-    score_fourni = bool(str(row.get("Score") or "").strip())
 
     if existing:
         if full_name:
@@ -320,8 +332,8 @@ async def upsert_contact(
         existing.email = courriel
         if etape:
             existing.stage = etape
-        if score_fourni:
-            existing.score = score
+        if score_lu is not None:
+            existing.score = score_lu
         if tags_json is not None:
             existing.tags = tags_json
         existing.updated_at = datetime.now(UTC)
@@ -336,7 +348,7 @@ async def upsert_contact(
             phone=_get("Tel"),
             source=_get("Source"),
             stage=etape or "contact",
-            score=score,
+            score=score_lu if score_lu is not None else 50,
             tags=tags_json,
             scope="global",
         )
