@@ -15,10 +15,12 @@ interface ModeSelectorProps {
   mode: BoardMode;
   onChange: (mode: BoardMode) => void;
   ollamaAvailable: boolean;
+  /** B-1215 : pourquoi le mode souverain est grisé, quand ce n'est pas Ollama lui-même. */
+  raisonIndisponible?: string;
   onRefreshOllama?: () => void;
 }
 
-export function ModeSelector({ mode, onChange, ollamaAvailable, onRefreshOllama }: ModeSelectorProps) {
+export function ModeSelector({ mode, onChange, ollamaAvailable, raisonIndisponible, onRefreshOllama }: ModeSelectorProps) {
   return (
     <div className="flex items-center gap-2">
       <button
@@ -49,7 +51,7 @@ export function ModeSelector({ mode, onChange, ollamaAvailable, onRefreshOllama 
       <button
         onClick={() => ollamaAvailable && onChange('sovereign')}
         disabled={!ollamaAvailable}
-        title={ollamaAvailable ? 'Mode souverain - Ollama local' : 'Ollama non disponible'}
+        title={ollamaAvailable ? 'Mode souverain - Ollama local' : raisonIndisponible ?? 'Ollama non disponible'}
         className={cn(
           'relative flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all',
           !ollamaAvailable && 'opacity-40 cursor-not-allowed',

@@ -129,7 +129,11 @@ describe('B-1172 : Board souverain et modèles Ollama Cloud', () => {
       expect({
         souverainActivable: !(souverain as HTMLButtonElement).disabled,
         titre: souverain.getAttribute('title'),
-      }).toEqual({ souverainActivable: false, titre: 'Ollama non disponible' });
+      }).toEqual({
+        souverainActivable: false,
+        // B-1215 : Ollama tourne ; ce qui manque, c'est un modèle local.
+        titre: 'Aucun modèle local installé : les modèles Ollama Cloud partent en ligne',
+      });
     });
     fireEvent.click(souverain);
     fireEvent.change(screen.getByLabelText('Question soumise au Board'), {

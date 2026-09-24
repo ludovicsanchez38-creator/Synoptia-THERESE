@@ -120,6 +120,8 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
   const [ollamaModels, setOllamaModels] = useState<Array<{ name: string; size: number; paramSize?: string }>>([]);
   const [selectedModels, setSelectedModels] = useState<Record<string, string>>({});
   const [ollamaAvailable, setOllamaAvailable] = useState(false);
+  // B-1215 : Ollama répond mais n'a que des modèles Ollama Cloud.
+  const [seulementDesModelesCloud, setSeulementDesModelesCloud] = useState(false);
   const [confirmationOpen, setConfirmationOpen] = useState(false);
   const [runError, setRunError] = useState<string | null>(null);
   // B-640 : une demande de fermeture pendant la délibération attend confirmation.
@@ -143,6 +145,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
           .map((m) => ({ name: m.name, size: m.size ?? 0 }))
           .sort((a, b) => a.size - b.size);
         setOllamaAvailable(statut.available && modeles.length > 0);
+        setSeulementDesModelesCloud(statut.available && modeles.length === 0 && (statut.models ?? []).length > 0);
         setOllamaModels(modeles);
       })
       .catch(() => setOllamaAvailable(false));
@@ -581,6 +584,11 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                         mode={mode}
                         onChange={setMode}
                         ollamaAvailable={ollamaAvailable}
+                        raisonIndisponible={
+                          seulementDesModelesCloud
+                            ? 'Aucun modèle local installé : les modèles Ollama Cloud partent en ligne'
+                            : undefined
+                        }
                         onRefreshOllama={checkOllama}
                       />
                     </div>
