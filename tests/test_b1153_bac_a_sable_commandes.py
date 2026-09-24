@@ -131,7 +131,7 @@ async def test_le_depot_et_le_dossier_temporaire_restent_ecrivables(depot: Path,
     sortie = await _pytest(depot)
 
     assert sortie.startswith("Code retour : 0"), sortie
-    assert (depot / "ecrit.txt").read_text() == "ok"
+    assert (depot / "ecrit.txt").read_text(encoding="utf-8") == "ok"
     assert dossiers and not dossiers[0].exists(), "le dossier temporaire de la commande doit être retiré"
 
 
