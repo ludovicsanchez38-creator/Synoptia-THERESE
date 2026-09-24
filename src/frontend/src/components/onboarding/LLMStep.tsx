@@ -255,8 +255,10 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
       // fait attendre 3 min 26 s au testeur pour une réponse dégradée.
       // B-1156 : jamais un modèle Ollama Cloud par défaut sous « 100% local ».
       const locaux = ollamaModels.filter((m) => !estModeleOllamaCloud(m.nom));
-      const capable = locaux.find((m) => m.gereLesOutils);
-      defaultModel = (capable ?? locaux[0] ?? ollamaModels[0]).nom;
+      // B-1173 : sans modèle local capable, rien n'est présélectionné (ni le
+      // modèle grisé, ni le modèle Cloud) ; l'utilisateur choisit lui-même.
+      setSelectedModel(locaux.find((m) => m.gereLesOutils)?.nom ?? '');
+      return;
     }
 
     if (defaultModel) {
@@ -305,8 +307,8 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
   const canContinue = selectedProvider === 'ollama'
     ? Boolean(
         ollamaStatus?.available
-        && ollamaModels.some((m) => m.gereLesOutils)
-        && selectedModel,
+        // B-1173 : c'est le modèle CHOISI qui doit savoir agir.
+        && ollamaModels.some((m) => m.nom === selectedModel && m.gereLesOutils),
       )
     : (hasApiKey || saved)
       // L'adresse Qwen n'est pas optionnelle : continuer sans elle livrerait
@@ -538,6 +540,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
             }}
             className="w-full px-4 py-2.5 bg-background/60 border border-border/50 rounded-md text-sm text-text focus:outline-none focus:ring-2 focus:ring-ring transition-colors"
           >
+            {selectedModel === '' && <option value="" disabled>Choisis un modèle</option>}
             {availableModels.map((model) => (
               <option key={model.id} value={model.id} disabled={model.indisponible}>
                 {model.name} {model.badge ? `(${model.badge})` : ''}
