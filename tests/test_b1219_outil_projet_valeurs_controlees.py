@@ -48,3 +48,23 @@ async def test_le_tableur_n_enregistre_pas_un_budget_infini(client):
     assert liste.status_code == 200, liste.text
     projet = next(p for p in liste.json() if p["id"] == "p-b1219")
     assert projet["budget"] is None, projet["budget"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("statut, attendu", [("terminé", "completed"), ("En pause", "on_hold"), ("annulé", "cancelled")])
+async def test_un_statut_francais_est_traduit_comme_au_tableur(db_session, statut, attendu):
+    """B-1232 : B-1219 remplaçait en silence tout statut inconnu par « active »,
+    y compris « terminé », que la table du tableur sait traduire."""
+    resultat = json.loads(await execute_create_project({"name": f"Chantier {statut}", "status": statut}, db_session))
+    projet = (await db_session.execute(select(Project).where(Project.id == resultat["project_id"]))).scalar_one()
+    assert projet.status == attendu, projet.status
+
+
+@pytest.mark.asyncio
+async def test_une_valeur_ecartee_est_dite_au_modele(db_session):
+    """B-1232 : un statut ou un budget écarté l'est sans le dire ; le résultat
+    de l'outil le signale pour que le modèle ne l'annonce pas comme retenu."""
+    resultat = json.loads(await execute_create_project(
+        {"name": "Chantier flou", "status": "gelé", "budget": "beaucoup"}, db_session,
+    ))
+    assert "ecarte" in resultat or "écarté" in json.dumps(resultat, ensure_ascii=False), resultat

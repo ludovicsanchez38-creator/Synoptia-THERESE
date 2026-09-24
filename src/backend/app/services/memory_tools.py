@@ -236,12 +236,19 @@ MEMORY_TOOLS = [
 # Deduplication helpers (anti creation en masse)
 # ============================================================
 
-def _statut_de_projet(valeur: Any) -> str:
-    """B-1219 : un statut hors des quatre connus rendait le projet invisible du
-    tableau (et null tombait sur la colonne NOT NULL) ; il prend le défaut."""
-    from app.services.crm_utils import VALID_PROJECT_STATUSES
+def _statut_de_projet(valeur: Any) -> str | None:
+    """B-1219, B-1232 : statut connu, ou traduit comme au tableur (« terminé »
+    devient « completed ») ; None s'il reste inconnu (l'appelant prend le
+    défaut et le dit). Un statut hors des quatre rendait le projet invisible."""
+    from app.services.crm_utils import PROJECT_STATUS_MAP, VALID_PROJECT_STATUSES, cle_de_statut
 
-    return valeur if isinstance(valeur, str) and valeur in VALID_PROJECT_STATUSES else "active"
+    if not isinstance(valeur, str):
+        return None
+    if valeur in VALID_PROJECT_STATUSES:
+        return valeur
+    cle = cle_de_statut(valeur)
+    traduit = PROJECT_STATUS_MAP.get(cle, cle)
+    return traduit if traduit in VALID_PROJECT_STATUSES else None
 
 
 def _budget_de_projet(valeur: Any) -> float | None:
@@ -706,12 +713,21 @@ async def execute_create_project(
         _perimetre_creation = _perimetre_de_creation(
             scope, scope_id, conversation_id
         )
+        # B-1232 : ce qui est écarté est dit au modèle, qui ne doit pas
+        # l'annoncer comme retenu.
+        statut_retenu = _statut_de_projet(arguments.get("status"))
+        budget_retenu = _budget_de_projet(arguments.get("budget"))
+        ecarte: list[str] = []
+        if arguments.get("status") not in (None, "") and statut_retenu is None:
+            ecarte.append(f"statut « {arguments.get('status')} » inconnu, projet créé « active »")
+        if arguments.get("budget") not in (None, "") and budget_retenu is None:
+            ecarte.append(f"budget « {arguments.get('budget')} » illisible, non enregistré")
         async with _ctx() as session_geste:
             project = Project(
                 name=name,
                 description=arguments.get("description"),
-                status=_statut_de_projet(arguments.get("status")),
-                budget=_budget_de_projet(arguments.get("budget")),
+                status=statut_retenu or "active",
+                budget=budget_retenu,
                 # Même règle que les contacts.
                 scope=_perimetre_creation[0],
                 scope_id=_perimetre_creation[1],
@@ -760,12 +776,15 @@ async def execute_create_project(
             await session_geste.commit()
 
             logger.info(f"Created project via tool: {project.name} ({project.id})")
-            return json.dumps({
+            reponse: dict[str, Any] = {
                 "success": True,
                 "project_id": project.id,
                 "name": project.name,
                 "message": f"Projet '{project.name}' créé avec succès.",
-            }, ensure_ascii=False)
+            }
+            if ecarte:
+                reponse["ecarte"] = ecarte
+            return json.dumps(reponse, ensure_ascii=False)
 
     try:
         return await _proteger_le_geste(_geste_projet())
