@@ -1305,6 +1305,14 @@ def _prune_pre_restore_backups(backup_dir: Path, keep: str) -> None:
         logger.exception("Purge des anciennes archives de sécurité en échec")
 
 
+# B-1179 : dit quand la remise en état a échoué, au lieu de la promettre.
+RETOUR_ARRIERE_REUSSI = "Données restaurées à l'état précédent."
+ECHEC_DU_RETOUR_ARRIERE = (
+    "Le retour à l'état précédent a aussi échoué : des données ont pu être "
+    "perdues. Vérifie tes sauvegardes avant toute nouvelle tentative."
+)
+
+
 def _finalize_safety_archive(
     backup_dir: Path,
     name: str,
@@ -1426,18 +1434,22 @@ async def restore_backup(
             if p.exists():
                 shutil.rmtree(p, ignore_errors=True)
 
-    def _rollback() -> None:
+    def _rollback() -> bool:
         # Rollback INTÉGRAL depuis l'archive de sécurité (état d'avant restore).
         # _wipe_volatile_dirs() a pu détruire les artefacts avant qu'une erreur
         # (corruption OU archive piégée) ne survienne : on remet tout.
+        # B-1179 : rend False si la remise en état a elle-même échoué, pour que
+        # la réponse ne promette pas des données restaurées.
         try:
             _wipe_volatile_dirs()
             with tarfile.open(safety_archive, "r:gz") as tar:
                 _vider_les_elements_couverts(data_dir, elements_couverts(tar))
                 _safe_extractall(tar, data_dir)
             (data_dir / MANIFESTE_SAUVEGARDE).unlink(missing_ok=True)
+            return True
         except Exception:
             logger.exception("Rollback du restore en échec")
+            return False
 
     try:
         await maintenance_mode.begin()
@@ -1479,10 +1491,12 @@ async def restore_backup(
                 shutil.copy2(legacy_db, settings.db_path)
         except HTTPException as exc:
             # Archive non sûre (path traversal) détectée APRÈS le wipe → rollback.
-            _rollback()
+            retabli = _rollback()
             kept = _finalize_safety_archive(
                 backup_dir, current_backup_name, safety_archive, password, safety_included
             )
+            if not retabli and isinstance(exc.detail, str):
+                exc.detail = f"{exc.detail} {ECHEC_DU_RETOUR_ARRIERE}"
             if kept and isinstance(exc.detail, str):
                 # F2 : dire aussi sur ce chemin que l'état d'avant tentative est
                 # conservé, chiffré avec la passphrase qui vient d'être saisie.
@@ -1492,7 +1506,7 @@ async def restore_backup(
                 )
             raise
         except Exception as e:
-            _rollback()
+            retabli = _rollback()
             kept = _finalize_safety_archive(
                 backup_dir, current_backup_name, safety_archive, password, safety_included
             )
@@ -1504,7 +1518,10 @@ async def restore_backup(
             )
             raise HTTPException(
                 status_code=500,
-                detail=f"{message_pour_ecran(e, ou='pendant la restauration')} Données restaurées à l'état précédent.{suffix}",
+                detail=(
+                    f"{message_pour_ecran(e, ou='pendant la restauration')} "
+                    f"{RETOUR_ARRIERE_REUSSI if retabli else ECHEC_DU_RETOUR_ARRIERE}{suffix}"
+                ),
             ) from e
     finally:
         maintenance_mode.end()
