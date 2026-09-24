@@ -948,12 +948,14 @@ async def delete_contact(
         await session.delete(act)
     cascade_deleted["activities"] = len(activities)
 
+    projets_supprimes: list[str] = []
     if cascade:
         # Delete related projects (E3-06)
         projects_result = await session.execute(
             select(Project).where(Project.contact_id == contact_id)
         )
         projects = projects_result.scalars().all()
+        projets_supprimes = [project.id for project in projects]
         for project in projects:
             counts = await _nettoyer_et_supprimer_projet(session, project)
             for key, count in counts.items():
@@ -975,6 +977,11 @@ async def delete_contact(
     contact_name = contact.display_name
     await session.delete(contact)
     await session.commit()
+
+    # B-1178 : comme delete_project (B-021), le dépôt disque des projets
+    # supprimés en cascade part après le commit, jamais avant.
+    for project_id in projets_supprimes:
+        await _purger_le_depot_du_dossier(project_id)
 
     # Remove from Qdrant
     await _delete_embedding(contact_id)
