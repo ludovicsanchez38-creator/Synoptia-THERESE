@@ -19,7 +19,10 @@ from app.services.agents.git_service import GitService
 
 
 def _git(depot: Path, *args: str, env: dict | None = None) -> str:
-    return subprocess.run(["git", "-C", str(depot), *args], check=True, capture_output=True, text=True, env=env).stdout.strip()
+    # B-1201 : git écrit en UTF-8 ; sous Windows, text=True décodait en cp1252.
+    return subprocess.run(
+        ["git", "-C", str(depot), *args], check=True, capture_output=True, text=True, encoding="utf-8", env=env,
+    ).stdout.strip()
 
 
 @pytest.fixture
