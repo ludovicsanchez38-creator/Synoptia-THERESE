@@ -552,9 +552,12 @@ def _oublier_les_cles_en_memoire() -> None:
     garde la clé dans sa configuration, vider le seul cache ne suffit pas.
     """
     from app.services.llm import invalidate_api_key_cache, invalidate_llm_service
+    from app.services.web_search import set_brave_api_key
 
     invalidate_api_key_cache()
     invalidate_llm_service()
+    # La clé Brave vit dans son propre cache (B-052, DELETE /api-key).
+    set_brave_api_key(None)
 
 
 @router.delete("/all")

@@ -370,6 +370,34 @@ class TestDataDeletion:
         assert service.config.api_key != "sk-ant-purge-b1124"
 
     @pytest.mark.asyncio
+    async def test_delete_all_n_oublie_ni_la_cle_brave_ni_l_extracteur(self, client: AsyncClient, monkeypatch):
+        """B-1124, troisième temps (lecteur M1) : la clé Brave vit dans son
+        propre cache (web_search), et l'extracteur d'entités gardait l'ancien
+        service des modèles. Après la purge, la recherche web et l'extraction
+        partaient encore avec des clés effacées.
+        """
+        from app.services import entity_extractor as module_extracteur
+        from app.services import llm, web_search
+        from app.services.providers.base import LLMConfig, LLMProvider
+
+        web_search.set_brave_api_key("brave-purge-b1124")
+        try:
+            ancien = llm.LLMService(LLMConfig(provider=LLMProvider.ANTHROPIC, model="claude-test", api_key="sk-ant-purge-b1124"))
+            monkeypatch.setattr(llm, "_llm_service", ancien)
+            extracteur = module_extracteur.get_entity_extractor()
+            assert extracteur._get_llm() is ancien
+
+            response = await client.delete("/api/data/all?confirm=true")
+            assert response.status_code == 200
+
+            assert web_search._brave_api_key_cache is None, "la clé Brave effacée reste en cache"
+            assert module_extracteur.get_entity_extractor()._get_llm() is not ancien, (
+                "l'extracteur d'entités garde le service qui porte la clé effacée"
+            )
+        finally:
+            web_search.set_brave_api_key(None)
+
+    @pytest.mark.asyncio
     async def test_la_restauration_ne_laisse_pas_l_ancienne_cle_au_service(self, monkeypatch):
         """B-1124 : même trou à la restauration, qui ne vidait que le cache (B-023)."""
         from app.routers import data as module_data

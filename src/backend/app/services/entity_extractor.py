@@ -93,12 +93,14 @@ class EntityExtractor:
     MIN_CONFIDENCE = 0.6
 
     def __init__(self):
-        self._llm = None
+        pass
 
     def _get_llm(self):
-        if self._llm is None:
-            self._llm = get_llm_service()
-        return self._llm
+        # B-1124 : relu à chaque appel. Gardé ici, le service survivait à la
+        # suppression d'une clé, à la purge et à la restauration, et
+        # l'extraction repartait avec une clé effacée. get_llm_service() est
+        # déjà un singleton : relire ne coûte rien.
+        return get_llm_service()
 
     async def extract_entities(
         self,
