@@ -847,15 +847,20 @@ class CRMImportService:
                         contact_id = None  # Don't link to non-existent contact
 
                 # Parse status
-                raw_status = str(mapped.get("status", "active")).lower().strip()
-                status = status_map.get(raw_status, "active")
+                raw_status = str(mapped.get("status") or "").lower().strip()
+                statut_reconnu = status_map.get(raw_status)
+                status = statut_reconnu or "active"
 
                 if existing and update_existing:
                     existing.name = mapped.get("name") or existing.name
                     if mapped.get("description"):
                         existing.description = mapped["description"]
-                    existing.contact_id = contact_id
-                    existing.status = status
+                    # B-1083 : une colonne absente, vide ou inconnue déliait le
+                    # projet de son client et le repassait en « active ».
+                    if contact_id:
+                        existing.contact_id = contact_id
+                    if statut_reconnu:
+                        existing.status = statut_reconnu
                     if mapped.get("budget"):
                         existing.budget = _parse_value(mapped["budget"], "float")
                     if mapped.get("notes"):
