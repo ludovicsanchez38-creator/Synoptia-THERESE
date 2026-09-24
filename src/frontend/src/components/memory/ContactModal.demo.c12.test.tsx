@@ -4,7 +4,7 @@
  * vraie fiche, et l'adresse, les notes et les tags restaient en clair.
  * La fiche se consulte en lecture seule, comme ProjectModal (B-939).
  */
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Contact } from '../../services/api';
 import { maskContact } from '../../lib/demoMask';
@@ -51,7 +51,26 @@ describe('B-1080 : ContactModal en mode démonstration', () => {
     expect(enregistrer).toBeDisabled();
     await act(async () => { fireEvent.click(enregistrer); });
     expect(updateContact).not.toHaveBeenCalled();
-    expect(screen.getByLabelText('Prénom')).toBeDisabled();
+    // Audit de release 0.75 : lecture seule, pas désactivé. Un champ désactivé
+    // ne reçoit pas le focus d'ouverture, et la fenêtre n'est pas annoncée.
+    const prenom = screen.getByLabelText('Prénom');
+    expect(prenom).not.toBeDisabled();
+    expect(prenom).toHaveAttribute('readonly');
+    fireEvent.change(prenom, { target: { value: 'Autre' } });
+    expect(prenom).toHaveValue(MASQUE.first_name as string);
+  });
+
+  it('le focus d’ouverture entre dans la fiche en lecture seule', async () => {
+    useDemoStore.setState({ enabled: true });
+    ouvrir(MASQUE);
+    const dialogue = screen.getByRole('dialog');
+    await waitFor(() => expect(dialogue.contains(document.activeElement)).toBe(true));
+  });
+
+  it('un nouveau contact en démo ne se dit pas « aperçu masqué »', () => {
+    useDemoStore.setState({ enabled: true });
+    ouvrir(null);
+    expect(screen.queryByText('Aperçu masqué en lecture seule')).toBeNull();
   });
 
   it('ne supprime pas la fiche depuis l’aperçu masqué', () => {

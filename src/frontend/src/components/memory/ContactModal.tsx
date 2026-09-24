@@ -201,7 +201,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
                     {demoEnabled && isEditing ? 'Consulter le contact' : isEditing ? 'Modifier le contact' : 'Nouveau contact'}
                   </h2>
                   <p className="text-sm text-text-muted">
-                    {demoEnabled ? 'Aperçu masqué en lecture seule' : isEditing ? 'Modifie les informations du contact' : 'Ajoute un nouveau contact à ta mémoire'}
+                    {demoEnabled && isEditing ? 'Aperçu masqué en lecture seule' : isEditing ? 'Modifie les informations du contact' : 'Ajoute un nouveau contact à ta mémoire'}
                   </p>
                 </div>
               </div>
@@ -217,11 +217,10 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
                   Désactive le mode démo dans les paramètres pour {isEditing ? 'modifier ce contact' : 'créer un contact'}.
                 </Alerte>
               )}
-              <fieldset disabled={demoEnabled} className="space-y-4">
               {/* Name row */}
               <div className="grid grid-cols-2 gap-4">
                 <FormField label="Prénom" htmlFor="contactmodal-prenom">
-                  <Input id="contactmodal-prenom" data-dialog-autofocus
+                  <Input id="contactmodal-prenom" readOnly={demoEnabled} data-dialog-autofocus
                     type="text"
                     value={formData.first_name}
                     onChange={(e) => handleChange('first_name', e.target.value)}
@@ -229,7 +228,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
                   />
                 </FormField>
                 <FormField label="Nom" htmlFor="contactmodal-nom">
-                  <Input id="contactmodal-nom"
+                  <Input id="contactmodal-nom" readOnly={demoEnabled}
                     type="text"
                     value={formData.last_name}
                     onChange={(e) => handleChange('last_name', e.target.value)}
@@ -240,7 +239,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
 
               {/* Company */}
               <FormField label="Entreprise" htmlFor="contactmodal-entreprise">
-                <Input id="contactmodal-entreprise"
+                <Input id="contactmodal-entreprise" readOnly={demoEnabled}
                   type="text"
                   value={formData.company}
                   onChange={(e) => handleChange('company', e.target.value)}
@@ -250,7 +249,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
 
               {/* Email */}
               <FormField label="Email" htmlFor="contactmodal-email">
-                <Input id="contactmodal-email"
+                <Input id="contactmodal-email" readOnly={demoEnabled}
                   type="email"
                   value={formData.email}
                   onChange={(e) => handleChange('email', e.target.value)}
@@ -260,7 +259,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
 
               {/* Phone */}
               <FormField label="Téléphone" htmlFor="contactmodal-telephone">
-                <Input id="contactmodal-telephone"
+                <Input id="contactmodal-telephone" readOnly={demoEnabled}
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => handleChange('phone', e.target.value)}
@@ -272,7 +271,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
                   vide. Le champ existait en base et n'était saisissable nulle
                   part. */}
               <FormField label="Adresse" htmlFor="contactmodal-adresse">
-                <Input id="contactmodal-adresse"
+                <Input id="contactmodal-adresse" readOnly={demoEnabled}
                   type="text"
                   value={affiche('address')}
                   onChange={(e) => handleChange('address', e.target.value)}
@@ -282,7 +281,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
 
               {/* Notes */}
               <FormField label="Notes" htmlFor="contactmodal-notes">
-                <Textarea id="contactmodal-notes"
+                <Textarea id="contactmodal-notes" readOnly={demoEnabled}
                   value={affiche('notes')}
                   onChange={(e) => handleChange('notes', e.target.value)}
                   placeholder="Informations complémentaires..."
@@ -292,14 +291,13 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
 
               {/* Tags */}
               <FormField label="Tags (séparés par des virgules)" htmlFor="contactmodal-tags-separes-par-des-virgule">
-                <Input id="contactmodal-tags-separes-par-des-virgule"
+                <Input id="contactmodal-tags-separes-par-des-virgule" readOnly={demoEnabled}
                   type="text"
                   value={affiche('tags')}
                   onChange={(e) => handleChange('tags', e.target.value)}
                   placeholder="client, prospect, partenaire"
                 />
               </FormField>
-              </fieldset>
 
               {/* Error */}
               {error && (
