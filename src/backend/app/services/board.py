@@ -33,6 +33,7 @@ from app.services.llm import (
 )
 from app.services.llm import Message as LLMMessage
 from app.services.modeles_catalogue import frontier, max_tokens_recommande
+from app.services.ollama_capabilites import est_modele_ollama_cloud
 from app.services.user_profile import get_cached_profile
 from app.services.web_search import RechercheWebRefusee, WebSearchService
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -259,6 +260,14 @@ def _get_user_context() -> str:
     return ""
 
 
+
+def _refus_modele_cloud(modele: str) -> str:
+    """B-1156 : message du mode souverain face à un modèle Ollama Cloud."""
+    return (
+        f"Mode souverain : « {modele} » est un modèle Ollama Cloud, traité en ligne "
+        "par ollama.com. Choisis un modèle installé sur ton ordinateur."
+    )
+
 class BoardService:
     """Service pour les délibérations du board."""
 
@@ -446,6 +455,14 @@ class BoardService:
             # --- MODE SOUVERAIN : séquentiel via Ollama ---
             logger.info("Board en mode souverain (Ollama séquentiel)")
 
+            # B-1156 : un modèle Ollama Cloud est traité en ligne par
+            # ollama.com. Demandé explicitement (conseiller ou synthèse), il
+            # est refusé AVANT qu'un conseiller ne parte ; choisi dans le
+            # chat, il cède la place au premier modèle local installé.
+            for modele_demande in (request.ollama_models or {}).values():
+                if modele_demande and est_modele_ollama_cloud(modele_demande):
+                    raise ErreurPourEcran(_refus_modele_cloud(modele_demande))
+
             # Déterminer le modèle Ollama par défaut (celui sélectionné par l'utilisateur).
             # BUG-098 : ne plus coder "mistral-nemo:12b" en dur. Si l'utilisateur n'a
             # pas choisi de modèle, détecter le 1er modèle conversationnel installé
@@ -453,7 +470,11 @@ class BoardService:
             default_ollama_model = None
             try:
                 user_llm = get_llm_service()
-                if user_llm and user_llm.config.provider == LLMProvider.OLLAMA:
+                if (
+                    user_llm
+                    and user_llm.config.provider == LLMProvider.OLLAMA
+                    and not est_modele_ollama_cloud(user_llm.config.model or "")
+                ):
                     default_ollama_model = user_llm.config.model
             except Exception as e:
                 logger.debug("LLM service non disponible pour Board: %s", e)
@@ -473,6 +494,8 @@ class BoardService:
                     raise ErreurPourEcran(
                         "Mode souverain indisponible : aucun service Ollama local utilisable."
                     )
+                if est_modele_ollama_cloud(ollama_llm.config.model or ""):
+                    raise ErreurPourEcran(_refus_modele_cloud(ollama_llm.config.model))
                 llm_service = ollama_llm
                 actual_provider = f"ollama:{ollama_llm.config.model}"
 
@@ -764,6 +787,8 @@ class BoardService:
                 raise ErreurPourEcran(
                     "Mode souverain indisponible : la synthèse Ollama locale ne peut pas démarrer."
                 )
+            if est_modele_ollama_cloud(ollama_synth.config.model or ""):
+                raise ErreurPourEcran(_refus_modele_cloud(ollama_synth.config.model))
             synthesis_llm = ollama_synth
 
         synthesis = await self._generate_synthesis(request.question, opinions, synthesis_llm)

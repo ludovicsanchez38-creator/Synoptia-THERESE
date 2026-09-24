@@ -335,9 +335,13 @@ def detect_default_ollama_model(
 
         resp = httpx.get(f"{adresse}/api/tags", timeout=2.0)
         if resp.status_code == 200:
+            from app.services.ollama_capabilites import est_modele_ollama_cloud
+
             for model in resp.json().get("models", []):
                 name = model.get("name", "")
-                if _is_ollama_chat_model(name):
+                # B-1156 : un modèle Ollama Cloud figure parmi les modèles
+                # installés, mais ses requêtes partent chez ollama.com.
+                if _is_ollama_chat_model(name) and not est_modele_ollama_cloud(name):
                     return name
     except Exception as e:  # noqa: BLE001 - détection best-effort, jamais bloquante
         logger.debug(f"Détection du modèle Ollama installé impossible: {e}")
