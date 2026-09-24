@@ -95,6 +95,17 @@ class ErreurPourEcran(RuntimeError):
     """
 
 
+class ErreurDuModele(ErreurPourEcran):
+    """Le modèle n'a produit aucun texte ; le message est celui du fournisseur.
+
+    B-1033 : les fournisseurs rédigent leurs pannes pour l'écran (frontière
+    0.48 : « Impossible de se connecter à Ollama… Vérifie qu'Ollama est
+    lancé »). Jetées dans un RuntimeError, elles devenaient « redémarre
+    l'application », qui ne règle rien. Une panne du modèle n'est pas une
+    erreur interne : les routes la rendent en 503.
+    """
+
+
 def message_pour_ecran(exc: BaseException, ou: str | None = None) -> str:
     """La frontière d'erreurs utilisateur (lot C, 0.48).
 

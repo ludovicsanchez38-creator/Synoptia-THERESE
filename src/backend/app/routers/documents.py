@@ -48,7 +48,7 @@ from app.services.document_orchestrator import (
     parse_draft_output,
     parse_outline_response,
 )
-from app.services.error_handler import message_pour_ecran
+from app.services.error_handler import ErreurDuModele, message_pour_ecran
 from app.services.llm import Message, get_llm_service
 from app.services.token_tracker import enregistrer_usage_llm
 from fastapi import APIRouter, Depends, HTTPException
@@ -824,6 +824,13 @@ async def generate_outline(
         raise HTTPException(status_code=502, detail="Trame illisible, réessaie.") from None
     except TrameOccupee:
         raise HTTPException(status_code=409, detail=_MESSAGE_SECTIONS_REDIGEES) from None
+    except ErreurDuModele as exc:
+        # B-1033 : un modèle injoignable ou une clé manquante n'est pas une
+        # erreur interne. Pas de trace, un 503 et la cause actionnable.
+        logger.warning("Trame non générée, modèle indisponible : %s", exc)
+        raise HTTPException(
+            status_code=503, detail=f"La trame n'a pas pu être générée. {exc}"
+        ) from None
     except asyncio.CancelledError:
         if porteuse.cancelled():
             # La porteuse a été annulée avant son premier pas : c'est une

@@ -16,6 +16,7 @@ from typing import Any, AsyncGenerator
 
 from app.services.circuit_breaker import get_circuit_breaker
 from app.services.context import ContextWindow
+from app.services.error_handler import ErreurDuModele
 
 # Re-export types for backward compatibility
 from app.services.providers import (
@@ -1139,7 +1140,10 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
 
         if not content_parts and errors:
             cb.record_failure(provider_name, errors[0][:200])
-            raise RuntimeError("Erreur LLM lors de la génération : " + "; ".join(errors))
+            # B-1033 : le message du fournisseur est déjà écrit pour l'écran ;
+            # les marqueurs internes (« __ollama_… ») n'y vont jamais.
+            lisibles = [e for e in errors if not e.startswith("__")]
+            raise ErreurDuModele(lisibles[0] if lisibles else "Le modèle n'a produit aucune réponse.")
 
         cb.record_success(provider_name)
         return "".join(content_parts)
