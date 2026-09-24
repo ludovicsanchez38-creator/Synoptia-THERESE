@@ -543,6 +543,18 @@ async def export_conversations(
 # ============================================================
 
 
+def _oublier_les_cles_en_memoire() -> None:
+    """Vide le cache des clés API et le service des modèles (B-023, B-1124).
+
+    Même geste que POST et DELETE /api/config/api-key : le service déjà créé
+    garde la clé dans sa configuration, vider le seul cache ne suffit pas.
+    """
+    from app.services.llm import invalidate_api_key_cache, invalidate_llm_service
+
+    invalidate_api_key_cache()
+    invalidate_llm_service()
+
+
 @router.delete("/all")
 async def delete_all_data(
     confirm: bool = False,
@@ -632,11 +644,9 @@ async def delete_all_data(
     set_cached_profile(None)
 
     # B-1124 : jumeau de B-340 pour les clés API. La table Preference est
-    # vidée, mais le cache mémoire des clés les servait encore aux modèles
-    # jusqu'au redémarrage. Même invalidation qu'à la restauration (B-023).
-    from app.services.llm import invalidate_api_key_cache
-
-    invalidate_api_key_cache()
+    # vidée, mais le cache des clés ET le service des modèles déjà créé les
+    # servaient encore au chat jusqu'au redémarrage.
+    _oublier_les_cles_en_memoire()
 
     # Purger Qdrant (embeddings vectoriels)
     try:
@@ -1434,9 +1444,8 @@ async def restore_backup(
     # API comprises, sans passer par POST/DELETE /api-key - les deux seules
     # portes qui invalidaient. Le cache mémoire servait donc encore les clés
     # d'avant la restauration.
-    from app.services.llm import invalidate_api_key_cache
-
-    invalidate_api_key_cache()
+    # B-1124 : le service des modèles gardait aussi l'ancienne clé.
+    _oublier_les_cles_en_memoire()
 
     # Revue 0.40/0.40.1 : l'archive de sécurité devient une sauvegarde chiffrée
     # visible, ou disparaît si le chiffrement est impossible (US-003 : jamais

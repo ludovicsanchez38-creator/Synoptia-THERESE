@@ -350,6 +350,38 @@ class TestDataDeletion:
         assert llm._api_key_cache_loaded is False
 
     @pytest.mark.asyncio
+    async def test_delete_all_ne_laisse_pas_la_cle_au_service_des_modeles(self, client: AsyncClient, monkeypatch):
+        """B-1124, second temps (lecteur L1) : vider le cache ne suffisait pas.
+        Le service des modèles déjà créé gardait la clé dans sa configuration
+        et la servait au chat jusqu'au redémarrage. On passe par le service,
+        pas seulement par le cache.
+        """
+        from app.services import llm
+        from app.services.providers.base import LLMConfig, LLMProvider
+
+        ancien = llm.LLMService(LLMConfig(provider=LLMProvider.ANTHROPIC, model="claude-test", api_key="sk-ant-purge-b1124"))
+        monkeypatch.setattr(llm, "_llm_service", ancien)
+
+        response = await client.delete("/api/data/all?confirm=true")
+        assert response.status_code == 200
+
+        service = llm.get_llm_service()
+        assert service is not ancien, "la purge laisse en place le service qui porte la clé effacée"
+        assert service.config.api_key != "sk-ant-purge-b1124"
+
+    @pytest.mark.asyncio
+    async def test_la_restauration_ne_laisse_pas_l_ancienne_cle_au_service(self, monkeypatch):
+        """B-1124 : même trou à la restauration, qui ne vidait que le cache (B-023)."""
+        from app.routers import data as module_data
+        from app.services import llm
+        from app.services.providers.base import LLMConfig, LLMProvider
+
+        ancien = llm.LLMService(LLMConfig(provider=LLMProvider.ANTHROPIC, model="claude-test", api_key="sk-ant-avant-restauration"))
+        monkeypatch.setattr(llm, "_llm_service", ancien)
+        module_data._oublier_les_cles_en_memoire()
+        assert llm.get_llm_service() is not ancien
+
+    @pytest.mark.asyncio
     async def test_delete_all_data_purges_prestations(self, client: AsyncClient):
         """Art. 17 : aucun montant ni financeur ne survit à l'effacement global."""
         contact_id = await _create_contact(client, "ContactPrestation")
