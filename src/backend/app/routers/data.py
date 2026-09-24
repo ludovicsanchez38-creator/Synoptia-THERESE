@@ -631,6 +631,13 @@ async def delete_all_data(
 
     set_cached_profile(None)
 
+    # B-1124 : jumeau de B-340 pour les clés API. La table Preference est
+    # vidée, mais le cache mémoire des clés les servait encore aux modèles
+    # jusqu'au redémarrage. Même invalidation qu'à la restauration (B-023).
+    from app.services.llm import invalidate_api_key_cache
+
+    invalidate_api_key_cache()
+
     # Purger Qdrant (embeddings vectoriels)
     try:
         from app.services.qdrant import get_qdrant_service

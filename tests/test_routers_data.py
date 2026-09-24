@@ -330,6 +330,26 @@ class TestDataDeletion:
         )
 
     @pytest.mark.asyncio
+    async def test_delete_all_vide_aussi_le_cache_des_cles_api(self, client: AsyncClient, monkeypatch):
+        """B-1124 (lecteur K1, carte c12) : jumeau de B-340. La purge efface les
+        préférences, clés API comprises, sans vider le cache mémoire des clés :
+        une clé « supprimée conformément au RGPD » restait servie aux appels
+        des modèles jusqu'au redémarrage du moteur.
+        """
+        from app.services import llm
+
+        monkeypatch.setattr(llm, "_api_key_cache", {"anthropic_api_key": "sk-ant-purge-b1124"})
+        monkeypatch.setattr(llm, "_api_key_cache_loaded", True)
+
+        response = await client.delete("/api/data/all?confirm=true")
+        assert response.status_code == 200
+
+        assert "anthropic_api_key" not in llm._api_key_cache, (
+            "le cache sert encore une clé API après la purge RGPD"
+        )
+        assert llm._api_key_cache_loaded is False
+
+    @pytest.mark.asyncio
     async def test_delete_all_data_purges_prestations(self, client: AsyncClient):
         """Art. 17 : aucun montant ni financeur ne survit à l'effacement global."""
         contact_id = await _create_contact(client, "ContactPrestation")
