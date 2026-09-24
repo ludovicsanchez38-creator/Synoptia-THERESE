@@ -457,7 +457,7 @@ export function CapabilityCenter({
             </div>
 
             <footer className="border-t border-border px-4 py-3 text-sm text-text-muted">
-              Une capacité Vue ou Parcours s'ouvre au clic. Une Demande relue pose une phrase dans le composeur, que tu relis avant l'envoi.
+              Parcours et Vue s'ouvrent au clic. Une Demande relue pose une phrase dans le composeur, que tu relis avant l'envoi.
             </footer>
           </div>
         </div>

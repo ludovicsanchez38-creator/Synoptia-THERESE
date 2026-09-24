@@ -71,13 +71,14 @@ describe('Lot 3 DA : titre et compte du catalogue', () => {
 });
 
 describe('Lot 3 DA : typeCapacite', () => {
-  it('classe prompts, actions, les 7 parcours et une vue ; un clic onChoose reste inchangé', () => {
+  it('classe prompts, les 7 parcours et les vues ; un clic onChoose reste inchangé', () => {
     const parId = Object.fromEntries(capabilities.map((c) => [c.id, c]));
     for (const id of IDS_PROMPT) {
       expect(typeCapacite(parId[id]), id).toBe('Demande relue');
     }
-    expect(typeCapacite(parId.attention)).toBe('Action');
-    expect(typeCapacite(parId.office)).toBe('Action');
+    // P-098 : « Action » a rejoint « Vue » (ces cartes s'ouvrent au clic).
+    expect(typeCapacite(parId.attention)).toBe('Vue');
+    expect(typeCapacite(parId.office)).toBe('Vue');
     for (const id of IDS_SCENARIO) {
       expect(typeCapacite(parId[id]), id).toBe('Parcours');
     }
@@ -85,7 +86,7 @@ describe('Lot 3 DA : typeCapacite', () => {
 
     const { onChoose } = ouvrir();
     expect(screen.getByRole('button', { name: /^Tâches/ })).toHaveTextContent('Vue');
-    expect(screen.getByRole('button', { name: /^Relances et alertes/ })).toHaveTextContent('Action');
+    expect(screen.getByRole('button', { name: /^Relances et alertes/ })).toHaveTextContent('Vue');
     expect(screen.getByRole('button', { name: /^Brief du jour/ })).toHaveTextContent('Parcours');
     expect(screen.getByRole('button', { name: /^Email/ })).toHaveTextContent('Parcours');
     expect(screen.getByRole('button', { name: /^Agenda/ })).toHaveTextContent('Parcours');
@@ -95,7 +96,7 @@ describe('Lot 3 DA : typeCapacite', () => {
     expect(screen.getByRole('button', { name: /^Facturer un client/ })).toHaveTextContent('Parcours');
 
     fireEvent.click(screen.getByRole('tab', { name: /Créer et produire/ }));
-    expect(screen.getByRole('button', { name: /^Word, PowerPoint et Excel/ })).toHaveTextContent('Action');
+    expect(screen.getByRole('button', { name: /^Word, PowerPoint et Excel/ })).toHaveTextContent('Vue');
 
     fireEvent.click(screen.getByRole('tab', { name: /Comprendre et décider/ }));
     expect(screen.getByRole('button', { name: /^Décision/ })).toHaveTextContent('Parcours');
@@ -139,11 +140,12 @@ describe('Lot 3 DA : focus, intentions, vide, pied', () => {
     ).toBeInTheDocument();
   });
 
-  it('le pied contient Demande relue et s’ouvre au clic', () => {
+  it('le pied contient Demande relue et s’ouvrent au clic', () => {
     ouvrir();
     const pied = screen.getByRole('dialog').querySelector('footer') as HTMLElement;
     expect(pied).toHaveTextContent('Demande relue');
-    expect(pied).toHaveTextContent("s'ouvre au clic");
+    // P-098 : « Parcours et Vue s'ouvrent au clic ».
+    expect(pied).toHaveTextContent("s'ouvrent au clic");
   });
 });
 

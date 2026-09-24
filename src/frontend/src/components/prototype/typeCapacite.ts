@@ -4,7 +4,9 @@
  */
 import type { CapabilityGroupId, CapabilityItem } from './CapabilityCenter';
 
-export type TypeCapacite = 'Demande relue' | 'Action' | 'Parcours' | 'Vue';
+// P-098 : « Action » a rejoint « Vue » : ces cartes s'ouvrent au clic comme
+// une Vue, et la légende ne l'expliquait nulle part.
+export type TypeCapacite = 'Demande relue' | 'Parcours' | 'Vue';
 
 export const CLASSES_GROUPE_CAPACITE: Record<CapabilityGroupId, string> = {
   organize: 'bg-domaine-agenda-tint text-domaine-agenda',
@@ -17,8 +19,6 @@ export const CLASSES_GROUPE_CAPACITE: Record<CapabilityGroupId, string> = {
 
 export function typeCapacite(item: CapabilityItem): TypeCapacite {
   if (item.destination?.kind === 'prompt') return 'Demande relue';
-  if (item.destination?.kind === 'follow-ups') return 'Action';
-  if (item.destination?.kind === 'action' && item.destination.action === 'guided.open') return 'Action';
   if (item.scenario) return 'Parcours';
   return 'Vue';
 }
