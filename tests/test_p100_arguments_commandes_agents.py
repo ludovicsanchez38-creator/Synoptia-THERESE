@@ -66,6 +66,12 @@ def depot(tmp_path: Path) -> Path:
         "vitest run --root /",
         "vitest watch",
         "npm run typecheck",
+        # Lecteur G2 (dernière passe c12) : fichier d'arguments de pytest, et
+        # valeur de -k / -t qui est en fait une option.
+        "pytest @args.txt",
+        "pytest tests @args.txt",
+        "vitest run -t --dir=/",
+        "pytest -k --basetemp=/tmp/x",
     ],
 )
 async def test_un_argument_hors_regle_est_refuse_sans_rien_lancer(depot: Path, lances: list, commande: str):

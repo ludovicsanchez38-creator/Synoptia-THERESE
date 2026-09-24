@@ -799,8 +799,15 @@ class AgentToolExecutor:
             if argument in DRAPEAUX_A_VALEUR[base_cmd]:
                 if i + 1 >= len(reste):
                     return f"Erreur : {argument} attend une valeur."
+                # B-1079 : « -t --dir=/ » faisait passer une option pour la valeur.
+                if reste[i + 1].startswith(("-", "@")):
+                    return f"Erreur : la valeur de {argument} ne peut pas être une option (« {reste[i + 1]} »)."
                 i += 2
                 continue
+            # B-1079 : « pytest @fichier » lit ses arguments dans un fichier que
+            # l'agent peut écrire, et contournait toute la liste ci-dessous.
+            if argument.startswith("@"):
+                return f"Erreur : fichier d'arguments « {argument} » non autorisé pour {base_cmd}. Permis : {permis}."
             if argument.startswith("-"):
                 if argument not in DRAPEAUX_AUTORISES[base_cmd]:
                     return f"Erreur : argument « {argument} » non autorisé pour {base_cmd}. Permis : {permis}."
