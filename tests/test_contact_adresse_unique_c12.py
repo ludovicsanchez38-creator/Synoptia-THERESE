@@ -104,3 +104,21 @@ async def test_la_synchro_tableur_n_efface_pas_une_adresse_valide(db_session):
     contact, cree = await upsert_contact(db_session, {"ID": "crm-b1107", "Nom": "Jeanne Martin", "Email": "a@b.fr,pirate@x.fr"})
     assert not cree
     assert contact.email == "jeanne@exemple.fr"
+
+
+@pytest.mark.asyncio
+async def test_la_restauration_json_ne_garde_pas_une_adresse_double(client):
+    """B-1119 (lecteur J1) : /api/data/import/contacts (restauration d'un
+    export JSON) écrivait l'adresse telle quelle."""
+    reponse = await client.post(
+        "/api/data/import/contacts",
+        json={"contacts": [
+            {"id": "restau-b1119-a", "first_name": "Jeanne", "email": "a@b.fr,pirate@x.fr"},
+            {"id": "restau-b1119-b", "first_name": "Paul", "email": "paul@exemple.fr"},
+        ]},
+    )
+    assert reponse.status_code == 200, reponse.text[:200]
+    assert reponse.json()["imported"] == 2
+    fiches = {c["id"]: c for c in (await client.get("/api/memory/contacts")).json()}
+    assert fiches["restau-b1119-a"]["email"] is None
+    assert fiches["restau-b1119-b"]["email"] == "paul@exemple.fr"

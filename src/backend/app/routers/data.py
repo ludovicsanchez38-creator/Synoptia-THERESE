@@ -1636,6 +1636,15 @@ async def import_conversations(
     }
 
 
+def _adresse_restauree(valeur: object) -> str | None:
+    """Une adresse douteuse ou double n'est pas recopiée (B-1119)."""
+    if not isinstance(valeur, str) or not valeur.strip():
+        return None
+    from app.models.schemas import adresse_unique_valide
+
+    return valeur.strip() if adresse_unique_valide(valeur) else None
+
+
 @router.post("/import/contacts")
 async def import_contacts(
     data: dict,
@@ -1674,7 +1683,8 @@ async def import_contacts(
             first_name=contact_data.get("first_name"),
             last_name=contact_data.get("last_name"),
             company=contact_data.get("company"),
-            email=contact_data.get("email"),
+            # B-1119 : même règle que les autres imports (B-1074, B-1081).
+            email=_adresse_restauree(contact_data.get("email")),
             phone=contact_data.get("phone"),
             notes=contact_data.get("notes"),
             tags=json.dumps(contact_data.get("tags")) if contact_data.get("tags") else None,
