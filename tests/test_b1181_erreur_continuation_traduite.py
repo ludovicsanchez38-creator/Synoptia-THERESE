@@ -10,7 +10,6 @@ puis une erreur du fournisseur dans continue_with_tool_results.
 import json
 
 import pytest
-
 from app.services.providers.base import StreamEvent, ToolCall
 
 
