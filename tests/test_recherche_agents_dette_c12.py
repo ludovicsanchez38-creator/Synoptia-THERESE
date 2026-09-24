@@ -230,3 +230,29 @@ def test_un_lien_interne_vers_un_secret_est_refuse(tmp_path: Path):
         executeur._validate_path("notes.txt")
     with pytest.raises(PermissionError):
         executeur._validate_path("config_git")
+
+
+# --- B-1084 (lecteur G2, dernière passe de la carte c12) ----------------------
+
+
+@pytest.mark.parametrize("nom", ["prod.env", "secrets.env", ".git-credentials"])
+def test_d_autres_secrets_usuels_sont_sensibles(nom: str):
+    assert _nom_de_fichier_sensible(nom), nom
+
+
+@pytest.mark.parametrize("chemin", [".ssh/config", ".aws/credentials", ".gnupg/pubring.kbx"])
+def test_les_dossiers_de_secrets_sont_interdits_a_la_lecture(tmp_path: Path, chemin: str):
+    fichier = tmp_path / chemin
+    fichier.parent.mkdir(parents=True)
+    fichier.write_text("aws_secret_access_key = secret\n", encoding="utf-8")
+    with pytest.raises(PermissionError):
+        AgentToolExecutor(str(tmp_path))._validate_path(chemin)
+
+
+async def test_la_recherche_ne_parcourt_pas_les_dossiers_de_secrets(tmp_path: Path):
+    # Tout fichier d'un dossier de secrets est un secret, quelle que soit son extension.
+    (tmp_path / ".aws").mkdir()
+    (tmp_path / ".aws" / "profils.md").write_text("aws_secret_access_key = secret\n", encoding="utf-8")
+    (tmp_path / "a.md").write_text("rien\n", encoding="utf-8")
+    sortie = await AgentToolExecutor(str(tmp_path)).search_codebase("aws_secret_access_key", "*.md")
+    assert ".aws" not in sortie and "= secret" not in sortie, sortie

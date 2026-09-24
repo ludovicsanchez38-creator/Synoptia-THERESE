@@ -82,12 +82,14 @@ DOSSIERS_EXCLUS_RECHERCHE = frozenset(
         "__pycache__", ".mypy_cache", ".pytest_cache", ".ruff_cache",
     }
 )
-SUFFIXES_SENSIBLES = frozenset({".key", ".pem", ".p12", ".pfx"})
+SUFFIXES_SENSIBLES = frozenset({".key", ".pem", ".p12", ".pfx", ".env"})
+# B-1084 : tout fichier de ces dossiers est un secret, quelle que soit son extension.
+DOSSIERS_SENSIBLES = frozenset({".ssh", ".aws", ".gnupg"})
 # B-1048 : secrets usuels hors des suffixes ci-dessus.
 NOMS_SENSIBLES = frozenset(
     {
         "id_rsa", "id_dsa", "id_ecdsa", "id_ed25519", ".netrc", ".npmrc", ".pypirc",
-        "credentials.json", "service-account.json",
+        "credentials.json", "service-account.json", ".git-credentials",
     }
 )
 TAILLE_MAX_FICHIER_RECHERCHE = 5 * 1024 * 1024
@@ -111,6 +113,7 @@ def _dossier_exclu(nom: str, parent: str) -> bool:
     nom = nom.lower()
     return (
         nom in DOSSIERS_EXCLUS_RECHERCHE
+        or nom in DOSSIERS_SENSIBLES
         or nom.startswith(".venv")
         or (nom == "target" and os.path.basename(parent).lower() == "src-tauri")
     )
@@ -552,6 +555,7 @@ class AgentToolExecutor:
         if (
             ".git" in lowered_parts
             or ".git" in parts_resolues
+            or not DOSSIERS_SENSIBLES.isdisjoint(lowered_parts | parts_resolues)
             or _nom_de_fichier_sensible(requested.name)
             or _nom_de_fichier_sensible(resolved.name)
         ):
