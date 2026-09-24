@@ -1071,10 +1071,24 @@ async def get_config(
             ],
         ]
     # Un choix enregistré avant P-103 (nom local nu) est relu avec son fournisseur.
+    # B-1149 : et réenregistré ainsi, car l'essaim relit la préférence en base
+    # et la routerait encore par devinette (« equipe/assistant:free » partait
+    # chez OpenRouter pendant que l'Atelier l'affichait local).
+    migrations: dict[str, str] = {}
     if katia_model in locaux:
         katia_model = f"{PREFIXE_MODELE_LOCAL}{katia_model}"
+        migrations["agent_katia_model"] = katia_model
     if zezette_model in locaux:
         zezette_model = f"{PREFIXE_MODELE_LOCAL}{zezette_model}"
+        migrations["agent_zezette_model"] = zezette_model
+    for cle, valeur in migrations.items():
+        existante = (await session.execute(select(Preference).where(Preference.key == cle))).scalar_one_or_none()
+        if existante:
+            existante.value = valeur
+        else:
+            session.add(Preference(key=cle, value=valeur))
+    if migrations:
+        await session.commit()
 
     return AgentConfigResponse(
         source_path=source_path,

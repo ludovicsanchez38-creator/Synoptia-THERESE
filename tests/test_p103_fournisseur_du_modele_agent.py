@@ -119,3 +119,32 @@ async def test_l_echec_explicite_devient_un_evenement_d_erreur_de_l_agent(monkey
     evenements = [e async for e in runtime.run("Bonjour")]
     assert [e.type for e in evenements] == ["error"], evenements
     assert "en ligne" in evenements[0].content
+
+
+async def test_un_ancien_choix_local_relu_est_enregistre_avec_son_fournisseur(client, db_session, monkeypatch):
+    """B-1149 (audit de release 0.75) : le préfixe n'était ajouté que dans la
+    RÉPONSE ; la préférence restait nue et l'essaim, qui la relit en base, la
+    routait par devinette (« equipe/assistant:free » partait chez OpenRouter
+    alors que l'Atelier l'affichait local)."""
+    from app.models.entities import Preference
+    from app.routers import agents as routeur_agents
+    from app.services.agents.runtime import PREFIXE_MODELE_LOCAL
+    from sqlmodel import select
+
+    monkeypatch.setattr("shutil.which", lambda _nom: "/usr/local/bin/ollama")
+
+    async def installes() -> list[str]:
+        return ["equipe/assistant:free"]
+
+    monkeypatch.setattr(routeur_agents, "_modeles_ollama_installes", installes)
+    db_session.add(Preference(key="agent_katia_model", value="equipe/assistant:free"))
+    await db_session.commit()
+
+    config = (await client.get("/api/agents/config")).json()
+    assert config["katia_model"] == f"{PREFIXE_MODELE_LOCAL}equipe/assistant:free"
+
+    db_session.expire_all()
+    enregistre = (
+        await db_session.execute(select(Preference).where(Preference.key == "agent_katia_model"))
+    ).scalar_one()
+    assert enregistre.value == f"{PREFIXE_MODELE_LOCAL}equipe/assistant:free"
