@@ -545,21 +545,25 @@ async def upsert_task(
             existing.due_date = due_date
         if completed_at is not None:
             existing.completed_at = completed_at
-        # B-1212 : même règle que la route des tâches, une tâche qui n'est plus
-        # « done » n'a pas de date de fin (la cellule vide ne la protège pas).
+        # B-1212, B-1231 : même règle que la route des tâches (tasks.py) :
+        # pas de date de fin hors de « done », une date posée en passant à « done ».
         if existing.status != "done":
             existing.completed_at = None
+        elif existing.completed_at is None:
+            existing.completed_at = datetime.now(UTC)
         existing.updated_at = datetime.now(UTC)
         return existing, False
     else:
+        statut_neuf = task_status or "todo"
         task = Task(
             id=task_id,
             title=title,
             description=description_val or None,
             priority=priority or "medium",
-            status=task_status or "todo",
+            status=statut_neuf,
             due_date=due_date,
-            completed_at=completed_at,
+            # B-1231 : même règle à la création.
+            completed_at=(completed_at or datetime.now(UTC)) if statut_neuf == "done" else None,
             created_at=created_at or datetime.now(UTC),
         )
         session.add(task)

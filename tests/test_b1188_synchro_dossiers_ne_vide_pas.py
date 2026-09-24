@@ -125,3 +125,25 @@ async def test_une_tache_rouverte_depuis_le_tableur_perd_sa_date_de_fin(client):
     assert resp.status_code == 200, resp.text
     _, tache, _ = await _lire()
     assert tache["completed_at"] is None, tache
+
+
+@pytest.mark.asyncio
+async def test_la_regle_de_date_de_fin_vaut_dans_les_deux_sens_et_a_la_creation(client):
+    """B-1231 : B-1212 n'appliquait que la moitié de la règle de la route des
+    tâches. Une tâche passée « done » par le tableur sans CompletedAt restait
+    sans date de fin ; une tâche NEUVE non terminée gardait la sienne."""
+    from app.models import database as db_module
+    from app.models.entities import Task
+
+    async with db_module.AsyncSessionLocal() as s:
+        s.add(Task(id="t-b1231", title="Appeler", status="todo", priority="high"))
+        await s.commit()
+    resp = await client.post("/api/crm/sync/import", json={"tasks": [
+        {"ID": "t-b1231", "Status": "done"},
+        {"ID": "t-b1231-neuve", "Title": "Neuve", "Status": "todo", "CompletedAt": "2026-09-01T10:00:00"},
+    ]})
+    assert resp.status_code == 200, resp.text
+    async with db_module.AsyncSessionLocal() as s:
+        faite = (await s.execute(select(Task).where(Task.id == "t-b1231"))).scalar_one()
+        neuve = (await s.execute(select(Task).where(Task.id == "t-b1231-neuve"))).scalar_one()
+    assert (faite.completed_at is not None, neuve.completed_at) == (True, None), (faite.completed_at, neuve.completed_at)
