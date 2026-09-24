@@ -295,3 +295,19 @@ jobs:
           # (signe les .sig + genere latest.json) UNIQUEMENT en CI, pour ne pas
           # casser les builds locaux qui n'ont pas la cle de signature.
           args: ${{ runner.os == 'Linux' && '--bundles deb --config src-tauri/tauri.linux.conf.json --config src-tauri/updater-ci.conf.json' || '--config src-tauri/updater-ci.conf.json' }}
+
+      # P-099 (décision de Ludo, 24/09/2026) : recette du paquet .deb PRODUIT,
+      # porte de la release. B-948 ne se voyait qu'en ouvrant le paquet publié.
+      # Le script extrait le .deb, le rend non inscriptible comme /usr/lib,
+      # vérifie docx/parts, pptx/oxml, pptx/shapes, démarre le moteur et génère
+      # un DOCX avec pied de page. Un échec rend le job rouge : la release ne se
+      # publie pas (étape 4 de /release-therese). Calibré sur 0.74.0 (rouge) et
+      # 0.74.1 (vert).
+      - name: Recette du paquet .deb (Linux)
+        if: runner.os == 'Linux'
+        timeout-minutes: 15
+        run: |
+          DEB="$(find src/frontend/src-tauri/target -path '*bundle/deb/*.deb' | head -1)"
+          VERSION="$(python3 -c "import json; print(json.load(open('src/frontend/src-tauri/tauri.conf.json'))['version'])")"
+          echo "Paquet : $DEB ; version attendue : $VERSION"
+          bash scripts/recette-deb.sh "$DEB" "$VERSION"
