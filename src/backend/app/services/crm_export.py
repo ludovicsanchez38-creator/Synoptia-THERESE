@@ -205,6 +205,15 @@ def export_to_csv(entities: list[Any], columns: list[tuple[str, str]]) -> bytes:
 # ============================================================
 
 
+def _cellule_texte(ws, ligne: int, colonne: int, valeur):
+    """Écrit une cellule de données. B-449 : openpyxl range une chaîne « =... »
+    en formule (type 'f') ; elle doit rester du texte dans le classeur."""
+    cellule = ws.cell(row=ligne, column=colonne, value=valeur)
+    if isinstance(valeur, str) and valeur.startswith("="):
+        cellule.data_type = "s"
+    return cellule
+
+
 def export_to_xlsx(
     entities: list[Any],
     columns: list[tuple[str, str]],
@@ -250,11 +259,7 @@ def export_to_xlsx(
         row_data = _entity_to_row(entity, columns)
         for col_idx, header in enumerate(headers, 1):
             value = row_data.get(header, "")
-            cell = ws.cell(row=row_idx, column=col_idx, value=value)
-            if isinstance(value, str) and value.startswith("="):
-                # B-449 : openpyxl range une chaîne « =... » en formule (type
-                # 'f') ; elle doit rester du texte dans le classeur.
-                cell.data_type = "s"
+            cell = _cellule_texte(ws, row_idx, col_idx, value)
             cell.border = thin_border
 
     # Auto-adjust column widths
@@ -649,7 +654,8 @@ def _populate_xlsx_sheet(ws, entities: list[Any], columns: list[tuple[str, str]]
         row_data = _entity_to_row(entity, columns)
         for col_idx, header in enumerate(headers, 1):
             value = row_data.get(header, "")
-            cell = ws.cell(row=row_idx, column=col_idx, value=value)
+            # B-1192 : l'export complet passe par la même garde que B-449.
+            cell = _cellule_texte(ws, row_idx, col_idx, value)
             cell.border = thin_border
 
     # Auto-adjust column widths
