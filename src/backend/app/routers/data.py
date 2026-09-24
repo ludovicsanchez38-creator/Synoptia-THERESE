@@ -677,10 +677,15 @@ async def delete_all_data(
             # verrouillé ; sa suppression échoue ou n'agit pas, et la
             # collection recréée rechargeait les anciens points. Les points
             # partent D'ABORD, la collection ensuite.
-            qdrant.client.delete(
-                collection_name=settings.qdrant_collection,
-                points_selector=FilterSelector(filter=Filter(must=[])),
-            )
+            try:
+                qdrant.client.delete(
+                    collection_name=settings.qdrant_collection,
+                    points_selector=FilterSelector(filter=Filter(must=[])),
+                )
+            except ValueError:
+                # B-1224 : collection absente, rien à retirer ; la recréation
+                # plus bas ne doit pas être sautée.
+                pass
             try:
                 qdrant.client.delete_collection(settings.qdrant_collection)
             except Exception:

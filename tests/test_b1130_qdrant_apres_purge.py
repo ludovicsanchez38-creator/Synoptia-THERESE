@@ -88,3 +88,17 @@ async def test_les_vecteurs_partent_meme_si_la_suppression_de_collection_n_agit_
 
     assert resp.status_code == 200, resp.text
     assert vrai_qdrant.client.count(settings.qdrant_collection).count == 0
+
+
+@pytest.mark.asyncio
+async def test_la_purge_recree_la_collection_meme_si_elle_manquait(client, vrai_qdrant):
+    """B-1224 : régression de B-1199 (revue du diff, n° 4). Retirer les points
+    d'une collection absente lève ValueError ; l'exception sautait la
+    recréation et le service restait sur une collection absente (B-1130)."""
+    vrai_qdrant.client.delete_collection(settings.qdrant_collection)
+    assert settings.qdrant_collection not in _collections(vrai_qdrant)
+
+    resp = await client.delete("/api/data/all?confirm=true")
+
+    assert resp.status_code == 200, resp.text
+    assert settings.qdrant_collection in _collections(vrai_qdrant)
