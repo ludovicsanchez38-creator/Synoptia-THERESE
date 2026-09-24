@@ -248,7 +248,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
     setSaved(false);
 
     const providerConfig = PROVIDERS.find(p => p.id === provider);
-    let defaultModel = providerConfig?.models[0]?.id || '';
+    const defaultModel = providerConfig?.models[0]?.id || '';
 
     if (provider === 'ollama' && ollamaModels.length > 0) {
       // Ne jamais pré-sélectionner un modèle incapable d'agir : c'est ce qui a
