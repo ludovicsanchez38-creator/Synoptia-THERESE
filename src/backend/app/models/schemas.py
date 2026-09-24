@@ -928,6 +928,19 @@ class CalendarEventResponse(BaseModel):
     blocage: str | None = None
 
 
+def participants_valides(participants: list[str] | None) -> list[str] | None:
+    """B-1164 : un participant de rendez-vous suit la règle d'adresse des
+    fiches (B-1074, B-1150) ; l'ancienne expression acceptait « g:a@b.fr » ou
+    « a@b.fr,c.fr », que CalDAV écrit tel quel en `mailto:`."""
+    if participants is None:
+        return None
+    propres = [participant.strip() for participant in participants]
+    for adresse in propres:
+        if not adresse_unique_valide(adresse):
+            raise ValueError(f"Adresse participant invalide : {adresse}")
+    return propres
+
+
 class CreateEventRequest(BaseModel):
     """Request pour créer un événement."""
 
@@ -990,11 +1003,12 @@ class CreateEventRequest(BaseModel):
         if self.timezone:
             verifier_fuseau(self.timezone)
 
-        for attendee in self.attendees or []:
-            address = attendee.strip()
-            if not re.fullmatch(r"[^\s@]+@[^\s@]+\.[^\s@]+", address):
-                raise ValueError(f"Adresse participant invalide : {attendee}")
         return self
+
+    @field_validator("attendees")
+    @classmethod
+    def _participants(cls, valeur: list[str] | None) -> list[str] | None:
+        return participants_valides(valeur)
 
 
 class UpdateEventRequest(BaseModel):
@@ -1013,6 +1027,11 @@ class UpdateEventRequest(BaseModel):
     # B-481 : statut et rappels n'étaient jamais transmis au provider
     status: Literal["confirmed", "tentative", "cancelled"] | None = None
     reminders: list[int] | None = None
+
+    @field_validator("attendees")
+    @classmethod
+    def _participants(cls, valeur: list[str] | None) -> list[str] | None:
+        return participants_valides(valeur)
 
 
 class ListEventsRequest(BaseModel):
