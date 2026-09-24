@@ -15,6 +15,7 @@
 
 from __future__ import annotations
 
+import os
 import time
 from pathlib import Path
 
@@ -187,6 +188,7 @@ def test_les_secrets_usuels_sont_sensibles(nom: str):
     assert _nom_de_fichier_sensible(nom), nom
 
 
+@pytest.mark.skipif(os.name == "nt" or (hasattr(os, "geteuid") and os.geteuid() == 0), reason="chmod(0) n'interdit pas la lecture sous Windows ni pour root")
 async def test_read_file_ne_rend_pas_de_chemin_absolu_au_modele(tmp_path: Path):
     (tmp_path / "dossier").mkdir()
     (tmp_path / "dossier" / "a.txt").write_text("x", encoding="utf-8")
@@ -205,8 +207,10 @@ async def test_read_file_ne_rend_pas_de_chemin_absolu_au_modele(tmp_path: Path):
 async def test_read_file_borne_max_lines(tmp_path: Path, max_lines: int):
     (tmp_path / "a.txt").write_text("\n".join(f"ligne {n}" for n in range(10)), encoding="utf-8")
     sortie = await AgentToolExecutor(str(tmp_path)).read_file("a.txt", max_lines=max_lines)
-    assert "-" not in sortie.splitlines()[-1] or "tronqué" not in sortie, sortie
+    # Borné à une ligne au moins : jamais « tronqué à -3 », jamais « sans limite ».
     assert sortie.splitlines()[0] == "ligne 0", sortie
+    assert "ligne 9" not in sortie, sortie
+    assert "tronqué à 1 lignes, total: 10" in sortie, sortie
 
 
 # --- B-1049 (lecteur B de la carte c12) --------------------------------------
@@ -214,10 +218,13 @@ async def test_read_file_borne_max_lines(tmp_path: Path, max_lines: int):
 
 def test_un_lien_interne_vers_un_secret_est_refuse(tmp_path: Path):
     (tmp_path / ".env").write_text("CLE_API=secret\n", encoding="utf-8")
-    (tmp_path / "notes.txt").symlink_to(tmp_path / ".env")
     (tmp_path / ".git").mkdir()
     (tmp_path / ".git" / "config").write_text("[core]\n", encoding="utf-8")
-    (tmp_path / "config_git").symlink_to(tmp_path / ".git" / "config")
+    try:
+        (tmp_path / "notes.txt").symlink_to(tmp_path / ".env")
+        (tmp_path / "config_git").symlink_to(tmp_path / ".git" / "config")
+    except OSError:
+        pytest.skip("le poste refuse de créer des liens symboliques")
     executeur = AgentToolExecutor(str(tmp_path))
     with pytest.raises(PermissionError):
         executeur._validate_path("notes.txt")
