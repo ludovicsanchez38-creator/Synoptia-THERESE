@@ -16,6 +16,7 @@ from datetime import UTC, datetime
 from typing import Any, Literal
 
 from app.models.entities import Contact, Deliverable, Project
+from app.services.formules_tableur import neutraliser_formule
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 from openpyxl.utils import get_column_letter
@@ -119,19 +120,15 @@ def _sans_caracteres_interdits(texte: str) -> str:
     return _CARACTERES_INTERDITS.sub("", texte)
 
 
-_DEBUT_DE_FORMULE = re.compile(r"^[=@\t\r]|^[+\-](?=[^\d\s])")
-
-
 def _neutraliser_formule(texte: str) -> str:
     """B-449 (05/09/2026) : une société « =1+1 » sortait du CSV telle quelle
     et du XLSX en formule ACTIVE. L'export est le dernier rempart : un
     préfixe de formule est désamorcé par une apostrophe (convention des
-    tableurs). Un téléphone en +33 ou une date en -5 restent intacts : seuls
-    « + » et « - » suivis d'autre chose qu'un chiffre sont visés.
+    tableurs). B-1120 : la règle est celle de l'import ; « +1+cmd|… », que
+    l'ancienne expression laissait passer parce qu'un chiffre suit le « + »,
+    est désamorcé, et un téléphone en +33 reste intact.
     """
-    if texte and _DEBUT_DE_FORMULE.match(texte):
-        return "'" + texte
-    return texte
+    return neutraliser_formule(texte)
 
 
 def _format_value(value: Any) -> str:

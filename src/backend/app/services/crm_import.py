@@ -15,6 +15,7 @@ from typing import Any, Literal
 
 from app.models.entities import Contact, Deliverable, Project, generate_uuid
 from app.models.schemas import adresse_unique_valide
+from app.services.formules_tableur import neutraliser_formule
 from openpyxl import load_workbook
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
@@ -342,8 +343,6 @@ FIELD_MAX_LENGTHS: dict[str, int] = {
     "status": 50,
 }
 
-# Characters that trigger formula injection in spreadsheets (SEC-017)
-FORMULA_PREFIXES = ("=", "+", "-", "@", "\t", "\r", "\n")
 
 
 def _sanitize_field(value: Any, field_name: str | None = None) -> Any:
@@ -363,9 +362,9 @@ def _sanitize_field(value: Any, field_name: str | None = None) -> Any:
     value = value.strip().replace("\x00", "")
     if not value:
         return None
-    # Neutralize formula injection - prefix with single quote if dangerous
-    if value and value[0] in FORMULA_PREFIXES:
-        value = "'" + value
+    # SEC-017, B-1120 : même règle qu'à l'export ; un téléphone « +33… » ou un
+    # budget « -500 » restent intacts, « +1+cmd|… » est désamorcé.
+    value = neutraliser_formule(value)
     # Enforce length limit
     if field_name and field_name in FIELD_MAX_LENGTHS:
         max_len = FIELD_MAX_LENGTHS[field_name]
