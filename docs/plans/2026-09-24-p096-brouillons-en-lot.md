@@ -1,202 +1,243 @@
-# P-096 : brouillons personnalisés en lot (design V2)
+# P-096 : brouillons personnalisés en lot (design V3)
 
 Décision de Ludo, 24/09/2026 (salle de décision, geste val-2026-09-23-01) :
 « FAIRE AUTREMENT : brouillons personnalisés en lot, aucun envoi, fusion par
 les Variables V1, aperçu par destinataire, lever l'ambiguïté du bouton
 Écrire. » Suggestion S1 du testeur Dr_logic-3D.
 
-Historique : V1 du 24/09 matin, relecture adverse NO-GO (5 P1, 23 P2 et P3,
-tous vérifiés dans le code, rapport conservé hors dépôt). Cette V2 reprend
-toutes les corrections ; ce qui relève d'une décision produit est isolé en
-fin de document.
+Historique : V1 (24/09 matin) NO-GO, 5 P1 et 27 P2 ou P3 ; V2 NO-GO, 1 P1 et
+22 P2 ou P3 (`docs/plans/revues/2026-09-24-p096-revue-v2.md`). Les onze
+questions produit ont été tranchées par délégation de Ludo le 24/09
+(`docs/plans/2026-09-24-arbitrages-par-delegation.md`), toutes selon la
+recommandation. Cette V3 intègre ces choix et chacun des 23 constats de la V2
+(tableau de correspondance en fin de document). Aucun code avant un GO de
+revue adverse.
 
 ## Promesse
 
 - N brouillons dans la boîte connectée, un par contact choisi, objet et corps
   fusionnés par contact. **Rien n'est envoyé** : l'envoi reste un geste de
   l'utilisateur dans sa messagerie, brouillon par brouillon.
-- Le lot n'écrit aucun objet ni corps dans la base de THÉRÈSE (la table des
-  éléments du lot ne garde que des identifiants et des codes). Un brouillon
-  ouvert ensuite dans THÉRÈSE suit le cache ordinaire des messages.
-- Pas de suivi d'ouverture, pas de désinscription (rien n'est envoyé).
+- **Aucun corps personnalisé en base** (décision 5) : le moteur garde le
+  modèle NON résolu (jetons compris) dans l'en-tête du lot, jusqu'à la fin du
+  lot plus 30 jours, pour pouvoir reprendre ; jamais un objet ou un corps
+  fusionné pour un contact.
+- Pas de signature ajoutée (décisions 2, 10, 11) : l'aperçu dit « sans
+  signature ». Pas de trace sur la fiche contact tant que le brouillon n'est
+  pas envoyé (décision 7). Pas de suivi d'ouverture, pas de désinscription.
 
 ## Données : qui est proposable
 
 - Route dédiée `GET /api/email/drafts/batch/candidats?q=&etiquette=&offset=`,
   filtrée côté serveur, avec compteurs exacts : proposables, sans adresse,
   exclus (et pourquoi). Le moteur réapplique ces règles aux identifiants
-  reçus.
-- Proposable : portée globale, `stage` différent de « archive », adresse
-  unique valide (`adresse_unique_valide`, B-1074). Règles RGPD : voir « À
-  trancher ».
-- Plafond : 50 contacts par lot, constante serveur unique lue par l'écran,
-  testée à 50 et 51.
+  reçus, à la prévisualisation comme à la création.
+- Proposable (décision 3) : portée globale seule en V1, `stage` différent de
+  « archive », adresse unique valide (`adresse_unique_valide`, B-1074).
+  Consentement expiré ou base légale vide : **signalés** dans la liste et
+  l'aperçu, sans blocage.
+- **Une adresse, un brouillon** : l'adresse est normalisée (minuscules,
+  espaces retirés) ; un second contact à la même adresse est refusé à la
+  validation (« adresse en double avec <contact masqué> »).
+- Plafond (décision 10) : 50 contacts par lot, constante serveur unique lue
+  par l'écran, testée à 50 et 51.
+- **Déjà écrit il y a moins de 24 h** (décision 6) : signalé par contact ET
+  par adresse normalisée, contact décoché par défaut, recochable.
 
 ## Fusion
 
-- Champs du contact dans un espace de noms à part, pour ne jamais écraser une
-  Variable de l'utilisateur : `{contact_prenom}`, `{contact_nom}`,
-  `{contact_entreprise}`, `{contact_email}` (compatibles `[a-z0-9_]`).
+- Champs du contact dans un espace de noms à part (décision 4) :
+  `{contact_prenom}`, `{contact_nom}`, `{contact_entreprise}`,
+  `{contact_email}`. **Le préfixe `contact_` est réservé** dans
+  `variables_service.validate_name` : une Variable `contact_*` n'est plus
+  créable ; si une telle Variable existe déjà, le lot est refusé tant qu'elle
+  existe (message qui la nomme).
+- À l'étape Modèle, avertissement quand le modèle contient `{prenom}`,
+  `{nom}`, `{entreprise}` ou `{email}` : « veux-tu dire {contact_prenom} ? »
+  (sinon la Variable de l'utilisateur se résoudrait en silence dans les N
+  brouillons).
 - Avant `resolve_text` : jetons du modèle qui sont des champs du contact et
-  dont la valeur nettoyée est vide = contact **bloqué** (jamais « Bonjour , »).
-  Seules des valeurs non vides, nettoyées, sont passées.
-- Objet : `\r`, `\n` et caractères de contrôle des valeurs remplacés par une
-  espace, `list_mode` inline, longueur maximale après fusion 250 caractères.
-  Corps : texte brut (`html: false`), bornes V1 par appel (20 jetons, 60 000
-  caractères), objet et corps résolus séparément.
-- Jeton inconnu restant, ou jeton mal formé (`{prénom}`, `{Prenom}`, règle de
-  `jetonsMalFormes` portée au moteur) : le **lot entier** est refusé avec la
-  liste des jetons. Pas de syntaxe de repli en V1.
-- Empreinte d'aperçu : révision des Variables + max(`updated_at`) des
-  contacts + hachage du modèle. La création la renvoie ; un aperçu périmé
-  donne 409 « l'aperçu n'est plus à jour ».
+  dont la valeur nettoyée est vide = contact **bloqué**, sans repli ni saisie
+  en ligne (décisions 9 et 11 ; une fiche d'entreprise sans prénom est donc
+  bloquée dès que le modèle contient `{contact_prenom}`), avec un lien vers sa
+  fiche.
+- Objet : le MODÈLE et les valeurs sont assainis (`\r`, `\n`, caractères de
+  contrôle remplacés par une espace), `list_mode` inline ; objet fusionné de
+  plus de 250 caractères = **contact** bloqué « objet trop long ».
+- Corps : texte brut (`html: false`), `list_mode` bloc ; objet et corps
+  résolus séparément. Plus de 20 jetons ou plus de 60 000 caractères au
+  modèle = **lot** refusé.
+- Jeton inconnu ou mal formé : lot refusé avec la liste des jetons. La règle
+  de `jetonsMalFormes` (`/^[\p{L}\p{N}_\- ]{1,40}$/u`, variables.ts:120) est
+  réécrite en Python sans `\p{L}` : `1 <= len(c) <= 40 and all(ch.isalnum()
+  or ch in "_- " for ch in c)`, plus les exclusions `{{…}}`, `{action:` et
+  blocs de code ; **un jeu de cas commun** (fichier JSON de cas partagé) est lu
+  par les tests Python et Vitest.
+- Empreinte d'aperçu : hachage des tuples triés (id, prénom, nom, entreprise,
+  adresse normalisée, stage, scope) des contacts du lot, plus `account_id`,
+  choix de signature, révision des Variables et hachage du modèle. Un aperçu
+  périmé donne 409 « l'aperçu n'est plus à jour » (une fiche modifiée par
+  import, dont `updated_at` peut reculer, change bien l'empreinte).
 
 ## Moteur
 
 - `POST …/batch/preview` : sans effet ; par contact, objet et corps résolus ou
   motif de blocage ; empreinte.
-- `POST …/batch` (`account_id`, `batch_id`, `contact_ids`, `subject`,
-  `body`, `empreinte`) : revalide tout, écrit les éléments du lot, lance la
-  tâche de fond et répond **202** `{task_id, batch_id}` sans attendre.
-- `GET …/batch/{batch_id}` : état par contact (lu par l'écran, masqué en démo).
-- `POST …/batch/{batch_id}/reprendre` : relance les seuls `non_tenté` et
-  échecs réessayables.
-- Table `brouillons_lot_items` (migration Alembic) : `batch_id`,
-  `contact_id`, `statut` (non_tenté, en_cours, créé, échec, incertain,
-  refusé), `draft_id`, `cause_code`, `maj` ; UNIQUE(`batch_id`,
-  `contact_id`) ; ni objet ni corps.
-- Réservation avant chaque appel au fournisseur : UPDATE conditionnel
-  non_tenté vers en_cours (une ligne, sinon on saute). Un second lancement du
-  même lot est refusé si un travail `brouillons_lot` est actif pour ce
-  `batch_id` (verrou asyncio par lot). Test : deux POST simultanés.
-- Travail du registre `brouillons_lot`, `entity_id = batch_id`, adaptateur
-  `AnnulationCooperative` : le drapeau est lu avant chaque contact, le
-  brouillon en cours finit et s'enregistre, fin CANCELLED « 7 créés, 5 non
-  tentés ». Libellé, étape et erreur du travail ne portent que des compteurs
-  (jamais un nom : le panneau Travaux n'est pas masqué).
-- Fournisseur : `create_drafts(demandes)` ouvre UNE session IMAP, résout le
-  dossier Brouillons une fois et dépose en boucle ; Gmail en séquentiel.
-  Arrêt au premier échec d'authentification, de quota ou de dossier, et après
-  3 échecs réseau consécutifs ; le reste passe `non_tenté`. Sur 429 Gmail, un
-  seul nouvel essai, attente croissante.
-- Causes classées par code, chacune avec un libellé écrit : auth, quota,
-  réseau, délai_incertain, adresse_invalide, champ_invalide,
-  dossier_introuvable. Seuls réseau et quota sont réessayables. Journal :
-  `type(e).__name__` et `contact_id`, jamais l'objet, le corps ni l'adresse.
-- Délai dépassé = **incertain** (le brouillon peut exister), exclu de la
-  reprise, avec la consigne « vérifie tes Brouillons ». Message-ID déterministe
-  par (`batch_id`, `contact_id`) posé sur chaque brouillon ; la recherche par
-  Message-ID avant reprise d'un incertain est une suite possible, hors V1.
-- Redémarrage : un élément `en_cours` devient `incertain`.
+- `POST …/batch` (`account_id`, `contact_ids`, `subject`, `body`,
+  `empreinte`) : revalide tout ; **le moteur génère `batch_id` (UUID)** ;
+  écrit l'en-tête et les éléments ; lance le travail ; répond **202**
+  `{task_id, batch_id}`. Aucun identifiant de lot n'est accepté de l'écran.
+- En-tête `brouillons_lot` : `batch_id` (clé), `account_id`, `created_at`,
+  `total`, modèle non résolu (objet et corps, jetons compris), hachage du
+  modèle, empreinte, `purge_apres` (fin du lot plus 30 jours).
+- Éléments `brouillons_lot_items` : `batch_id`, `contact_id`, `adresse_hash`
+  (pour le signalement 24 h par adresse), `statut` (non_tenté, en_cours,
+  créé, échec, incertain, refusé), `draft_id`, `cause_code`, `maj` ;
+  UNIQUE(`batch_id`, `contact_id`) ; index (`contact_id`, `maj`) et
+  (`adresse_hash`, `maj`) ; ni objet ni corps.
+- `GET …/batch/{batch_id}` : état par contact (masqué en démo ; « fiche
+  supprimée » pour un élément dont le contact n'existe plus).
+- `POST …/batch/{batch_id}/reprendre` : sans charge ; relit le modèle de
+  l'en-tête ; relance les seuls `non_tenté` et échecs réessayables ; refus
+  409 si un travail du lot est actif.
+- **Chaque lancement ou reprise = un nouveau `ProcessingTask`** du registre
+  `brouillons_lot`, `entity_id = batch_id` (un identifiant de travail n'est
+  jamais réutilisé, `traitements.py:181-182`).
+- Réservation avant chaque dépôt : UPDATE conditionnel non_tenté vers
+  en_cours (une ligne, sinon on saute). Verrou asyncio par lot. Tests : deux
+  POST simultanés ; même POST après la fin du lot (nouveau lot, pas de
+  réécriture).
+- Annulation coopérative (`AnnulationCooperative`) : drapeau lu avant chaque
+  dépôt ; le dépôt en cours finit et s'enregistre ; fin CANCELLED « 7 créés,
+  5 non tentés ». Libellé, étape et erreur du travail ne portent que des
+  compteurs.
+- **Session de dépôt** : `ouvrir_session_brouillons()` rend un objet à
+  `deposer(demande)` asynchrone ; **un `_run_imap_operation` par dépôt**, sur
+  un exécuteur à un seul fil par lot ; dossier Brouillons résolu et vérifié
+  (`folder.exists`) avant la boucle ; APPEND avec le drapeau `\Draft`. Après
+  un délai dépassé ou une erreur réseau, la session est abandonnée et rouverte
+  (trois échecs réseau consécutifs arrêtent le lot). Gmail : séquentiel, un
+  appel par dépôt. Test : dépôt n° 3 expiré, le n° 4 part sur une session
+  neuve.
+- **Causes, par code** : `auth`, `quota`, `reseau_avant_envoi`, `incertain`,
+  `adresse_invalide`, `champ_invalide`, `dossier_introuvable`, `autre`.
+  - Réessayable = échec **prouvé avant l'envoi** (connexion refusée, DNS,
+    401, 429 ; 403 `rateLimitExceeded` de Gmail traité comme 429).
+  - Toute erreur **après** l'envoi (délai de lecture, coupure, 5xx) =
+    `incertain`, exclu de la reprise, consigne « vérifie tes Brouillons ».
+    Gmail remonte l'exception `httpx` d'origine (plus la chaîne « Gmail API
+    request failed », qui confondait délai et 500).
+  - `auth` et `dossier_introuvable` arrêtent le lot et remettent l'élément en
+    `non_tenté` (rien n'a été déposé) ; `autre` (exception imprévue) arrête le
+    lot, élément `incertain`.
+  - Journal : `type(e).__name__` et `contact_id`, jamais l'objet, le corps ni
+    l'adresse.
+- **Message-ID** : `<hachage opaque(batch_id, contact_id)@domaine du compte>`,
+  jamais les identifiants en clair (vérification, avant de coder, que Gmail
+  `drafts.create` le conserve ; sinon le champ n'est pas posé et la reprise
+  d'un incertain reste manuelle).
+- **Redémarrage** : fonction dédiée appelée dans le lifespan juste après
+  `recuperer_taches_orphelines` (`main.py:219-229`) : tout élément `en_cours`
+  devient `incertain`.
+- **Conservation** (décision 8) : éléments et en-têtes purgés 30 jours après
+  la fin du lot, avec les travaux (`traitements.py:376-393`) ; éléments d'un
+  contact supprimés à la suppression et à l'anonymisation de la fiche
+  (`memory.py`, `rgpd.py:224-233`, `rgpd_auto.py:196-206`) ; purge totale
+  (« Effacer toutes mes données ») : les deux tables.
+- **Migration** : modèles SQLModel avec `UniqueConstraint` et index ;
+  révision Alembic `down_revision = "a7b8c9d0e1f2"` ; mise à jour de
+  `ALEMBIC_HEAD_REVISION` (`database.py:617`) ; extension de la preuve de
+  schéma dans `ensure_alembic_stamp` par `tables_de_brouillons_lot()` sur le
+  patron de `tables_de_planning` (`database.py:630-636`) ; test de montée
+  depuis une base à l'ancienne tête.
 - « Aucun envoi » testé en profondeur : espions sur `aiosmtplib.send`,
-  `GmailService.send_message`, toute URL contenant `/send`, et `send_message`
-  des deux fournisseurs.
+  `GmailService.send_message`, toute URL contenant `/send`, `send_message` des
+  deux fournisseurs.
 
 ## Écran
 
-- Dans « Nouveau message » (rédaction libre), groupe radio « Un destinataire »
-  / « Plusieurs contacts (un brouillon chacun) ». Titre de section
-  « Brouillon » en rédaction libre, « Modèle du lot » en mode plusieurs.
+- Verbe de l'établi (décision 1) : libellé visible « Écrire un e-mail »,
+  repris dans la palette et le titre de la surface.
+- Dans « Nouveau message », groupe radio « Un destinataire » / « Plusieurs
+  contacts (un brouillon chacun) ». Titre « Brouillon » ou « Modèle du lot ».
 - Assistant à une étape visible à la fois (Contacts, Modèle, Aperçu,
   Création, Compte rendu) ; focus sur le titre de l'étape à chaque changement.
 - Contacts : `fieldset` + `legend`, recherche, étiquette, cases ; plafond
-  expliqué, cases en `aria-disabled` au-delà ; compteur annoncé en
-  `aria-live="polite"`.
-- Modèle : aide qui liste les quatre champs du contact ; `jetonsMalFormes`
-  en direct.
+  expliqué, cases en `aria-disabled` au-delà ; compteur en
+  `aria-live="polite"` ; signalements RGPD et « déjà écrit il y a moins de
+  24 h » sur la ligne.
+- Modèle : aide qui liste les quatre champs du contact ; `jetonsMalFormes` en
+  direct ; avertissement « veux-tu dire {contact_prenom} ? ».
 - Aperçu : « Aperçu pour <nom masqué> (1 / 12) », précédent et suivant nommés
-  par le destinataire, annonce polie ; contacts bloqués listés avec
-  « Retirer du lot » et « Retirer les N bloqués ». Mention « sans
-  signature » (voir « À trancher »).
-- Création : confirmation **fail-closed**, dans le panneau (pas
-  `requestExternalAction`, fail-open par conception) : « 12 brouillons seront
-  créés dans la boîte … ; rien ne sera envoyé ». Test sans fournisseur de
-  confirmation : aucun POST.
+  par le destinataire, annonce polie ; « sans signature » ; contacts bloqués
+  listés avec « Retirer du lot » et « Retirer les N bloqués », et un lien vers
+  la fiche.
+- Création : confirmation **dans le panneau**, fail-closed : « 12 brouillons
+  seront créés dans la boîte … ; rien ne sera envoyé ». Test : aucun POST ne
+  part avant le clic sur « Confirmer » du panneau (ni par Entrée dans le
+  modèle, ni par double clic). Progression annoncée par paliers ; à l'arrêt,
+  l'écran dit que les brouillons déjà créés restent dans la boîte.
 - Compte rendu : état du lot dans un store, rechargeable par
-  `GET …/batch/{id}` ; entrée « Voir le compte rendu » depuis Travaux ; un
-  lot des dernières 24 h qui a déjà créé un brouillon pour un des contacts
-  choisis est signalé au lancement.
-- Saisie en cours : le panneau s'inscrit dans `saisieEnCours` dès qu'un
-  contact est coché ou le modèle modifié (B-978).
-- Mode démo : `maskContact` sur chaque ligne (liste, bloqués, en-tête
-  d'aperçu, compte rendu), `populateMap` sur les contacts du lot avant tout
-  `maskText` du texte résolu, fiches d'entreprise comprises (B-1075) ;
-  bouton « Créer » visible mais inactif, avec la raison (patron de
-  `ProjectModal`, `fieldset disabled`).
+  `GET …/batch/{id}` ; sur les lignes `brouillons_lot` du panneau Travaux, un
+  bouton « Voir le compte rendu » ouvre le canevas e-mail en mode compte
+  rendu pour cet `entity_id` ; « Reprendre » quand des éléments le
+  permettent.
+- **Saisie en cours** : le panneau passe par `useAbandonDeSaisie` (pile
+  d'Échap, registre, question) ; `collapseScenarioPanel` et
+  `rangerPourLAccueil` consultent le registre ; la garde se retire après le
+  202 (le lot vit alors dans le store). Test : cocher un contact, fermer le
+  panneau, la question apparaît ; même chose par Échap et par le retour à
+  l'accueil.
+- **Mode démo** : une table de masquage **propre au panneau** (jamais un
+  remplacement de la table globale, `useDemoMask.ts:33-34`) ; l'aperçu rend
+  par contact les valeurs substituées et l'écran masque exactement ces
+  valeurs, quelle que soit leur longueur (un nom de deux lettres compris) ;
+  `maskContact` sur chaque ligne ; bouton « Créer » visible mais inactif,
+  avec la raison. Test : lot ouvert en démo, puis un message du chat qui cite
+  un contact hors lot, toujours masqué.
 
 ## Tests prévus
 
 Moteur : résolution (espace de noms, "", "  ", None, homonyme de Variable),
-contact bloqué, lot refusé sur jeton inconnu ou mal formé, objet assaini,
-bornes, plafond 50/51, 202, deux POST simultanés, réservation, reprise des
-seuls réessayables, incertain exclu, annulation coopérative, redémarrage,
-aucun envoi (espions profonds), candidats filtrés et compteurs, empreinte
-périmée. Écran : bascule, assistant au clavier de bout en bout, plafond,
-aperçu navigable et annoncé, bloqués, confirmation fail-closed, compte rendu
-rechargé, masque démo arrivé directement par « Écrire », nom de « Écrire ».
+préfixe `contact_` réservé et Variable existante, contact bloqué, objet trop
+long (contact), 21 jetons (lot), jeton inconnu ou mal formé (jeu de cas
+commun), adresse en double, plafond 50/51, `batch_id` généré, 202, deux POST
+simultanés, même POST après la fin, réservation, reprise des seuls
+réessayables sans charge, incertain exclu, `ReadTimeout` Gmail et coupure
+IMAP après APPEND classés incertain, auth et dossier remettent en non_tenté,
+session rouverte après délai, drapeau `\Draft`, annulation coopérative,
+redémarrage, purge à 30 jours et à la suppression ou l'anonymisation d'un
+contact, montée Alembic, empreinte (fiche importée, contact ajouté, compte
+changé), aucun envoi (espions profonds). Écran : bascule, assistant au clavier
+de bout en bout, plafond, avertissement `{prenom}`, aperçu navigable et
+annoncé, bloqués et lien vers la fiche, confirmation sans POST anticipé,
+compte rendu rechargé et ouvert depuis Travaux, garde de saisie (fermeture,
+Échap, accueil), masque démo propre au panneau, nom « Écrire un e-mail ».
 
-## Réponses aux questions de la V1
+## Correspondance avec la revue V2
 
-1. Champ vide : blocage, sans syntaxe de repli (elle ne serait ni résolue ni
-   signalée aujourd'hui).
-2. Plafond : 50, constante serveur unique.
-3. Délai : pas de délai fixe ; une session IMAP par lot et un disjoncteur.
-4. Survie à la fermeture : oui, par la réponse 202, la table des éléments et
-   le compte rendu relisible hors du panneau.
-
-## À trancher par Ludo
-
-1. **Libellé visible du verbe de l'établi.** Recommandé : « Écrire un e-mail »
-   visible (les pastilles passent à la ligne), repris dans la palette et dans
-   le titre de la surface (E3 étendu au nom accessible). Alternative : garder
-   « Écrire » et ajouter « un e-mail » au seul nom accessible et à l'infobulle.
-2. **Signature.** THÉRÈSE ne l'ajoute qu'à l'envoi. Ajouter la signature texte
-   du compte à chaque brouillon, ou afficher « sans signature » dans l'aperçu ?
-3. **RGPD.** Contacts à exclure ou à signaler : archivés (exclus par défaut,
-   recommandé), consentement expiré, base légale vide. Bloquer ou seulement
-   avertir ? Portée : globale seule en V1 (recommandé) ?
-4. **Espace de noms `{contact_prenom}`** : décidé ici pour ne jamais écraser
-   une Variable de l'utilisateur ; plus long à taper que `{prenom}`. À
-   confirmer.
-
-## Revue de la V2 (24/09/2026) : NO-GO, V3 au cycle 13
-
-Relecture adverse par un rôle Claude séparé (Codex et Grok indisponibles),
-rapport complet dans `docs/plans/revues/2026-09-24-p096-revue-v2.md`.
-Un P1 bloque : la reprise d'un lot arrêté n'a rien pour recréer les
-brouillons, puisque le moteur ne garde ni l'objet, ni le corps, ni le compte.
-Les autres constats (P2 et P3) sont techniques et seront repris dans la V3 :
-une session IMAP avec un dépôt par appel, « incertain » pour toute erreur
-survenue après l'envoi, préfixe `contact_` réservé, table de masquage propre
-au panneau, garde de saisie branchée sur la fermeture et Échap, `batch_id`
-généré par le moteur, migration Alembic complète, purge des éléments.
-
-Le code n'est pas commencé : la règle maison est de faire accepter le design
-avant d'écrire le code.
-
-### Décisions supplémentaires pour Ludo (en plus des quatre ci-dessus)
-
-5. **Conservation du modèle pour la reprise.** (a) Le moteur garde le modèle
-   non résolu (jetons compris) jusqu'à la fin du lot, plus quelques jours ;
-   la promesse « aucun corps en base » devient « aucun corps personnalisé en
-   base ». (b) Ou « Reprendre » exige que l'écran renvoie le modèle ; après
-   un redémarrage, il faut le recoller. Recommandé : (a), plus simple à vivre.
-6. **Signalement « déjà écrit il y a moins de 24 h ».** Bloquer le contact ou
-   seulement avertir ? Recommandé : avertir, contact décoché par défaut.
-7. **Trace sur la fiche.** Un brouillon créé laisse-t-il une activité sur la
-   fiche contact (et met-il à jour la dernière interaction) ? Recommandé :
-   non tant qu'il n'est pas envoyé.
-8. **Durée de conservation des éléments du lot.** Recommandé : 30 jours,
-   comme les travaux, et effacement à la suppression ou à l'anonymisation du
-   contact.
-9. **Saisie en ligne d'un champ manquant.** La V1 la proposait, la V2 l'a
-   retirée sans le dire. Recommandé : non en V1, le contact reste bloqué avec
-   un lien vers sa fiche.
-10. **Signature, options réelles.** Il n'existe pas de signature texte, seule
-    une signature HTML. Trois choix : sans signature ; signature HTML
-    convertie en texte (images et liens perdus) ; corps en HTML avec
-    échappement des champs. Recommandé : sans signature, dit dans l'aperçu.
-11. **Réponses de la V1 à confirmer.** Blocage d'un champ vide sans repli
-    (une fiche d'entreprise sans prénom est alors bloquée dès que le modèle
-    contient `{contact_prenom}`), et plafond de 50 par lot : ce sont des
-    recommandations du relecteur, pas encore des décisions.
+| Constat V2 | Traitement V3 |
+|---|---|
+| 1 (P1) reprise sans modèle | en-tête `brouillons_lot` avec le modèle non résolu (décision 5), `reprendre` sans charge |
+| 2 session IMAP et réservation | `ouvrir_session_brouillons` / `deposer`, un appel par dépôt, session rouverte |
+| 3 réessayable après envoi | réessayable = prouvé avant l'envoi ; après = incertain ; exception httpx d'origine |
+| 4 préfixe `contact_` | réservé dans `validate_name`, Variable existante refuse le lot, avertissement `{prenom}` |
+| 5 table de masquage | table propre au panneau, valeurs substituées masquées quelle que soit la longueur |
+| 6 garde de saisie | `useAbandonDeSaisie`, fermeture, Échap et accueil consultent le registre |
+| 7 `batch_id` de l'écran | généré par le moteur |
+| 8 migration | quatre gestes écrits (modèle, révision, tête épinglée, preuve de schéma) et test de montée |
+| 9 décisions manquantes | tranchées par délégation (onze décisions) |
+| 10 redémarrage | fonction dédiée dans le lifespan |
+| 11 empreinte | tuples des contacts, compte, signature, Variables, modèle |
+| 12 bornes | objet trop long = contact ; jetons ou taille = lot ; modèle assaini ; `list_mode` écrits |
+| 13 causes | `autre`, 403 `rateLimitExceeded`, `folder.exists` avant la boucle, auth et dossier en non_tenté |
+| 14 relance et Travaux | nouveau travail par lancement, bouton « Voir le compte rendu » |
+| 15 conservation | 30 jours, suppression et anonymisation, index |
+| 16 `\p{L}` en Python | réécriture sans `\p{L}` et jeu de cas commun |
+| 17 signature texte | sans signature (décisions 2 et 10) |
+| 18 Message-ID | hachage opaque, vérification Gmail avant de coder |
+| 19 archivés et portée | décision 3, écrite une seule fois |
+| 20 test sans fournisseur | remplacé par « aucun POST avant Confirmer » |
+| 21 reliquats V1 | drapeau `\Draft`, progression par paliers, brouillons restants dits à l'arrêt |
+| 22 même adresse | une adresse, un brouillon ; signalement 24 h par adresse |
+| 23 comptes inexacts | historique corrigé en tête |
