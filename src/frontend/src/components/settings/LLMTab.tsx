@@ -196,9 +196,14 @@ export function LLMTab({
    */
   function quoiOllama(): string {
     if (!ollamaStatus?.available) return 'Service local injoignable';
-    const n = ollamaStatus?.models.length ?? 0;
-    if (n === 0) return 'Aucun modèle installé';
-    const compte = n === 1 ? '1 modèle installé' : `${n} modèles installés`;
+    // B-1160 : un modèle Ollama Cloud figure dans la liste d'Ollama mais tourne
+    // chez ollama.com ; il n'est pas « installé » sur le poste.
+    const noms = (ollamaStatus?.models ?? []).map((m) => m.name);
+    const nCloud = noms.filter(estModeleOllamaCloud).length;
+    const n = noms.length - nCloud;
+    if (n === 0 && nCloud === 0) return 'Aucun modèle installé';
+    const installes = n === 0 ? 'Aucun modèle installé' : n === 1 ? '1 modèle installé' : `${n} modèles installés`;
+    const compte = nCloud > 0 ? `${installes} · ${nCloud} en ligne (Ollama Cloud)` : installes;
     const prefixe = selectedProvider === 'ollama' && selectedModel ? `${selectedModel} · ` : '';
     // `ollamaStatus` vaut `null` sur un chemin réel (valeur de secours de
     // `loadSetting`), d'où l'accès optionnel jusqu'au bout.
@@ -491,7 +496,8 @@ export function LLMTab({
           </div>
         </Carte>
       )}
-      {selectedProvider === 'ollama' && selectedModel && (
+      {/* B-1160 : pas de carte « RAM compatible » pour un modèle Cloud. */}
+      {selectedProvider === 'ollama' && selectedModel && !estModeleOllamaCloud(selectedModel) && (
         <LocalModelFeasibility
           model={ollamaStatus?.models.find((model) => model.name === selectedModel)}
           resources={systemResources}
@@ -683,6 +689,8 @@ export function EffortSelector({
   }, []);
 
   async function handleChange(value: string) {
+    // B-1160 : sans modèle, l'effort partait avec un modèle vide.
+    if (!selectedModel) return;
     const previous = effort;
     setEffort(value);
     setSaving(true);
@@ -722,7 +730,7 @@ export function EffortSelector({
         <Select
           id="llm-effort"
           value={effort}
-          disabled={saving}
+          disabled={saving || !selectedModel}
           options={EFFORT_OPTIONS.map((opt) => ({ value: opt.value, label: opt.label }))}
           /* Deux valeurs, dans cet ordre, et JAMAIS `undefined` : l'aide
              ci-dessous décrit le champ en toutes circonstances, la mention ne

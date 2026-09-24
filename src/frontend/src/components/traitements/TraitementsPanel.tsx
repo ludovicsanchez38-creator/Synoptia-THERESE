@@ -90,7 +90,7 @@ export function TraitementsPanel() {
                 {enCours && !arretDemande && (
                   <Spinner taille="ligne" className="shrink-0 text-accent" />
                 )}
-                <span className="flex-1 truncate text-xs font-medium text-text">
+                <span className="flex-1 truncate text-xs font-medium text-text" title={t.label}>
                   {t.label}
                 </span>
                 {t.can_cancel && !arretDemande && (
@@ -126,8 +126,9 @@ export function TraitementsPanel() {
                   {fin ? `Fin ${fin}` : ''}
                 </p>
               )}
+              {/* B-1160 : l'erreur dit quoi faire, elle se lit en entier. */}
               {t.error && (
-                <p className="mt-0.5 truncate text-xs text-error">{t.error}</p>
+                <p className="mt-0.5 break-words text-xs text-error">{t.error}</p>
               )}
             </li>
           );
