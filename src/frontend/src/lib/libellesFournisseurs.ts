@@ -31,7 +31,8 @@ export const LIBELLES_FOURNISSEURS: Record<LLMProvider, string> = {
 const MOTEURS_D_IMAGES: Record<string, string> = {
   'gpt-image-2': 'GPT Image 2',
   'fal-flux-pro': 'Fal Flux Pro',
-  'nanobanan-pro': 'Nano Banana 2',
+  // B-1226 : le nom de l'écran Images, où cet accord est donné.
+  'nanobanan-pro': 'Nano Banana',
 };
 
 /** Le libellé d'un fournisseur ; l'identifiant lui-même s'il est inconnu. */

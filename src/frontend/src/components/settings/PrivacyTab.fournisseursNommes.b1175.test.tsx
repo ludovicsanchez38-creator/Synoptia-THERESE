@@ -97,5 +97,16 @@ describe('B-1175 : Confidentialité nomme l’accord Ollama Cloud', () => {
     render(<PrivacyTab />);
     const encadre = (await screen.findByText('Ce qui peut sortir de ta machine')).parentElement?.textContent ?? '';
     expect(encadre).toContain('Ollama Cloud');
+    // B-1225 : la détection reconnaît « :cloud » ET « -cloud » (gpt-oss:120b-cloud).
+    expect([encadre.includes('« :cloud »'), encadre.includes('« -cloud »')]).toEqual([true, true]);
+  });
+
+  it('B-1226 : l’accord Nano Banana porte le nom de l’écran où il est donné', async () => {
+    grantCloudConsent('images', 'nanobanan-pro', ['prompt'], '2026-09-24T10:00:00.000Z');
+    render(<PrivacyTab />);
+    await screen.findAllByRole('button', { name: 'Révoquer' });
+    const ligne = ligneDAccord();
+    expect({ nomme: ligne.includes('Nano Banana'), version: ligne.includes('Nano Banana 2') })
+      .toEqual({ nomme: true, version: false });
   });
 });
