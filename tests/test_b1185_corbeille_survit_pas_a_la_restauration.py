@@ -14,6 +14,7 @@ La Corbeille est un faux `~/.Trash` (Path.home redirigé) : jamais la vraie.
 from __future__ import annotations
 
 import pathlib
+import sys
 from pathlib import Path
 
 import pytest
@@ -27,6 +28,9 @@ def fausse_corbeille(tmp_path, monkeypatch):
     maison = tmp_path / "maison"
     (maison / ".Trash").mkdir(parents=True)
     monkeypatch.setattr(pathlib.Path, "home", classmethod(lambda cls: maison))
+    # La Corbeille ~/.Trash est celle de macOS ; sous Linux, P-102 vise la
+    # corbeille freedesktop (même piège que B-1169 sur la CI).
+    monkeypatch.setattr(sys, "platform", "darwin")
     from app.services.user_commands import UserCommandsService
 
     monkeypatch.setattr(UserCommandsService, "_instance", None)
