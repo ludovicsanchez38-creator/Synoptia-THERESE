@@ -316,17 +316,26 @@ class UserCommandsService:
         raise OSError("Corbeille du bureau : aucun nom libre")
 
     def _index_corbeille(self) -> Path:
+        # B-1185 : l'index vit HORS de `commands/`, que la sauvegarde archive
+        # et que la restauration remplace : restauré, il oubliait les dépôts
+        # faits après la sauvegarde, et la purge RGPD les laissait en Corbeille.
+        return self._commands_dir.parent.parent / ".corbeille-commandes.json"
+
+    def _ancien_index_corbeille(self) -> Path:
         return self._commands_dir / ".corbeille.json"
 
     def _depots_en_corbeille(self) -> list[str]:
-        index = self._index_corbeille()
-        if not index.exists():
-            return []
-        try:
-            charge = json.loads(index.read_text(encoding="utf-8"))
-            return [str(x) for x in charge] if isinstance(charge, list) else []
-        except (OSError, ValueError):
-            return []
+        depots: list[str] = []
+        for index in (self._index_corbeille(), self._ancien_index_corbeille()):
+            if not index.exists():
+                continue
+            try:
+                charge = json.loads(index.read_text(encoding="utf-8"))
+            except (OSError, ValueError):
+                continue
+            if isinstance(charge, list):
+                depots.extend(str(x) for x in charge if str(x) not in depots)
+        return depots
 
     def _noter_depot_en_corbeille(self, destination: Path) -> None:
         depots = self._depots_en_corbeille()
@@ -362,6 +371,7 @@ class UserCommandsService:
             except OSError as exc:
                 logger.warning("Dépôt en Corbeille non effacé : %s (%s)", depot, exc)
         self._index_corbeille().unlink(missing_ok=True)
+        self._ancien_index_corbeille().unlink(missing_ok=True)
 
         logger.info("Purge RGPD : %d commande(s) utilisateur effacée(s)", efface)
         return efface
