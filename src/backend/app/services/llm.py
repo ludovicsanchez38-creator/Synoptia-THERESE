@@ -824,6 +824,17 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
             )
             return self.config
 
+        # B-1071 : « En local, rien ne quitte ton ordinateur » (onglet Modèles).
+        # Tous les replis sont en ligne : un fournisseur local n'en cherche
+        # aucun, l'échec remonte au lieu de partir en silence chez un tiers.
+        if current_name == "ollama":
+            logger.warning(
+                "Circuit breaker: %s indisponible, aucune bascule vers un "
+                "service en ligne pour un fournisseur local",
+                current_name,
+            )
+            return self.config
+
         # Provider principal indisponible - chercher un fallback
         logger.warning(
             "Circuit breaker: provider %s indisponible, recherche de fallback...",
