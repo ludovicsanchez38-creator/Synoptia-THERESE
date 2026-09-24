@@ -348,7 +348,9 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
               setSynthesis(synthesisData);
               setIsSynthesizing(false);
             } catch {
-              console.error('Failed to parse synthesis');
+              // B-914 : l'indicateur tournait sans fin, seule trace en console.
+              setIsSynthesizing(false);
+              setRunError('La synthèse du Board est illisible : les avis ci-dessus restent consultables, relance la délibération pour obtenir une synthèse.');
             }
             break;
 
