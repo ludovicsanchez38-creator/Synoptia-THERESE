@@ -1722,7 +1722,9 @@ async def import_conversations(
         for msg_data in conv_data.get("messages", []):
             # B-1182 : le moteur ne stocke que des tours user et assistant ; un
             # autre rôle (dont « system ») serait rejoué au modèle tel quel.
-            if msg_data.get("role", "user") not in ROLES_IMPORTABLES:
+            role = msg_data.get("role", "user")
+            # B-1202 : un rôle non textuel (liste, objet) levait TypeError.
+            if not isinstance(role, str) or role not in ROLES_IMPORTABLES:
                 continue
             message_kwargs: dict[str, Any] = {
                 "conversation_id": conversation.id,

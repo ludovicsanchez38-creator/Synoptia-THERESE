@@ -95,3 +95,20 @@ async def test_l_import_json_d_un_message_ne_recopie_pas_un_role_hors_domaine(cl
     # Le moteur ne stocke que des tours user et assistant : un « system »
     # importé serait rejoué au modèle comme consigne.
     assert roles == [], f"rôles stockés : {roles}"
+
+
+@pytest.mark.asyncio
+async def test_un_role_non_hachable_est_ecarte_sans_erreur_500(client):
+    """B-1202 : régression de B-1182, un rôle liste levait TypeError (500)."""
+    resp = await client.post(
+        "/api/data/import/conversations",
+        json={"conversations": [{
+            "id": "conv-b1202", "title": "Importée",
+            "messages": [
+                {"role": ["user"], "content": "rôle liste"},
+                {"role": "user", "content": "gardé"},
+            ],
+        }]},
+    )
+    assert resp.status_code == 200, resp.text
+    assert resp.json()["imported"]["messages"] == 1, resp.json()
