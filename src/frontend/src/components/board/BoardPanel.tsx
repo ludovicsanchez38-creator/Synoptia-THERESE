@@ -31,6 +31,7 @@ import {
 } from '../../services/api';
 import { annulerDeliberation, couperTransport } from './annulerDeliberation';
 import { Spinner } from '../ui/Spinner';
+import { estModeleOllamaCloud } from '../../lib/ollamaCloud';
 
 interface BoardPanelProps {
   isOpen: boolean;
@@ -132,7 +133,10 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
   const checkOllama = useCallback(() => {
     getOllamaStatus()
       .then((statut) => {
+        // B-1172 : un modèle Ollama Cloud part chez ollama.com ; le mode
+        // souverain le refuse (B-1156), l'écran ne le propose donc pas.
         const modeles = (statut.models ?? [])
+          .filter((m) => !estModeleOllamaCloud(m.name))
           .map((m) => ({ name: m.name, size: m.size ?? 0 }))
           .sort((a, b) => a.size - b.size);
         setOllamaAvailable(statut.available && modeles.length > 0);
