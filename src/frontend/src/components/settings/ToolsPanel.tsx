@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { pushEscapeHandler } from '../../lib/escapeStack';
+import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import {
   Wrench,
   Plus,
@@ -209,6 +210,10 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
     if (!serverToDelete) return;
     return pushEscapeHandler(() => setServerToDelete(null));
   }, [serverToDelete]);
+  // B-921 : la question se déclarait modale sans y mettre le focus ni le
+  // rendre au bouton d'origine. Échap reste à la pile ci-dessus.
+  const questionSuppressionRef = useRef<HTMLDivElement>(null);
+  useDialogFocusTrap(questionSuppressionRef, { active: Boolean(serverToDelete) });
   const [installingPreset, setInstallingPreset] = useState<string | null>(null);
   const [presetToConfig, setPresetToConfig] = useState<api.MCPPreset | null>(null);
   const [presetFilter, setPresetFilter] = useState('');
@@ -940,6 +945,7 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
 
             {/* Modal */}
             <motion.div
+              ref={questionSuppressionRef}
               role="dialog"
               aria-modal="true"
               aria-label="Confirmer la suppression du connecteur"
