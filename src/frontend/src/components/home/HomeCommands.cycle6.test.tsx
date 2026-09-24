@@ -27,13 +27,14 @@ describe('D86 : les actions d’une commande perso existent hors survol', () => 
     render(<HomeCommands onPromptSelect={() => {}} />);
     fireEvent.click(screen.getByRole('button', { name: /Produire/ }));
     // AnimatePresence mode="wait" : la catégorie s'affiche après la sortie de la grille.
-    // B-1118 : sous charge, cette sortie dépasse le délai par défaut d'une seconde.
+    // B-1118 : sous charge, cette sortie dépasse le délai par défaut d'une seconde ;
+    // le test dispose de 15 s pour ne pas buter sur son propre délai.
     const deplacer = await screen.findByRole('button', { name: 'Déplacer' }, { timeout: 5000 });
     const supprimer = screen.getByRole('button', { name: 'Supprimer' });
     for (const bouton of [deplacer, supprimer]) {
       expect(bouton.closest('.hidden')).toBeNull();
     }
-  });
+  }, 15_000);
 
   it('Grok 0.70.0 P2 : invisibles hors survol, les actions ne sont pas cliquables dans le vide', async () => {
     render(<HomeCommands onPromptSelect={() => {}} />);
@@ -44,5 +45,5 @@ describe('D86 : les actions d’une commande perso existent hors survol', () => 
     expect(conteneur?.className).toMatch(/\bpointer-events-none\b/);
     expect(conteneur?.className).toMatch(/group-hover\/cmd:pointer-events-auto/);
     expect(conteneur?.className).toMatch(/focus-within:pointer-events-auto/);
-  });
+  }, 15_000);
 });
