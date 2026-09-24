@@ -158,3 +158,45 @@ rechargé, masque démo arrivé directement par « Écrire », nom de « Écrire
 4. **Espace de noms `{contact_prenom}`** : décidé ici pour ne jamais écraser
    une Variable de l'utilisateur ; plus long à taper que `{prenom}`. À
    confirmer.
+
+## Revue de la V2 (24/09/2026) : NO-GO, V3 au cycle 13
+
+Relecture adverse par un rôle Claude séparé (Codex et Grok indisponibles),
+rapport complet dans `docs/plans/revues/2026-09-24-p096-revue-v2.md`.
+Un P1 bloque : la reprise d'un lot arrêté n'a rien pour recréer les
+brouillons, puisque le moteur ne garde ni l'objet, ni le corps, ni le compte.
+Les autres constats (P2 et P3) sont techniques et seront repris dans la V3 :
+une session IMAP avec un dépôt par appel, « incertain » pour toute erreur
+survenue après l'envoi, préfixe `contact_` réservé, table de masquage propre
+au panneau, garde de saisie branchée sur la fermeture et Échap, `batch_id`
+généré par le moteur, migration Alembic complète, purge des éléments.
+
+Le code n'est pas commencé : la règle maison est de faire accepter le design
+avant d'écrire le code.
+
+### Décisions supplémentaires pour Ludo (en plus des quatre ci-dessus)
+
+5. **Conservation du modèle pour la reprise.** (a) Le moteur garde le modèle
+   non résolu (jetons compris) jusqu'à la fin du lot, plus quelques jours ;
+   la promesse « aucun corps en base » devient « aucun corps personnalisé en
+   base ». (b) Ou « Reprendre » exige que l'écran renvoie le modèle ; après
+   un redémarrage, il faut le recoller. Recommandé : (a), plus simple à vivre.
+6. **Signalement « déjà écrit il y a moins de 24 h ».** Bloquer le contact ou
+   seulement avertir ? Recommandé : avertir, contact décoché par défaut.
+7. **Trace sur la fiche.** Un brouillon créé laisse-t-il une activité sur la
+   fiche contact (et met-il à jour la dernière interaction) ? Recommandé :
+   non tant qu'il n'est pas envoyé.
+8. **Durée de conservation des éléments du lot.** Recommandé : 30 jours,
+   comme les travaux, et effacement à la suppression ou à l'anonymisation du
+   contact.
+9. **Saisie en ligne d'un champ manquant.** La V1 la proposait, la V2 l'a
+   retirée sans le dire. Recommandé : non en V1, le contact reste bloqué avec
+   un lien vers sa fiche.
+10. **Signature, options réelles.** Il n'existe pas de signature texte, seule
+    une signature HTML. Trois choix : sans signature ; signature HTML
+    convertie en texte (images et liens perdus) ; corps en HTML avec
+    échappement des champs. Recommandé : sans signature, dit dans l'aperçu.
+11. **Réponses de la V1 à confirmer.** Blocage d'un champ vide sans repli
+    (une fiche d'entreprise sans prénom est alors bloquée dès que le modèle
+    contient `{contact_prenom}`), et plafond de 50 par lot : ce sont des
+    recommandations du relecteur, pas encore des décisions.
