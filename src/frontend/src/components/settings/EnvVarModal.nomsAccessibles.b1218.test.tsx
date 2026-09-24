@@ -20,6 +20,11 @@ describe('B-1218 : noms accessibles de la modale des variables', () => {
     const noms = champs.map((c) => c.getAttribute('aria-label') ?? '');
     expect(new Set(noms).size).toBe(noms.length);
     fireEvent.change(champs[0], { target: { value: 'secret' } });
-    expect(screen.getByRole('button', { name: /Afficher/ })).toBeTruthy();
+    // B-1227 : bouton bascule, nom FIXE et état porté par aria-pressed seul.
+    const oeil = screen.getByRole('button', { name: /Afficher la valeur de/ });
+    const nomAvant = oeil.getAttribute('aria-label');
+    fireEvent.click(oeil);
+    expect({ nomFixe: oeil.getAttribute('aria-label') === nomAvant, presse: oeil.getAttribute('aria-pressed') })
+      .toEqual({ nomFixe: true, presse: 'true' });
   });
 });

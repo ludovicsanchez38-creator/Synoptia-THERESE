@@ -261,7 +261,7 @@ export function EnvVarModal({ preset, onSubmit, onCancel }: EnvVarModalProps) {
                       <button
                         type="button"
                         onClick={() => toggleShowValue(envVar)}
-                        aria-label={show ? `Masquer ${config.label}` : `Afficher ${config.label}`}
+                        aria-label={`Afficher la valeur de ${config.label}`}
                         aria-pressed={show}
                         className="p-1 hover:bg-border/30 rounded-sm transition-colors"
                       >
