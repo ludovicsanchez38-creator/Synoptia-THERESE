@@ -11,11 +11,15 @@ import json
 import logging
 import unicodedata
 from datetime import UTC, datetime
+from typing import get_args
 
 from app.models.entities import Contact, Deliverable, Preference, Project, Task
-from app.models.schemas import adresse_unique_valide
+from app.models.schemas import EtapePipeline, adresse_unique_valide
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
+
+# B-1187 : une étape venue du tableur n'est retenue que si le pipeline la connaît.
+ETAPES_PIPELINE = frozenset(get_args(EtapePipeline))
 
 logger = logging.getLogger(__name__)
 
@@ -298,16 +302,28 @@ async def upsert_contact(
     if courriel_refuse:
         courriel = existing.email if existing else None
 
+    # B-1187 : même règle que B-1108/B-1125 (arbitrage du 24/09) : le tableur
+    # fait foi pour ce qu'il dit, pas pour ce qu'il tait. Une cellule vide ou
+    # une étape inconnue ne remplace pas la valeur enregistrée.
+    etape = (_get("Stage") or "").lower()
+    etape = etape if etape in ETAPES_PIPELINE else None
+    score_fourni = bool(str(row.get("Score") or "").strip())
+
     if existing:
-        existing.first_name = first_name
-        existing.last_name = last_name
-        existing.company = _get("Entreprise")
+        if full_name:
+            existing.first_name = first_name
+            existing.last_name = last_name
+        for attribut, colonne in (("company", "Entreprise"), ("phone", "Tel"), ("source", "Source")):
+            valeur = _get(colonne)
+            if valeur:
+                setattr(existing, attribut, valeur)
         existing.email = courriel
-        existing.phone = _get("Tel")
-        existing.source = _get("Source")
-        existing.stage = _get("Stage", "contact") or "contact"
-        existing.score = score
-        existing.tags = tags_json
+        if etape:
+            existing.stage = etape
+        if score_fourni:
+            existing.score = score
+        if tags_json is not None:
+            existing.tags = tags_json
         existing.updated_at = datetime.now(UTC)
         return existing, False
     else:
@@ -319,7 +335,7 @@ async def upsert_contact(
             email=courriel,
             phone=_get("Tel"),
             source=_get("Source"),
-            stage=_get("Stage", "contact") or "contact",
+            stage=etape or "contact",
             score=score,
             tags=tags_json,
             scope="global",
@@ -412,14 +428,20 @@ async def upsert_project(
     notes = _get("Notes")
 
     if existing:
-        existing.name = name
-        existing.description = description
+        # B-1188 : une cellule vide ne remplace ni le nom par « Sans nom »,
+        # ni la description, le budget ou les notes (arbitrage du 24/09).
+        if _get("Name"):
+            existing.name = name
+        if description:
+            existing.description = description
         if client_id:
             existing.contact_id = client_id
         if status:
             existing.status = status
-        existing.budget = budget
-        existing.notes = notes
+        if budget is not None and budget_raw:
+            existing.budget = budget
+        if notes:
+            existing.notes = notes
         existing.updated_at = datetime.now(UTC)
         return existing, False
     else:
@@ -497,14 +519,20 @@ async def upsert_task(
     description_val = _get_str("Description")
 
     if existing:
-        existing.title = title
-        existing.description = description_val or None
+        # B-1188 : une cellule vide n'invente pas « Sans titre » et n'efface
+        # ni la description ni les dates.
+        if _get_str("Title"):
+            existing.title = title
+        if description_val:
+            existing.description = description_val
         if priority:
             existing.priority = priority
         if task_status:
             existing.status = task_status
-        existing.due_date = due_date
-        existing.completed_at = completed_at
+        if due_date is not None:
+            existing.due_date = due_date
+        if completed_at is not None:
+            existing.completed_at = completed_at
         existing.updated_at = datetime.now(UTC)
         return existing, False
     else:
@@ -591,8 +619,11 @@ async def upsert_deliverable_from_import(
     description = _get("Description")
 
     if existing:
-        existing.title = title
-        existing.description = description
+        # B-1188 : ni titre inventé ni description effacée par une cellule vide.
+        if _get("Title"):
+            existing.title = title
+        if description:
+            existing.description = description
         if project_id:
             existing.project_id = project_id
         if statut_reconnu:
