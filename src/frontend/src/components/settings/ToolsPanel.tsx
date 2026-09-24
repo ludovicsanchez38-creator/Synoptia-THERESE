@@ -594,20 +594,6 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
               />
 
               {(() => {
-                // Filtrer par recherche
-                // B-1214 : accents repliés des deux côtés ; « Avancé » tapé tel
-                // qu'affiché retrouve la catégorie « avance ».
-                const filter = replierPourRecherche(presetFilter.trim());
-                const filteredPresets = filter
-                  ? presets.filter((p) =>
-                      replierPourRecherche(p.name).includes(filter) ||
-                      replierPourRecherche(p.description).includes(filter) ||
-                      replierPourRecherche(p.category || '').includes(filter)
-                    )
-                  : presets;
-
-                // Grouper les presets par categorie
-                const CATEGORY_ORDER = ['essentiels', 'productivite', 'recherche', 'marketing', 'crm', 'finance', 'communication', 'avance'];
                 const CATEGORY_LABELS: Record<string, string> = {
                   essentiels: 'Essentiels',
                   productivite: 'Productivité',
@@ -618,6 +604,22 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
                   communication: 'Communication',
                   avance: 'Avancé',
                 };
+                // Filtrer par recherche
+                // B-1214 : accents repliés des deux côtés ; « Avancé » tapé tel
+                // qu'affiché retrouve la catégorie « avance ». B-1228 : le
+                // libellé affiché compte aussi (« CRM & Ventes »).
+                const filter = replierPourRecherche(presetFilter.trim());
+                const filteredPresets = filter
+                  ? presets.filter((p) =>
+                      replierPourRecherche(p.name).includes(filter) ||
+                      replierPourRecherche(p.description).includes(filter) ||
+                      replierPourRecherche(p.category || '').includes(filter) ||
+                      replierPourRecherche(CATEGORY_LABELS[p.category || ''] ?? '').includes(filter)
+                    )
+                  : presets;
+
+                // Grouper les presets par categorie
+                const CATEGORY_ORDER = ['essentiels', 'productivite', 'recherche', 'marketing', 'crm', 'finance', 'communication', 'avance'];
                 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
                   essentiels: <Globe className="w-3.5 h-3.5" />,
                   productivite: <Briefcase className="w-3.5 h-3.5" />,

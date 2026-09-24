@@ -64,6 +64,7 @@ describe('B-1176 (b) : catégories de presets accentuées', () => {
       { id: 'notion', name: 'Notion', description: 'Pages et bases', category: 'productivite', command: 'npx', args: [] },
       { id: 'playwright', name: 'Playwright', description: 'Navigateur', category: 'avance', command: 'npx', args: [] },
       { id: 'brave', name: 'Brave', description: 'Recherche web', category: 'recherche', command: 'npx', args: [] },
+      { id: 'hubspot', name: 'HubSpot', description: 'Contacts et affaires', category: 'crm', command: 'npx', args: [] },
     ]);
   });
 
@@ -73,7 +74,7 @@ describe('B-1176 (b) : catégories de presets accentuées', () => {
     await screen.findByText('Recherche');
     const entetes = Array.from(document.querySelectorAll('button[aria-controls^="mcp-preset-category-"]'))
       .map((b) => b.textContent?.trim());
-    expect(entetes).toEqual(['Productivité', 'Recherche', 'Avancé']);
+    expect(entetes).toEqual(['Productivité', 'Recherche', 'CRM & Ventes', 'Avancé']);
   });
 
   it('B-1214 : chercher « Avancé » tel qu’affiché trouve la catégorie', async () => {
@@ -84,5 +85,15 @@ describe('B-1176 (b) : catégories de presets accentuées', () => {
     const entetes = Array.from(document.querySelectorAll('button[aria-controls^="mcp-preset-category-"]'))
       .map((b) => b.textContent?.trim());
     expect(entetes).toEqual(['Avancé']);
+  });
+
+  it('B-1228 : chercher « Ventes » tel qu’affiché trouve la catégorie « CRM & Ventes »', async () => {
+    render(<ToolsPanel onError={vi.fn()} />);
+    fireEvent.click(await screen.findByRole('button', { name: /Presets/ }));
+    await screen.findByText('Recherche');
+    fireEvent.change(screen.getByRole('textbox', { name: 'Rechercher un preset MCP' }), { target: { value: 'Ventes' } });
+    const entetes = Array.from(document.querySelectorAll('button[aria-controls^="mcp-preset-category-"]'))
+      .map((b) => b.textContent?.trim());
+    expect(entetes).toEqual(['CRM & Ventes']);
   });
 });
