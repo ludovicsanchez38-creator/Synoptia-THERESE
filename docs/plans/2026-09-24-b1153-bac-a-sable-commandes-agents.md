@@ -1,7 +1,20 @@
-# B-1153 : confiner les commandes des agents (design V4)
+# B-1153 : confiner les commandes des agents (design V5)
 
-Statut : **V4, après trois revues adverses** (V1, V2 et V3 : NO-GO ; rapports
-hors dépôt, scratchpad de la session du 24/09). Arbitrage de principe :
+Statut : **V5, après quatre revues adverses** (V1 à V4 : NO-GO ; rapports
+hors dépôt, scratchpad de la session du 24/09).
+
+**Décision de la V5 : macOS seulement en V1.** La revue V4 a montré que, sous
+Linux, Landlock tel que conçu ne confine que l'écriture : la clé maîtresse
+(`~/.therese/.encryption_key`, `encryption.py:40`, d'où dérivent la clé
+SQLCipher de toute la base et le chiffrement des clés d'API,
+`encryption.py:446-483`) restait lisible par la commande et partait vers le
+modèle par sa sortie. Landlock n'a pas de règle de refus : fermer la lecture
+exige une liste blanche de lecture (racines système, dépôt, dossier
+temporaire, chaînes d'outils résolues), à concevoir et mesurer. Dans le sens
+de l'arbitrage (« refus explicite là où le confinement n'est pas
+disponible »), **Linux refuse les commandes d'agents en V1, comme Windows** ;
+le relais Linux (prototypes et mesures ci-dessous) devient la V2, avec la
+liste blanche de lecture pour condition. Arbitrage de principe :
 `docs/plans/2026-09-24-arbitrages-par-delegation.md`. Aucun code avant un GO
 de revue.
 
@@ -17,6 +30,9 @@ de revue.
 | V2 | prototypes « validés » | ils utilisaient `assert` (supprimé sous `-O`, donc fail-open) et ne bloquaient ni `io_uring` ni les appels x32. Corrigé et remesuré en V3 |
 | V3 | la commande est coupée des autres processus | les signaux n'étaient restreints nulle part : sous Seatbelt, une commande confinée a tué un processus extérieur (mesuré par la revue). La revue craignait aussi la lecture de `/proc/<moteur>/environ` et `ptrace` sous Linux ; **mesuré le 24/09 : Landlock les refuse déjà** (un processus confiné ne peut pas exercer d'accès de type ptrace hors de son domaine), le témoin non confiné lisant bien le secret. **Signaux restreints en V4**, `ptrace` refusé aussi par seccomp |
 | V3 | cinq dossiers d'identifiants refusés en lecture (macOS) | `~/.netrc`, `~/.npmrc`, `~/.config/gh`, `~/.docker`, cookies de navigateurs restaient lisibles. **Liste étendue en V4** ; R1 requalifié |
+| V4 | « aucun secret du moteur » sous Linux | faux : la clé maîtresse est un fichier lisible (Landlock n'y confine que l'écriture). **Linux refuse en V1** ; relais Linux en V2 avec liste blanche de lecture |
+| V4 | la commande n'expose rien de plus que `read_file` | faux : `read_file` refuse les chemins absolus et hors dépôt (`tools.py:545-549`) ; la commande lit tout `$HOME` hors liste. R1 requalifié en **nouvelle surface** |
+| V4 | liste de lecture refusée (macOS) | omettait `~/.claude`, `~/.claude.json`, `~/.pypirc`, `~/.config/git`, `~/.cargo/credentials*`, `~/.config/pip`, historiques du shell. **Ajoutés en V5** (`~/.gitconfig` exclu : le refuser casse git, mesuré) ; `DONNEES` lié à `settings.data_dir` résolu |
 
 ## Le constat
 
@@ -41,7 +57,10 @@ s'exécutent alors.
   (test existant conservé) ; la fusion approuvée (`approve_task`), sur un diff
   relu par l'utilisateur, voir R6.
 
-## Garanties de la V4
+## Garanties (V1 : macOS)
+
+Les mentions de Linux ci-dessous décrivent la V2 ; en V1, Linux refuse
+`run_command` (garantie 8).
 
 1. **Écriture confinée** au worktree de la mission, à un dossier temporaire
    neuf propre à la commande (`mkdtemp(prefix="therese-cmd-")`, retiré à la
@@ -66,8 +85,9 @@ s'exécutent alors.
 4. **Aucune prise sur les autres processus.** Signaux : la commande ne peut
    signaler qu'elle-même et ses descendants (macOS : `(deny signal)` puis
    `(allow signal (target self))` et `(target children)`, mesuré : enfant tué,
-   processus extérieur refusé ; Linux : `LANDLOCK_SCOPE_SIGNAL` à partir de
-   l'ABI 6, mesuré sur ABI 8). Lecture de l'environnement ou de la mémoire du
+   processus extérieur refusé ; `(target children)` ne couvre que les enfants
+   DIRECTS, mesuré par la revue V4 : petit-enfant et orphelin refusés, ce qui
+   est plus strict, sans effet sur les suites mesurées). Lecture de l'environnement ou de la mémoire du
    moteur, `ptrace` : Landlock refuse tout accès de type ptrace hors du domaine
    (mesuré : `/proc/<moteur>/environ` EACCES, attache EPERM, le témoin non
    confiné lisant bien le secret) ; seccomp refuse en plus `ptrace`,
@@ -104,18 +124,22 @@ s'exécutent alors.
      issue refuse `run_command` pour la vie du processus. La sonde ne prouve
      que ces trois points ; les autres garanties ont leurs tests.
    - Toute exception de préparation (mkdtemp, résolution, profil) refuse.
-8. **Refus explicite** là où le confinement n'existe pas : Windows ; Linux
-   sans Landlock (noyau < 5.13 ou désactivé), sans seccomp, ou hors x86_64 et
-   aarch64 ; macOS sans `/usr/bin/sandbox-exec` ou dont la sonde échoue.
+8. **Refus explicite** là où le confinement n'existe pas : Windows et Linux
+   en V1 (voir la décision en tête) ; macOS sans `/usr/bin/sandbox-exec` ou
+   dont la sonde échoue.
    Message : « Erreur : les commandes des agents sont désactivées sur ce
    système, faute de pouvoir les confiner (<raison>). L'agent peut toujours
    lire et modifier les fichiers de la mission. »
 
-Défense en profondeur, macOS : lecture refusée du dossier de données de
-THÉRÈSE et des identifiants usuels (`~/.ssh`, `~/.aws`, `~/.gnupg`,
-`~/.docker`, `~/.kube`, `~/.config/gh`, `~/.config/gcloud`, `~/.netrc`,
-`~/.npmrc`, `~/.git-credentials`, `~/Library/Keychains`, `~/Library/Cookies`,
-`~/Library/Safari`, profils Chrome et Firefox) ; `(deny appleevent-send)` ; `(deny mach-lookup (global-name
+Lecture refusée, macOS : le dossier de données de THÉRÈSE (**résolu depuis
+`settings.data_dir`**, `THERESE_DATA_DIR` compris : il contient la clé
+maîtresse) et les identifiants usuels (`~/.ssh`, `~/.aws`, `~/.gnupg`,
+`~/.docker`, `~/.kube`, `~/.config/gh`, `~/.config/gcloud`, `~/.config/git`,
+`~/.config/pip`, `~/.claude`, `~/.claude.json`, `~/.netrc`, `~/.npmrc`,
+`~/.pypirc`, `~/.git-credentials`, `~/.cargo/credentials*`, historiques du
+shell, `~/Library/Keychains`, `~/Library/Cookies`, `~/Library/Safari`, profils
+Chrome et Firefox). `~/.gitconfig` reste lisible : le refuser casse git
+(mesuré par la revue V4) ; `(deny appleevent-send)` ; `(deny mach-lookup (global-name
 "com.apple.pasteboard.1"))`, le presse-papiers (mesuré : `pbpaste` échoue).
 
 ## Mécanismes
@@ -148,7 +172,7 @@ fichiers ordinaires du dossier personnel lisibles, `/dev/tty` refusé. Piège
 appris : `(target pgrp)` laisse signaler tout le groupe du terminal ;
 `(target others)` ne refuse rien sous `(allow default)`.
 
-**Linux, relais Landlock + seccomp**, sans dépendance (appels système par
+**Linux, V2 (non livrée en V1) : relais Landlock + seccomp**, sans dépendance (appels système par
 `ctypes`). Ordre, chaque étape vérifiée, sortie 97 sinon :
 `PR_SET_NO_NEW_PRIVS` ; Landlock sur les droits d'écriture (ABI ≥ 1 ; `REFER`
 si ≥ 2, `TRUNCATE` si ≥ 3 ; droits de fichier seulement pour les
@@ -179,7 +203,13 @@ Garde P-100 (refus tôt et lisible), `_validate_path` de `write_file` (qui
 refuse `.git`), délai de 120 s, arrêt du groupe de processus, sortie tronquée
 à 5 000 caractères.
 
-## Mesure de référence : la suite de THÉRÈSE confinée (macOS, profils V3 et V4)
+## Mesure de référence : la suite de THÉRÈSE confinée (macOS)
+
+**Profil V5, HEAD du cycle 13 (d1c22dde), 24/09 au soir** : pytest 3 629
+tests, **0 échec**, 4 sautés ; Vitest 2 742 tests, **0 échec**. Réseau coupé,
+environnement réduit, signaux restreints, liste de lecture complète.
+
+Mesures antérieures (profils V3 et V4, arbre à 57304c07) :
 
 Arbre jetable à 57304c07, environnement réduit à `PATH`, `HOME`, `LANG` et
 aux variables de dossiers temporaires, réseau coupé :
@@ -198,8 +228,11 @@ des deux suites sous le relais fait partie des tests (cas 11).
 
 ## Tests (TDD)
 
-Rouges d'abord, sabotage qui les refait rougir. Cas 1 à 10 sur la CI Linux et
-macOS, sautés ailleurs ; cas 12 sur les trois systèmes.
+Rouges d'abord, sabotage qui les refait rougir. Cas 1 à 10d : macOS, joués
+sur le Mac à chaque cycle **et dans un travail CI `macos-latest` dédié**,
+limité à ces fichiers (aujourd'hui aucun travail de CI ne tourne sur macOS,
+seule la release y construit) ; sautés ailleurs. Cas 12 (refus) sur la CI
+Linux et Windows. Les cas marqués Linux relèvent de la V2.
 
 1. **Le cas de l'audit** : `pytest.ini` avec `--basetemp` hors worktree,
    `run_command("pytest -q")` : le témoin existe toujours.
@@ -216,7 +249,7 @@ macOS, sautés ailleurs ; cas 12 sur les trois systèmes.
    `textconv` définis dans un faux `~/.gitconfig` (qui créent un témoin) ;
    puis `commit` et `diff_files` : aucun témoin, commit sur la vraie branche,
    avec l'identité de l'utilisateur.
-7. **Relais en échec** (Linux) : DEPOT inexistant → code 97, commande non
+7. **Relais en échec** (Linux, V2) : DEPOT inexistant → code 97, commande non
    lancée, refus lisible ; même chose sous `PYTHONOPTIMIZE=2`.
 8. **Sonde** : confinement simulé inefficace (profil vide injecté par le
    test) → `run_command` refusé ; témoin qui échoue pour une autre raison que
@@ -230,7 +263,11 @@ macOS, sautés ailleurs ; cas 12 sur les trois systèmes.
     (moteur lancé avec un faux `THERESE_DB_KEY`) et `ptrace` sont refusés,
     avec un témoin non confiné qui, lui, lit le secret.
 10c. **Identité git seulement globale** : sous `GIT_CONFIG_GLOBAL=/dev/null`,
-    le commit de mission réussit avec l'identité relue à la création.
+    le commit de mission réussit avec l'identité relue à la création ; le test
+    retire toute autre source d'identité (`GIT_AUTHOR_*`, `GIT_COMMITTER_*`,
+    configuration du dépôt, `GIT_CONFIG_NOSYSTEM=1`).
+10d. **Dossier de données déplacé** : avec `THERESE_DATA_DIR` hors défaut,
+    la clé maîtresse de ce dossier est illisible par la commande.
 11. **Dogfooding** : les suites pytest et Vitest de THÉRÈSE passent sous le
     confinement, sur macOS (mesure ci-dessus) et sur Linux (DQ SYN).
 12. **Refus** sur plateforme sans confinement : rien lancé, message exact.
@@ -240,11 +277,13 @@ macOS, sautés ailleurs ; cas 12 sur les trois systèmes.
 
 ## Risques résiduels, numérotés
 
-- **R1, lecture** : sous Linux (aucun refus de lecture), et sous macOS hors
-  de la liste refusée, la commande lit les fichiers de l'utilisateur, y
-  compris un identifiant rangé ailleurs, et peut les recopier dans sa sortie
-  (5 000 caractères au plus), qui revient au modèle. Sans réseau, c'est la
-  seule sortie ; elle existe aujourd'hui aussi par `read_file`.
+- **R1, lecture, nouvelle surface** : sous macOS, hors de la liste refusée,
+  la commande lit les fichiers du dossier personnel (un identifiant rangé
+  ailleurs, `~/.gitconfig`, des documents) et peut les recopier dans sa
+  sortie (5 000 caractères au plus), qui revient au modèle. C'est une surface
+  **plus large** que `read_file`, qui refuse les chemins absolus et hors
+  dépôt. Sans réseau, c'est la seule sortie. Elle existe déjà, sans aucune
+  borne, avec le `run_command` actuel.
 - **R2, tests qui ont besoin du réseau** : ils échouent sous confinement.
   La suite de THÉRÈSE n'en a pas (mesuré). Assumé.
 - **R3, Seatbelt obsolète** : s'il disparaît, la sonde échoue et
