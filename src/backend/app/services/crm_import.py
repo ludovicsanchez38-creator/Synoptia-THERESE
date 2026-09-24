@@ -994,15 +994,19 @@ class CRMImportService:
                         result.skipped += 1
                         continue
 
-                raw_status = str(mapped.get("status", "a_faire")).lower().strip()
-                status = status_map.get(raw_status, "a_faire")
+                raw_status = str(mapped.get("status") or "").lower().strip()
+                statut_reconnu = status_map.get(raw_status)
+                status = statut_reconnu or "a_faire"
 
                 if existing and update_existing:
                     existing.title = mapped.get("title") or existing.title
                     if mapped.get("description"):
                         existing.description = mapped["description"]
                     existing.project_id = project_id
-                    existing.status = status
+                    # B-1106 : jumeau de B-1083, un statut absent, vide ou
+                    # inconnu repassait le livrable en « a_faire ».
+                    if statut_reconnu:
+                        existing.status = statut_reconnu
                     if mapped.get("due_date"):
                         existing.due_date = _parse_value(mapped["due_date"], "datetime")
 

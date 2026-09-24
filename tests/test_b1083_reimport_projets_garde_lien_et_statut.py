@@ -56,3 +56,23 @@ async def test_un_statut_reconnu_est_toujours_applique(db_session):
     projet = await _relire(db_session)
     assert projet.status == "completed"
     assert projet.contact_id == "contact-b1083"
+
+
+# --- B-1106 (lecteur I1) : même défaut sur le réimport de livrables ---------
+
+
+@pytest.mark.asyncio
+async def test_un_reimport_de_livrables_sans_statut_garde_le_statut(db_session):
+    from app.models.entities import Deliverable
+
+    await _projet_lie(db_session)
+    db_session.add(Deliverable(id="livrable-b1106", title="Plan", project_id="projet-b1083", status="valide"))
+    await db_session.commit()
+    service = CRMImportService(db_session)
+    await service.import_deliverables(b"id,title,project_id\nlivrable-b1106,Plan v2,projet-b1083\n", "livrables.csv")
+    await service.import_deliverables(b"id,title,project_id,status\nlivrable-b1106,Plan v3,projet-b1083,Gele\n", "livrables.csv")
+    await db_session.commit()
+    livrable = await db_session.get(Deliverable, "livrable-b1106")
+    await db_session.refresh(livrable)
+    assert livrable.title == "Plan v3"
+    assert livrable.status == "valide"
