@@ -70,7 +70,10 @@ export function TraitementsPanel() {
       {/* P-097 : une frise en lecture seule. Les étapes passées n'ont plus
           l'apparence d'une carte-bouton ; chacune dit son état, son début et
           sa fin. Seul un travail en cours garde un geste (« Arrêter »). */}
-      <ol aria-label="Frise des travaux récents" className="max-h-80 overflow-y-auto border-l border-border pl-3">
+      {/* Le conteneur qui défile garde une marge symétrique : une marge d'un seul
+          côté rognait l'anneau de focus d'« Arrêter » (anneauNonRogne). */}
+      <div className="max-h-80 overflow-y-auto px-1">
+      <ol aria-label="Frise des travaux récents" className="border-l border-border pl-3">
         {traitements.map((t) => {
           const enCours = t.state === 'running' || t.state === 'queued';
           const arretDemande =
@@ -130,6 +133,7 @@ export function TraitementsPanel() {
           );
         })}
       </ol>
+      </div>
     </div>
   );
 }
