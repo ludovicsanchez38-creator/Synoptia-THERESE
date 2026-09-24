@@ -105,6 +105,9 @@ TAILLE_DEPLIEE_MAX_MOTIF = 10_000
 LONGUEUR_MAX_LIGNE_RENDUE = 500
 # B-1047 : read_file lisait `max_lines` tel quel (négatif compris).
 MAX_LIGNES_LUES = 2000
+# B-1194 : les lignes ne bornent pas un fichier sans saut de ligne (un fichier
+# creux de 64 Mio passait entier au modèle). read_file borne aussi les octets.
+MAX_OCTETS_LUS = 256 * 1024
 
 _REPETITION_BORNEE = regex.compile(r"\{\s*(\d*)\s*(?:,\s*(\d*)\s*)?\}")
 
@@ -586,13 +589,19 @@ class AgentToolExecutor:
         except (TypeError, ValueError):
             max_lines = 500
         try:
-            content = resolved.read_text(encoding="utf-8", errors="replace")
+            with resolved.open("rb") as fichier:
+                brut = fichier.read(MAX_OCTETS_LUS + 1)
+            coupe = len(brut) > MAX_OCTETS_LUS
+            content = brut[:MAX_OCTETS_LUS].decode("utf-8", errors="replace")
             lines = content.split("\n")
             if len(lines) > max_lines:
                 return (
                     "\n".join(lines[:max_lines])
                     + f"\n\n[... tronqué à {max_lines} lignes, total: {len(lines)}]"
                 )
+            if coupe:
+                taille = resolved.stat().st_size
+                return content + f"\n\n[... tronqué à {MAX_OCTETS_LUS} octets, taille : {taille} octets]"
             return content
         except Exception as e:
             return f"Erreur de lecture : {_erreur_pour_le_modele(e)}"
