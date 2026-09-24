@@ -9,6 +9,7 @@ Utilise par crm.py (router), crm_sync.py (service) et crm_import.py (service).
 
 import json
 import logging
+import unicodedata
 from datetime import UTC, datetime
 
 from app.models.entities import Contact, Deliverable, Preference, Project, Task
@@ -32,6 +33,18 @@ PROJECT_STATUS_MAP: dict[str, str] = {
     "en_attente": "on_hold",
     "livre": "completed",
     "planifie": "active",
+    # B-1108 : formes accentuées au féminin et anglaises (clés passées par
+    # cle_de_statut : minuscules, sans accents, espaces en « _ »).
+    "terminee": "completed",
+    "livree": "completed",
+    "annulee": "cancelled",
+    "planifiee": "active",
+    "actif": "active",
+    "done": "completed",
+    "finished": "completed",
+    "paused": "on_hold",
+    "canceled": "cancelled",
+    "in_progress": "active",
     # Valeurs deja normalisees
     "active": "active",
     "completed": "completed",
@@ -48,9 +61,25 @@ TASK_PRIORITY_MAP: dict[str, str] = {
     "low": "low",
     "high": "high",
     "medium": "medium",
+    # B-1125 : priorités saisies en français dans le tableur
+    "basse": "low",
+    "faible": "low",
+    "moyenne": "medium",
+    "normale": "medium",
+    "haute": "high",
+    "elevee": "high",
+    "urgente": "urgent",
 }
 
 VALID_TASK_STATUSES = {"todo", "in_progress", "done", "cancelled"}
+
+# B-1125 : statuts de tâche en français ou en anglais (clés de cle_de_statut).
+TASK_STATUS_MAP: dict[str, str] = {
+    "todo": "todo", "a_faire": "todo",
+    "in_progress": "in_progress", "en_cours": "in_progress",
+    "done": "done", "fait": "done", "faite": "done", "termine": "done", "terminee": "done", "completed": "done",
+    "cancelled": "cancelled", "canceled": "cancelled", "annule": "cancelled", "annulee": "cancelled",
+}
 
 # B-1109 : statuts des livrables ramenés au contrat de l'entité
 # (a_faire, en_cours, en_revision, valide). L'ancienne liste (pending,
@@ -62,6 +91,24 @@ DELIVERABLE_STATUS_MAP: dict[str, str] = {
     "en_revision": "en_revision", "en revision": "en_revision", "en révision": "en_revision", "review": "en_revision",
     "valide": "valide", "validé": "valide", "done": "valide", "completed": "valide",
 }
+
+
+
+
+class LigneIncomplete(Exception):
+    """B-1125 : ligne écartée avec un message, sans faire tomber la synchro.
+
+    Pas une ValueError : les boucles de synchro ignorent celles-ci en silence
+    (ID absent) ; celle-ci doit apparaître dans les erreurs rendues."""
+
+
+def cle_de_statut(valeur: str | None) -> str:
+    """B-1108 : « Terminé », « En cours » ou « On hold » deviennent « termine »,
+    « en_cours » et « on_hold » : minuscules, sans accents, espaces et tirets
+    ramenés à « _ ». Les tables de statuts sont cherchées avec cette clé."""
+    texte = unicodedata.normalize("NFKD", (valeur or "").strip().lower())
+    sans_accents = "".join(c for c in texte if not unicodedata.combining(c))
+    return "_".join(sans_accents.replace("-", " ").split())
 
 
 # =============================================================================
@@ -158,31 +205,17 @@ def safe_strip_or_none(value: str | None) -> str | None:
 
 def normalize_project_status(raw_status: str | None, default: str = "active") -> str:
     """Normalise un statut de projet vers une valeur valide."""
-    if not raw_status:
-        return default
-    cleaned = raw_status.strip().lower()
-    status = PROJECT_STATUS_MAP.get(cleaned, cleaned)
-    if status not in VALID_PROJECT_STATUSES:
-        return default
-    return status
+    return PROJECT_STATUS_MAP.get(cle_de_statut(raw_status)) or default
 
 
 def normalize_task_priority(raw_priority: str | None, default: str = "medium") -> str:
     """Normalise une priorite de tache vers une valeur valide."""
-    if not raw_priority:
-        return default
-    cleaned = raw_priority.strip().lower()
-    return TASK_PRIORITY_MAP.get(cleaned, default)
+    return TASK_PRIORITY_MAP.get(cle_de_statut(raw_priority), default)
 
 
 def normalize_task_status(raw_status: str | None, default: str = "todo") -> str:
     """Normalise un statut de tache vers une valeur valide."""
-    if not raw_status:
-        return default
-    cleaned = raw_status.strip().lower()
-    if cleaned not in VALID_TASK_STATUSES:
-        return default
-    return cleaned
+    return TASK_STATUS_MAP.get(cle_de_statut(raw_status)) or default
 
 
 # =============================================================================
@@ -353,12 +386,21 @@ async def upsert_project(
             val = row.get(key, default).strip()
         return val or None
 
+    # B-1108 : le tableur fait foi pour ce qu'il dit, pas pour ce qu'il tait.
+    # Une cellule ClientID vide ou un client inconnu ne délie pas le projet ;
+    # un statut vide ou inconnu ne remplace pas le statut enregistré. La
+    # requête (et non session.get) voit aussi un client créé plus tôt dans la
+    # même synchro, pas encore validé en base.
     client_id = _get("ClientID")
+    if client_id:
+        connu = await session.execute(select(Contact.id).where(Contact.id == client_id))
+        if connu.scalar_one_or_none() is None:
+            client_id = None
 
-    raw_status = _get("Status", "active") or "active"
-    status = effective_map.get(raw_status.lower(), raw_status.lower())
+    table_des_statuts = {cle_de_statut(cle): valeur for cle, valeur in effective_map.items()}
+    status = table_des_statuts.get(cle_de_statut(_get("Status")))
     if status not in VALID_PROJECT_STATUSES:
-        status = "active"
+        status = None
 
     budget_raw = row.get("Budget", "")
     if isinstance(budget_raw, str):
@@ -372,8 +414,10 @@ async def upsert_project(
     if existing:
         existing.name = name
         existing.description = description
-        existing.contact_id = client_id
-        existing.status = status
+        if client_id:
+            existing.contact_id = client_id
+        if status:
+            existing.status = status
         existing.budget = budget
         existing.notes = notes
         existing.updated_at = datetime.now(UTC)
@@ -384,7 +428,7 @@ async def upsert_project(
             name=name,
             description=description,
             contact_id=client_id,
-            status=status,
+            status=status or "active",
             budget=budget,
             notes=notes,
             scope="global",
@@ -439,11 +483,10 @@ async def upsert_task(
             return (row.get(key, default) or default).strip()
         return row.get(key, default).strip()
 
-    raw_priority = _get_str("Priority", "medium")
-    priority = normalize_task_priority(raw_priority)
-
-    raw_status = _get_str("Status", "todo")
-    task_status = normalize_task_status(raw_status)
+    # B-1125 : une priorité ou un statut vide ou inconnu ne remplace pas
+    # la valeur enregistrée ; une tâche neuve prend « medium » et « todo ».
+    priority = TASK_PRIORITY_MAP.get(cle_de_statut(_get_str("Priority")))
+    task_status = TASK_STATUS_MAP.get(cle_de_statut(_get_str("Status")))
 
     # Parser les dates
     due_date = parse_datetime(_get_str("DueDate"))
@@ -456,8 +499,10 @@ async def upsert_task(
     if existing:
         existing.title = title
         existing.description = description_val or None
-        existing.priority = priority
-        existing.status = task_status
+        if priority:
+            existing.priority = priority
+        if task_status:
+            existing.status = task_status
         existing.due_date = due_date
         existing.completed_at = completed_at
         existing.updated_at = datetime.now(UTC)
@@ -467,8 +512,8 @@ async def upsert_task(
             id=task_id,
             title=title,
             description=description_val or None,
-            priority=priority,
-            status=task_status,
+            priority=priority or "medium",
+            status=task_status or "todo",
             due_date=due_date,
             completed_at=completed_at,
             created_at=created_at or datetime.now(UTC),
@@ -527,10 +572,20 @@ async def upsert_deliverable_from_import(
             val = row.get(key, default).strip()
         return val or None
 
+    # B-1125 : un projet vide ou inconnu ne détache pas un livrable existant ;
+    # un livrable neuf sans projet connu est écarté avec un message (la
+    # colonne project_id est NOT NULL : l'échec éclatait au commit final et
+    # faisait tomber toute la synchro en 500).
     project_id = _get("ProjectID")
+    if project_id:
+        connu = await session.execute(select(Project.id).where(Project.id == project_id))
+        if connu.scalar_one_or_none() is None:
+            project_id = None
+    if not project_id and not existing:
+        raise LigneIncomplete(f"livrable {deliv_id} écarté : aucun projet connu (colonne ProjectID vide ou inconnue)")
     # B-1109 : un statut absent, vide ou inconnu ne remplace pas celui d'un
     # livrable existant (même règle que B-1083 et B-1106).
-    statut_reconnu = DELIVERABLE_STATUS_MAP.get((_get("Status") or "").lower())
+    statut_reconnu = DELIVERABLE_STATUS_MAP.get(cle_de_statut(_get("Status")))
 
     title = _get("Title", "Sans titre") or "Sans titre"
     description = _get("Description")
@@ -538,7 +593,8 @@ async def upsert_deliverable_from_import(
     if existing:
         existing.title = title
         existing.description = description
-        existing.project_id = project_id
+        if project_id:
+            existing.project_id = project_id
         if statut_reconnu:
             existing.status = statut_reconnu
         existing.updated_at = datetime.now(UTC)

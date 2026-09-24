@@ -14,6 +14,8 @@ from datetime import UTC, datetime
 
 from app.models.entities import Contact, Deliverable, Preference, Project
 from app.services.crm_utils import (
+    DELIVERABLE_STATUS_MAP,
+    cle_de_statut,
     parse_datetime,
     upsert_contact,
     upsert_project,
@@ -242,18 +244,6 @@ class CRMSyncService:
 
         Ce mapping est specifique au service sync (statuts en francais, verification projet).
         """
-        # Map status values
-        status_map = {
-            "a_faire": "a_faire",
-            "en_cours": "en_cours",
-            "en_revision": "en_revision",
-            "valide": "valide",
-            "todo": "a_faire",
-            "in_progress": "en_cours",
-            "review": "en_revision",
-            "done": "valide",
-        }
-
         for row in deliverables_data:
             try:
                 deliverable_id = (row.get("ID", "") or "").strip()
@@ -273,9 +263,10 @@ class CRMSyncService:
                     logger.warning(f"Deliverable {deliverable_id} references unknown project {project_id}")
                     continue
 
-                # Parse status
-                raw_status = (row.get("Status", "a_faire") or "a_faire").strip().lower()
-                status = status_map.get(raw_status, "a_faire")
+                # B-1125 : même table que l'import (« Validé », « En révision »
+                # reconnus) ; un statut vide ou inconnu ne remplace pas
+                # celui d'un livrable existant.
+                status = DELIVERABLE_STATUS_MAP.get(cle_de_statut(row.get("Status")))
 
                 # Parse dates
                 due_date = parse_datetime(row.get("DueDate", ""))
@@ -285,7 +276,8 @@ class CRMSyncService:
                     existing.title = (row.get("Title", "Sans titre") or "Sans titre").strip()
                     existing.description = (row.get("Description", "") or "").strip() or None
                     existing.project_id = project_id
-                    existing.status = status
+                    if status:
+                        existing.status = status
                     existing.due_date = due_date
                     existing.completed_at = completed_at
                     existing.updated_at = datetime.now(UTC)
@@ -297,7 +289,7 @@ class CRMSyncService:
                         title=(row.get("Title", "Sans titre") or "Sans titre").strip(),
                         description=(row.get("Description", "") or "").strip() or None,
                         project_id=project_id,
-                        status=status,
+                        status=status or "a_faire",
                         due_date=due_date,
                         completed_at=completed_at,
                     )
