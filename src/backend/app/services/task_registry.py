@@ -185,3 +185,30 @@ async def recuperer_taches_orphelines(session: AsyncSession) -> int:
     await session.commit()
     logger.info("Traitements orphelins repris : %d", len(orphelines))
     return len(orphelines)
+
+
+async def recuperer_missions_orphelines(session: AsyncSession) -> int:
+    """B-1086 : libère les missions d'Atelier d'une exécution précédente.
+
+    Le verrou de l'Atelier compte les AgentTask `pending` ou `in_progress`
+    (409 sur /request et /spawn). `recuperer_taches_orphelines` ne reprend
+    que les ProcessingTask : après un arrêt brutal, une mission restait
+    « en cours » et verrouillait l'Atelier à vie. Appelée au démarrage, avant
+    toute nouvelle mission : toute mission active est alors orpheline.
+    """
+    from app.models.entities_agents import AgentTask
+
+    resultat = await session.execute(
+        select(AgentTask).where(AgentTask.status.in_(("pending", "in_progress")))
+    )
+    orphelines = list(resultat.scalars().all())
+    if not orphelines:
+        return 0
+    maintenant = datetime.now(UTC)
+    for mission in orphelines:
+        mission.status = "error"
+        mission.error = "Mission interrompue par l'arrêt de l'application."
+        mission.updated_at = maintenant
+    await session.commit()
+    logger.info("Missions d'Atelier orphelines libérées : %d", len(orphelines))
+    return len(orphelines)

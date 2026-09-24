@@ -216,12 +216,19 @@ async def lifespan(app: FastAPI):
     # services externes : cela ne touche que la base.
     try:
         from app.models.database import get_session_context
-        from app.services.task_registry import recuperer_taches_orphelines
+        from app.services.task_registry import (
+            recuperer_missions_orphelines,
+            recuperer_taches_orphelines,
+        )
 
         async with get_session_context() as session:
             reprises = await recuperer_taches_orphelines(session)
+            # B-1086 : les missions d'Atelier ont leur propre verrou (AgentTask).
+            missions = await recuperer_missions_orphelines(session)
         if reprises:
             logger.info(f"Traitements interrompus repris : {reprises}")
+        if missions:
+            logger.info(f"Missions d'Atelier interrompues libérées : {missions}")
         # 0.46 : rétention des traitements - les terminées de plus de 30 jours
         # partent, les actives jamais (elles relèvent du récupérateur).
         from app.services.traitements import purger_les_terminees
