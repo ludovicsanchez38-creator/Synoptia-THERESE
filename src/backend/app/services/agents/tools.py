@@ -59,19 +59,117 @@ ALLOWED_SEARCH_GLOBS = {
 # Recherche des agents (search_codebase), faite en Python et non plus par grep :
 # sous Windows, le grep de Git développait lui-même `*.py` contre le dossier
 # courant et ne trouvait rien (CI Windows, run 35903233291).
-DOSSIERS_EXCLUS_RECHERCHE = frozenset({".git", ".venv", "node_modules"})
+# B-1044 : des dossiers lourds ou générés (environnements, caches, builds)
+# noyaient la recherche ; `target` n'est exclu que sous `src-tauri` (ailleurs,
+# un dossier de ce nom peut porter du code). Tout dossier dont le nom commence
+# par `.venv` est un environnement (`.venv-quarantine-icloud`, 16 895 fichiers).
+DOSSIERS_EXCLUS_RECHERCHE = frozenset(
+    {
+        ".git", ".venv", "node_modules", "venv", "env", "dist",
+        "__pycache__", ".mypy_cache", ".pytest_cache", ".ruff_cache",
+    }
+)
 SUFFIXES_SENSIBLES = frozenset({".key", ".pem", ".p12", ".pfx"})
+# B-1048 : secrets usuels hors des suffixes ci-dessus.
+NOMS_SENSIBLES = frozenset(
+    {
+        "id_rsa", "id_dsa", "id_ecdsa", "id_ed25519", ".netrc", ".npmrc", ".pypirc",
+        "credentials.json", "service-account.json",
+    }
+)
 TAILLE_MAX_FICHIER_RECHERCHE = 5 * 1024 * 1024
 DELAI_RECHERCHE_S = 15.0
 MAX_RESULTATS_RECHERCHE = 200
+# B-1040 : `regex.compile` n'a pas de délai ; `a{10000000}` y allouait 2,7 Go et
+# `(a{1000}){1000}` 265 Mo. Le motif est borné avant compilation : longueur,
+# répétition unitaire, et taille une fois les répétitions (imbriquées) dépliées.
+LONGUEUR_MAX_MOTIF = 1000
+REPETITION_MAX_MOTIF = 1000
+TAILLE_DEPLIEE_MAX_MOTIF = 10_000
+# B-1044 : une ligne de JS minifié pouvait partir entière au modèle.
+LONGUEUR_MAX_LIGNE_RENDUE = 500
+# B-1047 : read_file lisait `max_lines` tel quel (négatif compris).
+MAX_LIGNES_LUES = 2000
+
+_REPETITION_BORNEE = regex.compile(r"\{\s*(\d*)\s*(?:,\s*(\d*)\s*)?\}")
+
+
+def _dossier_exclu(nom: str, parent: str) -> bool:
+    nom = nom.lower()
+    return (
+        nom in DOSSIERS_EXCLUS_RECHERCHE
+        or nom.startswith(".venv")
+        or (nom == "target" and os.path.basename(parent).lower() == "src-tauri")
+    )
+
+
+def _motif_demesure(motif: str) -> str | None:
+    """Raison du refus d'un motif trop coûteux à compiler, ou None (B-1040)."""
+    if len(motif) > LONGUEUR_MAX_MOTIF:
+        return f"plus de {LONGUEUR_MAX_MOTIF} caractères"
+    # Par groupe ouvert : [taille dépliée cumulée, taille du dernier élément].
+    pile: list[list[int]] = [[0, 0]]
+    i = 0
+    while i < len(motif):
+        caractere = motif[i]
+        if caractere == "\\":
+            element, i = 1, i + 2
+        elif caractere == "[":
+            j = i + 1
+            if j < len(motif) and motif[j] == "^":
+                j += 1
+            if j < len(motif) and motif[j] == "]":
+                j += 1
+            while j < len(motif) and motif[j] != "]":
+                j += 2 if motif[j] == "\\" else 1
+            element, i = 1, j + 1
+        elif caractere == "(":
+            pile.append([0, 0])
+            i += 1
+            continue
+        elif caractere == ")":
+            element = max(pile.pop()[0], 1) if len(pile) > 1 else 1
+            i += 1
+        elif caractere == "{" and (repetition := _REPETITION_BORNEE.match(motif, i)):
+            bornes = [int(borne) for borne in repetition.groups() if borne]
+            facteur = max(bornes) if bornes else 1
+            if facteur > REPETITION_MAX_MOTIF:
+                return f"répétition au-delà de {REPETITION_MAX_MOTIF}"
+            cadre = pile[-1]
+            cadre[0] += cadre[1] * (facteur - 1)
+            cadre[1] *= facteur
+            if cadre[0] > TAILLE_DEPLIEE_MAX_MOTIF:
+                return "répétitions imbriquées trop grandes"
+            i = repetition.end()
+            continue
+        elif caractere in "*+?|":
+            i += 1
+            continue
+        else:
+            element, i = 1, i + 1
+        cadre = pile[-1]
+        cadre[0] += element
+        cadre[1] = element
+        if cadre[0] > TAILLE_DEPLIEE_MAX_MOTIF:
+            return "répétitions imbriquées trop grandes"
+    return None
 
 
 def _nom_de_fichier_sensible(nom: str) -> bool:
     """Fichier que ni read_file ni search_codebase ne rendent (B-969).
 
-    Comparé en minuscules : `.ENV.yaml` ou `CLE.PEM` restent des secrets."""
-    nom = nom.lower()
-    return nom.startswith(".env") or Path(nom).suffix in SUFFIXES_SENSIBLES
+    Comparé en minuscules : `.ENV.yaml` ou `CLE.PEM` restent des secrets.
+    B-1045 : un nom Windows déguisé désigne le même fichier : flux alternatif
+    (`cle.pem::$DATA`, `CLE.PEM:zone`), points et espaces finaux (`cle.pem.`),
+    que Windows retire. Le nom brut ET le nom normalisé sont testés."""
+    brut = nom.lower()
+    normalise = brut.split(":", 1)[0].rstrip(" .")
+    return any(
+        candidat.startswith(".env")
+        or candidat in NOMS_SENSIBLES
+        or Path(candidat).suffix in SUFFIXES_SENSIBLES
+        for candidat in (brut, normalise)
+    )
 
 
 class _DelaiDepasse(Exception):
@@ -85,10 +183,25 @@ class _ResultatRecherche:
     # (B-963, B-965).
     erreurs: list[str] = field(default_factory=list)
     trop_volumineux: bool = False
+    # B-1041 : au délai, ce qui a été trouvé est rendu, marqué partiel.
+    delai_atteint: bool = False
+    # B-1042 : une correspondance de plus que demandé a été vue.
+    tronque: bool = False
+    # B-1043 : fichiers sautés parce qu'ils ne sont pas du texte UTF-8.
+    non_utf8: int = 0
 
 
 def _message_sans_chemin(exc: OSError) -> str:
     return exc.strerror or type(exc).__name__
+
+
+def _erreur_pour_le_modele(exc: BaseException) -> str:
+    """B-1046 : le texte d'une OSError porte le chemin absolu (nom de
+    l'utilisateur compris) ; il n'atteint pas le modèle, comme pour la
+    recherche (B-963, B-965)."""
+    if isinstance(exc, OSError) and (exc.filename is not None or exc.filename2 is not None):
+        return _message_sans_chemin(exc)
+    return str(exc)
 
 
 # Sans suivre un lien final, sans bloquer sur une FIFO (drapeaux absents : 0).
@@ -184,6 +297,27 @@ def _rechercher(
     # dossier est comparé à l'identité relevée chez son parent, avant et après
     # son listage, puis encore après l'ouverture de chacun de ses fichiers.
     a_parcourir: list[tuple[str, str, tuple[int, int] | None]] = [(racine, "", None)]
+    try:
+        _parcourir(a_parcourir, motif, glob_filter, max_results, echeance, arret, resultat)
+    except _DelaiDepasse:
+        # B-1041 : ce qui a été trouvé est rendu. Plafond déjà atteint : le
+        # délai est tombé en cherchant une correspondance de plus (B-1042).
+        if len(resultat.lignes) >= max_results:
+            resultat.tronque = True
+        else:
+            resultat.delai_atteint = True
+    return resultat
+
+
+def _parcourir(
+    a_parcourir: list[tuple[str, str, tuple[int, int] | None]],
+    motif: regex.Pattern[str],
+    glob_filter: str,
+    max_results: int,
+    echeance: float,
+    arret: threading.Event,
+    resultat: _ResultatRecherche,
+) -> None:
     while a_parcourir:
         dossier, prefixe, attendue = a_parcourir.pop()
         est_racine = attendue is None
@@ -209,7 +343,7 @@ def _rechercher(
                 if _est_un_lien(entree):
                     continue
                 if entree.is_dir(follow_symlinks=False):
-                    if entree.name.lower() not in DOSSIERS_EXCLUS_RECHERCHE:
+                    if not _dossier_exclu(entree.name, dossier):
                         sous_dossiers.append((entree.path, relatif + "/", _identite_entree(entree)))
                     continue
                 if (
@@ -232,9 +366,13 @@ def _rechercher(
             if not octets or b"\x00" in octets:
                 continue  # vide, ou binaire : jamais lu
             try:
-                texte = octets.decode("utf-8").removesuffix("\n")
+                # B-1043 : `utf-8-sig` retire un BOM, sinon collé à la ligne 1.
+                texte = octets.decode("utf-8-sig").removesuffix("\n")
             except UnicodeDecodeError:
-                continue  # pas du texte UTF-8 : binaire, comme pour grep en locale UTF-8
+                # Pas du texte UTF-8 : sauté comme grep en locale UTF-8, mais
+                # compté pour que le modèle l'apprenne (B-1043).
+                resultat.non_utf8 += 1
+                continue
             for numero, ligne in enumerate(texte.split("\n"), start=1):
                 ligne = ligne.removesuffix("\r")
                 restant = echeance - time.monotonic()
@@ -245,11 +383,14 @@ def _rechercher(
                 except TimeoutError as exc:
                     raise _DelaiDepasse from exc
                 if trouve:
-                    resultat.lignes.append(f"{relatif}:{numero}:{ligne}")
                     if len(resultat.lignes) >= max_results:
-                        return resultat
+                        # B-1042 : une de plus que demandé, la limite est réelle.
+                        resultat.tronque = True
+                        return
+                    if len(ligne) > LONGUEUR_MAX_LIGNE_RENDUE:
+                        ligne = ligne[:LONGUEUR_MAX_LIGNE_RENDUE] + " […] (ligne tronquée)"
+                    resultat.lignes.append(f"{relatif}:{numero}:{ligne}")
         a_parcourir.extend(reversed(sous_dossiers))
-    return resultat
 
 
 class _RecherchesBloquees(Exception):
@@ -391,7 +532,16 @@ class AgentToolExecutor:
         if not resolved.is_relative_to(self.source_path.resolve()):
             raise PermissionError(f"Chemin hors du source tree : {file_path}")
         lowered_parts = {part.lower() for part in requested.parts}
-        if ".git" in lowered_parts or _nom_de_fichier_sensible(requested.name):
+        # B-1049 : le filtre porte aussi sur la CIBLE. Un lien interne
+        # (`notes.txt` -> `.env`) passait, le nom demandé étant anodin ; sous
+        # Windows, la résolution rend aussi le nom long d'un nom court 8.3.
+        parts_resolues = {part.lower() for part in resolved.relative_to(self.source_path.resolve()).parts}
+        if (
+            ".git" in lowered_parts
+            or ".git" in parts_resolues
+            or _nom_de_fichier_sensible(requested.name)
+            or _nom_de_fichier_sensible(resolved.name)
+        ):
             raise PermissionError(f"Fichier sensible interdit : {file_path}")
         return resolved
 
@@ -407,6 +557,11 @@ class AgentToolExecutor:
         if not resolved.is_file():
             return f"Erreur : {file_path} n'est pas un fichier"
 
+        # B-1047 : un max_lines négatif rendait « tronqué à -3 lignes ».
+        try:
+            max_lines = max(1, min(int(max_lines), MAX_LIGNES_LUES))
+        except (TypeError, ValueError):
+            max_lines = 500
         try:
             content = resolved.read_text(encoding="utf-8", errors="replace")
             lines = content.split("\n")
@@ -417,7 +572,7 @@ class AgentToolExecutor:
                 )
             return content
         except Exception as e:
-            return f"Erreur de lecture : {e}"
+            return f"Erreur de lecture : {_erreur_pour_le_modele(e)}"
 
     async def list_directory(self, dir_path: str = ".", max_entries: int = 100) -> str:
         """Liste le contenu d'un répertoire."""
@@ -443,7 +598,7 @@ class AgentToolExecutor:
                 lines.append(f"{prefix}{rel}")
             return "\n".join(lines)
         except Exception as e:
-            return f"Erreur : {e}"
+            return f"Erreur : {_erreur_pour_le_modele(e)}"
 
     async def search_codebase(
         self, pattern: str, glob_filter: str = "*.py", max_results: int = 20
@@ -456,6 +611,9 @@ class AgentToolExecutor:
             return self._NO_SOURCE_MSG
         if glob_filter not in ALLOWED_SEARCH_GLOBS:
             return f"Erreur : filtre de recherche non autorisé : {glob_filter}"
+        raison = _motif_demesure(pattern)
+        if raison:
+            return f"Erreur : motif trop coûteux ({raison}) ; raccourcis-le ou réduis ses répétitions"
         arret = threading.Event()
         try:
             limite = max(1, min(int(max_results), MAX_RESULTATS_RECHERCHE))
@@ -490,6 +648,8 @@ class AgentToolExecutor:
             # Le fil s'arrête à son prochain point de contrôle (annulation, délai).
             arret.set()
 
+        if resultat.delai_atteint and not resultat.lignes:
+            return "Erreur : timeout de recherche"
         if not resultat.lignes and resultat.erreurs:
             # B-963 : rien trouvé et des fichiers illisibles, c'est un échec.
             detail = " ; ".join(dict.fromkeys(resultat.erreurs))[:300]
@@ -500,6 +660,15 @@ class AgentToolExecutor:
             lignes.append("(certains fichiers n'ont pas pu être lus)")
         if resultat.trop_volumineux:
             lignes.append("(certains fichiers trop volumineux n'ont pas été parcourus)")
+        if resultat.non_utf8:
+            pluriel = "s" if resultat.non_utf8 > 1 else ""
+            lignes.append(f"({resultat.non_utf8} fichier{pluriel} non UTF-8 ignoré{pluriel})")
+        if resultat.tronque:
+            lignes.append(
+                f"(résultats limités à {limite} : il peut y en avoir d'autres, affine le motif ou le filtre)"
+            )
+        if resultat.delai_atteint:
+            lignes.append("(résultats partiels : délai de recherche atteint)")
         return "\n".join(lignes)
 
     # --- Outils d'écriture (Zézette uniquement) ---
@@ -517,9 +686,9 @@ class AgentToolExecutor:
             resolved.write_text(content, encoding="utf-8")
             return f"Fichier écrit : {file_path} ({len(content)} caractères)"
         except PermissionError as e:
-            return f"Permission refusée : {e}"
+            return f"Permission refusée : {_erreur_pour_le_modele(e)}"
         except Exception as e:
-            return f"Erreur d'écriture : {e}"
+            return f"Erreur d'écriture : {_erreur_pour_le_modele(e)}"
 
     async def run_command(self, command: str) -> str:
         """Exécute une commande autorisée (tests, lint)."""

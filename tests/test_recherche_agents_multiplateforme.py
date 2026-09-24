@@ -77,9 +77,11 @@ async def test_le_nombre_de_resultats_est_borne(tmp_path: Path):
     (tmp_path / "a.py").write_text("cible\n" * 30, encoding="utf-8")
     (tmp_path / "b.py").write_text("cible\n" * 30, encoding="utf-8")
     sortie = await AgentToolExecutor(str(tmp_path)).search_codebase("cible", "*.py", max_results=5)
-    assert sortie.splitlines() == [f"a.py:{n}:cible" for n in range(1, 6)], sortie
+    # B-1042 (cycle 12) : la limite atteinte est dite au modèle, sur une ligne à part.
+    assert sortie.splitlines()[:5] == [f"a.py:{n}:cible" for n in range(1, 6)], sortie
+    assert sortie.splitlines()[5].startswith("(résultats limités à 5"), sortie
     defaut = await AgentToolExecutor(str(tmp_path)).search_codebase("cible", "*.py")
-    assert len(defaut.splitlines()) == 20, defaut
+    assert len(defaut.splitlines()) == 21, defaut
 
 
 async def test_les_dossiers_exclus_ne_sont_pas_parcourus(tmp_path: Path):
@@ -241,7 +243,8 @@ async def test_un_fichier_qui_n_est_pas_du_texte_utf8_n_est_pas_lu(tmp_path: Pat
     (tmp_path / "latin.py").write_bytes(b"\xffcible = 'illisible'\n")
     (tmp_path / "texte.py").write_text("cible = 'lisible'\n", encoding="utf-8")
     sortie = await AgentToolExecutor(str(tmp_path)).search_codebase("cible", "*.py")
-    assert sortie == "texte.py:1:cible = 'lisible'", sortie
+    # B-1043 (cycle 12) : toujours pas lu, mais le modèle apprend qu'il existe.
+    assert sortie.splitlines() == ["texte.py:1:cible = 'lisible'", "(1 fichier non UTF-8 ignoré)"], sortie
 
 
 async def test_un_motif_invalide_dit_au_modele_comment_le_corriger(tmp_path: Path):
