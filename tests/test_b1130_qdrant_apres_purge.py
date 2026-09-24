@@ -52,3 +52,23 @@ async def test_la_collection_existe_toujours_apres_la_purge(client, vrai_qdrant)
     assert resp.status_code == 200, resp.text
     assert settings.qdrant_collection in _collections(vrai_qdrant), "la purge laisse le service sur une collection absente"
     assert vrai_qdrant.client.count(settings.qdrant_collection).count == 0
+
+
+@pytest.mark.asyncio
+async def test_les_vecteurs_partent_meme_si_la_collection_ne_peut_pas_etre_supprimee(
+    client, vrai_qdrant, monkeypatch
+):
+    """B-1199 : sous Windows, supprimer la collection du stockage local échoue
+    (fichier verrouillé) ; l'exception était avalée et les vecteurs restaient,
+    alors que la réponse annonçait « toutes mes données » effacées."""
+    _poser_un_point(vrai_qdrant)
+
+    def verrouille(*_a, **_k):
+        raise PermissionError("[WinError 32] fichier utilisé par un autre processus")
+
+    monkeypatch.setattr(vrai_qdrant.client, "delete_collection", verrouille)
+
+    resp = await client.delete("/api/data/all?confirm=true")
+
+    assert resp.status_code == 200, resp.text
+    assert vrai_qdrant.client.count(settings.qdrant_collection).count == 0
