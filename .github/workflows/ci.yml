@@ -73,6 +73,36 @@ jobs:
           if-no-files-found: ignore
           retention-days: 7
 
+  # B-1153 (cycle 13) : les commandes des agents ne tournent que confinées
+  # (Seatbelt, macOS). Ces garanties ne se vérifient que sur macOS : sans ce
+  # travail, seul le poste du développeur les jouait. La release appelle
+  # cette CI, elle ne publie donc pas sans elles.
+  bac-a-sable-macos:
+    name: Bac à sable des agents (macOS)
+    runs-on: macos-latest
+    timeout-minutes: 15
+
+    env:
+      THERESE_ENV: test
+      TRANSFORMERS_OFFLINE: "1"
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+          cache: pip
+
+      - name: Installer libmagic
+        run: brew install libmagic
+
+      - name: Installer UV et dépendances
+        run: pip install uv && uv sync --dev
+
+      - name: Confinement Seatbelt et git de mission (B-1153)
+        run: uv run pytest tests/test_b1153_bac_a_sable_commandes.py tests/test_b1153_git_de_mission_durci.py tests/test_p100_arguments_commandes_agents.py -q -p no:cacheprovider
+
   # B-948 / B-956 (cycle 11, 23/09/2026) : le paquet .deb installe le bundle
   # PyInstaller en lecture seule sous /usr/lib. Cette contre-épreuve construit
   # deux bundles réels (sans puis avec les témoins de répertoires) et génère un

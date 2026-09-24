@@ -254,3 +254,14 @@ def test_run_command_ne_lance_rien_hors_du_confinement():
     assert source.count("create_subprocess_exec(") == 1
     assert "*lancement.argv" in source and "env=lancement.env" in source
     assert "confinement_indisponible()" in source.split("create_subprocess_exec(")[0]
+
+
+def test_la_ci_joue_le_confinement_sur_macos():
+    """Sans runner macOS, les garanties confinées ne seraient vérifiées que sur
+    le poste du développeur : la CI (appelée par la release) les joue."""
+    ci = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
+    bloc = ci[ci.index("bac-a-sable-macos:"):]
+    bloc = bloc[: bloc.index("\n  # ") if "\n  # " in bloc else len(bloc)]
+    assert "runs-on: macos-latest" in bloc
+    assert "tests/test_b1153_bac_a_sable_commandes.py" in bloc
+    assert "tests/test_b1153_git_de_mission_durci.py" in bloc
