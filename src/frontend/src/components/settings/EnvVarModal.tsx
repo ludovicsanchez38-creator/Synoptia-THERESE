@@ -233,7 +233,7 @@ export function EnvVarModal({ preset, onSubmit, onCancel }: EnvVarModalProps) {
                 </div>
 
                 <div className="relative">
-                  <input aria-label="Valeur de la variable"
+                  <input aria-label={`Valeur de ${config.label}`}
                     type={show ? 'text' : 'password'}
                     value={value}
                     onChange={(e) => handleValueChange(envVar, e.target.value)}
@@ -261,6 +261,8 @@ export function EnvVarModal({ preset, onSubmit, onCancel }: EnvVarModalProps) {
                       <button
                         type="button"
                         onClick={() => toggleShowValue(envVar)}
+                        aria-label={show ? `Masquer ${config.label}` : `Afficher ${config.label}`}
+                        aria-pressed={show}
                         className="p-1 hover:bg-border/30 rounded-sm transition-colors"
                       >
                         {show ? (
