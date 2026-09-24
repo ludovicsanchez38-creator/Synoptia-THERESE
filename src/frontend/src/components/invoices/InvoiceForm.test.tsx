@@ -105,9 +105,11 @@ describe('InvoiceForm décimaux', () => {
     fireEvent.click(screen.getByRole('button', { name: /Créer/i }));
 
     expect(createInvoiceMock).not.toHaveBeenCalled();
-    // B-407 / B-437 : la garde passe par le centre de notifications, plus par une boîte native.
+    // B-407 / B-437 : jamais de boîte native. B-1068 (cycle 12) : le message vit
+    // dans le pied de la modale, une notification recouvrait « Créer ».
     expect(window.alert).not.toHaveBeenCalled();
-    expect(notifValeurInvalide).toHaveBeenCalledWith(expect.objectContaining({ type: 'warning', title: 'Valeur invalide' }));
+    expect(notifValeurInvalide).not.toHaveBeenCalledWith(expect.objectContaining({ title: 'Valeur invalide' }));
+    expect(screen.getByTestId('invoiceform-validation')).toHaveTextContent(/nombres valides/i);
   });
 });
 

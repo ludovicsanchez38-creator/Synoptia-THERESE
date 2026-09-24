@@ -162,6 +162,11 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
   // B-1039 : un champ requis manquant se dit dans le pied de la modale. Une
   // notification, en bas à droite, recouvrait entièrement le bouton « Créer ».
   const [erreurValidation, setErreurValidation] = useState<string | null>(null);
+  // Lecteur C de la carte c12 : le message restait affiché une fois la saisie
+  // corrigée. Il s'efface dès que le client ou une ligne change.
+  useEffect(() => {
+    setErreurValidation(null);
+  }, [contactId, lines, lineInputs]);
 
   // B-1031 et B-1036 : la modale prend le focus, le retient au Tab, et le rend
   // au déclencheur à la fermeture (création comprise). Échap reste à la pile
@@ -313,13 +318,14 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
       };
     });
 
+    // B-1068 : même règle que « Champ requis » (B-1039), le message vit dans le pied.
     if (normalizedLines.some((line) => line.quantity === null || line.unit_price_ht === null)) {
-      addNotification({ type: 'warning', title: 'Valeur invalide', message: 'Saisis des nombres valides pour les quantités et montants' });
+      setErreurValidation('Saisis des nombres valides pour les quantités et montants.');
       return;
     }
 
     if (normalizedLines.some((line) => line.quantity! < 1 || line.unit_price_ht! < 0)) {
-      addNotification({ type: 'warning', title: 'Valeur invalide', message: 'Saisis une quantité supérieure ou égale à 1 et un prix positif ou nul' });
+      setErreurValidation('Saisis une quantité supérieure ou égale à 1 et un prix positif ou nul.');
       return;
     }
 

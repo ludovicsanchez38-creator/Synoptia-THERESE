@@ -218,7 +218,11 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
   }
 
   function handleInvoiceCreatedOrUpdated(invoice: Invoice) {
-    if (editingInvoice) {
+    // B-1067 : « Convertir en facture » renvoie une NOUVELLE pièce, d'un autre
+    // identifiant ; la mise à jour par identifiant ne l'ajoutait pas et le devis
+    // gardait son ancien statut. Seule la pièce modifiée elle-même est
+    // remplacée en place ; tout le reste recharge la liste.
+    if (editingInvoice && invoice.id === editingInvoice.id) {
       updateInvoiceInStore(invoice);
     } else {
       // B-569 : un document créé sous un filtre de statut qui l'exclut
@@ -229,6 +233,13 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
       loadInvoices(); // Recharger pour avoir toutes les données
     }
     handleCloseForm();
+    // B-1069 : la première pièce créée depuis l'état vide démonte le bouton qui
+    // avait ouvert la modale ; le focus tombait sur la page. Il revient à
+    // « Nouveau devis ou facture », sauf s'il est déjà ailleurs.
+    requestAnimationFrame(() => {
+      const actif = document.activeElement;
+      if (!actif || actif === document.body || !actif.isConnected) creationRef.current?.focus();
+    });
   }
 
   const filteredInvoices = getFilteredInvoices();

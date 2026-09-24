@@ -5,7 +5,7 @@
  * personnel » levait une exception non rattrapée (homeDir sans try),
  * « Actualiser » et « Ouvrir un dossier » écrivaient des TypeError en console.
  */
-import { fireEvent, render, screen } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../services/api', () => ({
@@ -39,17 +39,15 @@ describe('B-1037 : la vue Fichiers en navigateur ne propose pas de gestes natifs
     }
   });
 
-  it('un clic forcé ne lève rien et n’écrit rien en console', async () => {
+  // Lecteur F (B-1070) : un « clic forcé » sur un bouton désactivé ne prouvait
+  // rien, React ignore onClick quand la prop disabled est vraie. On garde ce
+  // qui est observable : le montage en navigateur ne lève rien et n'écrit rien.
+  it('le montage en navigateur ne lève rien et n’écrit rien en console', async () => {
     const rejets: unknown[] = [];
     const surRejet = (e: PromiseRejectionEvent) => rejets.push(e.reason);
     window.addEventListener('unhandledrejection', surRejet);
     render(<FileBrowser />);
     await screen.findByText(/accessibles depuis l’application THÉRÈSE/);
-    for (const nom of ['Répertoire personnel', 'Actualiser', 'Ouvrir un dossier', 'Dossier racine']) {
-      const bouton = screen.getByRole('button', { name: nom });
-      bouton.removeAttribute('disabled');
-      fireEvent.click(bouton);
-    }
     await new Promise((r) => setTimeout(r, 20));
     window.removeEventListener('unhandledrejection', surRejet);
     expect(rejets).toEqual([]);

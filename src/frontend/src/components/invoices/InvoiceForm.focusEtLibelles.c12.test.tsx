@@ -93,7 +93,9 @@ describe('cycle 12 : formulaire devis/facture, focus et libellés', () => {
     const dernier = focalisables[focalisables.length - 1];
     dernier.focus();
     fireEvent.keyDown(dernier, { key: 'Tab' });
-    expect(dialogue.contains(document.activeElement)).toBe(true);
+    // Lecteur F (B-1070) : jsdom ne déplace jamais le focus sur un keyDown ;
+    // seul le piège le ramène au premier élément.
+    expect(document.activeElement).toBe(focalisables[0]);
   });
 
   it('B-1035 : un devis est annoncé « Nouveau devis », pas « Nouvelle facture »', async () => {
@@ -139,5 +141,20 @@ describe('cycle 12 : formulaire devis/facture, focus et libellés', () => {
     fireEvent.click(within(dialogue).getByRole('button', { name: /^Créer/ }));
     expect(addNotification).not.toHaveBeenCalledWith(expect.objectContaining({ title: 'Champ requis' }));
     expect(within(dialogue).getByTestId('invoiceform-validation')).toHaveTextContent(/description/i);
+  });
+
+  it('B-1068 : « Valeur invalide » se dit aussi dans le pied, et le message s’efface quand on corrige', async () => {
+    const { dialogue } = ouvrir({ type: 'facture' });
+    const contact = await within(dialogue).findByRole('option', { name: /Jean Dupont/ });
+    fireEvent.change(contact.closest('select') as HTMLSelectElement, { target: { value: 'contact-1' } });
+    const description = within(dialogue).getAllByLabelText(/Description/)[0];
+    fireEvent.change(description, { target: { value: 'Atelier' } });
+    const quantite = within(dialogue).getAllByLabelText(/Quantité/)[0];
+    fireEvent.change(quantite, { target: { value: '0' } });
+    fireEvent.click(within(dialogue).getByRole('button', { name: /^Créer/ }));
+    expect(addNotification).not.toHaveBeenCalledWith(expect.objectContaining({ title: 'Valeur invalide' }));
+    expect(within(dialogue).getByTestId('invoiceform-validation')).toHaveTextContent(/quantité/i);
+    fireEvent.change(quantite, { target: { value: '2' } });
+    expect(within(dialogue).queryByTestId('invoiceform-validation')).toBeNull();
   });
 });
