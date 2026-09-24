@@ -141,7 +141,7 @@ npm run tauri:build        # Package .app + .dmg
 ```
 
 **Artefacts** :
-- `src/frontend/src-tauri/target/release/bundle/macos/THÉRÈSE.app`
+- `src/frontend/src-tauri/target/release/bundle/macos/THERESE.app`
 - `src/frontend/src-tauri/target/release/bundle/dmg/THÉRÈSE.dmg`
 
 ## Monitoring et logs

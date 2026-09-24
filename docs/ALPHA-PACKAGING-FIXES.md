@@ -41,7 +41,7 @@
 - **Statut** : DOCUMENTÉ (instructions sur la page alpha)
 - **Symptôme** : "THÉRÈSE est endommagé et ne peut pas être ouvert"
 - **Cause** : App non signée (pas de certificat Apple Developer)
-- **Fix utilisateur** : `xattr -cr /Applications/THÉRÈSE.app` dans le Terminal
+- **Fix utilisateur** : `xattr -cr /Applications/THERESE.app` dans le Terminal
 - **Fix long terme** : Apple Developer Program (99 USD/an) + code signing dans le CI
 - **Page alpha** : Instructions ajoutées sur synoptia.fr/therese/alpha/
 

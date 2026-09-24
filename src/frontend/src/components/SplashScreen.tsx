@@ -116,7 +116,7 @@ export function SplashScreen({ onReady }: SplashScreenProps) {
           // tardif si le health check déjà parti finit par répondre 200.
           fatalSidecarError.current = true;
           setError(
-            `Le moteur n'a pas pu démarrer :\n${event.payload}\n\nDans le Terminal :\nxattr -cr /Applications/THÉRÈSE.app\npuis relancez l'app.`
+            `Le moteur n'a pas pu démarrer :\n${event.payload}\n\nDans le Terminal :\nxattr -cr /Applications/THERESE.app\npuis relance l'app.`
           );
         }).then((fn) => {
           unlisten = fn;
