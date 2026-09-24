@@ -39,7 +39,20 @@ ALLOWED_SUBCOMMANDS = {
     "npm": {"test", "run"},
 }
 
-ALLOWED_NPM_SCRIPTS = {"test", "lint", "typecheck", "build"}
+# B-1052 : « typecheck » n'existe dans aucun package.json (« make typecheck », oui).
+ALLOWED_NPM_SCRIPTS = {"test", "lint", "build"}
+
+# P-100 (B-959) : pour pytest, vitest et ruff, seul le premier mot était
+# contrôlé ; `pytest --basetemp=<dossier>` vide le dossier visé, `ruff format
+# <chemin>` réécrit hors du dépôt. Ne passent plus que des chemins relatifs
+# résolus DANS le dépôt, ces drapeaux, et la valeur qui suit `-k` ou `-t`.
+SOUS_COMMANDE_OBLIGATOIRE = {"vitest": "run", "ruff": "check"}
+DRAPEAUX_AUTORISES = {
+    "pytest": ("-q", "-v", "-vv", "-x", "--tb=short", "--tb=line", "--tb=no"),
+    "vitest": (),
+    "ruff": ("--fix",),
+}
+DRAPEAUX_A_VALEUR = {"pytest": ("-k",), "vitest": ("-t",), "ruff": ()}
 ALLOWED_SEARCH_GLOBS = {
     "*.css",
     "*.html",
@@ -724,6 +737,9 @@ class AgentToolExecutor:
                 return "Erreur : les arguments supplémentaires de npm sont interdits"
         if base_cmd == "make" and len(parts) != 2:
             return "Erreur : une seule cible make autorisée peut être exécutée"
+        refus = self._arguments_refuses(base_cmd, parts[1:])
+        if refus:
+            return refus
 
         proc: asyncio.subprocess.Process | None = None
         try:
@@ -762,6 +778,45 @@ class AgentToolExecutor:
             return f"Erreur : timeout (120s) pour '{command}'"
         except Exception as e:
             return f"Erreur d'exécution : {e}"
+
+    def _arguments_refuses(self, base_cmd: str, args: list[str]) -> str | None:
+        """P-100 : raison du refus des arguments de pytest, vitest ou ruff, ou None."""
+        if base_cmd not in DRAPEAUX_AUTORISES:
+            return None
+        permis = ", ".join(
+            ["chemins relatifs du dépôt", *DRAPEAUX_AUTORISES[base_cmd]]
+            + [f"{drapeau} <valeur>" for drapeau in DRAPEAUX_A_VALEUR[base_cmd]]
+        )
+        reste = list(args)
+        attendue = SOUS_COMMANDE_OBLIGATOIRE.get(base_cmd)
+        if attendue:
+            if not reste or reste[0] != attendue:
+                return f"Erreur : {base_cmd} s'utilise sous la forme « {base_cmd} {attendue} ». Permis ensuite : {permis}."
+            reste = reste[1:]
+        i = 0
+        while i < len(reste):
+            argument = reste[i]
+            if argument in DRAPEAUX_A_VALEUR[base_cmd]:
+                if i + 1 >= len(reste):
+                    return f"Erreur : {argument} attend une valeur."
+                i += 2
+                continue
+            if argument.startswith("-"):
+                if argument not in DRAPEAUX_AUTORISES[base_cmd]:
+                    return f"Erreur : argument « {argument} » non autorisé pour {base_cmd}. Permis : {permis}."
+                i += 1
+                continue
+            if not self._chemin_dans_le_depot(argument.split("::", 1)[0]):
+                return f"Erreur : chemin hors du dépôt : « {argument} ». Permis : {permis}."
+            i += 1
+        return None
+
+    def _chemin_dans_le_depot(self, chemin: str) -> bool:
+        if not chemin or chemin.startswith("~") or Path(chemin).is_absolute() or ":" in chemin:
+            return False
+        assert self.source_path is not None
+        racine = self.source_path.resolve()
+        return (racine / chemin).resolve().is_relative_to(racine)
 
     # --- Outils git (Zézette) ---
 
@@ -1041,7 +1096,7 @@ ZEZETTE_TOOLS = [
                 "properties": {
                     "command": {
                         "type": "string",
-                        "description": "Commande à exécuter (ex: make test-backend, pytest tests/)",
+                        "description": "Commande à exécuter (ex: make test-backend, pytest -q tests/, vitest run, ruff check). Arguments : chemins relatifs du dépôt et drapeaux usuels seulement",
                     },
                 },
                 "required": ["command"],
