@@ -10,6 +10,8 @@ interface PresetMCP {
   description: string;
   category?: string;
   env_required?: string[];
+  risk_level?: string;
+  risk_warning?: string;
 }
 
 interface EnvVarModalProps {
@@ -181,6 +183,12 @@ export function EnvVarModal({ preset, onSubmit, onCancel }: EnvVarModalProps) {
             Configuration {preset.name}
           </h3>
           <p className="text-sm text-text-muted">{preset.description}</p>
+          {/* B-1193 : le risque du connecteur, avant de saisir ses clés. */}
+          {preset.risk_warning && (preset.risk_level === 'high' || preset.risk_level === 'medium') && (
+            <p className={`mt-2 text-sm ${preset.risk_level === 'high' ? 'text-error' : 'text-warning'}`}>
+              {preset.risk_warning}
+            </p>
+          )}
         </div>
 
         {/* Info */}

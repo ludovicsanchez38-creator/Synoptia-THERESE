@@ -109,6 +109,9 @@ function PresetCategory({
                 );
                 const isInstalled = servers.some((s) => s.name === preset.name);
                 const isInstalling = installingPreset === preset.id;
+                // B-1193 : le risque se lit avant le clic qui installe et démarre.
+                const risqueSignale = (preset.risk_level === 'high' || preset.risk_level === 'medium') && Boolean(preset.risk_warning);
+                const idRisque = `mcp-risque-${preset.id}`;
 
                 return (
                   <div
@@ -126,6 +129,7 @@ function PresetCategory({
                     <button
                       type="button"
                       aria-label={isInstalled ? `${preset.name} est installé` : `Installer ${preset.name}`}
+                      aria-describedby={risqueSignale ? idRisque : undefined}
                       onClick={() => onInstall(preset.id)}
                       disabled={isInstalled || isInstalling}
                       className="absolute inset-0 z-0 rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
@@ -172,6 +176,14 @@ function PresetCategory({
                       </div>
                     </div>
                     <p className="pointer-events-none relative z-10 text-xs text-text-muted line-clamp-2">{preset.description}</p>
+                    {risqueSignale && (
+                      <p
+                        id={idRisque}
+                        className={`pointer-events-none relative z-10 text-xs mt-1 ${preset.risk_level === 'high' ? 'text-error' : 'text-warning'}`}
+                      >
+                        {preset.risk_warning}
+                      </p>
+                    )}
                     {preset.env_required && preset.env_required.length > 0 && (
                       <p className="pointer-events-none relative z-10 text-xs text-warning mt-1">
                         Requiert: {preset.env_required.join(', ')}
