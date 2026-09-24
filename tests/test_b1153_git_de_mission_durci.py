@@ -27,11 +27,15 @@ def poste(tmp_path: Path, monkeypatch):
     """Un dépôt, une configuration globale piégée et des témoins."""
     temoins = tmp_path / "temoins"
     temoins.mkdir()
+    # B-1201 : sous Windows, un chemin à barres inverses dans une valeur entre
+    # guillemets est une séquence d'échappement : la configuration devenait
+    # illisible et `git init` échouait. Chemins en barres obliques.
+    t = temoins.as_posix()
     globale = tmp_path / "gitconfig-global"
     globale.write_text(
         "[user]\n\tname = Léa Martin\n\temail = lea@exemple.fr\n"
-        f'[filter "piege"]\n\tclean = "touch {temoins}/filter; cat"\n'
-        f'[diff "piege"]\n\ttextconv = "touch {temoins}/textconv; cat"\n',
+        f'[filter "piege"]\n\tclean = "touch {t}/filter; cat"\n'
+        f'[diff "piege"]\n\ttextconv = "touch {t}/textconv; cat"\n',
         encoding="utf-8",
     )
     for variable in ("GIT_AUTHOR_NAME", "GIT_AUTHOR_EMAIL", "GIT_COMMITTER_NAME", "GIT_COMMITTER_EMAIL", "GIT_DIR", "GIT_WORK_TREE"):
@@ -47,7 +51,7 @@ def poste(tmp_path: Path, monkeypatch):
     _git(depot, "add", "-A")
     _git(depot, "commit", "-q", "-m", "base")
     crochet = depot / ".git" / "hooks" / "pre-commit"
-    crochet.write_text(f"#!/bin/sh\ntouch {temoins}/hook\n", encoding="utf-8")
+    crochet.write_text(f"#!/bin/sh\ntouch {temoins.as_posix()}/hook\n", encoding="utf-8")
     crochet.chmod(0o755)
     return depot, temoins
 
@@ -64,9 +68,9 @@ async def test_le_commit_de_mission_n_execute_ni_hook_ni_pilote_ni_faux_depot(po
     (worktree / "lisez-moi.txt").write_text("modifié par l'agent\n", encoding="utf-8")
     faux = worktree / ".faux-git"
     subprocess.run(["git", "init", "-q", "--bare", str(faux)], check=True, capture_output=True)
-    (faux / "hooks" / "pre-commit").write_text(f"#!/bin/sh\ntouch {temoins}/faux\n", encoding="utf-8")
+    (faux / "hooks" / "pre-commit").write_text(f"#!/bin/sh\ntouch {temoins.as_posix()}/faux\n", encoding="utf-8")
     (faux / "hooks" / "pre-commit").chmod(0o755)
-    (worktree / ".git").write_text(f"gitdir: {faux}\n", encoding="utf-8")
+    (worktree / ".git").write_text(f"gitdir: {faux.as_posix()}\n", encoding="utf-8")
 
     empreinte = await mission.commit("travail de l'agent")
     fichiers = await mission.diff_files(base="main")
