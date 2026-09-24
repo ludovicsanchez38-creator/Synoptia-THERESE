@@ -457,11 +457,26 @@ def _validate_contact(data: dict) -> list[str]:
     errors = []
     if not data.get("first_name") and not data.get("last_name") and not data.get("company"):
         errors.append("Au moins un nom ou une entreprise est requis")
-    # B-1074 : une seule adresse, de la forme nom@domaine (« @ » seul laissait
-    # passer « a@b.fr,pirate@x.fr »).
-    if data.get("email") and not adresse_unique_valide(str(data.get("email", ""))):
-        errors.append("Email invalide")
+    # B-1148 : une adresse double ou douteuse n'écarte plus la fiche ; elle est
+    # retirée par _ecarter_adresse_douteuse, comme aux autres portes (B-1074).
     return errors
+
+
+def _ecarter_adresse_douteuse(data: dict) -> str | None:
+    """B-1074, B-1148 : une fiche porte une seule adresse de la forme nom@domaine.
+
+    Une valeur douteuse (« jean@a.fr, compta@a.fr ») est retirée de la ligne,
+    qui s'importe sans adresse ; sur une fiche existante, l'adresse valide déjà
+    enregistrée n'est donc pas effacée (motif de B-1107). Rend la note à
+    montrer, ou None."""
+    valeur = data.get("email")
+    if not valeur or adresse_unique_valide(str(valeur)):
+        return None
+    data.pop("email", None)
+    return (
+        f"Adresse e-mail ignorée (« {str(valeur)[:80]} ») : une seule adresse par fiche. "
+        "La fiche est importée sans cette adresse."
+    )
 
 
 def _validate_project(data: dict) -> list[str]:
@@ -559,16 +574,23 @@ class CRMImportService:
         validation_errors = []
         sample_rows = []
 
+        bloquantes = []
         for idx, row in enumerate(raw_data[:5]):
             mapped = _map_columns(row, mapping)
+            note = _ecarter_adresse_douteuse(mapped)
             sample_rows.append(mapped)
+            if note:
+                # B-1148 : prévenue, pas bloquante.
+                validation_errors.append(ImportError(row=idx + 1, column="email", message=note, data=mapped))
 
             errors = _validate_contact(mapped)
             for error in errors:
-                validation_errors.append(ImportError(row=idx + 1, column=None, message=error, data=mapped))
+                erreur = ImportError(row=idx + 1, column=None, message=error, data=mapped)
+                validation_errors.append(erreur)
+                bloquantes.append(erreur)
 
-        can_import = len(validation_errors) == 0 or all(
-            err.row > 5 for err in validation_errors
+        can_import = len(bloquantes) == 0 or all(
+            err.row > 5 for err in bloquantes
         )
 
         return ImportPreview(
@@ -620,6 +642,9 @@ class CRMImportService:
         for idx, row in enumerate(raw_data):
             try:
                 mapped = _map_columns(row, mapping)
+                note = _ecarter_adresse_douteuse(mapped)
+                if note:
+                    result.errors.append(ImportError(row=idx + 1, column="email", message=note, data=mapped))
 
                 # Validate
                 errors = _validate_contact(mapped)

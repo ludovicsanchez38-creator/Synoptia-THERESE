@@ -40,8 +40,45 @@ def test_la_mise_a_jour_peut_vider_l_adresse():
     assert ContactUpdate(email=None).email is None
 
 
-def test_l_import_tableur_refuse_deux_adresses():
-    assert "Email invalide" in _validate_contact({"first_name": "Jeanne", "email": "a@b.fr,pirate@x.fr"})
+def test_l_import_tableur_n_ecarte_pas_la_fiche_pour_une_adresse_double():
+    """B-1148 (audit de release 0.75) : l'adresse double n'est plus une erreur
+    bloquante ; la fiche est importée sans l'adresse, comme par les autres portes."""
+    assert _validate_contact({"first_name": "Jeanne", "email": "a@b.fr,pirate@x.fr"}) == []
+
+
+@pytest.mark.asyncio
+async def test_l_import_tableur_garde_la_fiche_sans_l_adresse_double(db_session):
+    from app.models.entities import Contact
+    from app.services.crm_import import CRMImportService
+    from sqlmodel import select
+
+    csv = "first_name,last_name,email\nJeanne,Martin,\"jean@a.fr, compta@a.fr\"\nPaul,Durand,paul@exemple.fr\n".encode()
+    service = CRMImportService(db_session)
+    apercu = await service.preview_contacts(csv, "contacts.csv")
+    assert apercu.can_import, apercu.validation_errors
+    resultat = await service.import_contacts(csv, "contacts.csv")
+    await db_session.commit()
+    assert resultat.created == 2, resultat
+    assert resultat.skipped == 0
+    assert any("une seule adresse" in e.message for e in resultat.errors), resultat.errors
+    fiches = {c.first_name: c for c in (await db_session.execute(select(Contact))).scalars().all()}
+    assert fiches["Jeanne"].email is None
+    assert fiches["Paul"].email == "paul@exemple.fr"
+
+
+@pytest.mark.asyncio
+async def test_le_reimport_d_une_adresse_double_n_efface_pas_l_adresse_valide(db_session):
+    from app.models.entities import Contact
+    from app.services.crm_import import CRMImportService
+
+    db_session.add(Contact(id="c-b1148", first_name="Jeanne", email="jeanne@exemple.fr", scope="global"))
+    await db_session.commit()
+    csv = "id,first_name,email\nc-b1148,Jeanne,\"jean@a.fr, compta@a.fr\"\n".encode()
+    await CRMImportService(db_session).import_contacts(csv, "contacts.csv")
+    await db_session.commit()
+    fiche = await db_session.get(Contact, "c-b1148")
+    await db_session.refresh(fiche)
+    assert fiche.email == "jeanne@exemple.fr"
 
 
 def test_l_import_vcard_ne_garde_pas_une_adresse_double():
