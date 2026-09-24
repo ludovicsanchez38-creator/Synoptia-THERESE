@@ -13,6 +13,11 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# B-1183 : appelé par la release, ce workflow héritait de `contents: write`.
+# Aucun travail n'écrit dans le dépôt : lecture seule.
+permissions:
+  contents: read
+
 jobs:
   lint:
     name: Lint (Python)
@@ -405,11 +410,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf libasound2-dev
 
-      - uses: dtolnay/rust-toolchain@stable
+      # B-1183 : la release appelle ce workflow (contents: write) ; ses
+      # actions tierces sont épinglées par empreinte comme dans release.yml
+      # (vérifiées le 25/09/2026 : stable et v2 pointent sur ces commits).
+      - uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
         with:
+          toolchain: stable
           components: clippy
 
-      - uses: Swatinem/rust-cache@v2
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
           workspaces: src/frontend/src-tauri
 
