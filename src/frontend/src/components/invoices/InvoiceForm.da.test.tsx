@@ -108,7 +108,7 @@ describe('Lot 5 DA : types des Button', () => {
 });
 
 describe('Lot 5 DA : BUG-132 par ligne', () => {
-  it('toutes les lignes vides : notification conservée et erreur sur chaque ligne', async () => {
+  it('toutes les lignes vides : message dans le pied (B-1039, plus de notification) et erreur sur chaque ligne', async () => {
     const notif = vi.fn();
     useStatusStore.setState({ addNotification: notif });
     render(<InvoiceForm invoice={null} onClose={vi.fn()} onSave={vi.fn()} />);
@@ -119,8 +119,9 @@ describe('Lot 5 DA : BUG-132 par ligne', () => {
     fireEvent.click(screen.getByRole('button', { name: /Créer/i }));
 
     expect(createInvoiceMock).not.toHaveBeenCalled();
-    const messages = notif.mock.calls.map((c) => (c[0]?.message as string) ?? '');
-    expect(messages.some((m) => /description d.un moins une ligne|description d’au moins une ligne/i.test(m) || /au moins une ligne/i.test(m))).toBe(true);
+    // B-1039 : la notification recouvrait « Créer » ; le message vit dans le pied.
+    expect(notif).not.toHaveBeenCalledWith(expect.objectContaining({ title: 'Champ requis' }));
+    expect(screen.getByTestId('invoiceform-validation')).toHaveTextContent(/description d’au moins une ligne/i);
 
     const l1 = screen.getByLabelText('Description ligne 1');
     const l2 = screen.getByLabelText('Description ligne 2');

@@ -17,6 +17,8 @@ import { montantAvecDevise } from '../../lib/devise';
 import { cn } from '../../lib/utils';
 import { Z_LAYER } from '../../styles/z-layers';
 import { pushEscapeHandler } from '../../lib/escapeStack';
+import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
+import { libellesDeLaPiece } from './libellesPiece';
 import { useExternalActionConfirmation } from '../app/useExternalActionConfirmation';
 import { Button } from '../ui/Button';
 import { FormField } from '../ui/FormField';
@@ -157,6 +159,15 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
   const [isConverting, setIsConverting] = useState(false);
   const [showConvertDialog, setShowConvertDialog] = useState(false);
   const [lignesSansDescription, setLignesSansDescription] = useState<number[]>([]);
+  // B-1039 : un champ requis manquant se dit dans le pied de la modale. Une
+  // notification, en bas à droite, recouvrait entièrement le bouton « Créer ».
+  const [erreurValidation, setErreurValidation] = useState<string | null>(null);
+
+  // B-1031 et B-1036 : la modale prend le focus, le retient au Tab, et le rend
+  // au déclencheur à la fermeture (création comprise). Échap reste à la pile
+  // (B-228) : le piège ne le traite pas.
+  const dialogueRef = useRef<HTMLDivElement>(null);
+  useDialogFocusTrap(dialogueRef, { active: true });
 
   // B-228 : la modale n'était inscrite NI dans la pile Échap NI dans le
   // panelStore. `consommeEchapUnifie` rendait donc false, la cascade de la coque
@@ -264,12 +275,13 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
     e.preventDefault();
 
     if (!contactId) {
-      addNotification({ type: 'warning', title: 'Champ requis', message: 'Sélectionne un contact' });
+      setErreurValidation('Sélectionne un contact.');
+      dialogueRef.current?.querySelector<HTMLElement>('#contact')?.focus();
       return;
     }
 
     if (lines.length === 0) {
-      addNotification({ type: 'warning', title: 'Champ requis', message: 'Ajoute au moins une ligne de facturation' });
+      setErreurValidation('Ajoute au moins une ligne de facturation.');
       return;
     }
 
@@ -283,16 +295,13 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
     if (vides.length > 0) {
       setLignesSansDescription(vides);
       if (vides.length === lines.length) {
-        addNotification({
-          type: 'warning',
-          title: 'Champ requis',
-          message: 'Renseigne la description d’au moins une ligne',
-        });
+        setErreurValidation('Renseigne la description d’au moins une ligne.');
       }
       document.getElementById(`invoiceform-description-${vides[0]}`)?.focus();
       return;
     }
     setLignesSansDescription([]);
+    setErreurValidation(null);
 
     const normalizedLines = lines.map((line, index) => {
       const quantity = parseDecimalDraft(lineInputs[index]?.quantity ?? '');
@@ -342,11 +351,11 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
         if (invoice) {
           // Mise a jour
           savedInvoice = await updateInvoice(invoice.id, data);
-          addNotification({ type: 'success', title: 'Facture mise à jour', message: savedInvoice.invoice_number });
+          addNotification({ type: 'success', title: libellesDeLaPiece(documentType).misAJour, message: savedInvoice.invoice_number });
         } else {
           // Creation
           savedInvoice = await createInvoice(data);
-          addNotification({ type: 'success', title: 'Facture créée', message: savedInvoice.invoice_number });
+          addNotification({ type: 'success', title: libellesDeLaPiece(documentType).cree, message: savedInvoice.invoice_number });
         }
 
         onSave(savedInvoice);
@@ -495,9 +504,10 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
       />
 
       <motion.div
+        ref={dialogueRef}
         role="dialog"
         aria-modal="true"
-        aria-label={invoice ? `Modifier ${invoice.invoice_number}` : 'Nouvelle facture'}
+        aria-label={titreFormulaire}
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
@@ -782,6 +792,15 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
           </div>
         </form>
 
+        {erreurValidation && (
+          <p
+            data-testid="invoiceform-validation"
+            role="alert"
+            className="px-6 pt-3 text-sm text-warning"
+          >
+            {erreurValidation}
+          </p>
+        )}
         <div className="px-6 py-4 border-t border-border flex items-center justify-between">
           <div className="flex flex-wrap items-center gap-2">
             {invoice && invoice.document_type !== 'devis' && invoice.status !== 'paid' && invoice.status !== 'cancelled' && invoice.status !== 'converted' && (

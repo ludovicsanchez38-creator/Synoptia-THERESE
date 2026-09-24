@@ -149,3 +149,24 @@ describe('B-938 : confirmation de suppression de facture au clavier', () => {
     expect(deleteInvoice).toHaveBeenCalledExactlyOnceWith('inv-c10');
   });
 });
+
+describe('B-1038 (cycle 12) : un devis n’est pas nommé « facture » à la suppression', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    _clearEscapeHandlers();
+    listInvoices.mockResolvedValue([{ ...facture, id: 'dev-c12', invoice_number: 'DEV-2026-001', document_type: 'devis' }]);
+    deleteInvoice.mockResolvedValue(undefined);
+    useInvoiceStore.setState({
+      invoices: [], currentInvoiceId: null, filters: { status: 'all' },
+      isInvoicePanelOpen: true, draftInvoice: null, listeTronquee: false,
+    });
+    useStatusStore.setState({ notifications: [] });
+  });
+
+  it('la confirmation dit « Supprimer le devis ? » et nomme le devis', async () => {
+    const { dialogue } = await ouvrirLaConfirmation();
+    expect(within(dialogue).getByRole('heading', { name: 'Supprimer le devis ?' })).toBeInTheDocument();
+    expect(dialogue).toHaveTextContent('Le devis DEV-2026-001 sera définitivement supprimé.');
+    expect(dialogue).not.toHaveTextContent(/facture/i);
+  });
+});

@@ -135,9 +135,11 @@ describe('InvoiceForm - BUG-132 validation description de ligne', () => {
     fireEvent.click(screen.getByRole('button', { name: /Créer/i }));
 
     expect(createInvoiceMock).not.toHaveBeenCalled();
-    const messages = notifSpy.mock.calls.map((c) => (c[0]?.message as string) ?? '');
-    expect(messages.some((m) => /description/i.test(m))).toBe(true);
-    expect(messages.some((m) => /ajoute au moins une ligne/i.test(m))).toBe(false);
+    // B-1039 : le message ciblé vit dans le pied de la modale, plus dans une notification.
+    const pied = screen.getByTestId('invoiceform-validation');
+    expect(pied).toHaveTextContent(/description/i);
+    expect(pied).not.toHaveTextContent(/ajoute au moins une ligne/i);
+    expect(notifSpy).not.toHaveBeenCalledWith(expect.objectContaining({ title: 'Champ requis' }));
   });
 
   it('accepte la soumission une fois la description renseignée', async () => {

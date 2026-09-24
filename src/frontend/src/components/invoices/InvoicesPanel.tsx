@@ -13,6 +13,7 @@ import { filtresAvecType, statutsProposesPour, useInvoiceStore } from '../../sto
 import { useStatusStore } from '../../stores/statusStore';
 import { listInvoices, deleteInvoice, generateInvoicePDF, type Invoice } from '../../services/api';
 import { InvoiceForm } from './InvoiceForm';
+import { libellesDeLaPiece } from './libellesPiece';
 import { cn } from '../../lib/utils';
 import { Z_LAYER } from '../../styles/z-layers';
 import { pushEscapeHandler } from '../../lib/escapeStack';
@@ -194,7 +195,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
       addNotification({
         type: 'error',
         title: 'Erreur',
-        message: cause || 'Impossible de supprimer la facture',
+        message: cause || `Impossible de supprimer ${libellesDeLaPiece(deletingInvoice.document_type).nomDefini}`,
       });
     } finally {
       setIsDeleting(false);
@@ -552,9 +553,14 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
           if (isDeleting && e.key === 'Tab') e.preventDefault();
         }}
       >
-        <h3 className="text-lg font-semibold text-text">Supprimer la facture ?</h3>
+        {/* B-1038 : un devis ou un avoir ne s'appelle pas « facture ». */}
+        <h3 className="text-lg font-semibold text-text">Supprimer {libellesDeLaPiece(deletingInvoice.document_type).nomDefini} ?</h3>
         <p className="text-sm text-text-muted">
-          La facture <strong>{deletingInvoice.invoice_number}</strong> sera définitivement supprimée.
+          {deletingInvoice.document_type === 'devis'
+            ? <>Le devis <strong>{deletingInvoice.invoice_number}</strong> sera définitivement supprimé.</>
+            : deletingInvoice.document_type === 'avoir'
+              ? <>L’avoir <strong>{deletingInvoice.invoice_number}</strong> sera définitivement supprimé.</>
+              : <>La facture <strong>{deletingInvoice.invoice_number}</strong> sera définitivement supprimée.</>}{' '}
           Cette action est irréversible.
         </p>
         <div className="flex items-center justify-end gap-3">
