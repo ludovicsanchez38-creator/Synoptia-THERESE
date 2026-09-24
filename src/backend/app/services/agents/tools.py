@@ -20,7 +20,7 @@ from pathlib import Path
 # mouliner `re` sans fin, et un fil d'exécution ne s'annule pas. `regex` accepte
 # un délai. Déjà livré avec transformers, déclaré explicitement dans pyproject.
 import regex
-from app.services.sous_processus import environnement_outils_systeme
+from app.services.agents import bac_a_sable
 
 logger = logging.getLogger(__name__)
 
@@ -524,6 +524,12 @@ class BranchGuard:
             )
 
 
+def _refus_de_confinement(raison: str) -> str:
+    """B-1153 : message rendu au modèle quand la commande ne peut pas être confinée.
+    (str() : mypy lit les imports `app.*` comme Any.)"""
+    return str(bac_a_sable.MESSAGE_REFUS.format(raison=raison))
+
+
 class AgentToolExecutor:
     """Exécute les outils pour un agent donné."""
 
@@ -745,15 +751,28 @@ class AgentToolExecutor:
         if refus:
             return refus
 
+        # B-1153 : la commande exécute du code que l'agent peut écrire
+        # (conftest.py, pytest.ini, package.json, Makefile) ; elle ne part
+        # que confinée. Sans confinement disponible, refus explicite.
+        indisponible = await bac_a_sable.confinement_indisponible()
+        if indisponible:
+            return _refus_de_confinement(raison=indisponible)
+        try:
+            lancement = bac_a_sable.preparer_lancement(parts, self.source_path)
+        except Exception as e:
+            logger.warning("Confinement impossible à préparer : %s", type(e).__name__)
+            return _refus_de_confinement(raison="préparation impossible")
+
         proc: asyncio.subprocess.Process | None = None
         try:
             proc = await asyncio.create_subprocess_exec(
-                *parts,
+                *lancement.argv,
                 cwd=str(self.source_path),
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
-                env=environnement_outils_systeme(PYTHONDONTWRITEBYTECODE="1"),  # B-949
+                env=lancement.env,  # liste blanche (B-1153), jamais l'environnement du moteur
                 start_new_session=os.name == "posix",
+                close_fds=True,
             )
             stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=120.0)
             out = stdout.decode("utf-8", errors="replace")
@@ -765,6 +784,10 @@ class AgentToolExecutor:
                 out = out[:max_chars] + f"\n... tronqué ({len(out)} chars total)"
             if len(err) > max_chars:
                 err = err[:max_chars] + f"\n... tronqué ({len(err)} chars total)"
+
+            if proc.returncode != 0 and err.startswith("sandbox-exec:"):
+                # Le confinement lui-même n'a pas démarré : rien n'a tourné.
+                return _refus_de_confinement(raison="le confinement n'a pas démarré")
 
             result = f"Code retour : {proc.returncode}\n"
             if out:
@@ -782,6 +805,8 @@ class AgentToolExecutor:
             return f"Erreur : timeout (120s) pour '{command}'"
         except Exception as e:
             return f"Erreur d'exécution : {e}"
+        finally:
+            lancement.nettoyer()
 
     def _arguments_refuses(self, base_cmd: str, args: list[str]) -> str | None:
         """P-100 : raison du refus des arguments de pytest, vitest ou ruff, ou None."""

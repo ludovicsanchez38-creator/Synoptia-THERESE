@@ -99,10 +99,18 @@ async def test_la_recherche_des_agents_ne_lance_aucun_outil_du_poste(moteur_fige
 
 
 async def test_les_commandes_autorisees_des_agents_n_heritent_pas_du_bundle(moteur_fige, monkeypatch, tmp_path: Path):
+    """B-1153 : l'environnement de la commande est désormais construit en
+    liste blanche ; le chemin des bibliothèques du bundle n'y figure pas."""
+    from app.services.agents import bac_a_sable
+
+    async def disponible():
+        return None
+
+    monkeypatch.setattr(bac_a_sable, "confinement_indisponible", disponible)
     appels = _intercepter(monkeypatch, module_outils)
     await AgentToolExecutor(str(tmp_path)).run_command("ruff check")
     assert appels, "la commande n'a pas été lancée"
-    assert _ld_effectif(appels[0]) == ORIGINE
+    assert BUNDLE not in (_ld_effectif(appels[0]) or "")
     assert appels[0]["env"]["PYTHONDONTWRITEBYTECODE"] == "1"
 
 

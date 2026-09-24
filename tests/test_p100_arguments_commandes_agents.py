@@ -28,13 +28,25 @@ class _Processus:
 
 @pytest.fixture
 def lances(monkeypatch) -> list[tuple]:
+    """Ces tests portent sur la garde des ARGUMENTS : le confinement (B-1153,
+    tests dédiés) est remplacé par un lanceur transparent, sur toute
+    plateforme."""
+    from app.services.agents import bac_a_sable
+
     appels: list[tuple] = []
 
     async def faux_exec(*args, **kwargs):
         appels.append(args)
         return _Processus()
 
+    async def disponible():
+        return None
+
     monkeypatch.setattr(module_outils.asyncio, "create_subprocess_exec", faux_exec)
+    monkeypatch.setattr(bac_a_sable, "confinement_indisponible", disponible)
+    monkeypatch.setattr(
+        bac_a_sable, "preparer_lancement", lambda parts, depot: bac_a_sable.Lancement(argv=list(parts), env={})
+    )
     return appels
 
 
