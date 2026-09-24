@@ -7,7 +7,7 @@
  * s'est passé. Fond = teinte opaque (`--color-*-tint`), pas un color-mix.
  * L'icône est décorative, et `role="alert"` vaut pour les deux tons.
  */
-import { type HTMLAttributes, type ReactNode } from 'react';
+import { type HTMLAttributes, type ReactNode, type Ref } from 'react';
 
 import { cn } from '../../lib/utils';
 
@@ -19,6 +19,8 @@ const TONS: Record<TonAlerte, { fond: string; titre: string }> = {
 };
 
 export interface AlerteProps extends HTMLAttributes<HTMLDivElement> {
+  /** React 19 : la ref passe en prop jusqu'au bandeau (défilement et focus, B-1032). */
+  ref?: Ref<HTMLDivElement>;
   ton?: TonAlerte;
   titre?: string;
   icone?: ReactNode;

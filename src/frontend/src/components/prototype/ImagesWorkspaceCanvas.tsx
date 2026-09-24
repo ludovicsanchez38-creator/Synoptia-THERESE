@@ -27,6 +27,7 @@ import { useDemoMask } from '../../hooks/useDemoMask';
 import { Alerte, Button, Carte, EtatVide, Select, Textarea } from '../ui';
 import { Spinner } from '../ui/Spinner';
 import { BoutonFermerLePanneau } from './BoutonFermerLePanneau';
+import { useRevelerALApparition } from '../../hooks/useRevelerALApparition';
 
 const PROVIDERS: Array<{ id: ImageProvider; label: string; availability: keyof ImageProviderStatus }> = [
   { id: 'gpt-image-2', label: 'GPT Image 2', availability: 'openai_available' },
@@ -68,6 +69,9 @@ export function ImagesWorkspaceCanvas({ onClose }: { onClose: () => void }) {
   const [confirmationSnapshot, setConfirmationSnapshot] = useState<ImageGenerationSnapshot | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [errorField, setErrorField] = useState<'prompt' | 'provider' | null>(null);
+  // B-1032 : le message vit au bas d'une section défilante (part visible 0 en
+  // 800 x 800) ; un moteur non configuré donne le focus au geste qui répare.
+  const erreurRef = useRevelerALApparition(error, errorField === 'provider' ? 'premier-bouton' : false);
   const [errorContext, setErrorContext] = useState<'load' | 'generation' | null>(null);
   const [downloadError, setDownloadError] = useState<string | null>(null);
   const [selected, setSelected] = useState<ImageResponse | null>(null);
@@ -202,14 +206,17 @@ export function ImagesWorkspaceCanvas({ onClose }: { onClose: () => void }) {
       setError('Décris le visuel en au moins 8 caractères.');
       setErrorField('prompt');
       setErrorContext(null);
-      requestAnimationFrame(() => document.getElementById('image-prompt')?.focus());
+      // Le champ reçoit la frappe sans défiler : le message, amené dans la vue
+      // par erreurRef, reste visible (B-1032).
+      requestAnimationFrame(() => document.getElementById('image-prompt')?.focus({ preventScroll: true }));
       return;
     }
     if (!providerStatus?.[activeProvider.availability]) {
       setError(`Le moteur ${activeProvider.label} n’est pas configuré.`);
       setErrorField('provider');
       setErrorContext(null);
-      requestAnimationFrame(() => document.getElementById(`image-provider-${provider}`)?.focus());
+      // B-1032 : le bouton radio du moteur est désactivé, focus() n'y faisait
+      // rien ; erreurRef donne le focus à « Ouvrir les Paramètres ».
       return;
     }
     setError(null);
@@ -351,7 +358,7 @@ export function ImagesWorkspaceCanvas({ onClose }: { onClose: () => void }) {
 
           <div className="mt-4 rounded-md border border-accent-cyan/30 bg-accent-tint p-3 text-sm leading-5 text-accent"><ShieldCheck className="mr-1 inline h-4 w-4" />La demande sera transmise au moteur choisi. Rien ne part avant confirmation.</div>
           </fieldset>
-          {error && <Alerte id="image-generation-error" className="mt-3" titre={titreDeLErreur(errorContext, errorField)} icone={<AlertCircle className="h-4 w-4" />} action={errorContext ? <Button type="button" variant="secondary" onClick={() => errorContext === 'load' ? void refresh() : requestGeneration()}>Réessayer</Button> : errorField === 'provider' ? <Button type="button" variant="secondary" onClick={() => usePanelStore.getState().openSettings('services')}>Ouvrir les Paramètres (Services et connecteurs)</Button> : undefined}>{error}</Alerte>}
+          {error && <Alerte ref={erreurRef} id="image-generation-error" className="mt-3" titre={titreDeLErreur(errorContext, errorField)} icone={<AlertCircle className="h-4 w-4" />} action={errorContext ? <Button type="button" variant="secondary" onClick={() => errorContext === 'load' ? void refresh() : requestGeneration()}>Réessayer</Button> : errorField === 'provider' ? <Button type="button" variant="secondary" onClick={() => usePanelStore.getState().openSettings('services')}>Ouvrir les Paramètres (Services et connecteurs)</Button> : undefined}>{error}</Alerte>}
           {confirmationSnapshot ? <div ref={confirmationRef} className="mt-4" data-testid="image-generation-confirmation"><Alerte ton="attention" titre={`Confirmer la génération avec ${confirmationSnapshot.providerLabel} ?`} action={<div className="flex flex-wrap justify-end gap-2"><Button type="button" variant="secondary" onClick={() => setConfirmationSnapshot(null)}>Annuler</Button><Button type="button" onClick={() => void confirmGeneration()} disabled={pending}>Confirmer et générer</Button></div>}><span className="font-semibold">Prompt : {maskText(confirmationSnapshot.request.prompt)}</span><br />Format {confirmationSnapshot.request.size}, qualité {confirmationSnapshot.request.quality}. Cette action peut consommer un crédit du fournisseur.{!hasCloudConsent('images', confirmationSnapshot.request.provider) ? <> En confirmant ce premier usage cloud, tu consens à transmettre ces données à {confirmationSnapshot.providerLabel}.</> : null}</Alerte></div> : <Button type="button" size="lg" onClick={requestGeneration} disabled={pending || loading} className="mt-4 w-full">{pending ? <Spinner taille="bouton" /> : <Sparkles className="h-4 w-4" />}{pending ? 'Génération en cours…' : 'Préparer la génération'}</Button>}
         </section>
 

@@ -20,6 +20,7 @@ import { usePanneauCouvrant } from '../../hooks/usePanneauCouvrant';
 import { Alerte, Button, Carte, Textarea } from '../ui';
 import { Spinner } from '../ui/Spinner';
 import { BoutonFermerLePanneau } from './BoutonFermerLePanneau';
+import { useRevelerALApparition } from '../../hooks/useRevelerALApparition';
 
 const AUDIO_PERIME_MESSAGE =
   'L’audio correspondait au texte précédent. Génère-le à nouveau pour entendre la nouvelle version.';
@@ -45,6 +46,10 @@ export function VoiceWorkspaceCanvas({
   const [speechLoading, setSpeechLoading] = useState(false);
   const [speechUrl, setSpeechUrl] = useState<string | null>(null);
   const [transcriptionError, setTranscriptionError] = useState<string | null>(null);
+  // B-1032, B-1034 : la confirmation remplace le bouton cliqué (le focus tombait
+  // sur la page) et les messages vivent au bas d'une section défilante.
+  const confirmationRef = useRevelerALApparition(confirmationOpen, 'premier-bouton');
+  const erreurTranscriptionRef = useRevelerALApparition(transcriptionError);
   const [speechError, setSpeechError] = useState<string | null>(null);
   const [speechStatus, setSpeechStatus] = useState<string | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
@@ -164,9 +169,9 @@ export function VoiceWorkspaceCanvas({
             <ShieldCheck className="mr-1 inline h-4 w-4" /><strong>{transcriptionEngine}</strong> · {usesLocalTranscription ? 'l’audio reste sur cette machine.' : 'le fichier sera envoyé à Groq après ta confirmation.'}
           </div>
 
-          {confirmationOpen ? <Alerte ton="attention" className="mt-4" data-testid="voice-transcription-confirmation" titre={`Confirmer la transcription avec ${transcriptionEngine} ?`} action={<div className="flex flex-wrap justify-end gap-2"><Button type="button" variant="secondary" onClick={() => setConfirmationOpen(false)}>Annuler</Button><Button type="button" onClick={() => void confirmTranscription()}>Confirmer et transcrire</Button></div>} /> : <Button type="button" size="lg" onClick={prepareTranscription} disabled={!file || transcribing} className="mt-4 w-full">{transcribing ? <Spinner taille="bouton" /> : <Mic className="h-4 w-4" />}{transcribing ? 'Transcription en cours…' : 'Préparer la transcription'}</Button>}
+          {confirmationOpen ? <Alerte ref={confirmationRef} ton="attention" className="mt-4" data-testid="voice-transcription-confirmation" titre={`Confirmer la transcription avec ${transcriptionEngine} ?`} action={<div className="flex flex-wrap justify-end gap-2"><Button type="button" variant="secondary" onClick={() => setConfirmationOpen(false)}>Annuler</Button><Button type="button" onClick={() => void confirmTranscription()}>Confirmer et transcrire</Button></div>} /> : <Button type="button" size="lg" onClick={prepareTranscription} disabled={!file || transcribing} className="mt-4 w-full">{transcribing ? <Spinner taille="bouton" /> : <Mic className="h-4 w-4" />}{transcribing ? 'Transcription en cours…' : 'Préparer la transcription'}</Button>}
 
-          {transcriptionError && <Alerte className="mt-3" titre="Transcription impossible" icone={<AlertCircle className="h-4 w-4" />} action={<Button type="button" variant="secondary" onClick={prepareTranscription}>Réessayer</Button>}>{transcriptionError}</Alerte>}
+          {transcriptionError && <Alerte ref={erreurTranscriptionRef} className="mt-3" titre="Transcription impossible" icone={<AlertCircle className="h-4 w-4" />} action={<Button type="button" variant="secondary" onClick={prepareTranscription}>Réessayer</Button>}>{transcriptionError}</Alerte>}
 
           {transcript && <div className="mt-5"><label className="text-sm font-semibold text-text">Transcription<Textarea aria-label="Transcription" rows={8} value={transcript} onChange={(event) => setTranscript(event.target.value)} className="mt-2 font-normal leading-6" /></label><Button type="button" size="lg" onClick={() => onContinueInChat(`Voici la transcription d’un enregistrement :\n\n${transcript}\n\nExtrais les décisions, engagements et prochaines actions.`)} className="mt-3 w-full">Analyser dans le chat</Button></div>}
         </section>
