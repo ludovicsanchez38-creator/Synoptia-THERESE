@@ -4,6 +4,7 @@ THÉRÈSE v2 - Memory Router
 Endpoints for memory management (contacts, projects, search).
 """
 
+import asyncio
 import json
 import logging
 import time
@@ -113,6 +114,31 @@ def _project_to_embedding_text(project: Project) -> str:
         if tags:
             parts.append(f"Tags: {', '.join(tags)}")
     return "\n".join(parts)
+
+
+# Les tâches asyncio ne sont retenues que par une référence forte (BUG-172).
+_INDEXATIONS_DE_FICHES: set[asyncio.Task[None]] = set()
+
+
+def indexer_fiches_en_arriere_plan(fiches: list[Contact]) -> None:
+    """B-1204 : indexe des fiches importées APRÈS la réponse.
+
+    Un vecteur prend jusqu'à 19 s sur une machine modeste (BUG-172) : indexer
+    dans la requête un carnet de quelques fiches dépassait le délai client de
+    30 s, l'écran annonçait un échec et une relance recréait en double les
+    fiches sans courriel. Les fiches sont enregistrées, l'index suit ;
+    `_embed_contact` est déjà sans effet de bord en cas d'échec.
+    """
+    if not fiches:
+        return
+
+    async def _indexer(lot: list[Contact]) -> None:
+        for fiche in lot:
+            await _embed_contact(fiche)
+
+    tache = asyncio.create_task(_indexer(list(fiches)))
+    _INDEXATIONS_DE_FICHES.add(tache)
+    tache.add_done_callback(_INDEXATIONS_DE_FICHES.discard)
 
 
 async def _embed_contact(contact: Contact) -> None:
@@ -721,8 +747,7 @@ async def import_vcf_contacts(
     await session.commit()
     # B-1180 : comme une création à l'unité, chaque fiche importée ou mise à
     # jour rejoint l'index sémantique (sinon le chat ne la retrouve pas).
-    for fiche in a_indexer:
-        await _embed_contact(fiche)
+    indexer_fiches_en_arriere_plan(a_indexer)
     logger.info(f"VCF import (memory): {created} created, {updated} updated, {skipped} skipped")
 
     parts = [f"{created} contact(s) cree(s)"]

@@ -14,6 +14,7 @@ sans l'espion posé ici, `_embed_contact` échoue en silence partout.
 
 from __future__ import annotations
 
+import time
 from unittest.mock import AsyncMock
 
 import pytest
@@ -38,8 +39,15 @@ def espion_qdrant(monkeypatch):
     return espion
 
 
-def _entites_indexees(espion) -> list[str]:
-    return [c.kwargs.get("entity_id") for c in espion.await_args_list]
+def _entites_indexees(espion, attendue: str | None = None) -> list[str]:
+    # B-1204 : l'indexation part en tâche de fond après la réponse ; on lui
+    # laisse le temps d'arriver (la boucle de l'application tourne à part).
+    for _ in range(100):
+        vues = [c.kwargs.get("entity_id") for c in espion.await_args_list]
+        if attendue is None or attendue in vues:
+            return vues
+        time.sleep(0.05)
+    return vues
 
 
 async def _contact_id(client, email: str) -> str:
@@ -57,7 +65,7 @@ async def test_une_fiche_creee_par_l_import_vcard_est_indexee(client, espion_qdr
     assert resp.json()["created"] == 1, resp.json()
 
     cid = await _contact_id(client, "alice.martin@example.fr")
-    assert cid in _entites_indexees(espion_qdrant), (
+    assert cid in _entites_indexees(espion_qdrant, cid), (
         f"fiche {cid} créée par l'import vCard, appels async_add_memory = "
         f"{espion_qdrant.await_count} ({_entites_indexees(espion_qdrant)})"
     )
@@ -81,7 +89,7 @@ async def test_une_fiche_mise_a_jour_par_l_import_vcard_est_reindexee(client, es
     assert resp.json()["updated"] == 1, resp.json()
     fiche = (await client.get(f"/api/memory/contacts/{cid}")).json()
     assert fiche["company"] == "Boulangerie Martin"
-    assert cid in _entites_indexees(espion_qdrant), (
+    assert cid in _entites_indexees(espion_qdrant, cid), (
         f"société passée à « Boulangerie Martin » par l'import, embedding non "
         f"refait : appels = {espion_qdrant.await_count}"
     )
@@ -97,7 +105,7 @@ async def test_jumeau_crm_une_fiche_importee_par_vcard_est_indexee(client, espio
     assert resp.json()["created"] == 1, resp.json()
 
     cid = await _contact_id(client, "alice.martin@example.fr")
-    assert cid in _entites_indexees(espion_qdrant), (
+    assert cid in _entites_indexees(espion_qdrant, cid), (
         f"fiche {cid} créée par /api/crm/import/vcf, appels async_add_memory = "
         f"{espion_qdrant.await_count}"
     )
@@ -140,3 +148,32 @@ async def test_mesure_score_et_etape_d_une_fiche_importee(client, espion_qdrant)
         f"last_interaction={importee.get('last_interaction')} | unitaire : "
         f"stage={unitaire.get('stage')} score={unitaire.get('score')}\n"
     )
+
+
+@pytest.mark.asyncio
+async def test_l_import_repond_sans_attendre_l_indexation(client, monkeypatch):
+    """B-1204 : régression de B-1180. Indexer les fiches une à une DANS la
+    requête dépasse le délai client de 30 s sur une machine modeste (19 s par
+    vecteur, BUG-172) ; l'utilisateur relance et les fiches sans courriel
+    naissent en double. L'import répond, l'indexation suit en tâche de fond."""
+    import asyncio
+
+    import app.services.qdrant as module_qdrant
+
+    async def lent(**_kwargs):
+        await asyncio.sleep(2)
+        return "point-id"
+
+    monkeypatch.setattr(module_qdrant._qdrant_service, "async_add_memory", lent)
+    carnet = b"".join(
+        f"BEGIN:VCARD\r\nVERSION:3.0\r\nFN:Fiche {i}\r\nEMAIL:fiche{i}@example.fr\r\nEND:VCARD\r\n".encode()
+        for i in range(3)
+    )
+    debut = time.monotonic()
+    resp = await client.post(
+        "/api/memory/contacts/import",
+        files={"file": ("carnet.vcf", carnet, "text/vcard")},
+    )
+    duree = time.monotonic() - debut
+    assert resp.status_code == 200, resp.text
+    assert duree < 1.5, f"l'import a attendu l'indexation : {duree:.1f} s pour 3 fiches"

@@ -880,10 +880,9 @@ async def import_vcf_contacts(
     await session.commit()
     # B-1180 : comme une création à l'unité, chaque fiche importée ou mise à
     # jour rejoint l'index sémantique (sinon le chat ne la retrouve pas).
-    from app.routers.memory import _embed_contact
+    from app.routers.memory import indexer_fiches_en_arriere_plan
 
-    for fiche in a_indexer:
-        await _embed_contact(fiche)
+    indexer_fiches_en_arriere_plan(a_indexer)
     logger.info(f"VCF import: {created} created, {updated} updated")
 
     return {
