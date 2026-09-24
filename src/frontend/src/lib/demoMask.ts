@@ -96,17 +96,28 @@ export interface MaskableContact {
  * Masque un contact avec un persona fictif.
  * Retourne une copie avec les champs PII remplacés.
  */
+/**
+ * B-1075 : la clé d'une fiche. Une fiche d'entreprise sans prénom ni nom
+ * (cas courant en B2B) était sautée : sa société, son adresse et son
+ * téléphone restaient en clair en démonstration.
+ */
+function cleDuContact(contact: { first_name?: string | null; last_name?: string | null; company?: string | null; email?: string | null }): string {
+  return (`${contact.first_name || ''}${contact.last_name || ''}` || contact.company || contact.email || '').toLowerCase();
+}
+
 export function maskContact<T extends MaskableContact>(contact: T): T {
-  const key = `${contact.first_name || ''}${contact.last_name || ''}`.toLowerCase();
+  const key = cleDuContact(contact);
   if (!key) return contact;
 
   const idx = hashToIndex(key, DEMO_PERSONAS.length);
   const persona = DEMO_PERSONAS[idx];
+  // Une fiche sans nom n'en reçoit pas d'inventé : seuls ses champs remplis sont remplacés.
+  const nommee = Boolean(contact.first_name || contact.last_name);
 
   return {
     ...contact,
-    first_name: persona.firstName,
-    last_name: persona.lastName,
+    first_name: nommee ? persona.firstName : contact.first_name ?? null,
+    last_name: nommee ? persona.lastName : contact.last_name ?? null,
     company: contact.company ? persona.company : null,
     email: contact.email ? persona.email : null,
     phone: contact.phone ? hashToPhone(key) : null,
@@ -150,7 +161,7 @@ export function buildReplacementMap(
   const map = new Map<string, string>();
 
   for (const contact of contacts) {
-    const key = `${contact.first_name || ''}${contact.last_name || ''}`.toLowerCase();
+    const key = cleDuContact(contact);
     if (!key) continue;
 
     const idx = hashToIndex(key, DEMO_PERSONAS.length);
