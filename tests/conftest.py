@@ -148,8 +148,11 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
     if db_module.async_engine is None or db_module.AsyncSessionLocal is None:
         await db_module.init_db()
 
-    # Créer les tables
+    # Tables neuves AVANT le test aussi (B-1197) : la fixture `client` ne
+    # nettoie qu'en entrée ; un test HTTP suivi d'un test de service laissait
+    # ses lignes au second (5 projets comptés au lieu d'un).
     async with db_module.async_engine.begin() as conn:
+        await conn.run_sync(SQLModel.metadata.drop_all)
         await conn.run_sync(SQLModel.metadata.create_all)
 
     async with db_module.AsyncSessionLocal() as session:
