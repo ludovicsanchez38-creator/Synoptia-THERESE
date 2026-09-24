@@ -52,7 +52,11 @@ class TestLaRacineEstExclusive:
 
         assert root.racine == str(racine.resolve())
         assert root.generation == 1
-        assert root.volume_id == racine.stat().st_dev
+        # B-1141 : même conversion signée que le code (BUG-172). Sous Windows,
+        # un numéro de volume au-delà de 2^63-1 est stocké négatif : comparer
+        # au st_dev brut rougissait selon le runner.
+        assert root.volume_id == svc._volume_id(racine)
+        assert root.volume_id % (1 << 64) == racine.stat().st_dev % (1 << 64)
 
     @pytest.mark.asyncio
     async def test_deux_projets_ne_partagent_pas_une_racine(self, client, racine):
@@ -697,3 +701,24 @@ class TestBug172VolumeWindows:
         # et toujours dans les bornes de l'INTEGER signé SQLite
         for v in (0, 2**64 - 30, 2**63, 2**63 - 1):
             assert -(2**63) <= temoin(v) <= 2**63 - 1
+
+
+def test_b1141_un_volume_windows_au_dela_de_2_63_reste_identifiable(monkeypatch, tmp_path):
+    """Le cas du runner Windows du 24/09 : st_dev = 17594508763472084922."""
+    import os
+
+    from app.services import project_sync_service as svc
+
+    vrai_stat = os.stat_result
+    grand = 17594508763472084922
+
+    faux = tmp_path
+
+    def stat_force(self, *args, **kwargs):
+        reel = os.stat(str(self))
+        return vrai_stat((reel.st_mode, reel.st_ino, grand, reel.st_nlink, reel.st_uid, reel.st_gid, reel.st_size, int(reel.st_atime), int(reel.st_mtime), int(reel.st_ctime)))
+
+    monkeypatch.setattr(type(faux), "stat", stat_force)
+    identifiant = svc._volume_id(faux)
+    assert -(1 << 63) <= identifiant < (1 << 63)
+    assert identifiant % (1 << 64) == grand
