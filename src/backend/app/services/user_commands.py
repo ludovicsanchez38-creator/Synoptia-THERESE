@@ -7,10 +7,13 @@ Stockage : ~/.therese/commands/user/*.md (YAML frontmatter + contenu)
 
 import json
 import logging
+import os
 import shutil
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
+from urllib.parse import quote
 
 import yaml
 from app.config import settings
@@ -250,6 +253,10 @@ class UserCommandsService:
             return directory / f"{filepath.stem}-{timestamp}{filepath.suffix}"
 
         try:
+            if sys.platform.startswith("linux"):
+                self._deposer_dans_la_corbeille_freedesktop(filepath)
+                logger.info(f"Deleted user command: {name}")
+                return True
             if not trash_dir.exists():
                 raise OSError("La Corbeille système n'est pas disponible")
             destination = available_destination(trash_dir)
@@ -265,6 +272,48 @@ class UserCommandsService:
 
         logger.info(f"Deleted user command: {name}")
         return True
+
+    def _deposer_dans_la_corbeille_freedesktop(self, filepath: Path) -> None:
+        """P-102 : corbeille du bureau Linux (spécification freedesktop.org).
+
+        Le contenu va dans `Trash/files/<nom>`, et `Trash/info/<nom>.trashinfo`
+        garde le chemin d'origine et la date, pour que le gestionnaire de
+        fichiers sache le restaurer. La fiche est créée en exclusif AVANT le
+        déplacement, ce qui réserve le nom. Les deux chemins sont notés pour
+        la purge RGPD (B-465). Toute erreur remonte en OSError : l'appelant
+        replie alors dans `commands/user/.trash`.
+        """
+        base = Path(os.environ.get("XDG_DATA_HOME") or Path.home() / ".local" / "share") / "Trash"
+        fichiers, infos = base / "files", base / "info"
+        fichiers.mkdir(parents=True, exist_ok=True, mode=0o700)
+        infos.mkdir(parents=True, exist_ok=True, mode=0o700)
+        fiche_info = (
+            "[Trash Info]\n"
+            f"Path={quote(str(filepath.resolve()))}\n"
+            f"DeletionDate={datetime.now().strftime('%Y-%m-%dT%H:%M:%S')}\n"
+        )
+        for essai in range(1000):
+            nom = filepath.name if essai == 0 else f"{filepath.stem}.{essai}{filepath.suffix}"
+            info = infos / f"{nom}.trashinfo"
+            try:
+                descripteur = os.open(info, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+            except FileExistsError:
+                continue
+            if (fichiers / nom).exists():
+                os.close(descripteur)
+                info.unlink(missing_ok=True)
+                continue
+            with os.fdopen(descripteur, "w", encoding="utf-8") as sortie:
+                sortie.write(fiche_info)
+            try:
+                shutil.move(str(filepath), str(fichiers / nom))
+            except OSError:
+                info.unlink(missing_ok=True)
+                raise
+            self._noter_depot_en_corbeille(fichiers / nom)
+            self._noter_depot_en_corbeille(info)
+            return
+        raise OSError("Corbeille du bureau : aucun nom libre")
 
     def _index_corbeille(self) -> Path:
         return self._commands_dir / ".corbeille.json"
