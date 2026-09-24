@@ -606,11 +606,20 @@ class AgentToolExecutor:
                 brut = fichier.read(MAX_OCTETS_LUS + 1)
             coupe = len(brut) > MAX_OCTETS_LUS
             content = brut[:MAX_OCTETS_LUS].decode("utf-8", errors="replace")
+            # B-1200 : read_text normalisait les fins de ligne ; la lecture en
+            # octets les rendait telles quelles (CRLF sous Windows).
+            content = content.replace("\r\n", "\n").replace("\r", "\n")
             lines = content.split("\n")
             if len(lines) > max_lines:
+                # B-1200 : le total ne porte que sur la partie lue.
+                total = (
+                    f"{len(lines)} dans les {MAX_OCTETS_LUS} premiers octets"
+                    if coupe
+                    else str(len(lines))
+                )
                 return (
                     "\n".join(lines[:max_lines])
-                    + f"\n\n[... tronqué à {max_lines} lignes, total: {len(lines)}]"
+                    + f"\n\n[... tronqué à {max_lines} lignes, total: {total}]"
                 )
             if coupe:
                 taille = resolved.stat().st_size

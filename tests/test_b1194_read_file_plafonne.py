@@ -28,3 +28,25 @@ async def test_temoin_petit_fichier_lu_entier(tmp_path):
 
     (tmp_path / "notes.md").write_text("a\nb\n", encoding="utf-8")
     assert await AgentToolExecutor(str(tmp_path)).read_file("notes.md") == "a\nb\n"
+
+
+@pytest.mark.asyncio
+async def test_les_fins_de_ligne_windows_sont_normalisees(tmp_path):
+    """B-1200 : lire en octets ne doit pas rendre les CRLF que read_text
+    normalisait (régression vue sur la CI Windows)."""
+    from app.services.agents.tools import AgentToolExecutor
+
+    (tmp_path / "notes.md").write_bytes(b"a\r\nb\r\n")
+    assert await AgentToolExecutor(str(tmp_path)).read_file("notes.md") == "a\nb\n"
+
+
+@pytest.mark.asyncio
+async def test_la_coupe_en_lignes_dit_aussi_la_coupe_en_octets(tmp_path):
+    """B-1200 : quand les deux bornes jouent, le total de lignes annoncé ne
+    porte que sur la partie lue ; le modèle doit le savoir."""
+    from app.services.agents.tools import MAX_OCTETS_LUS, AgentToolExecutor
+
+    (tmp_path / "long.log").write_bytes(b"x\n" * (MAX_OCTETS_LUS // 2 + 1000))
+    resultat = await AgentToolExecutor(str(tmp_path)).read_file("long.log", max_lines=10)
+    assert "tronqué à 10 lignes" in resultat
+    assert "octets" in resultat.splitlines()[-1], resultat.splitlines()[-1]
