@@ -4,6 +4,7 @@ THÉRÈSE v2 - Pydantic Schemas
 Request/Response models for API endpoints.
 """
 
+import math
 import re
 from datetime import UTC, date, datetime
 from typing import Annotated, Any, Literal, Self
@@ -1140,6 +1141,10 @@ class InvoiceResponse(BaseModel):
     lines: list[InvoiceLineResponse] = []
 
 
+# B-1161 : plafond du total hors taxe d'une ligne de facture (10¹²).
+MONTANT_MAX_LIGNE = 1e12
+
+
 class InvoiceLineRequest(BaseModel):
     """Request pour une ligne de facture.
 
@@ -1162,7 +1167,21 @@ class InvoiceLineRequest(BaseModel):
     # colonne NOT NULL au moment d'écrire : 500, après une écriture partielle.
     quantity: float = Field(default=1.0, gt=0, allow_inf_nan=False)
     unit_price_ht: float = Field(ge=0, allow_inf_nan=False)
-    tva_rate: float = Field(default=20.0, ge=0, allow_inf_nan=False)  # Default TVA française normale
+    # B-1161 : taux borné à 100 %, pour que la TVA d'une ligne reste bornée.
+    tva_rate: float = Field(default=20.0, ge=0, le=100, allow_inf_nan=False)  # Default TVA française normale
+
+    @model_validator(mode="after")
+    def _total_de_ligne_borne(self) -> Self:
+        """B-1161 : 1e200 × 1e200 est fini à l'entrée et infini au produit ;
+        total_tax devenait nan et l'écriture tombait en 500. Le total d'une
+        ligne reste fini et au plus MONTANT_MAX_LIGNE."""
+        total = self.quantity * self.unit_price_ht
+        if not math.isfinite(total) or total > MONTANT_MAX_LIGNE:
+            raise ValueError(
+                "Le montant de cette ligne dépasse la limite (mille milliards) : "
+                "vérifie la quantité et le prix."
+            )
+        return self
 
 
 class CreateInvoiceRequest(BaseModel):
