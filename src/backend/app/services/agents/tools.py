@@ -9,6 +9,7 @@ import asyncio
 import fnmatch
 import logging
 import os
+import re
 import signal
 import stat
 import threading
@@ -527,6 +528,18 @@ class BranchGuard:
             )
 
 
+_LANCEMENT_RATE = re.compile(r"sandbox-exec: execvp\(\) of '([^']+)' failed: ([^\n]+)")
+
+
+def _commande_non_lancee(commande: str, cause: str) -> str:
+    """B-1191 : la commande n'a pas pu être lancée dans le confinement."""
+    if "No such file" in cause:
+        cause = "introuvable, absente du PATH"
+    elif "Permission denied" in cause:
+        cause = "permission refusée"
+    return f"Erreur : la commande « {commande} » n'a pas pu être lancée ({cause})."
+
+
 def _refus_de_confinement(raison: str) -> str:
     """B-1153 : message rendu au modèle quand la commande ne peut pas être confinée.
     (str() : mypy lit les imports `app.*` comme Any.)"""
@@ -795,6 +808,11 @@ class AgentToolExecutor:
                 err = err[:max_chars] + f"\n... tronqué ({len(err)} chars total)"
 
             if proc.returncode != 0 and err.startswith("sandbox-exec:"):
+                # B-1191 : une commande introuvable n'est pas un confinement
+                # en panne ; on la nomme.
+                lancement_rate = _LANCEMENT_RATE.match(err)
+                if lancement_rate:
+                    return _commande_non_lancee(lancement_rate.group(1), lancement_rate.group(2))
                 # Le confinement lui-même n'a pas démarré : rien n'a tourné.
                 return _refus_de_confinement(raison="le confinement n'a pas démarré")
 

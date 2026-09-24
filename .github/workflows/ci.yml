@@ -106,7 +106,7 @@ jobs:
         run: pip install uv && uv sync --dev
 
       - name: Confinement Seatbelt et git de mission (B-1153)
-        run: uv run pytest tests/test_b1153_bac_a_sable_commandes.py tests/test_b1153_git_de_mission_durci.py tests/test_p100_arguments_commandes_agents.py -q -p no:cacheprovider
+        run: uv run pytest tests/test_b1153_bac_a_sable_commandes.py tests/test_b1153_git_de_mission_durci.py tests/test_p100_arguments_commandes_agents.py tests/test_b1191_commande_introuvable_nommee.py -q -p no:cacheprovider
 
   # B-948 / B-956 (cycle 11, 23/09/2026) : le paquet .deb installe le bundle
   # PyInstaller en lecture seule sous /usr/lib. Cette contre-épreuve construit
