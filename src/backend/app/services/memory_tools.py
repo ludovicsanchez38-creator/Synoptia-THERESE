@@ -466,9 +466,12 @@ async def execute_create_contact(
 
     # Deduplication : si un contact equivalent existe deja, on le reutilise
     # plutot que de creer un doublon (regression "creation en masse").
+    # B-1190 : comme read_contact (B-1110), sans périmètre la déduplication
+    # ferme sur le carnet général ; sinon elle rendait l'id d'un homonyme
+    # rangé dans un autre dossier.
     existing = await _find_existing_contact(
         session, first_name, last_name, email,
-        scope=scope, scope_id=scope_id, conversation_id=conversation_id,
+        scope=scope or "global", scope_id=scope_id, conversation_id=conversation_id,
     )
     if existing is not None:
         # 0.56 : `success: true` PROMETTAIT une ecriture qui n'avait pas lieu.
@@ -642,12 +645,13 @@ async def execute_create_project(
     # (regression "creation en masse" via les commandes / interpretees par le LLM).
     # Finding 7 (30/08) : deux homonymes, `.first()` renvoyait l'id de l'autre
     # client. Ambigu = refus, pas un troisième ni le mauvais.
+    # B-1190 : même fermeture sans périmètre que read_contact (B-1110).
     existing = await _find_existing_project(
-        session, name, scope=scope, scope_id=scope_id, conversation_id=conversation_id
+        session, name, scope=scope or "global", scope_id=scope_id, conversation_id=conversation_id
     )
     if existing is None:
         homonymes = await _lister_projets_homonymes(
-            session, name, scope=scope, scope_id=scope_id, conversation_id=conversation_id
+            session, name, scope=scope or "global", scope_id=scope_id, conversation_id=conversation_id
         )
         if len(homonymes) > 1:
             return json.dumps({
