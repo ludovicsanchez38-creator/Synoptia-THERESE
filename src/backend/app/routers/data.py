@@ -52,6 +52,7 @@ from app.models.entities import (
 from app.models.entities_agents import AgentMessage, AgentSession, AgentTask, CodeChange
 from app.models.entities_sync import ProjectSyncEntry, ProjectSyncRoot, SyncOperation, SyncPlan
 from app.models.processing import ProcessingTask
+from app.models.schemas import perimetre_normalise
 from app.services.audit import (
     ActivityLog,
     AuditAction,
@@ -1728,6 +1729,35 @@ def _adresse_restauree(valeur: object) -> str | None:
     return valeur.strip() if adresse_unique_valide(valeur) else None
 
 
+def _date_restauree(valeur: Any) -> datetime | None:
+    """B-1126 : date ISO de l'export, ou None si absente ou illisible."""
+    if not isinstance(valeur, str) or not valeur.strip():
+        return None
+    try:
+        return datetime.fromisoformat(valeur.strip().replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def _score_restaure(valeur: Any) -> int:
+    """B-1126 : score de l'export sur l'échelle 0-100 (B-1165), sinon 50."""
+    if isinstance(valeur, int) and not isinstance(valeur, bool) and 0 <= valeur <= 100:
+        return valeur
+    return 50
+
+
+def _perimetre_restaure(valeur: Any) -> str:
+    """B-1126 : périmètre normalisé (B-1165), « global » s'il est vide ou inconnu."""
+    if isinstance(valeur, str) and valeur.strip():
+        try:
+            perimetre: str | None = perimetre_normalise(valeur)
+        except ValueError:
+            perimetre = None
+        if perimetre:
+            return perimetre
+    return "global"
+
+
 @router.post("/import/contacts")
 async def import_contacts(
     data: dict,
@@ -1761,6 +1791,11 @@ async def import_contacts(
         if existing.scalar_one_or_none():
             continue
 
+        # B-1126 : tout ce que l'export écrit revient, RGPD compris ; sans
+        # quoi un contact exclu de la purge redevenait purgeable et un contact
+        # cloisonné redevenait global. Une valeur hors règle prend le défaut.
+        maintenant = datetime.now(UTC)
+        extra = contact_data.get("extra_data")
         contact = Contact(
             id=contact_data.get("id"),
             first_name=contact_data.get("first_name"),
@@ -1769,8 +1804,24 @@ async def import_contacts(
             # B-1119 : même règle que les autres imports (B-1074, B-1081).
             email=_adresse_restauree(contact_data.get("email")),
             phone=contact_data.get("phone"),
+            address=contact_data.get("address"),
             notes=contact_data.get("notes"),
             tags=json.dumps(contact_data.get("tags")) if contact_data.get("tags") else None,
+            extra_data=json.dumps(extra) if isinstance(extra, (dict, list)) else (extra if isinstance(extra, str) else None),
+            stage=contact_data.get("stage") or "contact",
+            score=_score_restaure(contact_data.get("score")),
+            source=contact_data.get("source"),
+            last_interaction=_date_restauree(contact_data.get("last_interaction")),
+            next_follow_up=_date_restauree(contact_data.get("next_follow_up")),
+            rgpd_base_legale=contact_data.get("rgpd_base_legale"),
+            rgpd_date_collecte=_date_restauree(contact_data.get("rgpd_date_collecte")),
+            rgpd_date_expiration=_date_restauree(contact_data.get("rgpd_date_expiration")),
+            rgpd_consentement=contact_data.get("rgpd_consentement") is True,
+            purge_excluded=contact_data.get("purge_excluded") is True,
+            scope=_perimetre_restaure(contact_data.get("scope")),
+            scope_id=contact_data.get("scope_id"),
+            created_at=_date_restauree(contact_data.get("created_at")) or maintenant,
+            updated_at=_date_restauree(contact_data.get("updated_at")) or maintenant,
         )
         session.add(contact)
         imported += 1
