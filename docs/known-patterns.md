@@ -642,3 +642,13 @@ dernier enfant VISIBLE (le dernier enfant DOM était un wrapper vide).
 - **Un fournisseur local ne bascule jamais vers un service en ligne** (B-1071, P-103) : l'onglet Modèles promet « En local, rien ne quitte ton ordinateur ». Tout repli du disjoncteur est en ligne : Ollama indisponible = échec explicite.
 - **Une fiche contact porte une seule adresse** (B-1074) : les chemins d'e-mail joignent les destinataires par « , », et « a@b.fr,pirate@x.fr » passait la validation de création.
 
+
+## Audit de release 0.75.0 (24/09/2026)
+
+- **Une animation de sortie framer-motion peut ne jamais finir sous jsdom** sur un runner lent, quand la sortie est lancée pendant l'animation d'ouverture. Un test qui attend la disparition du nœud rougit en CI Linux et reste vert sur le Mac : lire l'état (`aria-expanded`, `aria-hidden`) au lieu de la fin de l'animation.
+- **Un focus rendu dans un `requestAnimationFrame` se lit dans un `waitFor`**, jamais aussitôt la fenêtre fermée.
+- **mypy incrémental sous-compte d'une erreur** : 950 avec cache, 951 cache vidé (la valeur de la CI). Mesurer cache vidé avant d'annoncer le cliquet.
+- **Un modèle Ollama « :cloud » ou « -cloud » n'est pas local** (B-1146) : Ollama le liste parmi les modèles installés mais transmet ses requêtes à ollama.com. Tout libellé « local » doit passer par `est_modele_ollama_cloud`.
+- **Une purge RGPD doit vider chaque mémoire, pas seulement la table** (B-1124, B-1145) : cache des clés, service des modèles, clé Brave, extracteur d'entités, cache de THERESE.md. Tester par le parcours (la clé réellement servie), pas par le cache.
+- **Traduire le code nu « API error: NNN » au moment de lever l'erreur**, après le comptage du disjoncteur qui en a besoin (B-1147).
+- **La garde des arguments d'agent ne confine pas l'exécution** (B-1153) : un `pytest.ini` écrit par l'agent suffit à vider un dossier hors du dépôt.
