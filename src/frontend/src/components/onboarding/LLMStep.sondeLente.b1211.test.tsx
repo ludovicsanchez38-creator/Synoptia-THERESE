@@ -1,5 +1,6 @@
 /**
- * B-1211 (garde, constat non reproduit) : suite supposée de B-1173. Quand la première vérification d'Ollama échoue
+ * B-1211 : suite de B-1173 (rouvert après la revue du diff : la première garde
+ * recliquait sur Ollama et masquait le défaut). Quand la première vérification d'Ollama échoue
  * (sonde lente), qu'on choisit Ollama puis qu'on relance la vérification, le
  * modèle retenu restait celui du fournisseur précédent : le menu montrait un
  * modèle Ollama mais « Continuer » restait grisé.
@@ -60,8 +61,9 @@ describe('B-1211 : vérification d’Ollama relancée après un échec', () => {
       fireEvent.click(screen.getByRole('button', { name: 'Réessayer la vérification' }));
     });
     await act(async () => Promise.resolve());
+    // Pas de nouveau clic : la radio (un bouton role=radio) est déjà cochée.
     const radio = screen.getByRole('radio', { name: /Ollama \(Local\)/ });
-    if (!(radio as HTMLInputElement).checked) fireEvent.click(radio);
+    expect(radio.getAttribute('aria-checked')).toBe('true');
     const select = screen.getByLabelText('Modèle') as HTMLSelectElement;
     const continuer = screen.getByTestId('onboarding-next-btn') as HTMLButtonElement;
     expect({ modele: select.value, continuerActif: !continuer.disabled })

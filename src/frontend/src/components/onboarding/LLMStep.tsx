@@ -240,6 +240,18 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
     return () => { annule = true; };
   }, [selectedProvider]);
 
+  // B-1211 : Ollama choisi avant que ses modèles ne soient chargés (sonde
+  // lente puis « Réessayer la vérification ») : le modèle retenu restait
+  // celui du fournisseur précédent, le menu en montrait un autre et
+  // « Continuer » restait grisé. À chaque liste chargée, même règle que
+  // handleSelectProvider, sauf choix explicite de l'utilisateur.
+  useEffect(() => {
+    if (selectedProvider !== 'ollama' || modeleChoisiParLUtilisateur.current) return;
+    if (ollamaModels.some((m) => m.nom === selectedModel)) return;
+    const locaux = ollamaModels.filter((m) => !estModeleOllamaCloud(m.nom));
+    setSelectedModel(locaux.find((m) => m.gereLesOutils)?.nom ?? '');
+  }, [ollamaModels, selectedProvider, selectedModel]);
+
   async function handleSelectProvider(provider: api.LLMProvider) {
     setSelectedProvider(provider);
     modeleChoisiParLUtilisateur.current = false;
