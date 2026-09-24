@@ -184,16 +184,16 @@ def parse_budget(value: str | int | float | None) -> float | None:
     """Parse un budget depuis une valeur quelconque."""
     if value is None:
         return None
-    if isinstance(value, (int, float)):
-        return float(value)
     if isinstance(value, str):
         value = value.strip()
-    if not value:
+    if value == "":
         return None
     try:
-        return float(value)
+        nombre = float(value)
     except (ValueError, TypeError):
         return None
+    # B-1219 : un budget infini ou NaN n'est pas un budget.
+    return nombre if math.isfinite(nombre) else None
 
 
 def parse_tags_json(value: str | None) -> str | None:

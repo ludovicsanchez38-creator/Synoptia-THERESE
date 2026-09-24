@@ -528,7 +528,8 @@ class ProjectCreate(BaseModel):
     scope: str = "global"
     scope_id: str | None = None
     status: Literal["active", "completed", "on_hold", "cancelled"] = "active"
-    budget: float | None = None
+    # B-1219 : un budget infini faisait tomber la liste des projets en 500.
+    budget: float | None = Field(default=None, allow_inf_nan=False)
     notes: str | None = None
     tags: list[str] | None = None
 
@@ -551,7 +552,8 @@ class ProjectUpdate(BaseModel):
     description: str | None = None
     contact_id: str | None = None
     status: Literal["active", "completed", "on_hold", "cancelled"] | None = None
-    budget: float | None = None
+    # B-1219 : un budget infini faisait tomber la liste des projets en 500.
+    budget: float | None = Field(default=None, allow_inf_nan=False)
     notes: str | None = None
     tags: list[str] | None = None
 

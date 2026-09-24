@@ -8,6 +8,7 @@ to directly add entities to the memory system during conversation.
 import asyncio
 import json
 import logging
+import math
 import unicodedata
 from datetime import UTC, datetime
 from difflib import SequenceMatcher
@@ -234,6 +235,24 @@ MEMORY_TOOLS = [
 # ============================================================
 # Deduplication helpers (anti creation en masse)
 # ============================================================
+
+def _statut_de_projet(valeur: Any) -> str:
+    """B-1219 : un statut hors des quatre connus rendait le projet invisible du
+    tableau (et null tombait sur la colonne NOT NULL) ; il prend le défaut."""
+    from app.services.crm_utils import VALID_PROJECT_STATUSES
+
+    return valeur if isinstance(valeur, str) and valeur in VALID_PROJECT_STATUSES else "active"
+
+
+def _budget_de_projet(valeur: Any) -> float | None:
+    """B-1219 : un budget illisible, négatif ou infini n'est pas enregistré
+    (un budget infini faisait tomber la liste des projets en erreur 500)."""
+    try:
+        nombre = float(valeur)
+    except (TypeError, ValueError):
+        return None
+    return nombre if math.isfinite(nombre) and nombre >= 0 else None
+
 
 def _perimetre_de_creation(
     scope: str | None, scope_id: str | None, conversation_id: str | None
@@ -691,8 +710,8 @@ async def execute_create_project(
             project = Project(
                 name=name,
                 description=arguments.get("description"),
-                status=arguments.get("status", "active"),
-                budget=arguments.get("budget"),
+                status=_statut_de_projet(arguments.get("status")),
+                budget=_budget_de_projet(arguments.get("budget")),
                 # Même règle que les contacts.
                 scope=_perimetre_creation[0],
                 scope_id=_perimetre_creation[1],
