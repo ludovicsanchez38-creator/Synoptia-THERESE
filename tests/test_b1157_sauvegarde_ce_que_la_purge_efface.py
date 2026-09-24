@@ -21,6 +21,29 @@ from app.routers import data as data_router
 
 PASSE = "Passphrase-Test-123"
 
+ELEMENTS = ("projects", "invoices", "THERESE.md", "commands")
+
+
+@pytest.fixture(autouse=True)
+def _dossier_de_donnees_rendu_intact(tmp_path):
+    """B-1186 : ces tests écrivent dans le dossier de données de la session ;
+    on met de côté ce qui y était et on le rend tel quel après le test."""
+    data_dir = Path(settings.data_dir)
+    cote = tmp_path / "mis-de-cote"
+    cote.mkdir()
+    for nom in ELEMENTS:
+        if (data_dir / nom).exists():
+            shutil.move(str(data_dir / nom), str(cote / nom))
+    yield
+    for nom in ELEMENTS:
+        cible = data_dir / nom
+        if cible.is_dir():
+            shutil.rmtree(cible)
+        elif cible.exists():
+            cible.unlink()
+        if (cote / nom).exists():
+            shutil.move(str(cote / nom), str(cible))
+
 
 def _poser(data_dir: Path) -> None:
     (data_dir / "projects" / "p1").mkdir(parents=True, exist_ok=True)

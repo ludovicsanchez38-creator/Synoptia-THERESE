@@ -29,9 +29,23 @@ def _collections(service) -> set[str]:
     return {c.name for c in service.client.get_collections().collections}
 
 
+def _poser_un_point(service) -> None:
+    from qdrant_client.models import PointStruct
+
+    service.client.upsert(
+        collection_name=settings.qdrant_collection,
+        points=[PointStruct(id=1, vector=[0.1] * settings.embedding_dimensions,
+                            payload={"entity_id": "contact-x", "type": "contact"})],
+    )
+    assert service.client.count(settings.qdrant_collection).count == 1
+
+
 @pytest.mark.asyncio
 async def test_la_collection_existe_toujours_apres_la_purge(client, vrai_qdrant):
     assert settings.qdrant_collection in _collections(vrai_qdrant)
+    # B-1186 : sans point posé, le compte final valait 0 même quand la purge
+    # n'effaçait plus rien ; le test ne prouvait pas l'effacement.
+    _poser_un_point(vrai_qdrant)
 
     resp = await client.delete("/api/data/all?confirm=true")
 
