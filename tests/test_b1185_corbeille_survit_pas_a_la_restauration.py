@@ -23,17 +23,21 @@ from app.config import settings
 PASSE = "Passphrase-Test-123"
 
 
-@pytest.fixture
-def fausse_corbeille(tmp_path, monkeypatch):
+@pytest.fixture(params=["darwin", "linux"])
+def fausse_corbeille(request, tmp_path, monkeypatch):
+    # B-1233 : les deux chemins de la Corbeille, ~/.Trash (macOS) et
+    # freedesktop (Linux, P-102), écrivent dans le même index ; forcer la
+    # plateforme sur un seul (B-1198) retirait l'autre de la couverture.
     maison = tmp_path / "maison"
     (maison / ".Trash").mkdir(parents=True)
     monkeypatch.setattr(pathlib.Path, "home", classmethod(lambda cls: maison))
-    # La Corbeille ~/.Trash est celle de macOS ; sous Linux, P-102 vise la
-    # corbeille freedesktop (même piège que B-1169 sur la CI).
-    monkeypatch.setattr(sys, "platform", "darwin")
+    monkeypatch.setenv("XDG_DATA_HOME", str(maison / ".local" / "share"))
+    monkeypatch.setattr(sys, "platform", request.param)
     from app.services.user_commands import UserCommandsService
 
     monkeypatch.setattr(UserCommandsService, "_instance", None)
+    if request.param == "linux":
+        return maison / ".local" / "share" / "Trash" / "files"
     return maison / ".Trash"
 
 
