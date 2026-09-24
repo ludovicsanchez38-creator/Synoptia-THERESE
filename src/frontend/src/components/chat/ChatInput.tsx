@@ -39,6 +39,7 @@ import type { StreamChunk } from '../../services/api/chat';
 import { useAutosave } from '../../hooks/useAutosave';
 import { cn } from '../../lib/utils';
 import { libelleDuFournisseur } from '../../lib/libellesFournisseurs';
+import { fournisseurDAccord } from '../../lib/ollamaCloud';
 import { PLACEHOLDER_COMPOSEUR } from '../../lib/etabli';
 import { ACCEPT_FICHIERS, FILTRES_SELECTEUR } from '../../lib/formatsIndexables';
 import {
@@ -67,7 +68,8 @@ interface PendingCloudConsent {
   // Revue Soso : la finalité fait partie de la demande. Un accord donné pour
   // les messages ne vaut pas pour l'envoi de documents.
   purpose: CloudPurpose;
-  provider: LLMProvider;
+  // B-1158 : destination d'accord (fournisseur, ou « ollama-cloud »).
+  provider: string;
   providerLabel: string;
   dataCategories: string[];
 }
@@ -535,16 +537,19 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     );
     const finaliteCloud: CloudPurpose =
       attachedFiles.length > 0 || conversationPorteDesDocuments ? 'documents' : 'llm';
+    // B-1158 : l'accord porte sur la destination réelle ; un modèle Ollama
+    // Cloud part chez ollama.com et le demande comme un fournisseur en ligne.
+    const destinationMessage = fournisseurDAccord(currentProvider, currentModel);
     if (
-      currentProvider && currentProvider !== 'ollama'
-      && cloudConsentGrantedRef.current !== `${finaliteCloud}:${currentProvider}`
-      && !hasCloudConsent(finaliteCloud, currentProvider)
+      destinationMessage
+      && cloudConsentGrantedRef.current !== `${finaliteCloud}:${destinationMessage}`
+      && !hasCloudConsent(finaliteCloud, destinationMessage)
     ) {
       setPendingCloudConsent({
         action: 'message',
         purpose: finaliteCloud,
-        provider: currentProvider,
-        providerLabel: libelleDuFournisseur(currentProvider),
+        provider: destinationMessage,
+        providerLabel: libelleDuFournisseur(destinationMessage),
         dataCategories: [
           'message saisi',
           'contexte de conversation',
@@ -851,23 +856,24 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       }
       pendingClientAction = null;
     }
-  }, [input, isOffline, modelAvailable, isStreaming, currentProvider, attachedFiles, addMessage, updateMessage, setMessageEntities, setMessageMetadata, setMessageSkillFile, setStreaming, setActivity, currentConversationId, currentConversation, updateConversationId, deleteConversation, setQueuedPrompt, clearDraft, saveDraft, pendingSkillId, variablesPreview]);
+  }, [input, isOffline, modelAvailable, isStreaming, currentProvider, currentModel, attachedFiles, addMessage, updateMessage, setMessageEntities, setMessageMetadata, setMessageSkillFile, setStreaming, setActivity, currentConversationId, currentConversation, updateConversationId, deleteConversation, setQueuedPrompt, clearDraft, saveDraft, pendingSkillId, variablesPreview]);
 
   // Recherche approfondie
   const handleDeepResearch = useCallback(async () => {
     const trimmed = input.trim();
     if (!trimmed || isOffline || isStreaming) return;
 
+    const destinationRecherche = fournisseurDAccord(currentProvider, currentModel);
     if (
-      currentProvider && currentProvider !== 'ollama'
-      && cloudConsentGrantedRef.current !== `llm:${currentProvider}`
-      && !hasCloudConsent('llm', currentProvider)
+      destinationRecherche
+      && cloudConsentGrantedRef.current !== `llm:${destinationRecherche}`
+      && !hasCloudConsent('llm', destinationRecherche)
     ) {
       setPendingCloudConsent({
         action: 'deep-research',
         purpose: 'llm',
-        provider: currentProvider,
-        providerLabel: libelleDuFournisseur(currentProvider),
+        provider: destinationRecherche,
+        providerLabel: libelleDuFournisseur(destinationRecherche),
         dataCategories: ['requête saisie', 'contexte de conversation', 'résultats de recherche web'],
       });
       return;
@@ -962,7 +968,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       setStreaming(false);
       setActivity('idle');
     }
-  }, [input, isOffline, isStreaming, currentProvider, addMessage, updateMessage, setStreaming, setActivity, currentConversationId, currentConversation, updateConversationId]);
+  }, [input, isOffline, isStreaming, currentProvider, currentModel, addMessage, updateMessage, setStreaming, setActivity, currentConversationId, currentConversation, updateConversationId]);
 
   // Ref stable pour sendMessage (évite dépendances circulaires dans useEffect)
   const sendMessageRef = useRef(sendMessage);
@@ -971,7 +977,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   deepResearchRef.current = handleDeepResearch;
 
   const confirmCloudConsent = useCallback(() => {
-    if (!pendingCloudConsent || currentProvider !== pendingCloudConsent.provider) {
+    if (!pendingCloudConsent || fournisseurDAccord(currentProvider, currentModel) !== pendingCloudConsent.provider) {
       setPendingCloudConsent(null);
       return;
     }
@@ -988,7 +994,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       if (action === 'message') void sendMessageRef.current();
       else void deepResearchRef.current();
     }, 0);
-  }, [currentProvider, pendingCloudConsent]);
+  }, [currentProvider, currentModel, pendingCloudConsent]);
 
   // Auto-send du prompt en file d'attente quand le streaming finit
   useEffect(() => {

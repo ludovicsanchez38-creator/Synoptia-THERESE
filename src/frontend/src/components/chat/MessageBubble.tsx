@@ -82,6 +82,7 @@ function LocalMarkdownImage({ src, alt }: { src: string; alt: string }) {
 }
 import { cn } from '../../lib/utils';
 import { messageVariants } from '../../lib/animations';
+import { estModeleOllamaCloud } from '../../lib/ollamaCloud';
 import type { Message } from '../../stores/chatStore';
 import { useStatusStore } from '../../stores/statusStore';
 
@@ -707,7 +708,8 @@ export const MessageBubble = memo(function MessageBubble({
             {(() => {
               const prov = message.provider ?? message.usage?.provider;
               if (!prov) return null;
-              const isLocal = prov === 'ollama';
+              // B-1156 : un modèle Ollama Cloud part chez ollama.com.
+              const isLocal = prov === 'ollama' && !estModeleOllamaCloud(message.usage?.model ?? '');
               return (
                 <div
                   className={`flex items-center gap-1.5 px-2 py-1 rounded-sm ${

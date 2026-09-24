@@ -29,5 +29,7 @@ export const LIBELLES_FOURNISSEURS: Record<LLMProvider, string> = {
 
 /** Le libellé d'un fournisseur ; l'identifiant lui-même s'il est inconnu. */
 export function libelleDuFournisseur(fournisseur: string): string {
+  // B-1158 : clé d'accord des modèles Ollama Cloud (lib/ollamaCloud.ts).
+  if (fournisseur === 'ollama-cloud') return 'Ollama Cloud (ollama.com)';
   return (LIBELLES_FOURNISSEURS as Record<string, string>)[fournisseur] ?? fournisseur;
 }

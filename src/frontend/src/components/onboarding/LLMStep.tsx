@@ -13,6 +13,7 @@ import { FOURNISSEURS as PROVIDERS, chargerCatalogue, selectionApresCatalogue, t
 import { Button } from '../ui/Button';
 import { LocalModelFeasibility } from '../llm/LocalModelFeasibility';
 import { handleRovingFocus } from '../../lib/rovingFocus';
+import { estModeleOllamaCloud } from '../../lib/ollamaCloud';
 import { Spinner } from '../ui/Spinner';
 import { Alerte } from '../ui/Alerte';
 import { FormField } from '../ui/FormField';
@@ -179,7 +180,10 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
     ? ollamaModels.map((m) => ({
         id: m.nom,
         name: m.nom,
-        badge: m.gereLesOutils ? undefined : 'Sans actions',
+        badge: [
+          estModeleOllamaCloud(m.nom) ? 'Ollama Cloud, en ligne' : null,
+          m.gereLesOutils ? null : 'Sans actions',
+        ].filter(Boolean).join(', ') || undefined,
         indisponible: !m.gereLesOutils,
         motif: m.motif,
       }))
@@ -249,8 +253,10 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
     if (provider === 'ollama' && ollamaModels.length > 0) {
       // Ne jamais pré-sélectionner un modèle incapable d'agir : c'est ce qui a
       // fait attendre 3 min 26 s au testeur pour une réponse dégradée.
-      const capable = ollamaModels.find((m) => m.gereLesOutils);
-      defaultModel = (capable ?? ollamaModels[0]).nom;
+      // B-1156 : jamais un modèle Ollama Cloud par défaut sous « 100% local ».
+      const locaux = ollamaModels.filter((m) => !estModeleOllamaCloud(m.nom));
+      const capable = locaux.find((m) => m.gereLesOutils);
+      defaultModel = (capable ?? locaux[0] ?? ollamaModels[0]).nom;
     }
 
     if (defaultModel) {
