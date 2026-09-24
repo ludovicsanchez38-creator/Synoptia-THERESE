@@ -462,7 +462,7 @@ def _validate_contact(data: dict) -> list[str]:
     return errors
 
 
-def _ecarter_adresse_douteuse(data: dict) -> str | None:
+def _ecarter_adresse_douteuse(data: dict[str, Any]) -> str | None:
     """B-1074, B-1148 : une fiche porte une seule adresse de la forme nom@domaine.
 
     Une valeur douteuse (« jean@a.fr, compta@a.fr ») est retirée de la ligne,
