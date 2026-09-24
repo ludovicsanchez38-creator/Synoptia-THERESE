@@ -235,13 +235,27 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
   }, [currentPath, navigateTo]);
 
   // Go to home
+  // B-1037 : hors application native (navigateur), homeDir() rejette ; sans
+  // garde ni try, la promesse rejetée remontait en exception non rattrapée.
   const goHome = useCallback(async () => {
-    const home = await homeDir();
-    await navigateTo(home);
+    if (!isTauri()) return;
+    try {
+      const home = await homeDir();
+      await navigateTo(home);
+    } catch (err) {
+      console.error('Failed to get home directory:', err);
+      setError('Impossible de charger le répertoire personnel');
+    }
   }, [navigateTo]);
+
+  const actualiser = useCallback(() => {
+    if (!isTauri()) return;
+    void loadDirectory(currentPath);
+  }, [currentPath, loadDirectory]);
 
   // Open folder picker
   const openFolderPicker = useCallback(async () => {
+    if (!isTauri()) return;
     try {
       const selected = await open({
         directory: true,
@@ -299,6 +313,8 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
   // Breadcrumb parts (normaliser backslashes Windows)
   const normalizedPath = normalizeBrowserPath(currentPath);
   const pathParts = normalizedPath.split('/').filter(Boolean);
+  // B-1037 : en navigateur, les gestes qui exigent l'application sont éteints.
+  const natif = isTauri();
   const isWindowsCurrentPath = isWindowsPath(currentPath);
 
   return (
@@ -311,6 +327,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
           onClick={goHome}
           title="Répertoire personnel"
           aria-label="Répertoire personnel"
+          disabled={!natif}
         >
           <Home className="w-4 h-4" />
         </Button>
@@ -329,9 +346,10 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => loadDirectory(currentPath)}
+          onClick={actualiser}
           title="Actualiser"
           aria-label="Actualiser"
+          disabled={!natif}
         >
           <RefreshCw className={cn('w-4 h-4', loading && 'animate-spin')} />
         </Button>
@@ -342,6 +360,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
           onClick={openFolderPicker}
           title="Ouvrir un dossier"
           aria-label="Ouvrir un dossier"
+          disabled={!natif}
         >
           <HardDrive className="w-4 h-4" />
         </Button>
@@ -367,6 +386,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
           size="sm"
           onClick={goHome}
           aria-label="Dossier racine"
+          disabled={!natif}
         >
           ~
         </Button>
