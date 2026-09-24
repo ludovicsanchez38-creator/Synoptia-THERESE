@@ -82,9 +82,17 @@ class TestLesConsignesSuiventLeDossierDeDonnees:
             "l'utilisateur réel"
         )
 
-    def test_sans_override_le_comportement_habituel_est_intact(self, monkeypatch):
-        """La correction ne doit pas déplacer les fichiers d'une vraie installation."""
+    def test_sans_override_le_comportement_habituel_est_intact(self, monkeypatch, tmp_path):
+        """La correction ne doit pas déplacer les fichiers d'une vraie installation.
+
+        Cycle 13 : `Settings()` sans dossier de données crée et lit
+        `~/.therese` ; sans dossier personnel jetable, ce test touchait la
+        vraie installation de la personne qui le lance (refusé sous le
+        confinement des commandes d'agents, B-1153).
+        """
         monkeypatch.delenv("THERESE_DATA_DIR", raising=False)
+        monkeypatch.setenv("HOME", str(tmp_path))
+        monkeypatch.setenv("USERPROFILE", str(tmp_path))
 
         import app.config as module_config
         from app.config import Settings
