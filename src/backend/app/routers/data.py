@@ -1104,8 +1104,8 @@ def _verify_restored_db() -> None:
         status_code=409,
         detail=(
             "La base restaurée est chiffrée avec une clé introuvable sur cette "
-            "machine (archive sans .encryption_key ?). Restauration annulée, "
-            "tes données actuelles sont intactes."
+            "machine (archive sans .encryption_key ?). Restauration annulée"
+            f"{DONNEES_INTACTES}"
         ),
     )
 
@@ -1323,6 +1323,7 @@ def _prune_pre_restore_backups(backup_dir: Path, keep: str) -> None:
 
 
 # B-1179 : dit quand la remise en état a échoué, au lieu de la promettre.
+DONNEES_INTACTES = ", tes données actuelles sont intactes."
 RETOUR_ARRIERE_REUSSI = "Données restaurées à l'état précédent."
 ECHEC_DU_RETOUR_ARRIERE = (
     "Le retour à l'état précédent a aussi échoué : des données ont pu être "
@@ -1513,7 +1514,11 @@ async def restore_backup(
                 backup_dir, current_backup_name, safety_archive, password, safety_included
             )
             if not retabli and isinstance(exc.detail, str):
-                exc.detail = f"{exc.detail} {ECHEC_DU_RETOUR_ARRIERE}"
+                # B-1203 : la vérification promet « tes données actuelles
+                # sont intactes » ; ce n'est vrai que si le rollback a réussi.
+                exc.detail = (
+                    f"{exc.detail.replace(DONNEES_INTACTES, '.')} {ECHEC_DU_RETOUR_ARRIERE}"
+                )
             if kept and isinstance(exc.detail, str):
                 # F2 : dire aussi sur ce chemin que l'état d'avant tentative est
                 # conservé, chiffré avec la passphrase qui vient d'être saisie.

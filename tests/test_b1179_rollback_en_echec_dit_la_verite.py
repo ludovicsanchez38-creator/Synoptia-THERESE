@@ -104,3 +104,47 @@ async def test_temoin_un_rollback_reussi_remet_bien_l_etat(client, monkeypatch):
     assert "Données restaurées à l'état précédent" in (corps.get("message") or corps.get("detail") or "")
     assert (data_dir / "images" / "img.png").read_bytes() == b"image-courante"
     assert (data_dir / "THERESE.md").read_text(encoding="utf-8") == "Mes consignes actuelles"
+
+
+@pytest.mark.asyncio
+async def test_une_base_refusee_puis_un_rollback_en_echec_ne_dit_pas_intactes(client, monkeypatch):
+    """B-1203 : régression de B-1179, la réponse disait à la fois « tes données
+    actuelles sont intactes » (409 de la vérification) et « des données ont pu
+    être perdues » (rollback en échec)."""
+    from fastapi import HTTPException
+
+    data_dir = Path(settings.data_dir)
+    _etat_courant(data_dir)
+    resp = await client.post("/api/data/backup", json={"password": PASSE})
+    assert resp.status_code == 200, resp.text
+    nom = resp.json()["backup_name"]
+
+    vraie_extraction = data_router._safe_extractall
+    appels: list[str] = []
+
+    def _extraction(tar, dest):
+        appels.append(str(dest))
+        if len(appels) == 1:
+            return vraie_extraction(tar, dest)  # la restauration passe
+        raise OSError(errno.ENOSPC, "No space left on device")  # le rollback, non
+
+    def _base_refusee():
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "La base restaurée est chiffrée avec une clé introuvable sur cette "
+                "machine (archive sans .encryption_key ?). Restauration annulée, "
+                "tes données actuelles sont intactes."
+            ),
+        )
+
+    monkeypatch.setattr(data_router, "_safe_extractall", _extraction)
+    monkeypatch.setattr(data_router, "_verify_restored_db", _base_refusee)
+
+    resp = await client.post(f"/api/data/restore/{nom}?confirm=true", json={"password": PASSE})
+
+    corps = resp.json()
+    detail = corps.get("message") or corps.get("detail") or ""
+    assert resp.status_code == 409, resp.text
+    assert len(appels) == 2, appels
+    assert "intactes" not in detail and "ont pu être perdues" in detail, detail
