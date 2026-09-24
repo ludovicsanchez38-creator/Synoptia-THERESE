@@ -44,6 +44,7 @@ import { EtatVide } from '../ui/EtatVide';
 import { Etiquette } from '../ui/Etiquette';
 import { Input } from '../ui/Input';
 import { Textarea } from '../ui/Textarea';
+import { ImageNonAffichee } from '../ui/ImageNonAffichee';
 import type { DocumentSection, SectionUpdateRequest } from '../../services/api/documents';
 
 // =============================================================================
@@ -63,6 +64,10 @@ const STATUS_META: Record<DocumentSection['status'], { label: string; ton: 'neut
 const markdownComponents: Components = {
   p({ children }) {
     return <p className="mb-3 last:mb-0 leading-relaxed">{children}</p>;
+  },
+  // B-1050 : une image écrite par le modèle n'est jamais chargée.
+  img({ alt }) {
+    return <ImageNonAffichee alt={alt} />;
   },
   ul({ children }) {
     return <ul className="list-disc list-inside mb-3 space-y-1">{children}</ul>;

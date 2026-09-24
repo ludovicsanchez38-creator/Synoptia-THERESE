@@ -2,6 +2,7 @@ import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 
 import { cn } from '../../lib/utils';
+import { ImageNonAffichee } from './ImageNonAffichee';
 
 const components: Components = {
   p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
@@ -37,9 +38,7 @@ const components: Components = {
       </a>
     );
   },
-  img: ({ alt }) => (
-    <span className="text-text-muted">{alt ? `Image non affichée : ${alt}` : 'Image non affichée'}</span>
-  ),
+  img: ({ alt }) => <ImageNonAffichee alt={alt} />,
 };
 
 function safeUrl(url: string): string {
