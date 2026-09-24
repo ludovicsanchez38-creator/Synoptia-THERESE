@@ -49,3 +49,45 @@ def test_l_import_vcard_ne_garde_pas_une_adresse_double():
     contacts = parse_vcf(vcf)
     # vobject ne rend que la première valeur : la fiche garde une adresse unique.
     assert contacts and contacts[0].get("email") in (None, "", "a@b.fr"), contacts
+
+
+# ---------------------------------------------------------------------------
+# B-1081 : trois portes d'écriture n'appliquaient pas encore la règle
+# (lecteurs G1 et H2, dernière passe de la carte c12).
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize("adresse", INVALIDES)
+def test_la_creation_crm_refuse_plus_d_une_adresse(adresse: str):
+    from app.models.schemas import CreateCRMContactRequest
+
+    with pytest.raises(ValidationError):
+        CreateCRMContactRequest(first_name="Jeanne", email=adresse)
+
+
+def test_la_creation_crm_garde_une_adresse_ordinaire():
+    from app.models.schemas import CreateCRMContactRequest
+
+    assert CreateCRMContactRequest(first_name="Jeanne", email="jeanne@exemple.fr").email == "jeanne@exemple.fr"
+
+
+@pytest.mark.asyncio
+async def test_l_outil_du_chat_refuse_une_adresse_double(db_session):
+    import json
+
+    from app.models.entities import Contact
+    from app.services.memory_tools import execute_create_contact
+    from sqlmodel import select
+
+    r = json.loads(await execute_create_contact({"first_name": "Jeanne", "email": "a@b.fr,pirate@x.fr"}, db_session))
+    assert "error" in r, r
+    assert (await db_session.execute(select(Contact))).scalars().all() == []
+
+
+@pytest.mark.asyncio
+async def test_la_synchro_tableur_ne_garde_pas_une_adresse_double(db_session):
+    from app.services.crm_utils import upsert_contact
+
+    contact, cree = await upsert_contact(db_session, {"ID": "crm-b1081", "Nom": "Jeanne Martin", "Email": "a@b.fr,pirate@x.fr"})
+    assert cree
+    assert contact.email is None

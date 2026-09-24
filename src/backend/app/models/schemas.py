@@ -1430,6 +1430,14 @@ class CreateCRMContactRequest(BaseModel):
     address: str | None = Field(default=None, max_length=LONGUEUR_ADRESSE)
     tags: list[str] | None = None
 
+    # B-1081 : la porte CRM n'appliquait pas la règle de B-1074.
+    @field_validator("email")
+    @classmethod
+    def _adresse_unique(cls, valeur: str | None) -> str | None:
+        if valeur and valeur.strip() and not adresse_unique_valide(valeur):
+            raise ValueError("L'adresse e-mail n'a pas la forme attendue (nom@domaine), une seule adresse par fiche.")
+        return valeur
+
 
 # ============================================================
 # Notification Schemas (US-004 - v0.9.0)

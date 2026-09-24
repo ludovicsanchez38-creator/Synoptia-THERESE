@@ -12,6 +12,7 @@ import logging
 from datetime import UTC, datetime
 
 from app.models.entities import Contact, Deliverable, Preference, Project, Task
+from app.models.schemas import adresse_unique_valide
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -247,11 +248,17 @@ async def upsert_contact(
             val = row.get(key, default).strip()
         return val or None
 
+    # B-1081 : une adresse double ou douteuse venue du tableur n'est pas
+    # recopiée (même règle que la fiche, B-1074) ; le reste de la ligne l'est.
+    courriel = _get("Email")
+    if courriel and not adresse_unique_valide(courriel):
+        courriel = None
+
     if existing:
         existing.first_name = first_name
         existing.last_name = last_name
         existing.company = _get("Entreprise")
-        existing.email = _get("Email")
+        existing.email = courriel
         existing.phone = _get("Tel")
         existing.source = _get("Source")
         existing.stage = _get("Stage", "contact") or "contact"
@@ -265,7 +272,7 @@ async def upsert_contact(
             first_name=first_name,
             last_name=last_name,
             company=_get("Entreprise"),
-            email=_get("Email"),
+            email=courriel,
             phone=_get("Tel"),
             source=_get("Source"),
             stage=_get("Stage", "contact") or "contact",

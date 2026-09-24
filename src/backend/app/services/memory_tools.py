@@ -22,6 +22,7 @@ from app.models.entities import (
     Prestation,
     Project,
 )
+from app.models.schemas import adresse_unique_valide
 from app.services.cloisonnement import souvenirs_globaux_visibles
 from app.services.contexte_execution import ContexteExecution
 from app.services.qdrant import get_qdrant_service
@@ -452,6 +453,11 @@ async def execute_create_contact(
     first_name = (arguments.get("first_name") or "").strip()
     last_name = (arguments.get("last_name") or "").strip()
     email = (arguments.get("email") or "").strip() or None
+    # B-1081 : même règle que la fiche (B-1074), une seule adresse nom@domaine.
+    if email and not adresse_unique_valide(email):
+        return json.dumps({
+            "error": "L'adresse e-mail n'a pas la forme attendue (nom@domaine), une seule adresse par fiche. Rien n'a été enregistré.",
+        }, ensure_ascii=False)
 
     # Le nom de famille est optionnel : un prenom (ou une entreprise) suffit.
     company = (arguments.get("company") or "").strip() or None
