@@ -107,11 +107,26 @@ describe('B-1158 accord pour Ollama Cloud', () => {
     expect(accord).toHaveTextContent('Ollama Cloud');
   });
 
-  it('la recherche approfondie passe par la même règle', async () => {
-    const source = (await import('node:fs')).readFileSync(
-      (await import('node:path')).join(__dirname, 'ChatInput.tsx'), 'utf-8',
-    );
-    const bloc = source.slice(source.indexOf('const handleDeepResearch'), source.indexOf('const handleDeepResearch') + 700);
-    expect(bloc).toContain('fournisseurDAccord(');
+  // B-1177 : l'ancienne garde lisait 700 caractères du source ; elle restait
+  // verte sur un appel neutralisé. On exécute la recherche approfondie.
+  it('la recherche approfondie vers un modèle « :cloud » demande l’accord et ne part pas', async () => {
+    apiMocks.getLLMConfig.mockResolvedValue({
+      provider: 'ollama', model: 'kimi-k2.6:cloud', available_models: ['kimi-k2.6:cloud'], available: true,
+    });
+    apiMocks.streamDeepResearch.mockReturnValue((async function* () {
+      yield { type: 'done' };
+    })());
+    render(<ChatInput />);
+    const input = await screen.findByPlaceholderText(PLACEHOLDER_COMPOSEUR);
+    await waitFor(() => expect(apiMocks.getLLMConfig).toHaveBeenCalled());
+    fireEvent.change(input, { target: { value: 'Compare les offres de mutuelle pour indépendants' } });
+    const bouton = await screen.findByRole('button', { name: 'Lancer une recherche approfondie' });
+    await waitFor(() => expect(bouton).not.toBeDisabled());
+    fireEvent.click(bouton);
+    const accord = await screen.findByTestId('chat-cloud-consent');
+    expect({
+      accordNommeOllamaCloud: (accord.textContent ?? '').includes('Ollama Cloud'),
+      recherchesParties: apiMocks.streamDeepResearch.mock.calls.length,
+    }).toEqual({ accordNommeOllamaCloud: true, recherchesParties: 0 });
   });
 });
