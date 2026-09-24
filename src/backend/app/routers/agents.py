@@ -35,6 +35,7 @@ from app.models.schemas_agents import (
     SpawnAgentRequest,
 )
 from app.services.agents.git_service import GitService
+from app.services.agents.runtime import PREFIXE_MODELE_LOCAL
 from app.services.agents.swarm import SwarmOrchestrator
 from app.services.error_handler import message_pour_ecran
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -1051,14 +1052,23 @@ async def get_config(
     # et proposait des modèles qu'Ollama ne sert pas, avec le premier
     # présélectionné ; l'agent par défaut ne pouvait pas tourner. Les modèles
     # locaux proposés sont ceux réellement installés.
+    # P-103 : l'identifiant porte le fournisseur (« ollama:<nom> ») ; le
+    # routage n'a plus à le deviner d'après le nom du modèle.
+    locaux: list[str] = []
     if "ollama" in configured_providers or not configured_providers:
+        locaux = await _modeles_ollama_installes()
         filtered_models = [
             *filtered_models,
             *[
-                {"id": nom, "name": f"{nom} (local, installé)", "provider": "ollama"}
-                for nom in await _modeles_ollama_installes()
+                {"id": f"{PREFIXE_MODELE_LOCAL}{nom}", "name": f"{nom} (local, installé)", "provider": "ollama"}
+                for nom in locaux
             ],
         ]
+    # Un choix enregistré avant P-103 (nom local nu) est relu avec son fournisseur.
+    if katia_model in locaux:
+        katia_model = f"{PREFIXE_MODELE_LOCAL}{katia_model}"
+    if zezette_model in locaux:
+        zezette_model = f"{PREFIXE_MODELE_LOCAL}{zezette_model}"
 
     return AgentConfigResponse(
         source_path=source_path,

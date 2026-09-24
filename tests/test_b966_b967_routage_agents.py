@@ -18,6 +18,7 @@ from __future__ import annotations
 import pytest
 from app.services import llm as module_llm
 from app.services.agents.runtime import _get_llm_for_model
+from app.services.error_handler import ErreurPourEcran
 
 PRINCIPAL = object()
 
@@ -52,7 +53,10 @@ def test_b966_un_modele_local_reste_local(fournisseurs, modele):
 def test_b966_ollama_arrete_ne_bascule_pas_vers_un_cloud_homonyme(fournisseurs):
     demandes, indisponibles = fournisseurs
     indisponibles.add("ollama")
-    assert _get_llm_for_model("qwen3.5:9b") is PRINCIPAL
+    # P-103 (cycle 12) : plus de repli vers le service principal non plus,
+    # un échec explicite (tests/test_p103_fournisseur_du_modele_agent.py).
+    with pytest.raises(ErreurPourEcran):
+        _get_llm_for_model("qwen3.5:9b")
     assert "qwen" not in demandes and "openrouter" not in demandes, demandes
 
 

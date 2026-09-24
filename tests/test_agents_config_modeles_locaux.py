@@ -31,7 +31,8 @@ async def test_les_modeles_locaux_proposes_sont_ceux_installes(client, ollama_av
     assert resp.status_code == 200
     modeles = resp.json()["available_models"]
     locaux = [m for m in modeles if m["provider"] == "ollama"]
-    assert [m["id"] for m in locaux] == ["gemma4-tia:latest", "qwen3:8b"]
+    # P-103 (cycle 12) : l'identifiant porte son fournisseur.
+    assert [m["id"] for m in locaux] == ["ollama:gemma4-tia:latest", "ollama:qwen3:8b"]
     assert all(m["id"] != "qwen3.5:9b" for m in modeles)
     assert all("local" in m["name"] for m in locaux)
 

@@ -11,7 +11,7 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, AsyncGenerator
 
 if TYPE_CHECKING:
-    from app.services.llm import Message
+    from app.services.llm import LLMService, Message
 
 from app.services.agents.config import AgentConfig
 from app.services.agents.tools import AgentToolExecutor
@@ -64,13 +64,36 @@ def _sans_bascule_si_local(fournisseur: str) -> dict[str, bool]:
     return {"bascule_circuit": False} if fournisseur == "ollama" else {}
 
 
+# P-103 : le fournisseur voyage avec un modèle local choisi dans l'Atelier.
+PREFIXE_MODELE_LOCAL = "ollama:"
+
+
+def _service_local(nom: str) -> "LLMService":
+    """P-103 : un modèle local ne quitte jamais la machine. Ollama absent, c'est
+    un échec explicite, pas un repli vers le service principal (parfois en
+    ligne) ni vers un fournisseur homonyme."""
+    from app.services.llm import get_llm_service_for_provider
+
+    svc = get_llm_service_for_provider("ollama", model_override=nom, **_sans_bascule_si_local("ollama"))
+    if svc is None:
+        raise ErreurPourEcran(
+            f"Le modèle local « {nom} » n'est pas disponible. L'agent ne bascule pas vers un "
+            "service en ligne : lance Ollama, ou choisis un autre modèle dans l'Atelier."
+        )
+    return svc
+
+
 def _get_llm_for_model(model_id: str):
     """Obtient un LLMService pour un model ID spécifique.
 
-    Détecte le provider à partir du model ID et crée le service approprié.
-    Fallback sur le service principal si le provider n'est pas configuré.
+    P-103 : « ollama:<nom> » désigne un modèle local sans rien deviner. Un modèle
+    reconnu local (catalogue, hf.co/, « : » d'Ollama) indisponible est un échec
+    explicite. Seul un modèle en ligne peut retomber sur le service principal.
     """
     from app.services.llm import get_llm_service, get_llm_service_for_provider
+
+    if model_id.lower().startswith(PREFIXE_MODELE_LOCAL):
+        return _service_local(model_id[len(PREFIXE_MODELE_LOCAL):])
 
     # Mapping model ID → provider. Comparaison en minuscules : MiniMax-M3
     # porte sa casse officielle, et un préfixe sensible à la casse l'aurait
@@ -99,10 +122,10 @@ def _get_llm_for_model(model_id: str):
     fournisseur = _fournisseur_du_catalogue(model_id)
     if fournisseur is None and _est_un_modele_hugging_face_local(model_id):
         fournisseur = "ollama"
+    if fournisseur == "ollama":
+        return _service_local(model_id)
     if fournisseur is not None:
-        svc = get_llm_service_for_provider(
-            fournisseur, model_override=model_id, **_sans_bascule_si_local(fournisseur)
-        )
+        svc = get_llm_service_for_provider(fournisseur, model_override=model_id)
         return svc or get_llm_service()
 
     # Modèles OpenRouter (contiennent "/" comme nvidia/nemotron-3-super-120b-a12b)
@@ -111,13 +134,10 @@ def _get_llm_for_model(model_id: str):
         if svc:
             return svc
 
-    # Modèles locaux Ollama (contiennent ":" comme qwen3:32b)
+    # Modèles locaux Ollama (contiennent ":" comme qwen3:32b). P-103 : Ollama
+    # absent, plus de chute vers les préfixes en ligne (« qwen » cloud).
     if ":" in model_id:
-        svc = get_llm_service_for_provider(
-            "ollama", model_override=model_id, **_sans_bascule_si_local("ollama")
-        )
-        if svc:
-            return svc
+        return _service_local(model_id)
 
     for prefix, provider in provider_map.items():
         if model_id.lower().startswith(prefix):
