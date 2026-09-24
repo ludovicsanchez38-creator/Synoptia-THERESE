@@ -119,7 +119,9 @@ describe('cycle 12 : formulaire devis/facture, focus et libellés', () => {
     fireEvent.change(within(dialogue).getAllByLabelText(/Description/)[0], { target: { value: 'Atelier' } });
     fireEvent.click(within(dialogue).getByRole('button', { name: /^Créer/ }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
-    expect(declencheur).toHaveFocus();
+    // CI Linux : le focus revient dans un requestAnimationFrame, après la
+    // disparition du dialogue ; on l'attend au lieu de le lire aussitôt.
+    await waitFor(() => expect(declencheur).toHaveFocus());
     expect(addNotification).toHaveBeenCalledWith(expect.objectContaining({ title: 'Devis créé' }));
   });
 

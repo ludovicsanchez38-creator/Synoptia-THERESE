@@ -40,16 +40,20 @@ describe('PromptLibrary — cycle 6', () => {
     searchPromptLibrary.mockResolvedValue({ query: 'relance', total: 1, categories: [categorieEmail] });
     render(<PromptLibrary onSelectPrompt={() => {}} onClose={() => {}} />);
     await screen.findByText('Relance facture');
-    fireEvent.click(screen.getByRole('button', { name: /Email/ }));
-    // B-1142 : les deux attentes du test (repli animé de la catégorie, puis
-    // résultat de recherche après le délai de saisie) dépassaient le délai
-    // par défaut d'une seconde sous charge : la première en CI (run
-    // 36000802057), la seconde en ronde B (1,9 s). Le test lui-même dispose
-    // de 15 s pour que ces deux attentes ne butent pas sur son propre délai.
-    await waitFor(() => expect(screen.queryByText('Relance facture')).toBeNull(), { timeout: 5000 });
+    const categorie = screen.getByRole('button', { name: /Email/ });
+    fireEvent.click(categorie);
+    // B-1142 (troisième temps, CI Linux) : on lit l'état de la catégorie, pas
+    // la fin de l'animation de sortie. Sous jsdom, une sortie lancée pendant
+    // l'animation d'ouverture peut ne jamais se terminer sur un runner lent.
+    await waitFor(() => expect(categorie).toHaveAttribute('aria-expanded', 'false'));
     fireEvent.change(screen.getByLabelText('Rechercher un prompt'), { target: { value: 'relance' } });
+    // La recherche passe par un délai de saisie ; sous charge, le résultat
+    // dépassait le délai par défaut d'une seconde (1,9 s mesurées).
     await screen.findByText(/1 résultat pour "relance"/, {}, { timeout: 5000 });
-    expect(await screen.findByText('Relance facture')).toBeInTheDocument();
+    await waitFor(() =>
+      expect(screen.getByRole('button', { name: /Email/ })).toHaveAttribute('aria-expanded', 'true'),
+    );
+    expect(screen.getByText('Relance facture')).toBeInTheDocument();
   }, 15_000);
 
   it('sophie-03 : une copie refusée par le navigateur ne montre pas la coche « copié »', async () => {
