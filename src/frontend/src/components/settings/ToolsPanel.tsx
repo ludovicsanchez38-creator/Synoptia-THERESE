@@ -595,13 +595,13 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
                 const CATEGORY_ORDER = ['essentiels', 'productivite', 'recherche', 'marketing', 'crm', 'finance', 'communication', 'avance'];
                 const CATEGORY_LABELS: Record<string, string> = {
                   essentiels: 'Essentiels',
-                  productivite: 'Productivite',
+                  productivite: 'Productivité',
                   recherche: 'Recherche',
                   marketing: 'Marketing',
                   crm: 'CRM & Ventes',
                   finance: 'Finance',
                   communication: 'Communication',
-                  avance: 'Avance',
+                  avance: 'Avancé',
                 };
                 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
                   essentiels: <Globe className="w-3.5 h-3.5" />,

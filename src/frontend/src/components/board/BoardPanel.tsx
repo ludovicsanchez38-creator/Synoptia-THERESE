@@ -33,6 +33,9 @@ import { annulerDeliberation, couperTransport } from './annulerDeliberation';
 import { Spinner } from '../ui/Spinner';
 import { estModeleOllamaCloud } from '../../lib/ollamaCloud';
 
+// B-1176 : la confiance s'affiche en français, comme la carte de synthèse.
+const LIBELLES_CONFIANCE: Record<string, string> = { high: 'élevée', medium: 'moyenne', low: 'faible' };
+
 interface BoardPanelProps {
   isOpen: boolean;
   onClose: () => void;
@@ -777,7 +780,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                                 decision.confidence === 'medium' && 'text-warning',
                                 decision.confidence === 'low' && 'text-error'
                               )}>
-                                Confiance {decision.confidence}
+                                Confiance {LIBELLES_CONFIANCE[decision.confidence] ?? decision.confidence}
                               </span>
                             </div>
                             {decisionASupprimer === decision.id && (
