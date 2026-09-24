@@ -52,8 +52,16 @@ TASK_PRIORITY_MAP: dict[str, str] = {
 
 VALID_TASK_STATUSES = {"todo", "in_progress", "done", "cancelled"}
 
-# Statuts valides pour les livrables (endpoint import_crm_data)
-VALID_DELIVERABLE_STATUSES_IMPORT = {"pending", "in_progress", "completed", "blocked"}
+# B-1109 : statuts des livrables ramenés au contrat de l'entité
+# (a_faire, en_cours, en_revision, valide). L'ancienne liste (pending,
+# in_progress, completed, blocked) réécrivait « valide » en « pending ».
+# Même table que l'import de fichier (crm_import), plus les anciens alias.
+DELIVERABLE_STATUS_MAP: dict[str, str] = {
+    "a_faire": "a_faire", "a faire": "a_faire", "à faire": "a_faire", "todo": "a_faire", "pending": "a_faire",
+    "en_cours": "en_cours", "en cours": "en_cours", "in_progress": "en_cours",
+    "en_revision": "en_revision", "en revision": "en_revision", "en révision": "en_revision", "review": "en_revision",
+    "valide": "valide", "validé": "valide", "done": "valide", "completed": "valide",
+}
 
 
 # =============================================================================
@@ -520,8 +528,9 @@ async def upsert_deliverable_from_import(
         return val or None
 
     project_id = _get("ProjectID")
-    raw_status = _get("Status", "pending") or "pending"
-    status = raw_status.lower() if raw_status.lower() in VALID_DELIVERABLE_STATUSES_IMPORT else "pending"
+    # B-1109 : un statut absent, vide ou inconnu ne remplace pas celui d'un
+    # livrable existant (même règle que B-1083 et B-1106).
+    statut_reconnu = DELIVERABLE_STATUS_MAP.get((_get("Status") or "").lower())
 
     title = _get("Title", "Sans titre") or "Sans titre"
     description = _get("Description")
@@ -530,7 +539,8 @@ async def upsert_deliverable_from_import(
         existing.title = title
         existing.description = description
         existing.project_id = project_id
-        existing.status = status
+        if statut_reconnu:
+            existing.status = statut_reconnu
         existing.updated_at = datetime.now(UTC)
         return existing, False
     else:
@@ -539,7 +549,7 @@ async def upsert_deliverable_from_import(
             title=title,
             description=description,
             project_id=project_id,
-            status=status,
+            status=statut_reconnu or "a_faire",
         )
         session.add(deliverable)
         return deliverable, True
