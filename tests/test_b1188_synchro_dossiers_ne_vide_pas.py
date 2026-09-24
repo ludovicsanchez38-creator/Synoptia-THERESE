@@ -111,3 +111,17 @@ async def test_temoin_le_statut_et_le_projet_sont_bien_proteges(client):
         assert (p.status, t.status, t.priority, d.status, d.project_id) == (
             "active", "done", "high", "en_cours", "p-b1188"
         )
+
+
+@pytest.mark.asyncio
+async def test_une_tache_rouverte_depuis_le_tableur_perd_sa_date_de_fin(client):
+    """B-1212 : régression de B-1188. Une tâche repassée « à faire » dans le
+    tableur, cellule CompletedAt vide, gardait sa date de fin ; la route des
+    tâches l'efface dès que le statut n'est plus « done » (tasks.py)."""
+    await _poser()
+    resp = await client.post("/api/crm/sync/import", json={
+        "tasks": [{"ID": "t-b1188", "Status": "todo"}],
+    })
+    assert resp.status_code == 200, resp.text
+    _, tache, _ = await _lire()
+    assert tache["completed_at"] is None, tache

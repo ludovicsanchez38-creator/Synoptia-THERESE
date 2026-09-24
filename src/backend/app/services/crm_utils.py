@@ -533,6 +533,10 @@ async def upsert_task(
             existing.due_date = due_date
         if completed_at is not None:
             existing.completed_at = completed_at
+        # B-1212 : même règle que la route des tâches, une tâche qui n'est plus
+        # « done » n'a pas de date de fin (la cellule vide ne la protège pas).
+        if existing.status != "done":
+            existing.completed_at = None
         existing.updated_at = datetime.now(UTC)
         return existing, False
     else:
