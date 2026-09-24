@@ -130,7 +130,12 @@ def parse_vcf(content: bytes) -> list[dict]:
 
         # Email
         if hasattr(vcard, "email"):
-            contact["email"] = vcard.email.value
+            # B-1074 : une adresse double ou douteuse n'est pas importée ; la
+            # fiche l'est, sans adresse.
+            from app.models.schemas import adresse_unique_valide
+
+            valeur = str(vcard.email.value or "").strip()
+            contact["email"] = valeur if adresse_unique_valide(valeur) else None
 
         # Téléphone
         if hasattr(vcard, "tel"):

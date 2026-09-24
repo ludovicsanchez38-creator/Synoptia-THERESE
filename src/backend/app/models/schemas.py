@@ -61,6 +61,23 @@ HorodatageUTC = Annotated[
 # ============================================================
 
 
+
+_CARACTERES_INTERDITS_ADRESSE = re.compile(r"[\s,;<>\"()\x00-\x1f\x7f]")
+
+
+def adresse_unique_valide(adresse: str) -> bool:
+    """B-1074 : une fiche contact porte UNE adresse de la forme nom@domaine.
+
+    « a@b.fr,pirate@x.fr » passait (un @, un point, aucune espace) et les
+    chemins d'e-mail joignent les destinataires par « , ». Refusés : espaces
+    et caractères de contrôle, virgule, point-virgule, chevrons, guillemets,
+    parenthèses, plus d'un @, domaine sans point."""
+    adresse = adresse.strip()
+    if not adresse or _CARACTERES_INTERDITS_ADRESSE.search(adresse):
+        return False
+    local, arobase, domaine = adresse.partition("@")
+    return bool(local) and arobase == "@" and "@" not in domaine and "." in domaine.strip(".") and not domaine.startswith(".")
+
 class ChatMessageInput(BaseModel):
     """Input message for chat request."""
 
@@ -280,8 +297,8 @@ class ContactCreate(BaseModel):
         if not any(identite):
             raise ValueError("Une fiche contact a besoin d'au moins un prénom, un nom, une société ou une adresse e-mail.")
         courriel = (self.email or "").strip()
-        if courriel and ("@" not in courriel or "." not in courriel.split("@")[-1] or " " in courriel):
-            raise ValueError("L'adresse e-mail n'a pas la forme attendue (nom@domaine).")
+        if courriel and not adresse_unique_valide(courriel):
+            raise ValueError("L'adresse e-mail n'a pas la forme attendue (nom@domaine), une seule adresse par fiche.")
         return self
 
     # Scope (L6 revue produit) : rattacher un contact à une conversation/projet.
@@ -326,6 +343,15 @@ class ContactUpdate(BaseModel):
     rgpd_date_expiration: datetime | None = None
     rgpd_consentement: bool | None = None
     next_follow_up: datetime | None = None
+
+    # B-1074 : même règle d'adresse qu'à la création (la mise à jour n'en avait
+    # aucune) ; une chaîne vide reste permise pour effacer l'adresse.
+    @field_validator("email")
+    @classmethod
+    def _adresse_unique(cls, valeur: str | None) -> str | None:
+        if valeur and valeur.strip() and not adresse_unique_valide(valeur):
+            raise ValueError("L'adresse e-mail n'a pas la forme attendue (nom@domaine), une seule adresse par fiche.")
+        return valeur
 
     @field_validator("next_follow_up", mode="before")
     @classmethod

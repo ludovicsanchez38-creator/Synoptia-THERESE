@@ -14,6 +14,7 @@ from datetime import UTC, datetime
 from typing import Any, Literal
 
 from app.models.entities import Contact, Deliverable, Project, generate_uuid
+from app.models.schemas import adresse_unique_valide
 from openpyxl import load_workbook
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
@@ -456,7 +457,9 @@ def _validate_contact(data: dict) -> list[str]:
     errors = []
     if not data.get("first_name") and not data.get("last_name") and not data.get("company"):
         errors.append("Au moins un nom ou une entreprise est requis")
-    if data.get("email") and "@" not in str(data.get("email", "")):
+    # B-1074 : une seule adresse, de la forme nom@domaine (« @ » seul laissait
+    # passer « a@b.fr,pirate@x.fr »).
+    if data.get("email") and not adresse_unique_valide(str(data.get("email", ""))):
         errors.append("Email invalide")
     return errors
 
