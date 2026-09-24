@@ -179,15 +179,18 @@ Garde P-100 (refus tôt et lisible), `_validate_path` de `write_file` (qui
 refuse `.git`), délai de 120 s, arrêt du groupe de processus, sortie tronquée
 à 5 000 caractères.
 
-## Mesure de référence : la suite de THÉRÈSE confinée (macOS, profil V3)
+## Mesure de référence : la suite de THÉRÈSE confinée (macOS, profils V3 et V4)
 
 Arbre jetable à 57304c07, environnement réduit à `PATH`, `HOME`, `LANG` et
 aux variables de dossiers temporaires, réseau coupé :
 
 | Suite | Résultat |
 |---|---|
-| pytest (hors e2e) | 3 497 tests, 1 échec, 4 sautés |
-| Vitest | 2 729 tests, 0 échec |
+| pytest (hors e2e) | 3 497 tests, 1 échec, 4 sautés (V3 comme V4) |
+| Vitest | 2 729 tests, 0 échec (V3 comme V4) |
+
+Le profil V4 ajoute la restriction des signaux, retire `/dev/tty` et étend la
+lecture refusée : même résultat, aucune régression.
 
 Le seul échec lisait le vrai `~/.therese` de la personne qui lance les tests :
 défaut du test, corrigé depuis (3a890e98, `HOME` jetable). La mesure Linux
