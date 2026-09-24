@@ -33,6 +33,7 @@ import { EnvVarModal } from './EnvVarModal';
 import * as api from '../../services/api';
 import { Z_LAYER } from '../../styles/z-layers';
 import { Spinner } from '../ui/Spinner';
+import { replierPourRecherche } from '../../lib/replierPourRecherche';
 
 // ============================================================
 // PresetCategory - Groupe de presets avec header repliable
@@ -594,12 +595,14 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
 
               {(() => {
                 // Filtrer par recherche
-                const filter = presetFilter.toLowerCase().trim();
+                // B-1214 : accents repliés des deux côtés ; « Avancé » tapé tel
+                // qu'affiché retrouve la catégorie « avance ».
+                const filter = replierPourRecherche(presetFilter.trim());
                 const filteredPresets = filter
                   ? presets.filter((p) =>
-                      p.name.toLowerCase().includes(filter) ||
-                      p.description.toLowerCase().includes(filter) ||
-                      (p.category || '').toLowerCase().includes(filter)
+                      replierPourRecherche(p.name).includes(filter) ||
+                      replierPourRecherche(p.description).includes(filter) ||
+                      replierPourRecherche(p.category || '').includes(filter)
                     )
                   : presets;
 

@@ -75,4 +75,14 @@ describe('B-1176 (b) : catégories de presets accentuées', () => {
       .map((b) => b.textContent?.trim());
     expect(entetes).toEqual(['Productivité', 'Recherche', 'Avancé']);
   });
+
+  it('B-1214 : chercher « Avancé » tel qu’affiché trouve la catégorie', async () => {
+    render(<ToolsPanel onError={vi.fn()} />);
+    fireEvent.click(await screen.findByRole('button', { name: /Presets/ }));
+    await screen.findByText('Recherche');
+    fireEvent.change(screen.getByRole('textbox', { name: 'Rechercher un preset MCP' }), { target: { value: 'Avancé' } });
+    const entetes = Array.from(document.querySelectorAll('button[aria-controls^="mcp-preset-category-"]'))
+      .map((b) => b.textContent?.trim());
+    expect(entetes).toEqual(['Avancé']);
+  });
 });
