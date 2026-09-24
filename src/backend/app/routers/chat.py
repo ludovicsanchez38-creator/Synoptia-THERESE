@@ -1279,6 +1279,9 @@ async def send_message(
         for msg in history_messages
         if msg.model not in ("action-deterministe", "commande-deterministe")
         and not (msg.extra_data and '"deterministic": true' in msg.extra_data)
+        # B-1221 : le moteur ne stocke que des tours user et assistant ; un
+        # « system » importé avant B-1182 serait rejoué comme consigne.
+        and msg.role in ("user", "assistant")
     ]
 
     # Save user message
