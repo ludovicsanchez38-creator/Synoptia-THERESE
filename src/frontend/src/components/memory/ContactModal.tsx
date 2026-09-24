@@ -5,6 +5,7 @@ import { Button } from '../ui/Button';
 import { modalVariants, overlayVariants } from '../../lib/animations';
 import * as api from '../../services/api';
 import { useContactsStore } from '../../stores/contactsStore';
+import { useDemoStore } from '../../stores/demoStore';
 import { Z_LAYER } from '../../styles/z-layers';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { useRendreLeFocusALaFermeture, useRevelerALApparition } from '../../hooks/useRevelerALApparition';
@@ -57,6 +58,14 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
   useRendreLeFocusALaFermeture(showDeleteConfirm, supprimerRef);
 
   const isEditing = !!contact;
+  // B-1080 : en démo, la liste passe la fiche déjà masquée. L'enregistrer
+  // écrirait le persona fictif sur la vraie fiche : lecture seule, comme
+  // ProjectModal (B-939). Adresse, notes et tags ne sont pas masqués par
+  // maskContact, ils restent donc cachés.
+  const demoEnabled = useDemoStore((s) => s.enabled);
+  const MASQUE_DEMO = 'Masqué en démonstration';
+  const affiche = (champ: 'address' | 'notes' | 'tags') =>
+    demoEnabled && formData[champ] ? MASQUE_DEMO : formData[champ];
 
   // US-013 : piège de focus (Tab + restauration à la fermeture). Pas d'onEscape :
   // Échap reste géré par la cascade de la coque (ConversationCanvasPrototype) via le store.
@@ -84,11 +93,13 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
   }, [isOpen, contact]);
 
   function handleChange(field: keyof FormData, value: string) {
+    if (demoEnabled) return;
     setFormData((prev) => ({ ...prev, [field]: value }));
     setError(null);
   }
 
   async function handleSave() {
+    if (useDemoStore.getState().enabled) return;
     // Validation
     if (!formData.first_name.trim() && !formData.last_name.trim()) {
       setError('Le prénom ou le nom est requis');
@@ -135,7 +146,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
   }
 
   async function handleDelete() {
-    if (!contact) return;
+    if (!contact || useDemoStore.getState().enabled) return;
 
     setDeleting(true);
     setError(null);
@@ -172,7 +183,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
             ref={dialogRef}
             role="dialog"
             aria-modal="true"
-            aria-label={isEditing ? 'Modifier le contact' : 'Nouveau contact'}
+            aria-label={demoEnabled && isEditing ? 'Consulter le contact' : isEditing ? 'Modifier le contact' : 'Nouveau contact'}
             variants={modalVariants}
             initial="initial"
             animate="animate"
@@ -187,10 +198,10 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
                 </div>
                 <div>
                   <h2 className="text-lg font-semibold text-text">
-                    {isEditing ? 'Modifier le contact' : 'Nouveau contact'}
+                    {demoEnabled && isEditing ? 'Consulter le contact' : isEditing ? 'Modifier le contact' : 'Nouveau contact'}
                   </h2>
                   <p className="text-sm text-text-muted">
-                    {isEditing ? 'Modifie les informations du contact' : 'Ajoute un nouveau contact à ta mémoire'}
+                    {demoEnabled ? 'Aperçu masqué en lecture seule' : isEditing ? 'Modifie les informations du contact' : 'Ajoute un nouveau contact à ta mémoire'}
                   </p>
                 </div>
               </div>
@@ -201,6 +212,12 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
 
             {/* Content - Scrollable */}
             <div className="flex-1 overflow-y-auto p-6 space-y-4">
+              {demoEnabled && (
+                <Alerte ton="attention" titre="Mode démo : lecture seule">
+                  Désactive le mode démo dans les paramètres pour {isEditing ? 'modifier ce contact' : 'créer un contact'}.
+                </Alerte>
+              )}
+              <fieldset disabled={demoEnabled} className="space-y-4">
               {/* Name row */}
               <div className="grid grid-cols-2 gap-4">
                 <FormField label="Prénom" htmlFor="contactmodal-prenom">
@@ -257,7 +274,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
               <FormField label="Adresse" htmlFor="contactmodal-adresse">
                 <Input id="contactmodal-adresse"
                   type="text"
-                  value={formData.address}
+                  value={affiche('address')}
                   onChange={(e) => handleChange('address', e.target.value)}
                   placeholder="Numéro et rue, code postal, ville"
                 />
@@ -266,7 +283,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
               {/* Notes */}
               <FormField label="Notes" htmlFor="contactmodal-notes">
                 <Textarea id="contactmodal-notes"
-                  value={formData.notes}
+                  value={affiche('notes')}
                   onChange={(e) => handleChange('notes', e.target.value)}
                   placeholder="Informations complémentaires..."
                   rows={3}
@@ -277,11 +294,12 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
               <FormField label="Tags (séparés par des virgules)" htmlFor="contactmodal-tags-separes-par-des-virgule">
                 <Input id="contactmodal-tags-separes-par-des-virgule"
                   type="text"
-                  value={formData.tags}
+                  value={affiche('tags')}
                   onChange={(e) => handleChange('tags', e.target.value)}
                   placeholder="client, prospect, partenaire"
                 />
               </FormField>
+              </fieldset>
 
               {/* Error */}
               {error && (
@@ -328,6 +346,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
                     variant="ghost"
                     className="text-error hover:text-error hover:bg-error/10"
                     onClick={() => setShowDeleteConfirm(true)}
+                    disabled={demoEnabled}
                   >
                     <Trash2 className="w-4 h-4 mr-2" />
                     Supprimer
@@ -341,7 +360,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
                 <Button
                   variant="primary"
                   onClick={handleSave}
-                  disabled={saving}
+                  disabled={saving || demoEnabled}
                 >
                   {saving ? (
                     <>
