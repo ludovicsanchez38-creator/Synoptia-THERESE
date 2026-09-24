@@ -933,6 +933,37 @@ def _checkpoint_db() -> bool:
     return False
 
 
+# B-1157 : la purge efface ces éléments ; la sauvegarde les archive, et une
+# restauration vide ceux que l'archive COUVRE (dit par son manifeste) avant
+# d'extraire. Une archive d'avant ce correctif n'a pas de manifeste : sa
+# restauration ne touche pas à ces éléments, qu'elle ne contient pas.
+ELEMENTS_COUVERTS = ("projects", "invoices", "commands", "THERESE.md")
+MANIFESTE_SAUVEGARDE = ".manifeste-sauvegarde.json"
+
+
+def elements_couverts(tar: Any) -> set[str]:
+    """Les éléments de ELEMENTS_COUVERTS que le manifeste de `tar` déclare."""
+    try:
+        membre = tar.getmember(MANIFESTE_SAUVEGARDE)
+        flux = tar.extractfile(membre)
+        manifeste = json.loads(flux.read().decode("utf-8")) if flux else {}
+    except (KeyError, ValueError, OSError):
+        return set()
+    declares = manifeste.get("couverts", []) if isinstance(manifeste, dict) else []
+    return {nom for nom in declares if nom in ELEMENTS_COUVERTS}
+
+
+def _vider_les_elements_couverts(data_dir: Path, couverts: set[str]) -> None:
+    import shutil
+
+    for nom in couverts:
+        cible = data_dir / nom
+        if cible.is_dir() and not cible.is_symlink():
+            shutil.rmtree(cible, ignore_errors=True)
+        elif cible.exists() or cible.is_symlink():
+            cible.unlink(missing_ok=True)
+
+
 def _create_archive(archive_path) -> list[str]:
     """Crée une archive complète : DB, index, images et fichiers Office.
 
@@ -942,6 +973,7 @@ def _create_archive(archive_path) -> list[str]:
     images EN CLAIR : inclure la clé n'abaisse pas la posture, mais le fichier
     de backup doit être protégé comme la base elle-même (documenté SECURITY.md).
     """
+    import io
     import tarfile
     from pathlib import Path
 
@@ -960,6 +992,11 @@ def _create_archive(archive_path) -> list[str]:
         (data_dir / "export_profile.json", "export_profile.json"),
         (data_dir / ".encryption_key", ".encryption_key"),
         (data_dir / ".encryption_salt", ".encryption_salt"),
+        # B-1157 : ce que la purge efface aussi.
+        (data_dir / "projects", "projects"),
+        (data_dir / "invoices", "invoices"),
+        (data_dir / "commands", "commands"),
+        (data_dir / "THERESE.md", "THERESE.md"),
     ]
 
     if not checkpoint_complete:
@@ -985,6 +1022,10 @@ def _create_archive(archive_path) -> list[str]:
                 if src and src.exists():
                     tar.add(str(src), arcname=arcname)
                     included.append(arcname)
+            manifeste = json.dumps({"version": 1, "couverts": list(ELEMENTS_COUVERTS)}).encode("utf-8")
+            info = tarfile.TarInfo(MANIFESTE_SAUVEGARDE)
+            info.size = len(manifeste)
+            tar.addfile(info, io.BytesIO(manifeste))
     except Exception:
         archive_path.unlink(missing_ok=True)
         raise
@@ -1387,7 +1428,9 @@ async def restore_backup(
         try:
             _wipe_volatile_dirs()
             with tarfile.open(safety_archive, "r:gz") as tar:
+                _vider_les_elements_couverts(data_dir, elements_couverts(tar))
                 _safe_extractall(tar, data_dir)
+            (data_dir / MANIFESTE_SAUVEGARDE).unlink(missing_ok=True)
         except Exception:
             logger.exception("Rollback du restore en échec")
 
@@ -1421,7 +1464,9 @@ async def restore_backup(
                     )
                 _wipe_volatile_dirs()
                 with tarfile.open(archive, "r:gz") as tar:
+                    _vider_les_elements_couverts(data_dir, elements_couverts(tar))
                     _safe_extractall(tar, data_dir)
+                (data_dir / MANIFESTE_SAUVEGARDE).unlink(missing_ok=True)
                 # US-014 : vérifier que la DB restaurée s'ouvre AVANT de déclarer
                 # le succès (sinon rollback via le except HTTPException ci-dessous)
                 _verify_restored_db()
