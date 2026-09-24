@@ -81,3 +81,11 @@ def motif_d_exclusion(modele: str) -> str | None:
         "rendez-vous, ni document. Choisis un modèle comme qwen3.5 ou "
         "ministral-3 pour que THÉRÈSE puisse agir."
     )
+
+
+def est_modele_ollama_cloud(modele: str) -> bool:
+    """B-1146 : un modèle Ollama Cloud (« gpt-oss:120b-cloud », « kimi-k2.6:cloud »)
+    figure parmi les modèles installés, mais Ollama transmet ses requêtes à
+    ollama.com. Il ne doit jamais être présenté comme local."""
+    nom = modele.strip().lower()
+    return nom.endswith(":cloud") or nom.endswith("-cloud")

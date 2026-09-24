@@ -23,6 +23,7 @@ export type { FournisseurConfig as ProviderConfig } from '../../lib/catalogueMod
 export { FOURNISSEURS as PROVIDERS } from '../../lib/catalogueModeles';
 
 import { Spinner } from '../ui/Spinner';
+import { estModeleOllamaCloud } from '../../lib/ollamaCloud';
 
 /** P-085 : fournisseurs secondaires, regroupés derrière « Autres » dans la grille. */
 const SECONDAIRES = new Set(['deepseek', 'glm', 'kimi', 'qwen', 'minimax', 'infomaniak']);
@@ -184,7 +185,7 @@ export function LLMTab({
 
   // Modèles disponibles pour le provider sélectionné
   const availableModels: { id: string; name: string; badge?: string }[] = selectedProvider === 'ollama'
-    ? ollamaModels.map(name => ({ id: name, name }))
+    ? ollamaModels.map(name => ({ id: name, name, badge: estModeleOllamaCloud(name) ? 'Ollama Cloud, en ligne' : undefined }))
     : catalogueDynamique ?? (currentProviderConfig?.models || []);
 
   /**

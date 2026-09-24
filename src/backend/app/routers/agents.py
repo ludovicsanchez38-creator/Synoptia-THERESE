@@ -38,6 +38,7 @@ from app.services.agents.git_service import GitService
 from app.services.agents.runtime import PREFIXE_MODELE_LOCAL
 from app.services.agents.swarm import SwarmOrchestrator
 from app.services.error_handler import message_pour_ecran
+from app.services.ollama_capabilites import est_modele_ollama_cloud
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -1060,7 +1061,12 @@ async def get_config(
         filtered_models = [
             *filtered_models,
             *[
-                {"id": f"{PREFIXE_MODELE_LOCAL}{nom}", "name": f"{nom} (local, installé)", "provider": "ollama"}
+                {
+                    "id": f"{PREFIXE_MODELE_LOCAL}{nom}",
+                    # B-1146 : un modèle Ollama Cloud passe par ollama.com.
+                    "name": f"{nom} (Ollama Cloud, en ligne)" if est_modele_ollama_cloud(nom) else f"{nom} (local, installé)",
+                    "provider": "ollama",
+                }
                 for nom in locaux
             ],
         ]
