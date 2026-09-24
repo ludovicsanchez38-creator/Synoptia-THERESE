@@ -66,6 +66,22 @@ HorodatageUTC = Annotated[
 _CARACTERES_INTERDITS_ADRESSE = re.compile(r"[\s,;:<>\"()\x00-\x1f\x7f]")  # B-1150 : « : » ouvre un groupe
 
 
+PERIMETRES = frozenset({"global", "project", "conversation"})
+
+
+def perimetre_normalise(valeur: str | None) -> str | None:
+    """B-1165 : « Global » était enregistré tel quel, et aucune règle de
+    cloisonnement (qui compare à « global », « project », « conversation »)
+    ne le reconnaissait. Le périmètre est ramené en minuscules et doit être
+    l'un des trois ; None reste None (« ne pas toucher »)."""
+    if valeur is None:
+        return None
+    propre = valeur.strip().lower()
+    if propre not in PERIMETRES:
+        raise ValueError("Périmètre inconnu : global, project ou conversation.")
+    return propre
+
+
 def adresse_unique_valide(adresse: str) -> bool:
     """B-1074 : une fiche contact porte UNE adresse de la forme nom@domaine.
 
@@ -305,6 +321,11 @@ class ContactCreate(BaseModel):
     scope: str | None = None  # global | project | conversation (defaut global cote modele)
     scope_id: str | None = None
 
+    @field_validator("scope")
+    @classmethod
+    def _perimetre(cls, valeur: str | None) -> str | None:
+        return perimetre_normalise(valeur)
+
 
 MESSAGE_FICHE_SANS_IDENTITE = (
     "Une fiche contact a besoin d'au moins un prénom, un nom, une société ou une adresse e-mail."
@@ -348,6 +369,11 @@ class ContactUpdate(BaseModel):
     scope: str | None = None  # global | project | conversation
     scope_id: str | None = None
 
+    @field_validator("scope")
+    @classmethod
+    def _perimetre(cls, valeur: str | None) -> str | None:
+        return perimetre_normalise(valeur)
+
     # CRM fields (Phase 5)
     # B-167 : même domaine qu'à la création - sinon l'étape inconnue rentre
     # par la mise à jour.
@@ -355,7 +381,8 @@ class ContactUpdate(BaseModel):
     source: str | None = Field(default=None, max_length=LONGUEUR_NOM)
     # P0-PROD-1 : override manuel du score (sinon le PATCH du champ score était
     # silencieusement ignoré faute de champ sur le schéma).
-    score: int | None = None
+    # B-1165 : borné à l'échelle 0-100 de l'écran.
+    score: int | None = Field(default=None, ge=0, le=100)
 
     # RGPD fields (Phase 6)
     rgpd_base_legale: str | None = None
@@ -497,6 +524,11 @@ class ProjectCreate(BaseModel):
     notes: str | None = None
     tags: list[str] | None = None
 
+    @field_validator("scope")
+    @classmethod
+    def _perimetre(cls, valeur: str | None) -> str | None:
+        return perimetre_normalise(valeur)
+
 
 class ProjectUpdate(BaseModel):
     """Update project request."""
@@ -515,6 +547,11 @@ class ProjectUpdate(BaseModel):
     # est justement globale. `None` = ne pas toucher au périmètre existant.
     scope: str | None = None  # global | project | conversation
     scope_id: str | None = None
+
+    @field_validator("scope")
+    @classmethod
+    def _perimetre(cls, valeur: str | None) -> str | None:
+        return perimetre_normalise(valeur)
 
     @model_validator(mode="after")
     def _null_sur_champ_obligatoire(self) -> Self:
