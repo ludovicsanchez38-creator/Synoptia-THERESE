@@ -131,6 +131,10 @@ export function MessageList({ onPromptSelect, onSaveAsCommand, onGuidedPanelChan
     return conversation.messages.map((msg) => ({
       ...msg,
       content: maskText(msg.content),
+      // B-933 : les entités détectées portent des noms réels, et
+      // « Enregistrer » les écrirait dans la vraie mémoire : aucune
+      // suggestion d'entité en démonstration.
+      detectedEntities: undefined,
       // B-483 : titres de sources web et noms de fichiers générés restaient en
       // clair sous le masque.
       webSources: msg.webSources?.map((source) => ({
