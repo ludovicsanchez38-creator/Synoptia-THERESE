@@ -3439,9 +3439,12 @@ async def _execute_tools_and_continue(
                     yield nested_event
 
         elif event.type == "error":
+            # B-1181 : même traduction qu'au premier tour (B-1155).
             error_data = StreamChunk(
                 type="error",
-                content=event.content or "Tool continuation error",
+                content=message_fournisseur_pour_ecran(
+                    event.content or "Erreur inattendue du fournisseur LLM"
+                ),
                 conversation_id=conversation_id,
             )
             yield f"data: {json.dumps(error_data.model_dump())}\n\n"
