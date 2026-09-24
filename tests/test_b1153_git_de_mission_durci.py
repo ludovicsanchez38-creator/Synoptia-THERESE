@@ -70,6 +70,9 @@ async def test_le_commit_de_mission_n_execute_ni_hook_ni_pilote_ni_faux_depot(po
     subprocess.run(["git", "init", "-q", "--bare", str(faux)], check=True, capture_output=True)
     (faux / "hooks" / "pre-commit").write_text(f"#!/bin/sh\ntouch {temoins.as_posix()}/faux\n", encoding="utf-8")
     (faux / "hooks" / "pre-commit").chmod(0o755)
+    # B-1201 : Git pour Windows marque `.git` caché, et Windows refuse d'ouvrir
+    # en écriture un fichier caché : on le retire avant de le réécrire.
+    (worktree / ".git").unlink()
     (worktree / ".git").write_text(f"gitdir: {faux.as_posix()}\n", encoding="utf-8")
 
     empreinte = await mission.commit("travail de l'agent")
