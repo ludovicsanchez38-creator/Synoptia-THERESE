@@ -124,10 +124,16 @@ def test_la_restauration_invalide_le_cache_des_cles():
     corps = inspect.getsource(routeur.restore_backup)
     # L'APPEL, pas la simple mention : la ligne d'import contient déjà le nom,
     # et un test qui la lit ne détecte pas le retrait de l'appel (constaté au
-    # sabotage de ce lot).
-    appels = re.findall(r"(?<![\w.])invalidate_api_key_cache\s*\(\s*\)", corps)
+    # sabotage de ce lot). B-1124 : l'invalidation passe par la fonction
+    # commune à la purge et à la restauration, qui vide aussi le service.
+    appels = re.findall(r"(?<![\w.])_oublier_les_cles_en_memoire\s*\(\s*\)", corps)
     assert appels, (
         "restore_backup remplace la base entière sans APPELER "
-        "invalidate_api_key_cache() : les clés de la sauvegarde restaurée "
+        "_oublier_les_cles_en_memoire() : les clés de la sauvegarde restaurée "
         "restent invisibles"
     )
+    commune = inspect.getsource(routeur._oublier_les_cles_en_memoire)
+    for geste in ("invalidate_api_key_cache", "invalidate_llm_service"):
+        assert re.findall(rf"(?<![\w.]){geste}\s*\(\s*\)", commune), (
+            f"_oublier_les_cles_en_memoire n'appelle plus {geste}()"
+        )
