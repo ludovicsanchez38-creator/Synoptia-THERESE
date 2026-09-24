@@ -205,7 +205,7 @@ def export_to_csv(entities: list[Any], columns: list[tuple[str, str]]) -> bytes:
 # ============================================================
 
 
-def _cellule_texte(ws, ligne: int, colonne: int, valeur):
+def _cellule_texte(ws: Any, ligne: int, colonne: int, valeur: Any) -> Any:
     """Écrit une cellule de données. B-449 : openpyxl range une chaîne « =... »
     en formule (type 'f') ; elle doit rester du texte dans le classeur."""
     cellule = ws.cell(row=ligne, column=colonne, value=valeur)

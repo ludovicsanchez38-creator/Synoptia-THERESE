@@ -305,8 +305,8 @@ async def upsert_contact(
     # B-1187 : même règle que B-1108/B-1125 (arbitrage du 24/09) : le tableur
     # fait foi pour ce qu'il dit, pas pour ce qu'il tait. Une cellule vide ou
     # une étape inconnue ne remplace pas la valeur enregistrée.
-    etape = (_get("Stage") or "").lower()
-    etape = etape if etape in ETAPES_PIPELINE else None
+    etape_cellule = (_get("Stage") or "").lower()
+    etape = etape_cellule if etape_cellule in ETAPES_PIPELINE else None
     score_fourni = bool(str(row.get("Score") or "").strip())
 
     if existing:
