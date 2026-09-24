@@ -250,9 +250,12 @@ async def upsert_contact(
 
     # B-1081 : une adresse double ou douteuse venue du tableur n'est pas
     # recopiée (même règle que la fiche, B-1074) ; le reste de la ligne l'est.
+    # B-1107 : sur une fiche existante, elle n'efface pas non plus l'adresse
+    # valide déjà enregistrée. Une cellule vide garde son sens de miroir.
     courriel = _get("Email")
-    if courriel and not adresse_unique_valide(courriel):
-        courriel = None
+    courriel_refuse = bool(courriel) and not adresse_unique_valide(courriel)
+    if courriel_refuse:
+        courriel = existing.email if existing else None
 
     if existing:
         existing.first_name = first_name

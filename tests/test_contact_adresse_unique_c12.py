@@ -91,3 +91,16 @@ async def test_la_synchro_tableur_ne_garde_pas_une_adresse_double(db_session):
     contact, cree = await upsert_contact(db_session, {"ID": "crm-b1081", "Nom": "Jeanne Martin", "Email": "a@b.fr,pirate@x.fr"})
     assert cree
     assert contact.email is None
+
+
+@pytest.mark.asyncio
+async def test_la_synchro_tableur_n_efface_pas_une_adresse_valide(db_session):
+    """B-1107 (lecteur I1) : régression de B-1081, une cellule mal formée
+    effaçait l'adresse valide d'une fiche existante."""
+    from app.services.crm_utils import upsert_contact
+
+    await upsert_contact(db_session, {"ID": "crm-b1107", "Nom": "Jeanne Martin", "Email": "jeanne@exemple.fr"})
+    await db_session.commit()
+    contact, cree = await upsert_contact(db_session, {"ID": "crm-b1107", "Nom": "Jeanne Martin", "Email": "a@b.fr,pirate@x.fr"})
+    assert not cree
+    assert contact.email == "jeanne@exemple.fr"
