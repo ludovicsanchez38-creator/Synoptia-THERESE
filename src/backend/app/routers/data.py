@@ -678,11 +678,21 @@ async def delete_all_data(
     from pathlib import Path
 
     data_dir = Path(settings.data_dir)
-    for sub in ("images", "outputs", "projects"):
+    # B-1145 : les PDF de factures rangés dans le dossier de données partaient
+    # aussi avec « toutes mes données » (le dossier de travail choisi par
+    # l'utilisateur, lui, n'est pas touché).
+    for sub in ("images", "outputs", "projects", "invoices"):
         target = data_dir / sub
         if target.exists():
             shutil.rmtree(target, ignore_errors=True)
         target.mkdir(parents=True, exist_ok=True)
+
+    # B-1145 : THERESE.md (consignes personnelles) survivait sur le disque et
+    # dans son cache, qui nourrit le prompt du chat et du Board (motif B-340).
+    from app.services.llm import reload_therese_md
+
+    (data_dir / "THERESE.md").unlink(missing_ok=True)
+    reload_therese_md()
 
     # B-193 : les commandes utilisateur sont du texte écrit par l'utilisateur,
     # rangé sur le disque dans commands/user/ et non dans les tables balayées

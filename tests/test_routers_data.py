@@ -452,6 +452,33 @@ class TestDataDeletion:
             assert restes == [], f"{modele.__tablename__} survit à la purge RGPD"
 
     @pytest.mark.asyncio
+    async def test_delete_all_efface_pdf_de_factures_et_therese_md(self, client: AsyncClient, monkeypatch):
+        """Audit de release 0.75 (agent sécurité) : les PDF de factures rangés
+        dans le dossier de données et THERESE.md, sur le disque ET dans son cache
+        mémoire qui nourrit le prompt du chat et du Board, survivaient à la purge
+        (même défaut que B-340 pour le profil)."""
+        from pathlib import Path
+
+        from app.config import settings
+        from app.services import llm
+
+        donnees = Path(settings.data_dir)
+        (donnees / "invoices").mkdir(parents=True, exist_ok=True)
+        pdf = donnees / "invoices" / "FAC-2026-001.pdf"
+        pdf.write_bytes(b"%PDF-1.4 facture de Marie Dupont")
+        consignes = donnees / "THERESE.md"
+        consignes.write_text("Je suis Marie Dupont, consignes secrètes", encoding="utf-8")
+        monkeypatch.setattr(llm, "chemins_de_recherche_therese_md", lambda: [consignes])
+        assert "Marie Dupont" in (llm.reload_therese_md() or "")
+
+        response = await client.delete("/api/data/all?confirm=true")
+        assert response.status_code == 200
+
+        assert not pdf.exists(), "un PDF de facture survit à la purge RGPD"
+        assert not consignes.exists(), "THERESE.md survit à la purge RGPD"
+        assert "Marie Dupont" not in (llm.load_therese_md() or ""), "le cache sert encore THERESE.md"
+
+    @pytest.mark.asyncio
     async def test_delete_all_purge_fichiers_disque_et_annonce_backups(self, client: AsyncClient):
         """Revue 0.40 : la route vidait les tables et Qdrant mais laissait
         images/ et outputs/ sur disque, et le message affirmait que TOUT était
