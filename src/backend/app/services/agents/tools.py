@@ -84,7 +84,7 @@ DOSSIERS_EXCLUS_RECHERCHE = frozenset(
 )
 SUFFIXES_SENSIBLES = frozenset({".key", ".pem", ".p12", ".pfx", ".env"})
 # B-1084 : tout fichier de ces dossiers est un secret, quelle que soit son extension.
-DOSSIERS_SENSIBLES = frozenset({".ssh", ".aws", ".gnupg"})
+DOSSIERS_SENSIBLES = frozenset({".ssh", ".aws", ".gnupg", ".envs"})  # B-1150 : .envs, cookiecutter-django
 # B-1048 : secrets usuels hors des suffixes ci-dessus.
 NOMS_SENSIBLES = frozenset(
     {

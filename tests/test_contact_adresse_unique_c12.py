@@ -14,7 +14,7 @@ from app.services.crm_import import _validate_contact
 from app.services.import_service import parse_vcf
 from pydantic import ValidationError
 
-INVALIDES = ["a@b.fr,pirate@x.fr", "a@b.fr;pirate@x.fr", "Jean <a@b.fr>", "a@b.fr\nBcc: x@y.fr", "a@@b.fr", "a@b"]
+INVALIDES = ["a@b.fr,pirate@x.fr", "a@b.fr;pirate@x.fr", "Jean <a@b.fr>", "a@b.fr\nBcc: x@y.fr", "a@@b.fr", "a@b", "g:a@b.fr"]  # B-1150 : « : » ouvre un groupe d'adresses
 
 
 @pytest.mark.parametrize("adresse", INVALIDES)

@@ -62,7 +62,7 @@ HorodatageUTC = Annotated[
 
 
 
-_CARACTERES_INTERDITS_ADRESSE = re.compile(r"[\s,;<>\"()\x00-\x1f\x7f]")
+_CARACTERES_INTERDITS_ADRESSE = re.compile(r"[\s,;:<>\"()\x00-\x1f\x7f]")  # B-1150 : « : » ouvre un groupe
 
 
 def adresse_unique_valide(adresse: str) -> bool:

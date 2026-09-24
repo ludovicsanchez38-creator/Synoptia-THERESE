@@ -240,7 +240,7 @@ def test_d_autres_secrets_usuels_sont_sensibles(nom: str):
     assert _nom_de_fichier_sensible(nom), nom
 
 
-@pytest.mark.parametrize("chemin", [".ssh/config", ".aws/credentials", ".gnupg/pubring.kbx"])
+@pytest.mark.parametrize("chemin", [".ssh/config", ".aws/credentials", ".gnupg/pubring.kbx", ".envs/.production/.django"])
 def test_les_dossiers_de_secrets_sont_interdits_a_la_lecture(tmp_path: Path, chemin: str):
     fichier = tmp_path / chemin
     fichier.parent.mkdir(parents=True)
