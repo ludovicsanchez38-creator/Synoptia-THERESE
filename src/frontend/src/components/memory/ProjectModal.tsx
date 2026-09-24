@@ -6,7 +6,7 @@ import { modalVariants, overlayVariants } from '../../lib/animations';
 import * as api from '../../services/api';
 import { Z_LAYER } from '../../styles/z-layers';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
-import { useRevelerALApparition } from '../../hooks/useRevelerALApparition';
+import { useRendreLeFocusALaFermeture, useRevelerALApparition } from '../../hooks/useRevelerALApparition';
 import { ProjectSyncSection } from './ProjectSyncSection';
 import { Spinner } from '../ui/Spinner';
 import { Alerte } from '../ui/Alerte';
@@ -64,11 +64,16 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
   // B-1030 : le message et la confirmation vivent au bas du contenu défilant.
   const erreurRef = useRevelerALApparition(error);
   const confirmationRef = useRevelerALApparition(showDeleteConfirm, 'premier-bouton');
+  // B-1061 : « Annuler » rend le focus au bouton « Supprimer ».
+  const supprimerRef = useRef<HTMLButtonElement>(null);
+  useRendreLeFocusALaFermeture(showDeleteConfirm, supprimerRef);
   // Un fichier joint ne part plus au premier clic : on retient lequel est
   // visé, et l'appel réseau n'existe qu'au clic de confirmation. Bandeau EN
   // LIGNE, comme pour la suppression du projet juste en dessous : superposer
   // une boîte ferait fermer CETTE modale par Échap.
   const [fichierASupprimer, setFichierASupprimer] = useState<api.FileMetadata | null>(null);
+  // B-1060 : la confirmation du fichier joint est amenée dans la vue, focus sur « Conserver ».
+  const confirmationFichierRef = useRevelerALApparition(fichierASupprimer?.id, 'premier-bouton');
   const boutonSuppressionRef = useRef<HTMLButtonElement | null>(null);
   const [loadingContacts, setLoadingContacts] = useState(false);
   const [contactsCharges, setContactsCharges] = useState(false);
@@ -528,7 +533,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
 
               {/* Suppression d'un fichier joint : confirmation en ligne */}
               {fichierASupprimer && (
-                <div className="flex items-center gap-2 px-3 py-3 bg-[var(--color-error-tint)] border border-error/20 rounded-md">
+                <div ref={confirmationFichierRef} className="flex items-center gap-2 px-3 py-3 bg-[var(--color-error-tint)] border border-error/20 rounded-md">
                   <AlertCircle className="w-4 h-4 text-error shrink-0" />
                   <div className="flex-1">
                     <p className="text-sm text-error font-medium">
@@ -589,6 +594,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
               <div>
                 {isEditing && !showDeleteConfirm && (
                   <Button
+                    ref={supprimerRef}
                     variant="ghost"
                     className="text-error hover:text-error hover:bg-error/10"
                     onClick={() => setShowDeleteConfirm(true)}

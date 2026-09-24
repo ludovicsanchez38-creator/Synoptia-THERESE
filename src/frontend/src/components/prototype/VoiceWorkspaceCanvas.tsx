@@ -20,7 +20,7 @@ import { usePanneauCouvrant } from '../../hooks/usePanneauCouvrant';
 import { Alerte, Button, Carte, Textarea } from '../ui';
 import { Spinner } from '../ui/Spinner';
 import { BoutonFermerLePanneau } from './BoutonFermerLePanneau';
-import { useRevelerALApparition } from '../../hooks/useRevelerALApparition';
+import { useRendreLeFocusALaFermeture, useRevelerALApparition } from '../../hooks/useRevelerALApparition';
 
 const AUDIO_PERIME_MESSAGE =
   'L’audio correspondait au texte précédent. Génère-le à nouveau pour entendre la nouvelle version.';
@@ -50,7 +50,12 @@ export function VoiceWorkspaceCanvas({
   // sur la page) et les messages vivent au bas d'une section défilante.
   const confirmationRef = useRevelerALApparition(confirmationOpen, 'premier-bouton');
   const erreurTranscriptionRef = useRevelerALApparition(transcriptionError);
+  // B-1061 : « Annuler » rend le focus à « Préparer la transcription ».
+  const preparerRef = useRef<HTMLButtonElement>(null);
+  useRendreLeFocusALaFermeture(confirmationOpen, preparerRef);
   const [speechError, setSpeechError] = useState<string | null>(null);
+  // B-1062 : même traitement que l'erreur de transcription (B-1032).
+  const erreurSyntheseRef = useRevelerALApparition(speechError);
   const [speechStatus, setSpeechStatus] = useState<string | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -169,7 +174,7 @@ export function VoiceWorkspaceCanvas({
             <ShieldCheck className="mr-1 inline h-4 w-4" /><strong>{transcriptionEngine}</strong> · {usesLocalTranscription ? 'l’audio reste sur cette machine.' : 'le fichier sera envoyé à Groq après ta confirmation.'}
           </div>
 
-          {confirmationOpen ? <Alerte ref={confirmationRef} ton="attention" className="mt-4" data-testid="voice-transcription-confirmation" titre={`Confirmer la transcription avec ${transcriptionEngine} ?`} action={<div className="flex flex-wrap justify-end gap-2"><Button type="button" variant="secondary" onClick={() => setConfirmationOpen(false)}>Annuler</Button><Button type="button" onClick={() => void confirmTranscription()}>Confirmer et transcrire</Button></div>} /> : <Button type="button" size="lg" onClick={prepareTranscription} disabled={!file || transcribing} className="mt-4 w-full">{transcribing ? <Spinner taille="bouton" /> : <Mic className="h-4 w-4" />}{transcribing ? 'Transcription en cours…' : 'Préparer la transcription'}</Button>}
+          {confirmationOpen ? <Alerte ref={confirmationRef} ton="attention" className="mt-4" data-testid="voice-transcription-confirmation" titre={`Confirmer la transcription avec ${transcriptionEngine} ?`} action={<div className="flex flex-wrap justify-end gap-2"><Button type="button" variant="secondary" onClick={() => setConfirmationOpen(false)}>Annuler</Button><Button type="button" onClick={() => void confirmTranscription()}>Confirmer et transcrire</Button></div>} /> : <Button ref={preparerRef} type="button" size="lg" onClick={prepareTranscription} disabled={!file || transcribing} className="mt-4 w-full">{transcribing ? <Spinner taille="bouton" /> : <Mic className="h-4 w-4" />}{transcribing ? 'Transcription en cours…' : 'Préparer la transcription'}</Button>}
 
           {transcriptionError && <Alerte ref={erreurTranscriptionRef} className="mt-3" titre="Transcription impossible" icone={<AlertCircle className="h-4 w-4" />} action={<Button type="button" variant="secondary" onClick={prepareTranscription}>Réessayer</Button>}>{transcriptionError}</Alerte>}
 
@@ -183,7 +188,7 @@ export function VoiceWorkspaceCanvas({
           {!ttsReady && <Alerte ton="attention" className="mt-3" titre="Voix locale à activer">La voix locale doit être activée dans Paramètres → Confidentialité avant d’utiliser la synthèse.</Alerte>}
           <Button type="button" size="lg" onClick={() => void createSpeech()} disabled={!speechText.trim() || !ttsReady || speechLoading} className="mt-4 w-full">{speechLoading ? <Spinner taille="bouton" /> : <Volume2 className="h-4 w-4" />}{speechLoading ? 'Création de l’audio…' : 'Générer l’audio local'}</Button>
           {speechStatus && <p role="status" className="mt-3 rounded-md border border-info/40 bg-[var(--color-info-tint)] p-3 text-sm text-info">{speechStatus}</p>}
-          {speechError && <Alerte className="mt-3" titre="Synthèse vocale impossible" icone={<AlertCircle className="h-4 w-4" />} action={<Button type="button" variant="secondary" onClick={() => void createSpeech()}>Réessayer</Button>}>{speechError}</Alerte>}
+          {speechError && <Alerte ref={erreurSyntheseRef} className="mt-3" titre="Synthèse vocale impossible" icone={<AlertCircle className="h-4 w-4" />} action={<Button type="button" variant="secondary" onClick={() => void createSpeech()}>Réessayer</Button>}>{speechError}</Alerte>}
           {speechUrl && <Carte className="mt-5 p-4"><div className="mb-3 flex items-center gap-2 text-sm font-semibold text-text"><Play className="h-4 w-4 text-domaine-prospects" />Audio généré localement</div><audio controls src={speechUrl} className="w-full" /><a href={speechUrl} download="therese-tts.wav" className="mt-3 inline-flex min-h-9 items-center rounded-md border border-border bg-surface px-4 py-2 text-sm font-semibold text-text hover:bg-surface-2">Enregistrer le WAV</a></Carte>}
         </section>
       </div>

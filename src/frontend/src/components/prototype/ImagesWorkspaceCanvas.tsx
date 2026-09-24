@@ -27,7 +27,7 @@ import { useDemoMask } from '../../hooks/useDemoMask';
 import { Alerte, Button, Carte, EtatVide, Select, Textarea } from '../ui';
 import { Spinner } from '../ui/Spinner';
 import { BoutonFermerLePanneau } from './BoutonFermerLePanneau';
-import { useRevelerALApparition } from '../../hooks/useRevelerALApparition';
+import { useRendreLeFocusALaFermeture, useRevelerALApparition } from '../../hooks/useRevelerALApparition';
 
 const PROVIDERS: Array<{ id: ImageProvider; label: string; availability: keyof ImageProviderStatus }> = [
   { id: 'gpt-image-2', label: 'GPT Image 2', availability: 'openai_available' },
@@ -79,7 +79,6 @@ export function ImagesWorkspaceCanvas({ onClose }: { onClose: () => void }) {
   const [unavailableImageIds, setUnavailableImageIds] = useState<Set<string>>(new Set());
   const generationLocked = useRef(false);
   const dialogRef = useRef<HTMLElement>(null);
-  const confirmationRef = useRef<HTMLDivElement>(null);
   // Hotfix 0.48.1 : isolation seulement quand le panneau RECOUVRE la zone.
   // Revue passe 2 : le clavier reste À LA PAGE en toutes circonstances -
   // le rail et l'en-tête sont actifs, un piège les rendrait inatteignables,
@@ -94,13 +93,11 @@ export function ImagesWorkspaceCanvas({ onClose }: { onClose: () => void }) {
 
   // La confirmation d'une action payante remplace le bouton en bas de la colonne
   // scrollable : à 1280×900 elle naissait sous le pli (finding Codex CODEX-09).
-  // On l'amène à l'écran dès qu'elle apparaît pour qu'Annuler / Confirmer soient
-  // visibles sans deviner qu'il faut faire défiler.
-  useEffect(() => {
-    if (confirmationSnapshot) {
-      confirmationRef.current?.scrollIntoView?.({ behavior: 'smooth', block: 'nearest' });
-    }
-  }, [confirmationSnapshot]);
+  // Elle est amenée à l'écran et, B-1059, reçoit le focus (sur « Annuler ») ;
+  // B-1061 : « Annuler » rend le focus à « Préparer la génération ».
+  const confirmationRef = useRevelerALApparition(confirmationSnapshot, 'premier-bouton');
+  const preparerRef = useRef<HTMLButtonElement>(null);
+  useRendreLeFocusALaFermeture(confirmationSnapshot !== null, preparerRef);
 
   async function refresh() {
     setLoading(true);
@@ -359,7 +356,7 @@ export function ImagesWorkspaceCanvas({ onClose }: { onClose: () => void }) {
           <div className="mt-4 rounded-md border border-accent-cyan/30 bg-accent-tint p-3 text-sm leading-5 text-accent"><ShieldCheck className="mr-1 inline h-4 w-4" />La demande sera transmise au moteur choisi. Rien ne part avant confirmation.</div>
           </fieldset>
           {error && <Alerte ref={erreurRef} id="image-generation-error" className="mt-3" titre={titreDeLErreur(errorContext, errorField)} icone={<AlertCircle className="h-4 w-4" />} action={errorContext ? <Button type="button" variant="secondary" onClick={() => errorContext === 'load' ? void refresh() : requestGeneration()}>Réessayer</Button> : errorField === 'provider' ? <Button type="button" variant="secondary" onClick={() => usePanelStore.getState().openSettings('services')}>Ouvrir les Paramètres (Services et connecteurs)</Button> : undefined}>{error}</Alerte>}
-          {confirmationSnapshot ? <div ref={confirmationRef} className="mt-4" data-testid="image-generation-confirmation"><Alerte ton="attention" titre={`Confirmer la génération avec ${confirmationSnapshot.providerLabel} ?`} action={<div className="flex flex-wrap justify-end gap-2"><Button type="button" variant="secondary" onClick={() => setConfirmationSnapshot(null)}>Annuler</Button><Button type="button" onClick={() => void confirmGeneration()} disabled={pending}>Confirmer et générer</Button></div>}><span className="font-semibold">Prompt : {maskText(confirmationSnapshot.request.prompt)}</span><br />Format {confirmationSnapshot.request.size}, qualité {confirmationSnapshot.request.quality}. Cette action peut consommer un crédit du fournisseur.{!hasCloudConsent('images', confirmationSnapshot.request.provider) ? <> En confirmant ce premier usage cloud, tu consens à transmettre ces données à {confirmationSnapshot.providerLabel}.</> : null}</Alerte></div> : <Button type="button" size="lg" onClick={requestGeneration} disabled={pending || loading} className="mt-4 w-full">{pending ? <Spinner taille="bouton" /> : <Sparkles className="h-4 w-4" />}{pending ? 'Génération en cours…' : 'Préparer la génération'}</Button>}
+          {confirmationSnapshot ? <div ref={confirmationRef} className="mt-4" data-testid="image-generation-confirmation"><Alerte ton="attention" titre={`Confirmer la génération avec ${confirmationSnapshot.providerLabel} ?`} action={<div className="flex flex-wrap justify-end gap-2"><Button type="button" variant="secondary" onClick={() => setConfirmationSnapshot(null)}>Annuler</Button><Button type="button" onClick={() => void confirmGeneration()} disabled={pending}>Confirmer et générer</Button></div>}><span className="font-semibold">Prompt : {maskText(confirmationSnapshot.request.prompt)}</span><br />Format {confirmationSnapshot.request.size}, qualité {confirmationSnapshot.request.quality}. Cette action peut consommer un crédit du fournisseur.{!hasCloudConsent('images', confirmationSnapshot.request.provider) ? <> En confirmant ce premier usage cloud, tu consens à transmettre ces données à {confirmationSnapshot.providerLabel}.</> : null}</Alerte></div> : <Button ref={preparerRef} type="button" size="lg" onClick={requestGeneration} disabled={pending || loading} className="mt-4 w-full">{pending ? <Spinner taille="bouton" /> : <Sparkles className="h-4 w-4" />}{pending ? 'Génération en cours…' : 'Préparer la génération'}</Button>}
         </section>
 
         <section className="min-h-0 overflow-y-auto p-5">

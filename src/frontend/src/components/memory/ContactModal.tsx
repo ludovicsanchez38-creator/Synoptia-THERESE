@@ -7,7 +7,7 @@ import * as api from '../../services/api';
 import { useContactsStore } from '../../stores/contactsStore';
 import { Z_LAYER } from '../../styles/z-layers';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
-import { useRevelerALApparition } from '../../hooks/useRevelerALApparition';
+import { useRendreLeFocusALaFermeture, useRevelerALApparition } from '../../hooks/useRevelerALApparition';
 import { Spinner } from '../ui/Spinner';
 import { Alerte } from '../ui/Alerte';
 import { FormField } from '../ui/FormField';
@@ -52,6 +52,9 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
   // B-1030 : le message et la confirmation vivent au bas du contenu défilant.
   const erreurRef = useRevelerALApparition(error);
   const confirmationRef = useRevelerALApparition(showDeleteConfirm, 'premier-bouton');
+  // B-1061 : « Annuler » rend le focus au bouton « Supprimer ».
+  const supprimerRef = useRef<HTMLButtonElement>(null);
+  useRendreLeFocusALaFermeture(showDeleteConfirm, supprimerRef);
 
   const isEditing = !!contact;
 
@@ -321,6 +324,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
               <div>
                 {isEditing && !showDeleteConfirm && (
                   <Button
+                    ref={supprimerRef}
                     variant="ghost"
                     className="text-error hover:text-error hover:bg-error/10"
                     onClick={() => setShowDeleteConfirm(true)}
