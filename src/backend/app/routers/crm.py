@@ -845,6 +845,7 @@ async def import_vcf_contacts(
     created = 0
     updated = 0
 
+    a_indexer: list[Contact] = []
     for contact_data in parsed_contacts:
         existing = None
         if contact_data.get("email"):
@@ -860,6 +861,7 @@ async def import_vcf_contacts(
                     setattr(existing, field, new_value)
             existing.updated_at = datetime.now(UTC)
             session.add(existing)
+            a_indexer.append(existing)
             updated += 1
         elif not existing:
             contact = Contact(
@@ -872,9 +874,16 @@ async def import_vcf_contacts(
                 notes=contact_data.get("notes"),
             )
             session.add(contact)
+            a_indexer.append(contact)
             created += 1
 
     await session.commit()
+    # B-1180 : comme une création à l'unité, chaque fiche importée ou mise à
+    # jour rejoint l'index sémantique (sinon le chat ne la retrouve pas).
+    from app.routers.memory import _embed_contact
+
+    for fiche in a_indexer:
+        await _embed_contact(fiche)
     logger.info(f"VCF import: {created} created, {updated} updated")
 
     return {
