@@ -34,10 +34,19 @@ describe('ToolsPanel - B-875, le scrutin d’un serveur en démarrage relit les 
     render(<ToolsPanel onError={vi.fn()} />);
     await screen.findByText('filesystem');
     expect(api.listMCPServers).toHaveBeenCalledTimes(1);
+    // B-1196 : le nom s'affiche parfois avant que l'effet ne pose le scrutin ;
+    // avancer le temps à ce moment ne déclenchait rien (1 échec sur 60).
+    for (let i = 0; i < 20 && vi.getTimerCount() === 0; i++) {
+      await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
+    }
+    expect(vi.getTimerCount()).toBeGreaterThan(0);
 
     await act(async () => { vi.advanceTimersByTime(3100); await Promise.resolve(); });
     expect(api.listMCPServers).toHaveBeenCalledTimes(2);
-    await act(async () => { await Promise.resolve(); });
+    // B-1196 : une seule microtâche ne suffisait pas toujours à propager le
+    // « running » (1 échec sur 6 à 10) ; une vraie tâche (setTimeout n'est pas
+    // simulé ici) vide toute la chaîne de promesses du rafraîchissement.
+    await act(async () => { await new Promise((r) => setTimeout(r, 0)); });
     await act(async () => { vi.advanceTimersByTime(3100); await Promise.resolve(); });
     expect(api.listMCPServers).toHaveBeenCalledTimes(2);
   });
