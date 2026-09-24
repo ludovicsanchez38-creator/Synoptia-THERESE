@@ -7,6 +7,7 @@ Supports Claude, OpenAI, Gemini, Mistral, Grok, and Ollama.
 Sprint 2 - PERF-2.1: Refactored to use modular providers.
 """
 
+import contextlib
 import logging
 import os
 import re
@@ -1037,6 +1038,9 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
 
         except Exception as e:
             cb.record_failure(provider_name, str(e)[:200])
+            # B-1092 : marquée, pour que l'appelant ne la recompte pas.
+            with contextlib.suppress(Exception):
+                e.__dict__["_comptee_par_le_disjoncteur"] = True
             logger.error(
                 "Circuit breaker: échec stream sur %s: %s",
                 provider_name, str(e)[:200],
@@ -1156,11 +1160,17 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
                     if event.output_tokens is not None:
                         usage_sink["output_tokens"] = event.output_tokens
         except Exception as exc:
-            cb.record_failure(provider_name, str(exc)[:200])
+            # B-1092 : le flux compte déjà ses exceptions ; les recompter ici
+            # faisait deux échecs d'une panne (seuil 2 : circuit ouvert).
+            if not getattr(exc, "_comptee_par_le_disjoncteur", False):
+                cb.record_failure(provider_name, str(exc)[:200])
             raise
 
         if not content_parts and errors:
-            cb.record_failure(provider_name, errors[0][:200])
+            # B-1092 : une erreur de panne (429, 5xx) est déjà comptée par le
+            # flux ; seules les autres erreurs le sont ici.
+            if not any(_is_provider_outage(erreur) for erreur in errors):
+                cb.record_failure(provider_name, errors[0][:200])
             # B-1033 : le message du fournisseur est déjà écrit pour l'écran ;
             # les marqueurs internes (« __ollama_… ») n'y vont jamais.
             lisibles = [e for e in errors if not e.startswith("__")]
