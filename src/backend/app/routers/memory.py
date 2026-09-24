@@ -132,13 +132,38 @@ def indexer_fiches_en_arriere_plan(fiches: list[Contact]) -> None:
     if not fiches:
         return
 
-    async def _indexer(lot: list[Contact]) -> None:
-        for fiche in lot:
-            await _embed_contact(fiche)
+    async def _indexer(identifiants: list[str]) -> None:
+        from app.models.database import get_session_context
 
-    tache = asyncio.create_task(_indexer(list(fiches)))
+        for identifiant in identifiants:
+            # B-1222 : l'état de la base fait foi, pas l'instantané de
+            # l'import. Une fiche supprimée entre-temps n'est pas réindexée,
+            # et une fiche modifiée l'est dans son état courant.
+            async with get_session_context() as session:
+                fiche = await session.get(Contact, identifiant)
+            if fiche is None:
+                continue
+            await _embed_contact(fiche)
+            async with get_session_context() as session:
+                encore_la = await session.get(Contact, identifiant)
+            if encore_la is None:
+                # Supprimée PENDANT le calcul du vecteur : on le retire.
+                await _delete_embedding(identifiant)
+
+    tache = asyncio.create_task(_indexer([fiche.id for fiche in fiches]))
     _INDEXATIONS_DE_FICHES.add(tache)
     tache.add_done_callback(_INDEXATIONS_DE_FICHES.discard)
+
+
+async def arreter_les_indexations_de_fiches() -> None:
+    """B-1222 : avant une purge ou une restauration, les indexations de fond
+    en cours sont arrêtées et attendues ; sinon elles réécrivaient dans Qdrant
+    des fiches que la purge venait d'effacer."""
+    taches = list(_INDEXATIONS_DE_FICHES)
+    for tache in taches:
+        tache.cancel()
+    if taches:
+        await asyncio.gather(*taches, return_exceptions=True)
 
 
 async def _embed_contact(contact: Contact) -> None:

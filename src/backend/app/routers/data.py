@@ -661,6 +661,11 @@ async def delete_all_data(
     # servaient encore au chat jusqu'au redémarrage.
     _oublier_les_cles_en_memoire()
 
+    # B-1222 : aucune indexation de fond ne doit réécrire après la purge.
+    from app.routers.memory import arreter_les_indexations_de_fiches
+
+    await arreter_les_indexations_de_fiches()
+
     # Purger Qdrant (embeddings vectoriels)
     try:
         from app.services.qdrant import get_qdrant_service
@@ -1470,6 +1475,11 @@ async def restore_backup(
 
     try:
         await maintenance_mode.begin()
+        # B-1222 : la restauration remplace la base et l'index ; une
+        # indexation de fond d'avant ne doit plus écrire.
+        from app.routers.memory import arreter_les_indexations_de_fiches
+
+        await arreter_les_indexations_de_fiches()
     except RuntimeError as exc:
         if decrypted_temp is not None:
             decrypted_temp.unlink(missing_ok=True)
