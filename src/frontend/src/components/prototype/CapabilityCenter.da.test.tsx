@@ -78,7 +78,8 @@ describe('Lot 3 DA : typeCapacite', () => {
     }
     // P-098 : « Action » a rejoint « Vue » (ces cartes s'ouvrent au clic).
     expect(typeCapacite(parId.attention)).toBe('Vue');
-    expect(typeCapacite(parId.office)).toBe('Vue');
+    // Audit de release 0.75 : Office pose une phrase dans le composeur (guided.open).
+    expect(typeCapacite(parId.office)).toBe('Demande relue');
     for (const id of IDS_SCENARIO) {
       expect(typeCapacite(parId[id]), id).toBe('Parcours');
     }
@@ -96,7 +97,7 @@ describe('Lot 3 DA : typeCapacite', () => {
     expect(screen.getByRole('button', { name: /^Facturer un client/ })).toHaveTextContent('Parcours');
 
     fireEvent.click(screen.getByRole('tab', { name: /Créer et produire/ }));
-    expect(screen.getByRole('button', { name: /^Word, PowerPoint et Excel/ })).toHaveTextContent('Vue');
+    expect(screen.getByRole('button', { name: /^Word, PowerPoint et Excel/ })).toHaveTextContent('Demande relue');
 
     fireEvent.click(screen.getByRole('tab', { name: /Comprendre et décider/ }));
     expect(screen.getByRole('button', { name: /^Décision/ })).toHaveTextContent('Parcours');

@@ -17,8 +17,15 @@ export const CLASSES_GROUPE_CAPACITE: Record<CapabilityGroupId, string> = {
   control: 'bg-surface-2 text-text-muted',
 };
 
+// Audit de release 0.75 : ces actions posent une phrase dans le composeur
+// (actionRegistry : insertChatPrompt), comme une destination « prompt ».
+const ACTIONS_QUI_POSENT_UNE_PHRASE = new Set(['guided.open']);
+
 export function typeCapacite(item: CapabilityItem): TypeCapacite {
   if (item.destination?.kind === 'prompt') return 'Demande relue';
+  if (item.destination?.kind === 'action' && ACTIONS_QUI_POSENT_UNE_PHRASE.has(item.destination.action)) {
+    return 'Demande relue';
+  }
   if (item.scenario) return 'Parcours';
   return 'Vue';
 }

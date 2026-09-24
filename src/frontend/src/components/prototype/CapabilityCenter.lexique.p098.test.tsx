@@ -29,3 +29,20 @@ describe('P-098 : chaque mot de badge est expliqué, à l’identique, dans la l
     for (const mot of vus) expect(legende, mot).toContain(mot);
   });
 });
+
+describe('Audit de release 0.75 : le badge dit ce que fait le clic', () => {
+  it('« Word, PowerPoint et Excel » pose une phrase dans le chat : c’est une Demande relue, pas une Vue', () => {
+    render(<CapabilityCenter onClose={vi.fn()} onChoose={vi.fn()} />);
+    const dialogue = screen.getByRole('dialog');
+    for (const onglet of within(dialogue).getAllByRole('tab')) {
+      fireEvent.click(onglet);
+      const titre = within(dialogue).queryByText('Word, PowerPoint et Excel');
+      if (!titre) continue;
+      const carte = titre.closest('button') as HTMLElement;
+      const badge = carte.querySelector('b')?.parentElement?.nextElementSibling?.textContent?.trim();
+      expect(badge).toBe('Demande relue');
+      return;
+    }
+    throw new Error('carte « Word, PowerPoint et Excel » introuvable');
+  });
+});
