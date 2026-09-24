@@ -41,6 +41,7 @@ export function TraitementsPanel() {
   return (
     <div
       className="absolute right-0 top-full z-50 mt-2 w-96 max-w-[90vw] rounded-md border border-border bg-surface p-3 shadow-lg"
+      id="traitements-panneau"
       role="dialog"
       aria-label="Travaux en cours"
     >
