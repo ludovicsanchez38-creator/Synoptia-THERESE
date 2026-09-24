@@ -120,8 +120,9 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
   const [ollamaModels, setOllamaModels] = useState<Array<{ name: string; size: number; paramSize?: string }>>([]);
   const [selectedModels, setSelectedModels] = useState<Record<string, string>>({});
   const [ollamaAvailable, setOllamaAvailable] = useState(false);
-  // B-1215 : Ollama répond mais n'a que des modèles Ollama Cloud.
-  const [seulementDesModelesCloud, setSeulementDesModelesCloud] = useState(false);
+  // B-1215, B-1229 : pourquoi le mode souverain est grisé quand Ollama répond
+  // (aucun modèle, ou seulement des modèles Ollama Cloud) ; absent sinon.
+  const [raisonSouverain, setRaisonSouverain] = useState<string | undefined>(undefined);
   const [confirmationOpen, setConfirmationOpen] = useState(false);
   const [runError, setRunError] = useState<string | null>(null);
   // B-640 : une demande de fermeture pendant la délibération attend confirmation.
@@ -145,10 +146,20 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
           .map((m) => ({ name: m.name, size: m.size ?? 0 }))
           .sort((a, b) => a.size - b.size);
         setOllamaAvailable(statut.available && modeles.length > 0);
-        setSeulementDesModelesCloud(statut.available && modeles.length === 0 && (statut.models ?? []).length > 0);
+        setRaisonSouverain(
+          !statut.available || modeles.length > 0
+            ? undefined
+            : (statut.models ?? []).length > 0
+              ? 'Aucun modèle local installé : les modèles Ollama Cloud partent en ligne'
+              : 'Aucun modèle installé dans Ollama',
+        );
         setOllamaModels(modeles);
       })
-      .catch(() => setOllamaAvailable(false));
+      .catch(() => {
+        setOllamaAvailable(false);
+        // B-1229 : l'état est inconnu, l'ancien motif ne vaut plus.
+        setRaisonSouverain(undefined);
+      });
   }, []);
 
   useEffect(() => {
@@ -584,11 +595,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                         mode={mode}
                         onChange={setMode}
                         ollamaAvailable={ollamaAvailable}
-                        raisonIndisponible={
-                          seulementDesModelesCloud
-                            ? 'Aucun modèle local installé : les modèles Ollama Cloud partent en ligne'
-                            : undefined
-                        }
+                        raisonIndisponible={raisonSouverain}
                         onRefreshOllama={checkOllama}
                       />
                     </div>

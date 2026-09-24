@@ -151,4 +151,22 @@ describe('B-1172 : Board souverain et modèles Ollama Cloud', () => {
       pragmatic: 'qwen3:8b', visionary: 'qwen3:8b',
     });
   });
+
+  it('B-1229 : Ollama sans aucun modèle dit ce qui manque', async () => {
+    apiMocks.getOllamaStatus.mockResolvedValue(sonde([]));
+    render(<BoardPanel isOpen onClose={vi.fn()} />);
+    const souverain = await screen.findByRole('button', { name: /Souverain/ });
+    await waitFor(() => expect(souverain.getAttribute('title')).toBe('Aucun modèle installé dans Ollama'));
+  });
+
+  it('B-1229 : une nouvelle vérification en échec efface l’ancien motif', async () => {
+    apiMocks.getOllamaStatus
+      .mockResolvedValueOnce(sonde([{ name: 'kimi-k2.6:cloud', size: 1000 }]))
+      .mockRejectedValue(new Error('injoignable'));
+    render(<BoardPanel isOpen onClose={vi.fn()} />);
+    const souverain = await screen.findByRole('button', { name: /Souverain/ });
+    await waitFor(() => expect(souverain.getAttribute('title')).toMatch(/Aucun modèle local/));
+    fireEvent.click(screen.getByTitle('Vérifier Ollama'));
+    await waitFor(() => expect(souverain.getAttribute('title')).toBe('Ollama non disponible'));
+  });
 });
