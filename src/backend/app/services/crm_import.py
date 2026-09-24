@@ -14,7 +14,7 @@ from datetime import UTC, datetime
 from typing import Any, Literal
 
 from app.models.entities import Contact, Deliverable, Project, generate_uuid
-from app.models.schemas import adresse_unique_valide
+from app.models.schemas import adresse_unique_valide, perimetre_normalise
 from app.services.formules_tableur import neutraliser_formule
 from openpyxl import load_workbook
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -373,6 +373,19 @@ def _sanitize_field(value: Any, field_name: str | None = None) -> Any:
     return value
 
 
+def _perimetre_ou_none(valeur: Any) -> str | None:
+    """B-1087, B-1165 : périmètre normalisé, ou None s'il est vide ou inconnu
+    (un import ne tombe pas pour une valeur de périmètre)."""
+    if not isinstance(valeur, str) or not valeur.strip():
+        return None
+    try:
+        # Variable annotée : mypy lit les imports `app.*` comme Any.
+        perimetre: str | None = perimetre_normalise(valeur)
+    except ValueError:
+        return None
+    return perimetre
+
+
 def _map_columns(row: dict, mapping: dict[str, str]) -> dict[str, Any]:
     """Map source columns to internal column names and sanitize values (SEC-017)."""
     result = {}
@@ -677,15 +690,22 @@ class CRMImportService:
                         "email",
                         "phone",
                         "address",
-                        "stage",
                         "source",
                         "notes",
                         "rgpd_base_legale",
-                        "scope",
                         "scope_id",
                     ):
                         if field_name in mapped:
                             setattr(existing, field_name, mapped[field_name])
+                    # B-1087 : étape et périmètre sont NOT NULL ; une cellule
+                    # vide écrivait None et le commit unique faisait échouer
+                    # tout l'import. Vide ou inconnu ne remplace rien ; le
+                    # périmètre suit la règle de B-1165.
+                    if mapped.get("stage"):
+                        existing.stage = mapped["stage"]
+                    perimetre = _perimetre_ou_none(mapped.get("scope"))
+                    if perimetre:
+                        existing.scope = perimetre
                     if "score" in mapped:
                         score = _parse_value(mapped["score"], "int")
                         if score is not None:
@@ -699,7 +719,6 @@ class CRMImportService:
                         "next_follow_up",
                         "rgpd_date_collecte",
                         "rgpd_date_expiration",
-                        "created_at",
                     ):
                         if field_name in mapped:
                             setattr(
@@ -707,6 +726,11 @@ class CRMImportService:
                                 field_name,
                                 _parse_value(mapped[field_name], "datetime"),
                             )
+                    # B-1121 : date de création NOT NULL ; vide ou illisible,
+                    # elle ne remplace pas celle de la fiche.
+                    cree_le = _parse_value(mapped.get("created_at"), "datetime")
+                    if cree_le is not None:
+                        existing.created_at = cree_le
                     for field_name in ("rgpd_consentement", "purge_excluded"):
                         if field_name in mapped:
                             parsed_bool = _parse_value(mapped[field_name], "bool")
@@ -714,9 +738,7 @@ class CRMImportService:
                                 setattr(existing, field_name, parsed_bool)
 
                     existing.updated_at = (
-                        _parse_value(mapped["updated_at"], "datetime")
-                        if "updated_at" in mapped
-                        else datetime.now(UTC)
+                        _parse_value(mapped.get("updated_at"), "datetime") or datetime.now(UTC)
                     )
                     self.session.add(existing)
                     result.updated += 1
@@ -764,7 +786,7 @@ class CRMImportService:
                             _parse_value(mapped.get("purge_excluded"), "bool")
                             or False
                         ),
-                        scope=mapped.get("scope") or "global",
+                        scope=_perimetre_ou_none(mapped.get("scope")) or "global",
                         scope_id=mapped.get("scope_id"),
                         created_at=created_at or datetime.now(UTC),
                         updated_at=updated_at or datetime.now(UTC),
