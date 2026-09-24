@@ -668,6 +668,10 @@ async def delete_all_data(
         qdrant = get_qdrant_service()
         if qdrant.client:
             qdrant.client.delete_collection(settings.qdrant_collection)
+            # B-1130 : le service restait initialisé sur une collection
+            # absente ; jusqu'au redémarrage, chaque ajout en mémoire se
+            # perdait en silence. La collection repart vide.
+            qdrant._ensure_collection()
     except Exception:
         logger.warning("Impossible de purger la collection Qdrant")
 
