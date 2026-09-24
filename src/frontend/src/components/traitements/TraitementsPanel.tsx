@@ -15,6 +15,7 @@ import type { Traitement } from '../../services/api';
 import { useProcessingTasksStore } from '../../stores/processingTasksStore';
 import { Spinner } from '../ui/Spinner';
 import { Alerte, Button, EtatVide } from '../ui';
+import { heureDuServeur } from '../../lib/heureDuServeur';
 
 const LIBELLES_ETAT: Record<Traitement['state'], string> = {
   queued: 'En file',
@@ -66,15 +67,20 @@ export function TraitementsPanel() {
         <EtatVide titre="Aucun travail récent." className="py-6" />
       )}
 
-      <ul className="max-h-80 space-y-2 overflow-y-auto">
+      {/* P-097 : une frise en lecture seule. Les étapes passées n'ont plus
+          l'apparence d'une carte-bouton ; chacune dit son état, son début et
+          sa fin. Seul un travail en cours garde un geste (« Arrêter »). */}
+      <ol aria-label="Frise des travaux récents" className="max-h-80 overflow-y-auto border-l border-border pl-3">
         {traitements.map((t) => {
           const enCours = t.state === 'running' || t.state === 'queued';
           const arretDemande =
             t.state === 'cancel_requested' || arretsDemandes.has(t.id);
+          const debut = heureDuServeur(t.started_at ?? t.created_at);
+          const fin = heureDuServeur(t.finished_at);
           return (
             <li
               key={t.id}
-              className="rounded-sm border border-border/60 bg-surface-2 p-2"
+              className="relative py-1.5 before:absolute before:-left-[17px] before:top-3 before:h-2 before:w-2 before:rounded-full before:bg-border"
               data-testid="traitement"
             >
               <div className="flex items-center gap-2">
@@ -110,13 +116,20 @@ export function TraitementsPanel() {
                   ? ` (${Math.round(t.progress * 100)} %)`
                   : ''}
               </p>
+              {(debut || fin) && (
+                <p className="mt-0.5 text-xs tabular-nums text-text-muted">
+                  {debut ? `Début ${debut}` : ''}
+                  {debut && fin ? ' · ' : ''}
+                  {fin ? `Fin ${fin}` : ''}
+                </p>
+              )}
               {t.error && (
                 <p className="mt-0.5 truncate text-xs text-error">{t.error}</p>
               )}
             </li>
           );
         })}
-      </ul>
+      </ol>
     </div>
   );
 }
