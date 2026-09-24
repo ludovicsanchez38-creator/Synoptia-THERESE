@@ -107,6 +107,7 @@ class EntityExtractor:
         user_message: str,
         existing_contacts: list[str] | None = None,
         existing_projects: list[str] | None = None,
+        llm: Any | None = None,
     ) -> ExtractionResult:
         if len(user_message.strip()) < 10:
             return ExtractionResult(contacts=[], projects=[])
@@ -120,7 +121,8 @@ class EntityExtractor:
             return ExtractionResult(contacts=[], projects=[])
 
         try:
-            llm = self._get_llm()
+            # B-1139 : le service de la conversation quand l'appelant le donne.
+            llm = llm or self._get_llm()
             prompt = f"Message utilisateur a analyser:\n\n{user_message}"
             messages = [Message(role="user", content=prompt)]
             context = ContextWindow(

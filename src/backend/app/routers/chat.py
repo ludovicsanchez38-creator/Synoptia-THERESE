@@ -940,6 +940,7 @@ async def _extract_entities_background(
     user_message: str,
     conversation_id: str,
     message_id: str,
+    llm_service: LLMService | None = None,
 ) -> None:
     """
     Extrait les entités en arrière-plan (PERF-001).
@@ -952,15 +953,29 @@ async def _extract_entities_background(
     """
     try:
         from app.models.database import get_session_context
+        from app.models.entities import Preference
 
         async with get_session_context() as session:
+            # B-1154 : l'interrupteur « Extraction automatique » (Paramètres,
+            # Services) n'était lu par aucun code : coupé, il laissait partir
+            # chaque message au modèle. Absent, il vaut « allumé » (défaut de
+            # l'écran).
+            reglage = (
+                await session.execute(select(Preference).where(Preference.key == "auto_extract_entities"))
+            ).scalar_one_or_none()
+            if reglage is not None and (reglage.value or "").strip().lower() == "false":
+                return
             extractor = get_entity_extractor()
             contact_names, project_names = await _get_existing_entity_names(session)
 
+        # B-1139 : le service qui vient de répondre, pas une relecture du
+        # service global : une conversation locale reste locale, et un modèle
+        # local indisponible saute l'extraction (aucun repli en ligne, B-1071).
         extraction_result = await extractor.extract_entities(
             user_message=user_message,
             existing_contacts=contact_names,
             existing_projects=project_names,
+            llm=llm_service,
         )
 
         if extraction_result.contacts or extraction_result.projects:
@@ -2887,6 +2902,7 @@ async def _do_stream_response(
             user_message=user_message,
             conversation_id=conversation_id,
             message_id=assistant_message.id,
+            llm_service=llm_service,
         )
     )
 
