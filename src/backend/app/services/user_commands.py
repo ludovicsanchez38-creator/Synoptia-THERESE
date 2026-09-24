@@ -182,6 +182,9 @@ class UserCommandsService:
             content=content,
         )
 
+        # B-1223 : le dossier a pu disparaître depuis la naissance du service
+        # (restauration dont le retour arrière a échoué, ménage manuel).
+        filepath.parent.mkdir(parents=True, exist_ok=True)
         filepath.write_text(cmd.to_markdown(), encoding="utf-8")
         logger.info(f"Created user command: {name}")
         return cmd
