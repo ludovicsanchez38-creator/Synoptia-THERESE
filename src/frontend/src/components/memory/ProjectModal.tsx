@@ -6,6 +6,7 @@ import { modalVariants, overlayVariants } from '../../lib/animations';
 import * as api from '../../services/api';
 import { Z_LAYER } from '../../styles/z-layers';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
+import { useRevelerALApparition } from '../../hooks/useRevelerALApparition';
 import { ProjectSyncSection } from './ProjectSyncSection';
 import { Spinner } from '../ui/Spinner';
 import { Alerte } from '../ui/Alerte';
@@ -60,6 +61,9 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  // B-1030 : le message et la confirmation vivent au bas du contenu défilant.
+  const erreurRef = useRevelerALApparition(error);
+  const confirmationRef = useRevelerALApparition(showDeleteConfirm, 'premier-bouton');
   // Un fichier joint ne part plus au premier clic : on retient lequel est
   // visé, et l'appel réseau n'existe qu'au clic de confirmation. Bandeau EN
   // LIGNE, comme pour la suppression du projet juste en dessous : superposer
@@ -517,7 +521,9 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
 
               {/* Error */}
               {error && (
-                <Alerte icone={<AlertCircle className="w-4 h-4" />}>{maskText(error)}</Alerte>
+                <div ref={erreurRef}>
+                  <Alerte icone={<AlertCircle className="w-4 h-4" />}>{maskText(error)}</Alerte>
+                </div>
               )}
 
               {/* Suppression d'un fichier joint : confirmation en ligne */}
@@ -551,7 +557,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
 
               {/* Delete confirmation */}
               {showDeleteConfirm && (
-                <div className="flex items-center gap-2 px-3 py-3 bg-error/10 border border-error/20 rounded-md">
+                <div ref={confirmationRef} className="flex items-center gap-2 px-3 py-3 bg-error/10 border border-error/20 rounded-md">
                   <AlertCircle className="w-4 h-4 text-error shrink-0" />
                   <div className="flex-1">
                     <p className="text-sm text-error font-medium">Supprimer ce projet ?</p>
