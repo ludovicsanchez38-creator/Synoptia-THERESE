@@ -1128,7 +1128,8 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
                 if event.type == "text" and event.content:
                     content_parts.append(event.content)
                 elif event.type == "error":
-                    errors.append(event.content or "Unknown error")
+                    # B-1066 : ce texte atteint l'écran (ErreurDuModele) : jamais d'anglais.
+                    errors.append(event.content or "Le fournisseur a signalé une erreur sans la décrire.")
                 elif event.type == "done" and usage_sink is not None:
                     if event.input_tokens is not None:
                         usage_sink["input_tokens"] = event.input_tokens

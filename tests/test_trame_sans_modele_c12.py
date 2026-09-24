@@ -81,3 +81,45 @@ async def test_trame_sans_modele_joignable_503_actionnable_sans_trace(client: As
 
     detail = await client.get(f"/api/documents/{document_id}")
     assert detail.json()["sections"] == []
+
+
+def _flux_erreur_vide(*_args, **_kwargs):
+    async def flux():
+        yield StreamEvent(type="error", content="")
+
+    return flux()
+
+
+@pytest.mark.asyncio
+async def test_b1066_une_erreur_vide_du_fournisseur_se_dit_en_francais():
+    service = LLMService.__new__(LLMService)
+    with (
+        patch.object(LLMService, "stream_response_with_tools", _flux_erreur_vide),
+        patch.object(LLMService, "_resolve_with_circuit_breaker", lambda self: self.config),
+        patch.object(LLMService, "_get_system_prompt_with_identity", lambda self: "système"),
+        patch.object(LLMService, "prepare_context", lambda self, **kw: {}),
+    ):
+        service.config = type("Cfg", (), {"provider": type("P", (), {"value": "ollama"})(), "max_tokens": 1000})()
+        with pytest.raises(ErreurPourEcran) as info:
+            await service.generate_content(prompt="Trame")
+    assert "Unknown" not in str(info.value)
+    assert str(info.value), "message vide"
+
+
+@pytest.mark.asyncio
+async def test_b1065_le_travail_de_trame_en_echec_ne_garde_pas_le_texte_technique(client: AsyncClient):
+    from app.services import traitements
+
+    reponse = await client.post("/api/documents", json={"title": "Proposition", "brief": "Brief"})
+    document_id = reponse.json()["id"]
+
+    def flux_technique(*_a, **_k):
+        raise RuntimeError("Traceback interne : sqlite3.OperationalError at /Users/ludo/secret.db")
+
+    with patch.object(LLMService, "generate_content", side_effect=flux_technique):
+        reponse = await client.post(f"/api/documents/{document_id}/outline")
+    assert reponse.status_code == 500
+    travaux = await traitements.lister(limit=5)
+    echecs = [t for t in travaux if t["type"] == "document_outline" and t["state"] == "failed"]
+    assert echecs, travaux
+    assert "/Users/" not in (echecs[0]["error"] or "") and "Traceback" not in (echecs[0]["error"] or ""), echecs[0]

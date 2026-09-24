@@ -727,7 +727,8 @@ async def _generer_la_trame(
         await _terminer_temoin(handle, EtatTache.FAILED, error="Sections rédigées pendant la génération")
         raise
     except Exception as exc:
-        await _terminer_temoin(handle, EtatTache.FAILED, error=str(exc)[:200])
+        # B-1065 : le panneau « Travaux » affiche ce texte ; jamais la trace technique.
+        await _terminer_temoin(handle, EtatTache.FAILED, error=message_pour_ecran(exc, ou="pendant la génération de la trame")[:200])
         raise
 
 
