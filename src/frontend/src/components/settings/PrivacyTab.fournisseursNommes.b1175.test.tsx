@@ -83,4 +83,19 @@ describe('B-1175 : Confidentialité nomme l’accord Ollama Cloud', () => {
     await screen.findAllByRole('button', { name: 'Révoquer' });
     expect(ligneDAccord()).toContain('Board (plusieurs fournisseurs IA)');
   });
+
+  it('B-1216 : un accord de génération d’images nomme le moteur', async () => {
+    grantCloudConsent('images', 'fal-flux-pro', ['prompt'], '2026-09-24T10:00:00.000Z');
+    render(<PrivacyTab />);
+    await screen.findAllByRole('button', { name: 'Révoquer' });
+    const ligne = ligneDAccord();
+    expect({ nomme: ligne.includes('Fal Flux Pro'), cleBrute: ligne.includes('fal-flux-pro') })
+      .toEqual({ nomme: true, cleBrute: false });
+  });
+
+  it('B-1217 : l’encadré ne promet pas qu’un modèle Ollama Cloud reste local', async () => {
+    render(<PrivacyTab />);
+    const encadre = (await screen.findByText('Ce qui peut sortir de ta machine')).parentElement?.textContent ?? '';
+    expect(encadre).toContain('Ollama Cloud');
+  });
 });

@@ -281,7 +281,8 @@ export function PrivacyTab() {
               <li>• <strong>Ce que tu as branché</strong> : le fournisseur du modèle si tu
                 choisis un modèle cloud, ta messagerie, ton agenda, tes serveurs MCP, la
                 génération d'images, la dictée cloud. Avec un modèle local (Ollama), le
-                contenu de tes conversations ne part chez aucun fournisseur de modèle.</li>
+                contenu de tes conversations ne part chez aucun fournisseur de modèle ;
+                un modèle Ollama Cloud (nom en « :cloud »), lui, part chez ollama.com.</li>
               <li>• <strong>La recherche web</strong> : ta requête part chez le moteur
                 (DuckDuckGo par défaut), y compris en modèle local. Dans le chat, une
                 carte te la demande avant de partir. Le Board, la recherche approfondie
