@@ -238,7 +238,19 @@ class SwarmOrchestrator:
             )
             return
 
-        worktree_git = GitService(worktree_path)
+        # B-1153 : git de la mission durci (vrai dossier git et identité relus
+        # avant que l'agent n'agisse ; ni hooks, ni configuration globale).
+        try:
+            worktree_git = await GitService.pour_mission(worktree_path)
+        except GitCommitEchoue as exc:
+            await self.git.remove_worktree(worktree_path)
+            yield AgentStreamChunk(
+                type="error",
+                agent="zezette",
+                content=f"Impossible de préparer l’espace de travail isolé : {exc}",
+                task_id=task_id,
+            )
+            return
         keep_branch = False
         files_changed: list[dict[str, str]] = []
         diff_stat = ""

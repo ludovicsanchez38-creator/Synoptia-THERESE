@@ -10,6 +10,7 @@ import logging
 import os
 import re
 import signal
+from dataclasses import dataclass
 from pathlib import Path
 
 from app.services.sous_processus import environnement_outils_systeme
@@ -62,23 +63,74 @@ def _cause_de_commit_lisible(sortie: str) -> str:
     return "git a refusé le commit (voir le journal)"
 
 
+@dataclass(frozen=True)
+class ConfigMission:
+    """B-1153, garantie 6 : ce que git de la mission relit au départ, avant que
+    l'agent n'ait touché au worktree."""
+
+    git_dir: str
+    nom: str | None
+    email: str | None
+
+
 class GitService:
     """Service git pour les opérations sur le repo source."""
 
-    def __init__(self, repo_path: str | Path) -> None:
+    def __init__(self, repo_path: str | Path, mission: ConfigMission | None = None) -> None:
         self.repo_path = Path(repo_path)
+        self._mission = mission
+
+    @classmethod
+    async def pour_mission(cls, worktree: str | Path) -> "GitService":
+        """B-1153 : git durci pour le worktree d'une mission d'agent.
+
+        Relit le vrai dossier git et l'identité AVANT que l'agent n'agisse,
+        avec l'environnement complet (l'identité vit souvent dans
+        ~/.gitconfig). Ensuite, chaque commande ignore le fichier `.git` du
+        worktree (réinscriptible par l'agent), la configuration globale et
+        système (pilotes `filter` et `textconv` qu'un `.gitattributes` de
+        l'agent déclencherait), les hooks (dont `pre-commit`, qui lit une
+        configuration du worktree) et le moniteur de fichiers.
+        """
+        simple = cls(worktree)
+        code, git_dir, err = await simple._run("rev-parse", "--absolute-git-dir")
+        if code != 0 or not git_dir:
+            raise GitCommitEchoue(f"espace de travail isolé illisible par git : {(err or git_dir).strip()}")
+        _, nom, _ = await simple._run("config", "user.name")
+        _, email, _ = await simple._run("config", "user.email")
+        return cls(worktree, ConfigMission(git_dir=git_dir, nom=nom or None, email=email or None))
+
+    def _commande(self, args: tuple[str, ...]) -> tuple[list[str], dict[str, str], str | None]:
+        if self._mission is None:
+            return ["git", "-C", str(self.repo_path), *args], environnement_outils_systeme(), None  # B-949
+        mission = self._mission
+        options = ["-c", "core.hooksPath=/dev/null", "-c", "core.fsmonitor=false"]
+        if mission.nom:
+            options += ["-c", f"user.name={mission.nom}"]
+        if mission.email:
+            options += ["-c", f"user.email={mission.email}"]
+        if args and args[0] == "diff":
+            args = ("diff", "--no-textconv", "--no-ext-diff", *args[1:])
+        env = environnement_outils_systeme(
+            GIT_DIR=mission.git_dir,
+            GIT_WORK_TREE=str(self.repo_path),
+            GIT_CONFIG_GLOBAL=os.devnull,
+            GIT_CONFIG_NOSYSTEM="1",
+        )
+        return ["git", *options, *args], env, str(self.repo_path)
 
     async def _run(self, *args: str, timeout: float = 30.0) -> tuple[int, str, str]:
         """Exécute une commande git et retourne (returncode, stdout, stderr)."""
-        cmd = ["git", "-C", str(self.repo_path), *args]
+        cmd, env, cwd = self._commande(args)
         logger.debug(f"Git: {' '.join(cmd)}")
         proc: asyncio.subprocess.Process | None = None
         try:
             proc = await asyncio.create_subprocess_exec(
                 *cmd,
+                cwd=cwd,
                 stdout=asyncio.subprocess.PIPE,
                 stderr=asyncio.subprocess.PIPE,
-                env=environnement_outils_systeme(),  # B-949
+                env=env,
                 start_new_session=os.name == "posix",
             )
             stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
