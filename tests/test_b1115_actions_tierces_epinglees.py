@@ -50,10 +50,20 @@ def test_rust_toolchain_nomme_sa_chaine(workflow: Path):
     assert "toolchain: stable" in bloc, bloc
 
 
-def test_ci_yml_ne_garde_que_la_lecture_du_depot():
-    """B-1183 : appelée par la release, la CI héritait de `contents: write`
-    (journal du run 36034697390) alors qu'aucun de ses travaux n'écrit dans le
-    dépôt. Le jeton est ramené à la lecture."""
-    texte = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
+def _appeles_par_la_release() -> list[str]:
+    return re.findall(r"uses: \./(\.github/workflows/[\w.-]+\.yml)", RELEASE.read_text(encoding="utf-8"))
+
+
+def test_la_release_appelle_des_workflows_connus():
+    assert set(_appeles_par_la_release()) >= {".github/workflows/ci.yml", ".github/workflows/tests-e2e.yml"}
+
+
+@pytest.mark.parametrize("chemin", [".github/workflows/ci.yml", ".github/workflows/tests-e2e.yml"])
+def test_un_workflow_appele_par_la_release_ne_garde_que_la_lecture(chemin: str):
+    """B-1183, puis B-1210 pour tests-e2e.yml : appelé par la release, un
+    workflow héritait de `contents: write` (journal du run 36034697390) alors
+    qu'aucun de ses travaux n'écrit dans le dépôt. Le jeton est ramené à la
+    lecture."""
+    texte = Path(chemin).read_text(encoding="utf-8")
     entete = texte[: texte.index("\njobs:")]
     assert "\npermissions:\n  contents: read" in entete, entete

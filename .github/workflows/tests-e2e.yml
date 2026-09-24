@@ -16,6 +16,11 @@ on:
   # B-158 : appelé par release.yml comme porte de release.
   workflow_call:
 
+# B-1210 : appelé par la release, ce workflow héritait de `contents: write`.
+# Aucun travail n'écrit dans le dépôt : lecture seule.
+permissions:
+  contents: read
+
 jobs:
   e2e:
     name: Parcours de bout en bout
