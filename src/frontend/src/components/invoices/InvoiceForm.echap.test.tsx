@@ -12,7 +12,7 @@
  * Le commentaire d'autorité de la coque le dit déjà : « Une surface nouvelle
  * doit s'inscrire dans l'une des deux — il n'y a pas de troisième endroit. »
  */
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { InvoiceForm } from './InvoiceForm';
@@ -82,14 +82,18 @@ describe('B-228 : Échap ne ferme que la modale de facture', () => {
     await screen.findByRole('dialog', { name: /Confirmer la conversion/i });
 
     // Le dessus de la pile est le dialogue de conversion, pas le formulaire.
-    expect(runTopEscapeHandler()).toBe(true);
-    await waitFor(() =>
-      expect(screen.queryByRole('dialog', { name: /Confirmer la conversion/i })).toBeNull(),
-    );
+    // B-835 : act() vide aussi les effets passifs, dont le retrait du
+    // gestionnaire du dialogue. Sans lui, sous charge, le second appui
+    // tombait encore sur ce gestionnaire périmé (DOM déjà nettoyé).
+    let pris = false;
+    act(() => { pris = runTopEscapeHandler(); });
+    expect(pris).toBe(true);
+    expect(screen.queryByRole('dialog', { name: /Confirmer la conversion/i })).toBeNull();
     expect(fermer).not.toHaveBeenCalled();
 
     // Et le formulaire reste joignable au coup suivant.
-    expect(runTopEscapeHandler()).toBe(true);
+    act(() => { pris = runTopEscapeHandler(); });
+    expect(pris).toBe(true);
     expect(fermer).toHaveBeenCalledTimes(1);
   });
 });
