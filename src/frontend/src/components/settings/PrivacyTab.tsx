@@ -28,6 +28,7 @@ import {
   type CloudPurpose,
 } from '../../lib/consent';
 import { Spinner } from '../ui/Spinner';
+import { libelleDuFournisseur } from '../../lib/libellesFournisseurs';
 
 // Types de données stockées
 const DATA_TYPES = [
@@ -438,7 +439,7 @@ export function PrivacyTab() {
                   <p className="text-xs text-text-muted">
                     {grant.provider.toLowerCase() === 'board'
                       ? 'Board (plusieurs fournisseurs IA)'
-                      : grant.provider}{' '}
+                      : libelleDuFournisseur(grant.provider)}{' '}
                     - accordé le {new Date(grant.timestamp).toLocaleDateString('fr-FR')}
                   </p>
                 </div>
