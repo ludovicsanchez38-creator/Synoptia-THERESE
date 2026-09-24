@@ -39,7 +39,7 @@ import type { StreamChunk } from '../../services/api/chat';
 import { useAutosave } from '../../hooks/useAutosave';
 import { cn } from '../../lib/utils';
 import { libelleDuFournisseur } from '../../lib/libellesFournisseurs';
-import { fournisseurDAccord } from '../../lib/ollamaCloud';
+import { estModeleOllamaCloud, FOURNISSEUR_OLLAMA_CLOUD, fournisseurDAccord } from '../../lib/ollamaCloud';
 import { PLACEHOLDER_COMPOSEUR } from '../../lib/etabli';
 import { ACCEPT_FICHIERS, FILTRES_SELECTEUR } from '../../lib/formatsIndexables';
 import {
@@ -186,13 +186,21 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   const modelChecking = modelAvailable === null;
   const modelUnavailable = modelAvailable === false;
   const isDisabled = isOffline || hasQueuedPrompt || modelChecking || modelUnavailable;
+  // B-1174 : même règle que la bulle (B-1156) : Ollama Cloud part chez ollama.com.
+  const ollamaCloud = currentProvider === 'ollama' && !!currentModel && estModeleOllamaCloud(currentModel);
+  const traitementLocal = currentProvider === 'ollama' && !ollamaCloud;
 
   const loadLLMConfig = useCallback(() => {
     getLLMConfig()
       .then((cfg) => {
         setCurrentModel(cfg.model);
         setCurrentProvider(cfg.provider);
-        useChatStore.getState().setFournisseurCourant(cfg.provider ?? null);
+        // B-1174 : un modèle Ollama Cloud ne compte pas comme local pour le fil.
+        useChatStore.getState().setFournisseurCourant(
+          cfg.provider === 'ollama' && cfg.model && estModeleOllamaCloud(cfg.model)
+            ? FOURNISSEUR_OLLAMA_CLOUD
+            : cfg.provider ?? null,
+        );
         setAvailableModels(cfg.available_models || []);
         setModelAvailable(cfg.available !== false);
       })
@@ -1343,17 +1351,19 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
             {currentProvider && (
               <span
                 className={`text-xs px-1.5 py-0.5 rounded-sm ${
-                  currentProvider === 'ollama'
+                  traitementLocal
                     ? 'bg-[var(--color-success-tint)] text-success'
                     : 'bg-[var(--color-warning-tint)] text-warning'
                 }`}
                 title={
-                  currentProvider === 'ollama'
+                  traitementLocal
                     ? 'Modèle local (Ollama) : le traitement reste sur ta machine'
-                    : 'Modèle cloud : le traitement sort vers le fournisseur'
+                    : ollamaCloud
+                      ? 'Modèle Ollama Cloud : le traitement part chez ollama.com'
+                      : 'Modèle cloud : le traitement sort vers le fournisseur'
                 }
               >
-                {currentProvider === 'ollama' ? 'local' : 'cloud'}
+                {traitementLocal ? 'local' : 'cloud'}
               </span>
             )}
           </div>
