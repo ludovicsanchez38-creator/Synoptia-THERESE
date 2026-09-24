@@ -1,7 +1,14 @@
 # B-1153 : confiner les commandes des agents (design V5)
 
-Statut : **V5, après quatre revues adverses** (V1 à V4 : NO-GO ; rapports
-hors dépôt, scratchpad de la session du 24/09).
+Statut : **V5, GO de la cinquième revue adverse (24/09), implémentée** :
+confinement `app/services/agents/bac_a_sable.py` et `run_command` (5e26794e),
+git de mission durci (2cf80569), travail CI macOS dédié (8fb8cf24). Les P2
+de la revue V5 sont traités au code : environnement construit en liste
+blanche, `(deny job-creation)`, dossiers `fr.synoptia.therese` refusés,
+`DONNEES` résolu depuis `settings.data_dir`. Reste à faire valider par Ludo :
+R1 (la commande lit le dossier personnel hors liste et peut le recopier dans
+sa sortie, qui revient au modèle). Revues V1 à V4 : NO-GO ; rapports hors
+dépôt, scratchpad de la session du 24/09.
 
 **Décision de la V5 : macOS seulement en V1.** La revue V4 a montré que, sous
 Linux, Landlock tel que conçu ne confine que l'écriture : la clé maîtresse
