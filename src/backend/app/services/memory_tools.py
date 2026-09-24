@@ -895,6 +895,13 @@ async def execute_read_contact(
             ensure_ascii=False,
         )
 
+    # B-1110 : sans périmètre (conversation absente ou introuvable),
+    # `_cloison_contacts` n'appliquait aucun filtre et le modèle lisait les
+    # contacts de tous les dossiers et des autres conversations, alors que
+    # les fichiers ferment dans le même cas. L'outil ferme aussi : carnet
+    # général seul.
+    if scope is None:
+        scope = "global"
     # BUG-146 : recherche insensible aux ACCENTS (« jerome » doit trouver
     # « Jérôme ») - la comparaison lower() seule ne suffisait pas.
     q = _fold(query)

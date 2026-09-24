@@ -106,8 +106,12 @@ class TestLesOutilsMemoireRespectentLePerimetre:
         assert "0622222222" in resultat
 
     @pytest.mark.asyncio
-    async def test_sans_perimetre_le_comportement_ne_change_pas(self, db_session):
-        """Les appels qui ne fournissent pas de périmètre ne sont pas cloisonnés."""
+    async def test_sans_perimetre_read_contact_ferme_comme_les_fichiers(self, db_session):
+        """B-1110 (cycle 13) : la règle de la 0.43 disait « sans périmètre, pas
+        de cloison ». Depuis le chat, un périmètre vide veut dire conversation
+        absente ou introuvable ; `read_contact` rendait alors les contacts de
+        tous les dossiers, alors que les fichiers ferment. L'outil ferme aussi :
+        carnet général seul."""
         from app.models.entities import Contact
         from app.services.memory_tools import execute_memory_tool
 
@@ -121,7 +125,7 @@ class TestLesOutilsMemoireRespectentLePerimetre:
 
         resultat = await execute_memory_tool("read_contact", {"query": "Denis"}, db_session)
 
-        assert "0633333333" in resultat
+        assert "0633333333" not in resultat
 
 
 class TestLeChatTransmetLePerimetreAuxOutils:
