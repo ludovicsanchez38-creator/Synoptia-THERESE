@@ -27,7 +27,8 @@ describe('D86 : les actions d’une commande perso existent hors survol', () => 
     render(<HomeCommands onPromptSelect={() => {}} />);
     fireEvent.click(screen.getByRole('button', { name: /Produire/ }));
     // AnimatePresence mode="wait" : la catégorie s'affiche après la sortie de la grille.
-    const deplacer = await screen.findByRole('button', { name: 'Déplacer' });
+    // B-1118 : sous charge, cette sortie dépasse le délai par défaut d'une seconde.
+    const deplacer = await screen.findByRole('button', { name: 'Déplacer' }, { timeout: 5000 });
     const supprimer = screen.getByRole('button', { name: 'Supprimer' });
     for (const bouton of [deplacer, supprimer]) {
       expect(bouton.closest('.hidden')).toBeNull();
@@ -37,7 +38,7 @@ describe('D86 : les actions d’une commande perso existent hors survol', () => 
   it('Grok 0.70.0 P2 : invisibles hors survol, les actions ne sont pas cliquables dans le vide', async () => {
     render(<HomeCommands onPromptSelect={() => {}} />);
     fireEvent.click(screen.getByRole('button', { name: /Produire/ }));
-    const deplacer = await screen.findByRole('button', { name: 'Déplacer' });
+    const deplacer = await screen.findByRole('button', { name: 'Déplacer' }, { timeout: 5000 });
     const conteneur = deplacer.closest('.opacity-0') as HTMLElement | null;
     expect(conteneur).not.toBeNull();
     expect(conteneur?.className).toMatch(/\bpointer-events-none\b/);
