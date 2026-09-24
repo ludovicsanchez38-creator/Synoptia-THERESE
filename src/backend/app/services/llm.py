@@ -1155,7 +1155,12 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
             # B-1033 : le message du fournisseur est déjà écrit pour l'écran ;
             # les marqueurs internes (« __ollama_… ») n'y vont jamais.
             lisibles = [e for e in errors if not e.startswith("__")]
-            raise ErreurDuModele(lisibles[0] if lisibles else "Le modèle n'a produit aucune réponse.")
+            # B-1147 : le code nu « API error: NNN » ne va jamais à l'écran.
+            from app.services.providers.base import message_fournisseur_pour_ecran
+
+            raise ErreurDuModele(
+                message_fournisseur_pour_ecran(lisibles[0]) if lisibles else "Le modèle n'a produit aucune réponse."
+            )
 
         cb.record_success(provider_name)
         return "".join(content_parts)

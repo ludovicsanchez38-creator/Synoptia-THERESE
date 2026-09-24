@@ -123,3 +123,45 @@ async def test_b1065_le_travail_de_trame_en_echec_ne_garde_pas_le_texte_techniqu
     echecs = [t for t in travaux if t["type"] == "document_outline" and t["state"] == "failed"]
     assert echecs, travaux
     assert "/Users/" not in (echecs[0]["error"] or "") and "Traceback" not in (echecs[0]["error"] or ""), echecs[0]
+
+
+# --- Audit de release 0.75 (avocat du diable) : « API error: 529 » à l'écran ---
+
+
+def _flux_code_nu(code: int):
+    def flux_factory(*_args, **_kwargs):
+        async def flux():
+            yield StreamEvent(type="error", content=f"API error: {code}")
+
+        return flux()
+
+    return flux_factory
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("code", [529, 503, 401])
+async def test_un_code_http_nu_n_arrive_pas_en_anglais_a_l_ecran(code: int):
+    """B-1147 : les 5xx (et tout code chez Gemini) gardent la forme « API error:
+    NNN » pour le disjoncteur ; generate_content la portait telle quelle à la
+    trame (503) et au panneau Travaux. L'écran reçoit une phrase française."""
+    service = LLMService.__new__(LLMService)
+    with (
+        patch.object(LLMService, "stream_response_with_tools", _flux_code_nu(code)),
+        patch.object(LLMService, "_resolve_with_circuit_breaker", lambda self: self.config),
+        patch.object(LLMService, "_get_system_prompt_with_identity", lambda self: "système"),
+        patch.object(LLMService, "prepare_context", lambda self, **kw: {}),
+    ):
+        service.config = type(
+            "Cfg", (), {"provider": type("P", (), {"value": "anthropic"})(), "max_tokens": 1000}
+        )()
+        with pytest.raises(ErreurPourEcran) as info:
+            await service.generate_content(prompt="Trame")
+    ecran = message_pour_ecran(info.value)
+    assert "API error" not in ecran, ecran
+    assert str(code) in ecran or code == 401, ecran
+
+
+def test_le_disjoncteur_compte_toujours_la_forme_brute():
+    from app.services.llm import _is_provider_outage
+
+    assert _is_provider_outage("API error: 529")

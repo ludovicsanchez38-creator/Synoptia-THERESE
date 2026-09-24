@@ -7,6 +7,7 @@ Sprint 2 - PERF-2.1: Extracted from monolithic llm.py
 
 import json
 import logging
+import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from enum import Enum
@@ -379,3 +380,24 @@ class BaseProvider(ABC):
             except json.JSONDecodeError:
                 return None
         return None
+
+
+_CODE_HTTP_NU = re.compile(r"^\s*API error:\s*(\d{3})\s*$")
+
+
+def message_fournisseur_pour_ecran(texte: str) -> str:
+    """B-1147 : le code nu « API error: NNN » est gardé dans les événements pour
+    que le disjoncteur (`_is_provider_outage`) compte les pannes. Il ne doit
+    jamais atteindre l'écran : on le traduit au moment de lever l'erreur, une
+    fois la panne comptée. Tout autre texte passe tel quel."""
+    correspondance = _CODE_HTTP_NU.match(texte or "")
+    if not correspondance:
+        return texte
+    code = int(correspondance.group(1))
+    if code >= 500:
+        return (
+            f"Le service d'IA est indisponible pour l'instant (erreur {code}). "
+            "Réessaie dans un moment ou choisis un autre modèle."
+        )
+    return message_erreur_http(None, code)
+
