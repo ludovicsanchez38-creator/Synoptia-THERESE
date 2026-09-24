@@ -21,7 +21,7 @@ EXPORT = {
     "notes": "Rappeler en octobre",
     "tags": ["client", "bière"],
     "extra_data": {"siret": "12345678900011"},
-    "stage": "client",
+    "stage": "signature",
     "score": 82,
     "source": "salon",
     "last_interaction": "2026-09-01T10:00:00",
@@ -48,7 +48,7 @@ async def test_la_restauration_rend_tous_les_champs_exportes(client, db_session)
     assert fiche.purge_excluded is True
     assert fiche.rgpd_consentement is True
     assert (fiche.scope, fiche.scope_id) == ("project", "projet-grange")
-    assert (fiche.stage, fiche.score, fiche.source) == ("client", 82, "salon")
+    assert (fiche.stage, fiche.score, fiche.source) == ("signature", 82, "salon")
     assert fiche.address == "3 rue des Lilas, Manosque"
     assert fiche.rgpd_base_legale == "contrat"
     assert fiche.rgpd_date_expiration.strftime("%Y-%m-%d") == "2028-01-15"

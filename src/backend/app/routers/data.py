@@ -13,7 +13,7 @@ import logging
 import re
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, get_args
 
 from app.config import settings
 from app.models.database import close_db, get_session
@@ -52,7 +52,7 @@ from app.models.entities import (
 from app.models.entities_agents import AgentMessage, AgentSession, AgentTask, CodeChange
 from app.models.entities_sync import ProjectSyncEntry, ProjectSyncRoot, SyncOperation, SyncPlan
 from app.models.processing import ProcessingTask
-from app.models.schemas import perimetre_normalise
+from app.models.schemas import EtapePipeline, perimetre_normalise
 from app.services.audit import (
     ActivityLog,
     AuditAction,
@@ -942,6 +942,7 @@ def _checkpoint_db() -> bool:
 # restauration vide ceux que l'archive COUVRE (dit par son manifeste) avant
 # d'extraire. Une archive d'avant ce correctif n'a pas de manifeste : sa
 # restauration ne touche pas à ces éléments, qu'elle ne contient pas.
+ROLES_IMPORTABLES = frozenset({"user", "assistant"})
 ELEMENTS_COUVERTS = ("projects", "invoices", "commands", "THERESE.md")
 MANIFESTE_SAUVEGARDE = ".manifeste-sauvegarde.json"
 
@@ -1703,6 +1704,10 @@ async def import_conversations(
 
         # Import messages
         for msg_data in conv_data.get("messages", []):
+            # B-1182 : le moteur ne stocke que des tours user et assistant ; un
+            # autre rôle (dont « system ») serait rejoué au modèle tel quel.
+            if msg_data.get("role", "user") not in ROLES_IMPORTABLES:
+                continue
             message_kwargs: dict[str, Any] = {
                 "conversation_id": conversation.id,
                 "role": msg_data.get("role", "user"),
@@ -1767,6 +1772,11 @@ def _score_restaure(valeur: Any) -> int:
     return 50
 
 
+def _etape_restauree(valeur: Any) -> str:
+    """B-1182 : une étape hors pipeline (B-167) prend le défaut, comme ailleurs."""
+    return valeur if valeur in get_args(EtapePipeline) else "contact"
+
+
 def _perimetre_restaure(valeur: Any) -> str:
     """B-1126 : périmètre normalisé (B-1165), « global » s'il est vide ou inconnu."""
     if isinstance(valeur, str) and valeur.strip():
@@ -1829,7 +1839,7 @@ async def import_contacts(
             notes=contact_data.get("notes"),
             tags=json.dumps(contact_data.get("tags")) if contact_data.get("tags") else None,
             extra_data=json.dumps(extra) if isinstance(extra, (dict, list)) else (extra if isinstance(extra, str) else None),
-            stage=contact_data.get("stage") or "contact",
+            stage=_etape_restauree(contact_data.get("stage")),
             score=_score_restaure(contact_data.get("score")),
             source=contact_data.get("source"),
             last_interaction=_date_restauree(contact_data.get("last_interaction")),

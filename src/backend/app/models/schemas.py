@@ -507,6 +507,14 @@ class RGPDUpdateRequest(BaseModel):
 # ============================================================
 
 
+def nom_de_projet_requis(valeur: str) -> str:
+    """B-1182 : un projet porte toujours un nom (blanc refusé, espaces retirés)."""
+    nom = (valeur or "").strip()
+    if not nom:
+        raise ValueError("Le nom du projet est requis")
+    return nom
+
+
 class ProjectCreate(BaseModel):
     """Create project request."""
 
@@ -528,6 +536,12 @@ class ProjectCreate(BaseModel):
     @classmethod
     def _perimetre(cls, valeur: str | None) -> str | None:
         return perimetre_normalise(valeur)
+
+    @field_validator("name")
+    @classmethod
+    def _nom_requis(cls, valeur: str) -> str:
+        # B-1182 : comme l'écran (ProjectModal) et l'import de fichier.
+        return nom_de_projet_requis(valeur)
 
 
 class ProjectUpdate(BaseModel):
@@ -557,6 +571,12 @@ class ProjectUpdate(BaseModel):
     def _null_sur_champ_obligatoire(self) -> Self:
         _null_ne_touche_pas(self, ("name", "status", "scope"))
         return self
+
+    @field_validator("name")
+    @classmethod
+    def _nom_non_vide(cls, valeur: str | None) -> str | None:
+        # B-1182 : un renommage ne vide pas le nom (null explicite = ne pas toucher, B-1162).
+        return None if valeur is None else nom_de_projet_requis(valeur)
 
 
 class ProjectResponse(BaseModel):
