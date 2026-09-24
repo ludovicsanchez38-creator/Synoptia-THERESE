@@ -294,9 +294,8 @@ class ContactCreate(BaseModel):
     # est refusée, et une adresse e-mail doit ressembler à une adresse.
     @model_validator(mode="after")
     def _fiche_identifiable(self) -> "ContactCreate":
-        identite = [(self.first_name or "").strip(), (self.last_name or "").strip(), (self.company or "").strip(), (self.email or "").strip()]
-        if not any(identite):
-            raise ValueError("Une fiche contact a besoin d'au moins un prénom, un nom, une société ou une adresse e-mail.")
+        if not fiche_identifiable(self.first_name, self.last_name, self.company, self.email):
+            raise ValueError(MESSAGE_FICHE_SANS_IDENTITE)
         courriel = (self.email or "").strip()
         if courriel and not adresse_unique_valide(courriel):
             raise ValueError("L'adresse e-mail n'a pas la forme attendue (nom@domaine), une seule adresse par fiche.")
@@ -305,6 +304,16 @@ class ContactCreate(BaseModel):
     # Scope (L6 revue produit) : rattacher un contact à une conversation/projet.
     scope: str | None = None  # global | project | conversation (defaut global cote modele)
     scope_id: str | None = None
+
+
+MESSAGE_FICHE_SANS_IDENTITE = (
+    "Une fiche contact a besoin d'au moins un prénom, un nom, une société ou une adresse e-mail."
+)
+
+
+def fiche_identifiable(*champs: str | None) -> bool:
+    """B-171, B-1163 : vrai si l'un des champs d'identité n'est pas vide."""
+    return any((champ or "").strip() for champ in champs)
 
 
 def _null_ne_touche_pas(modele: BaseModel, champs: tuple[str, ...]) -> None:
@@ -1476,6 +1485,14 @@ class CreateCRMContactRequest(BaseModel):
         if valeur and valeur.strip() and not adresse_unique_valide(valeur):
             raise ValueError("L'adresse e-mail n'a pas la forme attendue (nom@domaine), une seule adresse par fiche.")
         return valeur
+
+    # B-1163 : la règle B-171 de ContactCreate, que la porte CRM ignorait
+    # (un prénom fait d'espaces créait une fiche vide).
+    @model_validator(mode="after")
+    def _fiche_identifiable(self) -> Self:
+        if not fiche_identifiable(self.first_name, self.last_name, self.company, self.email):
+            raise ValueError(MESSAGE_FICHE_SANS_IDENTITE)
+        return self
 
 
 # ============================================================

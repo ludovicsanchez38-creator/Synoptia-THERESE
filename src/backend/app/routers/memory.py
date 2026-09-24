@@ -13,6 +13,7 @@ from typing import Any, Literal
 from app.models.database import get_session
 from app.models.entities import Contact, Conversation, FileMetadata, Project
 from app.models.schemas import (
+    MESSAGE_FICHE_SANS_IDENTITE,
     ContactCreate,
     ContactResponse,
     ContactUpdate,
@@ -22,6 +23,7 @@ from app.models.schemas import (
     ProjectCreate,
     ProjectResponse,
     ProjectUpdate,
+    fiche_identifiable,
 )
 from app.services.audit import AuditAction, log_activity
 from app.services.qdrant import get_qdrant_service
@@ -849,6 +851,15 @@ async def update_contact(
         update_data.pop("stage", None)
     if "tags" in update_data:
         update_data["tags"] = json.dumps(update_data["tags"]) if update_data["tags"] else None
+
+    # B-1163 : la règle B-171 de la création vaut aussi pour la mise à jour ;
+    # un PATCH qui vidait prénom, nom, société et adresse rendait une fiche vide.
+    identite = [
+        update_data[champ] if champ in update_data else getattr(contact, champ)
+        for champ in ("first_name", "last_name", "company", "email")
+    ]
+    if not fiche_identifiable(*identite):
+        raise HTTPException(status_code=422, detail=MESSAGE_FICHE_SANS_IDENTITE)
 
     for key, value in update_data.items():
         setattr(contact, key, value)
