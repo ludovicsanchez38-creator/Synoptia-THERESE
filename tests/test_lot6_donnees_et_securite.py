@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import inspect
 import json
+import sys
 from datetime import UTC, datetime, timedelta
 
 import pytest
@@ -193,6 +194,10 @@ class TestB465LaPurgeRGPDRetrouveLesCommandesArchivees:
 
         monkeypatch.setenv("HOME", str(tmp_path))
         monkeypatch.setenv("USERPROFILE", str(tmp_path))  # Path.home() sous Windows
+        # P-102 : sous Linux, la corbeille est celle du bureau (freedesktop),
+        # couverte par test_p102_corbeille_freedesktop.py ; ce test garde le
+        # chemin ~/.Trash de macOS, quelle que soit la machine qui le joue.
+        monkeypatch.setattr(sys, "platform", "darwin")
         (tmp_path / ".Trash").mkdir()
         service = UserCommandsService()
         commande = service.create_command(name="purge_b465", description="test", content="Texte rédigé par Marie")
