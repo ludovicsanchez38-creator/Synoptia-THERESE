@@ -363,6 +363,9 @@ jobs:
           # une amélioration force la mise à jour du chiffre, donc le mou ne peut
           # plus se reconstituer en silence.
           #
+          # 948 = compte mesuré à froid sur le Mac le 25/09/2026 (cycle 13 :
+          # l'export complet XLSX sorti de la boucle, B-1220, retire trois
+          # erreurs) ; à confirmer par le runner. Auparavant :
           # 951 = compte mesuré SUR CE RUNNER (ubuntu-latest) au dernier
           # recalage (10/09/2026, cycle 6 : le run 34479930815 a lu 951 après
           # l'annotation de cinq lignes des fournisseurs e-mail, afa28993 ; le
@@ -375,7 +378,7 @@ jobs:
           # ici. Aucun cache mypy n'est restauré dans ce job : la mesure est
           # fraîche par construction. (B-470 : ce commentaire disait encore
           # 1001 après quatre recalages successifs.)
-          MYPY_BASELINE: "951"
+          MYPY_BASELINE: "948"
         run: |
           # `--no-sync` est indispensable : sans lui, `uv run` resynchronise
           # le projet complet et réintroduit les dépendances CUDA évitées à

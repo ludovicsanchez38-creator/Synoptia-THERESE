@@ -538,28 +538,13 @@ class CRMExportService:
         total_count = len(contacts) + len(projects) + len(deliverables)
 
         if format == "xlsx":
-            # Create workbook with multiple sheets
-            wb = Workbook()
-
-            # Contacts sheet
-            ws_contacts = wb.active
-            ws_contacts.title = "Contacts"
-            _populate_xlsx_sheet(ws_contacts, contacts, CONTACT_COLUMNS)
-
-            # Projects sheet
-            ws_projects = wb.create_sheet("Projets")
-            _populate_xlsx_sheet(ws_projects, projects, PROJECT_COLUMNS)
-
-            # Deliverables sheet
-            ws_deliverables = wb.create_sheet("Livrables")
-            _populate_xlsx_sheet(ws_deliverables, deliverables, DELIVERABLE_COLUMNS)
-
-            output = io.BytesIO()
-            wb.save(output)
-            output.seek(0)
+            # B-1220 : comme les exports unitaires (B-450), le classeur se
+            # construit hors de la boucle ; sinon l'application ne répondait
+            # plus pendant l'export.
+            donnees = await asyncio.to_thread(_classeur_complet, contacts, projects, deliverables)
 
             return ExportResult(
-                data=output.read(),
+                data=donnees,
                 filename=f"crm_export_{timestamp}.xlsx",
                 content_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 row_count=total_count,
@@ -625,6 +610,19 @@ class CRMExportService:
                 # du fichier - l'en-tete X-Row-Count disait 8 pour 7 lignes.
                 row_count=len(contacts),
             )
+
+
+def _classeur_complet(contacts: list[Any], projects: list[Any], deliverables: list[Any]) -> bytes:
+    """Classeur à trois onglets de l'export complet (appelé hors de la boucle)."""
+    wb = Workbook()
+    ws_contacts = wb.active
+    ws_contacts.title = "Contacts"
+    _populate_xlsx_sheet(ws_contacts, contacts, CONTACT_COLUMNS)
+    _populate_xlsx_sheet(wb.create_sheet("Projets"), projects, PROJECT_COLUMNS)
+    _populate_xlsx_sheet(wb.create_sheet("Livrables"), deliverables, DELIVERABLE_COLUMNS)
+    output = io.BytesIO()
+    wb.save(output)
+    return output.getvalue()
 
 
 def _populate_xlsx_sheet(ws, entities: list[Any], columns: list[tuple[str, str]]):

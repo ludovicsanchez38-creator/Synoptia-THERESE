@@ -134,7 +134,9 @@ class TestCliquetMypy:
         # stricte) et le Mac aussi.
         # 10/09/2026 (cycle 6) : cinq annotations dans les fournisseurs e-mail
         # (afa28993) ; le runner mesure 951 (run 34479930815), le Mac aussi.
-        assert _etape_mypy()["env"]["MYPY_BASELINE"] == "951"
+        # 25/09/2026 (cycle 13) : l'export complet XLSX sorti de la boucle
+        # (B-1220) retire trois erreurs ; le Mac mesure 948 à froid.
+        assert _etape_mypy()["env"]["MYPY_BASELINE"] == "948"
 
 
 @pytest.mark.skipif(shutil.which("bash") is None, reason="bash requis")
