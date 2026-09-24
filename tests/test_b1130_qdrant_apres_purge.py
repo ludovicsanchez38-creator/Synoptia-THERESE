@@ -72,3 +72,19 @@ async def test_les_vecteurs_partent_meme_si_la_collection_ne_peut_pas_etre_suppr
 
     assert resp.status_code == 200, resp.text
     assert vrai_qdrant.client.count(settings.qdrant_collection).count == 0
+
+
+@pytest.mark.asyncio
+async def test_les_vecteurs_partent_meme_si_la_suppression_de_collection_n_agit_pas(
+    client, vrai_qdrant, monkeypatch
+):
+    """B-1199, second volet (CI Windows run 36070072718) : la suppression de la
+    collection ne lève rien mais laisse le stockage local en place ; la
+    collection recréée rechargeait les anciens points."""
+    _poser_un_point(vrai_qdrant)
+    monkeypatch.setattr(vrai_qdrant.client, "delete_collection", lambda *_a, **_k: True)
+
+    resp = await client.delete("/api/data/all?confirm=true")
+
+    assert resp.status_code == 200, resp.text
+    assert vrai_qdrant.client.count(settings.qdrant_collection).count == 0

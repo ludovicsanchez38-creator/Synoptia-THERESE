@@ -37,6 +37,8 @@ def vrai_qdrant(tmp_path, monkeypatch):
 def _purge_sabotee(service, monkeypatch) -> None:
     # Mutant : « la purge n'efface plus la mémoire vectorielle ».
     monkeypatch.setattr(service.client, "delete_collection", lambda *a, **k: True)
+    # B-1199 : la purge retire d'abord les points ; le mutant neutralise les deux gestes.
+    monkeypatch.setattr(service.client, "delete", lambda *a, **k: None)
 
 
 def _poser_un_point(service) -> None:

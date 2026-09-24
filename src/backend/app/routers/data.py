@@ -668,21 +668,20 @@ async def delete_all_data(
 
         qdrant = get_qdrant_service()
         if qdrant.client:
+            # B-1199 : sous Windows, le stockage local de la collection reste
+            # verrouillé ; sa suppression échoue ou n'agit pas, et la
+            # collection recréée rechargeait les anciens points. Les points
+            # partent D'ABORD, la collection ensuite.
+            qdrant.client.delete(
+                collection_name=settings.qdrant_collection,
+                points_selector=FilterSelector(filter=Filter(must=[])),
+            )
             try:
                 qdrant.client.delete_collection(settings.qdrant_collection)
             except Exception:
-                # B-1199 : sous Windows, le stockage local de la collection
-                # reste verrouillé et sa suppression échoue ; l'exception
-                # était avalée et les vecteurs survivaient à « toutes mes
-                # données ». Repli : on retire tous les points un à un.
                 logger.warning(
-                    "Suppression de la collection Qdrant impossible, "
-                    "retrait de tous ses points",
+                    "Suppression de la collection Qdrant impossible (points déjà retirés)",
                     exc_info=True,
-                )
-                qdrant.client.delete(
-                    collection_name=settings.qdrant_collection,
-                    points_selector=FilterSelector(filter=Filter(must=[])),
                 )
             # B-1130 : le service restait initialisé sur une collection
             # absente ; jusqu'au redémarrage, chaque ajout en mémoire se
