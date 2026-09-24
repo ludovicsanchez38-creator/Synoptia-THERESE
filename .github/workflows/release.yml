@@ -210,20 +210,24 @@ jobs:
 
       # ---- Rust ----
       - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+        # B-1115 : épinglé par empreinte (branche stable du 24/09/2026) ; la
+        # chaîne n'est plus déduite du nom de branche, d'où `toolchain`.
+        uses: dtolnay/rust-toolchain@6bed0761d98439e5a578e2877258200ad565ba87 # stable
+        with:
+          toolchain: stable
 
       - name: Cache Rust
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2
         with:
           workspaces: src/frontend/src-tauri
           save-if: "true"
 
       - name: Installer mold (linker rapide - Linux)
         if: runner.os == 'Linux'
-        uses: rui314/setup-mold@v1
+        uses: rui314/setup-mold@10ca16bf91dc22e05ebdc935cad9c75ea248f621 # v1
 
       - name: Setup sccache
-        uses: mozilla-actions/sccache-action@v0.0.10
+        uses: mozilla-actions/sccache-action@9e7fa8a12102821edf02ca5dbea1acd0f89a2696 # v0.0.10
 
       - name: Optimisations compilation Rust (Linux)
         if: runner.os == 'Linux'
@@ -267,7 +271,10 @@ jobs:
 
       # ---- Build Tauri ----
       - name: Build THÉRÈSE (Tauri)
-        uses: tauri-apps/tauri-action@v0
+        # B-1115 : ce travail reçoit la clé privée de l'updater ; les actions
+        # tierces sont épinglées par empreinte (étiquette en commentaire),
+        # pour qu'un déplacement d'étiquette n'exécute pas un autre code.
+        uses: tauri-apps/tauri-action@84b9d35b5fc46c1e45415bdb6144030364f7ebc5 # v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # US-007 : signature des artefacts updater (.sig) + generation de latest.json.
