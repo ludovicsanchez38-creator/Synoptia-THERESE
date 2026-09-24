@@ -36,4 +36,16 @@ describe('B-1209 : réglages de purge illisibles', () => {
     expect({ desactive: (enregistrer as HTMLButtonElement).disabled, envois: vi.mocked(updatePurgeSettings).mock.calls.length })
       .toEqual({ desactive: true, envois: 0 });
   });
+
+  it('B-1230 : les commandes de purge sont grisées et la raison est dite', async () => {
+    render(<PrivacyTab />);
+    await screen.findByRole('button', { name: 'Réessayer le chargement' });
+    const interrupteur = screen.getByRole('switch');
+    const curseur = screen.getByLabelText('Ancienneté des données à purger, en mois');
+    expect({
+      interrupteurInactif: (interrupteur as HTMLButtonElement).disabled,
+      curseurInactif: (curseur as HTMLInputElement).disabled,
+      raisonDite: screen.queryByText(/réglages n’ont pas pu être lus/i) !== null,
+    }).toEqual({ interrupteurInactif: true, curseurInactif: true, raisonDite: true });
+  });
 });

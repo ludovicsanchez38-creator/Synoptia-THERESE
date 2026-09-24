@@ -638,7 +638,9 @@ export function PrivacyTab() {
           </div>
           <button
             onClick={() => setPurgeEnabled(!purgeEnabled)}
-            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+            // B-1230 : sans réglages lus, rien à modifier (l'enregistrement est bloqué, B-1209).
+            disabled={purgeIndisponible}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
               purgeEnabled ? 'bg-accent-cyan' : 'bg-surface-elevated'
             }`}
             role="switch"
@@ -660,6 +662,7 @@ export function PrivacyTab() {
               Durée de rétention : <span className="text-accent-cyan-ink font-semibold">{purgeMonths} mois</span>
             </label>
             <input aria-label="Ancienneté des données à purger, en mois"
+              disabled={purgeIndisponible}
               type="range"
               min={12}
               max={60}
@@ -681,6 +684,11 @@ export function PrivacyTab() {
 
         {/* Bouton sauvegarder */}
         <div className="flex items-center gap-3">
+          {purgeIndisponible && (
+            <p className="text-xs text-text-muted">
+              Les réglages n’ont pas pu être lus : réessaie le chargement avant de les modifier.
+            </p>
+          )}
           <Button
             variant="primary"
             size="sm"
