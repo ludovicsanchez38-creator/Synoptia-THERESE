@@ -176,4 +176,6 @@ async def test_l_import_repond_sans_attendre_l_indexation(client, monkeypatch):
     )
     duree = time.monotonic() - debut
     assert resp.status_code == 200, resp.text
-    assert duree < 1.5, f"l'import a attendu l'indexation : {duree:.1f} s pour 3 fiches"
+    # Trois fiches à 2 s chacune : une indexation dans la requête dure au
+    # moins 6 s. Le seuil laisse de la marge au runner Windows, lent (B-1167).
+    assert duree < 4, f"l'import a attendu l'indexation : {duree:.1f} s pour 3 fiches"
