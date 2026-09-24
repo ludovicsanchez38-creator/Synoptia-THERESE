@@ -395,6 +395,35 @@ class TestDataDeletion:
         assert prestations.json() == []
 
     @pytest.mark.asyncio
+    async def test_delete_all_efface_travaux_et_synchro_de_dossiers(self, client: AsyncClient, db_session):
+        """B-1129 (lecteur L1, carte c12) : cinq tables échappaient à la purge
+        Art. 17 : les travaux (intitulés = noms de fichiers, erreurs) et les
+        quatre tables de synchro de dossier (chemins locaux absolus, empreintes).
+        """
+        from app.models.entities_sync import (
+            ProjectSyncEntry,
+            ProjectSyncRoot,
+            SyncOperation,
+            SyncPlan,
+        )
+        from app.models.processing import ProcessingTask
+        from sqlmodel import select
+
+        db_session.add(ProcessingTask(type="indexation", label="bilan-marie-dupont.pdf", run_instance_id="purge-b1129"))
+        db_session.add(ProjectSyncRoot(project_id="projet-b1129", racine="/Users/marie/Clients/Dupont", volume_id=1))
+        db_session.add(ProjectSyncEntry(project_id="projet-b1129", chemin="Dupont/bilan.pdf", file_id="f-b1129", taille=1, mtime_ns=1, sha256="0" * 64, generation_racine=1))
+        db_session.add(SyncPlan(id="plan-b1129", project_id="projet-b1129", generation_racine=1))
+        db_session.add(SyncOperation(plan_id="plan-b1129", type="indexer", chemin="Dupont/bilan.pdf"))
+        await db_session.commit()
+
+        response = await client.delete("/api/data/all?confirm=true")
+        assert response.status_code == 200
+
+        for modele in (ProcessingTask, ProjectSyncRoot, ProjectSyncEntry, SyncPlan, SyncOperation):
+            restes = (await db_session.execute(select(modele))).scalars().all()
+            assert restes == [], f"{modele.__tablename__} survit à la purge RGPD"
+
+    @pytest.mark.asyncio
     async def test_delete_all_purge_fichiers_disque_et_annonce_backups(self, client: AsyncClient):
         """Revue 0.40 : la route vidait les tables et Qdrant mais laissait
         images/ et outputs/ sur disque, et le message affirmait que TOUT était

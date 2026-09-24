@@ -50,6 +50,8 @@ from app.models.entities import (
     Variable,
 )
 from app.models.entities_agents import AgentMessage, AgentSession, AgentTask, CodeChange
+from app.models.entities_sync import ProjectSyncEntry, ProjectSyncRoot, SyncOperation, SyncPlan
+from app.models.processing import ProcessingTask
 from app.services.audit import (
     ActivityLog,
     AuditAction,
@@ -627,6 +629,13 @@ async def delete_all_data(
     await session.execute(delete(FileMetadata))
     await session.execute(delete(BoardDecisionDB))
     await session.execute(delete(Variable))
+    # B-1129 : les travaux portent des noms de fichiers et des erreurs, la
+    # synchro de dossiers des chemins locaux absolus et des empreintes.
+    await session.execute(delete(SyncOperation))
+    await session.execute(delete(SyncPlan))
+    await session.execute(delete(ProjectSyncEntry))
+    await session.execute(delete(ProjectSyncRoot))
+    await session.execute(delete(ProcessingTask))
     # Les préférences contiennent aussi le profil et les choix personnels :
     # « toutes les données » doit donc réellement remettre cet espace à zéro.
     await session.execute(delete(Preference))
