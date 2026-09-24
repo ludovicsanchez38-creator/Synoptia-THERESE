@@ -1,4 +1,4 @@
-# P-096 : brouillons personnalisés en lot (design V4)
+# P-096 : brouillons personnalisés en lot (design V5)
 
 Décision de Ludo, 24/09/2026 (salle de décision, geste val-2026-09-23-01) :
 « FAIRE AUTREMENT : brouillons personnalisés en lot, aucun envoi, fusion par
@@ -11,8 +11,11 @@ questions produit ont été tranchées par délégation de Ludo le 24/09
 (`docs/plans/2026-09-24-arbitrages-par-delegation.md`), toutes selon la
 recommandation. La V3 intégrait ces choix et les 23 constats de la V2 ; sa
 revue (`docs/plans/revues/2026-09-24-p096-revue-v3.md`, NO-GO, 1 P1 et 16 P2
-ou P3) est intégrée dans cette V4 (second tableau en fin de document). Aucun
-code avant un GO de revue adverse.
+ou P3) est intégrée dans la V4 ; celle de la V4 (`…-revue-v4.md`, NO-GO, 1 P1
+et 11 P2 ou P3) dans cette V5 (troisième tableau). Les points que la revue V4
+présente comme décisions (n° 1, 3, 4) sont techniques et tranchés ici, dans le
+sens le plus prudent : jamais de dépôt dont on ne sait pas qu'il manque.
+Aucun code avant un GO de revue adverse.
 
 ## Promesse
 
@@ -41,8 +44,10 @@ code avant un GO de revue adverse.
   Consentement expiré ou base légale vide : **signalés** dans la liste et
   l'aperçu, sans blocage.
 - **Une adresse, un brouillon** : l'adresse est normalisée (minuscules,
-  espaces retirés) ; un second contact à la même adresse est **bloqué**
-  (« adresse en double »), avec « Retirer du lot ». Le moteur rend des
+  espaces retirés) ; quand plusieurs contacts partagent une adresse, le
+  moteur trie les identifiants et garde le premier ; les autres sont
+  **bloqués** (« adresse en double »), avec « Retirer du lot ». Test à ordre
+  inversé. Le moteur rend des
   identifiants, jamais des noms, dans ses motifs de blocage et de refus.
 - Plafond (décision 10) : 50 contacts par lot, constante serveur unique lue
   par l'écran, testée à 50 et 51.
@@ -79,9 +84,11 @@ code avant un GO de revue adverse.
   l'aperçu, les Variables étant les mêmes pour tous.
 - Jeton inconnu ou mal formé : lot refusé avec la liste des jetons. La règle
   de `jetonsMalFormes` (`/^[\p{L}\p{N}_\- ]{1,40}$/u`, variables.ts:120) est
-  réécrite en Python sans `\p{L}` : `1 <= len(c) <= 40 and all(ch.isalnum()
-  or ch in "_- " for ch in c)`, plus les exclusions `{{…}}`, `{action:` et
-  blocs de code ; **un jeu de cas commun** (fichier JSON de cas partagé) est lu
+  réécrite en Python sans `\p{L}` : un contenu vide ou fait d'espaces est
+  ignoré comme dans l'écran (`variables.ts:120`), sinon mal formé si
+  `not (1 <= len(c) <= 40 and all(ch.isalnum() or ch in "_- " for ch in c))`,
+  plus les exclusions `{{…}}`, `{action:` et blocs de code ; `{   }` entre au
+  jeu de cas ; **un jeu de cas commun** (fichier JSON de cas partagé) est lu
   par les tests Python et Vitest.
 - Empreinte d'aperçu : hachage des tuples triés (id, prénom, nom, entreprise,
   adresse normalisée, stage, scope) des contacts du lot, plus `account_id`,
@@ -106,24 +113,32 @@ code avant un GO de revue adverse.
   UNIQUE(`batch_id`, `contact_id`) ; index (`contact_id`, `maj`) et
   (`adresse_hash`, `maj`) ; ni objet ni corps.
 - `GET …/batch/{batch_id}` : état par contact, en identifiants (le masque de
-  démo est appliqué par l'écran) ; « fiche supprimée » pour un élément dont
-  le contact n'existe plus.
-- `POST …/batch/{batch_id}/reprendre` : sans charge ; relit le modèle de
-  l'en-tête ; **revalide tout comme à la création** (proposabilité, blocages,
-  doublons d'adresse, préfixe `contact_`, empreinte recalculée sur les mêmes
-  contacts et comparée à celle de l'en-tête) : un écart donne 409 « l'aperçu
-  n'est plus à jour » et l'écran rouvre l'Aperçu sur les contacts restants ;
-  puis, sous le verrou du lot, remet explicitement les échecs réessayables à
-  `non_tenté` et relance. Refus 409 si un travail du lot est actif ; cause
-  `compte_absent` si le compte a été déconnecté (l'écran remplace
-  « Reprendre » par « Compte déconnecté »).
+  démo est appliqué par l'écran). Les éléments d'une fiche supprimée partent
+  avec elle (décision 8).
+- `POST …/batch/{batch_id}/reprendre` (charge facultative : `empreinte`) :
+  relit le modèle de l'en-tête ; revalide les contacts **restants** comme à la
+  création (proposabilité, blocages, doublons d'adresse, préfixe `contact_`).
+  L'**empreinte de reprise** ne porte que sur les contacts restants (sans leur
+  étape, qu'un envoi fait changer) et sur les Variables **citées** par le
+  modèle. Si elle diffère de celle de l'en-tête, 409 « l'aperçu n'est plus à
+  jour » avec l'aperçu recalculé des restants ; l'écran le montre, et la
+  confirmation renvoie `POST …/reprendre` **sur le même lot** avec la nouvelle
+  empreinte (les Message-ID restent stables ; aucun second lot n'est créé).
+  Sous **un seul verrou du lot** : contrôle qu'aucun travail du lot n'est
+  actif (sinon 409), remise explicite des échecs réessayables à `non_tenté`,
+  création du travail. Cause `compte_absent` si le compte a été déconnecté
+  (l'écran remplace « Reprendre » par « Compte déconnecté »). « Abandonner les
+  restants » clôt le lot (restants en `abandonné`, plus de reprise).
 - **Chaque lancement ou reprise = un nouveau `ProcessingTask`** du registre
   `brouillons_lot`, `entity_id = batch_id` (un identifiant de travail n'est
   jamais réutilisé, `traitements.py:181-182`).
 - Réservation avant chaque dépôt : UPDATE conditionnel non_tenté vers
-  en_cours (une ligne, sinon on saute). Verrou asyncio par lot. Tests : deux
-  POST simultanés ; même POST après la fin du lot (nouveau lot, pas de
-  réécriture).
+  en_cours (une ligne, sinon on saute). Verrou asyncio par lot.
+- **Double soumission** : `POST …/batch` dont l'empreinte est identique à
+  celle d'un lot actif, ou créé dans les 10 dernières minutes, rend 409 « ce
+  lot vient d'être lancé » avec son `batch_id`. Tests : deux POST simultanés
+  (un seul lot), même POST juste après la fin (409), même POST une heure plus
+  tard (nouveau lot, contacts signalés « déjà écrit »).
 - Annulation coopérative (`AnnulationCooperative`) : drapeau lu avant chaque
   dépôt ; le dépôt en cours finit et s'enregistre ; fin CANCELLED « 7 créés,
   5 non tentés ». Libellé, étape et erreur du travail ne portent que des
@@ -133,8 +148,10 @@ code avant un GO de revue adverse.
   qui reçoit désormais l'exécuteur à utiliser ; **un exécuteur à un fil par
   SESSION**, abandonné avec elle (`shutdown(wait=False,
   cancel_futures=True)`) : un fil bloqué sur un dépôt expiré ne retarde pas la
-  session suivante ; un dépôt dont la fonction n'a jamais démarré reste
-  `non_tenté` ; dossier Brouillons résolu et vérifié
+  session suivante. Le fil pose un drapeau « APPEND émis » juste avant la
+  commande : sans drapeau (délai à la connexion, fonction jamais démarrée),
+  l'élément est remis explicitement de `en_cours` à `non_tenté` ; avec
+  drapeau, `incertain` (un `TimeoutError` ne dit pas la phase) ; dossier Brouillons résolu et vérifié
   (`folder.exists`) avant la boucle ; APPEND avec le drapeau `\Draft`. Après
   un délai dépassé ou une erreur réseau, la session est abandonnée et rouverte
   (trois échecs réseau consécutifs arrêtent le lot). Gmail : séquentiel, un
@@ -163,21 +180,31 @@ code avant un GO de revue adverse.
   contrat commun `SendEmailRequest`, `_message_du_brouillon` et
   `_encoder_message`). `chercher_brouillon(message_id)` est ajouté aux deux
   fournisseurs (IMAP `SEARCH HEADER Message-ID`, Gmail `q=rfc822msgid:` sur
-  les brouillons). **Avant toute reprise**, chaque élément `incertain` ou
-  `non_tenté` d'un lot qui a déjà tourné est cherché : trouvé = `créé`, absent
-  = `non_tenté`. Vérification, avant de coder, que Gmail `drafts.create`
-  conserve l'en-tête ; sinon, pour Gmail, l'incertain reste exclu de la
-  reprise, consigne « vérifie tes Brouillons ».
+  les brouillons). **La recherche ne fait que promouvoir** : un élément
+  `incertain` trouvé dans les Brouillons devient `créé` ; **absent, il reste
+  `incertain`** (l'utilisateur a pu l'envoyer ou le supprimer : l'absence ne
+  prouve pas qu'il manque), exclu de la reprise, avec la consigne « vérifie
+  tes Brouillons » et un geste explicite par élément, « Recréer ce
+  brouillon ». La recherche tourne **dans le travail**, au début de la
+  reprise, par la session de dépôt (une connexion), dans le dossier Brouillons
+  résolu ; si elle échoue (réseau), le lot s'arrête en `reseau_avant_envoi`
+  sans rien déposer ni reclasser. Vérification, avant de coder, que Gmail
+  `drafts.create` conserve l'en-tête ; sinon, pour Gmail, pas de recherche :
+  l'incertain reste exclu, avec le même geste.
 - **Redémarrage** : fonction dédiée appelée dans le lifespan après
   `recuperer_taches_orphelines`, **dans son propre `try`** (celui des
   travaux est fail-open, `main.py:217-233`) : tout élément `en_cours` devient
   `incertain`. Filet : le GET d'un lot dont le dernier travail est
-  `interrupted` fait la même bascule.
-- **Conservation** (décision 8) : « fin du lot » = fin de son dernier
-  travail, quel que soit l'état final (terminé, échec, annulé, interrompu,
-  bascule du démarrage comprise). `purge_apres` est **réécrit à chaque fin**
-  et vidé au lancement d'une reprise. Une purge dédiée, lancée au démarrage
-  et une fois par jour de session, supprime en-têtes et éléments échus, sans
+  `interrupted` fait la même bascule ; il se fonde sur « élément `en_cours`
+  sans travail actif du lot » (la ligne du travail peut avoir été purgée à
+  30 jours de sa création).
+- **Conservation** (décision 8) : `purge_apres` est posé **dès la
+  création** (création plus 30 jours), puis **réécrit à chaque fin** de
+  travail (fin plus 30 jours, quel que soit l'état final, bascule du
+  démarrage comprise) et vidé au lancement d'une reprise. Une purge dédiée
+  tourne au démarrage et dans une tâche jumelle de `_rgpd_purge_scheduler`
+  (`main.py:369-383`, une passe par jour, annulée à l'arrêt, sautée si
+  `maintenance_mode.active`) ; elle supprime en-têtes et éléments échus, sans
   jamais toucher un lot dont un travail est actif ; un en-tête sans élément
   (tous partis avec leurs fiches) part avec son dernier élément. Éléments
   d'un contact supprimés à la suppression et à l'anonymisation de la fiche
@@ -187,18 +214,26 @@ code avant un GO de revue adverse.
 - **Export RGPD** (constat V3 n° 13) : l'export global inclut en-têtes et
   éléments ; l'export d'un contact inclut ses éléments (lot, date, statut),
   sans `adresse_hash`.
-- **Lot en cours face aux gestes destructeurs** (P1 de la revue V3) : la
-  **restauration** et la **purge totale** refusent (409 « un lot de
-  brouillons est en cours ») tant qu'un travail `brouillons_lot` est actif ;
-  l'écran propose d'arrêter le lot (annulation coopérative : le dépôt en
-  cours finit) puis de relancer le geste. Le verrou de maintenance ne compte
-  que les requêtes HTTP (`maintenance.py:30-58`) : c'est ce contrôle,
-  AVANT `maintenance_mode.begin()` et `close_db()`, qui empêche le lot
-  d'écrire dans une base en cours d'extraction. La **déconnexion d'un
-  compte** arrête d'abord les lots de ce compte (même annulation), et son
-  en-tête est purgé aussitôt (son modèle ne sert plus). Une sauvegarde prise
-  pendant un lot garde des éléments `non_tenté` dont le brouillon peut
-  exister : la recherche par Message-ID avant reprise les reclasse. Tests :
+- **Lot en cours face aux gestes destructeurs** (P1 de la revue V3) :
+  - **Restauration** : le contrôle se fait **après** `maintenance_mode.begin()`
+    (plus aucune requête admise, toutes les admises terminées, donc aucun
+    `POST …/batch` à mi-chemin) : un travail `brouillons_lot` actif au sens
+    d'`actif_pour` (`traitements.py:304-322`) donne `end()` puis 409 « un lot
+    de brouillons est en cours ». Après l'extraction, les éléments
+    `non_tenté` des lots restaurés dont un travail a déjà tourné passent en
+    `incertain` (leur brouillon peut exister).
+  - **Purge totale** (hors maintenance, `data.py:564-642`) : 409 en contrôle
+    d'entrée ; un lot lancé pendant la purge s'arrête de lui-même, la
+    réservation conditionnelle ne trouvant plus d'élément (test).
+  - L'écran propose d'arrêter le lot (annulation coopérative, jusqu'à 30 s en
+    IMAP) et **attend l'état terminal du travail** avant de proposer de
+    relancer le geste.
+  - **Déconnexion d'un compte** : demande l'arrêt des lots du compte, attend
+    leur état terminal (au plus 45 s, sinon 409 « un lot se termine,
+    réessaie ») puis **vide seulement l'objet et le corps du modèle** dans
+    l'en-tête ; en-tête et éléments restent jusqu'à `purge_apres` (compte
+    rendu, `compte_absent`, « déjà écrit » au rebranchement de la même
+    boîte). Tests :
   restauration, purge totale et déconnexion IMAP pendant le 2e dépôt d'un lot
   de 5 ; reprise après déconnexion.
 - **Migration** : modèles SQLModel avec `UniqueConstraint` et index ;
@@ -328,4 +363,21 @@ compte rendu rechargé et ouvert depuis Travaux, garde de saisie (fermeture,
 | 15 `entity_id` et store persisté | type complété, store non persisté |
 | 16 choix de signature dans l'empreinte | retiré |
 | 17 règles floues | adresse en double = contact bloqué ; « déjà écrit » = créé ou incertain, hors envois hors lot |
+
+## Correspondance avec la revue V4
+
+| Constat V4 | Traitement V5 |
+|---|---|
+| 1 (P1) « absent = non_tenté » redépose | la recherche ne fait que promouvoir ; absent reste incertain, geste explicite « Recréer ce brouillon » ; non_tenté restaurés en incertain |
+| 2 contrôle avant `begin()` | restauration : contrôle après `begin()` puis `end()` et 409 ; purge : contrôle d'entrée et réservation qui arrête ; l'écran attend l'état terminal |
+| 3 reprise, empreinte et second lot | empreinte de reprise sur les restants et les Variables citées ; confirmation sur le même lot ; « Abandonner les restants » |
+| 4 déconnexion et purge de l'en-tête | arrêt attendu (45 s) puis modèle vidé, en-tête et éléments gardés jusqu'à `purge_apres` |
+| 5 recherche sans lieu ni sort | dans le travail, par la session de dépôt, dans le dossier résolu ; échec = arrêt sans reclasser |
+| 6 purge sans planificateur | tâche jumelle de `_rgpd_purge_scheduler`, sautée en maintenance ; `purge_apres` dès la création ; filet du GET sans la ligne du travail |
+| 7 409 hors verrou | contrôle, remise et création du travail sous le même verrou |
+| 8 phase du délai | drapeau « APPEND émis » ; sans lui, retour explicite à non_tenté |
+| 9 « fiche supprimée » | retiré |
+| 10 double soumission | 409 sur empreinte identique (lot actif ou de moins de 10 minutes) |
+| 11 ordre du doublon d'adresse | identifiants triés, le premier gardé ; test à ordre inversé |
+| 12 accolades vides | ignorées comme à l'écran ; cas ajouté au jeu commun |
 
