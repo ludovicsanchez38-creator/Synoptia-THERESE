@@ -940,8 +940,13 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
                         self.config.provider.value, (event.content or "")[:200]
                     )
                 from app.services.error_handler import ErreurPourEcran
+                from app.services.providers.base import message_fournisseur_pour_ecran
 
-                raise ErreurPourEcran(event.content or "Erreur du fournisseur LLM")
+                # B-1155 : panne comptée ci-dessus sur la forme brute ; l'écran
+                # reçoit le message traduit.
+                raise ErreurPourEcran(
+                    message_fournisseur_pour_ecran(event.content or "Erreur du fournisseur LLM")
+                )
             elif event.type == "done" and usage_sink is not None:
                 if event.input_tokens is not None:
                     usage_sink["input_tokens"] = event.input_tokens

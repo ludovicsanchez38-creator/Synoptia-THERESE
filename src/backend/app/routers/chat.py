@@ -54,7 +54,7 @@ from app.services.mcp_service import get_mcp_service
 from app.services.memory_tools import MEMORY_TOOL_NAMES, MEMORY_TOOLS, execute_memory_tool
 from app.services.path_security import validate_file_path
 from app.services.performance import get_performance_monitor, get_search_index
-from app.services.providers.base import LLMProvider
+from app.services.providers.base import LLMProvider, message_fournisseur_pour_ecran
 from app.services.qdrant import get_qdrant_service
 from app.services.skills.base import SkillExecuteRequest
 from app.services.slash_commands import (
@@ -2638,7 +2638,11 @@ async def _do_stream_response(
                         yield continued_event
 
             elif event.type == "error":
-                error_content = event.content or "Erreur inattendue du fournisseur LLM"
+                # B-1155 : « API error: 529 » (forme gardée pour le disjoncteur)
+                # est traduit avant l'écran et l'historique.
+                error_content = message_fournisseur_pour_ecran(
+                    event.content or "Erreur inattendue du fournisseur LLM"
+                )
                 # B-147 : les fichiers déjà écrits par les outils de ce tour
                 # AVANT l'événement terminal - ce `return` sautait le drain.
                 cartes_outils, fichiers_outils = _cartes_des_fichiers_outils()
