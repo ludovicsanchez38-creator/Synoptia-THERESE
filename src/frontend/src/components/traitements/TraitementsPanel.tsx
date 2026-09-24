@@ -73,7 +73,7 @@ export function TraitementsPanel() {
       {/* Le conteneur qui défile garde une marge symétrique : une marge d'un seul
           côté rognait l'anneau de focus d'« Arrêter » (anneauNonRogne). */}
       <div className="max-h-80 overflow-y-auto px-1">
-      <ol aria-label="Frise des travaux récents" className="border-l border-border pl-3">
+      <ol role="list" aria-label="Frise des travaux récents" className="border-l border-border pl-3">
         {traitements.map((t) => {
           const enCours = t.state === 'running' || t.state === 'queued';
           const arretDemande =

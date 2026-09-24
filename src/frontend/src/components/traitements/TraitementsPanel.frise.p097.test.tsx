@@ -38,6 +38,10 @@ describe('P-097 : frise des travaux récents', () => {
   it('une liste ordonnée, sans étape présentée comme un bouton', () => {
     render(<TraitementsPanel />);
     const frise = screen.getByRole('list', { name: 'Frise des travaux récents' });
+    // Audit de release 0.75 : WebKit (Safari, Tauri sous macOS) retire la
+    // sémantique de liste d'un <ol> sans puces ; VoiceOver ne l'annonce plus.
+    // Le rôle explicite la rétablit (jsdom ne reproduit pas ce retrait).
+    expect(frise).toHaveAttribute('role', 'list');
     expect(frise.tagName).toBe('OL');
     const passe = within(frise).getAllByRole('listitem')[1];
     // Ni bordure ni fond de carte (la pastille de la frise est un pseudo-élément).
