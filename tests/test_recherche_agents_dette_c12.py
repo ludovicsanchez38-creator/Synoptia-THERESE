@@ -253,6 +253,8 @@ async def test_la_recherche_ne_parcourt_pas_les_dossiers_de_secrets(tmp_path: Pa
     # Tout fichier d'un dossier de secrets est un secret, quelle que soit son extension.
     (tmp_path / ".aws").mkdir()
     (tmp_path / ".aws" / "profils.md").write_text("aws_secret_access_key = secret\n", encoding="utf-8")
-    (tmp_path / "a.md").write_text("rien\n", encoding="utf-8")
+    # Témoin positif : la recherche marche et trouve le même motif hors du dossier.
+    (tmp_path / "a.md").write_text("aws_secret_access_key = exemple\n", encoding="utf-8")
     sortie = await AgentToolExecutor(str(tmp_path)).search_codebase("aws_secret_access_key", "*.md")
+    assert sortie.startswith("a.md:1:"), sortie
     assert ".aws" not in sortie and "= secret" not in sortie, sortie
