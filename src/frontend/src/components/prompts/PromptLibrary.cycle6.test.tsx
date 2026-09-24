@@ -43,7 +43,9 @@ describe('PromptLibrary — cycle 6', () => {
     fireEvent.click(screen.getByRole('button', { name: /Email/ }));
     await waitFor(() => expect(screen.queryByText('Relance facture')).toBeNull());
     fireEvent.change(screen.getByLabelText('Rechercher un prompt'), { target: { value: 'relance' } });
-    await screen.findByText(/1 résultat pour "relance"/);
+    // B-1142 : la recherche passe par un délai de saisie ; sous charge, le
+    // résultat dépassait le délai par défaut d'une seconde (1,9 s mesurées).
+    await screen.findByText(/1 résultat pour "relance"/, {}, { timeout: 5000 });
     expect(await screen.findByText('Relance facture')).toBeInTheDocument();
   });
 
