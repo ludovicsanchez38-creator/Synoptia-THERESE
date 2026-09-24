@@ -307,6 +307,16 @@ class ContactCreate(BaseModel):
     scope_id: str | None = None
 
 
+def _null_ne_touche_pas(modele: BaseModel, champs: tuple[str, ...]) -> None:
+    """B-1162 : un `null` ENVOYÉ sur une colonne NOT NULL vaut « ne pas
+    toucher », comme le promettent les schémas de mise à jour. Retiré des
+    champs posés, il disparaît du `model_dump(exclude_unset=True)` de la
+    route, au lieu d'écrire None et de tomber en 500."""
+    for champ in champs:
+        if champ in modele.model_fields_set and getattr(modele, champ) is None:
+            modele.model_fields_set.discard(champ)
+
+
 class ContactUpdate(BaseModel):
     """Update contact request."""
 
@@ -358,6 +368,11 @@ class ContactUpdate(BaseModel):
     @classmethod
     def _relance_au_jour_civil_paris(cls, valeur: Any) -> Any:
         return _jour_civil_de_relance(valeur)
+
+    @model_validator(mode="after")
+    def _null_sur_champ_obligatoire(self) -> Self:
+        _null_ne_touche_pas(self, ("scope", "stage", "score", "rgpd_consentement"))
+        return self
 
 
 class ContactResponse(BaseModel):
@@ -491,6 +506,11 @@ class ProjectUpdate(BaseModel):
     # est justement globale. `None` = ne pas toucher au périmètre existant.
     scope: str | None = None  # global | project | conversation
     scope_id: str | None = None
+
+    @model_validator(mode="after")
+    def _null_sur_champ_obligatoire(self) -> Self:
+        _null_ne_touche_pas(self, ("name", "status", "scope"))
+        return self
 
 
 class ProjectResponse(BaseModel):
