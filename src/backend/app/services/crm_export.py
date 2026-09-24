@@ -128,7 +128,8 @@ def _neutraliser_formule(texte: str) -> str:
     l'ancienne expression laissait passer parce qu'un chiffre suit le « + »,
     est désamorcé, et un téléphone en +33 reste intact.
     """
-    return neutraliser_formule(texte)
+    # str() : mypy lit les imports `app.*` comme Any (cliquet de la CI).
+    return str(neutraliser_formule(texte))
 
 
 def _format_value(value: Any) -> str:
