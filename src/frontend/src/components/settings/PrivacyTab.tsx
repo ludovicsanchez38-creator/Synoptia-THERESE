@@ -214,6 +214,9 @@ export function PrivacyTab() {
   }
 
   async function handleSavePurge() {
+    // B-1209 : sans réglages lus, l'écran ne montre que ses valeurs par défaut ;
+    // les enregistrer pourrait réactiver une purge que l'utilisateur a coupée.
+    if (purgeIndisponible) return;
     setSaving(true);
     setError(null);
     try {
@@ -680,7 +683,7 @@ export function PrivacyTab() {
             variant="primary"
             size="sm"
             onClick={handleSavePurge}
-            disabled={saving}
+            disabled={saving || purgeIndisponible}
           >
             {saving ? (
               <>
