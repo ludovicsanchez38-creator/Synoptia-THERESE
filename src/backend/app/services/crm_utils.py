@@ -236,17 +236,6 @@ def etiquettes_ecartees(valeur: Any) -> int:
     return 1
 
 
-def parse_tags_json(value: str | None) -> str | None:
-    """Convertit une chaine de tags separee par des virgules en JSON array."""
-    if value is None:
-        return None
-    if isinstance(value, str):
-        value = value.strip()
-    if not value:
-        return None
-    return json.dumps(value.split(","))
-
-
 def safe_strip(value: str | None, default: str = "") -> str:
     """Strip une valeur en gerant les None et types mixtes."""
     if value is None:
@@ -336,7 +325,9 @@ async def upsert_contact(
     tags_raw = row.get("Tags", "")
     if isinstance(tags_raw, str):
         tags_raw = tags_raw.strip() if tags_raw else ""
-    tags_json = parse_tags_json(tags_raw) if tags_raw else None
+    # B-1300 : règle unique des étiquettes, comme les deux imports.
+    tags_lues = etiquettes_lues(tags_raw)
+    tags_json = json.dumps(tags_lues) if tags_lues else None
 
     # Fonctions d'extraction de champs
     def _get(key: str, default: str = "") -> str | None:
