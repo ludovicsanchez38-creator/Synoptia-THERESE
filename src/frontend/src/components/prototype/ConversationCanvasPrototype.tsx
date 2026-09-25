@@ -2596,7 +2596,13 @@ export function ConversationCanvasPrototype() {
               closeTrustCenter();
               openSettings('privacy');
             }}
-            onOpenAdvanced={() => openSettings('advanced')}
+            onOpenAdvanced={() => {
+              // B-1472 : même défaut que B-1359, et l'onglet Avancé est
+              // réservé au mode Contributeur. Le Centre passe la main et
+              // ouvre l'onglet qu'il nomme (service d'IA et modèle).
+              closeTrustCenter();
+              openSettings('ai');
+            }}
           />
         )}
       </AnimatePresence>

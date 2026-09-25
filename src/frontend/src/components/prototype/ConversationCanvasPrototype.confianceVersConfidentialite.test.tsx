@@ -91,3 +91,28 @@ describe('Centre de confiance vers Confidentialité (B-1359, B-1360)', () => {
     await waitFor(() => expect(declencheur).toHaveFocus());
   });
 });
+
+/**
+ * B-1472 (recette P-146, lot 5, KO-11) : « Paramètres », l'autre bouton du
+ * pied du Centre, gardait le défaut que B-1359 avait corrigé pour
+ * « Confidentialité » : Paramètres s'ouvrait sous le Centre, sur l'onglet
+ * Avancé réservé au mode Contributeur. Il ferme le Centre et ouvre l'onglet
+ * que le Centre nomme (« Le service d'IA et le modèle se choisissent dans
+ * Paramètres »).
+ */
+describe('Centre de confiance vers Paramètres (B-1472)', () => {
+  it('le Centre se ferme et Paramètres s’ouvre sur le service d’IA', async () => {
+    vi.mocked(fetchSetupStatus).mockResolvedValue(etat(true));
+    render(<ConversationCanvasPrototype />);
+    fireEvent.click(screen.getByRole('button', { name: 'Contrôle des données' }));
+    const centre = await screen.findByRole('dialog', { name: 'Centre de confiance' });
+
+    fireEvent.click(within(centre).getByRole('button', { name: 'Paramètres' }));
+
+    expect(usePanelStore.getState().showSettings).toBe(true);
+    expect(usePanelStore.getState().requestedSettingsTab).toBe('ai');
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Centre de confiance' })).not.toBeInTheDocument();
+    });
+  });
+});
