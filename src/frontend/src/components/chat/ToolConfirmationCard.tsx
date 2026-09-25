@@ -82,18 +82,54 @@ function EmailDetails({ confirmation }: { confirmation: PendingConfirmation }) {
   );
 }
 
+// B-1480 : les actions natives se confirment en français, comme le document
+// (B-1454). Une clé inconnue (outil de connecteur) garde son nom.
+const TITRES_DES_OUTILS: Record<string, string> = {
+  create_contact: 'Confirmer la création du contact',
+  create_project: 'Confirmer la création du projet',
+  web_search: 'Confirmer la recherche sur le web',
+  browser_navigate: 'Confirmer la navigation web',
+};
+
+const LIBELLES_DES_ARGUMENTS: Record<string, string> = {
+  first_name: 'Prénom',
+  last_name: 'Nom',
+  company: 'Entreprise',
+  email: 'E-mail',
+  phone: 'Téléphone',
+  address: 'Adresse',
+  notes: 'Notes',
+  name: 'Nom',
+  description: 'Description',
+  status: 'Statut',
+  budget: 'Budget',
+  tags: 'Étiquettes',
+  query: 'Recherche',
+  max_results: 'Nombre de résultats',
+  url: 'Adresse web',
+  action: 'Action',
+  selector: 'Élément visé',
+  value: 'Valeur',
+};
+
+function estOutilDeConnecteur(toolName: string): boolean {
+  return toolName.includes('__');
+}
+
 function GenericDetails({ confirmation }: { confirmation: PendingConfirmation }) {
   // Passe 4 : hors e-mail et agenda, la carte empruntait le titre « envoi
-  // de l'email » et des champs vides. Confirmer à l'aveugle. On montre le
-  // nom réel et les arguments, sans les clés internes (_confirmation_*).
+  // de l'email » et des champs vides. Confirmer à l'aveugle. On montre les
+  // arguments, sans les clés internes (_confirmation_*) ; pour un connecteur,
+  // le nom complet de l'outil reste la trace du connecteur visé.
   const entries = Object.entries(confirmation.arguments).filter(
     ([key]) => !key.startsWith('_'),
   );
+  const connecteur = estOutilDeConnecteur(confirmation.tool_name);
   return (
     <dl className="mb-3 space-y-1 text-xs text-text-muted">
-      <Detail label="Outil">{confirmation.tool_name}</Detail>
+      {connecteur && <Detail label="Outil du connecteur">{confirmation.tool_name}</Detail>}
       {entries.map(([key, raw]) => (
-        <Detail key={key} label={key}>
+        <Detail key={key} label={connecteur ? key : (LIBELLES_DES_ARGUMENTS[key] ?? key)}>
           {raw == null ? '' : typeof raw === 'string' ? raw : JSON.stringify(raw)}
         </Detail>
       ))}
@@ -135,7 +171,9 @@ function ConfirmationItem({ confirmation }: { confirmation: PendingConfirmation 
       ? 'Confirmer l’envoi de l’email'
       : isDocument
         ? 'Confirmer la création du document'
-        : `Confirmer l’action ${confirmation.tool_name}`;
+        : estOutilDeConnecteur(confirmation.tool_name)
+          ? `Confirmer l’outil « ${toolName} » d’un connecteur`
+          : TITRES_DES_OUTILS[toolName] ?? `Confirmer l’action ${toolName}`;
 
   async function handle(approved: boolean) {
     setBusy(approved ? 'approve' : 'cancel');

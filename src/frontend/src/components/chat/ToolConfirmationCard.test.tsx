@@ -99,7 +99,8 @@ describe('ToolConfirmationCard (US-002)', () => {
     render(<ToolConfirmationCard />);
 
     expect(screen.queryByText(/Confirmer l[’']envoi de l[’']email/)).toBeNull();
-    expect(screen.getAllByText(/web_search/).length).toBeGreaterThan(0);
+    // B-1480 : le titre dit l'action en français, sans le nom technique.
+    expect(screen.getByText('Confirmer la recherche sur le web')).toBeTruthy();
     expect(screen.getByText('adresses du dossier Martin')).toBeTruthy();
   });
 
