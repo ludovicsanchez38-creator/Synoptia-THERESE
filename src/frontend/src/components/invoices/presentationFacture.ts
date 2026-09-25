@@ -66,6 +66,8 @@ export function cellulesStatut(invoice: Invoice): {
   const due = dateListe(invoice.due_date);
   const envoye = masculin(invoice.document_type) ? `Envoyé le ${issue}` : `Envoyée le ${issue}`;
   const emis = masculin(invoice.document_type) ? `Émis le ${issue}` : `Émise le ${issue}`;
+  // B-1449 : un brouillon n'est pas émis ; il porte seulement une date.
+  const date = masculin(invoice.document_type) ? `Daté du ${issue}` : `Datée du ${issue}`;
 
   if (!STATUS_CONFIG[invoice.status]) {
     return {
@@ -77,7 +79,7 @@ export function cellulesStatut(invoice: Invoice): {
 
   if (invoice.status === 'draft') {
     return {
-      envoi: { ton: 'neutre', texte: 'Brouillon', sous: emis },
+      envoi: { ton: 'neutre', texte: 'Brouillon', sous: date },
       paiement: { texte: 'Sans objet' },
       echeance: {
         texte: due,
@@ -139,9 +141,11 @@ export function cellulesStatut(invoice: Invoice): {
         ? `Payée le ${date}`
         : 'Payée';
     // B-1388 : le moteur ne garde aucune date d'envoi ; une facture payée a
-    // pu ne jamais partir (devis converti puis payé). Seule l'émission est sûre.
+    // pu ne jamais partir (devis converti puis payé). B-1449 : « Émise le »
+    // passait pour un état d'envoi ; la colonne dit que l'envoi n'est pas
+    // tracé (P-139), l'émission reste en dessous.
     return {
-      envoi: { ton: 'neutre', texte: emis },
+      envoi: { ton: 'neutre', texte: 'Envoi non tracé', sous: emis },
       paiement: { ton: 'succes', texte },
       echeance: { texte: due, muted: true },
     };
@@ -168,7 +172,7 @@ export function cellulesStatut(invoice: Invoice): {
   // base, non filtrables hors devis). Affirmer un impayé mentirait ; on replie
   // sur le libellé réel du statut, en ton neutre. B-1388 : ni un envoi.
   return {
-    envoi: { ton: 'neutre', texte: emis },
+    envoi: { ton: 'neutre', texte: 'Envoi non tracé', sous: emis },
     paiement: { ton: 'neutre', texte: STATUS_CONFIG[invoice.status].label },
     echeance: { texte: due },
   };
