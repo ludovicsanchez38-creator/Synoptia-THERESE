@@ -217,6 +217,8 @@ def _etats_de_module_neufs(monkeypatch):
 
     monkeypatch.setattr(user_profile, "_cached_profile", None)
     monkeypatch.setattr(bac_a_sable, "_SONDE_VERROU", None)
+    # B-1332 : le résultat mémorisé de la sonde aussi.
+    monkeypatch.setattr(bac_a_sable, "_SONDE_RESULTAT", None)
 
 
 @pytest.fixture(scope="function")
