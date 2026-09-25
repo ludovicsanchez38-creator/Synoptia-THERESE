@@ -13,6 +13,7 @@ PUIS au rollback, qui rappelle la même fonction.
 
 from __future__ import annotations
 
+import asyncio
 import errno
 import logging
 from pathlib import Path
@@ -164,11 +165,19 @@ async def test_une_interruption_pendant_l_arret_des_indexations_ne_verrouille_pa
     assert resp.status_code == 200, resp.text
     nom = resp.json()["backup_name"]
 
+    # B-1259 : l'arrêt des indexations ne lève pas d'OSError (set, puis
+    # gather avec return_exceptions) ; son vrai chemin d'interruption est
+    # l'ANNULATION (déconnexion, arrêt de l'application).
     async def interrompu():
-        raise OSError("interruption simulée")
+        raise asyncio.CancelledError()
 
     monkeypatch.setattr(memory_router, "arreter_les_indexations_de_fiches", interrompu)
 
-    await client.post(f"/api/data/restore/{nom}?confirm=true", json={"password": PASSE})
+    try:
+        await client.post(f"/api/data/restore/{nom}?confirm=true", json={"password": PASSE})
+    except (asyncio.CancelledError, Exception):
+        pass
 
     assert maintenance_mode.active is False
+    # US-003 : l'archive déchiffrée en clair ne survit pas à l'annulation.
+    assert not list(data_dir.rglob(f".{nom}.restore.tar.gz")), "archive déchiffrée laissée en clair"
