@@ -848,11 +848,16 @@ function NewBoardForm({
               {confirmationSnapshot.context && <p>Contexte : {confirmationSnapshot.context}</p>}
               <p>Mode : {confirmationSnapshot.mode === 'cloud' ? 'Cloud avec recherche web' : 'Souverain via Ollama local'}</p>
               <p>Conseillers : {confirmationSnapshot.advisorCount}</p>
-              <p className="mt-1 font-semibold">
-                Le mode cloud transmet la question, le contexte, le profil local utile et les résultats web aux fournisseurs configurés. Jusqu’à six appels au service d’IA peuvent consommer des crédits.
-              </p>
-              {confirmationSnapshot.mode === 'sovereign' && (
-                <p className="mt-1 font-semibold">Ollama doit être disponible. Aucun repli cloud ne sera effectué.</p>
+              {/* B-1463 : comme BoardPanel (B-642), le paragraphe du cloud ne
+                  s'affiche plus sous un lancement 100 % local. */}
+              {confirmationSnapshot.mode === 'cloud' ? (
+                <p className="mt-1 font-semibold">
+                  Le mode cloud transmet la question, le contexte, le profil local utile et les résultats web aux fournisseurs configurés. Jusqu’à six appels au service d’IA peuvent consommer des crédits.
+                </p>
+              ) : (
+                <p className="mt-1 font-semibold">
+                  Tout reste sur cette machine : la question, le contexte et les avis passent par Ollama en local, un conseiller après l’autre. Ollama doit être disponible ; aucun repli vers le cloud n’aura lieu.
+                </p>
               )}
             </div>
           </div>

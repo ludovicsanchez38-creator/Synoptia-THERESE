@@ -82,6 +82,25 @@ describe('Board 0.40 conversationnel', () => {
     expect(onStart).toHaveBeenCalledWith(expect.objectContaining({ mode: 'cloud' }));
   });
 
+  it('B-1463 : en Souverain, la confirmation ne parle pas du cloud', () => {
+    // Recette P-146, lot 4 : la carte reprenait « Le mode cloud transmet la
+    // question… » sous un lancement 100 % local (B-642 n'avait corrigé que
+    // BoardPanel).
+    render(<BoardWorkspaceCanvas
+      resource={{ status: 'ready', data: workspace, error: null }} decisionResource={null}
+      run={idleRun} target="new-board" onRetry={vi.fn()} onRetryDecision={vi.fn()}
+      onStart={vi.fn()} onCancel={vi.fn()} onReset={vi.fn()} onOpenClassic={vi.fn()}
+    />);
+    fireEvent.click(screen.getByRole('radio', { name: /Souverain/ }));
+    fireEvent.change(screen.getByLabelText('Question stratégique'), {
+      target: { value: 'Faut-il embaucher un apprenti ?' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Préparer la délibération' }));
+    const bloc = screen.getByTestId('board-confirmation');
+    expect(bloc).not.toHaveTextContent('Le mode cloud transmet');
+    expect(bloc).toHaveTextContent('Tout reste sur cette machine');
+  });
+
   it('réserve l’annulation d’un Board engagé à une confirmation dédiée', () => {
     const onCancel = vi.fn();
     const runningRun: BoardRunState = {
