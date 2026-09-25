@@ -32,6 +32,8 @@ interface BillingProfileState {
    *  `statutLecture === 'lu'` : sans lecture réussie, il ne dit rien. */
   missing: string[] | null;
   statutLecture: StatutLectureProfil;
+  /** P-136 : le numéro de TVA de l'émetteur est-il au profil ? `null` = inconnu. */
+  tvaIntraRenseigne: boolean | null;
   refresh: () => Promise<void>;
 }
 
@@ -50,13 +52,18 @@ export const useBillingProfileStore = create<BillingProfileState>((set, get) => 
   return {
     missing: null,
     statutLecture: 'jamais_lu',
+    tvaIntraRenseigne: null,
 
     refresh: async () => {
       const jeton = ++dernierJeton;
       try {
         const status = await getBillingProfileStatus();
         if (jeton !== dernierJeton) return;
-        set({ missing: status.is_complete ? null : status.missing, statutLecture: 'lu' });
+        set({
+          missing: status.is_complete ? null : status.missing,
+          statutLecture: 'lu',
+          tvaIntraRenseigne: typeof status.tva_intra_renseigne === 'boolean' ? status.tva_intra_renseigne : null,
+        });
       } catch {
         if (jeton !== dernierJeton) return;
         // Une panne réseau ne bloque pas le formulaire, et n'efface pas non

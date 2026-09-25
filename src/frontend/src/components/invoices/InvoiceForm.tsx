@@ -127,6 +127,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
   // simultanément, donc compléter le profil doit se refléter ici sans remontage.
   const billingMissing = useBillingProfileStore((s) => s.missing);
   const statutLectureProfil = useBillingProfileStore((s) => s.statutLecture);
+  const tvaIntraRenseigne = useBillingProfileStore((s) => s.tvaIntraRenseigne);
   const refreshBillingStatus = useBillingProfileStore((s) => s.refresh);
   useEffect(() => {
     void refreshBillingStatus();
@@ -637,6 +638,22 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
                 Infos de ta société incomplètes ({billingMissing.join(', ')}). Une facture sans ces
                 informations n'est pas conforme. Complète-les dans Réglages &gt; Profil avant de
                 générer le PDF.
+              </p>
+            </div>
+          )}
+
+          {/* P-136 : service-public.fr F31808 (vérifié le 11 août 2026) : le numéro
+              de TVA du vendeur figure sur la facture, sauf montant total HT
+              inférieur ou égal à 150 €. Avertissement, pas blocage. */}
+          {tvaIntraRenseigne === false
+            && (documentType === 'facture' || documentType === 'avoir')
+            && lines.some((l) => Number(l.tva_rate) > 0)
+            && calculateInvoiceTotals().subtotalHT > 150 && (
+            <div className={bandeauProfil} data-testid="invoiceform-tva-intra">
+              <AlertTriangle className="h-[18px] w-[18px] shrink-0 mt-0.5" />
+              <p className="text-sm">
+                Ton numéro de TVA intracommunautaire n’est pas renseigné (Réglages &gt; Profil). Il
+                doit figurer sur une facture avec TVA de plus de 150 € HT.
               </p>
             </div>
           )}

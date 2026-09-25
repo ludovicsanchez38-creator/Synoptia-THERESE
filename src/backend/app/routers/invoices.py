@@ -834,10 +834,14 @@ async def billing_profile_status(session: AsyncSession = Depends(get_session)):
         return {
             "is_complete": False,
             "missing": ["raison sociale ou nom", "SIRET", "adresse"],
+            "tva_intra_renseigne": False,
         }
     return {
         "is_complete": profile.is_billing_complete(),
         "missing": profile.missing_billing_fields(),
+        # P-136 : le formulaire avertit (sans bloquer) d'une facture avec TVA
+        # de plus de 150 € HT sans numéro de TVA de l'émetteur (F31808).
+        "tva_intra_renseigne": bool((profile.tva_intra or "").strip()),
     }
 
 
