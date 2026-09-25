@@ -159,7 +159,15 @@ export function PipelineView({ contacts, onContactClick, onStageChange }: Pipeli
           : null;
       })}
     >
-      <div ref={grilleRef} className="grid grid-flow-col auto-cols-[minmax(15rem,1fr)] gap-3 overflow-x-auto pb-2 snap-x snap-proximity">
+      {/* B-1426 : la grille défile en largeur ; nommée et focalisable, elle
+          défile aussi aux flèches, colonnes vides comprises. */}
+      <div
+        ref={grilleRef}
+        role="region"
+        aria-label="Étapes du pipeline"
+        tabIndex={0}
+        className="grid grid-flow-col auto-cols-[minmax(15rem,1fr)] gap-3 overflow-x-auto pb-2 snap-x snap-proximity rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
         {PIPELINE_STAGES.map((stage) => (
           <DroppableStage key={stage.id} stage={stage} count={contactsByStage[stage.id]?.length || 0}>
             <SortableContext
