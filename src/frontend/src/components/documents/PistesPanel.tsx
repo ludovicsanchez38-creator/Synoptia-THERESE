@@ -73,8 +73,19 @@ export interface PistesPanelProps {
 // COMPOSANT
 // =============================================================================
 
+/**
+ * B-1396 (Zoé, cycle 13) : à 200 % (720×450), trame et Pistes à 288 px
+ * chacune laissaient 131 px à l'éditeur. Dans une fenêtre étroite, le volet
+ * s'ouvre replié ; l'utilisateur le déplie d'un clic.
+ */
+function fenetreEtroite(): boolean {
+  return typeof window !== 'undefined'
+    && typeof window.matchMedia === 'function'
+    && window.matchMedia('(max-width: 1023px)').matches;
+}
+
 export function PistesPanel({ pistes, onExplore, onIgnore }: PistesPanelProps) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(fenetreEtroite);
   const [showTraitees, setShowTraitees] = useState(false);
   const boutonDeplierRef = useRef<HTMLButtonElement>(null);
   const boutonReplierRef = useRef<HTMLButtonElement>(null);

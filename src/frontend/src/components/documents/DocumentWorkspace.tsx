@@ -213,7 +213,8 @@ export function DocumentWorkspace({ documentId, onBack }: DocumentWorkspaceProps
         </div>
       ) : (
         <div className="flex-1 min-h-0 flex overflow-hidden">
-          <div className="w-72 shrink-0 border-r border-border/40 overflow-y-auto">
+          {/* B-1396 : 224 px sous 1 280 px, pour laisser la place d'écrire. */}
+          <div className="w-56 xl:w-72 shrink-0 border-r border-border/40 overflow-y-auto">
             <OutlineTree
               sections={doc.sections}
               activeSectionId={sectionActive}
