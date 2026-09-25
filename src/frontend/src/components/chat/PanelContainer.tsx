@@ -46,6 +46,7 @@ export function PanelContainer({ onUserCommandsRefresh }: PanelContainerProps) {
   const {
     showSettings,
     requestedSettingsTab,
+    requestedSettingsSection,
     showContactModal,
     showProjectModal,
     showBoardPanel,
@@ -104,7 +105,12 @@ export function PanelContainer({ onUserCommandsRefresh }: PanelContainerProps) {
         }
       >
         {/* Settings Modal */}
-        <SettingsModal isOpen={showSettings} onClose={closeSettings} requestedTab={requestedSettingsTab} />
+        <SettingsModal
+          isOpen={showSettings}
+          onClose={closeSettings}
+          requestedTab={requestedSettingsTab}
+          requestedSection={requestedSettingsSection}
+        />
 
         {/* Contact Modal */}
         <ContactModal

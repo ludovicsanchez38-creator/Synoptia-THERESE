@@ -9,6 +9,9 @@ import { create } from 'zustand';
 import * as api from '../services/api';
 import type { SettingsTab } from '../lib/deepLinks';
 
+/** Sections d'une rubrique des Paramètres qu'un lien peut viser. */
+export type SettingsSection = 'facturation';
+
 // ============================================================
 // Types
 // ============================================================
@@ -37,6 +40,8 @@ interface PanelState {
   showShortcuts: boolean;
   showSettings: boolean;
   requestedSettingsTab: SettingsTab | null;
+  /** B-1346 : la section de la rubrique à amener sous les yeux (et au focus). */
+  requestedSettingsSection: SettingsSection | null;
   showPromptLibrary: boolean;
   showBoardPanel: boolean;
   showContactModal: boolean;
@@ -59,7 +64,7 @@ interface PanelState {
   closeCommandPalette: () => void;
   openShortcuts: () => void;
   closeShortcuts: () => void;
-  openSettings: (tab?: SettingsTab) => void;
+  openSettings: (tab?: SettingsTab, section?: SettingsSection) => void;
   closeSettings: () => void;
   openPromptLibrary: () => void;
   closePromptLibrary: () => void;
@@ -95,6 +100,7 @@ export const usePanelStore = create<PanelState>((set, get) => ({
   showShortcuts: false,
   showSettings: false,
   requestedSettingsTab: null,
+  requestedSettingsSection: null,
   showPromptLibrary: false,
   showBoardPanel: false,
   showContactModal: false,
@@ -146,6 +152,7 @@ export const usePanelStore = create<PanelState>((set, get) => ({
       showShortcuts: false,
       showSettings: false,
       requestedSettingsTab: null,
+      requestedSettingsSection: null,
       showBoardPanel: false,
       showContactModal: false,
       showProjectModal: false,
@@ -160,8 +167,9 @@ export const usePanelStore = create<PanelState>((set, get) => ({
   closeCommandPalette: () => set({ showCommandPalette: false }),
   openShortcuts: () => set({ showShortcuts: true }),
   closeShortcuts: () => set({ showShortcuts: false }),
-  openSettings: (tab) => set({ showSettings: true, requestedSettingsTab: tab ?? null }),
-  closeSettings: () => set({ showSettings: false, requestedSettingsTab: null }),
+  openSettings: (tab, section) =>
+    set({ showSettings: true, requestedSettingsTab: tab ?? null, requestedSettingsSection: section ?? null }),
+  closeSettings: () => set({ showSettings: false, requestedSettingsTab: null, requestedSettingsSection: null }),
   openPromptLibrary: () => set({ showPromptLibrary: true }),
   closePromptLibrary: () => set({ showPromptLibrary: false }),
   toggleBoardPanel: () => set((s) => ({ showBoardPanel: !s.showBoardPanel })),

@@ -25,6 +25,7 @@ import { useUXMode } from '../../hooks/useUXMode';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { useBillingProfileStore } from '../../stores/billingProfileStore';
 import { resolveSettingsTab, type SettingsTab } from '../../lib/deepLinks';
+import type { SettingsSection } from '../../stores/panelStore';
 import { Spinner } from '../ui/Spinner';
 import { Alerte } from '../ui/Alerte';
 import { Squelette } from '../ui/Squelette';
@@ -34,6 +35,8 @@ interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
   requestedTab?: SettingsTab | null;
+  /** B-1346 : section à amener sous les yeux une fois la rubrique chargée. */
+  requestedSection?: SettingsSection | null;
 }
 
 type Tab = 'profile' | 'ai' | 'services' | 'accessibility' | 'tools' | 'agents' | 'privacy' | 'advanced' | 'about';
@@ -58,7 +61,7 @@ async function loadSetting<T>(label: string, request: Promise<T>, fallback: T) {
   }
 }
 
-export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalProps) {
+export function SettingsModal({ isOpen, onClose, requestedTab, requestedSection }: SettingsModalProps) {
   const [activeTab, setActiveTab] = useState<Tab>(
     () => requestedTab ?? resolveSettingsTab(window.location.search) ?? 'profile',
   );
@@ -175,6 +178,27 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
   useEffect(() => {
     if (isOpen && requestedTab) setActiveTab(requestedTab);
   }, [isOpen, requestedTab]);
+
+  // B-1346 : « Compléter le profil de facturation » ouvrait le haut du
+  // profil ; la facturation est tout en bas. Une fois la rubrique chargée, on
+  // amène la section sous les yeux et on pose le focus dans son premier champ,
+  // une seule fois par ouverture.
+  const sectionAmeneeRef = useRef(false);
+  useEffect(() => {
+    if (!isOpen) {
+      sectionAmeneeRef.current = false;
+      return;
+    }
+    if (loading || sectionAmeneeRef.current || requestedSection !== 'facturation' || activeTab !== 'profile') return;
+    const cadre = requestAnimationFrame(() => {
+      const section = document.getElementById('settings-emetteur-title')?.closest('section');
+      if (!section) return;
+      sectionAmeneeRef.current = true;
+      section.scrollIntoView?.({ block: 'start' });
+      section.querySelector<HTMLElement>('input, textarea, select')?.focus();
+    });
+    return () => cancelAnimationFrame(cadre);
+  }, [isOpen, loading, requestedSection, activeTab]);
 
   useEffect(() => {
     if (isOpen) {

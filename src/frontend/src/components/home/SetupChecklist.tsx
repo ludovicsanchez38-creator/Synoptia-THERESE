@@ -22,7 +22,8 @@ export function SetupChecklist({ status, niveau = 'h2' }: { status: SetupStatus;
       cle: 'cle_ia',
       label: 'Configurer une clé IA (ou Ollama)',
       icon: KeyRound,
-      action: () => usePanelStore.getState().openSettings(),
+      // B-1363 : sans onglet, Paramètres s'ouvrait sur le Profil.
+      action: () => usePanelStore.getState().openSettings('ai'),
     },
     {
       done: status.has_calendar,
@@ -43,7 +44,8 @@ export function SetupChecklist({ status, niveau = 'h2' }: { status: SetupStatus;
       cle: 'facturation',
       label: 'Compléter le profil de facturation',
       icon: FileSignature,
-      action: () => usePanelStore.getState().openSettings(),
+      // B-1346 : la facturation est en bas du profil ; on y mène directement.
+      action: () => usePanelStore.getState().openSettings('profile', 'facturation'),
     },
   ].filter((s) => !s.done && !invérifiables.has(s.cle));
 
