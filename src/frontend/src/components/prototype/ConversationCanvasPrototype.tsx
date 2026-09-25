@@ -793,13 +793,19 @@ export function ConversationCanvasPrototype() {
           }),
     [setupStatus],
   );
+  // B-1348 : lu une seule fois au montage, l'état restait celui d'avant les
+  // Paramètres (« Compléter le profil de facturation » après l'avoir fait).
+  // Tout ce que la mise en route mesure se règle dans Paramètres : on relit
+  // à leur fermeture.
+  const parametresOuverts = usePanelStore((state) => state.showSettings);
   useEffect(() => {
+    if (parametresOuverts) return;
     let annule = false;
     fetchSetupStatus()
       .then((statut) => { if (!annule) setSetupStatus(statut); })
       .catch(() => { /* indisponible : l'état vide standard s'affiche */ });
     return () => { annule = true; };
-  }, []);
+  }, [parametresOuverts]);
   const { resource: contactsResource, refresh: refreshContacts } = useContactsResource();
   const [scenario, setScenario] = useState<Scenario>(initialScenario);
   // B-860 : même règle que `chooseScenario`, sinon `?scenario=email` laissait
