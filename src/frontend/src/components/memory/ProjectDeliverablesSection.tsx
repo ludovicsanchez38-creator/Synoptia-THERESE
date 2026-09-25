@@ -83,7 +83,7 @@ export function ProjectDeliverablesSection({
               id={`livrable-${projectId}`}
               value={titre}
               onChange={(e) => setTitre(e.target.value)}
-              placeholder="Nouveau livrable, par exemple « Plans cotés »"
+              placeholder="Nouveau livrable"
               maxLength={200}
             />
           </div>
