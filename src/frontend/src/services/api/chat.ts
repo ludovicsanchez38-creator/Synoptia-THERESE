@@ -383,6 +383,9 @@ export async function confirmTool(
   return request<ConfirmToolResponse>('/api/chat/confirm-tool', {
     method: 'POST',
     body: JSON.stringify({ confirmation_id: confirmationId, approved }),
+    // B-1459 : l'action confirmée peut durer (document, indexation, envoi) ;
+    // le délai de 30 s annonçait un échec pendant qu'elle aboutissait.
+    timeoutMs: null,
   });
 }
 
