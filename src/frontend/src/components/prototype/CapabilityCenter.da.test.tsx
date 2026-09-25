@@ -89,8 +89,9 @@ describe('Lot 3 DA : typeCapacite', () => {
     expect(screen.getByRole('button', { name: /^Tâches/ })).toHaveTextContent('Vue');
     expect(screen.getByRole('button', { name: /^Relances et alertes/ })).toHaveTextContent('Vue');
     expect(screen.getByRole('button', { name: /^Brief du jour/ })).toHaveTextContent('Parcours');
-    expect(screen.getByRole('button', { name: /^Email/ })).toHaveTextContent('Parcours');
-    expect(screen.getByRole('button', { name: /^Agenda/ })).toHaveTextContent('Parcours');
+    // P-128 : les deux cartes portent le nom de l'écran qu'elles ouvrent.
+    expect(screen.getByRole('button', { name: /^Écrire un e-mail/ })).toHaveTextContent('Parcours');
+    expect(screen.getByRole('button', { name: /^Préparer un rendez-vous/ })).toHaveTextContent('Parcours');
 
     fireEvent.click(screen.getByRole('tab', { name: /Développer mon activité/ }));
     expect(screen.getByRole('button', { name: /^Contacts/ })).toHaveTextContent('Parcours');
@@ -145,8 +146,9 @@ describe('Lot 3 DA : focus, intentions, vide, pied', () => {
     ouvrir();
     const pied = screen.getByRole('dialog').querySelector('footer') as HTMLElement;
     expect(pied).toHaveTextContent('Demande relue');
-    // P-098 : « Parcours et Vue s'ouvrent au clic ».
-    expect(pied).toHaveTextContent("s'ouvrent au clic");
+    // P-098 : Parcours et Vue s'ouvrent au clic. P-128 : la légende dit en
+    // plus ce que chacun ouvre, et garde « au clic » pour les deux.
+    expect(pied.textContent?.match(/au clic/g)?.length).toBe(2);
   });
 });
 

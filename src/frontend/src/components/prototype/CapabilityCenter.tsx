@@ -43,7 +43,7 @@ import { Button } from '../ui/Button';
 import { EtatVide } from '../ui/EtatVide';
 import { Input } from '../ui/Input';
 import { cn } from '../../lib/utils';
-import { CLASSES_GROUPE_CAPACITE, classesTypeCapacite, typeCapacite } from './typeCapacite';
+import { CLASSES_GROUPE_CAPACITE, EXPLICATION_DU_TYPE, classesTypeCapacite, typeCapacite } from './typeCapacite';
 import { replierPourRecherche } from '../../lib/replierPourRecherche';
 
 export type CapabilityGroupId = 'organize' | 'business' | 'create' | 'decide' | 'automate' | 'control';
@@ -126,15 +126,17 @@ export const capabilities: CapabilityItem[] = [
     prompt: "Qu’est-ce qui demande mon attention aujourd’hui ?",
   },
   {
-    id: 'email', group: 'organize', title: 'Email', icon: Mail, scenario: 'email',
+    // P-128 : la carte porte le nom de l'écran qu'elle ouvre (le mode « Écrire »).
+    id: 'email', group: 'organize', title: 'Écrire un e-mail', icon: Mail, scenario: 'email',
     description: 'Lire les messages et préparer des réponses avec le contexte de la relation.',
-    features: ['IMAP/Gmail', 'Brouillons', 'Signatures'], keywords: ['mail', 'message', 'réponse'],
+    features: ['IMAP/Gmail', 'Brouillons', 'Signatures'], keywords: ['email', 'e-mail', 'mail', 'message', 'réponse'],
     prompt: 'Résume mes messages prioritaires et prépare les réponses nécessaires.',
   },
   {
-    id: 'calendar', group: 'organize', title: 'Agenda', icon: Calendar, scenario: 'meeting',
+    // P-128 : ouvrait « Préparer un rendez-vous » sous le nom « Agenda ».
+    id: 'calendar', group: 'organize', title: 'Préparer un rendez-vous', icon: Calendar, scenario: 'meeting',
     description: 'Préparer les rendez-vous et créer des événements sans changer d’écran.',
-    features: ['CalDAV/Google', 'Ajout rapide', 'Import/Export ICS'], keywords: ['calendrier', 'rendez-vous', 'événement'],
+    features: ['CalDAV/Google', 'Ajout rapide', 'Import/Export ICS'], keywords: ['agenda', 'calendrier', 'rendez-vous', 'événement', 'séance'],
     prompt: 'Prépare mon prochain rendez-vous et rassemble le contexte utile.',
   },
   {
@@ -450,7 +452,7 @@ export function CapabilityCenter({
                           </span>
                           <b className="truncate text-sm font-semibold">{capability.title}</b>
                         </span>
-                        <span className={classesTypeCapacite(type)}>{type}</span>
+                        <span className={classesTypeCapacite(type)} title={EXPLICATION_DU_TYPE[type]}>{type}</span>
                         <span className="col-span-2 text-sm text-text-muted">{capability.description}</span>
                       </button>
                     );
@@ -460,7 +462,8 @@ export function CapabilityCenter({
             </div>
 
             <footer className="border-t border-border px-4 py-3 text-sm text-text-muted">
-              Parcours et Vue s'ouvrent au clic. Une Demande relue pose une phrase dans le composeur, que tu relis avant l'envoi.
+              {/* P-128 : ce que chaque type ouvre, pas seulement comment il s'ouvre. */}
+              {EXPLICATION_DU_TYPE.Vue} {EXPLICATION_DU_TYPE.Parcours} {EXPLICATION_DU_TYPE['Demande relue']}
             </footer>
           </div>
         </div>

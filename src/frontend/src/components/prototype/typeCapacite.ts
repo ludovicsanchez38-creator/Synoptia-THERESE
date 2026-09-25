@@ -8,6 +8,16 @@ import type { CapabilityGroupId, CapabilityItem } from './CapabilityCenter';
 // une Vue, et la légende ne l'expliquait nulle part.
 export type TypeCapacite = 'Demande relue' | 'Parcours' | 'Vue';
 
+/**
+ * P-128 (Hugo, cycle 13) : ce que chaque type ouvre. Une seule source pour la
+ * légende du Centre et l'infobulle du badge.
+ */
+export const EXPLICATION_DU_TYPE: Record<TypeCapacite, string> = {
+  Vue: 'Vue : ouvre un écran au clic (par exemple Tâches).',
+  Parcours: 'Parcours : ouvre au clic un mode guidé de l’Accueil (par exemple Préparer un rendez-vous).',
+  'Demande relue': 'Demande relue : pose une phrase dans le champ, que tu relis avant l’envoi.',
+};
+
 export const CLASSES_GROUPE_CAPACITE: Record<CapabilityGroupId, string> = {
   organize: 'bg-domaine-agenda-tint text-domaine-agenda',
   business: 'bg-domaine-factures-tint text-domaine-factures',
