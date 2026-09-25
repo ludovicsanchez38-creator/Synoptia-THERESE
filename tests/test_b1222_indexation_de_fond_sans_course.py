@@ -173,21 +173,35 @@ async def test_une_panne_persistante_ne_journalise_qu_une_trace(db_session, monk
 
 
 @pytest.mark.asyncio
-async def test_une_interruption_pendant_l_attente_ne_laisse_pas_une_purge_a_moitie_faite(client, monkeypatch):
+@pytest.mark.parametrize(
+    ("module", "attente"),
+    [
+        ("app.routers.memory", "arreter_les_indexations_de_fiches"),
+        ("app.services.memory_tools", "attendre_les_gestes_de_creation"),
+    ],
+)
+async def test_une_interruption_pendant_l_attente_ne_laisse_pas_une_purge_a_moitie_faite(
+    client, monkeypatch, module, attente
+):
     """B-1249 : l'attente de la fiche en vol (B-1234, jusqu'à 19 s) venait
     APRÈS le commit des suppressions ; une interruption à ce moment laissait
     des tables vides mais l'index vectoriel et les fichiers en place. Elle
-    vient désormais avant toute suppression."""
-    from app.routers import memory as memoire
+    vient désormais avant toute suppression. B-1280 : l'interruption réelle
+    est une annulation (déconnexion, arrêt), et l'attente des créations du
+    chat (B-1260) est la première."""
+    import importlib
 
     cree = await client.post("/api/memory/contacts", json={"first_name": "Alice", "last_name": "Martin"})
     assert cree.status_code == 200, cree.text
 
     async def interrompu():
-        raise OSError("interruption simulée pendant l'attente")
+        raise asyncio.CancelledError()
 
-    monkeypatch.setattr(memoire, "arreter_les_indexations_de_fiches", interrompu)
-    await client.delete("/api/data/all?confirm=true")
+    monkeypatch.setattr(importlib.import_module(module), attente, interrompu)
+    try:
+        await client.delete("/api/data/all?confirm=true")
+    except (asyncio.CancelledError, Exception):
+        pass
 
     restants = (await client.get("/api/memory/contacts")).json()
     assert len(restants) == 1, "la purge a supprimé les fiches avant l'attente interrompue"
