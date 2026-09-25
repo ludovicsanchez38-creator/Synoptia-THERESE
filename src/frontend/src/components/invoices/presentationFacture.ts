@@ -138,8 +138,10 @@ export function cellulesStatut(invoice: Invoice): {
       : date
         ? `Payée le ${date}`
         : 'Payée';
+    // B-1388 : le moteur ne garde aucune date d'envoi ; une facture payée a
+    // pu ne jamais partir (devis converti puis payé). Seule l'émission est sûre.
     return {
-      envoi: { ton: 'info', texte: envoye },
+      envoi: { ton: 'neutre', texte: emis },
       paiement: { ton: 'succes', texte },
       echeance: { texte: due, muted: true },
     };
@@ -164,9 +166,9 @@ export function cellulesStatut(invoice: Invoice): {
   // Couple type/statut non décrit par le tableau du design (une facture ou un
   // avoir `accepted`, `refused`, `expired`, `converted` : statuts présents en
   // base, non filtrables hors devis). Affirmer un impayé mentirait ; on replie
-  // sur le libellé réel du statut, en ton neutre.
+  // sur le libellé réel du statut, en ton neutre. B-1388 : ni un envoi.
   return {
-    envoi: { ton: 'info', texte: envoye },
+    envoi: { ton: 'neutre', texte: emis },
     paiement: { ton: 'neutre', texte: STATUS_CONFIG[invoice.status].label },
     echeance: { texte: due },
   };

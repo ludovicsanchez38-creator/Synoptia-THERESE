@@ -77,7 +77,8 @@ describe('Point 8 : un couple type/statut non décrit dit le statut réel', () =
     const { envoi, paiement } = cellulesStatut(
       piece({ document_type: 'facture', status: 'converted' }),
     );
-    expect(envoi.texte).toMatch(/^Envoyée le /);
+    // B-1388 : rien ne prouve un envoi ; la date sûre est celle d'émission.
+    expect(envoi.texte).toMatch(/^Émise le /);
     expect('ton' in paiement && paiement.ton).toBe('neutre');
     expect(paiement.texte).toBe(STATUS_CONFIG.converted.label);
     expect(paiement.texte).not.toMatch(/Impay/);
@@ -107,5 +108,29 @@ describe('B-1356 : un devis converti ne prétend pas avoir été envoyé', () =>
     const { envoi } = cellulesStatut(piece({ document_type: 'devis', status: 'converted' }));
     expect(envoi.texte).toBe('Converti en facture');
     expect(envoi.texte).not.toMatch(/Envoy/);
+  });
+});
+
+describe('B-1388 : une facture payée ne prétend pas avoir été envoyée', () => {
+  // Nathalie (c13) : devis brouillon converti puis marqué payé, la colonne
+  // Envoi disait « Envoyée le 25/09/2026 » ; le moteur ne garde aucune date
+  // d'envoi, et rien ne dit qu'elle est partie.
+  it('une facture payée dit « Émise le », en ton neutre', () => {
+    const { envoi } = cellulesStatut(piece({ document_type: 'facture', status: 'paid' }));
+    expect(envoi.texte).toMatch(/^Émise le /);
+    expect(envoi.texte).not.toMatch(/Envoy/);
+    expect('ton' in envoi && envoi.ton).toBe('neutre');
+  });
+
+  it('un avoir payé dit « Émis le »', () => {
+    const { envoi } = cellulesStatut(piece({ document_type: 'avoir', status: 'paid' }));
+    expect(envoi.texte).toMatch(/^Émis le /);
+  });
+
+  it('une facture envoyée ou en retard reste « Envoyée » : son statut le prouve', () => {
+    for (const statut of ['sent', 'overdue'] as const) {
+      const { envoi } = cellulesStatut(piece({ document_type: 'facture', status: statut }));
+      expect(envoi.texte, statut).toMatch(/^Envoyée/);
+    }
   });
 });
