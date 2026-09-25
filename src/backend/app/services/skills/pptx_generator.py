@@ -349,17 +349,8 @@ NE génère PAS de code Python. Écris directement le contenu textuel des slides
         title_frame.paragraphs[0].font.color.rgb = SYNOPTIA_COLORS["text"]
         title_frame.paragraphs[0].alignment = PP_ALIGN.CENTER
 
-        # Sous-titre
-        subtitle_box = slide.shapes.add_textbox(
-            Inches(0.5), Inches(4.2), Inches(12.333), Inches(0.5)
-        )
-        subtitle_frame = subtitle_box.text_frame
-        subtitle_frame.paragraphs[0].text = "Synoptia - L'entrepreneur augmenté"
-        subtitle_frame.paragraphs[0].font.name = "Inter"
-        subtitle_frame.paragraphs[0].font.size = Pt(18)
-        subtitle_frame.paragraphs[0].font.italic = True
-        subtitle_frame.paragraphs[0].font.color.rgb = SYNOPTIA_COLORS["accent_cyan"]
-        subtitle_frame.paragraphs[0].alignment = PP_ALIGN.CENTER
+        # B-1453 : plus de sous-titre « Synoptia - L'entrepreneur augmenté » :
+        # la présentation est celle de l'utilisatrice, pas de l'éditeur.
 
     def _add_content_slide(self, prs: Presentation, slide_data: dict[str, Any]) -> None:
         """Ajoute une slide de contenu."""
