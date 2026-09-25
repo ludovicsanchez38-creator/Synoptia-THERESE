@@ -964,6 +964,15 @@ class CRMImportService:
                 raw_status = str(mapped.get("status") or "").lower().strip()
                 statut_reconnu = status_map.get(raw_status)
                 status = statut_reconnu or "active"
+                # B-1307 : inconnu, le statut ne remplace rien (B-1083, B-1106)
+                # et prend le défaut à la création ; il se dit au rapport.
+                if raw_status and not statut_reconnu and not (existing and not update_existing):
+                    result.errors.append(ImportError(
+                        row=idx + 1,
+                        column="status",
+                        message=f"Statut « {mapped.get('status')} » inconnu, non enregistré",
+                        data=mapped,
+                    ))
 
                 # B-1256 : une cellule de budget illisible (« inf », « NaN »,
                 # texte) ne remplace rien et figure au rapport ; elle effaçait
@@ -1141,6 +1150,15 @@ class CRMImportService:
                 raw_status = str(mapped.get("status") or "").lower().strip()
                 statut_reconnu = status_map.get(raw_status)
                 status = statut_reconnu or "a_faire"
+                # B-1307 : inconnu, le statut ne remplace rien (B-1083, B-1106)
+                # et prend le défaut à la création ; il se dit au rapport.
+                if raw_status and not statut_reconnu and not (existing and not update_existing):
+                    result.errors.append(ImportError(
+                        row=idx + 1,
+                        column="status",
+                        message=f"Statut « {mapped.get('status')} » inconnu, non enregistré",
+                        data=mapped,
+                    ))
 
                 if existing and update_existing:
                     existing.title = mapped.get("title") or existing.title
