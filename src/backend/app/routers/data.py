@@ -580,13 +580,15 @@ async def delete_all_data(
             detail="Ajoute ?confirm=true pour confirmer la suppression de toutes tes données",
         )
 
-    # B-1222, B-1249, B-1251 : aucune indexation de fond, fiche ou profil, ne
-    # doit réécrire après la purge. L'attente de celle en vol (jusqu'à ~19 s)
-    # vient AVANT toute suppression : interrompue, elle ne laisse pas une purge
-    # à moitié faite.
+    # B-1222, B-1249, B-1251, B-1260 : aucune indexation de fond (fiche,
+    # profil) ni création du chat en vol ne doit écrire après la purge.
+    # L'attente (jusqu'à ~19 s) vient AVANT toute suppression : interrompue,
+    # elle ne laisse pas une purge à moitié faite.
     from app.routers.memory import arreter_les_indexations_de_fiches
+    from app.services.memory_tools import attendre_les_gestes_de_creation
     from app.services.user_profile import arreter_l_indexation_du_profil
 
+    await attendre_les_gestes_de_creation()
     await arreter_les_indexations_de_fiches()
     await arreter_l_indexation_du_profil()
 
@@ -1496,8 +1498,10 @@ async def restore_backup(
         # le bloc dont le finally clôt le mode maintenance : une annulation à
         # ce moment ne laisse pas l'application verrouillée.
         from app.routers.memory import arreter_les_indexations_de_fiches
+        from app.services.memory_tools import attendre_les_gestes_de_creation
         from app.services.user_profile import arreter_l_indexation_du_profil
 
+        await attendre_les_gestes_de_creation()
         await arreter_les_indexations_de_fiches()
         await arreter_l_indexation_du_profil()
         # Aucune session n'est injectée à cette route : tous les appels API

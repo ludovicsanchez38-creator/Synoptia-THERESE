@@ -1180,6 +1180,16 @@ def _consommer_issue_geste(geste: "asyncio.Task[str]") -> None:
         )
 
 
+async def attendre_les_gestes_de_creation() -> None:
+    """B-1260 : la purge et la restauration attendent les créations du chat en
+    vol. Un geste garde sa transaction ouverte pendant le calcul du vecteur
+    (jusqu'à 19 s) : la purge se heurtait au verrou d'écriture de SQLite
+    (délai de 5 s) et répondait 500, ou laissait survivre la fiche créée."""
+    gestes = list(_gestes_en_cours)
+    if gestes:
+        await asyncio.gather(*gestes, return_exceptions=True)
+
+
 async def _proteger_le_geste(coro: "Any") -> str:
     geste: "asyncio.Task[str]" = asyncio.create_task(coro)
     _gestes_en_cours.add(geste)
