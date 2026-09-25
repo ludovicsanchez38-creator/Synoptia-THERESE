@@ -19,9 +19,11 @@ export interface SegmentsProps {
   valeur: string;
   onChange: (id: string) => void;
   className?: string;
+  /** B-1370 : le segment choisi reçoit le focus initial du dialogue qui le contient. */
+  focusInitial?: boolean;
 }
 
-export function Segments({ label, options, valeur, onChange, className }: SegmentsProps) {
+export function Segments({ label, options, valeur, onChange, className, focusInitial = false }: SegmentsProps) {
   return (
     <div
       role="group"
@@ -35,6 +37,7 @@ export function Segments({ label, options, valeur, onChange, className }: Segmen
             key={option.id}
             type="button"
             aria-pressed={presse}
+            data-dialog-autofocus={focusInitial && presse ? true : undefined}
             onClick={() => onChange(option.id)}
             className={classeSegment(presse)}
           >

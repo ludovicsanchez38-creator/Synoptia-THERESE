@@ -195,6 +195,12 @@ export function TaskForm() {
     reference === null ||
     JSON.stringify([title, description, status, priority, dueDate, projectId, tagsInput]) !== reference;
   const { abandonDemande, demanderAbandon: handleCancel, continuerSaisie, racineSaisie, questionRef } = useAbandonDeSaisie({ modifie, abandonner });
+  // B-1370 (Zoé, cycle 13) : le formulaire s'ouvre sur son premier champ ;
+  // le focus restait sur « Nouvelle tâche ». Un effet, pas `autoFocus` :
+  // le déclencheur doit être mémorisé avant (B-996, retour à l'abandon).
+  useEffect(() => {
+    document.getElementById('taskform-titre')?.focus();
+  }, []);
 
   return (
     <motion.div

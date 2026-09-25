@@ -620,6 +620,8 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
               <Segments
                 label="Type de document"
                 valeur={documentType}
+                // B-1370 (Zoé, cycle 13) : le premier champ, pas la croix.
+                focusInitial
                 options={OPTIONS_TYPE_DOCUMENT}
                 onChange={(id) => setDocumentType(id as 'devis' | 'facture' | 'avoir')}
               />
@@ -631,6 +633,8 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
               <FormField label="Client *" htmlFor="contact">
                 <Select
                   id="contact"
+                  // B-1370 : en modification, le client est le premier champ.
+                  data-dialog-autofocus={invoice ? true : undefined}
                   value={contactId}
                   onChange={(e) => setContactId(e.target.value)}
                   required
