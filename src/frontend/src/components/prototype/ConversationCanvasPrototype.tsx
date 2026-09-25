@@ -1126,6 +1126,9 @@ export function ConversationCanvasPrototype() {
     if (blockStreamingNavigation()) return;
     createConversation();
     openChat();
+    // P-124 : le rail « Nouvelle conversation » et ⌘N placent le curseur
+    // dans le champ de message, comme le choix d'une conversation (B-1370).
+    setFocusDuComposeurDemande((n) => n + 1);
   };
   const openEmbeddedView = (view: Exclude<AppView, 'chat'>): boolean => {
     if (blockStreamingNavigation()) return false;

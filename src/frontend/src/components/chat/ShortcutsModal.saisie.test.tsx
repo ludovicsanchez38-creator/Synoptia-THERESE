@@ -72,4 +72,9 @@ describe('B-1376 : les listes disent quels raccourcis marchent en écrivant', ()
     expect(screen.getByText(/\+M : Contacts/)).toBeInTheDocument();
     expect(screen.getByText(/En écrivant dans un champ/)).toBeInTheDocument();
   });
+
+  it('P-124 : Paramètres liste ⌘N « Nouvelle conversation »', () => {
+    render(<AccessibilityTab />);
+    expect(screen.getByText(/\+N : Nouvelle conversation/)).toBeInTheDocument();
+  });
 });

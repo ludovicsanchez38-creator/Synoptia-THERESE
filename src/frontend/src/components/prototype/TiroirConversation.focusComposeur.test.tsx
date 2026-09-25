@@ -67,4 +67,24 @@ describe('B-1370 : choisir une conversation pose le focus dans le champ de messa
     await act(async () => { await new Promise((r) => setTimeout(r, 400)); });
     expect(document.activeElement).toBe(champ);
   });
+
+  it('P-124 : « Nouvelle conversation » du rail pose le focus dans le champ', async () => {
+    render(<ConversationCanvasPrototype />);
+    await act(async () => { fireEvent.click(rail('Projets')); });
+    await screen.findByRole('heading', { name: 'Projets' });
+
+    await act(async () => { fireEvent.click(rail('Nouvelle conversation')); });
+
+    const champ = await screen.findByTestId('chat-message-input');
+    await waitFor(() => expect(document.activeElement).toBe(champ));
+  });
+
+  it('P-124 : ⌘N pose aussi le focus dans le champ', async () => {
+    render(<ConversationCanvasPrototype />);
+
+    await act(async () => { fireEvent.keyDown(window, { key: 'n', ctrlKey: true, metaKey: true }); });
+
+    const champ = await screen.findByTestId('chat-message-input');
+    await waitFor(() => expect(document.activeElement).toBe(champ));
+  });
 });

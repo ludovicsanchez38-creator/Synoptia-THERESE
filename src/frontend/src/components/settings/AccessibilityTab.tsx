@@ -190,7 +190,8 @@ export function AccessibilityTab() {
             <p className="font-medium">Raccourcis clavier disponibles</p>
             <ul className="mt-1 text-xs space-y-0.5 text-accent-cyan-ink">
               {/* B-1376 : mêmes noms que la fenêtre des raccourcis (⌘M ouvre Contacts). */}
-              {(['⌘ + K', '⌘ + B', '⌘ + M', '⌘ + D'] as const).map((keys) => (
+              {/* P-124 : ⌘N, le raccourci le plus courant, y figure aussi. */}
+              {(['⌘ + N', '⌘ + K', '⌘ + B', '⌘ + M', '⌘ + D'] as const).map((keys) => (
                 <li key={keys}>{mod}+{keys.slice(-1)} : {descriptionDuRaccourci(keys)}</li>
               ))}
               <li>Tab / Shift+Tab : Navigation</li>
