@@ -7,7 +7,7 @@ import pytest
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("etiquettes", ["vip", 42, {"a": 1}, [3, None]])
+@pytest.mark.parametrize("etiquettes", [42, {"a": 1}, [3, None], " , "])
 async def test_des_etiquettes_hors_forme_ne_cassent_pas_la_liste(client, etiquettes):
     resp = await client.post(
         "/api/data/import/contacts",

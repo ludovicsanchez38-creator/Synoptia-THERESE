@@ -59,6 +59,7 @@ from app.services.audit import (
     AuditService,
     log_activity,
 )
+from app.services.crm_utils import etiquettes_lues
 from app.services.encryption import decrypt_backup_archive, encrypt_backup_archive
 from app.services.error_handler import message_pour_ecran
 from app.services.maintenance import maintenance_mode
@@ -1866,13 +1867,6 @@ def _perimetre_restaure(valeur: Any) -> str:
     return "global"
 
 
-def _etiquettes_importees(valeur: Any) -> list[str]:
-    """Étiquettes d'un contact importé : les seuls textes d'une liste."""
-    if not isinstance(valeur, list):
-        return []
-    return [etiquette for etiquette in valeur if isinstance(etiquette, str) and etiquette.strip()]
-
-
 @router.post("/import/contacts")
 async def import_contacts(
     data: dict,
@@ -1921,9 +1915,9 @@ async def import_contacts(
             phone=contact_data.get("phone"),
             address=contact_data.get("address"),
             notes=contact_data.get("notes"),
-            # B-1264 : seules des étiquettes en texte sont gardées ; « vip » ou
-            # un nombre stockés tels quels faisaient tomber la liste des contacts.
-            tags=json.dumps(etiquettes) if (etiquettes := _etiquettes_importees(contact_data.get("tags"))) else None,
+            # B-1264, B-1275 : règle unique des étiquettes importées (textes
+            # d'une liste, ou texte découpé sur les virgules).
+            tags=json.dumps(etiquettes) if (etiquettes := etiquettes_lues(contact_data.get("tags"))) else None,
             extra_data=json.dumps(extra) if isinstance(extra, (dict, list)) else (extra if isinstance(extra, str) else None),
             stage=_etape_restauree(contact_data.get("stage")),
             score=_score_restaure(contact_data.get("score")),

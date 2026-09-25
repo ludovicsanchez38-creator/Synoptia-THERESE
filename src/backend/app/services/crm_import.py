@@ -16,7 +16,7 @@ from typing import Any, Literal
 
 from app.models.entities import Contact, Deliverable, Project, generate_uuid
 from app.models.schemas import adresse_unique_valide, perimetre_normalise
-from app.services.crm_utils import ETAPES_PIPELINE
+from app.services.crm_utils import ETAPES_PIPELINE, etiquettes_lues
 from app.services.formules_tableur import neutraliser_formule
 from openpyxl import load_workbook
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -458,12 +458,9 @@ def _parse_value(value: Any, field_type: str) -> Any:
         return str(value).strip()
 
     if field_type == "tags":
-        if isinstance(value, list):
-            return json.dumps(value)
-        if isinstance(value, str):
-            tags = [t.strip() for t in value.split(",") if t.strip()]
-            return json.dumps(tags) if tags else None
-        return None
+        # B-1272 : même règle que l'import JSON des sauvegardes.
+        tags = etiquettes_lues(value)
+        return json.dumps(tags) if tags else None
 
     # String
     return str(value).strip() if value else None

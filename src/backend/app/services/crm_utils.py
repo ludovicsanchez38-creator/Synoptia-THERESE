@@ -12,7 +12,7 @@ import logging
 import math
 import unicodedata
 from datetime import UTC, datetime
-from typing import get_args
+from typing import Any, get_args
 
 from app.models.entities import Contact, Deliverable, Preference, Project, Task
 from app.models.schemas import EtapePipeline, adresse_unique_valide
@@ -194,6 +194,20 @@ def parse_budget(value: str | int | float | None) -> float | None:
         return None
     # B-1219 : un budget infini ou NaN n'est pas un budget.
     return nombre if math.isfinite(nombre) else None
+
+
+def etiquettes_lues(valeur: Any) -> list[str]:
+    """B-1264, B-1272, B-1275 : règle unique des étiquettes importées. Une
+    liste n'en garde que les textes, un texte est découpé sur les virgules ;
+    tout le reste est écarté (stocké tel quel, il faisait tomber la liste des
+    contacts)."""
+    if isinstance(valeur, list):
+        brutes: list[Any] = valeur
+    elif isinstance(valeur, str):
+        brutes = valeur.split(",")
+    else:
+        return []
+    return [e.strip() for e in brutes if isinstance(e, str) and e.strip()]
 
 
 def parse_tags_json(value: str | None) -> str | None:
