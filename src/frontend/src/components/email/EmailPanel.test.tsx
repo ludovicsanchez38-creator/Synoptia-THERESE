@@ -7,6 +7,7 @@
 
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { demanderLaConnexionEmail } from '../../lib/demandeDeConnexionEmail';
 
 // --- Mocks -----------------------------------------------------------------
 
@@ -82,7 +83,9 @@ describe('BUG-037 - Croix de fermeture du wizard email', () => {
     mockToggleEmailPanel = vi.fn();
   });
 
-  it('affiche le wizard quand aucun compte n\'est configuré', async () => {
+  it('affiche le wizard quand aucun compte n\'est configuré et que la connexion est demandée', async () => {
+    // B-1436 : dans l'écran intégré, l'assistant s'ouvre sur demande (« Brancher mes mails »).
+    demanderLaConnexionEmail();
     const { EmailPanel } = await import('./EmailPanel');
     render(<EmailPanel standalone />);
 
@@ -107,6 +110,8 @@ describe('BUG-037 - Croix de fermeture du wizard email', () => {
   });
 
   it('BUG-037 : la croix du wizard ferme le wizard (mode standalone, sans compte)', async () => {
+    // B-1436 : dans l'écran intégré, l'assistant s'ouvre sur demande (« Brancher mes mails »).
+    demanderLaConnexionEmail();
     const { EmailPanel } = await import('./EmailPanel');
     render(<EmailPanel standalone />);
 
@@ -125,6 +130,8 @@ describe('BUG-037 - Croix de fermeture du wizard email', () => {
   });
 
   it('BUG-037 : après fermeture du wizard, un écran de repli s\'affiche avec "Configurer un compte"', async () => {
+    // B-1436 : dans l'écran intégré, l'assistant s'ouvre sur demande (« Brancher mes mails »).
+    demanderLaConnexionEmail();
     const { EmailPanel } = await import('./EmailPanel');
     render(<EmailPanel standalone />);
 
@@ -141,6 +148,8 @@ describe('BUG-037 - Croix de fermeture du wizard email', () => {
   });
 
   it('BUG-037 : clic sur "Configurer un compte" relance le wizard', async () => {
+    // B-1436 : dans l'écran intégré, l'assistant s'ouvre sur demande (« Brancher mes mails »).
+    demanderLaConnexionEmail();
     const { EmailPanel } = await import('./EmailPanel');
     render(<EmailPanel standalone />);
 

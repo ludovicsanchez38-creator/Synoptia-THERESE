@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { demanderLaConnexionEmail } from '../../lib/demandeDeConnexionEmail';
 import { BoutonFermerLePanneau } from './BoutonFermerLePanneau';
 import { AnimatePresence, motion, useIsPresent } from 'framer-motion';
 import {
@@ -2149,7 +2150,11 @@ export function ConversationCanvasPrototype() {
                         else openEmbeddedView(cible.view);
                       }}
                       setup={setupStatus}
-                      onSetupEmail={() => openEmbeddedView('email')}
+                      onSetupEmail={() => {
+                        // B-1436 : geste explicite, l'assistant s'ouvre.
+                        demanderLaConnexionEmail();
+                        openEmbeddedView('email');
+                      }}
                     />
                     {/* P-135 : ce qui vient sur sept jours, et deux chiffres sourcés. */}
                     <CetteSemaine

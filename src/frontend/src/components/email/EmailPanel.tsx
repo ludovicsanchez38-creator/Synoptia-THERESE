@@ -5,6 +5,7 @@
  * Phase 1 Frontend - Email
  */
 
+import { consommerLaDemandeDeConnexionEmail } from '../../lib/demandeDeConnexionEmail';
 import { useEffect, useState, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
@@ -77,9 +78,13 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
   const [showSignatureEditor, setShowSignatureEditor] = useState(false);
   const [reauthing, setReauthing] = useState(false);
   // Contrôle l'affichage du wizard indépendamment de isConnected.
-  // Initialisé à true pour l'afficher automatiquement si aucun compte.
   // Mis à false quand l'utilisateur clique la croix du wizard.
-  const [showSetupWizard, setShowSetupWizard] = useState(true);
+  // B-1436 : dans l'écran intégré, l'assistant ne s'ouvre plus d'office par-
+  // dessus la vue (son voile cachait « Retour ») ; seulement sur demande
+  // (« Brancher mes mails »). Le panneau modal classique garde l'ouverture.
+  const [showSetupWizard, setShowSetupWizard] = useState(
+    () => !standalone || consommerLaDemandeDeConnexionEmail(),
+  );
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Load accounts on mount/open (standalone ou modal)
