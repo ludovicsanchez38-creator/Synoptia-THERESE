@@ -4,6 +4,7 @@
 import { Accessibility, Sun, Moon } from 'lucide-react';
 import { useAccessibilityStore } from '../../stores/accessibilityStore';
 import { handleRovingFocus } from '../../lib/rovingFocus';
+import { RACCOURCIS_PENDANT_LA_SAISIE, descriptionDuRaccourci } from '../../lib/raccourcisAnnonces';
 
 export function AccessibilityTab() {
   const mod = navigator.platform.toUpperCase().indexOf('MAC') >= 0 ? '⌘' : 'Ctrl';
@@ -188,12 +189,16 @@ export function AccessibilityTab() {
           <div className="text-sm text-accent-cyan-ink">
             <p className="font-medium">Raccourcis clavier disponibles</p>
             <ul className="mt-1 text-xs space-y-0.5 text-accent-cyan-ink">
-              <li>{mod}+K : Palette de commandes</li>
-              <li>{mod}+B : Conversations</li>
-              <li>{mod}+M : Mémoire</li>
-              <li>{mod}+D : Décision</li>
+              {/* B-1376 : mêmes noms que la fenêtre des raccourcis (⌘M ouvre Contacts). */}
+              {(['⌘ + K', '⌘ + B', '⌘ + M', '⌘ + D'] as const).map((keys) => (
+                <li key={keys}>{mod}+{keys.slice(-1)} : {descriptionDuRaccourci(keys)}</li>
+              ))}
               <li>Tab / Shift+Tab : Navigation</li>
             </ul>
+            <p className="mt-1 text-xs text-accent-cyan-ink">
+              En écrivant dans un champ, seuls ces raccourcis restent actifs :{' '}
+              {RACCOURCIS_PENDANT_LA_SAISIE.map((keys) => keys.replace(/⌘/g, mod)).join(' · ')}.
+            </p>
           </div>
         </div>
       </div>

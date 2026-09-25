@@ -13,7 +13,7 @@ import { describe, expect, it } from 'vitest';
 import { APP_ACTIONS } from './actionRegistry';
 import { CAPACITES } from './capacites/manifeste';
 import { capabilities } from '../components/prototype/CapabilityCenter';
-import { SHORTCUT_GROUPS } from '../components/chat/ShortcutsModal';
+import { SHORTCUT_GROUPS } from './raccourcisAnnonces';
 import { SLASH_COMMANDS } from '../components/chat/SlashCommandsMenu';
 import { viewLabels } from '../components/prototype/PrototypeUnifiedViewCanvas';
 import { TEXTES_ONBOARDING } from '../components/onboarding/textes';

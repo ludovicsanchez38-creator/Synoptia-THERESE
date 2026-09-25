@@ -19,7 +19,7 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
-import { SHORTCUT_GROUPS } from './ShortcutsModal';
+import { SHORTCUT_GROUPS } from '../../lib/raccourcisAnnonces';
 
 const ici = dirname(fileURLToPath(import.meta.url));
 const sourceDuHook = readFileSync(

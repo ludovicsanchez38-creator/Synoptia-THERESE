@@ -3,71 +3,12 @@ import { X, Keyboard } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { DialogShell } from '../ui/DialogShell';
 import { Button, Carte } from '../ui';
+import { RACCOURCIS_PENDANT_LA_SAISIE, SHORTCUT_GROUPS } from '../../lib/raccourcisAnnonces';
 
 interface ShortcutsModalProps {
   isOpen: boolean;
   onClose: () => void;
 }
-
-interface ShortcutGroup {
-  title: string;
-  shortcuts: { keys: string; description: string }[];
-}
-
-/** Exporté pour que le test de véracité puisse confronter chaque raccourci
- *  annoncé au gestionnaire de clavier. Une fiche d'aide qui ment est pire que
- *  pas de fiche : l'utilisateur essaie, rien ne se passe, il conclut que
- *  l'application est cassée. */
-export const SHORTCUT_GROUPS: ShortcutGroup[] = [
-  {
-    title: 'Chat',
-    shortcuts: [
-      { keys: '↵', description: 'Envoyer le message' },
-      { keys: '⇧ + ↵', description: 'Nouvelle ligne' },
-      { keys: '⌘ + N', description: 'Nouvelle conversation' },
-    ],
-  },
-  {
-    title: 'Navigation',
-    shortcuts: [
-      { keys: '⌘ + K', description: 'Palette de commandes' },
-      { keys: '⌘ + /', description: 'Raccourcis clavier' },
-      { keys: '⌘ + B', description: 'Liste des conversations' },
-      { keys: '⌘ + M', description: 'Contacts' },
-      { keys: '⌘ + ,', description: 'Paramètres' },
-      { keys: 'Échap', description: 'Fermer le panneau actif' },
-    ],
-  },
-  {
-    title: 'Fonctions principales',
-    shortcuts: [
-      { keys: '⌘ + D', description: 'Décision' },
-      { keys: '⌘ + E', description: 'Email (Gmail)' },
-      { keys: '⌘ + T', description: 'Tâches (Kanban)' },
-      { keys: '⌘ + I', description: 'Devis et factures' },
-      { keys: '⌘ + P', description: 'Pipeline' },
-    ],
-  },
-  {
-    title: 'Outils',
-    shortcuts: [
-      { keys: '⌘ + ⇧ + A', description: 'Améliorer THÉRÈSE' },
-      // P-095 : nommer par ce que fait le raccourci, pas par le prénom interne de l'agent.
-      { keys: '⌘ + ⇧ + K', description: 'Écrire à l’agent de l’Atelier' },
-      { keys: '⌘ + ⇧ + C', description: 'Agenda' },
-      { keys: '⌘ + ⇧ + F', description: 'Rechercher dans les Contacts' },
-      { keys: '⌘ + ⇧ + D', description: 'Mode démonstration' },
-    ],
-  },
-  {
-    title: 'Fichiers',
-    shortcuts: [
-      // Entrée 6 : ce groupe était déclaré VIDE, et le raccourci qu'il aurait
-      // dû annoncer n'était branché nulle part. Les deux se répondaient.
-      { keys: '⌘ + O', description: 'Ouvrir les Fichiers' },
-    ],
-  },
-];
 
 export function ShortcutsModal({ isOpen, onClose }: ShortcutsModalProps) {
   // Adapter ⌘ → Ctrl sur Windows/Linux (BUG-042 icône Apple sur Windows)
@@ -159,6 +100,11 @@ export function ShortcutsModal({ isOpen, onClose }: ShortcutsModalProps) {
                   </Carte>
                 ))}
               </div>
+              {/* B-1376 : la plupart des raccourcis sont ignorés dans un champ. */}
+              <p className="mt-6 text-sm text-text-muted">
+                En écrivant dans un champ, seuls ces raccourcis restent actifs :{' '}
+                {RACCOURCIS_PENDANT_LA_SAISIE.map(adaptKey).join(' · ')}.
+              </p>
             </div>
 
             {/* Footer */}
