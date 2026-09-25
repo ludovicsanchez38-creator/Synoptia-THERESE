@@ -352,7 +352,11 @@ class ImapSmtpProvider(EmailProvider):
                 # pour savoir s'il en reste ; avec `limit=offset + max_results`,
                 # le seuil `len(all_msgs) > offset + max_results` ne pouvait
                 # jamais être vrai et aucune page suivante n'était annoncée.
-                all_msgs = list(mailbox.fetch(criteria, reverse=True, limit=offset + max_results + 1))
+                # B-1409 : `mark_seen` vaut True par défaut dans imap_tools
+                # (BODY[] au lieu de BODY.PEEK[]) : lister marquait lus chez
+                # le fournisseur des messages jamais ouverts. Le « lu » est
+                # posé explicitement à l'ouverture (EmailDetail, markAsRead).
+                all_msgs = list(mailbox.fetch(criteria, reverse=True, limit=offset + max_results + 1, mark_seen=False))
 
                 # Apply pagination
                 paginated = all_msgs[offset : offset + max_results]
@@ -430,7 +434,7 @@ class ImapSmtpProvider(EmailProvider):
         def _sync_fetch():
             with self._connect_mailbox(initial_folder=dossier, timeout=IMAP_CONNECT_TIMEOUT) as mailbox:
                 # Search by UID, dans le dossier du message
-                for msg in mailbox.fetch(AND(uid=uid)):
+                for msg in mailbox.fetch(AND(uid=uid), mark_seen=False):
                     return self._imap_to_dto(msg, include_attachments=include_attachments, folder=dossier)
                 raise ValueError(f"Message {message_id} not found")
 
@@ -686,7 +690,7 @@ class ImapSmtpProvider(EmailProvider):
                     mailbox.flag([uid], {r"\Flagged"}, False)
 
                 # Fetch updated message
-                for msg in mailbox.fetch(AND(uid=uid)):
+                for msg in mailbox.fetch(AND(uid=uid), mark_seen=False):
                     return self._imap_to_dto(msg, folder=dossier)
 
                 raise ValueError(f"Message {message_id} not found")
@@ -743,7 +747,7 @@ class ImapSmtpProvider(EmailProvider):
                 # Cycle 6 : l'UID est réattribué dans la destination ; on lit le
                 # message dans son dossier d'origine, puis on le déplace.
                 dto = None
-                for msg in mailbox.fetch(AND(uid=uid)):
+                for msg in mailbox.fetch(AND(uid=uid), mark_seen=False):
                     dto = self._imap_to_dto(msg, folder=destination_folder)
                     break
                 if dto is None:
@@ -855,7 +859,7 @@ class ImapSmtpProvider(EmailProvider):
 
         def _sync_fetch():
             with self._connect_mailbox(initial_folder=dossier, timeout=IMAP_CONNECT_TIMEOUT) as mailbox:
-                for msg in mailbox.fetch(AND(uid=uid)):
+                for msg in mailbox.fetch(AND(uid=uid), mark_seen=False):
                     for idx, att in enumerate(msg.attachments):
                         if str(idx) == attachment_id or att.filename == attachment_id:
                             return EmailAttachmentDTO(
