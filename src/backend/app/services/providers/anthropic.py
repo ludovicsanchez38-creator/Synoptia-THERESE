@@ -116,6 +116,15 @@ class AnthropicProvider(BaseProvider):
                 input_tokens: int | None = None
                 output_tokens: int | None = None
                 done_emitted = False
+                # P-122 (Opus 5.5) : le contenu du tour tel que reçu, dans
+                # l'ordre. Sur les modèles à réflexion toujours active, la
+                # reprise après outils doit le renvoyer INCHANGÉ (blocs
+                # `thinking` signés compris), sinon l'API répond 400. La même
+                # liste est attachée à chaque tool_call : chat.py ne l'utilise
+                # qu'au `done`, quand elle est complète.
+                blocs_du_tour: list[dict[str, Any]] = []
+                blocs_par_index: dict[int, dict[str, Any]] = {}
+                tour_avec_reflexion = False
 
                 async for line in response.aiter_lines():
                     if line.startswith("data: "):
@@ -133,6 +142,11 @@ class AnthropicProvider(BaseProvider):
 
                             elif event_type == "content_block_start":
                                 content_block = event.get("content_block", {})
+                                bloc = dict(content_block)
+                                blocs_du_tour.append(bloc)
+                                blocs_par_index[event.get("index", len(blocs_du_tour) - 1)] = bloc
+                                if bloc.get("type") in ("thinking", "redacted_thinking"):
+                                    tour_avec_reflexion = True
                                 if content_block.get("type") == "tool_use":
                                     current_tool_call_id = content_block.get("id")
                                     current_tool_name = content_block.get("name")
@@ -141,14 +155,25 @@ class AnthropicProvider(BaseProvider):
                             elif event_type == "content_block_delta":
                                 delta = event.get("delta", {})
                                 delta_type = delta.get("type")
+                                bloc_courant = blocs_par_index.get(event.get("index", -1))
 
                                 if delta_type == "text_delta":
                                     if text := delta.get("text"):
+                                        if bloc_courant is not None:
+                                            bloc_courant["text"] = bloc_courant.get("text", "") + text
                                         yield StreamEvent(type="text", content=text)
 
                                 elif delta_type == "input_json_delta":
                                     if partial := delta.get("partial_json"):
                                         current_tool_input += partial
+
+                                # P-122 : la réflexion ne s'affiche jamais,
+                                # elle est seulement gardée pour la reprise.
+                                elif delta_type == "thinking_delta" and bloc_courant is not None:
+                                    bloc_courant["thinking"] = bloc_courant.get("thinking", "") + (delta.get("thinking") or "")
+
+                                elif delta_type == "signature_delta" and bloc_courant is not None:
+                                    bloc_courant["signature"] = delta.get("signature", "")
 
                             elif event_type == "content_block_stop":
                                 if current_tool_call_id and current_tool_name:
@@ -157,12 +182,19 @@ class AnthropicProvider(BaseProvider):
                                     except json.JSONDecodeError:
                                         arguments = {}
 
+                                    bloc_outil = blocs_par_index.get(event.get("index", -1))
+                                    if bloc_outil is not None:
+                                        bloc_outil["input"] = arguments
+
                                     yield StreamEvent(
                                         type="tool_call",
                                         tool_call=ToolCall(
                                             id=current_tool_call_id,
                                             name=current_tool_name,
                                             arguments=arguments,
+                                        ),
+                                        assistant_content_brut=(
+                                            blocs_du_tour if tour_avec_reflexion else None
                                         ),
                                     )
 
@@ -249,9 +281,15 @@ class AnthropicProvider(BaseProvider):
         # Multi-tours (bug lcjp 11/06/2026) : rejouer les tours précédents
         for turn in prior_turns or []:
             self._append_tool_turn(
-                messages, turn.assistant_content, turn.tool_calls, turn.tool_results
+                messages,
+                turn.assistant_content,
+                turn.tool_calls,
+                turn.tool_results,
+                turn.assistant_content_brut,
             )
-        self._append_tool_turn(messages, assistant_content, tool_calls, tool_results)
+        self._append_tool_turn(
+            messages, assistant_content, tool_calls, tool_results, assistant_content_brut
+        )
 
         # Stream continuation
         async for event in self.stream(system_prompt, messages, tools):
@@ -263,18 +301,26 @@ class AnthropicProvider(BaseProvider):
         assistant_content: str,
         tool_calls: list[ToolCall],
         tool_results: list[ToolResult],
+        assistant_content_brut: Any | None = None,
     ) -> None:
-        """Ajoute un tour d'outils au format Anthropic (tool_use/tool_result blocks)."""
-        assistant_content_blocks = []
-        if assistant_content:
-            assistant_content_blocks.append({"type": "text", "text": assistant_content})
-        for tc in tool_calls:
-            assistant_content_blocks.append({
-                "type": "tool_use",
-                "id": tc.id,
-                "name": tc.name,
-                "input": tc.arguments,
-            })
+        """Ajoute un tour d'outils au format Anthropic (tool_use/tool_result blocks).
+
+        P-122 : un tour qui portait de la réflexion (Opus 5.5, Fable) est
+        rejoué TEL QUE REÇU ; le reconstruire perdrait les blocs signés (400).
+        """
+        assistant_content_blocks: list[dict[str, Any]] = []
+        if isinstance(assistant_content_brut, list) and assistant_content_brut:
+            assistant_content_blocks = list(assistant_content_brut)
+        else:
+            if assistant_content:
+                assistant_content_blocks.append({"type": "text", "text": assistant_content})
+            for tc in tool_calls:
+                assistant_content_blocks.append({
+                    "type": "tool_use",
+                    "id": tc.id,
+                    "name": tc.name,
+                    "input": tc.arguments,
+                })
         messages.append({
             "role": "assistant",
             "content": assistant_content_blocks,
