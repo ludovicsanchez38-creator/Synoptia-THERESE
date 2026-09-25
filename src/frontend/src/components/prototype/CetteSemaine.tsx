@@ -106,7 +106,7 @@ export function CetteSemaine({
                 ? 'Aucune facture payée ce mois-ci.'
                 : devises.map(([devise, valeur]) => montant(valeur, devise)).join(' · ')}
             {!pannes.has('encaisse') && devises.length > 0 && (
-              <span className="block">Source : factures payées ce mois-ci.</span>
+              <span className="block">Source : factures payées ce mois-ci, avoirs non déduits.</span>
             )}
           </dd>
         </div>

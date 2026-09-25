@@ -47,7 +47,8 @@ describe('P-135 : Cette semaine', () => {
     const section = await screen.findByRole('region', { name: 'Cette semaine' });
     expect(await within(section).findByText(/Encaissé en septembre/)).toBeInTheDocument();
     expect(within(section).getByText(/1\s440,00\s€/)).toBeInTheDocument();
-    expect(within(section).getByText(/factures payées ce mois-ci/)).toBeInTheDocument();
+    // Le chiffre dit ce qu'il compte : les avoirs ne sont pas déduits.
+    expect(within(section).getByText('Source : factures payées ce mois-ci, avoirs non déduits.')).toBeInTheDocument();
     expect(within(section).getByText(/Prospects en cours : 3/)).toBeInTheDocument();
     expect(within(section).getByText(/Découverte 2, Proposition 1/)).toBeInTheDocument();
   });
