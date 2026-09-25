@@ -350,6 +350,20 @@ async def _indexer_en_arriere_plan(profile: UserProfile, generation: int) -> Non
         )
 
 
+async def arreter_l_indexation_du_profil() -> None:
+    """B-1251 : garantit qu'aucune indexation du profil n'écrira après l'appel.
+
+    Même double protection que `delete_user_profile` : avancer la génération
+    fait renoncer les indexations qui attendent encore le verrou, et prendre
+    le verrou attend celle qui est déjà en vol (son fil n'est pas annulable).
+    La purge et la restauration l'appellent avant de toucher à l'index.
+    """
+    global _GENERATION_PROFIL
+    _GENERATION_PROFIL += 1
+    async with _VERROU_INDEXATION:
+        pass
+
+
 async def _embed_profile(profile: UserProfile) -> None:
     """
     Embed user profile in Qdrant for semantic search.

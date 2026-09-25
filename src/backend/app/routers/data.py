@@ -580,12 +580,15 @@ async def delete_all_data(
             detail="Ajoute ?confirm=true pour confirmer la suppression de toutes tes données",
         )
 
-    # B-1222, B-1249 : aucune indexation de fond ne doit réécrire après la
-    # purge. L'attente de la fiche en vol (jusqu'à ~19 s) vient AVANT toute
-    # suppression : interrompue, elle ne laisse pas une purge à moitié faite.
+    # B-1222, B-1249, B-1251 : aucune indexation de fond, fiche ou profil, ne
+    # doit réécrire après la purge. L'attente de celle en vol (jusqu'à ~19 s)
+    # vient AVANT toute suppression : interrompue, elle ne laisse pas une purge
+    # à moitié faite.
     from app.routers.memory import arreter_les_indexations_de_fiches
+    from app.services.user_profile import arreter_l_indexation_du_profil
 
     await arreter_les_indexations_de_fiches()
+    await arreter_l_indexation_du_profil()
 
     # Log avant suppression
     await log_activity(
@@ -1493,8 +1496,10 @@ async def restore_backup(
         # le bloc dont le finally clôt le mode maintenance : une annulation à
         # ce moment ne laisse pas l'application verrouillée.
         from app.routers.memory import arreter_les_indexations_de_fiches
+        from app.services.user_profile import arreter_l_indexation_du_profil
 
         await arreter_les_indexations_de_fiches()
+        await arreter_l_indexation_du_profil()
         # Aucune session n'est injectée à cette route : tous les appels API
         # admis avant le verrou sont terminés. Les pools sont disposés AVANT
         # l'archive de sécurité et, surtout, avant toute extraction.
