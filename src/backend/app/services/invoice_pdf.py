@@ -656,6 +656,7 @@ class InvoicePDFGenerator:
         currency_symbol: str,
         currency: str = "EUR",
         invoice_data: dict[str, Any] | None = None,
+        regime_tva: str = "normal",
     ) -> list[Any]:
         """Construit le bloc conditions de paiement et mentions legales.
 
@@ -675,8 +676,13 @@ class InvoicePDFGenerator:
         sans_tva = bool(lignes) and all(
             not float(ligne.get("tva_rate") or 0) for ligne in lignes
         )
-        if not tva_applicable:
-            tva_mention = "TVA non applicable, art. 293 B du CGI."
+        # P-119 : le régime déclaré au profil donne le motif. Textes relevés
+        # le 25/09/2026 : service-public F31808 (franchise) ; CGI annexe II
+        # art. 242 nonies A, I, 12° et art. 261, 4, 4° a (formation).
+        if not tva_applicable or (sans_tva and regime_tva == "franchise"):
+            tva_mention = "TVA non applicable, art. 293 B du code général des impôts."
+        elif sans_tva and regime_tva == "exoneration_formation":
+            tva_mention = "Exonération de TVA, art. 261, 4, 4° a du code général des impôts."
         elif sans_tva:
             tva_mention = "Aucune TVA facturée (taux de 0 % sur toutes les lignes)."
         else:
@@ -820,7 +826,10 @@ class InvoicePDFGenerator:
 
         # 7. Conditions de paiement
         story.extend(
-            self._build_conditions_block(tva_applicable, currency_symbol, currency, invoice_data)
+            self._build_conditions_block(
+                tva_applicable, currency_symbol, currency, invoice_data,
+                regime_tva=str(user_profile.get("regime_tva") or "normal"),
+            )
         )
 
         # Build PDF

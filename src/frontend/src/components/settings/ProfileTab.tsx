@@ -8,6 +8,7 @@ import { Carte, CarteTete } from '../ui/Carte';
 import { Etiquette } from '../ui/Etiquette';
 import { FormField } from '../ui/FormField';
 import { Input } from '../ui/Input';
+import { Select } from '../ui/Select';
 import { Textarea } from '../ui/Textarea';
 import { useDemoStore } from '../../stores/demoStore';
 import * as api from '../../services/api';
@@ -30,6 +31,7 @@ export interface ProfileFormData {
   code_ape: string;
   nda: string;
   context: string;
+  regime_tva: api.RegimeTva;
 }
 
 export interface ProfileTabProps {
@@ -380,6 +382,27 @@ export function ProfileTab({
               value={profileForm.code_ape}
               onChange={(e) => setProfileForm((prev) => ({ ...prev, code_ape: e.target.value }))}
               placeholder="0000Z"
+            />
+          </FormField>
+        </div>
+
+        {/* P-119 : sans régime déclaré, la mention légale (franchise ou
+            exonération) ne pouvait pas s'imprimer sur les factures. */}
+        <div className="px-4 pb-4">
+          <FormField
+            label="Régime de TVA"
+            htmlFor="settings-profile-regime-tva"
+            description="Il choisit la mention légale imprimée quand une facture ne porte aucune TVA."
+          >
+            <Select
+              id="settings-profile-regime-tva"
+              value={profileForm.regime_tva}
+              onChange={(e) => setProfileForm((prev) => ({ ...prev, regime_tva: e.target.value as api.RegimeTva }))}
+              options={[
+                { value: 'normal', label: 'Assujetti à la TVA' },
+                { value: 'franchise', label: 'Franchise en base (art. 293 B du CGI)' },
+                { value: 'exoneration_formation', label: 'Exonéré : formation professionnelle continue (art. 261, 4, 4° a du CGI)' },
+              ]}
             />
           </FormField>
         </div>

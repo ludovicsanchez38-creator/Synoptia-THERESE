@@ -789,6 +789,8 @@ class UserProfileUpdate(BaseModel):
     siret: str = ""
     code_ape: str = ""
     nda: str = ""
+    # P-119 : régime de TVA déclaré, qui choisit la mention légale du PDF.
+    regime_tva: Literal["normal", "franchise", "exoneration_formation"] = "normal"
 
 
 class UserProfileResponse(BaseModel):
@@ -807,6 +809,7 @@ class UserProfileResponse(BaseModel):
     siret: str = ""
     code_ape: str = ""
     nda: str = ""
+    regime_tva: str = "normal"
     display_name: str
 
 

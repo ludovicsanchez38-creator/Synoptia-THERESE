@@ -28,6 +28,7 @@ const VIDE: ProfileFormData = {
   code_ape: '',
   nda: '',
   context: '',
+  regime_tva: 'normal',
 };
 
 /** Les treize champs du profil, dans l'ordre du design. */

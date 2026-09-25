@@ -39,6 +39,10 @@ class UserProfile:
     siret: str = ""                # "123 456 789 00010" (identite emetteur facture)
     code_ape: str = ""             # "0000Z" (code NAF)
     nda: str = ""                  # Numero declaration activite (organisme de formation)
+    # P-119 : "normal" (assujetti), "franchise" (art. 293 B du CGI) ou
+    # "exoneration_formation" (art. 261, 4, 4° a du CGI). Choisit la mention
+    # légale du PDF quand aucune TVA n'est facturée.
+    regime_tva: str = "normal"
 
     def to_dict(self) -> dict:
         """Convert to dictionary."""
@@ -61,6 +65,7 @@ class UserProfile:
             siret=data.get("siret", ""),
             code_ape=data.get("code_ape", ""),
             nda=data.get("nda", ""),
+            regime_tva=data.get("regime_tva") or "normal",
         )
 
     def is_billing_complete(self) -> bool:
@@ -604,7 +609,7 @@ def parse_claude_md(content: str) -> UserProfile:
 
 # B-1328 : la raison sociale va avec le SIRET sur la facture ; perdue seule,
 # la facture sortait au nom de la personne avec le SIRET de la société.
-_CHAMPS_DE_FACTURATION = frozenset({"company", "address", "siren", "tva_intra", "siret", "code_ape", "nda"})
+_CHAMPS_DE_FACTURATION = frozenset({"company", "address", "siren", "tva_intra", "siret", "code_ape", "nda", "regime_tva"})
 
 
 def _meme_personne(a: str, b: str) -> bool:
@@ -664,7 +669,10 @@ async def import_from_claude_md(
             # la même personne.
             if champ.name not in _CHAMPS_DE_FACTURATION and not meme_personne:
                 continue
-            if not getattr(profile, champ.name) and getattr(existant, champ.name):
+            # P-119 : un fichier ne dit jamais le régime de TVA ; sa valeur par
+            # défaut (« normal ») ne vaut pas déclaration.
+            tait = not getattr(profile, champ.name) or (champ.name == "regime_tva" and profile.regime_tva == "normal")
+            if tait and getattr(existant, champ.name):
                 setattr(profile, champ.name, getattr(existant, champ.name))
 
     # Save the profile

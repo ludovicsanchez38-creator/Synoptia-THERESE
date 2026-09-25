@@ -112,6 +112,7 @@ export {
   getThereseMd,
   saveThereseMd,
   type UserProfile,
+  type RegimeTva,
   type UserProfileUpdate,
   type WorkingDirectory,
   type LLMProvider,

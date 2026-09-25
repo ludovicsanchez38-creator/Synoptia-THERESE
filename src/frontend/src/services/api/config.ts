@@ -130,6 +130,8 @@ export async function setApiKey(
 }
 
 // User Profile
+export type RegimeTva = 'normal' | 'franchise' | 'exoneration_formation';
+
 export interface UserProfile {
   name: string;
   nickname: string | null;
@@ -144,6 +146,8 @@ export interface UserProfile {
   siret: string | null;
   code_ape: string | null;
   nda: string | null;
+  /** P-119 : régime de TVA déclaré (mention légale du PDF). */
+  regime_tva?: RegimeTva;
   display_name: string;
 }
 
@@ -161,6 +165,7 @@ export interface UserProfileUpdate {
   siret?: string;
   code_ape?: string;
   nda?: string;
+  regime_tva?: RegimeTva;
 }
 
 export interface WorkingDirectory {
