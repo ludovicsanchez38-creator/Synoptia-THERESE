@@ -274,7 +274,7 @@ describe('Gate de parité par source d’action', () => {
         expect(screen.getByTestId('conversation-canvas-prototype')).toHaveAttribute('data-embedded-view', 'crm');
       });
 
-      await act(async () => { screen.getByLabelText('Revenir à la conversation unifiée').click(); });
+      await act(async () => { screen.getByLabelText('Revenir à l’écran précédent').click(); });
       await act(async () => { runAction('crm.open'); });
 
       await waitFor(() => {

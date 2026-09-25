@@ -32,7 +32,7 @@ describe('Coque - B-816, le retour d’une vue embarquée rend le focus au décl
     const ouvrir = await screen.findByRole('button', { name: /^Ouvrir Agenda/ });
     ouvrir.focus();
     fireEvent.click(ouvrir);
-    const retour = await screen.findByRole('button', { name: 'Revenir à la conversation unifiée' });
+    const retour = await screen.findByRole('button', { name: 'Revenir à l’écran précédent' });
     fireEvent.click(retour);
     await waitFor(() => expect(document.activeElement).toBe(screen.getByRole('button', { name: /^Ouvrir Agenda/ })));
   });

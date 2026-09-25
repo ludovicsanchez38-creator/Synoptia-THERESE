@@ -30,7 +30,7 @@ async function commencerUneSaisie(page: Page, vue: string, bouton: RegExp, texte
 
 const SORTIES: Array<[string, (page: Page) => Promise<void>]> = [
   ['Échap', (page) => page.keyboard.press('Escape')],
-  ['le Retour d’en-tête de la vue', (page) => page.getByRole('button', { name: 'Revenir à la conversation unifiée' }).click()],
+  ['le Retour d’en-tête de la vue', (page) => page.getByRole('button', { name: 'Revenir à l’écran précédent' }).click()],
   ['le rail « Accueil »', (page) => page.getByRole('button', { name: 'Accueil', exact: true }).first().click()],
 ];
 
@@ -66,7 +66,7 @@ test.describe('Parcours 09 - Saisie protégée', () => {
       await ouvrirLaSurface(page, formulaire.vue);
       await page.getByRole('button', { name: formulaire.bouton }).first().click();
       await expect(page.getByLabel(/Titre/).first()).toBeVisible({ timeout: 10000 });
-      await page.getByRole('button', { name: 'Revenir à la conversation unifiée' }).click();
+      await page.getByRole('button', { name: 'Revenir à l’écran précédent' }).click();
       await expect(page.getByText(/Abandonner les modifications/)).toHaveCount(0);
       await expect(page.getByLabel(/Titre/)).toHaveCount(0);
     });
