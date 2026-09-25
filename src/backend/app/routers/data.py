@@ -1487,9 +1487,13 @@ async def restore_backup(
         decrypted_temp = backup_dir / f".{backup_name}.restore.tar.gz"
         try:
             decrypt_backup_archive(encrypted_archive, decrypted_temp, password)
-        except ValueError as exc:
+        except BaseException as exc:
+            # B-1290 : toute interruption (disque plein, arrêt), pas seulement
+            # une mauvaise passphrase, efface le clair partiel (US-003).
             decrypted_temp.unlink(missing_ok=True)
-            raise HTTPException(status_code=400, detail=str(exc)) from exc
+            if isinstance(exc, ValueError):
+                raise HTTPException(status_code=400, detail=str(exc)) from exc
+            raise
         archive = decrypted_temp
 
     # US-011 : filet de sécurité COMPLET (DB, Qdrant, images, outputs et MCP),
