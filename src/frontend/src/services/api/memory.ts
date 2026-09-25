@@ -268,10 +268,25 @@ export async function searchMemory(
 }
 
 // Import/Export VCF Contacts
+
+/** B-1381 : le moteur a refusé le fichier ; son message est fait pour l'écran. */
+export class ImportVcardRefuse extends Error {}
+
+/** B-1381 : le message d'échec d'un import vCard, le même aux deux boutons. */
+export function messageDEchecDImportVcard(erreur: unknown): string {
+  return erreur instanceof ImportVcardRefuse
+    ? erreur.message
+    : 'L’import a échoué. Vérifie le fichier et réessaie.';
+}
+
+/**
+ * Import vCard, commun au Pipeline et à Contacts (B-1381 : une route, une
+ * règle de doublon, un bilan).
+ */
 export async function importVCFFile(
   file: File,
   updateExisting = true,
-): Promise<{ created: number; updated: number; skipped: number; message: string }> {
+): Promise<{ created: number; updated: number; skipped: number; deja_a_jour: number; total: number; message: string }> {
   const formData = new FormData();
   formData.append('file', file);
 
@@ -282,7 +297,9 @@ export async function importVCFFile(
   );
   if (!response.ok) {
     const d = await response.json().catch(() => ({}));
-    throw new Error(d.detail || d.message || `Erreur ${response.status}`);
+    const raison = typeof d.detail === 'string' ? d.detail : typeof d.message === 'string' ? d.message : '';
+    if (response.status === 400 && raison) throw new ImportVcardRefuse(raison);
+    throw new Error(raison || `Erreur ${response.status}`);
   }
   return response.json();
 }

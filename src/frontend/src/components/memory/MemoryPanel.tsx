@@ -188,9 +188,10 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
       console.log('VCF import:', result.message);
       await loadData();
       addNotification({ type: 'success', title: 'Import VCF', message: result.message });
-    } catch (err: any) {
+    } catch (err) {
       console.error('VCF import failed:', err);
-      addNotification({ type: 'error', title: 'Import VCF', message: 'L’import a échoué. Vérifie le fichier et réessaie.' });
+      // B-1381 : la raison d'un refus du moteur est dite, jamais une exception brute.
+      addNotification({ type: 'error', title: 'Import VCF', message: api.messageDEchecDImportVcard(err) });
     }
     e.target.value = '';
   }

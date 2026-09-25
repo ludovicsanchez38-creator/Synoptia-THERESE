@@ -14,7 +14,8 @@ import { ListeDesPrestations } from './ListeDesPrestations';
 import { useCRMStore } from '../../stores/crmStore';
 import { useContactsStore } from '../../stores/contactsStore';
 import { listProjects, listActivities, updateContactStage, type ContactResponse, type ActivityResponse } from '../../services/api';
-import { createCRMContact, importVCFContacts, type CreateCRMContactRequest } from '../../services/api/crm';
+import { createCRMContact, type CreateCRMContactRequest } from '../../services/api/crm';
+import { importVCFFile, messageDEchecDImportVcard } from '../../services/api/memory';
 import { useDemoMask } from '../../hooks';
 import { useStatusStore } from '../../stores/statusStore';
 import { Z_LAYER } from '../../styles/z-layers';
@@ -121,11 +122,12 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
     if (!file) return;
     const addNotification = useStatusStore.getState().addNotification;
     try {
-      const result = await importVCFContacts(file);
+      const result = await importVCFFile(file);
       addNotification({ type: 'success', title: 'Import VCF', message: result.message });
       await loadContacts();
-    } catch (err: any) {
-      addNotification({ type: 'error', title: 'Erreur import', message: err.message });
+    } catch (err) {
+      // B-1381 : même import et même message qu'à l'écran Contacts.
+      addNotification({ type: 'error', title: 'Import VCF', message: messageDEchecDImportVcard(err) });
     }
     e.target.value = '';
   };

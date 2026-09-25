@@ -28,7 +28,7 @@ from app.models.schemas import (
 )
 from app.services.audit import AuditAction, log_activity
 from app.services.qdrant import get_qdrant_service
-from app.services.scoring import calculate_base_score, update_contact_score
+from app.services.scoring import update_contact_score
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -764,107 +764,21 @@ async def create_contact(
 @router.post("/contacts/import")
 async def import_vcf_contacts(
     file: UploadFile = File(..., description="Fichier .vcf (VCard)"),
-    update_existing: bool = Query(True, description="Mettre a jour les contacts existants (par email)"),
+    update_existing: bool = Query(True, description="Mettre à jour les contacts existants (même e-mail, sinon mêmes prénom et nom)"),
     session: AsyncSession = Depends(get_session),
 ):
+    """Importe des contacts depuis un fichier VCard (.vcf).
+
+    B-1381 : même import que le Pipeline (`/api/crm/import/vcf`), par
+    `services/import_vcard.py` : une règle de doublon, un bilan.
     """
-    Importe des contacts depuis un fichier VCard (.vcf).
+    from app.services.import_vcard import ImportRefuse, importer_des_vcard
 
-    Les doublons sont detectes par email ou nom complet.
-    """
-    from datetime import UTC, datetime
-
-    from app.services.import_service import parse_vcf_avec_ecarts, resume_des_ecarts
-
-    if not file.filename or not file.filename.lower().endswith(".vcf"):
-        raise HTTPException(status_code=400, detail="Le fichier doit etre au format .vcf")
-
-    content = await file.read()
-    if len(content) > 1_000_000:
-        raise HTTPException(status_code=400, detail="Fichier trop volumineux (max 1 Mo)")
-
+    contenu = await file.read()
     try:
-        parsed_contacts, ecartees, nb_cartes = parse_vcf_avec_ecarts(content)
-    except Exception as e:
-        logger.error(f"Erreur parsing VCF: {e}")
-        # B-552 (05/09/2026) : le texte brut de vobject (anglais, numéro de
-        # ligne interne) traversait jusqu'à l'écran.
-        raise HTTPException(status_code=400, detail="Fichier VCF invalide : il ne respecte pas le format vCard attendu. Vérifie qu'il s'agit bien d'un export de contacts.")
-
-    if not parsed_contacts:
-        return {"created": 0, "updated": 0, "skipped": 0, "message": "Aucun contact trouve dans le fichier"}
-
-    created = 0
-    updated = 0
-    skipped = 0
-
-    a_indexer: list[Contact] = []
-    for contact_data in parsed_contacts:
-        existing = None
-        if contact_data.get("email"):
-            result = await session.execute(
-                select(Contact).where(Contact.email == contact_data["email"]).limit(1)
-            )
-            existing = result.scalar_one_or_none()
-
-        if not existing and contact_data.get("first_name") and contact_data.get("last_name"):
-            result = await session.execute(
-                select(Contact).where(
-                    Contact.first_name == contact_data["first_name"],
-                    Contact.last_name == contact_data["last_name"],
-                ).limit(1)
-            )
-            existing = result.scalar_one_or_none()
-
-        if existing and update_existing:
-            for field in ("first_name", "last_name", "company", "phone", "address", "notes"):
-                new_value = contact_data.get(field)
-                if new_value:
-                    setattr(existing, field, new_value)
-            existing.updated_at = datetime.now(UTC)
-            session.add(existing)
-            a_indexer.append(existing)
-            updated += 1
-        elif existing:
-            skipped += 1
-        else:
-            contact = Contact(
-                first_name=contact_data.get("first_name", ""),
-                last_name=contact_data.get("last_name", ""),
-                company=contact_data.get("company"),
-                email=contact_data.get("email"),
-                phone=contact_data.get("phone"),
-                address=contact_data.get("address"),
-                notes=contact_data.get("notes"),
-            )
-            # B-1382 : une fiche neuve reçoit le score de base (sinon 50 figé, qui sautait au premier déplacement).
-            contact.score = calculate_base_score(contact)
-            session.add(contact)
-            a_indexer.append(contact)
-            created += 1
-
-    await session.commit()
-    # B-1180 : comme une création à l'unité, chaque fiche importée ou mise à
-    # jour rejoint l'index sémantique (sinon le chat ne la retrouve pas).
-    indexer_fiches_en_arriere_plan(a_indexer)
-    logger.info(f"VCF import (memory): {created} created, {updated} updated, {skipped} skipped")
-
-    parts = [f"{created} contact(s) créé(s)"]
-    if updated:
-        parts.append(f"{updated} mis à jour")
-    if skipped:
-        parts.append(f"{skipped} doublon(s) ignoré(s)")
-    # B-1380 : le total compte les cartes du fichier, et l'écarté se dit.
-    if ecartees:
-        parts.append(resume_des_ecarts(ecartees))
-    return {
-        "created": created,
-        "updated": updated,
-        "skipped": skipped,
-        "total": nb_cartes,
-        "ecartees": ecartees,
-        "message": ", ".join(parts),
-    }
+        return await importer_des_vcard(session, file.filename, contenu, mettre_a_jour=update_existing)
+    except ImportRefuse as e:
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("/contacts/export")

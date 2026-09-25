@@ -72,6 +72,8 @@ export {
   deleteProjectWithCascade,
   searchMemory,
   importVCFFile,
+  ImportVcardRefuse,
+  messageDEchecDImportVcard,
   exportVCFFile,
   downloadVCFFile,
   type VCFDownloadResult,
@@ -423,7 +425,6 @@ export {
 // CRM - Contact creation + push
 export {
   createCRMContact,
-  importVCFContacts,
   type CreateCRMContactRequest,
 } from './crm';
 
