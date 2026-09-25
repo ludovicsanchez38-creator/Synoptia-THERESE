@@ -305,4 +305,14 @@ describe('DocumentWorkspace', () => {
     expect(screen.getByText(/Génération de la trame en cours/i)).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /Générer la trame/i })).toBeNull();
   });
+
+  it('B-1370 : à l’ouverture, le titre du document prend le focus perdu', async () => {
+    useDocumentStore.setState({ currentDocument: makeDetail({ pistes: [makePiste()] }) });
+    (document.activeElement as HTMLElement | null)?.blur();
+
+    render(<DocumentWorkspace documentId="doc-1" onBack={vi.fn()} />);
+
+    const titre = screen.getByRole('heading', { name: 'Proposition Client X' });
+    await waitFor(() => expect(document.activeElement).toBe(titre));
+  });
 });

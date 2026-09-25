@@ -39,7 +39,7 @@
  * D1) - le déclenchement navigateur suit la même mécanique que
  * `exportConversation` (chat.ts:282) via `downloadExportedDocument`.
  */
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ArrowLeft, Download } from 'lucide-react';
 import { Button } from '../ui/Button';
 import { useDocumentStore } from '../../stores/documentStore';
@@ -146,6 +146,17 @@ export function DocumentWorkspace({ documentId, onBack }: DocumentWorkspaceProps
   const doc = currentDocument && currentDocument.id === documentId ? currentDocument : null;
   const activeSection = doc?.sections.find((s) => s.id === sectionActive) ?? null;
 
+  // B-1370 (Hugo, cycle 13) : ouvrir un document démonte la carte cliquée ;
+  // le focus perdu rejoint le titre du document (il tombait sur « Replier
+  // le volet Pistes »), sans reprendre un focus déjà posé ailleurs.
+  const titreRef = useRef<HTMLHeadingElement>(null);
+  const titreCharge = doc !== null;
+  useEffect(() => {
+    if (!titreCharge) return;
+    const actif = document.activeElement;
+    if (!actif || actif === document.body) titreRef.current?.focus();
+  }, [titreCharge, documentId]);
+
   return (
     <div className="flex-1 min-h-0 flex flex-col bg-bg" data-testid="document-workspace">
       <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-b border-border shrink-0" data-testid="atelier-entete">
@@ -154,7 +165,10 @@ export function DocumentWorkspace({ documentId, onBack }: DocumentWorkspaceProps
             <ArrowLeft className="w-4 h-4 mr-1.5" />
             Retour aux documents
           </Button>
-          {doc && <p className="text-sm font-medium text-text truncate">{doc.title}</p>}
+          {doc && (
+            // B-1370 : un titre, focalisable par programme (voir l'effet).
+            <h2 ref={titreRef} tabIndex={-1} className="text-sm font-medium text-text truncate outline-none">{doc.title}</h2>
+          )}
         </div>
         {doc && (
           <div className="flex flex-wrap items-center gap-2 shrink-0 max-[840px]:basis-full">

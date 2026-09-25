@@ -78,7 +78,14 @@ export function PistesPanel({ pistes, onExplore, onIgnore }: PistesPanelProps) {
   const [showTraitees, setShowTraitees] = useState(false);
   const boutonDeplierRef = useRef<HTMLButtonElement>(null);
   const boutonReplierRef = useRef<HTMLButtonElement>(null);
-  const premierRendu = useRef(true);
+  // B-1370 : le transfert ne suit qu'une bascule demandée. Un « premier
+  // rendu » ne suffisait pas : le double montage de StrictMode passait la
+  // garde, et le volet prenait le focus perdu à l'ouverture d'un document.
+  const basculeDemandee = useRef(false);
+  const basculer = (replie: boolean) => {
+    basculeDemandee.current = true;
+    setCollapsed(replie);
+  };
 
   // B-288 : le bouton qui bascule le volet se démonte avec lui. Sans ce
   // transfert, le focus retombait sur <body> et la tabulation suivante
@@ -86,10 +93,8 @@ export function PistesPanel({ pistes, onExplore, onIgnore }: PistesPanelProps) {
   // reprend le focus que s'il a été PERDU - jamais s'il est déjà posé
   // ailleurs par l'utilisateur.
   useEffect(() => {
-    if (premierRendu.current) {
-      premierRendu.current = false;
-      return;
-    }
+    if (!basculeDemandee.current) return;
+    basculeDemandee.current = false;
     const actif = document.activeElement;
     if (actif && actif !== document.body) return;
     (collapsed ? boutonDeplierRef : boutonReplierRef).current?.focus();
@@ -108,7 +113,7 @@ export function PistesPanel({ pistes, onExplore, onIgnore }: PistesPanelProps) {
           variant="ghost"
           size="icon"
           ref={boutonDeplierRef}
-          onClick={() => setCollapsed(false)}
+          onClick={() => basculer(false)}
           className="relative"
           aria-label="Déplier le volet Pistes"
           title="Pistes"
@@ -134,7 +139,7 @@ export function PistesPanel({ pistes, onExplore, onIgnore }: PistesPanelProps) {
           variant="ghost"
           size="icon"
           ref={boutonReplierRef}
-          onClick={() => setCollapsed(true)}
+          onClick={() => basculer(true)}
           aria-label="Replier le volet Pistes"
           title="Replier"
         >
