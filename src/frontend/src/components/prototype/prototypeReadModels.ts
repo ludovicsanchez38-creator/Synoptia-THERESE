@@ -256,7 +256,11 @@ export function todayBriefTitle(itemCount: number): string {
   return 'Ton attention aujourd’hui';
 }
 
-export function contactDisplayName(contact: Contact): string {
+/** B-1443 : partagé par le Pipeline, la liste des Contacts et les Projets
+ *  (ils s'arrêtaient au prénom et au nom : « Sans nom », « Contact »). */
+export function contactDisplayName(
+  contact: Pick<Contact, 'first_name' | 'last_name' | 'company' | 'email'>,
+): string {
   const name = [contact.first_name, contact.last_name].filter(Boolean).join(' ').trim();
   return name || contact.company || contact.email || 'Contact sans nom';
 }

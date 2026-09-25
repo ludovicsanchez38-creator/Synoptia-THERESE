@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { contactDisplayName } from '../prototype/prototypeReadModels';
 import { X, Briefcase, Trash2, AlertCircle, Upload, FileText, FileSpreadsheet, File } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../ui/Button';
@@ -325,8 +326,10 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
 
   // Get contact display name
   function getContactDisplayName(contact: api.Contact): string {
+    // B-1443 : sans prénom ni nom, l'entreprise est le nom (pas « Sans nom (SA) »).
     const parts = [contact.first_name, contact.last_name].filter(Boolean);
-    const name = parts.length > 0 ? parts.join(' ') : 'Sans nom';
+    if (parts.length === 0) return contactDisplayName(contact);
+    const name = parts.join(' ');
     return contact.company ? `${name} (${contact.company})` : name;
   }
 

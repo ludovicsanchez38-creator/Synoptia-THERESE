@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, type RefObject } from 'react';
+import { contactDisplayName } from '../prototype/prototypeReadModels';
 import { X, Plus, Search, ChevronRight, Trash2, AlertCircle, Shield, Download, Upload, UserX, RefreshCw, AlertTriangle } from 'lucide-react';
 import { Spinner } from '../ui/Spinner';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -957,7 +958,8 @@ function ContactsList({
   return (
     <div>
       {contacts.map((contact) => {
-        const titre = [contact.first_name, contact.last_name].filter(Boolean).join(' ') || 'Sans nom';
+        // B-1443 : le nom retombe sur l'entreprise puis l'e-mail.
+        const titre = contactDisplayName(contact);
         const detail = [contact.company, contact.email].filter(Boolean).join(' · ') || undefined;
         return (
           <Ligne
@@ -1039,7 +1041,7 @@ function ContactsList({
                   size="icon"
                   onClick={(e) => { e.stopPropagation(); onDelete(contact); }}
                   className="text-text-muted hover:text-error"
-                  aria-label={`Supprimer ${titre === 'Sans nom' ? 'le contact' : titre}`}
+                  aria-label={`Supprimer ${titre === 'Contact sans nom' ? 'le contact' : titre}`}
                   title="Supprimer"
                 >
                   <Trash2 className="w-4 h-4" />

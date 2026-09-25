@@ -5,6 +5,7 @@
  * Drag & Drop via @dnd-kit.
  */
 
+import { contactDisplayName } from '../prototype/prototypeReadModels';
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HelpCircle } from 'lucide-react';
@@ -108,8 +109,8 @@ export function PipelineView({ contacts, onContactClick, onStageChange }: Pipeli
   function nomDuContact(contactId: string): string {
     const contact = contacts.find((c) => c.id === contactId);
     if (!contact) return 'Contact';
-    const nom = [contact.first_name, contact.last_name].filter(Boolean).join(' ') || 'Contact';
-    return maskText(nom);
+    // B-1443 : une fiche sans nom s'appelle par son entreprise, pas « Contact ».
+    return maskText(contactDisplayName(contact));
   }
 
   function libelleDuStage(stageId: string | null): string | null {
@@ -251,7 +252,8 @@ function SortableContactCard({ contact, onClick }: SortableContactCardProps) {
   const { maskText: masquer } = useDemoMask();
   // B-877 : le conteneur triable garde pour nom le seul nom du contact ; sans
   // cela, le bouton « Ouvrir la fiche » entrerait dans son nom calculé.
-  const nomAccessible = masquer([contact.first_name, contact.last_name].filter(Boolean).join(' ') || 'Contact');
+  // B-1443 : sans prénom ni nom, la carte s'appelle par l'entreprise.
+  const nomAccessible = masquer(contactDisplayName(contact));
   const {
     attributes,
     listeners,
@@ -317,10 +319,11 @@ function ContactCard({ contact, onClick, isOverlay }: ContactCardProps) {
       {/* B-845 : en démonstration, la carte passe par le même masque que
           l'annonce de déplacement ; sinon le vrai client restait à l'écran. */}
       <div className="font-semibold">
-        {masquer([contact.first_name, contact.last_name].filter(Boolean).join(' '))}
+        {masquer(contactDisplayName(contact))}
       </div>
 
-      {contact.company && (
+      {/* B-1443 : sans prénom ni nom, l'entreprise est déjà le titre. */}
+      {contact.company && (contact.first_name || contact.last_name) && (
         <p className="text-sm text-text-muted truncate">{masquer(contact.company)}</p>
       )}
 
