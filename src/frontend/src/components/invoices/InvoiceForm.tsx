@@ -41,6 +41,11 @@ interface InvoiceLineInputState {
   unit_price_ht: string;
 }
 
+/** B-1411 : arrondi au centime, identique au `round(x, 2)` du serveur à deux décimales. */
+function arrondirAuCentime(valeur: number): number {
+  return Math.round(valeur * 100) / 100;
+}
+
 const TVA_RATES = [
   { value: 20.0, label: '20% (normale)' },
   { value: 10.0, label: '10% (intermédiaire)' },
@@ -306,24 +311,31 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
     return { quantity, unitPrice };
   }
 
+  // B-1411 : l'argent n'a pas de troisième décimale. On arrondit là où le
+  // montant naît (la ligne), comme le serveur (`_montants_de_ligne`) et le
+  // panneau Facturer (B-017) ; trois lignes de 33,33 € à 20 % affichaient
+  // 119,99 € pour une pièce enregistrée à 120,00 €.
   function calculateLineTotals(line: InvoiceLineRequest, index: number) {
     const { quantity, unitPrice } = getLineNumericValues(index);
-    const totalHT = quantity * unitPrice;
-    const totalTTC = totalHT * (1 + line.tva_rate / 100);
+    const totalHT = arrondirAuCentime(quantity * unitPrice);
+    const totalTTC = arrondirAuCentime(totalHT * (1 + line.tva_rate / 100));
     return { totalHT, totalTTC };
   }
 
   function calculateInvoiceTotals() {
     let subtotalHT = 0;
-    let totalTax = 0;
+    let sommeTTC = 0;
 
     for (const [index, line] of lines.entries()) {
       const { totalHT, totalTTC } = calculateLineTotals(line, index);
       subtotalHT += totalHT;
-      totalTax += (totalTTC - totalHT);
+      sommeTTC += totalTTC;
     }
 
-    const totalTTC = subtotalHT + totalTax;
+    subtotalHT = arrondirAuCentime(subtotalHT);
+    const totalTTC = arrondirAuCentime(sommeTTC);
+    // La TVA se déduit du TTC et du HT, comme côté serveur.
+    const totalTax = arrondirAuCentime(totalTTC - subtotalHT);
 
     return { subtotalHT, totalTax, totalTTC };
   }
