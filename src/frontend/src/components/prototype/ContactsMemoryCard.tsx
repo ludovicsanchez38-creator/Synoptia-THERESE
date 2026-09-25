@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { BoutonOuvrirLaVue } from './BoutonOuvrirLaVue';
 import {
   AlertCircle,
@@ -13,6 +13,7 @@ import type { Contact } from '../../services/api/memory';
 import { contactMatchesQuery } from '../../stores/contactsStore';
 import { libelleDEtape } from '../crm/pipelineEtapes';
 import { ActivityTimeline } from '../crm/ActivityTimeline';
+import { useDemoMask } from '../../hooks';
 import {
   contactDisplayName,
   contactInitials,
@@ -79,7 +80,13 @@ export function ContactsMemoryCard({
   onOpenContact: (contactId: string) => void;
   onOpenClassic: () => void;
 }) {
-  const recentContacts = resource.status === 'ready' ? selectRecentContacts(resource.data, 4) : [];
+  // B-1414 : en démonstration, aucun vrai nom (famille B-1080).
+  const { enabled: demo, maskContact, populateMap } = useDemoMask();
+  useEffect(() => {
+    if (demo && resource.status === 'ready') populateMap(resource.data, []);
+  }, [demo, resource, populateMap]);
+  const recentContacts = (resource.status === 'ready' ? selectRecentContacts(resource.data, 4) : [])
+    .map((contact) => (demo ? maskContact(contact) : contact));
 
   return (
     <section
@@ -175,7 +182,15 @@ export function ContactsMemoryCanvas({
     const normalized = query.trim();
     return normalized ? contacts.filter((contact) => contactMatchesQuery(contact, normalized)) : contacts;
   }, [contacts, query]);
-  const selectedContact = filteredContacts.find((contact) => contact.id === selectedContactId) ?? filteredContacts[0] ?? null;
+  const choisi = filteredContacts.find((contact) => contact.id === selectedContactId) ?? filteredContacts[0] ?? null;
+  // B-1414 : la recherche porte sur les vraies fiches, l'écran n'affiche que
+  // leur version masquée en démonstration (famille B-1080).
+  const { enabled: demo, maskContact, maskText, populateMap } = useDemoMask();
+  useEffect(() => {
+    if (demo) populateMap(contacts, []);
+  }, [demo, contacts, populateMap]);
+  const vu = (contact: Contact): Contact => (demo ? maskContact(contact) : contact);
+  const selectedContact = choisi ? vu(choisi) : null;
 
   return (
     <div className="flex h-full flex-col">
@@ -229,8 +244,8 @@ export function ContactsMemoryCanvas({
                     selectedContact?.id === contact.id ? 'bg-domaine-prospects-tint' : 'hover:bg-surface-2'
                   }`}
                 >
-                  <ContactAvatar contact={contact} className="h-7 w-7 text-xs" />
-                  <span className="min-w-0 flex-1 truncate text-xs font-semibold text-text">{contactDisplayName(contact)}</span>
+                  <ContactAvatar contact={vu(contact)} className="h-7 w-7 text-xs" />
+                  <span className="min-w-0 flex-1 truncate text-xs font-semibold text-text">{contactDisplayName(vu(contact))}</span>
                 </button>
               ))}
               {filteredContacts.length === 0 && (
@@ -269,7 +284,7 @@ export function ContactsMemoryCanvas({
                 <div className="mt-5">
                   <div className="text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">Notes mémorisées</div>
                   <div className="mt-2 min-h-24 whitespace-pre-wrap rounded-md border border-border bg-surface p-3 text-sm leading-6 text-text">
-                    {selectedContact.notes || 'Aucune note enregistrée pour ce contact.'}
+                    {selectedContact.notes ? maskText(selectedContact.notes) : 'Aucune note enregistrée pour ce contact.'}
                   </div>
                 </div>
 

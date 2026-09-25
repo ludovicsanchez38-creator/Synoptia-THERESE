@@ -10,6 +10,7 @@ import { Mail, Phone, Users, FileText, TrendingUp, ArrowRight } from 'lucide-rea
 import { listActivities, type ActivityResponse } from '../../services/api';
 import { presenterActivite } from '../../lib/activitesCrm';
 import { EtatVide } from '../ui/EtatVide';
+import { useDemoMask } from '../../hooks';
 import { Squelette } from '../ui/Squelette';
 
 interface ActivityTimelineProps {
@@ -40,6 +41,8 @@ const ACTIVITY_COLORS = {
 export function ActivityTimeline({ contactId }: ActivityTimelineProps) {
   const [activities, setActivities] = useState<ActivityResponse[]>([]);
   const [loading, setLoading] = useState(true);
+  // B-1414 : une note de séance porte des noms ; en démonstration, masqués.
+  const { maskText } = useDemoMask();
 
   useEffect(() => {
     loadActivities();
@@ -93,7 +96,9 @@ export function ActivityTimeline({ contactId }: ActivityTimelineProps) {
         // Une trace retirée par son auteur reste lisible, mais elle ne doit
         // pas se lire comme un fait courant.
         const annulee = activity.statut === 'annulee';
-        const { titre, description } = presenterActivite(activity);
+        const presentee = presenterActivite(activity);
+        const titre = maskText(presentee.titre);
+        const description = presentee.description ? maskText(presentee.description) : presentee.description;
 
         return (
           <motion.div
