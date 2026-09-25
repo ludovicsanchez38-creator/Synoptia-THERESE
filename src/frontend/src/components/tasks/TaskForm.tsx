@@ -67,9 +67,17 @@ export function TaskForm() {
   // P-134 : une relance posée en tâche n'était reliée à personne.
   const [contactId, setContactId] = useState('');
   const contacts = useContactsStore((s) => s.contacts);
+  // P-150 : les projets auxquels rattacher la tâche (le filtre projet des
+  // Tâches restait vide faute d'écran qui pose le projet).
+  const [projets, setProjets] = useState<api.Project[]>([]);
+  useEffect(() => {
+    let vivant = true;
+    api.listProjects().then((liste) => { if (vivant) setProjets(liste); }).catch(() => { if (vivant) setProjets([]); });
+    return () => { vivant = false; };
+  }, []);
   const contactsCharges = useContactsStore((s) => s.loaded);
   // Famille B-1080 : en démonstration, aucun vrai nom dans la liste.
-  const { maskContact } = useDemoMask();
+  const { maskContact, maskText } = useDemoMask();
   useEffect(() => {
     if (!contactsCharges) void useContactsStore.getState().fetchContacts().catch(() => undefined);
   }, [contactsCharges]);
@@ -162,7 +170,8 @@ export function TaskForm() {
           status,
           priority,
           due_date: dueDate ? `${dueDate}T00:00:00Z` : undefined,
-          project_id: projectId || undefined,
+          // P-150 : « Aucun » détache la tâche du projet.
+          project_id: projectId || null,
           contact_id: contactId || null,
           tags: tags.length > 0 ? tags : undefined,
         };
@@ -362,16 +371,17 @@ export function TaskForm() {
           />
         </FormField>
 
-        {/* Project (optional, future feature) */}
-        {/* <div>
-          <label htmlFor="taskform-projet-lie" className="text-sm text-text-muted mb-2 block">Projet lié</label>
-          <select id="taskform-projet-lie"
+        <FormField label="Projet lié" htmlFor="taskform-projet-lie" description="Le projet que cette tâche fait avancer.">
+          <Select
+            id="taskform-projet-lie"
             value={projectId}
             onChange={(e) => setProjectId(e.target.value)}
-          >
-            <option value="">Aucun</option>
-          </select>
-        </div> */}
+            options={[
+              { value: '', label: 'Aucun projet' },
+              ...projets.map((projet) => ({ value: projet.id, label: maskText(projet.name) })),
+            ]}
+          />
+        </FormField>
       </div>
     </motion.div>
   );

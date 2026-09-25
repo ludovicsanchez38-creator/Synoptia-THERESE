@@ -39,7 +39,8 @@ export interface UpdateTaskRequest {
   status?: string;
   priority?: string;
   due_date?: string;
-  project_id?: string;
+  /** P-150 : null détache la tâche du projet. */
+  project_id?: string | null;
   /** null retire la personne liée. */
   contact_id?: string | null;
   tags?: string[];
