@@ -83,7 +83,8 @@ class UserProfile:
         """Get display name (nickname or full name)."""
         # B-1304 : un nom fait seulement d'espaces n'a pas de premier mot.
         mots = (self.name or "").split()
-        return self.nickname or (mots[0] if mots else "Utilisateur")
+        # B-1333 : un surnom fait d'espaces n'est pas un surnom.
+        return (self.nickname or "").strip() or (mots[0] if mots else "Utilisateur")
 
     def format_for_llm(self) -> str:
         """Format profile for injection into LLM system prompt."""

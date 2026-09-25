@@ -27,3 +27,12 @@ async def test_un_nom_blanc_est_refuse_et_ne_compte_pas_comme_raison_sociale(cli
     ok = await client.post("/api/config/profile", json={"name": "  Marie Exemple  "})
     assert ok.status_code == 200, ok.text
     assert ok.json()["name"] == "Marie Exemple", ok.json()
+
+
+def test_un_surnom_blanc_n_est_pas_affiche():
+    """B-1333 : un surnom fait d'espaces était affiché tel quel par
+    display_name. Lecteur ζ, passe 8."""
+    from app.services.user_profile import UserProfile
+
+    assert UserProfile(name="Marie Exemple", nickname="   ").display_name() == "Marie"
+    assert UserProfile(name="Marie Exemple", nickname=" Mimi ").display_name() == "Mimi"
