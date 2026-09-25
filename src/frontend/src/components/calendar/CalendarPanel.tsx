@@ -26,6 +26,7 @@ import { useEmailStore } from '../../stores/emailStore';
 import { CalendarView } from './CalendarView';
 import { EventForm } from './EventForm';
 import { EventDetail } from './EventDetail';
+import { plageAffichee } from './plageAffichee';
 import { classifyCalendarError } from './calendarErrors';
 import { Button } from '../ui/Button';
 import { Alerte } from '../ui/Alerte';
@@ -161,7 +162,7 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
     if (calendarsReady && currentCalendarId) {
       loadEvents();
     }
-  }, [calendarsReady, currentCalendarId, currentAccountId, selectedDate]);
+  }, [calendarsReady, currentCalendarId, currentAccountId, selectedDate, viewMode]);
 
   async function loadCalendars() {
     if (!hasCachedCalendars) setLoading(true);
@@ -219,9 +220,9 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
     if (!erreurDesAgendasRef.current) setError(null);
 
     try {
-      // Load events for the selected month
-      const startOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1);
-      const endOfMonth = new Date(selectedDate.getFullYear(), selectedDate.getMonth() + 1, 0);
+      // B-1429 : la plage couvre exactement ce que la vue affiche (le dernier
+      // jour du mois était exclu, comme les jours voisins de la grille).
+      const { debut, fin } = plageAffichee(selectedDate, viewMode);
 
       // L'account_id doit venir du calendrier sélectionné, pas seulement du
       // compte email « courant » qui peut être vide (ouverture de l'agenda à
@@ -231,8 +232,8 @@ export function CalendarPanel({ isOpen, onClose, standalone = false }: CalendarP
       const effectiveAccountId = currentCal?.account_id || currentAccountId || undefined;
 
       const evts = await api.listEvents(effectiveAccountId, currentCalendarId, {
-        time_min: startOfMonth.toISOString(),
-        time_max: endOfMonth.toISOString(),
+        time_min: debut.toISOString(),
+        time_max: fin.toISOString(),
         max_results: 250,
       });
 
