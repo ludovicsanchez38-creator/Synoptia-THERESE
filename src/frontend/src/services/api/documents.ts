@@ -314,6 +314,10 @@ export async function* draftSection(
 export async function validateSection(sectionId: string): Promise<DocumentSection> {
   return request<DocumentSection>(`/api/documents/sections/${sectionId}/validate`, {
     method: 'POST',
+    // B-1446 : la validation résume la section par le modèle ; un modèle
+    // local y met près d'une minute, et le délai de 30 s annonçait un échec
+    // pendant que le moteur aboutissait.
+    timeoutMs: null,
   });
 }
 

@@ -34,6 +34,7 @@
  * lire l'état courant sans dépendre de `instruction` dans les deps de l'effet
  * (qui ne doit se déclencher qu'au changement de `instructionPrefill`).
  */
+import { Spinner } from '../ui/Spinner';
 import { useEffect, useRef, useState } from 'react';
 import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -142,7 +143,7 @@ export interface SectionEditorProps {
   error: string | null;
   onUpdateSection: (sectionId: string, payload: SectionUpdateRequest) => void;
   onDraft: (sectionId: string, instruction?: string) => void;
-  onValidate: (sectionId: string) => void;
+  onValidate: (sectionId: string) => void | Promise<void>;
   /** Texte à poser dans le champ instruction (D4, « Explorer » d'une piste). */
   instructionPrefill?: string | null;
   /** Appelé juste après consommation de `instructionPrefill` (le parent efface son état). */
@@ -173,6 +174,9 @@ export function SectionEditor({
   arretDemande = false,
 }: SectionEditorProps) {
   const [titleDraft, setTitleDraft] = useState('');
+  // B-1446 : la validation peut durer près d'une minute (résumé par un
+  // modèle local) ; le bouton le dit et ne se relance pas.
+  const [validationEnCours, setValidationEnCours] = useState(false);
   const [briefDraft, setBriefDraft] = useState('');
   const [instruction, setInstruction] = useState('');
   const [lastInstruction, setLastInstruction] = useState<string | undefined>(undefined);
@@ -312,9 +316,14 @@ export function SectionEditor({
     }
   }
 
-  function handleValidate() {
-    if (!section) return;
-    onValidate(section.id);
+  async function handleValidate() {
+    if (!section || validationEnCours) return;
+    setValidationEnCours(true);
+    try {
+      await onValidate(section.id);
+    } finally {
+      setValidationEnCours(false);
+    }
   }
 
   return (
@@ -436,9 +445,15 @@ export function SectionEditor({
             Retoucher
           </Button>
           {!isValidee && (
-            <Button variant="primary" size="sm" onClick={handleValidate} disabled={!canValidate}>
-              <CheckCircle2 className="w-4 h-4 mr-1.5" />
-              Valider
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => void handleValidate()}
+              disabled={!canValidate || validationEnCours}
+              aria-busy={validationEnCours}
+            >
+              {validationEnCours ? <Spinner taille="ligne" className="mr-1.5" /> : <CheckCircle2 className="w-4 h-4 mr-1.5" />}
+              {validationEnCours ? 'Validation…' : 'Valider'}
             </Button>
           )}
         </div>
