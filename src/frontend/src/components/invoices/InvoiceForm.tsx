@@ -874,7 +874,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
                   <span className="font-medium text-text">Conditions :</span> 30 jours, virement bancaire
                 </p>
                 <p className="text-text-muted">
-                  <span className="font-medium text-text">Mentions legales :</span> ajoutees automatiquement
+                  <span className="font-medium text-text">Mentions légales :</span> ajoutées automatiquement
                 </p>
               </div>
               <div className="flex items-center justify-end gap-3">
