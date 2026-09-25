@@ -1185,9 +1185,11 @@ async def attendre_les_gestes_de_creation() -> None:
     vol. Un geste garde sa transaction ouverte pendant le calcul du vecteur
     (jusqu'à 19 s) : la purge se heurtait au verrou d'écriture de SQLite
     (délai de 5 s) et répondait 500, ou laissait survivre la fiche créée."""
+    # B-1270 : `asyncio.wait`, pas `gather` : un gather annulé (purge
+    # interrompue) annulait les gestes que `shield` protège.
     gestes = list(_gestes_en_cours)
     if gestes:
-        await asyncio.gather(*gestes, return_exceptions=True)
+        await asyncio.wait(gestes)
 
 
 async def _proteger_le_geste(coro: "Any") -> str:

@@ -193,7 +193,9 @@ async def arreter_les_indexations_de_fiches() -> None:
     try:
         taches = list(_INDEXATIONS_DE_FICHES)
         if taches:
-            await asyncio.gather(*taches, return_exceptions=True)
+            # B-1270 : `asyncio.wait` n'annule pas ce qu'il attend ; un gather
+            # annulé annulait la fiche en vol, dont le fil écrivait quand même.
+            await asyncio.wait(taches)
     finally:
         _ARRET_DES_INDEXATIONS.clear()
 
