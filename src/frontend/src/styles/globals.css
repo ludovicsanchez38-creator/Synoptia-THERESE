@@ -14,6 +14,8 @@
   --color-surface-2: #F0F4FB;
   --color-surface-elevated: #FFFFFF;
   --color-border: #E2E8F3;
+  /* B-1427 : pouce des barres de défilement, 3:1 sur chaque fond. */
+  --color-defilement: #7F8CA1;
 
   --color-text: #101C36;
   /* 5.81:1 sur #F3F6FC : marge AA pour le texte secondaire, y compris
@@ -186,6 +188,8 @@
   --color-surface-2: #0E1630;
   --color-surface-elevated: #1A2340;
   --color-border: #2A3550;
+  /* B-1427 : pouce des barres de défilement, 3:1 sur chaque fond. */
+  --color-defilement: #5E6E8C;
 
   --color-text: #E6EDF7;
   --color-text-muted: #B6C7DA;
@@ -301,7 +305,7 @@ button,
 /* Custom scrollbar */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
+::-webkit-scrollbar-thumb { background: var(--color-defilement); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--color-text-muted); }
 
 /* Select / Option - contraste (BUG-039) */
@@ -531,6 +535,8 @@ html[data-reduce-motion="true"] *::after {
   --color-surface-2: #0A0A0A;
   --color-surface-elevated: #141414;
   --color-border: #FFFFFF;
+  /* B-1427 : pouce des barres de défilement, 3:1 sur chaque fond. */
+  --color-defilement: #FFFFFF;
 
   --color-text: #FFFFFF;
   --color-text-muted: #E0E0E0;
