@@ -91,6 +91,7 @@ import { getProfile, type UserProfile } from '../../services/api/config';
 import { useChatStore } from '../../stores/chatStore';
 import { useStatusStore } from '../../stores/statusStore';
 import { TraitementsIndicator } from '../traitements/TraitementsIndicator';
+import { useProcessingTasksStore } from '../../stores/processingTasksStore';
 import { useConversationSync } from '../../hooks/useConversationSync';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { usePanelStore } from '../../stores/panelStore';
@@ -1684,6 +1685,8 @@ export function ConversationCanvasPrototype() {
                 setTrustCenterOpen((open) => !open);
                 setCapabilityCenterOpen(false);
                 setCommandOpen(false);
+                // B-1401 : « Travaux » restait ouvert sous le Centre.
+                useProcessingTasksStore.getState().fermerPanneau();
               }}
               className="mr-1 hidden h-9 items-center gap-1.5 rounded-md px-3 text-sm font-semibold text-accent hover:bg-accent-tint sm:flex whitespace-nowrap shrink-0"
             >
