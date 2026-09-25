@@ -101,6 +101,26 @@ function GenericDetails({ confirmation }: { confirmation: PendingConfirmation })
   );
 }
 
+// B-1454 : la création d'un document se confirme en français, pas par le nom
+// de l'outil et ses clés brutes.
+const FORMATS_DE_DOCUMENT: Record<string, string> = {
+  docx: 'Document Word (.docx)',
+  xlsx: 'Tableur Excel (.xlsx)',
+  pptx: 'Présentation PowerPoint (.pptx)',
+};
+
+function DocumentDetails({ confirmation }: { confirmation: PendingConfirmation }) {
+  const format = String(confirmation.arguments.format ?? '').toLowerCase();
+  const contenu = String(confirmation.arguments.content ?? '');
+  const apercu = contenu.length > 280 ? `${contenu.slice(0, 280)}…` : contenu;
+  return (
+    <dl className="mb-3 space-y-1 text-xs text-text-muted">
+      <Detail label="Format">{FORMATS_DE_DOCUMENT[format] ?? format.toUpperCase()}</Detail>
+      {apercu && <Detail label="Contenu">{apercu}</Detail>}
+    </dl>
+  );
+}
+
 function ConfirmationItem({ confirmation }: { confirmation: PendingConfirmation }) {
   const [busy, setBusy] = useState<'approve' | 'cancel' | null>(null);
   const remove = useToolConfirmationStore((state) => state.remove);
@@ -108,11 +128,14 @@ function ConfirmationItem({ confirmation }: { confirmation: PendingConfirmation 
   const toolName = baseToolName(confirmation.tool_name);
   const isCalendar = toolName === 'create_calendar_event';
   const isEmail = toolName === 'send_email';
+  const isDocument = toolName === 'generate_document';
   const title = isCalendar
     ? 'Confirmer la création du rendez-vous'
     : isEmail
       ? 'Confirmer l’envoi de l’email'
-      : `Confirmer l’action ${confirmation.tool_name}`;
+      : isDocument
+        ? 'Confirmer la création du document'
+        : `Confirmer l’action ${confirmation.tool_name}`;
 
   async function handle(approved: boolean) {
     setBusy(approved ? 'approve' : 'cancel');
@@ -144,7 +167,7 @@ function ConfirmationItem({ confirmation }: { confirmation: PendingConfirmation 
         {isCalendar ? <Calendar className="h-4 w-4" /> : isEmail ? <Mail className="h-4 w-4" /> : <Shield className="h-4 w-4" />}
         <span className="text-sm font-medium text-text">{title}</span>
       </div>
-      {isCalendar ? <CalendarDetails confirmation={confirmation} /> : isEmail ? <EmailDetails confirmation={confirmation} /> : <GenericDetails confirmation={confirmation} />}
+      {isCalendar ? <CalendarDetails confirmation={confirmation} /> : isEmail ? <EmailDetails confirmation={confirmation} /> : isDocument ? <DocumentDetails confirmation={confirmation} /> : <GenericDetails confirmation={confirmation} />}
       <div className="flex gap-2">
         <Button variant="primary" size="sm" onClick={() => void handle(true)} disabled={busy !== null}>
           {busy === 'approve' ? <Spinner taille="bouton" className="mr-1" /> : isCalendar ? <Check className="mr-1 h-4 w-4" /> : isEmail ? <Send className="mr-1 h-4 w-4" /> : <Check className="mr-1 h-4 w-4" />}
