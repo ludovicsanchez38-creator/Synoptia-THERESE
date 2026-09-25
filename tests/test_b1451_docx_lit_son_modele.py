@@ -46,7 +46,7 @@ def test_le_garde_refuse_toujours_une_lecture_hors_des_bibliotheques(tmp_path):
     secret.write_text("ne pas lire")
     restaurer = _installer_garde_fs(str(tmp_path / "sortie" / "x.docx"))
     try:
-        with pytest.raises(PermissionError), builtins.open(secret):
+        with pytest.raises(PermissionError), builtins.open(secret, encoding="utf-8"):
             pass
     finally:
         restaurer()
