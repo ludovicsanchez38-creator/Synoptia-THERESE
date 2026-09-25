@@ -330,6 +330,9 @@ def _parse_json(content: bytes) -> list[dict]:
     # B-1301 : un nombre, un texte ou null tombait plus loin en TypeError (500).
     if not isinstance(data, list):
         raise ValueError("Le fichier JSON doit contenir une liste de fiches (ou un objet).")
+    # B-1312 : [1, 2] passait, et l'aperçu tombait sur `raw_data[0].keys()`.
+    if any(not isinstance(fiche, dict) for fiche in data):
+        raise ValueError("Chaque fiche du fichier JSON doit être un objet.")
     return data
 
 

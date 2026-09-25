@@ -12,3 +12,14 @@ async def test_un_json_hors_forme_est_refuse_lisiblement(db_session, contenu):
     res = await CRMImportService(db_session).import_contacts(contenu, filename="c.json")
     assert res.success is False, res
     assert res.message.startswith("Import impossible"), res.message
+
+
+@pytest.mark.asyncio
+async def test_une_liste_sans_objets_est_refusee_a_l_apercu_et_a_l_import(db_session):
+    """B-1312 : résidu de B-1301, `[1, 2]` passait la lecture et l'aperçu
+    tombait en 500 sur `raw_data[0].keys()`. Lecteur α, passe 6."""
+    service = CRMImportService(db_session)
+    apercu = await service.preview_contacts(b"[1, 2]", filename="c.json")
+    assert apercu.can_import is False and apercu.validation_errors, apercu
+    res = await service.import_contacts(b"[1, 2]", filename="c.json")
+    assert res.message.startswith("Import impossible"), res.message
