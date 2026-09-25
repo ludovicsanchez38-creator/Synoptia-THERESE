@@ -462,7 +462,9 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
           </div>
         ) : searchError ? (
           <Alerte titre="Recherche impossible">{searchError}</Alerte>
-        ) : error ? (
+        ) : error && searchResults === null ? (
+          // B-1305 : une recherche aboutie montre ses résultats, même si la
+          // bibliothèque n'avait pas pu se charger.
           <Alerte
             titre="Bibliothèque indisponible"
             action={<Button
