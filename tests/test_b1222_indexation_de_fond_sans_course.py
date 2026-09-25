@@ -141,3 +141,32 @@ async def test_une_interruption_pendant_l_attente_ne_laisse_pas_une_purge_a_moit
 
     restants = (await client.get("/api/memory/contacts")).json()
     assert len(restants) == 1, "la purge a supprimé les fiches avant l'attente interrompue"
+
+
+@pytest.mark.asyncio
+async def test_la_purge_n_attend_que_la_fiche_en_vol(client, monkeypatch):
+    """B-1255 : rien ne prouvait l'arrêt ENTRE deux fiches (B-1234). Depuis
+    B-1249, l'attente précède les suppressions : sans la demande d'arrêt, la
+    purge attendait l'indexation du carnet entier, un vecteur par fiche."""
+    import app.services.qdrant as mq
+
+    def ecrire_dans_le_fil(entity_id):
+        time.sleep(1.0)
+
+    async def ajout(**kw):
+        await asyncio.to_thread(ecrire_dans_le_fil, kw.get("entity_id"))
+        return "p"
+
+    async def suppr(entity_id):
+        return 0
+
+    monkeypatch.setattr(mq._qdrant_service, "async_add_memory", ajout)
+    monkeypatch.setattr(mq._qdrant_service, "async_delete_by_entity", suppr)
+    resp = await client.post("/api/memory/contacts/import", files={"file": ("c.vcf", _carnet(6), "text/vcard")})
+    assert resp.status_code == 200, resp.text
+    time.sleep(0.3)  # la première fiche est en vol dans son fil
+    debut = time.monotonic()
+    r = await client.delete("/api/data/all?confirm=true")
+    duree = time.monotonic() - debut
+    assert r.status_code == 200, r.text
+    assert duree < 3.5, f"la purge a attendu {duree:.1f} s : le carnet entier, pas la seule fiche en vol"
