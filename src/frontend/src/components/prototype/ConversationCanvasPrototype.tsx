@@ -1420,6 +1420,7 @@ export function ConversationCanvasPrototype() {
         else setSelectedAtelierTarget('current');
         setCanvasOpen(true);
       },
+      ouvrirAction: (id) => void useActionsStoreDirect.getState().ouvrirLaTache(id),
     });
   };
   useEffect(() => {

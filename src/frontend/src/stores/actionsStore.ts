@@ -140,6 +140,13 @@ interface ActionsState {
   /** Definit la tache active */
   setActiveTask: (task: TaskState | null) => void;
 
+  /**
+   * B-1477 : rouvre le résultat d'une tâche depuis « Travaux », panneau
+   * fermé ou fiche quittée. Une tâche que le moteur ne connaît plus (il a
+   * redémarré) est dite, sans laisser croire à un résultat vide.
+   */
+  ouvrirLaTache: (taskId: string) => Promise<void>;
+
   /** Polling interne */
   _startPolling: (taskId: string) => void;
   _stopPolling: (taskId: string) => void;
@@ -260,6 +267,18 @@ export const useActionsStore = create<ActionsState>((set, get) => ({
   closePanel: () => set({ isPanelOpen: false, selectedAgent: null }),
 
   setActiveTask: (task) => set({ activeTask: task }),
+
+  ouvrirLaTache: async (taskId) => {
+    try {
+      const tache = await fetchTask(taskId);
+      set({ activeTask: tache, selectedAgent: null, isPanelOpen: true, error: null });
+    } catch {
+      set({
+        isPanelOpen: true,
+        error: 'Le résultat de cette action n’a pas pu être relu : il n’est gardé que jusqu’au redémarrage de THÉRÈSE.',
+      });
+    }
+  },
 
   // Polling interne (non expose dans le type public)
   _startPolling: (taskId: string) => {

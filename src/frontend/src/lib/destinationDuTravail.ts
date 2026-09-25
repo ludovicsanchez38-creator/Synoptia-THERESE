@@ -13,7 +13,8 @@ export type DestinationDuTravail =
   | { kind: 'document'; id: string }
   | { kind: 'conversation'; id: string }
   | { kind: 'vue'; vue: 'projects' | 'files' }
-  | { kind: 'scenario'; scenario: 'board' | 'atelier' };
+  | { kind: 'scenario'; scenario: 'board' | 'atelier' }
+  | { kind: 'action'; id: string };
 
 /** Le panneau des travaux vit dans l'en-tête ; la coque écoute cet événement. */
 export const EVENEMENT_OUVRIR_TRAVAIL = 'therese:ouvrir-travail';
@@ -33,6 +34,10 @@ export function destinationDuTravail(travail: Traitement): DestinationDuTravail 
     case 'board':
     case 'atelier':
       return enCours ? { kind: 'scenario', scenario: travail.type } : null;
+    // B-1477 : le moteur relit une action par son identifiant (entity_id),
+    // en cours comme terminée ; sa ligne rouvre le résultat.
+    case 'action':
+      return travail.entity_id ? { kind: 'action', id: travail.entity_id } : null;
     default:
       return null;
   }
@@ -43,6 +48,7 @@ export interface ActionsDOuverture {
   ouvrirDocument: (id: string) => void;
   ouvrirConversation: (id: string) => void;
   ouvrirScenario: (scenario: 'board' | 'atelier') => void;
+  ouvrirAction: (id: string) => void;
 }
 
 export function ouvrirLeTravail(cible: DestinationDuTravail, actions: ActionsDOuverture): void {
@@ -53,6 +59,8 @@ export function ouvrirLeTravail(cible: DestinationDuTravail, actions: ActionsDOu
     actions.ouvrirConversation(cible.id);
   } else if (cible.kind === 'vue') {
     actions.ouvrirVue(cible.vue);
+  } else if (cible.kind === 'action') {
+    actions.ouvrirAction(cible.id);
   } else {
     actions.ouvrirScenario(cible.scenario);
   }

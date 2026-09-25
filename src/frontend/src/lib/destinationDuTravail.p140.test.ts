@@ -41,7 +41,7 @@ describe('P-140 : la destination d’un travail', () => {
 
 describe('P-140 : ouvrir un travail', () => {
   function actions() {
-    return { ouvrirVue: vi.fn(), ouvrirDocument: vi.fn(), ouvrirConversation: vi.fn(), ouvrirScenario: vi.fn() };
+    return { ouvrirVue: vi.fn(), ouvrirDocument: vi.fn(), ouvrirConversation: vi.fn(), ouvrirScenario: vi.fn(), ouvrirAction: vi.fn() };
   }
   it('un document ouvre la vue Documents puis le document', () => {
     const a = actions();
