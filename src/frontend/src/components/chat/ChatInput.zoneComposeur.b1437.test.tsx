@@ -1,5 +1,5 @@
 /** B-1437 : le composeur porte le repère que suit la carte de confirmation. */
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useChatStore } from '../../stores/chatStore';
