@@ -95,3 +95,28 @@ async def test_le_fil_du_vecteur_en_vol_n_ecrit_pas_apres_la_purge(client, monke
     time.sleep(2.5)
     apres = [e for e in journal if e[1] > fin_de_la_purge]
     assert not apres, f"{len(apres)} écriture(s) de fil après la réponse de la purge"
+
+
+@pytest.mark.asyncio
+async def test_une_fiche_en_erreur_n_arrete_pas_les_suivantes(db_session, monkeypatch):
+    """B-1239 : une erreur sur une fiche (lecture en base, calcul du vecteur)
+    faisait mourir la tâche en silence ; les fiches suivantes n'étaient
+    jamais indexées."""
+    from app.models.entities import Contact
+    from app.routers import memory as memoire
+
+    premiere, seconde = Contact(first_name="Alice"), Contact(first_name="Bruno")
+    db_session.add(premiere)
+    db_session.add(seconde)
+    await db_session.commit()
+    vues: list[str] = []
+
+    async def embed(fiche):
+        if fiche.first_name == "Alice":
+            raise RuntimeError("panne du modèle d'embedding")
+        vues.append(fiche.first_name)
+
+    monkeypatch.setattr(memoire, "_embed_contact", embed)
+    memoire.indexer_fiches_en_arriere_plan([premiere, seconde])
+    await asyncio.gather(*list(memoire._INDEXATIONS_DE_FICHES), return_exceptions=True)
+    assert vues == ["Bruno"], vues

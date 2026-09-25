@@ -135,24 +135,32 @@ def indexer_fiches_en_arriere_plan(fiches: list[Contact]) -> None:
         return
 
     async def _indexer(identifiants: list[str]) -> None:
-        from app.models.database import get_session_context
-
         for identifiant in identifiants:
             if _ARRET_DES_INDEXATIONS.is_set():
                 return
-            # B-1222 : l'état de la base fait foi, pas l'instantané de
-            # l'import. Une fiche supprimée entre-temps n'est pas réindexée,
-            # et une fiche modifiée l'est dans son état courant.
-            async with get_session_context() as session:
-                fiche = await session.get(Contact, identifiant)
-            if fiche is None:
-                continue
-            await _embed_contact(fiche)
-            async with get_session_context() as session:
-                encore_la = await session.get(Contact, identifiant)
-            if encore_la is None:
-                # Supprimée PENDANT le calcul du vecteur : on le retire.
-                await _delete_embedding(identifiant)
+            try:
+                await _indexer_une_fiche(identifiant)
+            except Exception:
+                # B-1239 : une fiche en erreur ne fait plus mourir la tâche en
+                # silence ; les suivantes sont indexées, l'échec est journalisé.
+                logger.warning("Indexation de fond de la fiche %s en échec", identifiant, exc_info=True)
+
+    async def _indexer_une_fiche(identifiant: str) -> None:
+        from app.models.database import get_session_context
+
+        # B-1222 : l'état de la base fait foi, pas l'instantané de
+        # l'import. Une fiche supprimée entre-temps n'est pas réindexée,
+        # et une fiche modifiée l'est dans son état courant.
+        async with get_session_context() as session:
+            fiche = await session.get(Contact, identifiant)
+        if fiche is None:
+            return
+        await _embed_contact(fiche)
+        async with get_session_context() as session:
+            encore_la = await session.get(Contact, identifiant)
+        if encore_la is None:
+            # Supprimée PENDANT le calcul du vecteur : on le retire.
+            await _delete_embedding(identifiant)
 
     tache = asyncio.create_task(_indexer([fiche.id for fiche in fiches]))
     _INDEXATIONS_DE_FICHES.add(tache)
