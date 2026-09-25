@@ -123,7 +123,21 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
       });
   }, [effectiveOpen, demoEnabled, populateMap]);
 
-  async function loadTasks() {
+  // B-1420 : « Rafraîchir les tâches » relisait sans rien montrer. Le bouton
+  // est occupé pendant la relecture, puis l'heure de la relecture s'affiche ;
+  // un échec garde son propre message (B-532).
+  const [relectureEnCours, setRelectureEnCours] = useState(false);
+  const [relueA, setRelueA] = useState<string | null>(null);
+
+  async function rafraichir() {
+    setRelectureEnCours(true);
+    setRelueA(null);
+    const reussie = await loadTasks();
+    setRelectureEnCours(false);
+    if (reussie) setRelueA(new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }));
+  }
+
+  async function loadTasks(): Promise<boolean> {
     if (!hasCachedTasks) setLoading(true);
     setError(null);
 
@@ -141,11 +155,13 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
         ? result.filter((t) => (t.tags ?? []).includes(filterTag))
         : result;
       setTasks(visible);
+      return true;
     } catch (err: any) {
       console.error('Failed to load tasks:', err);
       // B-532 : un échec de rechargement se dit même avec une liste en cache,
       // qui peut être périmée.
       setError(hasCachedTasks ? 'Impossible de rafraîchir les tâches : la liste affichée peut être périmée.' : 'Impossible de charger les tâches');
+      return false;
     } finally {
       setLoading(false);
     }
@@ -203,9 +219,19 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
           Filtrer
         </Button>
 
-        <Button variant="ghost" size="icon" aria-label="Rafraîchir les tâches" onClick={loadTasks}>
-          <RefreshCw className="h-[18px] w-[18px]" />
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Rafraîchir les tâches"
+          aria-busy={relectureEnCours}
+          disabled={relectureEnCours}
+          onClick={() => void rafraichir()}
+        >
+          <RefreshCw className={`h-[18px] w-[18px] ${relectureEnCours ? 'animate-spin' : ''}`} />
         </Button>
+        {relueA && (
+          <p role="status" className="text-sm text-text-muted">Liste relue à {relueA}</p>
+        )}
 
         <Button variant="primary" size="md" onClick={handleNewTask}>
           <Plus className="h-[18px] w-[18px] mr-2" />
