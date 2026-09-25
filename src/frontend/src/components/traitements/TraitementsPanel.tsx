@@ -102,7 +102,7 @@ export function TraitementsPanel() {
                     }}
                     aria-label={`Ouvrir ${t.label}`}
                     title={t.label}
-                    className="flex-1 truncate rounded-sm text-left text-xs font-medium text-accent underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="flex-1 truncate rounded-sm text-left text-sm font-medium text-accent underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   >
                     {t.label}
                   </button>
