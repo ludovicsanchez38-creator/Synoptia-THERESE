@@ -7,11 +7,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, UserPlus, Upload, Mail, Phone, FileText, Users, AlertCircle, HelpCircle } from 'lucide-react';
+import { X, UserPlus, Upload, Mail, Phone, FileText, Users, AlertCircle } from 'lucide-react';
 import { PipelineView } from './PipelineView';
 import { ActivityTimeline } from './ActivityTimeline';
 import { ListeDesPrestations } from './ListeDesPrestations';
-import { SCORE_AIDE } from './pipelineEtapes';
+import { ExplicationDuScore } from './ExplicationDuScore';
 import { useCRMStore } from '../../stores/crmStore';
 import { useContactsStore } from '../../stores/contactsStore';
 import { listProjects, listActivities, updateContactStage, type ContactResponse, type ActivityResponse } from '../../services/api';
@@ -333,11 +333,10 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
                       </dd>
                     </div>
                     <div>
-                      <dt className="flex items-center gap-1 text-text-muted">
+                      <dt className="flex flex-wrap items-center gap-1 text-text-muted">
                         Score
-                        <HelpCircle className="h-4 w-4" aria-label={SCORE_AIDE} role="img">
-                          <title>{SCORE_AIDE}</title>
-                        </HelpCircle>
+                        {/* P-152 : lisible au clavier, avec le motif du dernier changement. */}
+                        <ExplicationDuScore contactId={selectedContact!.id} />
                       </dt>
                       <dd className="font-semibold tabular-nums text-text">{displaySelectedContact.score ?? 0}</dd>
                     </div>

@@ -8,10 +8,10 @@
 import { contactDisplayName } from '../prototype/prototypeReadModels';
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { HelpCircle } from 'lucide-react';
 import { Etiquette } from '../ui/Etiquette';
 import { cn } from '../../lib/utils';
-import { PIPELINE_ETAPES, SCORE_AIDE, etiquetteDEtape } from './pipelineEtapes';
+import { PIPELINE_ETAPES, etiquetteDEtape } from './pipelineEtapes';
+import { ExplicationDuScore } from './ExplicationDuScore';
 import {
   DndContext,
   DragOverlay,
@@ -347,10 +347,12 @@ function ContactCard({ contact, onClick, isOverlay }: ContactCardProps) {
       )}
 
       <div className="flex flex-wrap gap-2 items-center text-sm text-text-muted mt-2">
-        <div className="flex items-center gap-1" title={SCORE_AIDE}>
+        {/* P-152 : un vrai bouton déplie l'explication (l'icône à infobulle
+            n'était ni focalisable ni lue au clavier). */}
+        <div className="flex flex-wrap items-center gap-1">
           <span>Score</span>
           <span className="tabular-nums font-semibold text-text">{contact.score}</span>
-          <HelpCircle size={18} className="text-text-muted" aria-label={SCORE_AIDE} />
+          <ExplicationDuScore contactId={contact.id} />
         </div>
 
         {contact.source ? <Etiquette ton="neutre">{contact.source}</Etiquette> : null}

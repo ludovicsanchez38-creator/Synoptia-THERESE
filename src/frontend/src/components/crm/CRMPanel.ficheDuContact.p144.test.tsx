@@ -70,7 +70,9 @@ describe('P-144 : « Ouvrir la fiche » ouvre une vraie fiche', () => {
     expect(within(fiche).getByText('06 12 34 56 78')).toBeInTheDocument();
     expect((within(fiche).getByLabelText('Étape') as HTMLSelectElement).value).toBe('discovery');
     expect(within(fiche).getByText('105')).toBeInTheDocument();
-    expect(within(fiche).getByLabelText(/Score de potentiel commercial/)).toBeInTheDocument();
+    // P-152 : l'explication se déplie depuis un bouton, lisible au clavier.
+    fireEvent.click(within(fiche).getByRole('button', { name: 'Expliquer le score' }));
+    expect(within(fiche).getByText(/Score de potentiel commercial/)).toBeInTheDocument();
   });
 
   it('une coordonnée absente se dit, sans case vide', async () => {
