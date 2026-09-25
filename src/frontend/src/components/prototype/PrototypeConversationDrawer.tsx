@@ -193,10 +193,12 @@ export function PrototypeConversationDrawer({
       conversation.id,
       replierPourRecherche([
         conversation.title,
+        // P-127 : un freelance retrouve un sujet par son client, donc par le projet.
+        conversation.projectId ? nomsDesProjets.get(conversation.projectId) ?? '' : '',
         ...(conversation.messages ?? []).map((message) => message.content ?? ''),
       ].join('\n')),
     ]));
-  }, [conversations, rechercheRepliee]);
+  }, [conversations, rechercheRepliee, nomsDesProjets]);
 
   const filtered = useMemo(() => {
     return [...conversations]

@@ -80,6 +80,14 @@ describe('P-126 : le tiroir dit à quel projet appartient une conversation', () 
     expect(screen.queryByText(/Ta première demande/)).toBeNull();
   });
 
+  it('P-127 : la recherche trouve une conversation par le nom de son projet', async () => {
+    render(<PrototypeConversationDrawer onClose={vi.fn()} onOpenChat={vi.fn()} surface="search" />);
+    await within(ligne('Quota de l’API')).findByText(/API client Orion/);
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Rechercher une conversation' }), { target: { value: 'orion' } });
+    expect(screen.getByText('Quota de l’API')).toBeInTheDocument();
+    expect(screen.queryByText('Maquette de la page d’accueil')).toBeNull();
+  });
+
   it('noms de projets illisibles : la ligne dit « Projet rattaché » sans inventer de nom', async () => {
     apiMocks.listProjects.mockRejectedValue(new Error('panne'));
     render(<PrototypeConversationDrawer onClose={vi.fn()} onOpenChat={vi.fn()} />);
