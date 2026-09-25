@@ -34,10 +34,11 @@ async def test_l_import_garde_ce_que_le_fichier_tait(db_session, tmp_path):
 
 
 @pytest.mark.asyncio
-async def test_un_fichier_d_une_autre_personne_ne_recupere_rien(db_session, tmp_path):
-    """B-1317 : la fusion de B-1299 gardait le surnom et la facturation de
-    l'ancien profil même quand le fichier nommait une autre personne.
-    Lecteur β, passe 6."""
+async def test_un_fichier_d_une_autre_personne_ne_recupere_que_la_facturation(db_session, tmp_path):
+    """B-1317 : la fusion de B-1299 gardait le surnom de l'ancien profil même
+    quand le fichier nommait une autre personne. B-1319 : la facturation, elle,
+    n'est jamais effacée par un fichier qui ne la porte pas. B-1340 : le nom
+    du test dit désormais ce qu'il vérifie. Lecteurs β et ε."""
     from app.services import user_profile as up
 
     await up.set_user_profile(
