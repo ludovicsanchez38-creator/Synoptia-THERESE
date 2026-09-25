@@ -101,3 +101,11 @@ describe('Point 8 : un couple type/statut non décrit dit le statut réel', () =
     expect(avoir.texte).toBe('Impayé');
   });
 });
+
+describe('B-1356 : un devis converti ne prétend pas avoir été envoyé', () => {
+  it('affiche « Converti en facture », pas « Envoyé le »', () => {
+    const { envoi } = cellulesStatut(piece({ document_type: 'devis', status: 'converted' }));
+    expect(envoi.texte).toBe('Converti en facture');
+    expect(envoi.texte).not.toMatch(/Envoy/);
+  });
+});

@@ -98,6 +98,16 @@ export function cellulesStatut(invoice: Invoice): {
     };
   }
 
+  if (invoice.document_type === 'devis' && invoice.status === 'converted') {
+    // B-1356 : un devis converti directement depuis le brouillon n'a jamais été
+    // envoyé ; « Envoyé le <date d'émission> » affirmait un envoi inventé.
+    return {
+      envoi: { ton: 'neutre', texte: 'Converti en facture', sous: emis },
+      paiement: { ton: 'neutre', texte: 'Converti' },
+      echeance: { texte: `Valable jusqu'au ${due}`, muted: true },
+    };
+  }
+
   if (invoice.document_type === 'devis') {
     const paiement: CellulePaiement =
       invoice.status === 'sent'
