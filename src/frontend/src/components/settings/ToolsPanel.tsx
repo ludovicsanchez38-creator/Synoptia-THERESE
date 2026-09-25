@@ -397,7 +397,8 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
     if (requirementsCheck && !requirementsCheck.all_satisfied) {
       const cmdCheck = requirementsCheck.commands[preset.command];
       if (cmdCheck && !cmdCheck.available) {
-        onError(`Impossible d'installer ${preset.name} : la commande '${preset.command}' n'est pas disponible. ${requirementsCheck.help_message || 'Installe Node.js pour continuer.'}`);
+        // B-1473 : le conseil de CETTE commande (uvx n'est pas Node.js).
+        onError(`Impossible d'installer ${preset.name} : la commande '${preset.command}' n'est pas disponible. ${cmdCheck.aide || requirementsCheck.help_message || ''}`.trim());
         return;
       }
     }
@@ -570,15 +571,16 @@ export function ToolsPanel({ onError }: ToolsPanelProps) {
                   <div className="text-xs text-warning">
                     <p className="font-medium mb-1">Prérequis manquants</p>
                     {Object.entries(requirementsCheck.commands)
-                      .filter(([, v]) => !(v as { available: boolean }).available)
-                      .map(([cmd]) => (
-                        <p key={cmd} className="text-warning">
-                          <code className="bg-[var(--color-warning-tint)] px-1 rounded-sm">{cmd}</code> non trouvé sur le système
-                        </p>
+                      .filter(([, v]) => !v.available)
+                      .map(([cmd, v]) => (
+                        <div key={cmd}>
+                          <p className="text-warning">
+                            <code className="bg-[var(--color-warning-tint)] px-1 rounded-sm">{cmd}</code> non trouvé sur le système
+                          </p>
+                          {/* B-1473 : un conseil par commande manquante. */}
+                          {v.aide && <p className="mt-0.5 text-warning">{v.aide}</p>}
+                        </div>
                       ))}
-                    {requirementsCheck.help_message && (
-                      <p className="mt-1 text-warning">{requirementsCheck.help_message}</p>
-                    )}
                   </div>
                 </div>
               )}

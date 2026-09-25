@@ -537,6 +537,26 @@ async def list_presets():
     ]
 
 
+def conseil_d_installation(commande: str) -> str:
+    """B-1473 : ce qu'il faut installer pour qu'une commande de préréglage
+    existe. Partagé par l'installation et la vérification des prérequis :
+    l'écran listait « uvx non trouvé » avec un conseil qui ne parlait que de
+    Node.js."""
+    if commande in ("npx", "node", "npm"):
+        return (
+            "Installe Node.js depuis https://nodejs.org/ ou via un gestionnaire "
+            "de versions (nvm, fnm, volta), puis relance THÉRÈSE."
+        )
+    if commande in ("python", "python3"):
+        return "Installe Python depuis https://python.org/."
+    if commande == "docker":
+        return "Installe Docker depuis https://docker.com/."
+    if commande in ("uvx", "uv"):
+        # Fetch et Time sont des serveurs Python lancés par uvx.
+        return "Installe uv depuis https://docs.astral.sh/uv/ (il fournit uvx), puis relance THÉRÈSE."
+    return ""
+
+
 @router.get("/presets/check-requirements")
 async def check_preset_requirements():
     """
@@ -562,18 +582,14 @@ async def check_preset_requirements():
         results[cmd] = {
             "available": resolved is not None,
             "path": resolved,
+            "aide": conseil_d_installation(cmd),
         }
 
-    # Message d'aide pour npx si absent
-    npx_available = results.get("npx", {}).get("available", False)
-    help_message = None
-    if not npx_available:
-        help_message = (
-            "npx n'est pas disponible sur ce systeme. "
-            "La plupart des serveurs MCP en ont besoin. "
-            "Installe Node.js depuis https://nodejs.org/ "
-            "ou via un gestionnaire (nvm, fnm, volta)."
-        )
+    # B-1473 : un conseil pour CHAQUE commande manquante, pas seulement npx.
+    conseils = [
+        f"{cmd} : {r['aide']}" for cmd, r in results.items() if not r["available"] and r["aide"]
+    ]
+    help_message = " ".join(conseils) or None
 
     return {
         "commands": results,
@@ -606,23 +622,8 @@ async def install_preset(preset_id: str, env: dict[str, str] | None = None) -> M
     cmd = preset["command"]
     resolved = shutil.which(cmd, path=enriched_path) or resolve_mcp_command(cmd, enriched_path)
     if not resolved:
-        install_hint = ""
-        if cmd in ("npx", "node", "npm"):
-            install_hint = (
-                " Installe Node.js depuis https://nodejs.org/ "
-                "ou via un gestionnaire de versions (nvm, fnm, volta), "
-                "puis relance THERESE."
-            )
-        elif cmd in ("python", "python3"):
-            install_hint = " Installe Python depuis https://python.org/."
-        elif cmd == "docker":
-            install_hint = " Installe Docker depuis https://docker.com/."
-        elif cmd in ("uvx", "uv"):
-            # B-1473 : Fetch et Time sont des serveurs Python lancés par uvx.
-            install_hint = (
-                " Installe uv depuis https://docs.astral.sh/uv/ (il fournit uvx), "
-                "puis relance THÉRÈSE."
-            )
+        conseil = conseil_d_installation(cmd)
+        install_hint = f" {conseil}" if conseil else ""
 
         raise HTTPException(
             status_code=422,

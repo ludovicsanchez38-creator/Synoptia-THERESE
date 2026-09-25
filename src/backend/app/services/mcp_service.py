@@ -68,6 +68,19 @@ def build_mcp_enriched_path() -> str:
         "/opt/homebrew/bin",
         f"{home}/.volta/bin",
     ]
+    # B-1473 : Fetch et Time se lancent par uvx, que uv pose dans le
+    # répertoire exécutable de l'utilisateur (docs.astral.sh/uv, Storage) :
+    # $XDG_BIN_HOME, sinon $XDG_DATA_HOME/../bin, sinon ~/.local/bin
+    # (%USERPROFILE%\.local\bin sous Windows). ~/.cargo/bin : anciennes
+    # installations.
+    xdg_bin = os.environ.get("XDG_BIN_HOME", "")
+    if xdg_bin:
+        extra_paths.append(xdg_bin)
+    xdg_data = os.environ.get("XDG_DATA_HOME", "")
+    if xdg_data:
+        extra_paths.append(os.path.normpath(os.path.join(xdg_data, "..", "bin")))
+    extra_paths.append(os.path.join(home, ".local", "bin"))
+    extra_paths.append(os.path.join(home, ".cargo", "bin"))
 
     for base in [f"{home}/.nvm/versions/node", f"{home}/.fnm/node-versions"]:
         base_obj = Path(base)

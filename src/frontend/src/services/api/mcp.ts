@@ -159,7 +159,8 @@ export async function listMCPPresets(): Promise<MCPPreset[]> {
 
 // BUG-083 : Verification des prerequis systeme (npx, python, etc.)
 export interface MCPRequirementsCheck {
-  commands: Record<string, { available: boolean; path: string | null }>;
+  /** B-1473 : `aide` dit quoi installer pour que la commande existe. */
+  commands: Record<string, { available: boolean; path: string | null; aide?: string }>;
   all_satisfied: boolean;
   help_message: string | null;
 }

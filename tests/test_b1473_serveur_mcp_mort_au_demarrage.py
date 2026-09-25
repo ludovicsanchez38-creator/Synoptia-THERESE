@@ -59,3 +59,35 @@ async def test_sans_uvx_l_installation_dit_quoi_installer(client: AsyncClient, m
     assert "uvx" in detail
     assert "https://docs.astral.sh/uv/" in detail
     assert "système" in detail
+
+
+def test_le_path_des_connecteurs_trouve_uvx_la_ou_uv_l_installe(tmp_path, monkeypatch):
+    """L'app empaquetée part d'un PATH minimal. uv pose uvx dans le
+    répertoire exécutable de l'utilisateur (docs.astral.sh/uv, Storage) :
+    $XDG_BIN_HOME, sinon $XDG_DATA_HOME/../bin, sinon ~/.local/bin."""
+    import os
+
+    from app.services.mcp_service import build_mcp_enriched_path
+
+    maison = tmp_path / "maison"
+    (maison / ".local" / "bin").mkdir(parents=True)
+    xdg_bin = tmp_path / "xdg-bin"
+    xdg_bin.mkdir()
+    monkeypatch.setenv("HOME", str(maison))
+    monkeypatch.setenv("PATH", "/usr/bin")
+    monkeypatch.setenv("XDG_BIN_HOME", str(xdg_bin))
+    chemins = build_mcp_enriched_path().split(os.pathsep)
+    assert str(maison / ".local" / "bin") in chemins
+    assert str(xdg_bin) in chemins
+
+
+@pytest.mark.asyncio
+async def test_les_prerequis_disent_quoi_installer_pour_chaque_commande(client: AsyncClient, monkeypatch):
+    """L'écran des connecteurs listait « uvx non trouvé » avec un conseil
+    qui ne parlait que de Node.js (help_message n'était composé que pour npx)."""
+    monkeypatch.setattr("shutil.which", lambda cmd, *a, **k: None if cmd == "uvx" else f"/usr/bin/{cmd}")
+    corps = (await client.get("/api/mcp/presets/check-requirements")).json()
+    assert corps["all_satisfied"] is False
+    assert "https://docs.astral.sh/uv/" in corps["commands"]["uvx"]["aide"]
+    assert "https://docs.astral.sh/uv/" in (corps["help_message"] or "")
+    assert "Node.js" not in (corps["help_message"] or "")
