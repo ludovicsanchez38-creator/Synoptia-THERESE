@@ -139,3 +139,19 @@ async def test_une_difference_d_accent_n_est_pas_un_autre_nom(db_session):
         {"first_name": "Helene", "last_name": "Exemple", "email": "helene@exemple.fr"}, db_session,
     ))
     assert "nom" not in resultat.get("champs_ignores", []), resultat
+
+
+@pytest.mark.asyncio
+async def test_un_prenom_compose_retape_n_est_pas_un_autre_nom(db_session):
+    """B-1316 : /contact coupe au premier espace (« Jean » / « Pierre
+    Martin ») ; comparés champ par champ au contact « Jean Pierre » / « Martin »,
+    ils donnaient « Non appliqué : nom » pour le même nom. Lecteur β, passe 6."""
+    from app.services.memory_tools import execute_create_contact
+    from app.services.slash_commands import execute_slash_command
+
+    await execute_create_contact(
+        {"first_name": "Jean Pierre", "last_name": "Martin", "email": "jp@exemple.fr"}, db_session,
+    )
+    reponse = await execute_slash_command("contact", "Jean Pierre Martin email=jp@exemple.fr", db_session)
+    assert "déjà en mémoire" in reponse, reponse
+    assert "Non appliqué" not in reponse, reponse

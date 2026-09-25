@@ -289,10 +289,23 @@ def _champs_de_contact_non_appliques(fiche: Any, arguments: dict[str, Any]) -> l
         decompose = unicodedata.normalize("NFKD", _texte(valeur))
         return "".join(c for c in decompose if not unicodedata.combining(c)).casefold()
 
-    if any(
-        _texte(arguments.get(c)) and _nom(arguments.get(c)) != _nom(getattr(fiche, c, None))
-        for c in ("first_name", "last_name")
-    ):
+    prenom, nom = _texte(arguments.get("first_name")), _texte(arguments.get("last_name"))
+    if prenom and nom:
+        # B-1316 : prénom et nom saisis ensemble comparés comme un nom complet ;
+        # /contact coupe au premier espace, « Jean Pierre » « Martin » devenait
+        # « Jean » « Pierre Martin ».
+        def _complet(a: Any, b: Any) -> str:
+            return " ".join(f"{_nom(a)} {_nom(b)}".split())
+
+        different = _complet(prenom, nom) != _complet(
+            getattr(fiche, "first_name", None), getattr(fiche, "last_name", None)
+        )
+    else:
+        different = any(
+            _texte(arguments.get(c)) and _nom(arguments.get(c)) != _nom(getattr(fiche, c, None))
+            for c in ("first_name", "last_name")
+        )
+    if different:
         perdus.append("nom")
     for champ, libelle, forme in comparaisons:
         valeur = arguments.get(champ)
