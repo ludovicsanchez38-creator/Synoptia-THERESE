@@ -148,3 +148,27 @@ async def test_une_base_refusee_puis_un_rollback_en_echec_ne_dit_pas_intactes(cl
     assert resp.status_code == 409, resp.text
     assert len(appels) == 2, appels
     assert "intactes" not in detail and "ont pu être perdues" in detail, detail
+
+
+@pytest.mark.asyncio
+async def test_une_interruption_pendant_l_arret_des_indexations_ne_verrouille_pas_l_application(client, monkeypatch):
+    """B-1235 : l'attente des indexations de fond (B-1222) vivait hors du bloc
+    dont le finally clôt le mode maintenance ; une interruption à ce moment
+    laissait l'application verrouillée jusqu'au redémarrage."""
+    from app.routers import memory as memory_router
+    from app.services.maintenance import maintenance_mode
+
+    data_dir = Path(settings.data_dir)
+    _etat_courant(data_dir)
+    resp = await client.post("/api/data/backup", json={"password": PASSE})
+    assert resp.status_code == 200, resp.text
+    nom = resp.json()["backup_name"]
+
+    async def interrompu():
+        raise OSError("interruption simulée")
+
+    monkeypatch.setattr(memory_router, "arreter_les_indexations_de_fiches", interrompu)
+
+    await client.post(f"/api/data/restore/{nom}?confirm=true", json={"password": PASSE})
+
+    assert maintenance_mode.active is False

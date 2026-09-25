@@ -1480,17 +1480,19 @@ async def restore_backup(
 
     try:
         await maintenance_mode.begin()
-        # B-1222 : la restauration remplace la base et l'index ; une
-        # indexation de fond d'avant ne doit plus écrire.
-        from app.routers.memory import arreter_les_indexations_de_fiches
-
-        await arreter_les_indexations_de_fiches()
     except RuntimeError as exc:
         if decrypted_temp is not None:
             decrypted_temp.unlink(missing_ok=True)
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
     try:
+        # B-1222, B-1235 : la restauration remplace la base et l'index ; une
+        # indexation de fond d'avant ne doit plus écrire. L'attente vit DANS
+        # le bloc dont le finally clôt le mode maintenance : une annulation à
+        # ce moment ne laisse pas l'application verrouillée.
+        from app.routers.memory import arreter_les_indexations_de_fiches
+
+        await arreter_les_indexations_de_fiches()
         # Aucune session n'est injectée à cette route : tous les appels API
         # admis avant le verrou sont terminés. Les pools sont disposés AVANT
         # l'archive de sécurité et, surtout, avant toute extraction.
