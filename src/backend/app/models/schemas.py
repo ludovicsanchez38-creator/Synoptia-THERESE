@@ -1321,6 +1321,8 @@ class CreateInvoiceRequest(BaseModel):
     lines: list[InvoiceLineRequest]
     notes: str | None = None
     validite_jours: int | None = None  # Duree de validite en jours (devis, defaut 30)
+    # P-154 : la facture qu'un avoir corrige (réservé aux avoirs).
+    converted_from_id: str | None = None
 
 
 class UpdateInvoiceRequest(BaseModel):
@@ -1334,6 +1336,8 @@ class UpdateInvoiceRequest(BaseModel):
     lines: list[InvoiceLineRequest] | None = None
     notes: str | None = None
     validite_jours: int | None = None  # Duree de validite en jours (devis)
+    # P-154 : la facture qu'un avoir corrige (réservé aux avoirs).
+    converted_from_id: str | None = None
 
 
 class MarkPaidRequest(BaseModel):

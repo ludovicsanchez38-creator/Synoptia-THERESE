@@ -10,7 +10,7 @@ import { auCentime } from '../../lib/auCentime';
 import { useState, useEffect, useRef, type FormEvent } from 'react';
 import { motion } from 'framer-motion';
 import { X, Plus, Trash2, Save, FileCheck, AlertTriangle } from 'lucide-react';
-import { createInvoice, updateInvoice, convertDevisToInvoice, updateDevisStatus, type Invoice, type InvoiceLineRequest, listContacts, getContact, type Contact, markInvoicePaid } from '../../services/api';
+import { createInvoice, updateInvoice, convertDevisToInvoice, updateDevisStatus, type Invoice, type InvoiceLineRequest, listContacts, getContact, type Contact, markInvoicePaid, listInvoices } from '../../services/api';
 import { PLAFOND_CONTACTS } from '../../stores/contactsStore';
 import { useStatusStore } from '../../stores/statusStore';
 import { useBillingProfileStore } from '../../stores/billingProfileStore';
@@ -135,6 +135,17 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
     (invoice?.document_type as 'devis' | 'facture' | 'avoir') || defaultDocumentType || 'facture'
   );
   const [contactId, setContactId] = useState(invoice?.contact_id || '');
+  // P-154 : la facture qu'un avoir corrige, choisie parmi celles du client.
+  const [factureOrigineId, setFactureOrigineId] = useState(invoice?.converted_from_id || '');
+  const [facturesDuClient, setFacturesDuClient] = useState<Invoice[]>([]);
+  useEffect(() => {
+    if (documentType !== 'avoir' || !contactId) { setFacturesDuClient([]); return; }
+    let vivant = true;
+    listInvoices({ contact_id: contactId, document_type: 'facture' })
+      .then((liste) => { if (vivant) setFacturesDuClient(liste); })
+      .catch(() => { if (vivant) setFacturesDuClient([]); });
+    return () => { vivant = false; };
+  }, [documentType, contactId]);
   const [currency, setCurrency] = useState(invoice?.currency || 'EUR');
   const [issueDate, setIssueDate] = useState(
     // B-1413 : date civile locale ; `toISOString()` donnait la veille entre
@@ -415,6 +426,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
       notes: notes || undefined,
       status: status !== 'draft' ? status : undefined,
       validite_jours: documentType === 'devis' ? validiteJours : undefined,
+      converted_from_id: documentType === 'avoir' ? (factureOrigineId || null) : undefined,
     };
 
     const persistInvoice = async () => {
@@ -729,6 +741,23 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
                 required
               />
             </FormField>
+
+            {documentType === 'avoir' && (
+              <FormField label="Facture d’origine" htmlFor="factureOrigine" description="La facture que cet avoir corrige ; le PDF la cite.">
+                <Select
+                  id="factureOrigine"
+                  value={factureOrigineId}
+                  onChange={(e) => setFactureOrigineId(e.target.value)}
+                  options={[
+                    { value: '', label: 'Aucune' },
+                    ...facturesDuClient.map((f) => ({
+                      value: f.id,
+                      label: `${f.invoice_number} du ${new Date(f.issue_date).toLocaleDateString('fr-FR')}`,
+                    })),
+                  ]}
+                />
+              </FormField>
+            )}
 
             {documentType === 'devis' && (
               <FormField label="Validité (jours)" htmlFor="validiteJours">

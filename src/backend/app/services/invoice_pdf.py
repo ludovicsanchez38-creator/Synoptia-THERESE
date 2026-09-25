@@ -689,7 +689,7 @@ class InvoicePDFGenerator:
             tva_mention = "TVA incluse selon les taux en vigueur."
 
         heading = Paragraph(
-            "CONDITIONS" if self._current_document_type == "devis" else "CONDITIONS DE PAIEMENT",
+            "CONDITIONS" if self._current_document_type in ("devis", "avoir") else "CONDITIONS DE PAIEMENT",
             ParagraphStyle(
                 "ConditionsHeading",
                 fontName=theme.font_bold,
@@ -729,6 +729,19 @@ class InvoicePDFGenerator:
             reglement = "Paiement à 30 jours à compter de la réception de la facture.<br/>"
         if legal_mentions:
             penalty_lines = legal_mentions.replace("\n", "<br/>") + "<br/>"
+
+        if self._current_document_type == "avoir":
+            # P-154 : un avoir ne réclame rien : ni délai de paiement, ni
+            # pénalités de retard, ni indemnité de recouvrement. Il cite la
+            # facture qu'il corrige quand elle est connue.
+            origine = donnees.get("facture_origine") or {}
+            reference = (
+                f"Avoir sur la facture n° {_texte_pdf(origine['numero'])} du {_texte_pdf(origine['date'])}.<br/>"
+                if origine.get("numero") and origine.get("date")
+                else ""
+            )
+            reglement = f"{reference}Montant à déduire du solde dû ou à rembourser au client.<br/>"
+            penalty_lines = ""
 
         conditions_text = (
             f"{reglement}"

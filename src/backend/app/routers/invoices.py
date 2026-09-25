@@ -421,6 +421,20 @@ STATUTS_DE_DEVIS = frozenset(
 STATUTS_DE_FACTURE = frozenset({"draft", "sent", "paid", "overdue", "cancelled"})
 
 
+async def _verifier_la_facture_d_origine(
+    session: AsyncSession, document_type: str, origine_id: str | None
+) -> None:
+    """P-154 : un avoir peut désigner la facture qu'il corrige ; la pièce
+    désignée doit exister et être une facture. Réservé aux avoirs."""
+    if origine_id is None:
+        return
+    if document_type != "avoir":
+        raise HTTPException(status_code=400, detail="La facture d'origine est réservée aux avoirs.")
+    origine = await session.get(Invoice, origine_id)
+    if origine is None or origine.document_type != "facture":
+        raise HTTPException(status_code=400, detail="La pièce d'origine d'un avoir doit être une facture existante.")
+
+
 @router.post("", response_model=InvoiceResponse, include_in_schema=False)
 @router.post("/", response_model=InvoiceResponse)
 async def create_invoice(
@@ -443,6 +457,7 @@ async def create_invoice(
     document_type = request.document_type
     if document_type not in ("devis", "facture", "avoir"):
         raise HTTPException(status_code=400, detail="document_type doit être : devis, facture ou avoir")
+    await _verifier_la_facture_d_origine(session, document_type, request.converted_from_id)
 
     # Dates par défaut
     issue_date = _date_du_client(request.issue_date, "Date d'émission") if request.issue_date else datetime.now(UTC)
@@ -472,6 +487,7 @@ async def create_invoice(
             status="draft",
             notes=request.notes,
             validite_jours=validite_jours,
+            converted_from_id=request.converted_from_id,
         ),
     )
     invoice_number = invoice.invoice_number
@@ -570,6 +586,10 @@ async def update_invoice(
     if request.status is not None:
         _dater_le_premier_envoi(invoice, request.status)
         invoice.status = request.status
+
+    if "converted_from_id" in request.model_fields_set:
+        await _verifier_la_facture_d_origine(session, invoice.document_type, request.converted_from_id)
+        invoice.converted_from_id = request.converted_from_id
 
     if request.notes is not None:
         invoice.notes = request.notes
@@ -772,6 +792,8 @@ async def convert_invoice(
         "total_ttc": source.total_ttc,
         "tva_applicable": source.tva_applicable,
         "notes": source.notes or "",
+        # P-154 : un avoir tiré d'une facture la garde comme pièce d'origine.
+        "converted_from_id": source.id if target_type == "avoir" and source_type == "facture" else None,
     }
     lignes_source = [_snapshot_de_ligne(line) for line in source.lines]
 
@@ -817,6 +839,16 @@ async def billing_profile_status(session: AsyncSession = Depends(get_session)):
         "is_complete": profile.is_billing_complete(),
         "missing": profile.missing_billing_fields(),
     }
+
+
+async def _facture_d_origine_pour_le_pdf(session: AsyncSession, invoice: Invoice) -> dict[str, str] | None:
+    """P-154 : numéro et date de la facture qu'un avoir corrige."""
+    if invoice.document_type != "avoir" or not invoice.converted_from_id:
+        return None
+    origine = await session.get(Invoice, invoice.converted_from_id)
+    if origine is None:
+        return None
+    return {"numero": origine.invoice_number, "date": origine.issue_date.strftime("%d/%m/%Y")}
 
 
 @router.get("/{invoice_id}/pdf")
@@ -880,6 +912,7 @@ async def generate_invoice_pdf(
         "payment_terms": invoice.payment_terms,
         "payment_method": invoice.payment_method,
         "legal_mentions": invoice.legal_mentions,
+        "facture_origine": await _facture_d_origine_pour_le_pdf(session, invoice),
         "lines": [
             {
                 "description": line.description,

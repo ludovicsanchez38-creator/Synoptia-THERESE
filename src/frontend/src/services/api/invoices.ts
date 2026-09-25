@@ -70,6 +70,8 @@ export interface CreateInvoiceRequest {
   lines: InvoiceLineRequest[];
   notes?: string;
   validite_jours?: number;
+  /** P-154 : la facture qu'un avoir corrige. */
+  converted_from_id?: string | null;
 }
 
 export interface UpdateInvoiceRequest {
@@ -81,6 +83,8 @@ export interface UpdateInvoiceRequest {
   lines?: InvoiceLineRequest[];
   notes?: string;
   validite_jours?: number;
+  /** P-154 : la facture qu'un avoir corrige. */
+  converted_from_id?: string | null;
 }
 
 export async function listInvoices(params?: {
