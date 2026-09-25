@@ -31,3 +31,34 @@ async def test_l_import_garde_ce_que_le_fichier_tait(db_session, tmp_path):
     ), profil
     relu = await up.get_user_profile(db_session)
     assert relu is not None and relu.siret == "12345678900010", relu
+
+
+@pytest.mark.asyncio
+async def test_un_fichier_d_une_autre_personne_ne_recupere_rien(db_session, tmp_path):
+    """B-1317 : la fusion de B-1299 gardait le surnom et la facturation de
+    l'ancien profil même quand le fichier nommait une autre personne.
+    Lecteur β, passe 6."""
+    from app.services import user_profile as up
+
+    await up.set_user_profile(
+        db_session,
+        up.UserProfile(name="Marie Exemple", nickname="Mimi", siret="12345678900010"),
+        embed_in_qdrant=False,
+    )
+    fichier = tmp_path / "THERESE.md"
+    fichier.write_text("**Owner** : Paul Autre\n", encoding="utf-8")
+    profil = await up.import_from_claude_md(db_session, str(fichier))
+    assert (profil.name, profil.nickname, profil.siret) == ("Paul Autre", "", ""), profil
+
+
+@pytest.mark.asyncio
+async def test_la_meme_personne_autrement_ecrite_garde_tout(db_session, tmp_path):
+    from app.services import user_profile as up
+
+    await up.set_user_profile(
+        db_session, up.UserProfile(name="Hélène Exemple", siret="12345678900010"), embed_in_qdrant=False,
+    )
+    fichier = tmp_path / "THERESE.md"
+    fichier.write_text("**Owner** : helene EXEMPLE\n", encoding="utf-8")
+    profil = await up.import_from_claude_md(db_session, str(fichier))
+    assert profil.siret == "12345678900010", profil

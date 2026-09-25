@@ -9,6 +9,7 @@ import asyncio
 import json
 import logging
 import re
+import unicodedata
 from dataclasses import asdict, dataclass, fields
 from pathlib import Path
 
@@ -599,6 +600,14 @@ def parse_claude_md(content: str) -> UserProfile:
     return profile
 
 
+def _meme_personne(a: str, b: str) -> bool:
+    def _forme(nom: str) -> str:
+        decompose = unicodedata.normalize("NFKD", nom or "")
+        return " ".join("".join(c for c in decompose if not unicodedata.combining(c)).casefold().split())
+
+    return bool(_forme(a)) and _forme(a) == _forme(b)
+
+
 async def import_from_claude_md(
     session: AsyncSession,
     file_path: str,
@@ -631,7 +640,9 @@ async def import_from_claude_md(
     # (règle de B-1108, B-1125). Il ne porte ni adresse, ni SIREN, ni TVA, ni
     # SIRET, ni APE, ni NDA : l'import écrasait la facturation.
     existant = await get_user_profile(session)
-    if existant is not None:
+    # B-1317 : seulement pour la même personne (casse et accents repliés) ;
+    # un fichier qui en nomme une autre ne récupère ni surnom ni facturation.
+    if existant is not None and _meme_personne(existant.name, profile.name):
         for champ in fields(UserProfile):
             if not getattr(profile, champ.name) and getattr(existant, champ.name):
                 setattr(profile, champ.name, getattr(existant, champ.name))
