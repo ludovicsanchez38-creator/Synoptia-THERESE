@@ -31,6 +31,7 @@ import {
 import { FormulaireVariables } from './FormulaireVariables';
 import { useToolConfirmationStore } from '../../stores/toolConfirmationStore';
 import { doitAdopterIdentiteServeur } from '../../lib/identiteConversation';
+import { messageDErreurDuFlux } from '../../lib/messageDErreurDuFlux';
 import { attendrePersistance, assurerConversationPersistee } from '../../lib/rattachementConversation';
 import { estUneImage } from '../../lib/pieceJointeImage';
 import { useFileDrop, type DroppedFile } from '../../hooks/useFileDrop';
@@ -840,13 +841,10 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           deleteConversation(currentConversationId);
         }
 
+        // B-1395 : une coupure du flux ne montre plus le texte brut du navigateur.
         const errorMessage = isConversationGhost
           ? "La conversation n'existait plus sur le serveur. Un nouveau chat a été créé automatiquement. Tu peux renvoyer ton message."
-          : error instanceof ApiError
-            ? `Erreur serveur (${error.status}): ${error.message}`
-            : error instanceof Error
-              ? error.message
-              : "Désolée, une erreur s'est produite. Réessaie.";
+          : messageDErreurDuFlux(error);
 
         // Update the placeholder message with error
         updateMessage(assistantMessageId, errorMessage);
