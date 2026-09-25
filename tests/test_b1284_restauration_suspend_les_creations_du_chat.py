@@ -38,4 +38,7 @@ async def test_la_restauration_refuse_une_creation_du_chat(client, monkeypatch):
     r = await client.post(f"/api/data/restore/{nom}?confirm=true", json={"password": PASSE})
     assert r.status_code == 200, r.text
     assert issues and issues[0].get("success") is False, issues
+    # B-1294 : pendant une restauration, le chat n'annonce pas un effacement.
+    assert "Effacement de toutes les données" not in issues[0].get("error", ""), issues
+    assert "restauration" in issues[0].get("error", ""), issues
     assert mt._CREATIONS_SUSPENDUES == 0, "suspension non levée après la restauration"

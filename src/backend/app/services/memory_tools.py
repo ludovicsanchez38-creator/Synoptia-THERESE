@@ -1256,8 +1256,9 @@ async def _proteger_le_geste(coro: "Any") -> str:
         return json.dumps({
             "success": False,
             "error": (
-                "Effacement de toutes les données en cours : rien n'a été créé. "
-                "Réessaie une fois l'effacement terminé."
+                # B-1294 : la suspension sert à l'effacement ET à la restauration.
+                "Une opération sur tes données est en cours (effacement ou restauration) : "
+                "rien n'a été créé. Réessaie une fois qu'elle sera terminée."
             ),
         }, ensure_ascii=False)
     geste: "asyncio.Task[str]" = asyncio.create_task(coro)
