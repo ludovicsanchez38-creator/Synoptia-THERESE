@@ -23,3 +23,12 @@ async def test_une_liste_sans_objets_est_refusee_a_l_apercu_et_a_l_import(db_ses
     assert apercu.can_import is False and apercu.validation_errors, apercu
     res = await service.import_contacts(b"[1, 2]", filename="c.json")
     assert res.message.startswith("Import impossible"), res.message
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("contenu", [b"{pas du json", b"\xff\xfe\x00"])
+async def test_un_json_illisible_repond_en_francais(db_session, contenu):
+    """B-1326 : le message technique anglais de JSONDecodeError (ou de
+    UnicodeDecodeError) remontait tel quel. Lecteur δ, passe 7."""
+    res = await CRMImportService(db_session).import_contacts(contenu, filename="c.json")
+    assert res.message.startswith("Import impossible : Fichier JSON illisible"), res.message

@@ -323,7 +323,13 @@ def _parse_xlsx(content: bytes, sheet_name: str | None = None) -> list[dict]:
 
 def _parse_json(content: bytes) -> list[dict]:
     """Parse JSON content to list of dicts."""
-    data = json.loads(content.decode("utf-8"))
+    # B-1326 : pas de message technique anglais à l'écran.
+    try:
+        data = json.loads(content.decode("utf-8"))
+    except UnicodeDecodeError as exc:
+        raise ValueError("Fichier JSON illisible : encodage UTF-8 attendu.") from exc
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"Fichier JSON illisible (ligne {exc.lineno}, colonne {exc.colno}).") from exc
     if isinstance(data, dict):
         # Check for nested structure
         if "contacts" in data:
