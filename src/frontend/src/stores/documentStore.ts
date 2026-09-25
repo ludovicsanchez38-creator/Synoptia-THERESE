@@ -248,11 +248,12 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
     // tardif rechargerait un document qu'on vient de quitter).
     draftAbortController?.abort();
     draftAbortController = null;
-    // B-919 : le suivi de trame est unique (B-903) ; fermer le document sans
-    // demander l'arrêt laissait ce suivi bloquer toute génération, sans
-    // bouton d'arrêt à l'écran.
-    if (get().outlineGeneration) void get().cancelOutline();
-    set({ currentDocument: null, sectionActive: null, error: null, draftError: null, exportError: null, outlineNotice: null, isStreaming: false });
+    // B-919 puis B-1374 : le suivi de trame est unique (B-903). Fermer le
+    // document le LIBÈRE (une autre trame peut partir) sans arrêter la
+    // génération : l'annuler jetait le travail en silence. Elle continue en
+    // fond, arrêtable dans « Travaux », et la réouverture reprend le suivi
+    // (B-1394).
+    set({ currentDocument: null, sectionActive: null, error: null, draftError: null, exportError: null, outlineNotice: null, isStreaming: false, outlineGeneration: null });
   },
 
   requestCreateModal: () => set({ createModalRequested: true }),
@@ -306,16 +307,21 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
       // B-830 : juste après une annulation, le moteur peut encore refuser (409
       // outline_in_progress) : c'est une fin neutre à dire, pas une panne.
       const dejaEnCours = e?.code === 'outline_in_progress';
-      set((s) => ({
-        isLoading: encoreLaMienne(s) ? false : s.isLoading,
-        outlineGeneration: encoreLaMienne(s) ? null : s.outlineGeneration,
-        outlineNotice: annulee
-          ? 'Génération de la trame annulée.'
-          : dejaEnCours
-            ? 'Une génération de trame est déjà en cours pour ce document.'
-            : s.outlineNotice,
-        error: annulee || dejaEnCours ? s.error : e?.message || 'Impossible de générer la trame.',
-      }));
+      set((s) => {
+        // B-1374 : une trame détachée (document fermé) ne parle plus à
+        // l'écran courant ; son issue se lit dans « Travaux ».
+        if (!encoreLaMienne(s)) return {};
+        return {
+          isLoading: false,
+          outlineGeneration: null,
+          outlineNotice: annulee
+            ? 'Génération de la trame annulée.'
+            : dejaEnCours
+              ? 'Une génération de trame est déjà en cours pour ce document.'
+              : s.outlineNotice,
+          error: annulee || dejaEnCours ? s.error : e?.message || 'Impossible de générer la trame.',
+        };
+      });
     }
   },
 
