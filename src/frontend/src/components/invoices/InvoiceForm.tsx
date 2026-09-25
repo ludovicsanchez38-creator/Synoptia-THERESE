@@ -210,6 +210,20 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
     return pushEscapeHandler(() => setShowConvertDialog(false));
   }, [showConvertDialog]);
 
+  // B-1397 : le focus entre dans la confirmation (sur « Annuler », le choix
+  // sûr) et revient au bouton qui l'a ouverte à sa fermeture.
+  const annulerConversionRef = useRef<HTMLButtonElement>(null);
+  const declencheurConversionRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!showConvertDialog) return;
+    declencheurConversionRef.current = document.activeElement as HTMLElement | null;
+    annulerConversionRef.current?.focus();
+    return () => {
+      const declencheur = declencheurConversionRef.current;
+      if (declencheur && document.contains(declencheur)) declencheur.focus();
+    };
+  }, [showConvertDialog]);
+
   // Charger les contacts
   useEffect(() => {
     void loadContacts(invoice?.contact_id);
@@ -901,7 +915,9 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
         {showConvertDialog && (
           <div
             className="absolute inset-0 z-10 flex items-center justify-center"
-            onClick={() => setShowConvertDialog(false)}
+            // B-1397 : le second clic d'un double-clic sur « Convertir en
+            // facture » tombait sur ce voile et refermait la confirmation.
+            onClick={(e) => { if (e.detail < 2) setShowConvertDialog(false); }}
           >
             <div className="absolute inset-0 bg-black/60 rounded-md" />
             <div
@@ -925,7 +941,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
                 </p>
               </div>
               <div className="flex items-center justify-end gap-3">
-                <Button variant="secondary" size="md" type="button" onClick={() => setShowConvertDialog(false)}>
+                <Button ref={annulerConversionRef} variant="secondary" size="md" type="button" onClick={() => setShowConvertDialog(false)}>
                   Annuler
                 </Button>
                 <Button variant="primary" size="md" type="button" onClick={handleConvertToInvoice}>
