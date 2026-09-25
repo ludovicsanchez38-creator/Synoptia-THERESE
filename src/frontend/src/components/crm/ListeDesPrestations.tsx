@@ -125,7 +125,7 @@ export function ListeDesPrestations({ contactId }: { contactId: string }) {
             className="mt-1 block rounded-sm border border-border bg-surface px-2 py-1 text-sm text-text"
             value={intitule}
             onChange={(e) => setIntitule(e.target.value)}
-            placeholder="FORGER, PROPULSER, diagnostic…"
+            placeholder="Accompagnement mensuel, audit, formation…"
           />
         </label>
         <label className="text-xs text-text-muted">

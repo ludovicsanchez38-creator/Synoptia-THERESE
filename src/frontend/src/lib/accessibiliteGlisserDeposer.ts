@@ -44,13 +44,20 @@ export function annoncesGlisserDeposer(libelle: LibelleParIdentifiant): Announce
       over
         ? `${nom(active.id)} est au-dessus de ${nom(over.id)}.`
         : `${nom(active.id)} n’est plus au-dessus d’une zone de dépôt.`,
+    // B-1390 : « la carte de … a été déposé » faisait une faute d'accord ;
+    // une tournure sans participe vaut pour tous les noms.
     onDragEnd: ({ active, over }) =>
       over
-        ? `${nom(active.id)} a été déposé sur ${nom(over.id)}.`
-        : `${nom(active.id)} a été relâché sans être déposé.`,
+        ? `Dépôt effectué : ${nom(active.id)}, sur ${nom(over.id)}.`
+        : `Relâché sans dépôt : ${nom(active.id)}.`,
     onDragCancel: ({ active }) =>
       `Déplacement annulé : ${nom(active.id)} retrouve sa place.`,
   };
+}
+
+/** B-1390 : « la carte de Karim », mais « la carte d’Élodie ». */
+export function laCarteDe(nom: string): string {
+  return /^[aeiouyhàâéèêëîïôöûüœ]/i.test(nom) ? `la carte d’${nom}` : `la carte de ${nom}`;
 }
 
 /** Le bloc `accessibility` à passer tel quel à un `DndContext`. */

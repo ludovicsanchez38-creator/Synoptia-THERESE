@@ -84,7 +84,7 @@ describe('lot 8 : les champs gardent leurs identifiants et leurs libellés', () 
     const champ = screen.getByLabelText(/^Participants/) as HTMLInputElement;
     const aide = container.querySelector('#eventform-participants-desc') as HTMLElement;
     expect(aide, 'la description est rendue par FormField').not.toBeNull();
-    expect(aide.textContent).toBe('Séparez les emails par des virgules');
+    expect(aide.textContent).toBe('Sépare les adresses e-mail par des virgules');
     expect(champ.getAttribute('aria-describedby')).toContain('eventform-participants-desc');
     // Position assumée au design (§ 6) : une consigne de saisie se lit avant
     // le champ, et `aria-describedby` l'annonce désormais au lecteur d'écran.

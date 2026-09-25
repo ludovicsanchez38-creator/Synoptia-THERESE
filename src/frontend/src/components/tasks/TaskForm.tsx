@@ -310,7 +310,7 @@ export function TaskForm() {
         <FormField
           label="Tags"
           htmlFor="taskform-tags"
-          description="Séparez les tags par des virgules"
+          description="Sépare les étiquettes par des virgules"
         >
           <Input
             id="taskform-tags"

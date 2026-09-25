@@ -63,6 +63,7 @@ const OPTIONS_TYPE_DOCUMENT = [
   { id: 'avoir', label: 'Avoir' },
 ];
 
+// B-1390 : un devis est masculin, une facture féminine.
 const OPTIONS_STATUT_DEVIS = [
   { value: 'draft', label: 'Brouillon' },
   { value: 'sent', label: 'Envoyé' },
@@ -70,12 +71,12 @@ const OPTIONS_STATUT_DEVIS = [
   { value: 'refused', label: 'Refusé' },
   { value: 'expired', label: 'Expiré' },
   { value: 'converted', label: 'Converti en facture' },
-  { value: 'cancelled', label: 'Annulée' },
+  { value: 'cancelled', label: 'Annulé' },
 ];
 
 const OPTIONS_STATUT_FACTURE = [
   { value: 'draft', label: 'Brouillon' },
-  { value: 'sent', label: 'Envoyé' },
+  { value: 'sent', label: 'Envoyée' },
   { value: 'paid', label: 'Payée' },
   { value: 'overdue', label: 'En retard' },
   { value: 'cancelled', label: 'Annulée' },

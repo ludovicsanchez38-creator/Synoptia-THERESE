@@ -461,7 +461,7 @@ export function EventForm() {
         <FormField
           label="Participants"
           htmlFor="eventform-participants"
-          description="Séparez les emails par des virgules"
+          description="Sépare les adresses e-mail par des virgules"
         >
           <Input
             id="eventform-participants"

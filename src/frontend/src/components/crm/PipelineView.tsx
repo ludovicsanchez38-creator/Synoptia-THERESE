@@ -31,7 +31,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { pushEscapeHandler } from '../../lib/escapeStack';
-import { accessibiliteGlisserDeposer } from '../../lib/accessibiliteGlisserDeposer';
+import { accessibiliteGlisserDeposer, laCarteDe } from '../../lib/accessibiliteGlisserDeposer';
 import { useDemoMask } from '../../hooks';
 import type { ContactResponse } from '../../services/api';
 
@@ -136,7 +136,7 @@ export function PipelineView({ contacts, onContactClick, onStageChange }: Pipeli
         const stage = libelleDuStage(identifiant);
         if (stage) return `la colonne ${stage}`;
         return contacts.some((c) => c.id === identifiant)
-          ? `la carte de ${nomDuContact(identifiant)}`
+          ? laCarteDe(nomDuContact(identifiant))
           : null;
       })}
     >

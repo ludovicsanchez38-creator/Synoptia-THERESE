@@ -704,7 +704,12 @@ export function InvoiceWorkspaceCanvas({
       <div className="border-b border-border px-5 py-4 pr-16">
         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.12em] text-text-muted"><Receipt className="h-3.5 w-3.5" />Devis et factures</div>
         <h2 className="mt-2 text-xl font-bold tracking-[-0.02em] text-text">{selection === 'new-devis' ? 'Nouveau devis brouillon' : 'Détail du document'}</h2>
-        <p className="mt-1 text-sm text-text-muted">Les données affichées viennent du module Facturation existant.</p>
+        {/* B-1390 : la phrase de développeur (« module Facturation existant ») disait d'où venaient les données, pas ce qui se passe. */}
+        <p className="mt-1 text-sm text-text-muted">
+          {selection === 'new-devis'
+            ? 'Le devis reste un brouillon : rien n’est envoyé sans ta confirmation.'
+            : 'Le document tel qu’il est enregistré dans Devis et factures.'}
+        </p>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto p-5">
