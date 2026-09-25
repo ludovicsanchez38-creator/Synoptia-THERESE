@@ -23,7 +23,8 @@ export interface ActionEtabli {
 }
 
 export const ACTIONS_ETABLI: readonly ActionEtabli[] = [
-  { id: 'email', label: 'Écrire' },
+  // P-117 (Claire, cycle 13) : « Écrire » laissait croire à un document.
+  { id: 'email', label: 'Écrire un e-mail' },
   { id: 'memory', label: 'Retrouver' },
   { id: 'meeting', label: 'Préparer' },
   { id: 'invoice', label: 'Facturer' },

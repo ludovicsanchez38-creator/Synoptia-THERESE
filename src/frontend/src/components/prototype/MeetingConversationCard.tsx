@@ -347,6 +347,29 @@ function EventPreparation({
     }
   }
 
+  // P-117 (Claire, cycle 13) : l'action d'après séance était la dernière
+  // section, trouvée par hasard. Elle dit ce qu'elle est, et vient en premier
+  // quand la séance est passée.
+  const finDeSeance = event.end_datetime ? new Date(event.end_datetime) : event.end_date ? new Date(`${event.end_date}T23:59:59`) : null;
+  const seancePassee = finDeSeance !== null && finDeSeance.getTime() < Date.now();
+  const compteRendu = relatedContacts.length > 0 ? (
+        <section className="rounded-md border border-border bg-surface p-4">
+          <div className="flex items-center gap-2"><FileText className="h-4 w-4 text-domaine-factures" /><h3 className="text-sm font-bold text-text">Après la séance : compte rendu</h3></div>
+          <p className="mt-1 text-xs text-text-muted">La note sera ajoutée au CRM du contact choisi après confirmation.</p>
+          <select aria-label="Contact destinataire de la note" value={contactId} onChange={(event) => { setContactId(event.target.value); setConfirming(false); }} className="mt-3 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-accent">{relatedContacts.map((contact) => <option key={contact.id} value={contact.id}>{contactDisplayName(contact)}</option>)}</select>
+          <textarea aria-label="Note de rendez-vous" value={note} onChange={(event) => { setNote(event.target.value); setConfirming(false); }} rows={4} placeholder="Tes notes factuelles après le rendez-vous…" className="mt-2 w-full resize-y rounded-md border border-border px-3 py-2 text-sm leading-5 outline-none focus:border-accent" />
+          {!confirming ? (
+            <button type="button" disabled={!note.trim()} onClick={() => setConfirming(true)} className="mt-2 w-full rounded-md bg-accent-fill px-3 py-2.5 text-sm font-semibold text-accent-ink disabled:cursor-not-allowed disabled:opacity-40">Vérifier la note</button>
+          ) : (
+            <div className="mt-2 rounded-md border border-accent-cyan/30 bg-accent-tint p-3">
+              <p className="text-xs leading-5 text-accent">Confirmer l’ajout de cette note au contact sélectionné. L’événement Agenda ne sera pas modifié.</p>
+              <div className="mt-2 flex gap-2"><button type="button" disabled={pending} onClick={onAbandon} className="flex-1 rounded-sm border border-error bg-surface px-3 py-2 text-sm font-semibold text-error disabled:opacity-60">Annuler</button><button type="button" disabled={pending} onClick={() => setConfirming(false)} className="flex-1 rounded-sm border border-border bg-surface px-3 py-2 text-sm font-semibold text-text disabled:opacity-60">Modifier</button><button type="button" disabled={pending} onClick={() => void confirmNote()} className="flex flex-1 items-center justify-center gap-2 rounded-sm bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink">{pending && <Spinner taille="ligne" />}Confirmer l’ajout</button></div>
+            </div>
+          )}
+          {feedback && <p className="mt-2 text-xs text-accent" role="status">{feedback}</p>}
+        </section>
+  ) : null;
+
   return (
     <div className="space-y-5" data-testid="meeting-event-preparation">
       <section className="rounded-md border border-border bg-surface p-4">
@@ -360,6 +383,8 @@ function EventPreparation({
         {event.location && <p className="mt-3 flex items-center gap-2 rounded-md bg-surface-2 px-3 py-2 text-xs text-text"><MapPin className="h-3.5 w-3.5 text-domaine-factures" />{event.location}</p>}
         {event.description && <div className="mt-3 whitespace-pre-wrap rounded-md bg-surface-2 px-3 py-3 text-xs leading-5 text-text">{event.description}</div>}
       </section>
+
+      {seancePassee && compteRendu}
 
       <section>
         <div className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-text-muted">Participants et contacts reliés</div>
@@ -390,23 +415,7 @@ function EventPreparation({
         </div>
       </section>
 
-      {relatedContacts.length > 0 && (
-        <section className="rounded-md border border-border bg-surface p-4">
-          <div className="flex items-center gap-2"><FileText className="h-4 w-4 text-domaine-factures" /><h3 className="text-sm font-bold text-text">Ajouter une note de rendez-vous</h3></div>
-          <p className="mt-1 text-xs text-text-muted">La note sera ajoutée au CRM du contact choisi après confirmation.</p>
-          <select aria-label="Contact destinataire de la note" value={contactId} onChange={(event) => { setContactId(event.target.value); setConfirming(false); }} className="mt-3 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm outline-none focus:border-accent">{relatedContacts.map((contact) => <option key={contact.id} value={contact.id}>{contactDisplayName(contact)}</option>)}</select>
-          <textarea aria-label="Note de rendez-vous" value={note} onChange={(event) => { setNote(event.target.value); setConfirming(false); }} rows={4} placeholder="Tes notes factuelles après le rendez-vous…" className="mt-2 w-full resize-y rounded-md border border-border px-3 py-2 text-sm leading-5 outline-none focus:border-accent" />
-          {!confirming ? (
-            <button type="button" disabled={!note.trim()} onClick={() => setConfirming(true)} className="mt-2 w-full rounded-md bg-accent-fill px-3 py-2.5 text-sm font-semibold text-accent-ink disabled:cursor-not-allowed disabled:opacity-40">Vérifier la note</button>
-          ) : (
-            <div className="mt-2 rounded-md border border-accent-cyan/30 bg-accent-tint p-3">
-              <p className="text-xs leading-5 text-accent">Confirmer l’ajout de cette note au contact sélectionné. L’événement Agenda ne sera pas modifié.</p>
-              <div className="mt-2 flex gap-2"><button type="button" disabled={pending} onClick={onAbandon} className="flex-1 rounded-sm border border-error bg-surface px-3 py-2 text-sm font-semibold text-error disabled:opacity-60">Annuler</button><button type="button" disabled={pending} onClick={() => setConfirming(false)} className="flex-1 rounded-sm border border-border bg-surface px-3 py-2 text-sm font-semibold text-text disabled:opacity-60">Modifier</button><button type="button" disabled={pending} onClick={() => void confirmNote()} className="flex flex-1 items-center justify-center gap-2 rounded-sm bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink">{pending && <Spinner taille="ligne" />}Confirmer l’ajout</button></div>
-            </div>
-          )}
-          {feedback && <p className="mt-2 text-xs text-accent" role="status">{feedback}</p>}
-        </section>
-      )}
+      {!seancePassee && compteRendu}
 
       <section>
         <div className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-text-muted">Historique CRM disponible</div>

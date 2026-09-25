@@ -36,7 +36,7 @@ vi.mock('../../services/api/voice', async (importOriginal) => ({
 describe('La source unique de l’établi', () => {
   it('déclare exactement les cinq actions, ids et libellés figés', () => {
     expect(ACTIONS_ETABLI).toEqual([
-      { id: 'email', label: 'Écrire' },
+      { id: 'email', label: 'Écrire un e-mail' },
       { id: 'memory', label: 'Retrouver' },
       { id: 'meeting', label: 'Préparer' },
       { id: 'invoice', label: 'Facturer' },
