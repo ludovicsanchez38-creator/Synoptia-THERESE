@@ -385,6 +385,11 @@ async def upsert_contact(
             tags=tags_json,
             scope="global",
         )
+        if score_lu is None:
+            # B-1382 : sans score dans le tableur, celui de la règle, pas 50.
+            from app.services.scoring import calculate_base_score
+
+            contact.score = calculate_base_score(contact)
         session.add(contact)
         return contact, True
 

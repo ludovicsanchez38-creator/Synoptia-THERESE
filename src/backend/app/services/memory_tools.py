@@ -661,6 +661,10 @@ async def execute_create_contact(
                 scope=_perimetre_creation[0],
                 scope_id=_perimetre_creation[1],
             )
+            # B-1382 : une fiche neuve reçoit le score de base (sinon 50 figé, qui sautait au premier déplacement).
+            from app.services.scoring import calculate_base_score
+
+            contact.score = calculate_base_score(contact)
             session_geste.add(contact)
             await session_geste.flush()
 

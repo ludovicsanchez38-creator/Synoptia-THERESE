@@ -25,6 +25,7 @@ from app.services.crm_utils import (
     etiquettes_lues,
 )
 from app.services.formules_tableur import neutraliser_formule
+from app.services.scoring import calculate_base_score
 from openpyxl import load_workbook
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
@@ -888,6 +889,9 @@ class CRMImportService:
                         created_at=created_at or datetime.now(UTC),
                         updated_at=updated_at or datetime.now(UTC),
                     )
+                    if score is None:
+                        # B-1382 : sans score dans le fichier, celui de la règle, pas 50.
+                        contact.score = calculate_base_score(contact)
                     self.session.add(contact)
                     result.created += 1
                     if etape_ecartee:

@@ -873,6 +873,8 @@ async def import_vcf_contacts(
                 address=contact_data.get("address"),
                 notes=contact_data.get("notes"),
             )
+            # B-1382 : une fiche neuve reçoit le score de base (sinon 50 figé, qui sautait au premier déplacement).
+            contact.score = calculate_base_score(contact)
             session.add(contact)
             a_indexer.append(contact)
             created += 1

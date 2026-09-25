@@ -28,7 +28,7 @@ from app.models.schemas import (
 )
 from app.services.audit import AuditAction, log_activity
 from app.services.qdrant import get_qdrant_service
-from app.services.scoring import update_contact_score
+from app.services.scoring import calculate_base_score, update_contact_score
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
 from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -835,6 +835,8 @@ async def import_vcf_contacts(
                 address=contact_data.get("address"),
                 notes=contact_data.get("notes"),
             )
+            # B-1382 : une fiche neuve reçoit le score de base (sinon 50 figé, qui sautait au premier déplacement).
+            contact.score = calculate_base_score(contact)
             session.add(contact)
             a_indexer.append(contact)
             created += 1
