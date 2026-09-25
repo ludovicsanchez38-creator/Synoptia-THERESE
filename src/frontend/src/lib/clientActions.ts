@@ -16,6 +16,7 @@ import type { StreamChunk } from '../services/api/chat';
 import { runAction } from './actionRegistry';
 import { useChatStore } from '../stores/chatStore';
 import { useStatusStore } from '../stores/statusStore';
+import { actionArreterLaReponse } from './arretDeLaReponse';
 
 export const CLIENT_ACTION_EVENT = 'therese:client-action';
 
@@ -34,6 +35,8 @@ export function runNavigationAction(actionId: string): boolean {
       type: 'warning',
       title: 'Réponse en cours',
       message: 'Arrête la réponse avant de changer de vue.',
+      // B-1369 : le bandeau couvre le bouton d'arrêt du composeur.
+      action: actionArreterLaReponse(),
     });
     return false;
   }

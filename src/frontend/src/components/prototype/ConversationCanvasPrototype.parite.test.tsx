@@ -23,6 +23,7 @@ import { useStatusStore } from '../../stores/statusStore';
 import { _clearEscapeHandlers } from '../../lib/escapeStack';
 import { APP_ACTIONS, runAction } from '../../lib/actionRegistry';
 import { runNavigationAction } from '../../lib/clientActions';
+import { inscrireArretDeLaReponse } from '../../lib/arretDeLaReponse';
 import { ConversationCanvasPrototype } from './ConversationCanvasPrototype';
 import { ActionPanel } from '../actions/ActionPanel';
 import { useActionsStore } from '../../stores/actionsStore';
@@ -357,6 +358,26 @@ describe('Gate de parité par source d’action', () => {
         .getState()
         .notifications.filter((n) => n.title === 'Réponse en cours');
       expect(refus).toHaveLength(1);
+    });
+
+    it("B-1369 : le refus de la coque porte « Arrêter la réponse »", async () => {
+      // Le bandeau s'affiche en bas à droite, par-dessus le bouton d'arrêt du
+      // composeur : il doit offrir lui-même le geste qu'il demande.
+      useChatStore.setState({ isStreaming: true });
+      useStatusStore.setState({ notifications: [] });
+      const arret = vi.fn();
+      const retirer = inscrireArretDeLaReponse(arret);
+
+      render(<ConversationCanvasPrototype />);
+      await act(async () => {
+        window.dispatchEvent(new CustomEvent('therese:insert-prompt', { detail: 'Prépare la relance' }));
+      });
+
+      const refus = useStatusStore.getState().notifications.find((n) => n.title === 'Réponse en cours');
+      expect(refus?.action?.label).toBe('Arrêter la réponse');
+      refus?.action?.onClick();
+      expect(arret).toHaveBeenCalledTimes(1);
+      retirer();
     });
 
     it('signale la perte de connexion en dehors du chat', async () => {

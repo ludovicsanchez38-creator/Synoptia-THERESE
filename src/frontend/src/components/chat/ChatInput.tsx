@@ -32,6 +32,7 @@ import { FormulaireVariables } from './FormulaireVariables';
 import { useToolConfirmationStore } from '../../stores/toolConfirmationStore';
 import { doitAdopterIdentiteServeur } from '../../lib/identiteConversation';
 import { messageDErreurDuFlux } from '../../lib/messageDErreurDuFlux';
+import { inscrireArretDeLaReponse } from '../../lib/arretDeLaReponse';
 import { attendrePersistance, assurerConversationPersistee } from '../../lib/rattachementConversation';
 import { estUneImage } from '../../lib/pieceJointeImage';
 import { useFileDrop, type DroppedFile } from '../../hooks/useFileDrop';
@@ -1032,6 +1033,9 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       }
     }
   }, []);
+
+  // B-1369 : le bandeau « Réponse en cours » de la coque propose cet arrêt.
+  useEffect(() => inscrireArretDeLaReponse(stopStreaming), [stopStreaming]);
 
   // Handle slash command selection
   const handleSlashCommandSelect = useCallback((command: SlashCommand) => {

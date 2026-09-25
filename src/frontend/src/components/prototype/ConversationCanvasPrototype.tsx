@@ -36,6 +36,7 @@ import { WindowControls } from '../window/WindowControls';
 import { isMacPlatform } from '../../lib/platform';
 import { replierPourRecherche } from '../../lib/replierPourRecherche';
 import { classerCommandes, indexDeLaMeilleureOption } from '../../lib/classerCommandes';
+import { actionArreterLaReponse } from '../../lib/arretDeLaReponse';
 import { startWindowDrag } from '../../lib/windowChrome';
 import {
   AtelierHistoryCard,
@@ -977,6 +978,8 @@ export function ConversationCanvasPrototype() {
       type: 'warning',
       title: 'Réponse en cours',
       message: 'Arrête la réponse avant de changer de vue ou de conversation.',
+      // B-1369 : le bandeau s'affiche par-dessus le bouton d'arrêt du composeur.
+      action: actionArreterLaReponse(),
     });
     return true;
   }, []);

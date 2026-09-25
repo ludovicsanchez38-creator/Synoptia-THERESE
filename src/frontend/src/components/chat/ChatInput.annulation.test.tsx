@@ -20,6 +20,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { useChatStore } from '../../stores/chatStore';
 import { useStatusStore } from '../../stores/statusStore';
 import { ChatInput } from './ChatInput';
+import { arreterLaReponse } from '../../lib/arretDeLaReponse';
 
 const apiMocks = vi.hoisted(() => ({
   getLLMConfig: vi.fn(),
@@ -68,6 +69,17 @@ describe('ChatInput - arrêt de la génération', () => {
     });
     useStatusStore.setState({ connectionState: 'connected' });
     poserConversation({ synced: true });
+  });
+
+  it("B-1369 : l'arrêt inscrit par le composeur est celui du bouton", async () => {
+    render(<ChatInput />);
+    await screen.findByLabelText('Arrêter la réponse');
+
+    await act(async () => {
+      expect(arreterLaReponse()).toBe(true);
+    });
+
+    expect(apiMocks.cancelGeneration).toHaveBeenCalledWith('conv-locale');
   });
 
   it('prévient le serveur quand l’utilisateur arrête la réponse', async () => {
