@@ -33,6 +33,18 @@ _MILLIERS = "\u202f"  # espace insécable étroite
 _AVANT_SYMBOLE = "\u00a0"  # espace insécable
 
 
+def _decimal_fr(valeur: float, chiffres: int = 1) -> str:
+    """B-1464 : 30.0 -> « 30,0 » (virgule décimale, milliers insécables)."""
+    entier, _, decimales = f"{valeur:,.{chiffres}f}".partition(".")
+    entier = entier.replace(",", _MILLIERS)
+    return f"{entier},{decimales}" if decimales else entier
+
+
+def _pourcent_fr(valeur: float) -> str:
+    """B-1464 : 30.0 -> « 30,0 % » (espace insécable avant le signe)."""
+    return f"{_decimal_fr(valeur)}{_AVANT_SYMBOLE}%"
+
+
 def _montant_fr(valeur: float) -> str:
     """Rend un montant au format français : 1234.5 -> « 1 234,50 € »."""
     entier, _, decimales = f"{valeur:,.2f}".partition(".")
@@ -120,15 +132,15 @@ class CalculatorService:
 
         # Interprétation
         if roi_percent >= 100:
-            interpretation = f"🚀 Excellent ! Tu as doublé ton investissement (+{roi_percent:.1f}%)"
+            interpretation = f"Excellent ! Tu as doublé ton investissement (+{_pourcent_fr(roi_percent)})"
         elif roi_percent >= 50:
-            interpretation = f"✅ Très bon ROI de {roi_percent:.1f}%. L'investissement est rentable."
+            interpretation = f"Très bon ROI de {_pourcent_fr(roi_percent)}. L'investissement est rentable."
         elif roi_percent >= 20:
-            interpretation = f"👍 ROI correct de {roi_percent:.1f}%. Investissement rentable."
+            interpretation = f"ROI correct de {_pourcent_fr(roi_percent)}. Investissement rentable."
         elif roi_percent >= 0:
-            interpretation = f"⚠️ ROI faible de {roi_percent:.1f}%. Rentable mais marginal."
+            interpretation = f"ROI faible de {_pourcent_fr(roi_percent)}. Rentable mais marginal."
         else:
-            interpretation = f"❌ ROI négatif de {roi_percent:.1f}%. Perte de {_montant_fr(abs(profit))}"
+            interpretation = f"ROI négatif de {_pourcent_fr(roi_percent)}. Perte de {_montant_fr(abs(profit))}"
 
         return ROIResult(
             investment=investment,
@@ -168,15 +180,15 @@ class CalculatorService:
 
         # Interprétation (score max = 1000)
         if score >= 500:
-            interpretation = f"🚀 Score ICE excellent ({score:.0f}/1000). Priorité haute !"
+            interpretation = f"Score ICE excellent ({score:.0f}/1000). Priorité haute !"
         elif score >= 300:
-            interpretation = f"✅ Bon score ICE ({score:.0f}/1000). À considérer sérieusement."
+            interpretation = f"Bon score ICE ({score:.0f}/1000). À considérer sérieusement."
         elif score >= 150:
-            interpretation = f"👍 Score ICE moyen ({score:.0f}/1000). Peut-être intéressant."
+            interpretation = f"Score ICE moyen ({score:.0f}/1000). Peut-être intéressant."
         elif score >= 50:
-            interpretation = f"⚠️ Score ICE faible ({score:.0f}/1000). Peu prioritaire."
+            interpretation = f"Score ICE faible ({score:.0f}/1000). Peu prioritaire."
         else:
-            interpretation = f"❌ Score ICE très faible ({score:.0f}/1000). À éviter."
+            interpretation = f"Score ICE très faible ({score:.0f}/1000). À éviter."
 
         return ICEResult(
             impact=impact,
@@ -219,15 +231,15 @@ class CalculatorService:
 
         # Interprétation
         if score >= 100:
-            interpretation = f"🚀 Score RICE exceptionnel ({score:.1f}). Priorité absolue !"
+            interpretation = f"Score RICE exceptionnel ({_decimal_fr(score, 1)}). Priorité absolue !"
         elif score >= 50:
-            interpretation = f"✅ Très bon score RICE ({score:.1f}). Haute priorité."
+            interpretation = f"Très bon score RICE ({_decimal_fr(score, 1)}). Haute priorité."
         elif score >= 20:
-            interpretation = f"👍 Score RICE correct ({score:.1f}). Priorité moyenne."
+            interpretation = f"Score RICE correct ({_decimal_fr(score, 1)}). Priorité moyenne."
         elif score >= 5:
-            interpretation = f"⚠️ Score RICE faible ({score:.1f}). Basse priorité."
+            interpretation = f"Score RICE faible ({_decimal_fr(score, 1)}). Basse priorité."
         else:
-            interpretation = f"❌ Score RICE très faible ({score:.1f}). À reconsidérer."
+            interpretation = f"Score RICE très faible ({_decimal_fr(score, 1)}). À reconsidérer."
 
         return RICEResult(
             reach=reach,
@@ -272,11 +284,11 @@ class CalculatorService:
 
         # Interprétation
         if npv > 0:
-            interpretation = f"✅ NPV positive ({_montant_fr(npv)}). L'investissement crée de la valeur."
+            interpretation = f"NPV positive ({_montant_fr(npv)}). L'investissement crée de la valeur."
         elif npv == 0:
-            interpretation = "⚠️ NPV nulle. L'investissement atteint juste le seuil de rentabilité."
+            interpretation = "NPV nulle. L'investissement atteint juste le seuil de rentabilité."
         else:
-            interpretation = f"❌ NPV négative ({_montant_fr(npv)}). L'investissement détruit de la valeur."
+            interpretation = f"NPV négative ({_montant_fr(npv)}). L'investissement détruit de la valeur."
 
         return NPVResult(
             initial_investment=initial_investment,
@@ -316,9 +328,9 @@ class CalculatorService:
         _ensure_finite_result(break_even_units, break_even_revenue)
 
         interpretation = (
-            f"📊 Seuil de rentabilité : {break_even_units:.0f} unités\n"
-            f"💰 CA minimum : {_montant_fr(break_even_revenue)}\n"
-            f"📈 Marge par unité : {_montant_fr(margin_per_unit)}"
+            f"Seuil de rentabilité : {break_even_units:.0f} unités\n"
+            f"CA minimum : {_montant_fr(break_even_revenue)}\n"
+            f"Marge par unité : {_montant_fr(margin_per_unit)}"
         )
 
         return BreakEvenResult(
