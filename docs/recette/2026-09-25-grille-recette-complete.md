@@ -40,7 +40,7 @@ grille, à signaler.
 | Tâches : compléter | Cocher une tâche | Elle passe « Terminée », sort du brief |
 | Tâches : filtrer | Filtre projet, filtre tag | La liste se restreint, « réinitialiser » la rend |
 | Agenda : créer | Nouveau rendez-vous local avec un participant | Il apparaît dans l'Agenda et dans les séances de la fiche (P-116) |
-| Agenda : ajout rapide | Saisie en langage naturel (local) | Refus clair si non pris en charge, sans perte |
+| Agenda : ajout rapide | Saisie en langage naturel dans la conversation (seul point d'entrée pour un agenda local) | Carte de confirmation, rendez-vous créé, message accentué (B-1431) |
 | Agenda : import/export ICS | Exporter puis réimporter | Le fichier se range dans Téléchargements, l'import ne duplique pas |
 | Préparer un rendez-vous | Choisir la séance | Participants reliés, points à vérifier, note de séance |
 | Note de séance | Ajouter la note au contact | Elle se lit dans l'historique de la fiche (P-120) |
@@ -49,6 +49,11 @@ grille, à signaler.
 | Palette ⌘K | Chercher un nom de client | Le contact, le projet, la conversation (P-016) |
 | Navigation | Rail, Retour, Échap depuis chaque vue | On revient d'un geste à l'écran précédent |
 | Reprise | Recharger sur une vue | La vue quittée se rouvre (P-142) |
+| Agenda : vues et périodes | Jour, Semaine, Mois, Liste ; période suivante puis précédente, y compris à cheval sur deux mois | Chaque rendez-vous reste à sa place, dernier jour du mois compris (B-1429) |
+| Préparer : nouvel événement | « Nouvel événement » depuis Préparer | Formulaire « Vérifier avant création », rendez-vous créé |
+| Poursuivre dans le chat | Depuis l'Accueil, saisir puis « Poursuivre dans le chat » | Nouvelle conversation avec la saisie, non envoyée |
+| Tâches : colonnes et liste | Basculer Colonnes et Liste, glisser une carte entre colonnes | Le statut suit la colonne |
+| Relance de fiche : la compléter | Relance posée sur la fiche, puis la déclarer faite | Elle sort du brief et de « Cette semaine » |
 
 ## Lot 2 : développer l'activité (clients)
 

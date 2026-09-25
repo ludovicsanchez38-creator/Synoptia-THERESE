@@ -120,3 +120,14 @@ peux accepter d'un « oui » global ou corriger une par une.
   l'import).
 - B-1427 : barres de défilement presque invisibles (1,1:1) ; les rendre
   lisibles change l'aspect de toute l'application.
+- B-1436 (recette, lot 1) : sans boîte branchée, ouvrir l'écran Email lance
+  l'assistant de connexion par-dessus, son voile cache « Retour » et il faut
+  deux Échap pour revenir. L'ouverture d'office est un choix ancien (BUG-037).
+  **Recommandation** : ne plus l'ouvrir d'office ; l'écran montre
+  « Configurer un compte », et « Brancher mes mails » de l'Accueil ouvre
+  l'assistant directement. La rédaction dirait aussi, avant la confirmation,
+  qu'aucune boîte n'est branchée (B-1435).
+- P-149 à P-151 (recette, lot 1) : relance de fiche dans « Relances et
+  alertes » avec « faite », projet d'une tâche depuis son formulaire (le filtre
+  projet existe mais rien ne pose le projet), personne liée visible sur la
+  tâche. **Recommandation** : oui aux trois.
