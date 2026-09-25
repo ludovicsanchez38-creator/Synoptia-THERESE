@@ -489,6 +489,23 @@ async def _appliquer_sous_verrou(
                 EtatTacheTraitement.FAILED,
                 error=f"{len(restantes)} opération(s) en échec, réessayables",
             )
+        elif etat_final == EtatPlan.APPLIQUE_PARTIEL:
+            # B-1373 : « Terminé » sans un mot pour un plan partiel faisait
+            # croire que le dossier était lu. La ligne de Travaux le dit.
+            ecartes = sum(1 for o in finales if o.etat == EtatOperation.OBSOLETE)
+            raisons = []
+            if ecartes:
+                raisons.append(f"{ecartes} fichier{'s' if ecartes > 1 else ''} non indexé{'s' if ecartes > 1 else ''}")
+            if conflits:
+                raisons.append(f"{conflits} conflit{'s' if conflits > 1 else ''} à trancher")
+            await handle.terminer(
+                EtatTacheTraitement.DONE,
+                error=(
+                    "Synchronisation partielle : "
+                    + (", ".join(raisons) or "des éléments restent à traiter")
+                    + ". Le détail est dans le dossier du projet."
+                ),
+            )
         else:
             await handle.terminer(EtatTacheTraitement.DONE)
     except asyncio.CancelledError:
