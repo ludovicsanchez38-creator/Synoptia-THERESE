@@ -252,7 +252,7 @@ class TestMigration:
         conn = sqlite3.connect(db)
         conn.execute("CREATE TABLE contacts (id TEXT PRIMARY KEY)")
         conn.execute(
-            "CREATE TABLE invoices (id TEXT PRIMARY KEY, validite_jours INTEGER)"
+            "CREATE TABLE invoices (id TEXT PRIMARY KEY, validite_jours INTEGER, sent_at TIMESTAMP)"  # P-139
         )
         conn.execute(
             "CREATE TABLE board_decisions ("
