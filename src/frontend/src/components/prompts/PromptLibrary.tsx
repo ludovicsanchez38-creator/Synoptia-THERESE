@@ -300,6 +300,9 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
   const [resultsQuery, setResultsQuery] = useState('');
   const [searchError, setSearchError] = useState<string | null>(null);
   const [totalResults, setTotalResults] = useState(0);
+  // B-1296 : compte les réponses de recherche ; la clé de l'accordéon le suit,
+  // pour qu'une même requête retapée rouvre aussi les catégories repliées.
+  const [reponsesDeRecherche, setReponsesDeRecherche] = useState(0);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>(undefined);
   const rechercheCourante = useRef(0);
@@ -364,6 +367,7 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
         setSearchResults(data.categories);
         setTotalResults(data.total);
         setResultsQuery(value.trim());
+        setReponsesDeRecherche((n) => n + 1);
         setSearchError(null);
       } catch {
         if (numero !== rechercheCourante.current) return;
@@ -477,9 +481,10 @@ export function PromptLibrary({ onSelectPrompt, onClose }: PromptLibraryProps) {
               <CategoryAccordion
                 // Cycle 6 (Sophie, sophie-02) : une nouvelle recherche remonte
                 // l'accordéon, donc rouvre une catégorie repliée à la main.
-                // B-823 : la clé suit la requête AFFICHÉE (resultsQuery), pas la frappe,
-                // sinon l'accordéon se remontait à chaque caractère saisi.
-                key={`${category.category}-${searchResults !== null ? resultsQuery : ''}`}
+                // B-823 : la clé suit la réponse AFFICHÉE, pas la frappe, sinon
+                // l'accordéon se remontait à chaque caractère saisi. B-1296 : le
+                // numéro de réponse, pas le texte, qu'une recherche retapée garde.
+                key={`${category.category}-${searchResults !== null ? reponsesDeRecherche : ''}`}
                 category={category}
                 onSelectPrompt={handleSelect}
                 defaultOpen={searchResults !== null || index === 0}
