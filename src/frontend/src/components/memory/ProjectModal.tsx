@@ -10,6 +10,7 @@ import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { useQuestionDAbandonDeModale } from '../../hooks/useQuestionDAbandonDeModale';
 import { useRendreLeFocusALaFermeture, useRevelerALApparition } from '../../hooks/useRevelerALApparition';
 import { ProjectSyncSection } from './ProjectSyncSection';
+import { ProjectDeliverablesSection } from './ProjectDeliverablesSection';
 import { Spinner } from '../ui/Spinner';
 import { Alerte } from '../ui/Alerte';
 import { FormField } from '../ui/FormField';
@@ -466,6 +467,11 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
               {/* Dossier synchronisé (0.45) - visible uniquement en édition */}
               {isEditing && project && (
                 <ProjectSyncSection projectId={project.id} maskDisplayText={maskText} />
+              )}
+
+              {/* P-153 : les livrables du projet, ajoutables sans changer de vue. */}
+              {isEditing && project && (
+                <ProjectDeliverablesSection projectId={project.id} lectureSeule={demoEnabled} masquer={maskText} />
               )}
 
               {/* Fichiers du projet (visible uniquement en édition) */}
