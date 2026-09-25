@@ -1839,6 +1839,13 @@ def _perimetre_restaure(valeur: Any) -> str:
     return "global"
 
 
+def _etiquettes_importees(valeur: Any) -> list[str]:
+    """Étiquettes d'un contact importé : les seuls textes d'une liste."""
+    if not isinstance(valeur, list):
+        return []
+    return [etiquette for etiquette in valeur if isinstance(etiquette, str) and etiquette.strip()]
+
+
 @router.post("/import/contacts")
 async def import_contacts(
     data: dict,
@@ -1887,7 +1894,9 @@ async def import_contacts(
             phone=contact_data.get("phone"),
             address=contact_data.get("address"),
             notes=contact_data.get("notes"),
-            tags=json.dumps(contact_data.get("tags")) if contact_data.get("tags") else None,
+            # B-1264 : seules des étiquettes en texte sont gardées ; « vip » ou
+            # un nombre stockés tels quels faisaient tomber la liste des contacts.
+            tags=json.dumps(etiquettes) if (etiquettes := _etiquettes_importees(contact_data.get("tags"))) else None,
             extra_data=json.dumps(extra) if isinstance(extra, (dict, list)) else (extra if isinstance(extra, str) else None),
             stage=_etape_restauree(contact_data.get("stage")),
             score=_score_restaure(contact_data.get("score")),
