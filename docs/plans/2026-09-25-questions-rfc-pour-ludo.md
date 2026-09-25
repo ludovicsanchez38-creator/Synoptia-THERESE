@@ -140,4 +140,13 @@ peux accepter d'un « oui » global ou corriger une par une.
 - P-152 à P-155 (recette, lots 2 et 3) : explication du score au clavier,
   livrable depuis le projet, avoir lié à sa facture d'origine, date réelle
   d'un paiement. **Recommandation** : oui aux quatre.
+- Recette, lot 4 : les variables (`{nom}`) ne montrent jamais le texte
+  substitué avant l'envoi ; l'écran l'annonce (« le moteur les remplace à
+  l'envoi »), la grille demandait une substitution visible. **Recommandation** :
+  un aperçu du message final sous le composeur, par la route
+  `/api/variables/preview` qui existe déjà.
+- Recette, lot 4 : Décision s'ouvre en mode Cloud même quand le service
+  configuré est Ollama et qu'aucun accord cloud n'est donné.
+  **Recommandation** : Souverain par défaut quand Ollama est le service
+  choisi (même esprit que P-111).
 
