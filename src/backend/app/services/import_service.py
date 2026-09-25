@@ -6,6 +6,7 @@ Parse et importe des fichiers .ics (calendrier) et .vcf (contacts).
 
 import logging
 from datetime import UTC
+from typing import Any
 
 import vobject
 from app.services.calendar.base_provider import allday_end_from_wire
@@ -105,7 +106,7 @@ def parse_vcf(content: bytes) -> list[dict]:
     return parse_vcf_avec_ecarts(content)[0]
 
 
-def parse_vcf_avec_ecarts(content: bytes) -> tuple[list[dict], list[str], int]:
+def parse_vcf_avec_ecarts(content: bytes) -> tuple[list[dict[str, Any]], list[str], int]:
     """Les contacts lus, ce qui a été écarté (en clair) et le nombre de cartes.
 
     B-1380 : une carte sans nom disparaissait avant tout comptage, et une
