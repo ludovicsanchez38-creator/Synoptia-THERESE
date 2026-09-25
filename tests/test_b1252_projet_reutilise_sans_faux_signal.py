@@ -48,3 +48,15 @@ async def test_projet_termine_retape_sans_option(db_session):
     await execute_create_project({"name": "Site Web", "status": "completed"}, db_session)
     reponse = await execute_slash_command("projet", "Site Web", db_session)
     assert "Non appliqué" not in reponse, reponse
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("budget", ["beaucoup", "-5"])
+async def test_un_budget_illisible_est_signale_meme_sans_budget_existant(db_session, budget):
+    """B-1273 : illisible donne None, égal au budget absent du projet ; rien
+    n'était signalé, contre la docstring. Revue du diff, passe 5 (cas D)."""
+    from app.services.slash_commands import execute_slash_command
+
+    await execute_slash_command("projet", "Chantier", db_session)
+    reponse = await execute_slash_command("projet", f"Chantier budget={budget}", db_session)
+    assert "Non appliqué" in reponse and "budget" in reponse, reponse

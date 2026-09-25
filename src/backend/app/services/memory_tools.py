@@ -293,12 +293,18 @@ def _valeurs_non_appliquees(projet: Any, arguments: dict[str, Any]) -> list[str]
     Une valeur illisible (statut inconnu, budget négatif) compte comme
     différente : elle n'est pas appliquée non plus."""
     perdues: list[str] = []
+    # B-1273 : illisible compte comme perdu AVANT la comparaison ; sinon
+    # None (illisible) égalait None (projet sans valeur) et rien n'était dit.
     statut = arguments.get("status")
-    if statut not in (None, "") and _statut_de_projet(statut) != projet.status:
-        perdues.append("statut")
+    if statut not in (None, ""):
+        statut_lu = _statut_de_projet(statut)
+        if statut_lu is None or statut_lu != projet.status:
+            perdues.append("statut")
     budget = arguments.get("budget")
-    if budget not in (None, "") and _budget_de_projet(budget) != projet.budget:
-        perdues.append("budget")
+    if budget not in (None, ""):
+        budget_lu = _budget_de_projet(budget)
+        if budget_lu is None or budget_lu != projet.budget:
+            perdues.append("budget")
     description = arguments.get("description")
     if isinstance(description, str):
         description = description.strip()
