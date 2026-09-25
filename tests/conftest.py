@@ -166,6 +166,17 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
 
 
 @pytest.fixture(autouse=True)
+def _qdrant_simule_a_chaque_test():
+    """B-1469 : la restauration appelle `close_qdrant()`, qui remet le
+    singleton du module à None (en production, le suivant rouvre l'index
+    restauré). Posé une seule fois à l'import, le simulacre disparaissait
+    pour tous les tests suivants : les imports vCard échouaient à
+    l'installation selon l'ordre de la suite."""
+    _qdrant_module._qdrant_service = _mock_qdrant
+    yield
+
+
+@pytest.fixture(autouse=True)
 def _autorisation_recherche_web_neutre():
     """Le garde de la recherche web tient un cache de module.
 
