@@ -1764,7 +1764,9 @@ export function ConversationCanvasPrototype() {
                 setCapabilityCenterOpen(false);
                 setTrustCenterOpen(false);
               }}
-              className="hidden h-9 items-center gap-2 rounded-full border border-border bg-surface px-3 text-sm text-text-muted hover:bg-surface-2 md:flex"
+              // B-1403 (Zoé, cycle 13) : `hidden md:flex` retirait la seule entrée
+              // visible de la palette sous 768 px (200 % sur un écran de 1 440).
+              className="flex h-9 items-center gap-2 rounded-full border border-border bg-surface px-3 text-sm text-text-muted hover:bg-surface-2"
             >
               <Search className="h-3.5 w-3.5" />
               {/* B-761 : sous 840 px le mot reste dans le nom accessible (sr-only),
@@ -2119,14 +2121,16 @@ export function ConversationCanvasPrototype() {
                 /* Lot 2 DA : un plan au-dessus des lignes (`Ligne` pose z-10 sur sa zone
                    droite) ; sans lui, une étiquette repliée sous le composeur se
                    dessinait par-dessus (recette du 11/09 à 800 px). */
-                className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-[linear-gradient(to_top,var(--color-bg)_70%,transparent)] px-5 pb-5 pt-12 sm:px-8"
+                // B-1403 : fenêtre basse (200 %, 720×450), le composeur et son fond
+                // prenaient 245 px sur 398 ; ils se resserrent sous 560 px de haut.
+                className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-[linear-gradient(to_top,var(--color-bg)_70%,transparent)] px-5 pb-5 pt-12 sm:px-8 [@media(max-height:560px)]:pb-3 [@media(max-height:560px)]:pt-9"
                 data-testid="prototype-composer-backdrop"
               >
                 {/* B-562 : tant que le fil n'est pas au bout, on le dit. */}
                 {/* B-947 : l'indice occupe les 48 px déjà réservés en haut.
                     Hors flux, sa visibilité ne redimensionne plus le fond et
                     ne réinjecte pas 38 px dans le dégagement mesuré du fil. */}
-                <div className="pointer-events-none absolute inset-x-0 top-2.5">
+                <div className="pointer-events-none absolute inset-x-0 top-2.5 [@media(max-height:560px)]:top-0.5">
                   <IndiceDeDefilement cible={conversationScrollRef} />
                 </div>
                 <div className={`pointer-events-auto mx-auto transition-[max-width] duration-200 ${canvasOpen ? 'max-w-[760px]' : 'max-w-colonne'}`}>
@@ -2178,7 +2182,7 @@ export function ConversationCanvasPrototype() {
                         }}
                         rows={2}
                         placeholder={PLACEHOLDER_COMPOSEUR}
-                        className="max-h-28 min-h-12 w-full resize-none bg-transparent px-2.5 py-2 text-sm leading-6 text-text outline-none placeholder:text-text-muted"
+                        className="max-h-28 min-h-12 w-full resize-none bg-transparent px-2.5 py-2 text-sm leading-6 text-text outline-none placeholder:text-text-muted [@media(max-height:560px)]:h-9 [@media(max-height:560px)]:min-h-9 [@media(max-height:560px)]:py-1.5"
                       />
                     ) : (
                       <div
