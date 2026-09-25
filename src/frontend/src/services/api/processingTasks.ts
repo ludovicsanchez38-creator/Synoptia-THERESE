@@ -19,6 +19,8 @@ export interface Traitement {
   progress: number | null;
   project_id: string | null;
   conversation_id: string | null;
+  /** P-056 : l'objet métier suivi (document d'une trame…). */
+  entity_id?: string | null;
   error: string | null;
   created_at: string | null;
   started_at: string | null;

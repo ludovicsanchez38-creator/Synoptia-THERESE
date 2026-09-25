@@ -39,7 +39,7 @@
  */
 
 import { create } from 'zustand';
-import { annulerTraitement } from '../services/api/processingTasks';
+import { annulerTraitement, listerTraitements } from '../services/api/processingTasks';
 import type {
   DocumentResponse,
   DocumentDetail,
@@ -153,6 +153,9 @@ let draftAbortController: AbortController | null = null;
  */
 let openDocumentToken = 0;
 
+/** B-1394 : intervalle du suivi d'une trame retrouvée après un rechargement. */
+const INTERVALLE_SUIVI_TRAME_MS = 3000;
+
 /** Applique une mise à jour à une section précise de currentDocument (immuable). */
 function patchSection(
   document: DocumentDetail,
@@ -203,6 +206,10 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
       const document = await apiGetDocument(id);
       if (token !== openDocumentToken) return; // réponse périmée - un appel plus récent gère l'état
       set({ currentDocument: document, isLoading: false });
+      // B-1394 : une trame lancée avant un rechargement se génère encore côté
+      // moteur ; sans la retrouver, l'écran disait « Aucune section » et
+      // proposait de la relancer (409).
+      if (!document.sections_total && !get().outlineGeneration) void retrouverTrameEnCours(id);
     } catch (e: any) {
       if (token !== openDocumentToken) return;
       set({ isLoading: false, error: e?.message || 'Impossible de charger le document.' });
@@ -568,3 +575,36 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
 
   clearError: () => set({ error: null, draftError: null, exportError: null }),
 }));
+
+/**
+ * B-1394 : retrouve la génération de trame encore active pour ce document et
+ * la suit comme si on venait de la lancer (état de travail, bouton d'arrêt),
+ * jusqu'à sa fin ; le document ouvert est alors relu.
+ */
+async function retrouverTrameEnCours(documentId: string): Promise<void> {
+  const store = useDocumentStore;
+  let actifs;
+  try {
+    actifs = await listerTraitements({ actives: true });
+  } catch {
+    return;
+  }
+  const trame = actifs.find(
+    (t) => t.type === 'document_outline' && t.entity_id === documentId && (t.state === 'queued' || t.state === 'running'),
+  );
+  if (!trame || store.getState().outlineGeneration) return;
+  store.setState({ outlineGeneration: { documentId, taskId: trame.id, arretDemande: false } });
+
+  for (;;) {
+    await new Promise((fin) => setTimeout(fin, INTERVALLE_SUIVI_TRAME_MS));
+    if (store.getState().outlineGeneration?.taskId !== trame.id) return;
+    try {
+      const encore = await listerTraitements({ actives: true });
+      if (!encore.some((t) => t.id === trame.id)) break;
+    } catch {
+      // Lecture manquée : on réessaie au prochain tour.
+    }
+  }
+  store.setState((s) => (s.outlineGeneration?.taskId === trame.id ? { outlineGeneration: null } : {}));
+  if (store.getState().currentDocument?.id === documentId) await store.getState().openDocument(documentId);
+}
