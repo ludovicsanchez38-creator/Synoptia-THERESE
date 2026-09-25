@@ -922,6 +922,22 @@ def _restricted_import(format_type: str):
     return safe_import
 
 
+def _dossiers_des_bibliotheques_office() -> list[Path]:
+    """B-1451 : les dossiers des bibliothèques Office autorisées, lus seuls."""
+    import importlib
+
+    dossiers: list[Path] = []
+    for nom in ("docx", "pptx", "openpyxl"):
+        try:
+            module = importlib.import_module(nom)
+        except ImportError:
+            continue
+        fichier = getattr(module, "__file__", None)
+        if fichier:
+            dossiers.append(Path(fichier).resolve().parent)
+    return dossiers
+
+
 def _installer_garde_fs(output_path: str) -> Any:
     """Borne builtins.open au dossier de sortie, dans CE process.
 
@@ -952,17 +968,27 @@ def _installer_garde_fs(output_path: str) -> Any:
     os.environ["TMPDIR"] = str(dossier)
     tempfile.tempdir = str(dossier)
 
+    # B-1451 : `docx.Document()` ouvre toujours le modèle `default.docx`
+    # livré avec python-docx (idem pptx, et les gabarits d'openpyxl). Ces
+    # fichiers se LISENT ; rien d'autre hors du dossier de sortie, et jamais
+    # en écriture.
+    bibliotheques = _dossiers_des_bibliotheques_office()
+
     def open_borne(file: Any, mode: str = "r", *args: Any, **kwargs: Any) -> Any:
         if isinstance(file, int):
             return reel_open(file, mode, *args, **kwargs)
         try:
             chemin = Path(file).resolve()
-            chemin.relative_to(dossier)
         except (TypeError, ValueError, OSError) as exc:
             raise PermissionError(
                 f"Accès hors du dossier de sortie interdit : {file}"
             ) from exc
-        return reel_open(file, mode, *args, **kwargs)
+        if chemin.is_relative_to(dossier):
+            return reel_open(file, mode, *args, **kwargs)
+        lecture_seule = not any(lettre in str(mode) for lettre in "wax+")
+        if lecture_seule and any(chemin.is_relative_to(racine) for racine in bibliotheques):
+            return reel_open(file, mode, *args, **kwargs)
+        raise PermissionError(f"Accès hors du dossier de sortie interdit : {file}")
 
     # ZipFile utilise io.open, lié à l'import, pas builtins.open.
     builtins.open = open_borne
