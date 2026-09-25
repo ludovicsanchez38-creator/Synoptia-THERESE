@@ -263,6 +263,30 @@ def _budget_de_projet(valeur: Any) -> float | None:
     return nombre if math.isfinite(nombre) and nombre >= 0 else None
 
 
+def _champs_de_contact_non_appliques(fiche: Any, arguments: dict[str, Any]) -> list[str]:
+    """Libellés des valeurs demandées pour un contact existant qui en diffèrent
+    (B-1271). Courriel sans casse, téléphone sans séparateurs."""
+
+    def _texte(valeur: Any) -> str:
+        return valeur.strip() if isinstance(valeur, str) else ""
+
+    def _telephone(valeur: Any) -> str:
+        return "".join(c for c in _texte(valeur) if c.isdigit() or c == "+")
+
+    comparaisons = (
+        ("notes", "notes", _texte),
+        ("address", "adresse", _texte),
+        ("phone", "téléphone", _telephone),
+        ("email", "email", lambda v: _texte(v).casefold()),
+        ("company", "entreprise", lambda v: _texte(v).casefold()),
+    )
+    return [
+        libelle
+        for champ, libelle, forme in comparaisons
+        if _texte(arguments.get(champ)) and forme(arguments.get(champ)) != forme(getattr(fiche, champ, None))
+    ]
+
+
 def _valeurs_non_appliquees(projet: Any, arguments: dict[str, Any]) -> list[str]:
     """Libellés des valeurs demandées pour un projet existant qui en diffèrent.
 
@@ -531,17 +555,9 @@ async def execute_create_contact(
         #
         # Campagne cinq personas, finding de Karim. Pas d'`update_contact` :
         # on repare le contrat des outils qui existent, on n'ouvre pas de porte.
-        ignores = [
-            libelle
-            for champ, libelle in (
-                ("notes", "notes"),
-                ("address", "adresse"),
-                ("phone", "téléphone"),
-                ("email", "email"),
-                ("company", "entreprise"),
-            )
-            if arguments.get(champ)
-        ]
+        # B-1271 : seule une valeur qui DIFFÈRE de la fiche est perdue ;
+        # retaper le courriel qui a retrouvé la fiche ne l'est pas.
+        ignores = _champs_de_contact_non_appliques(existing, arguments)
         if ignores:
             message = (
                 f"Contact '{existing.display_name}' existe deja : je le reutilise, "
