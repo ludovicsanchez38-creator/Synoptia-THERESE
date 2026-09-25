@@ -63,7 +63,8 @@ describe('P-130 : importer un tableur de contacts', () => {
     expect(apiMocks.apercuImportContacts).toHaveBeenCalledWith(fichier);
 
     fireEvent.click(within(fenetre).getByRole('button', { name: 'Importer 3 lignes' }));
-    expect(await within(fenetre).findByText('2 contacts créés, 1 mis à jour')).toBeInTheDocument();
+    expect(await within(fenetre).findByText('Import terminé : 2 créés, 1 mis à jour, 0 écarté.')).toBeInTheDocument();
+    expect(within(fenetre).queryByText('2 contacts créés, 1 mis à jour')).toBeNull();
     expect(apiMocks.importerContactsTableur).toHaveBeenCalledWith(fichier);
     await waitFor(() => expect(fetchContacts).toHaveBeenCalled());
   });

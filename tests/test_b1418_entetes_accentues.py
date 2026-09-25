@@ -30,3 +30,14 @@ async def test_l_import_garde_l_etape_et_le_telephone(db_session):
     assert resultat.created == 1, resultat.message
     nadia = (await db_session.execute(select(Contact).where(Contact.last_name == "Roux"))).scalar_one()
     assert (nadia.first_name, nadia.phone, nadia.stage) == ("Nadia", "06 11 22 33 44", "discovery")
+
+
+@pytest.mark.asyncio
+async def test_l_apercu_signale_une_etape_inconnue_sans_bloquer(db_session):
+    """P-130 : l'aperçu doit dire les lignes écartées ; une étape inconnue
+    n'était signalée qu'après l'import (B-1262)."""
+    csv = "Prénom,Nom,Étape\nMarc,Leroy,inconnue\nNadia,Roux,discovery\n".encode("utf-8")
+    apercu = await CRMImportService(db_session).preview_contacts(csv, filename="prospects.csv")
+    messages = [(e.row, e.message) for e in apercu.validation_errors]
+    assert (1, "Étape « inconnue » inconnue du pipeline, ne sera pas enregistrée") in messages
+    assert apercu.can_import is True

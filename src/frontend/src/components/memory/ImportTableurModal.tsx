@@ -173,10 +173,11 @@ export function ImportTableurModal({ onFermer, onImporte }: { onFermer: () => vo
 
           {resultat && (
             <div className="space-y-2" role="status">
-              <p className="font-medium">{resultat.message}</p>
-              <p className="text-text-muted">
-                {resultat.created} créé{resultat.created > 1 ? 's' : ''}, {resultat.updated} mis à jour, {resultat.skipped} écarté{resultat.skipped > 1 ? 's' : ''}.
+              {/* Les chiffres une seule fois : le message du moteur les répétait. */}
+              <p className="font-medium">
+                Import terminé : {resultat.created} créé{resultat.created > 1 ? 's' : ''}, {resultat.updated} mis à jour, {resultat.skipped} écarté{resultat.skipped > 1 ? 's' : ''}.
               </p>
+              {resultat.errors.length > 0 && <p className="font-medium">Lignes signalées</p>}
               {resultat.errors.length > 0 && (
                 <ul className="list-disc pl-5 text-text-muted">
                   {resultat.errors.map((ligne, i) => <li key={`${ligne.row}-${i}`}>{texteDeLaLigne(ligne)}</li>)}

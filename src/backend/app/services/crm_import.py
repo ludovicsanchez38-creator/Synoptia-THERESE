@@ -680,6 +680,17 @@ class CRMImportService:
                 validation_errors.append(erreur)
                 bloquantes.append(erreur)
 
+        # P-130 : l'aperçu dit aussi les étapes qui seront écartées (règle de
+        # B-1262), sur toutes les lignes ; un signalement, pas un blocage.
+        for idx, row in enumerate(raw_data):
+            cellule_etape = str(_map_columns(row, mapping).get("stage") or "").strip()
+            if cellule_etape and cellule_etape.lower() not in ETAPES_PIPELINE:
+                validation_errors.append(ImportError(
+                    row=idx + 1,
+                    column="stage",
+                    message=f"Étape « {cellule_etape} » inconnue du pipeline, ne sera pas enregistrée",
+                ))
+
         can_import = len(bloquantes) == 0 or all(
             err.row > 5 for err in bloquantes
         )
