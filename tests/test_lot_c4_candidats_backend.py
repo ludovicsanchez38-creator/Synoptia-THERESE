@@ -50,10 +50,15 @@ class TestB581DebutSurUneBorneDePause:
 
 class TestB582PlafondsLusSansOuvrirLOnglet:
     @pytest.mark.asyncio
-    async def test_le_budget_enregistre_s_applique_au_premier_controle(self, client, db_session):
+    async def test_le_budget_enregistre_s_applique_au_premier_controle(self, client, db_session, monkeypatch):
         from app.models.entities import Preference
         from app.services.token_tracker import TokenTracker
 
+        # B-1379 : `TokenTracker` est un singleton. Un test antérieur qui passe
+        # par le chat le charge sur une base sans plafond, et ce test recevait
+        # cette instance déjà « chargée » : rouge selon l'ordre d'exécution. Le
+        # premier contrôle se mesure sur une instance neuve, comme au lancement.
+        monkeypatch.setattr(TokenTracker, "_instance", None)
         db_session.add(Preference(key="token_limits", value=json.dumps({"monthly_budget_eur": 500.0, "warn_at_percentage": 80}), category="llm"))
         await db_session.commit()
 
