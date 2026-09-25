@@ -152,15 +152,19 @@ export function useAutosave(conversationId: string | null) {
     }
   }, [conversationId]);
 
-  // Nettoyage du timer au démontage.
+  // Nettoyage du timer au démontage ET au changement de conversation.
   // #198 : un brouillon encore en attente est écrit avant de disparaître ;
   // sinon taper puis fermer le composeur avant cinq secondes ne laissait rien.
+  // B-1377 : même règle quand on change de conversation. Le minuteur est
+  // commun : taper dans la suivante l'annulait, et le brouillon de la
+  // précédente était perdu. Il est écrit sous la clé de SA conversation.
   useEffect(() => {
+    const conversationDeCeTour = conversationId;
     return () => {
       if (!timerRef.current) return;
       clearTimeout(timerRef.current);
       timerRef.current = null;
-      const key = getDraftKey(conversationIdRef.current);
+      const key = getDraftKey(conversationDeCeTour);
       const contenu = latestValueRef.current;
       if (key && contenu.trim() && contenu !== lastSavedValueRef.current) {
         try {
@@ -170,7 +174,7 @@ export function useAutosave(conversationId: string | null) {
         }
       }
     };
-  }, []);
+  }, [conversationId]);
 
   return { saveDraft, restoreDraft, clearDraft, retrySave, lastSavedAt, draftError };
 }

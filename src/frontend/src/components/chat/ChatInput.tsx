@@ -1092,10 +1092,22 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     textareaRef.current?.focus();
   }, []);
 
-  // US-007 : Restaurer le brouillon au chargement d'une conversation
+  // US-007 : Restaurer le brouillon au chargement d'une conversation.
+  // B-1377 : un brouillon appartient à SA conversation. Lors d'une vraie
+  // bascule (la précédente existe toujours), le champ prend le brouillon de
+  // la nouvelle, vide compris ; sinon le texte d'Orion passait dans Veille.
+  // Un identifiant adopté du serveur, ou une conversation qui vient d'être
+  // créée, désignent la MÊME saisie : elle est gardée.
+  const conversationPrecedenteRef = useRef(currentConversationId);
   useEffect(() => {
+    const precedente = conversationPrecedenteRef.current;
+    conversationPrecedenteRef.current = currentConversationId;
     const draft = restoreDraft();
-    if (draft && !input) {
+    const vraieBascule =
+      precedente !== null
+      && precedente !== currentConversationId
+      && useChatStore.getState().conversations.some((c) => c.id === precedente);
+    if (vraieBascule || (draft && !input)) {
       setInput(draft);
       // Resize textarea pour le brouillon restauré
       setTimeout(() => {
