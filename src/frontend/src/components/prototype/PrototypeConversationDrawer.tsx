@@ -24,6 +24,7 @@ import {
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { usePanneauCouvrant } from '../../hooks/usePanneauCouvrant';
 import { pushEscapeHandler } from '../../lib/escapeStack';
+import { replierPourRecherche } from '../../lib/replierPourRecherche';
 import { sortieRetenueParUneSaisie } from '../../lib/saisieEnCours';
 
 interface PrototypeConversationDrawerProps {
@@ -161,8 +162,24 @@ export function PrototypeConversationDrawer({
     return pushEscapeHandler(() => fermerOverlayInterneRef.current());
   }, [overlayInterne]);
 
+  // B-1352 : le titre est la demande coupée à 50 caractères ; un nom écrit
+  // après restait introuvable, alors que l'aperçu l'affichait. La recherche
+  // lit aussi les messages chargés, accents et casse repliés. Le texte replié
+  // n'est calculé que pendant une recherche (le store change à chaque morceau
+  // de flux).
+  const rechercheRepliee = replierPourRecherche(query.trim());
+  const texteReplie = useMemo(() => {
+    if (!rechercheRepliee) return null;
+    return new Map(conversations.map((conversation) => [
+      conversation.id,
+      replierPourRecherche([
+        conversation.title,
+        ...(conversation.messages ?? []).map((message) => message.content ?? ''),
+      ].join('\n')),
+    ]));
+  }, [conversations, rechercheRepliee]);
+
   const filtered = useMemo(() => {
-    const normalized = query.trim().toLocaleLowerCase('fr-FR');
     return [...conversations]
       // P-054 (Nadia, c4) : une conversation sans aucun message (⌘N sans
       // rien écrire) n'a rien où revenir ; la lister faisait un fantôme
@@ -171,9 +188,9 @@ export function PrototypeConversationDrawer({
       // sinon ce brouillon devient injoignable.
       .filter((conversation) =>
         (conversation.messages.length || conversation.messageCount || 0) > 0 || aUnBrouillonLocal(conversation.id))
-      .filter((conversation) => !normalized || conversation.title.toLocaleLowerCase('fr-FR').includes(normalized))
+      .filter((conversation) => !texteReplie || (texteReplie.get(conversation.id) ?? '').includes(rechercheRepliee))
       .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime());
-  }, [conversations, query]);
+  }, [conversations, texteReplie, rechercheRepliee]);
   const grouped = useMemo(() => groupConversations(filtered), [filtered]);
 
   useEffect(() => {
