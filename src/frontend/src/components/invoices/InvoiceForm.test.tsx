@@ -218,7 +218,8 @@ describe('InvoiceForm - confirmations métier 0.40', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Confirmer le paiement' }));
 
-    await waitFor(() => expect(markInvoicePaidMock).toHaveBeenCalledWith('invoice-1'));
+    // P-155 : la date du paiement part avec lui (aujourd'hui par défaut).
+    await waitFor(() => expect(markInvoicePaidMock).toHaveBeenCalledWith('invoice-1', expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/)));
   });
 
   it.each([

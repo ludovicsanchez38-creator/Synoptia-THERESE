@@ -180,6 +180,8 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
   // B-1039 : un champ requis manquant se dit dans le pied de la modale. Une
   // notification, en bas à droite, recouvrait entièrement le bouton « Créer ».
   const [erreurValidation, setErreurValidation] = useState<string | null>(null);
+  // P-155 : la date réelle du paiement, jamais dans le futur ; aujourd'hui par défaut.
+  const [datePaiement, setDatePaiement] = useState(() => localDateKey(new Date()));
   // Lecteur C de la carte c12 : le message restait affiché une fois la saisie
   // corrigée. Il s'efface dès que le client ou une ligne change.
   useEffect(() => {
@@ -465,19 +467,30 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
 
   function handleMarkPaid() {
     if (!invoice) return;
+    const aujourdhui = localDateKey(new Date());
+    if (!datePaiement || datePaiement > aujourdhui) {
+      addNotification({ type: 'error', title: 'Date du paiement', message: 'Indique une date passée ou celle d’aujourd’hui.' });
+      return;
+    }
+    const [annee, mois, jour] = datePaiement.split('-');
+    // P-138 : un brouillon n'a jamais été émis ; le marquer payé se signale.
+    const brouillon = invoice.status === 'draft';
 
     requestExternalAction({
       title: 'Confirmer le paiement de la facture',
-      description: 'Cette action changera le statut de la facture et enregistrera sa date de paiement.',
+      description: brouillon
+        ? 'Cette facture est encore un brouillon : elle n’a jamais été émise. La confirmation la marque payée à la date indiquée.'
+        : 'Cette action changera le statut de la facture et enregistrera sa date de paiement.',
       confirmLabel: 'Confirmer le paiement',
       details: [
         { label: 'Facture', value: invoice.invoice_number },
         { label: 'Montant TTC', value: montantAvecDevise(invoice.total_ttc, invoice.currency) },
+        { label: 'Date du paiement', value: `${jour}/${mois}/${annee}` },
         { label: 'Nouveau statut', value: 'Payée' },
       ],
     }, async () => {
       try {
-        const updatedInvoice = await markInvoicePaid(invoice.id);
+        const updatedInvoice = await markInvoicePaid(invoice.id, datePaiement);
         addNotification({ type: 'success', title: 'Facture payée', message: `${invoice.invoice_number} marquée comme payée` });
         onSave(updatedInvoice);
       } catch (error) {
@@ -907,9 +920,20 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
         <div className="px-6 py-4 border-t border-border flex items-center justify-between">
           <div className="flex flex-wrap items-center gap-2">
             {invoice && invoice.document_type !== 'devis' && invoice.status !== 'paid' && invoice.status !== 'cancelled' && invoice.status !== 'converted' && (
-              <Button variant="secondary" size="md" type="button" onClick={handleMarkPaid}>
-                Marquer comme payée
-              </Button>
+              <div className="flex items-center gap-2">
+                <label htmlFor="invoiceform-date-paiement" className="text-sm text-text-muted">Payée le</label>
+                <input
+                  id="invoiceform-date-paiement"
+                  type="date"
+                  value={datePaiement}
+                  max={localDateKey(new Date())}
+                  onChange={(e) => setDatePaiement(e.target.value)}
+                  className="min-h-9 rounded-md border border-border bg-surface px-2 text-sm text-text"
+                />
+                <Button variant="secondary" size="md" type="button" onClick={handleMarkPaid}>
+                  Marquer comme payée
+                </Button>
+              </div>
             )}
 
             {invoice && invoice.document_type === 'devis' && invoice.status !== 'accepted' && invoice.status !== 'refused' && invoice.status !== 'converted' && invoice.status !== 'cancelled' && invoice.status !== 'expired' && (

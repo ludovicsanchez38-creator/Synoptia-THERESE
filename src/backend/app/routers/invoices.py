@@ -692,6 +692,13 @@ async def mark_invoice_paid(
 
     # Date de paiement
     payment_date = datetime.fromisoformat(request.payment_date.replace("Z", "")) if request.payment_date else datetime.now(UTC)
+    # P-155 : la date réelle se saisit ; une date future ferait passer la
+    # facture pour payée avant de l'être (tableau de bord, relances).
+    if payment_date.date() > datetime.now(UTC).date() + timedelta(days=1):
+        raise HTTPException(
+            status_code=400,
+            detail="La date du paiement ne peut pas être dans le futur.",
+        )
 
     invoice.status = "paid"
     invoice.payment_date = payment_date
