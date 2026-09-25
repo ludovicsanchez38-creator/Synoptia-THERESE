@@ -16,6 +16,7 @@ import { Textarea } from '../ui/Textarea';
 import { FormField } from '../ui/FormField';
 import { Alerte } from '../ui/Alerte';
 import { slugDeCommande } from '../../lib/slugDeCommande';
+import { texteSansMarkdown } from '../../lib/texteSansMarkdown';
 
 interface CreateCommandFormProps {
   onSubmit: (data: {
@@ -32,21 +33,25 @@ interface CreateCommandFormProps {
   capturedPreview?: string;
 }
 
-const CATEGORY_OPTIONS = [
-  'general',
-  'production',
-  'analyse',
-  'organisation',
-  'communication',
-  'autre',
+// B-1351 : la valeur reste le code enregistré, le libellé est du français.
+const CATEGORY_OPTIONS: { value: string; label: string }[] = [
+  { value: 'general', label: 'Général' },
+  { value: 'production', label: 'Production' },
+  { value: 'analyse', label: 'Analyse' },
+  { value: 'organisation', label: 'Organisation' },
+  { value: 'communication', label: 'Communication' },
+  { value: 'autre', label: 'Autre' },
 ];
 
 export function CreateCommandForm({ onSubmit, onBack, initialContent, initialDescription, capturedPreview }: CreateCommandFormProps) {
   const [name, setName] = useState('');
-  const [description, setDescription] = useState(initialDescription || '');
+  // B-1351 : une réponse capturée arrive en Markdown ; on n'en garde que le texte.
+  const [description, setDescription] = useState(texteSansMarkdown(initialDescription || '').slice(0, 100));
   const [category, setCategory] = useState('general');
   const [icon, setIcon] = useState('');
-  const [showOnHome, setShowOnHome] = useState(true);
+  // B-1351 : une réponse capturée peut être confidentielle (un compte rendu) ;
+  // elle ne s'affiche sur l'Accueil que si on le demande.
+  const [showOnHome, setShowOnHome] = useState(!capturedPreview);
   const [content, setContent] = useState(initialContent || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -137,7 +142,7 @@ export function CreateCommandForm({ onSubmit, onBack, initialContent, initialDes
         {capturedPreview && (
           <div className="rounded-md border border-info/30 bg-[var(--color-info-tint)] px-3 py-2">
             <p className="mb-1 text-sm font-medium text-info">Réponse capturée</p>
-            <p className="line-clamp-4 text-sm text-text-muted">{capturedPreview}</p>
+            <p className="line-clamp-4 text-sm text-text-muted">{texteSansMarkdown(capturedPreview).slice(0, 300)}</p>
           </div>
         )}
 
@@ -148,10 +153,7 @@ export function CreateCommandForm({ onSubmit, onBack, initialContent, initialDes
               id="cmd-category"
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              options={CATEGORY_OPTIONS.map((opt) => ({
-                value: opt,
-                label: opt.charAt(0).toUpperCase() + opt.slice(1),
-              }))}
+              options={CATEGORY_OPTIONS}
             />
           </FormField>
           <FormField label="Icône (emoji)" htmlFor="cmd-icon">

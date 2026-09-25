@@ -186,8 +186,8 @@ export function PanelContainer({ onUserCommandsRefresh }: PanelContainerProps) {
                 onSubmit={handleSaveCommandSubmit}
                 onBack={closeSaveCommand}
                 initialContent={saveCommandData.userPrompt}
-                initialDescription={saveCommandData.assistantContent.slice(0, 100)}
-                capturedPreview={saveCommandData.assistantContent.slice(0, 300)}
+                initialDescription={saveCommandData.assistantContent}
+                capturedPreview={saveCommandData.assistantContent}
               />
             </motion.div>
           </motion.div>
