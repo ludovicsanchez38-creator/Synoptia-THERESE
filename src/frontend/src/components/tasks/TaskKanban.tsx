@@ -11,7 +11,9 @@
  */
 
 import { useMemo, useState } from 'react';
-import { CheckCircle2, Circle, Clock, GripVertical } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, GripVertical, User } from 'lucide-react';
+import { useContactsStore } from '../../stores/contactsStore';
+import { nomDeLaPersonneLiee } from './personneLiee';
 import {
   DndContext,
   DragOverlay,
@@ -342,6 +344,8 @@ interface TaskCardProps {
 function TaskCard({ task, onClick, onStatusChange, isOverlay, showDragHandle, commandesRevelees = false, maskTextFn }: TaskCardProps) {
   const [survol, setSurvol] = useState(false);
   const showActions = survol || commandesRevelees;
+  // P-151 : la personne liée se lit sur la carte.
+  const personne = useContactsStore((s) => nomDeLaPersonneLiee(s.contacts, task.contact_id));
 
   const barre = barrePriorite(task.priority);
 
@@ -396,9 +400,16 @@ function TaskCard({ task, onClick, onStatusChange, isOverlay, showDragHandle, co
             )}
 
             {/* Pied : retard, échéance, étiquettes - les métadonnées de la maquette. */}
-            {(isOverdue || task.due_date || (task.tags && task.tags.length > 0)) && (
+            {(isOverdue || personne || task.due_date || (task.tags && task.tags.length > 0)) && (
               <div className="flex flex-wrap items-center gap-2 mt-2">
                 {isOverdue && <Etiquette ton="erreur">En retard</Etiquette>}
+
+                {personne && (
+                  <span className="inline-flex items-center gap-1 text-xs text-text-muted" title="Personne liée">
+                    <User className="h-3 w-3" aria-hidden />
+                    {maskTextFn ? maskTextFn(personne) : personne}
+                  </span>
+                )}
 
                 {task.due_date && (
                   <span className="text-xs font-medium text-text-muted">

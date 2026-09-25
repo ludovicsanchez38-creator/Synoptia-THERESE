@@ -11,7 +11,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react';
-import { CheckCircle2, Circle, Clock, AlertCircle, Trash2 } from 'lucide-react';
+import { CheckCircle2, Circle, Clock, AlertCircle, Trash2, User } from 'lucide-react';
 import { useTaskStore } from '../../stores/taskStore';
 import type { Task } from '../../services/api';
 import * as api from '../../services/api';
@@ -24,11 +24,14 @@ import { isPastParisCivilDate } from '../../lib/civilDate';
 import { useStatusStore } from '../../stores/statusStore';
 import { pushEscapeHandler } from '../../lib/escapeStack';
 import { CLASSE_BARRE_PRIORITE, barrePriorite } from './prioriteBarre';
+import { useContactsStore } from '../../stores/contactsStore';
+import { nomDeLaPersonneLiee } from './personneLiee';
 
 export function TaskList() {
   const { tasks, searchQuery, setCurrentTask, setIsTaskFormOpen, updateTask, removeTask } =
     useTaskStore();
   const { maskText } = useDemoMask();
+  const contacts = useContactsStore((s) => s.contacts);
   // D106 : plus de confirm() natif ; confirmation en ligne dans la carte,
   // fail-closed, et Échap ne ferme que la question.
   const [tacheASupprimer, setTacheASupprimer] = useState<Task | null>(null);
@@ -197,6 +200,13 @@ export function TaskList() {
             {/* Droite */}
             <div className="flex items-center gap-2 relative z-10">
               {isOverdue && <Etiquette ton="erreur">En retard</Etiquette>}
+
+              {nomDeLaPersonneLiee(contacts, task.contact_id) && (
+                <span className="inline-flex items-center gap-1 text-xs text-text-muted" title="Personne liée">
+                  <User className="h-3 w-3" aria-hidden />
+                  {maskText(nomDeLaPersonneLiee(contacts, task.contact_id) as string)}
+                </span>
+              )}
 
               {task.due_date && (
                 <span className="text-xs font-medium text-text-muted">

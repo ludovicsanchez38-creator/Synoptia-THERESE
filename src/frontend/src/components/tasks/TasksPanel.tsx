@@ -12,6 +12,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, RefreshCw, Filter, AlertCircle } from 'lucide-react';
+import { useContactsStore } from '../../stores/contactsStore';
 import { useTaskStore } from '../../stores/taskStore';
 import { TaskKanban } from './TaskKanban';
 import { TaskList } from './TaskList';
@@ -114,6 +115,14 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
       loadTasks();
     }
   }, [effectiveOpen, filterStatus, filterPriority, filterProjectId, filterTag]);
+
+  // P-151 : la ligne et la carte nomment la personne liée ; le carnet doit
+  // être lu, même si la vue Contacts n'a pas encore été ouverte.
+  useEffect(() => {
+    if (!effectiveOpen) return;
+    const carnet = useContactsStore.getState();
+    if (!carnet.loaded && !carnet.loading) void carnet.fetchContacts().catch(() => {});
+  }, [effectiveOpen]);
 
   // BUG-118 : liste des projets pour le filtre par projet
   useEffect(() => {
