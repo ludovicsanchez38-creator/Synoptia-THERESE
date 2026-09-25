@@ -90,6 +90,8 @@ import type { CalendarEvent, CreateEventRequest } from '../../services/api/calen
 import type { ActivityResponse } from '../../services/api/crm-extended';
 import { getProfile, type UserProfile } from '../../services/api/config';
 import { useChatStore } from '../../stores/chatStore';
+import { EVENEMENT_OUVRIR_TRAVAIL, ouvrirLeTravail, type DestinationDuTravail } from '../../lib/destinationDuTravail';
+import { useDocumentStore } from '../../stores/documentStore';
 import { useStatusStore } from '../../stores/statusStore';
 import { TraitementsIndicator } from '../traitements/TraitementsIndicator';
 import { useProcessingTasksStore } from '../../stores/processingTasksStore';
@@ -1273,6 +1275,34 @@ export function ConversationCanvasPrototype() {
     };
     window.addEventListener('therese:preparer-seance', surDemande);
     return () => window.removeEventListener('therese:preparer-seance', surDemande);
+  }, []);
+
+  // P-140 : une ligne de « Travaux » (panneau de l'en-tête) ouvre son objet.
+  const ouvrirLeTravailRef = useRef<(cible: DestinationDuTravail) => void>(() => {});
+  ouvrirLeTravailRef.current = (cible) => {
+    if (blockStreamingNavigation()) return;
+    ouvrirLeTravail(cible, {
+      ouvrirVue: (vue) => openEmbeddedView(vue),
+      ouvrirDocument: (id) => useDocumentStore.getState().demanderLOuverture(id),
+      ouvrirConversation: (id) => {
+        useChatStore.getState().loadConversation(id);
+        openChat();
+      },
+      ouvrirScenario: (scenario) => {
+        setScenario(scenario);
+        if (scenario === 'board') setSelectedBoardTarget('current');
+        else setSelectedAtelierTarget('current');
+        setCanvasOpen(true);
+      },
+    });
+  };
+  useEffect(() => {
+    const surDemande = (event: Event) => {
+      const cible = (event as CustomEvent<DestinationDuTravail>).detail;
+      if (cible) ouvrirLeTravailRef.current(cible);
+    };
+    window.addEventListener(EVENEMENT_OUVRIR_TRAVAIL, surDemande);
+    return () => window.removeEventListener(EVENEMENT_OUVRIR_TRAVAIL, surDemande);
   }, []);
 
   useEffect(() => {

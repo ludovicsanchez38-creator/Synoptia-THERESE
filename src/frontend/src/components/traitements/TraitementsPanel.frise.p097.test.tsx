@@ -47,7 +47,12 @@ describe('P-097 : frise des travaux récents', () => {
     // Ni bordure ni fond de carte (la pastille de la frise est un pseudo-élément).
     const classes = passe.className.split(/\s+/);
     expect(classes.filter((c) => c === 'border' || c.startsWith('border-') || c === 'bg-surface-2')).toEqual([]);
-    expect(within(passe).queryByRole('button')).toBeNull();
+    // P-140 (acceptée après P-097) : une étape passée peut ouvrir l'objet
+    // qu'elle nomme. Ce geste est un lien de texte, jamais une carte-bouton.
+    for (const geste of within(passe).queryAllByRole('button')) {
+      expect(geste).toHaveAccessibleName(/^Ouvrir /);
+      expect(geste.className.split(/\s+/).filter((c) => c === 'border' || c.startsWith('border-') || c.startsWith('bg-'))).toEqual([]);
+    }
   });
 
   it('un travail fini dit son état, son début et sa fin, en heure locale (UTC du serveur)', () => {

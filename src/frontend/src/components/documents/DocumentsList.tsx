@@ -120,6 +120,7 @@ export function DocumentsList() {
   const generateOutline = useDocumentStore((s) => s.generateOutline);
   const createModalRequested = useDocumentStore((s) => s.createModalRequested);
   const clearCreateModalRequest = useDocumentStore((s) => s.clearCreateModalRequest);
+  const ouvertureDemandee = useDocumentStore((s) => s.ouvertureDemandee);
 
   const [modalOpen, setModalOpen] = useState(false);
   // Bascule liste <-> atelier (DocumentWorkspace, D3). État local
@@ -166,6 +167,14 @@ export function DocumentsList() {
     },
     [openDocument]
   );
+
+  // P-140 : une ouverture demandée d'ailleurs (Travaux), consommée une fois,
+  // que la vue soit déjà montée ou non.
+  useEffect(() => {
+    if (!ouvertureDemandee) return;
+    useDocumentStore.getState().effacerLaDemandeDOuverture();
+    handleOpen(ouvertureDemandee);
+  }, [ouvertureDemandee, handleOpen]);
 
   const handleBackToList = useCallback(() => {
     setWorkspaceOpenId(null);

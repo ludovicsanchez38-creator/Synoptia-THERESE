@@ -16,6 +16,7 @@ import { useProcessingTasksStore } from '../../stores/processingTasksStore';
 import { Spinner } from '../ui/Spinner';
 import { Alerte, Button, EtatVide } from '../ui';
 import { heureDuServeur } from '../../lib/heureDuServeur';
+import { EVENEMENT_OUVRIR_TRAVAIL, destinationDuTravail } from '../../lib/destinationDuTravail';
 
 const LIBELLES_ETAT: Record<Traitement['state'], string> = {
   queued: 'En file',
@@ -78,6 +79,7 @@ export function TraitementsPanel() {
           const enCours = t.state === 'running' || t.state === 'queued';
           const arretDemande =
             t.state === 'cancel_requested' || arretsDemandes.has(t.id);
+          const destination = destinationDuTravail(t);
           const debut = heureDuServeur(t.started_at ?? t.created_at);
           const fin = heureDuServeur(t.finished_at);
           return (
@@ -90,9 +92,25 @@ export function TraitementsPanel() {
                 {enCours && !arretDemande && (
                   <Spinner taille="ligne" className="shrink-0 text-accent" />
                 )}
-                <span className="flex-1 truncate text-xs font-medium text-text" title={t.label}>
-                  {t.label}
-                </span>
+                {/* P-140 : la ligne ouvre l'objet qu'elle nomme quand on le connaît. */}
+                {destination ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.dispatchEvent(new CustomEvent(EVENEMENT_OUVRIR_TRAVAIL, { detail: destination }));
+                      fermer();
+                    }}
+                    aria-label={`Ouvrir ${t.label}`}
+                    title={t.label}
+                    className="flex-1 truncate rounded-sm text-left text-xs font-medium text-accent underline-offset-2 hover:underline focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  >
+                    {t.label}
+                  </button>
+                ) : (
+                  <span className="flex-1 truncate text-xs font-medium text-text" title={t.label}>
+                    {t.label}
+                  </span>
+                )}
                 {t.can_cancel && !arretDemande && (
                   <Button
                     type="button"

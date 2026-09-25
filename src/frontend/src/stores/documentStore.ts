@@ -96,6 +96,11 @@ interface DocumentStore {
    * un event DOM dispatché avant le montage du listener serait perdu, alors
    * qu'un state Zustand déjà posé est lu correctement au premier rendu. */
   createModalRequested: boolean;
+  /**
+   * P-140 : un document à ouvrir dans l'atelier, demandé d'ailleurs (ligne
+   * « Trame : … » des Travaux). Consommé puis effacé par `DocumentsList`.
+   */
+  ouvertureDemandee: string | null;
 
   // Documents
   loadDocuments: () => Promise<void>;
@@ -109,6 +114,8 @@ interface DocumentStore {
   requestCreateModal: () => void;
   /** Efface le drapeau `createModalRequested` (D4, consommé par `DocumentsList`). */
   clearCreateModalRequest: () => void;
+  demanderLOuverture: (id: string) => void;
+  effacerLaDemandeDOuverture: () => void;
 
   // Trame / sections
   generateOutline: (documentId: string) => Promise<void>;
@@ -180,6 +187,7 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
   outlineGeneration: null,
   outlineNotice: null,
   createModalRequested: false,
+  ouvertureDemandee: null,
 
   // ============================================================
   // Documents
@@ -258,6 +266,8 @@ export const useDocumentStore = create<DocumentStore>((set, get) => ({
 
   requestCreateModal: () => set({ createModalRequested: true }),
   clearCreateModalRequest: () => set({ createModalRequested: false }),
+  demanderLOuverture: (id) => set({ ouvertureDemandee: id }),
+  effacerLaDemandeDOuverture: () => set({ ouvertureDemandee: null }),
 
   // ============================================================
   // Trame / sections
