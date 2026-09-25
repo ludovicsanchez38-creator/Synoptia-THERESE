@@ -124,7 +124,7 @@ export const FOURNISSEURS: FournisseurConfig[] = [
   {
     id: 'anthropic',
     name: 'Claude (Anthropic)',
-    description: 'Recommandé - Excellent coding et français',
+    description: 'Excellent en français, pour écrire et analyser',
     keyPrefix: 'sk-ant-',
     keyPlaceholder: 'sk-ant-...',
     consoleUrl: 'https://console.anthropic.com/settings/keys',
@@ -172,7 +172,7 @@ export const FOURNISSEURS: FournisseurConfig[] = [
   {
     id: 'gemini',
     name: 'Gemini (Google)',
-    description: 'Gemini 3.x - Contexte 1M tokens',
+    description: 'Gemini 3.x - Lit de très longs documents',
     keyPlaceholder: 'AIza...',
     consoleUrl: 'https://aistudio.google.com/app/apikey',
     models: [
@@ -201,7 +201,7 @@ export const FOURNISSEURS: FournisseurConfig[] = [
   {
     id: 'grok',
     name: 'Grok (xAI)',
-    description: 'Grok 4.5 - co-développé avec Cursor, 500k contexte',
+    description: 'Grok 4.5 - Lit de longs documents',
     keyPrefix: 'xai-',
     keyPlaceholder: 'xai-...',
     consoleUrl: 'https://console.x.ai',
@@ -219,7 +219,7 @@ export const FOURNISSEURS: FournisseurConfig[] = [
   {
     id: 'openrouter',
     name: 'OpenRouter',
-    description: 'Accès unifié à 200+ modèles (Claude, GPT, Gemini, Llama...)',
+    description: 'Un seul compte pour plus de 200 modèles (Claude, GPT, Gemini, Llama...)',
     keyPrefix: 'sk-or-',
     keyPlaceholder: 'sk-or-v1-...',
     consoleUrl: 'https://openrouter.ai/keys',
@@ -236,7 +236,7 @@ export const FOURNISSEURS: FournisseurConfig[] = [
   {
     id: 'perplexity',
     name: 'Perplexity',
-    description: 'Recherche augmentée par IA (Sonar)',
+    description: 'Répond en s’appuyant sur une recherche sur le web',
     keyPrefix: 'pplx-',
     keyPlaceholder: 'pplx-...',
     consoleUrl: 'https://www.perplexity.ai/settings/api',
@@ -262,7 +262,7 @@ export const FOURNISSEURS: FournisseurConfig[] = [
   {
     id: 'glm',
     name: 'GLM (Z.ai)',
-    description: 'GLM 5.3 - Taillé pour le code et les agents',
+    description: 'GLM 5.3 - Conçu pour programmer et automatiser',
     keyPlaceholder: 'Clé API Z.ai...',
     consoleUrl: 'https://z.ai',
     models: [
@@ -274,7 +274,7 @@ export const FOURNISSEURS: FournisseurConfig[] = [
   {
     id: 'kimi',
     name: 'Kimi (Moonshot AI)',
-    description: 'Kimi K3 - Contexte d\'un million de tokens',
+    description: 'Kimi K3 - Lit de très longs documents',
     keyPrefix: 'sk-',
     keyPlaceholder: 'sk-...',
     consoleUrl: 'https://platform.moonshot.ai',

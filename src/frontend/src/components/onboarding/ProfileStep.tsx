@@ -164,7 +164,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
         </div>
         <Button variant="ghost" size="sm" onClick={handleImportClaudeMd} disabled={loading} className="max-[840px]:basis-full max-[840px]:justify-start">
           <Upload className="w-4 h-4 mr-2" />
-          Importer THÉRÈSE.md
+          Importer un profil (THÉRÈSE.md)
         </Button>
       </div>
 

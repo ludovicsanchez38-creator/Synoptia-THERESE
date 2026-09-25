@@ -23,7 +23,7 @@ describe('ProfileStep - B-773, une panne du sélecteur se dit en français', () 
   it('ne relaie pas l’exception du pont natif et propose de réessayer', async () => {
     vi.mocked(open).mockRejectedValueOnce(new TypeError("Cannot read properties of undefined (reading 'invoke')"));
     render(<ProfileStep onNext={vi.fn()} onBack={vi.fn()} />);
-    fireEvent.click(await screen.findByRole('button', { name: /Importer THÉRÈSE\.md/ }));
+    fireEvent.click(await screen.findByRole('button', { name: /Importer un profil \(THÉRÈSE\.md\)/ }));
 
     const alerte = await screen.findByRole('alert');
     expect(alerte.textContent).not.toMatch(JARGON);

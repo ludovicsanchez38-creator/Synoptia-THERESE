@@ -106,7 +106,7 @@ export function CompleteStep({ onComplete, onBack, llmSkipped = false, serviceIa
         // (mistral-medium-latest -> « mistral-medium », claude-opus-4-8 ->
         // « claude-opus »). Le débordement est déjà tenu par `truncate` et le
         // `title` de la ligne, qui rendent la valeur entière au survol.
-        ? `${summary.llmConfig.provider} / ${summary.llmConfig.model}`
+        ? `${libelleDuFournisseur(summary.llmConfig.provider)}, modèle ${summary.llmConfig.model}`
         : 'À configurer',
       configured: !llmSkipped && !!summary.llmConfig?.available,
       unavailable: !llmSkipped && summaryUnavailable.includes('Service d’IA'),

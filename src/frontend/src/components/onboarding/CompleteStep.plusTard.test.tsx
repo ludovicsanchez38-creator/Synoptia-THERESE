@@ -39,7 +39,7 @@ describe('CompleteStep : le récapitulatif respecte « Configurer plus tard » (
     render(<CompleteStep onComplete={vi.fn()} onBack={vi.fn()} llmSkipped={false} />);
 
     const ligne = await screen.findByTestId('summary-service-d-ia');
-    expect(ligne).toHaveTextContent('mistral / mistral-medium-latest');
+    expect(ligne).toHaveTextContent('Mistral, modèle mistral-medium-latest');
     expect(ligne).toHaveAttribute('data-configured', 'true');
   });
 });

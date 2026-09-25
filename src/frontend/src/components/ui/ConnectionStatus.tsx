@@ -49,6 +49,8 @@ export function ConnectionStatus() {
 
   return (
     <div
+      // P-113 : la latence est une mesure de développeur ; elle reste au survol.
+      title={connectionState === 'connected' && latency ? `Temps de réponse du moteur : ${latency} ms` : undefined}
       className={cn(
         'flex items-center gap-2 px-3 py-1.5 rounded-sm text-xs',
         config.bgColor
@@ -62,9 +64,6 @@ export function ConnectionStatus() {
         )}
       />
       <span className={cn(config.color, 'whitespace-nowrap')}>{config.label}</span>
-      {connectionState === 'connected' && latency && (
-        <span className="text-text-muted max-[840px]:hidden">{latency}ms</span>
-      )}
     </div>
   );
 }

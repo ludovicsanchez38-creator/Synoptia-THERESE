@@ -23,11 +23,11 @@ const features = [
   {
     icon: Shield,
     title: 'Données locales',
-    description: 'Ton contexte reste sur ta machine. Les réponses passent par le provider IA de ton choix.',
+    description: 'Ton contexte reste sur ta machine. Les réponses passent par le service d’IA de ton choix, en ligne ou sur ta machine.',
   },
   {
     icon: Zap,
-    title: 'Multi-LLM',
+    title: 'Plusieurs IA au choix',
     description: 'Claude, GPT, Gemini, Mistral ou Ollama. Tu choisis.',
   },
 ];

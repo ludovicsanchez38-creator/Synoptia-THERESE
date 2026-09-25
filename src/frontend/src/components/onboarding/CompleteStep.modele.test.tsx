@@ -41,8 +41,8 @@ describe('B-243 - le récapitulatif nomme le modèle enregistré', () => {
   it('« mistral-medium-latest » s’affiche en entier', async () => {
     await rendreAvecModele('mistral', 'mistral-medium-latest');
 
-    expect(await screen.findByText('mistral / mistral-medium-latest')).toBeInTheDocument();
-    expect(screen.queryByText('mistral / mistral-medium')).toBeNull();
+    expect(await screen.findByText('Mistral, modèle mistral-medium-latest')).toBeInTheDocument();
+    expect(screen.queryByText(/modèle mistral-medium$/)).toBeNull();
   });
 
   it('la version d’un modèle Claude reste visible', async () => {
@@ -58,6 +58,6 @@ describe('B-243 - le récapitulatif nomme le modèle enregistré', () => {
   it('« gpt-5.6-luna » garde sa variante, pas seulement sa version', async () => {
     await rendreAvecModele('openai', 'gpt-5.6-luna');
 
-    expect(await screen.findByText('openai / gpt-5.6-luna')).toBeInTheDocument();
+    expect(await screen.findByText('OpenAI, modèle gpt-5.6-luna')).toBeInTheDocument();
   });
 });

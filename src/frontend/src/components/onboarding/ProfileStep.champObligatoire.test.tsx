@@ -68,7 +68,7 @@ describe('ProfileStep — le champ obligatoire annonce son état', () => {
     vi.mocked(open).mockResolvedValueOnce('/Users/camille/THÉRÈSE.md' as never);
     apiMocks.importClaudeMd.mockResolvedValueOnce({ name: 'Camille Martin' });
     await act(async () => {
-      fireEvent.click(screen.getByText('Importer THÉRÈSE.md'));
+      fireEvent.click(screen.getByText('Importer un profil (THÉRÈSE.md)'));
     });
 
     expect(champ).toHaveValue('Camille Martin');
@@ -88,7 +88,7 @@ describe('ProfileStep — le champ obligatoire annonce son état', () => {
 
     vi.mocked(open).mockRejectedValueOnce(new Error('Import impossible'));
     await act(async () => {
-      fireEvent.click(screen.getByText('Importer THÉRÈSE.md'));
+      fireEvent.click(screen.getByText('Importer un profil (THÉRÈSE.md)'));
     });
 
     // Le message d'import est bien affiché : sans cette assertion, le test
@@ -112,7 +112,7 @@ describe('ProfileStep — le champ obligatoire annonce son état', () => {
     vi.mocked(open).mockResolvedValueOnce('/Users/camille/THÉRÈSE.md' as never);
     apiMocks.importClaudeMd.mockResolvedValueOnce({ name: 'Camille Martin' });
     await act(async () => {
-      fireEvent.click(screen.getByText('Importer THÉRÈSE.md'));
+      fireEvent.click(screen.getByText('Importer un profil (THÉRÈSE.md)'));
     });
 
     apiMocks.setProfile.mockRejectedValueOnce(new Error('Sauvegarde indisponible'));

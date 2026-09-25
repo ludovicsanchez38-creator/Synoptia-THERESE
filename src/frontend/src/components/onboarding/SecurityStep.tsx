@@ -109,7 +109,7 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
         titre="Important"
         icone={<AlertTriangle className="h-5 w-5 text-warning" />}
       >
-        Les agents IA peuvent exécuter des commandes et agir via les tools que tu actives. Commence avec le minimum de permissions nécessaires.
+        THÉRÈSE peut agir pour toi (lancer des commandes, écrire des fichiers) avec les outils que tu actives. Commence avec le minimum de permissions nécessaires.
       </Alerte>
 
       {/* Risks list. B-1344 : pas de défilement propre, l'assistant défile déjà. */}
