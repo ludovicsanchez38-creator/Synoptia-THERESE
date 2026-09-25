@@ -107,6 +107,14 @@ function SavedIndicator({ savedAt }: { savedAt: Date }) {
   );
 }
 
+/** P-156 : libellés courts de l'effort, « Auto » n'est pas affiché. */
+const LIBELLES_EFFORT: Record<string, string> = {
+  low: 'effort faible',
+  medium: 'effort moyen',
+  high: 'effort élevé',
+  max: 'effort maximal',
+};
+
 export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId, onInitialPromptConsumed, userCommands, demandeDeFocus = 0 }: ChatInputProps) {
   const [input, setInput] = useState('');
   // P-061 : calculé une fois par saisie (audit 0.74 : trois parcours par rendu).
@@ -184,6 +192,8 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   // redemande un accord (consentement par fournisseur, revue 0.40).
   const cloudConsentGrantedRef = useRef<string | null>(null);
   const [availableModels, setAvailableModels] = useState<string[]>([]);
+  // P-156 : l'effort choisi dans Paramètres se lit dans la puce du modèle.
+  const [currentEffort, setCurrentEffort] = useState<string | null>(null);
   const [modelAvailable, setModelAvailable] = useState<boolean | null>(null);
   const [modelChangeError, setModelChangeError] = useState<string | null>(null);
   const [failedModel, setFailedModel] = useState<string | null>(null);
@@ -207,6 +217,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         );
         setAvailableModels(cfg.available_models || []);
         setModelAvailable(cfg.available !== false);
+        setCurrentEffort(cfg.effort ?? null);
       })
       .catch(() => setModelAvailable(false));
   }, []);
@@ -1410,6 +1421,14 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
                 }
               >
                 {traitementLocal ? 'local' : 'cloud'}
+              </span>
+            )}
+            {currentEffort && LIBELLES_EFFORT[currentEffort] && (
+              <span
+                className="text-xs text-text-muted"
+                title="Effort de raisonnement demandé dans Paramètres, appliqué si le modèle le prend en charge"
+              >
+                {LIBELLES_EFFORT[currentEffort]}
               </span>
             )}
           </div>
