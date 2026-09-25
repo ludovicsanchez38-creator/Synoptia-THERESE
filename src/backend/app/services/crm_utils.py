@@ -210,6 +210,15 @@ def etiquettes_lues(valeur: Any) -> list[str]:
     return [e.strip() for e in brutes if isinstance(e, str) and e.strip()]
 
 
+def etiquettes_ecartees(valeur: Any) -> int:
+    """B-1286 : nombre d'étiquettes qu'`etiquettes_lues` écarte, pour le dire."""
+    if valeur is None or isinstance(valeur, str):
+        return 0
+    if isinstance(valeur, list):
+        return sum(1 for e in valeur if not isinstance(e, str))
+    return 1
+
+
 def parse_tags_json(value: str | None) -> str | None:
     """Convertit une chaine de tags separee par des virgules en JSON array."""
     if value is None:

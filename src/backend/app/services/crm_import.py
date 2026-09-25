@@ -16,7 +16,7 @@ from typing import Any, Literal
 
 from app.models.entities import Contact, Deliverable, Project, generate_uuid
 from app.models.schemas import adresse_unique_valide, perimetre_normalise
-from app.services.crm_utils import ETAPES_PIPELINE, etiquettes_lues
+from app.services.crm_utils import ETAPES_PIPELINE, etiquettes_ecartees, etiquettes_lues
 from app.services.formules_tableur import neutraliser_formule
 from openpyxl import load_workbook
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -469,6 +469,23 @@ def _parse_value(value: Any, field_type: str) -> Any:
     return str(value).strip() if value else None
 
 
+def _lire_les_etiquettes(valeur: Any, ligne: int, mapped: dict) -> tuple[str | None, "ImportError | None"]:
+    """B-1286 : étiquettes retenues (JSON) et signalement de celles écartées."""
+    lues = etiquettes_lues(valeur)
+    ecartees = etiquettes_ecartees(valeur)
+    signalement = (
+        ImportError(
+            row=ligne,
+            column="tags",
+            message=f"{ecartees} étiquette(s) illisible(s), non enregistrée(s)",
+            data=mapped,
+        )
+        if ecartees
+        else None
+    )
+    return (json.dumps(lues) if lues else None), signalement
+
+
 def _validate_contact(data: dict) -> list[str]:
     """Validate contact data, return list of errors."""
     errors = []
@@ -735,7 +752,13 @@ class CRMImportService:
                         if score is not None:
                             existing.score = score
                     if "tags" in mapped:
-                        existing.tags = _parse_value(mapped["tags"], "tags")
+                        # B-1286 : toutes écartées, elles ne remplacent rien ;
+                        # une cellule vide garde son sens de miroir.
+                        tags_lues, signalement_tags = _lire_les_etiquettes(mapped["tags"], idx + 1, mapped)
+                        if tags_lues is not None or signalement_tags is None:
+                            existing.tags = tags_lues
+                        if signalement_tags:
+                            result.errors.append(signalement_tags)
                     if "extra_data" in mapped:
                         existing.extra_data = _parse_value(mapped["extra_data"], "json")
                     for field_name in (
@@ -773,6 +796,7 @@ class CRMImportService:
                 else:
                     # Create new
                     score = _parse_value(mapped.get("score"), "int")
+                    tags_de_la_ligne, signalement_tags = _lire_les_etiquettes(mapped.get("tags"), idx + 1, mapped)
                     created_at = _parse_value(mapped.get("created_at"), "datetime")
                     updated_at = _parse_value(mapped.get("updated_at"), "datetime")
                     contact = Contact(
@@ -786,7 +810,7 @@ class CRMImportService:
                         stage=etape or "contact",
                         score=score if score is not None else 50,
                         source=mapped.get("source"),
-                        tags=_parse_value(mapped.get("tags"), "tags"),
+                        tags=tags_de_la_ligne,
                         notes=mapped.get("notes"),
                         extra_data=_parse_value(mapped.get("extra_data"), "json"),
                         last_interaction=_parse_value(
@@ -819,6 +843,8 @@ class CRMImportService:
                     result.created += 1
                     if etape_ecartee:
                         result.errors.append(etape_ecartee)
+                    if signalement_tags:
+                        result.errors.append(signalement_tags)
 
             except Exception as e:
                 logger.error(f"Error importing contact row {idx + 1}: {e}")
@@ -959,7 +985,11 @@ class CRMImportService:
                     if mapped.get("notes"):
                         existing.notes = mapped["notes"]
                     if mapped.get("tags"):
-                        existing.tags = _parse_value(mapped["tags"], "tags")
+                        tags_lues, signalement_tags = _lire_les_etiquettes(mapped["tags"], idx + 1, mapped)
+                        if tags_lues is not None:
+                            existing.tags = tags_lues
+                        if signalement_tags:
+                            result.errors.append(signalement_tags)
 
                     existing.updated_at = datetime.now(UTC)
                     self.session.add(existing)
@@ -969,6 +999,7 @@ class CRMImportService:
                     result.skipped += 1
 
                 else:
+                    tags_de_la_ligne, signalement_tags = _lire_les_etiquettes(mapped.get("tags"), idx + 1, mapped)
                     project = Project(
                         id=project_id or generate_uuid(),
                         name=mapped.get("name", "Sans nom"),
@@ -977,11 +1008,13 @@ class CRMImportService:
                         status=status,
                         budget=budget_lu,
                         notes=mapped.get("notes"),
-                        tags=_parse_value(mapped.get("tags"), "tags"),
+                        tags=tags_de_la_ligne,
                         scope="global",
                     )
                     self.session.add(project)
                     result.created += 1
+                    if signalement_tags:
+                        result.errors.append(signalement_tags)
                     if budget_ecarte:
                         result.errors.append(budget_ecarte)
 

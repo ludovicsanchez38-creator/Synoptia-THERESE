@@ -59,7 +59,7 @@ from app.services.audit import (
     AuditService,
     log_activity,
 )
-from app.services.crm_utils import etiquettes_lues
+from app.services.crm_utils import etiquettes_ecartees, etiquettes_lues
 from app.services.encryption import decrypt_backup_archive, encrypt_backup_archive
 from app.services.error_handler import message_pour_ecran
 from app.services.maintenance import maintenance_mode
@@ -1910,6 +1910,7 @@ async def import_contacts(
         )
 
     imported = 0
+    ecartees = 0
 
     for contact_data in contacts:
         # Check if contact already exists
@@ -1955,10 +1956,12 @@ async def import_contacts(
         )
         session.add(contact)
         imported += 1
+        # B-1286 : ce qui est écarté se compte et se dit.
+        ecartees += etiquettes_ecartees(contact_data.get("tags"))
 
     await session.commit()
 
-    return {"success": True, "imported": imported}
+    return {"success": True, "imported": imported, "etiquettes_ecartees": ecartees}
 
 
 @router.get("/backup/status")
