@@ -269,6 +269,8 @@ function SortableProjectCard({ project, onSelect, onDelete }: SortableProjectCar
     transition,
     isDragging,
   } = useSortable({ id: project.id });
+  const { maskText: masquer } = useDemoMask();
+  const nomAccessible = masquer(project.name) || 'Projet';
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -293,6 +295,9 @@ function SortableProjectCard({ project, onSelect, onDelete }: SortableProjectCar
       className="cursor-grab active:cursor-grabbing"
       {...attributes}
       {...listeners}
+      // B-1398 : comme les cartes du Pipeline (B-877), le conteneur déplaçable
+      // porte le nom du projet ; il était un bouton sans nom.
+      aria-label={nomAccessible}
     >
       <ProjectCard
         project={project}
