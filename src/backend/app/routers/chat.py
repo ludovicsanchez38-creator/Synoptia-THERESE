@@ -1212,9 +1212,13 @@ async def deep_research_endpoint(
                 yield f"data: {json.dumps(event_data)}\n\n"
         except (GeneratorExit, asyncio.CancelledError):
             etat_recherche["etat"] = EtatTacheTraitement.CANCELLED
-            await _persister_message_partiel(
-                conversation.id, full_synthesis, llm_service
-            )
+            # B-1462 : quand le client part, Starlette annule la portée anyio
+            # du flux ; la sauvegarde y était annulée à son tour. Abritée,
+            # bornée à 5 s.
+            with anyio.move_on_after(5, shield=True):
+                await _persister_message_partiel(
+                    conversation.id, full_synthesis, llm_service
+                )
             raise
         except Exception as e:
             etat_recherche["etat"] = EtatTacheTraitement.FAILED
