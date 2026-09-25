@@ -1257,7 +1257,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       {variablesPreview && (
         <div
           data-testid="variables-preview-chip"
-          className="flex items-center gap-2 mb-2 px-3 py-1.5 rounded-md text-xs
+          className="flex flex-wrap items-center gap-2 mb-2 px-3 py-1.5 rounded-md text-xs
                      bg-surface-elevated/60 border border-border/40"
         >
           <span className="text-text-muted">
@@ -1292,6 +1292,17 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
                 Renseigner les variables
               </button>
             </>
+          )}
+          {/* Décision du 25/09 : le message tel qu'il partira, quand toutes
+              ses variables sont connues. */}
+          {variablesPreview.unknown.length === 0 && variablesPreview.resolved && (
+            <span
+              data-testid="variables-message-final"
+              className="basis-full whitespace-pre-wrap text-text line-clamp-3"
+              title={variablesPreview.resolved}
+            >
+              Partira ainsi : {variablesPreview.resolved}
+            </span>
           )}
           {variablesPreview.errors.length > 0 && (
             <span className="text-error">{variablesPreview.errors[0]}</span>
