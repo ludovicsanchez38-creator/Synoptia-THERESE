@@ -54,8 +54,15 @@ class MaintenanceMode:
             raise RuntimeError("Une restauration est déjà en cours")
 
         self._active = True
-        while self._active_requests:
-            await asyncio.sleep(0.01)
+        # B-1263 : annulée pendant l'attente, la restauration n'atteint jamais
+        # le finally qui appelle end() ; le verrou restait actif jusqu'au
+        # redémarrage. On le rend ici avant de laisser passer l'annulation.
+        try:
+            while self._active_requests:
+                await asyncio.sleep(0.01)
+        except BaseException:
+            self._active = False
+            raise
 
     def end(self) -> None:
         self._active = False
