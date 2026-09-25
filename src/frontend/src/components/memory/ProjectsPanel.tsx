@@ -15,14 +15,16 @@
  * (`PrototypeUnifiedViewCanvas.tsx:50`).
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { AlertCircle, Plus } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { AlertCircle, Plus, Search } from 'lucide-react';
 import * as api from '../../services/api';
 import type { Project } from '../../services/api';
 import { Alerte } from '../ui/Alerte';
 import { Button } from '../ui/Button';
 import { Carte } from '../ui/Carte';
 import { EtatVide } from '../ui/EtatVide';
+import { Input } from '../ui/Input';
+import { replierPourRecherche } from '../../lib/replierPourRecherche';
 import { Squelette } from '../ui/Squelette';
 import { Z_LAYER } from '../../styles/z-layers';
 import { pushEscapeHandler } from '../../lib/escapeStack';
@@ -49,6 +51,15 @@ export function ProjectsPanel() {
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Project | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<Project | null>(null);
+  // P-123 : avec quinze projets, une liste qui ne se filtre pas ne se parcourt plus.
+  const [filtre, setFiltre] = useState('');
+  const projetsAffiches = useMemo(() => {
+    const terme = replierPourRecherche(filtre.trim());
+    if (!terme) return projects;
+    return projects.filter((projet) => replierPourRecherche(
+      [projet.name, projet.description ?? '', ...(projet.tags ?? [])].join(' '),
+    ).includes(terme));
+  }, [projects, filtre]);
   // B-402 : la confirmation piège le focus comme ProjectModal ; Tab fuyait vers le kanban sous le voile.
   const dialogRef = useRef<HTMLDivElement>(null);
   useDialogFocusTrap(dialogRef, { active: Boolean(deleteTarget) });
@@ -222,14 +233,37 @@ export function ProjectsPanel() {
             Crée ton premier projet pour rassembler les contacts, documents et tâches d’une même affaire.
           </EtatVide>
         ) : (
+          <>
+          <div className="mb-3">
+            <Input
+              type="search"
+              icon={<Search size={18} />}
+              aria-label="Filtrer les projets"
+              placeholder="Filtrer par nom, description ou tag…"
+              value={filtre}
+              onChange={(event) => setFiltre(event.target.value)}
+            />
+          </div>
+          {projetsAffiches.length === 0 ? (
+            <EtatVide
+              titre={`Aucun projet ne correspond à « ${filtre.trim()} ».`}
+              action={(
+                <Button type="button" variant="secondary" size="md" onClick={() => setFiltre('')}>
+                  Effacer le filtre
+                </Button>
+              )}
+            />
+          ) : (
           <Carte as="section" className="overflow-hidden">
             <ProjectsKanban
-              projects={projects}
+              projects={projetsAffiches}
               onSelect={handleSelect}
               onDelete={setDeleteTarget}
               onStatusChange={handleStatusChange}
             />
           </Carte>
+          )}
+          </>
         )}
       </div>
 

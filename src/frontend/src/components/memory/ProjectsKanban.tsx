@@ -367,6 +367,14 @@ function ProjectCard({ project, onSelect, onDelete, isOverlay, showDragHandle }:
           {project.description && (
             <p className="text-sm text-text-muted truncate mt-0.5">{maskText(project.description)}</p>
           )}
+          {/* P-123 : les tags saisis n'apparaissaient nulle part. */}
+          {project.tags && project.tags.length > 0 && (
+            <span className="mt-1 flex flex-wrap gap-1">
+              {project.tags.map((tag) => (
+                <Etiquette key={tag}>{maskText(tag)}</Etiquette>
+              ))}
+            </span>
+          )}
         </button>
 
         {/* Actions (hover). `group-focus-within` va toujours de pair avec
