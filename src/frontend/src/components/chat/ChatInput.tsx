@@ -1192,8 +1192,20 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         >
           <AlertCircle className="mt-0.5 h-5 w-5 shrink-0 text-warning" />
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-semibold text-text">Choisis d’abord un modèle</p>
-            <p className="mt-1 text-xs leading-5 text-text-muted">Aucun modèle actif ne peut répondre. Configure une clé cloud ou démarre Ollama avec un modèle local.</p>
+            {/* B-1476 : un service en ligne indisponible est un service sans
+                clé (config.py : `api_key and model`). Le nommer, dire la
+                cause, et ne conseiller Ollama que s'il est le service choisi. */}
+            {currentProvider && currentProvider !== 'ollama' ? (
+              <>
+                <p className="text-sm font-semibold text-text">{libelleDuFournisseur(currentProvider)} n’a pas de clé</p>
+                <p className="mt-1 text-xs leading-5 text-text-muted">Le service choisi ne peut pas répondre sans sa clé. Pose-la dans les réglages IA, ou choisis un autre service.</p>
+              </>
+            ) : (
+              <>
+                <p className="text-sm font-semibold text-text">Choisis d’abord un modèle</p>
+                <p className="mt-1 text-xs leading-5 text-text-muted">Aucun modèle actif ne peut répondre. Configure une clé cloud ou démarre Ollama avec un modèle local.</p>
+              </>
+            )}
           </div>
           {reglagesDejaOuverts ? (
             <p className="shrink-0 self-center text-xs text-text-muted">Les réglages sont ouverts : choisis un modèle dans l’onglet IA.</p>
