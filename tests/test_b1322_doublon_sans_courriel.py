@@ -30,3 +30,23 @@ async def test_deux_personnes_differentes_restent_deux(db_session):
     await execute_create_contact({"first_name": "Jean", "last_name": "Martin"}, db_session)
     resultat = json.loads(await execute_create_contact({"first_name": "Jeanne", "last_name": "Martin"}, db_session))
     assert not resultat.get("already_existed"), resultat
+
+
+@pytest.mark.asyncio
+async def test_un_tiret_ne_cree_pas_de_doublon(db_session):
+    """B-1331 : « Jean-Pierre » face à « Jean Pierre » créait un doublon (tiret
+    non replié). Lecteurs ζ et ε, passe 8."""
+    await execute_create_contact({"first_name": "Jean Pierre", "last_name": "Martin"}, db_session)
+    resultat = json.loads(await execute_create_contact({"first_name": "Jean-Pierre", "last_name": "Martin"}, db_session))
+    assert resultat.get("already_existed") is True, resultat
+    assert "nom" not in resultat.get("champs_ignores", []), resultat
+
+
+@pytest.mark.asyncio
+async def test_le_nom_complet_dans_le_seul_prenom_n_est_pas_signale(db_session):
+    """B-1337 : régression de B-1322. Nom complet saisi dans le seul prénom :
+    fiche retrouvée puis annoncée « nom ignoré ». Lecteur ε, passe 8."""
+    await execute_create_contact({"first_name": "Marie", "last_name": "Exemple"}, db_session)
+    resultat = json.loads(await execute_create_contact({"first_name": "Marie Exemple"}, db_session))
+    assert resultat.get("already_existed") is True, resultat
+    assert "nom" not in resultat.get("champs_ignores", []), resultat

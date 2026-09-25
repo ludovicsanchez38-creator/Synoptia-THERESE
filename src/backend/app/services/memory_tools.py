@@ -286,22 +286,21 @@ def _champs_de_contact_non_appliques(fiche: Any, arguments: dict[str, Any]) -> l
     # Prénom et nom comparés chacun : un prénom seul saisi n'est pas un autre nom.
     # B-1311 : sans casse NI accents (Hélène et Helene sont le même nom).
     def _nom(valeur: Any) -> str:
-        decompose = unicodedata.normalize("NFKD", _texte(valeur))
-        return "".join(c for c in decompose if not unicodedata.combining(c)).casefold()
+        return _nom_complet_normalise(_texte(valeur), None)
 
     prenom, nom = _texte(arguments.get("first_name")), _texte(arguments.get("last_name"))
+    # B-1316 : prénom et nom saisis ensemble comparés comme un nom complet ;
+    # /contact coupe au premier espace, « Jean Pierre » « Martin » devenait
+    # « Jean » « Pierre Martin ».
+    meme_nom_complet = _nom_complet_normalise(prenom, nom) == _nom_complet_normalise(
+        getattr(fiche, "first_name", None), getattr(fiche, "last_name", None)
+    )
     if prenom and nom:
-        # B-1316 : prénom et nom saisis ensemble comparés comme un nom complet ;
-        # /contact coupe au premier espace, « Jean Pierre » « Martin » devenait
-        # « Jean » « Pierre Martin ».
-        def _complet(a: Any, b: Any) -> str:
-            return " ".join(f"{_nom(a)} {_nom(b)}".split())
-
-        different = _complet(prenom, nom) != _complet(
-            getattr(fiche, "first_name", None), getattr(fiche, "last_name", None)
-        )
+        different = not meme_nom_complet
     else:
-        different = any(
+        # Un seul des deux saisi : pas un autre nom s'il égale son champ, ni
+        # (B-1337) s'il porte à lui seul le nom complet de la fiche.
+        different = not meme_nom_complet and any(
             _texte(arguments.get(c)) and _nom(arguments.get(c)) != _nom(getattr(fiche, c, None))
             for c in ("first_name", "last_name")
         )
@@ -542,9 +541,11 @@ async def _find_existing_contact(
 
 
 def _nom_complet_normalise(prenom: str | None, nom: str | None) -> str:
+    """Nom comparable : sans casse ni accents (B-1311, B-1322), tirets repliés
+    en espaces (B-1331 : « Jean-Pierre » est « Jean Pierre »)."""
     decompose = unicodedata.normalize("NFKD", f"{prenom or ''} {nom or ''}")
     sans_accents = "".join(c for c in decompose if not unicodedata.combining(c))
-    return " ".join(sans_accents.casefold().split())
+    return " ".join(sans_accents.casefold().replace("-", " ").replace("\u2010", " ").split())
 
 
 # ============================================================
