@@ -9,7 +9,7 @@ import asyncio
 import json
 import logging
 import re
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, fields
 from pathlib import Path
 
 from app.models.entities import Preference
@@ -624,6 +624,15 @@ async def import_from_claude_md(
 
     if not profile.name:
         raise ValueError("Could not extract user name from THERESE.md")
+
+    # B-1299 : le fichier fait foi pour ce qu'il dit, pas pour ce qu'il tait
+    # (règle de B-1108, B-1125). Il ne porte ni adresse, ni SIREN, ni TVA, ni
+    # SIRET, ni APE, ni NDA : l'import écrasait la facturation.
+    existant = await get_user_profile(session)
+    if existant is not None:
+        for champ in fields(UserProfile):
+            if not getattr(profile, champ.name) and getattr(existant, champ.name):
+                setattr(profile, champ.name, getattr(existant, champ.name))
 
     # Save the profile
     return await set_user_profile(session, profile)
