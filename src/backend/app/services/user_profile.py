@@ -65,16 +65,17 @@ class UserProfile:
 
     def is_billing_complete(self) -> bool:
         """Profil émetteur minimal pour émettre une facture conforme (P0-PROD-2)."""
-        return bool((self.company or self.name) and self.siret and self.address)
+        return not self.missing_billing_fields()
 
     def missing_billing_fields(self) -> list[str]:
         """Champs manquants pour une facture conforme."""
+        # B-1325 : un champ fait d'espaces est absent, pas complet.
         missing: list[str] = []
-        if not (self.company or self.name):
+        if not ((self.company or "").strip() or (self.name or "").strip()):
             missing.append("raison sociale ou nom")
-        if not self.siret:
+        if not (self.siret or "").strip():
             missing.append("SIRET")
-        if not self.address:
+        if not (self.address or "").strip():
             missing.append("adresse")
         return missing
 
