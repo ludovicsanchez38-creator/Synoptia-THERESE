@@ -40,6 +40,14 @@ const OPTIONS_TYPE = [
 
 const SQUELETTES = ['w-24', 'w-[60%]', 'w-20', 'w-20', 'w-16', 'w-16', 'w-12'] as const;
 
+/**
+ * B-1387 (Nathalie, Zoé, cycle 13) : à 125 % ou à 800 px, le tableau débordait
+ * de son cadre et le montant, « PDF » et « Supprimer » sortaient de la vue. La
+ * dernière colonne (montant et actions) reste collée au bord droit du cadre
+ * quand le reste défile ; son fond suit celui de la rangée survolée.
+ */
+const COLONNE_COLLEE = 'sticky right-0 z-[1] bg-surface border-l border-border';
+
 interface InvoicesPanelProps {
   standalone?: boolean;
 }
@@ -432,10 +440,10 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
             <th className="text-left text-xs font-semibold text-text-muted px-4 py-2 border-b border-border tracking-wide">
               Échéance
             </th>
-            <th className="text-right text-xs font-semibold text-text-muted px-4 py-2 border-b border-border tracking-wide">
+            {/* B-1387 : montant et actions, collés à droite du cadre. */}
+            <th className={cn(COLONNE_COLLEE, 'text-right text-xs font-semibold text-text-muted px-4 py-2 border-b border-border tracking-wide')}>
               Montant TTC
             </th>
-            <th className="sr-only">Actions</th>
           </tr>
         </thead>
         <tbody>
@@ -484,21 +492,22 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
                 </td>
                 <td
                   className={cn(
-                    'px-4 py-2.5 border-b border-border align-middle tabular-nums whitespace-nowrap',
+                    'px-4 py-2.5 border-b border-border align-middle tabular-nums',
                     echeance.echue && 'font-semibold text-error',
                     echeance.muted && !echeance.echue && 'text-text-muted',
                   )}
                 >
-                  {echeance.texte}
+                  {/* B-1387 : seule la date est insécable, la sous-ligne passe à la ligne. */}
+                  <span className="whitespace-nowrap">{echeance.texte}</span>
                   {echeance.sous ? (
                     <p className="text-xs text-text-muted font-normal">{echeance.sous}</p>
                   ) : null}
                 </td>
-                <td className="px-4 py-2.5 border-b border-border align-middle text-right font-semibold tabular-nums whitespace-nowrap text-text">
-                  {montantAvecDevise(invoice.total_ttc, invoice.currency)}
-                </td>
-                <td className="px-4 py-2.5 border-b border-border align-middle">
+                <td className={cn(COLONNE_COLLEE, 'px-4 py-2.5 border-b border-border align-middle')}>
                   <div className="flex items-center justify-end gap-2">
+                    <span className="font-semibold tabular-nums whitespace-nowrap text-text">
+                      {montantAvecDevise(invoice.total_ttc, invoice.currency)}
+                    </span>
                     <Button
                       variant="ghost"
                       size="md"

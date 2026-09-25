@@ -154,11 +154,13 @@ describe('Lot 5 DA : trois colonnes de statut', () => {
     expect(tdEchue!.className).toMatch(/\btext-error\b/);
     expect(tdEchue!.querySelector('[data-etiquette]')).toBeNull();
 
-    const tdMontant = Array.from(row.querySelectorAll('td')).find((td) =>
-      /\btabular-nums\b/.test(td.className) && (td.textContent ?? '').includes('€'),
+    // B-1387 : le montant partage la dernière colonne avec les actions ; il
+    // garde ses chiffres tabulaires, sur son propre élément.
+    const montant = Array.from(row.querySelectorAll<HTMLElement>('td, td span')).find((el) =>
+      /\btabular-nums\b/.test(el.className) && (el.textContent ?? '').includes('€'),
     );
-    expect(tdMontant).toBeDefined();
-    expect(tdMontant!.className).toMatch(/\btabular-nums\b/);
+    expect(montant).toBeDefined();
+    expect(montant!.className).toMatch(/\btabular-nums\b/);
   });
 
   it('un devis sent, un avoir sent/paid/overdue accordent envoi et paiement', async () => {

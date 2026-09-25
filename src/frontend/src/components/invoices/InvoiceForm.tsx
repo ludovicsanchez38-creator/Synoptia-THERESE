@@ -706,14 +706,26 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
 
           <div>
             <p className="text-sm font-medium text-text mb-3">Lignes de facturation *</p>
-            <table className="w-full border-collapse">
+            {/* B-1387 (Nathalie, cycle 13) : en disposition automatique, les
+                champs numériques gardaient leur largeur naturelle et la
+                description tombait à 61 px à 125 %. Colonnes numériques en
+                rem (elles suivent la taille du texte), description au reste. */}
+            <table className="w-full table-fixed border-collapse">
+              <colgroup>
+                <col />
+                <col className="w-24" />
+                <col className="w-28" />
+                <col className="w-36" />
+                <col className="w-28" />
+                <col className="w-14" />
+              </colgroup>
               <thead>
                 <tr>
-                  <th className="text-left text-xs font-semibold text-text-muted px-4 py-2 border-b border-border tracking-wide">Description</th>
-                  <th className="text-left text-xs font-semibold text-text-muted px-4 py-2 border-b border-border tracking-wide">Quantité</th>
-                  <th className="text-left text-xs font-semibold text-text-muted px-4 py-2 border-b border-border tracking-wide">Prix HT</th>
-                  <th className="text-left text-xs font-semibold text-text-muted px-4 py-2 border-b border-border tracking-wide">TVA</th>
-                  <th className="text-left text-xs font-semibold text-text-muted px-4 py-2 border-b border-border tracking-wide">Total HT</th>
+                  <th className="text-left text-xs font-semibold text-text-muted px-2 py-2 border-b border-border tracking-wide">Description</th>
+                  <th className="text-left text-xs font-semibold text-text-muted px-2 py-2 border-b border-border tracking-wide">Quantité</th>
+                  <th className="text-left text-xs font-semibold text-text-muted px-2 py-2 border-b border-border tracking-wide">Prix HT</th>
+                  <th className="text-left text-xs font-semibold text-text-muted px-2 py-2 border-b border-border tracking-wide">TVA</th>
+                  <th className="text-left text-xs font-semibold text-text-muted px-2 py-2 border-b border-border tracking-wide">Total HT</th>
                   <th className="sr-only">Actions</th>
                 </tr>
               </thead>
@@ -723,7 +735,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
                   const erreurDescription = lignesSansDescription.includes(index);
                   return (
                     <tr key={index}>
-                      <td className="px-4 py-2.5 border-b border-border align-middle">
+                      <td className="px-2 py-2.5 border-b border-border align-middle">
                         <Input
                           id={`invoiceform-description-${index}`}
                           aria-label={`Description ligne ${index + 1}`}
@@ -749,7 +761,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
                           </p>
                         )}
                       </td>
-                      <td className="px-4 py-2.5 border-b border-border align-middle">
+                      <td className="px-2 py-2.5 border-b border-border align-middle">
                         <Input
                           id={`invoiceform-quantite-${index}`}
                           aria-label={`Quantité ligne ${index + 1}`}
@@ -761,7 +773,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
                           required
                         />
                       </td>
-                      <td className="px-4 py-2.5 border-b border-border align-middle">
+                      <td className="px-2 py-2.5 border-b border-border align-middle">
                         <Input
                           id={`invoiceform-prix-${index}`}
                           aria-label={`Prix HT ligne ${index + 1}`}
@@ -773,7 +785,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
                           required
                         />
                       </td>
-                      <td className="px-4 py-2.5 border-b border-border align-middle">
+                      <td className="px-2 py-2.5 border-b border-border align-middle">
                         <Select
                           id={`invoiceform-tva-${index}`}
                           aria-label={`TVA ligne ${index + 1}`}
@@ -782,10 +794,10 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
                           onChange={(e) => updateLine(index, 'tva_rate', parseFloat(e.target.value))}
                         />
                       </td>
-                      <td className="px-4 py-2.5 border-b border-border align-middle tabular-nums whitespace-nowrap">
+                      <td className="px-2 py-2.5 border-b border-border align-middle tabular-nums whitespace-nowrap">
                         {montantAvecDevise(totalHT, currency)}
                       </td>
-                      <td className="px-4 py-2.5 border-b border-border align-middle">
+                      <td className="px-2 py-2.5 border-b border-border align-middle">
                         <Button
                           variant="ghost"
                           size="icon"
