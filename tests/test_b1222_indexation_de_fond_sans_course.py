@@ -61,3 +61,37 @@ async def test_purge_totale_pendant_l_indexation(client, monkeypatch):
     apres = [e for e in journal if e[0] == "add" and e[2] > t_purge]
 
     assert not apres, f"{len(apres)} vecteur(s) de fiches effacées écrits après la purge"
+
+
+@pytest.mark.asyncio
+async def test_le_fil_du_vecteur_en_vol_n_ecrit_pas_apres_la_purge(client, monkeypatch):
+    """B-1234 : le vecteur est calculé et écrit dans un FIL (asyncio.to_thread) ;
+    annuler la tâche ne l'arrête pas, et il écrivait dans la collection
+    recréée après la réponse 200 de la purge. Ici l'écriture se fait dans le
+    fil, comme dans le moteur (qdrant.py add_memory)."""
+    import app.services.qdrant as mq
+
+    journal: list[tuple[str, float]] = []
+
+    def ecrire_dans_le_fil(entity_id):
+        time.sleep(0.8)
+        journal.append((entity_id, time.monotonic()))
+
+    async def ajout(**kw):
+        await asyncio.to_thread(ecrire_dans_le_fil, kw.get("entity_id"))
+        return "p"
+
+    async def suppr(entity_id):
+        return 0
+
+    monkeypatch.setattr(mq._qdrant_service, "async_add_memory", ajout)
+    monkeypatch.setattr(mq._qdrant_service, "async_delete_by_entity", suppr)
+    resp = await client.post("/api/memory/contacts/import", files={"file": ("c.vcf", _carnet(3), "text/vcard")})
+    assert resp.status_code == 200, resp.text
+    time.sleep(0.3)  # un vecteur est en vol dans son fil
+    r = await client.delete("/api/data/all?confirm=true")
+    assert r.status_code == 200, r.text
+    fin_de_la_purge = time.monotonic()
+    time.sleep(2.5)
+    apres = [e for e in journal if e[1] > fin_de_la_purge]
+    assert not apres, f"{len(apres)} écriture(s) de fil après la réponse de la purge"

@@ -118,6 +118,8 @@ def _project_to_embedding_text(project: Project) -> str:
 
 # Les tâches asyncio ne sont retenues que par une référence forte (BUG-172).
 _INDEXATIONS_DE_FICHES: set[asyncio.Task[None]] = set()
+# B-1234 : demande d'arrêt lue entre deux fiches (voir arreter_les_indexations_de_fiches).
+_ARRET_DES_INDEXATIONS = asyncio.Event()
 
 
 def indexer_fiches_en_arriere_plan(fiches: list[Contact]) -> None:
@@ -136,6 +138,8 @@ def indexer_fiches_en_arriere_plan(fiches: list[Contact]) -> None:
         from app.models.database import get_session_context
 
         for identifiant in identifiants:
+            if _ARRET_DES_INDEXATIONS.is_set():
+                return
             # B-1222 : l'état de la base fait foi, pas l'instantané de
             # l'import. Une fiche supprimée entre-temps n'est pas réindexée,
             # et une fiche modifiée l'est dans son état courant.
@@ -159,11 +163,17 @@ async def arreter_les_indexations_de_fiches() -> None:
     """B-1222 : avant une purge ou une restauration, les indexations de fond
     en cours sont arrêtées et attendues ; sinon elles réécrivaient dans Qdrant
     des fiches que la purge venait d'effacer."""
-    taches = list(_INDEXATIONS_DE_FICHES)
-    for tache in taches:
-        tache.cancel()
-    if taches:
-        await asyncio.gather(*taches, return_exceptions=True)
+    # B-1234 : ANNULER ne suffit pas. Le vecteur se calcule et s'écrit dans
+    # un fil (asyncio.to_thread) que l'annulation n'arrête pas : il écrivait
+    # dans la collection recréée après la purge. On demande l'arrêt entre
+    # deux fiches, puis on ATTEND la fin de la fiche en vol, fil compris.
+    _ARRET_DES_INDEXATIONS.set()
+    try:
+        taches = list(_INDEXATIONS_DE_FICHES)
+        if taches:
+            await asyncio.gather(*taches, return_exceptions=True)
+    finally:
+        _ARRET_DES_INDEXATIONS.clear()
 
 
 async def _embed_contact(contact: Contact) -> None:
