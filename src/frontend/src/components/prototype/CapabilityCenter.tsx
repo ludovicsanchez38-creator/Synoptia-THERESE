@@ -272,7 +272,8 @@ export const capabilities: CapabilityItem[] = [
     id: 'skills-commands', group: 'automate', title: 'Skills et commandes', icon: Terminal,
     description: 'Enregistrer les processus récurrents pour les relancer en langage naturel.',
     features: ['Skills', 'Commandes V3', 'Outils dynamiques'], keywords: ['skill', 'slash', 'workflow'],
-    prompt: 'Transforme ce processus récurrent en commande réutilisable.', destination: { kind: 'prompt' },
+    // B-1479 : aucun outil ne crée de commande ; le modèle rédige la consigne, le bouton sous sa réponse l'enregistre.
+    prompt: 'Rédige une consigne réutilisable pour ce processus récurrent ; je l’enregistrerai avec « Enregistrer comme commande » sous ta réponse.', destination: { kind: 'prompt' },
   },
 
   {

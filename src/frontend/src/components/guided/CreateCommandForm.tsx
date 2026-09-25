@@ -105,7 +105,7 @@ export function CreateCommandForm({ onSubmit, onBack, initialContent, initialDes
         </Button>
         <div>
           <h3 className="text-lg font-semibold text-text">Créer une commande</h3>
-          <p className="text-xs text-text-muted">Définis un raccourci personnalisé pour THÉRÈSE</p>
+          <p className="text-xs text-text-muted">Une commande relance cette consigne depuis le menu « / ».</p>
         </div>
       </div>
 

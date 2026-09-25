@@ -377,15 +377,19 @@ export const MessageBubble = memo(function MessageBubble({
           'absolute top-2 right-2 flex items-center gap-1 z-10',
           'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 transition-all'
         )}>
-          {/* Sauvegarder comme raccourci (assistant uniquement, pas en streaming, pas pour les images) */}
+          {/* B-1479 : enregistrer la réponse comme commande (assistant uniquement,
+              pas en streaming, pas pour les images). « Raccourci » désignait
+              ailleurs les touches du clavier ; le menu « / » parle de commandes. */}
           {!isUser && !message.isStreaming && !isImage && onSaveAsCommand && (
             <button
+              type="button"
               onClick={onSaveAsCommand}
               className={cn(
                 'p-1.5 rounded-md transition-all',
                 'hover:bg-surface text-text-muted hover:text-accent-cyan-ink'
               )}
-              title="Sauvegarder comme raccourci"
+              aria-label="Enregistrer comme commande"
+              title="Enregistrer comme commande"
             >
               <Bookmark className="w-4 h-4" />
             </button>

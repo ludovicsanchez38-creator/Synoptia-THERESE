@@ -153,7 +153,7 @@ export function PanelContainer({ onUserCommandsRefresh }: PanelContainerProps) {
         )}
       </Suspense>
 
-      {/* Modal Sauvegarder comme raccourci */}
+      {/* Modale « Enregistrer comme commande » (B-1479) */}
       <AnimatePresence>
         {showSaveCommand && saveCommandData && (
           <motion.div
@@ -166,7 +166,7 @@ export function PanelContainer({ onUserCommandsRefresh }: PanelContainerProps) {
             <motion.div
               role="dialog"
               aria-modal="true"
-              aria-label="Sauvegarder comme raccourci"
+              aria-label="Enregistrer comme commande"
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
