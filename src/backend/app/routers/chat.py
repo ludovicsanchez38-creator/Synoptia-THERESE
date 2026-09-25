@@ -1238,6 +1238,10 @@ async def deep_research_endpoint(
     )
 
 
+#: B-1368 : titres posés par l'interface avant le premier message.
+_TITRES_PROVISOIRES = {"", "Nouvelle conversation"}
+
+
 @router.post("/send")
 async def send_message(
     request: ChatRequest,
@@ -1283,6 +1287,17 @@ async def send_message(
         # « system » importé avant B-1182 serait rejoué comme consigne.
         and msg.role in ("user", "assistant")
     ]
+
+    # B-1368 : une conversation créée vide (sélecteur de projet, ⌘N) gardait
+    # son titre provisoire en base, et aucun envoi n'avançait sa date : le
+    # tiroir la rangeait à sa création et ne la retrouvait pas par son sujet.
+    from datetime import UTC, datetime
+
+    if not history_messages and (conversation.title or "").strip() in _TITRES_PROVISOIRES:
+        conversation.title = request.message[:50]
+        get_search_index().index_conversation(conversation.id, conversation.title)
+    conversation.updated_at = datetime.now(UTC)
+    session.add(conversation)
 
     # Save user message
     user_message = Message(
