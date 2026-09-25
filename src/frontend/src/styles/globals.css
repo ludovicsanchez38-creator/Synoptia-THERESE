@@ -597,6 +597,17 @@ html[data-reduce-motion="true"] *::after {
   background: transparent;
   border: 1px solid currentColor;
 }
+/* B-1404 (Zoé, cycle 13) : l'état choisi d'un segment, d'un filtre ou d'un
+   onglet ne se distinguait plus (1,32:1 sur le texte, 1,06:1 sur le fond,
+   même graisse ; WCAG 1.4.11 exige 3:1). Il s'inverse : 21:1 entre les deux
+   états. Hors couche, pour qu'aucune utilitaire ne le batte. */
+[data-high-contrast="true"] [aria-pressed="true"],
+[data-high-contrast="true"] [role="tab"][aria-selected="true"],
+[data-high-contrast="true"] [role="radio"][aria-checked="true"] {
+  background: #FFFFFF;
+  color: #000000;
+  font-weight: 700;
+}
 
 /* ============================================================
    DA « Application affinée » (lot 1, 10/09/2026) : le socle typographique.
