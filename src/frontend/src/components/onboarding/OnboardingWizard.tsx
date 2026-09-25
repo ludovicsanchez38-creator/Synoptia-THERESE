@@ -287,12 +287,15 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
                   transition={{ duration: 0.3 }}
                   className="h-full"
                 >
-                  {currentStep === 0 && <div data-testid="onboarding-step-0"><WelcomeStep onNext={goNext} /></div>}
-                  {currentStep === 1 && <div data-testid="onboarding-step-1"><ProfileStep onNext={goNext} onBack={goBack} /></div>}
-                  {currentStep === 2 && <div data-testid="onboarding-step-2"><LLMStep onNext={completeLlmStep} onBack={goBack} /></div>}
-                  {currentStep === 3 && <div data-testid="onboarding-step-3"><SecurityStep provider={configuredProvider} onNext={goNext} onBack={goBack} /></div>}
-                  {currentStep === 4 && <div data-testid="onboarding-step-4"><WorkingDirStep onNext={goNext} onBack={goBack} /></div>}
-                  {currentStep === 5 && <div data-testid="onboarding-step-5"><CompleteStep onComplete={handleComplete} onBack={goBack} llmSkipped={llmSkipped} serviceIaConserve={serviceIaConserve} /></div>}
+                  {/* B-1343 : l'enveloppe prend la hauteur du dialogue, sinon le
+                      pied « épinglé » d'une étape en colonne h-full défilait
+                      avec le contenu (« Commencer » sous le bas du dialogue). */}
+                  {currentStep === 0 && <div className="h-full" data-testid="onboarding-step-0"><WelcomeStep onNext={goNext} /></div>}
+                  {currentStep === 1 && <div className="h-full" data-testid="onboarding-step-1"><ProfileStep onNext={goNext} onBack={goBack} /></div>}
+                  {currentStep === 2 && <div className="h-full" data-testid="onboarding-step-2"><LLMStep onNext={completeLlmStep} onBack={goBack} /></div>}
+                  {currentStep === 3 && <div className="h-full" data-testid="onboarding-step-3"><SecurityStep provider={configuredProvider} onNext={goNext} onBack={goBack} /></div>}
+                  {currentStep === 4 && <div className="h-full" data-testid="onboarding-step-4"><WorkingDirStep onNext={goNext} onBack={goBack} /></div>}
+                  {currentStep === 5 && <div className="h-full" data-testid="onboarding-step-5"><CompleteStep onComplete={handleComplete} onBack={goBack} llmSkipped={llmSkipped} serviceIaConserve={serviceIaConserve} /></div>}
                 </motion.div>
               </AnimatePresence>
             </div>

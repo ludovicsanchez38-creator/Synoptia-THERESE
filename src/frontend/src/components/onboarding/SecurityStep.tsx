@@ -89,7 +89,7 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
       initial={{ opacity: 0, x: 50 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: -50 }}
-      className="space-y-6"
+      className="space-y-6 px-8 py-6"
     >
       {/* Header avec warning */}
       <div className="text-center space-y-3">
@@ -206,13 +206,13 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
         </Carte>
       )}
 
-      {/* Navigation */}
-      <div className="flex flex-wrap gap-3 pt-2">
+      {/* Navigation. B-1343 : le même pied que les autres étapes (« Retour »
+          discret à gauche, l'action à droite, sous un filet). */}
+      <div className="flex flex-wrap justify-between gap-3 border-t border-border pt-4">
         <Button
-          variant="secondary"
+          variant="ghost"
           onClick={onBack}
           data-testid="onboarding-prev-btn"
-          className="flex-1"
         >
           Retour
         </Button>
@@ -232,7 +232,6 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
           }}
           disabled={cloudEnabled && !acknowledged}
           data-testid="onboarding-next-btn"
-          className="flex-1"
         >
           <CheckCircle2 className="w-5 h-5" />
           <span>J'ai compris, continuer</span>
