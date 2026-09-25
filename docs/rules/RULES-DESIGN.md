@@ -379,6 +379,7 @@ une des causes du « trop d'interfaces » signalé par Ludo.
 | documents | Documents |
 | processing-tasks (Traitements) | Travaux - panneau « Travaux récents », compteur « N travaux en cours » |
 | tasks | Tâches |
+| projects | Projets - un projet ; son absence : « Aucun projet » ; « dossier » ne désigne qu'un dossier du disque (B-1367, 25/09/2026) |
 | Atelier documentaire | Rédiger un document (l'entrée-action ; la vue s'appelle Documents) |
 | Atelier agents | Améliorer THÉRÈSE (au tiroir) |
 | Board | Décision (libellés de navigation et titres seulement - le mot reste libre dans le texte courant) |

@@ -152,9 +152,11 @@ export function ConversationProjectPicker({
           un mensonge plus large que celui qu'il remplaçait. Le libellé dit ce
           qui est vrai dans les deux cas : les fichiers suivent le dossier, le
           carnet reste partagé tant que le mode cabinet n'est pas activé. */}
-      <span className="sr-only">Dossier de cette conversation : fichiers rattachés, carnet partagé</span>
+      {/* B-1367 (Hugo, cycle 13) : « Projet », comme le rail ; « dossier »
+          désigne un dossier du disque (« Dossier synchronisé »). */}
+      <span className="sr-only">Projet de cette conversation : fichiers rattachés, carnet partagé</span>
       <select
-        aria-label="Dossier de cette conversation : fichiers rattachés, carnet partagé"
+        aria-label="Projet de cette conversation : fichiers rattachés, carnet partagé"
         value={selection}
         disabled={enCours}
         onChange={(e) => void surChangement(e.target.value)}
@@ -163,11 +165,13 @@ export function ConversationProjectPicker({
         {/* Libellés honnêtes : ils annoncent ce que la conversation CONSULTE.
             « Toute la mémoire » par défaut aurait menti — le défaut est
             désormais le moindre privilège. */}
-        <option value="">Documents généraux</option>
+        {/* B-1367 : « Aucun projet », comme le formulaire de document ; la
+            parenthèse garde ce que la conversation consulte. */}
+        <option value="">Aucun projet (documents généraux)</option>
         {/* B-494 : un dossier rattaché mais absent de la liste (liste non lue)
             restait affiché comme « Documents généraux », ce qui est faux. */}
         {dossierNonRelu && (
-          <option value={dossierNonRelu}>Dossier rattaché (nom non lu)</option>
+          <option value={dossierNonRelu}>Projet rattaché (nom non lu)</option>
         )}
         {projets.map((projet) => {
           const homonymes = projets.filter((p) => p.name === projet.name).length > 1;
