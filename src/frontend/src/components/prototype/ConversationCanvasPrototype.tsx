@@ -820,6 +820,10 @@ export function ConversationCanvasPrototype() {
   const [imagesOpen, setImagesOpen] = useState(false);
   const [followUpsOpen, setFollowUpsOpen] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
+  // B-1386 : le panneau qui a ouvert la vue affichée, et celui à rouvrir quand
+  // l'écran aura suivi la pile après un retour.
+  const panneauDOrigineRef = useRef<{ outil: RightPanelTool; vue: AppView } | null>(null);
+  const panneauARouvrirRef = useRef<RightPanelTool | null>(null);
   const {
     inboxResource: emailInboxResource,
     messageResource: emailMessageResource,
@@ -1113,8 +1117,10 @@ export function ConversationCanvasPrototype() {
     createConversation();
     openChat();
   };
-  const openEmbeddedView = (view: Exclude<AppView, 'chat'>) => {
-    if (blockStreamingNavigation()) return;
+  const openEmbeddedView = (view: Exclude<AppView, 'chat'>): boolean => {
+    if (blockStreamingNavigation()) return false;
+    // B-1386 : une navigation vers une autre vue oublie le panneau d'origine.
+    panneauDOrigineRef.current = null;
     if (embeddedView === null) {
       declencheurDeVueRef.current = memoriserLeDeclencheur(document.activeElement);
     }
@@ -1136,6 +1142,17 @@ export function ConversationCanvasPrototype() {
     if (useNavigationStore.getState().activeView !== view) {
       useNavigationStore.getState().setView(view);
     }
+    return true;
+  };
+  /**
+   * B-1386 (persona Nathalie, cycle 13) : un panneau-outil (Relances,
+   * Livrables) ouvre une vue, qui le referme. La pile ne connaît que les vues :
+   * « Retour » ou Échap menaient ailleurs et le panneau avait disparu. Le
+   * panneau est retenu comme origine de la vue qu'il ouvre, et le geste de
+   * retour qui ferme cette vue le rouvre.
+   */
+  const ouvrirVueDepuisPanneau = (outil: RightPanelTool, view: Exclude<AppView, 'chat'>) => {
+    if (openEmbeddedView(view)) panneauDOrigineRef.current = { outil, vue: view };
   };
   // J0a : l'autre sens. Toute navigation posée dans le store - accueil
   // (QuickActions, TodayPanels, RecentConversations), registre d'actions,
@@ -1202,6 +1219,20 @@ export function ConversationCanvasPrototype() {
     // relancerait l'effet en boucle.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewDemandee, isStreaming]);
+
+  // B-1386 : le panneau d'origine se rouvre une fois l'écran aligné sur la
+  // pile (l'effet ci-dessus referme les panneaux en ouvrant la vue précédente).
+  useEffect(() => {
+    const outil = panneauARouvrirRef.current;
+    if (!outil || embeddedView !== viewDemandee) return;
+    panneauARouvrirRef.current = null;
+    if (outil === 'calculator') setCalculatorOpen(true);
+    else if (outil === 'deliverables') setDeliverablesOpen(true);
+    else if (outil === 'images') setImagesOpen(true);
+    else if (outil === 'follow-ups') setFollowUpsOpen(true);
+    else setVoiceOpen(true);
+    setCanvasOpen(true);
+  }, [embeddedView, viewDemandee]);
 
   // J0b : reprises de l'ancienne coque, qui les portait seule.
   //
@@ -1274,6 +1305,9 @@ export function ConversationCanvasPrototype() {
     if (!embeddedView) return;
     // B-978 : le « Retour » d'en-tête démontait un formulaire modifié sans question.
     if (sortieRetenueParUneSaisie()) return;
+    const origine = panneauDOrigineRef.current;
+    panneauDOrigineRef.current = null;
+    if (origine?.vue === embeddedView) panneauARouvrirRef.current = origine.outil;
     setEmbeddedView(null);
     // Remédiation NO-GO J0 : sans retour dans le store, `activeView` restait
     // sur la vue fermée. Rejouer la même action devenait un no-op
@@ -1449,6 +1483,13 @@ export function ConversationCanvasPrototype() {
     setCommandOpen(false);
     setSelectedCapability(capability);
     fermerLeChat();
+    // B-1386 : la carte remplace la vue par l'accueil ; la pile le suit, sinon
+    // « Retour » ramenait ensuite à un écran déjà quitté.
+    if (embeddedView !== null) {
+      panneauDOrigineRef.current = null;
+      derniereVueRef.current = null;
+      useNavigationStore.getState().retourAccueil();
+    }
     setEmbeddedView(null);
     setCalculatorOpen(false);
     setDeliverablesOpen(false);
@@ -2187,8 +2228,8 @@ export function ConversationCanvasPrototype() {
                   onClose={() => {
                     collapseToolPanel('deliverables');
                   }}
-                  onOpenProjects={() => openEmbeddedView('projects')}
-                  onOpenInvoices={() => openEmbeddedView('invoices')}
+                  onOpenProjects={() => ouvrirVueDepuisPanneau('deliverables', 'projects')}
+                  onOpenInvoices={() => ouvrirVueDepuisPanneau('deliverables', 'invoices')}
                 />
               ) : imagesOpen ? (
                 <ImagesWorkspaceCanvas
@@ -2201,7 +2242,7 @@ export function ConversationCanvasPrototype() {
                   onClose={() => {
                     collapseToolPanel('follow-ups');
                   }}
-                  onOpenEmail={() => openEmbeddedView('email')}
+                  onOpenEmail={() => ouvrirVueDepuisPanneau('follow-ups', 'email')}
                 />
               ) : voiceOpen ? (
                 <VoiceWorkspaceCanvas
