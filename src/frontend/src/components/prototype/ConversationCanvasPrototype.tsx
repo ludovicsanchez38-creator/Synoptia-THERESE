@@ -820,6 +820,8 @@ export function ConversationCanvasPrototype() {
   const [imagesOpen, setImagesOpen] = useState(false);
   const [followUpsOpen, setFollowUpsOpen] = useState(false);
   const [voiceOpen, setVoiceOpen] = useState(false);
+  // B-1370 : incrémenté quand une conversation est choisie dans le tiroir.
+  const [focusDuComposeurDemande, setFocusDuComposeurDemande] = useState(0);
   // B-1386 : le panneau qui a ouvert la vue affichée, et celui à rouvrir quand
   // l'écran aura suivi la pile après un retour.
   const panneauDOrigineRef = useRef<{ outil: RightPanelTool; vue: AppView } | null>(null);
@@ -1821,13 +1823,14 @@ export function ConversationCanvasPrototype() {
             </div>
           </nav>
 
-          <AnimatePresence>{drawerOpen && <PrototypeConversationDrawer surface={drawerSurface} navigationLocked={isStreaming} onClose={closeConversationDrawer} onOpenChat={() => openChat()} />}</AnimatePresence>
+          <AnimatePresence>{drawerOpen && <PrototypeConversationDrawer surface={drawerSurface} navigationLocked={isStreaming} onClose={closeConversationDrawer} onOpenChat={() => { openChat(); setFocusDuComposeurDemande((n) => n + 1); }} />}</AnimatePresence>
 
           <main id="main-content" className="relative flex min-w-0 flex-1 overflow-hidden">
             {chatOpen ? (
               <PrototypeChatSurface
                 initialPrompt={chatInitialPrompt}
                 userCommands={userSlashCommands}
+                demandeDeFocus={focusDuComposeurDemande}
                 onInitialPromptConsumed={() => setChatInitialPrompt(null)}
                 onOpenCommandPalette={() => {
                   setCommandOpen(true);

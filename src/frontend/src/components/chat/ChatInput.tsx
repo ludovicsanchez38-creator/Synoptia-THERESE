@@ -63,6 +63,8 @@ interface ChatInputProps {
   initialSkillId?: string;
   onInitialPromptConsumed?: () => void;
   userCommands?: import('./SlashCommandsMenu').SlashCommand[];
+  /** B-1370 : chaque incrément pose le focus dans le champ (conversation choisie). */
+  demandeDeFocus?: number;
 }
 
 interface PendingCloudConsent {
@@ -105,7 +107,7 @@ function SavedIndicator({ savedAt }: { savedAt: Date }) {
   );
 }
 
-export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId, onInitialPromptConsumed, userCommands }: ChatInputProps) {
+export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId, onInitialPromptConsumed, userCommands, demandeDeFocus = 0 }: ChatInputProps) {
   const [input, setInput] = useState('');
   // P-061 : calculé une fois par saisie (audit 0.74 : trois parcours par rendu).
   const jetonsRates = useMemo(() => jetonsMalFormes(input), [input]);
@@ -1033,6 +1035,18 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       }
     }
   }, []);
+
+  // B-1370 (Hugo, cycle 13) : choisir une conversation dans le tiroir pose le
+  // focus ici. Le tiroir et l'écran fermés rendent chacun le focus à leur
+  // déclencheur pendant le même rendu ; cet effet passe après eux.
+  // Le champ est désactivé le temps de vérifier le modèle au montage : la
+  // demande attend qu'il soit actif, et n'est servie qu'une fois.
+  const focusServiRef = useRef(0);
+  useEffect(() => {
+    if (demandeDeFocus <= focusServiRef.current || isDisabled) return;
+    focusServiRef.current = demandeDeFocus;
+    textareaRef.current?.focus();
+  }, [demandeDeFocus, isDisabled]);
 
   // B-1369 : le bandeau « Réponse en cours » de la coque propose cet arrêt.
   useEffect(() => inscrireArretDeLaReponse(stopStreaming), [stopStreaming]);

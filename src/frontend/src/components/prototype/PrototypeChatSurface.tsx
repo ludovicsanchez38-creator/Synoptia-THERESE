@@ -14,6 +14,8 @@ interface PrototypeChatSurfaceProps {
   onInitialPromptConsumed: () => void;
   onOpenCommandPalette: () => void;
   onClose: () => void;
+  /** B-1370 : transmis au composeur (focus après le choix d'une conversation). */
+  demandeDeFocus?: number;
 }
 
 export function PrototypeChatSurface({
@@ -22,6 +24,7 @@ export function PrototypeChatSurface({
   onInitialPromptConsumed,
   onOpenCommandPalette,
   onClose,
+  demandeDeFocus,
 }: PrototypeChatSurfaceProps) {
   const [guidedPrompt, setGuidedPrompt] = useState<string | undefined>();
   const [guidedSkillId, setGuidedSkillId] = useState<string | undefined>();
@@ -91,6 +94,7 @@ export function PrototypeChatSurface({
               initialSkillId={guidedSkillId}
               onInitialPromptConsumed={consumed}
               userCommands={userCommands}
+              demandeDeFocus={demandeDeFocus}
             />
           </div>
         </>
