@@ -6,6 +6,7 @@ import {
   Mail,
   RefreshCw,
   Search,
+  UserPlus,
   Users,
 } from 'lucide-react';
 import type { Contact } from '../../services/api/memory';
@@ -17,6 +18,7 @@ import {
 } from './prototypeReadModels';
 import type { ReadResource } from './usePrototypeReadData';
 import { Spinner } from '../ui/Spinner';
+import { usePanelStore } from '../../stores/panelStore';
 
 const EMPTY_CONTACTS: Contact[] = [];
 const LIMITE_CONTACTS_ACCUEIL = 200;
@@ -39,14 +41,26 @@ function ContactAvatar({ contact, className = '' }: { contact: Contact; classNam
   );
 }
 
-function EmptyContacts({ onOpenClassic }: { onOpenClassic: () => void }) {
+/**
+ * B-1349 : l'état vide portait son propre « Ouvrir Contacts », en plus de
+ * celui de l'en-tête ou du pied (quatre à l'écran), et rien pour ajouter. Il
+ * propose le geste qui manque : créer une fiche.
+ */
+function EmptyContacts() {
   return (
     <div className="flex min-h-44 items-center justify-center px-5 py-8 text-center" data-testid="contacts-memory-empty">
       <div>
         <Users className="mx-auto h-6 w-6 text-text-muted" />
         <p className="mt-2 text-sm font-semibold text-text">Aucun contact enregistré</p>
         <p className="mt-1 text-xs text-text-muted">La mémoire est prête, mais elle ne contient encore aucune personne.</p>
-        <BoutonOuvrirLaVue vue="memory" onOuvrir={onOpenClassic} />
+        <button
+          type="button"
+          onClick={() => usePanelStore.getState().openNewContact()}
+          className="mt-4 inline-flex items-center gap-1.5 rounded-md bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink"
+        >
+          <UserPlus className="h-3.5 w-3.5" />
+          Ajouter un contact
+        </button>
       </div>
     </div>
   );
@@ -110,7 +124,7 @@ export function ContactsMemoryCard({
           </div>
         </div>
       ) : recentContacts.length === 0 ? (
-        <EmptyContacts onOpenClassic={onOpenClassic} />
+        <EmptyContacts />
       ) : (
         <div className="divide-y divide-border">
           {recentContacts.map((contact) => (
@@ -188,7 +202,7 @@ export function ContactsMemoryCanvas({
           </div>
         </div>
       ) : contacts.length === 0 ? (
-        <EmptyContacts onOpenClassic={onOpenClassic} />
+        <EmptyContacts />
       ) : (
         <div className="grid min-h-0 flex-1 grid-cols-1 grid-rows-[minmax(160px,40%)_minmax(0,1fr)] sm:grid-cols-[210px_minmax(0,1fr)] sm:grid-rows-1">
           <aside className="min-h-0 border-b border-border bg-surface p-3 sm:border-b-0 sm:border-r">
