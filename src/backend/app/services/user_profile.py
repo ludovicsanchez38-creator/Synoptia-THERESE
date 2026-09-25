@@ -647,6 +647,13 @@ async def import_from_claude_md(
     # (règle de B-1108, B-1125). Il ne porte ni adresse, ni SIREN, ni TVA, ni
     # SIRET, ni APE, ni NDA : l'import écrasait la facturation.
     existant = await get_user_profile(session)
+    if existant is None and await _profil_encore_enregistre():
+        # B-1334 : un profil enregistré mais illisible (trousseau verrouillé)
+        # serait écrasé, facturation comprise, sans rien reprendre.
+        raise ValueError(
+            "Ton profil actuel ne peut pas être lu (trousseau verrouillé ?) : "
+            "l'import l'écraserait. Déverrouille le trousseau puis réessaie."
+        )
     if existant is not None:
         meme_personne = _meme_personne(existant.name, profile.name)
         for champ in fields(UserProfile):

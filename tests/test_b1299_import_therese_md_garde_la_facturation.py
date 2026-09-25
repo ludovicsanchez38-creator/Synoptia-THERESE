@@ -146,3 +146,27 @@ async def test_un_fichier_sans_owner_est_refuse_lisiblement(client, tmp_path):
     reponse = await client.post("/api/config/profile/import-claude-md", json={"file_path": str(fichier)})
     assert reponse.status_code == 422, reponse.text
     assert "Owner" in reponse.text and "nom" in reponse.text, reponse.text
+
+
+@pytest.mark.asyncio
+async def test_un_profil_illisible_n_est_pas_ecrase(db_session, tmp_path, monkeypatch):
+    """B-1334 : si le profil existant ne se déchiffre plus (trousseau
+    verrouillé), get_user_profile rendait None et l'import écrasait toute la
+    facturation. L'import refuse, le profil reste intact. Lecteur ζ, passe 8."""
+    from app.services import user_profile as up
+
+    await up.set_user_profile(
+        db_session, up.UserProfile(name="Marie Exemple", siret="12345678900010"), embed_in_qdrant=False,
+    )
+
+    def dechiffrement_impossible(valeur):
+        raise RuntimeError("trousseau verrouillé")
+
+    monkeypatch.setattr(up, "decrypt_value", dechiffrement_impossible)
+    fichier = tmp_path / "THERESE.md"
+    fichier.write_text("**Owner** : Marie Exemple\n", encoding="utf-8")
+    with pytest.raises(ValueError, match="trousseau"):
+        await up.import_from_claude_md(db_session, str(fichier))
+    monkeypatch.undo()
+    relu = await up.get_user_profile(db_session)
+    assert relu is not None and relu.siret == "12345678900010", relu
