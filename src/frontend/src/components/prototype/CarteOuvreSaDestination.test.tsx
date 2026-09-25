@@ -97,4 +97,24 @@ describe('Une carte ouvre sa destination', () => {
     expect((composeur as HTMLTextAreaElement).value.length).toBeGreaterThan(0);
     expect(useChatStore.getState().isStreaming).toBe(false);
   });
+
+  it('B-1370 : la demande à relire reçoit le focus, curseur en fin de texte', async () => {
+    // Hugo, cycle 13 : le focus restait sur « Plus d’outils », puis tombait
+    // sur la page quand le tiroir disparaissait, loin du texte à relire.
+    await ouvrirLeTiroir();
+    await act(async () => {
+      fireEvent.change(screen.getByPlaceholderText(/Chercher une capacité/), {
+        target: { value: 'Recherche web' },
+      });
+    });
+    await act(async () => {
+      fireEvent.click(screen.getAllByRole('button', { name: /Recherche web/ })[0]);
+    });
+
+    const composeur = (await screen.findByPlaceholderText(/Demande à Thérèse/)) as HTMLTextAreaElement;
+    await waitFor(() => expect(document.activeElement).toBe(composeur));
+    expect(composeur.selectionStart).toBe(composeur.value.length);
+    await act(async () => { await new Promise((r) => setTimeout(r, 400)); });
+    expect(document.activeElement).toBe(composeur);
+  });
 });

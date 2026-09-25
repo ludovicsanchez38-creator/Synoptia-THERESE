@@ -822,6 +822,9 @@ export function ConversationCanvasPrototype() {
   const [voiceOpen, setVoiceOpen] = useState(false);
   // B-1370 : incrémenté quand une conversation est choisie dans le tiroir.
   const [focusDuComposeurDemande, setFocusDuComposeurDemande] = useState(0);
+  // B-1370 : incrémenté quand une carte pose une demande à relire.
+  const [relectureDemandee, setRelectureDemandee] = useState(0);
+  const relectureServieRef = useRef(0);
   // B-1386 : le panneau qui a ouvert la vue affichée, et celui à rouvrir quand
   // l'écran aura suivi la pile après un retour.
   const panneauDOrigineRef = useRef<{ outil: RightPanelTool; vue: AppView } | null>(null);
@@ -1222,6 +1225,18 @@ export function ConversationCanvasPrototype() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewDemandee, isStreaming]);
 
+  // B-1370 : la demande posée par une carte reçoit le focus, curseur en fin,
+  // après la fermeture du tiroir et de la palette (qui rendent le focus à
+  // leur déclencheur en se fermant).
+  useEffect(() => {
+    if (relectureDemandee <= relectureServieRef.current || capabilityCenterOpen || commandOpen) return;
+    relectureServieRef.current = relectureDemandee;
+    const champ = composerRef.current;
+    if (!champ) return;
+    champ.focus();
+    champ.setSelectionRange(champ.value.length, champ.value.length);
+  }, [relectureDemandee, capabilityCenterOpen, commandOpen]);
+
   // B-1386 : le panneau d'origine se rouvre une fois l'écran aligné sur la
   // pile (l'effet ci-dessus referme les panneaux en ouvrant la vue précédente).
   useEffect(() => {
@@ -1518,6 +1533,9 @@ export function ConversationCanvasPrototype() {
       return;
     }
     setComposerValue(capability.prompt);
+    // B-1370 : le texte attend d'être relu ; le focus l'y rejoint une fois le
+    // tiroir fermé (il rend sinon le focus à « Plus d'outils »).
+    setRelectureDemandee((n) => n + 1);
   }
 
   /**
