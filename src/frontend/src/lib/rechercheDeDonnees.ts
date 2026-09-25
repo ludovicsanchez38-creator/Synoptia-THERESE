@@ -55,18 +55,25 @@ export function chercherDansLesDonnees(
       detail: projet.description || 'Projet',
     }));
 
+  // B-1440 : une conversation se retrouve aussi par le nom de son projet
+  // (comme dans le tiroir, P-127), et le résultat le nomme.
+  const nomDuProjet = new Map(sources.projets.map((projet) => [projet.id, projet.name]));
   const conversations = sources.conversations
     .filter((conversation) => replierPourRecherche([
       conversation.title,
+      conversation.projectId ? nomDuProjet.get(conversation.projectId) ?? '' : '',
       ...(conversation.messages ?? []).map((message) => message.content ?? ''),
     ].join('\n')).includes(replie))
     .slice(0, PLAFONDS.conversations)
-    .map((conversation): ResultatDeDonnee => ({
-      kind: 'conversation',
-      id: conversation.id,
-      titre: conversation.title || 'Nouvelle conversation',
-      detail: 'Conversation',
-    }));
+    .map((conversation): ResultatDeDonnee => {
+      const projet = conversation.projectId ? nomDuProjet.get(conversation.projectId) : undefined;
+      return {
+        kind: 'conversation',
+        id: conversation.id,
+        titre: conversation.title || 'Nouvelle conversation',
+        detail: projet ? `Conversation · Projet : ${projet}` : 'Conversation',
+      };
+    });
 
   return { contacts, projets, conversations };
 }
