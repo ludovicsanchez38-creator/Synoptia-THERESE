@@ -3,6 +3,7 @@ import { save } from '@tauri-apps/plugin-dialog';
 import { writeFile } from '@tauri-apps/plugin-fs';
 
 const mockApiFetch = vi.fn();
+const mockRequest = vi.fn();
 
 vi.mock('./core', async () => {
   const actual = await vi.importActual<typeof import('./core')>('./core');
@@ -10,6 +11,7 @@ vi.mock('./core', async () => {
     ...actual,
     API_BASE: 'http://127.0.0.1:17293',
     apiFetch: (...args: unknown[]) => mockApiFetch(...args),
+    request: (...args: unknown[]) => mockRequest(...args),
   };
 });
 
@@ -66,9 +68,9 @@ describe('data API', () => {
     // Elle attend désormais l'indexation en vol (B-1249, jusqu'à ~19 s) avant
     // d'effacer : le délai client par défaut annonçait un échec pendant que
     // la purge aboutissait.
-    mockApiFetch.mockResolvedValue(new Response(JSON.stringify({ deleted: true, message: 'ok', note: '' }), { status: 200 }));
+    mockRequest.mockResolvedValue({ deleted: true, message: 'ok', note: '' });
     await deleteAllData();
-    const options = mockApiFetch.mock.calls[0][1] as { timeoutMs?: number | null };
-    expect(options.timeoutMs).toBeNull();
+    const [chemin, options] = mockRequest.mock.calls[0] as [string, { timeoutMs?: number | null }];
+    expect({ chemin, timeoutMs: options.timeoutMs }).toEqual({ chemin: '/api/data/all?confirm=true', timeoutMs: null });
   });
 });
