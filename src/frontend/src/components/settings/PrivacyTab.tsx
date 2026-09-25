@@ -465,7 +465,7 @@ export function PrivacyTab() {
         {!voiceGranted && (
           <div className="mt-3 flex flex-wrap items-center justify-between gap-2 rounded-md border border-border/50 bg-surface px-3 py-2">
             <p className="text-xs text-text-muted">
-              Dictée cloud (Groq) : non autorisée. La dictée reste possible en 100 % local.
+              Dictée cloud (Groq) : non autorisée. La dictée passe alors par la voix locale, si elle est disponible (voir plus bas).
             </p>
             <Button variant="secondary" size="sm" onClick={handleGrantVoiceConsent}>
               Autoriser la dictée cloud (Groq)
