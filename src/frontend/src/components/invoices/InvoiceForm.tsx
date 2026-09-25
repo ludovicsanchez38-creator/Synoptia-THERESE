@@ -92,6 +92,14 @@ function isValidDecimalDraft(value: string) {
   return /^\d*([.,]\d*)?$/.test(value);
 }
 
+/**
+ * B-1400 : « 1 000,50 € » collé dans un prix était refusé en bloc. Espaces
+ * (y compris insécables) et symbole euro sont retirés avant validation.
+ */
+function nettoyerSaisieDecimale(value: string) {
+  return value.replace(/[\s\u00a0\u202f€]/g, '');
+}
+
 function parseDecimalDraft(value: string) {
   if (!value.trim()) return null;
   const normalized = value.replace(',', '.').trim();
@@ -248,13 +256,32 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
     setLines(newLines);
   }
 
-  function updateDecimalLineInput(index: number, field: keyof InvoiceLineInputState, rawValue: string) {
-    if (!isValidDecimalDraft(rawValue)) {
+  // B-1393 : la sélection de chaque champ montant, relevée à chaque changement.
+  // Une touche refusée laissait le curseur en fin de champ : « 1 » sélectionné
+  // puis « -2 » donnait 12. On rend la sélection d'avant.
+  const selectionsRef = useRef(new Map<HTMLInputElement, [number, number]>());
+  function releverSelection(e: React.SyntheticEvent<HTMLInputElement>) {
+    const champ = e.currentTarget;
+    selectionsRef.current.set(champ, [champ.selectionStart ?? 0, champ.selectionEnd ?? 0]);
+  }
+
+  function updateDecimalLineInput(
+    index: number,
+    field: keyof InvoiceLineInputState,
+    rawValue: string,
+    champ?: HTMLInputElement,
+  ) {
+    const value = nettoyerSaisieDecimale(rawValue);
+    if (!isValidDecimalDraft(value)) {
+      const avant = champ ? selectionsRef.current.get(champ) : undefined;
+      if (champ && avant) {
+        requestAnimationFrame(() => champ.setSelectionRange(avant[0], avant[1]));
+      }
       return;
     }
 
     const newInputs = [...lineInputs];
-    newInputs[index] = { ...newInputs[index], [field]: rawValue };
+    newInputs[index] = { ...newInputs[index], [field]: value };
     setLineInputs(newInputs);
   }
 
@@ -710,7 +737,8 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
                           type="text"
                           inputMode="decimal"
                           value={lineInputs[index]?.quantity ?? formatDecimalInput(line.quantity)}
-                          onChange={(e) => updateDecimalLineInput(index, 'quantity', e.target.value)}
+                          onChange={(e) => updateDecimalLineInput(index, 'quantity', e.target.value, e.currentTarget)}
+                          onSelect={releverSelection}
                           required
                         />
                       </td>
@@ -721,7 +749,8 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
                           type="text"
                           inputMode="decimal"
                           value={lineInputs[index]?.unit_price_ht ?? formatDecimalInput(line.unit_price_ht)}
-                          onChange={(e) => updateDecimalLineInput(index, 'unit_price_ht', e.target.value)}
+                          onChange={(e) => updateDecimalLineInput(index, 'unit_price_ht', e.target.value, e.currentTarget)}
+                          onSelect={releverSelection}
                           required
                         />
                       </td>
