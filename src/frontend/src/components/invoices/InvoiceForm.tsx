@@ -863,7 +863,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
               <h3 className="text-sm font-medium text-text mb-2">Conditions de paiement</h3>
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <span className="text-text-muted">Delai :</span>{' '}
+                  <span className="text-text-muted">Délai :</span>{' '}
                   <span className="text-text">{invoice.payment_terms}</span>
                 </div>
                 <div>
@@ -872,7 +872,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
                 </div>
                 {invoice.late_penalty_rate && (
                   <div>
-                    <span className="text-text-muted">Penalites de retard :</span>{' '}
+                    <span className="text-text-muted">Pénalités de retard :</span>{' '}
                     <span className="text-text">{invoice.late_penalty_rate}% annuel</span>
                   </div>
                 )}

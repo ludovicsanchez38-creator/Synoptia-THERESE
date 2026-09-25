@@ -547,8 +547,9 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
 
       {/* Footer stats */}
       <div className="px-3 py-2 border-t border-border/50 text-xs text-text-muted">
-        {filteredEntries.length} elements
-        {searchQuery && ' (filtre: "' + searchQuery + '")'}
+        {/* B-1450 : accents et accord (« 0 élément », « 3 éléments »). */}
+        {filteredEntries.length} {filteredEntries.length > 1 ? 'éléments' : 'élément'}
+        {searchQuery && ` (filtre : « ${searchQuery} »)`}
       </div>
     </div>
   );
