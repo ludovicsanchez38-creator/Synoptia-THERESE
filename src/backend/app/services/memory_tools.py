@@ -1215,12 +1215,23 @@ async def creations_du_chat_suspendues() -> AsyncIterator[None]:
     laissait écrire après la purge une création lancée pendant ses autres
     attentes ; celles déjà en vol sont attendues par la purge elle-même
     (`attendre_les_gestes_de_creation`, sous son plafond B-1277)."""
-    global _CREATIONS_SUSPENDUES
-    _CREATIONS_SUSPENDUES += 1
+    suspendre_les_creations_du_chat()
     try:
         yield
     finally:
-        _CREATIONS_SUSPENDUES -= 1
+        reprendre_les_creations_du_chat()
+
+
+def suspendre_les_creations_du_chat() -> None:
+    """B-1284 : forme sans bloc, pour la restauration, dont le try/finally
+    enjambe déjà begin() et la fin du mode maintenance."""
+    global _CREATIONS_SUSPENDUES
+    _CREATIONS_SUSPENDUES += 1
+
+
+def reprendre_les_creations_du_chat() -> None:
+    global _CREATIONS_SUSPENDUES
+    _CREATIONS_SUSPENDUES = max(0, _CREATIONS_SUSPENDUES - 1)
 
 
 async def attendre_les_gestes_de_creation() -> None:

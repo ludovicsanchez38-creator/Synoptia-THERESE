@@ -1536,6 +1536,14 @@ async def restore_backup(
             raise HTTPException(status_code=503, detail=str(exc)) from exc
         raise
 
+    # B-1284 : comme la purge (B-1276), le chat ne crée plus rien jusqu'au
+    # finally ; begin() ne suit plus une réponse en flux après ses en-têtes.
+    from app.services.memory_tools import (
+        reprendre_les_creations_du_chat,
+        suspendre_les_creations_du_chat,
+    )
+
+    suspendre_les_creations_du_chat()
     try:
         # B-1222, B-1235 : la restauration remplace la base et l'index ; une
         # indexation de fond d'avant ne doit plus écrire. L'attente vit DANS
@@ -1611,6 +1619,7 @@ async def restore_backup(
                 ),
             ) from e
     finally:
+        reprendre_les_creations_du_chat()
         maintenance_mode.end()
         # US-003 : ne jamais laisser subsister l'archive déchiffrée en clair.
         if decrypted_temp is not None:
