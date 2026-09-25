@@ -102,6 +102,19 @@ if (isTauri()) {
   _pluginLoaded = true;
 }
 
+// B-1424 (revue adverse de la RFC P-109) : le greffon écrit chaque dictée
+// dans `app_data_dir/tauri-plugin-mic-recorder/`, et rien ne l'effaçait. Le
+// fichier part dès qu'il a été lu, que la transcription réussisse ou non ; un
+// effacement refusé ne casse pas la dictée.
+async function effacerLEnregistrement(chemin: string): Promise<void> {
+  try {
+    const { remove } = await import('@tauri-apps/plugin-fs');
+    await remove(chemin);
+  } catch (err) {
+    console.warn('[VoiceRecorder] Enregistrement non effacé :', err);
+  }
+}
+
 export function useVoiceRecorder(options: UseVoiceRecorderOptions = {}): UseVoiceRecorderReturn {
   const { onTranscript, onError } = options;
 
@@ -189,6 +202,7 @@ export function useVoiceRecorder(options: UseVoiceRecorderOptions = {}): UseVoic
       setError(errorMsg);
       onError?.(errorMsg);
     } finally {
+      await effacerLEnregistrement(savePath);
       if (transcriptionControllerRef.current === controller) {
         transcriptionControllerRef.current = null;
       }
