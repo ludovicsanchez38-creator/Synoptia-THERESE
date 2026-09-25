@@ -1104,7 +1104,7 @@ async def bloquer_un_evenement(
     """
     evenement = await session.get(CalendarEvent, event_id)
     if evenement is None:
-        raise HTTPException(status_code=404, detail="Evenement introuvable")
+        raise HTTPException(status_code=404, detail="Événement introuvable")
 
     motif = (request.blocage or "").strip()
     if request.blocage is not None and not motif:
@@ -1608,7 +1608,7 @@ async def delete_event(
             # absent par ValueError ; sans ce filet, un second clic sur
             # « supprimer » rendait 500 là où la lecture rend déjà 404.
             raise HTTPException(status_code=404, detail="Événement introuvable") from absent
-        return {"success": True, "message": "Evenement supprime"}
+        return {"success": True, "message": "Événement supprimé"}
 
     # Google Calendar
     if not account_id:
@@ -1638,7 +1638,7 @@ async def delete_event(
             await session.delete(db_event)
             await session.commit()
 
-        return {"success": True, "message": "Evenement supprime"}
+        return {"success": True, "message": "Événement supprimé"}
 
     except Exception as e:
         logger.error(f"Failed to delete event: {e}")

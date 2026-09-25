@@ -1179,8 +1179,8 @@ async def _resoudre_calendrier(
         )
     if not auto_create_local:
         return None, (
-            "Aucun calendrier configure. Connecte un compte Google, ou cree un "
-            "calendrier local depuis le panneau Calendrier."
+            "Aucun agenda configuré. Connecte un compte Google, ou crée un "
+            "agenda local depuis l'écran Agenda."
         )
     cal = Calendar(
         id=generate_uuid(),
@@ -1677,7 +1677,8 @@ async def _create_calendar_event(
         )
         event = await provider.create_event(request)
         return (
-            f"Evenement cree : **{event.summary}** "
+            # B-1431 : accents rétablis (le message part tel quel à l'écran).
+            f"Événement créé : **{event.summary}** "
             f"le {event.start.strftime('%d/%m/%Y %H:%M') if event.start else ''}"
         )
     except Exception:
