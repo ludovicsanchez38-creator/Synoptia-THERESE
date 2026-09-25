@@ -877,6 +877,9 @@ async def generate_invoice_pdf(
         "siret": user_profile.get("siret", ""),
         "code_ape": user_profile.get("code_ape", ""),
         "tva_intra": user_profile.get("tva_intra", ""),
+        # B-1445 : le régime choisit la mention légale (P-119) ; la liste
+        # blanche l'oubliait et le PDF sortait toujours « Aucune TVA facturée ».
+        "regime_tva": user_profile.get("regime_tva", "normal"),
     }
 
     # Générer le PDF (dans le dossier de travail si configuré)
