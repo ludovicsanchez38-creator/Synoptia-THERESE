@@ -131,3 +131,13 @@ peux accepter d'un « oui » global ou corriger une par une.
   alertes » avec « faite », projet d'une tâche depuis son formulaire (le filtre
   projet existe mais rien ne pose le projet), personne liée visible sur la
   tâche. **Recommandation** : oui aux trois.
+- Recette, lot 3 : les documents produits par THÉRÈSE (présentation,
+  tableur) se terminent par « Généré par THERESE - Synoptia ». Le slogan
+  « Synoptia - L'entrepreneur augmenté » a été retiré de la page de titre
+  (B-1453). **Recommandation** : retirer aussi ce pied, ou le rendre
+  facultatif dans le profil d'export : le document est celui de
+  l'utilisatrice.
+- P-152 à P-155 (recette, lots 2 et 3) : explication du score au clavier,
+  livrable depuis le projet, avoir lié à sa facture d'origine, date réelle
+  d'un paiement. **Recommandation** : oui aux quatre.
+
