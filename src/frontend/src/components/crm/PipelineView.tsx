@@ -5,7 +5,7 @@
  * Drag & Drop via @dnd-kit.
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HelpCircle } from 'lucide-react';
 import { Etiquette } from '../ui/Etiquette';
@@ -47,6 +47,11 @@ export function PipelineView({ contacts, onContactClick, onStageChange }: Pipeli
   const { maskText } = useDemoMask();
   const [contactsByStage, setContactsByStage] = useState<Record<string, ContactResponse[]>>({});
   const [activeContact, setActiveContact] = useState<ContactResponse | null>(null);
+  // B-1383 : la carte déposée dans une autre colonne n'y apparaît qu'après la
+  // réponse du moteur, sous un autre parent : l'ancien nœud part avec le
+  // focus. On retient la carte pour lui rendre le focus dans sa colonne.
+  const carteDeposee = useRef<{ id: string; stage: string } | null>(null);
+  const grilleRef = useRef<HTMLDivElement>(null);
 
   // B-237 : sans `coordinateGetter`, dnd-kit avance son pointeur virtuel de
   // 25 px par flèche — dans des colonnes minmax(15rem, 1fr), la carte
@@ -65,6 +70,19 @@ export function PipelineView({ contacts, onContactClick, onStageChange }: Pipeli
 
     setContactsByStage(grouped);
   }, [contacts]);
+
+  useEffect(() => {
+    const deposee = carteDeposee.current;
+    if (!deposee || !contactsByStage[deposee.stage]?.some((c) => c.id === deposee.id)) return;
+    carteDeposee.current = null;
+    const selecteur = `[data-colonne="${echapperPourCss(deposee.stage)}"] [data-carte="${echapperPourCss(deposee.id)}"]`;
+    const nouvelle = grilleRef.current?.querySelector<HTMLElement>(selecteur);
+    const actif = document.activeElement as HTMLElement | null;
+    // Seulement si le focus est perdu (page) ou resté sur l'ancienne carte :
+    // un focus posé ailleurs entre-temps n'est pas volé.
+    const focusPerdu = !actif || actif === document.body || actif.dataset.carte === deposee.id;
+    if (nouvelle && focusPerdu && actif !== nouvelle) nouvelle.focus();
+  }, [contactsByStage]);
 
   // B-237 : Échap pendant un glissé descendait toute la cascade de la coque
   // jusqu'à `collapseEmbeddedView()` — la vue CRM entière se fermait au geste
@@ -119,6 +137,7 @@ export function PipelineView({ contacts, onContactClick, onStageChange }: Pipeli
     const currentContact = contacts.find((c) => c.id === contactId);
     if (!currentContact || currentContact.stage === targetStage) return;
 
+    carteDeposee.current = { id: contactId, stage: targetStage };
     onStageChange(contactId, targetStage);
   }
 
@@ -140,7 +159,7 @@ export function PipelineView({ contacts, onContactClick, onStageChange }: Pipeli
           : null;
       })}
     >
-      <div className="grid grid-flow-col auto-cols-[minmax(15rem,1fr)] gap-3 overflow-x-auto pb-2 snap-x snap-proximity">
+      <div ref={grilleRef} className="grid grid-flow-col auto-cols-[minmax(15rem,1fr)] gap-3 overflow-x-auto pb-2 snap-x snap-proximity">
         {PIPELINE_STAGES.map((stage) => (
           <DroppableStage key={stage.id} stage={stage} count={contactsByStage[stage.id]?.length || 0}>
             <SortableContext
@@ -180,6 +199,11 @@ interface DroppableStageProps {
   children: React.ReactNode;
 }
 
+/** `CSS.escape` n'existe pas partout (jsdom ancien) : repli sur les guillemets. */
+function echapperPourCss(valeur: string): string {
+  return typeof globalThis.CSS?.escape === 'function' ? globalThis.CSS.escape(valeur) : valeur.replace(/["\\]/g, '\\$&');
+}
+
 function DroppableStage({ stage, count, children }: DroppableStageProps) {
   const { isOver, setNodeRef } = useDroppable({ id: stage.id });
   const etiquette = etiquetteDEtape(stage.id);
@@ -187,6 +211,7 @@ function DroppableStage({ stage, count, children }: DroppableStageProps) {
   return (
     <div
       ref={setNodeRef}
+      data-colonne={stage.id}
       className={cn(
         'snap-start min-h-[22rem] bg-surface-2 rounded-md p-2 grid gap-2 content-start',
         isOver && 'ring-2 ring-ring bg-accent-tint',
@@ -242,6 +267,7 @@ function SortableContactCard({ contact, onClick }: SortableContactCardProps) {
       {...attributes}
       {...listeners}
       aria-label={nomAccessible}
+      data-carte={contact.id}
     >
       <ContactCard
         contact={contact}
