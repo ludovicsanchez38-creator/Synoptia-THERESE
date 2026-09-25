@@ -107,16 +107,21 @@ export function TodayDashboardCard({
 }) {
   // Le masque du mode démo : l'écran par défaut ne laisse aucun vrai nom.
   const { maskText } = useDemoMask();
-  const items = resource.status === 'ready' ? buildTodayAttentionItems(resource.data) : [];
+  // B-1417 : une relecture (retour de focus, B-317) garde les données
+  // affichées (B-426) ; les lignes restent donc à l'écran. Les remplacer par
+  // des squelettes démontait le bouton appuyé : le clic était perdu.
+  const donnees = resource.status === 'ready' || resource.status === 'loading' ? resource.data : null;
+  const lu = donnees !== null;
+  const items = donnees ? buildTodayAttentionItems(donnees) : [];
   // Une lecture qui a échoué ne dit RIEN de l'état réel : compter ses données
   // pour zéro, c'est annoncer une journée calme qu'on n'a pas constatée.
   const sourcesEnPanne =
-    resource.status === 'ready' ? nommerLesSources(resource.data.indisponibles) : [];
-  const presentes = resource.status === 'ready' ? sourcesPresentes(resource.data) : [];
+    donnees ? nommerLesSources(donnees.indisponibles) : [];
+  const presentes = donnees ? sourcesPresentes(donnees) : [];
   // Entrée 11b : le brief montre six éléments, le reste se déroule ici plutôt
   // que sur un autre écran. Depuis le 29/08, le seuil est réglable.
   const [toutAfficher, setToutAfficher] = useState(false);
-  const jour = resource.status === 'ready' ? resource.data.date : null;
+  const jour = donnees ? donnees.date : null;
   const [reglage, setReglage] = useState<ReglageDuBrief>(REGLAGE_PAR_DEFAUT);
   const [jourConnu, setJourConnu] = useState<string | null>(null);
   // Le réglage vit et meurt avec la journée civile du backend : dès qu'elle
@@ -158,20 +163,20 @@ export function TodayDashboardCard({
   const sansMessagerie = items.length === 0 && setup !== null && setup.has_email === false;
   const videNonConstate = items.length === 0 && !sansMessagerie && sourcesEnPanne.length > 0;
   const nbRetards = items.filter((item) => item.urgent).length;
-  const nonAffiches = resource.status === 'ready' ? nombreNonAffiche(resource.data) : 0;
+  const nonAffiches = donnees ? nombreNonAffiche(donnees) : 0;
 
   let titre = 'Ta journée';
   let meta = 'Lecture des sources locales';
   if (resource.status === 'error') meta = 'Lecture impossible';
-  else if (resource.status === 'ready' && items.length > 0) {
+  else if (lu && items.length > 0) {
     titre = todayBriefTitle(items.length);
     meta = `${items.length} ${pluriel(items.length, 'élément', 'éléments')}`;
     if (nbRetards > 0) meta += `, dont ${nbRetards} en retard`;
     if (nonAffiches > 0) meta += `, et ${nonAffiches} ${pluriel(nonAffiches, 'autre non affiché', 'autres non affichés')}`;
     if (sourcesEnPanne.length > 0) meta += ` · ${metaDesPannes(sourcesEnPanne)}`;
-  } else if (resource.status === 'ready' && sansMessagerie) meta = 'Messagerie non branchée';
-  else if (resource.status === 'ready' && videNonConstate) meta = `${metaDesPannes(sourcesEnPanne)}, lecture incomplète`;
-  else if (resource.status === 'ready') {
+  } else if (lu && sansMessagerie) meta = 'Messagerie non branchée';
+  else if (lu && videNonConstate) meta = `${metaDesPannes(sourcesEnPanne)}, lecture incomplète`;
+  else if (lu) {
     titre = todayBriefTitle(0);
     meta = 'Aucune échéance, aucune facture en attente';
   }
@@ -194,7 +199,7 @@ export function TodayDashboardCard({
         actions={
           <>
             <BoutonOuvrirLaVue vue="calendar" onOuvrir={() => onOpenView('calendar')} className={CLASSE_BOUTON_VUE} />
-            {resource.status === 'ready' && items.length > 0 && (
+            {lu && items.length > 0 && (
               <Button
                 variant="primary"
                 size="md"
@@ -211,7 +216,7 @@ export function TodayDashboardCard({
       {/* Le variateur (plan du 29/08) : trois mots écrits, un seul choix
           (radiogroup), habillé des segments de la DA. Il n'apparaît que
           lorsqu'il a de quoi replier. */}
-      {resource.status === 'ready' && motsOfferts.length > 1 && (
+      {lu && motsOfferts.length > 1 && (
         <div className="flex flex-wrap items-center gap-2 border-t border-border px-4 py-2">
           <span id="variateur-brief-libelle" className="text-sm text-text-muted">
             Montre-moi
@@ -247,7 +252,7 @@ export function TodayDashboardCard({
       {/* La panne est nommée dans tous les corps, une seule fois, au-dessus.
           Un seul « Réessayer » dans la carte : ici seulement si le corps n'en
           porte pas (le vide non constaté a le sien). */}
-      {resource.status === 'ready' && sourcesEnPanne.length > 0 && (
+      {lu && sourcesEnPanne.length > 0 && (
         <div className="px-4 pt-3">
           <Alerte
             data-testid="today-dashboard-indisponible"
@@ -266,7 +271,7 @@ export function TodayDashboardCard({
         </div>
       )}
 
-      {resource.status === 'loading' ? (
+      {resource.status === 'loading' && !lu ? (
         <>
           <div aria-hidden="true">
             <SqueletteDeLigne />
@@ -373,7 +378,7 @@ export function TodayDashboardCard({
         </>
       )}
 
-      {resource.status === 'ready' && (presentes.length > 0 || sourcesEnPanne.length > 0) && (
+      {lu && (presentes.length > 0 || sourcesEnPanne.length > 0) && (
         <div className="flex flex-wrap items-center gap-1.5 border-t border-border bg-surface-2 px-4 py-2.5 text-xs font-medium text-text-muted">
           <span className="mr-1">Lu dans</span>
           {presentes.map((s) => (
