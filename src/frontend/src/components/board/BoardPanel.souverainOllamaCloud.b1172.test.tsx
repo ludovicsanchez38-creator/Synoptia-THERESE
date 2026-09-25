@@ -60,8 +60,8 @@ async function lancerSouverain() {
     target: { value: 'Dois-je passer ma société en SASU cette année ?' },
   });
   // Laisse la sonde et la déclaration B-110 se poser.
-  await waitFor(() => expect(screen.getAllByLabelText('Modèle du conseiller analyst').length).toBeGreaterThan(0));
-  const select = screen.getAllByLabelText('Modèle du conseiller analyst')[0] as HTMLSelectElement;
+  await waitFor(() => expect(screen.getAllByLabelText("Modèle du conseiller : L'Analyste").length).toBeGreaterThan(0));
+  const select = screen.getAllByLabelText("Modèle du conseiller : L'Analyste")[0] as HTMLSelectElement;
   const optionsProposees = Array.from(select.options).map((o) => o.value);
   const valeurAffichee = select.value;
   fireEvent.click(screen.getByTestId('board-submit-btn'));
