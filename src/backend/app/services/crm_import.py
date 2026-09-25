@@ -320,12 +320,16 @@ def _parse_json(content: bytes) -> list[dict]:
     if isinstance(data, dict):
         # Check for nested structure
         if "contacts" in data:
-            return data["contacts"]
+            data = data["contacts"]
         elif "projects" in data:
-            return data["projects"]
+            data = data["projects"]
         elif "deliverables" in data:
-            return data["deliverables"]
-        return [data]
+            data = data["deliverables"]
+        else:
+            return [data]
+    # B-1301 : un nombre, un texte ou null tombait plus loin en TypeError (500).
+    if not isinstance(data, list):
+        raise ValueError("Le fichier JSON doit contenir une liste de fiches (ou un objet).")
     return data
 
 
