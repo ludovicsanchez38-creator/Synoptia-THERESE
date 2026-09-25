@@ -227,7 +227,14 @@ function CategoryAccordion({
   // Cycle 6 (Sophie, sophie-02) : une recherche annonçait « 3 résultats » sans
   // en montrer un seul si la catégorie avait été repliée avant ; l'accordéon
   // suit désormais l'intention du parent quand elle change.
-  useEffect(() => { setIsOpen(defaultOpen); }, [defaultOpen]);
+  // B-1281 : ajusté PENDANT le rendu, et seulement quand elle change. Un effet
+  // tournait aussi au montage : joué après un clic de repli précoce, il
+  // rouvrait la catégorie.
+  const [intentionPrecedente, setIntentionPrecedente] = useState(defaultOpen);
+  if (intentionPrecedente !== defaultOpen) {
+    setIntentionPrecedente(defaultOpen);
+    setIsOpen(defaultOpen);
+  }
 
   return (
     <div className="overflow-hidden rounded-md border border-border bg-surface shadow-sm">
