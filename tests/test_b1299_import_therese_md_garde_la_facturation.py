@@ -83,3 +83,20 @@ async def test_la_meme_personne_autrement_ecrite_garde_tout(db_session, tmp_path
     fichier.write_text("**Owner** : helene EXEMPLE\n", encoding="utf-8")
     profil = await up.import_from_claude_md(db_session, str(fichier))
     assert profil.siret == "12345678900010", profil
+
+
+@pytest.mark.asyncio
+async def test_la_reponse_de_l_import_porte_la_facturation(client, tmp_path):
+    """B-1323 : la route d'import ne renvoyait pas la facturation ; l'écran des
+    Paramètres l'affichait vide, et « Enregistrer » l'effaçait. Lecteur δ."""
+    r = await client.post(
+        "/api/config/profile",
+        json={"name": "Marie Exemple", "address": "12 rue de l'Exemple", "siret": "12345678900010", "nda": "93000000000"},
+    )
+    assert r.status_code == 200, r.text
+    fichier = tmp_path / "THERESE.md"
+    fichier.write_text("**Owner** : Marie Exemple\n**Marque** : Exemple SARL\n", encoding="utf-8")
+    reponse = await client.post("/api/config/profile/import-claude-md", json={"file_path": str(fichier)})
+    assert reponse.status_code == 200, reponse.text
+    corps = reponse.json()
+    assert (corps["address"], corps["siret"], corps["nda"]) == ("12 rue de l'Exemple", "12345678900010", "93000000000"), corps

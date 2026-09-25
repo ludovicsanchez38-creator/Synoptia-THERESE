@@ -1215,6 +1215,8 @@ async def import_claude_md(
     # Update cache
     set_cached_profile(profile)
 
+    # B-1323 : la facturation fait partie de la réponse ; omise, l'écran des
+    # Paramètres l'affichait vide et « Enregistrer » l'effaçait en base.
     return UserProfileResponse(
         name=profile.name,
         nickname=profile.nickname,
@@ -1223,6 +1225,12 @@ async def import_claude_md(
         context=profile.context,
         email=profile.email,
         location=profile.location,
+        address=profile.address,
+        siren=profile.siren,
+        tva_intra=profile.tva_intra,
+        siret=profile.siret,
+        code_ape=profile.code_ape,
+        nda=profile.nda,
         display_name=profile.display_name(),
     )
 
