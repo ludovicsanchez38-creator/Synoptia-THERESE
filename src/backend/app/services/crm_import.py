@@ -50,9 +50,12 @@ class ImportResult:
     @property
     def message(self) -> str:
         """Human-readable summary."""
+        # B-1278 : un signalement (cellule écartée) ne fait pas oublier ce qui
+        # a été enregistré ; le message compte toujours les lignes.
+        bilan = f"{self.created} créés, {self.updated} mis à jour, {self.skipped} ignorés"
         if self.success:
-            return f"Import termine: {self.created} crees, {self.updated} mis a jour, {self.skipped} ignores"
-        return f"Import avec erreurs: {len(self.errors)} erreurs sur {self.total_rows} lignes"
+            return f"Import terminé : {bilan}"
+        return f"Import terminé avec {len(self.errors)} signalement(s) : {bilan}, sur {self.total_rows} lignes"
 
 
 @dataclass
