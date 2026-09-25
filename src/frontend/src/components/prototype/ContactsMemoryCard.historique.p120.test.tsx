@@ -46,4 +46,23 @@ describe('P-120 : l’historique sur la fiche de Retrouver', () => {
     expect(within(historique).getByText('Objectif : reprendre confiance à l’oral.')).toBeInTheDocument();
     expect(apiMocks.listActivities).toHaveBeenCalledWith(expect.objectContaining({ contact_id: 'c-helene' }));
   });
+
+  it('dans la colonne étroite de la fiche, la date passe sous le titre', async () => {
+    // Chrome 1280x800 : titres de 123 px sur une section de 267, trois lignes.
+    apiMocks.listActivities.mockResolvedValue([{
+      id: 'a1', contact_id: 'c-helene', type: 'note', title: 'Note rendez-vous : Séance Hélène',
+      description: null, extra_data: null, created_at: '2026-09-24T10:00:00Z',
+    }]);
+    render(
+      <ContactsMemoryCanvas
+        resource={{ status: 'ready', error: null, data: [helene] }}
+        selectedContactId="c-helene"
+        onSelectContact={vi.fn()}
+        onRetry={vi.fn()}
+        onOpenClassic={vi.fn()}
+      />,
+    );
+    const titre = await screen.findByText('Note rendez-vous : Séance Hélène');
+    expect(titre.parentElement?.className).toMatch(/\bflex-col\b/);
+  });
 });

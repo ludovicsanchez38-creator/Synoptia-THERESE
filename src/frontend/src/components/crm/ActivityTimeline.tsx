@@ -15,6 +15,8 @@ import { Squelette } from '../ui/Squelette';
 
 interface ActivityTimelineProps {
   contactId: string;
+  /** P-120 : colonne étroite (fiche de Retrouver), la date passe sous le titre. */
+  compacte?: boolean;
 }
 
 const ACTIVITY_ICONS = {
@@ -38,7 +40,7 @@ const ACTIVITY_COLORS = {
 // B-566 puis B-1353 : `extra_data` (JSON brut), « Score: » et « Raison: »
 // ne s'affichent jamais ; `presenterActivite` en fait des phrases.
 
-export function ActivityTimeline({ contactId }: ActivityTimelineProps) {
+export function ActivityTimeline({ contactId, compacte = false }: ActivityTimelineProps) {
   const [activities, setActivities] = useState<ActivityResponse[]>([]);
   const [loading, setLoading] = useState(true);
   // B-1414 : une note de séance porte des noms ; en démonstration, masqués.
@@ -106,7 +108,7 @@ export function ActivityTimeline({ contactId }: ActivityTimelineProps) {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: index * 0.05 }}
-            className="flex gap-4"
+            className={compacte ? 'flex gap-2' : 'flex gap-4'}
           >
             {/* Timeline line */}
             <div className="relative flex flex-col items-center">
@@ -119,15 +121,15 @@ export function ActivityTimeline({ contactId }: ActivityTimelineProps) {
             </div>
 
             {/* Content */}
-            <div className="flex-1 pb-6">
-              <div className="bg-surface rounded-md p-4">
-                <div className="flex items-start justify-between mb-2">
+            <div className={compacte ? 'min-w-0 flex-1 pb-3' : 'flex-1 pb-6'}>
+              <div className={compacte ? 'bg-surface rounded-md p-3' : 'bg-surface rounded-md p-4'}>
+                <div className={compacte ? 'mb-1 flex flex-col' : 'flex items-start justify-between mb-2'}>
                   <h4
                     className={`font-medium text-text-primary${annulee ? ' line-through opacity-60' : ''}`}
                   >
                     {titre}
                   </h4>
-                  <span className="text-xs text-text-muted whitespace-nowrap ml-2">
+                  <span className={compacte ? 'text-xs text-text-muted' : 'text-xs text-text-muted whitespace-nowrap ml-2'}>
                     {formatDate(activity.created_at)}
                   </span>
                 </div>

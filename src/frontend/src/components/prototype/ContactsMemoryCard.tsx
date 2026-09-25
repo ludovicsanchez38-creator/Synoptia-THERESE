@@ -301,7 +301,7 @@ export function ContactsMemoryCanvas({
                 <section aria-label="Historique" className="mt-5">
                   <div className="text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">Historique</div>
                   <div className="mt-2">
-                    <ActivityTimeline key={selectedContact.id} contactId={selectedContact.id} />
+                    <ActivityTimeline key={selectedContact.id} contactId={selectedContact.id} compacte />
                   </div>
                 </section>
               </div>
