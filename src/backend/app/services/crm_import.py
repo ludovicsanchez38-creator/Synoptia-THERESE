@@ -17,6 +17,7 @@ from typing import Any, Literal
 from app.models.entities import Contact, Deliverable, Project, generate_uuid
 from app.models.schemas import adresse_unique_valide, perimetre_normalise
 from app.services.crm_utils import (
+    DELIVERABLE_STATUS_MAP,
     ETAPES_PIPELINE,
     PROJECT_STATUS_MAP,
     cle_de_statut,
@@ -1099,23 +1100,6 @@ class CRMImportService:
 
         result = ImportResult(success=True, total_rows=len(raw_data))
 
-        # Status mapping
-        status_map = {
-            "a_faire": "a_faire",
-            "a faire": "a_faire",
-            "todo": "a_faire",
-            "en_cours": "en_cours",
-            "en cours": "en_cours",
-            "in_progress": "en_cours",
-            "en_revision": "en_revision",
-            "en revision": "en_revision",
-            "review": "en_revision",
-            "valide": "valide",
-            "validé": "valide",
-            "done": "valide",
-            "completed": "valide",
-        }
-
         for idx, row in enumerate(raw_data):
             try:
                 mapped = _map_columns(row, mapping)
@@ -1155,7 +1139,8 @@ class CRMImportService:
                         continue
 
                 raw_status = str(mapped.get("status") or "").lower().strip()
-                statut_reconnu = status_map.get(raw_status)
+                # B-1320 : même table et même clé que la synchro tableur.
+                statut_reconnu = DELIVERABLE_STATUS_MAP.get(cle_de_statut(raw_status))
                 status = statut_reconnu or "a_faire"
                 # B-1307 : inconnu, le statut ne remplace rien (B-1083, B-1106)
                 # et prend le défaut à la création ; il se dit au rapport.
@@ -1197,16 +1182,25 @@ class CRMImportService:
                     result.skipped += 1
 
                 else:
+                    echeance_lue = _parse_value(mapped.get("due_date"), "datetime")
                     deliverable = Deliverable(
                         id=deliverable_id or generate_uuid(),
                         title=mapped.get("title", "Sans titre"),
                         description=mapped.get("description"),
                         project_id=project_id,
                         status=status,
-                        due_date=_parse_value(mapped.get("due_date"), "datetime"),
+                        due_date=echeance_lue,
                     )
                     self.session.add(deliverable)
                     result.created += 1
+                    # B-1321 : à la création aussi, une échéance illisible se dit.
+                    if echeance_lue is None and str(mapped.get("due_date") or "").strip():
+                        result.errors.append(ImportError(
+                            row=idx + 1,
+                            column="due_date",
+                            message=f"Date « {str(mapped['due_date']).strip()} » illisible, non enregistrée",
+                            data=mapped,
+                        ))
 
             except Exception as e:
                 logger.error(f"Error importing deliverable row {idx + 1}: {e}")
