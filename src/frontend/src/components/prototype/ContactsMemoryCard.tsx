@@ -14,6 +14,8 @@ import { contactMatchesQuery } from '../../stores/contactsStore';
 import { libelleDEtape } from '../crm/pipelineEtapes';
 import { ActivityTimeline } from '../crm/ActivityTimeline';
 import { useDemoMask } from '../../hooks';
+import { listerLesSeancesDuContact } from '../../services/api';
+import type { CalendarEvent } from '../../services/api/calendar';
 import {
   contactDisplayName,
   contactInitials,
@@ -163,6 +165,64 @@ export function ContactsMemoryCard({
   );
 }
 
+function quandLaSeance(seance: CalendarEvent): string {
+  if (seance.all_day && seance.start_date) {
+    return new Date(`${seance.start_date}T00:00:00`).toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long' });
+  }
+  if (!seance.start_datetime) return 'Horaire à confirmer';
+  const debut = new Date(seance.start_datetime);
+  if (Number.isNaN(debut.getTime())) return 'Horaire à confirmer';
+  return debut.toLocaleString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' });
+}
+
+function ProchainesSeances({ contactId, aUneAdresse }: { contactId: string; aUneAdresse: boolean }) {
+  const [seances, setSeances] = useState<CalendarEvent[] | null>(null);
+  const [erreur, setErreur] = useState(false);
+  const { maskText } = useDemoMask();
+  useEffect(() => {
+    if (!aUneAdresse) return;
+    let vivant = true;
+    setSeances(null);
+    setErreur(false);
+    listerLesSeancesDuContact(contactId)
+      .then((liste) => { if (vivant) setSeances(liste); })
+      .catch(() => { if (vivant) setErreur(true); });
+    return () => { vivant = false; };
+  }, [contactId, aUneAdresse]);
+
+  return (
+    <section aria-label="Prochaines séances" className="mt-5">
+      <div className="text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">Prochaines séances</div>
+      <div className="mt-2">
+        {!aUneAdresse ? (
+          <p className="text-sm text-text-muted">Ajoute son adresse e-mail : ses rendez-vous s’y rattachent par l’adresse des participants.</p>
+        ) : erreur ? (
+          <p className="text-sm text-text-muted">Les séances n’ont pas pu être lues.</p>
+        ) : seances === null ? (
+          <p className="text-sm text-text-muted">Lecture de l’agenda…</p>
+        ) : seances.length === 0 ? (
+          <p className="text-sm text-text-muted">Aucune séance à venir avec cette adresse.</p>
+        ) : (
+          <ul className="grid gap-1.5">
+            {seances.map((seance) => (
+              <li key={seance.id}>
+                <button
+                  type="button"
+                  onClick={() => window.dispatchEvent(new CustomEvent('therese:preparer-seance', { detail: { evenement: seance } }))}
+                  className="flex w-full flex-col items-start rounded-md border border-border bg-surface px-3 py-2 text-left hover:bg-surface-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
+                  <span className="text-sm font-semibold text-text">{maskText(seance.summary)}</span>
+                  <span className="text-sm text-text-muted">{quandLaSeance(seance)}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </section>
+  );
+}
+
 export function ContactsMemoryCanvas({
   resource,
   selectedContactId,
@@ -295,6 +355,10 @@ export function ContactsMemoryCanvas({
                     ))}
                   </div>
                 )}
+
+                {/* P-116 : pour une coach, la fiche cliente sans ses séances
+                    n'a pas de sens. */}
+                <ProchainesSeances contactId={selectedContact.id} aUneAdresse={Boolean(choisi?.email)} />
 
                 {/* P-120 : les notes de séance et les échanges enregistrés
                     (activités) ne vivaient que dans la vue Pipeline. */}

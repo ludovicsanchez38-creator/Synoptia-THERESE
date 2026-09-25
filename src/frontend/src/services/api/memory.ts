@@ -6,6 +6,7 @@
  */
 
 import { ApiError, request } from './core';
+import type { CalendarEvent } from './calendar';
 
 // Types
 export interface Contact {
@@ -404,4 +405,12 @@ async function enregistrerLeTelechargement(blob: Blob, filename: string): Promis
   document.body.removeChild(anchor);
   URL.revokeObjectURL(url);
   return 'browser_download_started';
+}
+
+/**
+ * P-116 : les prochaines séances d'un contact, rapprochées par son adresse
+ * e-mail parmi les participants (même règle que Préparer et le brief).
+ */
+export async function listerLesSeancesDuContact(contactId: string): Promise<CalendarEvent[]> {
+  return request<CalendarEvent[]>(`/api/memory/contacts/${encodeURIComponent(contactId)}/seances`);
 }

@@ -77,6 +77,7 @@ export {
   exportVCFFile,
   downloadVCFFile,
   downloadContactsTableur,
+  listerLesSeancesDuContact,
   type VCFDownloadResult,
   type Contact,
   type Project,

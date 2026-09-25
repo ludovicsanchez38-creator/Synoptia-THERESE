@@ -27,6 +27,7 @@ from app.models.schemas import (
     fiche_identifiable,
 )
 from app.services.audit import AuditAction, log_activity
+from app.services.civil_time import date_civile_paris
 from app.services.qdrant import get_qdrant_service
 from app.services.scoring import update_contact_score
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
@@ -885,6 +886,78 @@ async def lire_la_fiche(
 
     fiche = await fiche_selon_le_contrat(contact, session)
     return {**fiche, "consigne": CONSIGNE_DE_LECTURE}
+
+
+PLAFOND_SEANCES = 20
+
+
+@router.get("/contacts/{contact_id}/seances")
+async def prochaines_seances(
+    contact_id: str,
+    limit: int = Query(5, ge=1, le=PLAFOND_SEANCES),
+    session: AsyncSession = Depends(get_session),
+) -> list[dict[str, Any]]:
+    """P-116 : les prochaines séances d'un contact, pour sa fiche.
+
+    Rapprochement par l'adresse e-mail parmi les participants, comme Préparer
+    (`contactsForEvent`) et le brief (`_attendee_emails`). Sans adresse sur la
+    fiche, rien n'est rapproché : aucune séance n'est inventée par le nom.
+    """
+    from datetime import UTC, datetime
+
+    from app.models.entities import CalendarEvent
+    from app.models.schemas import CalendarEventResponse
+    from app.routers.dashboard import _attendee_emails
+    from sqlalchemy import and_, or_
+
+    contact = await session.get(Contact, contact_id)
+    if contact is None:
+        raise HTTPException(status_code=404, detail="Contact introuvable")
+    courriel = (contact.email or "").strip().lower()
+    if not courriel:
+        return []
+
+    aujourd_hui = date_civile_paris()
+    debut_du_jour = datetime.combine(aujourd_hui, datetime.min.time())
+    motif = courriel.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    requete = select(CalendarEvent).where(
+        CalendarEvent.status != "cancelled",
+        func.lower(CalendarEvent.attendees).like(f"%{motif}%", escape="\\"),
+        or_(
+            CalendarEvent.start_datetime >= debut_du_jour,
+            and_(CalendarEvent.all_day == True, CalendarEvent.start_date >= aujourd_hui.isoformat()),  # noqa: E712
+        ),
+    )
+    candidats = (await session.execute(requete)).scalars().all()
+    # Le LIKE ne sert qu'à dégrossir : « marie.helene@… » contient
+    # « helene@… ». Seule une adresse identique rapproche.
+    seances = [e for e in candidats if courriel in _attendee_emails(e.attendees)]
+
+    def _debut(evenement: CalendarEvent) -> str:
+        if evenement.start_datetime is not None:
+            return evenement.start_datetime.isoformat()
+        return evenement.start_date or ""
+
+    seances.sort(key=_debut)
+    return [
+        CalendarEventResponse(
+            id=e.id,
+            calendar_id=e.calendar_id,
+            summary=e.summary,
+            description=e.description,
+            location=e.location,
+            start_datetime=e.start_datetime.isoformat() if e.start_datetime else None,
+            end_datetime=e.end_datetime.isoformat() if e.end_datetime else None,
+            start_date=e.start_date,
+            end_date=e.end_date,
+            all_day=bool(e.all_day),
+            attendees=_attendee_emails(e.attendees),
+            recurrence=None,
+            status=e.status or "confirmed",
+            synced_at=(e.synced_at or datetime.now(UTC)).isoformat(),
+        ).model_dump()
+        for e in seances[:limit]
+    ]
 
 
 MESSAGE_FICHE_MODIFIEE_AILLEURS = (
