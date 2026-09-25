@@ -667,14 +667,26 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
               )}
             </div>
 
-            <FormField label="Statut" htmlFor="status">
-              <Select
-                id="status"
-                value={status}
-                onChange={(e) => setStatus(e.target.value as typeof status)}
-                options={documentType === 'devis' ? OPTIONS_STATUT_DEVIS : OPTIONS_STATUT_FACTURE}
-              />
-            </FormField>
+            {/* B-1439 : le moteur crée toujours un brouillon. À la création, un
+                sélecteur de statut promettait ce qu'il ignore. */}
+            {invoice ? (
+              <FormField label="Statut" htmlFor="status">
+                <Select
+                  id="status"
+                  value={status}
+                  onChange={(e) => setStatus(e.target.value as typeof status)}
+                  options={documentType === 'devis' ? OPTIONS_STATUT_DEVIS : OPTIONS_STATUT_FACTURE}
+                />
+              </FormField>
+            ) : (
+              <div>
+                <p className="text-sm font-medium text-text">Statut</p>
+                <p className="mt-1 text-sm text-text-muted">
+                  {documentType === 'devis' ? 'Le devis naît en brouillon' : 'La pièce naît en brouillon'} ;
+                  son statut change quand tu l’envoies ou l’encaisses.
+                </p>
+              </div>
+            )}
 
             <FormField label="Devise" htmlFor="currency">
               <Select
