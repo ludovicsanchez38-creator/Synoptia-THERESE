@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { BoutonOuvrirLaVue } from './BoutonOuvrirLaVue';
 import { formaterCout } from '../../lib/coutAffiche';
 import {
@@ -40,6 +40,7 @@ import { Ligne } from '../ui/Ligne';
 import { Spinner } from '../ui/Spinner';
 import { Squelette } from '../ui/Squelette';
 import { Textarea } from '../ui/Textarea';
+import { modeDuBoardParDefaut } from '../../lib/modeDuBoardParDefaut';
 
 /*
  * DA « Application affinée », lot 7 (11/09/2026) : la carte d'historique et
@@ -699,6 +700,16 @@ function NewBoardForm({
   const [question, setQuestion] = useState('');
   const [context, setContext] = useState('');
   const [mode, setMode] = useState<BoardMode>('cloud');
+  // Décision du 25/09 : Souverain par défaut quand Ollama est le service
+  // choisi ; un choix fait à la main n'est jamais écrasé.
+  const modeChoisiRef = useRef(false);
+  useEffect(() => {
+    let vivant = true;
+    void modeDuBoardParDefaut().then((suggere) => {
+      if (vivant && !modeChoisiRef.current) setMode(suggere);
+    });
+    return () => { vivant = false; };
+  }, []);
   const [confirmationSnapshot, setConfirmationSnapshot] = useState<(BoardRequest & { advisorCount: number }) | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -794,7 +805,7 @@ function NewBoardForm({
               aria-checked={mode === 'cloud'}
               tabIndex={mode === 'cloud' ? 0 : -1}
               onKeyDown={(event) => handleRovingFocus(event, '[role="radio"]', 'horizontal')}
-              onClick={() => setMode('cloud')}
+              onClick={() => { modeChoisiRef.current = true; setMode('cloud'); }}
               className={classeDuMode(mode === 'cloud')}
             >
               <Globe aria-hidden="true" className={`${ICONE} text-domaine-prospects`} />
@@ -807,7 +818,7 @@ function NewBoardForm({
               aria-checked={mode === 'sovereign'}
               tabIndex={mode === 'sovereign' ? 0 : -1}
               onKeyDown={(event) => handleRovingFocus(event, '[role="radio"]', 'horizontal')}
-              onClick={() => setMode('sovereign')}
+              onClick={() => { modeChoisiRef.current = true; setMode('sovereign'); }}
               className={classeDuMode(mode === 'sovereign')}
             >
               <ShieldCheck aria-hidden="true" className={`${ICONE} text-domaine-prospects`} />

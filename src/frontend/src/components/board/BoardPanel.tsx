@@ -32,6 +32,7 @@ import {
 import { annulerDeliberation, couperTransport } from './annulerDeliberation';
 import { Spinner } from '../ui/Spinner';
 import { estModeleOllamaCloud } from '../../lib/ollamaCloud';
+import { modeDuBoardParDefaut } from '../../lib/modeDuBoardParDefaut';
 
 // B-1176 : la confiance s'affiche en français, comme la carte de synthèse.
 const LIBELLES_CONFIANCE: Record<string, string> = { high: 'élevée', medium: 'moyenne', low: 'faible' };
@@ -117,6 +118,14 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
     synthesis: BoardSynthesis;
   } | null>(null);
   const [mode, setMode] = useState<BoardMode>('cloud');
+  // Décision du 25/09 : Souverain par défaut quand Ollama est le service
+  // choisi, dès qu'Ollama répond ; un choix fait à la main n'est jamais écrasé.
+  const modeChoisiRef = useRef(false);
+  const [modeSuggere, setModeSuggere] = useState<BoardMode>('cloud');
+  const choisirLeMode = useCallback((suivant: BoardMode) => {
+    modeChoisiRef.current = true;
+    setMode(suivant);
+  }, []);
   const [ollamaModels, setOllamaModels] = useState<Array<{ name: string; size: number; paramSize?: string }>>([]);
   const [selectedModels, setSelectedModels] = useState<Record<string, string>>({});
   const [ollamaAvailable, setOllamaAvailable] = useState(false);
@@ -165,6 +174,16 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
   useEffect(() => {
     checkOllama();
   }, [checkOllama]);
+
+  useEffect(() => {
+    let vivant = true;
+    void modeDuBoardParDefaut().then((suggere) => { if (vivant) setModeSuggere(suggere); });
+    return () => { vivant = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!modeChoisiRef.current && modeSuggere === 'sovereign' && ollamaAvailable) setMode('sovereign');
+  }, [modeSuggere, ollamaAvailable]);
 
   const handleModelChange = useCallback((role: string, model: string) => {
     setSelectedModels((prev) => ({ ...prev, [role]: model }));
@@ -593,7 +612,7 @@ export function BoardPanel({ isOpen, onClose }: BoardPanelProps) {
                     <div className="flex justify-center mb-4">
                       <ModeSelector
                         mode={mode}
-                        onChange={setMode}
+                        onChange={choisirLeMode}
                         ollamaAvailable={ollamaAvailable}
                         raisonIndisponible={raisonSouverain}
                         onRefreshOllama={checkOllama}
