@@ -27,6 +27,7 @@ import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Segments } from '../ui/Segments';
 import { Textarea } from '../ui/Textarea';
+import { localDateKey } from '../../lib/civilDate';
 
 interface InvoiceFormProps {
   invoice: Invoice | null;
@@ -136,7 +137,9 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
   const [contactId, setContactId] = useState(invoice?.contact_id || '');
   const [currency, setCurrency] = useState(invoice?.currency || 'EUR');
   const [issueDate, setIssueDate] = useState(
-    invoice?.issue_date.split('T')[0] || new Date().toISOString().split('T')[0]
+    // B-1413 : date civile locale ; `toISOString()` donnait la veille entre
+    // minuit et 2 h à Paris.
+    invoice?.issue_date.split('T')[0] || localDateKey(new Date())
   );
   const [dueDate, setDueDate] = useState(() => {
     if (invoice?.due_date) {
@@ -144,7 +147,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
     }
     const date = new Date();
     date.setDate(date.getDate() + 30);
-    return date.toISOString().split('T')[0];
+    return localDateKey(date);
   });
   const [status, setStatus] = useState(invoice?.status || 'draft');
   const [notes, setNotes] = useState(invoice?.notes || '');
