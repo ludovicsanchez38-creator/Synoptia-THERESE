@@ -12,6 +12,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+import anyio
 from app.models.database import get_session
 from app.models.entities_agents import AgentMessage, AgentSession, AgentTask
 from app.models.processing import EtatTache as EtatTacheTraitement
@@ -66,6 +67,10 @@ def repo_error_message(source_path: str) -> str:
         "git clone <adresse du dépôt> therese-source"
     )
 _running_agent_tasks: dict[str, asyncio.Task[Any]] = {}
+# B-1478 : missions dont l'arrêt a été DEMANDÉ (route d'annulation). Une
+# annulation sans demande vient du départ du client (écran fermé, page
+# rechargée) : la fiche le dit, au lieu d'« annulée par l'utilisateur ».
+_arrets_demandes: set[str] = set()
 _PROFILE_DISABLED_MUTATION_TOOLS = {"write_file", "run_command"}
 _MAX_OPENCLAW_AGENTS = 3
 
@@ -369,7 +374,12 @@ async def agent_request(
 
         except asyncio.CancelledError:
             final_status = "cancelled"
-            final_error = "Mission annulée par l'utilisateur."
+            if task.id in _arrets_demandes:
+                final_error = "Mission annulée par l'utilisateur."
+            else:
+                final_error = (
+                    "Mission interrompue : l'écran qui la suivait a été fermé ou rechargé."
+                )
             raise
         except Exception as e:
             logger.error(f"Erreur swarm: {e}", exc_info=True)
@@ -385,71 +395,77 @@ async def agent_request(
             final_status = "error"
             final_error = message
         finally:
-            persistance_agent_task_ok = False
-            if _running_agent_tasks.get(task.id) is current_async_task:
-                _running_agent_tasks.pop(task.id, None)
-            # rien ici : le traitement est terminé APRÈS la persistance de
-            # l'AgentTask, plus bas (revue F8 : deux transactions, la seconde
-            # en échec laissait done + in_progress - incohérence durable).
-            # Même si le client ferme le flux, l'état local doit refléter
-            # l'annulation et ne jamais rester artificiellement « en cours ».
-            try:
-                from app.models.database import get_session_context
-
-                async with get_session_context() as update_session:
-                    result = await update_session.execute(
-                        select(AgentTask).where(AgentTask.id == task.id)
-                    )
-                    db_task = result.scalar_one_or_none()
-                    if db_task:
-                        db_task.status = final_status
-                        db_task.branch_name = branch_name
-                        db_task.files_changed = (
-                            json.dumps(files_changed, ensure_ascii=False) if files_changed else None
-                        )
-                        db_task.diff_summary = diff_summary
-                        db_task.run_phase = run_phase
-                        db_task.plan = plan or None
-                        db_task.test_results = json.dumps(test_results, ensure_ascii=False)
-                        db_task.explanation = explanation or None
-                        db_task.events = json.dumps(events, ensure_ascii=False)
-                        db_task.agent_outputs = json.dumps(agent_outputs, ensure_ascii=False)
-                        db_task.agent_model = (
-                            json.dumps(agent_models, ensure_ascii=False) if agent_models else None
-                        )
-                        db_task.base_branch = base_branch
-                        db_task.commit_hash = commit_hash
-                        db_task.error = final_error
-                        db_task.updated_at = datetime.now(UTC)
-                        await update_session.commit()
-                persistance_agent_task_ok = True
-            except Exception as e:
-                logger.error(f"Erreur mise à jour tâche: {e}")
-
-
-            # Cohérence des deux cycles de vie (revue F8) : le traitement se
-            # termine APRÈS l'AgentTask. Si SA persistance a échoué, le
-            # traitement le DIT (failed) plutôt que d'annoncer un done
-            # incohérent avec une mission restée in_progress.
-            if handle is not None:
+            # B-1478 : quand le client part (rechargement), Starlette annule la
+            # portée anyio du flux, et l'annulation est de niveau : chaque await
+            # ci-dessous était annulé, la mission restait « in_progress » pour
+            # toujours et bloquait la suivante. La consignation est protégée.
+            with anyio.move_on_after(10, shield=True):
+                persistance_agent_task_ok = False
+                if _running_agent_tasks.get(task.id) is current_async_task:
+                    _running_agent_tasks.pop(task.id, None)
+                _arrets_demandes.discard(task.id)
+                # rien ici : le traitement est terminé APRÈS la persistance de
+                # l'AgentTask, plus bas (revue F8 : deux transactions, la seconde
+                # en échec laissait done + in_progress - incohérence durable).
+                # Même si le client ferme le flux, l'état local doit refléter
+                # l'annulation et ne jamais rester artificiellement « en cours ».
                 try:
-                    if not persistance_agent_task_ok:
-                        await handle.terminer(
-                            EtatTacheTraitement.FAILED,
-                            error="Persistance de la mission en échec - états à réconcilier",
+                    from app.models.database import get_session_context
+
+                    async with get_session_context() as update_session:
+                        result = await update_session.execute(
+                            select(AgentTask).where(AgentTask.id == task.id)
                         )
-                    elif final_status == "cancelled":
-                        await handle.terminer(EtatTacheTraitement.CANCELLED)
-                    elif final_status == "error":
-                        await handle.terminer(
-                            EtatTacheTraitement.FAILED, error=(final_error or "")[:500]
+                        db_task = result.scalar_one_or_none()
+                        if db_task:
+                            db_task.status = final_status
+                            db_task.branch_name = branch_name
+                            db_task.files_changed = (
+                                json.dumps(files_changed, ensure_ascii=False) if files_changed else None
+                            )
+                            db_task.diff_summary = diff_summary
+                            db_task.run_phase = run_phase
+                            db_task.plan = plan or None
+                            db_task.test_results = json.dumps(test_results, ensure_ascii=False)
+                            db_task.explanation = explanation or None
+                            db_task.events = json.dumps(events, ensure_ascii=False)
+                            db_task.agent_outputs = json.dumps(agent_outputs, ensure_ascii=False)
+                            db_task.agent_model = (
+                                json.dumps(agent_models, ensure_ascii=False) if agent_models else None
+                            )
+                            db_task.base_branch = base_branch
+                            db_task.commit_hash = commit_hash
+                            db_task.error = final_error
+                            db_task.updated_at = datetime.now(UTC)
+                            await update_session.commit()
+                    persistance_agent_task_ok = True
+                except Exception as e:
+                    logger.error(f"Erreur mise à jour tâche: {e}")
+
+
+                # Cohérence des deux cycles de vie (revue F8) : le traitement se
+                # termine APRÈS l'AgentTask. Si SA persistance a échoué, le
+                # traitement le DIT (failed) plutôt que d'annoncer un done
+                # incohérent avec une mission restée in_progress.
+                if handle is not None:
+                    try:
+                        if not persistance_agent_task_ok:
+                            await handle.terminer(
+                                EtatTacheTraitement.FAILED,
+                                error="Persistance de la mission en échec - états à réconcilier",
+                            )
+                        elif final_status == "cancelled":
+                            await handle.terminer(EtatTacheTraitement.CANCELLED)
+                        elif final_status == "error":
+                            await handle.terminer(
+                                EtatTacheTraitement.FAILED, error=(final_error or "")[:500]
+                            )
+                        else:
+                            await handle.terminer(EtatTacheTraitement.DONE)
+                    except Exception:
+                        logger.warning(
+                            "État du traitement Atelier non consigné", exc_info=True
                         )
-                    else:
-                        await handle.terminer(EtatTacheTraitement.DONE)
-                except Exception:
-                    logger.warning(
-                        "État du traitement Atelier non consigné", exc_info=True
-                    )
     return StreamingResponse(
         event_stream(),
         media_type="text/event-stream",
@@ -732,6 +748,7 @@ async def cancel_task(
             )
         )
         _traitement = _r.scalars().first()
+    _arrets_demandes.add(task_id)
     if _traitement is not None:
         await _traitements.demander_arret(_traitement.id)
     else:
