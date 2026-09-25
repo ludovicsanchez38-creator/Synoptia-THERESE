@@ -55,6 +55,8 @@ PROJECT_STATUS_MAP: dict[str, str] = {
     "completed": "completed",
     "on_hold": "on_hold",
     "cancelled": "cancelled",
+    # B-1315 : connu de l'import de fichier, désormais commun aux deux portes.
+    "pause": "on_hold",
 }
 
 VALID_PROJECT_STATUSES = {"active", "completed", "on_hold", "cancelled"}

@@ -16,7 +16,13 @@ from typing import Any, Literal
 
 from app.models.entities import Contact, Deliverable, Project, generate_uuid
 from app.models.schemas import adresse_unique_valide, perimetre_normalise
-from app.services.crm_utils import ETAPES_PIPELINE, etiquettes_ecartees, etiquettes_lues
+from app.services.crm_utils import (
+    ETAPES_PIPELINE,
+    PROJECT_STATUS_MAP,
+    cle_de_statut,
+    etiquettes_ecartees,
+    etiquettes_lues,
+)
 from app.services.formules_tableur import neutraliser_formule
 from openpyxl import load_workbook
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -928,22 +934,6 @@ class CRMImportService:
         result = ImportResult(success=True, total_rows=len(raw_data))
 
         # Status mapping
-        status_map = {
-            "en_cours": "active",
-            "en cours": "active",
-            "actif": "active",
-            "active": "active",
-            "en_pause": "on_hold",
-            "en pause": "on_hold",
-            "pause": "on_hold",
-            "on_hold": "on_hold",
-            "termine": "completed",
-            "terminé": "completed",
-            "completed": "completed",
-            "annule": "cancelled",
-            "annulé": "cancelled",
-            "cancelled": "cancelled",
-        }
 
         for idx, row in enumerate(raw_data):
             try:
@@ -978,7 +968,8 @@ class CRMImportService:
 
                 # Parse status
                 raw_status = str(mapped.get("status") or "").lower().strip()
-                statut_reconnu = status_map.get(raw_status)
+                # B-1315 : même table et même clé que la synchro tableur.
+                statut_reconnu = PROJECT_STATUS_MAP.get(cle_de_statut(raw_status))
                 status = statut_reconnu or "active"
                 # B-1307 : inconnu, le statut ne remplace rien (B-1083, B-1106)
                 # et prend le défaut à la création ; il se dit au rapport.
