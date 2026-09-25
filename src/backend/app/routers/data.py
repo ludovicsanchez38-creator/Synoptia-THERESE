@@ -1438,6 +1438,20 @@ def _finalize_safety_archive(
     return kept
 
 
+
+async def _rouvrir_la_base_apres_restauration() -> None:
+    """B-1470 : rouvre la base si la restauration l'a fermée, puis invalide le
+    service de modèles (sa configuration a pu être lue sans base)."""
+    from app.models import database as base
+    from app.services.llm import invalidate_llm_service
+
+    if base.sync_engine is None:
+        try:
+            await base.init_db()
+        except Exception:
+            logger.exception("Réouverture de la base après restauration impossible")
+    invalidate_llm_service()
+
 @router.post("/restore/{backup_name}")
 async def restore_backup(
     backup_name: str,
@@ -1644,6 +1658,11 @@ async def restore_backup(
                 ),
             ) from e
     finally:
+        # B-1470 : la base fermée pour la restauration (ou son retour arrière)
+        # n'était rouverte qu'au redémarrage : la lecture des préférences
+        # échouait et le chat retombait sur le premier modèle Ollama venu. On
+        # la rouvre ici, puis le service de modèles relit les préférences.
+        await _rouvrir_la_base_apres_restauration()
         reprendre_les_creations_du_chat()
         maintenance_mode.end()
         # US-003 : ne jamais laisser subsister l'archive déchiffrée en clair.
