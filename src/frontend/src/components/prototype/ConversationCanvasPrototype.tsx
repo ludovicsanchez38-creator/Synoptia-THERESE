@@ -281,7 +281,7 @@ function ContextCanvas({
   onEnsureMeetingCalendar: () => Promise<void>;
   onRetryInvoices: () => void;
   onRetryInvoice: () => void;
-  onCreateDevisDraft: (request: CreateInvoiceRequest) => Promise<Invoice>;
+  onCreateDevisDraft: (request: CreateInvoiceRequest, idExistant?: string) => Promise<Invoice>;
   onCreateInvoiceContact: (data: Partial<Contact>) => Promise<Contact>;
   onRetryBoard: () => void;
   onRetryBoardDecision: () => void;

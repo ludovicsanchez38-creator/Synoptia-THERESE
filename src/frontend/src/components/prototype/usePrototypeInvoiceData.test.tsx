@@ -11,6 +11,7 @@ vi.mock('../../services/api', async (importOriginal) => {
     getInvoice: vi.fn(),
     listContacts: vi.fn(),
     listInvoices: vi.fn(),
+    updateInvoice: vi.fn(),
   };
 });
 
@@ -21,6 +22,7 @@ import {
   getInvoice,
   listContacts,
   listInvoices,
+  updateInvoice,
   type Contact,
   type Invoice,
 } from '../../services/api';
@@ -92,5 +94,23 @@ describe('usePrototypeInvoiceData', () => {
     renderHook(() => usePrototypeInvoiceData(false));
     expect(listInvoices).not.toHaveBeenCalled();
     expect(createInvoice).not.toHaveBeenCalled();
+  });
+
+  it('B-1412 : avec l’identifiant du brouillon, il est mis à jour, pas recréé', async () => {
+    const retouche = { ...invoice, subtotal_ht: 590, total_ttc: 708 };
+    vi.mocked(updateInvoice).mockResolvedValue(retouche);
+    const { result } = renderHook(() => usePrototypeInvoiceData(true));
+    await waitFor(() => expect(result.current.resource.status).toBe('ready'));
+
+    await act(async () => {
+      await result.current.createDevisDraft({
+        contact_id: contact.id, document_type: 'devis', currency: 'EUR',
+        lines: [{ description: 'Diagnostic approfondi', quantity: 1, unit_price_ht: 590, tva_rate: 20 }],
+      }, invoice.id);
+    });
+
+    expect(createInvoice).not.toHaveBeenCalled();
+    expect(updateInvoice).toHaveBeenCalledWith(invoice.id, expect.objectContaining({ contact_id: contact.id }));
+    expect(result.current.resource.data?.invoices).toEqual([retouche]);
   });
 });

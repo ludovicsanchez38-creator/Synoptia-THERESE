@@ -6,6 +6,7 @@ import {
   getInvoice,
   listContacts,
   listInvoices,
+  updateInvoice,
   type Contact,
   type CreateInvoiceRequest,
   type Invoice,
@@ -70,7 +71,28 @@ export function usePrototypeInvoiceData(enabled = true) {
     }
   }, []);
 
-  const createDevisDraft = useCallback(async (request: CreateInvoiceRequest) => {
+  // B-1412 : avec `idExistant`, le brouillon déjà enregistré est mis à jour
+  // (une retouche créait un second devis).
+  const createDevisDraft = useCallback(async (request: CreateInvoiceRequest, idExistant?: string) => {
+    if (idExistant) {
+      const misAJour = await updateInvoice(idExistant, {
+        contact_id: request.contact_id,
+        currency: request.currency,
+        issue_date: request.issue_date,
+        due_date: request.due_date,
+        lines: request.lines,
+        notes: request.notes,
+        validite_jours: request.validite_jours,
+      });
+      useInvoiceStore.getState().updateInvoiceInStore(misAJour);
+      setResource((current) => current.status === 'ready'
+        ? {
+            ...current,
+            data: { ...current.data, invoices: current.data.invoices.map((i) => (i.id === misAJour.id ? misAJour : i)) },
+          }
+        : current);
+      return misAJour;
+    }
     const created = await createInvoice({ ...request, document_type: 'devis' });
     useInvoiceStore.getState().addInvoice(created);
     setResource((current) => current.status === 'ready'

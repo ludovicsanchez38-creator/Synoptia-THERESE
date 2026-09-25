@@ -318,7 +318,8 @@ function DevisDraftForm({
   onCreateContact,
 }: {
   data: InvoiceWorkspaceData;
-  onCreateDraft: (request: CreateInvoiceRequest) => Promise<Invoice>;
+  /** B-1412 : `idExistant` met à jour le brouillon déjà enregistré au lieu d'en créer un second. */
+  onCreateDraft: (request: CreateInvoiceRequest, idExistant?: string) => Promise<Invoice>;
   onCreateContact: (data: Partial<Contact>) => Promise<Contact>;
   /** Le contact que la coque a déjà à l'écran, s'il y en a un. */
   contactInitial?: string;
@@ -341,6 +342,10 @@ function DevisDraftForm({
   const [error, setError] = useState<string | null>(null);
   const [errorFieldId, setErrorFieldId] = useState<string | null>(null);
   const [created, setCreated] = useState<Invoice | null>(null);
+  // B-1412 : `created` porte le message de succès et tombe à la première
+  // retouche (B-377) ; le brouillon enregistré, lui, reste celui que la
+  // prochaine confirmation met à jour.
+  const [brouillonEnregistre, setBrouillonEnregistre] = useState<Invoice | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [contactForm, setContactForm] = useState({ firstName: '', lastName: '', company: '', email: '', phone: '', address: '' });
   const [contactSaving, setContactSaving] = useState(false);
@@ -444,8 +449,12 @@ function DevisDraftForm({
     setSaving(true);
     setError(null);
     try {
-      const invoice = await onCreateDraft(snapshot.request);
+      // B-1412 : après un premier enregistrement, la retouche vise CE brouillon.
+      const invoice = brouillonEnregistre
+        ? await onCreateDraft(snapshot.request, brouillonEnregistre.id)
+        : await onCreateDraft(snapshot.request);
       setCreated(invoice);
+      setBrouillonEnregistre(invoice);
       setHasUnsavedChanges(false);
       setConfirmationSnapshot(null);
     } catch (err) {
@@ -650,7 +659,7 @@ function DevisDraftForm({
             <div className="flex items-start gap-2 text-xs text-accent">
               <ShieldCheck className="h-4 w-4 shrink-0" />
               <div>
-                <strong>Confirmer la création du devis brouillon</strong>
+                <strong>{brouillonEnregistre ? `Confirmer la mise à jour de ${brouillonEnregistre.invoice_number}` : 'Confirmer la création du devis brouillon'}</strong>
                 <p className="mt-1">Destinataire : {confirmationSnapshot.recipient}</p>
                 <p>Montant TTC : {formatMoney(confirmationSnapshot.totalTtc, confirmationSnapshot.request.currency)}</p>
                 <p>Échéance : {formatDate(confirmationSnapshot.request.due_date)}</p>
@@ -693,7 +702,8 @@ export function InvoiceWorkspaceCanvas({
   selection: InvoiceSelection;
   onRetry: () => void;
   onRetryInvoice: () => void;
-  onCreateDraft: (request: CreateInvoiceRequest) => Promise<Invoice>;
+  /** B-1412 : `idExistant` met à jour le brouillon déjà enregistré au lieu d'en créer un second. */
+  onCreateDraft: (request: CreateInvoiceRequest, idExistant?: string) => Promise<Invoice>;
   onCreateContact: (data: Partial<Contact>) => Promise<Contact>;
   /** Le contact que la coque a déjà à l'écran, s'il y en a un. */
   contactInitial?: string;
