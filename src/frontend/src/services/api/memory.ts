@@ -34,6 +34,8 @@ export interface Contact {
   rgpd_date_collecte?: string | null;
   rgpd_date_expiration?: string | null;
   rgpd_consentement?: boolean;
+  /** P-133 : la prochaine relance décidée, jour civil (le moteur la ramène à 09:00). */
+  next_follow_up?: string | null;
 }
 
 export interface Project {

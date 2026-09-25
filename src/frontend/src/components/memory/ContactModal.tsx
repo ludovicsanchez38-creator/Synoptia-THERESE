@@ -33,6 +33,8 @@ interface FormData {
   address: string;
   notes: string;
   tags: string;
+  /** P-133 : AAAA-MM-JJ, vide sans relance. */
+  next_follow_up: string;
 }
 
 const initialFormData: FormData = {
@@ -44,6 +46,7 @@ const initialFormData: FormData = {
   address: '',
   notes: '',
   tags: '',
+  next_follow_up: '',
 };
 
 export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModalProps) {
@@ -99,6 +102,8 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
         address: contact.address || '',
         notes: contact.notes || '',
         tags: Array.isArray(contact.tags) ? contact.tags.join(', ') : (contact.tags || ''),
+        // Le moteur rend le jour civil à 09:00 (echeance_de_relance) : on garde le jour.
+        next_follow_up: /^\d{4}-\d{2}-\d{2}/.test(contact.next_follow_up ?? '') ? (contact.next_follow_up as string).slice(0, 10) : '',
       };
       setFormData(chargee);
       setReference(chargee);
@@ -145,6 +150,8 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
         tags: formData.tags.trim()
           ? formData.tags.split(',').map(t => t.trim()).filter(Boolean)
           : null,
+        // P-133 : effacer la date efface la relance (null traverse le moteur).
+        next_follow_up: formData.next_follow_up || null,
       };
 
       // Via le store unique : la création/édition se reflète aussitôt Mémoire ET CRM (P4).
@@ -310,6 +317,20 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
                   onChange={(e) => handleChange('notes', e.target.value)}
                   placeholder="Informations complémentaires..."
                   rows={3}
+                />
+              </FormField>
+
+              {/* P-133 : la relance datée, lue par le brief de l'Accueil,
+                  n'avait aucun champ ; seule une importation pouvait la poser. */}
+              <FormField
+                label="Prochaine relance"
+                htmlFor="contactmodal-relance"
+                description="Le jour venu, l’Accueil te propose de relancer cette personne."
+              >
+                <Input id="contactmodal-relance" readOnly={demoEnabled}
+                  type="date"
+                  value={formData.next_follow_up}
+                  onChange={(e) => handleChange('next_follow_up', e.target.value)}
                 />
               </FormField>
 
