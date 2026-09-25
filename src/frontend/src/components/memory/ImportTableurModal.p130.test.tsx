@@ -59,7 +59,7 @@ describe('P-130 : importer un tableur de contacts', () => {
     expect(await within(fenetre).findByText('3 lignes lues.')).toBeInTheDocument();
     expect(within(fenetre).getByText(/Prénom → Prénom/)).toBeInTheDocument();
     expect(within(fenetre).getByText(/Commentaire/)).toBeInTheDocument();
-    expect(within(fenetre).getByText(/Ligne 3 : Étape « inconnue » inconnue du pipeline/)).toBeInTheDocument();
+    expect(within(fenetre).getByText(/Ligne 4 du tableur : Étape « inconnue » inconnue du pipeline/)).toBeInTheDocument();
     expect(apiMocks.apercuImportContacts).toHaveBeenCalledWith(fichier);
 
     fireEvent.click(within(fenetre).getByRole('button', { name: 'Importer 3 lignes' }));

@@ -39,8 +39,13 @@ function nomDuChamp(champ: string): string {
   return CHAMPS[champ] ?? champ;
 }
 
-function texteDeLaLigne(ligne: LigneDImport): string {
-  return ligne.row > 0 ? `Ligne ${ligne.row} : ${ligne.message}` : ligne.message;
+/** B-1442 : le moteur numérote depuis la première ligne de DONNÉES. Dans un
+ *  CSV ou un classeur, l'en-tête occupe la ligne 1 : on affiche le numéro que
+ *  l'utilisateur voit dans son tableur. Dans un JSON, c'est le rang. */
+function texteDeLaLigne(ligne: LigneDImport, fichier: File | null): string {
+  if (ligne.row <= 0) return ligne.message;
+  if (fichier?.name.toLowerCase().endsWith('.json')) return `Élément ${ligne.row} : ${ligne.message}`;
+  return `Ligne ${ligne.row + 1} du tableur : ${ligne.message}`;
 }
 
 export function ImportTableurModal({ onFermer, onImporte }: { onFermer: () => void; onImporte: () => void }) {
@@ -164,7 +169,7 @@ export function ImportTableurModal({ onFermer, onImporte }: { onFermer: () => vo
                 <div>
                   <p className="font-medium">Lignes écartées ou signalées</p>
                   <ul className="mt-1 list-disc pl-5 text-text-muted">
-                    {apercu.validation_errors.map((ligne, i) => <li key={`${ligne.row}-${i}`}>{texteDeLaLigne(ligne)}</li>)}
+                    {apercu.validation_errors.map((ligne, i) => <li key={`${ligne.row}-${i}`}>{texteDeLaLigne(ligne, fichier)}</li>)}
                   </ul>
                 </div>
               )}
@@ -180,7 +185,7 @@ export function ImportTableurModal({ onFermer, onImporte }: { onFermer: () => vo
               {resultat.errors.length > 0 && <p className="font-medium">Lignes signalées</p>}
               {resultat.errors.length > 0 && (
                 <ul className="list-disc pl-5 text-text-muted">
-                  {resultat.errors.map((ligne, i) => <li key={`${ligne.row}-${i}`}>{texteDeLaLigne(ligne)}</li>)}
+                  {resultat.errors.map((ligne, i) => <li key={`${ligne.row}-${i}`}>{texteDeLaLigne(ligne, fichier)}</li>)}
                 </ul>
               )}
             </div>
