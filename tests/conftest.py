@@ -210,6 +210,13 @@ def _etats_de_module_neufs(monkeypatch):
     monkeypatch.setattr(memory, "_FICHES_RENDUES", [])
     monkeypatch.setattr(memory, "_ARRET_DES_INDEXATIONS", asyncio.Event())
     monkeypatch.setattr(memory_tools, "_CREATIONS_SUSPENDUES", 0)
+    # B-1324 : le cache de profil laissé par un test faisait échouer le
+    # suivant (setup-status) ; le verrou de sonde du bac à sable, créé à la
+    # demande, se lie lui aussi à la boucle de sa première attente.
+    from app.services.agents import bac_a_sable
+
+    monkeypatch.setattr(user_profile, "_cached_profile", None)
+    monkeypatch.setattr(bac_a_sable, "_SONDE_VERROU", None)
 
 
 @pytest.fixture(scope="function")
