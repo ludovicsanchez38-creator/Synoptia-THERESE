@@ -1487,10 +1487,14 @@ async def restore_backup(
 
     try:
         await maintenance_mode.begin()
-    except RuntimeError as exc:
+    except BaseException as exc:
+        # B-1269 : annulée pendant l'attente de begin() (B-1263), la
+        # restauration laissait l'archive déchiffrée en clair (US-003).
         if decrypted_temp is not None:
             decrypted_temp.unlink(missing_ok=True)
-        raise HTTPException(status_code=503, detail=str(exc)) from exc
+        if isinstance(exc, RuntimeError):
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        raise
 
     try:
         # B-1222, B-1235 : la restauration remplace la base et l'index ; une
