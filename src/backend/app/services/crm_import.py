@@ -472,7 +472,7 @@ def _parse_value(value: Any, field_type: str) -> Any:
     return str(value).strip() if value else None
 
 
-def _lire_les_etiquettes(valeur: Any, ligne: int, mapped: dict) -> tuple[str | None, "ImportError | None"]:
+def _lire_les_etiquettes(valeur: Any, ligne: int, mapped: dict[str, Any]) -> tuple[str | None, "ImportError | None"]:
     """B-1286 : étiquettes retenues (JSON) et signalement de celles écartées."""
     lues = etiquettes_lues(valeur)
     ecartees = etiquettes_ecartees(valeur)
