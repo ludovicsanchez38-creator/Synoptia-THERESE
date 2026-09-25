@@ -12,7 +12,7 @@ import {
   HardDrive,
   History,
   Mail,
-  HelpCircle,
+  LayoutGrid,
   Plus,
   Search,
   Settings,
@@ -1826,7 +1826,8 @@ export function ConversationCanvasPrototype() {
                   conversation » ne le voyait jamais.
 
                   Le bouton d'aide ouvre donc ce catalogue, depuis n'importe où. */}
-              <IconButton label="Plus d’outils" onClick={() => setCapabilityCenterOpen(true)}><HelpCircle className="h-[18px] w-[18px]" /></IconButton>
+              {/* P-143 (Zoé, cycle 13) : un « ? » promettait une aide ; le bouton ouvre le tiroir des outils. */}
+              <IconButton label="Plus d’outils" onClick={() => setCapabilityCenterOpen(true)}><LayoutGrid className="h-[18px] w-[18px]" /></IconButton>
               <button
                 type="button"
                 data-testid="shell-profile-button"

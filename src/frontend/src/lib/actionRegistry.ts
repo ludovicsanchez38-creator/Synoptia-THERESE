@@ -80,7 +80,8 @@ export const APP_ACTIONS: AppAction[] = [
   // -- Réglages --
   { id: 'data.export', label: 'Exporter les données', description: 'Sauvegarder ta mémoire (via Réglages)', group: 'Réglages', keywords: ['backup', 'sauvegarde'], run: () => panel().openSettings() },
   { id: 'settings.open', label: 'Paramètres', description: 'Configurer THÉRÈSE', group: 'Réglages', shortcut: ',', run: () => panel().openSettings() },
-  { id: 'shortcuts.open', label: 'Raccourcis clavier', description: 'Voir tous les raccourcis', group: 'Réglages', shortcut: '/', run: () => panel().openShortcuts() },
+  // P-143 : « aide » dans ⌘K rendait 0 résultat.
+  { id: 'shortcuts.open', label: 'Raccourcis clavier', description: 'Voir tous les raccourcis', group: 'Réglages', shortcut: '/', keywords: ['aide', 'help', 'astuces', 'clavier'], run: () => panel().openShortcuts() },
 ];
 
 /** Liste des actions disponibles (pour la palette ⌘K). */
