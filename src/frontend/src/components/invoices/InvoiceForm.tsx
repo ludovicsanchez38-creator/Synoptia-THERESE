@@ -6,6 +6,7 @@
  * US-018 : Conversion devis -> facture + conditions de paiement
  */
 
+import { auCentime } from '../../lib/auCentime';
 import { useState, useEffect, useRef, type FormEvent } from 'react';
 import { motion } from 'framer-motion';
 import { X, Plus, Trash2, Save, FileCheck, AlertTriangle } from 'lucide-react';
@@ -42,10 +43,8 @@ interface InvoiceLineInputState {
   unit_price_ht: string;
 }
 
-/** B-1411 : arrondi au centime, identique au `round(x, 2)` du serveur à deux décimales. */
-function arrondirAuCentime(valeur: number): number {
-  return Math.round(valeur * 100) / 100;
-}
+/** B-1411 puis B-1428 : arrondi commercial partagé avec le moteur. */
+const arrondirAuCentime = auCentime;
 
 const TVA_RATES = [
   { value: 20.0, label: '20% (normale)' },

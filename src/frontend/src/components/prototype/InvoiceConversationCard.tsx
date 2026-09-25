@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState, type ReactNode } from 'react';
+import { auCentime } from '../../lib/auCentime';
 import { montantAvecDevise } from '../../lib/devise';
 import { BoutonOuvrirLaVue } from './BoutonOuvrirLaVue';
 import {
@@ -127,16 +128,11 @@ function dueDateIso(): string {
 }
 
 /**
- * Arrondi au centime, l'unité réelle de l'argent.
- *
- * Pendant de `round(..., 2)` côté serveur. Nuance connue et LAISSÉE telle
- * quelle : Python arrondit au pair le plus proche, `Math.round` arrondit vers
- * le haut. L'écart ne se manifeste que sur un demi-centime exact, que la
- * saisie à deux décimales du formulaire ne produit pas ici.
+ * Arrondi au centime, l'unité réelle de l'argent. B-1428 : l'arrondi
+ * commercial partagé avec le moteur et le formulaire (l'ancien `Math.round`
+ * divergeait du `round` de Python sur un demi-centime exact, 2,5 × 1,25 €).
  */
-function arrondirCentimes(value: number): number {
-  return Math.round(value * 100) / 100;
-}
+const arrondirCentimes = auCentime;
 
 function parseDecimal(value: string): number | null {
   if (!value.trim()) return null;

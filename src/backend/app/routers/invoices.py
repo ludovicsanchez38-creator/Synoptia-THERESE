@@ -8,6 +8,7 @@ Phase 4 - Invoicing
 import logging
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
+from decimal import ROUND_HALF_UP, Decimal
 
 from app.models.database import get_session
 from app.models.entities import Contact, Invoice, InvoiceLine, Preference
@@ -182,6 +183,14 @@ def _date_du_client(valeur: str, champ: str) -> datetime:
         ) from invalide
 
 
+def _au_centime(valeur: float) -> float:
+    """B-1428 : arrondi commercial au centime, demi-centime vers le haut (en
+    valeur absolue), comme l'écran. `round` de Python arrondit au pair sur la
+    représentation binaire : 2,5 × 1,25 = 3,125 donnait 3,12 ici et 3,13 à
+    l'écran. On passe par la représentation décimale courte du nombre."""
+    return float(Decimal(repr(valeur)).quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
+
+
 def _montants_de_ligne(
     ligne: InvoiceLineRequest, tva_applicable: bool = True
 ) -> tuple[float, float]:
@@ -203,10 +212,10 @@ def _montants_de_ligne(
     pas a chaque affichage. Les totaux du document somment ensuite des lignes
     deja arrondies, donc la somme des parts egale toujours le tout.
     """
-    total_ht = round(ligne.quantity * ligne.unit_price_ht, 2)
+    total_ht = _au_centime(ligne.quantity * ligne.unit_price_ht)
     if not tva_applicable:
         return total_ht, total_ht
-    total_ttc = round(total_ht * (1 + ligne.tva_rate / 100), 2)
+    total_ttc = _au_centime(total_ht * (1 + ligne.tva_rate / 100))
     return total_ht, total_ttc
 
 
@@ -217,9 +226,9 @@ def _calculate_invoice_totals(lines: list[InvoiceLine]) -> tuple[float, float, f
     Returns:
         (subtotal_ht, total_tax, total_ttc)
     """
-    subtotal_ht = round(sum(line.total_ht for line in lines), 2)
-    total_ttc = round(sum(line.total_ttc for line in lines), 2)
-    total_tax = round(total_ttc - subtotal_ht, 2)
+    subtotal_ht = _au_centime(sum(line.total_ht for line in lines))
+    total_ttc = _au_centime(sum(line.total_ttc for line in lines))
+    total_tax = _au_centime(total_ttc - subtotal_ht)
 
     return subtotal_ht, total_tax, total_ttc
 
