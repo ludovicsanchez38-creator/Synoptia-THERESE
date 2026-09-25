@@ -14,7 +14,8 @@ export function modeleOpenAIRaisonnant(modele: string): boolean {
 
 /** Sans outils, l'effort n'est transmis qu'aux modèles dont le support est
  * vérifié dans le catalogue backend (fiches GPT-5.6 « tel quel »). */
-const EFFORT_TRANSMIS_SANS_OUTILS = new Set(['gpt-6-astra', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna']);
+// P-122 (25/09/2026) : gpt-6-sol et gpt-6-luna, même contrat que gpt-6-astra.
+const EFFORT_TRANSMIS_SANS_OUTILS = new Set(['gpt-6-sol', 'gpt-6-astra', 'gpt-6-luna', 'gpt-5.6-sol', 'gpt-5.6-terra', 'gpt-5.6-luna']);
 
 export function effortTransmisSansOutils(modele: string): boolean {
   return EFFORT_TRANSMIS_SANS_OUTILS.has(modele.toLowerCase());

@@ -32,11 +32,16 @@ TOKEN_PRICES = {
     "claude-opus-4-7": {"input": 5.00, "output": 25.00},
     "claude-opus-4-6": {"input": 5.00, "output": 25.00},
     "claude-opus-5": {"input": 5.00, "output": 25.00},
+    # P-122 : relevé platform.claude.com/docs/en/about-claude/models/overview le 25/09/2026.
+    "claude-opus-5-5": {"input": 4.00, "output": 20.00},
     "claude-opus-4-8": {"input": 5.00, "output": 25.00},
     "claude-sonnet-4-6": {"input": 3.00, "output": 15.00},
     "claude-haiku-4-5-20251001": {"input": 1.00, "output": 5.00},
     # OpenAI (juin 2026 ; gpt-6-astra relevé developers.openai.com/api/docs/pricing le 10/09/2026, standard, contexte court)
     "gpt-6-astra": {"input": 10.00, "output": 50.00},
+    # P-122 : relevé developers.openai.com/api/docs/pricing le 25/09/2026 (standard, contexte court).
+    "gpt-6-sol": {"input": 2.00, "output": 10.00},
+    "gpt-6-luna": {"input": 0.10, "output": 0.50},
     "gpt-5.6-sol": {"input": 4.00, "output": 20.00},
     "gpt-5.6-terra": {"input": 2.00, "output": 12.00},
     "gpt-5.6-luna": {"input": 0.20, "output": 1.20},

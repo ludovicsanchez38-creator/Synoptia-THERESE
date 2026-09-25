@@ -75,8 +75,8 @@ class TestLesGenerationsCourantesSontProposees:
         from app.routers.config import _available_models_for
 
         for fournisseur, attendu in [
-            ("anthropic", "claude-opus-5"),
-            ("openai", "gpt-5.6-sol"),
+            ("anthropic", "claude-opus-5-5"),  # P-122
+            ("openai", "gpt-6-sol"),  # P-122
             ("grok", "grok-4.6"),
         ]:
             proposes = await _available_models_for(fournisseur)

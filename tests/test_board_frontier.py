@@ -26,9 +26,9 @@ class TestLeHelperOverrides:
             effort_override="max",
         )
         assert service is not None
-        assert service.config.model == "claude-opus-5"
+        assert service.config.model == "claude-opus-5-5"
         assert service.config.effort == "max"
-        # claude-opus-5 : max se traduit max (output_config.effort)
+        # claude-opus-5-5 (P-122) : max se traduit max (output_config.effort)
         assert service.config.effort_resolu == "max"
 
     def test_max_tokens_override_pose_la_config(self, client, monkeypatch):
@@ -54,7 +54,8 @@ class TestLeHelperOverrides:
 
     def test_preferences_non_frontier_ignorees_par_l_override(self, client, monkeypatch):
         """Design : préférence utilisateur gpt-5.5 -> le conseiller reçoit
-        quand même gpt-5.6-sol (model_override gagne sur user_model)."""
+        quand même la tête du catalogue, gpt-6-sol depuis P-122 (model_override
+        gagne sur user_model)."""
         from app.models.database import get_sync_connection
         from app.services.llm import get_llm_service_for_provider
         from sqlalchemy import text
@@ -79,8 +80,8 @@ class TestLeHelperOverrides:
             effort_override="max",
         )
         assert service is not None
-        assert service.config.model == "gpt-5.6-sol"
-        # gpt-5.6-sol : reasoning_effort max transmis tel quel
+        assert service.config.model == "gpt-6-sol"
+        # gpt-6-sol (P-122) : reasoning_effort max transmis tel quel
         assert service.config.effort_resolu == "max"
 
 

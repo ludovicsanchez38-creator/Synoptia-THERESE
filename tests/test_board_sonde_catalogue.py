@@ -81,7 +81,7 @@ class TestLaSonde:
 
         client = FauxClient({
             "api.openai.com": _reponse(
-                {"data": [{"id": "gpt-5.6-sol"}, {"id": "gpt-5.5"}]}
+                {"data": [{"id": "gpt-6-sol"}, {"id": "gpt-5.5"}]}
             ),
         })
         await board_module.sonder_catalogue(client=client)

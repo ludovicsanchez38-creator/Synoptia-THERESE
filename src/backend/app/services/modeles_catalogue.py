@@ -67,6 +67,8 @@ _EFFORT_GEMINI_3 = {"low": "LOW", "medium": "MEDIUM", "high": "HIGH", "max": "HI
 _EFFORT_MISTRAL_MEDIUM = {"low": "high", "medium": "high", "high": "high", "max": "high"}
 
 _ANTHROPIC_EFFORT_OK = FicheModele(effort=_EFFORT_ANTHROPIC)
+# P-122 : Opus 5.5 accepte les cinq niveaux, xhigh compris (doc effort, 25/09/2026).
+_EFFORT_ANTHROPIC_OPUS_55 = {"low": "low", "medium": "medium", "high": "high", "xhigh": "xhigh", "max": "max"}
 
 _EFFORT_GPT6 = {"low": "low", "medium": "medium", "high": "high", "xhigh": "xhigh", "max": "max"}
 
@@ -76,8 +78,11 @@ CATALOGUE: dict[str, FicheFournisseur] = {
         env_vars=("ANTHROPIC_API_KEY",),
         context_window=200000,
         modeles=(
-            "claude-opus-5",                 # Le plus polyvalent (recommandé)
+            # P-122 (Ludo, 25/09/2026) : « start with Claude Opus 5.5 for most
+            # workloads » (platform.claude.com, relevé le 25/09/2026).
+            "claude-opus-5-5",               # Le plus polyvalent (recommandé)
             "claude-fable-5",                # Puissance maximale, plus lent
+            "claude-opus-5",                 # Génération précédente
             "claude-sonnet-5",               # Équilibre vitesse/intelligence
             "claude-haiku-4-5-20251001",     # Le plus rapide
             "claude-opus-4-8",               # Génération précédente
@@ -86,6 +91,13 @@ CATALOGUE: dict[str, FicheFournisseur] = {
             "claude-sonnet-4-6",
         ),
         fiches={
+            # Opus 5.5 : cinq niveaux, défaut medium, réflexion toujours active
+            # (max_tokens couvre réflexion + texte), contexte 1 M, sortie 128 k.
+            "claude-opus-5-5": FicheModele(
+                effort=_EFFORT_ANTHROPIC_OPUS_55,
+                max_tokens_recommande=64000,
+                context_window=1_000_000,
+            ),
             # Effort vérifié (ex-_EFFORT_PREFIXES d'anthropic.py + opus-5,
             # doc effort du 25/08 : opus-5 accepte low..max, défaut high).
             "claude-opus-5": FicheModele(
@@ -105,10 +117,14 @@ CATALOGUE: dict[str, FicheFournisseur] = {
         env_vars=("OPENAI_API_KEY",),
         context_window=200000,
         modeles=(
-            "gpt-5.6-sol",       # Le plus capable de la génération 5.6 (recommandé)
+            # P-122 (Ludo, 25/09/2026) : GPT-6 Sol et Luna, relevés le 25/09 sur
+            # developers.openai.com (contexte 1 050 000, sortie 128 000).
+            "gpt-6-sol",         # Code et agents, génération 6 (recommandé)
             "gpt-6-astra",       # Puissance maximale, plus cher (P-057, Ludo 09/09/2026 ; contexte 1 050 000, sortie 128 000)
+            "gpt-6-luna",        # Le plus économique de la génération 6
+            "gpt-5.6-sol",       # Génération précédente
             "gpt-5.6-terra",     # Équilibre intelligence/coût
-            "gpt-5.6-luna",      # Le plus économique de la génération
+            "gpt-5.6-luna",      # Le plus économique de la génération 5.6
             "gpt-5.5",           # Génération précédente
             "gpt-5.5-pro",       # Réflexion longue
             "gpt-5.4-mini",      # Petit, rapide, bon marché
@@ -117,6 +133,10 @@ CATALOGUE: dict[str, FicheFournisseur] = {
             # gpt-6-astra (doc du 10/09/2026) : reasoning.effort low/medium/high/
             # xhigh/max ; « none » n'est pas documenté, donc jamais envoyé.
             "gpt-6-astra": FicheModele(effort=_EFFORT_GPT6, context_window=1_050_000),
+            # gpt-6-sol / gpt-6-luna : none, low, medium, high, xhigh, max
+            # documentés (25/09/2026) : transmis tels quels.
+            "gpt-6-sol": FicheModele(effort=TEL_QUEL, context_window=1_050_000),
+            "gpt-6-luna": FicheModele(effort=TEL_QUEL, context_window=1_050_000),
             # Fiches 5.6 : none/low/medium/high/xhigh/max, transmis tel quel.
             "gpt-5.6-sol": FicheModele(effort=TEL_QUEL),
             "gpt-5.6-terra": FicheModele(effort=TEL_QUEL),

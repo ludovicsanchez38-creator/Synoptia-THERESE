@@ -20,9 +20,10 @@ class TestLesFrontiers:
     def test_la_tete_de_chaque_liste_est_le_frontier_verifie(self):
         from app.services import modeles_catalogue as cat
 
+        # P-122 (25/09/2026) : Opus 5.5 et GPT-6 Sol, relevés aux sources.
         attendus = {
-            "anthropic": "claude-opus-5",
-            "openai": "gpt-5.6-sol",
+            "anthropic": "claude-opus-5-5",
+            "openai": "gpt-6-sol",
             "gemini": "gemini-3.7-flash",
             "mistral": "mistral-medium-3-5",
             "grok": "grok-4.6",
@@ -183,13 +184,14 @@ class TestLesTablesDeLlmDeriventDuCatalogue:
         self, client, monkeypatch
     ):
         from app.services.llm import LLMService
-        from app.services.modeles_catalogue import CATALOGUE, frontier
+        from app.services.modeles_catalogue import fenetre_de_contexte, frontier
 
         self._poser_preference("llm_provider", "openai")
         monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
         config = LLMService()._default_config()
         assert config.model == frontier("openai")
-        assert config.context_window == CATALOGUE["openai"].context_window
+        # P-122 : la tête (gpt-6-sol) porte sa propre fenêtre, 1 050 000.
+        assert config.context_window == fenetre_de_contexte("openai", frontier("openai"))
 
     def test_repli_par_cle_recoit_le_frontier(self, client, monkeypatch):
         """Sans préférence : première clé trouvée (anthropic) -> frontier."""

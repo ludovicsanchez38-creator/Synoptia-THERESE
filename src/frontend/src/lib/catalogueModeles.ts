@@ -136,8 +136,10 @@ export const FOURNISSEURS: FournisseurConfig[] = [
       // foi ; aucun modèle ne quitte le catalogue.
       // Fable 5 : modèle frontier Anthropic (1M contexte). Thinking toujours
       // actif, paramètres de sampling refusés - géré côté provider backend.
+      // P-122 (25/09/2026) : Opus 5.5 en tête, comme au catalogue du moteur.
+      { id: 'claude-opus-5-5', name: 'Claude Opus 5.5', badge: 'Recommandé' },
       { id: 'claude-fable-5', name: 'Claude Fable 5', badge: 'Frontier' },
-      { id: 'claude-opus-5', name: 'Claude Opus 5', badge: 'Recommandé' },
+      { id: 'claude-opus-5', name: 'Claude Opus 5' },
       { id: 'claude-sonnet-5', name: 'Claude Sonnet 5', badge: 'Équilibré' },
       { id: 'claude-opus-4-8', name: 'Claude Opus 4.8' },
       { id: 'claude-sonnet-4-6', name: 'Claude Sonnet 4.6', badge: 'Équilibré' },
@@ -147,15 +149,20 @@ export const FOURNISSEURS: FournisseurConfig[] = [
   {
     id: 'openai',
     name: 'GPT (OpenAI)',
-    description: 'GPT-5.6 (Sol, Terra, Luna) et 5.5 - Polyvalent et puissant',
+    description: 'GPT-6 (Sol, Astra, Luna) et 5.6 - Polyvalent et puissant',
     keyPrefix: 'sk-',
     keyPlaceholder: 'sk-...',
     consoleUrl: 'https://platform.openai.com/api-keys',
     models: [
+      // P-122 (25/09/2026) : GPT-6 Sol en tête, comme au catalogue du moteur ;
+      // Astra (P-057) manquait au repli.
+      { id: 'gpt-6-sol', name: 'GPT-6 Sol', badge: 'Recommandé' },
+      { id: 'gpt-6-astra', name: 'GPT-6 Astra', badge: 'Frontier' },
+      { id: 'gpt-6-luna', name: 'GPT-6 Luna', badge: 'Rapide' },
       // GPT-5.6 : GA du 09/07/2026 - trois variantes, six niveaux d'effort.
-      { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol', badge: 'Frontier' },
+      { id: 'gpt-5.6-sol', name: 'GPT-5.6 Sol' },
       { id: 'gpt-5.6-terra', name: 'GPT-5.6 Terra', badge: 'Équilibré' },
-      { id: 'gpt-5.6-luna', name: 'GPT-5.6 Luna', badge: 'Rapide' },
+      { id: 'gpt-5.6-luna', name: 'GPT-5.6 Luna' },
       { id: 'gpt-5.5', name: 'GPT-5.5', badge: 'Flagship' },
       { id: 'gpt-5.4', name: 'GPT-5.4' },
       { id: 'gpt-5.4-mini', name: 'GPT-5.4 mini' },
