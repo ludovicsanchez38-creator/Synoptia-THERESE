@@ -211,6 +211,7 @@ function ContextCanvas({
   onClose,
   contactsResource,
   emailMessageResource,
+  aucuneBoiteEmail,
   meetingResource,
   meetingEventResource,
   meetingTarget,
@@ -263,6 +264,8 @@ function ContextCanvas({
   onClose: () => void;
   contactsResource: ReadResource<Contact[]>;
   emailMessageResource: ReadResource<EmailMessage> | null;
+  /** B-1435 : la boîte lue est vide, la rédaction le dit avant de confirmer. */
+  aucuneBoiteEmail: boolean;
   meetingResource: ReadResource<MeetingWorkspaceData>;
   meetingEventResource: ReturnType<typeof usePrototypeMeetingData>['eventResource'];
   meetingTarget: MeetingTarget;
@@ -354,6 +357,7 @@ function ContextCanvas({
         <EmailMessageCanvas
           resource={emailMessageResource}
           nouvelleRedaction={redactionLibre}
+          aucuneBoite={aucuneBoiteEmail}
           onRetry={onRetryEmailMessage}
           onGenerateDraft={onGenerateEmailDraft}
           onSaveDraft={onSaveEmailDraft}
@@ -2510,6 +2514,7 @@ export function ConversationCanvasPrototype() {
                   }}
                   contactsResource={contactsResource}
                   emailMessageResource={emailMessageResource}
+                  aucuneBoiteEmail={emailInboxResource.status === 'ready' && !emailInboxResource.data.currentAccount}
                   meetingResource={meetingResource}
                   meetingEventResource={meetingEventResource}
                   meetingTarget={selectedMeetingTarget}

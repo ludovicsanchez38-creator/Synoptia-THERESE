@@ -169,12 +169,19 @@ export function EmailInboxCard({
 export function EmailMessageCanvas({
   resource,
   nouvelleRedaction = false,
+  aucuneBoite = false,
   onRetry,
   onGenerateDraft,
   onSaveDraft,
   onOpenClassic,
 }: {
   resource: ReadResource<EmailMessage> | null;
+  /**
+   * B-1435 : aucune boîte branchée. Un brouillon ne s'enregistre que chez un
+   * fournisseur : la rédaction le dit avant toute confirmation, et le texte
+   * reste dans le champ.
+   */
+  aucuneBoite?: boolean;
   /**
    * Écrire sans partir d'un message reçu (entrée 10, plan du 28/08).
    *
@@ -314,6 +321,7 @@ export function EmailMessageCanvas({
   }
 
   function requestSave() {
+    if (aucuneBoite) return;
     const validationError = validateDraft();
     if (validationError) {
       setError(validationError.message);
@@ -551,13 +559,18 @@ export function EmailMessageCanvas({
               <button
                 type="button"
                 onClick={requestSave}
-                disabled={saving}
+                disabled={saving || aucuneBoite}
                 className="inline-flex items-center gap-1.5 rounded-md bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink disabled:opacity-60"
               >
                 <Save className="h-3.5 w-3.5" />
                 Enregistrer comme brouillon
               </button>
             </div>
+            {aucuneBoite && (
+              <p className="mt-2 text-xs text-text-muted" data-testid="email-sans-boite">
+                Aucune boîte n’est branchée : le brouillon ne peut pas encore s’enregistrer. Ton texte reste ici ; branche Gmail ou IMAP depuis la vue Email.
+              </p>
+            )}
           </section>
         </div>
       )}
