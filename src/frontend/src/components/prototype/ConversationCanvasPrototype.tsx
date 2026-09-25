@@ -2286,7 +2286,12 @@ export function ConversationCanvasPrototype() {
         {trustCenterOpen && (
           <TrustCenter
             onClose={closeTrustCenter}
-            onOpenPrivacy={() => openSettings('privacy')}
+            onOpenPrivacy={() => {
+              // B-1359/B-1360 : resté ouvert, le Centre masquait la page de
+              // Confidentialité et Échap fermait la couche du dessous.
+              closeTrustCenter();
+              openSettings('privacy');
+            }}
             onOpenAdvanced={() => openSettings('advanced')}
           />
         )}
