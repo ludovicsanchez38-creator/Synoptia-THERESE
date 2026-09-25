@@ -191,12 +191,17 @@ async def _do_projet(
     if not name:
         return "Indique un nom de projet : `/projet Nom du projet [budget=... statut=...]`."
 
-    budget = None
+    budget: float | str | None = None
     if kw.get("budget"):
+        brut = kw["budget"]
         try:
-            budget = float(kw["budget"].replace(",", ".").replace(" ", ""))
+            budget = float(
+                brut.replace(",", ".").replace("€", "").replace("\u00a0", "").replace(" ", "")
+            )
         except ValueError:
-            budget = None
+            # B-1257 : la valeur brute part à l'outil, qui l'écarte ET le dit ;
+            # la jeter ici faisait répondre « Projet créé » sans le budget.
+            budget = brut
 
     args = {
         "name": name,
