@@ -168,9 +168,11 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
         </Button>
       </div>
 
-      {/* Info stockage */}
-      <p className="text-xs text-text-muted mb-4 px-1">
-        Ces informations sont stockées localement{dossierDeDonnees ? ` dans ${dossierDeDonnees}` : ''} et ne quittent jamais ta machine.
+      {/* Info stockage. B-1345 : « ne quittent jamais ta machine » était faux
+          avec un service en ligne (le profil accompagne chaque demande), et
+          écrit en 12 px. */}
+      <p className="text-sm text-text-muted mb-4 px-1">
+        Ces informations sont stockées localement{dossierDeDonnees ? ` dans ${dossierDeDonnees}` : ''}. Avec un modèle local, elles restent sur ta machine ; avec un service en ligne, elles accompagnent tes demandes.
       </p>
 
       {/* Form */}
