@@ -23,7 +23,10 @@ interface ModeSelectorProps {
 export function ModeSelector({ mode, onChange, ollamaAvailable, raisonIndisponible, onRefreshOllama }: ModeSelectorProps) {
   return (
     <div className="flex items-center gap-2">
+      {/* B-1422 : le mode actif s'annonce (aria-pressed), pas seulement par la couleur. */}
       <button
+        type="button"
+        aria-pressed={mode === 'cloud'}
         onClick={() => onChange('cloud')}
         className={cn(
           'relative flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all',
@@ -49,6 +52,8 @@ export function ModeSelector({ mode, onChange, ollamaAvailable, raisonIndisponib
       </button>
 
       <button
+        type="button"
+        aria-pressed={mode === 'sovereign'}
         onClick={() => ollamaAvailable && onChange('sovereign')}
         disabled={!ollamaAvailable}
         title={ollamaAvailable ? 'Mode souverain - Ollama local' : raisonIndisponible ?? 'Ollama non disponible'}
