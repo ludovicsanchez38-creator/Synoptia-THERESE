@@ -1162,7 +1162,8 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   }, [initialPrompt, onInitialPromptConsumed]);
 
   return (
-    <div className="p-4 relative">
+    // B-1437 : repère du bord haut du composeur, pour la carte de confirmation.
+    <div className="p-4 relative" data-zone-composeur="">
       {/* Slash commands menu */}
       <SlashCommandsMenu
         isOpen={showSlashMenu}

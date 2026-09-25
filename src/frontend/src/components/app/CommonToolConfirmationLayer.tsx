@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ToolConfirmationCard } from '../chat/ToolConfirmationCard';
 import { useToolConfirmationStore } from '../../stores/toolConfirmationStore';
 import { Z_LAYER } from '../../styles/z-layers';
@@ -36,9 +36,33 @@ export function CommonToolConfirmationLayer() {
     return () => observateur.disconnect();
   }, [pending, setHauteurCalque]);
 
+  // B-1437 : fixée à 96 px du bas, la carte recouvrait de 14 à 27 px le
+  // composeur, plus haut. Elle se pose 8 px au-dessus de son bord haut réel,
+  // suivi au redimensionnement ; sans composeur, le repli reste 96 px.
+  const [basDuCalque, setBasDuCalque] = useState<number | null>(null);
+  useEffect(() => {
+    if (pending.length === 0) return;
+    const composeur = document.querySelector<HTMLElement>('[data-zone-composeur]');
+    if (!composeur) {
+      setBasDuCalque(null);
+      return;
+    }
+    const placer = () =>
+      setBasDuCalque(Math.max(0, window.innerHeight - composeur.getBoundingClientRect().top + 8));
+    placer();
+    window.addEventListener('resize', placer);
+    const observateur = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(placer);
+    observateur?.observe(composeur);
+    return () => {
+      window.removeEventListener('resize', placer);
+      observateur?.disconnect();
+    };
+  }, [pending]);
+
   return (
     <div
       className={`pointer-events-none fixed inset-x-0 bottom-24 ${Z_LAYER.WIZARD} flex justify-center px-4`}
+      style={basDuCalque === null ? undefined : { bottom: `${basDuCalque}px` }}
       data-testid="common-tool-confirmation-layer"
     >
       <div ref={carteRef} className="pointer-events-auto w-full max-w-2xl">
