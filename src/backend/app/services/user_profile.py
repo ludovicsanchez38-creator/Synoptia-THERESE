@@ -342,6 +342,12 @@ async def _indexer_en_arriere_plan(profile: UserProfile, generation: int) -> Non
                 )
                 return
             await _embed_profile(profile)
+            # B-1292 : même relecture que les fiches (B-1222). Effacé pendant
+            # le calcul (purge, suppression du profil), le vecteur du profil
+            # (nom, courriel, entreprise) restait dans l'index sans sa ligne.
+            if not await _profil_encore_enregistre():
+                qdrant = get_qdrant_service()
+                await asyncio.to_thread(qdrant.delete_by_entity, "owner_profile")
     except Exception:
         logger.warning(
             "Profil enregistre mais non indexe : la question « qui suis-je ? » "
@@ -365,6 +371,19 @@ async def arreter_l_indexation_du_profil() -> None:
     global _GENERATION_PROFIL
     async with _VERROU_INDEXATION:
         _GENERATION_PROFIL += 1
+
+
+async def _profil_encore_enregistre() -> bool:
+    from app.models.database import get_session_context
+
+    async with get_session_context() as session:
+        result = await session.execute(
+            select(Preference.id).where(
+                Preference.key == PROFILE_KEY,
+                Preference.category == PROFILE_CATEGORY,
+            )
+        )
+        return result.first() is not None
 
 
 async def _embed_profile(profile: UserProfile) -> None:
