@@ -197,12 +197,16 @@ def _etats_de_module_neufs(monkeypatch):
 
     from app.routers import calendar as agenda
     from app.routers import memory
-    from app.services import board, memory_tools, project_sync_service, user_profile
+    from app.services import board, indexation, memory_tools, project_sync_service, user_profile
 
     monkeypatch.setattr(user_profile, "_VERROU_INDEXATION", asyncio.Lock())
     monkeypatch.setattr(agenda, "_CREATION_CALENDRIER_PAR_DEFAUT", asyncio.Lock())
     monkeypatch.setattr(project_sync_service, "_verrou_racines", asyncio.Lock())
     monkeypatch.setattr(board, "_verrou_sonde", asyncio.Lock())
+    # B-1318 : le sémaphore d'indexation se lie à la boucle de la même façon.
+    monkeypatch.setattr(
+        indexation, "INDEX_SEMAPHORE", asyncio.Semaphore(indexation.MAX_INDEXATIONS_SIMULTANEES)
+    )
     monkeypatch.setattr(memory, "_FICHES_RENDUES", [])
     monkeypatch.setattr(memory, "_ARRET_DES_INDEXATIONS", asyncio.Event())
     monkeypatch.setattr(memory_tools, "_CREATIONS_SUSPENDUES", 0)
