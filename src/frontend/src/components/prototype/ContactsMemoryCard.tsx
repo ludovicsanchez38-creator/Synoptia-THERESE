@@ -342,9 +342,9 @@ export function ContactsMemoryCanvas({
                 </div>
 
                 <div className="mt-5">
-                  <div className="text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">Notes mémorisées</div>
+                  <div className="text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">Notes de la fiche</div>
                   <div className="mt-2 min-h-24 whitespace-pre-wrap rounded-md border border-border bg-surface p-3 text-sm leading-6 text-text">
-                    {selectedContact.notes ? maskText(selectedContact.notes) : 'Aucune note enregistrée pour ce contact.'}
+                    {selectedContact.notes ? maskText(selectedContact.notes) : 'Aucune note sur la fiche.'}
                   </div>
                 </div>
 
