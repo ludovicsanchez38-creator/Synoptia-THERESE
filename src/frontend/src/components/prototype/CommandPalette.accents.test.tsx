@@ -38,7 +38,7 @@ function ouvrirLaPalette() {
   render(<ConversationCanvasPrototype />);
   fireEvent.click(screen.getByRole('button', { name: /^Rechercher(Ctrl\+K|⌘K)$/ }));
   const champ = screen.getByRole('combobox', {
-    name: 'Rechercher une commande, un parcours ou une capacité',
+    name: 'Rechercher une commande, une capacité, un contact, un projet ou une conversation',
   });
   const resultats = screen.getByRole('listbox', { name: 'Résultats' });
   return {

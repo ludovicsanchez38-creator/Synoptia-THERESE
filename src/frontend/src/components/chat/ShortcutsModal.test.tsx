@@ -31,7 +31,7 @@ describe('ShortcutsModal - glyphe modificateur selon la plateforme', () => {
     render(<ShortcutsModal isOpen={true} onClose={() => {}} />);
 
     // B-1375 : ⌘K porte le nom du dialogue qu'il ouvre.
-    expect(screen.getByText('Rechercher une commande ou une capacité')).toBeTruthy();
+    expect(screen.getByText('Rechercher une commande, une capacité ou une donnée')).toBeTruthy();
     expect(document.body.textContent).not.toContain('⌘');
     expect(screen.getAllByText('Ctrl').length).toBeGreaterThan(0);
   });

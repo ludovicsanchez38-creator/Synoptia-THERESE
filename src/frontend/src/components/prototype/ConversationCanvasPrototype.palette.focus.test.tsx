@@ -82,7 +82,7 @@ describe('B-278 - la palette rend le focus à son déclencheur', () => {
     expect(document.activeElement, 'le déclencheur doit tenir le focus AVANT ⌘K').toBe(declencheur);
 
     fireEvent.keyDown(window, { key: 'k', ...MODIFICATEUR });
-    const palette = screen.getByRole('dialog', { name: 'Rechercher une commande ou une capacité' });
+    const palette = screen.getByRole('dialog', { name: 'Rechercher une commande, une capacité ou une donnée' });
     expect(palette.contains(document.activeElement), 'la palette doit prendre le focus').toBe(true);
 
     fireEvent.keyDown(document, { key: 'Escape' });
@@ -97,7 +97,7 @@ describe('B-278 - la palette rend le focus à son déclencheur', () => {
     fireEvent.keyDown(window, { key: 'k', ...MODIFICATEUR });
 
     const champ = screen.getByRole('combobox', {
-      name: 'Rechercher une commande, un parcours ou une capacité',
+      name: 'Rechercher une commande, une capacité, un contact, un projet ou une conversation',
     });
     fireEvent.change(champ, { target: { value: 'liste des conversations' } });
     const option = screen.getByRole('option', { name: /Ouvrir la liste des conversations/ });

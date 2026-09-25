@@ -186,7 +186,7 @@ describe('ConversationCanvasPrototype - recette UI 16/07', () => {
     // rail qui ne filtrait que des titres de conversation.
     fireEvent.click(navigation.getByRole('button', { name: 'Conversations' }));
     expect(screen.getByLabelText('Rechercher une conversation')).toHaveFocus();
-    expect(screen.queryByRole('dialog', { name: 'Rechercher une commande ou une capacité' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: 'Rechercher une commande, une capacité ou une donnée' })).not.toBeInTheDocument();
     expect(navigation.queryByRole('button', { name: 'Historique' })).toBeNull();
   });
 

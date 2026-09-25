@@ -19,6 +19,8 @@ import {
   ShieldCheck,
   Sparkles,
   User,
+  FolderOpen,
+  MessageSquare,
   Users,
   X,
   Home,
@@ -92,6 +94,10 @@ import { getProfile, type UserProfile } from '../../services/api/config';
 import { useChatStore } from '../../stores/chatStore';
 import { EVENEMENT_OUVRIR_TRAVAIL, ouvrirLeTravail, type DestinationDuTravail } from '../../lib/destinationDuTravail';
 import { lienProfondPresent, lireLaVueQuittee, memoriserLaVue } from '../../lib/vueQuittee';
+import { useDemoMask } from '../../hooks/useDemoMask';
+import { AUCUN_RESULTAT_DE_DONNEES, chercherDansLesDonnees, type ResultatDeDonnee } from '../../lib/rechercheDeDonnees';
+import { listProjects as listerLesProjetsDeLaPalette } from '../../services/api/memory';
+import type { Project as ProjetDeLaPalette } from '../../services/api/memory';
 import { useDocumentStore } from '../../stores/documentStore';
 import { useStatusStore } from '../../stores/statusStore';
 import { TraitementsIndicator } from '../traitements/TraitementsIndicator';
@@ -425,13 +431,45 @@ function CommandPalette({
   onSelect,
   onCapability,
   onAction,
+  onDonnee,
 }: {
   onClose: () => void;
   onSelect: (scenario: Scenario) => void;
   onCapability: (capability: CapabilityItem) => void;
   onAction: (actionId: string) => void;
+  onDonnee: (resultat: ResultatDeDonnee) => void;
 }) {
   const [query, setQuery] = useState('');
+  // P-016 : la palette cherche aussi dans les contacts, les projets et les
+  // conversations déjà lus (recherche locale, rien n'est envoyé).
+  const contactsConnus = useContactsStoreDirect((s) => s.contacts);
+  const contactsLus = useContactsStoreDirect((s) => s.loaded);
+  const conversationsConnues = useChatStore((s) => s.conversations);
+  const [projetsConnus, setProjetsConnus] = useState<ProjetDeLaPalette[]>([]);
+  const { maskText } = useDemoMask();
+  useEffect(() => {
+    if (!contactsLus) void useContactsStoreDirect.getState().fetchContacts().catch(() => undefined);
+  }, [contactsLus]);
+  useEffect(() => {
+    let vivant = true;
+    Promise.resolve(listerLesProjetsDeLaPalette())
+      .then((projets) => { if (vivant) setProjetsConnus(projets ?? []); })
+      .catch(() => undefined);
+    return () => { vivant = false; };
+  }, []);
+  const donnees = useMemo(
+    () => (query.trim()
+      ? chercherDansLesDonnees(query, { contacts: contactsConnus, projets: projetsConnus, conversations: conversationsConnues })
+      : AUCUN_RESULTAT_DE_DONNEES),
+    [query, contactsConnus, projetsConnus, conversationsConnues],
+  );
+  const groupesDeDonnees = [
+    { titre: 'Contacts', resultats: donnees.contacts },
+    { titre: 'Projets', resultats: donnees.projets },
+    { titre: 'Conversations', resultats: donnees.conversations },
+  ].filter((groupe) => groupe.resultats.length > 0);
+  const listeDesDonnees = groupesDeDonnees.flatMap((groupe) => groupe.resultats);
+  const nbDonnees = listeDesDonnees.length;
   const [activeOption, setActiveOption] = useState(0);
   const dialogRef = useRef<HTMLDivElement>(null);
   const isPresent = useIsPresent();
@@ -480,7 +518,7 @@ function CommandPalette({
     ).slice(0, 6);
   }, [query, visibleCapabilities]);
   const scenarioCount = query ? 0 : ACTIONS_ETABLI.length;
-  const optionCount = scenarioCount + visibleCapabilities.length + visibleActions.length;
+  const optionCount = scenarioCount + nbDonnees + visibleCapabilities.length + visibleActions.length;
   const isMac = isMacPlatform();
 
   useEffect(() => {
@@ -490,6 +528,7 @@ function CommandPalette({
       query
         ? indexDeLaMeilleureOption(
             [
+              listeDesDonnees.map((d) => ({ name: d.titre, keywords: [], description: d.detail })),
               visibleCapabilities.map((c) => ({ name: c.title, keywords: [...c.keywords, ...c.features], description: c.description })),
               visibleActions.map((a) => ({ name: a.label, keywords: a.keywords, description: a.description })),
             ],
@@ -497,7 +536,9 @@ function CommandPalette({
           )
         : 0,
     );
-  }, [query, visibleCapabilities, visibleActions]);
+    // listeDesDonnees se recalcule à chaque rendu ; `donnees` en est la source.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, visibleCapabilities, visibleActions, donnees]);
 
   const handleSearchKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Home' || event.key === 'End') {
@@ -529,7 +570,7 @@ function CommandPalette({
         role="dialog"
         aria-modal="true"
         // B-1375 : un nom pour ⌘K, qui dit ce qu'il parcourt.
-        aria-label="Rechercher une commande ou une capacité"
+        aria-label="Rechercher une commande, une capacité ou une donnée"
         tabIndex={-1}
         initial={{ y: -12, scale: 0.98 }}
         animate={{ y: 0, scale: 1 }}
@@ -550,7 +591,7 @@ function CommandPalette({
           <input
             data-dialog-autofocus
             role="combobox"
-            aria-label="Rechercher une commande, un parcours ou une capacité"
+            aria-label="Rechercher une commande, une capacité, un contact, un projet ou une conversation"
             aria-expanded="true"
             aria-autocomplete="list"
             aria-controls="prototype-command-results"
@@ -612,10 +653,52 @@ function CommandPalette({
               redevient un nom ; le compte reste au seul endroit qui l'annonce
               justement. « fréquentes » ne vaut qu'au repos : sous filtre, la
               section liste toutes les capacités qui correspondent. */}
-          <SectionLabel>{query ? 'Capacités' : 'Capacités fréquentes'}</SectionLabel>
+          {(() => {
+            let rang = scenarioCount;
+            return groupesDeDonnees.map((groupe) => (
+              <div key={groupe.titre}>
+                <SectionLabel>{groupe.titre}</SectionLabel>
+                {groupe.resultats.map((resultat) => {
+                  const optionIndex = rang;
+                  rang += 1;
+                  const IconeDeDonnee = resultat.kind === 'contact' ? Users : resultat.kind === 'projet' ? FolderOpen : MessageSquare;
+                  return (
+                    <button
+                      key={`${resultat.kind}-${resultat.id}`}
+                      id={`prototype-command-option-${optionIndex}`}
+                      role="option"
+                      aria-selected={activeOption === optionIndex}
+                      tabIndex={-1}
+                      type="button"
+                      onMouseEnter={() => setActiveOption(optionIndex)}
+                      onClick={() => {
+                        onDonnee(resultat);
+                        onClose();
+                      }}
+                      className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left hover:bg-bg"
+                    >
+                      <span className="grid h-8 w-8 place-items-center rounded-sm bg-surface-2 text-text-muted">
+                        <IconeDeDonnee className="h-4 w-4" />
+                      </span>
+                      <span className="min-w-0 flex-1">
+                        <span className="block truncate text-sm font-semibold text-text">{maskText(resultat.titre)}</span>
+                        <span className="block truncate text-xs text-text-muted">{maskText(resultat.detail)}</span>
+                      </span>
+                      <ChevronRight className="h-4 w-4 text-text-muted" />
+                    </button>
+                  );
+                })}
+              </div>
+            ));
+          })()}
+          {nbDonnees > 0 && <div className="my-2 h-px bg-border" />}
+
+          {(visibleCapabilities.length > 0 || !query) && (
+            <SectionLabel>{query ? 'Capacités' : 'Capacités fréquentes'}</SectionLabel>
+          )}
           {visibleCapabilities.map((capability, capabilityIndex) => {
             const Icon = capability.icon;
-            const optionIndex = scenarioCount + capabilityIndex;
+            const optionIndex = scenarioCount + nbDonnees + capabilityIndex;
             return (
               <button
                 key={capability.id}
@@ -648,11 +731,11 @@ function CommandPalette({
               </button>
             );
           })}
-          {visibleCapabilities.length === 0 && visibleActions.length === 0 && (
+          {nbDonnees === 0 && visibleCapabilities.length === 0 && visibleActions.length === 0 && (
             <div className="px-4 py-8 text-center text-sm text-text-muted">
-              Aucune commande ni capacité ne correspond.
+              Rien ne correspond.
               {/* B-1375 : dire la limite plutôt que laisser croire à une recherche générale. */}
-              <span className="mt-1 block">Cette recherche ne parcourt pas encore tes contacts, conversations ni documents.</span>
+              <span className="mt-1 block">Cette recherche parcourt les commandes, les capacités, tes contacts, tes projets et tes conversations ; pas encore tes documents ni ton agenda.</span>
             </div>
           )}
           {visibleActions.length > 0 && (
@@ -660,7 +743,7 @@ function CommandPalette({
               <div className="my-2 h-px bg-border" />
               <SectionLabel>Commandes de l’application</SectionLabel>
               {visibleActions.map((action, actionIndex) => {
-                const optionIndex = scenarioCount + visibleCapabilities.length + actionIndex;
+                const optionIndex = scenarioCount + nbDonnees + visibleCapabilities.length + actionIndex;
                 return <button key={action.id} id={`prototype-command-option-${optionIndex}`} role="option" aria-selected={activeOption === optionIndex} tabIndex={-1} type="button" onMouseEnter={() => setActiveOption(optionIndex)} onClick={() => { onAction(action.id); onClose(); }} className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-left hover:bg-bg">
                   <span className="grid h-8 w-8 place-items-center rounded-sm bg-accent-tint text-accent"><Sparkles className="h-4 w-4" /></span>
                   <span className="min-w-0 flex-1"><span className="block text-sm font-semibold text-text">{action.label}</span><span className="block truncate text-xs text-text-muted">{action.description}</span></span>
@@ -1292,6 +1375,20 @@ export function ConversationCanvasPrototype() {
     window.addEventListener('therese:preparer-seance', surDemande);
     return () => window.removeEventListener('therese:preparer-seance', surDemande);
   }, []);
+
+  // P-016 : un résultat de données de la palette ouvre son objet.
+  function ouvrirUneDonnee(resultat: ResultatDeDonnee) {
+    if (blockStreamingNavigation()) return;
+    if (resultat.kind === 'contact') {
+      chooseScenario('memory');
+      setSelectedContactId(resultat.id);
+    } else if (resultat.kind === 'projet') {
+      openEmbeddedView('projects');
+    } else {
+      useChatStore.getState().loadConversation(resultat.id);
+      openChat();
+    }
+  }
 
   // P-140 : une ligne de « Travaux » (panneau de l'en-tête) ouvre son objet.
   const ouvrirLeTravailRef = useRef<(cible: DestinationDuTravail) => void>(() => {});
@@ -2453,6 +2550,7 @@ export function ConversationCanvasPrototype() {
             onSelect={chooseScenario}
             onCapability={chooseCapability}
             onAction={runUnifiedAction}
+            onDonnee={ouvrirUneDonnee}
           />
         )}
         {capabilityCenterOpen && (

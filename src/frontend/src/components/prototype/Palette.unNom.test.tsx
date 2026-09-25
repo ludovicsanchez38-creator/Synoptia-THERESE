@@ -16,7 +16,7 @@ vi.mock('../../hooks/useConversationSync', () => ({ useConversationSync: vi.fn()
 import { descriptionDuRaccourci } from '../../lib/raccourcisAnnonces';
 import { ConversationCanvasPrototype } from './ConversationCanvasPrototype';
 
-const NOM = 'Rechercher une commande ou une capacité';
+const NOM = 'Rechercher une commande, une capacité ou une donnée';
 
 describe('B-1375 : un nom pour ⌘K, qui dit ce qu’il parcourt', () => {
   it('le dialogue et la fiche des raccourcis portent le même nom', async () => {
@@ -38,6 +38,8 @@ describe('B-1375 : un nom pour ⌘K, qui dit ce qu’il parcourt', () => {
       fireEvent.change(screen.getByRole('combobox'), { target: { value: 'Orion' } });
     });
 
-    expect(screen.getByText(/ne parcourt pas encore tes contacts, conversations ni documents/)).toBeInTheDocument();
+    // P-016 : contacts, projets et conversations sont désormais parcourus ;
+    // l'état vide dit ce qui ne l'est toujours pas.
+    expect(screen.getByText(/pas encore tes documents ni ton agenda/)).toBeInTheDocument();
   });
 });
