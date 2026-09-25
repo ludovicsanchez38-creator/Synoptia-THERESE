@@ -29,6 +29,7 @@ from app.models.schemas import (
     RGPDStatsResponse,
     RGPDUpdateRequest,
 )
+from app.services.rgpd_identite import effacer_l_identite, exporter_la_fiche
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
@@ -92,25 +93,8 @@ async def export_contact_data(
     tasks.extend(t for t in result.scalars().all() if t.id not in deja)
 
     # Build export
-    contact_data = {
-        "id": contact.id,
-        "first_name": contact.first_name,
-        "last_name": contact.last_name,
-        "company": contact.company,
-        "email": contact.email,
-        "phone": contact.phone,
-        "notes": contact.notes,
-        "tags": contact.tags,
-        "stage": contact.stage,
-        "score": contact.score,
-        "source": contact.source,
-        "created_at": contact.created_at.isoformat() if contact.created_at else None,
-        "last_interaction": contact.last_interaction.isoformat() if contact.last_interaction else None,
-        "rgpd_base_legale": contact.rgpd_base_legale,
-        "rgpd_date_collecte": contact.rgpd_date_collecte.isoformat() if contact.rgpd_date_collecte else None,
-        "rgpd_date_expiration": contact.rgpd_date_expiration.isoformat() if contact.rgpd_date_expiration else None,
-        "rgpd_consentement": contact.rgpd_consentement,
-    }
+    # B-1438 : toutes les colonnes de la fiche, adresse comprise.
+    contact_data = exporter_la_fiche(contact)
 
     activities_data = [
         {
@@ -220,17 +204,9 @@ async def anonymize_contact(
     if not contact:
         raise HTTPException(status_code=404, detail="Contact non trouvé")
 
-    # Anonymize contact data
-    contact.first_name = "[ANONYMISÉ]"
-    contact.last_name = None
-    contact.email = None
-    contact.phone = None
-    contact.notes = None
-    contact.tags = None
-    contact.company = "[ANONYMISÉ]"
-    contact.stage = "archive"
-    contact.extra_data = None
-    contact.updated_at = datetime.now(UTC)
+    # B-1438 : le même traitement que la purge automatique (l'adresse et la
+    # relance datée restaient en clair sur la fiche anonymisée).
+    effacer_l_identite(contact, datetime.now(UTC))
 
     # Incident du 30/08 : l'anonymisation effaçait l'identité mais conservait
     # l'intitulé, le montant et le financeur sous la fiche [ANONYMISÉ]. Une

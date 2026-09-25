@@ -14,6 +14,7 @@ from datetime import UTC, datetime, timedelta
 
 from app.models.database import get_session_context
 from app.models.entities import Activity, Contact, EmailMessage, Notification
+from app.services.rgpd_identite import effacer_l_identite
 from sqlmodel import or_, select
 
 logger = logging.getLogger(__name__)
@@ -193,17 +194,9 @@ async def auto_purge_expired_contacts() -> dict[str, int]:
                     continue
 
                 # Anonymiser
-                contact.first_name = "[ANONYMISÉ]"
-                contact.last_name = None
-                contact.email = None
-                contact.phone = None
-                contact.notes = None
-                contact.tags = None
-                contact.company = "[ANONYMISÉ]"
-                contact.address = None  # B-880 : l'adresse postale restait en clair
-                contact.stage = "archive"
-                contact.extra_data = None
-                contact.updated_at = now
+                # B-880 puis B-1438 : un seul traitement pour la purge et la
+                # route manuelle (adresse et relance datée comprises).
+                effacer_l_identite(contact, now)
 
                 # RGPD-1 (US-003) : effacer aussi les emails liés (art. 17),
                 # comme l'anonymisation manuelle. Sinon le contenu des mails du
