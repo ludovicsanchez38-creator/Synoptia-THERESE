@@ -668,10 +668,19 @@ class InvoicePDFGenerator:
         s = self.styles
         theme = self.theme
 
-        if tva_applicable:
-            tva_mention = "TVA incluse selon les taux en vigueur."
-        else:
+        # B-1357 : « TVA incluse » s'imprimait aussi quand toutes les lignes
+        # sont à 0 %, ce qui est faux. Le motif d'une exonération (franchise,
+        # formation...) n'est pas connu ici : la mention se borne au constat.
+        lignes = (invoice_data or {}).get("lines") or []
+        sans_tva = bool(lignes) and all(
+            not float(ligne.get("tva_rate") or 0) for ligne in lignes
+        )
+        if not tva_applicable:
             tva_mention = "TVA non applicable, art. 293 B du CGI."
+        elif sans_tva:
+            tva_mention = "Aucune TVA facturée (taux de 0 % sur toutes les lignes)."
+        else:
+            tva_mention = "TVA incluse selon les taux en vigueur."
 
         heading = Paragraph(
             "CONDITIONS" if self._current_document_type == "devis" else "CONDITIONS DE PAIEMENT",
@@ -710,7 +719,8 @@ class InvoicePDFGenerator:
                 reglement += f", par {_texte_pdf(payment_method)}"
             reglement += ".<br/>"
         else:
-            reglement = "Paiement à réception de facture, net à 30 jours.<br/>"
+            # B-1357 : « à réception de facture, net à 30 jours » se contredisait.
+            reglement = "Paiement à 30 jours à compter de la réception de la facture.<br/>"
         if legal_mentions:
             penalty_lines = legal_mentions.replace("\n", "<br/>") + "<br/>"
 

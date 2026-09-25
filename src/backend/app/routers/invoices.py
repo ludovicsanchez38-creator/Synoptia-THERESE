@@ -920,21 +920,24 @@ def generate_legal_mentions(
             pas sur une facture libellee en devise etrangere (test global : 40 EUR
             sur une facture CAD).
     """
+    # B-1357 : ce texte est imprimé tel quel sur la facture remise au client,
+    # il s'écrit donc en français correct (accents, virgule décimale).
+    taux = f"{late_penalty_rate:.2f}".replace(".", ",")
     lines = [
-        f"Date d'echeance : {due_date_str}." if due_date_str else "",
+        f"Date d'échéance : {due_date_str}." if due_date_str else "",
     ]
     if currency == "EUR":
         lines += [
-            f"En cas de retard de paiement, une penalite de {late_penalty_rate:.2f}% annuel sera appliquee "
-            "(3 fois le taux d'interet legal en vigueur).",
-            "Une indemnite forfaitaire de 40 EUR pour frais de recouvrement sera exigee "
+            f"En cas de retard de paiement, une pénalité de {taux} % annuel sera appliquée "
+            "(3 fois le taux d'intérêt légal en vigueur).",
+            "Une indemnité forfaitaire de 40 EUR pour frais de recouvrement sera exigée "
             "(art. L441-10 du Code de commerce).",
-            "Escompte pour paiement anticipe : neant.",
+            "Escompte pour paiement anticipé : néant.",
         ]
     else:
         lines.append(
-            "En cas de retard de paiement, des penalites pourront etre appliquees "
-            "conformement aux conditions convenues entre les parties."
+            "En cas de retard de paiement, des pénalités pourront être appliquées "
+            "conformément aux conditions convenues entre les parties."
         )
     return "\n".join(line for line in lines if line)
 
