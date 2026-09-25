@@ -24,7 +24,22 @@ import { Z_LAYER } from '../../styles/z-layers';
 const LIBELLES_PERIMETRE: Record<MemoryScope, string> = {
   global: 'Global',
   project: 'Projet',
-  conversation: 'Conv.',
+  conversation: 'Conversation',
+};
+
+/**
+ * P-115 : où vit un contact, et comment il y entre. Une fiche créée depuis la
+ * conversation appartient à son projet, ou à défaut à sa conversation
+ * (memory_tools, _perimetre_de_creation) ; une fiche créée ici est globale.
+ */
+const AIDE_PERIMETRE =
+  'Global : visible dans toutes les conversations (c’est le cas des contacts ajoutés ici). '
+  + 'Projet : créé depuis une conversation rattachée à un projet, visible dans ce projet. '
+  + 'Conversation : créé depuis une conversation sans projet, visible dans celle-ci.';
+
+const COMMENT_Y_RANGER: Partial<Record<MemoryScope, string>> = {
+  project: 'Un contact entre dans un projet quand tu le crées depuis une conversation rattachée à ce projet.',
+  conversation: 'Un contact appartient à une conversation quand tu le crées depuis une conversation sans projet.',
 };
 
 interface EtatVideContacts {
@@ -64,6 +79,7 @@ function decrireEtatVideContacts(
   if (nomPerimetre) {
     return {
       message: `Aucun contact dans le périmètre « ${nomPerimetre} ».`,
+      explication: perimetre === 'all' ? undefined : COMMENT_Y_RANGER[perimetre],
       actionLabel: 'Voir tous les périmètres',
     };
   }
@@ -449,9 +465,10 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                     { id: 'all', label: 'Tout' },
                     { id: 'global', label: 'Global' },
                     { id: 'project', label: 'Projet' },
-                    { id: 'conversation', label: 'Conv.' },
+                    { id: 'conversation', label: 'Conversation' },
                   ]}
                 />
+                <p data-testid="aide-perimetre" className="text-sm text-text-muted">{AIDE_PERIMETRE}</p>
               </div>
             )}
 
@@ -889,6 +906,9 @@ function ContactsList({
             className={openMenuId === contact.id ? Z_LAYER.DROPDOWN : undefined}
             droite={
               <>
+                {(contact.scope === 'project' || contact.scope === 'conversation') && (
+                  <Etiquette ton="info">{LIBELLES_PERIMETRE[contact.scope]}</Etiquette>
+                )}
                 <RGPDBadge contact={contact} />
                 <div className="relative">
                   <Button
