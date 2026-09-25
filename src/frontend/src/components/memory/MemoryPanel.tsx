@@ -230,6 +230,24 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
     }
   }
 
+  // P-137 : l'export tableur, étapes comprises, que le moteur savait déjà faire.
+  async function handleExportTableur() {
+    try {
+      const result = await api.downloadContactsTableur();
+      addNotification({
+        type: 'success',
+        title: 'Export tableur',
+        message:
+          result === 'desktop_saved'
+            ? 'Contacts exportés en tableur dans Téléchargements'
+            : 'Téléchargement du tableur démarré',
+      });
+    } catch (err) {
+      console.error('Export tableur impossible:', err);
+      addNotification({ type: 'error', title: 'Export tableur', message: 'L’export a échoué. Réessaie dans un instant.' });
+    }
+  }
+
   // Load data when panel opens or scope changes
   useEffect(() => {
     if (effectiveOpen) {
@@ -421,7 +439,16 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                     title="Exporter les contacts (.vcf)"
                   >
                     <Download size={18} />
-                    Exporter
+                    Exporter (.vcf)
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="md"
+                    onClick={() => void handleExportTableur()}
+                    title="Exporter les contacts en tableur, avec leurs étapes"
+                  >
+                    <Download size={18} />
+                    Exporter en tableur (.xlsx)
                   </Button>
                   <Button
                     variant="primary"
@@ -784,6 +811,15 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                   >
                     <Download className="w-4 h-4 mr-2" />
                     Exporter VCF
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="flex-1"
+                    onClick={() => void handleExportTableur()}
+                    title="Exporter les contacts en tableur, avec leurs étapes"
+                  >
+                    <Download className="w-4 h-4 mr-2" />
+                    Exporter en tableur (.xlsx)
                   </Button>
                 </div>
               </div>

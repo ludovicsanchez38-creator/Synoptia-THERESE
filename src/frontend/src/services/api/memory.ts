@@ -316,13 +316,13 @@ export async function exportVCFFile(): Promise<Blob> {
 
 export type VCFDownloadResult = 'desktop_saved' | 'browser_download_started';
 
-function getVCFFilenameFromDisposition(disposition: string | null): string {
+function getVCFFilenameFromDisposition(disposition: string | null, parDefaut = 'therese-contacts.vcf'): string {
   if (!disposition) {
-    return 'therese-contacts.vcf';
+    return parDefaut;
   }
 
   const match = disposition.match(/filename="?([^";\n]+)"?/);
-  return match?.[1] || 'therese-contacts.vcf';
+  return match?.[1] || parDefaut;
 }
 
 function buildVCFVariantFilename(filename: string, index: number): string {
@@ -366,7 +366,26 @@ export async function downloadVCFFile(): Promise<VCFDownloadResult> {
   }
 
   const filename = getVCFFilenameFromDisposition(response.headers.get('Content-Disposition'));
-  const blob = await response.blob();
+  return enregistrerLeTelechargement(await response.blob(), filename);
+}
+
+/**
+ * P-137 : le moteur exporte les contacts en tableur, étapes comprises
+ * (`POST /api/crm/export/contacts`) ; aucune surface ne l'appelait. Le
+ * classeur se range dans Téléchargements, comme le vCard.
+ */
+export async function downloadContactsTableur(): Promise<VCFDownloadResult> {
+  const { API_BASE, apiFetch } = await import('./core');
+  const response = await apiFetch(`${API_BASE}/api/crm/export/contacts?format=xlsx`, { method: 'POST' });
+  if (!response.ok) {
+    const d = await response.json().catch(() => ({}));
+    throw new ApiError(response.status, response.statusText, d.detail || d.message || `Erreur ${response.status}`);
+  }
+  const filename = getVCFFilenameFromDisposition(response.headers.get('Content-Disposition'), 'contacts.xlsx');
+  return enregistrerLeTelechargement(await response.blob(), filename);
+}
+
+async function enregistrerLeTelechargement(blob: Blob, filename: string): Promise<VCFDownloadResult> {
   const isTauriRuntime = typeof window !== 'undefined' && ('__TAURI__' in window || '__TAURI_INTERNALS__' in window);
 
   if (isTauriRuntime) {

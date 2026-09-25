@@ -76,6 +76,7 @@ export {
   messageDEchecDImportVcard,
   exportVCFFile,
   downloadVCFFile,
+  downloadContactsTableur,
   type VCFDownloadResult,
   type Contact,
   type Project,
