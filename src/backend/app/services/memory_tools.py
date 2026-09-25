@@ -280,11 +280,16 @@ def _champs_de_contact_non_appliques(fiche: Any, arguments: dict[str, Any]) -> l
         ("email", "email", lambda v: _texte(v).casefold()),
         ("company", "entreprise", lambda v: _texte(v).casefold()),
     )
-    return [
-        libelle
-        for champ, libelle, forme in comparaisons
-        if _texte(arguments.get(champ)) and forme(arguments.get(champ)) != forme(getattr(fiche, champ, None))
-    ]
+    perdus: list[str] = []
+    for champ, libelle, forme in comparaisons:
+        valeur = arguments.get(champ)
+        if valeur is None or (isinstance(valeur, (str, list, dict)) and not valeur):
+            continue
+        # B-1285 : une valeur non textuelle (nombre, liste, objet) n'est pas
+        # enregistrée non plus ; elle compte comme perdue avant toute comparaison.
+        if not isinstance(valeur, str) or _texte(valeur) and forme(valeur) != forme(getattr(fiche, champ, None)):
+            perdus.append(libelle)
+    return perdus
 
 
 def _valeurs_non_appliquees(projet: Any, arguments: dict[str, Any]) -> list[str]:
