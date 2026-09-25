@@ -606,16 +606,23 @@ function DevisDraftForm({
           <h3 className="text-sm font-bold text-text">Lignes du devis</h3>
           <button id="devis-add-line" type="button" aria-invalid={errorFieldId === 'devis-add-line'} aria-describedby={errorFieldId === 'devis-add-line' ? 'devis-form-error' : undefined} onClick={() => { invalidateDraft(); setLines((current) => [...current, { description: '', quantity: '1', unitPrice: '0', tvaRate: 20 }]); }} className="inline-flex min-h-11 items-center gap-1 rounded-sm border border-border px-2.5 py-1.5 text-sm font-semibold text-text"><Plus className="h-3.5 w-3.5" />Ajouter</button>
         </div>
+        {/* B-1355 : quantité et prix n'avaient pas d'étiquette visible (« 1 »,
+            « 0 ») ; les champs gardent leur nom accessible, l'intitulé est visuel. */}
+        {lines.length > 0 && (
+          <div data-testid="devis-lignes-entete" aria-hidden="true" className="mt-3 hidden gap-2 px-3 text-xs text-text-muted sm:grid sm:grid-cols-[1fr_70px_100px_86px_32px]">
+            <span>Description</span><span>Qté</span><span>Prix HT</span><span>TVA</span><span />
+          </div>
+        )}
         <div className="mt-3 space-y-3">
           {lines.map((line, index) => (
             <div key={index} className="grid gap-2 rounded-md bg-surface-2 p-3 sm:grid-cols-[1fr_70px_100px_86px_32px]">
-              <input id={`devis-description-${index}`} aria-label={`Description ligne ${index + 1}`} aria-invalid={errorFieldId === `devis-description-${index}`} aria-describedby={errorFieldId === `devis-description-${index}` ? 'devis-form-error' : undefined} placeholder="Description" value={line.description} onChange={(event) => updateLine(index, { description: event.target.value })} className="rounded-sm border border-border px-2.5 py-2 text-sm" />
-              <input id={`devis-quantity-${index}`} aria-label={`Quantité ligne ${index + 1}`} aria-invalid={errorFieldId === `devis-quantity-${index}`} aria-describedby={errorFieldId === `devis-quantity-${index}` ? 'devis-form-error' : undefined} inputMode="decimal" value={line.quantity} onChange={(event) => updateLine(index, { quantity: event.target.value })} className="rounded-sm border border-border px-2.5 py-2 text-sm" />
-              <input id={`devis-price-${index}`} aria-label={`Prix HT ligne ${index + 1}`} aria-invalid={errorFieldId === `devis-price-${index}`} aria-describedby={errorFieldId === `devis-price-${index}` ? 'devis-form-error' : undefined} inputMode="decimal" value={line.unitPrice} onChange={(event) => updateLine(index, { unitPrice: event.target.value })} className="rounded-sm border border-border px-2.5 py-2 text-sm" />
-              <select aria-label={`TVA ligne ${index + 1}`} value={line.tvaRate} onChange={(event) => updateLine(index, { tvaRate: Number(event.target.value) })} className="rounded-sm border border-border bg-surface px-2 py-2 text-sm">
+              <input id={`devis-description-${index}`} aria-label={`Description ligne ${index + 1}`} aria-invalid={errorFieldId === `devis-description-${index}`} aria-describedby={errorFieldId === `devis-description-${index}` ? 'devis-form-error' : undefined} placeholder="Description" value={line.description} onChange={(event) => updateLine(index, { description: event.target.value })} className="min-w-0 rounded-sm border border-border px-2.5 py-2 text-sm" />
+              <input id={`devis-quantity-${index}`} aria-label={`Quantité ligne ${index + 1}`} aria-invalid={errorFieldId === `devis-quantity-${index}`} aria-describedby={errorFieldId === `devis-quantity-${index}` ? 'devis-form-error' : undefined} inputMode="decimal" value={line.quantity} onChange={(event) => updateLine(index, { quantity: event.target.value })} className="min-w-0 rounded-sm border border-border px-2.5 py-2 text-sm" />
+              <input id={`devis-price-${index}`} aria-label={`Prix HT ligne ${index + 1}`} aria-invalid={errorFieldId === `devis-price-${index}`} aria-describedby={errorFieldId === `devis-price-${index}` ? 'devis-form-error' : undefined} inputMode="decimal" value={line.unitPrice} onChange={(event) => updateLine(index, { unitPrice: event.target.value })} className="min-w-0 rounded-sm border border-border px-2.5 py-2 text-sm" />
+              <select aria-label={`TVA ligne ${index + 1}`} value={line.tvaRate} onChange={(event) => updateLine(index, { tvaRate: Number(event.target.value) })} className="min-w-0 rounded-sm border border-border bg-surface px-2 py-2 text-sm">
                 {[20, 10, 5.5, 2.1, 0].map((rate) => <option key={rate} value={rate}>{rate}%</option>)}
               </select>
-              <button type="button" aria-label={`Supprimer la ligne ${index + 1}`} onClick={() => { invalidateDraft(); setLines((current) => current.filter((_, lineIndex) => lineIndex !== index)); }} className="grid h-8 w-8 place-items-center rounded-sm text-error hover:bg-surface"><Trash2 className="h-3.5 w-3.5" /></button>
+              <button type="button" aria-label={`Supprimer la ligne ${index + 1}`} onClick={() => { invalidateDraft(); setLines((current) => current.filter((_, lineIndex) => lineIndex !== index)); }} className="grid h-8 w-8 min-w-0 place-items-center rounded-sm text-error hover:bg-surface"><Trash2 className="h-3.5 w-3.5" /></button>
             </div>
           ))}
         </div>
