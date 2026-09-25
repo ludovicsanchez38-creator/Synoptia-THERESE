@@ -150,3 +150,69 @@ peux accepter d'un « oui » global ou corriger une par une.
   **Recommandation** : Souverain par défaut quand Ollama est le service
   choisi (même esprit que P-111).
 
+
+---
+
+## Décisions du 25/09/2026 (tranchées sur délégation de Ludo)
+
+Ludo : « Décide les 36 questions sauf lesquelles non négociable ». Chaque
+recommandation ci-dessus est retenue telle quelle, avec les précisions
+suivantes :
+
+- **P-105** : 1 chantier « mise au repos des écritures de fond » validé ;
+  livrer d'abord le rapprochement au geste. 2 l'interrupteur ne coupe que la
+  relève de fond. 3 fils IMAP reconstitués avant livraison. 4 90 jours. 5
+  fuseau du système, fériés français exclus. 6 une ligne dans « Cette
+  semaine ».
+- **P-106** : 7 lecture des fichiers de Dr_logic d'abord, export après la
+  saisie du planning. 8 accord « documents » exigé dès qu'un outil de lecture
+  de fichier est offert à un modèle en ligne. 9 copie dans un dossier de
+  THÉRÈSE.
+- **P-107** : 10 outil, date, oui ou non, empreinte salée, jamais le
+  contenu ; 12 mois ; effacé par « Effacer toutes mes données ». 11 d'après
+  la configuration réelle. 12 le pont des agents au périmètre, avec
+  interrupteur. 13 retrait partout, dit à l'écran.
+- **P-108** : 14 même version exigée, refus sinon. 15 connecteurs importés
+  désactivés. 16 trois états d'avant relais. 17 l'alerte « dossier
+  synchronisé » part en premier.
+- **P-109** : 18 conversation neuve. 19 accord au démarrage de la session.
+  21 Échap et le grand bouton seulement.
+- **P-110** : 22 voie sans git. 23 masquage des fichiers de mots de passe,
+  sinon Atelier local. 24 contrôle automatique bloquant plus relecture. 25
+  signalement des données personnelles dès le premier lot.
+- **P-121** : 26 arrondi commercial au demi-centime supérieur, en centimes
+  entiers, serveur et écran (B-1428). 27 règles plus strictes à la création
+  ou au changement du champ. 28 taux 0 selon le régime du profil. 29 devis
+  envoyé ou accepté non retouchable.
+- **P-125** : 30 deux réponses de fond, file au-delà. 31 purge et
+  restauration arrêtent d'office les réponses (B-1425). 32 pièces jointes
+  gardées sur la conversation d'origine.
+- **P-104** : nom « fil de travail » ; un niveau de variantes ; minuteur
+  manuel en phase 1 ; plusieurs projets par fil, une conversation dans un
+  seul fil ; la carte « Reprendre » n'apparaît à l'Accueil que s'il y a un
+  fil en cours, sans bloc permanent (« trop d'interfaces », 27/08).
+- **P-132 moitié 2** : un seul vocabulaire d'avancement (celui du pipeline),
+  étape terminale « Perdu », exclue des prospects en cours.
+- **P-136** : avertissement non bloquant ; la règle légale est relevée à la
+  source au moment du code. **P-138** : oui, avec la date réelle (P-155).
+  **P-139** : oui (`sent_at`), il remplace « Envoi non tracé » (B-1449).
+- **P-148 à P-155** : acceptées.
+- **B-1416** : en-têtes d'export accentués et libellés d'étape ; l'import
+  accepte les deux formes (B-1418 replie déjà les accents).
+- **B-1427** : pouce de défilement relevé à 3:1 sur les deux thèmes.
+- **B-1436 et B-1435** : l'assistant e-mail ne s'ouvre plus d'office ;
+  « Brancher mes mails » l'ouvre ; la rédaction dit avant la confirmation
+  qu'aucune boîte n'est branchée.
+- **Variables** : aperçu du message final sous le composeur.
+- **Décision** : Souverain par défaut quand Ollama est le service choisi.
+
+### Réservées à Ludo (non négociables pour moi)
+
+1. **Q20, les dictées déjà conservées chez les testeurs** : les effacer
+   d'office à la mise à jour, c'est supprimer définitivement des fichiers sur
+   leurs machines, et l'annoncer dans les notes de version et sur Discord.
+   Recommandation : oui, mais c'est ton geste. Le correctif B-1424 empêche
+   déjà toute nouvelle accumulation.
+2. **Le pied « Généré par THERESE - Synoptia »** sur les documents des
+   utilisatrices : c'est ta marque et ta communication. Recommandation : le
+   retirer, ou le rendre facultatif.
