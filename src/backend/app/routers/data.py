@@ -580,6 +580,13 @@ async def delete_all_data(
             detail="Ajoute ?confirm=true pour confirmer la suppression de toutes tes données",
         )
 
+    # B-1222, B-1249 : aucune indexation de fond ne doit réécrire après la
+    # purge. L'attente de la fiche en vol (jusqu'à ~19 s) vient AVANT toute
+    # suppression : interrompue, elle ne laisse pas une purge à moitié faite.
+    from app.routers.memory import arreter_les_indexations_de_fiches
+
+    await arreter_les_indexations_de_fiches()
+
     # Log avant suppression
     await log_activity(
         session,
@@ -660,11 +667,6 @@ async def delete_all_data(
     # vidée, mais le cache des clés ET le service des modèles déjà créé les
     # servaient encore au chat jusqu'au redémarrage.
     _oublier_les_cles_en_memoire()
-
-    # B-1222 : aucune indexation de fond ne doit réécrire après la purge.
-    from app.routers.memory import arreter_les_indexations_de_fiches
-
-    await arreter_les_indexations_de_fiches()
 
     # Purger Qdrant (embeddings vectoriels)
     try:

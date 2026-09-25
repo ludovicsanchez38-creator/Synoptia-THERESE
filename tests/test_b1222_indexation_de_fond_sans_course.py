@@ -120,3 +120,24 @@ async def test_une_fiche_en_erreur_n_arrete_pas_les_suivantes(db_session, monkey
     memoire.indexer_fiches_en_arriere_plan([premiere, seconde])
     await asyncio.gather(*list(memoire._INDEXATIONS_DE_FICHES), return_exceptions=True)
     assert vues == ["Bruno"], vues
+
+
+@pytest.mark.asyncio
+async def test_une_interruption_pendant_l_attente_ne_laisse_pas_une_purge_a_moitie_faite(client, monkeypatch):
+    """B-1249 : l'attente de la fiche en vol (B-1234, jusqu'à 19 s) venait
+    APRÈS le commit des suppressions ; une interruption à ce moment laissait
+    des tables vides mais l'index vectoriel et les fichiers en place. Elle
+    vient désormais avant toute suppression."""
+    from app.routers import memory as memoire
+
+    cree = await client.post("/api/memory/contacts", json={"first_name": "Alice", "last_name": "Martin"})
+    assert cree.status_code == 200, cree.text
+
+    async def interrompu():
+        raise OSError("interruption simulée pendant l'attente")
+
+    monkeypatch.setattr(memoire, "arreter_les_indexations_de_fiches", interrompu)
+    await client.delete("/api/data/all?confirm=true")
+
+    restants = (await client.get("/api/memory/contacts")).json()
+    assert len(restants) == 1, "la purge a supprimé les fiches avant l'attente interrompue"
