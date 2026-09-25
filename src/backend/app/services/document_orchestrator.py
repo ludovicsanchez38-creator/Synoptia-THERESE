@@ -247,6 +247,11 @@ def build_summary_prompt(section: "DocumentSection") -> str:
 # =============================================================================
 
 _PISTES_MARKER_RE = re.compile(r"^PISTES\s*:?\s*$")
+# B-1447 : un modèle local écrit volontiers le marqueur en gras
+# (« **Pistes :** »). Accepté seulement seul sur sa ligne ET suivi uniquement
+# de puces jusqu'à la fin : un bloc final, jamais une ligne de contenu.
+_PISTES_EN_GRAS_RE = re.compile(r"^(?:\*\*|__)\s*pistes\s*:?\s*(?:\*\*|__)\s*:?\s*$", re.IGNORECASE)
+_PUCE_RE = re.compile(r"^[-*]\s+")
 
 
 def parse_draft_output(raw: str) -> tuple[str, list[str]]:
@@ -280,7 +285,7 @@ def parse_draft_output(raw: str) -> tuple[str, list[str]]:
             marker_index = index  # pas de break : le dernier match gagne
 
     if marker_index is None:
-        return raw.strip(), []
+        return _bloc_de_pistes_en_gras(lines, raw)
 
     content = "\n".join(lines[:marker_index]).strip()
 
@@ -297,6 +302,19 @@ def parse_draft_output(raw: str) -> tuple[str, list[str]]:
             pistes.append(piste)
 
     return content, pistes
+
+
+def _bloc_de_pistes_en_gras(lines: list[str], raw: str) -> tuple[str, list[str]]:
+    """B-1447 : le dernier marqueur en gras, s'il n'est suivi que de puces."""
+    marqueurs = [i for i, line in enumerate(lines) if _PISTES_EN_GRAS_RE.match(line.strip())]
+    if not marqueurs:
+        return raw.strip(), []
+    marqueur = marqueurs[-1]
+    suite = [line.strip() for line in lines[marqueur + 1 :] if line.strip()]
+    if not suite or not all(_PUCE_RE.match(line) for line in suite):
+        return raw.strip(), []
+    pistes = [_PUCE_RE.sub("", line).strip() for line in suite]
+    return "\n".join(lines[:marqueur]).strip(), [piste for piste in pistes if piste]
 
 
 # =============================================================================
