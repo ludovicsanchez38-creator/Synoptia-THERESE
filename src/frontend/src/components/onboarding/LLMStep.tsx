@@ -4,7 +4,7 @@
  * Third step of the onboarding wizard - Configure LLM provider and API key.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Cpu, Key, Check, AlertCircle, Eye, EyeOff, AlertTriangle } from 'lucide-react';
 import * as api from '../../services/api';
@@ -23,6 +23,8 @@ import { Input } from '../ui/Input';
 interface LLMStepProps {
   onNext: (provider: api.LLMProvider | null) => void;
   onBack: () => void;
+  /** Service retenu à un passage précédent (Continuer, puis Retour) : il reste choisi. */
+  choixPrecedent?: api.LLMProvider | null;
 }
 
 // Catalogue centralisé (dette 0.43.4) : l'onboarding déclarait sa PROPRE copie
@@ -68,8 +70,10 @@ function mentionOrigineCle(origine: string | undefined): string {
   return 'Clé API configurée';
 }
 
-export function LLMStep({ onNext, onBack }: LLMStepProps) {
-  const [selectedProvider, setSelectedProvider] = useState<api.LLMProvider>('anthropic');
+export function LLMStep({ onNext, onBack, choixPrecedent = null }: LLMStepProps) {
+  const [selectedProvider, setSelectedProvider] = useState<api.LLMProvider>(choixPrecedent ?? 'anthropic');
+  // P-111 : Ollama détecté est proposé d'office, jamais contre un choix déjà fait.
+  const fournisseurChoisiParLUtilisateur = useRef(choixPrecedent !== null);
   // La LISTE des modèles cloud vient du backend ; le repli statique ne sert
   // que si la route échoue. En onboarding rien n'est encore enregistré : si le
   // modèle sélectionné n'existe pas dans la liste fraîche, on prend le premier.
@@ -248,15 +252,39 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
   // handleSelectProvider, sauf choix explicite de l'utilisateur.
   // B-1341 : parmi les modèles locaux capables d'agir, préférer ceux que la
   // RAM permet ; l'écran déconseillait le modèle qu'il venait de choisir.
-  const modeleLocalParDefaut = useCallback((): string => {
-    const capables = ollamaModels.filter((m) => !estModeleOllamaCloud(m.nom) && m.gereLesOutils);
-    const tientEnRam = capables.find((m) =>
+  const modelesLocauxCapables = useMemo(
+    () => ollamaModels.filter((m) => !estModeleOllamaCloud(m.nom) && m.gereLesOutils),
+    [ollamaModels],
+  );
+  const modeleLocalQuiTient = useMemo(
+    () => modelesLocauxCapables.find((m) =>
       assessLocalModelFeasibility(
         ollamaStatus?.models.find((model) => model.name === m.nom),
         systemResources,
-      ).status !== 'too-large');
-    return (tientEnRam ?? capables[0])?.nom ?? '';
-  }, [ollamaModels, ollamaStatus, systemResources]);
+      ).status !== 'too-large')?.nom ?? '',
+    [modelesLocauxCapables, ollamaStatus, systemResources],
+  );
+  const modeleLocalParDefaut = useCallback(
+    (): string => modeleLocalQuiTient || (modelesLocauxCapables[0]?.nom ?? ''),
+    [modeleLocalQuiTient, modelesLocauxCapables],
+  );
+
+  // P-111 : le seul choix qui tient la promesse « Données locales » était le
+  // 14e sur 14. Ollama qui répond passe en tête ; il n'est choisi d'office que
+  // si un modèle local capable d'agir tient en mémoire, et jamais contre un
+  // choix de l'utilisateur.
+  const ollamaEnTete = ollamaStatus?.available === true;
+  const fournisseursAffiches = useMemo(
+    () => (ollamaEnTete
+      ? [...PROVIDERS.filter((p) => p.id === 'ollama'), ...PROVIDERS.filter((p) => p.id !== 'ollama')]
+      : PROVIDERS),
+    [ollamaEnTete],
+  );
+  useEffect(() => {
+    if (loading || fournisseurChoisiParLUtilisateur.current) return;
+    if (!ollamaEnTete || !modeleLocalQuiTient) return;
+    setSelectedProvider('ollama');
+  }, [loading, ollamaEnTete, modeleLocalQuiTient]);
 
   useEffect(() => {
     if (selectedProvider !== 'ollama' || modeleChoisiParLUtilisateur.current) return;
@@ -266,6 +294,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
 
   async function handleSelectProvider(provider: api.LLMProvider) {
     setSelectedProvider(provider);
+    fournisseurChoisiParLUtilisateur.current = true;
     modeleChoisiParLUtilisateur.current = false;
     setErreurDuChampCle(false);
     setError(null);
@@ -375,7 +404,7 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
         aria-label="Choix du service d’IA"
         className="space-y-2 mb-6"
       >
-        {PROVIDERS.map((provider) => {
+        {fournisseursAffiches.map((provider) => {
           // B-514 : « jamais mesuré » (statut null : délai dépassé, réseau) n'est
           // pas « mesuré indisponible ». Le premier laisse choisir Ollama, avec un badge.
           const ollamaNonMesure = provider.id === 'ollama' && ollamaStatus === null;
@@ -414,7 +443,12 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
                   <span className="text-sm font-medium text-text">{provider.name}</span>
                   {provider.id === 'anthropic' && (
                     <span className="rounded-sm bg-accent-tint px-2 py-0.5 text-sm font-medium text-accent-cyan-ink">
-                      Recommandé
+                      {ollamaEnTete ? 'Recommandé en ligne' : 'Recommandé'}
+                    </span>
+                  )}
+                  {provider.id === 'ollama' && ollamaEnTete && (
+                    <span className="rounded-sm bg-[var(--color-success-tint)] px-2 py-0.5 text-sm font-medium text-success">
+                      Tes données restent sur ta machine
                     </span>
                   )}
                   {provider.id === 'ollama' && !isAvailable && (

@@ -292,7 +292,7 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
                       avec le contenu (« Commencer » sous le bas du dialogue). */}
                   {currentStep === 0 && <div className="h-full" data-testid="onboarding-step-0"><WelcomeStep onNext={goNext} /></div>}
                   {currentStep === 1 && <div className="h-full" data-testid="onboarding-step-1"><ProfileStep onNext={goNext} onBack={goBack} /></div>}
-                  {currentStep === 2 && <div className="h-full" data-testid="onboarding-step-2"><LLMStep onNext={completeLlmStep} onBack={goBack} /></div>}
+                  {currentStep === 2 && <div className="h-full" data-testid="onboarding-step-2"><LLMStep onNext={completeLlmStep} onBack={goBack} choixPrecedent={configuredProvider} /></div>}
                   {currentStep === 3 && <div className="h-full" data-testid="onboarding-step-3"><SecurityStep provider={configuredProvider} onNext={goNext} onBack={goBack} /></div>}
                   {currentStep === 4 && <div className="h-full" data-testid="onboarding-step-4"><WorkingDirStep onNext={goNext} onBack={goBack} /></div>}
                   {currentStep === 5 && <div className="h-full" data-testid="onboarding-step-5"><CompleteStep onComplete={handleComplete} onBack={goBack} llmSkipped={llmSkipped} serviceIaConserve={serviceIaConserve} /></div>}
