@@ -213,9 +213,13 @@ async def _do_projet(
     if result.get("error"):
         return f"Impossible de créer le projet : {result['error']}"
     pname = result.get("name", "projet")
+    # B-1238 : ce que l'outil a écarté ou ignoré est dit, pas tu.
+    notes = " ".join(f"({e})" for e in result.get("ecarte", []))
     if result.get("already_existed"):
-        return f"Projet **{pname}** déjà en mémoire, je le réutilise (pas de doublon)."
-    return f"Projet **{pname}** créé en mémoire."
+        ignore = result.get("ignore", [])
+        suite = f" Non appliqué : {', '.join(ignore)}." if ignore else ""
+        return f"Projet **{pname}** déjà en mémoire, je le réutilise (pas de doublon).{suite}"
+    return f"Projet **{pname}** créé en mémoire.{' ' + notes if notes else ''}"
 
 
 async def _prepare_rdv(

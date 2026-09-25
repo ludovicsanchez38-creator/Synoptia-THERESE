@@ -68,3 +68,33 @@ async def test_une_valeur_ecartee_est_dite_au_modele(db_session):
         {"name": "Chantier flou", "status": "gelé", "budget": "beaucoup"}, db_session,
     ))
     assert "ecarte" in resultat or "écarté" in json.dumps(resultat, ensure_ascii=False), resultat
+
+
+@pytest.mark.asyncio
+async def test_un_projet_homonyme_dit_ce_qu_il_n_applique_pas(db_session):
+    """B-1238 : sur un projet existant, l'outil rendait already_existed en
+    ignorant sans le dire le statut, le budget et la description demandés."""
+    await execute_create_project({"name": "Site Web"}, db_session)
+    resultat = json.loads(await execute_create_project(
+        {"name": "Site Web", "status": "completed", "budget": 1200, "description": "Refonte"}, db_session,
+    ))
+    assert resultat.get("already_existed") is True, resultat
+    assert set(resultat.get("ignore", [])) == {"status", "budget", "description"}, resultat
+
+
+@pytest.mark.asyncio
+async def test_la_commande_projet_dit_ce_qu_elle_ecarte(db_session):
+    """B-1238 : /projet ignorait la clé « ecarte » de l'outil (B-1232)."""
+    from app.services.slash_commands import execute_slash_command
+
+    reponse = await execute_slash_command("projet", "Chantier flou statut=gelé", db_session)
+    assert "gelé" in reponse and "active" in reponse, reponse
+
+
+def test_l_import_de_fichier_n_accepte_pas_un_budget_infini():
+    """B-1238 : quatrième porte du budget infini (B-1219) ; et « inf » en entier
+    levait OverflowError."""
+    from app.services.crm_import import _parse_value
+
+    assert _parse_value("1e999", "float") is None
+    assert _parse_value("inf", "int") is None

@@ -9,6 +9,7 @@ import csv
 import io
 import json
 import logging
+import math
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any, Literal
@@ -404,14 +405,17 @@ def _parse_value(value: Any, field_type: str) -> Any:
     if field_type == "int":
         try:
             return int(float(str(value).strip()))
-        except (ValueError, TypeError):
+        except (ValueError, TypeError, OverflowError):
+            # B-1238 : « inf » levait OverflowError.
             return None
 
     if field_type == "float":
         try:
-            return float(str(value).strip().replace(",", "."))
+            nombre = float(str(value).strip().replace(",", "."))
         except (ValueError, TypeError):
             return None
+        # B-1238 : un budget infini ou NaN n'est pas un nombre (B-1219).
+        return nombre if math.isfinite(nombre) else None
 
     if field_type == "datetime":
         if isinstance(value, datetime):
