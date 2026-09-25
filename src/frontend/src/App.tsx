@@ -14,6 +14,7 @@ import * as api from './services/api';
 import { Z_LAYER } from './styles/z-layers';
 import { useAccessibilityRoot } from './hooks/useAccessibilityRoot';
 import { isolateDataProfilePersistence } from './lib/profileStorageIsolation';
+import { EcranDeChargement } from './components/EcranDeChargement';
 
 // Lazy-loaded : ecrans non-critiques (UltraJury perf)
 const OnboardingWizard = lazy(() => import('./components/onboarding').then(m => ({ default: m.OnboardingWizard })));
@@ -189,16 +190,7 @@ function ApplicationBootstrap() {
   }
 
   // Fallback de chargement pour les composants lazy
-  const lazyFallback = (
-    <div className="h-screen w-screen bg-bg flex items-center justify-center">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold bg-gradient-to-r from-accent-cyan to-accent-magenta bg-clip-text text-transparent">
-          THERESE
-        </h1>
-        <p className="text-text-muted mt-2 text-sm">Chargement...</p>
-      </div>
-    </div>
-  );
+  const lazyFallback = <EcranDeChargement />;
 
   // En production Tauri : SplashScreen pendant le démarrage du sidecar
   if (!backendReady) {
@@ -228,16 +220,7 @@ function ApplicationBootstrap() {
   }
 
   if (!isReady) {
-    return (
-      <div className="h-screen w-screen bg-bg flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-accent-cyan to-accent-magenta bg-clip-text text-transparent">
-            THERESE
-          </h1>
-          <p className="text-text-muted mt-2 text-sm">Chargement...</p>
-        </div>
-      </div>
-    );
+    return <EcranDeChargement />;
   }
 
   return (

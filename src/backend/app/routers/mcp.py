@@ -320,7 +320,7 @@ PRESET_SERVERS = [
     {
         "id": "fetch",
         "name": "Fetch",
-        "description": "Recupere le contenu d'URLs (HTTP GET)",
+        "description": "Récupère le contenu d'URLs (HTTP GET)",
         "category": "essentiels",
         "command": "npx",
         "args": ["-y", "@modelcontextprotocol/server-fetch"],
@@ -350,7 +350,7 @@ PRESET_SERVERS = [
     {
         "id": "notion",
         "name": "Notion",
-        "description": "Bases de donnees, pages, knowledge management",
+        "description": "Bases de données, pages, knowledge management",
         "category": "productivite",
         "popular": True,
         "url": "https://notion.so",
@@ -361,7 +361,7 @@ PRESET_SERVERS = [
     {
         "id": "airtable",
         "name": "Airtable",
-        "description": "Bases de donnees, CRM, gestion de projets",
+        "description": "Bases de données, CRM, gestion de projets",
         "category": "productivite",
         "url": "https://airtable.com",
         "command": "npx",
@@ -371,7 +371,7 @@ PRESET_SERVERS = [
     {
         "id": "todoist",
         "name": "Todoist",
-        "description": "Gestion de taches, projets, deadlines",
+        "description": "Gestion de tâches, projets, deadlines",
         "category": "productivite",
         "popular": True,
         "url": "https://todoist.com",
@@ -396,7 +396,7 @@ PRESET_SERVERS = [
     {
         "id": "brave-search",
         "name": "Brave Search",
-        "description": "Recherche web avancee (web, local, images, news)",
+        "description": "Recherche web avancée (web, local, images, news)",
         "category": "recherche",
         "popular": True,
         "url": "https://brave.com/search/api/",
@@ -407,7 +407,7 @@ PRESET_SERVERS = [
     {
         "id": "perplexity",
         "name": "Perplexity",
-        "description": "Recherche web IA-augmentee avec sources",
+        "description": "Recherche web augmentée par l'IA, avec sources",
         "category": "recherche",
         "url": "https://perplexity.ai",
         "command": "npx",
@@ -436,7 +436,7 @@ PRESET_SERVERS = [
     {
         "id": "hubspot",
         "name": "HubSpot CRM",
-        "description": "CRM gratuit - contacts, deals, taches, pipeline",
+        "description": "CRM gratuit - contacts, deals, tâches, pipeline",
         "category": "crm",
         "popular": True,
         "url": "https://hubspot.com",
@@ -447,7 +447,7 @@ PRESET_SERVERS = [
     {
         "id": "pipedrive",
         "name": "Pipedrive",
-        "description": "CRM ventes - deals, contacts, activites, pipeline",
+        "description": "CRM ventes - deals, contacts, activités, pipeline",
         "category": "crm",
         "url": "https://pipedrive.com",
         "command": "npx",
@@ -494,7 +494,7 @@ PRESET_SERVERS = [
     {
         "id": "sequential-thinking",
         "name": "Sequential Thinking",
-        "description": "Raisonnement etape par etape structure",
+        "description": "Raisonnement structuré, étape par étape",
         "category": "avance",
         "command": "npx",
         "args": ["-y", "@modelcontextprotocol/server-sequential-thinking"],

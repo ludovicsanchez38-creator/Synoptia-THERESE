@@ -48,7 +48,7 @@ const CATEGORY_LABELS: Record<string, string> = {
   organisation: 'Organisation',
   commercial: 'Commercial',
   finance: 'Finance',
-  strategie: 'Strategie',
+  strategie: 'Stratégie',
 };
 
 // ---------------------------------------------------------------------------
