@@ -27,7 +27,7 @@ async def test_une_valeur_egale_a_celle_du_projet_n_est_pas_ignoree(db_session):
         {"name": "Site Web", "status": "active", "budget": 1200}, db_session,
     ))
     assert resultat.get("already_existed") is True, resultat
-    assert not resultat.get("ignore") and not resultat.get("champs_ignores"), resultat
+    assert not resultat.get("champs_ignores"), resultat
 
 
 @pytest.mark.asyncio

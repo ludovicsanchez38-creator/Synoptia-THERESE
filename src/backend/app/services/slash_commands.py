@@ -218,7 +218,7 @@ async def _do_projet(
     # B-1238 : ce que l'outil a écarté ou ignoré est dit, pas tu.
     notes = " ".join(f"({e})" for e in result.get("ecarte", []))
     if result.get("already_existed"):
-        ignore = result.get("ignore", [])
+        ignore = result.get("champs_ignores", [])
         suite = f" Non appliqué : {', '.join(ignore)}." if ignore else ""
         return f"Projet **{pname}** déjà en mémoire, je le réutilise (pas de doublon).{suite}"
     return f"Projet **{pname}** créé en mémoire.{' ' + notes if notes else ''}"

@@ -707,21 +707,27 @@ async def execute_create_project(
                 ),
             }, ensure_ascii=False)
     if existing is not None:
-        reutilise: dict[str, Any] = {
-            "success": True,
-            "project_id": existing.id,
-            "name": existing.name,
-            "already_existed": True,
-            "message": f"Projet '{existing.name}' existe déjà, je le réutilise.",
-        }
         # B-1238 : ce qui était demandé n'est PAS appliqué au projet existant ;
         # le modèle ne doit pas l'annoncer comme fait. B-1252 : seule une valeur
         # qui DIFFÈRE de celle du projet est perdue ; redire l'existant ne l'est pas.
-        ignore = _valeurs_non_appliquees(existing, arguments)
-        if ignore:
-            reutilise["ignore"] = ignore
-            reutilise["message"] += " Les valeurs demandées (" + ", ".join(ignore) + ") n'ont pas été appliquées."
-        return json.dumps(reutilise, ensure_ascii=False)
+        # B-1253 : même contrat que le contact réutilisé, que lit le Récap réel.
+        ignores = _valeurs_non_appliquees(existing, arguments)
+        if ignores:
+            message = (
+                f"Projet '{existing.name}' existe déjà : je le réutilise, mais RIEN "
+                f"n'a été enregistré. Ces valeurs sont ignorées : {', '.join(ignores)}. "
+                "Ne dis pas que le projet a été mis à jour."
+            )
+        else:
+            message = f"Projet '{existing.name}' existe déjà, je le réutilise."
+        return json.dumps({
+            "success": not ignores,
+            "project_id": existing.id,
+            "name": existing.name,
+            "already_existed": True,
+            "champs_ignores": ignores,
+            "message": message,
+        }, ensure_ascii=False)
 
     # Fence 0.47 : même contrat que create_contact - aucun nouvel effet
     # métier local après observation de l'annulation.
