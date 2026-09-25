@@ -201,7 +201,9 @@ async def _do_projet(
     args = {
         "name": name,
         "description": kw.get("description"),
-        "status": kw.get("status", "active"),
+        # B-1252 : pas de statut injecté ; l'outil prend « active » à la
+        # création, et un projet réutilisé ne se voit rien reprocher.
+        "status": kw.get("status"),
         "budget": budget,
     }
     result = json.loads(

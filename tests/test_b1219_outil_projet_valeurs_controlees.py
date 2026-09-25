@@ -79,7 +79,7 @@ async def test_un_projet_homonyme_dit_ce_qu_il_n_applique_pas(db_session):
         {"name": "Site Web", "status": "completed", "budget": 1200, "description": "Refonte"}, db_session,
     ))
     assert resultat.get("already_existed") is True, resultat
-    assert set(resultat.get("ignore", [])) == {"status", "budget", "description"}, resultat
+    assert set(resultat.get("ignore", [])) == {"statut", "budget", "description"}, resultat
 
 
 @pytest.mark.asyncio

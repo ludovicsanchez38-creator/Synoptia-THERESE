@@ -261,6 +261,26 @@ def _budget_de_projet(valeur: Any) -> float | None:
     return nombre if math.isfinite(nombre) and nombre >= 0 else None
 
 
+def _valeurs_non_appliquees(projet: Any, arguments: dict[str, Any]) -> list[str]:
+    """Libellés des valeurs demandées pour un projet existant qui en diffèrent.
+
+    Une valeur illisible (statut inconnu, budget négatif) compte comme
+    différente : elle n'est pas appliquée non plus."""
+    perdues: list[str] = []
+    statut = arguments.get("status")
+    if statut not in (None, "") and _statut_de_projet(statut) != projet.status:
+        perdues.append("statut")
+    budget = arguments.get("budget")
+    if budget not in (None, "") and _budget_de_projet(budget) != projet.budget:
+        perdues.append("budget")
+    description = arguments.get("description")
+    if isinstance(description, str):
+        description = description.strip()
+    if description not in (None, "") and description != (projet.description or "").strip():
+        perdues.append("description")
+    return perdues
+
+
 def _perimetre_de_creation(
     scope: str | None, scope_id: str | None, conversation_id: str | None
 ) -> tuple[str, str | None]:
@@ -695,8 +715,9 @@ async def execute_create_project(
             "message": f"Projet '{existing.name}' existe déjà, je le réutilise.",
         }
         # B-1238 : ce qui était demandé n'est PAS appliqué au projet existant ;
-        # le modèle ne doit pas l'annoncer comme fait.
-        ignore = [c for c in ("status", "budget", "description") if arguments.get(c) not in (None, "")]
+        # le modèle ne doit pas l'annoncer comme fait. B-1252 : seule une valeur
+        # qui DIFFÈRE de celle du projet est perdue ; redire l'existant ne l'est pas.
+        ignore = _valeurs_non_appliquees(existing, arguments)
         if ignore:
             reutilise["ignore"] = ignore
             reutilise["message"] += " Les valeurs demandées (" + ", ".join(ignore) + ") n'ont pas été appliquées."
