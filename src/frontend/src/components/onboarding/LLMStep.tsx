@@ -12,6 +12,7 @@ import { TEXTES_ONBOARDING } from './textes';
 import { FOURNISSEURS as PROVIDERS, chargerCatalogue, selectionApresCatalogue, type ModeleDecore } from '../../lib/catalogueModeles';
 import { Button } from '../ui/Button';
 import { LocalModelFeasibility } from '../llm/LocalModelFeasibility';
+import { assessLocalModelFeasibility } from '../llm/modelFeasibility';
 import { handleRovingFocus } from '../../lib/rovingFocus';
 import { estModeleOllamaCloud } from '../../lib/ollamaCloud';
 import { Spinner } from '../ui/Spinner';
@@ -245,12 +246,23 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
   // celui du fournisseur précédent, le menu en montrait un autre et
   // « Continuer » restait grisé. À chaque liste chargée, même règle que
   // handleSelectProvider, sauf choix explicite de l'utilisateur.
+  // B-1341 : parmi les modèles locaux capables d'agir, préférer ceux que la
+  // RAM permet ; l'écran déconseillait le modèle qu'il venait de choisir.
+  const modeleLocalParDefaut = useCallback((): string => {
+    const capables = ollamaModels.filter((m) => !estModeleOllamaCloud(m.nom) && m.gereLesOutils);
+    const tientEnRam = capables.find((m) =>
+      assessLocalModelFeasibility(
+        ollamaStatus?.models.find((model) => model.name === m.nom),
+        systemResources,
+      ).status !== 'too-large');
+    return (tientEnRam ?? capables[0])?.nom ?? '';
+  }, [ollamaModels, ollamaStatus, systemResources]);
+
   useEffect(() => {
     if (selectedProvider !== 'ollama' || modeleChoisiParLUtilisateur.current) return;
     if (ollamaModels.some((m) => m.nom === selectedModel)) return;
-    const locaux = ollamaModels.filter((m) => !estModeleOllamaCloud(m.nom));
-    setSelectedModel(locaux.find((m) => m.gereLesOutils)?.nom ?? '');
-  }, [ollamaModels, selectedProvider, selectedModel]);
+    setSelectedModel(modeleLocalParDefaut());
+  }, [ollamaModels, selectedProvider, selectedModel, modeleLocalParDefaut]);
 
   async function handleSelectProvider(provider: api.LLMProvider) {
     setSelectedProvider(provider);
@@ -266,10 +278,9 @@ export function LLMStep({ onNext, onBack }: LLMStepProps) {
       // Ne jamais pré-sélectionner un modèle incapable d'agir : c'est ce qui a
       // fait attendre 3 min 26 s au testeur pour une réponse dégradée.
       // B-1156 : jamais un modèle Ollama Cloud par défaut sous « 100% local ».
-      const locaux = ollamaModels.filter((m) => !estModeleOllamaCloud(m.nom));
       // B-1173 : sans modèle local capable, rien n'est présélectionné (ni le
       // modèle grisé, ni le modèle Cloud) ; l'utilisateur choisit lui-même.
-      setSelectedModel(locaux.find((m) => m.gereLesOutils)?.nom ?? '');
+      setSelectedModel(modeleLocalParDefaut());
       return;
     }
 
