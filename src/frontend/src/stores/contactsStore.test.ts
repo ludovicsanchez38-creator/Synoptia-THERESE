@@ -101,7 +101,7 @@ describe('contactsStore', () => {
     expect(useContactsStore.getState().contacts).toHaveLength(0);
   });
 
-  it('search("q") fusionne filtre local (nom/email) + résultats sémantiques (sans doublon)', async () => {
+  it('search("q") : une correspondance par nom écarte les simples ressemblances (B-1350)', async () => {
     // Les deux contacts sont dans le store ; le sémantique renvoie des IDS (results[]).
     useContactsStore.setState({
       contacts: [makeContact({ id: 'c1', first_name: 'Jean' }), makeContact({ id: 'c3', first_name: 'Autre' })],
@@ -110,7 +110,9 @@ describe('contactsStore', () => {
     await useContactsStore.getState().search('jean');
     expect(searchMemory).toHaveBeenCalledWith('jean', ['contacts']);
     const ids = (useContactsStore.getState().searchResults ?? []).map((c) => c.id);
-    expect(ids).toEqual(['c1', 'c3']); // c1 (local d'abord) puis c3 (sémantique résolu du store), c1 non dupliqué
+    // B-1350 : avant, c3 (« Autre », simple voisin sémantique) suivait c1. Un
+    // nom est une recherche exacte : seule la fiche qui correspond reste.
+    expect(ids).toEqual(['c1']);
   });
 
   it('search trouve par le NOM via le filtre local même si le sémantique renvoie vide (régression Syn P5)', async () => {

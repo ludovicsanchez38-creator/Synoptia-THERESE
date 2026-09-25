@@ -16,6 +16,7 @@ import {
   deleteContact as apiDeleteContact,
   searchMemory as apiSearchMemory,
 } from '../services/api/memory';
+import { replierPourRecherche } from '../lib/replierPourRecherche';
 
 /** Plafond du GET /contacts (le=200). Atteint = liste incomplète. */
 export const PLAFOND_CONTACTS = 200;
@@ -41,14 +42,22 @@ interface ContactsStore {
   removeLocal: (id: string) => void;
 }
 
-/** Vrai si le contact matche la requête sur nom/email/entreprise (filtre local). */
+/**
+ * Vrai si le contact matche la requête sur nom/email/entreprise (filtre local).
+ * B-1350 : casse ET accents repliés, « helene » trouve « Hélène ».
+ */
 export function contactMatchesQuery(contact: Contact, query: string): boolean {
-  const q = query.toLowerCase();
+  const q = replierPourRecherche(query);
+  return [contact.first_name, contact.last_name, contact.company, contact.email].some(
+    (champ) => replierPourRecherche(champ ?? '').includes(q),
+  );
+}
+
+/** Correspondance littérale élargie aux notes, pour les fiches renvoyées par le moteur. */
+function correspondLitteralement(contact: Contact, query: string): boolean {
   return (
-    (contact.first_name?.toLowerCase().includes(q) ?? false) ||
-    (contact.last_name?.toLowerCase().includes(q) ?? false) ||
-    (contact.company?.toLowerCase().includes(q) ?? false) ||
-    (contact.email?.toLowerCase().includes(q) ?? false)
+    contactMatchesQuery(contact, query) ||
+    replierPourRecherche(contact.notes ?? '').includes(replierPourRecherche(query))
   );
 }
 
@@ -143,8 +152,16 @@ export const useContactsStore = create<ContactsStore>((set, get) => ({
       const semantic = semanticIds
         .map((id) => byId.get(id))
         .filter((c): c is Contact => !!c);
-      // Hybride : matches locaux d'abord, puis hits sémantiques non déjà présents.
-      if (toujoursCourante()) set({ searchResults: mergeContactsById(local, semantic), loading: false });
+      // B-1350 : un nom est une recherche exacte. Dès qu'une fiche correspond
+      // littéralement, les simples ressemblances sont écartées (« helene »
+      // rendait tout le carnet, chaque voisin au-dessus du seuil). La moitié
+      // sémantique ne sert que quand rien ne correspond.
+      const litteraux = mergeContactsById(
+        local,
+        semantic.filter((c) => correspondLitteralement(c, q)),
+      );
+      const trouves = litteraux.length > 0 ? litteraux : semantic;
+      if (toujoursCourante()) set({ searchResults: trouves, loading: false });
     } catch {
       // Sémantique indisponible : la recherche reste utilisable via le filtre local.
       if (toujoursCourante()) set({ searchResults: local, loading: false });
