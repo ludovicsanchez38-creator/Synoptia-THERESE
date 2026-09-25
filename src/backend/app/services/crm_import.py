@@ -816,6 +816,18 @@ class CRMImportService:
                     # Create new
                     score = _parse_value(mapped.get("score"), "int")
                     tags_de_la_ligne, signalement_tags = _lire_les_etiquettes(mapped.get("tags"), idx + 1, mapped)
+                    # B-1313 : à la création aussi, une date illisible se dit.
+                    dates_ecartees = [
+                        ImportError(
+                            row=idx + 1,
+                            column=champ_date,
+                            message=f"Date « {str(mapped[champ_date]).strip()} » illisible, non enregistrée",
+                            data=mapped,
+                        )
+                        for champ_date in ("last_interaction", "next_follow_up", "rgpd_date_collecte", "rgpd_date_expiration")
+                        if str(mapped.get(champ_date) or "").strip()
+                        and _parse_value(mapped[champ_date], "datetime") is None
+                    ]
                     created_at = _parse_value(mapped.get("created_at"), "datetime")
                     updated_at = _parse_value(mapped.get("updated_at"), "datetime")
                     contact = Contact(
@@ -864,6 +876,7 @@ class CRMImportService:
                         result.errors.append(etape_ecartee)
                     if signalement_tags:
                         result.errors.append(signalement_tags)
+                    result.errors.extend(dates_ecartees)
 
             except Exception as e:
                 logger.error(f"Error importing contact row {idx + 1}: {e}")

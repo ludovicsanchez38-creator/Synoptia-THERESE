@@ -54,3 +54,14 @@ async def test_l_echeance_illisible_d_un_livrable_garde_l_ancienne(db_session):
     livrable = (await db_session.execute(select(Deliverable).where(Deliverable.id == "l-d"))).scalar_one()
     assert livrable.due_date is not None and livrable.due_date.year == 2030, livrable.due_date
     assert any(e.column == "due_date" for e in res.errors), [e.message for e in res.errors]
+
+
+@pytest.mark.asyncio
+async def test_a_la_creation_une_date_illisible_se_dit(db_session):
+    """B-1313 : B-1302 ne couvrait que la mise à jour ; à la création, la date
+    illisible était perdue sans signalement. Lecteur α, passe 6."""
+    res = await CRMImportService(db_session).import_contacts(
+        b"id,first_name,last_name,rgpd_date_expiration\nc-new,Jean,Exemple,pas une date\n", filename="c.csv"
+    )
+    assert res.created == 1, res
+    assert any(e.column == "rgpd_date_expiration" for e in res.errors), [e.message for e in res.errors]
