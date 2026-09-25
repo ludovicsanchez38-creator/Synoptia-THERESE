@@ -8,6 +8,7 @@ import { useContactsStore } from '../../stores/contactsStore';
 import { useDemoStore } from '../../stores/demoStore';
 import { Z_LAYER } from '../../styles/z-layers';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
+import { useQuestionDAbandonDeModale } from '../../hooks/useQuestionDAbandonDeModale';
 import { useRendreLeFocusALaFermeture, useRevelerALApparition } from '../../hooks/useRevelerALApparition';
 import { Spinner } from '../ui/Spinner';
 import { Alerte } from '../ui/Alerte';
@@ -46,6 +47,8 @@ const initialFormData: FormData = {
 
 export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModalProps) {
   const [formData, setFormData] = useState<FormData>(initialFormData);
+  // B-1392 : la saisie telle que chargée, pour savoir si elle a changé.
+  const [reference, setReference] = useState<FormData>(initialFormData);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -72,10 +75,21 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
   const dialogRef = useRef<HTMLDivElement>(null);
   useDialogFocusTrap(dialogRef, { active: isOpen });
 
+  // B-1392 : Échap, la croix, le fond et « Annuler » demandent avant de jeter
+  // une saisie modifiée, comme Tâche et Rendez-vous.
+  const modifie = !demoEnabled && (Object.keys(formData) as (keyof FormData)[]).some(
+    (champ) => formData[champ] !== reference[champ],
+  );
+  const { abandonDemande, demanderFermeture, continuerSaisie, abandonner } = useQuestionDAbandonDeModale({
+    actif: isOpen,
+    modifie,
+    fermer: onClose,
+  });
+
   // Load contact data when editing
   useEffect(() => {
     if (isOpen && contact) {
-      setFormData({
+      const chargee = {
         first_name: contact.first_name || '',
         last_name: contact.last_name || '',
         company: contact.company || '',
@@ -84,9 +98,12 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
         address: contact.address || '',
         notes: contact.notes || '',
         tags: Array.isArray(contact.tags) ? contact.tags.join(', ') : (contact.tags || ''),
-      });
+      };
+      setFormData(chargee);
+      setReference(chargee);
     } else if (isOpen) {
       setFormData(initialFormData);
+      setReference(initialFormData);
     }
     setError(null);
     setShowDeleteConfirm(false);
@@ -180,7 +197,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
             exit="exit"
             transition={{ duration: 0.2 }}
             className={`fixed inset-0 bg-text/35 backdrop-blur-sm ${Z_LAYER.MODAL}`}
-            onClick={onClose}
+            onClick={demanderFermeture}
           />
 
           {/* Modal */}
@@ -210,7 +227,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
                   </p>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" onClick={onClose} aria-label="Fermer">
+              <Button variant="ghost" size="icon" onClick={demanderFermeture} aria-label="Fermer">
                 <X className="w-5 h-5" />
               </Button>
             </div>
@@ -356,8 +373,15 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
                   </Button>
                 )}
               </div>
+              {abandonDemande && (
+                <div className="flex w-full flex-wrap items-center gap-2 rounded-sm border border-warning/40 bg-[var(--color-warning-tint)] px-3 py-2">
+                  <p role="alert" className="flex-1 text-sm font-semibold text-text">Abandonner les modifications ?</p>
+                  <Button variant="ghost" size="md" onClick={continuerSaisie}>Continuer la saisie</Button>
+                  <Button variant="danger" size="md" onClick={abandonner}>Abandonner</Button>
+                </div>
+              )}
               <div className="flex flex-wrap gap-3 max-[840px]:basis-full [&>button]:max-[840px]:flex-1">
-                <Button variant="ghost" onClick={onClose}>
+                <Button variant="ghost" onClick={demanderFermeture}>
                   Annuler
                 </Button>
                 <Button

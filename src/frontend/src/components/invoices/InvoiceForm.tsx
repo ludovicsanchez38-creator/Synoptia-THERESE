@@ -18,6 +18,7 @@ import { cn } from '../../lib/utils';
 import { Z_LAYER } from '../../styles/z-layers';
 import { pushEscapeHandler } from '../../lib/escapeStack';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
+import { useQuestionDAbandonDeModale } from '../../hooks/useQuestionDAbandonDeModale';
 import { libellesDeLaPiece } from './libellesPiece';
 import { useExternalActionConfirmation } from '../app/useExternalActionConfirmation';
 import { Button } from '../ui/Button';
@@ -180,9 +181,18 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
   // factures AVEC son enfant — brouillon compris, en une seule pression.
   // Le ref suit le pattern de SignatureEditorModal : sans lui, une identité de
   // `onClose` recréée à chaque rendu réinscrirait un handler par rendu.
-  const onCloseRef = useRef(onClose);
-  onCloseRef.current = onClose;
-  useEffect(() => pushEscapeHandler(() => onCloseRef.current()), []);
+  // B-1392 : une saisie modifiée n'est plus jetée sans question (Échap, croix,
+  // fond, Annuler) ; intacte, Échap ferme la modale seule, comme avant.
+  const saisieCourante = JSON.stringify({
+    documentType, contactId, currency, issueDate, dueDate, status, notes, validiteJours, lines, lineInputs,
+  });
+  const saisieInitiale = useRef(saisieCourante);
+  const { abandonDemande, demanderFermeture, continuerSaisie, abandonner } = useQuestionDAbandonDeModale({
+    actif: true,
+    modifie: saisieCourante !== saisieInitiale.current,
+    fermer: onClose,
+    fermerSiIntact: true,
+  });
 
   // Le dialogue de conversion est une couche AU-DESSUS : la pile étant LIFO, il
   // se ferme le premier et laisse le formulaire ouvert.
@@ -500,7 +510,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
   return (
     <div
       className={`fixed inset-0 ${Z_LAYER.MODAL_NESTED} flex items-center justify-center`}
-      onClick={onClose}
+      onClick={demanderFermeture}
     >
       <motion.div
         initial={{ opacity: 0 }}
@@ -527,7 +537,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
       >
         <div className="flex items-center justify-between px-6 py-4 border-b border-border">
           <h2 className="font-editorial text-lg font-semibold text-text">{titreFormulaire}</h2>
-          <Button variant="ghost" size="icon" type="button" aria-label="Fermer" onClick={onClose}>
+          <Button variant="ghost" size="icon" type="button" aria-label="Fermer" onClick={demanderFermeture}>
             <X className="h-[18px] w-[18px]" />
           </Button>
         </div>
@@ -840,8 +850,15 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
             )}
           </div>
 
+          {abandonDemande && (
+            <div className="flex w-full flex-wrap items-center gap-2 rounded-sm border border-warning/40 bg-[var(--color-warning-tint)] px-3 py-2">
+              <p role="alert" className="flex-1 text-sm font-semibold text-text">Abandonner les modifications ?</p>
+              <Button variant="ghost" size="md" type="button" onClick={continuerSaisie}>Continuer la saisie</Button>
+              <Button variant="danger" size="md" type="button" onClick={abandonner}>Abandonner</Button>
+            </div>
+          )}
           <div className="flex items-center gap-3">
-            <Button variant="secondary" size="md" type="button" onClick={onClose}>
+            <Button variant="secondary" size="md" type="button" onClick={demanderFermeture}>
               Annuler
             </Button>
             <Button variant="primary" size="md" type="submit" form={ID_FORMULAIRE} disabled={isSaving}>

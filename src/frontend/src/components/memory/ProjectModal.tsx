@@ -6,6 +6,7 @@ import { modalVariants, overlayVariants } from '../../lib/animations';
 import * as api from '../../services/api';
 import { Z_LAYER } from '../../styles/z-layers';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
+import { useQuestionDAbandonDeModale } from '../../hooks/useQuestionDAbandonDeModale';
 import { useRendreLeFocusALaFermeture, useRevelerALApparition } from '../../hooks/useRevelerALApparition';
 import { ProjectSyncSection } from './ProjectSyncSection';
 import { Spinner } from '../ui/Spinner';
@@ -56,6 +57,8 @@ const STATUS_OPTIONS = [
 export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModalProps) {
   const { enabled: demoEnabled, replacementMap, maskContact, maskProject } = useDemoMask();
   const [formData, setFormData] = useState<FormData>(initialFormData);
+  // B-1392 : la saisie telle que chargée, pour savoir si elle a changé.
+  const [reference, setReference] = useState<FormData>(initialFormData);
   const [contacts, setContacts] = useState<api.Contact[]>([]);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -103,6 +106,17 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
   // Échap reste géré par la cascade de la coque, ou par l'escapeStack du parent.
   const dialogRef = useRef<HTMLDivElement>(null);
   useDialogFocusTrap(dialogRef, { active: isOpen });
+
+  // B-1392 : Échap, la croix, le fond et « Annuler » demandent avant de jeter
+  // une saisie modifiée, comme Tâche et Rendez-vous.
+  const modifie = !demoEnabled && (Object.keys(formData) as (keyof FormData)[]).some(
+    (champ) => formData[champ] !== reference[champ],
+  );
+  const { abandonDemande, demanderFermeture, continuerSaisie, abandonner } = useQuestionDAbandonDeModale({
+    actif: isOpen,
+    modifie,
+    fermer: onClose,
+  });
 
   const loadProjectFiles = useCallback(async (projectId: string, contexte: number) => {
     if (contexte !== fichiersContexteRef.current) return;
@@ -212,7 +226,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
   // Load project data when editing
   useEffect(() => {
     if (isOpen && project) {
-      setFormData({
+      const charge = {
         name: project.name || '',
         description: project.description || '',
         contact_id: project.contact_id || '',
@@ -220,9 +234,12 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
         budget: project.budget?.toString() || '',
         notes: project.notes || '',
         tags: Array.isArray(project.tags) ? project.tags.join(', ') : (project.tags || ''),
-      });
+      };
+      setFormData(charge);
+      setReference(charge);
     } else if (isOpen) {
       setFormData(initialFormData);
+      setReference(initialFormData);
     }
     setError(null);
     setShowDeleteConfirm(false);
@@ -324,7 +341,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
             exit="exit"
             transition={{ duration: 0.2 }}
             className={`fixed inset-0 bg-text/35 backdrop-blur-sm ${Z_LAYER.MODAL}`}
-            onClick={onClose}
+            onClick={demanderFermeture}
           />
 
           {/* Modal */}
@@ -354,7 +371,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                   </p>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" onClick={onClose} aria-label="Fermer">
+              <Button variant="ghost" size="icon" onClick={demanderFermeture} aria-label="Fermer">
                 <X className="w-5 h-5" />
               </Button>
             </div>
@@ -605,8 +622,15 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
                   </Button>
                 )}
               </div>
+              {abandonDemande && (
+                <div className="flex w-full flex-wrap items-center gap-2 rounded-sm border border-warning/40 bg-[var(--color-warning-tint)] px-3 py-2">
+                  <p role="alert" className="flex-1 text-sm font-semibold text-text">Abandonner les modifications ?</p>
+                  <Button variant="ghost" size="md" onClick={continuerSaisie}>Continuer la saisie</Button>
+                  <Button variant="danger" size="md" onClick={abandonner}>Abandonner</Button>
+                </div>
+              )}
               <div className="flex flex-wrap gap-3 max-[840px]:basis-full [&>button]:max-[840px]:flex-1">
-                <Button variant="ghost" onClick={onClose}>
+                <Button variant="ghost" onClick={demanderFermeture}>
                   Annuler
                 </Button>
                 <Button
