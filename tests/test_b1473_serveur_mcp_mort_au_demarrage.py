@@ -73,7 +73,9 @@ def test_le_path_des_connecteurs_trouve_uvx_la_ou_uv_l_installe(tmp_path, monkey
     (maison / ".local" / "bin").mkdir(parents=True)
     xdg_bin = tmp_path / "xdg-bin"
     xdg_bin.mkdir()
+    # Sous Windows, expanduser("~") lit USERPROFILE et ignore HOME.
     monkeypatch.setenv("HOME", str(maison))
+    monkeypatch.setenv("USERPROFILE", str(maison))
     monkeypatch.setenv("PATH", "/usr/bin")
     monkeypatch.setenv("XDG_BIN_HOME", str(xdg_bin))
     chemins = build_mcp_enriched_path().split(os.pathsep)
