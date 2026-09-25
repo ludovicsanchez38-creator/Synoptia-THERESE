@@ -5,6 +5,8 @@
  * Sprint 2 - PERF-2.2: Extracted from monolithic api.ts
  */
 
+import { messageDeValidation } from '../../lib/messageDeValidation';
+
 /**
  * Port par défaut du backend. Surchargable au build/dev par
  * VITE_THERESE_BACKEND_PORT : les E2E isolés (revue 0.40) pointent ainsi le
@@ -306,7 +308,10 @@ export async function request<T>(
 
   if (!response.ok) {
     const data = await response.json().catch(() => null);
-    const message = data?.detail || data?.message || `Erreur ${response.status}`;
+    // B-1399 : un refus 422 nomme le champ et la règle au lieu de « Données
+    // invalides dans la requête ».
+    const detailDeValidation = response.status === 422 ? messageDeValidation(data?.details) : null;
+    const message = detailDeValidation || data?.detail || data?.message || `Erreur ${response.status}`;
     const code = typeof data?.code === 'string' && data.code !== 'HTTP_ERROR' ? data.code : undefined;
     throw new ApiError(response.status, response.statusText, message, code);
   }
