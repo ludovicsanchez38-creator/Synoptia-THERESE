@@ -121,5 +121,7 @@ export function deleteBackup(backupName: string): Promise<{ deleted: boolean; ba
 }
 
 export function deleteAllData(): Promise<{ deleted: boolean; message: string; note: string; backups_kept?: number }> {
-  return request('/api/data/all?confirm=true', { method: 'DELETE' });
+  // B-1250 : la purge attend l'indexation en vol avant d'effacer (B-1249) ;
+  // le délai client par défaut (30 s) annonçait un échec pendant qu'elle aboutissait.
+  return request('/api/data/all?confirm=true', { method: 'DELETE', timeoutMs: null });
 }

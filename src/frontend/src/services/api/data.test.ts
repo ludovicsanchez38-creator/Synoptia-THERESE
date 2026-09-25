@@ -13,7 +13,7 @@ vi.mock('./core', async () => {
   };
 });
 
-import { downloadAllData } from './data';
+import { deleteAllData, downloadAllData } from './data';
 
 describe('data API', () => {
   beforeEach(() => {
@@ -60,5 +60,15 @@ describe('data API', () => {
     createObjectURL.mockRestore();
     revokeObjectURL.mockRestore();
     click.mockRestore();
+  });
+
+  it('B-1250 : la purge totale n’abandonne pas au bout de 30 s', async () => {
+    // Elle attend désormais l'indexation en vol (B-1249, jusqu'à ~19 s) avant
+    // d'effacer : le délai client par défaut annonçait un échec pendant que
+    // la purge aboutissait.
+    mockApiFetch.mockResolvedValue(new Response(JSON.stringify({ deleted: true, message: 'ok', note: '' }), { status: 200 }));
+    await deleteAllData();
+    const options = mockApiFetch.mock.calls[0][1] as { timeoutMs?: number | null };
+    expect(options.timeoutMs).toBeNull();
   });
 });
