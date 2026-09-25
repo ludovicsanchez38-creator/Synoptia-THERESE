@@ -934,9 +934,10 @@ async def prochaines_seances(
     seances = [e for e in candidats if courriel in _attendee_emails(e.attendees)]
 
     def _debut(evenement: CalendarEvent) -> str:
+        # Annotée : mypy lit les imports `app.*` comme Any (cliquet mypy).
         if evenement.start_datetime is not None:
-            return evenement.start_datetime.isoformat()
-        return evenement.start_date or ""
+            return str(evenement.start_datetime.isoformat())
+        return str(evenement.start_date or "")
 
     seances.sort(key=_debut)
     return [
