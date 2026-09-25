@@ -144,6 +144,20 @@ def _split_positional_and_kwargs(rest: str) -> tuple[str, dict[str, str]]:
     return positional, kwargs
 
 
+def _cles_ignorees(rest: str, lues: set[str]) -> str:
+    """B-1303 : phrase qui nomme les options tapées que la commande ne lit pas
+    (inconnues, ou propres à une autre commande) ; vide s'il n'y en a pas."""
+    head = _KV_HEAD.search(rest)
+    if not head:
+        return ""
+    ignorees: list[str] = []
+    for m in _KV_PAIR.finditer(rest[head.start():]):
+        cle = m.group(1).strip().lower()
+        if _KEY_ALIASES.get(cle) not in lues and cle not in ignorees:
+            ignorees.append(cle)
+    return f" Option(s) ignorée(s) : {', '.join(ignorees)}." if ignorees else ""
+
+
 async def _do_contact(
     rest: str,
     session: AsyncSession,
@@ -174,12 +188,13 @@ async def _do_contact(
     if result.get("error"):
         return f"Impossible de créer le contact : {result['error']}"
     name = result.get("display_name", "contact")
+    ignorees = _cles_ignorees(rest, {"email", "phone", "company"})
     if result.get("already_existed"):
         # B-1261 : ce qui a été saisi et n'est pas écrit est dit, comme /projet.
         ignores = result.get("champs_ignores", [])
         suite = f" Non appliqué : {', '.join(ignores)}." if ignores else ""
-        return f"Contact **{name}** déjà en mémoire, je le réutilise (pas de doublon).{suite}"
-    return f"Contact **{name}** créé en mémoire."
+        return f"Contact **{name}** déjà en mémoire, je le réutilise (pas de doublon).{suite}{ignorees}"
+    return f"Contact **{name}** créé en mémoire.{ignorees}"
 
 
 async def _do_projet(
@@ -225,11 +240,12 @@ async def _do_projet(
     pname = result.get("name", "projet")
     # B-1238 : ce que l'outil a écarté ou ignoré est dit, pas tu.
     notes = " ".join(f"({e})" for e in result.get("ecarte", []))
+    ignorees = _cles_ignorees(rest, {"budget", "status", "description"})
     if result.get("already_existed"):
         ignore = result.get("champs_ignores", [])
         suite = f" Non appliqué : {', '.join(ignore)}." if ignore else ""
-        return f"Projet **{pname}** déjà en mémoire, je le réutilise (pas de doublon).{suite}"
-    return f"Projet **{pname}** créé en mémoire.{' ' + notes if notes else ''}"
+        return f"Projet **{pname}** déjà en mémoire, je le réutilise (pas de doublon).{suite}{ignorees}"
+    return f"Projet **{pname}** créé en mémoire.{' ' + notes if notes else ''}{ignorees}"
 
 
 async def _prepare_rdv(
