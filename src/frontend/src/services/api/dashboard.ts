@@ -30,6 +30,8 @@ export interface DashboardTask {
   priority: string;
   due_date: string | null;
   project_id: string | null;
+  /** P-134 : la personne concernée (« Relancer … » ouvre sa fiche). */
+  contact_id?: string | null;
 }
 
 export interface DashboardInvoice {

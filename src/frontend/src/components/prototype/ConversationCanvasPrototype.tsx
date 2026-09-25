@@ -1984,6 +1984,11 @@ export function ConversationCanvasPrototype() {
                           void openInvoice(cible.id);
                           return;
                         }
+                        if (cible.kind === 'contact') {
+                          chooseScenario('memory');
+                          setSelectedContactId(cible.id);
+                          return;
+                        }
                         if (cible.view === 'chat') openChat();
                         else openEmbeddedView(cible.view);
                       }}

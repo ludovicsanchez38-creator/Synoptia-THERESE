@@ -32,6 +32,12 @@ export interface TodayAttentionItem {
    * disparu s'ouvre sur sa liste plutôt que sur un identifiant inventé.
    */
   cibleId: string | null;
+  /**
+   * P-134 : la personne que ce point nomme (tâche reliée à un contact,
+   * prospect à relancer). Présente, le point ouvre sa fiche : « Relancer
+   * Karim » menait à la liste des tâches, jamais à son numéro.
+   */
+  contactId?: string | null;
 }
 
 function isOverdue(dueDate: string | null, today: string): boolean {
@@ -66,6 +72,7 @@ function taskToAttention(task: DashboardTask, today: string): TodayAttentionItem
   return {
     id: `task-${task.id}`,
     cibleId: task.id,
+    contactId: task.contact_id ?? null,
     kind: 'task',
     title: task.title,
     detail: dueLabel ? `Échéance ${dueLabel}` : `Priorité ${task.priority || 'à préciser'}`,
@@ -149,6 +156,7 @@ function prospectToAttention(prospect: DashboardProspect, aujourdHui: string): T
   return {
     id: `prospect-${prospect.id}`,
     cibleId: prospect.id,
+    contactId: prospect.id,
     kind: 'prospect',
     title: `Relancer ${prospect.name}`,
     detail: morceaux.join(' · ') || 'Contexte CRM disponible',

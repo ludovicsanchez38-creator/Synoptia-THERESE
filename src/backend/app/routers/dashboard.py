@@ -415,6 +415,8 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
                 "priority": t.priority,
                 "due_date": t.due_date.isoformat() if t.due_date else None,
                 "project_id": t.project_id,
+                # P-134 : « Relancer … » ouvre la personne, pas la liste des tâches.
+                "contact_id": t.contact_id,
             })
     except Exception as e:
         logger.warning(f"Erreur lecture tâches: {e}")
