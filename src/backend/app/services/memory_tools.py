@@ -6,10 +6,12 @@ to directly add entities to the memory system during conversation.
 """
 
 import asyncio
+import contextlib
 import json
 import logging
 import math
 import unicodedata
+from collections.abc import AsyncIterator
 from datetime import UTC, datetime
 from difflib import SequenceMatcher
 from pathlib import Path
@@ -1180,6 +1182,25 @@ def _consommer_issue_geste(geste: "asyncio.Task[str]") -> None:
         )
 
 
+# B-1276 : nombre de purges en cours ; tant qu'il est positif, le chat ne crée rien.
+_CREATIONS_SUSPENDUES = 0
+
+
+@contextlib.asynccontextmanager
+async def creations_du_chat_suspendues() -> AsyncIterator[None]:
+    """B-1276 : pendant « Effacer toutes mes données », le chat ne crée plus
+    rien (il le dit), et les créations déjà en vol sont attendues jusqu'à la
+    dernière. N'attendre qu'un instantané laissait écrire après la purge une
+    création lancée pendant ses autres attentes."""
+    global _CREATIONS_SUSPENDUES
+    _CREATIONS_SUSPENDUES += 1
+    try:
+        await attendre_les_gestes_de_creation()
+        yield
+    finally:
+        _CREATIONS_SUSPENDUES -= 1
+
+
 async def attendre_les_gestes_de_creation() -> None:
     """B-1260 : la purge et la restauration attendent les créations du chat en
     vol. Un geste garde sa transaction ouverte pendant le calcul du vecteur
@@ -1187,12 +1208,20 @@ async def attendre_les_gestes_de_creation() -> None:
     (délai de 5 s) et répondait 500, ou laissait survivre la fiche créée."""
     # B-1270 : `asyncio.wait`, pas `gather` : un gather annulé (purge
     # interrompue) annulait les gestes que `shield` protège.
-    gestes = list(_gestes_en_cours)
-    if gestes:
-        await asyncio.wait(gestes)
+    while _gestes_en_cours:
+        await asyncio.wait(list(_gestes_en_cours))
 
 
 async def _proteger_le_geste(coro: "Any") -> str:
+    if _CREATIONS_SUSPENDUES:
+        coro.close()
+        return json.dumps({
+            "success": False,
+            "error": (
+                "Effacement de toutes les données en cours : rien n'a été créé. "
+                "Réessaie une fois l'effacement terminé."
+            ),
+        }, ensure_ascii=False)
     geste: "asyncio.Task[str]" = asyncio.create_task(coro)
     _gestes_en_cours.add(geste)
     geste.add_done_callback(_consommer_issue_geste)

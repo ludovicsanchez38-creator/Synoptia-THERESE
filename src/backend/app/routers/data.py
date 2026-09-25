@@ -580,15 +580,21 @@ async def delete_all_data(
             detail="Ajoute ?confirm=true pour confirmer la suppression de toutes tes données",
         )
 
-    # B-1222, B-1249, B-1251, B-1260 : aucune indexation de fond (fiche,
-    # profil) ni création du chat en vol ne doit écrire après la purge.
-    # L'attente (jusqu'à ~19 s) vient AVANT toute suppression : interrompue,
-    # elle ne laisse pas une purge à moitié faite.
+    # B-1260, B-1276 : pendant toute la purge, le chat ne crée plus rien, et
+    # les créations déjà en vol sont attendues jusqu'à la dernière.
+    from app.services.memory_tools import creations_du_chat_suspendues
+
+    async with creations_du_chat_suspendues():
+        return await _supprimer_toutes_les_donnees(session)
+
+
+async def _supprimer_toutes_les_donnees(session: AsyncSession) -> dict[str, Any]:
+    # B-1222, B-1249, B-1251 : aucune indexation de fond (fiche, profil) ne
+    # doit écrire après la purge. L'attente vient AVANT toute suppression :
+    # interrompue, elle ne laisse pas une purge à moitié faite.
     from app.routers.memory import arreter_les_indexations_de_fiches
-    from app.services.memory_tools import attendre_les_gestes_de_creation
     from app.services.user_profile import arreter_l_indexation_du_profil
 
-    await attendre_les_gestes_de_creation()
     await arreter_les_indexations_de_fiches()
     await arreter_l_indexation_du_profil()
 
