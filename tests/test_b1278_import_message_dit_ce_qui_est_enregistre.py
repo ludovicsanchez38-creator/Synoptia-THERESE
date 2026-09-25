@@ -25,3 +25,13 @@ async def test_le_message_sans_signalement(db_session):
         "id,first_name,last_name\nc-3,Léa,Exemple\n".encode(), filename="c.csv"
     )
     assert res.message == "Import terminé : 1 créés, 0 mis à jour, 0 ignorés", res.message
+
+
+@pytest.mark.asyncio
+async def test_un_fichier_illisible_n_annonce_pas_un_import_termine(db_session):
+    """B-1289 : un fichier illisible répondait « Import terminé avec 1
+    signalement(s) : 0 créés … sur 0 lignes ». Revue du diff, passe 6 (cas G)."""
+    res = await CRMImportService(db_session).import_contacts(b"pas un classeur", filename="c.xlsx")
+    assert res.success is False, res
+    assert res.message.startswith("Import impossible"), res.message
+    assert "terminé" not in res.message, res.message

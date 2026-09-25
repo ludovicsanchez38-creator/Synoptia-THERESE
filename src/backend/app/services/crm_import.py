@@ -53,6 +53,9 @@ class ImportResult:
         # B-1278 : un signalement (cellule écartée) ne fait pas oublier ce qui
         # a été enregistré ; le message compte toujours les lignes.
         bilan = f"{self.created} créés, {self.updated} mis à jour, {self.skipped} ignorés"
+        # B-1289 : rien lu (fichier illisible) n'est pas un import terminé.
+        if not self.success and self.total_rows == 0 and self.errors:
+            return f"Import impossible : {self.errors[0].message}"
         if self.success:
             return f"Import terminé : {bilan}"
         return f"Import terminé avec {len(self.errors)} signalement(s) : {bilan}, sur {self.total_rows} lignes"
