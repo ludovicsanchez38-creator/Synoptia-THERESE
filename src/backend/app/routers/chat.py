@@ -2137,6 +2137,24 @@ async def _stream_response(
                         )
 
 
+def _texte_du_resultat_mcp(resultat: Any) -> str:
+    """B-1468 (recette P-146, lot 5) : le résultat d'un outil de connecteur
+    (MCP) arrivait à l'écran en objet brut (`content`, `structuredContent`) ;
+    l'écran le traitait comme du texte et plantait. On rend les blocs texte
+    du résultat, ou, à défaut, sa forme JSON lisible."""
+    if isinstance(resultat, str):
+        return resultat
+    if isinstance(resultat, dict) and isinstance(resultat.get("content"), list):
+        textes = [
+            str(bloc.get("text", ""))
+            for bloc in resultat["content"]
+            if isinstance(bloc, dict) and bloc.get("type") == "text"
+        ]
+        if textes:
+            return "\n".join(textes)
+    return json.dumps(resultat, ensure_ascii=False, default=str)
+
+
 async def _persister_message_partiel(
     conversation_id: str, contenu: str, llm_service: Any
 ) -> None:
@@ -3538,7 +3556,7 @@ async def confirm_tool(
         mcp_service = get_mcp_service()
         mcp_result = await mcp_service.execute_tool_call(tool_name, arguments)
         result = (
-            mcp_result.result
+            _texte_du_resultat_mcp(mcp_result.result)
             if mcp_result.success
             else f"Erreur lors de l'envoi : {mcp_result.error}"
         )

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { texteDuContenu } from '../lib/texteDuContenu';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { generateId } from '../lib/utils';
 import { createDebouncedStorage } from '../lib/debouncedStorage';
@@ -188,6 +189,9 @@ export const useChatStore = create<ChatStore>()(
         const messageId = message.id || generateId();
         const newMessage: Message = {
           ...message,
+          // B-1468 : un contenu non textuel (résultat brut d'un connecteur)
+          // faisait planter la bulle puis, persisté, le tiroir.
+          content: texteDuContenu(message.content),
           id: messageId,
           timestamp: new Date(),
         };
@@ -467,6 +471,18 @@ export const useChatStore = create<ChatStore>()(
         // BUG-076 : ne pas restaurer la dernière conversation au lancement
         // L'app démarre toujours sur l'écran d'accueil
       }),
+      // B-1468 : un cache déjà empoisonné (contenu non textuel) faisait
+      // planter le tiroir à chaque ouverture ; il est assaini à la lecture.
+      merge: (persiste, courant) => {
+        const lu = (persiste ?? {}) as Partial<ChatStore>;
+        const conversations = (lu.conversations ?? courant.conversations).map((conversation: Conversation) => ({
+          ...conversation,
+          messages: (conversation.messages ?? []).map((m: Message) =>
+            typeof m.content === 'string' ? m : { ...m, content: texteDuContenu(m.content) },
+          ),
+        }));
+        return { ...courant, ...lu, conversations };
+      },
     }
   )
 );
