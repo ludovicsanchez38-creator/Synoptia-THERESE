@@ -588,15 +588,38 @@ async def delete_all_data(
         return await _supprimer_toutes_les_donnees(session)
 
 
-async def _supprimer_toutes_les_donnees(session: AsyncSession) -> dict[str, Any]:
-    # B-1222, B-1249, B-1251 : aucune indexation de fond (fiche, profil) ne
-    # doit écrire après la purge. L'attente vient AVANT toute suppression :
-    # interrompue, elle ne laisse pas une purge à moitié faite.
+# B-1277 : l'écran n'a plus de délai (B-1250) ; le serveur plafonne donc ses
+# attentes. Un vecteur n'est pas borné (modèle chargé, voire téléchargé, au
+# premier appel), et trois attentes se suivent.
+DELAI_MAX_TRAVAUX_DE_FOND_S = 120.0
+TRAVAUX_DE_FOND_EN_COURS = (
+    "Des travaux de fond (création ou indexation) ne sont pas terminés : "
+    "rien n'a été modifié. Réessaie dans un instant."
+)
+
+
+async def _arreter_les_travaux_de_fond() -> None:
+    """B-1222, B-1249, B-1251, B-1260 : aucune création du chat ni indexation
+    de fond (fiche, profil) ne doit écrire après une purge ou une restauration.
+    L'attente précède toute suppression ; au-delà du plafond, rien n'est
+    touché et la route répond 503."""
     from app.routers.memory import arreter_les_indexations_de_fiches
+    from app.services.memory_tools import attendre_les_gestes_de_creation
     from app.services.user_profile import arreter_l_indexation_du_profil
 
-    await arreter_les_indexations_de_fiches()
-    await arreter_l_indexation_du_profil()
+    async def _attendre() -> None:
+        await attendre_les_gestes_de_creation()
+        await arreter_les_indexations_de_fiches()
+        await arreter_l_indexation_du_profil()
+
+    try:
+        await asyncio.wait_for(_attendre(), DELAI_MAX_TRAVAUX_DE_FOND_S)
+    except TimeoutError as exc:
+        raise HTTPException(status_code=503, detail=TRAVAUX_DE_FOND_EN_COURS) from exc
+
+
+async def _supprimer_toutes_les_donnees(session: AsyncSession) -> dict[str, Any]:
+    await _arreter_les_travaux_de_fond()
 
     # Log avant suppression
     await log_activity(
@@ -1507,13 +1530,7 @@ async def restore_backup(
         # indexation de fond d'avant ne doit plus écrire. L'attente vit DANS
         # le bloc dont le finally clôt le mode maintenance : une annulation à
         # ce moment ne laisse pas l'application verrouillée.
-        from app.routers.memory import arreter_les_indexations_de_fiches
-        from app.services.memory_tools import attendre_les_gestes_de_creation
-        from app.services.user_profile import arreter_l_indexation_du_profil
-
-        await attendre_les_gestes_de_creation()
-        await arreter_les_indexations_de_fiches()
-        await arreter_l_indexation_du_profil()
+        await _arreter_les_travaux_de_fond()
         # Aucune session n'est injectée à cette route : tous les appels API
         # admis avant le verrou sont terminés. Les pools sont disposés AVANT
         # l'archive de sécurité et, surtout, avant toute extraction.

@@ -1189,13 +1189,13 @@ _CREATIONS_SUSPENDUES = 0
 @contextlib.asynccontextmanager
 async def creations_du_chat_suspendues() -> AsyncIterator[None]:
     """B-1276 : pendant « Effacer toutes mes données », le chat ne crée plus
-    rien (il le dit), et les créations déjà en vol sont attendues jusqu'à la
-    dernière. N'attendre qu'un instantané laissait écrire après la purge une
-    création lancée pendant ses autres attentes."""
+    rien (il le dit). N'attendre qu'un instantané des créations en vol
+    laissait écrire après la purge une création lancée pendant ses autres
+    attentes ; celles déjà en vol sont attendues par la purge elle-même
+    (`attendre_les_gestes_de_creation`, sous son plafond B-1277)."""
     global _CREATIONS_SUSPENDUES
     _CREATIONS_SUSPENDUES += 1
     try:
-        await attendre_les_gestes_de_creation()
         yield
     finally:
         _CREATIONS_SUSPENDUES -= 1
