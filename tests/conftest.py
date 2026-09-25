@@ -182,6 +182,20 @@ def _autorisation_recherche_web_neutre():
     poser_autorisation_recherche(None)
 
 
+@pytest.fixture(autouse=True)
+def _verrou_d_indexation_du_profil_neuf(monkeypatch):
+    """B-1297 : le verrou d'indexation du profil est un `asyncio.Lock` de
+    module, lié à la boucle de sa première attente disputée. Chaque test a sa
+    boucle : un verrou lié à celle d'un test précédent faisait lever « bound
+    to a different event loop » dans la purge (500), selon l'ordre des tests.
+    En production, une seule boucle : rien à changer côté moteur."""
+    import asyncio
+
+    from app.services import user_profile
+
+    monkeypatch.setattr(user_profile, "_VERROU_INDEXATION", asyncio.Lock())
+
+
 @pytest.fixture(scope="function")
 def client():
     """Test client HTTP sync, compatible await.
