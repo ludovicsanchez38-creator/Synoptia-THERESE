@@ -72,3 +72,53 @@ async def test_une_valeur_non_textuelle_reste_signalee(db_session, champ, valeur
     assert resultat.get("already_existed") is True, resultat
     assert libelle in resultat.get("champs_ignores", []), resultat
     assert resultat.get("success") is False, resultat
+
+
+@pytest.mark.asyncio
+async def test_un_autre_nom_retrouve_par_le_courriel_est_signale(db_session):
+    """B-1298 : régression de B-1271. Retrouvée par son courriel sous un autre
+    nom, la fiche était réutilisée en silence : succès, aucun champ ignoré,
+    alors que le nom saisi n'était pas enregistré. Lecteur X, passe 5."""
+    import json
+
+    from app.services.memory_tools import execute_create_contact
+
+    await execute_create_contact(
+        {"first_name": "Marie", "last_name": "Exemple", "email": "marie@exemple.fr"}, db_session,
+    )
+    resultat = json.loads(await execute_create_contact(
+        {"first_name": "Marie", "last_name": "Durand", "email": "marie@exemple.fr"}, db_session,
+    ))
+    assert resultat.get("already_existed") is True, resultat
+    assert "nom" in resultat.get("champs_ignores", []), resultat
+    assert resultat.get("success") is False, resultat
+
+
+@pytest.mark.asyncio
+async def test_le_meme_nom_en_autre_casse_n_est_pas_signale(db_session):
+    import json
+
+    from app.services.memory_tools import execute_create_contact
+
+    await execute_create_contact(
+        {"first_name": "Marie", "last_name": "Exemple", "email": "marie@exemple.fr"}, db_session,
+    )
+    resultat = json.loads(await execute_create_contact(
+        {"first_name": "marie", "last_name": "EXEMPLE", "email": "marie@exemple.fr"}, db_session,
+    ))
+    assert "nom" not in resultat.get("champs_ignores", []), resultat
+
+
+@pytest.mark.asyncio
+async def test_un_prenom_seul_avec_le_courriel_n_est_pas_un_autre_nom(db_session):
+    import json
+
+    from app.services.memory_tools import execute_create_contact
+
+    await execute_create_contact(
+        {"first_name": "Marie", "last_name": "Exemple", "email": "marie@exemple.fr"}, db_session,
+    )
+    resultat = json.loads(await execute_create_contact(
+        {"first_name": "Marie", "email": "marie@exemple.fr"}, db_session,
+    ))
+    assert "nom" not in resultat.get("champs_ignores", []), resultat

@@ -281,6 +281,14 @@ def _champs_de_contact_non_appliques(fiche: Any, arguments: dict[str, Any]) -> l
         ("company", "entreprise", lambda v: _texte(v).casefold()),
     )
     perdus: list[str] = []
+    # B-1298 : retrouvée par son courriel sous un autre nom, la fiche garde le
+    # sien ; le nom saisi n'est pas enregistré et doit être dit.
+    # Prénom et nom comparés chacun : un prénom seul saisi n'est pas un autre nom.
+    if any(
+        _texte(arguments.get(c)) and _texte(arguments.get(c)).casefold() != _texte(getattr(fiche, c, None)).casefold()
+        for c in ("first_name", "last_name")
+    ):
+        perdus.append("nom")
     for champ, libelle, forme in comparaisons:
         valeur = arguments.get(champ)
         if valeur is None or (isinstance(valeur, (str, list, dict)) and not valeur):
