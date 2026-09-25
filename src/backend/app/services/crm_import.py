@@ -16,6 +16,7 @@ from typing import Any, Literal
 
 from app.models.entities import Contact, Deliverable, Project, generate_uuid
 from app.models.schemas import adresse_unique_valide, perimetre_normalise
+from app.services.crm_utils import ETAPES_PIPELINE
 from app.services.formules_tableur import neutraliser_formule
 from openpyxl import load_workbook
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -683,6 +684,23 @@ class CRMImportService:
                     db_result = await self.session.execute(stmt)
                     existing = db_result.scalar_one_or_none()
 
+                # B-1262 : même règle que le tableur (B-1187) : seule une étape
+                # du pipeline est retenue ; une autre rendait la fiche
+                # invisible des colonnes. Elle ne remplace rien et figure au
+                # rapport.
+                cellule_etape = str(mapped.get("stage") or "").strip()
+                etape = cellule_etape.lower() if cellule_etape.lower() in ETAPES_PIPELINE else None
+                etape_ecartee = (
+                    ImportError(
+                        row=idx + 1,
+                        column="stage",
+                        message=f"Étape « {cellule_etape} » inconnue du pipeline, non enregistrée",
+                        data=mapped,
+                    )
+                    if cellule_etape and etape is None
+                    else None
+                )
+
                 if existing and update_existing:
                     # Un champ présent dans l'export fait foi, y compris une
                     # valeur vide ou un score nul : sinon l'aller-retour
@@ -705,8 +723,10 @@ class CRMImportService:
                     # vide écrivait None et le commit unique faisait échouer
                     # tout l'import. Vide ou inconnu ne remplace rien ; le
                     # périmètre suit la règle de B-1165.
-                    if mapped.get("stage"):
-                        existing.stage = mapped["stage"]
+                    if etape:
+                        existing.stage = etape
+                    if etape_ecartee:
+                        result.errors.append(etape_ecartee)
                     perimetre = _perimetre_ou_none(mapped.get("scope"))
                     if perimetre:
                         existing.scope = perimetre
@@ -763,7 +783,7 @@ class CRMImportService:
                         email=mapped.get("email"),
                         phone=mapped.get("phone"),
                         address=mapped.get("address"),
-                        stage=mapped.get("stage") or "contact",
+                        stage=etape or "contact",
                         score=score if score is not None else 50,
                         source=mapped.get("source"),
                         tags=_parse_value(mapped.get("tags"), "tags"),
@@ -797,6 +817,8 @@ class CRMImportService:
                     )
                     self.session.add(contact)
                     result.created += 1
+                    if etape_ecartee:
+                        result.errors.append(etape_ecartee)
 
             except Exception as e:
                 logger.error(f"Error importing contact row {idx + 1}: {e}")
