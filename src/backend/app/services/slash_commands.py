@@ -283,6 +283,8 @@ async def _prepare_rdv(
         content=(
             f"Rendez-vous préparé : **{title}**, le "
             f"{start.strftime('%d/%m/%Y à %H:%M')}. Rien n'est créé avant ta confirmation."
+            # B-1314 : comme /contact et /projet (B-1303).
+            f"{_cles_ignorees(rest, {'date', 'description'})}"
         ),
         confirmation={
             "confirmation_id": confirmation_id,

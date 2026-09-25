@@ -29,3 +29,13 @@ async def test_les_cles_lues_ne_sont_pas_signalees(db_session):
 
     reponse = await execute_slash_command("contact", "Marie Exemple email=marie@exemple.fr tel=0600000000", db_session)
     assert "ignor" not in reponse.lower(), reponse
+
+
+@pytest.mark.asyncio
+async def test_rdv_dit_la_cle_qu_il_ne_lit_pas(db_session):
+    """B-1314 : B-1303 ne couvrait pas /rdv. Lecteur α, passe 6."""
+    from app.services.slash_commands import execute_slash_command_outcome
+
+    issue = await execute_slash_command_outcome("rdv", "Point client date=2030-06-03T14:00 lieu=Manosque", db_session)
+    assert "préparé" in issue.content, issue.content
+    assert "lieu" in issue.content and "ignor" in issue.content.lower(), issue.content
