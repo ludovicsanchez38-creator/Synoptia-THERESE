@@ -44,6 +44,7 @@ import { EtatVide } from '../ui/EtatVide';
 import { Input } from '../ui/Input';
 import { cn } from '../../lib/utils';
 import { CLASSES_GROUPE_CAPACITE, classesTypeCapacite, typeCapacite } from './typeCapacite';
+import { replierPourRecherche } from '../../lib/replierPourRecherche';
 
 export type CapabilityGroupId = 'organize' | 'business' | 'create' | 'decide' | 'automate' | 'control';
 export type PrototypeScenario = 'today' | 'memory' | 'email' | 'meeting' | 'invoice' | 'board' | 'atelier';
@@ -152,13 +153,13 @@ export const capabilities: CapabilityItem[] = [
   {
     id: 'contacts-memory', group: 'business', title: 'Contacts', icon: Users, scenario: 'memory',
     description: 'Retrouver les personnes, notes et éléments de contexte sans chercher dans plusieurs modules.',
-    features: ['Recherche hybride', 'Scopes', 'Extraction d’entités'], keywords: ['contact', 'mémoire', 'notes'],
+    features: ['Recherche hybride', 'Scopes', 'Extraction d’entités'], keywords: ['contact', 'mémoire', 'notes', 'client', 'clients', 'clientes', 'carnet', 'fiche', 'fiches', 'importer', 'import', 'vcf', 'csv', 'excel', 'exporter'],
     prompt: 'Retrouve tout ce que je sais sur cette personne et résume la relation.',
   },
   {
     id: 'crm', group: 'business', title: 'Pipeline', icon: UserCheck,
     description: 'Suivre prospects, activités et étapes commerciales depuis la conversation.',
-    features: ['Scoring', 'Pipeline', 'Activités'], keywords: ['crm', 'prospect', 'opportunité'],
+    features: ['Scoring', 'Pipeline', 'Activités'], keywords: ['crm', 'prospect', 'opportunité', 'importer', 'import', 'vcf', 'csv', 'excel'],
     prompt: 'Analyse mon pipeline et indique les opportunités à faire avancer.', destination: { kind: 'view', view: 'crm' },
   },
   {
@@ -329,10 +330,12 @@ export function CapabilityCenter({
   useDialogFocusTrap(dialogRef, { active: isPresent, onEscape: onClose, isolateBackground: true });
 
   const visibleCapabilities = useMemo(() => {
-    const normalized = query.trim().toLowerCase();
+    // P-114 / P-129 : accents et casse repliés des deux côtés (« echeance »
+    // trouve « échéance »), et des mots-clés qui disent les mots des gens.
+    const normalized = replierPourRecherche(query.trim());
     if (!normalized) return capabilities.filter((item) => item.group === selectedGroup);
     return capabilities.filter((item) =>
-      [item.title, item.description, ...item.features, ...item.keywords].join(' ').toLowerCase().includes(normalized),
+      replierPourRecherche([item.title, item.description, ...item.features, ...item.keywords].join(' ')).includes(normalized),
     );
   }, [query, selectedGroup]);
 
