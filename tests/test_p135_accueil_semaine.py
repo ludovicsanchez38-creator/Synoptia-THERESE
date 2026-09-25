@@ -72,3 +72,36 @@ async def test_une_base_vide_rend_des_listes_vides(client: AsyncClient):
     corps = (await client.get("/api/dashboard/semaine")).json()
     assert corps["a_venir"] == [] and corps["encaisse_du_mois"] == {} and corps["prospects_par_etape"] == {}
     assert corps["indisponibles"] == []
+
+
+@pytest.mark.asyncio
+async def test_b1430_les_rendez_vous_de_la_semaine(client: AsyncClient, db_session, monkeypatch):
+    """B-1430 (recette P-146, lot 1) : « Cette semaine » disait « Rien de daté
+    dans les sept prochains jours » alors que deux rendez-vous tombaient les
+    jours suivants. Les rendez-vous de demain à J+7 en font partie."""
+    from app.models.entities import Calendar, CalendarEvent
+
+    monkeypatch.setattr("app.routers.dashboard.date_civile_paris", lambda *_a, **_k: JOUR)
+    db_session.add(Calendar(id="cal-b1430", summary="Agenda", provider="local"))
+    await db_session.flush()
+    db_session.add_all([
+        CalendarEvent(id="ev-lundi", calendar_id="cal-b1430", summary="Point fournisseur bois",
+                      start_datetime=_a(4, 14), end_datetime=_a(4, 15)),
+        CalendarEvent(id="ev-journee", calendar_id="cal-b1430", summary="Salon des artisans",
+                      all_day=True, start_date=(JOUR + timedelta(days=2)).isoformat(),
+                      end_date=(JOUR + timedelta(days=2)).isoformat()),
+        CalendarEvent(id="ev-annule", calendar_id="cal-b1430", summary="Annulé",
+                      start_datetime=_a(3), end_datetime=_a(3, 10), status="cancelled"),
+        CalendarEvent(id="ev-aujourdhui", calendar_id="cal-b1430", summary="Déjà au brief",
+                      start_datetime=_a(0, 15), end_datetime=_a(0, 16)),
+        CalendarEvent(id="ev-loin", calendar_id="cal-b1430", summary="Plus tard",
+                      start_datetime=_a(10), end_datetime=_a(10, 10)),
+    ])
+    await db_session.commit()
+
+    corps = (await client.get("/api/dashboard/semaine")).json()
+    assert [(e["kind"], e["titre"]) for e in corps["a_venir"]] == [
+        ("rdv", "Salon des artisans"),
+        ("rdv", "Point fournisseur bois"),
+    ]
+    assert corps["a_venir"][1]["date"].startswith((JOUR + timedelta(days=4)).isoformat())

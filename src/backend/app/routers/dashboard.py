@@ -585,6 +585,30 @@ async def get_semaine(session: AsyncSession = Depends(get_session)) -> dict[str,
                 "titre": tache.title,
                 "date": tache.due_date.isoformat() if tache.due_date else None,
             })
+        # B-1430 (recette P-146, lot 1) : « Rien de daté » s'affichait au-dessus
+        # de deux rendez-vous. Les rendez-vous de demain à J+7 en font partie
+        # (avec heure, ou sur la journée, qui commencent dans la fenêtre).
+        demain_str = (today + timedelta(days=1)).isoformat()
+        horizon_str = (today + timedelta(days=HORIZON_DE_LA_SEMAINE + 1)).isoformat()
+        rendez_vous = (await session.execute(
+            select(CalendarEvent).where(
+                CalendarEvent.status != "cancelled",
+                or_(
+                    and_(CalendarEvent.start_datetime >= demain, CalendarEvent.start_datetime < horizon),
+                    and_(
+                        CalendarEvent.all_day == True,  # noqa: E712
+                        CalendarEvent.start_date >= demain_str,
+                        CalendarEvent.start_date < horizon_str,
+                    ),
+                ),
+            ).limit(PLAFOND_SEMAINE)
+        )).scalars().all()
+        for evenement in rendez_vous:
+            debut = evenement.start_datetime.isoformat() if evenement.start_datetime else evenement.start_date
+            a_venir.append({
+                "kind": "rdv", "id": evenement.id, "contact_id": None,
+                "titre": evenement.summary, "date": debut,
+            })
         a_venir.sort(key=lambda e: e["date"] or "")
         a_venir = a_venir[:PLAFOND_SEMAINE]
     except Exception as e:

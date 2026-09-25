@@ -2158,6 +2158,7 @@ export function ConversationCanvasPrototype() {
                         setSelectedContactId(id);
                       }}
                       onOpenTasks={() => openEmbeddedView('tasks')}
+                      onOpenAgenda={() => openEmbeddedView('calendar')}
                     />
                     </>
                   ) : scenario === 'memory' ? (

@@ -117,7 +117,8 @@ export async function fetchTodayDashboard(): Promise<TodayDashboard> {
 
 /** P-135 : ce qui vient sur sept jours, et deux chiffres sourcés. */
 export interface ElementDeLaSemaine {
-  kind: 'relance' | 'tache';
+  /** B-1430 : `rdv` pour un rendez-vous de l'agenda. */
+  kind: 'relance' | 'tache' | 'rdv';
   id: string;
   contact_id: string | null;
   titre: string;

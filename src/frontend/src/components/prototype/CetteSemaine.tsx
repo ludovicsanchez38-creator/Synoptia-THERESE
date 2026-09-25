@@ -15,7 +15,12 @@ const ORDRE_DES_ETAPES = ['contact', 'discovery', 'proposition', 'signature'];
 
 function jourDe(element: ElementDeLaSemaine): string {
   if (!element.date) return '';
-  const jour = new Date(element.date);
+  // B-1430 : un rendez-vous sur la journée arrive en « AAAA-MM-JJ », que
+  // `new Date` lirait à minuit UTC (la veille à l'ouest de Greenwich).
+  const civile = /^(\d{4})-(\d{2})-(\d{2})$/.exec(element.date);
+  const jour = civile
+    ? new Date(Number(civile[1]), Number(civile[2]) - 1, Number(civile[3]))
+    : new Date(element.date);
   if (Number.isNaN(jour.getTime())) return '';
   return jour.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'short' });
 }
@@ -37,9 +42,12 @@ function montant(valeur: number, devise: string): string {
 export function CetteSemaine({
   onOpenContact,
   onOpenTasks,
+  onOpenAgenda,
 }: {
   onOpenContact: (contactId: string) => void;
   onOpenTasks: () => void;
+  /** B-1430 : un rendez-vous ouvre l'Agenda. */
+  onOpenAgenda?: () => void;
 }) {
   const [semaine, setSemaine] = useState<SemaineDashboard | null>(null);
   const [illisible, setIllisible] = useState(false);
@@ -73,7 +81,7 @@ export function CetteSemaine({
       <h3 className="text-sm font-semibold text-text">Cette semaine</h3>
 
       {pannes.has('semaine') ? (
-        <p className="mt-1 text-sm text-text-muted">Les relances et échéances à venir n’ont pas pu être lues.</p>
+        <p className="mt-1 text-sm text-text-muted">Les relances, rendez-vous et échéances à venir n’ont pas pu être lus.</p>
       ) : semaine.a_venir.length === 0 ? (
         <p className="mt-1 text-sm text-text-muted">Rien de daté dans les sept prochains jours.</p>
       ) : (
@@ -82,7 +90,11 @@ export function CetteSemaine({
             <li key={`${element.kind}-${element.id}`}>
               <button
                 type="button"
-                onClick={() => (element.contact_id ? onOpenContact(element.contact_id) : onOpenTasks())}
+                onClick={() => {
+                  if (element.kind === 'rdv') onOpenAgenda?.();
+                  else if (element.contact_id) onOpenContact(element.contact_id);
+                  else onOpenTasks();
+                }}
                 className="flex w-full items-center gap-2 rounded-sm px-2 py-1.5 text-left text-sm hover:bg-surface-2 focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <span className="min-w-0 flex-1">
