@@ -16,6 +16,8 @@ import {
   type EmailFollowUp,
   type FollowUpStatus,
 } from '../../services/api/follow-ups';
+import { listContacts, updateContact, type Contact } from '../../services/api/memory';
+import { contactDisplayName } from './prototypeReadModels';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { usePanneauCouvrant } from '../../hooks/usePanneauCouvrant';
 import { parisDateKey } from '../../lib/civilDate';
@@ -74,6 +76,8 @@ export function FollowUpsWorkspaceCanvas({
   const [editingNote, setEditingNote] = useState('');
   const [deleteConfirmation, setDeleteConfirmation] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // P-149 : les relances posées sur une fiche (P-133) figurent ici aussi.
+  const [relancesDeFiche, setRelancesDeFiche] = useState<Contact[]>([]);
   const dialogRef = useRef<HTMLElement>(null);
   // Hotfix 0.48.1 : isolation seulement quand le panneau RECOUVRE la zone.
   // Revue passe 2 : le clavier reste À LA PAGE en toutes circonstances -
@@ -90,6 +94,14 @@ export function FollowUpsWorkspaceCanvas({
   async function refresh() {
     setLoading(true);
     setError(null);
+    // P-149 : lecture à part ; une fiche illisible n'empêche pas les relances d'e-mail.
+    void listContacts()
+      .then((fiches) => setRelancesDeFiche(
+        fiches
+          .filter((fiche) => fiche.next_follow_up)
+          .sort((a, b) => String(a.next_follow_up).localeCompare(String(b.next_follow_up))),
+      ))
+      .catch(() => setRelancesDeFiche([]));
     try {
       setItems(await listFollowUps());
     } catch (reason) {
@@ -133,6 +145,21 @@ export function FollowUpsWorkspaceCanvas({
     if (saved) setEditingId(null);
   }
 
+  async function relanceDeFicheFaite(fiche: Contact) {
+    setPendingId(fiche.id);
+    setError(null);
+    try {
+      await updateContact(fiche.id, { next_follow_up: null });
+      setRelancesDeFiche((courantes) => courantes.filter((c) => c.id !== fiche.id));
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'La relance n’a pas pu être terminée.');
+    } finally {
+      setPendingId(null);
+    }
+  }
+
+  const fichesVisibles = filter === 'done' ? [] : relancesDeFiche;
+
   async function confirmDelete(id: string) {
     setPendingId(id);
     setError(null);
@@ -168,7 +195,26 @@ export function FollowUpsWorkspaceCanvas({
         )}
 
         <div className="mt-4 min-h-0 flex-1 overflow-y-auto">
-          {loading ? <div className="grid min-h-56 place-items-center text-sm text-text-muted" role="status"><div><Spinner taille="zone" className="mx-auto mb-2" />Chargement des relances…</div></div> : visibleItems.length === 0 ? <EtatVide className="grid min-h-56 place-items-center rounded-md border border-dashed border-border bg-surface" titre="Aucune relance dans cette catégorie"><CheckCircle2 className="mx-auto mb-2 h-8 w-8 opacity-50" />Les prochaines échéances apparaîtront ici.</EtatVide> : <div className="space-y-2">{visibleItems.map((item) => {
+          {!loading && fichesVisibles.length > 0 && (
+            <section aria-labelledby="relances-fiches-titre" className="mb-4">
+              <h3 id="relances-fiches-titre" className="mb-2 text-xs font-semibold text-text-muted">Relances posées sur les fiches</h3>
+              <div className="space-y-2">{fichesVisibles.map((fiche) => {
+                const nom = contactDisplayName(fiche);
+                const retard = estEnRetard(String(fiche.next_follow_up), new Date());
+                return <Carte key={fiche.id} className="p-4" data-testid="relance-de-fiche">
+                  <div className="flex flex-wrap items-start gap-3">
+                    <span className={`mt-0.5 grid h-8 w-8 shrink-0 place-items-center rounded-md ${retard ? 'bg-[var(--color-warning-tint)] text-warning' : 'bg-accent-tint text-accent'}`}><CalendarClock className="h-4 w-4" /></span>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-semibold text-text">{nom}</p>
+                      <div className={`mt-1 text-sm font-semibold ${retard ? 'text-warning' : 'text-text-muted'}`}>{retard ? 'En retard · ' : 'Échéance · '}{formatDueDate(String(fiche.next_follow_up))}</div>
+                    </div>
+                    <Button type="button" variant="ghost" size="icon" aria-label={`Relance faite : ${nom}`} onClick={() => void relanceDeFicheFaite(fiche)} disabled={pendingId === fiche.id} className="text-success hover:bg-[var(--color-success-tint)]"><CheckCircle2 className="h-[18px] w-[18px]" /></Button>
+                  </div>
+                </Carte>;
+              })}</div>
+            </section>
+          )}
+          {loading ? <div className="grid min-h-56 place-items-center text-sm text-text-muted" role="status"><div><Spinner taille="zone" className="mx-auto mb-2" />Chargement des relances…</div></div> : visibleItems.length === 0 ? (fichesVisibles.length > 0 ? null : <EtatVide className="grid min-h-56 place-items-center rounded-md border border-dashed border-border bg-surface" titre="Aucune relance dans cette catégorie"><CheckCircle2 className="mx-auto mb-2 h-8 w-8 opacity-50" />Les prochaines échéances apparaîtront ici.</EtatVide>) : <div className="space-y-2">{visibleItems.map((item) => {
             const busy = pendingId === item.id;
             const overdue = item.status === 'pending' && estEnRetard(item.due_date, new Date());
             return <Carte key={item.id} className="p-4" data-testid="follow-up-row">
