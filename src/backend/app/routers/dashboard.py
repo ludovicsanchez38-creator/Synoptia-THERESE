@@ -534,3 +534,103 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
             "invoices_total": invoices_total,
         },
     }
+
+
+# P-135 : les étapes d'un prospect (avant d'être client) ; « active » et
+# « archive » n'en sont pas.
+ETAPES_DE_PROSPECT = ("contact", "discovery", "proposition", "signature")
+HORIZON_DE_LA_SEMAINE = 7
+PLAFOND_SEMAINE = 20
+
+
+@router.get("/semaine")
+async def get_semaine(session: AsyncSession = Depends(get_session)) -> dict[str, Any]:
+    """P-135 : l'Accueil ne regardait qu'aujourd'hui.
+
+    - `a_venir` : relances datées (fiche) et échéances de tâches ouvertes, de
+      demain à J+7 (aujourd'hui est déjà au brief) ;
+    - `encaisse_du_mois` : total TTC des factures payées dont le paiement
+      tombe dans le mois civil de Paris, par devise (jamais additionnées) ;
+    - `prospects_par_etape` : fiches aux étapes de prospect.
+    Chaque bloc dégrade à part et se dit dans `indisponibles`, comme /today.
+    """
+    today = date_civile_paris(datetime.now(UTC))
+    demain = datetime.combine(today + timedelta(days=1), datetime.min.time())
+    horizon = datetime.combine(today + timedelta(days=HORIZON_DE_LA_SEMAINE + 1), datetime.min.time())
+    indisponibles: list[str] = []
+
+    a_venir: list[dict[str, Any]] = []
+    try:
+        relances = (await session.execute(
+            select(Contact).where(
+                Contact.next_follow_up >= demain, Contact.next_follow_up < horizon,
+            ).order_by(Contact.next_follow_up.asc()).limit(PLAFOND_SEMAINE)
+        )).scalars().all()
+        for contact in relances:
+            nom = " ".join(p for p in (contact.first_name, contact.last_name) if p) or contact.company or "ce contact"
+            a_venir.append({
+                "kind": "relance", "id": contact.id, "contact_id": contact.id,
+                "titre": f"Relancer {nom}",
+                "date": contact.next_follow_up.isoformat() if contact.next_follow_up else None,
+            })
+        taches = (await session.execute(
+            select(Task).where(
+                Task.due_date >= demain, Task.due_date < horizon,
+                Task.status.notin_(["done", "cancelled"]),
+            ).order_by(Task.due_date.asc()).limit(PLAFOND_SEMAINE)
+        )).scalars().all()
+        for tache in taches:
+            a_venir.append({
+                "kind": "tache", "id": tache.id, "contact_id": tache.contact_id,
+                "titre": tache.title,
+                "date": tache.due_date.isoformat() if tache.due_date else None,
+            })
+        a_venir.sort(key=lambda e: e["date"] or "")
+        a_venir = a_venir[:PLAFOND_SEMAINE]
+    except Exception as e:
+        logger.warning(f"Erreur lecture de la semaine : {e}")
+        indisponibles.append("semaine")
+        a_venir = []
+
+    encaisse: dict[str, float] = {}
+    debut_du_mois = datetime.combine(today.replace(day=1), datetime.min.time())
+    mois_suivant = (today.replace(day=28) + timedelta(days=4)).replace(day=1)
+    fin_du_mois = datetime.combine(mois_suivant, datetime.min.time())
+    try:
+        payees = (await session.execute(
+            select(Invoice).where(
+                Invoice.document_type == "facture",
+                Invoice.status == "paid",
+                Invoice.payment_date >= debut_du_mois,
+                Invoice.payment_date < fin_du_mois,
+            )
+        )).scalars().all()
+        for facture in payees:
+            devise = facture.currency or "EUR"
+            encaisse[devise] = round(encaisse.get(devise, 0.0) + float(facture.total_ttc or 0.0), 2)
+    except Exception as e:
+        logger.warning(f"Erreur lecture de l'encaissé : {e}")
+        indisponibles.append("encaisse")
+        encaisse = {}
+
+    prospects: dict[str, int] = {}
+    try:
+        lignes = (await session.execute(
+            select(Contact.stage, func.count()).where(
+                Contact.stage.in_(ETAPES_DE_PROSPECT)
+            ).group_by(Contact.stage)
+        )).all()
+        prospects = {etape: int(nombre) for etape, nombre in lignes if nombre}
+    except Exception as e:
+        logger.warning(f"Erreur lecture du pipeline : {e}")
+        indisponibles.append("pipeline")
+        prospects = {}
+
+    return {
+        "date": today.isoformat(),
+        "mois": today.strftime("%Y-%m"),
+        "a_venir": a_venir,
+        "encaisse_du_mois": encaisse,
+        "prospects_par_etape": prospects,
+        "indisponibles": indisponibles,
+    }

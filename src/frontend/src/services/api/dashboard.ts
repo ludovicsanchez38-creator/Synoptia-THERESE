@@ -115,6 +115,31 @@ export async function fetchTodayDashboard(): Promise<TodayDashboard> {
   return request<TodayDashboard>('/api/dashboard/today');
 }
 
+/** P-135 : ce qui vient sur sept jours, et deux chiffres sourcés. */
+export interface ElementDeLaSemaine {
+  kind: 'relance' | 'tache';
+  id: string;
+  contact_id: string | null;
+  titre: string;
+  date: string | null;
+}
+
+export interface SemaineDashboard {
+  date: string;
+  /** AAAA-MM, le mois civil de Paris. */
+  mois: string;
+  a_venir: ElementDeLaSemaine[];
+  /** Factures payées dans le mois, par devise (jamais additionnées entre elles). */
+  encaisse_du_mois: Record<string, number>;
+  prospects_par_etape: Record<string, number>;
+  /** « semaine », « encaisse », « pipeline » : ce qui n'a pas pu être lu. */
+  indisponibles: string[];
+}
+
+export async function fetchSemaineDashboard(): Promise<SemaineDashboard> {
+  return request<SemaineDashboard>('/api/dashboard/semaine');
+}
+
 export interface SetupStatus {
   has_calendar: boolean;
   has_email: boolean;

@@ -101,6 +101,7 @@ import type { Project as ProjetDeLaPalette } from '../../services/api/memory';
 import { useDocumentStore } from '../../stores/documentStore';
 import { useStatusStore } from '../../stores/statusStore';
 import { TraitementsIndicator } from '../traitements/TraitementsIndicator';
+import { CetteSemaine } from './CetteSemaine';
 import { useProcessingTasksStore } from '../../stores/processingTasksStore';
 import { useConversationSync } from '../../hooks/useConversationSync';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
@@ -2109,6 +2110,7 @@ export function ConversationCanvasPrototype() {
                   )}
 
                   {scenario === 'today' ? (
+                    <>
                     <TodayDashboardCard
                       resource={todayResource}
                       onRetry={() => void refreshToday()}
@@ -2138,6 +2140,15 @@ export function ConversationCanvasPrototype() {
                       setup={setupStatus}
                       onSetupEmail={() => openEmbeddedView('email')}
                     />
+                    {/* P-135 : ce qui vient sur sept jours, et deux chiffres sourcés. */}
+                    <CetteSemaine
+                      onOpenContact={(id) => {
+                        chooseScenario('memory');
+                        setSelectedContactId(id);
+                      }}
+                      onOpenTasks={() => openEmbeddedView('tasks')}
+                    />
+                    </>
                   ) : scenario === 'memory' ? (
                     <ContactsMemoryCard
                       resource={contactsResource}
