@@ -135,15 +135,29 @@ def indexer_fiches_en_arriere_plan(fiches: list[Contact]) -> None:
         return
 
     async def _indexer(identifiants: list[str]) -> None:
-        for identifiant in identifiants:
-            if _ARRET_DES_INDEXATIONS.is_set():
-                return
-            try:
-                await _indexer_une_fiche(identifiant)
-            except Exception:
-                # B-1239 : une fiche en erreur ne fait plus mourir la tâche en
-                # silence ; les suivantes sont indexées, l'échec est journalisé.
-                logger.warning("Indexation de fond de la fiche %s en échec", identifiant, exc_info=True)
+        echecs = 0
+        try:
+            for identifiant in identifiants:
+                if _ARRET_DES_INDEXATIONS.is_set():
+                    return
+                try:
+                    await _indexer_une_fiche(identifiant)
+                except Exception:
+                    # B-1239 : une fiche en erreur ne fait plus mourir la tâche
+                    # en silence ; les suivantes sont indexées. B-1258 : une
+                    # panne qui se répète ne laisse qu'une trace, puis un décompte.
+                    echecs += 1
+                    if echecs == 1:
+                        logger.warning(
+                            "Indexation de fond de la fiche %s en échec", identifiant, exc_info=True
+                        )
+                    else:
+                        logger.debug("Indexation de fond de la fiche %s en échec", identifiant)
+        finally:
+            if echecs > 1:
+                logger.warning(
+                    "Indexation de fond : %d fiches sur %d en échec", echecs, len(identifiants)
+                )
 
     async def _indexer_une_fiche(identifiant: str) -> None:
         from app.models.database import get_session_context

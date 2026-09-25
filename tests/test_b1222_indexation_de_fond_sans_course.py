@@ -97,11 +97,35 @@ async def test_le_fil_du_vecteur_en_vol_n_ecrit_pas_apres_la_purge(client, monke
     assert not apres, f"{len(apres)} écriture(s) de fil après la réponse de la purge"
 
 
+def _lecture_en_panne(monkeypatch, en_panne):
+    """B-1258 : `_embed_contact` avale ses erreurs ; ce qui peut lever, c'est
+    la lecture de la fiche en base. On fait donc tomber celle-ci."""
+    import contextlib
+
+    import app.models.database as base
+
+    vraie = base.get_session_context
+
+    @contextlib.asynccontextmanager
+    async def lecture():
+        async with vraie() as session:
+            ordinaire = session.get
+
+            async def get(modele, identifiant, *a, **kw):
+                if identifiant in en_panne:
+                    raise RuntimeError("base verrouillée")
+                return await ordinaire(modele, identifiant, *a, **kw)
+
+            session.get = get
+            yield session
+
+    monkeypatch.setattr(base, "get_session_context", lecture)
+
+
 @pytest.mark.asyncio
 async def test_une_fiche_en_erreur_n_arrete_pas_les_suivantes(db_session, monkeypatch):
-    """B-1239 : une erreur sur une fiche (lecture en base, calcul du vecteur)
-    faisait mourir la tâche en silence ; les fiches suivantes n'étaient
-    jamais indexées."""
+    """B-1239 : une erreur sur une fiche (lecture en base) faisait mourir la
+    tâche en silence ; les fiches suivantes n'étaient jamais indexées."""
     from app.models.entities import Contact
     from app.routers import memory as memoire
 
@@ -112,14 +136,40 @@ async def test_une_fiche_en_erreur_n_arrete_pas_les_suivantes(db_session, monkey
     vues: list[str] = []
 
     async def embed(fiche):
-        if fiche.first_name == "Alice":
-            raise RuntimeError("panne du modèle d'embedding")
         vues.append(fiche.first_name)
 
     monkeypatch.setattr(memoire, "_embed_contact", embed)
+    _lecture_en_panne(monkeypatch, {premiere.id})
     memoire.indexer_fiches_en_arriere_plan([premiere, seconde])
     await asyncio.gather(*list(memoire._INDEXATIONS_DE_FICHES), return_exceptions=True)
     assert vues == ["Bruno"], vues
+
+
+@pytest.mark.asyncio
+async def test_une_panne_persistante_ne_journalise_qu_une_trace(db_session, monkeypatch, caplog):
+    """B-1258 : une base en panne produisait une trace complète par fiche
+    restante ; une seule trace, puis un décompte."""
+    import logging
+
+    from app.models.entities import Contact
+    from app.routers import memory as memoire
+
+    fiches = [Contact(first_name=f"Fiche {i}") for i in range(3)]
+    for fiche in fiches:
+        db_session.add(fiche)
+    await db_session.commit()
+
+    async def embed(fiche):
+        return None
+
+    monkeypatch.setattr(memoire, "_embed_contact", embed)
+    _lecture_en_panne(monkeypatch, {f.id for f in fiches})
+    with caplog.at_level(logging.WARNING, logger=memoire.logger.name):
+        memoire.indexer_fiches_en_arriere_plan(fiches)
+        await asyncio.gather(*list(memoire._INDEXATIONS_DE_FICHES), return_exceptions=True)
+    traces = [r for r in caplog.records if r.exc_info]
+    assert len(traces) == 1, [r.getMessage() for r in caplog.records]
+    assert any("3" in r.getMessage() for r in caplog.records if not r.exc_info), [r.getMessage() for r in caplog.records]
 
 
 @pytest.mark.asyncio
