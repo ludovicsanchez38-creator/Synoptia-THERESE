@@ -94,7 +94,7 @@ import { getProfile, type UserProfile } from '../../services/api/config';
 import { useChatStore } from '../../stores/chatStore';
 import { EVENEMENT_OUVRIR_TRAVAIL, ouvrirLeTravail, type DestinationDuTravail } from '../../lib/destinationDuTravail';
 import { lienProfondPresent, lireLaVueQuittee, memoriserLaVue } from '../../lib/vueQuittee';
-import { useDemoMask } from '../../hooks/useDemoMask';
+import { useDemoMask, useRemplirLeMasqueDeDemo } from '../../hooks/useDemoMask';
 import { AUCUN_RESULTAT_DE_DONNEES, chercherDansLesDonnees, type ResultatDeDonnee } from '../../lib/rechercheDeDonnees';
 import { listProjects as listerLesProjetsDeLaPalette } from '../../services/api/memory';
 import type { Project as ProjetDeLaPalette } from '../../services/api/memory';
@@ -1319,6 +1319,17 @@ export function ConversationCanvasPrototype() {
     // relancerait l'effet en boucle.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewDemandee, isStreaming]);
+
+  // B-1419 : la démonstration masque aussi l'Accueil et la palette, sans
+  // attendre qu'un panneau ait rempli la table de remplacement.
+  const contactsPourLeMasque = useContactsStoreDirect((etat) => etat.contacts);
+  const contactsPourLeMasqueLus = useContactsStoreDirect((etat) => etat.loaded);
+  useRemplirLeMasqueDeDemo(
+    useContactsStoreDirect.getState().fetchContacts,
+    contactsPourLeMasque,
+    contactsPourLeMasqueLus,
+    listerLesProjetsDeLaPalette,
+  );
 
   // P-142 : après un rechargement, l'écran quitté se rouvre (sauf lien
   // profond). Lu au premier rendu, avant que l'accueil ne l'efface.

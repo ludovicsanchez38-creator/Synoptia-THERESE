@@ -5,7 +5,7 @@
  * Renvoie des identity functions quand le mode démo est désactivé (zero overhead).
  */
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDemoStore } from '../stores/demoStore';
 import {
   maskContact,
@@ -30,8 +30,10 @@ export function useDemoMask() {
       projects: Array<{ name?: string | null }>
     ) => {
       if (!enabled) return;
+      // B-1419 : un panneau enrichit la table, il ne l'écrase plus (MemoryPanel
+      // la remplissait sans les projets, qui redevenaient lisibles).
       const map = buildReplacementMap(contacts, projects);
-      useDemoStore.setState({ replacementMap: map });
+      useDemoStore.setState((etat) => ({ replacementMap: new Map([...etat.replacementMap, ...map]) }));
     },
     [enabled]
   );
@@ -81,4 +83,36 @@ export function useDemoMask() {
     }),
     [enabled, maskContactFn, maskProjectFn, maskTextFn, populateMap, replacementMap]
   );
+}
+
+/**
+ * B-1419 : en démonstration, l'Accueil, « Cette semaine » et la palette
+ * montraient les vrais noms tant qu'aucun panneau n'avait rempli la table
+ * (`maskText` est l'identité sans table). Monté par la coque : dès que la
+ * démonstration est active, la table se remplit des contacts et projets.
+ */
+export function useRemplirLeMasqueDeDemo(
+  lireLesContacts: () => Promise<void>,
+  contacts: Array<{ first_name?: string | null; last_name?: string | null; company?: string | null; email?: string | null }>,
+  contactsLus: boolean,
+  lireLesProjets: () => Promise<Array<{ name?: string | null }>>,
+): void {
+  const enabled = useDemoStore((s) => s.enabled);
+  const [projets, setProjets] = useState<Array<{ name?: string | null }>>([]);
+  useEffect(() => {
+    if (enabled && !contactsLus) void lireLesContacts().catch(() => undefined);
+  }, [enabled, contactsLus, lireLesContacts]);
+  useEffect(() => {
+    if (!enabled) return;
+    let vivant = true;
+    Promise.resolve(lireLesProjets())
+      .then((liste) => { if (vivant) setProjets(liste ?? []); })
+      .catch(() => undefined);
+    return () => { vivant = false; };
+  }, [enabled, lireLesProjets]);
+  useEffect(() => {
+    if (!enabled) return;
+    const map = buildReplacementMap(contacts, projets);
+    useDemoStore.setState((etat) => ({ replacementMap: new Map([...etat.replacementMap, ...map]) }));
+  }, [enabled, contacts, projets]);
 }
