@@ -14,8 +14,8 @@ describe('TrustCenter', () => {
       />,
     );
 
-    expect(screen.getByText(/Données métier conservées localement/)).toBeInTheDocument();
-    expect(screen.getByText(/secrets protégés par le trousseau système/)).toBeInTheDocument();
+    expect(screen.getByText(/conservés sur ta machine/)).toBeInTheDocument();
+    expect(screen.getByText(/trousseau de ton ordinateur/)).toBeInTheDocument();
     expect(screen.queryByText('Stockage local chiffré. Sources affichées dans chaque résultat.')).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Confidentialité' }));

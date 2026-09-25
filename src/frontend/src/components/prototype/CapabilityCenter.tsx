@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components -- prototype catalogue and its visual browser intentionally share one module */
-import { useMemo, useRef, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { motion, useIsPresent } from 'framer-motion';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { handleRovingFocus } from '../../lib/rovingFocus';
@@ -38,6 +38,9 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import type { AppView } from '../../stores/navigationStore';
+import * as api from '../../services/api';
+import { libelleDuFournisseur } from '../../lib/libellesFournisseurs';
+import { estModeleOllamaCloud } from '../../lib/ollamaCloud';
 import type { DeepLinkAction, SettingsTab } from '../../lib/deepLinks';
 import { Button } from '../ui/Button';
 import { EtatVide } from '../ui/EtatVide';
@@ -484,6 +487,33 @@ function TrustRow({ icon, title, value }: { icon: ReactNode; title: string; valu
   );
 }
 
+type EtatDeConfiance =
+  | { statut: 'lecture' }
+  | { statut: 'illisible' }
+  | { statut: 'lu'; llm: api.LLMConfig; rechercheWeb: boolean | null };
+
+/**
+ * P-118 : « mes notes partent-elles ? » La réponse dépend du service actif et
+ * de la recherche web, lus au moment d'ouvrir le panneau, jamais supposés.
+ */
+function phrasesDeLEtat(etat: EtatDeConfiance): string[] {
+  if (etat.statut === 'lecture') return ['Vérification du service d’IA actif…'];
+  if (etat.statut === 'illisible') return ['Impossible de lire le service d’IA actif. Ouvre Paramètres pour le vérifier.'];
+  const { llm, rechercheWeb } = etat;
+  const phrases: string[] = [];
+  if (!llm.available) {
+    phrases.push('Aucun service d’IA n’est prêt : THÉRÈSE ne peut pas encore répondre.');
+  } else if (llm.provider === 'ollama' && !estModeleOllamaCloud(llm.model)) {
+    phrases.push(`Ton assistante répond en local avec ${llm.model}. Tes messages ne quittent pas ta machine.`);
+  } else {
+    const service = llm.provider === 'ollama' ? 'Ollama Cloud' : libelleDuFournisseur(llm.provider);
+    phrases.push(`Ton assistante répond avec ${service} (${llm.model}), un service en ligne : tes messages lui sont envoyés.`);
+  }
+  if (rechercheWeb === true) phrases.push('La recherche web est active : tes recherches partent vers le moteur de recherche.');
+  if (rechercheWeb === false) phrases.push('La recherche web est coupée.');
+  return phrases;
+}
+
 export function TrustCenter({
   onClose,
   onOpenPrivacy,
@@ -496,6 +526,19 @@ export function TrustCenter({
   const dialogRef = useRef<HTMLElement>(null);
   const isPresent = useIsPresent();
   useDialogFocusTrap(dialogRef, { active: isPresent, onEscape: onClose, isolateBackground: true });
+  const [etat, setEtat] = useState<EtatDeConfiance>({ statut: 'lecture' });
+  useEffect(() => {
+    let vivant = true;
+    void Promise.allSettled([api.getLLMConfig(), api.getWebSearchStatus()]).then(([llm, web]) => {
+      if (!vivant) return;
+      if (llm.status === 'rejected') {
+        setEtat({ statut: 'illisible' });
+        return;
+      }
+      setEtat({ statut: 'lu', llm: llm.value, rechercheWeb: web.status === 'fulfilled' ? web.value.enabled : null });
+    });
+    return () => { vivant = false; };
+  }, []);
 
   return (
     <motion.div
@@ -529,10 +572,17 @@ export function TrustCenter({
             <X className="h-3.5 w-3.5" />
           </Button>
         </div>
+        <div
+          data-testid="confiance-etat-actuel"
+          role="status"
+          className="border-b border-border px-4 py-3 text-sm leading-5 text-text"
+        >
+          {phrasesDeLEtat(etat).map((phrase) => <p key={phrase}>{phrase}</p>)}
+        </div>
         <div className="p-2">
-          <TrustRow icon={<Database className="h-3.5 w-3.5" />} title="Données" value="Données métier conservées localement ; secrets protégés par le trousseau système." />
-          <TrustRow icon={<SlidersHorizontal className="h-3.5 w-3.5" />} title="Modèles" value="Service d’IA et modèle configurés dans les Paramètres, avec option locale via Ollama." />
-          <TrustRow icon={<Globe className="h-3.5 w-3.5" />} title="Traitement externe" value="Dans le chat, une mutation (envoi, rendez-vous, recherche web, contact, document, outil MCP) demande une confirmation. Le Board, la recherche approfondie et l’Atelier cherchent encore sans carte ; l’interrupteur de Paramètres > Services les coupe." />
+          <TrustRow icon={<Database className="h-3.5 w-3.5" />} title="Données" value="Tes contacts, projets et conversations sont conservés sur ta machine ; tes clés d’accès sont rangées dans le trousseau de ton ordinateur." />
+          <TrustRow icon={<SlidersHorizontal className="h-3.5 w-3.5" />} title="Modèles" value="Le service d’IA et le modèle se choisissent dans Paramètres ; un modèle local est possible avec Ollama." />
+          <TrustRow icon={<Globe className="h-3.5 w-3.5" />} title="Ce qui sort de ta machine" value="Dans la conversation, THÉRÈSE demande ta confirmation avant d’agir (envoyer un e-mail, poser un rendez-vous, chercher sur le web, créer un contact ou un document, utiliser un connecteur). Décision, la recherche approfondie et Améliorer THÉRÈSE cherchent encore sur le web sans demander ; l’interrupteur de Paramètres > Services les coupe." />
           <TrustRow icon={<Gauge className="h-3.5 w-3.5" />} title="Coûts et limites" value="Seules les consommations réellement mesurées sont présentées comme telles." />
           <TrustRow icon={<ShieldCheck className="h-3.5 w-3.5" />} title="RGPD" value="Export global et droits par contact accessibles depuis Confidentialité et le CRM." />
         </div>

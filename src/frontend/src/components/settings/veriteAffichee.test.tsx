@@ -154,8 +154,9 @@ describe('Les promesses de confirmation disent ce qui est réellement confirmé'
     // Promettre « tout effet externe » recouvrirait le Board, qui cherche
     // encore sans carte. L'écran doit nommer les deux moitiés.
     const centre = source('components/prototype/CapabilityCenter.tsx');
-    expect(centre).toMatch(/Dans le chat[^<]*demande une confirmation/);
-    expect(centre).toMatch(/Board[^<]*cherchent encore sans carte/);
+    // P-118 : même contrat, en français courant (« Board » s'appelle Décision).
+    expect(centre).toMatch(/Dans la conversation[^<]*demande ta confirmation/);
+    expect(centre).toMatch(/Décision[^<]*cherchent encore sur le web sans demander/);
   });
 
   it('la mention sous le composeur nomme ce qui est confirmé', () => {
