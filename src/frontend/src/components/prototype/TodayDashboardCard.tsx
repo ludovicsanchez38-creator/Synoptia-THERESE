@@ -346,7 +346,8 @@ export function TodayDashboardCard({
               </Button>
             }
           >
-            Sans boîte connectée, le brief ne voit ni messages à traiter ni relances.
+            {/* B-1433 : les relances posées sur une fiche restent visibles. */}
+            Sans boîte connectée, le brief ne voit pas les messages à traiter ni les relances nées d’un e-mail.
           </EtatVide>
           {listeDeMiseEnRoute}
         </>
