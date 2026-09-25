@@ -280,9 +280,13 @@ def _parse_csv(content: bytes) -> list[dict]:
         except UnicodeDecodeError:
             continue
     else:
-        raise ValueError("Impossible de decoder le fichier CSV")
+        raise ValueError("Impossible de décoder le fichier CSV")
 
-    reader = csv.DictReader(io.StringIO(text))
+    # B-1336 : Excel en français sépare par des points-virgules ; le
+    # séparateur le plus fréquent de la ligne d'en-tête est retenu.
+    entete = text.lstrip("\ufeff").splitlines()[0] if text.strip() else ""
+    separateur = max((",", ";", "\t"), key=entete.count) if entete else ","
+    reader = csv.DictReader(io.StringIO(text), delimiter=separateur)
     # B-551 (05/09/2026) : une ligne plus longue que l'en-tête range ses
     # valeurs excédentaires sous la clé None (comportement de DictReader).
     # Cette clé cassait l'aperçu d'import (detected_columns exige des chaînes)
