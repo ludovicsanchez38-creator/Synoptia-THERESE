@@ -37,7 +37,6 @@ export interface ProfileTabProps {
   setProfileForm: (form: ProfileFormData | ((prev: ProfileFormData) => ProfileFormData)) => void;
   profile: api.UserProfile | null;
   saving: boolean;
-  saved: boolean;
   /**
    * Lot 9 : plus de prop `error`. La coque rend l'erreur, et elle seule : la
    * passer ici la montait une seconde fois, en deux `role="alert"` pour un même
@@ -53,7 +52,6 @@ export function ProfileTab({
   setProfileForm,
   profile,
   saving: _saving,
-  saved,
   setError,
   onSave: _onSave,
   onImport,
@@ -324,12 +322,6 @@ export function ProfileTab({
           </FormField>
         </div>
 
-        {saved && (
-          <p role="status" className="flex items-center gap-1 px-4 pb-4 text-sm text-success">
-            <Check className="h-4 w-4" />
-            Profil enregistré
-          </p>
-        )}
       </Carte>
 
       {/* Seule occurrence des champs de facturation, éditables. */}

@@ -55,7 +55,6 @@ function rendre(profil: UserProfile | null = null, form: Partial<ProfileFormData
       setProfileForm={vi.fn()}
       profile={profil}
       saving={false}
-      saved={false}
       setError={vi.fn()}
       onSave={vi.fn()}
       onImport={vi.fn()}

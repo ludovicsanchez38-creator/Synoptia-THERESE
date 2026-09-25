@@ -28,7 +28,7 @@ import { resolveSettingsTab, type SettingsTab } from '../../lib/deepLinks';
 import { Spinner } from '../ui/Spinner';
 import { Alerte } from '../ui/Alerte';
 import { Squelette } from '../ui/Squelette';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Check } from 'lucide-react';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -694,7 +694,6 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
             setProfileForm={setProfileForm}
             profile={profile}
             saving={profileSaving}
-            saved={profileSaved}
             setError={setError}
             onSave={handleSaveProfile}
             onImport={handleImportClaudeMd}
@@ -989,7 +988,16 @@ export function SettingsModal({ isOpen, onClose, requestedTab }: SettingsModalPr
             </div>
 
             {/* Pied de page */}
-            <div className="flex shrink-0 justify-end gap-3 border-t border-border/50 px-4 py-3 sm:px-6 sm:py-4">
+            <div className="flex shrink-0 items-center justify-end gap-3 border-t border-border/50 px-4 py-3 sm:px-6 sm:py-4">
+              {/* B-1347 : la confirmation s'affichait dans la carte d'identité,
+                  hors de vue quand on enregistre la facturation, en bas. Elle
+                  vit au pied, à côté du bouton qui l'a déclenchée. */}
+              {activeTab === 'profile' && profileSaved && (
+                <p role="status" className="flex items-center gap-1 text-sm text-success">
+                  <Check className="h-4 w-4" />
+                  Profil enregistré
+                </p>
+              )}
               <Button variant="ghost" size="md" onClick={onClose}>
                 Fermer
               </Button>
