@@ -120,8 +120,27 @@ export function deleteBackup(backupName: string): Promise<{ deleted: boolean; ba
   return request(`/api/data/backups/${encodeURIComponent(backupName)}`, { method: 'DELETE' });
 }
 
-export function deleteAllData(): Promise<{ deleted: boolean; message: string; note: string; backups_kept?: number }> {
+// B-1424 : les dictées de l'app de bureau vivent hors du dossier de THÉRÈSE
+// (`app_data_dir/tauri-plugin-mic-recorder/`), que le moteur ne voit pas. La
+// purge totale les efface côté application, une fois la purge du moteur
+// réussie ; un dossier absent ou refusé ne la fait pas échouer.
+async function effacerLesDicteesConservees(): Promise<void> {
+  if (!('__TAURI__' in window || '__TAURI_INTERNALS__' in window)) return;
+  try {
+    const { remove, BaseDirectory } = await import('@tauri-apps/plugin-fs');
+    await remove('tauri-plugin-mic-recorder', { baseDir: BaseDirectory.AppData, recursive: true });
+  } catch (err) {
+    console.warn('[data] Dictées conservées non effacées :', err);
+  }
+}
+
+export async function deleteAllData(): Promise<{ deleted: boolean; message: string; note: string; backups_kept?: number }> {
   // B-1250 : la purge attend l'indexation en vol avant d'effacer (B-1249) ;
   // le délai client par défaut (30 s) annonçait un échec pendant qu'elle aboutissait.
-  return request('/api/data/all?confirm=true', { method: 'DELETE', timeoutMs: null });
+  const resultat = await request<{ deleted: boolean; message: string; note: string; backups_kept?: number }>(
+    '/api/data/all?confirm=true',
+    { method: 'DELETE', timeoutMs: null },
+  );
+  await effacerLesDicteesConservees();
+  return resultat;
 }
