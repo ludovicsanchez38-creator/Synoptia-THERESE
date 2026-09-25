@@ -140,7 +140,10 @@ describe('B-1172 : Board souverain et modèles Ollama Cloud', () => {
       target: { value: 'Dois-je passer ma société en SASU cette année ?' },
     });
     fireEvent.click(screen.getByTestId('board-submit-btn'));
-    expect(screen.queryByText(/Tout reste sur cette machine/)).toBeNull();
+    // B-1237 : l'ancienne assertion (« Tout reste… » absent) était vraie par
+    // construction. On vérifie que le clic sur le bouton grisé laisse bien le
+    // Board en mode cloud : c'est la confirmation cloud qui s'affiche.
+    expect((await screen.findByTestId('board-confirmation')).textContent).toContain('cloud avec recherche web');
   });
 
   it('témoin : sans modèle Cloud, les cinq conseillers partent sur le modèle local', async () => {
