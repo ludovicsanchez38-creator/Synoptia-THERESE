@@ -34,6 +34,7 @@ import { Squelette } from '../ui/Squelette';
 import { Textarea } from '../ui/Textarea';
 import { CLASSES_SEGMENTS, classeSegment } from '../ui/segments.classes';
 import { PIPELINE_ETAPES } from './pipelineEtapes';
+import { libelleTypeActivite, presenterActivite } from '../../lib/activitesCrm';
 
 interface CRMPanelProps {
   isOpen?: boolean;
@@ -609,10 +610,11 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
 
 const ACTIVITY_FILTER_CHIPS = [
   { id: 'all', label: 'Tous' },
-  { id: 'email', label: 'Email', icon: Mail },
-  { id: 'call', label: 'Appel', icon: Phone },
-  { id: 'meeting', label: 'Réunion', icon: Users },
-  { id: 'note', label: 'Note', icon: FileText },
+  // B-1421 : mêmes libellés que la fiche (lib/activitesCrm).
+  { id: 'email', label: libelleTypeActivite('email'), icon: Mail },
+  { id: 'call', label: libelleTypeActivite('call'), icon: Phone },
+  { id: 'meeting', label: libelleTypeActivite('meeting'), icon: Users },
+  { id: 'note', label: libelleTypeActivite('note'), icon: FileText },
 ];
 
 const GLOBAL_ACTIVITY_ICONS: Record<string, typeof Mail> = {
@@ -751,6 +753,9 @@ function GlobalActivityView({ annuaire }: { annuaire: ContactResponse[] }) {
             const Icon = GLOBAL_ACTIVITY_ICONS[activity.type] || FileText;
             const color = GLOBAL_ACTIVITY_COLORS[activity.type] || 'text-text-muted';
             const contactName = getContactName(activity.contact_id);
+            // B-1421 : ce fil avait son propre rendu, resté hors de B-1353 et
+            // B-1385 (type brut, « Raison: … », « Changement de stage »).
+            const { titre, description } = presenterActivite(activity);
 
             return (
               <motion.div
@@ -770,18 +775,11 @@ function GlobalActivityView({ annuaire }: { annuaire: ContactResponse[] }) {
                       <div className="flex items-center gap-2 mb-0.5">
                         <span className="text-sm font-medium text-accent-cyan-ink">{contactName}</span>
                         <span className="text-sm text-text-muted">·</span>
-                        <span className="text-sm text-text-muted capitalize">{
-                          activity.type === 'email' ? 'Email' :
-                          activity.type === 'call' ? 'Appel' :
-                          activity.type === 'meeting' ? 'Réunion' :
-                          activity.type === 'note' ? 'Note' :
-                          activity.type === 'stage_change' ? 'Changement de stage' :
-                          activity.type
-                        }</span>
+                        <span className="text-sm text-text-muted">{libelleTypeActivite(activity.type)}</span>
                       </div>
-                      <h4 className="text-sm font-medium text-text-primary">{maskText(activity.title)}</h4>
-                      {activity.description && (
-                        <p className="text-sm text-text-muted mt-1 line-clamp-2">{maskText(activity.description)}</p>
+                      <h4 className="text-sm font-medium text-text-primary">{maskText(titre)}</h4>
+                      {description && (
+                        <p className="text-sm text-text-muted mt-1 line-clamp-2">{maskText(description)}</p>
                       )}
                     </div>
                     <span className="tabular-nums text-sm text-text-muted whitespace-nowrap shrink-0">
@@ -803,10 +801,11 @@ function GlobalActivityView({ annuaire }: { annuaire: ContactResponse[] }) {
 // =============================================================================
 
 const ACTIVITY_TYPES = [
-  { id: 'email', label: 'Email', icon: Mail },
-  { id: 'call', label: 'Appel', icon: Phone },
-  { id: 'meeting', label: 'Réunion', icon: Users },
-  { id: 'note', label: 'Note', icon: FileText },
+  // B-1421 : mêmes libellés que la fiche (lib/activitesCrm).
+  { id: 'email', label: libelleTypeActivite('email'), icon: Mail },
+  { id: 'call', label: libelleTypeActivite('call'), icon: Phone },
+  { id: 'meeting', label: libelleTypeActivite('meeting'), icon: Users },
+  { id: 'note', label: libelleTypeActivite('note'), icon: FileText },
 ];
 
 interface AddActivityModalProps {
