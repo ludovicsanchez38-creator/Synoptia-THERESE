@@ -222,7 +222,9 @@ async def get_usage_history(
 async def get_usage_stats():
     """Get overall usage statistics."""
     tracker = get_token_tracker()
-    return tracker.get_stats()
+    # B-1475 : les champs `cost_eur`/`budget_eur` portent des dollars (grille
+    # de GET /prices) ; la réponse dit son unité en attendant leur renommage.
+    return {**tracker.get_stats(), "currency": "USD"}
 
 
 # ============================================================
@@ -313,4 +315,5 @@ async def get_escalation_status(
         "monthly_usage": tracker.get_monthly_usage(),
         "limits": tracker.get_limits().to_dict(),
         "recent_history_count": len(tracker._usage_history),
+        "currency": "USD",
     }

@@ -142,7 +142,8 @@ export function LimitsTab() {
           <div className="grid grid-cols-2 gap-3">
             <div className="p-3 bg-background/40 rounded-md border border-border/30">
               <p className="text-xl font-bold text-text">
-                {(status.monthly_usage.input_tokens / 1000).toFixed(1)}K
+                {/* B-1475 : le total compte l'entrée ET la sortie. */}
+                {(status.monthly_usage.total_tokens / 1000).toFixed(1)}K
               </p>
               <p className="text-xs text-text-muted">Tokens totaux</p>
             </div>

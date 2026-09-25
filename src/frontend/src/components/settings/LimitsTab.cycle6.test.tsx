@@ -69,3 +69,17 @@ describe('#188 : un budget à zéro reste un zéro', () => {
     expect(libelle.parentElement).not.toHaveTextContent(/NaN|Infinity|100%/);
   });
 });
+
+/**
+ * B-1475 (recette P-146, lot 5, KO-7) : « Tokens totaux » du mois affichait
+ * les seuls jetons d'entrée (28,4 K au lieu de 31 583).
+ */
+describe('B-1475 : les tokens totaux du mois comptent entrée et sortie', () => {
+  it('affiche le total mesuré, pas l’entrée seule', async () => {
+    api.getEscalationStatus.mockResolvedValue(statut(0, 50));
+    api.getTokenLimits.mockResolvedValue(limites);
+    render(<LimitsTab />);
+    const libelle = await screen.findByText('Tokens totaux');
+    expect(libelle.parentElement).toHaveTextContent('15.0K');
+  });
+});
