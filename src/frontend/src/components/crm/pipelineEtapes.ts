@@ -16,6 +16,10 @@ export const PIPELINE_ETAPES = [
 
 export type IdEtapePipeline = (typeof PIPELINE_ETAPES)[number]['id'];
 
+/** L'explication du score, une seule phrase pour la carte du Pipeline et la fiche (P-144). */
+export const SCORE_AIDE =
+  "Score de potentiel commercial, calculé depuis les informations du contact et son étape dans le pipeline. Plus il est haut, plus le prospect est chaud. L'échelle n'est pas plafonnée.";
+
 /** B-1385 : le libellé de colonne d'une étape ; un identifiant inconnu reste tel quel. */
 export function libelleDEtape(id: string): string {
   return PIPELINE_ETAPES.find((e) => e.id === id)?.label ?? id;

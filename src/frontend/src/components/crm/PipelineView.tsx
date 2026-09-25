@@ -10,7 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { HelpCircle } from 'lucide-react';
 import { Etiquette } from '../ui/Etiquette';
 import { cn } from '../../lib/utils';
-import { PIPELINE_ETAPES, etiquetteDEtape } from './pipelineEtapes';
+import { PIPELINE_ETAPES, SCORE_AIDE, etiquetteDEtape } from './pipelineEtapes';
 import {
   DndContext,
   DragOverlay,
@@ -287,8 +287,6 @@ interface ContactCardProps {
   isOverlay?: boolean;
 }
 
-const SCORE_AIDE =
-  "Score de potentiel commercial, calculé depuis les informations du contact et son étape dans le pipeline. Plus il est haut, plus le prospect est chaud. L'échelle n'est pas plafonnée.";
 
 function ContactCard({ contact, onClick, isOverlay }: ContactCardProps) {
   const { maskText: masquer } = useDemoMask();

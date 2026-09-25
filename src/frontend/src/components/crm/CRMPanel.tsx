@@ -7,10 +7,11 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, UserPlus, Upload, Mail, Phone, FileText, Users, AlertCircle } from 'lucide-react';
+import { X, UserPlus, Upload, Mail, Phone, FileText, Users, AlertCircle, HelpCircle } from 'lucide-react';
 import { PipelineView } from './PipelineView';
 import { ActivityTimeline } from './ActivityTimeline';
 import { ListeDesPrestations } from './ListeDesPrestations';
+import { SCORE_AIDE, libelleDEtape } from './pipelineEtapes';
 import { useCRMStore } from '../../stores/crmStore';
 import { useContactsStore } from '../../stores/contactsStore';
 import { listProjects, listActivities, updateContactStage, type ContactResponse, type ActivityResponse } from '../../services/api';
@@ -298,6 +299,36 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
                     </Button>
                   }
                 />
+                {/* P-144 (Nathalie, cycle 13) : « Ouvrir la fiche » n'ouvrait ni
+                    coordonnées, ni étape, ni score. */}
+                <section
+                  aria-label={`Fiche de ${displaySelectedContact.first_name} ${displaySelectedContact.last_name}`}
+                  className="px-4 pb-4"
+                >
+                  <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
+                    <div>
+                      <dt className="text-text-muted">E-mail</dt>
+                      <dd className="text-text [overflow-wrap:anywhere]">{displaySelectedContact.email || 'Non renseigné'}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-text-muted">Téléphone</dt>
+                      <dd className="text-text">{displaySelectedContact.phone || 'Non renseigné'}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-text-muted">Étape</dt>
+                      <dd className="text-text">{libelleDEtape(displaySelectedContact.stage ?? 'contact')}</dd>
+                    </div>
+                    <div>
+                      <dt className="flex items-center gap-1 text-text-muted">
+                        Score
+                        <HelpCircle className="h-4 w-4" aria-label={SCORE_AIDE} role="img">
+                          <title>{SCORE_AIDE}</title>
+                        </HelpCircle>
+                      </dt>
+                      <dd className="font-semibold tabular-nums text-text">{displaySelectedContact.score ?? 0}</dd>
+                    </div>
+                  </dl>
+                </section>
               </Carte>
 
               {/* Les prestations d'abord : c'est l'ETAT (ce que Ludo a
