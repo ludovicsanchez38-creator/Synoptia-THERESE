@@ -9,7 +9,7 @@
  * primitives du lot 1. Mêmes données, mêmes états, mêmes destinations.
  */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, RefreshCw, Filter, AlertCircle } from 'lucide-react';
 import { useTaskStore } from '../../stores/taskStore';
@@ -94,6 +94,17 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
   const [projects, setProjects] = useState<api.Project[]>([]);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [filterTag, setFilterTag] = useState<string | null>(null);
+  // B-1432 : les tags proposés suivent aussi les tâches affichées (une tâche
+  // créée ou modifiée dans l'écran), et gardent le tag du filtre actif pour
+  // qu'il reste lisible et révocable.
+  const tagsProposes = useMemo(
+    () => [...new Set([
+      ...availableTags,
+      ...tasks.flatMap((t) => t.tags ?? []),
+      ...(filterTag ? [filterTag] : []),
+    ])].sort(),
+    [availableTags, tasks, filterTag],
+  );
 
   const effectiveOpen = standalone || isOpen;
 
@@ -278,14 +289,14 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
         />
       )}
 
-      {availableTags.length > 0 && (
+      {tagsProposes.length > 0 && (
         <Select
           aria-label="Filtrer par étiquette"
           value={filterTag || ''}
           onChange={(e) => setFilterTag(e.target.value || null)}
           options={[
             { value: '', label: 'Tous les tags' },
-            ...availableTags.map((t) => ({ value: t, label: t })),
+            ...tagsProposes.map((t) => ({ value: t, label: t })),
           ]}
           className="w-auto"
         />
