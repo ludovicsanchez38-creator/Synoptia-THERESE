@@ -269,7 +269,7 @@ NE génère PAS de code Python. Écris directement le contenu textuel des slides
 
             lines = block.split('\n')
             title = None
-            points = []
+            points: list[str] = []
 
             for line in lines:
                 line = line.strip()
