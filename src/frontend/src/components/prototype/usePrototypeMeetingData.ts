@@ -89,10 +89,17 @@ export function usePrototypeMeetingData(enabled = true) {
   const workspace = useRef<MeetingWorkspaceData | null>(null);
   const createEventPending = useRef(false);
   const createNotePending = useRef(false);
+  // P-117 : une séance ouverte depuis l'Agenda (souvent passée, donc hors de la
+  // liste chargée, qui part de maintenant) reste trouvable par sa clé.
+  const seancesConnues = useRef(new Map<string, CalendarEvent>());
+  const trouver = useCallback(
+    (events: CalendarEvent[], key: string) => findEvent(events, key) ?? seancesConnues.current.get(key),
+    [],
+  );
 
   const loadEventContext = useCallback(async (eventKey: string, data = workspace.current) => {
     if (!data) return;
-    const event = findEvent(data.events, eventKey);
+    const event = trouver(data.events, eventKey);
     if (!event) {
       setEventResource({ status: 'error', data: null, error: 'Ce rendez-vous n’est plus disponible.' });
       return;
@@ -118,7 +125,7 @@ export function usePrototypeMeetingData(enabled = true) {
       data: { event, relatedContacts, activities, unavailableSources },
       error: null,
     });
-  }, []);
+  }, [trouver]);
 
   const refresh = useCallback(async () => {
     const activeRequest = ++requestId.current;
@@ -185,10 +192,10 @@ export function usePrototypeMeetingData(enabled = true) {
     workspace.current = data;
     setResource({ status: 'ready', data, error: null });
 
-    const requestedEvent = selectedEventId.current ? findEvent(events, selectedEventId.current) : events[0];
+    const requestedEvent = selectedEventId.current ? trouver(events, selectedEventId.current) : events[0];
     if (requestedEvent) void loadEventContext(meetingEventKey(requestedEvent), data);
     else setEventResource(null);
-  }, [loadEventContext]);
+  }, [loadEventContext, trouver]);
 
   // BUG-143 : la lecture de la coque reste pure (createDefault: false), donc une
   // base vierge n'a aucun calendrier et « Préparer un événement » finissait sur un
@@ -281,7 +288,16 @@ export function usePrototypeMeetingData(enabled = true) {
     resource,
     eventResource,
     refresh,
-    openEvent: loadEventContext,
+    // P-117 : `connu` porte la séance quand elle vient d'ailleurs (Agenda).
+    // Demandée avant la fin du chargement, elle est ouverte par `refresh`.
+    openEvent: async (eventKey: string, connu?: CalendarEvent) => {
+      if (connu && meetingEventKey(connu) === eventKey) seancesConnues.current.set(eventKey, connu);
+      if (!workspace.current) {
+        selectedEventId.current = eventKey;
+        return;
+      }
+      await loadEventContext(eventKey);
+    },
     retryEvent: () => selectedEventId.current ? loadEventContext(selectedEventId.current) : Promise.resolve(),
     ensureDefaultCalendar,
     createCalendarEvent,

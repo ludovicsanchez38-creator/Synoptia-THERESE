@@ -122,6 +122,18 @@ export function EventDetail() {
         )}
 
         <h3 className="text-xl font-semibold text-text mb-2">{event.summary}</h3>
+        {/* P-117 (Claire, cycle 13) : la note d'après séance ne se trouvait que
+            par l'Accueil. La coque ouvre le parcours sur cette séance ;
+            l'événement voyage avec la demande (une séance passée n'est pas
+            dans la liste que charge la préparation). */}
+        <Button
+          variant="secondary"
+          size="md"
+          className="mb-3"
+          onClick={() => window.dispatchEvent(new CustomEvent('therese:preparer-seance', { detail: { evenement: event } }))}
+        >
+          {endDate.getTime() < Date.now() ? 'Compte rendu de la séance' : 'Préparer la séance'}
+        </Button>
 
         {/* Status : sans la garde, tout rendez-vous confirmé sortait « Annulé ». */}
         {event.status !== 'confirmed' && (

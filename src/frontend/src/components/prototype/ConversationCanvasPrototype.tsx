@@ -1267,6 +1267,15 @@ export function ConversationCanvasPrototype() {
   //    bibliothèque de prompts).
   // 3. Les liens profonds `?view=` / `?settings_tab=` et le prompt transmis.
   useEffect(() => {
+    const surDemande = (e: Event) => {
+      const evenement = (e as CustomEvent<{ evenement?: CalendarEvent }>).detail?.evenement;
+      if (evenement) ouvrirLaSeanceRef.current(evenement);
+    };
+    window.addEventListener('therese:preparer-seance', surDemande);
+    return () => window.removeEventListener('therese:preparer-seance', surDemande);
+  }, []);
+
+  useEffect(() => {
     const surPromptInsere = (evenement: Event) => {
       const texte = (evenement as CustomEvent<string>).detail;
       // Garde reprise de l'écouteur fusionné : un prompt vide ne doit pas
@@ -1549,6 +1558,25 @@ export function ConversationCanvasPrototype() {
     // tiroir fermé (il rend sinon le focus à « Plus d'outils »).
     setRelectureDemandee((n) => n + 1);
   }
+
+  // P-117 (Claire, cycle 13) : « Compte rendu de la séance » ou « Préparer la
+  // séance », depuis l'Agenda, ouvre le parcours sur CETTE séance. La vue
+  // Agenda se ferme, la pile suit l'écran (B-1386), et l'événement est passé
+  // au parcours : une séance passée n'est pas dans la liste qu'il charge.
+  const ouvrirLaSeanceRef = useRef<(evenement: CalendarEvent) => void>(() => {});
+  ouvrirLaSeanceRef.current = (evenement) => {
+    if (blockStreamingNavigation()) return;
+    if (embeddedView !== null) {
+      panneauDOrigineRef.current = null;
+      derniereVueRef.current = null;
+      useNavigationStore.getState().retourAccueil();
+    }
+    chooseScenario('meeting');
+    const cle = meetingEventKey(evenement);
+    setSelectedMeetingTarget(cle);
+    setCanvasOpen(true);
+    void openMeetingEvent(cle, evenement);
+  };
 
   /**
    * B-1378 : retirer une capacité retire aussi la demande qu'elle avait posée

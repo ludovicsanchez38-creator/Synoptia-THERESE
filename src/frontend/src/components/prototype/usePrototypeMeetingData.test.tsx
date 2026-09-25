@@ -155,4 +155,28 @@ describe('usePrototypeMeetingData', () => {
       expect(result.current.resource.data?.calendars).toEqual([calendar]);
     });
   });
+
+  it('P-117 : une séance passée, absente de la liste chargée, s’ouvre depuis l’Agenda', async () => {
+    const passee: CalendarEvent = { ...event, id: 'event-passe', start_datetime: '2026-09-01T10:00:00', end_datetime: '2026-09-01T11:00:00' };
+    const { result } = renderHook(() => usePrototypeMeetingData(true));
+    await waitFor(() => expect(result.current.resource.status).toBe('ready'));
+
+    await act(async () => {
+      await result.current.openEvent(meetingEventKey(passee), passee);
+    });
+
+    await waitFor(() => expect(result.current.eventResource?.status).toBe('ready'));
+    expect(result.current.eventResource?.data?.event.id).toBe('event-passe');
+    expect(result.current.eventResource?.data?.relatedContacts.map((c) => c.id)).toEqual(['contact-1']);
+  });
+
+  it('P-117 : demandée avant la fin du chargement, la séance passée est ouverte ensuite', async () => {
+    const passee: CalendarEvent = { ...event, id: 'event-passe', start_datetime: '2026-09-01T10:00:00', end_datetime: '2026-09-01T11:00:00' };
+    const { result } = renderHook(() => usePrototypeMeetingData(true));
+    await act(async () => {
+      await result.current.openEvent(meetingEventKey(passee), passee);
+    });
+
+    await waitFor(() => expect(result.current.eventResource?.data?.event.id).toBe('event-passe'));
+  });
 });
