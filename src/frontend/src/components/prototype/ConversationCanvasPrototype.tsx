@@ -1474,6 +1474,17 @@ export function ConversationCanvasPrototype() {
   }
 
   /**
+   * B-1378 : retirer une capacité retire aussi la demande qu'elle avait posée
+   * dans le champ, sauf si l'utilisateur l'a retouchée (c'est alors sa saisie),
+   * et rend le focus au champ au lieu de le laisser tomber sur la page.
+   */
+  function retirerLaCapacite() {
+    if (selectedCapability?.prompt && composerValue === selectedCapability.prompt) setComposerValue('');
+    setSelectedCapability(null);
+    composerRef.current?.focus();
+  }
+
+  /**
    * Ouvre ce qu'une carte désigne. Partagé par le clic sur la carte et par la
    * validation du composeur : deux portes, une seule définition de ce que
    * « ouvrir » veut dire.
@@ -2080,7 +2091,7 @@ export function ConversationCanvasPrototype() {
                           <SelectedCapabilityIcon className="h-3.5 w-3.5" />
                         </span>
                         <span className="min-w-0 flex-1 truncate"><span className="font-semibold">Capacité :</span> {selectedCapability.title}</span>
-                        <button type="button" onClick={() => setSelectedCapability(null)} aria-label="Retirer la capacité" className="grid h-6 w-6 place-items-center rounded-sm hover:bg-surface">
+                        <button type="button" onClick={retirerLaCapacite} aria-label="Retirer la capacité" className="grid h-6 w-6 place-items-center rounded-sm hover:bg-surface">
                           <X className="h-3.5 w-3.5" />
                         </button>
                       </div>
