@@ -913,6 +913,15 @@ async def export_vcf_contacts(
             note = vcard.add("note")
             note.value = c.notes
 
+        # B-1389 : les étiquettes partent dans CATEGORIES, la propriété vCard
+        # standard ; elles disparaissaient du fichier sans le dire.
+        from app.services.crm_utils import etiquettes_lues
+
+        etiquettes = etiquettes_lues(c.tags)
+        if etiquettes:
+            categories = vcard.add("categories")
+            categories.value = etiquettes
+
         vcf_parts.append(vcard.serialize())
 
     vcf_content = "\n".join(vcf_parts)
