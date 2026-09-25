@@ -23,6 +23,7 @@ import { Textarea } from '../ui/Textarea';
 import * as api from '../../services/api';
 import { Spinner } from '../ui/Spinner';
 import { useAbandonDeSaisie } from '../../hooks/useAbandonDeSaisie';
+import { entreeValide } from '../../lib/entreeValide';
 
 /** Le message exact de la maquette (`projets.html:53`). */
 const ERREUR_TITRE_MANQUANT = "Ajoute un titre : c'est la seule chose obligatoire.";
@@ -202,6 +203,8 @@ export function TaskForm() {
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 20 }}
       className="h-full flex flex-col"
+      // B-1365 : Entrée dans un champ texte valide la tâche.
+      onKeyDown={entreeValide(() => void handleSave(), saving)}
     >
       {/* Header */}
       <div className="flex flex-wrap items-center gap-3 px-4 pt-4 pb-2">

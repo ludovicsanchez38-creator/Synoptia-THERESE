@@ -15,6 +15,7 @@ import { Alerte } from '../ui/Alerte';
 import { FormField } from '../ui/FormField';
 import { Input } from '../ui/Input';
 import { Textarea } from '../ui/Textarea';
+import { entreeValide } from '../../lib/entreeValide';
 
 interface ContactModalProps {
   isOpen: boolean;
@@ -232,8 +233,9 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
               </Button>
             </div>
 
-            {/* Content - Scrollable */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            {/* Content - Scrollable. */}
+            {/* B-1365 : Entrée dans un champ texte valide le formulaire. */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4" onKeyDown={entreeValide(() => void handleSave(), saving || demoEnabled)}>
               {demoEnabled && (
                 <Alerte ton="attention" titre="Mode démo : lecture seule">
                   Désactive le mode démo dans les paramètres pour {isEditing ? 'modifier ce contact' : 'créer un contact'}.

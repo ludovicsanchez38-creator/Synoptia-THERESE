@@ -18,6 +18,7 @@ import { Spinner } from '../ui/Spinner';
 import { Alerte } from '../ui/Alerte';
 import { Carte } from '../ui/Carte';
 import { Input } from '../ui/Input';
+import { entreeValide } from '../../lib/entreeValide';
 
 interface Props {
   projectId: string;
@@ -310,6 +311,8 @@ export function ProjectSyncSection({ projectId, maskDisplayText }: Props) {
                 value={maskText(chemin)}
                 disabled={modeDemo}
                 onChange={(e) => setChemin(e.target.value)}
+                // B-1365 : Entrée attache le dossier.
+                onKeyDown={entreeValide(() => void attacher(), modeDemo || occupe !== null || !chemin.trim())}
                 placeholder="/Users/toi/Documents/mon-projet"
               />
             </div>

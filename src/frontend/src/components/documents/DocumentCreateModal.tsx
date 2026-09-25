@@ -22,6 +22,7 @@ import { FormField } from '../ui/FormField';
 import { Input } from '../ui/Input';
 import { Select } from '../ui/Select';
 import { Textarea } from '../ui/Textarea';
+import { entreeValide } from '../../lib/entreeValide';
 
 interface DocumentCreateModalProps {
   isOpen: boolean;
@@ -154,7 +155,8 @@ export function DocumentCreateModal({ isOpen, onClose, onCreated }: DocumentCrea
             </div>
 
             {/* Content */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            {/* B-1365 : Entrée dans un champ texte valide le formulaire. */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4" onKeyDown={entreeValide(() => void handleSubmit(), saving)}>
               <FormField label="Titre" htmlFor="document-title" required>
                 <Input
                   id="document-title"

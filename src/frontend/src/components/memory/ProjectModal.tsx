@@ -19,6 +19,7 @@ import { Textarea } from '../ui/Textarea';
 import { useDemoMask } from '../../hooks/useDemoMask';
 import { useDemoStore } from '../../stores/demoStore';
 import { buildReplacementMap, maskText as appliquerMasque } from '../../lib/demoMask';
+import { entreeValide } from '../../lib/entreeValide';
 
 interface ProjectModalProps {
   isOpen: boolean;
@@ -377,7 +378,8 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
             </div>
 
             {/* Content - Scrollable */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4">
+            {/* B-1365 : Entrée dans un champ texte valide le formulaire. */}
+            <div className="flex-1 overflow-y-auto p-6 space-y-4" onKeyDown={entreeValide(() => void handleSave(), saving || demoEnabled)}>
               {demoEnabled && (
                 <Alerte ton="attention" titre="Mode démo : lecture seule">
                   Désactive le mode démo dans les paramètres pour modifier ce projet.

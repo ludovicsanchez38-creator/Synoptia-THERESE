@@ -41,6 +41,7 @@ import { Etiquette } from '../ui/Etiquette';
 import { Input } from '../ui/Input';
 import { Segments } from '../ui/Segments';
 import { Textarea } from '../ui/Textarea';
+import { entreeValide } from '../../lib/entreeValide';
 
 // =============================================================================
 // STATUTS (tags carrés theme-aware)
@@ -166,6 +167,8 @@ export function OutlineTree({
             onChange={(e) => setNewTitle(e.target.value)}
             placeholder="Titre de la section"
             aria-label="Titre de la nouvelle section"
+            // B-1365 : Entrée ajoute la section.
+            onKeyDown={entreeValide(handleCreateSection, !newTitle.trim())}
             autoFocus
           />
           <Textarea
