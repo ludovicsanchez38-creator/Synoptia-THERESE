@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import type { Contact } from '../../services/api/memory';
 import { contactMatchesQuery } from '../../stores/contactsStore';
+import { libelleDEtape } from '../crm/pipelineEtapes';
 import {
   contactDisplayName,
   contactInitials,
@@ -138,7 +139,7 @@ export function ContactsMemoryCard({
               <span className="min-w-0 flex-1">
                 <span className="block truncate text-sm font-semibold text-text">{contactDisplayName(contact)}</span>
                 <span className="mt-0.5 block truncate text-xs text-text-muted">
-                  {[contact.company, contact.email, contact.stage].filter(Boolean).join(' · ') || 'Fiche locale'}
+                  {[contact.company, contact.email, contact.stage && libelleDEtape(contact.stage)].filter(Boolean).join(' · ') || 'Fiche locale'}
                 </span>
               </span>
               <ChevronRight className="h-4 w-4 text-text-muted" />
@@ -245,7 +246,7 @@ export function ContactsMemoryCanvas({
                   <div className="min-w-0 flex-1">
                     <h3 className="text-lg font-bold text-text">{contactDisplayName(selectedContact)}</h3>
                     <p className="mt-0.5 text-xs text-text-muted">
-                      {[selectedContact.company, selectedContact.stage].filter(Boolean).join(' · ') || 'Contact local'}
+                      {[selectedContact.company, selectedContact.stage && libelleDEtape(selectedContact.stage)].filter(Boolean).join(' · ') || 'Contact local'}
                     </p>
                   </div>
                 </div>

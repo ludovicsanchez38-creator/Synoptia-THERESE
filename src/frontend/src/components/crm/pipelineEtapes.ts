@@ -16,6 +16,11 @@ export const PIPELINE_ETAPES = [
 
 export type IdEtapePipeline = (typeof PIPELINE_ETAPES)[number]['id'];
 
+/** B-1385 : le libellé de colonne d'une étape ; un identifiant inconnu reste tel quel. */
+export function libelleDEtape(id: string): string {
+  return PIPELINE_ETAPES.find((e) => e.id === id)?.label ?? id;
+}
+
 export function etiquetteDEtape(id: string): {
   domaine?: DomaineEtiquette;
   ton?: TonEtiquette;

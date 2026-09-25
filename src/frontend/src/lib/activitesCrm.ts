@@ -8,6 +8,7 @@
  * l'affichage, pour les anciennes comme pour les nouvelles.
  */
 import type { ActivityResponse } from '../services/api';
+import { libelleDEtape } from '../components/crm/pipelineEtapes';
 
 const LIBELLES_DE_TYPE: Record<string, string> = {
   email: 'E-mail',
@@ -42,7 +43,26 @@ export function motifLisible(motif: string): string {
   return code;
 }
 
+/** B-1385 : « Stage: contact -> discovery » devient « Étape : Contact → Découverte ». */
+function presenterChangementDEtape(activity: ActivityResponse): { titre: string; description: string } {
+  let ancienne: unknown;
+  let nouvelle: unknown;
+  try {
+    ({ old_stage: ancienne, new_stage: nouvelle } = JSON.parse(activity.extra_data ?? '') as {
+      old_stage?: unknown; new_stage?: unknown;
+    });
+  } catch {
+    const lu = /^Stage\s*:\s*(\S+)\s*-?>\s*(\S+)/.exec(activity.title);
+    if (lu) [, ancienne, nouvelle] = lu;
+  }
+  const titre = typeof ancienne === 'string' && typeof nouvelle === 'string'
+    ? `Étape : ${libelleDEtape(ancienne)} → ${libelleDEtape(nouvelle)}`
+    : 'Changement d’étape';
+  return { titre, description: 'Changement d’étape dans le pipeline' };
+}
+
 export function presenterActivite(activity: ActivityResponse): { titre: string; description: string | null } {
+  if (activity.type === 'stage_change') return presenterChangementDEtape(activity);
   if (activity.type !== 'score_change') {
     return { titre: activity.title, description: activity.description ?? null };
   }
