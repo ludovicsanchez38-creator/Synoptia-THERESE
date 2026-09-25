@@ -8,6 +8,7 @@ during conversation to interact with user's connected accounts.
 import asyncio
 import contextlib
 import logging
+import re
 from collections.abc import Iterable
 from contextvars import ContextVar
 from pathlib import Path
@@ -472,15 +473,32 @@ def _texte_de_retour_document(nom: str, fmt: str, *, collecte: bool) -> str:
     Lea a cherche un bouton parce que le modele lui en avait annonce un.
     """
     base = f"Document {fmt.upper()} genere : {nom}."
-    if collecte:
-        return (
-            f"{base} L'utilisateur peut l'enregistrer via la carte affichee "
-            "sous ce message - ne fournis aucun lien."
-        )
-    return (
-        f"{base} Le fichier est enregistre localement. N'annonce AUCUNE carte "
-        "ni aucun lien : dis simplement qu'il a ete produit."
-    )
+    return base + (_CONSIGNE_AVEC_CARTE if collecte else _CONSIGNE_SANS_CARTE)
+
+
+# Consignes adressées au MODÈLE, jamais à l'écran (B-1448).
+_CONSIGNE_AVEC_CARTE = (
+    " L'utilisateur peut l'enregistrer via la carte affichee "
+    "sous ce message - ne fournis aucun lien."
+)
+_CONSIGNE_SANS_CARTE = (
+    " Le fichier est enregistre localement. N'annonce AUCUNE carte "
+    "ni aucun lien : dis simplement qu'il a ete produit."
+)
+_BASE_DU_DOCUMENT_RE = re.compile(r"^Document (?P<fmt>[A-Z0-9]+) genere : (?P<nom>.*)\.$", re.DOTALL)
+
+
+def texte_du_document_pour_l_ecran(texte: str) -> str:
+    """B-1448 (recette P-146, lot 3) : après la carte de confirmation, le
+    retour de generate_document s'affichait tel quel à l'utilisatrice, avec la
+    consigne destinée au modèle (« ne fournis aucun lien »), sans accents. On
+    en garde l'annonce, réécrite pour l'écran ; tout autre texte passe tel quel."""
+    for consigne in (_CONSIGNE_AVEC_CARTE, _CONSIGNE_SANS_CARTE):
+        if texte.endswith(consigne):
+            trouve = _BASE_DU_DOCUMENT_RE.match(texte[: -len(consigne)])
+            if trouve:
+                return f"Document {trouve['fmt']} créé : {trouve['nom']}."
+    return texte
 
 
 def drain_generated_files() -> list[dict[str, Any]]:

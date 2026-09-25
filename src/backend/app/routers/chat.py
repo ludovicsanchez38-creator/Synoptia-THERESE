@@ -3510,6 +3510,7 @@ async def confirm_tool(
     from app.services.workspace_tools import (
         drain_generated_files,
         start_generated_files_collection,
+        texte_du_document_pour_l_ecran,
     )
 
     start_generated_files_collection()
@@ -3553,6 +3554,9 @@ async def confirm_tool(
     # et l'utilisateur confirme un document qu'il ne peut pas télécharger
     # (même trou que BUG-136, déplacé après la confirmation).
     fichiers = drain_generated_files()
+    # B-1448 : ce texte s'affiche à l'utilisatrice, pas au modèle.
+    if tool_name == "generate_document":
+        result = texte_du_document_pour_l_ecran(result)
     payload: dict[str, Any] = {
         "status": "executed",
         "tool_name": tool_name,
