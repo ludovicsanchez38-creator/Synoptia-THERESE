@@ -12,6 +12,7 @@ import {
 import type { Contact } from '../../services/api/memory';
 import { contactMatchesQuery } from '../../stores/contactsStore';
 import { libelleDEtape } from '../crm/pipelineEtapes';
+import { ActivityTimeline } from '../crm/ActivityTimeline';
 import {
   contactDisplayName,
   contactInitials,
@@ -279,6 +280,15 @@ export function ContactsMemoryCanvas({
                     ))}
                   </div>
                 )}
+
+                {/* P-120 : les notes de séance et les échanges enregistrés
+                    (activités) ne vivaient que dans la vue Pipeline. */}
+                <section aria-label="Historique" className="mt-5">
+                  <div className="text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">Historique</div>
+                  <div className="mt-2">
+                    <ActivityTimeline key={selectedContact.id} contactId={selectedContact.id} />
+                  </div>
+                </section>
               </div>
             )}
           </div>
