@@ -526,17 +526,25 @@ async def _find_existing_contact(
         if match is not None:
             return match
 
-    fn = first_name.strip().lower()
-    ln = last_name.strip().lower()
-    if not fn and not ln:
+    # B-1322 : nom complet comparé sans casse ni accents (comme B-1311,
+    # B-1316) ; « Helene » face à « Hélène », ou « Jean » « Pierre Martin »
+    # face à « Jean Pierre » « Martin », créaient un doublon.
+    cherche = _nom_complet_normalise(first_name, last_name)
+    if not cherche:
         return None
     result = await session.execute(
         _cloison_contacts(select(Contact), scope, scope_id, conversation_id)
     )
     for c in result.scalars().all():
-        if (c.first_name or "").strip().lower() == fn and (c.last_name or "").strip().lower() == ln:
+        if _nom_complet_normalise(c.first_name, c.last_name) == cherche:
             return c
     return None
+
+
+def _nom_complet_normalise(prenom: str | None, nom: str | None) -> str:
+    decompose = unicodedata.normalize("NFKD", f"{prenom or ''} {nom or ''}")
+    sans_accents = "".join(c for c in decompose if not unicodedata.combining(c))
+    return " ".join(sans_accents.casefold().split())
 
 
 # ============================================================
