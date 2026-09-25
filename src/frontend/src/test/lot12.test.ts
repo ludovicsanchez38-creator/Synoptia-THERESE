@@ -20,7 +20,9 @@ describe('lot 12 - gardes de régression', () => {
   it('B-442 : en démonstration, le fil des activités masque noms et titres', () => {
     const src = lire('components/crm/CRMPanel.tsx');
     expect(src).toMatch(/annuaire=\{demoEnabled \? allContacts\.map\(/);
-    expect(src).toMatch(/maskText\(activity\.title\)/);
+    // B-1421 : le titre passe par presenterActivite avant le masque.
+    expect(src).toMatch(/maskText\(titre\)/);
+    expect(src).toMatch(/maskText\(description\)/);
   });
 
   it('B-446 : plus aucune assertion arrière dans le code chargé au démarrage', () => {
