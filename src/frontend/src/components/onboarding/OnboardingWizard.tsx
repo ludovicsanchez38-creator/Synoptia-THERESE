@@ -47,6 +47,8 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
   const dialogRef = useRef<HTMLDivElement>(null);
   /** Revue Grok 0.70.0 (P1) : l'achèvement de l'étape IA attend le serveur ; un second appel pendant l'attente est ignoré. */
   const achevementIaEnCoursRef = useRef(false);
+  /** B-1342 : le conteneur défilant survit aux étapes ; chacune s'ouvre en haut. */
+  const contenuRef = useRef<HTMLDivElement>(null);
 
   // Window controls
   const handleMinimize = () => getCurrentWindow().minimize();
@@ -268,8 +270,14 @@ export function OnboardingWizard({ isOpen, onComplete }: OnboardingWizardProps) 
             </div>
 
             {/* Step Content */}
-            <div className="flex-1 overflow-y-auto relative">
-              <AnimatePresence mode="wait" custom={direction}>
+            <div ref={contenuRef} className="flex-1 overflow-y-auto relative">
+              <AnimatePresence
+                mode="wait"
+                custom={direction}
+                onExitComplete={() => {
+                  if (contenuRef.current) contenuRef.current.scrollTop = 0;
+                }}
+              >
                 <motion.div
                   key={currentStep}
                   custom={direction}
