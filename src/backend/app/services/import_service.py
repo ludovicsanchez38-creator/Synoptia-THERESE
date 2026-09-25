@@ -102,10 +102,23 @@ def parse_vcf(content: bytes) -> list[dict]:
         Liste de dicts avec les champs : first_name, last_name, company,
         email, phone, address, notes
     """
+    return parse_vcf_avec_ecarts(content)[0]
+
+
+def parse_vcf_avec_ecarts(content: bytes) -> tuple[list[dict], list[str], int]:
+    """Les contacts lus, ce qui a été écarté (en clair) et le nombre de cartes.
+
+    B-1380 : une carte sans nom disparaissait avant tout comptage, et une
+    adresse douteuse était vidée en silence ; l'import disait « terminé » sans
+    dire ce qu'il avait écarté.
+    """
     text = content.decode("utf-8", errors="replace")
     contacts = []
+    ecartees: list[str] = []
+    nb_cartes = 0
 
-    for vcard in vobject.readComponents(text):
+    for numero, vcard in enumerate(vobject.readComponents(text), start=1):
+        nb_cartes = numero
         contact = {}
 
         # Nom
@@ -118,7 +131,8 @@ def parse_vcf(content: bytes) -> list[dict]:
             contact["first_name"] = parts[0]
             contact["last_name"] = parts[1] if len(parts) > 1 else ""
         else:
-            continue  # Pas de nom, skip
+            ecartees.append(f"carte n° {numero} écartée : sans nom")
+            continue
 
         # Organisation
         if hasattr(vcard, "org"):
@@ -136,6 +150,10 @@ def parse_vcf(content: bytes) -> list[dict]:
 
             valeur = str(vcard.email.value or "").strip()
             contact["email"] = valeur if adresse_unique_valide(valeur) else None
+            if valeur and contact["email"] is None:
+                ecartees.append(
+                    f"carte n° {numero} : adresse e-mail « {valeur} » illisible, non importée"
+                )
 
         # Téléphone
         if hasattr(vcard, "tel"):
@@ -169,6 +187,22 @@ def parse_vcf(content: bytes) -> list[dict]:
         # Ne garder que les contacts avec au moins un nom
         if contact.get("first_name") or contact.get("last_name"):
             contacts.append(contact)
+        else:
+            ecartees.append(f"carte n° {numero} écartée : sans nom")
 
     logger.info(f"Parsed {len(contacts)} contacts from VCF file")
-    return contacts
+    return contacts, ecartees, nb_cartes
+
+
+def resume_des_ecarts(ecartees: list[str]) -> str:
+    """B-1380 : la phrase qui suit le bilan d'un import vCard."""
+    cartes = sum(1 for e in ecartees if "écartée" in e)
+    adresses = len(ecartees) - cartes
+    morceaux = []
+    if cartes:
+        morceaux.append(f"{cartes} carte{'s' if cartes > 1 else ''} écartée{'s' if cartes > 1 else ''} (sans nom)")
+    if adresses:
+        morceaux.append(
+            f"{adresses} adresse{'s' if adresses > 1 else ''} e-mail illisible{'s' if adresses > 1 else ''} non importée{'s' if adresses > 1 else ''}"
+        )
+    return ", ".join(morceaux)

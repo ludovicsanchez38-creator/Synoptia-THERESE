@@ -822,7 +822,7 @@ async def import_vcf_contacts(
     Les doublons sont détectés par email. Si update_existing=True,
     les contacts existants sont mis à jour avec les nouvelles données.
     """
-    from app.services.import_service import parse_vcf
+    from app.services.import_service import parse_vcf_avec_ecarts, resume_des_ecarts
 
     if not file.filename or not file.filename.lower().endswith(".vcf"):
         raise HTTPException(status_code=400, detail="Le fichier doit être au format .vcf")
@@ -832,7 +832,7 @@ async def import_vcf_contacts(
         raise HTTPException(status_code=400, detail="Fichier trop volumineux (max 1 Mo)")
 
     try:
-        parsed_contacts = parse_vcf(content)
+        parsed_contacts, ecartees, nb_cartes = parse_vcf_avec_ecarts(content)
     except Exception as e:
         logger.error(f"Erreur parsing VCF: {e}")
         # B-552 (05/09/2026) : le texte brut de vobject (anglais, numéro de
@@ -887,11 +887,16 @@ async def import_vcf_contacts(
     indexer_fiches_en_arriere_plan(a_indexer)
     logger.info(f"VCF import: {created} created, {updated} updated")
 
+    # B-1380 : le total compte les cartes du fichier, et l'écarté se dit.
+    message = f"{created} contact(s) créé(s){f', {updated} mis à jour' if updated else ''}"
+    if ecartees:
+        message += f", {resume_des_ecarts(ecartees)}"
     return {
         "created": created,
         "updated": updated,
-        "total": len(parsed_contacts),
-        "message": f"{created} contact(s) créé(s){f', {updated} mis à jour' if updated else ''}",
+        "total": nb_cartes,
+        "ecartees": ecartees,
+        "message": message,
     }
 
 

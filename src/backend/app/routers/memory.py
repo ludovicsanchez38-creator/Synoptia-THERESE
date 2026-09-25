@@ -772,7 +772,7 @@ async def import_vcf_contacts(
     """
     from datetime import UTC, datetime
 
-    from app.services.import_service import parse_vcf
+    from app.services.import_service import parse_vcf_avec_ecarts, resume_des_ecarts
 
     if not file.filename or not file.filename.lower().endswith(".vcf"):
         raise HTTPException(status_code=400, detail="Le fichier doit etre au format .vcf")
@@ -782,7 +782,7 @@ async def import_vcf_contacts(
         raise HTTPException(status_code=400, detail="Fichier trop volumineux (max 1 Mo)")
 
     try:
-        parsed_contacts = parse_vcf(content)
+        parsed_contacts, ecartees, nb_cartes = parse_vcf_avec_ecarts(content)
     except Exception as e:
         logger.error(f"Erreur parsing VCF: {e}")
         # B-552 (05/09/2026) : le texte brut de vobject (anglais, numéro de
@@ -847,16 +847,20 @@ async def import_vcf_contacts(
     indexer_fiches_en_arriere_plan(a_indexer)
     logger.info(f"VCF import (memory): {created} created, {updated} updated, {skipped} skipped")
 
-    parts = [f"{created} contact(s) cree(s)"]
+    parts = [f"{created} contact(s) créé(s)"]
     if updated:
-        parts.append(f"{updated} mis a jour")
+        parts.append(f"{updated} mis à jour")
     if skipped:
-        parts.append(f"{skipped} doublon(s) ignore(s)")
+        parts.append(f"{skipped} doublon(s) ignoré(s)")
+    # B-1380 : le total compte les cartes du fichier, et l'écarté se dit.
+    if ecartees:
+        parts.append(resume_des_ecarts(ecartees))
     return {
         "created": created,
         "updated": updated,
         "skipped": skipped,
-        "total": len(parsed_contacts),
+        "total": nb_cartes,
+        "ecartees": ecartees,
         "message": ", ".join(parts),
     }
 
