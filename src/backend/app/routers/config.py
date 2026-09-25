@@ -1559,16 +1559,19 @@ async def set_llm_config(
     if provider == LLMProvider.OLLAMA:
         base_url = settings.ollama_base_url
     elif provider in env_key_map:
-        env_var, pref_key = env_key_map[provider]
-        api_key = os.environ.get(env_var)
-        if provider == LLMProvider.GEMINI and not api_key:
-            api_key = os.environ.get("GOOGLE_API_KEY")
+        _env_var, pref_key = env_key_map[provider]
         result = await session.execute(
             select(Preference).where(Preference.key == pref_key)
         )
         pref = result.scalar_one_or_none()
-        if pref and not api_key:
-            api_key = _decrypt_pref_value(pref.value)
+        # B-1335 : la clé saisie dans Paramètres d'abord (B-530) ;
+        # l'environnement ensuite, et seulement sous la garde de B-200 (jamais
+        # à l'insu de l'utilisateur dans la version installée).
+        api_key = _decrypt_pref_value(pref.value) if pref else None
+        if not api_key:
+            from app.services.llm import _cle_depuis_environnement
+
+            api_key = _cle_depuis_environnement(provider.value)
 
     # Adresse personnalisée (dette 0.43.4). Portée par fournisseur - l'adresse
     # d'espace de travail Qwen n'a aucun sens pour OpenAI. None = conserver
