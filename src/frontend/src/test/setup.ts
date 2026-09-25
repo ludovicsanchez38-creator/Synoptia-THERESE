@@ -1,5 +1,15 @@
 import '@testing-library/jest-dom';
-import { vi } from 'vitest';
+import { afterEach, vi } from 'vitest';
+
+// P-142 : l'écran quitté vit dans sessionStorage (reprise après rechargement).
+// Un test ne doit pas hériter de l'écran laissé par le précédent.
+afterEach(() => {
+  try {
+    window.sessionStorage.clear();
+  } catch {
+    /* environnement sans stockage */
+  }
+});
 
 // Mock Tauri APIs
 vi.mock('@tauri-apps/api/event', () => ({

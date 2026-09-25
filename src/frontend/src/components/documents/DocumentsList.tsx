@@ -32,6 +32,7 @@ import { useDocumentStore } from '../../stores/documentStore';
 import type { DocumentResponse } from '../../services/api/documents';
 import { Button } from '../ui/Button';
 import { pushEscapeHandler } from '../../lib/escapeStack';
+import { lireLeDocumentQuitte, memoriserLeDocument } from '../../lib/vueQuittee';
 import { DocumentCreateModal } from './DocumentCreateModal';
 import { DocumentWorkspace } from './DocumentWorkspace';
 import { Spinner } from '../ui/Spinner';
@@ -127,6 +128,10 @@ export function DocumentsList() {
   // volontairement : le store ne porte pas de notion de "vue courante",
   // seulement les données du document ouvert.
   const [workspaceOpenId, setWorkspaceOpenId] = useState<string | null>(null);
+  // P-142 : l'atelier ouvert se rouvre après un rechargement. Lu au premier
+  // rendu ; quitter la vue normalement (démontage) l'oublie.
+  const documentQuitteRef = useRef<string | null | undefined>(undefined);
+  if (documentQuitteRef.current === undefined) documentQuitteRef.current = lireLeDocumentQuitte();
 
   useEffect(() => {
     loadDocuments();
@@ -175,6 +180,16 @@ export function DocumentsList() {
     useDocumentStore.getState().effacerLaDemandeDOuverture();
     handleOpen(ouvertureDemandee);
   }, [ouvertureDemandee, handleOpen]);
+
+  useEffect(() => {
+    const id = documentQuitteRef.current;
+    documentQuitteRef.current = null;
+    if (id && !useDocumentStore.getState().ouvertureDemandee) handleOpen(id);
+  }, [handleOpen]);
+  useEffect(() => {
+    memoriserLeDocument(workspaceOpenId);
+  }, [workspaceOpenId]);
+  useEffect(() => () => memoriserLeDocument(null), []);
 
   const handleBackToList = useCallback(() => {
     setWorkspaceOpenId(null);

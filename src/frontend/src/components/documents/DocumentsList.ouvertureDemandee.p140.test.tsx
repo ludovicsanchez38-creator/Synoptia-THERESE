@@ -108,3 +108,19 @@ describe('P-140 : ouvrir un document à la demande', () => {
     expect(etat.ouvertureDemandee).toBeNull();
   });
 });
+
+describe('P-142 : l’atelier ouvert se rouvre après un rechargement', () => {
+  beforeEach(() => {
+    mockListProjects.mockResolvedValue([]);
+    useDocumentStore.setState({ documents: [makeDocument()], ouvertureDemandee: null } as never);
+  });
+
+  it('le document quitté se rouvre, et quitter la vue l’oublie', () => {
+    sessionStorage.setItem('therese:document-quitte', 'doc-1');
+    const { unmount } = render(<DocumentsList />);
+    expect(screen.getByTestId('document-workspace-mock')).toHaveAttribute('data-document-id', 'doc-1');
+    expect(sessionStorage.getItem('therese:document-quitte')).toBe('doc-1');
+    unmount();
+    expect(sessionStorage.getItem('therese:document-quitte')).toBeNull();
+  });
+});

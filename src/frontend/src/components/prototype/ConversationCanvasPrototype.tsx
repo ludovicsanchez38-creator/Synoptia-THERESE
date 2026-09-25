@@ -91,6 +91,7 @@ import type { ActivityResponse } from '../../services/api/crm-extended';
 import { getProfile, type UserProfile } from '../../services/api/config';
 import { useChatStore } from '../../stores/chatStore';
 import { EVENEMENT_OUVRIR_TRAVAIL, ouvrirLeTravail, type DestinationDuTravail } from '../../lib/destinationDuTravail';
+import { lienProfondPresent, lireLaVueQuittee, memoriserLaVue } from '../../lib/vueQuittee';
 import { useDocumentStore } from '../../stores/documentStore';
 import { useStatusStore } from '../../stores/statusStore';
 import { TraitementsIndicator } from '../traitements/TraitementsIndicator';
@@ -1234,6 +1235,21 @@ export function ConversationCanvasPrototype() {
     // relancerait l'effet en boucle.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewDemandee, isStreaming]);
+
+  // P-142 : après un rechargement, l'écran quitté se rouvre (sauf lien
+  // profond). Lu au premier rendu, avant que l'accueil ne l'efface.
+  const vueQuitteeRef = useRef<AppView | null | undefined>(undefined);
+  if (vueQuitteeRef.current === undefined) {
+    vueQuitteeRef.current = lienProfondPresent(window.location.search) ? null : lireLaVueQuittee();
+  }
+  useEffect(() => {
+    const vue = vueQuitteeRef.current;
+    vueQuitteeRef.current = null;
+    if (vue) useNavigationStore.getState().setView(vue);
+  }, []);
+  useEffect(() => {
+    memoriserLaVue(embeddedView);
+  }, [embeddedView]);
 
   // B-1370 : la demande posée par une carte reçoit le focus, curseur en fin,
   // après la fermeture du tiroir et de la palette (qui rendent le focus à
