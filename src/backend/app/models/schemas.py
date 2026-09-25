@@ -763,6 +763,16 @@ class UserProfileUpdate(BaseModel):
     """User profile update request."""
 
     name: str
+
+    @field_validator("name")
+    @classmethod
+    def _nom_requis(cls, valeur: str) -> str:
+        """B-1310 : un nom blanc était enregistré et comptait comme raison
+        sociale de facturation ; l'interface exige déjà un nom."""
+        nom = (valeur or "").strip()
+        if not nom:
+            raise ValueError("Le nom est requis")
+        return nom
     nickname: str = ""
     company: str = ""
     role: str = ""
