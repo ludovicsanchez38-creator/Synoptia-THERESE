@@ -120,6 +120,9 @@ def _project_to_embedding_text(project: Project) -> str:
 _INDEXATIONS_DE_FICHES: set[asyncio.Task[None]] = set()
 # B-1234 : demande d'arrêt lue entre deux fiches (voir arreter_les_indexations_de_fiches).
 _ARRET_DES_INDEXATIONS = asyncio.Event()
+# B-1283 : fiches rendues (non indexées) par un arrêt, pour les relancer si
+# l'opération qui l'a demandé n'a finalement pas lieu.
+_FICHES_RENDUES: list[str] = []
 
 
 def indexer_fiches_en_arriere_plan(fiches: list[Contact]) -> None:
@@ -134,59 +137,78 @@ def indexer_fiches_en_arriere_plan(fiches: list[Contact]) -> None:
     if not fiches:
         return
 
-    async def _indexer(identifiants: list[str]) -> None:
-        echecs = tentees = 0
-        try:
-            for identifiant in identifiants:
-                if _ARRET_DES_INDEXATIONS.is_set():
-                    return
-                tentees += 1
-                try:
-                    await _indexer_une_fiche(identifiant)
-                except Exception:
-                    # B-1239 : une fiche en erreur ne fait plus mourir la tâche
-                    # en silence ; les suivantes sont indexées. B-1258 : une
-                    # panne qui se répète ne laisse qu'une trace, puis un décompte.
-                    echecs += 1
-                    if echecs == 1:
-                        logger.warning(
-                            "Indexation de fond de la fiche %s en échec", identifiant, exc_info=True
-                        )
-                    else:
-                        logger.debug("Indexation de fond de la fiche %s en échec", identifiant)
-        finally:
-            if echecs > 1:
-                logger.warning(
-                    # B-1279 : sur les fiches TENTÉES ; un arrêt laisse les autres de côté.
-                    "Indexation de fond : %d fiches sur %d en échec", echecs, tentees
-                )
+    _lancer_l_indexation([fiche.id for fiche in fiches])
 
-    async def _indexer_une_fiche(identifiant: str) -> None:
-        from app.models.database import get_session_context
 
-        # B-1222 : l'état de la base fait foi, pas l'instantané de
-        # l'import. Une fiche supprimée entre-temps n'est pas réindexée,
-        # et une fiche modifiée l'est dans son état courant.
-        async with get_session_context() as session:
-            fiche = await session.get(Contact, identifiant)
-        if fiche is None:
-            return
-        await _embed_contact(fiche)
-        async with get_session_context() as session:
-            encore_la = await session.get(Contact, identifiant)
-        if encore_la is None:
-            # Supprimée PENDANT le calcul du vecteur : on le retire.
-            await _delete_embedding(identifiant)
+def reprendre_les_indexations_de_fiches(identifiants: list[str]) -> None:
+    """B-1283 : relance les fiches rendues par un arrêt quand l'opération qui
+    l'avait demandé n'a pas lieu (plafond expiré, annulation) ; sinon ces
+    fiches, bien enregistrées, restaient hors de l'index pour de bon."""
+    if identifiants:
+        _lancer_l_indexation(list(identifiants))
 
-    tache = asyncio.create_task(_indexer([fiche.id for fiche in fiches]))
+
+def _lancer_l_indexation(identifiants: list[str]) -> None:
+    tache = asyncio.create_task(_indexer_des_fiches(identifiants))
     _INDEXATIONS_DE_FICHES.add(tache)
     tache.add_done_callback(_INDEXATIONS_DE_FICHES.discard)
 
 
-async def arreter_les_indexations_de_fiches() -> None:
+async def _indexer_des_fiches(identifiants: list[str]) -> None:
+    echecs = tentees = 0
+    try:
+        for position, identifiant in enumerate(identifiants):
+            if _ARRET_DES_INDEXATIONS.is_set():
+                # B-1283 : rendues, pas jetées.
+                _FICHES_RENDUES.extend(identifiants[position:])
+                return
+            tentees += 1
+            try:
+                await _indexer_une_fiche(identifiant)
+            except Exception:
+                # B-1239 : une fiche en erreur ne fait plus mourir la tâche
+                # en silence ; les suivantes sont indexées. B-1258 : une
+                # panne qui se répète ne laisse qu'une trace, puis un décompte.
+                echecs += 1
+                if echecs == 1:
+                    logger.warning(
+                        "Indexation de fond de la fiche %s en échec", identifiant, exc_info=True
+                    )
+                else:
+                    logger.debug("Indexation de fond de la fiche %s en échec", identifiant)
+    finally:
+        if echecs > 1:
+            logger.warning(
+                # B-1279 : sur les fiches TENTÉES ; un arrêt laisse les autres de côté.
+                "Indexation de fond : %d fiches sur %d en échec", echecs, tentees
+            )
+
+async def _indexer_une_fiche(identifiant: str) -> None:
+    from app.models.database import get_session_context
+
+    # B-1222 : l'état de la base fait foi, pas l'instantané de
+    # l'import. Une fiche supprimée entre-temps n'est pas réindexée,
+    # et une fiche modifiée l'est dans son état courant.
+    async with get_session_context() as session:
+        fiche = await session.get(Contact, identifiant)
+    if fiche is None:
+        return
+    await _embed_contact(fiche)
+    async with get_session_context() as session:
+        encore_la = await session.get(Contact, identifiant)
+    if encore_la is None:
+        # Supprimée PENDANT le calcul du vecteur : on le retire.
+        await _delete_embedding(identifiant)
+
+
+async def arreter_les_indexations_de_fiches() -> list[str]:
     """B-1222 : avant une purge ou une restauration, les indexations de fond
     en cours sont arrêtées et attendues ; sinon elles réécrivaient dans Qdrant
-    des fiches que la purge venait d'effacer."""
+    des fiches que la purge venait d'effacer.
+
+    B-1283 : rend les fiches laissées en route. Si l'appelant renonce ensuite
+    à son opération, il les relance (`reprendre_les_indexations_de_fiches`) ;
+    si cet arrêt est lui-même annulé, il les relance seul."""
     # B-1234 : ANNULER ne suffit pas. Le vecteur se calcule et s'écrit dans
     # un fil (asyncio.to_thread) que l'annulation n'arrête pas : il écrivait
     # dans la collection recréée après la purge. On demande l'arrêt entre
@@ -198,8 +220,20 @@ async def arreter_les_indexations_de_fiches() -> None:
             # B-1270 : `asyncio.wait` n'annule pas ce qu'il attend ; un gather
             # annulé annulait la fiche en vol, dont le fil écrivait quand même.
             await asyncio.wait(taches)
+    except BaseException:
+        # Annulé : l'opération n'aura pas lieu, rien ne doit rester en route.
+        # Les tâches relancées ne démarrent qu'après le finally (drapeau levé).
+        reprendre_les_indexations_de_fiches(_vider_les_fiches_rendues())
+        raise
     finally:
         _ARRET_DES_INDEXATIONS.clear()
+    return _vider_les_fiches_rendues()
+
+
+def _vider_les_fiches_rendues() -> list[str]:
+    rendues = list(_FICHES_RENDUES)
+    _FICHES_RENDUES.clear()
+    return rendues
 
 
 async def _embed_contact(contact: Contact) -> None:

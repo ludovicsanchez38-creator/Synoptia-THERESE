@@ -38,7 +38,7 @@ async def test_la_purge_refuse_une_creation_lancee_pendant_ses_attentes(client, 
 
         async with get_session_context() as session:
             issues.append(json.loads(await mt.execute_create_contact({"first_name": "Tardif"}, session)))
-        await arret_reel()
+        return await arret_reel()
 
     monkeypatch.setattr(memoire, "arreter_les_indexations_de_fiches", arret_pendant_lequel_le_chat_cree)
     r = await client.delete("/api/data/all?confirm=true")

@@ -604,19 +604,29 @@ async def _arreter_les_travaux_de_fond() -> None:
     de fond (fiche, profil) ne doit écrire après une purge ou une restauration.
     L'attente précède toute suppression ; au-delà du plafond, rien n'est
     touché et la route répond 503."""
-    from app.routers.memory import arreter_les_indexations_de_fiches
+    from app.routers.memory import (
+        arreter_les_indexations_de_fiches,
+        reprendre_les_indexations_de_fiches,
+    )
     from app.services.memory_tools import attendre_les_gestes_de_creation
     from app.services.user_profile import arreter_l_indexation_du_profil
 
+    rendues: list[str] = []
+
     async def _attendre() -> None:
         await attendre_les_gestes_de_creation()
-        await arreter_les_indexations_de_fiches()
+        rendues.extend(await arreter_les_indexations_de_fiches())
         await arreter_l_indexation_du_profil()
 
     try:
         await asyncio.wait_for(_attendre(), DELAI_MAX_TRAVAUX_DE_FOND_S)
-    except TimeoutError as exc:
-        raise HTTPException(status_code=503, detail=TRAVAUX_DE_FOND_EN_COURS) from exc
+    except BaseException as exc:
+        # B-1283 : l'opération n'aura pas lieu ; les fiches laissées en route
+        # par l'arrêt reprennent, sinon « rien n'a été modifié » serait faux.
+        reprendre_les_indexations_de_fiches(rendues)
+        if isinstance(exc, TimeoutError):
+            raise HTTPException(status_code=503, detail=TRAVAUX_DE_FOND_EN_COURS) from exc
+        raise
 
 
 async def _supprimer_toutes_les_donnees(session: AsyncSession) -> dict[str, Any]:
