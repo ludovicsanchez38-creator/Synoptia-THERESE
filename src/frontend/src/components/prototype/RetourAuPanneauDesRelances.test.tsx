@@ -131,4 +131,29 @@ describe('B-1386 : revenir au panneau des relances', () => {
     await waitFor(() => expect(ecranAffiche()).toBeNull());
     expect(screen.queryByTestId('follow-ups-workspace-canvas')).not.toBeInTheDocument();
   });
+
+  it('une carte qui mène à une vue garde l’écran précédent dans la pile', async () => {
+    // Régression de la première version de B-1386 : la pile était vidée pour
+    // toute carte, et Pipeline → carte « Tâches » → « Retour » menait à
+    // l'Accueil au lieu du Pipeline.
+    render(<ConversationCanvasPrototype />);
+    await act(async () => {
+      fireEvent.keyDown(window, { key: 'p', ctrlKey: true, metaKey: true });
+    });
+    await waitFor(() => expect(ecranAffiche()).toBe('crm'));
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Plus d’outils' }));
+    });
+    await screen.findByRole('heading', { name: 'Capacités' });
+    await act(async () => {
+      fireEvent.click(screen.getAllByRole('button', { name: /^Tâches/ })[0]);
+    });
+    await waitFor(() => expect(ecranAffiche()).toBe('tasks'));
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: 'Revenir à l’écran précédent' }));
+    });
+
+    await waitFor(() => expect(ecranAffiche()).toBe('crm'));
+  });
 });

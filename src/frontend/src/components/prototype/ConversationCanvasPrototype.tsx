@@ -1500,9 +1500,13 @@ export function ConversationCanvasPrototype() {
     setCommandOpen(false);
     setSelectedCapability(capability);
     fermerLeChat();
-    // B-1386 : la carte remplace la vue par l'accueil ; la pile le suit, sinon
-    // « Retour » ramenait ensuite à un écran déjà quitté.
-    if (embeddedView !== null) {
+    // B-1386 : une carte qui ne mène pas à une vue (panneau, demande à relire,
+    // parcours) remplace la vue par l'accueil ; la pile le suit, sinon
+    // « Retour » ramenait ensuite à un écran déjà quitté. Une carte qui mène
+    // à une vue, elle, empile l'écran d'où l'on vient (Pipeline → Tâches →
+    // « Retour » ramène au Pipeline).
+    const menerAUneVue = capability.destination?.kind === 'view' && capability.destination.view !== 'chat';
+    if (embeddedView !== null && !menerAUneVue) {
       panneauDOrigineRef.current = null;
       derniereVueRef.current = null;
       useNavigationStore.getState().retourAccueil();
