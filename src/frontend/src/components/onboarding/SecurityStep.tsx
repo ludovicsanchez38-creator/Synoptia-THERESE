@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   Shield,
@@ -73,6 +73,13 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
     setAcknowledged(false);
   }, [provider]);
   const [expanded, setExpanded] = useState<number | null>(null);
+  // B-1344 : un risque déplié en bas de liste restait sous le bord ; on
+  // l'amène sous les yeux une fois son explication rendue.
+  const risquesRef = useRef<(HTMLButtonElement | null)[]>([]);
+  useEffect(() => {
+    if (expanded === null) return;
+    risquesRef.current[expanded]?.scrollIntoView?.({ block: 'nearest' });
+  }, [expanded]);
   const cloudEnabled = provider !== null && provider !== 'ollama';
   // #294 : la table partagée couvre tous les fournisseurs (glm, kimi, qwen, minimax compris).
   const providerLabel = provider ? libelleDuFournisseur(provider) : null;
@@ -105,8 +112,8 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
         Les agents IA peuvent exécuter des commandes et agir via les tools que tu actives. Commence avec le minimum de permissions nécessaires.
       </Alerte>
 
-      {/* Risks list */}
-      <div className="space-y-2 max-h-[280px] overflow-y-auto px-2">
+      {/* Risks list. B-1344 : pas de défilement propre, l'assistant défile déjà. */}
+      <div className="space-y-2 px-2">
         {RISKS.map((risk, index) => {
           const Icon = risk.icon;
           const isExpanded = expanded === index;
@@ -114,6 +121,7 @@ export function SecurityStep({ provider, onNext, onBack }: SecurityStepProps) {
           return (
             <motion.button
               key={index}
+              ref={(element) => { risquesRef.current[index] = element; }}
               onClick={() => setExpanded(isExpanded ? null : index)}
               aria-expanded={isExpanded}
               className={cn(
