@@ -601,7 +601,9 @@ def parse_claude_md(content: str) -> UserProfile:
     return profile
 
 
-_CHAMPS_DE_FACTURATION = frozenset({"address", "siren", "tva_intra", "siret", "code_ape", "nda"})
+# B-1328 : la raison sociale va avec le SIRET sur la facture ; perdue seule,
+# la facture sortait au nom de la personne avec le SIRET de la société.
+_CHAMPS_DE_FACTURATION = frozenset({"company", "address", "siren", "tva_intra", "siret", "code_ape", "nda"})
 
 
 def _meme_personne(a: str, b: str) -> bool:

@@ -100,3 +100,37 @@ async def test_la_reponse_de_l_import_porte_la_facturation(client, tmp_path):
     assert reponse.status_code == 200, reponse.text
     corps = reponse.json()
     assert (corps["address"], corps["siret"], corps["nda"]) == ("12 rue de l'Exemple", "12345678900010", "93000000000"), corps
+
+
+@pytest.mark.asyncio
+async def test_une_variante_sans_marque_garde_la_raison_sociale(db_session, tmp_path):
+    """B-1328 : la raison sociale n'était pas protégée comme la facturation ;
+    une variante du nom sans ligne « Marque » gardait le SIRET mais perdait
+    la raison sociale, et la facture sortait au nom de la personne avec le
+    SIRET de la société. Lecteur ζ, passe 8."""
+    from app.services import user_profile as up
+
+    await up.set_user_profile(
+        db_session,
+        up.UserProfile(name="Marie Claire Exemple", company="Exemple SARL", siret="12345678900010"),
+        embed_in_qdrant=False,
+    )
+    fichier = tmp_path / "THERESE.md"
+    fichier.write_text("**Owner** : Marie-Claire Exemple\n", encoding="utf-8")
+    profil = await up.import_from_claude_md(db_session, str(fichier))
+    assert (profil.company, profil.siret) == ("Exemple SARL", "12345678900010"), profil
+
+
+@pytest.mark.asyncio
+async def test_la_meme_personne_retrouve_son_surnom_et_son_role(db_session, tmp_path):
+    """B-1329 : la reprise des champs pour la même personne n'était testée
+    nulle part (un _meme_personne toujours faux passait vert). Lecteur ζ."""
+    from app.services import user_profile as up
+
+    await up.set_user_profile(
+        db_session, up.UserProfile(name="Hélène Exemple", nickname="Léna", role="Coach"), embed_in_qdrant=False,
+    )
+    fichier = tmp_path / "THERESE.md"
+    fichier.write_text("**Owner** : helene EXEMPLE\n", encoding="utf-8")
+    profil = await up.import_from_claude_md(db_session, str(fichier))
+    assert (profil.nickname, profil.role) == ("Léna", "Coach"), profil
