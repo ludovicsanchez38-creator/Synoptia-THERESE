@@ -32,6 +32,20 @@ SYNOPTIA_COLORS = {
 }
 
 
+_TITRE_DIESE_RE = re.compile(r"^#{1,3}\s+(.+?)\s*$")
+_TITRE_GRAS_RE = re.compile(r"^(?:\*\*|__)(.+?)(?:\*\*|__)\s*:?\s*$")
+
+
+def _titre_de_diapositive(ligne: str) -> str | None:
+    """B-1457 : `#`, `##`, `###` ou une ligne entièrement en gras."""
+    for motif in (_TITRE_DIESE_RE, _TITRE_GRAS_RE):
+        trouve = motif.match(ligne)
+        if trouve:
+            titre = trouve.group(1).strip().rstrip(":").strip()
+            return titre or None
+    return None
+
+
 class PptxSkill(CodeGenSkill):
     """
     Skill de génération de présentations PowerPoint.
@@ -262,11 +276,15 @@ NE génère PAS de code Python. Écris directement le contenu textuel des slides
                 if not line:
                     continue
 
-                # Titre de slide
-                if line.startswith('# '):
-                    title = line[2:].strip()
-                elif line.startswith('## '):
-                    title = line[3:].strip()
+                # Titre de slide. B-1457 : un modèle local écrit ses titres en
+                # gras (« **Contexte** ») ou en `###` ; chaque titre ouvre sa
+                # diapositive, même sans séparateur `---`.
+                titre_lu = _titre_de_diapositive(line)
+                if titre_lu is not None:
+                    if title or points:
+                        slides.append({"title": title or "Slide", "points": points[:6]})
+                        points = []
+                    title = titre_lu
                 # Points
                 elif line.startswith('- ') or line.startswith('* '):
                     points.append(line[2:].strip())
