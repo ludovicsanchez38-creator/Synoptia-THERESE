@@ -600,6 +600,9 @@ def parse_claude_md(content: str) -> UserProfile:
     return profile
 
 
+_CHAMPS_DE_FACTURATION = frozenset({"address", "siren", "tva_intra", "siret", "code_ape", "nda"})
+
+
 def _meme_personne(a: str, b: str) -> bool:
     def _forme(nom: str) -> str:
         decompose = unicodedata.normalize("NFKD", nom or "")
@@ -640,10 +643,16 @@ async def import_from_claude_md(
     # (règle de B-1108, B-1125). Il ne porte ni adresse, ni SIREN, ni TVA, ni
     # SIRET, ni APE, ni NDA : l'import écrasait la facturation.
     existant = await get_user_profile(session)
-    # B-1317 : seulement pour la même personne (casse et accents repliés) ;
-    # un fichier qui en nomme une autre ne récupère ni surnom ni facturation.
-    if existant is not None and _meme_personne(existant.name, profile.name):
+    if existant is not None:
+        meme_personne = _meme_personne(existant.name, profile.name)
         for champ in fields(UserProfile):
+            # B-1319 : la facturation n'est jamais effacée par un fichier qui
+            # ne la porte pas (un critère strict de « même personne » la
+            # perdait pour un tiret ou un second prénom). B-1317 : le reste
+            # (surnom, rôle, lieu, courriel, contexte) n'est repris que pour
+            # la même personne.
+            if champ.name not in _CHAMPS_DE_FACTURATION and not meme_personne:
+                continue
             if not getattr(profile, champ.name) and getattr(existant, champ.name):
                 setattr(profile, champ.name, getattr(existant, champ.name))
 

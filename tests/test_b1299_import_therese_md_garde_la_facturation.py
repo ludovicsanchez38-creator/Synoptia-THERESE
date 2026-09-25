@@ -48,7 +48,28 @@ async def test_un_fichier_d_une_autre_personne_ne_recupere_rien(db_session, tmp_
     fichier = tmp_path / "THERESE.md"
     fichier.write_text("**Owner** : Paul Autre\n", encoding="utf-8")
     profil = await up.import_from_claude_md(db_session, str(fichier))
-    assert (profil.name, profil.nickname, profil.siret) == ("Paul Autre", "", ""), profil
+    # B-1319 : le surnom de l'autre personne n'est pas repris ; la facturation,
+    # elle, n'est jamais effacée par un fichier qui ne la porte pas.
+    assert (profil.name, profil.nickname, profil.siret) == ("Paul Autre", "", "12345678900010"), profil
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("nom_du_fichier", ["Marie-Claire Exemple", "Marie Claire Exemple Durand", "Marie"])
+async def test_une_variante_du_nom_garde_la_facturation(db_session, tmp_path, nom_du_fichier):
+    """B-1319 : régression de B-1317, le critère strict de « même personne »
+    effaçait la facturation pour un tiret, un second prénom ou un nom d'usage.
+    Lecteur γ, passe 7."""
+    from app.services import user_profile as up
+
+    await up.set_user_profile(
+        db_session,
+        up.UserProfile(name="Marie Claire Exemple", address="12 rue de l'Exemple", siret="12345678900010"),
+        embed_in_qdrant=False,
+    )
+    fichier = tmp_path / "THERESE.md"
+    fichier.write_text(f"**Owner** : {nom_du_fichier}\n", encoding="utf-8")
+    profil = await up.import_from_claude_md(db_session, str(fichier))
+    assert (profil.address, profil.siret) == ("12 rue de l'Exemple", "12345678900010"), profil
 
 
 @pytest.mark.asyncio
