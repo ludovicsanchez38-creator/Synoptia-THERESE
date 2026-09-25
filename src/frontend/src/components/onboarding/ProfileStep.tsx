@@ -6,7 +6,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { User, Upload, AlertCircle } from 'lucide-react';
+import { User, Upload, AlertCircle, ChevronDown, Receipt } from 'lucide-react';
 import { open } from '@tauri-apps/plugin-dialog';
 import * as api from '../../services/api';
 import { Button } from '../ui/Button';
@@ -54,7 +54,13 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
     email: '',
     location: '',
     context: '',
+    address: '',
+    siret: '',
+    tva_intra: '',
   });
+  // P-112 : la facturation se réglait ensuite, par une carte de l'Accueil puis
+  // un défilement dans Paramètres. Volet facultatif, replié par défaut.
+  const [factureAvecTherese, setFactureAvecTherese] = useState(false);
 
   useEffect(() => () => {
     if (continueTimerRef.current) clearTimeout(continueTimerRef.current);
@@ -80,7 +86,7 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
         setLoading(true);
         setError(null);
         const importedProfile = await api.importClaudeMd(selected);
-        setProfileForm({
+        setProfileForm((prev) => ({
           name: importedProfile.name || '',
           nickname: importedProfile.nickname || '',
           company: importedProfile.company || '',
@@ -88,7 +94,10 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
           email: importedProfile.email || '',
           location: importedProfile.location || '',
           context: importedProfile.context || '',
-        });
+          address: importedProfile.address || prev.address,
+          siret: importedProfile.siret || prev.siret,
+          tva_intra: importedProfile.tva_intra || prev.tva_intra,
+        }));
       }
     } catch (err) {
       // Le bandeau est partagé : un message qui ne parle pas du nom ne doit pas
@@ -126,6 +135,9 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
         email: profileForm.email,
         location: profileForm.location,
         context: profileForm.context,
+        address: profileForm.address.trim(),
+        siret: profileForm.siret.trim(),
+        tva_intra: profileForm.tva_intra.trim(),
       });
       saved = true;
       setSaveState('success');
@@ -261,6 +273,57 @@ export function ProfileStep({ onNext, onBack }: ProfileStepProps) {
             className="resize-none"
           />
         </FormField>
+
+        <div className="rounded-md border border-border">
+          <button
+            type="button"
+            aria-expanded={factureAvecTherese}
+            aria-controls="profile-facturation"
+            onClick={() => setFactureAvecTherese((ouvert) => !ouvert)}
+            className="flex min-h-9 w-full items-center gap-2 rounded-md px-3 py-2 text-left text-sm font-medium text-text hover:bg-surface-2 focus:outline-none focus:ring-2 focus:ring-ring"
+          >
+            <Receipt className="h-4 w-4 text-text-muted" aria-hidden="true" />
+            <span className="flex-1">Je facture avec THÉRÈSE <span className="font-normal text-text-muted">(facultatif)</span></span>
+            <ChevronDown className={`h-4 w-4 text-text-muted transition-transform ${factureAvecTherese ? 'rotate-180' : ''}`} aria-hidden="true" />
+          </button>
+          {factureAvecTherese && (
+            <div id="profile-facturation" className="space-y-4 border-t border-border px-3 py-3">
+              <p className="text-sm text-text-muted">
+                Ces mentions s’impriment sur tes devis et factures. Tu pourras les modifier dans Paramètres, rubrique Profil.
+              </p>
+              <FormField label="Adresse (facturation)" htmlFor="profile-address">
+                <Input
+                  id="profile-address"
+                  type="text"
+                  value={profileForm.address}
+                  onChange={(e) => setProfileForm((prev) => ({ ...prev, address: e.target.value }))}
+                  placeholder="Numéro, rue, code postal, ville"
+                />
+              </FormField>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <FormField label="SIRET (requis pour facturer)" htmlFor="profile-siret">
+                  <Input
+                    id="profile-siret"
+                    type="text"
+                    inputMode="numeric"
+                    value={profileForm.siret}
+                    onChange={(e) => setProfileForm((prev) => ({ ...prev, siret: e.target.value }))}
+                    placeholder="14 chiffres"
+                  />
+                </FormField>
+                <FormField label="TVA intracommunautaire" htmlFor="profile-tva">
+                  <Input
+                    id="profile-tva"
+                    type="text"
+                    value={profileForm.tva_intra}
+                    onChange={(e) => setProfileForm((prev) => ({ ...prev, tva_intra: e.target.value }))}
+                    placeholder="Facultatif"
+                  />
+                </FormField>
+              </div>
+            </div>
+          )}
+        </div>
 
         {/* Error */}
         {error && !nomEnFaute && <Alerte id="profile-step-erreur" icone={<AlertCircle className="h-4 w-4 text-error" />}>{error}</Alerte>}
