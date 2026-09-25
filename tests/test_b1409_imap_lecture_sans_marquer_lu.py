@@ -54,7 +54,7 @@ async def _appeler(operation: str):
         elif operation == "deplacer":
             await fournisseur.move_message("42", "Archives")
         elif operation == "piece_jointe":
-            with pytest.raises(Exception):
+            with pytest.raises(ValueError, match="not found"):
                 await fournisseur.get_attachment("42", "0")
     return boite
 
