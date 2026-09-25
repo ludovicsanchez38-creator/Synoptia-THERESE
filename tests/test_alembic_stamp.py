@@ -95,7 +95,9 @@ def _creer_tables_planning_reelles(db_path: Path) -> None:
     )
     engine.dispose()
 
-def _make_patched_tracked_db(db_path: Path, missing_column: str | None = None) -> None:
+def _make_patched_tracked_db(
+    db_path: Path, missing_column: str | None = None, sans_date_d_envoi: bool = False,
+) -> None:
     """Construit une DB ancienne dont les patches ad-hoc simulent le schéma head."""
     board_columns = [
         column
@@ -109,9 +111,12 @@ def _make_patched_tracked_db(db_path: Path, missing_column: str | None = None) -
     ]
     with closing(sqlite3.connect(str(db_path))) as conn:
         conn.execute("CREATE TABLE contacts (id VARCHAR PRIMARY KEY)")
+        # P-139 : la colonne sent_at fait partie du schéma patché de la tête.
         conn.execute(
             "CREATE TABLE invoices "
-            "(id VARCHAR PRIMARY KEY, currency TEXT, validite_jours INTEGER)"
+            "(id VARCHAR PRIMARY KEY, currency TEXT, validite_jours INTEGER"
+            + ("" if sans_date_d_envoi else ", sent_at TIMESTAMP")
+            + ")"
         )
         conn.execute("CREATE TABLE variables (id VARCHAR PRIMARY KEY)")
         conn.execute(
@@ -253,6 +258,16 @@ def test_realignement_db_trackee_ancienne_schema_patche(tmp_path):
 
     ensure_alembic_stamp(db)
     assert _read_stamp(db) == ALEMBIC_HEAD_REVISION
+
+
+def test_realignement_refuse_sans_la_date_d_envoi(tmp_path):
+    """P-139 : sans invoices.sent_at, ré-estampiller à la tête ferait sauter
+    la migration b8c9d0e1f2a3."""
+    db = tmp_path / "therese.db"
+    _make_patched_tracked_db(db, sans_date_d_envoi=True)
+
+    ensure_alembic_stamp(db)
+    assert _read_stamp(db) != ALEMBIC_HEAD_REVISION
 
 
 @pytest.mark.parametrize(

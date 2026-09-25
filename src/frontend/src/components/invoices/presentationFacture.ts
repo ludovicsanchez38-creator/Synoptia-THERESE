@@ -64,7 +64,10 @@ export function cellulesStatut(invoice: Invoice): {
 } {
   const issue = dateListe(invoice.issue_date);
   const due = dateListe(invoice.due_date);
-  const envoye = masculin(invoice.document_type) ? `Envoyé le ${issue}` : `Envoyée le ${issue}`;
+  // P-139 : la date du premier envoi quand le moteur la connaît ; sinon,
+  // pour une pièce ancienne, la date d'émission comme avant.
+  const dateEnvoi = invoice.sent_at ? dateListe(invoice.sent_at) : issue;
+  const envoye = masculin(invoice.document_type) ? `Envoyé le ${dateEnvoi}` : `Envoyée le ${dateEnvoi}`;
   const emis = masculin(invoice.document_type) ? `Émis le ${issue}` : `Émise le ${issue}`;
   // B-1449 : un brouillon n'est pas émis ; il porte seulement une date.
   const date = masculin(invoice.document_type) ? `Daté du ${issue}` : `Datée du ${issue}`;
@@ -145,7 +148,9 @@ export function cellulesStatut(invoice: Invoice): {
     // passait pour un état d'envoi ; la colonne dit que l'envoi n'est pas
     // tracé (P-139), l'émission reste en dessous.
     return {
-      envoi: { ton: 'neutre', texte: 'Envoi non tracé', sous: emis },
+      envoi: invoice.sent_at
+        ? { ton: 'info', texte: envoye, sous: emis }
+        : { ton: 'neutre', texte: 'Envoi non tracé', sous: emis },
       paiement: { ton: 'succes', texte },
       echeance: { texte: due, muted: true },
     };

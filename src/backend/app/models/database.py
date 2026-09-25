@@ -39,6 +39,8 @@ INVOICE_LEGACY_COLUMN_DEFINITIONS: dict[str, str] = {
     "converted_from_id": "TEXT",
     "validite_jours": "INTEGER",
     "payment_date": "TIMESTAMP",
+    # P-139 : date du premier envoi.
+    "sent_at": "TIMESTAMP",
 }
 
 BOARD_HISTORY_COLUMN_DEFINITIONS: dict[str, str] = {
@@ -614,7 +616,7 @@ def apply_adhoc_migrations(db_path) -> None:
 # Le test tests/test_alembic_stamp.py vérifie que cette constante suit la
 # vraie tête de src/backend/alembic/versions (épinglée en dur pour que
 # l'app PACKAGÉE puisse estampiller sans embarquer le dossier alembic/).
-ALEMBIC_HEAD_REVISION = "a7b8c9d0e1f2"
+ALEMBIC_HEAD_REVISION = "b8c9d0e1f2a3"
 
 
 def tables_de_synchronisation() -> tuple[str, ...]:
@@ -742,6 +744,8 @@ def ensure_alembic_stamp(db_path) -> None:
                     )
                     if (
                         "validite_jours" in inv_cols
+                        # P-139 : colonne apportée par b8c9d0e1f2a3.
+                        and "sent_at" in inv_cols
                         and {
                             "client_name",
                             "client_company",

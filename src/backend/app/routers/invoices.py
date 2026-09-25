@@ -288,6 +288,8 @@ def _invoice_to_response(invoice: Invoice) -> InvoiceResponse:
         converted_from_id=invoice.converted_from_id,
         validite_jours=invoice.validite_jours,
         payment_date=invoice.payment_date.isoformat() if invoice.payment_date else None,
+        # P-139 : toujours en UTC explicite (relue de SQLite, la date perd son fuseau).
+        sent_at=(invoice.sent_at if invoice.sent_at.tzinfo else invoice.sent_at.replace(tzinfo=UTC)).isoformat() if invoice.sent_at else None,
         created_at=invoice.created_at.isoformat(),
         updated_at=invoice.updated_at.isoformat(),
         lines=lines,
@@ -566,6 +568,7 @@ async def update_invoice(
         invoice.due_date = _date_du_client(request.due_date, "Date d'échéance")
 
     if request.status is not None:
+        _dater_le_premier_envoi(invoice, request.status)
         invoice.status = request.status
 
     if request.notes is not None:
@@ -656,6 +659,13 @@ async def delete_invoice(
     logger.info(f"Invoice deleted: {invoice_number}")
 
     return {"message": "Invoice deleted successfully"}
+
+
+def _dater_le_premier_envoi(invoice: Invoice, nouveau_statut: str) -> None:
+    """P-139 : la date du premier passage à « envoyé » est gardée, jamais
+    réécrite (un renvoi ou un aller-retour de statut ne la déplace pas)."""
+    if nouveau_statut == "sent" and invoice.sent_at is None:
+        invoice.sent_at = datetime.now(UTC)
 
 
 @router.patch("/{invoice_id}/mark-paid", response_model=InvoiceResponse)
@@ -1107,6 +1117,7 @@ async def update_devis_status(
     if invoice.document_type != "devis":
         raise HTTPException(status_code=400, detail="Ce document n'est pas un devis")
 
+    _dater_le_premier_envoi(invoice, new_status)
     invoice.status = new_status
     invoice.updated_at = datetime.now(UTC)
 

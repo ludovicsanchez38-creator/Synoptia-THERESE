@@ -821,6 +821,8 @@ class Invoice(SQLModel, table=True):
     converted_from_id: str | None = Field(default=None, index=True)  # ID du devis source si conversion
     validite_jours: int | None = Field(default=None)  # Duree de validite en jours (devis uniquement, defaut 30)
     payment_date: datetime | None = None
+    # P-139 : date du premier passage à « envoyé », jamais réécrite.
+    sent_at: datetime | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 

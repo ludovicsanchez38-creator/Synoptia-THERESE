@@ -41,6 +41,8 @@ export interface Invoice {
   converted_from_id: string | null;
   validite_jours: number | null;
   payment_date: string | null;
+  /** P-139 : date du premier envoi ; absente sur les pièces anciennes. */
+  sent_at?: string | null;
   created_at: string;
   updated_at: string;
   lines: InvoiceLine[];

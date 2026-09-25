@@ -165,7 +165,8 @@ def test_ensure_invoice_legacy_columns_is_idempotent(tmp_path: Path):
                 legal_mentions TEXT,
                 converted_from_id TEXT,
                 validite_jours INTEGER,
-                payment_date TIMESTAMP
+                payment_date TIMESTAMP,
+                sent_at TIMESTAMP
             )
             """
         )

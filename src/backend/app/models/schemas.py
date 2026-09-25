@@ -1260,6 +1260,7 @@ class InvoiceResponse(BaseModel):
     converted_from_id: str | None = None
     validite_jours: int | None = None  # Duree de validite en jours (devis)
     payment_date: str | None  # ISO datetime
+    sent_at: str | None = None  # P-139 : premier envoi, ISO datetime
     created_at: str  # ISO datetime
     updated_at: str  # ISO datetime
     lines: list[InvoiceLineResponse] = []
