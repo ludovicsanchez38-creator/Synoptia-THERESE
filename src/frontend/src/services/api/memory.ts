@@ -414,3 +414,53 @@ async function enregistrerLeTelechargement(blob: Blob, filename: string): Promis
 export async function listerLesSeancesDuContact(contactId: string): Promise<CalendarEvent[]> {
   return request<CalendarEvent[]>(`/api/memory/contacts/${encodeURIComponent(contactId)}/seances`);
 }
+
+/** P-130 : une ligne du tableur écartée ou signalée par le moteur. */
+export interface LigneDImport {
+  row: number;
+  column: string | null;
+  message: string;
+  data?: Record<string, unknown> | null;
+}
+
+export interface ApercuImportContacts {
+  total_rows: number;
+  sample_rows: Record<string, unknown>[];
+  detected_columns: string[];
+  column_mapping: Record<string, string>;
+  validation_errors: LigneDImport[];
+  can_import: boolean;
+}
+
+export interface ResultatImportContacts {
+  success: boolean;
+  created: number;
+  updated: number;
+  skipped: number;
+  errors: LigneDImport[];
+  total_rows: number;
+  message: string;
+}
+
+async function envoyerLeTableur<T>(chemin: string, fichier: File): Promise<T> {
+  const formData = new FormData();
+  formData.append('file', fichier);
+  const { API_BASE, apiFetch } = await import('./core');
+  const response = await apiFetch(`${API_BASE}${chemin}`, { method: 'POST', body: formData });
+  if (!response.ok) {
+    const d = await response.json().catch(() => ({}));
+    const raison = typeof d.detail === 'string' ? d.detail : typeof d.message === 'string' ? d.message : '';
+    throw new Error(raison || `Erreur ${response.status}`);
+  }
+  return response.json() as Promise<T>;
+}
+
+/** P-130 : aperçu sans écriture (colonnes reconnues, lignes écartées). */
+export function apercuImportContacts(fichier: File): Promise<ApercuImportContacts> {
+  return envoyerLeTableur<ApercuImportContacts>('/api/crm/import/contacts/preview', fichier);
+}
+
+/** P-130 : import d'un tableur CSV, Excel ou JSON (fiches existantes mises à jour). */
+export function importerContactsTableur(fichier: File): Promise<ResultatImportContacts> {
+  return envoyerLeTableur<ResultatImportContacts>('/api/crm/import/contacts', fichier);
+}

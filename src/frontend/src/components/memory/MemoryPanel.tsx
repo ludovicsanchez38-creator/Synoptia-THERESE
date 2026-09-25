@@ -20,6 +20,7 @@ import { useNavigationStore } from '../../stores/navigationStore';
 import { pushEscapeHandler } from '../../lib/escapeStack';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { Z_LAYER } from '../../styles/z-layers';
+import { ImportTableurModal } from './ImportTableurModal';
 
 const LIBELLES_PERIMETRE: Record<MemoryScope, string> = {
   global: 'Global',
@@ -115,6 +116,8 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
     error: contactsError,
   } = useContactsStore();
   const [loading, setLoading] = useState(false);
+  // P-130 : l'import d'un tableur (CSV, Excel, JSON), avec aperçu.
+  const [importTableurOuvert, setImportTableurOuvert] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   // P-052 : le raccourci « Rechercher dans les Contacts » demande le focus du
   // champ ; la demande est consommée ici, que le panneau soit monté avant ou
@@ -440,6 +443,15 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                   >
                     <Download size={18} />
                     Exporter (.vcf)
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="md"
+                    onClick={() => setImportTableurOuvert(true)}
+                    title="Importer des contacts depuis un tableur (CSV, Excel ou JSON)"
+                  >
+                    <Upload size={18} />
+                    Importer un tableur
                   </Button>
                   <Button
                     variant="ghost"
@@ -806,6 +818,15 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                   <Button
                     variant="ghost"
                     className="flex-1"
+                    onClick={() => setImportTableurOuvert(true)}
+                    title="Importer des contacts depuis un tableur (CSV, Excel ou JSON)"
+                  >
+                    <Upload className="w-4 h-4 mr-2" />
+                    Importer un tableur
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    className="flex-1"
                     onClick={handleExportVCF}
                     title="Exporter les contacts (.vcf)"
                   >
@@ -824,6 +845,12 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                 </div>
               </div>
             )}
+      {importTableurOuvert && (
+        <ImportTableurModal
+          onFermer={() => setImportTableurOuvert(false)}
+          onImporte={() => { void useContactsStore.getState().fetchContacts(); }}
+        />
+      )}
     </>
   );
 
