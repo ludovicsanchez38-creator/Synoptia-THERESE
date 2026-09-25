@@ -35,7 +35,7 @@ from app.services.llm import Message as LLMMessage
 from app.services.modeles_catalogue import frontier, max_tokens_recommande
 from app.services.ollama_capabilites import est_modele_ollama_cloud
 from app.services.user_profile import get_cached_profile
-from app.services.web_search import RechercheWebRefusee, WebSearchService
+from app.services.web_search import RechercheWebRefusee, get_web_search_service
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
@@ -275,7 +275,7 @@ class BoardService:
 
     def __init__(self, session: AsyncSession | None = None):
         self._session = session
-        self._web_search = WebSearchService()
+        self._web_search = get_web_search_service()  # B-1484 : moteur choisi
         # Revue jalon (F3) : persistance en vol, attendue par la route avant
         # tout verdict cancelled/done.
         self._persistance_en_cours: "asyncio.Task[None] | None" = None
