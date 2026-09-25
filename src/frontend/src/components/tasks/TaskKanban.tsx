@@ -300,6 +300,9 @@ function SortableTaskCard({ task, onClick, onStatusChange, maskTextFn }: Sortabl
       className="cursor-grab active:cursor-grabbing"
       {...attributes}
       {...listeners}
+      // B-1407 : le conteneur déplaçable porte le titre de la tâche (comme les
+      // cartes du Pipeline, B-877) ; il était un bouton sans nom.
+      aria-label={(maskTextFn ?? ((t: string) => t))(task.title) || 'Tâche'}
       onFocus={() => setFocusDansLaCarte(true)}
       onBlur={(event) => {
         // Passer d'une commande de la carte à l'autre ne referme rien :
