@@ -41,3 +41,15 @@ async def test_import_json_des_etiquettes_en_texte(client):
     assert resp.status_code == 200, resp.text
     fiche = next(c for c in (await client.get("/api/memory/contacts")).json() if c["id"] == "c-legacy")
     assert fiche["tags"] == ["vip", "client"], fiche
+
+
+@pytest.mark.parametrize(
+    ("texte", "attendu"),
+    [('["vip", "client"]', ["vip", "client"]), ('["Paris, France", "vip"]', ["Paris, France", "vip"]), ("[pas du json", ["[pas du json"])],
+)
+def test_un_texte_en_forme_de_liste_json_est_relu_comme_liste(texte, attendu):
+    """B-1287 : `etiquettes_lues` découpait sur ses virgules un texte en forme
+    de tableau JSON (« ["vip" », « "client"] »). Revue du diff, passe 6 (cas I)."""
+    from app.services.crm_utils import etiquettes_lues
+
+    assert etiquettes_lues(texte) == attendu

@@ -204,15 +204,32 @@ def etiquettes_lues(valeur: Any) -> list[str]:
     if isinstance(valeur, list):
         brutes: list[Any] = valeur
     elif isinstance(valeur, str):
+        # B-1287 : un texte en forme de tableau JSON se relit comme une liste,
+        # au lieu d'être découpé sur ses virgules.
+        liste = _liste_json(valeur)
+        if liste is not None:
+            return etiquettes_lues(liste)
         brutes = valeur.split(",")
     else:
         return []
     return [e.strip() for e in brutes if isinstance(e, str) and e.strip()]
 
 
+def _liste_json(texte: str) -> list[Any] | None:
+    if not texte.strip().startswith("["):
+        return None
+    try:
+        decode = json.loads(texte)
+    except ValueError:
+        return None
+    return decode if isinstance(decode, list) else None
+
+
 def etiquettes_ecartees(valeur: Any) -> int:
     """B-1286 : nombre d'étiquettes qu'`etiquettes_lues` écarte, pour le dire."""
-    if valeur is None or isinstance(valeur, str):
+    if isinstance(valeur, str):
+        valeur = _liste_json(valeur)
+    if valeur is None:
         return 0
     if isinstance(valeur, list):
         return sum(1 for e in valeur if not isinstance(e, str))
