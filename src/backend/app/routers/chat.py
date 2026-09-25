@@ -13,6 +13,7 @@ import time
 from pathlib import Path
 from typing import Any, AsyncGenerator
 
+import anyio
 from app.models.database import get_session
 from app.models.entities import Contact, Conversation, FileMetadata, Message, Project
 from app.models.processing import EtatTache as EtatTacheTraitement
@@ -2072,7 +2073,9 @@ async def _stream_response(
         # Déconnexion (GeneratorExit) = travail réellement arrêté ; toute
         # autre sortie non prévue est un échec. L'état terminal reste posé
         # par CE producteur, jamais par l'endpoint d'annulation.
-        if isinstance(sortie, GeneratorExit) or contexte_execution.annulation_observee():
+        # B-1461 : le départ du client arrive aussi en `CancelledError`
+        # (portée anyio annulée par Starlette) ; c'est un arrêt, pas un échec.
+        if isinstance(sortie, (GeneratorExit, asyncio.CancelledError)) or contexte_execution.annulation_observee():
             etat_generation["etat"] = EtatTacheTraitement.CANCELLED
         else:
             etat_generation["etat"] = EtatTacheTraitement.FAILED
@@ -2093,35 +2096,41 @@ async def _stream_response(
         # 3. et quoi qu'il arrive, retirer l'entrée du registre. Elle y restait
         #    quand `aclose()` levait : l'identifiant paraissait éternellement en
         #    cours de génération et faussait les annulations suivantes.
-        try:
-            for tache in (prochain, surveillance):
-                if tache is not None and not tache.done():
-                    tache.cancel()
-                    # `CancelledError` n'hérite pas d'`Exception` : les deux
-                    # sont nécessaires. Une erreur du producteur pendant sa
-                    # fermeture ne doit pas empêcher le nettoyage du registre.
-                    with contextlib.suppress(asyncio.CancelledError, Exception):
-                        await tache
-            with contextlib.suppress(Exception):
-                await producteur.aclose()
-        finally:
-            # Finding 4 : `finish_stream` n'était atteint qu'au bout du chemin
-            # nominal. Une annulation ou une déconnexion laissait le flux
-            # éternellement « actif » dans Réglages > Performances, et les
-            # statistiques ignoraient les flux arrêtés. L'appel est idempotent
-            # (`pop` sur le registre) : le doublon avec le chemin nominal est
-            # sans effet.
-            with contextlib.suppress(Exception):
-                get_performance_monitor().finish_stream(conversation_id)
-            _unregister_generation(
-                conversation_id, contexte=contexte_execution
-            )
-            if generation is not None:
+        # B-1461 : quand le client part, Starlette annule la portée anyio du
+        # flux, et chaque `await` de ce nettoyage était annulé à son tour : le
+        # producteur n'était pas attendu (texte partiel perdu), ni fermé, et
+        # l'état final n'était jamais écrit. Le nettoyage est abrité, borné à
+        # 5 s pour ne jamais retenir la requête.
+        with anyio.move_on_after(5, shield=True):
+            try:
+                for tache in (prochain, surveillance):
+                    if tache is not None and not tache.done():
+                        tache.cancel()
+                        # `CancelledError` n'hérite pas d'`Exception` : les deux
+                        # sont nécessaires. Une erreur du producteur pendant sa
+                        # fermeture ne doit pas empêcher le nettoyage du registre.
+                        with contextlib.suppress(asyncio.CancelledError, Exception):
+                            await tache
                 with contextlib.suppress(Exception):
-                    await generation.terminer(
-                        etat_generation["etat"],
-                        error=etat_generation.get("erreur"),
-                    )
+                    await producteur.aclose()
+            finally:
+                # Finding 4 : `finish_stream` n'était atteint qu'au bout du chemin
+                # nominal. Une annulation ou une déconnexion laissait le flux
+                # éternellement « actif » dans Réglages > Performances, et les
+                # statistiques ignoraient les flux arrêtés. L'appel est idempotent
+                # (`pop` sur le registre) : le doublon avec le chemin nominal est
+                # sans effet.
+                with contextlib.suppress(Exception):
+                    get_performance_monitor().finish_stream(conversation_id)
+                _unregister_generation(
+                    conversation_id, contexte=contexte_execution
+                )
+                if generation is not None:
+                    with contextlib.suppress(Exception):
+                        await generation.terminer(
+                            etat_generation["etat"],
+                            error=etat_generation.get("erreur"),
+                        )
 
 
 async def _persister_message_partiel(
