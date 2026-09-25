@@ -534,7 +534,7 @@ async def execute_create_contact(
             for champ, libelle in (
                 ("notes", "notes"),
                 ("address", "adresse"),
-                ("phone", "telephone"),
+                ("phone", "téléphone"),
                 ("email", "email"),
                 ("company", "entreprise"),
             )

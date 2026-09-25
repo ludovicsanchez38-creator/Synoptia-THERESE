@@ -175,7 +175,10 @@ async def _do_contact(
         return f"Impossible de créer le contact : {result['error']}"
     name = result.get("display_name", "contact")
     if result.get("already_existed"):
-        return f"Contact **{name}** déjà en mémoire, je le réutilise (pas de doublon)."
+        # B-1261 : ce qui a été saisi et n'est pas écrit est dit, comme /projet.
+        ignores = result.get("champs_ignores", [])
+        suite = f" Non appliqué : {', '.join(ignores)}." if ignores else ""
+        return f"Contact **{name}** déjà en mémoire, je le réutilise (pas de doublon).{suite}"
     return f"Contact **{name}** créé en mémoire."
 
 
