@@ -403,7 +403,9 @@ def _copier_si_conforme(source: Path, sha256_attendu: str) -> Path | None:
     import tempfile
 
     h = hashlib.sha256()
-    descripteur, chemin_copie = tempfile.mkstemp(prefix="therese-sync-")
+    # B-1371 : l'extracteur aiguille sur l'extension ; une copie sans suffixe
+    # rendait chaque fichier synchronisé illisible (aucun fragment indexé).
+    descripteur, chemin_copie = tempfile.mkstemp(prefix="therese-sync-", suffix=source.suffix)
     copie = Path(chemin_copie)
     try:
         with source.open("rb") as src, open(descripteur, "wb") as dst:
