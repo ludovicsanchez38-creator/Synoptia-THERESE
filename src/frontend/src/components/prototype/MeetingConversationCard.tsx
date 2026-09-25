@@ -22,6 +22,7 @@ import {
   type MeetingWorkspaceData,
 } from './usePrototypeMeetingData';
 import { Spinner } from '../ui/Spinner';
+import { libelleTypeActivite, presenterActivite } from '../../lib/activitesCrm';
 
 function libelleEvenementsCharges(n: number, incomplete?: boolean): string {
   const base = `${n} événement${n > 1 ? 's' : ''} sur 90 jours`;
@@ -409,7 +410,11 @@ function EventPreparation({
 
       <section>
         <div className="mb-2 text-xs font-semibold uppercase tracking-[0.14em] text-text-muted">Historique CRM disponible</div>
-        {activities.length > 0 ? <div className="space-y-2">{activities.slice(0, 5).map((activity) => <div key={activity.id} className="rounded-md border border-border bg-surface px-3 py-2.5"><strong className="block text-xs text-text">{activity.title}</strong><span className="mt-0.5 block text-xs text-text-muted">{new Date(activity.created_at).toLocaleDateString('fr-FR')} · {activity.type}</span>{activity.description && <p className="mt-1 whitespace-pre-wrap text-xs leading-5 text-text-muted">{activity.description}</p>}</div>)}</div> : <p className="rounded-md border border-border bg-surface p-3 text-xs text-text-muted">Aucune activité CRM reliée n’est disponible.</p>}
+        {activities.length > 0 ? <div className="space-y-2">{activities.slice(0, 5).map((activity) => {
+          // B-1353 : ni code de type, ni « Score: », ni « Raison: » à l'écran.
+          const { titre, description } = presenterActivite(activity);
+          return <div key={activity.id} className="rounded-md border border-border bg-surface px-3 py-2.5"><strong className="block text-xs text-text">{titre}</strong><span className="mt-0.5 block text-xs text-text-muted">{new Date(activity.created_at).toLocaleDateString('fr-FR')} · {libelleTypeActivite(activity.type)}</span>{description && <p className="mt-1 whitespace-pre-wrap text-xs leading-5 text-text-muted">{description}</p>}</div>;
+        })}</div> : <p className="rounded-md border border-border bg-surface p-3 text-xs text-text-muted">Aucune activité CRM reliée n’est disponible.</p>}
       </section>
 
       {context.unavailableSources.length > 0 && <div className="rounded-md border border-warning/40 bg-[var(--color-warning-tint)] p-3 text-xs text-warning">Source indisponible : {context.unavailableSources.join(', ')}.</div>}

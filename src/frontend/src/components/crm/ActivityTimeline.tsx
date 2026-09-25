@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Phone, Users, FileText, TrendingUp, ArrowRight } from 'lucide-react';
 import { listActivities, type ActivityResponse } from '../../services/api';
+import { presenterActivite } from '../../lib/activitesCrm';
 import { EtatVide } from '../ui/EtatVide';
 import { Squelette } from '../ui/Squelette';
 
@@ -33,27 +34,8 @@ const ACTIVITY_COLORS = {
   score_change: 'text-agent-magenta',
 };
 
-// B-566 : `extra_data` est une chaîne JSON sérialisée côté serveur. Brute,
-// elle n'apporte rien de plus que la description. Un changement de score
-// devient une phrase ; tout le reste se tait plutôt que de s'afficher en JSON.
-function detailLisible(activity: ActivityResponse): string | null {
-  if (activity.type !== 'score_change' || !activity.extra_data) return null;
-  try {
-    const { old_score, new_score } = JSON.parse(activity.extra_data) as { old_score?: number; new_score?: number };
-    if (typeof old_score === 'number' && typeof new_score === 'number') {
-      return `Score recalculé : ${old_score} → ${new_score}`;
-    }
-  } catch {
-    // JSON illisible : rien de brut à l'écran.
-  }
-  return null;
-}
-
-function DetailDActivite({ activity }: { activity: ActivityResponse }) {
-  const detail = detailLisible(activity);
-  if (!detail) return null;
-  return <div className="mt-2 text-xs text-text-muted opacity-70">{detail}</div>;
-}
+// B-566 puis B-1353 : `extra_data` (JSON brut), « Score: » et « Raison: »
+// ne s'affichent jamais ; `presenterActivite` en fait des phrases.
 
 export function ActivityTimeline({ contactId }: ActivityTimelineProps) {
   const [activities, setActivities] = useState<ActivityResponse[]>([]);
@@ -111,6 +93,7 @@ export function ActivityTimeline({ contactId }: ActivityTimelineProps) {
         // Une trace retirée par son auteur reste lisible, mais elle ne doit
         // pas se lire comme un fait courant.
         const annulee = activity.statut === 'annulee';
+        const { titre, description } = presenterActivite(activity);
 
         return (
           <motion.div
@@ -137,7 +120,7 @@ export function ActivityTimeline({ contactId }: ActivityTimelineProps) {
                   <h4
                     className={`font-medium text-text-primary${annulee ? ' line-through opacity-60' : ''}`}
                   >
-                    {activity.title}
+                    {titre}
                   </h4>
                   <span className="text-xs text-text-muted whitespace-nowrap ml-2">
                     {formatDate(activity.created_at)}
@@ -152,13 +135,11 @@ export function ActivityTimeline({ contactId }: ActivityTimelineProps) {
                   </p>
                 )}
 
-                {activity.description && (
+                {description && (
                   <p className={`text-sm text-text-muted${annulee ? ' line-through opacity-60' : ''}`}>
-                    {activity.description}
+                    {description}
                   </p>
                 )}
-
-                <DetailDActivite activity={activity} />
               </div>
             </div>
           </motion.div>

@@ -24,4 +24,13 @@ describe('ActivityTimeline : changement de score lisible (B-566)', () => {
     await waitFor(() => expect(screen.getByText(/Score recalculé : 80 → 90/)).toBeInTheDocument());
     expect(document.body.textContent).not.toContain('"old_score"');
   });
+
+  it('B-1353 : ni « Score: », ni « Raison: », et le motif est une phrase', async () => {
+    render(<ActivityTimeline contactId="c1" />);
+    await waitFor(() => expect(screen.getByText(/Score recalculé : 80 → 90/)).toBeInTheDocument());
+    const texte = document.body.textContent ?? '';
+    expect(texte).not.toContain('Score:');
+    expect(texte).not.toContain('Raison:');
+    expect(texte).toContain('Motif : devis accepté');
+  });
 });
