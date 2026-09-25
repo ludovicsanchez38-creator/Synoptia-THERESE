@@ -1559,7 +1559,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         </p>}
         {showKeyboardHints && <p className="text-xs text-text-muted">
           <kbd className="px-1 rounded-sm bg-surface-elevated">{/Mac|iPhone|iPad/.test(navigator.platform) ? '⌘' : 'Ctrl'}</kbd>+
-          <kbd className="px-1 rounded-sm bg-surface-elevated">K</kbd> commandes
+          <kbd className="px-1 rounded-sm bg-surface-elevated">K</kbd> rechercher
         </p>}
         {lastSavedAt && (
           <SavedIndicator savedAt={lastSavedAt} />

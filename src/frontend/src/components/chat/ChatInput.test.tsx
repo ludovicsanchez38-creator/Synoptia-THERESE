@@ -116,11 +116,12 @@ describe('ChatInput sans modèle', () => {
     render(<ChatInput />);
     await screen.findByPlaceholderText(PLACEHOLDER_COMPOSEUR);
     expect(screen.getByText(/nouvelle ligne/)).toBeInTheDocument();
-    expect(screen.getByText(/commandes/)).toBeInTheDocument();
+    // B-1375 : ⌘K s'annonce « rechercher », comme le bouton de l'en-tête.
+    expect(screen.getByText(/\brechercher\b/)).toBeInTheDocument();
 
     act(() => useAccessibilityStore.setState({ showKeyboardHints: false }));
     expect(screen.queryByText(/nouvelle ligne/)).not.toBeInTheDocument();
-    expect(screen.queryByText(/commandes/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/\brechercher\b/)).not.toBeInTheDocument();
   });
 
   it('demande le consentement au premier envoi cloud en nommant le fournisseur et les données', async () => {

@@ -37,7 +37,8 @@ export const SHORTCUT_GROUPS: ShortcutGroup[] = [
   {
     title: 'Navigation',
     shortcuts: [
-      { keys: '⌘ + K', description: 'Palette de commandes', pendantLaSaisie: true },
+      // B-1375 : le même nom que le dialogue qu'il ouvre.
+      { keys: '⌘ + K', description: 'Rechercher une commande ou une capacité', pendantLaSaisie: true },
       { keys: '⌘ + /', description: 'Raccourcis clavier', pendantLaSaisie: true },
       { keys: '⌘ + B', description: 'Liste des conversations' },
       { keys: '⌘ + M', description: 'Contacts' },

@@ -30,7 +30,8 @@ describe('ShortcutsModal - glyphe modificateur selon la plateforme', () => {
     setPlatform('Win32');
     render(<ShortcutsModal isOpen={true} onClose={() => {}} />);
 
-    expect(screen.getByText('Palette de commandes')).toBeTruthy();
+    // B-1375 : ⌘K porte le nom du dialogue qu'il ouvre.
+    expect(screen.getByText('Rechercher une commande ou une capacité')).toBeTruthy();
     expect(document.body.textContent).not.toContain('⌘');
     expect(screen.getAllByText('Ctrl').length).toBeGreaterThan(0);
   });

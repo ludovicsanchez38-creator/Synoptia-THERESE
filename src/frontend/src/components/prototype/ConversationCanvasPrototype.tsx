@@ -525,7 +525,8 @@ function CommandPalette({
         ref={dialogRef}
         role="dialog"
         aria-modal="true"
-        aria-label="Rechercher dans Thérèse"
+        // B-1375 : un nom pour ⌘K, qui dit ce qu'il parcourt.
+        aria-label="Rechercher une commande ou une capacité"
         tabIndex={-1}
         initial={{ y: -12, scale: 0.98 }}
         animate={{ y: 0, scale: 1 }}
@@ -645,7 +646,11 @@ function CommandPalette({
             );
           })}
           {visibleCapabilities.length === 0 && visibleActions.length === 0 && (
-            <div className="px-4 py-8 text-center text-sm text-text-muted">Aucune capacité trouvée.</div>
+            <div className="px-4 py-8 text-center text-sm text-text-muted">
+              Aucune commande ni capacité ne correspond.
+              {/* B-1375 : dire la limite plutôt que laisser croire à une recherche générale. */}
+              <span className="mt-1 block">Cette recherche ne parcourt pas encore tes contacts, conversations ni documents.</span>
+            </div>
           )}
           {visibleActions.length > 0 && (
             <>
