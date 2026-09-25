@@ -1,4 +1,4 @@
-import { lazy, Suspense, useRef } from 'react';
+import { lazy, Suspense, useEffect, useRef } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import type { AppView } from '../../stores/navigationStore';
 import { usePanelStore } from '../../stores/panelStore';
@@ -26,6 +26,18 @@ export const viewLabels: Record<Exclude<AppView, 'chat'>, string> = {
   documents: 'Documents',
 };
 
+/**
+ * Un élément de l'ancien écran reste dans le DOM le temps que le nouveau se
+ * charge : Suspense le masque (`display: none`) sans le retirer, et le
+ * navigateur lui retire ensuite le focus.
+ */
+function estAffiche(element: HTMLElement, racine: HTMLElement | null): boolean {
+  for (let noeud: HTMLElement | null = element; noeud && noeud !== racine; noeud = noeud.parentElement) {
+    if (noeud.hidden || getComputedStyle(noeud).display === 'none') return false;
+  }
+  return true;
+}
+
 export function PrototypeUnifiedViewCanvas({
   view,
   onClose,
@@ -45,6 +57,21 @@ export function PrototypeUnifiedViewCanvas({
     isolateBackground: false,
     piegeClavier: false,
   });
+
+  // B-1370 (Hugo, Zoé, cycle 13) : la vue reste montée d'un écran à l'autre,
+  // et le focus initial ci-dessus ne joue qu'au montage. ⌘T depuis Contacts
+  // laissait le focus sur la page (l'élément focalisé partait avec l'ancien
+  // écran) ou sur le rail. Le titre du nouvel écran le reprend, sauf si un
+  // élément encore présent dans la vue le tient déjà.
+  const vuePrecedente = useRef(view);
+  useEffect(() => {
+    if (vuePrecedente.current === view) return;
+    vuePrecedente.current = view;
+    const actif = document.activeElement;
+    const tenuDansLaVue =
+      actif instanceof HTMLElement && actif !== document.body && dialogRef.current?.contains(actif) && estAffiche(actif, dialogRef.current);
+    if (!tenuDansLaVue) document.getElementById('prototype-unified-view-title')?.focus();
+  }, [view]);
 
   return (
     <section ref={dialogRef} role="region" aria-labelledby="prototype-unified-view-title" tabIndex={-1} className="relative flex min-w-0 flex-1 flex-col overflow-hidden bg-bg" data-testid="prototype-unified-view" data-view={view}>
