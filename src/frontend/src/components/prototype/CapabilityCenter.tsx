@@ -558,9 +558,11 @@ export function TrustCenter({
         animate={{ y: 0, opacity: 1 }}
         exit={{ y: -8, opacity: 0 }}
         onClick={(event) => event.stopPropagation()}
-        className="absolute left-4 right-4 top-[62px] overflow-hidden rounded-md border border-border bg-surface shadow-lg sm:left-auto sm:w-[360px]"
+        // B-1415 : borné à la fenêtre ; seul le corps défile, l'en-tête et les
+        // boutons du pied restent visibles.
+        className="absolute left-4 right-4 top-[62px] flex max-h-[calc(100dvh-78px)] flex-col overflow-hidden rounded-md border border-border bg-surface shadow-lg sm:left-auto sm:w-[360px]"
       >
-        <div className="flex items-start gap-3 border-b border-border bg-accent-tint px-4 py-4">
+        <div className="flex shrink-0 items-start gap-3 border-b border-border bg-accent-tint px-4 py-4">
           <span className="grid h-9 w-9 place-items-center rounded-full bg-surface text-accent shadow-sm">
             <ShieldCheck className="h-[18px] w-[18px]" />
           </span>
@@ -572,6 +574,7 @@ export function TrustCenter({
             <X className="h-3.5 w-3.5" />
           </Button>
         </div>
+        <div data-testid="confiance-corps" className="min-h-0 flex-1 overflow-y-auto">
         <div
           data-testid="confiance-etat-actuel"
           role="status"
@@ -586,7 +589,8 @@ export function TrustCenter({
           <TrustRow icon={<Gauge className="h-3.5 w-3.5" />} title="Coûts et limites" value="Seules les consommations réellement mesurées sont présentées comme telles." />
           <TrustRow icon={<ShieldCheck className="h-3.5 w-3.5" />} title="RGPD" value="Export global et droits par contact accessibles depuis Confidentialité et le CRM." />
         </div>
-        <div className="grid grid-cols-2 gap-2 border-t border-border bg-surface-2 p-3">
+        </div>
+        <div className="grid shrink-0 grid-cols-2 gap-2 border-t border-border bg-surface-2 p-3">
           <Button type="button" variant="secondary" onClick={onOpenPrivacy}>Confidentialité</Button>
           <Button type="button" onClick={onOpenAdvanced}>Paramètres</Button>
         </div>
