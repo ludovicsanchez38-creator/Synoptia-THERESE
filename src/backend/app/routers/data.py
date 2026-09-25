@@ -714,6 +714,9 @@ async def _supprimer_toutes_les_donnees(session: AsyncSession) -> dict[str, Any]
     _oublier_les_cles_en_memoire()
 
     # Purger Qdrant (embeddings vectoriels)
+    # B-1469 : un index qui n'a pas pu être vidé se dit à l'écran ; il restait
+    # nominatif (profil, contacts) sans aucun message.
+    index_vide = True
     try:
         from app.services.qdrant import get_qdrant_service
         from qdrant_client.models import Filter, FilterSelector
@@ -733,6 +736,9 @@ async def _supprimer_toutes_les_donnees(session: AsyncSession) -> dict[str, Any]
                 # B-1224 : collection absente, rien à retirer ; la recréation
                 # plus bas ne doit pas être sautée.
                 pass
+            except Exception:
+                index_vide = False
+                raise
             try:
                 qdrant.client.delete_collection(settings.qdrant_collection)
             except Exception:
@@ -745,6 +751,7 @@ async def _supprimer_toutes_les_donnees(session: AsyncSession) -> dict[str, Any]
             # perdait en silence. La collection repart vide.
             qdrant._ensure_collection()
     except Exception:
+        index_vide = False
         logger.warning("Impossible de purger la collection Qdrant", exc_info=True)
 
     # Revue 0.40 : « toutes mes données » doit couvrir les fichiers sur disque
@@ -794,12 +801,18 @@ async def _supprimer_toutes_les_donnees(session: AsyncSession) -> dict[str, Any]
         )
     else:
         note = "Les logs d'audit sont conservés pour des raisons légales"
+    if not index_vide:
+        note = (
+            f"{note.rstrip('.')}. Attention : l'index de recherche n'a pas pu être vidé. "
+            "Redémarre THÉRÈSE, puis relance « Effacer toutes mes données »."
+        )
 
     return {
         "deleted": True,
         "message": "Toutes tes données ont été supprimées conformément au RGPD Art. 17",
         "note": note,
         "backups_kept": backups_kept,
+        "index_vide": index_vide,
     }
 
 
@@ -1558,6 +1571,14 @@ async def restore_backup(
         # admis avant le verrou sont terminés. Les pools sont disposés AVANT
         # l'archive de sécurité et, surtout, avant toute extraction.
         await close_db()
+        # B-1469 : le client Qdrant aussi. Sinon il garde une connexion vers
+        # le fichier que la restauration remplace, et toute écriture
+        # vectorielle échoue ensuite (« readonly database »), purge comprise :
+        # les noms restaient dans l'index après « Effacer toutes mes données ».
+        # Le prochain accès le rouvre sur les fichiers restaurés.
+        from app.services.qdrant import close_qdrant
+
+        await close_qdrant()
 
         try:
             safety_included = _create_archive(safety_archive)
