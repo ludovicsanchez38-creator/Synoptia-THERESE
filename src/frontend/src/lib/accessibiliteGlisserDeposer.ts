@@ -40,15 +40,20 @@ export function annoncesGlisserDeposer(libelle: LibelleParIdentifiant): Announce
 
   return {
     onDragStart: ({ active }) => `Élément saisi : ${nom(active.id)}.`,
+    // B-1441 : à la saisie au clavier, la carte est au-dessus d'elle-même.
     onDragOver: ({ active, over }) =>
       over
-        ? `${nom(active.id)} est au-dessus de ${nom(over.id)}.`
+        ? over.id === active.id
+          ? `${nom(active.id)} est à sa place de départ.`
+          : `${nom(active.id)} est au-dessus de ${nom(over.id)}.`
         : `${nom(active.id)} n’est plus au-dessus d’une zone de dépôt.`,
     // B-1390 : « la carte de … a été déposé » faisait une faute d'accord ;
     // une tournure sans participe vaut pour tous les noms.
     onDragEnd: ({ active, over }) =>
       over
-        ? `Dépôt effectué : ${nom(active.id)}, sur ${nom(over.id)}.`
+        ? over.id === active.id
+          ? `${nom(active.id)} reste à sa place.`
+          : `Dépôt effectué : ${nom(active.id)}, sur ${nom(over.id)}.`
         : `Relâché sans dépôt : ${nom(active.id)}.`,
     onDragCancel: ({ active }) =>
       `Déplacement annulé : ${nom(active.id)} retrouve sa place.`,
