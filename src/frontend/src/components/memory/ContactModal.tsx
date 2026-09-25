@@ -131,7 +131,12 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
 
       // Via le store unique : la création/édition se reflète aussitôt Mémoire ET CRM (P4).
       if (isEditing && contact) {
-        await useContactsStore.getState().updateContact(contact.id, payload);
+        // B-1391 : la version lue ; si la fiche a changé ailleurs (autre
+        // onglet, chat), le moteur refuse au lieu d'écraser, et la saisie reste.
+        await useContactsStore.getState().updateContact(contact.id, {
+          ...payload,
+          version_lue: contact.updated_at,
+        });
       } else {
         await useContactsStore.getState().createContact(payload);
       }

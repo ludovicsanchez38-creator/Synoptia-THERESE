@@ -18,6 +18,9 @@ import {
 } from '../services/api/memory';
 import { replierPourRecherche } from '../lib/replierPourRecherche';
 
+/** B-1391 : une mise à jour peut porter la version lue par le formulaire. */
+export type MiseAJourDeContact = Partial<Contact> & { version_lue?: string };
+
 /** Plafond du GET /contacts (le=200). Atteint = liste incomplète. */
 export const PLAFOND_CONTACTS = 200;
 
@@ -34,7 +37,7 @@ interface ContactsStore {
 
   fetchContacts: () => Promise<void>;
   createContact: (data: Partial<Contact>) => Promise<Contact>;
-  updateContact: (id: string, patch: Partial<Contact>) => Promise<void>;
+  updateContact: (id: string, patch: MiseAJourDeContact) => Promise<void>;
   deleteContact: (id: string) => Promise<void>;
   search: (query: string) => Promise<void>;
   setSelectedContact: (id: string | null) => void;

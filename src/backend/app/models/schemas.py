@@ -368,6 +368,10 @@ class ContactUpdate(BaseModel):
     # `None` = ne pas toucher au périmètre existant.
     scope: str | None = None  # global | project | conversation
     scope_id: str | None = None
+    # B-1391 : la date `updated_at` de la version lue par le formulaire. Si la
+    # fiche a changé depuis (autre onglet, chat), l'enregistrement est refusé
+    # au lieu d'écraser en silence. `None` = pas de contrôle (chat, CRM).
+    version_lue: datetime | None = None
 
     @field_validator("scope")
     @classmethod

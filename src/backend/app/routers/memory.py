@@ -9,7 +9,7 @@ import json
 import logging
 import time
 from pathlib import Path
-from typing import Any, Literal
+from typing import TYPE_CHECKING, Any, Literal
 
 from app.models.database import get_session
 from app.models.entities import Contact, Conversation, FileMetadata, Project
@@ -34,6 +34,8 @@ from sqlalchemy import func
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
 
+if TYPE_CHECKING:
+    from datetime import datetime
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
@@ -962,6 +964,22 @@ async def lire_la_fiche(
     return {**fiche, "consigne": CONSIGNE_DE_LECTURE}
 
 
+MESSAGE_FICHE_MODIFIEE_AILLEURS = (
+    "Cette fiche a été modifiée ailleurs depuis que tu l'as ouverte (un autre "
+    "onglet, ou Thérèse depuis le chat). Rien n'a été enregistré : ferme la "
+    "fiche, rouvre-la pour voir la version à jour, puis refais ta modification."
+)
+
+
+def _instant_utc_naif(instant: "datetime | None") -> "datetime | None":
+    """B-1391 : SQLite rend des dates naïves (UTC) ; le client renvoie celle qu'il a lue."""
+    from datetime import UTC
+
+    if instant is None or instant.tzinfo is None:
+        return instant
+    return instant.astimezone(UTC).replace(tzinfo=None)
+
+
 @router.patch("/contacts/{contact_id}", response_model=ContactResponse)
 async def update_contact(
     contact_id: str,
@@ -977,6 +995,11 @@ async def update_contact(
 
     # Update fields
     update_data = request.model_dump(exclude_unset=True)
+    # B-1391 : le formulaire dit quelle version il a lue ; une fiche changée
+    # depuis n'est pas écrasée avec des champs périmés.
+    version_lue = update_data.pop("version_lue", None)
+    if version_lue is not None and _instant_utc_naif(version_lue) != _instant_utc_naif(contact.updated_at):
+        raise HTTPException(status_code=409, detail=MESSAGE_FICHE_MODIFIEE_AILLEURS)
     # B-313 : `stage` est NOT NULL en base. Un client qui envoie explicitement
     # null exprime l'absence de changement, comme lorsque le champ est omis ;
     # laisser None atteindre SQLite transformait une saisie tolerable en 500.

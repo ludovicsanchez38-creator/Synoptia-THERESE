@@ -96,7 +96,8 @@ export async function createContact(
 
 export async function updateContact(
   id: string,
-  data: Partial<Contact>
+  // B-1391 : `version_lue` = updated_at de la version affichée (409 si périmée).
+  data: Partial<Contact> & { version_lue?: string }
 ): Promise<Contact> {
   return request<Contact>(`/api/memory/contacts/${id}`, {
     method: 'PATCH',
