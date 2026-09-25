@@ -1211,6 +1211,10 @@ async def import_claude_md(
             status_code=404,
             detail="Fichier THERESE.md introuvable à ce chemin, vérifie-le.",
         ) from e
+    except ValueError as e:
+        # B-1330 : un fichier sans nom (ou un chemin qui n'est pas un fichier)
+        # répondait 500 « réessaie ».
+        raise HTTPException(status_code=422, detail=str(e)) from e
 
     # Update cache
     set_cached_profile(profile)

@@ -634,13 +634,13 @@ async def import_from_claude_md(
         raise FileNotFoundError(f"File not found: {file_path}")
 
     if not path.is_file():
-        raise ValueError(f"Not a file: {file_path}")
+        raise ValueError("Ce chemin ne désigne pas un fichier THERESE.md.")
 
     content = path.read_text(encoding="utf-8")
     profile = parse_claude_md(content)
 
     if not profile.name:
-        raise ValueError("Could not extract user name from THERESE.md")
+        raise ValueError("Aucun nom trouvé dans ce THERESE.md : ajoute une ligne « **Owner** : ton nom ».")
 
     # B-1299 : le fichier fait foi pour ce qu'il dit, pas pour ce qu'il tait
     # (règle de B-1108, B-1125). Il ne porte ni adresse, ni SIREN, ni TVA, ni

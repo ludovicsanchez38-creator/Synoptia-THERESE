@@ -134,3 +134,14 @@ async def test_la_meme_personne_retrouve_son_surnom_et_son_role(db_session, tmp_
     fichier.write_text("**Owner** : helene EXEMPLE\n", encoding="utf-8")
     profil = await up.import_from_claude_md(db_session, str(fichier))
     assert (profil.nickname, profil.role) == ("Léna", "Coach"), profil
+
+
+@pytest.mark.asyncio
+async def test_un_fichier_sans_owner_est_refuse_lisiblement(client, tmp_path):
+    """B-1330 : un THERESE.md sans ligne « Owner » faisait répondre 500
+    « réessaie » (seul FileNotFoundError était traduit). Lecteur ζ, passe 8."""
+    fichier = tmp_path / "THERESE.md"
+    fichier.write_text("**Marque** : Exemple SARL\n", encoding="utf-8")
+    reponse = await client.post("/api/config/profile/import-claude-md", json={"file_path": str(fichier)})
+    assert reponse.status_code == 422, reponse.text
+    assert "Owner" in reponse.text and "nom" in reponse.text, reponse.text
