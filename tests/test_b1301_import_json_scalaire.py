@@ -32,3 +32,12 @@ async def test_un_json_illisible_repond_en_francais(db_session, contenu):
     UnicodeDecodeError) remontait tel quel. Lecteur δ, passe 7."""
     res = await CRMImportService(db_session).import_contacts(contenu, filename="c.json")
     assert res.message.startswith("Import impossible : Fichier JSON illisible"), res.message
+
+
+@pytest.mark.asyncio
+async def test_un_json_avec_bom_est_lu(db_session):
+    """B-1339 : un JSON valide précédé d'un BOM UTF-8 (fréquent sous Windows)
+    était refusé comme illisible. Lecteur ε, passe 8."""
+    contenu = b'\xef\xbb\xbf[{"first_name": "Marie", "last_name": "Exemple"}]'
+    res = await CRMImportService(db_session).import_contacts(contenu, filename="c.json")
+    assert res.created == 1, res.message
