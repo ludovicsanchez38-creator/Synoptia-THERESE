@@ -188,3 +188,22 @@ describe('BUG-037 - Croix de fermeture du wizard email', () => {
     });
   });
 });
+
+describe('B-1482 : fermer l’assistant rend le focus à « Configurer un compte »', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockGetEmailAuthStatus.mockResolvedValue({ accounts: [] });
+    mockToggleEmailPanel = vi.fn();
+  });
+
+  it('le focus revient au bouton qui l’a ouvert', async () => {
+    const { EmailPanel } = await import('./EmailPanel');
+    render(<EmailPanel standalone />);
+    const bouton = await screen.findByRole('button', { name: 'Configurer un compte' });
+    bouton.focus();
+    fireEvent.click(bouton);
+    await screen.findByTestId('email-setup-wizard');
+    fireEvent.click(screen.getByTestId('wizard-cancel-btn'));
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Configurer un compte' })).toHaveFocus());
+  });
+});

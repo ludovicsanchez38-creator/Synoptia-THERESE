@@ -82,9 +82,18 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
   // B-1436 : dans l'écran intégré, l'assistant ne s'ouvre plus d'office par-
   // dessus la vue (son voile cachait « Retour ») ; seulement sur demande
   // (« Brancher mes mails »). Le panneau modal classique garde l'ouverture.
+  // B-1482 : l'assistant remplace l'état vide ; à sa fermeture, le bouton
+  // « Configurer un compte » est remonté neuf et le focus tombait sur la page.
+  const boutonConfigurerRef = useRef<HTMLButtonElement>(null);
+  const rendreLeFocusAuBoutonRef = useRef(false);
   const [showSetupWizard, setShowSetupWizard] = useState(
     () => !standalone || consommerLaDemandeDeConnexionEmail(),
   );
+  useEffect(() => {
+    if (showSetupWizard || !rendreLeFocusAuBoutonRef.current) return;
+    rendreLeFocusAuBoutonRef.current = false;
+    boutonConfigurerRef.current?.focus();
+  }, [showSetupWizard]);
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Load accounts on mount/open (standalone ou modal)
@@ -422,7 +431,7 @@ export function EmailPanel({ standalone = false }: EmailPanelProps) {
               />
             </div>
           ) : !isConnected ? (
-            <EtatVide className="flex-1 self-center" titre="Aucun compte email configuré" action={<Button variant="primary" size="sm" onClick={() => setShowSetupWizard(true)}>Configurer un compte</Button>}>Connecte Gmail ou un compte IMAP/SMTP pour commencer.</EtatVide>
+            <EtatVide className="flex-1 self-center" titre="Aucun compte email configuré" action={<Button ref={boutonConfigurerRef} variant="primary" size="sm" onClick={() => { rendreLeFocusAuBoutonRef.current = true; setShowSetupWizard(true); }}>Configurer un compte</Button>}>Connecte Gmail ou un compte IMAP/SMTP pour commencer.</EtatVide>
           ) : isComposing ? (
             <EmailCompose />
           ) : (
