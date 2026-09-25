@@ -49,6 +49,10 @@ describe('P-115 : où vit un contact', () => {
     expect(within(filtres).queryByRole('button', { name: 'Conv.' })).toBeNull();
     expect(screen.getByTestId('aide-perimetre')).toHaveTextContent(/visible dans toutes les conversations/);
     expect(screen.getByTestId('aide-perimetre')).toHaveTextContent(/conversation rattachée à un projet/);
+    // Relecture : un contact de projet se voit aussi en mode « Tous les projets »
+    // (memory_tools._cloison_contacts), et une fiche de conversation nulle part ailleurs.
+    expect(screen.getByTestId('aide-perimetre')).toHaveTextContent(/« Tous les projets »/);
+    expect(screen.getByTestId('aide-perimetre')).toHaveTextContent(/dans cette conversation seulement/);
   });
 
   it('un contact rangé dans un projet ou une conversation le montre sur sa ligne', async () => {

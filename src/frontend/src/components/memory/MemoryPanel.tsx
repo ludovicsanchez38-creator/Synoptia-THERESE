@@ -34,12 +34,12 @@ const LIBELLES_PERIMETRE: Record<MemoryScope, string> = {
  */
 const AIDE_PERIMETRE =
   'Global : visible dans toutes les conversations (c’est le cas des contacts ajoutés ici). '
-  + 'Projet : créé depuis une conversation rattachée à un projet, visible dans ce projet. '
-  + 'Conversation : créé depuis une conversation sans projet, visible dans celle-ci.';
+  + 'Projet : créé depuis une conversation rattachée à un projet, visible dans les conversations de ce projet et en mode « Tous les projets ». '
+  + 'Conversation : créé ou suggéré depuis une conversation sans projet, visible dans cette conversation seulement.';
 
 const COMMENT_Y_RANGER: Partial<Record<MemoryScope, string>> = {
   project: 'Un contact entre dans un projet quand tu le crées depuis une conversation rattachée à ce projet.',
-  conversation: 'Un contact appartient à une conversation quand tu le crées depuis une conversation sans projet.',
+  conversation: 'Un contact appartient à une conversation quand tu le crées, ou l’enregistres depuis une suggestion, dans une conversation sans projet.',
 };
 
 interface EtatVideContacts {
