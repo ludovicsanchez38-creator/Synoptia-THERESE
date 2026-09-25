@@ -91,8 +91,9 @@ const OPTIONS_STATUT_FACTURE = [
 /** Rattache le bouton d'envoi, rendu hors du bloc défilant, à son formulaire. */
 const ID_FORMULAIRE = 'invoice-form';
 
+/** B-1456 : un décimal enregistré se relit avec la virgule (« 33,33 »). */
 function formatDecimalInput(value: number) {
-  return String(value);
+  return String(value).replace('.', ',');
 }
 
 function isValidDecimalDraft(value: string) {
