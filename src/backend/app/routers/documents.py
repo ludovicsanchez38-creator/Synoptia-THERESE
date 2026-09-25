@@ -659,6 +659,10 @@ async def _ecrire_la_trame(
         for rang, section in enumerate(ajoutees_pendant, start=len(parsed_sections) + 1):
             section.order = rang * 10.0
             sections.append(section)
+        # B-1405 : la trame écrite fait vivre le document, comme toute section.
+        document = await session.get(Document, document_id)
+        if document is not None:
+            _touch_document(document, session)
         await session.commit()
         for section in sections:
             await session.refresh(section)
