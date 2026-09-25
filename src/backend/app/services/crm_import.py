@@ -901,6 +901,23 @@ class CRMImportService:
                 statut_reconnu = status_map.get(raw_status)
                 status = statut_reconnu or "active"
 
+                # B-1256 : une cellule de budget illisible (« inf », « NaN »,
+                # texte) ne remplace rien et figure au rapport ; elle effaçait
+                # en silence le budget existant.
+                cellule_budget = str(mapped.get("budget") or "").strip()
+                budget_lu = _parse_value(cellule_budget, "float") if cellule_budget else None
+
+                budget_ecarte = (
+                    ImportError(
+                        row=idx + 1,
+                        column="budget",
+                        message=f"Budget « {cellule_budget} » illisible, non enregistré",
+                        data=mapped,
+                    )
+                    if cellule_budget and budget_lu is None
+                    else None
+                )
+
                 if existing and update_existing:
                     existing.name = mapped.get("name") or existing.name
                     if mapped.get("description"):
@@ -911,8 +928,10 @@ class CRMImportService:
                         existing.contact_id = contact_id
                     if statut_reconnu:
                         existing.status = statut_reconnu
-                    if mapped.get("budget"):
-                        existing.budget = _parse_value(mapped["budget"], "float")
+                    if budget_lu is not None:
+                        existing.budget = budget_lu
+                    if budget_ecarte:
+                        result.errors.append(budget_ecarte)
                     if mapped.get("notes"):
                         existing.notes = mapped["notes"]
                     if mapped.get("tags"):
@@ -932,13 +951,15 @@ class CRMImportService:
                         description=mapped.get("description"),
                         contact_id=contact_id,
                         status=status,
-                        budget=_parse_value(mapped.get("budget"), "float"),
+                        budget=budget_lu,
                         notes=mapped.get("notes"),
                         tags=_parse_value(mapped.get("tags"), "tags"),
                         scope="global",
                     )
                     self.session.add(project)
                     result.created += 1
+                    if budget_ecarte:
+                        result.errors.append(budget_ecarte)
 
             except Exception as e:
                 logger.error(f"Error importing project row {idx + 1}: {e}")
