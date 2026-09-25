@@ -926,7 +926,9 @@ class CRMImportService:
                 # B-1256 : une cellule de budget illisible (« inf », « NaN »,
                 # texte) ne remplace rien et figure au rapport ; elle effaçait
                 # en silence le budget existant.
-                cellule_budget = str(mapped.get("budget") or "").strip()
+                # B-1274 : `or ""` faisait d'un 0 numérique une cellule vide.
+                brut_budget = mapped.get("budget")
+                cellule_budget = "" if brut_budget is None else str(brut_budget).strip()
                 budget_lu = _parse_value(cellule_budget, "float") if cellule_budget else None
 
                 budget_ecarte = (

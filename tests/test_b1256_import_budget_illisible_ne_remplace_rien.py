@@ -34,3 +34,25 @@ async def test_un_budget_lisible_remplace_toujours(db_session):
     res, projet = await _importer(db_session, "1500")
     assert projet.budget == 1500.0, projet.budget
     assert not res.errors, [e.message for e in res.errors]
+
+
+@pytest.mark.asyncio
+async def test_un_budget_numerique_nul_est_lu(db_session):
+    """B-1274 : régression de B-1256. `str(budget or "")` faisait d'un 0
+    numérique (classeur, JSON) une cellule vide : budget None à la création,
+    sans rien au rapport. Revue du diff, passe 5 (cas E)."""
+    import json
+
+    db_session.add(Project(id="p-e", name="Chantier", budget=1200.0, status="active"))
+    await db_session.commit()
+    contenu = json.dumps([
+        {"id": "p-e", "name": "Chantier", "budget": 0},
+        {"id": "p-z", "name": "Nouveau", "budget": 0},
+    ]).encode()
+    res = await CRMImportService(db_session).import_projects(contenu, filename="p.json")
+    await db_session.commit()
+    db_session.expire_all()
+    budgets = {
+        p.id: p.budget for p in (await db_session.execute(select(Project))).scalars().all()
+    }
+    assert budgets == {"p-e": 0.0, "p-z": 0.0}, (budgets, [e.message for e in res.errors])
