@@ -54,9 +54,10 @@ async def test_le_profil_en_vol_n_ecrit_plus_apres_la_purge(client, monkeypatch)
 
 
 @pytest.mark.asyncio
-async def test_le_profil_en_attente_renonce_apres_la_purge(client, monkeypatch):
-    """Une seconde sauvegarde attend le verrou derrière la première : la purge
-    doit la faire renoncer, pas la laisser écrire avant ou après elle."""
+async def test_le_profil_en_attente_n_ecrit_pas_apres_la_purge(client, monkeypatch):
+    """Une seconde sauvegarde attend le verrou derrière la première. B-1282 :
+    déjà en file, elle passe avant la purge (verrou FIFO), que la purge efface
+    ensuite ; rien ne doit s'écrire après la réponse."""
     ecritures, demarre = _espion_du_profil(monkeypatch)
     r = await client.post("/api/config/profile", json={"name": "Marie Exemple"})
     assert r.status_code == 200, r.text
@@ -73,4 +74,3 @@ async def test_le_profil_en_attente_renonce_apres_la_purge(client, monkeypatch):
     assert p.status_code == 200, p.text
     await asyncio.sleep(2.0)
     assert not [e for e, t in ecritures if t > fin], f"profil écrit après la purge : {ecritures}"
-    assert len(ecritures) == 1, f"la sauvegarde en attente a écrit malgré la purge : {ecritures}"
