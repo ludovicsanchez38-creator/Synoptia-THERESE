@@ -122,3 +122,20 @@ async def test_un_prenom_seul_avec_le_courriel_n_est_pas_un_autre_nom(db_session
         {"first_name": "Marie", "email": "marie@exemple.fr"}, db_session,
     ))
     assert "nom" not in resultat.get("champs_ignores", []), resultat
+
+
+@pytest.mark.asyncio
+async def test_une_difference_d_accent_n_est_pas_un_autre_nom(db_session):
+    """B-1311 : Hélène et Helene étaient annoncés comme deux noms (casefold ne
+    replie pas les accents). Lecteur α, passe 6."""
+    import json
+
+    from app.services.memory_tools import execute_create_contact
+
+    await execute_create_contact(
+        {"first_name": "Hélène", "last_name": "Exemple", "email": "helene@exemple.fr"}, db_session,
+    )
+    resultat = json.loads(await execute_create_contact(
+        {"first_name": "Helene", "last_name": "Exemple", "email": "helene@exemple.fr"}, db_session,
+    ))
+    assert "nom" not in resultat.get("champs_ignores", []), resultat

@@ -284,8 +284,13 @@ def _champs_de_contact_non_appliques(fiche: Any, arguments: dict[str, Any]) -> l
     # B-1298 : retrouvée par son courriel sous un autre nom, la fiche garde le
     # sien ; le nom saisi n'est pas enregistré et doit être dit.
     # Prénom et nom comparés chacun : un prénom seul saisi n'est pas un autre nom.
+    # B-1311 : sans casse NI accents (Hélène et Helene sont le même nom).
+    def _nom(valeur: Any) -> str:
+        decompose = unicodedata.normalize("NFKD", _texte(valeur))
+        return "".join(c for c in decompose if not unicodedata.combining(c)).casefold()
+
     if any(
-        _texte(arguments.get(c)) and _texte(arguments.get(c)).casefold() != _texte(getattr(fiche, c, None)).casefold()
+        _texte(arguments.get(c)) and _nom(arguments.get(c)) != _nom(getattr(fiche, c, None))
         for c in ("first_name", "last_name")
     ):
         perdus.append("nom")
