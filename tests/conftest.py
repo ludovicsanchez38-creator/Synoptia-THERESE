@@ -183,17 +183,29 @@ def _autorisation_recherche_web_neutre():
 
 
 @pytest.fixture(autouse=True)
-def _verrou_d_indexation_du_profil_neuf(monkeypatch):
-    """B-1297 : le verrou d'indexation du profil est un `asyncio.Lock` de
-    module, lié à la boucle de sa première attente disputée. Chaque test a sa
-    boucle : un verrou lié à celle d'un test précédent faisait lever « bound
-    to a different event loop » dans la purge (500), selon l'ordre des tests.
-    En production, une seule boucle : rien à changer côté moteur."""
+def _etats_de_module_neufs(monkeypatch):
+    """B-1297 : un `asyncio.Lock` de module se lie à la boucle de sa première
+    attente disputée. Chaque test a sa boucle : un verrou lié à celle d'un
+    test précédent faisait lever « bound to a different event loop » dans la
+    purge (500), selon l'ordre des tests. En production, une seule boucle :
+    rien à changer côté moteur.
+
+    B-1306 : même chose pour les états de la mise au repos (fiches rendues,
+    drapeau d'arrêt, créations suspendues) : une fiche rendue laissée par un
+    test faisait échouer le suivant."""
     import asyncio
 
-    from app.services import user_profile
+    from app.routers import calendar as agenda
+    from app.routers import memory
+    from app.services import board, memory_tools, project_sync_service, user_profile
 
     monkeypatch.setattr(user_profile, "_VERROU_INDEXATION", asyncio.Lock())
+    monkeypatch.setattr(agenda, "_CREATION_CALENDRIER_PAR_DEFAUT", asyncio.Lock())
+    monkeypatch.setattr(project_sync_service, "_verrou_racines", asyncio.Lock())
+    monkeypatch.setattr(board, "_verrou_sonde", asyncio.Lock())
+    monkeypatch.setattr(memory, "_FICHES_RENDUES", [])
+    monkeypatch.setattr(memory, "_ARRET_DES_INDEXATIONS", asyncio.Event())
+    monkeypatch.setattr(memory_tools, "_CREATIONS_SUSPENDUES", 0)
 
 
 @pytest.fixture(scope="function")
