@@ -8,6 +8,8 @@ import { Alerte } from '../ui/Alerte';
 import { Button } from '../ui/Button';
 import { EtatVide } from '../ui/EtatVide';
 import { Input } from '../ui/Input';
+import { Select } from '../ui/Select';
+import { listProjects } from '../../services/api/memory';
 import { cn } from '../../lib/utils';
 
 /** Revue COCO 0.69.0 (finding 2) : une conversation listée sans message l'est pour son brouillon, autant le dire. */
@@ -35,6 +37,9 @@ interface PrototypeConversationDrawerProps {
 }
 
 export type PrototypeConversationDrawerSurface = 'new' | 'search' | 'history';
+
+/** P-126 : valeur du filtre pour les conversations sans projet (jamais un id). */
+const SANS_PROJET = '__sans_projet__';
 
 function dateLabel(date: Date): string {
   const value = new Date(date);
@@ -103,6 +108,20 @@ export function PrototypeConversationDrawer({
   const [editingTitle, setEditingTitle] = useState('');
   const [deleteConfirmationId, setDeleteConfirmationId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // P-126 : le projet de chaque conversation, et un filtre par projet. Les
+  // noms sont lus au montage ; illisibles, la ligne dit « Projet rattaché »
+  // sans inventer de nom (même règle que B-1367).
+  const [nomsDesProjets, setNomsDesProjets] = useState<Map<string, string>>(new Map());
+  const [filtreProjet, setFiltreProjet] = useState('');
+  useEffect(() => {
+    let vivant = true;
+    Promise.resolve(listProjects())
+      .then((projets) => {
+        if (vivant) setNomsDesProjets(new Map((projets ?? []).map((projet) => [projet.id, projet.name])));
+      })
+      .catch(() => undefined);
+    return () => { vivant = false; };
+  }, []);
   const { maskText } = useDemoMask();
   const drawerRef = useRef<HTMLElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -189,8 +208,20 @@ export function PrototypeConversationDrawer({
       .filter((conversation) =>
         (conversation.messages.length || conversation.messageCount || 0) > 0 || aUnBrouillonLocal(conversation.id))
       .filter((conversation) => !texteReplie || (texteReplie.get(conversation.id) ?? '').includes(rechercheRepliee))
+      .filter((conversation) => {
+        if (!filtreProjet) return true;
+        if (filtreProjet === SANS_PROJET) return !conversation.projectId;
+        return conversation.projectId === filtreProjet;
+      })
       .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime());
-  }, [conversations, texteReplie, rechercheRepliee]);
+  }, [conversations, texteReplie, rechercheRepliee, filtreProjet]);
+  // Seuls les projets qui ont au moins une conversation sont proposés.
+  const projetsDesConversations = useMemo(() => {
+    const ids = new Set(conversations.map((conversation) => conversation.projectId).filter((id): id is string => Boolean(id)));
+    return [...ids]
+      .map((id) => ({ value: id, label: maskText(nomsDesProjets.get(id) ?? 'Projet rattaché (nom non lu)') }))
+      .sort((a, b) => a.label.localeCompare(b.label, 'fr'));
+  }, [conversations, nomsDesProjets, maskText]);
   const grouped = useMemo(() => groupConversations(filtered), [filtered]);
 
   useEffect(() => {
@@ -318,6 +349,20 @@ export function PrototypeConversationDrawer({
           onChange={(event) => setQuery(event.target.value)}
           className="bg-surface-2"
         />
+        {projetsDesConversations.length > 0 && (
+          <div className="mt-2">
+            <Select
+              aria-label="Filtrer par projet"
+              value={filtreProjet}
+              onChange={(event) => setFiltreProjet(event.target.value)}
+              options={[
+                { value: '', label: 'Toutes les conversations' },
+                ...projetsDesConversations,
+                { value: SANS_PROJET, label: 'Sans projet' },
+              ]}
+            />
+          </div>
+        )}
       </div>
 
       <div
@@ -329,8 +374,8 @@ export function PrototypeConversationDrawer({
       >
         {error && <Alerte className="mb-2">{error}</Alerte>}
         {filtered.length === 0 ? (
-          <EtatVide titre={query ? 'Aucune conversation trouvée' : 'Aucune conversation'}>
-            {query ? null : 'Ta première demande à Thérèse apparaîtra ici, avec ce qu’elle a produit.'}
+          <EtatVide titre={query || filtreProjet ? 'Aucune conversation trouvée' : 'Aucune conversation'}>
+            {query || filtreProjet ? null : 'Ta première demande à Thérèse apparaîtra ici, avec ce qu’elle a produit.'}
           </EtatVide>
         ) : grouped.map(([label, items]) => (
           <section key={label} className="mb-4">
@@ -390,6 +435,13 @@ export function PrototypeConversationDrawer({
                       <span className="col-span-2 truncate text-sm text-text-muted">
                         {compteMessages(conversation)}{conversation.synced ? '' : ' · non enregistrée'}
                       </span>
+                      {conversation.projectId && (
+                        <span className="col-span-2 truncate text-sm text-text-muted">
+                          {nomsDesProjets.has(conversation.projectId)
+                            ? `Projet : ${maskText(nomsDesProjets.get(conversation.projectId) ?? '')}`
+                            : 'Projet rattaché (nom non lu)'}
+                        </span>
+                      )}
                       {/* P-070 : l'aperçu du dernier message, quand il est chargé (masqué en démo). */}
                       {apercu && <span className="col-span-2 truncate text-sm text-text-muted">{apercu}</span>}
                     </button>
