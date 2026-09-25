@@ -56,6 +56,14 @@ function messageDEchec(e: unknown, action: string): string {
   return e instanceof Error ? e.message : action;
 }
 
+/** B-1372 : les états du journal, écrits pour l'utilisateur. */
+const LIBELLES_ETAT_OPERATION: Record<string, string> = {
+  a_faire: 'à faire',
+  fait: 'fait',
+  echec: 'échec, réessayable',
+  obsolete: 'écarté',
+};
+
 export function ProjectSyncSection({ projectId, maskDisplayText }: Props) {
   const { enabled: modeDemo, maskText: masqueGlobal } = useDemoMask();
   const maskText = maskDisplayText ?? masqueGlobal;
@@ -391,11 +399,16 @@ export function ProjectSyncSection({ projectId, maskDisplayText }: Props) {
             <div className="text-sm text-text-muted space-y-0.5" data-testid="sync-journal">
               <p className="font-medium">Dernières opérations :</p>
               <ul className="max-h-24 overflow-y-auto">
+                {/* B-1372 : état en français, motif lisible en entier (il était
+                    coupé par la troncature de la ligne). */}
                 {journal.map((o) => (
-                  <li key={o.id} className="truncate">
-                    <span className="uppercase text-xs mr-1">{o.type}</span>
-                    {maskText(o.chemin.split('/').pop() ?? '')}
-                    <span className="ml-1">({o.etat}{o.erreur ? ` - ${maskText(o.erreur)}` : ''})</span>
+                  <li key={o.id}>
+                    <span className="block truncate">
+                      <span className="uppercase text-xs mr-1">{o.type}</span>
+                      {maskText(o.chemin.split('/').pop() ?? '')}
+                      <span className="ml-1">({LIBELLES_ETAT_OPERATION[o.etat] ?? o.etat})</span>
+                    </span>
+                    {o.erreur && <span className="block break-words text-xs">{maskText(o.erreur)}</span>}
                   </li>
                 ))}
               </ul>

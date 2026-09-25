@@ -614,10 +614,13 @@ def etat_pour_une_indexation(chunk_count: int) -> tuple[EtatOperation, str | Non
     """
     if chunk_count > 0:
         return EtatOperation.FAIT, None
+    # B-1372 : le motif s'affiche tel quel dans le journal du projet ; il est
+    # écrit pour l'utilisateur (accents, pas de « chunk », un geste à faire).
     return (
         EtatOperation.OBSOLETE,
-        "Fichier enregistre mais AUCUN chunk indexe : il n'apparaitra pas dans "
-        "les recherches. Format non extractible, fichier vide ou protege ?",
+        "Fichier non indexé : aucun texte n'a pu y être lu, il n'apparaîtra pas "
+        "dans les recherches. Vérifie qu'il n'est ni vide ni protégé et que son "
+        "format est pris en charge, puis relance la synchronisation.",
     )
 
 
