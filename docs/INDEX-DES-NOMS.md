@@ -17,7 +17,7 @@ L'identifiant d'un contrôle, c'est **le texte visible à l'écran**.
 
 | Verbe | Ouvre la surface |
 |---|---|
-| **Écrire** | Écrire un message |
+| **Écrire un e-mail** | Écrire un message |
 | **Retrouver** | Retrouver un contact |
 | **Préparer** | Préparer un rendez-vous |
 | **Facturer** | Facturer un client |
@@ -49,8 +49,8 @@ ouvre les surfaces ci-dessus, il ne les documente pas.
 | Capacité | Identifiant |
 |---|---|
 | Brief du jour | `daily-brief` |
-| Email | `email` |
-| Agenda | `calendar` |
+| Écrire un e-mail | `email` |
+| Préparer un rendez-vous | `calendar` |
 | Tâches | `tasks` |
 | Relances et alertes | `attention` |
 
