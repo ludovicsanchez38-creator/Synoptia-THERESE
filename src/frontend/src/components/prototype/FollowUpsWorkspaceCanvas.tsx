@@ -179,7 +179,7 @@ export function FollowUpsWorkspaceCanvas({
       <header className="relative shrink-0 border-b border-border bg-surface px-5 py-4 pr-16">
         <div className="flex items-start gap-3">
           <span className="grid h-9 w-9 place-items-center rounded-md border border-border bg-[var(--color-warning-tint)] text-warning shadow-sm"><Bell className="h-4 w-4" /></span>
-          <div><h2 id="follow-ups-workspace-title" data-dialog-autofocus tabIndex={-1} className="text-lg font-bold text-text outline-none">Relances et alertes</h2><p className="mt-0.5 text-xs text-text-muted">Échéances réelles liées aux emails, modifiables sans quitter le fil.</p></div>
+          <div><h2 id="follow-ups-workspace-title" data-dialog-autofocus tabIndex={-1} className="text-lg font-bold text-text outline-none">Relances et alertes</h2><p className="mt-0.5 text-xs text-text-muted">Échéances des e-mails et des fiches, modifiables sans quitter le fil.</p></div>
         </div>
         <BoutonFermerLePanneau onClose={onClose} nom="Fermer les relances" position="right-4 top-4" />
       </header>

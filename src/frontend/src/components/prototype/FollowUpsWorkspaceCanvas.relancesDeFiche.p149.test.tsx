@@ -34,6 +34,8 @@ describe('P-149 : les relances posées sur une fiche', () => {
     render(<FollowUpsWorkspaceCanvas onClose={vi.fn()} onOpenEmail={vi.fn()} />);
     expect(await screen.findByText('Julien Garnier')).toBeInTheDocument();
     expect(screen.queryByText('Nadia Roux')).toBeNull();
+    // Le sous-titre ne dit plus « liées aux emails » seulement.
+    expect(screen.getByText(/e-mails et des fiches/)).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole('button', { name: 'Relance faite : Julien Garnier' }));
     await waitFor(() => expect(memoire.updateContact).toHaveBeenCalledWith('c1', { next_follow_up: null }));
