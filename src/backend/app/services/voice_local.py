@@ -95,6 +95,10 @@ _PIPER_VOICE_URLS = {
 }
 
 
+# B-1410 : langue seule -> voix par défaut de cette langue.
+_VOIX_PAR_LANGUE = {"fr": DEFAULT_PIPER_VOICE}
+
+
 def _voix_du_catalogue(voice: str) -> str:
     """Valide un nom de voix contre la liste blanche, ou lève.
 
@@ -104,6 +108,9 @@ def _voix_du_catalogue(voice: str) -> str:
     chargé par le moteur d'inférence. `download_piper_voice` appliquait déjà
     cette liste blanche : un seul point de vérité, appliqué partout.
     """
+    # B-1410 : l'interface envoie la langue seule (« fr ») ; elle désigne la
+    # voix par défaut de cette langue. Seuls des noms de la liste sortent d'ici.
+    voice = _VOIX_PAR_LANGUE.get(voice, voice)
     if voice not in _PIPER_VOICE_URLS:
         raise ErreurPourEcran(f"Voix Piper inconnue : {voice}")
     return voice
