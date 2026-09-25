@@ -56,7 +56,11 @@ export function Ligne({
   className,
 }: LigneProps) {
   const cliquable = onClick != null;
-  const coupeDuLibelle = coupe ? 'block w-full truncate' : undefined;
+  // B-1402 (Zoé, cycle 13) : sans coupure, un mot sans espace (prénom de
+  // 150 caractères, e-mail) sortait de sa colonne, passait sous les actions
+  // et faisait défiler la page en largeur. `anywhere` agit aussi sur la
+  // largeur minimale, ce que `break-word` ne fait pas.
+  const coupeDuLibelle = coupe ? 'block w-full truncate' : '[overflow-wrap:anywhere]';
   const libelle = cliquable ? (
     <button
       type="button"
@@ -93,7 +97,7 @@ export function Ligne({
       <div className="min-w-0">
         {libelle}
         {detail ? (
-          <p className={cn('text-sm text-text-muted', coupe && 'truncate')}>{detail}</p>
+          <p className={cn('text-sm text-text-muted', coupe ? 'truncate' : '[overflow-wrap:anywhere]')}>{detail}</p>
         ) : null}
       </div>
       {droite != null ? (
