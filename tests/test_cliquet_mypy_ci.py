@@ -135,8 +135,10 @@ class TestCliquetMypy:
         # 10/09/2026 (cycle 6) : cinq annotations dans les fournisseurs e-mail
         # (afa28993) ; le runner mesure 951 (run 34479930815), le Mac aussi.
         # 25/09/2026 (cycle 13) : l'export complet XLSX sorti de la boucle
-        # (B-1220) retire trois erreurs ; le Mac mesure 948 à froid.
-        assert _etape_mypy()["env"]["MYPY_BASELINE"] == "948"
+        # (B-1220) retire trois erreurs ; le Mac mesure 948 à froid, le runner
+        # aussi. Puis la lecture JSON de l'import CRM (B-1301) retire quatre
+        # no-any-return : 944 à froid sur le Mac.
+        assert _etape_mypy()["env"]["MYPY_BASELINE"] == "944"
 
 
 @pytest.mark.skipif(shutil.which("bash") is None, reason="bash requis")
