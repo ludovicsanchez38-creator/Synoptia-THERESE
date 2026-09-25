@@ -11,7 +11,7 @@ import { X, UserPlus, Upload, Mail, Phone, FileText, Users, AlertCircle, HelpCir
 import { PipelineView } from './PipelineView';
 import { ActivityTimeline } from './ActivityTimeline';
 import { ListeDesPrestations } from './ListeDesPrestations';
-import { SCORE_AIDE, libelleDEtape } from './pipelineEtapes';
+import { SCORE_AIDE } from './pipelineEtapes';
 import { useCRMStore } from '../../stores/crmStore';
 import { useContactsStore } from '../../stores/contactsStore';
 import { listProjects, listActivities, updateContactStage, type ContactResponse, type ActivityResponse } from '../../services/api';
@@ -315,8 +315,21 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
                       <dd className="text-text">{displaySelectedContact.phone || 'Non renseigné'}</dd>
                     </div>
                     <div>
-                      <dt className="text-text-muted">Étape</dt>
-                      <dd className="text-text">{libelleDEtape(displaySelectedContact.stage ?? 'contact')}</dd>
+                      <dt className="text-text-muted"><label htmlFor="fiche-contact-etape">Étape</label></dt>
+                      <dd>
+                        {/* P-132 : glisser la carte était le seul moyen de changer
+                            d'étape. Même chemin que le glisser : activité et score. */}
+                        <Select
+                          id="fiche-contact-etape"
+                          value={displaySelectedContact.stage ?? 'contact'}
+                          disabled={demoEnabled}
+                          onChange={(event) => {
+                            const etape = event.target.value;
+                            void handleStageChange(selectedContact!.id, etape).then(() => setActivityRefreshKey((n) => n + 1));
+                          }}
+                          options={PIPELINE_ETAPES.map((e) => ({ value: e.id, label: e.label }))}
+                        />
+                      </dd>
                     </div>
                     <div>
                       <dt className="flex items-center gap-1 text-text-muted">

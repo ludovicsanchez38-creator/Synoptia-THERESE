@@ -5,7 +5,7 @@
  * coordonnées, son étape (le nom d'écran, pas le code) et son score, avec
  * l'explication du score.
  */
-import { render, screen, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { useCRMStore } from '../../stores/crmStore';
@@ -19,10 +19,11 @@ const elodie = vi.hoisted(() => ({
 }));
 
 const contactsLus = vi.hoisted(() => vi.fn());
+const etapeChangee = vi.hoisted(() => vi.fn());
 
 vi.mock('../../services/api', async () => {
   const reel = await vi.importActual<typeof import('../../services/api')>('../../services/api');
-  return { ...reel, listProjects: vi.fn().mockResolvedValue([]), listActivities: vi.fn().mockResolvedValue([]), };
+  return { ...reel, listProjects: vi.fn().mockResolvedValue([]), listActivities: vi.fn().mockResolvedValue([]), updateContactStage: (...a: unknown[]) => etapeChangee(...a) };
 });
 vi.mock('../../services/api/memory', async () => {
   const reel = await vi.importActual<typeof import('../../services/api/memory')>('../../services/api/memory');
@@ -34,6 +35,25 @@ vi.mock('../../services/api/prestations', async () => {
 });
 
 import { CRMPanel } from './CRMPanel';
+
+describe('P-132 : l’étape se change depuis la fiche', () => {
+  beforeEach(() => {
+    contactsLus.mockResolvedValue([elodie]);
+    etapeChangee.mockResolvedValue({ ...elodie, stage: 'proposition', score: 120 });
+    useCRMStore.setState({ projects: [], activeTab: 'activities' });
+    useContactsStore.setState({ contacts: [elodie] as never, loaded: true, loading: false, error: null, selectedContactId: 'ct-1', truncated: false });
+  });
+
+  it('choisir une étape passe par le même chemin que le glisser (activité et score)', async () => {
+    render(<CRMPanel standalone />);
+    const fiche = await screen.findByRole('region', { name: 'Fiche de Élodie Martin' });
+    const etape = within(fiche).getByLabelText('Étape') as HTMLSelectElement;
+    expect(etape.value).toBe('discovery');
+    fireEvent.change(etape, { target: { value: 'proposition' } });
+    await waitFor(() => expect(etapeChangee).toHaveBeenCalledWith('ct-1', 'proposition'));
+    await waitFor(() => expect((within(fiche).getByLabelText('Étape') as HTMLSelectElement).value).toBe('proposition'));
+  });
+});
 
 describe('P-144 : « Ouvrir la fiche » ouvre une vraie fiche', () => {
   beforeEach(() => {
@@ -48,7 +68,7 @@ describe('P-144 : « Ouvrir la fiche » ouvre une vraie fiche', () => {
 
     expect(within(fiche).getByText('elodie@boulangerie-exemple.fr')).toBeInTheDocument();
     expect(within(fiche).getByText('06 12 34 56 78')).toBeInTheDocument();
-    expect(within(fiche).getByText('Découverte')).toBeInTheDocument();
+    expect((within(fiche).getByLabelText('Étape') as HTMLSelectElement).value).toBe('discovery');
     expect(within(fiche).getByText('105')).toBeInTheDocument();
     expect(within(fiche).getByLabelText(/Score de potentiel commercial/)).toBeInTheDocument();
   });
