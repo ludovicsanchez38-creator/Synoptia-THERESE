@@ -775,11 +775,20 @@ class CRMImportService:
                         "rgpd_date_expiration",
                     ):
                         if field_name in mapped:
-                            setattr(
-                                existing,
-                                field_name,
-                                _parse_value(mapped[field_name], "datetime"),
-                            )
+                            # B-1302 : vide = miroir (efface) ; illisible = ne
+                            # remplace rien, et se dit (rgpd_date_expiration
+                            # est la date de purge RGPD de la fiche).
+                            cellule_date = str(mapped[field_name] or "").strip()
+                            date_lue = _parse_value(mapped[field_name], "datetime")
+                            if date_lue is None and cellule_date:
+                                result.errors.append(ImportError(
+                                    row=idx + 1,
+                                    column=field_name,
+                                    message=f"Date « {cellule_date} » illisible, non enregistrée",
+                                    data=mapped,
+                                ))
+                            else:
+                                setattr(existing, field_name, date_lue)
                     # B-1121 : date de création NOT NULL ; vide ou illisible,
                     # elle ne remplace pas celle de la fiche.
                     cree_le = _parse_value(mapped.get("created_at"), "datetime")
@@ -1143,7 +1152,17 @@ class CRMImportService:
                     if statut_reconnu:
                         existing.status = statut_reconnu
                     if mapped.get("due_date"):
-                        existing.due_date = _parse_value(mapped["due_date"], "datetime")
+                        # B-1302 : illisible, elle ne remplace pas l'échéance et se dit.
+                        echeance = _parse_value(mapped["due_date"], "datetime")
+                        if echeance is None:
+                            result.errors.append(ImportError(
+                                row=idx + 1,
+                                column="due_date",
+                                message=f"Date « {mapped['due_date']} » illisible, non enregistrée",
+                                data=mapped,
+                            ))
+                        else:
+                            existing.due_date = echeance
 
                     existing.updated_at = datetime.now(UTC)
                     self.session.add(existing)
