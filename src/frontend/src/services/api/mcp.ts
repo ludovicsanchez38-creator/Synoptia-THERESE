@@ -104,9 +104,17 @@ export async function deleteMCPServer(serverId: string): Promise<void> {
   });
 }
 
+/**
+ * B-1473 : un premier démarrage télécharge le serveur (npx, uvx) ; le moteur
+ * attend jusqu'à 150 s (initialize 90 s, liste des outils 60 s). Le client
+ * ne coupe pas avant lui.
+ */
+const DELAI_DEMARRAGE_MS = 180_000;
+
 export async function startMCPServer(serverId: string): Promise<MCPServer> {
   return request<MCPServer>(`/api/mcp/servers/${serverId}/start`, {
     method: 'POST',
+    timeoutMs: DELAI_DEMARRAGE_MS,
   });
 }
 
@@ -119,6 +127,7 @@ export async function stopMCPServer(serverId: string): Promise<MCPServer> {
 export async function restartMCPServer(serverId: string): Promise<MCPServer> {
   return request<MCPServer>(`/api/mcp/servers/${serverId}/restart`, {
     method: 'POST',
+    timeoutMs: DELAI_DEMARRAGE_MS,
   });
 }
 
@@ -166,5 +175,6 @@ export async function installMCPPreset(
   return request<MCPServer>(`/api/mcp/presets/${presetId}/install`, {
     method: 'POST',
     body: JSON.stringify(env || {}),
+    timeoutMs: DELAI_DEMARRAGE_MS,
   });
 }

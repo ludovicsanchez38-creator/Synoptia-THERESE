@@ -322,16 +322,17 @@ PRESET_SERVERS = [
         "name": "Fetch",
         "description": "Récupère le contenu d'URLs (HTTP GET)",
         "category": "essentiels",
-        "command": "npx",
-        "args": ["-y", "@modelcontextprotocol/server-fetch"],
+        # B-1473 : serveur officiel en Python ; le paquet npm n'existe pas.
+        "command": "uvx",
+        "args": ["mcp-server-fetch"],
     },
     {
         "id": "time",
         "name": "Time",
         "description": "Conversions timezone, dates, horloge mondiale",
         "category": "essentiels",
-        "command": "npx",
-        "args": ["-y", "@modelcontextprotocol/server-time"],
+        "command": "uvx",
+        "args": ["mcp-server-time"],
     },
 
     # ============================================================
@@ -616,12 +617,18 @@ async def install_preset(preset_id: str, env: dict[str, str] | None = None) -> M
             install_hint = " Installe Python depuis https://python.org/."
         elif cmd == "docker":
             install_hint = " Installe Docker depuis https://docker.com/."
+        elif cmd in ("uvx", "uv"):
+            # B-1473 : Fetch et Time sont des serveurs Python lancés par uvx.
+            install_hint = (
+                " Installe uv depuis https://docs.astral.sh/uv/ (il fournit uvx), "
+                "puis relance THÉRÈSE."
+            )
 
         raise HTTPException(
             status_code=422,
             detail=(
-                f"La commande '{cmd}' n'est pas disponible sur ce systeme. "
-                f"Le serveur MCP '{preset['name']}' ne peut pas etre installe "
+                f"La commande '{cmd}' n'est pas disponible sur ce système. "
+                f"Le serveur MCP '{preset['name']}' ne peut pas être installé "
                 f"sans ce prérequis.{install_hint}"
             ),
         )

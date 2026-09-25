@@ -12,6 +12,7 @@ import shutil
 import subprocess
 import sys
 import uuid
+from collections import deque
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from enum import Enum
@@ -266,6 +267,9 @@ class MCPService:
         self._pending_deadlines: dict[int, float] = {}
         self._reader_tasks: dict[str, asyncio.Task] = {}
         self._stderr_reader_tasks: dict[str, asyncio.Task] = {}  # Sprint 2 - PERF-2.8
+        # B-1473 : dernières lignes d'erreur de chaque serveur, pour dire
+        # pourquoi il s'est arrêté (paquet introuvable, dépendance absente).
+        self._dernieres_erreurs: dict[str, deque[str]] = {}
         self._cleanup_task: asyncio.Task | None = None  # Sprint 2 - PERF-2.14
 
     async def initialize(self):
@@ -426,6 +430,7 @@ class MCPService:
 
         server.status = MCPServerStatus.STARTING
         server.error = None
+        self._dernieres_erreurs[server_id] = deque(maxlen=20)
 
         try:
             # Validate command and args (SEC-001)
@@ -599,6 +604,7 @@ class MCPService:
 
                 stderr_text = line.decode().strip()
                 if stderr_text:
+                    self._dernieres_erreurs.setdefault(server_id, deque(maxlen=20)).append(stderr_text)
                     # Log at appropriate level based on content
                     lower_text = stderr_text.lower()
                     if "error" in lower_text or "fatal" in lower_text:
@@ -703,15 +709,45 @@ class MCPService:
         process.stdin.write(request_line.encode())
         await process.stdin.drain()
 
-        # Wait for response with timeout
+        # B-1473 : attendre la réponse OU la fin du processus. Un serveur mort
+        # avant de répondre (paquet npm introuvable) faisait attendre le délai
+        # entier, 90 s pour `initialize`, puis disait « Request timeout » sans
+        # la cause.
+        fin_du_processus = asyncio.ensure_future(process.wait())
         try:
-            result = await asyncio.wait_for(future, timeout=timeout)
-            return result
-        except asyncio.TimeoutError:
+            await asyncio.wait(
+                {future, fin_du_processus}, timeout=timeout, return_when=asyncio.FIRST_COMPLETED,
+            )
+            if not future.done() and fin_du_processus.done():
+                # Ce qu'il a écrit avant de sortir se lit jusqu'au bout.
+                await self._laisser_les_lecteurs_finir(server_id)
+            if future.done():
+                return future.result()
+            if fin_du_processus.done():
+                raise RuntimeError(self._cause_de_l_arret(server_id, method, process.returncode))
+            raise RuntimeError(f"Request timeout: {method}")
+        finally:
+            if not fin_du_processus.done():
+                fin_du_processus.cancel()
             self._pending_requests.pop(request_id, None)
             self._pending_timestamps.pop(request_id, None)  # Sprint 2 - PERF-2.14
             self._pending_deadlines.pop(request_id, None)
-            raise RuntimeError(f"Request timeout: {method}")
+            if not future.done():
+                future.cancel()
+
+    async def _laisser_les_lecteurs_finir(self, server_id: str) -> None:
+        lecteurs = [
+            t for t in (self._reader_tasks.get(server_id), self._stderr_reader_tasks.get(server_id))
+            if t is not None
+        ]
+        if lecteurs:
+            await asyncio.wait(lecteurs, timeout=2.0)
+
+    def _cause_de_l_arret(self, server_id: str, method: str, code: int | None) -> str:
+        lignes = list(self._dernieres_erreurs.get(server_id, ()))[-3:]
+        cause = " | ".join(lignes)[:500]
+        debut = f"Le serveur s'est arrêté avant de répondre ({method}, code {code})"
+        return f"{debut} : {cause}" if cause else debut
 
     async def _initialize_server(self, server_id: str):
         """Send initialize request to MCP server."""
