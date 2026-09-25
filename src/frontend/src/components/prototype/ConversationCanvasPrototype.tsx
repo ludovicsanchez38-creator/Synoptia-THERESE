@@ -1553,7 +1553,10 @@ export function ConversationCanvasPrototype() {
     // jamais. La fiche des raccourcis annonçait un groupe Fichiers vide.
     onOpenFile: () => openEmbeddedView('files'),
     onOpenSettings: () => openSettings('profile'),
-    onSearch: () => openEmbeddedView('memory'),
+    // B-1471 : l'action `memory.search` ouvre les Contacts ET y pose la
+    // demande de focus de la recherche ; ouvrir la vue seule laissait le
+    // curseur sur son titre, alors que le raccourci promet la recherche.
+    onSearch: () => runUnifiedActionRef.current('memory.search'),
     onToggleDemoMode: toggleDemoMode,
     onToggleAtelierPanel: toggleAtelierPanel,
     // B-641 (Nadia, c4) : « Katia - nouvelle tâche » ouvre le Chat de l'Atelier, focus dans le composeur.

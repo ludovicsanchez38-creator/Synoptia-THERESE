@@ -1079,6 +1079,11 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         }
         if (e.key === 'Escape') {
           e.preventDefault();
+          // B-1471 : cet Échap est consommé ici. Sans arrêt de propagation,
+          // le navigateur vide les microtâches avant l'écouteur de la coque
+          // (window) : le menu est déjà retiré de la pile d'Échap, et la
+          // cascade quittait la conversation.
+          e.stopPropagation();
           setShowSlashMenu(false);
           return;
         }
