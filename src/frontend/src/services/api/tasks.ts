@@ -14,6 +14,8 @@ export interface Task {
   priority: 'low' | 'medium' | 'high' | 'urgent';
   due_date: string | null;
   project_id: string | null;
+  /** P-134 : la personne concernée (relance, rappel). */
+  contact_id?: string | null;
   tags: string[] | null;
   completed_at: string | null;
   created_at: string;
@@ -27,6 +29,7 @@ export interface CreateTaskRequest {
   priority?: string;
   due_date?: string;
   project_id?: string;
+  contact_id?: string;
   tags?: string[];
 }
 
@@ -37,6 +40,8 @@ export interface UpdateTaskRequest {
   priority?: string;
   due_date?: string;
   project_id?: string;
+  /** null retire la personne liée. */
+  contact_id?: string | null;
   tags?: string[];
 }
 

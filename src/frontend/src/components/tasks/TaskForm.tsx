@@ -14,6 +14,8 @@ import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { AlertCircle, ChevronLeft, Save } from 'lucide-react';
 import { useTaskStore } from '../../stores/taskStore';
+import { useContactsStore } from '../../stores/contactsStore';
+import { useDemoMask } from '../../hooks';
 import { Alerte } from '../ui/Alerte';
 import { Button } from '../ui/Button';
 import { FormField } from '../ui/FormField';
@@ -62,6 +64,15 @@ export function TaskForm() {
   const [priority, setPriority] = useState('medium');
   const [dueDate, setDueDate] = useState('');
   const [projectId, setProjectId] = useState('');
+  // P-134 : une relance posée en tâche n'était reliée à personne.
+  const [contactId, setContactId] = useState('');
+  const contacts = useContactsStore((s) => s.contacts);
+  const contactsCharges = useContactsStore((s) => s.loaded);
+  // Famille B-1080 : en démonstration, aucun vrai nom dans la liste.
+  const { maskContact } = useDemoMask();
+  useEffect(() => {
+    if (!contactsCharges) void useContactsStore.getState().fetchContacts().catch(() => undefined);
+  }, [contactsCharges]);
   const [tagsInput, setTagsInput] = useState('');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -81,7 +92,7 @@ export function TaskForm() {
   // B-974 : état de référence de la saisie ; null tant que la fiche à
   // modifier n'est pas chargée (la question reste alors posée).
   const [reference, setReference] = useState<string | null>(() =>
-    currentTaskId ? null : JSON.stringify(['', '', 'todo', 'medium', '', '', '']),
+    currentTaskId ? null : JSON.stringify(['', '', 'todo', 'medium', '', '', '', '']),
   );
   useEffect(() => {
     if (isEditing && task && tacheChargeeRef.current !== task.id) {
@@ -92,11 +103,12 @@ export function TaskForm() {
       setPriority(task.priority);
       setDueDate(task.due_date ? task.due_date.split('T')[0] : '');
       setProjectId(task.project_id || '');
+      setContactId(task.contact_id || '');
       setTagsInput(task.tags ? task.tags.join(', ') : '');
       setReference(JSON.stringify([
         task.title, task.description || '', task.status, task.priority,
         task.due_date ? task.due_date.split('T')[0] : '', task.project_id || '',
-        task.tags ? task.tags.join(', ') : '',
+        task.tags ? task.tags.join(', ') : '', task.contact_id || '',
       ]));
     } else if (!isEditing && tacheChargeeRef.current !== NOUVELLE_TACHE) {
       // B-989 : « Nouvelle tâche » pendant une modification gardait les champs
@@ -107,8 +119,8 @@ export function TaskForm() {
       tacheChargeeRef.current = NOUVELLE_TACHE;
       if (dejaOuvert) {
         setTitle(''); setDescription(''); setStatus('todo'); setPriority('medium');
-        setDueDate(''); setProjectId(''); setTagsInput('');
-        setReference(JSON.stringify(['', '', 'todo', 'medium', '', '', '']));
+        setDueDate(''); setProjectId(''); setTagsInput(''); setContactId('');
+        setReference(JSON.stringify(['', '', 'todo', 'medium', '', '', '', '']));
       }
     }
   }, [isEditing, task]);
@@ -151,6 +163,7 @@ export function TaskForm() {
           priority,
           due_date: dueDate ? `${dueDate}T00:00:00Z` : undefined,
           project_id: projectId || undefined,
+          contact_id: contactId || null,
           tags: tags.length > 0 ? tags : undefined,
         };
 
@@ -165,6 +178,7 @@ export function TaskForm() {
           priority,
           due_date: dueDate ? `${dueDate}T00:00:00Z` : undefined,
           project_id: projectId || undefined,
+          contact_id: contactId || undefined,
           tags: tags.length > 0 ? tags : undefined,
         };
 
@@ -193,7 +207,7 @@ export function TaskForm() {
   }
   const modifie =
     reference === null ||
-    JSON.stringify([title, description, status, priority, dueDate, projectId, tagsInput]) !== reference;
+    JSON.stringify([title, description, status, priority, dueDate, projectId, tagsInput, contactId]) !== reference;
   const { abandonDemande, demanderAbandon: handleCancel, continuerSaisie, racineSaisie, questionRef } = useAbandonDeSaisie({ modifie, abandonner });
   // B-1370 (Zoé, cycle 13) : le formulaire s'ouvre sur son premier champ ;
   // le focus restait sur « Nouvelle tâche ». Un effet, pas `autoFocus` :
@@ -313,6 +327,24 @@ export function TaskForm() {
             type="date"
             value={dueDate}
             onChange={(e) => setDueDate(e.target.value)}
+          />
+        </FormField>
+
+        <FormField label="Contact" htmlFor="taskform-contact" description="La personne concernée, par exemple à relancer.">
+          <Select
+            id="taskform-contact"
+            value={contactId}
+            onChange={(e) => setContactId(e.target.value)}
+            options={[
+              { value: '', label: 'Aucun contact' },
+              ...contacts.map((fiche) => {
+                const contact = maskContact(fiche);
+                return {
+                  value: fiche.id,
+                  label: [contact.first_name, contact.last_name].filter(Boolean).join(' ') || contact.company || contact.email || 'Sans nom',
+                };
+              }),
+            ]}
           />
         </FormField>
 
