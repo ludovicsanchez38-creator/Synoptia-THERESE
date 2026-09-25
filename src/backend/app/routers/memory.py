@@ -135,11 +135,12 @@ def indexer_fiches_en_arriere_plan(fiches: list[Contact]) -> None:
         return
 
     async def _indexer(identifiants: list[str]) -> None:
-        echecs = 0
+        echecs = tentees = 0
         try:
             for identifiant in identifiants:
                 if _ARRET_DES_INDEXATIONS.is_set():
                     return
+                tentees += 1
                 try:
                     await _indexer_une_fiche(identifiant)
                 except Exception:
@@ -156,7 +157,8 @@ def indexer_fiches_en_arriere_plan(fiches: list[Contact]) -> None:
         finally:
             if echecs > 1:
                 logger.warning(
-                    "Indexation de fond : %d fiches sur %d en échec", echecs, len(identifiants)
+                    # B-1279 : sur les fiches TENTÉES ; un arrêt laisse les autres de côté.
+                    "Indexation de fond : %d fiches sur %d en échec", echecs, tentees
                 )
 
     async def _indexer_une_fiche(identifiant: str) -> None:

@@ -234,3 +234,45 @@ async def test_la_purge_n_attend_que_la_fiche_en_vol(client, monkeypatch):
     duree = time.monotonic() - debut
     assert r.status_code == 200, r.text
     assert duree < 3.5, f"la purge a attendu {duree:.1f} s : le carnet entier, pas la seule fiche en vol"
+
+
+@pytest.mark.asyncio
+async def test_le_decompte_ne_compte_que_les_fiches_tentees(db_session, monkeypatch, caplog):
+    """B-1279 : après un arrêt demandé par la purge, le décompte d'échecs
+    divisait par toutes les fiches du lot, y compris celles jamais tentées."""
+    import contextlib
+    import logging
+
+    import app.models.database as base
+    from app.models.entities import Contact
+    from app.routers import memory as memoire
+
+    fiches = [Contact(first_name=f"Fiche {i}") for i in range(4)]
+    for fiche in fiches:
+        db_session.add(fiche)
+    await db_session.commit()
+    vraie = base.get_session_context
+    echecs = 0
+
+    @contextlib.asynccontextmanager
+    async def lecture():
+        async with vraie() as session:
+            async def get(*a, **kw):
+                nonlocal echecs
+                echecs += 1
+                if echecs == 2:
+                    memoire._ARRET_DES_INDEXATIONS.set()
+                raise RuntimeError("base verrouillée")
+
+            session.get = get
+            yield session
+
+    monkeypatch.setattr(base, "get_session_context", lecture)
+    try:
+        with caplog.at_level(logging.WARNING, logger=memoire.logger.name):
+            memoire.indexer_fiches_en_arriere_plan(fiches)
+            await asyncio.wait(list(memoire._INDEXATIONS_DE_FICHES))
+    finally:
+        memoire._ARRET_DES_INDEXATIONS.clear()
+    decomptes = [r.getMessage() for r in caplog.records if "fiches sur" in r.getMessage()]
+    assert decomptes == ["Indexation de fond : 2 fiches sur 2 en échec"], decomptes
