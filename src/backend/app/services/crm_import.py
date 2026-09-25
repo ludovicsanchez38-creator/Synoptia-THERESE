@@ -10,8 +10,10 @@ import io
 import json
 import logging
 import math
+import unicodedata
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from functools import lru_cache
 from typing import Any, Literal
 
 from app.models.entities import Contact, Deliverable, Project, generate_uuid
@@ -420,12 +422,34 @@ def _perimetre_ou_none(valeur: Any) -> str | None:
     return perimetre
 
 
+@lru_cache(maxsize=4096)
+def _replier_entete(nom: str) -> str:
+    """B-1418 : « Étape », « ETAPE » et « etape » désignent la même colonne."""
+    sans_accents = unicodedata.normalize("NFD", nom).encode("ascii", "ignore").decode("ascii")
+    return " ".join(sans_accents.split()).lower()
+
+
+def _colonne_interne(source_col: Any, mapping: dict[str, str]) -> str | None:
+    """Le champ interne d'un en-tête : forme exacte d'abord, puis sans accents
+    ni casse (B-1418), puis le nom interne lui-même ; sinon, rien."""
+    if source_col in mapping:
+        return mapping[source_col]
+    if isinstance(source_col, str):
+        replie = _replier_entete(source_col)
+        for cle, interne in mapping.items():
+            if _replier_entete(cle) == replie:
+                return interne
+    if source_col in mapping.values():
+        return str(source_col)
+    return None
+
+
 def _map_columns(row: dict, mapping: dict[str, str]) -> dict[str, Any]:
     """Map source columns to internal column names and sanitize values (SEC-017)."""
     result = {}
     for source_col, value in row.items():
-        internal_col = mapping.get(source_col, source_col)
-        if internal_col in mapping.values():
+        internal_col = _colonne_interne(source_col, mapping)
+        if internal_col is not None:
             result[internal_col] = _sanitize_field(value, internal_col)
     return result
 
@@ -632,7 +656,11 @@ class CRMImportService:
             )
 
         detected_columns = list(raw_data[0].keys()) if raw_data else []
-        used_mapping = {col: mapping.get(col, col) for col in detected_columns if col in mapping}
+        used_mapping = {
+            col: interne
+            for col in detected_columns
+            if (interne := _colonne_interne(col, mapping)) is not None
+        }
 
         validation_errors = []
         sample_rows = []
