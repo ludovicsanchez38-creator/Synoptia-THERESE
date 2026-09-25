@@ -22,6 +22,34 @@ from sqlmodel import select
 # B-1187 : une étape venue du tableur n'est retenue que si le pipeline la connaît.
 ETAPES_PIPELINE = frozenset(get_args(EtapePipeline))
 
+# B-1416 : les libellés que lit l'utilisatrice, ceux de l'écran
+# (src/frontend/src/components/crm/pipelineEtapes.ts). L'export tableur les
+# écrit ; l'import relit libellé ou identifiant.
+LIBELLES_ETAPES: dict[str, str] = {
+    "contact": "Contact",
+    "discovery": "Découverte",
+    "proposition": "Proposition",
+    "signature": "Signature",
+    "delivery": "Livraison",
+    "active": "Actif",
+    "archive": "Archive",
+}
+
+
+def _replier(texte: str) -> str:
+    sans_accents = unicodedata.normalize("NFD", texte).encode("ascii", "ignore").decode("ascii")
+    return " ".join(sans_accents.split()).lower()
+
+
+def etape_depuis_cellule(cellule: str) -> str | None:
+    """L'étape d'une cellule de tableur : identifiant (« discovery ») ou
+    libellé de l'écran (« Découverte »), sans accents ni casse ; sinon None."""
+    replie = _replier(cellule)
+    for identifiant, libelle in LIBELLES_ETAPES.items():
+        if replie in (identifiant, _replier(libelle)):
+            return identifiant
+    return None
+
 logger = logging.getLogger(__name__)
 
 

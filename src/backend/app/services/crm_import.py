@@ -20,9 +20,9 @@ from app.models.entities import Contact, Deliverable, Project, generate_uuid
 from app.models.schemas import adresse_unique_valide, perimetre_normalise
 from app.services.crm_utils import (
     DELIVERABLE_STATUS_MAP,
-    ETAPES_PIPELINE,
     PROJECT_STATUS_MAP,
     cle_de_statut,
+    etape_depuis_cellule,
     etiquettes_ecartees,
     etiquettes_lues,
 )
@@ -684,7 +684,7 @@ class CRMImportService:
         # B-1262), sur toutes les lignes ; un signalement, pas un blocage.
         for idx, row in enumerate(raw_data):
             cellule_etape = str(_map_columns(row, mapping).get("stage") or "").strip()
-            if cellule_etape and cellule_etape.lower() not in ETAPES_PIPELINE:
+            if cellule_etape and etape_depuis_cellule(cellule_etape) is None:
                 validation_errors.append(ImportError(
                     row=idx + 1,
                     column="stage",
@@ -774,7 +774,8 @@ class CRMImportService:
                 # invisible des colonnes. Elle ne remplace rien et figure au
                 # rapport.
                 cellule_etape = str(mapped.get("stage") or "").strip()
-                etape = cellule_etape.lower() if cellule_etape.lower() in ETAPES_PIPELINE else None
+                # B-1416 : l'export écrit le libellé (« Découverte ») ; l'identifiant reste accepté.
+                etape = etape_depuis_cellule(cellule_etape) if cellule_etape else None
                 etape_ecartee = (
                     ImportError(
                         row=idx + 1,

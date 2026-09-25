@@ -575,7 +575,7 @@ function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
                 placeholder="LinkedIn, Site web..."
               />
             </FormField>
-            <FormField htmlFor="crmpanel-stage" label="Stage">
+            <FormField htmlFor="crmpanel-stage" label="Étape">
               <Select
                 id="crmpanel-stage"
                 value={form.stage}

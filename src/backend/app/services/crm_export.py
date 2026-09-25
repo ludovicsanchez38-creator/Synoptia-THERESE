@@ -16,6 +16,7 @@ from datetime import UTC, datetime
 from typing import Any, Literal
 
 from app.models.entities import Contact, Deliverable, Project
+from app.services.crm_utils import LIBELLES_ETAPES
 from app.services.formules_tableur import neutraliser_formule
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
@@ -45,27 +46,27 @@ class ExportResult:
 # Column mappings for exports
 CONTACT_COLUMNS = [
     ("id", "ID"),
-    ("first_name", "Prenom"),
+    ("first_name", "Prénom"),
     ("last_name", "Nom"),
     ("company", "Entreprise"),
     ("email", "Email"),
-    ("phone", "Telephone"),
+    ("phone", "Téléphone"),
     ("address", "Adresse"),
-    ("stage", "Stage"),
+    ("stage", "Étape"),
     ("score", "Score"),
     ("source", "Source"),
     ("tags", "Tags"),
     ("notes", "Notes"),
-    ("extra_data", "Donnees supplementaires"),
-    ("last_interaction", "Derniere interaction"),
+    ("extra_data", "Données supplémentaires"),
+    ("last_interaction", "Dernière interaction"),
     ("next_follow_up", "Prochaine relance"),
-    ("rgpd_base_legale", "Base legale RGPD"),
+    ("rgpd_base_legale", "Base légale RGPD"),
     ("rgpd_date_collecte", "Date collecte RGPD"),
     ("rgpd_date_expiration", "Date expiration RGPD"),
     ("rgpd_consentement", "Consentement RGPD"),
     ("purge_excluded", "Exclu purge RGPD"),
-    ("scope", "Perimetre"),
-    ("scope_id", "ID perimetre"),
+    ("scope", "Périmètre"),
+    ("scope_id", "ID périmètre"),
     ("created_at", "Date creation"),
     ("updated_at", "Date modification"),
 ]
@@ -165,6 +166,9 @@ def _entity_to_row(entity: Any, columns: list[tuple[str, str]]) -> dict[str, Any
         value = getattr(entity, attr, None)
         if attr == "tags":
             value = _parse_tags(value)
+        elif attr == "stage" and isinstance(value, str):
+            # B-1416 : le libellé de l'écran ; l'import le relit.
+            value = LIBELLES_ETAPES.get(value, value)
         row[header] = _format_value(value)
     return row
 

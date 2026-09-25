@@ -117,7 +117,7 @@ class TestB449UneFormuleNeSortJamaisActiveDeLExport:
         feuille = load_workbook(io.BytesIO(reponse.content))["Contacts"]
         entetes = [c.value for c in feuille[1]]
         col_societe = entetes.index("Entreprise") + 1
-        col_tel = entetes.index("Telephone") + 1
+        col_tel = entetes.index("Téléphone") + 1
         cellule = feuille.cell(row=2, column=col_societe)
         assert cellule.data_type != "f", "la formule est ACTIVE dans le classeur"
         assert "1+1" in str(cellule.value), "la valeur doit rester lisible"
