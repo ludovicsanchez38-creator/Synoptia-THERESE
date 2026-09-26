@@ -161,6 +161,16 @@ async def auto_purge_expired_contacts() -> dict[str, int]:
                 if ref_date.tzinfo is None:
                     ref_date = ref_date.replace(tzinfo=UTC)
 
+                # B-1667 : un consentement renouvelé (ou une expiration RGPD
+                # encore à venir) protège le contact : l'écran promet
+                # « prolongé de 3 ans ».
+                expiration = contact.rgpd_date_expiration
+                if expiration is not None:
+                    if expiration.tzinfo is None:
+                        expiration = expiration.replace(tzinfo=UTC)
+                    if expiration > now:
+                        continue
+
                 if ref_date < purge_threshold:
                     # B-1641 : un contact importé ou synchronisé avec une
                     # vieille « Dernière interaction » était anonymisé au
