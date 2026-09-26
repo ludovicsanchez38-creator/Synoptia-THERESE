@@ -25,6 +25,10 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter()
 
+# B-1516 : préfixe des audios temporaires, pour que le démarrage efface
+# ceux qu'un arrêt brutal a laissés.
+PREFIXE_AUDIO_TEMPORAIRE = "therese-voix-"
+
 
 async def _get_groq_api_key(session: AsyncSession) -> str | None:
     """Get Groq API key from environment or database."""
@@ -84,7 +88,7 @@ async def transcribe_audio(
     extension = Path(filename).suffix or ".webm"
 
     # Save to temp file (Groq API requires file upload)
-    with tempfile.NamedTemporaryFile(suffix=extension, delete=False) as tmp:
+    with tempfile.NamedTemporaryFile(prefix=PREFIXE_AUDIO_TEMPORAIRE, suffix=extension, delete=False) as tmp:
         tmp.write(audio_data)
         tmp_path = tmp.name
 
@@ -257,7 +261,7 @@ async def transcribe_audio_local(
         raise HTTPException(status_code=400, detail="Fichier audio vide")
 
     extension = Path(audio.filename or "recording.webm").suffix or ".webm"
-    with tempfile.NamedTemporaryFile(suffix=extension, delete=False) as tmp:
+    with tempfile.NamedTemporaryFile(prefix=PREFIXE_AUDIO_TEMPORAIRE, suffix=extension, delete=False) as tmp:
         tmp.write(audio_data)
         tmp_path = tmp.name
 
@@ -277,6 +281,24 @@ async def transcribe_audio_local(
             os.unlink(tmp_path)
         except Exception as e:
             logger.debug("Echec nettoyage fichier temp: %s", e)
+
+
+def effacer_les_audios_orphelins(dossier: Path | None = None) -> int:
+    """B-1516 : efface au démarrage les audios temporaires qu'un arrêt brutal
+    a laissés (dictée ou synthèse en cours quand le moteur a été tué).
+
+    Seul le préfixe de THÉRÈSE est visé ; au démarrage, aucune dictée ne
+    tourne encore.
+    """
+    dossier = dossier if dossier is not None else Path(tempfile.gettempdir())
+    effaces = 0
+    for chemin in dossier.glob(f"{PREFIXE_AUDIO_TEMPORAIRE}*"):
+        try:
+            chemin.unlink()
+            effaces += 1
+        except OSError as e:
+            logger.debug("Audio orphelin non effacé : %s", e)
+    return effaces
 
 
 def _effacer_fichier_temporaire(chemin: str) -> None:
@@ -310,7 +332,7 @@ async def text_to_speech_local(payload: TTSRequest) -> FileResponse:
     if not text:
         raise HTTPException(status_code=400, detail="Texte vide")
 
-    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as tmp:
+    with tempfile.NamedTemporaryFile(prefix=PREFIXE_AUDIO_TEMPORAIRE, suffix=".wav", delete=False) as tmp:
         out_path = tmp.name
 
     try:

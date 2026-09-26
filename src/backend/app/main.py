@@ -202,6 +202,15 @@ async def lifespan(app: FastAPI):
     except Exception:
         logger.exception("Ménage des restaurations interrompues en échec")
 
+    # B-1516 : une dictée ou une synthèse interrompue par un arrêt brutal
+    # laissait l'audio de l'utilisatrice dans le dossier temporaire.
+    try:
+        from app.routers import voice as _voix
+
+        _voix.effacer_les_audios_orphelins()
+    except Exception:
+        logger.exception("Ménage des audios temporaires en échec")
+
     # Migrations ad-hoc : factorisées dans database.apply_adhoc_migrations
     # (revue adversariale US-015 : elles doivent tourner AVANT l'estampille
     # Alembic, sinon une DB est marquée head sans avoir le schéma de head).
