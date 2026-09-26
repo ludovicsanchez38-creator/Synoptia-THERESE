@@ -103,7 +103,7 @@ INSTALL_E2E.md
 FIX_ASYNC_SESSIONS.md
 docs/code-review/rapport-securite.md
 .claude/worktrees/
-.agents-sync-paused
+.agents-sync-paused*
 scratchpad/
 
 # Rapports Playwright (artefacts de CI, pas du code - revue 0.40)
