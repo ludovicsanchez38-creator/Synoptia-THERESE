@@ -14,12 +14,14 @@
  */
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { pushEscapeHandler } from '../lib/escapeStack';
+import { inscrireSaisieEnCours } from '../lib/saisieEnCours';
 
 export function useQuestionDAbandonDeModale({
   actif,
   modifie,
   fermer,
   fermerSiIntact = false,
+  surfaceDuRegistre = false,
 }: {
   /** La modale est ouverte. */
   actif: boolean;
@@ -29,6 +31,10 @@ export function useQuestionDAbandonDeModale({
   fermer: () => void;
   /** Échap sur une saisie intacte ferme la modale ici, au lieu de décliner. */
   fermerSiIntact?: boolean;
+  /** B-1538 : la modale vit dans une vue qu'une navigation venue du store
+   *  peut démonter (« Voir » d'une notification) ; elle s'inscrit au registre
+   *  des saisies que la coque consulte avant de changer de vue. */
+  surfaceDuRegistre?: boolean;
 }) {
   const [abandonDemande, setAbandonDemande] = useState(false);
   const etat = useRef({ modifie, abandonDemande, fermer, fermerSiIntact });
@@ -39,6 +45,15 @@ export function useQuestionDAbandonDeModale({
   useEffect(() => {
     if (!actif) setAbandonDemande(false);
   }, [actif]);
+
+  useEffect(() => {
+    if (!actif || !surfaceDuRegistre) return;
+    return inscrireSaisieEnCours(() => {
+      if (!etat.current.modifie) return false;
+      setAbandonDemande(true);
+      return true;
+    });
+  }, [actif, surfaceDuRegistre]);
 
   const demanderFermeture = useCallback(() => {
     if (etat.current.modifie) setAbandonDemande(true);

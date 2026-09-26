@@ -227,6 +227,8 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
     actif: true,
     modifie: saisieCourante !== saisieInitiale.current,
     fermer: onClose,
+    // B-1538 : la vue Devis et factures peut être démontée par le store.
+    surfaceDuRegistre: true,
     fermerSiIntact: true,
   });
 
