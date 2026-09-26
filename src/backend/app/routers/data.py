@@ -1031,6 +1031,16 @@ ROLES_IMPORTABLES = frozenset({"user", "assistant"})
 ELEMENTS_COUVERTS = ("projects", "invoices", "commands", "THERESE.md")
 MANIFESTE_SAUVEGARDE = ".manifeste-sauvegarde.json"
 
+# B-1497 : les seules entrées de premier niveau qu'une sauvegarde écrit
+# (_create_archive, plus le manifeste et les compagnons WAL). Les anciennes
+# versions n'en écrivaient qu'une partie.
+NOMS_D_ARCHIVE = frozenset({
+    "therese.db", "therese.db-wal", "therese.db-shm", "qdrant", "images",
+    "outputs", "mcp_servers.json", "export_profile.json", ".encryption_key",
+    ".encryption_salt", "projects", "invoices", "commands", "THERESE.md",
+    MANIFESTE_SAUVEGARDE,
+})
+
 
 def elements_couverts(tar: Any) -> set[str]:
     """Les éléments de ELEMENTS_COUVERTS que le manifeste de `tar` déclare."""
@@ -1201,23 +1211,40 @@ def _membre_est_sur(dest: str | Path, nom: str) -> bool:
     return cible == racine or cible.is_relative_to(racine)
 
 
+def _membre_attendu(dest: str | Path, member: Any) -> bool:
+    """B-1497 : un membre de sauvegarde est un fichier ou un dossier, sous une
+    entrée que la sauvegarde écrit, sans `..` ni chemin absolu.
+
+    `filter="data"` n'écarte que ce qui sort du dossier des données : un
+    `outputs/../x` ou un lien interne `outputs/t -> ../backups` y écrivait
+    ailleurs que dans les entrées attendues (les autres sauvegardes, dont
+    l'archive de sécurité du retour arrière).
+    """
+    from pathlib import PurePosixPath
+
+    nom = member.name
+    if not (member.isfile() or member.isdir()) or nom.startswith("/") or "\\" in nom:
+        return False
+    segments = [s for s in PurePosixPath(nom).parts if s != "."]
+    if not segments or ".." in segments or segments[0] not in NOMS_D_ARCHIVE:
+        return False
+    return _membre_est_sur(dest, nom)
+
+
 def _safe_extractall(tar, dest) -> None:
-    """Extraction protégée contre le path traversal, compatible Python 3.11+.
-
-    Utilise filter='data' (PEP 706, Python 3.12+) si disponible ; sinon valide
-    chaque membre à la main (pas de chemin absolu / .. / lien)."""
-
+    """Extraction d'une sauvegarde : tout membre inattendu refuse l'archive
+    entière AVANT la moindre écriture (B-1497), puis filter='data' (PEP 706)
+    quand Python le connaît."""
+    for member in tar.getmembers():
+        if not _membre_attendu(dest, member):
+            raise HTTPException(
+                status_code=400,
+                detail="Archive de sauvegarde non sûre : elle contient un chemin ou un lien inattendu.",
+            )
     try:
         tar.extractall(dest, filter="data")
-        return
     except TypeError:
-        pass  # Python < 3.12 : pas de paramètre filter
-    for member in tar.getmembers():
-        if not _membre_est_sur(dest, member.name) or member.issym() or member.islnk():
-            raise HTTPException(
-                status_code=400, detail="Archive de backup non sûre (path traversal ou lien)"
-            )
-    tar.extractall(dest)
+        tar.extractall(dest)  # Python < 3.12 : membres déjà vérifiés un à un
 
 
 @router.post("/backup")
