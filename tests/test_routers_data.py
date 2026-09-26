@@ -675,6 +675,14 @@ class TestDataImport:
         self, client: AsyncClient
     ):
         """L'import dédié restaure l'état exporté, pas une conversation ressemblante."""
+        # B-1483 : le projet doit exister pour que le rattachement soit rendu.
+        from app.models import database as db_module
+        from app.models.entities import Project
+
+        async with db_module.AsyncSessionLocal() as session:
+            session.add(Project(id="project-historique", name="Historique"))
+            await session.commit()
+
         payload = {
             "conversations": [
                 {

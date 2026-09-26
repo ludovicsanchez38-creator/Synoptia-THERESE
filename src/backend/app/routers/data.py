@@ -1816,12 +1816,20 @@ async def import_conversations(
         if existing.scalar_one_or_none():
             continue  # Skip existing
 
+        # B-1483 : un projet absent de la base n'est pas recopié. Le
+        # rattachement le refuse (404) ; l'import cloisonnait la conversation
+        # sur un projet fantôme, sans plus aucun document visible.
+        projet_id = conv_data.get("project_id")
+        if not isinstance(projet_id, str) or await session.get(Project, projet_id) is None:
+            projet_id = None
+
         # Create conversation
         conversation_kwargs: dict[str, Any] = {
             "title": conv_data.get("title"),
             "summary": conv_data.get("summary"),
-            "project_id": conv_data.get("project_id"),
-            "memory_scope": conv_data.get("memory_scope") or "global",
+            "project_id": projet_id,
+            # Une politique « project » sans projet cloisonnerait sur du vide.
+            "memory_scope": (conv_data.get("memory_scope") or "global") if projet_id else "global",
         }
         if conv_data.get("id"):
             conversation_kwargs["id"] = conv_data["id"]
