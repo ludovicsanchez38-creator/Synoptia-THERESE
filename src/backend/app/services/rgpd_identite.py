@@ -73,7 +73,15 @@ async def anonymiser_la_personne(session: Any, contact: Contact, maintenant: dat
     manuelle et la purge automatique, qui n'effaçait que la fiche et ses
     e-mails. Rend les identifiants des dossiers supprimés, dont le dépôt
     disque se purge APRÈS le commit (B-445). Ne commite pas."""
-    from app.models.entities import Activity, EmailMessage, Invoice, Prestation, Project, Task
+    from app.models.entities import (
+        Activity,
+        EmailMessage,
+        Invoice,
+        Notification,
+        Prestation,
+        Project,
+        Task,
+    )
     from app.routers.memory import _nettoyer_et_supprimer_projet
     from sqlmodel import select
 
@@ -119,6 +127,18 @@ async def anonymiser_la_personne(session: Any, contact: Contact, maintenant: dat
     # Cycle 6 : les tâches rattachées au contact seul.
     for tache in (await session.execute(select(Task).where(Task.contact_id == contact_id))).scalars().all():
         await session.delete(tache)
+
+    # B-1640 : les préavis de purge portent le nom (« X sera anonymisé
+    # le … ») ; ils n'ont plus d'objet et ne survivent pas à l'anonymisation.
+    for preavis in (
+        await session.execute(
+            select(Notification).where(
+                Notification.source == "rgpd_purge",
+                Notification.action_url == f"/crm/contacts/{contact_id}",
+            )
+        )
+    ).scalars().all():
+        await session.delete(preavis)
 
     # RGPD-1 (US-003) : les e-mails liés (art. 17).
     for email_msg in (
