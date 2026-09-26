@@ -405,6 +405,7 @@ export {
 // Tasks - Gestion de tâches
 export {
   listTasks,
+  PLAFOND_TACHES,
   getTask,
   createTask,
   updateTask,

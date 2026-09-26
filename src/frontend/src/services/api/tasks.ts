@@ -46,6 +46,13 @@ export interface UpdateTaskRequest {
   tags?: string[];
 }
 
+/**
+ * Plafond d'une page de tâches (borne haute de la route, `le=1000`). La vue
+ * Tâches demande une seule page : au plafond, elle dit que sa liste est
+ * incomplète (revue P-148, constat 10).
+ */
+export const PLAFOND_TACHES = 1000;
+
 export async function listTasks(params?: {
   status?: string;
   priority?: string;
@@ -61,7 +68,7 @@ export async function listTasks(params?: {
   // Sans limit explicite, les tâches au-delà disparaissaient de l'UI sans
   // indicateur. 1000 = plafond API, palliatif honnête en attendant une
   // vraie pagination dans TasksPanel.
-  queryParams.set('limit', String(params?.limit ?? 1000));
+  queryParams.set('limit', String(params?.limit ?? PLAFOND_TACHES));
   if (params?.offset) queryParams.set('offset', String(params.offset));
 
   const response = await apiFetch(`${API_BASE}/api/tasks?${queryParams}`);

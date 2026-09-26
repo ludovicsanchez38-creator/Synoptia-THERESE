@@ -105,6 +105,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
 
   const hasCachedTasks = tasks.length > 0;
   const [loading, setLoading] = useState(!hasCachedTasks);
+  const [listeIncomplete, setListeIncomplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // P-148 : un filtre de projet (posé par « Voir les tâches » d'un projet)
   // déplie les filtres ; replié, il filtrait la liste sans le dire.
@@ -213,6 +214,9 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
       if (filterProjectId) params.project_id = filterProjectId;
 
       const result = await api.listTasks(params);
+      // Revue P-148, constat 10 : une seule page est lue. Au plafond, la
+      // liste est peut-être tronquée, et la vue le dit.
+      setListeIncomplete(result.length >= api.PLAFOND_TACHES);
       // BUG-118 : tags disponibles calculés sur le résultat serveur (avant filtre
       // tag), puis filtrage tag côté client (l'API tâches ne connaît pas les tags).
       setAvailableTags([...new Set(result.flatMap((t) => t.tags ?? []))].sort());
@@ -398,6 +402,11 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
         <Alerte className="mx-4 mt-2" icone={<AlertCircle className="h-[18px] w-[18px]" />}>
           {error}
         </Alerte>
+      )}
+      {listeIncomplete && (
+        <p role="status" className="mx-4 mt-2 text-sm text-text-muted">
+          Liste incomplète : seules les {api.PLAFOND_TACHES.toLocaleString('fr-FR')} premières tâches sont chargées.
+        </p>
       )}
 
       <div className="flex-1 overflow-hidden">
