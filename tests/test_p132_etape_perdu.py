@@ -330,7 +330,36 @@ async def test_la_fiche_lue_par_le_modele_porte_le_libelle(db_session):
 
     charge = json.loads(await execute_memory_tool("read_contact", {"query": "Benali"}, db_session))
 
-    assert charge["contacts"][0]["stage"] == "Perdu"
+    # Revue du diff, constat 2 : `stage` reste l'identifiant, comme dans la
+    # liste des contacts ; le mot et sa définition voyagent à côté.
+    fiche = charge["contacts"][0]
+    assert fiche["stage"] == "lost"
+    assert fiche["etape"] == "Perdu"
+    assert fiche["definition_de_l_etape"] == "la vente n'a pas abouti"
+
+
+@pytest.mark.asyncio
+async def test_list_contacts_puis_get_contact_rendent_la_meme_forme(client: AsyncClient):
+    """Revue du diff, constat 2 : le même modèle lisait l'identifiant par
+    `list_contacts` et le libellé par `get_contact`, sous la même clé. Les deux
+    portes MCP rendent désormais l'identifiant sous `stage` ; la fiche ajoute
+    le mot et sa définition, là où « signature » seul se lisait « en attente
+    de signature »."""
+    from app.services.mcp_therese_server import TOOL_ROUTES
+
+    fiche = await _fiche(client, stage="signature")
+    _, route_liste = TOOL_ROUTES["list_contacts"]
+    _, route_fiche = TOOL_ROUTES["get_contact"]
+
+    liste = await client.get(route_liste)
+    lue = await client.get(route_fiche.format(contact_id=fiche["id"]))
+
+    assert liste.status_code == 200, liste.text
+    assert lue.status_code == 200, lue.text
+    [dans_la_liste] = [c for c in liste.json() if c["id"] == fiche["id"]]
+    assert dans_la_liste["stage"] == lue.json()["stage"] == "signature"
+    assert lue.json()["etape"] == "Signature"
+    assert "accord est donné" in lue.json()["definition_de_l_etape"]
 
 
 def test_le_skill_proposition_donne_l_etape_en_toutes_lettres(tmp_path):

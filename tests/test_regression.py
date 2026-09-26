@@ -1319,8 +1319,9 @@ class TestP0PROD3_ChatTools:
         assert data["found"] is True
         fiche = data["contacts"][0]
         assert fiche["score"] == 85
-        # P-132 : le modèle lit le libellé de l'écran, pas l'identifiant.
-        assert fiche["stage"] == "Proposition"
+        assert fiche["stage"] == "proposition"
+        # P-132 : le mot de l'écran voyage à côté de l'identifiant.
+        assert fiche["etape"] == "Proposition"
         textes = " ".join(
             (t.get("texte") or "") + " " + (t.get("titre") or "") for t in fiche["traces"]
         )

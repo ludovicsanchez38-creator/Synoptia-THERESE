@@ -1000,10 +1000,14 @@ async def fiche_selon_le_contrat(
         "email": contact.email,
         "phone": contact.phone,
         "source": contact.source,
-        # P-132 : le libellé de l'écran (« Perdu », « Signature »), jamais
-        # l'identifiant : un modèle lit « signature » comme « en attente de
-        # signature ». Seuls un modèle (chat, MCP) lisent ce contrat.
-        "stage": libelle_d_etape(contact.stage),
+        # P-132 : `stage` reste l'identifiant, comme dans la liste des contacts
+        # (`list_contacts` côté MCP) : deux portes, une forme. Le mot de
+        # l'écran et sa définition voyagent à côté, comme dans l'état courant
+        # des prestations : « signature » seul se lit « en attente de
+        # signature ».
+        "stage": contact.stage,
+        "etape": libelle_d_etape(contact.stage),
+        "definition_de_l_etape": DEFINITIONS_ETAPES.get(contact.stage),
         "score": contact.score,
         "last_interaction": contact.last_interaction.isoformat()
         if contact.last_interaction
