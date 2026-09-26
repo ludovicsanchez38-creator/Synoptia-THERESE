@@ -482,3 +482,7 @@ Aucune décision de Ludo n'est réduite : les six décisions du 25/09 sont tenue
 Aucune. P-105 n'efface que les lignes qu'elle crée elle-même, selon la décision 4, n'annonce rien publiquement et ne touche pas à la marque.
 
 C-1 (conversion des anciennes lignes d'agenda) modifie des données de l'utilisateur sans en effacer : elle relève de la délégation, avec une recommandation, dans son propre ticket. Si la décision prise devait effacer des événements, elle reviendrait à Ludo. A-2 et A-3 sont des défauts ordinaires, corrigés hors RFC.
+
+## Amendements de la revue unique V4 (26/09/2026)
+
+Verdict GO. Pas de V5 : les constats P2 de `docs/plans/revues/2026-09-26-revue-rfc-v4-p105-p106.md` s'imposent aux lots concernés, avec leurs tests, et seront vérifiés à la revue de conception de chaque lot.

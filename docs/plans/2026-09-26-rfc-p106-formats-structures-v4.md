@@ -335,3 +335,7 @@ Aucune décision de Ludo n'est réduite : les décisions 7, 8 et 9 sont tenues, 
 ## 10. Questions réservées à Ludo
 
 Aucune. La copie d'une carte ne remplace jamais le fichier de l'utilisateur ; les fragments de fichiers retirés des réponses en ligne sans accord ne sont pas effacés (ils restent dans l'index local) ; rien n'est annoncé publiquement hors des notes de version habituelles, rien ne touche à la marque. D-1 et D-2 sont des défauts ordinaires, corrigés hors RFC.
+
+## Amendements de la revue unique V4 (26/09/2026)
+
+Verdict GO. Pas de V5 : les constats P2 de `docs/plans/revues/2026-09-26-revue-rfc-v4-p105-p106.md` s'imposent aux lots concernés, avec leurs tests, et seront vérifiés à la revue de conception de chaque lot.
