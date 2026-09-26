@@ -415,7 +415,10 @@ async def upsert_contact(
             valeur = _get(colonne)
             if valeur:
                 setattr(existing, attribut, valeur)
-        existing.email = courriel
+        # B-1664 : une cellule vide efface (miroir, B-1107) ; une colonne
+        # absente de la feuille ne dit rien et ne touche pas au courriel.
+        if "Email" in row:
+            existing.email = courriel
         if etape:
             existing.stage = etape
         if score_lu is not None:
