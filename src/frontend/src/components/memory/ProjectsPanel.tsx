@@ -104,14 +104,6 @@ export function ProjectsPanel() {
     return pushEscapeHandler(() => setDeleteTarget(null));
   }, [deleteTarget]);
 
-  useEffect(() => {
-    if (!modalOpen) return;
-    return pushEscapeHandler(() => {
-      setModalOpen(false);
-      setEditing(null);
-    });
-  }, [modalOpen]);
-
   const handleNew = useCallback(() => {
     setEditing(null);
     setModalOpen(true);
@@ -276,6 +268,9 @@ export function ProjectsPanel() {
         }}
         onSaved={handleSaved}
         project={editing}
+        // B-1491 : la fenêtre tient seule son Échap. Un gestionnaire de la vue,
+        // empilé après le sien, fermait sans poser la question de B-1392.
+        fermerSiIntact
       />
 
       {/* Confirmation de suppression */}

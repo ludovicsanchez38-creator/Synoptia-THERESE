@@ -28,6 +28,9 @@ interface ProjectModalProps {
   onClose: () => void;
   onSaved?: () => void;
   project?: api.Project | null; // If provided, edit mode
+  /** B-1491 : montée hors du panelStore (vue Projets), la fenêtre ferme
+   * elle-même une saisie intacte à Échap, au lieu de décliner. */
+  fermerSiIntact?: boolean;
 }
 
 interface FormData {
@@ -57,7 +60,7 @@ const STATUS_OPTIONS = [
   { id: 'cancelled', label: 'Annulé' },
 ];
 
-export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModalProps) {
+export function ProjectModal({ isOpen, onClose, onSaved, project, fermerSiIntact = false }: ProjectModalProps) {
   const { enabled: demoEnabled, replacementMap, maskContact, maskProject } = useDemoMask();
   const [formData, setFormData] = useState<FormData>(initialFormData);
   // B-1392 : la saisie telle que chargée, pour savoir si elle a changé.
@@ -119,6 +122,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project }: ProjectModal
     actif: isOpen,
     modifie,
     fermer: onClose,
+    fermerSiIntact,
   });
 
   const loadProjectFiles = useCallback(async (projectId: string, contexte: number) => {
