@@ -29,6 +29,10 @@ class ImportRefuse(ValueError):
     """Le fichier est refusé avant toute écriture ; le message va à l'écran."""
 
 
+class _NomAmbigu:
+    """Plusieurs fiches portent ce prénom et ce nom (B-1706)."""
+
+
 def verifier_le_fichier(nom_du_fichier: str | None, contenu: bytes) -> None:
     if not nom_du_fichier or not nom_du_fichier.lower().endswith(".vcf"):
         raise ImportRefuse("Le fichier doit être au format .vcf")
@@ -36,8 +40,14 @@ def verifier_le_fichier(nom_du_fichier: str | None, contenu: bytes) -> None:
         raise ImportRefuse("Fichier trop volumineux (max 1 Mo)")
 
 
-async def _fiche_existante(session: AsyncSession, carte: dict[str, Any]) -> Contact | None:
-    """Même personne : même e-mail, sinon mêmes prénom et nom."""
+async def _fiche_existante(
+    session: AsyncSession, carte: dict[str, Any]
+) -> Contact | _NomAmbigu | None:
+    """Même personne : même e-mail, sinon mêmes prénom et nom.
+
+    B-1706 : si plusieurs fiches portent ce prénom et ce nom, l'appariement
+    par le nom est ambigu. On n'en retient aucune.
+    """
     if carte.get("email"):
         trouvee = (
             await session.execute(select(Contact).where(Contact.email == carte["email"]).limit(1))
@@ -45,13 +55,20 @@ async def _fiche_existante(session: AsyncSession, carte: dict[str, Any]) -> Cont
         if trouvee:
             return trouvee
     if carte.get("first_name") and carte.get("last_name"):
-        return (
+        homonymes = (
             await session.execute(
                 select(Contact)
-                .where(Contact.first_name == carte["first_name"], Contact.last_name == carte["last_name"])
-                .limit(1)
+                .where(
+                    Contact.first_name == carte["first_name"],
+                    Contact.last_name == carte["last_name"],
+                )
+                .limit(2)
             )
-        ).scalar_one_or_none()
+        ).scalars().all()
+        if len(homonymes) > 1:
+            return _NomAmbigu()
+        if homonymes:
+            return homonymes[0]
     return None
 
 
@@ -76,7 +93,7 @@ async def importer_des_vcard(
 
     bilan: dict[str, Any] = {
         "created": 0, "updated": 0, "deja_a_jour": 0, "skipped": 0,
-        "courriels_gardes": 0, "total": nb_cartes, "ecartees": ecartees,
+        "courriels_gardes": 0, "non_rapprochees": 0, "total": nb_cartes, "ecartees": ecartees,
     }
     if not cartes:
         bilan["message"] = (
@@ -88,6 +105,10 @@ async def importer_des_vcard(
     a_indexer: list[Contact] = []
     for carte in cartes:
         existante = await _fiche_existante(session, carte)
+        if isinstance(existante, _NomAmbigu):
+            # Ni courriel, ni autre champ, ni fiche en plus.
+            bilan["non_rapprochees"] += 1
+            continue
         if existante is None:
             fiche = Contact(
                 first_name=carte.get("first_name", ""),
@@ -149,6 +170,12 @@ async def importer_des_vcard(
     if bilan["courriels_gardes"]:
         morceaux.append(
             f"{bilan['courriels_gardes']} fiche(s) gardent leur courriel, différent de celui de la carte"
+        )
+    if bilan["non_rapprochees"] == 1:
+        morceaux.append("1 carte non rapprochée : plusieurs fiches portent ce nom")
+    elif bilan["non_rapprochees"]:
+        morceaux.append(
+            f"{bilan['non_rapprochees']} cartes non rapprochées : plusieurs fiches portent ce nom"
         )
     # B-1380 : l'écarté se dit.
     if ecartees:
