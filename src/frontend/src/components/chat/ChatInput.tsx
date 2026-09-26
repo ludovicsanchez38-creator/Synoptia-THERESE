@@ -565,8 +565,14 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     const conversationPorteDesDocuments = Boolean(
       currentConversation()?.messages.some((m) => m.hasAttachments),
     );
+    // B-1521 : /fichier et /analyse lisent un fichier local et l'envoient au
+    // modèle (même motif que le moteur, FILE_COMMAND_PATTERN) : c'est un envoi
+    // de document, pas un simple message.
+    const commandeDeFichier = /^\/(fichier|analyse)\s+\S/im.test(trimmed);
     const finaliteCloud: CloudPurpose =
-      attachedFiles.length > 0 || conversationPorteDesDocuments ? 'documents' : 'llm';
+      attachedFiles.length > 0 || conversationPorteDesDocuments || commandeDeFichier
+        ? 'documents'
+        : 'llm';
     // B-1158 : l'accord porte sur la destination réelle ; un modèle Ollama
     // Cloud part chez ollama.com et le demande comme un fournisseur en ligne.
     const destinationMessage = fournisseurDAccord(currentProvider, currentModel);
@@ -586,11 +592,11 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           'mémoire locale utile',
           // B-1515 : ils partent avec chaque message, dans le prompt système.
           'ton profil et tes consignes personnelles (THERESE.md), s’ils sont renseignés',
+          ...(attachedFiles.length > 0 || conversationPorteDesDocuments || commandeDeFichier
+            ? ['contenu intégral des documents joints ou lus par /fichier et /analyse']
+            : []),
           ...(attachedFiles.length > 0 || conversationPorteDesDocuments
-            ? [
-                'contenu intégral des documents joints',
-                'ces documents sont renvoyés à chaque message de la conversation',
-              ]
+            ? ['ces documents sont renvoyés à chaque message de la conversation']
             : []),
         ],
       });
