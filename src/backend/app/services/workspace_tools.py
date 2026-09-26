@@ -1674,6 +1674,17 @@ async def _create_calendar_event(
     except ValueError as e:
         return f"Erreur de format de date : {e}. Utilise le format ISO 8601 (ex: 2026-03-26T14:00:00)."
 
+    # B-1500 : l'agenda range une heure murale de Paris sans fuseau (B-275) et
+    # SQLite jette le décalage. Une heure datée du modèle (Z, +02:00) est donc
+    # ramenée à Paris ; une heure sans fuseau est déjà celle de Paris. Deux
+    # bornes de même nature se comparent aussi sans lever d'erreur.
+    from app.services.civil_time import PARIS
+
+    if start.tzinfo is not None:
+        start = start.astimezone(PARIS).replace(tzinfo=None)
+    if end.tzinfo is not None:
+        end = end.astimezone(PARIS).replace(tzinfo=None)
+
     if end <= start:
         return "Erreur : la fin du rendez-vous doit être postérieure au début."
 
