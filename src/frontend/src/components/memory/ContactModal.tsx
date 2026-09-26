@@ -16,6 +16,7 @@ import { FormField } from '../ui/FormField';
 import { Input } from '../ui/Input';
 import { Textarea } from '../ui/Textarea';
 import { entreeValide } from '../../lib/entreeValide';
+import { gesteBloqueEnDemo } from '../../lib/gesteEnDemo';
 
 interface ContactModalProps {
   isOpen: boolean;
@@ -388,7 +389,7 @@ export function ContactModal({ isOpen, onClose, onSaved, contact }: ContactModal
                     ref={supprimerRef}
                     variant="ghost"
                     className="text-error hover:text-error hover:bg-error/10"
-                    onClick={() => setShowDeleteConfirm(true)}
+                    onClick={() => { if (!gesteBloqueEnDemo()) setShowDeleteConfirm(true); }}
                     disabled={demoEnabled}
                   >
                     <Trash2 className="w-4 h-4 mr-2" />

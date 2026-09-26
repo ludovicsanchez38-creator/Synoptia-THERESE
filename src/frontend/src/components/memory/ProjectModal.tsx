@@ -26,6 +26,7 @@ import { useDemoStore } from '../../stores/demoStore';
 import { buildReplacementMap, maskText as appliquerMasque } from '../../lib/demoMask';
 import { entreeValide } from '../../lib/entreeValide';
 import { demanderLOuvertureDuTravail, type DestinationDuTravail } from '../../lib/destinationDuTravail';
+import { gesteBloqueEnDemo } from '../../lib/gesteEnDemo';
 
 interface ProjectModalProps {
   isOpen: boolean;
@@ -720,7 +721,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project, fermerSiIntact
                     ref={supprimerRef}
                     variant="ghost"
                     className="text-error hover:text-error hover:bg-error/10"
-                    onClick={() => setShowDeleteConfirm(true)}
+                    onClick={() => { if (!gesteBloqueEnDemo()) setShowDeleteConfirm(true); }}
                     disabled={demoEnabled}
                   >
                     <Trash2 className="w-4 h-4 mr-2" />

@@ -34,6 +34,7 @@ import { useStatusStore } from '../../stores/statusStore';
 import { ProjectsKanban } from './ProjectsKanban';
 import { ProjectModal } from './ProjectModal';
 import { ConfirmationSuppressionProjet } from './ConfirmationSuppressionProjet';
+import { gesteBloqueEnDemo } from '../../lib/gesteEnDemo';
 
 /**
  * B-098 : plafond DUR du GET projets (`limit` borné à 200 côté serveur, 201
@@ -123,6 +124,8 @@ export function ProjectsPanel() {
 
   const handleStatusChange = useCallback(
     async (projectId: string, newStatus: string) => {
+      // B-1621 : déplacer un projet réel est bloqué en démo.
+      if (gesteBloqueEnDemo()) return;
       // Optimiste : on déplace la carte tout de suite, on resynchronise si échec.
       setProjects((prev) =>
         prev.map((p) => (p.id === projectId ? { ...p, status: newStatus } : p))
@@ -251,7 +254,7 @@ export function ProjectsPanel() {
             <ProjectsKanban
               projects={projetsAffiches}
               onSelect={handleSelect}
-              onDelete={setDeleteTarget}
+              onDelete={(projet) => { if (!gesteBloqueEnDemo()) setDeleteTarget(projet); }}
               onStatusChange={handleStatusChange}
             />
           </Carte>

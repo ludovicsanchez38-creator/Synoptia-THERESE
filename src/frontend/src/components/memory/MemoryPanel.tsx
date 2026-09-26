@@ -22,6 +22,7 @@ import { pushEscapeHandler } from '../../lib/escapeStack';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { Z_LAYER } from '../../styles/z-layers';
 import { ImportTableurModal } from './ImportTableurModal';
+import { gesteBloqueEnDemo } from '../../lib/gesteEnDemo';
 
 const LIBELLES_PERIMETRE: Record<MemoryScope, string> = {
   global: 'Global',
@@ -549,6 +550,8 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                   onNouveauContact={onNewContact}
                   onSelect={(c) => onEditContact?.(c)}
                   onDelete={(c) => {
+                    // B-1621 : bloqué en démo (la fiche réelle serait supprimée).
+                    if (gesteBloqueEnDemo()) return;
                     setDeleteError(null);
                     setDeleteConfirm({
                       type: 'contact',
@@ -558,6 +561,8 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                   }}
                   rgpdButtons={rgpdButtons}
                   onRGPDAction={(type, contact) => {
+                    // B-1621 : l'anonymisation est bloquée en démo.
+                    if (type === 'anonymize' && gesteBloqueEnDemo()) return;
                     rgpdFocusReturn.current = contact.id;
                     setRgpdAction({ type, contact });
                   }}

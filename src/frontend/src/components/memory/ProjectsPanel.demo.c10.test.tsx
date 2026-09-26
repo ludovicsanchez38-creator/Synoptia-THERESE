@@ -1,5 +1,5 @@
 /** B-939 : le nom protégé sur la carte ne doit pas ressortir dans sa confirmation. */
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Project } from '../../services/api';
 import { useDemoStore } from '../../stores/demoStore';
@@ -38,17 +38,13 @@ describe('B-939 : confirmation de suppression depuis Projets en mode démo', () 
     });
   });
 
-  it('revue P-148, constat 14 : en démonstration, la phrase des conséquences s’affiche, sans aucun nom', async () => {
+  it('B-1621 (décision de Ludo, 26/09) : en démonstration, Supprimer n’ouvre pas la confirmation et ne supprime rien', async () => {
     useDemoStore.setState({ enabled: true, replacementMap: new Map(REMPLACEMENTS) });
     render(<ProjectsPanel />);
     fireEvent.click(await screen.findByRole('button', { name: `Supprimer ${NOM_DEMO}` }));
-    const confirmation = screen.getByRole('dialog', { name: 'Supprimer ce projet ?' });
-    await waitFor(() => expect(within(confirmation).getByRole('status')).toHaveTextContent(
-      'La suppression emporte 3 tâches, 1 livrable et 1 fichier déposé dans THÉRÈSE.',
-    ));
-    expect(api.lireLEnsembleDuProjet).toHaveBeenCalledWith(PROJET.id, 1);
-    expect(confirmation).not.toHaveTextContent(PROJET.name);
-    expect(confirmation).not.toHaveTextContent(/Ardent/);
+    expect(screen.queryByRole('dialog', { name: 'Supprimer ce projet ?' })).toBeNull();
+    expect(api.deleteProject).not.toHaveBeenCalled();
+    expect(screen.queryByText(PROJET.name)).toBeNull();
   });
 
   afterEach(() => {
@@ -62,20 +58,5 @@ describe('B-939 : confirmation de suppression depuis Projets en mode démo', () 
     fireEvent.click(await screen.findByRole('button', { name: `Supprimer ${PROJET.name}` }));
     expect(screen.getByRole('dialog', { name: 'Supprimer ce projet ?' })).toHaveTextContent(PROJET.name);
     expect(api.deleteProject).not.toHaveBeenCalled();
-  });
-
-  it('garde le nom masqué dans la confirmation et supprime uniquement le vrai identifiant', async () => {
-    useDemoStore.setState({ enabled: true, replacementMap: new Map(REMPLACEMENTS) });
-    render(<ProjectsPanel />);
-    const supprimer = await screen.findByRole('button', { name: `Supprimer ${NOM_DEMO}` });
-    expect(screen.queryByText(PROJET.name)).toBeNull();
-    fireEvent.click(supprimer);
-
-    const confirmation = screen.getByRole('dialog', { name: 'Supprimer ce projet ?' });
-    expect.soft(confirmation).not.toHaveTextContent(PROJET.name);
-    expect.soft(confirmation).toHaveTextContent(NOM_DEMO);
-    expect(api.deleteProject).not.toHaveBeenCalled();
-    fireEvent.click(within(confirmation).getByRole('button', { name: 'Supprimer' }));
-    await waitFor(() => expect(api.deleteProject).toHaveBeenCalledWith(PROJET.id));
   });
 });
