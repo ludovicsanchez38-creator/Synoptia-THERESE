@@ -425,7 +425,8 @@ function TaskCard({ task, onClick, onStatusChange, isOverlay, showDragHandle, co
                     key={tag}
                     className="px-2 py-0.5 text-xs bg-accent-tint text-accent-cyan-ink rounded-sm"
                   >
-                    {tag}
+                    {/* Revue P-148, passe 2, constat 2 : masquée en démonstration. */}
+                    {maskTextFn ? maskTextFn(tag) : tag}
                   </span>
                 ))}
               </div>

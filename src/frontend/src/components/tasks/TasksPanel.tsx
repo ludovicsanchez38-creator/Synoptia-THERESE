@@ -53,13 +53,17 @@ function libelleDe(options: { value: string; label: string }[], valeur: string):
   return options.find((o) => o.value === valeur)?.label ?? valeur;
 }
 
-/** Revue P-148, constat 8 : ce qu'un geste venu d'ailleurs a retiré, en clair. */
-function annonceDesFiltresRetires(retires: FiltresRetires): string {
+/**
+ * Revue P-148, constat 8 : ce qu'un geste venu d'ailleurs a retiré, en clair.
+ * Passe 2, constat 2 : l'étiquette et la recherche, textes saisis qui peuvent
+ * nommer un client, passent par le masque de démonstration.
+ */
+function annonceDesFiltresRetires(retires: FiltresRetires, masquer: (texte: string) => string): string {
   const noms = [
     retires.statut ? `statut « ${libelleDe(OPTIONS_STATUT, retires.statut)} »` : '',
     retires.priorite ? `priorité « ${libelleDe(OPTIONS_PRIORITE, retires.priorite)} »` : '',
-    retires.etiquette ? `étiquette « ${retires.etiquette} »` : '',
-    retires.recherche ? `recherche « ${retires.recherche} »` : '',
+    retires.etiquette ? `étiquette « ${masquer(retires.etiquette)} »` : '',
+    retires.recherche ? `recherche « ${masquer(retires.recherche)} »` : '',
   ].filter(Boolean);
   return `Filtres précédents retirés : ${noms.join(', ')}.`;
 }
@@ -102,7 +106,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
     filtresRetires,
   } = useTaskStore();
 
-  const { enabled: demoEnabled, populateMap, maskProject } = useDemoMask();
+  const { enabled: demoEnabled, populateMap, maskProject, maskText } = useDemoMask();
 
   const hasCachedTasks = tasks.length > 0;
   const [loading, setLoading] = useState(!hasCachedTasks);
@@ -365,7 +369,9 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
           onChange={(e) => setFilterTag(e.target.value || null)}
           options={[
             { value: '', label: 'Tous les tags' },
-            ...tagsProposes.map((t) => ({ value: t, label: t })),
+            // Passe 2, constat 2 : le libellé est masqué en démonstration,
+            // la valeur reste la vraie étiquette (c'est elle qui filtre).
+            ...tagsProposes.map((t) => ({ value: t, label: maskText(t) })),
           ]}
           className="w-auto"
         />
@@ -373,7 +379,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
 
       {filtresRetires && (
         <p role="status" className="basis-full text-sm text-text-muted">
-          {annonceDesFiltresRetires(filtresRetires)}
+          {annonceDesFiltresRetires(filtresRetires, maskText)}
         </p>
       )}
 

@@ -223,7 +223,9 @@ export function TaskList() {
                   key={tag}
                   className="px-2 py-0.5 text-xs bg-accent-tint text-accent-cyan-ink rounded-sm"
                 >
-                  {tag}
+                  {/* Revue P-148, passe 2, constat 2 : une étiquette peut être
+                      un nom de client, masquée en démonstration comme ailleurs. */}
+                  {maskText(tag)}
                 </span>
               ))}
 
