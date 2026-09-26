@@ -297,6 +297,7 @@ async def _gather_local_context(
         try:
             from app.models.database import get_session_context
             from app.models.entities import Activity, Contact, Invoice
+            from app.services.crm_utils import libelle_d_etape
 
             async with get_session_context() as session:
                 from collections import defaultdict
@@ -353,7 +354,8 @@ async def _gather_local_context(
                             if c.next_follow_up else "aucune"
                         )
                         lines.append(
-                            f"- {name}{company} | étape : {c.stage} | "
+                            # P-132 : le mot de l'écran (« Perdu »), pas l'identifiant.
+                            f"- {name}{company} | étape : {libelle_d_etape(c.stage)} | "
                             f"dernière interaction : {derniere_interaction} | "
                             f"prochaine relance : {prochaine_relance}"
                         )

@@ -53,6 +53,22 @@ describe('P-135 : Cette semaine', () => {
     expect(within(section).getByText(/Découverte 2, Proposition 1/)).toBeInTheDocument();
   });
 
+  it('P-132 : les étapes suivent l’ordre du pipeline et viennent du moteur seul', async () => {
+    // Le moteur est la seule source de ce qui compte comme prospect : l'écran
+    // n'a plus sa propre liste. Il range ce qu'il reçoit dans l'ordre des
+    // colonnes du Pipeline, et une clé inconnue ne s'invente pas un libellé.
+    apiMocks.fetchSemaineDashboard.mockResolvedValue({
+      date: '2026-09-24', mois: '2026-09', a_venir: [], encaisse_du_mois: {},
+      prospects_par_etape: { delivery: 2, discovery: 1, xyz: 5 },
+      indisponibles: [],
+    });
+    render(<CetteSemaine onOpenContact={vi.fn()} onOpenTasks={vi.fn()} />);
+    const section = await screen.findByRole('region', { name: 'Cette semaine' });
+    expect(await within(section).findByText(/Prospects en cours : 3/)).toBeInTheDocument();
+    expect(within(section).getByText(/Découverte 1, Livraison 2/)).toBeInTheDocument();
+    expect(within(section).queryByText(/xyz/)).toBeNull();
+  });
+
   it('une semaine vide le dit, une lecture en panne aussi', async () => {
     apiMocks.fetchSemaineDashboard.mockResolvedValue({
       date: '2026-09-24', mois: '2026-09', a_venir: [], encaisse_du_mois: {}, prospects_par_etape: {}, indisponibles: ['encaisse'],

@@ -34,6 +34,7 @@ from app.services.crm_export import CRMExportService, ExportFormat
 from app.services.crm_import import CRMImportService, _sanitize_field
 from app.services.crm_utils import (
     compute_total_synced,
+    libelle_d_etape,
     new_sync_stats,
     update_last_sync_time,
     upsert_contact,
@@ -462,7 +463,11 @@ async def create_crm_contact(
                 contact.email or "",
                 contact.phone or "",
                 source,
-                contact.stage,
+                # P-132 : la feuille reçoit le mot de l'écran (« Perdu »), comme
+                # l'export tableur (B-1416) ; la synchro le relit
+                # (`etape_depuis_cellule`). La synchro n'est donc pas à sens
+                # unique : cette ligne-ci part de THÉRÈSE vers le tableur.
+                libelle_d_etape(contact.stage),
                 str(contact.score),
                 "",  # Tags
             ]

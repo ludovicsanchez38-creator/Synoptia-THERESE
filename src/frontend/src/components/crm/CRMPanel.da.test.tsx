@@ -207,7 +207,8 @@ describe('Lot 4 DA : plancher et jetons', () => {
     api.listContacts.mockResolvedValue([]);
     poser();
     await verifierPlancher(() =>
-      expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(7),
+      // P-132 : huit colonnes, Perdu comprise.
+      expect(screen.getAllByRole('heading', { level: 3 })).toHaveLength(8),
     );
 
     api.listActivities.mockResolvedValue([]);

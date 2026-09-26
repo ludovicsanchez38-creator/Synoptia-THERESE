@@ -234,11 +234,13 @@ class MemorySearchResponse(BaseModel):
 # ============================================================
 
 
-# B-167 : les sept étapes du pipeline, celles que l'écran sait afficher
-# (`PIPELINE_STAGES` dans PipelineView.tsx). La vue groupe les fiches en
+# B-167 : les huit étapes du pipeline, celles que l'écran sait afficher
+# (`PIPELINE_ETAPES` dans pipelineEtapes.ts). La vue groupe les fiches en
 # parcourant CES colonnes, sans repli : une étape hors liste faisait
 # disparaître la fiche du pipeline sans un mot. Le refus vaut mieux qu'un
 # enregistrement invisible.
+# P-132 : « Perdu » (`lost`) sépare la vente perdue de l'Archive, qui reste la
+# dernière colonne et le tombeau RGPD (l'anonymisation y pose la fiche).
 EtapePipeline = Literal[
     "contact",
     "discovery",
@@ -246,6 +248,7 @@ EtapePipeline = Literal[
     "signature",
     "delivery",
     "active",
+    "lost",
     "archive",
 ]
 
@@ -1464,7 +1467,7 @@ class UpdateContactStageRequest(BaseModel):
     """Request pour changer le stage d'un contact."""
 
     # B-167 : la porte de déplacement dans le pipeline partage le domaine des
-    # sept colonnes affichables.
+    # huit colonnes affichables.
     stage: EtapePipeline
 
 
@@ -1570,7 +1573,7 @@ class CreateCRMContactRequest(BaseModel):
     phone: str | None = Field(default=None, max_length=LONGUEUR_TELEPHONE)
     source: str | None = Field(default=None, max_length=LONGUEUR_NOM)
     # B-167 : la création CRM écrit dans le MÊME pipeline que la création
-    # mémoire ; elle partage donc le domaine des sept étapes affichables.
+    # mémoire ; elle partage donc le domaine des huit étapes affichables.
     stage: EtapePipeline = "contact"
     # QW1 : ces champs étaient jetés silencieusement à la création (la note métier
     # n'était ni stockée, ni cherchable). Cf. 2e passage personas (RH/santé/compta).

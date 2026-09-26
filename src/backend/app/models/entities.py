@@ -34,7 +34,7 @@ class Contact(SQLModel, table=True):
     extra_data: str | None = None  # JSON object stored as string
 
     # CRM Pipeline (Phase 5)
-    stage: str = Field(default="contact", index=True)  # contact, discovery, proposition, signature, delivery, active, archive
+    stage: str = Field(default="contact", index=True)  # contact, discovery, proposition, signature, delivery, active, lost, archive
     score: int = Field(default=50)  # Scoring prospect (0-100+)
     source: str | None = None  # website, referral, linkedin, etc.
     last_interaction: datetime | None = Field(default=None, index=True)  # Derniere interaction (pour decay)

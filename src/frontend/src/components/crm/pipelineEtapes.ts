@@ -1,6 +1,8 @@
 /**
- * Les sept étapes du pipeline (0.66.1). Module sans composant : les libellés
- * et le domaine d'étiquette sont partagés entre la vue et le formulaire.
+ * Les huit étapes du pipeline (0.66.1, « Perdu » depuis P-132). Module sans
+ * composant : les libellés et le domaine d'étiquette sont partagés entre la
+ * vue et le formulaire. Même ordre et mêmes mots que `LIBELLES_ETAPES` côté
+ * moteur (src/backend/app/services/crm_utils.py).
  */
 import type { DomaineEtiquette, TonEtiquette } from '../ui/Etiquette';
 
@@ -11,6 +13,9 @@ export const PIPELINE_ETAPES = [
   { id: 'signature', label: 'Signature' },
   { id: 'delivery', label: 'Livraison' },
   { id: 'active', label: 'Actif' },
+  // P-132 : une vente perdue n'est plus rangée en Archive (terminé, ou fiche
+  // effacée au titre du RGPD). Les deux issues terminales ferment la grille.
+  { id: 'lost', label: 'Perdu' },
   { id: 'archive', label: 'Archive' },
 ] as const;
 
@@ -31,6 +36,7 @@ export function etiquetteDEtape(id: string): {
 } {
   if (id === 'delivery') return { domaine: 'agenda' };
   if (id === 'active') return { ton: 'succes' };
-  if (id === 'archive') return { ton: 'neutre' };
+  // P-132 : une vente perdue n'est pas une erreur ; le mot porte le sens.
+  if (id === 'lost' || id === 'archive') return { ton: 'neutre' };
   return { domaine: 'prospects' };
 }

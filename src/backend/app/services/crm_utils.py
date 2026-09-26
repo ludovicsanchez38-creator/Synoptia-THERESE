@@ -32,8 +32,15 @@ LIBELLES_ETAPES: dict[str, str] = {
     "signature": "Signature",
     "delivery": "Livraison",
     "active": "Actif",
+    "lost": "Perdu",
     "archive": "Archive",
 }
+
+
+def libelle_d_etape(identifiant: str) -> str:
+    """Le mot de l'écran pour une étape (P-132) : c'est lui qu'on donne à lire,
+    au tableur comme au modèle. Un identifiant inconnu reste tel quel."""
+    return LIBELLES_ETAPES.get(identifiant, identifiant)
 
 
 def _replier(texte: str) -> str:
@@ -379,8 +386,11 @@ async def upsert_contact(
     # B-1187 : même règle que B-1108/B-1125 (arbitrage du 24/09) : le tableur
     # fait foi pour ce qu'il dit, pas pour ce qu'il tait. Une cellule vide ou
     # une étape inconnue ne remplace pas la valeur enregistrée.
-    etape_cellule = (_get("Stage") or "").lower()
-    etape = etape_cellule if etape_cellule in ETAPES_PIPELINE else None
+    # P-132 : identifiant ou libellé, comme l'import tableur (B-1416). La
+    # création d'une fiche CRM écrit le libellé dans la feuille (crm.py) ; la
+    # synchro doit pouvoir le relire.
+    etape_cellule = _get("Stage")
+    etape = etape_depuis_cellule(etape_cellule) if etape_cellule else None
 
     if existing:
         if full_name:

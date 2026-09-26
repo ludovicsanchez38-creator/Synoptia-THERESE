@@ -536,8 +536,13 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
     }
 
 
-# P-135 : les étapes d'un prospect (avant d'être client) ; « active » et
-# « archive » n'en sont pas.
+# P-135 : les étapes d'un prospect en cours, c'est-à-dire avant la livraison.
+# P-132 (constat 6 de la revue) : « signature » en est encore une. Signature =
+# l'accord est donné ou en cours de formalisation, la livraison n'a pas
+# commencé ; la base légale RGPD la range déjà en contrat (rgpd.py, inférence),
+# sans contradiction : l'accord existe, la vente n'est pas encore menée.
+# « delivery », « active », « lost » (Perdu) et « archive » n'en sont pas.
+# Liste blanche : une étape ajoutée au pipeline n'y entre que si on l'y écrit.
 ETAPES_DE_PROSPECT = ("contact", "discovery", "proposition", "signature")
 HORIZON_DE_LA_SEMAINE = 7
 PLAFOND_SEMAINE = 20

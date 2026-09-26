@@ -1,7 +1,7 @@
 /**
  * THÉRÈSE v2 - Pipeline View (CRM Phase 5)
  *
- * Vue Kanban du pipeline commercial avec 7 stages.
+ * Vue Kanban du pipeline commercial avec 8 étapes (P-132 : Perdu).
  * Drag & Drop via @dnd-kit.
  */
 

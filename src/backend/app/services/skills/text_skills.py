@@ -6,6 +6,8 @@ Skills de génération de contenu textuel (emails, posts, propositions).
 
 from typing import Any
 
+from app.services.crm_utils import libelle_d_etape
+
 from .base import InputField, MarkdownSkill, SkillOutputType
 
 
@@ -230,7 +232,7 @@ class ProposalSkill(MarkdownSkill):
 Informations sur {contact['name']} :
 - Entreprise : {contact.get('company', 'Non renseignée')}
 - Email : {contact.get('email', 'Non renseigné')}
-- Stage : {contact.get('stage', 'Non renseigné')}
+- Étape : {libelle_d_etape(contact['stage']) if contact.get('stage') else 'Non renseignée'}
 - Score : {contact.get('score', 'Non renseigné')}/100
 - Notes : {contact.get('notes', 'Aucune note')}
 """

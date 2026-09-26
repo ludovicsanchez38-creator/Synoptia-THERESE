@@ -141,7 +141,8 @@ class TestB322RelanceClients:
         contexte = await _gather_local_context(["crm", "invoices"])
 
         assert "Sophie Garcia (Garcia SARL)" in contexte
-        assert "étape : proposition" in contexte
+        # P-132 : le libellé de l'écran, pas l'identifiant.
+        assert "étape : Proposition" in contexte
         assert "Devis transmis" in contexte
         assert "devis DEV-2026-322" in contexte
         assert "1200.0 EUR" in contexte

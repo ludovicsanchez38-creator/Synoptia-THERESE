@@ -9,9 +9,7 @@ import { useEffect, useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { fetchSemaineDashboard, type ElementDeLaSemaine, type SemaineDashboard } from '../../services/api/dashboard';
 import { useDemoMask } from '../../hooks/useDemoMask';
-import { libelleDEtape } from '../crm/pipelineEtapes';
-
-const ORDRE_DES_ETAPES = ['contact', 'discovery', 'proposition', 'signature'];
+import { PIPELINE_ETAPES } from '../crm/pipelineEtapes';
 
 function jourDe(element: ElementDeLaSemaine): string {
   if (!element.date) return '';
@@ -73,8 +71,12 @@ export function CetteSemaine({
 
   const pannes = new Set(semaine.indisponibles);
   const devises = Object.entries(semaine.encaisse_du_mois);
-  const etapes = ORDRE_DES_ETAPES.filter((etape) => (semaine.prospects_par_etape[etape] ?? 0) > 0);
-  const totalProspects = etapes.reduce((total, etape) => total + (semaine.prospects_par_etape[etape] ?? 0), 0);
+  // P-132 : le moteur décide seul de ce qui est un prospect en cours
+  // (`ETAPES_DE_PROSPECT`, dashboard.py) ; l'écran range ce qu'il reçoit dans
+  // l'ordre du pipeline. Une clé inconnue n'est ni affichée ni comptée : elle
+  // n'aurait pas de libellé.
+  const etapes = PIPELINE_ETAPES.filter((etape) => (semaine.prospects_par_etape[etape.id] ?? 0) > 0);
+  const totalProspects = etapes.reduce((total, etape) => total + (semaine.prospects_par_etape[etape.id] ?? 0), 0);
 
   return (
     <section aria-label="Cette semaine" className="mt-4 rounded-md border border-border bg-surface px-4 py-3">
@@ -129,7 +131,7 @@ export function CetteSemaine({
               ? 'Le pipeline n’a pas pu être lu.'
               : totalProspects === 0
                 ? 'Aucune fiche aux étapes de prospect.'
-                : etapes.map((etape) => `${libelleDEtape(etape)} ${semaine.prospects_par_etape[etape]}`).join(', ')}
+                : etapes.map((etape) => `${etape.label} ${semaine.prospects_par_etape[etape.id]}`).join(', ')}
             {!pannes.has('pipeline') && totalProspects > 0 && (
               <span className="block">Source : fiches du pipeline, avant l’étape Livraison.</span>
             )}

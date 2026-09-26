@@ -452,7 +452,9 @@ interface CreateContactModalProps {
   onCreate: (data: CreateCRMContactRequest) => void;
 }
 
-const STAGES = PIPELINE_ETAPES.filter((s) => s.id !== 'archive');
+// Une fiche ne naît ni perdue (P-132) ni archivée : ces deux issues se posent
+// depuis la fiche ou le Pipeline. Le moteur les accepte (import, synchro).
+const STAGES = PIPELINE_ETAPES.filter((s) => s.id !== 'archive' && s.id !== 'lost');
 
 function CreateContactModal({ onClose, onCreate }: CreateContactModalProps) {
   const [form, setForm] = useState<CreateCRMContactRequest>({

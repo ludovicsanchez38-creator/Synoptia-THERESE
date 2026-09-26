@@ -6,6 +6,7 @@ API endpoints pour la génération de documents via skills.
 
 import logging
 import re
+from typing import Any
 
 from app.models.database import get_session
 from app.models.entities import Contact, Project
@@ -30,6 +31,19 @@ logger = logging.getLogger(__name__)
 IDENTIFIANT_FICHIER = re.compile(r"[A-Za-z0-9_-]{4,64}")
 
 router = APIRouter()
+
+
+def contact_pour_un_skill(c: Contact) -> dict[str, Any]:
+    """La fiche telle qu'un skill la lit (P-132 : l'étape y figure ; le skill
+    de proposition l'affichait sans jamais la recevoir, donc toujours
+    « Non renseigné »). L'identifiant voyage, le skill écrit le libellé."""
+    return {
+        'name': f"{c.first_name or ''} {c.last_name or ''}".strip(),
+        'company': c.company,
+        'email': c.email,
+        'notes': c.notes,
+        'stage': c.stage,
+    }
 
 
 @router.get("/list", response_model=list[SkillInfo])
@@ -98,15 +112,7 @@ async def execute_skill(
 
         memory_context = {
             'inputs': request.context or {},
-            'contacts': [
-                {
-                    'name': f"{c.first_name or ''} {c.last_name or ''}".strip(),
-                    'company': c.company,
-                    'email': c.email,
-                    'notes': c.notes,
-                }
-                for c in contacts
-            ],
+            'contacts': [contact_pour_un_skill(c) for c in contacts],
             'projects': [
                 {
                     'name': p.name,

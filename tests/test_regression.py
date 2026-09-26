@@ -1319,7 +1319,8 @@ class TestP0PROD3_ChatTools:
         assert data["found"] is True
         fiche = data["contacts"][0]
         assert fiche["score"] == 85
-        assert fiche["stage"] == "proposition"
+        # P-132 : le modèle lit le libellé de l'écran, pas l'identifiant.
+        assert fiche["stage"] == "Proposition"
         textes = " ".join(
             (t.get("texte") or "") + " " + (t.get("titre") or "") for t in fiche["traces"]
         )

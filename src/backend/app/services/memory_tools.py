@@ -28,6 +28,7 @@ from app.models.entities import (
 from app.models.schemas import adresse_unique_valide
 from app.services.cloisonnement import souvenirs_globaux_visibles
 from app.services.contexte_execution import ContexteExecution
+from app.services.crm_utils import libelle_d_etape
 from app.services.qdrant import get_qdrant_service
 from sqlalchemy import case, false, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -999,7 +1000,10 @@ async def fiche_selon_le_contrat(
         "email": contact.email,
         "phone": contact.phone,
         "source": contact.source,
-        "stage": contact.stage,
+        # P-132 : le libellé de l'écran (« Perdu », « Signature »), jamais
+        # l'identifiant : un modèle lit « signature » comme « en attente de
+        # signature ». Seuls un modèle (chat, MCP) lisent ce contrat.
+        "stage": libelle_d_etape(contact.stage),
         "score": contact.score,
         "last_interaction": contact.last_interaction.isoformat()
         if contact.last_interaction

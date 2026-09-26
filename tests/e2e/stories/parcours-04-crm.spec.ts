@@ -1,7 +1,7 @@
 /**
  * Parcours 04 - CRM
  *
- * Scenario : ouvrir le panneau CRM -> pipeline a 7 colonnes
+ * Scenario : ouvrir le panneau CRM -> pipeline a 8 colonnes
  *            -> bouton ajouter contact -> import vcf visible
  *
  * User Stories : US-300, US-301
@@ -22,9 +22,10 @@ import { test, expect } from '@playwright/test';
 import { ouvrirLApplication, ouvrirLaSurface } from './helpers/surfaces';
 
 /**
- * Les sept colonnes du pipeline, dans l'ordre de `PIPELINE_STAGES`
- * (src/frontend/src/components/crm/PipelineView.tsx). Accents compris : ce
- * sont les libellés que l'utilisateur lit.
+ * Les huit colonnes du pipeline, dans l'ordre de `PIPELINE_ETAPES`
+ * (src/frontend/src/components/crm/pipelineEtapes.ts). Accents compris : ce
+ * sont les libellés que l'utilisateur lit. P-132 : « Perdu » entre « Actif »
+ * et « Archive ».
  */
 const COLONNES_DU_PIPELINE = [
   'Contact',
@@ -33,6 +34,7 @@ const COLONNES_DU_PIPELINE = [
   'Signature',
   'Livraison',
   'Actif',
+  'Perdu',
   'Archive',
 ] as const;
 
@@ -51,7 +53,7 @@ test.describe('Parcours 04 - CRM', () => {
     await expect(crmPanel).toBeVisible({ timeout: 15000 });
   });
 
-  test('US-300.HP : le pipeline contient 7 colonnes (stages)', async ({ page }) => {
+  test('US-300.HP : le pipeline contient 8 colonnes (étapes)', async ({ page }) => {
     const crmPanel = page.getByTestId('crm-panel');
     await expect(crmPanel).toBeVisible({ timeout: 15000 });
 

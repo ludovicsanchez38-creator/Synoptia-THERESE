@@ -34,10 +34,15 @@ STAGE_SCORES = {
     "contact": 0,  # Nouveau lead, score de base
     "discovery": 10,  # Premier échange
     "proposition": 20,  # Offre envoyée
-    "signature": 30,  # En attente signature
+    # P-132 : Signature = l'accord est donné ou en cours de formalisation, la
+    # livraison n'a pas commencé. Pas « en attente de signature ».
+    "signature": 30,
     "delivery": 40,  # Projet en cours
     "active": 50,  # Client actif
-    "archive": -100,  # Perdu ou terminé
+    # P-132 : Perdu pèse comme Archive pesait : qui rangeait ses ventes
+    # perdues en Archive et les déplace vers Perdu garde le même score.
+    "lost": -100,
+    "archive": -100,  # Terminé, ou fiche effacée (RGPD)
 }
 
 

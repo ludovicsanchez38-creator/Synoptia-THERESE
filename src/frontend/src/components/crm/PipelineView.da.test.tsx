@@ -18,6 +18,8 @@ const COLONNES = [
   'Signature',
   'Livraison',
   'Actif',
+  // P-132 : une vente perdue a sa colonne, entre Actif et Archive.
+  'Perdu',
   'Archive',
 ] as const;
 
@@ -51,7 +53,7 @@ afterEach(() => {
 });
 
 describe('Lot 4 DA : colonnes', () => {
-  it('sept h3 aux libellés exacts, le compte hors du h3', () => {
+  it('huit h3 aux libellés exacts, le compte hors du h3', () => {
     render(
       <PipelineView
         contacts={[contact(), contact({ id: 'ct-2', first_name: 'Paul', last_name: 'Girard' })]}
