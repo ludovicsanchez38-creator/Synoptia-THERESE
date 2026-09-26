@@ -7,6 +7,8 @@ rendez-vous rangé à 8 h : SQLite jette le décalage. Même règle que
 l'écran depuis B-1487.
 """
 
+import sys
+import time
 from datetime import datetime
 
 import pytest
@@ -36,16 +38,30 @@ async def test_une_heure_datee_se_range_en_heure_de_paris(client, db_session):
     assert evenement.end_datetime == datetime(2026, 10, 1, 11, 0)
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="time.tzset n'existe pas sous Windows")
 @pytest.mark.asyncio
-async def test_une_heure_sans_fuseau_reste_celle_de_paris(client, db_session):
+async def test_une_heure_sans_fuseau_reste_celle_de_paris(client, db_session, monkeypatch):
+    # B-1669 : une heure sans fuseau est celle du POSTE ; ce cas vaut pour
+    # un poste à Paris (la CI tourne en UTC).
+    monkeypatch.setenv("TZ", "Europe/Paris")
+    time.tzset()
     reponse = await _creer(db_session, "2026-10-01T10:00:00", "2026-10-01T11:00:00")
     assert not reponse.startswith("Erreur"), reponse
     assert (await _stocke(db_session)).start_datetime == datetime(2026, 10, 1, 10, 0)
 
 
+@pytest.mark.skipif(sys.platform == "win32", reason="time.tzset n'existe pas sous Windows")
 @pytest.mark.asyncio
-async def test_un_debut_date_et_une_fin_sans_fuseau_ne_font_pas_planter(client, db_session):
+async def test_un_debut_date_et_une_fin_sans_fuseau_ne_font_pas_planter(client, db_session, monkeypatch):
+    monkeypatch.setenv("TZ", "Europe/Paris")
+    time.tzset()
     reponse = await _creer(db_session, "2026-10-01T08:00:00Z", "2026-10-01T11:00:00")
     assert not reponse.startswith("Erreur"), reponse
     evenement = await _stocke(db_session)
     assert (evenement.start_datetime, evenement.end_datetime) == (datetime(2026, 10, 1, 10, 0), datetime(2026, 10, 1, 11, 0))
+
+
+@pytest.fixture(autouse=True)
+def _fuseau_rendu():
+    yield
+    time.tzset()

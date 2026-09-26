@@ -1680,14 +1680,13 @@ async def _create_calendar_event(
 
     # B-1500 : l'agenda range une heure murale de Paris sans fuseau (B-275) et
     # SQLite jette le décalage. Une heure datée du modèle (Z, +02:00) est donc
-    # ramenée à Paris ; une heure sans fuseau est déjà celle de Paris. Deux
-    # bornes de même nature se comparent aussi sans lever d'erreur.
+    # ramenée à Paris. B-1669 : depuis B-1528 le modèle reçoit l'heure du
+    # POSTE ; une heure sans fuseau est la sienne (astimezone lit une heure
+    # naïve comme heure locale, heure d'été comprise). À Paris, rien ne change.
     from app.services.civil_time import PARIS
 
-    if start.tzinfo is not None:
-        start = start.astimezone(PARIS).replace(tzinfo=None)
-    if end.tzinfo is not None:
-        end = end.astimezone(PARIS).replace(tzinfo=None)
+    start = start.astimezone(PARIS).replace(tzinfo=None)
+    end = end.astimezone(PARIS).replace(tzinfo=None)
 
     if end <= start:
         return "Erreur : la fin du rendez-vous doit être postérieure au début."
