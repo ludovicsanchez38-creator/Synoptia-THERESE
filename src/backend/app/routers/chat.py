@@ -1697,6 +1697,7 @@ async def send_message(
                 detection_message=detection_message,
                 email_account_id=request.email_account_id,
                 calendar_id=request.calendar_id,
+                include_memory=request.include_memory,
             ),
             media_type="text/event-stream",
             headers={
@@ -1734,9 +1735,10 @@ async def send_message(
 
     # Get relevant memory context (0d : même texte que le payload LLM,
     # parité avec le chemin stream)
+    # B-1495 : include_memory=false n'injecte pas la mémoire.
     memory_context = await _get_memory_context(
         llm_user_message, conversation_id=conversation.id, session=session
-    )
+    ) if request.include_memory else None
 
     # Périmètre de la conversation, appliqué aux pièces jointes qu'elle
     # indexe : un document déposé dans un dossier client lui appartient.
@@ -1922,6 +1924,7 @@ async def _stream_response(
     detection_message: str | None = None,
     email_account_id: str | None = None,
     calendar_id: str | None = None,
+    include_memory: bool = True,
 ) -> AsyncGenerator[str, None]:
     """Stream response chunks as Server-Sent Events with MCP tool support."""
 
@@ -2010,6 +2013,7 @@ async def _stream_response(
         contexte=contexte_execution,
         email_account_id=email_account_id,
         calendar_id=calendar_id,
+        include_memory=include_memory,
     )
     # Déclarées hors de la boucle : le `finally` doit pouvoir les neutraliser
     # même quand c'est le CLIENT qui disparaît en pleine attente (fenêtre
@@ -2259,6 +2263,7 @@ async def _do_stream_response(
     contexte: ContexteExecution | None = None,
     email_account_id: str | None = None,
     calendar_id: str | None = None,
+    include_memory: bool = True,
 ) -> AsyncGenerator[str, None]:
     """Internal streaming implementation."""
     # Finding 1-2 (30/08) : coller le compte / l'agenda de l'écran AVANT
@@ -2367,9 +2372,10 @@ async def _do_stream_response(
     messages.append(LLMMessage(role="user", content=user_message))
 
     # Get relevant memory context for the user's message
+    # B-1495 : include_memory=false n'injecte pas la mémoire.
     memory_context = await _get_memory_context(
         user_message, conversation_id=conversation_id, session=session
-    )
+    ) if include_memory else None
 
     # Périmètre de la conversation, appliqué aux pièces jointes qu'elle
     # indexe : un document déposé dans un dossier client lui appartient.
