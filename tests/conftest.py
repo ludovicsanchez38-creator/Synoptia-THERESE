@@ -236,6 +236,10 @@ def _etats_de_module_neufs(monkeypatch):
     from app.services import llm as _llm
 
     _llm.invalidate_api_key_cache()
+    # P-132 : les étapes inconnues déjà signalées par un test précédent.
+    from app.models import database as base_de_donnees
+
+    monkeypatch.setattr(base_de_donnees, "_ETAPES_INCONNUES_SIGNALEES", set())
 
 
 @pytest.fixture(scope="function")

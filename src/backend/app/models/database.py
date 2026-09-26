@@ -264,6 +264,12 @@ PHASES_HERITEES_VERS_ETAPES: dict[str, str] = {
 }
 
 
+# P-132 (revue du diff, constat 4) : `apply_adhoc_migrations` tourne deux fois
+# par démarrage (init_db, puis le filet du lifespan). Une étape inconnue ne se
+# dit qu'une fois par processus.
+_ETAPES_INCONNUES_SIGNALEES: set[str] = set()
+
+
 def _table_presente(conn: Any, table: str) -> bool:
     return (
         conn.execute(
@@ -321,11 +327,15 @@ def migrer_les_phases_de_prestation(conn: Any) -> int:
         "GROUP BY phase ORDER BY phase",
         PHASES_DE_PRESTATION,
     ).fetchall()
-    if inconnues:
+    nouvelles = [
+        (valeur, nombre) for valeur, nombre in inconnues if valeur not in _ETAPES_INCONNUES_SIGNALEES
+    ]
+    if nouvelles:
+        _ETAPES_INCONNUES_SIGNALEES.update(valeur for valeur, _ in nouvelles)
         logger.warning(
             "P-132 : prestation(s) à une étape inconnue du pipeline, laissée(s) telle(s) "
             "quelle(s) : %s",
-            ", ".join(f"{valeur!r} ({nombre})" for valeur, nombre in inconnues),
+            ", ".join(f"{valeur!r} ({nombre})" for valeur, nombre in nouvelles),
         )
     return reecrites
 

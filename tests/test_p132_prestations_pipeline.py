@@ -178,6 +178,24 @@ def test_une_valeur_inconnue_traverse_intacte_et_se_journalise(tmp_path, caplog)
     assert len(signalements) == 1, signalements
 
 
+def test_une_valeur_inconnue_ne_se_dit_qu_une_fois_par_processus(tmp_path, caplog):
+    """Revue du diff, constat 4 : `apply_adhoc_migrations` tourne deux fois par
+    démarrage (init_db, puis le filet du lifespan). L'avertissement sortait
+    deux fois à chaque lancement ; il se dit une fois par processus."""
+    from app.models.database import apply_adhoc_migrations
+
+    base = tmp_path / "therese.db"
+    _base_d_avant(base, valeurs=("xyz-inconnue",))
+
+    with caplog.at_level(logging.WARNING, logger="app.models.database"):
+        apply_adhoc_migrations(base)
+        apply_adhoc_migrations(base)
+
+    signalements = [r.getMessage() for r in caplog.records if "xyz-inconnue" in r.getMessage()]
+    assert len(signalements) == 1, signalements
+    assert [phase for _, phase, _ in _lignes(base)] == ["xyz-inconnue"]
+
+
 def test_la_table_creee_au_demarrage_n_a_plus_de_defaut_piste(tmp_path):
     """Le modèle n'a plus de défaut depuis la 0.59 ; le DDL ad hoc le gardait."""
     from app.models.database import apply_adhoc_migrations
