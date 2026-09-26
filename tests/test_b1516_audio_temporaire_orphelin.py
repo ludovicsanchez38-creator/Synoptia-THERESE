@@ -7,6 +7,8 @@ rattache à THÉRÈSE, dans un dossier que Windows ne purge pas. Les fichiers
 portent désormais un préfixe, et le démarrage efface ceux qui restent.
 """
 
+import os
+import time
 from pathlib import Path
 
 import pytest
@@ -35,6 +37,10 @@ def test_le_demarrage_efface_les_audios_orphelins_et_rien_d_autre(tmp_path: Path
     (tmp_path / f"{PREFIXE_AUDIO_TEMPORAIRE}abc.webm").write_bytes(b"voix")
     (tmp_path / f"{PREFIXE_AUDIO_TEMPORAIRE}def.wav").write_bytes(b"voix")
     (tmp_path / "autre-appli.webm").write_bytes(b"x")
+    # B-1645 : seuls les audios d'au moins une heure sont des orphelins.
+    il_y_a_deux_heures = time.time() - 2 * 3600
+    for chemin in tmp_path.iterdir():
+        os.utime(chemin, (il_y_a_deux_heures, il_y_a_deux_heures))
 
     assert effacer_les_audios_orphelins(tmp_path) == 2
     assert [p.name for p in tmp_path.iterdir()] == ["autre-appli.webm"]

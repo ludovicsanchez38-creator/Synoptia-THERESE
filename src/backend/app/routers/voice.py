@@ -8,6 +8,7 @@ import asyncio
 import logging
 import os
 import tempfile
+import time
 from pathlib import Path
 
 from app.models.database import get_session
@@ -28,6 +29,9 @@ router = APIRouter()
 # B-1516 : préfixe des audios temporaires, pour que le démarrage efface
 # ceux qu'un arrêt brutal a laissés.
 PREFIXE_AUDIO_TEMPORAIRE = "therese-voix-"
+# B-1645 : le dossier temporaire est commun à tous les moteurs du compte ; un
+# audio plus récent peut appartenir à une dictée en cours ailleurs.
+AGE_MINIMUM_AUDIO_ORPHELIN_S = 3600
 
 
 async def _get_groq_api_key(session: AsyncSession) -> str | None:
@@ -287,13 +291,17 @@ def effacer_les_audios_orphelins(dossier: Path | None = None) -> int:
     """B-1516 : efface au démarrage les audios temporaires qu'un arrêt brutal
     a laissés (dictée ou synthèse en cours quand le moteur a été tué).
 
-    Seul le préfixe de THÉRÈSE est visé ; au démarrage, aucune dictée ne
-    tourne encore.
+    Seul le préfixe de THÉRÈSE est visé, et seulement les audios d'au moins
+    une heure : un autre moteur du même compte peut transcrire en ce moment
+    une dictée rangée dans le même dossier (B-1645).
     """
     dossier = dossier if dossier is not None else Path(tempfile.gettempdir())
+    limite = time.time() - AGE_MINIMUM_AUDIO_ORPHELIN_S
     effaces = 0
     for chemin in dossier.glob(f"{PREFIXE_AUDIO_TEMPORAIRE}*"):
         try:
+            if chemin.stat().st_mtime > limite:
+                continue
             chemin.unlink()
             effaces += 1
         except OSError as e:
