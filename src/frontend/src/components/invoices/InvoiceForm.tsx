@@ -432,8 +432,8 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
         return null;
       }
 
-      if (normalizedLines.some((line) => line.quantity! < 1 || line.unit_price_ht! < 0)) {
-        setErreurValidation('Saisis une quantité supérieure ou égale à 1 et un prix positif ou nul.');
+      if (normalizedLines.some((line) => line.quantity! <= 0 || line.unit_price_ht! < 0)) {
+        setErreurValidation('Saisis une quantité strictement positive et un prix positif ou nul.');
         return null;
       }
 

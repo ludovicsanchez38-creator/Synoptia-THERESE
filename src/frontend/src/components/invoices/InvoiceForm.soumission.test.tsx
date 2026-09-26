@@ -113,3 +113,46 @@ describe('B-011 : le bouton d’envoi appartient au formulaire', () => {
     expect(createInvoiceMock).not.toHaveBeenCalled();
   });
 });
+
+describe('B-1605 : quantité fractionnaire à la soumission', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    createInvoiceMock.mockResolvedValue({ id: 'inv-1' });
+    getBillingProfileStatusMock.mockResolvedValue({ is_complete: true, missing: [] });
+    useBillingProfileStore.setState({ missing: null });
+  });
+
+  it.each(['devis', 'facture'] as const)(
+    'envoie une demi-journée à l’API pour un %s',
+    async (documentType) => {
+      render(
+        <InvoiceForm
+          invoice={null}
+          defaultDocumentType={documentType}
+          onClose={vi.fn()}
+          onSave={vi.fn()}
+        />,
+      );
+      await remplirLeFormulaire();
+      fireEvent.change(screen.getByLabelText('Quantité ligne 1'), { target: { value: '0,5' } });
+      fireEvent.click(screen.getByRole('button', { name: /Créer/i }));
+
+      await waitFor(() => expect(createInvoiceMock).toHaveBeenCalledWith(
+        expect.objectContaining({
+          document_type: documentType,
+          lines: [expect.objectContaining({ quantity: 0.5 })],
+        }),
+      ));
+    },
+  );
+
+  it('refuse toujours une quantité nulle', async () => {
+    render(<InvoiceForm invoice={null} onClose={vi.fn()} onSave={vi.fn()} />);
+    await remplirLeFormulaire();
+    fireEvent.change(screen.getByLabelText('Quantité ligne 1'), { target: { value: '0' } });
+    fireEvent.click(screen.getByRole('button', { name: /Créer/i }));
+
+    expect(createInvoiceMock).not.toHaveBeenCalled();
+    expect(screen.getByTestId('invoiceform-validation')).toHaveTextContent(/quantité/i);
+  });
+});
