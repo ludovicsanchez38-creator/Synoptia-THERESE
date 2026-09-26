@@ -16,7 +16,7 @@
  * fail-closed par construction — l'appel réseau n'existe qu'au clic de
  * confirmation.
  */
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mockDeleteFile = vi.fn();
@@ -34,6 +34,7 @@ vi.mock('../../services/api', async () => {
 
 vi.mock('./ProjectSyncSection', () => ({ ProjectSyncSection: () => null }));
 
+import { _clearEscapeHandlers, runTopEscapeHandler } from '../../lib/escapeStack';
 import { ProjectModal } from './ProjectModal';
 
 const PROJET = {
@@ -120,6 +121,32 @@ describe('La suppression d’un fichier joint demande confirmation', () => {
       expect(screen.queryByText(/Supprimer « devis-v2.pdf » \?/)).toBeNull(),
     );
     expect(mockDeleteFile).not.toHaveBeenCalled();
+  });
+
+  /**
+   * Revue P-148, constat 7 : Échap sur la question du fichier ne ferme que la
+   * question. Sans handler dans la pile, la cascade de la coque fermait la
+   * fenêtre entière et l'on perdait sa place.
+   */
+  it('Échap ne ferme que la question du fichier, et le focus revient à la corbeille', async () => {
+    _clearEscapeHandlers();
+    const onClose = vi.fn();
+    render(<ProjectModal isOpen onClose={onClose} onSaved={vi.fn()} project={PROJET} />);
+    await waitFor(() => expect(screen.getByText('devis-v2.pdf')).toBeInTheDocument());
+    const corbeille = screen.getByRole('button', { name: /Supprimer le fichier/i });
+    fireEvent.click(corbeille);
+    await screen.findByText(/Supprimer « devis-v2.pdf » \?/);
+
+    let consomme = false;
+    act(() => { consomme = runTopEscapeHandler(); });
+
+    expect(consomme).toBe(true);
+    await waitFor(() => expect(screen.queryByText(/Supprimer « devis-v2.pdf » \?/)).toBeNull());
+    expect(onClose).not.toHaveBeenCalled();
+    expect(screen.getByText('devis-v2.pdf')).toBeInTheDocument();
+    expect(corbeille).toHaveFocus();
+    expect(mockDeleteFile).not.toHaveBeenCalled();
+    _clearEscapeHandlers();
   });
 
   it('la suppression n’a lieu qu’après confirmation explicite', async () => {

@@ -27,7 +27,7 @@ vi.mock('../../services/api/crm-extended', async (importOriginal) => ({
   createDeliverable: vi.fn(),
 }));
 
-import { _clearEscapeHandlers } from '../../lib/escapeStack';
+import { _clearEscapeHandlers, runTopEscapeHandler } from '../../lib/escapeStack';
 import { ProjectModal } from './ProjectModal';
 import { ProjectsPanel } from './ProjectsPanel';
 
@@ -128,6 +128,35 @@ describe.each<Hote>(['fenêtre du projet', 'vue Projets'])('P-148 : la confirmat
     } finally {
       Element.prototype.scrollIntoView = original;
     }
+  });
+
+  it('revue P-148, constat 7 : Échap ne ferme que la confirmation, et le focus revient à « Supprimer »', async () => {
+    const onClose = vi.fn();
+    let declencheur: HTMLElement;
+    if (hote === 'fenêtre du projet') {
+      await act(async () => { render(<ProjectModal isOpen onClose={onClose} project={PROJET} />); });
+      declencheur = screen.getByRole('button', { name: /^Supprimer$/ });
+    } else {
+      await act(async () => { render(<ProjectsPanel />); });
+      declencheur = await screen.findByRole('button', { name: `Supprimer ${PROJET.name}` });
+    }
+    declencheur.focus();
+    await act(async () => { fireEvent.click(declencheur); });
+    expect(screen.getByText('Supprimer ce projet ?')).toBeInTheDocument();
+
+    let consomme = false;
+    act(() => { consomme = runTopEscapeHandler(); });
+
+    expect(consomme).toBe(true);
+    await waitFor(() => expect(screen.queryByText('Supprimer ce projet ?')).toBeNull());
+    expect(onClose).not.toHaveBeenCalled();
+    if (hote === 'fenêtre du projet') {
+      expect(screen.getByRole('dialog', { name: `Projet ${PROJET.name}` })).toBeInTheDocument();
+      await waitFor(() => expect(screen.getByRole('button', { name: /^Supprimer$/ })).toHaveFocus());
+    } else {
+      await waitFor(() => expect(document.activeElement).toBe(declencheur));
+    }
+    expect(api.deleteProject).not.toHaveBeenCalled();
   });
 
   it('« Supprimer » supprime le projet', async () => {

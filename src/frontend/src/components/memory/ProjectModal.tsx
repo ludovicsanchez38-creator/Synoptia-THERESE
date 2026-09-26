@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '../ui/Button';
 import { modalVariants, overlayVariants } from '../../lib/animations';
 import * as api from '../../services/api';
+import { pushEscapeHandler } from '../../lib/escapeStack';
 import { Z_LAYER } from '../../styles/z-layers';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { useQuestionDAbandonDeModale } from '../../hooks/useQuestionDAbandonDeModale';
@@ -130,6 +131,27 @@ export function ProjectModal({ isOpen, onClose, onSaved, project, fermerSiIntact
     fermer: onClose,
     fermerSiIntact,
   });
+
+  // Revue P-148, constat 7 : une question en ligne (supprimer le projet,
+  // supprimer un fichier joint) se referme seule sur Échap. Inscrite après le
+  // handler d'abandon, elle passe au-dessus de lui dans la pile ; sans elle, la
+  // cascade de la coque fermait la fenêtre entière et l'on perdait sa place.
+  useEffect(() => {
+    if (!isOpen || !showDeleteConfirm) return;
+    return pushEscapeHandler(() => {
+      setShowDeleteConfirm(false);
+      return true;
+    });
+  }, [isOpen, showDeleteConfirm]);
+  const questionFichierOuverte = fichierASupprimer !== null;
+  useEffect(() => {
+    if (!isOpen || !questionFichierOuverte) return;
+    return pushEscapeHandler(() => {
+      setFichierASupprimer(null);
+      boutonSuppressionRef.current?.focus();
+      return true;
+    });
+  }, [isOpen, questionFichierOuverte]);
 
   // P-148, lot 3 : mener depuis la vue d'ensemble. Une saisie modifiée retient
   // la destination le temps de la question d'abandon (B-1392) ; la fenêtre ne
