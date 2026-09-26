@@ -599,9 +599,16 @@ TRAVAUX_DE_FOND_EN_COURS = (
     "Des travaux de fond (création ou indexation) ne sont pas terminés : "
     "rien n'a été modifié. Réessaie dans un instant."
 )
+# B-1520 : au plafond, un traitement arrêté (délibération, mission, réponse)
+# ne reprend pas, contrairement aux fiches : « rien n'a été modifié » serait faux.
+TRAVAUX_DE_FOND_ARRETES = (
+    "Des travaux de fond ne se sont pas terminés à temps : tes données n'ont "
+    "pas été touchées, mais les travaux en cours (Board, Atelier, réponses) "
+    "ont été arrêtés. Réessaie dans un instant."
+)
 
 
-async def _arreter_les_traitements_vivants() -> None:
+async def _arreter_les_traitements_vivants(arretes: set[str]) -> None:
     """B-1520 : Board, Atelier, trame, extraction et réponses en cours
     écrivaient leur fin après la purge (la décision du Board, question
     comprise). Chaque traitement inscrit au registre de ce processus reçoit
@@ -620,7 +627,6 @@ async def _arreter_les_traitements_vivants() -> None:
     from app.models.processing import EtatTache
     from app.services import task_registry, traitements
 
-    arretes: set[str] = set()
     restants: set[str] = set()
     while True:
         for identifiant in set(task_registry.vivantes()) - arretes:
@@ -649,12 +655,13 @@ async def _arreter_les_travaux_de_fond() -> None:
     from app.services.user_profile import arreter_l_indexation_du_profil
 
     rendues: list[str] = []
+    arretes: set[str] = set()
 
     async def _attendre() -> None:
         await attendre_les_gestes_de_creation()
         rendues.extend(await arreter_les_indexations_de_fiches())
         await arreter_l_indexation_du_profil()
-        await _arreter_les_traitements_vivants()
+        await _arreter_les_traitements_vivants(arretes)
 
     try:
         await asyncio.wait_for(_attendre(), DELAI_MAX_TRAVAUX_DE_FOND_S)
@@ -663,7 +670,10 @@ async def _arreter_les_travaux_de_fond() -> None:
         # par l'arrêt reprennent, sinon « rien n'a été modifié » serait faux.
         reprendre_les_indexations_de_fiches(rendues)
         if isinstance(exc, TimeoutError):
-            raise HTTPException(status_code=503, detail=TRAVAUX_DE_FOND_EN_COURS) from exc
+            raise HTTPException(
+                status_code=503,
+                detail=TRAVAUX_DE_FOND_ARRETES if arretes else TRAVAUX_DE_FOND_EN_COURS,
+            ) from exc
         raise
 
 

@@ -201,3 +201,26 @@ async def test_la_decision_protegee_du_board_n_ecrit_rien_apres_la_purge(client)
     )
     async with get_session_context() as session:
         assert await session.get(BoardDecisionDB, "dec-b1520") is None
+
+
+@pytest.mark.asyncio
+async def test_au_plafond_la_purge_dit_les_travaux_qu_elle_a_arretes(client, monkeypatch):
+    """Au plafond, les fiches arrêtées reprennent (B-1283), mais un
+    traitement arrêté (délibération, mission) ne reprend pas : « rien n'a été
+    modifié » devenait faux. Le 503 dit l'arrêt."""
+    from app.routers import data
+    from app.services import traitements
+    from app.services.task_registry import TravailNonInterruptible, retirer
+
+    monkeypatch.setattr(data, "DELAI_MAX_TRAVAUX_DE_FOND_S", 0.5)
+    traitement = await traitements.creer_traitement(type="board", label="Ne finit jamais")
+    await traitement.demarrer()
+    await traitement.lier_adaptateur(TravailNonInterruptible(lambda: None))
+    try:
+        purge = await _purger_dans_la_meme_boucle()
+    finally:
+        retirer(traitement.id)
+
+    assert purge.status_code == 503, purge.text
+    assert "rien n'a été modifié" not in purge.text
+    assert "arrêtés" in purge.text
