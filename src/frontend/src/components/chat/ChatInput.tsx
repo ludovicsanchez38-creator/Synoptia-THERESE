@@ -577,6 +577,8 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           'message saisi',
           'contexte de conversation',
           'mémoire locale utile',
+          // B-1515 : ils partent avec chaque message, dans le prompt système.
+          'ton profil et tes consignes personnelles (THERESE.md), s’ils sont renseignés',
           ...(attachedFiles.length > 0 || conversationPorteDesDocuments
             ? [
                 'contenu intégral des documents joints',

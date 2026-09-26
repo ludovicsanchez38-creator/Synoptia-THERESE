@@ -138,6 +138,8 @@ describe('ChatInput sans modèle', () => {
     fireEvent.click(screen.getByTestId('chat-send-btn'));
     expect(screen.getByTestId('chat-cloud-consent')).toHaveTextContent('OpenAI');
     expect(screen.getByTestId('chat-cloud-consent')).toHaveTextContent('message saisi, contexte de conversation, mémoire locale utile');
+    // B-1515 : le profil et THERESE.md partent aussi, dans le prompt système.
+    expect(screen.getByTestId('chat-cloud-consent')).toHaveTextContent('ton profil et tes consignes personnelles (THERESE.md), s’ils sont renseignés');
     expect(apiMocks.streamMessage).not.toHaveBeenCalled();
 
     fireEvent.click(screen.getByRole('button', { name: 'Annuler' }));
