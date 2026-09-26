@@ -935,10 +935,8 @@ async def cleanup_old_logs(
 # ============================================================
 
 
-def _backups_dir():
+def _backups_dir() -> Path:
     """Dossier des backups, sous le data dir (respecte THERESE_DATA_DIR)."""
-    from pathlib import Path
-
     d = Path(settings.data_dir) / "backups"
     d.mkdir(parents=True, exist_ok=True)
     return d
@@ -1825,9 +1823,9 @@ async def delete_backup(backup_name: str):
     if not any(c.exists() for c in candidates) and not metadata_file.exists():
         raise HTTPException(status_code=404, detail=f"Backup '{backup_name}' non trouvé")
 
-    for f in (*candidates, metadata_file):
-        if f.exists():
-            f.unlink()
+    for chemin in (*candidates, metadata_file):
+        if chemin.exists():
+            chemin.unlink()
 
     return {"deleted": True, "backup_name": backup_name}
 

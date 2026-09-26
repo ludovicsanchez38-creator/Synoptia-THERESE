@@ -139,7 +139,10 @@ class TestCliquetMypy:
         # aussi. Puis la lecture JSON de l'import CRM (B-1301) retire quatre
         # no-any-return : 944 à froid sur le Mac. Puis P-122 (rejeu des blocs de
         # réflexion d'Anthropic) : 943.
-        assert _etape_mypy()["env"]["MYPY_BASELINE"] == "943"
+        # 26/09/2026 (cycle 13) : le dossier des sauvegardes annoté (-> Path)
+        # retire six erreurs et en révèle trois (une variable de boucle servait
+        # de fichier ouvert puis de chemin), renommée : 937 à froid sur le Mac.
+        assert _etape_mypy()["env"]["MYPY_BASELINE"] == "937"
 
 
 @pytest.mark.skipif(shutil.which("bash") is None, reason="bash requis")
