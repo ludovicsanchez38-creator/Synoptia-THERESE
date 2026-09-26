@@ -23,6 +23,7 @@ import {
 } from './usePrototypeMeetingData';
 import { Spinner } from '../ui/Spinner';
 import { libelleTypeActivite, presenterActivite } from '../../lib/activitesCrm';
+import { libelleDEtape } from '../crm/pipelineEtapes';
 
 function libelleEvenementsCharges(n: number, incomplete?: boolean): string {
   const base = `${n} événement${n > 1 ? 's' : ''} sur 90 jours`;
@@ -396,7 +397,7 @@ function EventPreparation({
                 <div key={attendee} className="rounded-md border border-border bg-surface p-3">
                   <div className="flex items-center gap-3">
                     <span className="grid h-9 w-9 shrink-0 place-items-center rounded-md bg-accent-tint text-xs font-bold text-accent">{contact ? contactInitials(contact) : <Users className="h-4 w-4" />}</span>
-                    <div className="min-w-0 flex-1"><strong className="block truncate text-sm text-text">{contact ? contactDisplayName(contact) : attendee}</strong><span className="block truncate text-xs text-text-muted">{contact ? [contact.company, contact.stage, contact.email].filter(Boolean).join(' · ') : 'Pas de correspondance CRM exacte'}</span></div>
+                    <div className="min-w-0 flex-1"><strong className="block truncate text-sm text-text">{contact ? contactDisplayName(contact) : attendee}</strong><span className="block truncate text-xs text-text-muted">{contact ? [contact.company, contact.stage && libelleDEtape(contact.stage), contact.email].filter(Boolean).join(' · ') : 'Pas de correspondance CRM exacte'}</span></div>
                   </div>
                   {contact?.notes && <p className="mt-3 whitespace-pre-wrap border-t border-border pt-3 text-xs leading-5 text-text-muted">{contact.notes}</p>}
                 </div>
