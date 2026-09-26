@@ -1254,15 +1254,9 @@ def _membre_attendu(dest: str | Path, member: Any) -> bool:
     return _membre_est_sur(dest, nom)
 
 
-def _safe_extractall(tar, dest) -> None:
-    """Extraction d'une sauvegarde : tout membre inattendu refuse l'archive
-    entière AVANT la moindre écriture (B-1497), puis filter='data' (PEP 706)
-    quand Python le connaît.
-
-    Les liens (symboliques ou physiques) ne sont pas extraits : l'application
-    n'en crée aucun, un lien posé à la main ne doit ni rendre la sauvegarde
-    irrestaurable ni ouvrir un passage vers une autre entrée.
-    """
+def _membres_a_extraire(tar: Any, dest: str | Path) -> tuple[list[Any], int]:
+    """Les membres qu'une sauvegarde peut extraire, et le nombre de liens
+    ignorés. Lève HTTPException 400 au premier chemin inattendu (B-1497)."""
     membres = []
     liens_ignores = 0
     for member in tar.getmembers():
@@ -1275,6 +1269,19 @@ def _safe_extractall(tar, dest) -> None:
                 detail="Archive de sauvegarde non sûre : elle contient un chemin inattendu.",
             )
         membres.append(member)
+    return membres, liens_ignores
+
+
+def _safe_extractall(tar, dest) -> None:
+    """Extraction d'une sauvegarde : tout membre inattendu refuse l'archive
+    entière AVANT la moindre écriture (B-1497), puis filter='data' (PEP 706)
+    quand Python le connaît.
+
+    Les liens (symboliques ou physiques) ne sont pas extraits : l'application
+    n'en crée aucun, un lien posé à la main ne doit ni rendre la sauvegarde
+    irrestaurable ni ouvrir un passage vers une autre entrée.
+    """
+    membres, liens_ignores = _membres_a_extraire(tar, dest)
     if liens_ignores:
         logger.warning("Restauration : %d lien(s) de la sauvegarde non restauré(s)", liens_ignores)
     try:
@@ -1590,6 +1597,21 @@ async def restore_backup(
     # pour pouvoir faire un rollback intégral si l'extraction échoue.
     # %f : deux restaurations dans la même seconde ne doivent pas se partager
     # la même archive de sécurité.
+    # B-1524 : l'archive est examinée AVANT toute destruction. Refusée à
+    # l'extraction, elle faisait d'abord effacer les dossiers, puis remettre
+    # l'état d'avant par un retour arrière. Une archive illisible suit le
+    # chemin habituel (retour arrière et message), comme avant.
+    if archive.exists():
+        try:
+            with tarfile.open(archive, "r:gz") as examen:
+                _membres_a_extraire(examen, data_dir)
+        except tarfile.TarError:
+            pass
+        except HTTPException:
+            if decrypted_temp is not None:
+                decrypted_temp.unlink(missing_ok=True)
+            raise
+
     current_backup_name = f"pre_restore_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S_%f')}"
     safety_archive = backup_dir / f"{current_backup_name}.tar.gz"
     safety_included: list[str] = []
