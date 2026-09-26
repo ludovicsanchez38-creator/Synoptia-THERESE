@@ -193,6 +193,15 @@ async def lifespan(app: FastAPI):
     await init_db()
     logger.info("Database initialized")
 
+    # B-1507 : une restauration interrompue par un arrêt brutal laissait sa
+    # copie déchiffrée (clé comprise) en clair dans backups/.
+    try:
+        from app.routers import data as _donnees
+
+        _donnees.effacer_les_dechiffrements_interrompus()
+    except Exception:
+        logger.exception("Ménage des restaurations interrompues en échec")
+
     # Migrations ad-hoc : factorisées dans database.apply_adhoc_migrations
     # (revue adversariale US-015 : elles doivent tourner AVANT l'estampille
     # Alembic, sinon une DB est marquée head sans avoir le schéma de head).

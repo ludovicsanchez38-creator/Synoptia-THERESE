@@ -944,6 +944,26 @@ def _backups_dir():
     return d
 
 
+def effacer_les_dechiffrements_interrompus(dossier: Path | None = None) -> int:
+    """B-1507 : efface au démarrage les archives déchiffrées qu'une
+    restauration interrompue par un arrêt brutal a laissées en clair.
+
+    Seul le motif du temporaire de restauration est visé
+    (`.<nom>.restore.tar.gz`) : la sauvegarde chiffrée d'origine reste en
+    place. Aucune autre archive en clair n'est touchée, une ancienne
+    sauvegarde ou l'état d'avant une restauration pouvant en être l'unique
+    copie.
+    """
+    dossier = dossier if dossier is not None else Path(_backups_dir())
+    effaces = 0
+    for chemin in dossier.glob(".*.restore.tar.gz"):
+        chemin.unlink(missing_ok=True)
+        effaces += 1
+    if effaces:
+        logger.warning("Démarrage : %d archive(s) déchiffrée(s) d'une restauration interrompue effacée(s)", effaces)
+    return effaces
+
+
 def nom_sauvegarde_libre(backup_dir: Path, horodatage: str) -> str:
     # Revue 30/08 : deux POST dans la même seconde produisaient le même
     # `therese_backup_YYYYMMDD_HHMMSS`. La seconde écrasait l'archive
