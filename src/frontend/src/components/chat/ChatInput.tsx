@@ -157,6 +157,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   // B-1514 : la génération affichée, annoncée par le flux, et la demande
   // d'arrêt encore en vol. L'arrêt vise cette génération précise ; la file
   // attend que la demande soit traitée avant de partir.
+  const envoiEnPreparationRef = useRef(false);
   const generationEnCoursRef = useRef<string | null>(null);
   const annulationEnVolRef = useRef<Promise<unknown> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -555,6 +556,13 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       return;
     }
 
+    // B-1595 : l'aperçu des variables (B-1530) se fait AVANT de passer en
+    // réponse en cours ; deux Entrée ou un double clic pendant cette attente
+    // envoyaient le message deux fois. Un seul envoi en préparation à la fois.
+    if (envoiEnPreparationRef.current) return;
+    envoiEnPreparationRef.current = true;
+    try {
+    await (async () => {
     // Revue Soso : envoyer un DOCUMENT est une finalité distincte d'envoyer un
     // message. Sans elle, quiconque avait déjà accepté le chat n'aurait jamais
     // été informé que ses documents partent, ni qu'ils repartent à chaque
@@ -915,6 +923,10 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
         handleClientActionChunk(pendingClientAction);
       }
       pendingClientAction = null;
+    }
+    })();
+    } finally {
+      envoiEnPreparationRef.current = false;
     }
   }, [input, isOffline, modelAvailable, isStreaming, currentProvider, currentModel, attachedFiles, addMessage, updateMessage, setMessageEntities, setMessageMetadata, setMessageSkillFile, setStreaming, setActivity, currentConversationId, currentConversation, updateConversationId, deleteConversation, setQueuedPrompt, clearDraft, saveDraft, pendingSkillId, variablesPreview]);
 

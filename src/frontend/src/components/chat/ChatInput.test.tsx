@@ -145,6 +145,9 @@ describe('ChatInput sans modèle', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Annuler' }));
     expect(screen.queryByTestId('chat-cloud-consent')).not.toBeInTheDocument();
     expect(input).toHaveValue('Résume ce dossier');
+    // B-1595 : l'envoi précédent se referme dans une microtâche, comme entre
+    // deux gestes réels (le navigateur la vide entre deux clics).
+    await act(async () => { await Promise.resolve(); });
 
     fireEvent.click(screen.getByTestId('chat-send-btn'));
     fireEvent.click(screen.getByRole('button', { name: 'Autoriser et envoyer' }));
