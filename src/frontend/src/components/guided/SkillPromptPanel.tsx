@@ -5,6 +5,8 @@ import type { SubOption, FileFormat } from './actionData';
 import { cn } from '../../lib/utils';
 import { Button } from '../ui/Button';
 import { Textarea } from '../ui/Textarea';
+import { hasCloudConsent } from '../../lib/consent';
+import { libelleFournisseurImage } from '../../lib/fournisseurImage';
 
 interface SkillPromptPanelProps {
   option: SubOption;
@@ -135,6 +137,15 @@ export function SkillPromptPanel({ option, onGenerate, onBack }: SkillPromptPane
             'text-sm leading-relaxed'
           )}
         />
+
+        {/* B-1542 : une image part chez un fournisseur en ligne ; sans accord
+            déjà donné pour lui, le panneau le dit avant le clic. */}
+        {option.generatesImage && !hasCloudConsent('images', option.generatesImage.provider) && (
+          <p className="px-4 pb-3 text-xs text-text-muted">
+            Ta description part chez {libelleFournisseurImage(option.generatesImage.provider)} pour créer
+            l’image. En cliquant « Générer », tu donnes ton accord pour ce fournisseur.
+          </p>
+        )}
 
         {/* Footer with hints and generate button */}
         <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 border-t border-border/50">

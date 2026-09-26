@@ -13,6 +13,8 @@ import type { FileFormat, ImageProvider } from '../guided/actionData';
 import { DynamicSkillForm, type SkillSchema } from '../guided/DynamicSkillForm';
 import { SkillExecutionPanel, type SkillExecutionStatus } from '../guided/SkillExecutionPanel';
 import { SkillPromptPanel } from '../guided/SkillPromptPanel';
+import { grantCloudConsent, hasCloudConsent } from '../../lib/consent';
+import { libelleFournisseurImage } from '../../lib/fournisseurImage';
 import { ImageGenerationPanel, type ImageGenerationStatus } from '../guided/ImageGenerationPanel';
 import { useChatStore } from '../../stores/chatStore';
 import {
@@ -254,7 +256,12 @@ export function CommandExecutor({ command, onClose, onPromptSelect, onStartRFC }
     derniereConfigImageRef.current = config;
 
     const provider = config.provider as ImageProvider;
-    const providerLabel = provider === 'gpt-image-2' ? 'GPT Image 2' : provider === 'fal-flux-pro' ? 'Fal Flux Pro' : 'Nano Banana 2';
+    const providerLabel = libelleFournisseurImage(provider);
+    // B-1542 : le panneau a dit où part la description ; le clic sur
+    // « Générer » vaut accord pour ce fournisseur, comme dans le canevas Images.
+    if (!hasCloudConsent('images', provider)) {
+      grantCloudConsent('images', provider, ['description du visuel', 'format', 'qualité']);
+    }
 
     // B-096 (décision de Ludo, 05/09/2026) : aucune confirmation avant une
     // génération d'image, ici comme dans le canevas Images.
