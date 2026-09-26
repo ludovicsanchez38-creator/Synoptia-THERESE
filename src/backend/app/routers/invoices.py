@@ -573,6 +573,22 @@ async def update_invoice(
             )
 
     # Mise à jour des champs
+    # B-1614 : une pièce émise est figée (B-1506, numérotation continue) ;
+    # seul son statut change encore, jamais vers le brouillon.
+    if _facture_emise(invoice):
+        champs = {
+            champ for champ in request.model_fields_set
+            if champ != "status" and (getattr(request, champ) is not None or champ == "converted_from_id")
+        }
+        if champs:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "Une facture émise ne se modifie pas : seul son statut change. "
+                    "Pour la corriger, émets un avoir."
+                ),
+            )
+
     if request.contact_id is not None:
         # Vérifier que le nouveau contact existe
         contact = await session.get(Contact, request.contact_id)

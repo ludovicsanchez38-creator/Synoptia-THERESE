@@ -37,9 +37,15 @@ describe('B-1370 : le formulaire de devis s’ouvre sur son premier champ', () =
     await waitFor(() => expect(document.activeElement).toBe(choisi));
   });
 
-  it('modification : le client a le focus', async () => {
-    render(<InvoiceForm invoice={facture} onClose={vi.fn()} onSave={vi.fn()} />);
+  it('modification d’un brouillon : le client a le focus', async () => {
+    render(<InvoiceForm invoice={{ ...facture, status: 'draft' }} onClose={vi.fn()} onSave={vi.fn()} />);
 
     await waitFor(() => expect(document.activeElement).toBe(screen.getByLabelText(/Client/)));
+  });
+
+  it('B-1614 : sur une pièce émise, figée, le statut a le focus', async () => {
+    render(<InvoiceForm invoice={facture} onClose={vi.fn()} onSave={vi.fn()} />);
+
+    await waitFor(() => expect(document.activeElement).toBe(screen.getByLabelText('Statut')));
   });
 });

@@ -461,7 +461,11 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
 
         if (invoice) {
           // Mise a jour
-          savedInvoice = await updateInvoice(invoice.id, data);
+          // B-1614 : une pièce émise est figée ; seul son statut part.
+          savedInvoice = await updateInvoice(
+            invoice.id,
+            pieceEmise ? { status: status !== invoice.status ? status : undefined } : data,
+          );
           addNotification({ type: 'success', title: libellesDeLaPiece(documentType).misAJour, message: savedInvoice.invoice_number });
         } else {
           // Creation
@@ -691,6 +695,13 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
             </div>
           )}
 
+          {pieceEmise && (
+            <p className="rounded-md border border-border bg-surface-2 p-3 text-sm text-text">
+              Pièce émise : son contenu est figé (numérotation continue). Seul son statut change ;
+              pour la corriger, émets un avoir.
+            </p>
+          )}
+
           {!invoice && (
             <div className="space-y-1.5">
               {/* `Segments` n'expose son `label` qu'en `aria-label` : sans ce
@@ -713,10 +724,12 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
               <FormField label="Client *" htmlFor="contact">
                 <Select
                   id="contact"
-                  // B-1370 : en modification, le client est le premier champ.
-                  data-dialog-autofocus={invoice ? true : undefined}
+                  // B-1370 : en modification, le client est le premier champ ;
+                  // B-1614 : sur une pièce émise (figée), c'est le statut.
+                  data-dialog-autofocus={invoice && !pieceEmise ? true : undefined}
                   value={contactId}
                   onChange={(e) => setContactId(e.target.value)}
+                  disabled={pieceEmise}
                   required
                   options={[
                     { value: '', label: 'Sélectionner un contact' },
@@ -738,6 +751,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
               <FormField label="Statut" htmlFor="status">
                 <Select
                   id="status"
+                  data-dialog-autofocus={pieceEmise ? true : undefined}
                   value={status}
                   onChange={(e) => setStatus(e.target.value as typeof status)}
                   options={(documentType === 'devis' ? OPTIONS_STATUT_DEVIS : OPTIONS_STATUT_FACTURE).filter(
@@ -760,6 +774,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
                 id="currency"
                 value={currency}
                 onChange={(e) => setCurrency(e.target.value)}
+                disabled={pieceEmise}
                 options={CURRENCIES}
               />
             </FormField>
@@ -770,6 +785,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
                 id="issueDate"
                 value={issueDate}
                 onChange={(e) => setIssueDate(e.target.value)}
+                disabled={pieceEmise}
                 required
               />
             </FormField>
@@ -780,6 +796,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
                 id="dueDate"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
+                disabled={pieceEmise}
                 required
               />
             </FormField>
@@ -790,6 +807,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
                   id="factureOrigine"
                   value={factureOrigineId}
                   onChange={(e) => setFactureOrigineId(e.target.value)}
+                  disabled={pieceEmise}
                   options={[
                     { value: '', label: 'Aucune' },
                     ...facturesDuClient.map((f) => ({
@@ -813,6 +831,8 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
             )}
           </div>
 
+          {/* B-1614 : lignes et notes d'une pièce émise sont figées. */}
+          <fieldset disabled={pieceEmise} className="m-0 min-w-0 space-y-6 border-0 p-0">
           <div>
             <p className="text-sm font-medium text-text mb-3">Lignes de facturation *</p>
             {/* B-1387 (Nathalie, cycle 13) : en disposition automatique, les
@@ -939,6 +959,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
               placeholder="Notes internes ou mentions spécifiques..."
             />
           </FormField>
+          </fieldset>
 
           {invoice?.payment_terms && (
             <div className="p-4 rounded-md bg-surface-2 border border-border space-y-2">

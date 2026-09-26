@@ -1,21 +1,19 @@
-/**
- * P-154 (recette P-146, lot 3 ; acceptée le 25/09) : un avoir se relie à la
- * facture qu'il corrige, choisie parmi les factures du client.
- */
+/** B-1614 (suite de B-1506) : une facture émise se modifiait encore depuis
+ * le formulaire (client, dates, lignes, notes). Son contenu est figé : les
+ * champs sont désactivés, une phrase dit pourquoi, et seul le statut part. */
 import { render, screen, waitFor, fireEvent } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { InvoiceForm } from './InvoiceForm';
 import { useBillingProfileStore } from '../../stores/billingProfileStore';
-import { type Invoice } from '../../services/api';
+import type { Invoice } from '../../services/api';
 import { PrototypeExternalActionConfirmationProvider } from '../app/ExternalActionConfirmation';
 
-const { createInvoiceMock, updateInvoiceMock, getBillingProfileStatusMock, markInvoicePaidMock, updateDevisStatusMock, listInvoicesMock } = vi.hoisted(() => ({
+const { createInvoiceMock, updateInvoiceMock, getBillingProfileStatusMock, markInvoicePaidMock, updateDevisStatusMock } = vi.hoisted(() => ({
   createInvoiceMock: vi.fn(),
   updateInvoiceMock: vi.fn(),
   getBillingProfileStatusMock: vi.fn().mockResolvedValue({ is_complete: true, missing: [] }),
   markInvoicePaidMock: vi.fn(),
-  listInvoicesMock: vi.fn(),
   updateDevisStatusMock: vi.fn(),
 }));
 
@@ -35,7 +33,6 @@ vi.mock('../../services/api', async () => {
     createInvoice: createInvoiceMock,
     updateInvoice: updateInvoiceMock,
     markInvoicePaid: markInvoicePaidMock,
-    listInvoices: listInvoicesMock,
     updateDevisStatus: updateDevisStatusMock,
     getBillingProfileStatus: getBillingProfileStatusMock,
   };
@@ -55,36 +52,39 @@ const invoice: Invoice = {
   }],
 };
 
-function rendre(piece: Invoice) {
-  return render(
-    <PrototypeExternalActionConfirmationProvider>
-      <InvoiceForm invoice={piece} onClose={vi.fn()} onSave={vi.fn()} />
-    </PrototypeExternalActionConfirmationProvider>,
-  );
-}
-
-describe('P-154 : un avoir et sa facture d’origine', () => {
+describe('B-1614 : une facture émise est figée dans le formulaire', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     getBillingProfileStatusMock.mockResolvedValue({ is_complete: true, missing: [] });
     useBillingProfileStore.setState({ missing: null });
-    listInvoicesMock.mockResolvedValue([{ ...invoice, id: 'facture-1', invoice_number: 'FAC-2026-001' }]);
-    updateInvoiceMock.mockImplementation(async (id: string, data: object) => ({ ...invoice, id, ...data }));
   });
 
-  it('le formulaire d’un avoir propose les factures du client et garde le choix', async () => {
-    rendre({ ...invoice, id: 'avoir-1', invoice_number: 'AV-2026-001', document_type: 'avoir', status: 'draft', converted_from_id: null });
-    const champ = await screen.findByLabelText('Facture d’origine') as HTMLSelectElement;
-    await waitFor(() => expect(Array.from(champ.options).some((o) => (o.textContent ?? '').includes('FAC-2026-001'))).toBe(true));
-    expect(listInvoicesMock).toHaveBeenCalledWith({ contact_id: 'contact-1', document_type: 'facture' });
-    fireEvent.change(champ, { target: { value: 'facture-1' } });
+  it('client, dates, lignes et notes sont désactivés, le statut ne l’est pas', async () => {
+    render(
+      <PrototypeExternalActionConfirmationProvider>
+        <InvoiceForm invoice={invoice} onClose={vi.fn()} onSave={vi.fn()} />
+      </PrototypeExternalActionConfirmationProvider>,
+    );
+    expect(await screen.findByLabelText('Statut')).not.toBeDisabled();
+    expect(screen.getByLabelText(/Client/)).toBeDisabled();
+    expect(screen.getByLabelText(/Date d'émission/)).toBeDisabled();
+    expect(screen.getByLabelText(/Notes/)).toBeDisabled();
+    expect(screen.getByDisplayValue('Accompagnement')).toBeDisabled();
+    expect(screen.getByText(/émets un avoir/)).toBeInTheDocument();
+  });
+
+  it('seul le statut part à l’enregistrement', async () => {
+    updateInvoiceMock.mockResolvedValue({ ...invoice, status: 'paid' });
+    render(
+      <PrototypeExternalActionConfirmationProvider>
+        <InvoiceForm invoice={invoice} onClose={vi.fn()} onSave={vi.fn()} />
+      </PrototypeExternalActionConfirmationProvider>,
+    );
+    fireEvent.change(await screen.findByLabelText('Statut'), { target: { value: 'paid' } });
     fireEvent.click(screen.getByRole('button', { name: 'Mettre à jour' }));
-    await waitFor(() => expect(updateInvoiceMock).toHaveBeenCalled());
-    expect(updateInvoiceMock.mock.calls[0][1]).toMatchObject({ converted_from_id: 'facture-1' });
-  });
+    const confirmer = screen.queryByRole('button', { name: 'Confirmer le changement de statut' });
+    if (confirmer) fireEvent.click(confirmer);
 
-  it('une facture n’a pas ce champ', () => {
-    rendre(invoice);
-    expect(screen.queryByLabelText('Facture d’origine')).toBeNull();
+    await waitFor(() => expect(updateInvoiceMock).toHaveBeenCalledWith('invoice-1', { status: 'paid' }));
   });
 });
