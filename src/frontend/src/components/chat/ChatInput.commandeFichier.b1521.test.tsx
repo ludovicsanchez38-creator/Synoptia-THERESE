@@ -22,6 +22,11 @@ const apiMocks = vi.hoisted(() => ({
   createConversation: vi.fn().mockResolvedValue({ id: 'conv-serveur', title: 'Nouvelle conversation' }),
 }));
 vi.mock('../../services/api', () => ({ ...apiMocks, ApiError: class ApiError extends Error { status = 500; } }));
+const variablesMocks = vi.hoisted(() => ({ previewVariables: vi.fn() }));
+vi.mock('../../services/api/variables', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
+  ...variablesMocks,
+}));
 vi.mock('../../hooks/useFileDrop', () => ({ useFileDrop: () => ({ isDragging: false }) }));
 vi.mock('./SlashCommandsMenu', () => ({ SlashCommandsMenu: () => null, detectSlashCommand: () => false }));
 vi.mock('./ActionChips', () => ({ ActionChips: () => null }));
@@ -73,4 +78,22 @@ describe('ChatInput - une commande de fichier est un envoi de document (B-1521)'
     expect(carte).toHaveTextContent('contenu intégral des documents joints');
     expect(apiMocks.streamMessage).not.toHaveBeenCalled();
   });
+
+  it('B-1530 : une variable qui porte /fichier demande aussi l’accord pour les documents', async () => {
+    variablesMocks.previewVariables.mockImplementation(async (texte: string) => ({
+      resolved: texte.replace('{piece}', '/fichier ~/Documents/devis-roux.pdf'),
+      unknown: [], errors: [], variables_revision: 'r1',
+    }));
+    render(<ChatInput />);
+    await screen.findByTestId('chat-message-input');
+    await act(async () => { await Promise.resolve(); });
+    fireEvent.change(champ(), { target: { value: '{piece}' } });
+    await act(async () => { await new Promise((r) => setTimeout(r, 50)); });
+    await act(async () => { fireEvent.click(screen.getByTestId('chat-send-btn')); });
+
+    const carte = await screen.findByTestId('chat-cloud-consent');
+    expect(carte).toHaveTextContent('contenu intégral des documents joints');
+    expect(apiMocks.streamMessage).not.toHaveBeenCalled();
+  });
 });
+

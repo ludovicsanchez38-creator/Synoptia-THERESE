@@ -569,7 +569,18 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     // B-1521 : /fichier et /analyse lisent un fichier local et l'envoient au
     // modèle (même motif que le moteur, FILE_COMMAND_PATTERN) : c'est un envoi
     // de document, pas un simple message.
-    const commandeDeFichier = /^\/(fichier|analyse)\s+\S/im.test(trimmed);
+    const COMMANDE_DE_FICHIER = /^\/(fichier|analyse)\s+\S/im;
+    let commandeDeFichier = COMMANDE_DE_FICHIER.test(trimmed);
+    // B-1530 : le moteur remplace les variables AVANT de lire les commandes ;
+    // une variable qui porte « /fichier … » contournait l'accord. On teste
+    // aussi le texte tel qu'il partira ; aperçu indisponible = texte saisi.
+    if (!commandeDeFichier && hasVariableTokens(trimmed)) {
+      try {
+        commandeDeFichier = COMMANDE_DE_FICHIER.test((await previewVariables(trimmed)).resolved ?? '');
+      } catch {
+        // Aperçu indisponible : le texte saisi fait foi, comme avant.
+      }
+    }
     const finaliteCloud: CloudPurpose =
       attachedFiles.length > 0 || conversationPorteDesDocuments || commandeDeFichier
         ? 'documents'
