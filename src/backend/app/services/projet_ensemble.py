@@ -329,6 +329,11 @@ async def lire_l_ensemble(
     )
     ensemble: dict[str, Any] = {}
     indisponibles: list[str] = []
+    # Les dix lectures partagent une session sans savepoint : c'est sûr sous
+    # SQLite (une requête refusée n'annule pas la transaction), pas sous
+    # PostgreSQL, où la première erreur rendrait les familles suivantes
+    # indisponibles. Un changement de moteur impose un begin_nested() par
+    # famille (test_une_vraie_erreur_sql_sur_la_session_partagee...).
     for nom, lire in familles:
         try:
             ensemble[nom] = await lire(session, projet_id, contact_id, limite, jour)
