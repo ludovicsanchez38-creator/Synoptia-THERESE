@@ -109,7 +109,9 @@ def _debut_de_l_episode(ref_date: datetime, expiration: datetime | None, retenti
 async def _premier_preavis(session: Any, contact_id: str, depuis: datetime) -> datetime | None:
     """B-1641 : date du premier préavis de purge donné pour ce contact pendant
     l'épisode en cours (B-1670)."""
-    premier = (
+    # scalar() vaut Any (session non typée, func.min). L'annotation ne change
+    # pas la valeur rendue : datetime naïve, aware, ou None.
+    premier: datetime | None = (
         await session.execute(
             select(func.min(Notification.created_at)).where(
                 Notification.source == "rgpd_purge",
