@@ -79,7 +79,9 @@ jobs:
   backend-tests-windows:
     name: Suite principale (Windows)
     runs-on: windows-latest
-    timeout-minutes: 32
+    # 26/09/2026 : 4 100 tests ; sous charge (plusieurs runs en parallèle),
+    # l'étape pytest a coupé à 26 min, à 97 % et sans un rouge (8cf82c1b).
+    timeout-minutes: 44
 
     env:
       THERESE_ENV: test
@@ -111,7 +113,7 @@ jobs:
         # backend-autonomous-windows. Ses collectes fichier par fichier restent
         # actives dans cette passe.
         run: uv run pytest tests/ --ignore=tests/e2e -q --timeout=60 -p no:cacheprovider -k "not test_le_dossier_src_backend_tests_tient_seul" --junit-xml=junit-windows.xml
-        timeout-minutes: 26
+        timeout-minutes: 38
 
       - name: Bilan des échecs de la suite principale
         if: always()
