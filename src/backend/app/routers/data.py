@@ -601,6 +601,35 @@ TRAVAUX_DE_FOND_EN_COURS = (
 )
 
 
+async def _arreter_les_traitements_vivants() -> None:
+    """B-1520 : Board, Atelier, trame, extraction et réponses en cours
+    écrivaient leur fin après la purge (la décision du Board, question
+    comprise). Chaque traitement vivant de ce processus reçoit une demande
+    d'arrêt, puis on attend sa fin réelle : sorti du registre ET état
+    terminal en base. Le registre seul ne suffit pas : le Board s'y inscrit
+    par sa tâche porteuse, qui en sort dès son annulation, alors que la
+    décision est commitée par une tâche séparée sous `shield` ; la route ne
+    pose l'état terminal qu'après ce commit. Un producteur qui ne clôt
+    jamais finit au plafond de `_arreter_les_travaux_de_fond` (503, rien
+    d'effacé).
+    """
+    from app.models.processing import EtatTache
+    from app.services import task_registry, traitements
+
+    restants = set(task_registry.vivantes())
+    for identifiant in restants:
+        await traitements.demander_arret(identifiant)
+    while restants:
+        for identifiant in list(restants):
+            if task_registry.est_vivante(identifiant):
+                continue
+            ligne = await traitements.lire(identifiant)
+            if ligne is None or ligne.state in EtatTache.terminaux():
+                restants.discard(identifiant)
+        if restants:
+            await asyncio.sleep(0.05)
+
+
 async def _arreter_les_travaux_de_fond() -> None:
     """B-1222, B-1249, B-1251, B-1260 : aucune création du chat ni indexation
     de fond (fiche, profil) ne doit écrire après une purge ou une restauration.
@@ -619,6 +648,7 @@ async def _arreter_les_travaux_de_fond() -> None:
         await attendre_les_gestes_de_creation()
         rendues.extend(await arreter_les_indexations_de_fiches())
         await arreter_l_indexation_du_profil()
+        await _arreter_les_traitements_vivants()
 
     try:
         await asyncio.wait_for(_attendre(), DELAI_MAX_TRAVAUX_DE_FOND_S)

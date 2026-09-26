@@ -151,6 +151,11 @@ def est_vivante(task_id: str) -> bool:
     return task_id in _adaptateurs
 
 
+def vivantes() -> list[str]:
+    """B-1520 : les traitements inscrits dans ce processus."""
+    return list(_adaptateurs)
+
+
 async def demander_annulation(task_id: str) -> bool:
     """Demande l'arrêt d'un traitement. True si le travail est réellement coupé."""
     adaptateur = _adaptateurs.get(task_id)
