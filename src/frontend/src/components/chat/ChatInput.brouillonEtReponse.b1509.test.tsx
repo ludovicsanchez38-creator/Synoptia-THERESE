@@ -118,4 +118,19 @@ describe('ChatInput - brouillon et réponse en cours', () => {
     expect(champ().value).toBe('Message qui va échouer');
     expect(stockage['therese-draft-orion']).toBe('Message qui va échouer');
   });
+
+  it('B-1525 : une recherche approfondie lancée juste après la frappe ne revient pas en brouillon', async () => {
+    render(<ChatInput />);
+    await screen.findByTestId('chat-message-input');
+    apiMocks.streamDeepResearch.mockReturnValue((async function* () {
+      yield { type: 'done', content: '' };
+    })());
+    vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    fireEvent.change(champ(), { target: { value: 'Marché des menuiseries en Provence' } });
+    act(() => { vi.advanceTimersByTime(2000); });
+    await act(async () => { fireEvent.click(screen.getByLabelText('Lancer une recherche approfondie')); });
+    act(() => { vi.advanceTimersByTime(6000); });
+    expect(stockage['therese-draft-orion']).toBeUndefined();
+  });
 });
+

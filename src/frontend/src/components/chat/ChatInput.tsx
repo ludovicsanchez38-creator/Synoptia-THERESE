@@ -520,6 +520,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       const agent = useActionsStore.getState().agents.find((a) => a.id === agentId);
       if (agent) {
         setInput('');
+        clearDraft(); // B-1525 : le texte quitte le champ (B-1509).
         // P-051 : la fiche confirme, même sans paramètre.
         useActionsStore.getState().ouvrirLaFicheAgent(agent);
         return;
@@ -932,6 +933,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     // F9 revue : ce second chemin d'envoi doit aussi ramener en bas
     window.dispatchEvent(new CustomEvent('therese:scroll-chat-bottom'));
     setInput('');
+    clearDraft(); // B-1525 : le texte quitte le champ (B-1509).
     if (textareaRef.current) textareaRef.current.style.height = 'auto';
 
     setStreaming(true);
@@ -1017,7 +1019,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       setStreaming(false);
       setActivity('idle');
     }
-  }, [input, isOffline, isStreaming, currentProvider, currentModel, addMessage, updateMessage, setStreaming, setActivity, currentConversationId, currentConversation, updateConversationId]);
+  }, [input, isOffline, isStreaming, currentProvider, currentModel, addMessage, updateMessage, setStreaming, setActivity, currentConversationId, currentConversation, updateConversationId, clearDraft]);
 
   // Ref stable pour sendMessage (évite dépendances circulaires dans useEffect)
   const sendMessageRef = useRef(sendMessage);
@@ -1110,12 +1112,13 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     // (dictée, zéro aller-retour) au lieu d'insérer un message à envoyer.
     if (command.actionId) {
       setInput('');
+      clearDraft(); // B-1525 : le texte quitte le champ (B-1509).
       runNavigationAction(command.actionId);
       return;
     }
     setInput(command.prefix);
     textareaRef.current?.focus();
-  }, []);
+  }, [clearDraft]);
 
   const handleKeyDown = useCallback(
     (e: KeyboardEvent<HTMLTextAreaElement>) => {
