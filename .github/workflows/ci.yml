@@ -220,7 +220,11 @@ jobs:
   frontend:
     name: Frontend (Node.js)
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # 26/09/2026 : vitest seul prend désormais près de 9 minutes sur le
+    # runner (3200 tests) ; à 10 minutes, l'étape de build était coupée alors
+    # que tous les tests passaient, et chaque run de main finissait
+    # « annulé ». 15 minutes laissent la marge du build.
+    timeout-minutes: 15
 
     defaults:
       run:
