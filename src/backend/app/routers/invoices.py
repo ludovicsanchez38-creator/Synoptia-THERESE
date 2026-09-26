@@ -920,6 +920,13 @@ async def generate_invoice_pdf(
 
     # Récupérer le profil utilisateur (dataclass → dict pour .get())
     _profile = get_cached_profile()
+    if _profile is None:
+        # B-1616 : cache vide après un démarrage ou une restauration avec un
+        # profil chiffré (relu sans trousseau) ; lecture de secours en base,
+        # qui déchiffre et répare le cache, comme billing_profile_status.
+        from app.services.user_profile import get_user_profile
+
+        _profile = await get_user_profile(session)
 
     # P0-PROD-2 : garde-fou émetteur. Un document de facturation sans identité
     # émetteur (raison sociale + SIRET + adresse) n'est pas conforme ni opposable
