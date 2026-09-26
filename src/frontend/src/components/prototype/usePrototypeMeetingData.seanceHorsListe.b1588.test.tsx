@@ -16,7 +16,6 @@ vi.mock('../../services/api', async (importOriginal) => {
 
 import {
   createActivity,
-  createEvent,
   getEmailAuthStatus,
   listActivities,
   listCalendars,
