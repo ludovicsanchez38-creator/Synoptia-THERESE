@@ -197,6 +197,64 @@ describe('P-148 : la fenêtre du projet, une vue d’ensemble d’abord', () => 
     await waitFor(() => expect(screen.getByRole('heading', { level: 4, name: 'Conversations (240)' })).toHaveFocus());
   });
 
+  /**
+   * Revue P-148, constat 15 : si la relecture de « Tout afficher » échouait,
+   * la panne remplaçait toutes les lignes et le focus, dont le bouton avait
+   * disparu, tombait sur BODY. L'ensemble déjà lu reste ; la panne se dit sur
+   * la seule ligne dépliée, et son « Réessayer » prend le focus.
+   */
+  it('revue P-148, constat 15 : une relecture « Tout afficher » en panne garde l’ensemble lu et met le focus sur « Réessayer » de la ligne', async () => {
+    const cinq = Array.from({ length: 5 }, (_, i) => ({ id: `c${i}`, titre: `Échange ${i}`, mise_a_jour: '2026-09-25T08:00:00+00:00' }));
+    const huit = Array.from({ length: 8 }, (_, i) => ({ id: `c${i}`, titre: `Échange ${i}`, mise_a_jour: '2026-09-25T08:00:00+00:00' }));
+    api.lireLEnsembleDuProjet
+      .mockResolvedValueOnce(ensemble({ conversations: { total: 8, elements: cinq } }))
+      .mockRejectedValueOnce(new Error('réseau'))
+      .mockResolvedValueOnce(ensemble({ conversations: { total: 8, elements: huit } }));
+    await ouvrir();
+    const toutAfficher = await screen.findByRole('button', { name: 'Tout afficher (8)' });
+    toutAfficher.focus();
+    await act(async () => { fireEvent.click(toutAfficher); });
+
+    const ligne = screen.getByRole('list', { name: 'Conversations (8)' }).parentElement as HTMLElement;
+    // Ce qui était lu reste lu, toutes familles comprises.
+    expect(within(screen.getByRole('list', { name: 'Conversations (8)' })).getAllByRole('listitem')).toHaveLength(5);
+    expect(screen.getByRole('list', { name: 'Tâches (2)' })).toBeInTheDocument();
+    expect(screen.queryByText('Ce que rassemble ce projet n’a pas pu être lu.')).toBeNull();
+    // La panne se dit sur la ligne, et son « Réessayer » a le focus.
+    expect(within(ligne).getByRole('alert')).toHaveTextContent('La liste complète n’a pas pu être lue.');
+    const reessayer = within(ligne).getByRole('button', { name: 'Réessayer' });
+    await waitFor(() => expect(reessayer).toHaveFocus());
+
+    await act(async () => { fireEvent.click(reessayer); });
+    expect(api.lireLEnsembleDuProjet).toHaveBeenLastCalledWith(PROJET.id, 200);
+    await waitFor(() => expect(within(screen.getByRole('list', { name: 'Conversations (8)' })).getAllByRole('listitem')).toHaveLength(8));
+    expect(screen.queryByText('La liste complète n’a pas pu être lue.')).toBeNull();
+    await waitFor(() => expect(screen.getByRole('heading', { level: 4, name: 'Conversations (8)' })).toHaveFocus());
+  });
+
+  it('revue P-148, constat 15 : une ligne dont la relecture a échoué repropose « Tout afficher » quand une autre échoue à son tour', async () => {
+    const cinq = Array.from({ length: 5 }, (_, i) => ({ id: `c${i}`, titre: `Échange ${i}`, mise_a_jour: '2026-09-25T08:00:00+00:00' }));
+    const contacts = Array.from({ length: 5 }, (_, i) => ({ id: `k${i}`, first_name: `Prénom${i}`, last_name: 'Nom', company: null, associe: false }));
+    api.lireLEnsembleDuProjet
+      .mockResolvedValueOnce(ensemble({
+        conversations: { total: 8, elements: cinq },
+        contacts: { total: 7, ranges: 7, elements: contacts },
+      }))
+      .mockRejectedValue(new Error('réseau'));
+    await ouvrir();
+    await act(async () => { fireEvent.click(await screen.findByRole('button', { name: 'Tout afficher (8)' })); });
+    await screen.findByText('La liste complète n’a pas pu être lue.');
+    await act(async () => { fireEvent.click(screen.getByRole('button', { name: 'Tout afficher (7)' })); });
+
+    // La panne est passée aux contacts ; les conversations ne prétendent pas
+    // être dépliées (« Liste incomplète ») : elles reproposent leur geste.
+    const ligneContacts = screen.getByRole('list', { name: 'Contacts (7)' }).parentElement as HTMLElement;
+    await waitFor(() => expect(within(ligneContacts).getByRole('button', { name: 'Réessayer' })).toHaveFocus());
+    expect(screen.getByRole('button', { name: 'Tout afficher (8)' })).toBeInTheDocument();
+    expect(screen.queryByText(/Liste incomplète/)).toBeNull();
+    expect(screen.getAllByText('La liste complète n’a pas pu être lue.')).toHaveLength(1);
+  });
+
   it('démonstration : le titre passe par maskProject et aucun texte n’apparaît avant les contacts', async () => {
     useDemoStore.setState({ enabled: true, replacementMap: new Map() });
     api.listContacts.mockReturnValue(new Promise(() => {}));

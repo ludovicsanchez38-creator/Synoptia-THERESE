@@ -13,7 +13,7 @@ import { lireLEnsembleDuProjet, type EnsembleDuProjet } from '../../services/api
 import type { DestinationDuTravail } from '../../lib/destinationDuTravail';
 import { formatRelativeDate } from '../../lib/utils';
 import { useDemoMask } from '../../hooks/useDemoMask';
-import { VueDEnsemble, type EtatDeLEnsemble, type FamilleDEnsemble } from '../ui/VueDEnsemble';
+import { VueDEnsemble, type EtatDeLEnsemble, type FamilleDEnsemble, type FocusDEnsemble } from '../ui/VueDEnsemble';
 
 const LIMITE_COURTE = 5;
 const LIMITE_LONGUE = 200;
@@ -59,19 +59,32 @@ export function ProjectEnsembleSection({
   const [relecture, setRelecture] = useState(false);
   const requeteRef = useRef(0);
   // La ligne dépliée reprend le focus quand son bouton disparaît.
-  const [focusApres, setFocusApres] = useState<Depliable | null>(null);
+  const [focusApres, setFocusApres] = useState<FocusDEnsemble | null>(null);
+  // Revue P-148, constat 15 : la ligne dont la relecture « Tout afficher » a échoué.
+  const [panneDuDepli, setPanneDuDepli] = useState<Depliable | null>(null);
   const prefixe = `projet-${projectId.replace(/[^a-zA-Z0-9-]/g, '')}`;
 
-  const lire = useCallback(async (lim: number) => {
+  const lire = useCallback(async (lim: number, depli?: Depliable) => {
     const requete = ++requeteRef.current;
     try {
       const lu = await lireLEnsembleDuProjet(projectId, lim);
       if (requete !== requeteRef.current) return;
       setEnsemble(lu);
       setEtat('pret');
+      setPanneDuDepli(null);
     } catch {
       if (requete !== requeteRef.current) return;
-      setEtat('panne');
+      if (depli) {
+        // Revue P-148, constat 15 : l'ensemble déjà lu reste. La ligne revient
+        // à sa liste courte, dit sa panne, et son « Réessayer » prend le focus
+        // (le bouton « Tout afficher », désactivé pendant la lecture, l'a perdu).
+        setDeplies((courants) => new Set([...courants].filter((f) => f !== depli)));
+        setLimite(LIMITE_COURTE);
+        setPanneDuDepli(depli);
+        setFocusApres({ cle: depli, cible: 'reessayer' });
+      } else {
+        setEtat('panne');
+      }
     } finally {
       if (requete === requeteRef.current) setRelecture(false);
     }
@@ -83,6 +96,7 @@ export function ProjectEnsembleSection({
     setLimite(LIMITE_COURTE);
     setDeplies(new Set());
     setFocusApres(null);
+    setPanneDuDepli(null);
     void lire(LIMITE_COURTE);
     return () => { requeteRef.current += 1; };
   }, [lire]);
@@ -91,16 +105,18 @@ export function ProjectEnsembleSection({
 
   const reessayer = useCallback(() => {
     setEtat('chargement');
+    setPanneDuDepli(null);
     void lire(limite);
   }, [lire, limite]);
 
   const deplier = useCallback((famille: Depliable) => {
     setDeplies((courants) => new Set([...courants, famille]));
-    setFocusApres(famille);
+    setFocusApres({ cle: famille, cible: 'titre' });
+    setPanneDuDepli(null);
     if (limite < LIMITE_LONGUE) {
       setLimite(LIMITE_LONGUE);
       setRelecture(true);
-      void lire(LIMITE_LONGUE);
+      void lire(LIMITE_LONGUE, famille);
     }
   }, [lire, limite]);
 
@@ -109,6 +125,10 @@ export function ProjectEnsembleSection({
   }
 
   function gesteEtComplet(famille: Depliable, total: number, affiches: number, phraseIncomplete: string) {
+    if (panneDuDepli === famille) {
+      // Un seul geste : « Réessayer » relit, « Tout afficher » ferait doublon.
+      return { panne: { message: 'La liste complète n’a pas pu être lue.', onReessayer: () => deplier(famille) } };
+    }
     if (!deplies.has(famille)) {
       return total > affiches
         ? { action: { libelle: `Tout afficher (${total})`, onClick: () => deplier(famille), enCours: relecture } }

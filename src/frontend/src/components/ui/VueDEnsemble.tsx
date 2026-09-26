@@ -40,12 +40,28 @@ export interface FamilleDEnsemble {
   action?: { libelle: string; onClick: () => void; enCours?: boolean };
   /** Tout est affiché mais le moteur en compte davantage : la phrase qui le dit. */
   incomplete?: string;
+  /**
+   * Revue P-148, constat 15 : une relecture propre à cette ligne (« Tout
+   * afficher ») a échoué. Ce qui était lu reste affiché ; la panne se dit ici,
+   * avec son « Réessayer ».
+   */
+  panne?: { message: string; onReessayer: () => void };
+}
+
+/** Ce qui reprend le focus : le titre de la ligne, ou le « Réessayer » de sa panne. */
+export interface FocusDEnsemble {
+  cle: string;
+  cible: 'titre' | 'reessayer';
 }
 
 export type EtatDeLEnsemble = 'chargement' | 'panne' | 'pret';
 
 function idDeLaFamille(prefixe: string, cle: string): string {
   return `${prefixe}-famille-${cle}`;
+}
+
+function idDuReessai(idDeLigne: string): string {
+  return `${idDeLigne}-reessayer`;
 }
 
 export function VueDEnsemble({
@@ -69,10 +85,11 @@ export function VueDEnsemble({
   /** Préfixe des identifiants (plusieurs vues peuvent coexister). */
   prefixe?: string;
   /**
-   * La famille dont le titre reprend le focus : « Tout afficher » disparaît
-   * quand la liste est complète, le focus y revient au lieu de tomber sur la page.
+   * Ce qui reprend le focus : « Tout afficher » disparaît quand la liste est
+   * complète, le focus revient au titre de la ligne ; si la relecture échoue,
+   * au « Réessayer » de sa panne, au lieu de tomber sur la page.
    */
-  focaliser?: string | null;
+  focaliser?: FocusDEnsemble | null;
   onFocalise?: () => void;
 }) {
   const genere = useId();
@@ -81,7 +98,8 @@ export function VueDEnsemble({
 
   useLayoutEffect(() => {
     if (!focaliser) return;
-    document.getElementById(idDeLaFamille(base, focaliser))?.focus();
+    const idDeLigne = idDeLaFamille(base, focaliser.cle);
+    document.getElementById(focaliser.cible === 'reessayer' ? idDuReessai(idDeLigne) : idDeLigne)?.focus();
     onFocalise?.();
   }, [focaliser, base, onFocalise]);
 
@@ -134,7 +152,7 @@ function LigneDEnsemble({
   enChargement: boolean;
   onReessayer: () => void;
 }) {
-  const { libelle, total, resume, elements, texteDuVide, action, incomplete } = famille;
+  const { libelle, total, resume, elements, texteDuVide, action, incomplete, panne } = famille;
   const entete = enChargement || total === null ? libelle : `${libelle} (${total})`;
   return (
     <div className="space-y-1.5" data-famille={famille.cle}>
@@ -179,6 +197,13 @@ function LigneDEnsemble({
             ))}
           </ul>
           {incomplete && <p className="text-sm text-warning">{incomplete}</p>}
+          {panne && (
+            <Alerte
+              titre={panne.message}
+              icone={<AlertCircle className="h-4 w-4" />}
+              action={<Button id={idDuReessai(id)} variant="secondary" size="md" onClick={panne.onReessayer}>Réessayer</Button>}
+            />
+          )}
           {action && (
             <Button variant="ghost" size="md" onClick={action.onClick} disabled={action.enCours}>
               {action.enCours ? 'Chargement…' : action.libelle}
