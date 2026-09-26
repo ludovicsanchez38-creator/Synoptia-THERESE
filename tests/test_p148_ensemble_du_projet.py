@@ -138,6 +138,42 @@ class TestLaRoute:
         assert ensemble["conversations"]["total"] == 1
         assert ensemble["taches"]["total"] == 2
 
+    @pytest.mark.asyncio
+    async def test_une_vraie_erreur_sql_sur_la_session_partagee_ne_contamine_pas_les_familles_suivantes(
+        self, client, monkeypatch
+    ):
+        """Revue P-148, constat 12 : le test ci-dessus lève une RuntimeError
+        avant tout appel à la session. Ici, c'est SQLite qui refuse la requête
+        (colonne inconnue), sur la session que partagent les dix lectures : les
+        familles lues ensuite doivent rendre exactement ce qu'elles rendent sans
+        la panne."""
+        from app.services import projet_ensemble
+        from sqlalchemy import text
+
+        await _garnir_avec_du_bruit()
+        sain = (await client.get("/api/memory/projects/projet-cible/ensemble")).json()
+        assert sain["indisponibles"] == []
+
+        appels: list[str] = []
+
+        def clause_invalide(projet_id: str):
+            appels.append(projet_id)
+            return text("colonne_qui_n_existe_pas = 1")
+
+        monkeypatch.setattr(projet_ensemble, "clause_documents", clause_invalide)
+
+        reponse = await client.get("/api/memory/projects/projet-cible/ensemble")
+
+        assert reponse.status_code == 200, reponse.text
+        ensemble = reponse.json()
+        assert appels == ["projet-cible"]
+        assert ensemble["indisponibles"] == ["documents"]
+        assert ensemble["documents"] is None
+        # Toutes les autres familles, avant ET après la panne, sont intactes.
+        for famille in sain:
+            if famille not in ("documents", "indisponibles"):
+                assert ensemble[famille] == sain[famille], famille
+
 
 class TestLesFichiersDuProjet:
     @pytest.mark.asyncio
