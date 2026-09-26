@@ -48,6 +48,16 @@ export function parseLocalDateKey(key: string): Date {
   return new Date(y, (m || 1) - 1, d || 1);
 }
 
+/** B-1487 : le jour d'un rendez-vous daté est celui du poste. Couper la
+ * chaîne rendait le jour du décalage écrit (Paris pour l'agenda local, UTC
+ * pour certains CalDAV) : 2 h à Paris tombait le lendemain en Martinique.
+ * Une heure sans fuseau se lit déjà comme heure locale. */
+function jourDuPoste(instant: string | null | undefined): string {
+  if (!instant) return '';
+  const date = new Date(instant);
+  return Number.isNaN(date.getTime()) ? instant.slice(0, 10) : localDateKey(date);
+}
+
 interface EvenementCivil {
   all_day?: boolean | null;
   start_date?: string | null;
@@ -61,7 +71,7 @@ interface EvenementCivil {
  * BUG-144) ; un rendez-vous horodaté garde sa clé de début (la grille le
  * positionne par sa durée, cf. B-058). */
 export function clesDeJoursCouverts(evenement: EvenementCivil): string[] {
-  const debut = evenement.start_date || evenement.start_datetime?.slice(0, 10) || '';
+  const debut = evenement.start_date || jourDuPoste(evenement.start_datetime);
   if (!debut) return [];
   if (!evenement.all_day || !evenement.end_date || evenement.end_date <= debut) return [debut];
   const cles: string[] = [];

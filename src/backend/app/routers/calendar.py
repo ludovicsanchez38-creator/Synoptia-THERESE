@@ -97,6 +97,29 @@ def _validate_timezone(tz: str | None) -> str:
     return tz
 
 
+def _heure_murale_paris(valeur: str, fuseau: str | None) -> datetime:
+    """B-1487 : ramène une heure de l'écran à la convention de l'agenda local.
+
+    L'agenda local range une heure murale de Paris sans fuseau (B-275).
+    L'écran envoie l'heure saisie sans fuseau et, à côté, le fuseau réel du
+    poste ; un instant déjà daté (Z ou décalage) est converti tel quel.
+    """
+    moment = datetime.fromisoformat(valeur)
+    if moment.tzinfo is None:
+        moment = moment.replace(tzinfo=ZoneInfo(_validate_timezone(fuseau)))
+    return moment.astimezone(ZoneInfo("Europe/Paris")).replace(tzinfo=None)
+
+
+def _instant_pour_ecran(valeur: date | datetime | None) -> str | None:
+    """B-1487 : une heure murale de Paris rendue à l'écran porte son fuseau,
+    sans quoi un poste hors de Paris la lit comme son heure locale."""
+    if not isinstance(valeur, datetime):
+        return None
+    if valeur.tzinfo is None:
+        valeur = valeur.replace(tzinfo=ZoneInfo("Europe/Paris"))
+    return valeur.isoformat()
+
+
 def _google_allday_end_inclusive(start_obj: dict[str, str], end_obj: dict[str, str]) -> str | None:
     """BUG-144 (F2 revue) : end.date Google est EXCLUSIF (lendemain du dernier
     jour), l'app est INCLUSIVE. Conversion clampée à la lecture des réponses
@@ -872,8 +895,8 @@ async def _list_events_provider(
             summary=evt.summary,
             description=evt.description,
             location=evt.location,
-            start_datetime=evt.start.isoformat() if isinstance(evt.start, datetime) else None,
-            end_datetime=evt.end.isoformat() if isinstance(evt.end, datetime) else None,
+            start_datetime=_instant_pour_ecran(evt.start),
+            end_datetime=_instant_pour_ecran(evt.end),
             start_date=evt.start.isoformat() if evt.all_day and evt.start else None,
             end_date=evt.end.isoformat() if evt.all_day and evt.end else None,
             all_day=evt.all_day,
@@ -1168,8 +1191,8 @@ async def _create_event_provider(
         start = datetime.strptime(request.start_date, "%Y-%m-%d").date()
         end = datetime.strptime(request.end_date, "%Y-%m-%d").date()
     else:
-        start = datetime.fromisoformat(request.start_datetime.replace("Z", "")) if request.start_datetime else datetime.now(UTC)
-        end = datetime.fromisoformat(request.end_datetime.replace("Z", "")) if request.end_datetime else datetime.now(UTC)
+        start = _heure_murale_paris(request.start_datetime, request.timezone) if request.start_datetime else datetime.now(UTC)
+        end = _heure_murale_paris(request.end_datetime, request.timezone) if request.end_datetime else datetime.now(UTC)
 
     provider_req = ProviderCreateRequest(
         calendar_id=request.calendar_id,
@@ -1191,8 +1214,8 @@ async def _create_event_provider(
         summary=evt.summary,
         description=evt.description,
         location=evt.location,
-        start_datetime=evt.start.isoformat() if isinstance(evt.start, datetime) else None,
-        end_datetime=evt.end.isoformat() if isinstance(evt.end, datetime) else None,
+        start_datetime=_instant_pour_ecran(evt.start),
+        end_datetime=_instant_pour_ecran(evt.end),
         start_date=evt.start.isoformat() if evt.all_day and evt.start else None,
         end_date=evt.end.isoformat() if evt.all_day and evt.end else None,
         all_day=evt.all_day,
@@ -1340,13 +1363,13 @@ async def update_event(
         all_day = None
 
         if request.start_datetime:
-            start = datetime.fromisoformat(request.start_datetime.replace("Z", ""))
+            start = _heure_murale_paris(request.start_datetime, request.timezone)
         elif request.start_date:
             start = datetime.strptime(request.start_date, "%Y-%m-%d").date()
             all_day = True
 
         if request.end_datetime:
-            end = datetime.fromisoformat(request.end_datetime.replace("Z", ""))
+            end = _heure_murale_paris(request.end_datetime, request.timezone)
         elif request.end_date:
             end = datetime.strptime(request.end_date, "%Y-%m-%d").date()
             all_day = True
@@ -1359,7 +1382,9 @@ async def update_event(
         debut_effectif = start if start is not None else (stocke.start_datetime if stocke else None)
         fin_effective = end if end is not None else (stocke.end_datetime if stocke else None)
         # B-586 : comparer des INSTANTS. Un bord conscient est ramené en UTC ;
-        # un bord naïf (stocké, ou saisi sans fuseau) est déjà en UTC.
+        # un bord naïf (stocké, ou ramené par _heure_murale_paris) est une
+        # heure murale de Paris (B-275) : les deux bords l'étant, la
+        # comparaison reste juste.
         def _instant(valeur: datetime) -> datetime:
             if valeur.tzinfo is not None:
                 return valeur.astimezone(UTC).replace(tzinfo=None)
@@ -1412,8 +1437,8 @@ async def update_event(
             summary=evt.summary,
             description=evt.description,
             location=evt.location,
-            start_datetime=evt.start.isoformat() if isinstance(evt.start, datetime) else None,
-            end_datetime=evt.end.isoformat() if isinstance(evt.end, datetime) else None,
+            start_datetime=_instant_pour_ecran(evt.start),
+            end_datetime=_instant_pour_ecran(evt.end),
             start_date=evt.start.isoformat() if evt.all_day and evt.start else None,
             end_date=evt.end.isoformat() if evt.all_day and evt.end else None,
             all_day=evt.all_day,

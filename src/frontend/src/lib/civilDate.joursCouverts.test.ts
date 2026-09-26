@@ -42,3 +42,19 @@ describe('B-379 - les jours couverts par un événement', () => {
     expect(clesDeJoursCouverts({ all_day: true, start_date: '2026-09-01', end_date: null })).toEqual(['2026-09-01']);
   });
 });
+
+describe('B-1487 - un rendez-vous daté tombe sur le jour du poste', () => {
+  it('2 h à Paris est la veille au soir en Martinique', () => {
+    process.env.TZ = 'America/Martinique';
+    expect(
+      clesDeJoursCouverts({ all_day: false, start_datetime: '2026-07-10T02:00:00+02:00', end_datetime: '2026-07-10T03:00:00+02:00' }),
+    ).toEqual(['2026-07-09']);
+  });
+
+  it('une heure sans fuseau reste le jour écrit', () => {
+    process.env.TZ = 'America/Martinique';
+    expect(
+      clesDeJoursCouverts({ all_day: false, start_datetime: '2026-07-10T02:00:00', end_datetime: '2026-07-10T03:00:00' }),
+    ).toEqual(['2026-07-10']);
+  });
+});
