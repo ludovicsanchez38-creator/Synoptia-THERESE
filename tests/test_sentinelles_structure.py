@@ -110,13 +110,10 @@ class TestPointDEntree:
                 if isinstance(enfant, ast.Name) and "preload_embedding" in enfant.id:
                     pytest.fail("preload_embedding_model est attendu directement dans le lifespan : le serveur HTTP ne répondrait qu'après")
 
-    def test_le_profil_precharge_au_demarrage_ne_touche_pas_au_trousseau(self):
-        arbre = _arbre(APP_MAIN_PY)
-        appels = [a for a in ast.walk(arbre) if isinstance(a, ast.Call) and _mot_cle(a, "allow_decrypt") is not None]
-        assert appels, "le préchargement du profil doit passer allow_decrypt (BUG-013)"
-        assert all(_mot_cle(a, "allow_decrypt").value is False for a in appels), (
-            "au démarrage, allow_decrypt doit valoir False pour ne pas ouvrir le Keychain"
-        )
+    # BUG-013 (préchargement du profil sans trousseau au démarrage) : depuis
+    # B-1540, l'appel vit dans `user_profile.recharger_le_profil_en_cache`, et
+    # il est EXÉCUTÉ avec un espion par tests/test_main_startup.py
+    # (TestStartupKeychainSafety.test_startup_profile_preload_skips_decrypt).
 
 
 class TestSpecPyInstaller:
