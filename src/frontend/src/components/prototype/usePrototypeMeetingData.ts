@@ -254,7 +254,8 @@ export function usePrototypeMeetingData(enabled = true) {
     createNotePending.current = true;
     try {
       const data = workspace.current;
-      const event = data ? findEvent(data.events, eventId) : undefined;
+      // B-1588 : une séance ouverte depuis l'Agenda (P-117) est hors de la liste.
+      const event = data ? trouver(data.events, eventId) : undefined;
       const contact = data?.contacts.find((item) => item.id === contactId);
       if (!data || !event || !contact || !contactsForEvent(event, data.contacts).some((item) => item.id === contactId)) {
         throw new Error('Le contact n’est pas relié à ce rendez-vous par son adresse email.');
@@ -273,7 +274,7 @@ export function usePrototypeMeetingData(enabled = true) {
     } finally {
       createNotePending.current = false;
     }
-  }, []);
+  }, [trouver]);
 
   useEffect(() => {
     if (!enabled) return undefined;
