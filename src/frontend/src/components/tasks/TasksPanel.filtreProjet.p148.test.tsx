@@ -8,6 +8,8 @@
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { maskProject } from '../../lib/demoMask';
+import { useDemoStore } from '../../stores/demoStore';
 import { useTaskStore } from '../../stores/taskStore';
 
 vi.mock('../../services/api', async () => {
@@ -45,6 +47,21 @@ describe('P-148 : un filtre de projet se voit', () => {
     render(<TasksPanel isOpen onClose={() => {}} standalone />);
     await act(async () => { await Promise.resolve(); });
     expect(screen.queryByRole('combobox', { name: 'Filtrer par projet' })).toBeNull();
+  });
+
+  it('revue P-148, constat 1 : en démonstration, le filtre déplié porte le pseudonyme, jamais le vrai nom', async () => {
+    useDemoStore.setState({ enabled: true, replacementMap: new Map() });
+    try {
+      poser('p-cuisine');
+      render(<TasksPanel isOpen onClose={() => {}} standalone />);
+      const filtre = await screen.findByRole('combobox', { name: 'Filtrer par projet' });
+      await waitFor(() => expect(filtre).toHaveValue('p-cuisine'));
+      expect(screen.queryByText('Cuisine Roux')).toBeNull();
+      const pseudonyme = maskProject({ id: 'p-cuisine', name: 'Cuisine Roux' }).name;
+      expect((filtre as HTMLSelectElement).selectedOptions[0]).toHaveTextContent(pseudonyme);
+    } finally {
+      useDemoStore.setState({ enabled: false, replacementMap: new Map() });
+    }
   });
 
   it('un filtre de projet posé pendant que la vue est affichée déplie les filtres', async () => {

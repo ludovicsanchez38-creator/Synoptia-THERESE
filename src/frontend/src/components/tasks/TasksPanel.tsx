@@ -84,7 +84,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
     setFilterProjectId,
   } = useTaskStore();
 
-  const { enabled: demoEnabled, populateMap } = useDemoMask();
+  const { enabled: demoEnabled, populateMap, maskProject } = useDemoMask();
 
   const hasCachedTasks = tasks.length > 0;
   const [loading, setLoading] = useState(!hasCachedTasks);
@@ -297,7 +297,9 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
           onChange={(e) => setFilterProjectId(e.target.value || null)}
           options={[
             { value: '', label: 'Tous les projets' },
-            ...projects.map((p) => ({ value: p.id, label: p.name })),
+            // Revue P-148, constat 1 : déplié dès qu'un projet est filtré, le
+            // sélecteur montrait le vrai nom en démonstration.
+            ...projects.map((p) => ({ value: p.id, label: maskProject({ id: p.id, name: p.name }).name })),
           ]}
           className="w-auto"
         />
