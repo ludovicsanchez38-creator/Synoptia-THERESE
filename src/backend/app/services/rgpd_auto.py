@@ -11,10 +11,12 @@ dépasse la durée de rétention configurée (défaut : 36 mois).
 
 import logging
 from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from app.models.database import get_session_context
 from app.models.entities import Activity, Contact, EmailMessage, Notification
 from app.services.rgpd_identite import effacer_l_identite
+from sqlalchemy import func
 from sqlmodel import or_, select
 
 logger = logging.getLogger(__name__)
@@ -91,6 +93,24 @@ async def _is_purge_enabled() -> bool:
     return True
 
 
+PREAVIS_JOURS = 30
+
+
+async def _premier_preavis(session: Any, contact_id: str) -> datetime | None:
+    """B-1641 : date du premier préavis de purge donné pour ce contact."""
+    premier = (
+        await session.execute(
+            select(func.min(Notification.created_at)).where(
+                Notification.source == "rgpd_purge",
+                Notification.action_url == f"/crm/contacts/{contact_id}",
+            )
+        )
+    ).scalar()
+    if premier is not None and premier.tzinfo is None:
+        premier = premier.replace(tzinfo=UTC)
+    return premier
+
+
 async def auto_purge_expired_contacts() -> dict[str, int]:
     """
     Purge automatique des contacts expirés.
@@ -142,7 +162,15 @@ async def auto_purge_expired_contacts() -> dict[str, int]:
                     ref_date = ref_date.replace(tzinfo=UTC)
 
                 if ref_date < purge_threshold:
-                    contacts_to_purge.append(contact)
+                    # B-1641 : un contact importé ou synchronisé avec une
+                    # vieille « Dernière interaction » était anonymisé au
+                    # démarrage suivant, sans jamais avoir été annoncé. Aucune
+                    # anonymisation sans un préavis donné 30 jours avant.
+                    premier_preavis = await _premier_preavis(session, contact.id)
+                    if premier_preavis is not None and premier_preavis <= now - timedelta(days=PREAVIS_JOURS):
+                        contacts_to_purge.append(contact)
+                    else:
+                        contacts_to_warn.append(contact)
                 elif ref_date < warning_threshold:
                     contacts_to_warn.append(contact)
 
@@ -163,9 +191,15 @@ async def auto_purge_expired_contacts() -> dict[str, int]:
 
                 purge_date = contact.last_interaction or contact.updated_at or contact.created_at
                 if purge_date:
-                    purge_date_str = (purge_date + timedelta(days=retention_months * 30)).strftime(
-                        "%d/%m/%Y"
+                    if purge_date.tzinfo is None:
+                        purge_date = purge_date.replace(tzinfo=UTC)
+                    # B-1641 : jamais avant la fin du préavis.
+                    premier_preavis = await _premier_preavis(session, contact.id) or now
+                    echeance = max(
+                        purge_date + timedelta(days=retention_months * 30),
+                        premier_preavis + timedelta(days=PREAVIS_JOURS),
                     )
+                    purge_date_str = echeance.strftime("%d/%m/%Y")
                 else:
                     purge_date_str = "bientôt"
 

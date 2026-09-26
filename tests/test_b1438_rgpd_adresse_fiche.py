@@ -13,6 +13,8 @@ import pytest
 from app.models.entities import Contact
 from httpx import AsyncClient
 
+from tests.rgpd_preavis import preavis_ancien_pour_tous
+
 ADRESSE = "3 place de l'Hôtel de Ville, 04100 Manosque"
 
 
@@ -78,6 +80,8 @@ async def test_la_purge_automatique_efface_aussi_la_relance(db_session):
     await db_session.commit()
     cid = contact.id
 
+    # B-1641 : l'anonymisation automatique exige un préavis de 30 jours.
+    await preavis_ancien_pour_tous(db_session)
     with patch.object(rgpd_auto, "purge_contact_vector", new=AsyncMock(return_value=1)):
         await rgpd_auto.auto_purge_expired_contacts()
     db_session.expire_all()

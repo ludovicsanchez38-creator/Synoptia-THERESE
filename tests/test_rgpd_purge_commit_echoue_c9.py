@@ -12,6 +12,8 @@ from app.models.entities import Activity, Contact, Preference
 from app.services import rgpd_auto
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from tests.rgpd_preavis import preavis_ancien_pour_tous
+
 
 @pytest.mark.asyncio
 async def test_un_commit_qui_echoue_rend_des_compteurs_a_zero(db_session) -> None:
@@ -35,6 +37,8 @@ async def test_un_commit_qui_echoue_rend_des_compteurs_a_zero(db_session) -> Non
             raise RuntimeError("disque plein")
         await commit_reel(self)
 
+    # B-1641 : l'anonymisation automatique exige un préavis de 30 jours.
+    await preavis_ancien_pour_tous(db_session)
     with (
         patch.object(rgpd_auto, "purge_contact_vector", new=AsyncMock(return_value=1)),
         patch.object(AsyncSession, "commit", new=commit_defaillant),

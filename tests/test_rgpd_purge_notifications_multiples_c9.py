@@ -14,6 +14,8 @@ from app.models.entities import Contact, Notification, Preference
 from app.services import rgpd_auto
 from sqlmodel import select
 
+from tests.rgpd_preavis import preavis_ancien_pour_tous
+
 
 @pytest.mark.asyncio
 async def test_deux_notifications_pour_un_contact_n_arretent_pas_la_campagne(db_session) -> None:
@@ -45,6 +47,8 @@ async def test_deux_notifications_pour_un_contact_n_arretent_pas_la_campagne(db_
     await db_session.commit()
     id_anonymiser = a_anonymiser.id
 
+    # B-1641 : l'anonymisation automatique exige un préavis de 30 jours.
+    await preavis_ancien_pour_tous(db_session)
     with patch.object(rgpd_auto, "purge_contact_vector", new=AsyncMock(return_value=1)):
         resultat = await rgpd_auto.auto_purge_expired_contacts()
 
