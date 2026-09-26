@@ -1,5 +1,5 @@
 /** P-153 : la fenêtre d'un projet existant montre ses livrables. */
-import { act, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const api = vi.hoisted(() => ({
@@ -35,5 +35,23 @@ describe('P-153 : la fenêtre du projet et ses livrables', () => {
     });
     expect(await screen.findByText('Plans cotés')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Ajouter le livrable' })).toBeInTheDocument();
+  });
+
+  it('B-1490 : Entrée dans « Nouveau livrable » ajoute le livrable, sans enregistrer le projet', async () => {
+    livrables.createDeliverable.mockResolvedValue({ id: 'd2', project_id: 'p1', title: 'Devis signé', description: null, status: 'a_faire', due_date: null, completed_at: null, created_at: '', updated_at: '' });
+    await act(async () => {
+      render(<ProjectModal isOpen onClose={vi.fn()} project={{ id: 'p1', name: 'Cuisine Roux', description: null, contact_id: null, status: 'active', budget: null, notes: null, tags: null, created_at: '', updated_at: '' } as never} />);
+    });
+    const champ = await screen.findByPlaceholderText('Nouveau livrable');
+    fireEvent.change(champ, { target: { value: 'Devis signé' } });
+    await act(async () => {
+      // Un navigateur soumet le formulaire implicite à l'Entrée, sauf si
+      // un gestionnaire a appelé preventDefault : jsdom ne le fait pas seul.
+      if (fireEvent.keyDown(champ, { key: 'Enter' })) {
+        fireEvent.submit(champ.closest('form')!);
+      }
+    });
+    expect(api.updateProject).not.toHaveBeenCalled();
+    expect(livrables.createDeliverable).toHaveBeenCalledWith(expect.objectContaining({ project_id: 'p1', title: 'Devis signé' }));
   });
 });

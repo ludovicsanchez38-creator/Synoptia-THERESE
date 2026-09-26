@@ -21,6 +21,10 @@ export function entreeValide(action: () => void, desactive = false) {
     if (e.shiftKey || e.altKey || e.ctrlKey || e.metaKey || e.nativeEvent.isComposing) return;
     const cible = e.target;
     if (!(cible instanceof HTMLInputElement) || TYPES_SANS_VALIDATION.has(cible.type)) return;
+    // B-1490 : un champ qui a son propre formulaire (le « Nouveau livrable »
+    // de la fenêtre projet) l'envoie lui-même ; valider le conteneur
+    // enregistrait le projet et empêchait l'ajout.
+    if (cible.form) return;
     e.preventDefault();
     action();
   };
