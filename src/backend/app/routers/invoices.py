@@ -563,6 +563,14 @@ async def update_invoice(
                     f"{', '.join(sorted(autorises))}"
                 ),
             )
+        if request.status == "draft" and _facture_emise(invoice):
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "Une facture émise ne repasse pas en brouillon : pour la "
+                    "corriger, émets un avoir."
+                ),
+            )
 
     # Mise à jour des champs
     if request.contact_id is not None:
@@ -665,6 +673,15 @@ async def delete_invoice(
     if not invoice:
         raise HTTPException(status_code=404, detail="Invoice not found")
 
+    if _facture_emise(invoice):
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Une facture émise ne se supprime pas : sa numérotation doit "
+                "rester continue. Pour l'annuler, émets un avoir."
+            ),
+        )
+
     invoice_number = invoice.invoice_number
 
     # Supprimer le PDF si existant
@@ -679,6 +696,19 @@ async def delete_invoice(
     logger.info(f"Invoice deleted: {invoice_number}")
 
     return {"message": "Invoice deleted successfully"}
+
+
+def _facture_emise(invoice: Invoice) -> bool:
+    """B-1506 : une facture ou un avoir qui a quitté le brouillon est émis.
+
+    Sa numérotation appartient à une séquence chronologique et continue
+    (BOFiP, BOI-TVA-DECLA-30-20-20-10) : on ne le supprime pas et il ne
+    repasse pas en brouillon, on l'annule par un avoir. Un devis n'entre pas
+    dans cette séquence.
+    """
+    return invoice.document_type in ("facture", "avoir") and (
+        invoice.sent_at is not None or invoice.status != "draft"
+    )
 
 
 def _dater_le_premier_envoi(invoice: Invoice, nouveau_statut: str) -> None:
