@@ -64,4 +64,7 @@ async def test_un_debut_date_et_une_fin_sans_fuseau_ne_font_pas_planter(client, 
 @pytest.fixture(autouse=True)
 def _fuseau_rendu():
     yield
-    time.tzset()
+    # B-1676 : time.tzset n'existe pas sous Windows ; l'appeler au démontage
+    # mettait la suite Windows en erreur sur chaque test du fichier.
+    if hasattr(time, "tzset"):
+        time.tzset()
