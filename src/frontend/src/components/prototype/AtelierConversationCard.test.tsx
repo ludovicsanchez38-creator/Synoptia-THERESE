@@ -74,6 +74,20 @@ describe('Atelier 0.40 conversationnel', () => {
     expect(onStart).toHaveBeenCalledWith('Simplifier l’onboarding sans modifier les données.');
   });
 
+  it('B-1517 : la confirmation ne promet pas une exécution « locale » quand des extraits partent au modèle', () => {
+    render(<AtelierWorkspaceCanvas
+      resource={{ status: 'ready', data: workspace, error: null }}
+      taskResource={null} diffResource={null} run={idleRun} target="new-mission"
+      actionPending={null} onRetry={vi.fn()} onRetryTask={vi.fn()} onStart={vi.fn()}
+      onCancel={vi.fn()} onReset={vi.fn()} onMutate={vi.fn()} onOpenClassic={vi.fn()}
+    />);
+    fireEvent.change(screen.getByLabelText('Mission Atelier'), { target: { value: 'Corriger le tri des factures.' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Préparer la mission' }));
+    const carte = screen.getByTestId('atelier-confirmation');
+    expect(carte).not.toHaveTextContent(/exécution locale/i);
+    expect(carte).toHaveTextContent('Les commandes s’exécutent sur ce poste ; des extraits du dépôt partent au modèle de chaque agente.');
+  });
+
   it('réserve l’annulation d’une mission engagée à une confirmation dédiée', () => {
     const onCancel = vi.fn().mockResolvedValue(undefined);
     const runningRun: AtelierRunState = {
