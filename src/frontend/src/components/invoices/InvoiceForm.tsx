@@ -371,6 +371,16 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
       return;
     }
 
+    // B-1493 : la borne ne vaut que pour une validité saisie. Les attributs
+    // natifs min/max bloquaient aussi un devis existant hors bornes (reçu du
+    // moteur, qui les accepte) quand on ne changeait que ses notes.
+    const validiteSaisie = validiteJours !== (invoice?.validite_jours ?? 30);
+    if (documentType === 'devis' && validiteSaisie && (validiteJours < 1 || validiteJours > 365)) {
+      setErreurValidation('Choisis une validité entre 1 et 365 jours.');
+      dialogueRef.current?.querySelector<HTMLElement>('#validiteJours')?.focus();
+      return;
+    }
+
     // BUG-132 : une ligne par défaut existe mais sans description -> ne pas
     // afficher « ajoute une ligne » (trompeur), viser le vrai champ manquant.
     // Chaque ligne vide est marquée ; la notification ne part que si toutes
@@ -784,8 +794,6 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
                 <Input
                   type="number"
                   id="validiteJours"
-                  min={1}
-                  max={365}
                   value={validiteJours}
                   onChange={(e) => setValiditeJours(parseInt(e.target.value, 10) || 30)}
                 />
