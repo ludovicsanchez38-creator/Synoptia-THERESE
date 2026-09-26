@@ -36,7 +36,7 @@ import { inscrireArretDeLaReponse } from '../../lib/arretDeLaReponse';
 import { attendrePersistance, assurerConversationPersistee } from '../../lib/rattachementConversation';
 import { estUneImage } from '../../lib/pieceJointeImage';
 import { useFileDrop, type DroppedFile } from '../../hooks/useFileDrop';
-import { streamMessage, streamDeepResearch, indexFile, cancelGeneration, ApiError, getLLMConfig, setLLMConfig, type LLMProvider } from '../../services/api';
+import { streamMessage, streamDeepResearch, indexFile, cancelGeneration, annulerTraitement, ApiError, getLLMConfig, setLLMConfig, type LLMProvider } from '../../services/api';
 import type { StreamChunk } from '../../services/api/chat';
 import { useAutosave } from '../../hooks/useAutosave';
 import { cn } from '../../lib/utils';
@@ -154,6 +154,11 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  // B-1514 : la génération affichée, annoncée par le flux, et la demande
+  // d'arrêt encore en vol. L'arrêt vise cette génération précise ; la file
+  // attend que la demande soit traitée avant de partir.
+  const generationEnCoursRef = useRef<string | null>(null);
+  const annulationEnVolRef = useRef<Promise<unknown> | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const showKeyboardHints = useAccessibilityStore((state) => state.showKeyboardHints);
 
@@ -734,6 +739,10 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           }
         }
 
+        if (chunk.type === 'generation' && chunk.generation_id) {
+          generationEnCoursRef.current = chunk.generation_id;
+        }
+
         if (chunk.type === 'text') {
           // Accumulate content et flush sur frontière de phrase
           accumulatedContent += chunk.content;
@@ -877,6 +886,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       }
     } finally {
       abortRef.current = null;
+      generationEnCoursRef.current = null;
       setStreaming(false);
       setActivity('idle');
       // BUG-139 (revue harmonisation F2) : la navigation reçue s'exécute même
@@ -997,6 +1007,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       }
     } finally {
       abortRef.current = null;
+      generationEnCoursRef.current = null;
       setStreaming(false);
       setActivity('idle');
     }
@@ -1033,8 +1044,12 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     if (!isStreaming && queuedPrompt) {
       setInput(queuedPrompt);
       setQueuedPrompt(null);
+      // B-1514 : un arrêt encore en vol viserait sinon la réponse du message
+      // en file ; on attend qu'il soit traité.
+      const attente = annulationEnVolRef.current ?? Promise.resolve();
+      annulationEnVolRef.current = null;
       setTimeout(() => {
-        sendMessageRef.current?.();
+        void attente.then(() => sendMessageRef.current?.());
       }, 50);
     }
   }, [isStreaming, queuedPrompt, setQueuedPrompt]);
@@ -1046,13 +1061,21 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     // consommer des tokens) alors que la réponse s'est arrêtée à l'écran.
     // L'arrêt local reste effectif même si cet appel échoue.
     const conversationId = useChatStore.getState().currentConversationId;
-    if (conversationId) {
+    // B-1514 : viser la génération affichée par son identifiant ; « la
+    // génération courante de la conversation » pouvait être, à l'arrivée de la
+    // demande, celle du message en file. Repli sur la conversation tant que le
+    // flux n'a pas annoncé sa génération.
+    const generationId = generationEnCoursRef.current;
+    if (generationId || conversationId) {
       // `Promise.resolve` + try/catch : l'appel peut échouer de façon
       // ASYNCHRONE (serveur injoignable) comme SYNCHRONE (module d'API
       // indisponible, retour non-promesse). Dans les deux cas l'abort local a
       // déjà eu lieu — le geste de l'utilisateur ne doit jamais lever.
       try {
-        void Promise.resolve(cancelGeneration(conversationId)).catch(() => {});
+        const demande = generationId
+          ? annulerTraitement(generationId)
+          : cancelGeneration(conversationId as string);
+        annulationEnVolRef.current = Promise.resolve(demande).catch(() => {});
       } catch {
         // Rien de plus à faire : la réponse est déjà arrêtée à l'écran.
       }
