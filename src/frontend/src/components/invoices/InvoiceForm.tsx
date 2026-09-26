@@ -370,72 +370,80 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
 
-    if (!contactId) {
-      setErreurValidation('Sélectionne un contact.');
-      dialogueRef.current?.querySelector<HTMLElement>('#contact')?.focus();
-      return;
-    }
+    // B-1677 : une pièce émise est figée (B-1614) ; seul son statut part,
+    // ses lignes désactivées ne se valident plus (une ligne héritée à
+    // 0,5 jour ou sans description bloquait tout changement de statut).
+    const validLines = pieceEmise ? [] : lignesValidees();
+    if (validLines === null) return;
 
-    if (lines.length === 0) {
-      setErreurValidation('Ajoute au moins une ligne de facturation.');
-      return;
-    }
-
-    // B-1493 : la borne ne vaut que pour une validité saisie. Les attributs
-    // natifs min/max bloquaient aussi un devis existant hors bornes (reçu du
-    // moteur, qui les accepte) quand on ne changeait que ses notes.
-    const validiteSaisie = validiteJours !== (invoice?.validite_jours ?? 30);
-    if (documentType === 'devis' && validiteSaisie && (validiteJours < 1 || validiteJours > 365)) {
-      setErreurValidation('Choisis une validité entre 1 et 365 jours.');
-      dialogueRef.current?.querySelector<HTMLElement>('#validiteJours')?.focus();
-      return;
-    }
-
-    // BUG-132 : une ligne par défaut existe mais sans description -> ne pas
-    // afficher « ajoute une ligne » (trompeur), viser le vrai champ manquant.
-    // Chaque ligne vide est marquée ; la notification ne part que si toutes
-    // le sont (état maquette `nouveau` : ligne remplie + ligne vide).
-    const vides = lines
-      .map((line, index) => (line.description.trim() ? -1 : index))
-      .filter((index) => index >= 0);
-    if (vides.length > 0) {
-      setLignesSansDescription(vides);
-      if (vides.length === lines.length) {
-        setErreurValidation('Renseigne la description d’au moins une ligne.');
+    function lignesValidees() {
+      if (!contactId) {
+        setErreurValidation('Sélectionne un contact.');
+        dialogueRef.current?.querySelector<HTMLElement>('#contact')?.focus();
+        return null;
       }
-      document.getElementById(`invoiceform-description-${vides[0]}`)?.focus();
-      return;
-    }
-    setLignesSansDescription([]);
-    setErreurValidation(null);
 
-    const normalizedLines = lines.map((line, index) => {
-      const quantity = parseDecimalDraft(lineInputs[index]?.quantity ?? '');
-      const unitPrice = parseDecimalDraft(lineInputs[index]?.unit_price_ht ?? '');
-      return {
+      if (lines.length === 0) {
+        setErreurValidation('Ajoute au moins une ligne de facturation.');
+        return null;
+      }
+
+      // B-1493 : la borne ne vaut que pour une validité saisie. Les attributs
+      // natifs min/max bloquaient aussi un devis existant hors bornes (reçu du
+      // moteur, qui les accepte) quand on ne changeait que ses notes.
+      const validiteSaisie = validiteJours !== (invoice?.validite_jours ?? 30);
+      if (documentType === 'devis' && validiteSaisie && (validiteJours < 1 || validiteJours > 365)) {
+        setErreurValidation('Choisis une validité entre 1 et 365 jours.');
+        dialogueRef.current?.querySelector<HTMLElement>('#validiteJours')?.focus();
+        return null;
+      }
+
+      // BUG-132 : une ligne par défaut existe mais sans description -> ne pas
+      // afficher « ajoute une ligne » (trompeur), viser le vrai champ manquant.
+      // Chaque ligne vide est marquée ; la notification ne part que si toutes
+      // le sont (état maquette `nouveau` : ligne remplie + ligne vide).
+      const vides = lines
+        .map((line, index) => (line.description.trim() ? -1 : index))
+        .filter((index) => index >= 0);
+      if (vides.length > 0) {
+        setLignesSansDescription(vides);
+        if (vides.length === lines.length) {
+          setErreurValidation('Renseigne la description d’au moins une ligne.');
+        }
+        document.getElementById(`invoiceform-description-${vides[0]}`)?.focus();
+        return null;
+      }
+      setLignesSansDescription([]);
+      setErreurValidation(null);
+
+      const normalizedLines = lines.map((line, index) => {
+        const quantity = parseDecimalDraft(lineInputs[index]?.quantity ?? '');
+        const unitPrice = parseDecimalDraft(lineInputs[index]?.unit_price_ht ?? '');
+        return {
+          ...line,
+          quantity,
+          unit_price_ht: unitPrice,
+        };
+      });
+
+      // B-1068 : même règle que « Champ requis » (B-1039), le message vit dans le pied.
+      if (normalizedLines.some((line) => line.quantity === null || line.unit_price_ht === null)) {
+        setErreurValidation('Saisis des nombres valides pour les quantités et montants.');
+        return null;
+      }
+
+      if (normalizedLines.some((line) => line.quantity! < 1 || line.unit_price_ht! < 0)) {
+        setErreurValidation('Saisis une quantité supérieure ou égale à 1 et un prix positif ou nul.');
+        return null;
+      }
+
+      // À ce stade, null est exclu par les guards ci-dessus
+      return normalizedLines.map((line) => ({
         ...line,
-        quantity,
-        unit_price_ht: unitPrice,
-      };
-    });
-
-    // B-1068 : même règle que « Champ requis » (B-1039), le message vit dans le pied.
-    if (normalizedLines.some((line) => line.quantity === null || line.unit_price_ht === null)) {
-      setErreurValidation('Saisis des nombres valides pour les quantités et montants.');
-      return;
+        quantity: line.quantity as number,
+        unit_price_ht: line.unit_price_ht as number,
+      }));
     }
-
-    if (normalizedLines.some((line) => line.quantity! < 1 || line.unit_price_ht! < 0)) {
-      setErreurValidation('Saisis une quantité supérieure ou égale à 1 et un prix positif ou nul.');
-      return;
-    }
-
-    // À ce stade, null est exclu par les guards ci-dessus
-    const validLines = normalizedLines.map((line) => ({
-      ...line,
-      quantity: line.quantity as number,
-      unit_price_ht: line.unit_price_ht as number,
-    }));
 
     const data = {
       contact_id: contactId,

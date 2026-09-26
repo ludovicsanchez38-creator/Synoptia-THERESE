@@ -87,4 +87,23 @@ describe('B-1614 : une facture émise est figée dans le formulaire', () => {
 
     await waitFor(() => expect(updateInvoiceMock).toHaveBeenCalledWith('invoice-1', { status: 'paid' }));
   });
+
+  // B-1677 : les lignes figées ne se valident plus ; une ligne héritée à
+  // 0,5 jour ou sans description bloquait tout changement de statut.
+  it.each([
+    ['une quantité inférieure à 1', { quantity: 0.5, description: 'Demi-journée' }],
+    ['une description vide', { quantity: 1, description: '' }],
+  ])('le statut change même avec %s sur une ligne figée', async (_cas, ligne) => {
+    const piece: Invoice = { ...invoice, lines: [{ ...invoice.lines[0], ...ligne }] };
+    updateInvoiceMock.mockResolvedValue({ ...piece, status: 'overdue' });
+    render(
+      <PrototypeExternalActionConfirmationProvider>
+        <InvoiceForm invoice={piece} onClose={vi.fn()} onSave={vi.fn()} />
+      </PrototypeExternalActionConfirmationProvider>,
+    );
+    fireEvent.change(await screen.findByLabelText('Statut'), { target: { value: 'overdue' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Mettre à jour' }));
+
+    await waitFor(() => expect(updateInvoiceMock).toHaveBeenCalledWith('invoice-1', { status: 'overdue' }));
+  });
 });
