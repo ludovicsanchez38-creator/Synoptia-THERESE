@@ -1610,6 +1610,12 @@ async def restore_backup(
         # la réponse ne promette pas des données restaurées.
         try:
             _wipe_volatile_dirs()
+            # B-1523 : les compagnons (-wal, -shm) extraits de l'archive fautive
+            # restaient à côté de la base remise, et SQLite les rejouait à
+            # l'ouverture. Ceux de l'état d'avant, s'il y en avait, sont dans
+            # l'archive de sécurité et reviennent avec elle.
+            for suffixe in ("-wal", "-shm"):
+                Path(f"{settings.db_path}{suffixe}").unlink(missing_ok=True)
             with tarfile.open(safety_archive, "r:gz") as tar:
                 _vider_les_elements_couverts(data_dir, elements_couverts(tar))
                 _safe_extractall(tar, data_dir)
