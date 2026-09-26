@@ -331,7 +331,7 @@ ordre d'imports, après que tous les autres soient passés.
 2. `uv run pytest tests/test_regression.py -v`
 3. `OLLAMA_BASE_URL=http://127.0.0.1:9 uv run pytest tests/ --ignore=tests/e2e --junit-xml=/tmp/g.xml -q` (lire le XML : la console est tronquée par `os._exit`)
 4. `cd src/frontend && npx vitest run && npx tsc --noEmit && npx eslint src --max-warnings 27`
-5. `rm -rf .mypy_cache && uv run mypy src/backend/app --ignore-missing-imports --no-error-summary | grep -c " error:"` (baseline locale 954 le 08/09/2026, identique a MYPY_BASELINE de ci.yml : les compteurs Mac et ubuntu se sont averes egaux le 08/09 (978/978), l'ecart d'un signale avant n'est plus observe ; cliquet en egalite stricte depuis B-128 : un lot qui change le compte recale les deux. Piege du 08/09 : des attributs initialises a None sans annotation (browser_agent.py) faisaient FLOTTER le compte d'une execution a l'autre, typer explicitement)
+5. `rm -rf .mypy_cache && uv run mypy src/backend/app --ignore-missing-imports --no-error-summary | grep -c " error:"` (baseline locale 937 le 26/09/2026, mesuree a froid (`--cache-dir=/dev/null`), identique a MYPY_BASELINE de ci.yml : les compteurs Mac et ubuntu se sont averes egaux le 08/09 (978/978), l'ecart d'un signale avant n'est plus observe ; cliquet en egalite stricte depuis B-128 : un lot qui change le compte recale les deux. Piege du 08/09 : des attributs initialises a None sans annotation (browser_agent.py) faisaient FLOTTER le compte d'une execution a l'autre, typer explicitement)
 6. Si un gate echoue, NE PAS taguer
 
 Chaque fix critique = un test de regression.
