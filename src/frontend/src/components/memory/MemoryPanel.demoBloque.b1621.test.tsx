@@ -59,4 +59,18 @@ describe('B-1621 : en démo, les gestes destructifs de la liste des contacts son
     expect(screen.queryByRole('heading', { name: 'Anonymisation RGPD' })).toBeNull();
     expect(api.anonymizeContact).not.toHaveBeenCalled();
   });
+
+  // B-1689 : renouveler le consentement écrit sur la vraie fiche (et depuis
+  // B-1667 la protège de la purge) ; l'export sort ses vraies données.
+  it.each([
+    ['Renouveler consentement', 'renewContactConsent'],
+    ['Exporter (Art. 20)', 'exportContactRGPD'],
+  ] as const)('%s ne part pas en démo', async (libelle, appel) => {
+    render(<MemoryPanel standalone />);
+    fireEvent.click(await screen.findByRole('button', { name: 'Actions RGPD' }));
+    fireEvent.click(await screen.findByRole('button', { name: libelle }));
+    for (const bouton of screen.queryAllByRole('button', { name: /^(Renouveler|Exporter)$/ })) fireEvent.click(bouton);
+    expect(api[appel]).not.toHaveBeenCalled();
+    expect(screen.queryByRole('heading', { name: /Renouveler le consentement|Export/ })).toBeNull();
+  });
 });

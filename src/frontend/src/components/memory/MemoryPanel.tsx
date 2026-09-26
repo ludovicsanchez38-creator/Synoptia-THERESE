@@ -561,8 +561,10 @@ export function MemoryPanel({ isOpen, onClose, onNewContact, onEditContact, stan
                   }}
                   rgpdButtons={rgpdButtons}
                   onRGPDAction={(type, contact) => {
-                    // B-1621 : l'anonymisation est bloquée en démo.
-                    if (type === 'anonymize' && gesteBloqueEnDemo()) return;
+                    // B-1621 puis B-1689 : les actions RGPD sont bloquées en
+                    // démo (anonymiser et renouveler écrivent sur la vraie
+                    // fiche, exporter sort ses vraies données).
+                    if (gesteBloqueEnDemo()) return;
                     rgpdFocusReturn.current = contact.id;
                     setRgpdAction({ type, contact });
                   }}
