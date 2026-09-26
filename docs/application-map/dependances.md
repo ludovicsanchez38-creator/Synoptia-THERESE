@@ -221,6 +221,7 @@
 - `src/backend/app/models/entities_sync.py` → `src/backend/app/models/entities.py` :
 - `src/backend/app/models/planning_schemas.py` → `src/backend/app/models/fuseau.py` :
 - `src/backend/app/models/processing.py` → `src/backend/app/models/entities.py` :
+- `src/backend/app/models/schemas.py` → `app.models.fuseau.verifier_fuseau` :
 - `src/backend/app/models/schemas.py` → `app.services.civil_time` :
 - `src/backend/app/models/schemas.py` → `pydantic` :
 - `src/backend/app/models/schemas.py` → `src/backend/app/main.py` :
@@ -1796,6 +1797,9 @@
 - `src/frontend/src/components/invoices/InvoiceForm.soumission.test.tsx` → `../../stores/billingProfileStore` :
 - `src/frontend/src/components/invoices/InvoiceForm.soumission.test.tsx` → `./InvoiceForm` :
 - `src/frontend/src/components/invoices/InvoiceForm.soumission.test.tsx` → `@testing-library/react` :
+- `src/frontend/src/components/invoices/InvoiceForm.soumission.test.tsx` → `src/frontend/src/components/invoices/InvoiceForm.tsx` :
+- `src/frontend/src/components/invoices/InvoiceForm.soumission.test.tsx` → `src/frontend/src/services/api` :
+- `src/frontend/src/components/invoices/InvoiceForm.soumission.test.tsx` → `src/frontend/src/services/api.ts` :
 - `src/frontend/src/components/invoices/InvoiceForm.soumission.test.tsx` → `vitest` :
 - `src/frontend/src/components/invoices/InvoiceForm.test.tsx` → `src/frontend/src/components/app/ExternalActionConfirmation` :
 - `src/frontend/src/components/invoices/InvoiceForm.test.tsx` → `src/frontend/src/components/invoices/InvoiceForm.tsx` :
@@ -1814,9 +1818,11 @@
 - `src/frontend/src/components/invoices/InvoiceForm.tsx` → `src/frontend/src/hooks/useDialogFocusTrap.ts` :
 - `src/frontend/src/components/invoices/InvoiceForm.tsx` → `src/frontend/src/hooks/useQuestionDAbandonDeModale` :
 - `src/frontend/src/components/invoices/InvoiceForm.tsx` → `src/frontend/src/hooks/useQuestionDAbandonDeModale.ts` :
+- `src/frontend/src/components/invoices/InvoiceForm.tsx` → `src/frontend/src/lib/auCentime.ts` :
 - `src/frontend/src/components/invoices/InvoiceForm.tsx` → `src/frontend/src/lib/devise.ts` :
 - `src/frontend/src/components/invoices/InvoiceForm.tsx` → `src/frontend/src/lib/escapeStack.ts` :
 - `src/frontend/src/components/invoices/InvoiceForm.tsx` → `src/frontend/src/services/api` :
+- `src/frontend/src/components/invoices/InvoiceForm.tsx` → `src/frontend/src/services/api.ts` :
 - `src/frontend/src/components/invoices/InvoiceForm.tsx` → `src/frontend/src/services/api/index.ts` :
 - `src/frontend/src/components/invoices/InvoiceForm.tsx` → `src/frontend/src/services/api/invoices.ts` :
 - `src/frontend/src/components/invoices/InvoiceForm.tsx` → `src/frontend/src/stores/billingProfileStore` :

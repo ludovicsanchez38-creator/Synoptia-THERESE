@@ -10,12 +10,11 @@
 ## Doubles lectures manquantes (0)
 
 
-## Invariants divergents, a arbitrer (115)
+## Invariants divergents, a arbitrer (113)
 
 - scripts/check-app-version-sync.py: aucun mot commun entre les invariants de codex-map-challenge-a:c8-challenge-a-wp-046-b42ae547-efdd-4832-ada6-26a38fc715ed, orchestrateur:wp046-orchestrateur
 - src/backend/app/data/capacites.json: aucun mot commun entre les invariants de codex-challenge-b:c8-challenge-b-wp-047-20260912, lecteur-D04:c4-D04-WP-047, wp047-lecteur1:wp047-lecteur1
 - src/backend/app/models/board.py: aucun mot commun entre les invariants de lecteur-D09:c2-D09-WP-047, wp047-lecteur1:wp047-lecteur1
-- src/backend/app/models/schemas.py: aucun mot commun entre les invariants de claude-lecteur-c13s-08:c13s08-WP-048-ba4b37b4-d255-4a9e-9c3c-e78e158cffc6, claude-lecteur-c13s-d3:c13sd3-WP-048-df9eb435-9cca-4570-a763-44e399256d6c
 - src/backend/app/routers/browser.py: aucun mot commun entre les invariants de claude-map-t2:c9t-t2-wp-048-97ef17e7-03d8-447b-929f-af28c57c794b, wp048-lecteur1:wp048-lecteur1
 - src/backend/app/routers/performance.py: aucun mot commun entre les invariants de codex-challenge-b:c8-challenge-b-wp-050-20260912, lecteur-wp050:wp050-lecteur1
 - src/backend/app/services/deep_research.py: aucun mot commun entre les invariants de codex-challenge-b:c8-challenge-b-wp-052-20260912, lecteur-D02:c3-D02-WP-052, wp052-lecteur1:wp052-lecteur1
@@ -43,7 +42,6 @@
 - src/frontend/src/components/home/QuickActions.test.tsx: aucun mot commun entre les invariants de codex-map-c-challenge:c8-challenge-c-wp-064-5c78c7ae63f7, lecteur-cartographie-wp064:wp064-lecteur1
 - src/frontend/src/components/home/SetupChecklist.test.tsx: aucun mot commun entre les invariants de claude-map-t4:c9t-t4-wp-064-769f5546-154e-41da-abe8-048d595cbee0, codex-map-a:c8-codex-a-wp-064-2ea6ee08-9785-4fb9-8dab-87be426c93a1
 - src/frontend/src/components/home/index.ts: aucun mot commun entre les invariants de codex-challenge-b:c8-challenge-b-wp-064-20260912, lecteur-D03:c6-D03-WP-064, lecteur-R14:c3-R14-WP-064
-- src/frontend/src/components/invoices/InvoiceForm.soumission.test.tsx: aucun mot commun entre les invariants de codex-map-b:c8-codex-b-wp-diff-006-20260912, codex-map-c-critical:c8-critical-c-wp-diff-006-383d207bfe21
 - src/frontend/src/components/invoices/InvoicesPanel.causeSuppression.test.tsx: aucun mot commun entre les invariants de codex-map-b:c8-codex-b-wp-diff-006-20260912, codex-map-c-critical:c8-critical-c-wp-diff-006-383d207bfe21
 - src/frontend/src/components/invoices/InvoicesPanel.chargementEchoue.test.tsx: aucun mot commun entre les invariants de codex-map-b:c8-codex-b-wp-diff-006-20260912, codex-map-critical-a:c8-critical-a-wp-diff-006-c5aa5f66-502d-48e4-9869-1e03ad30e6b1
 - src/frontend/src/components/invoices/InvoicesPanel.creationSousFiltre.test.tsx: aucun mot commun entre les invariants de codex-map-b:c8-codex-b-wp-diff-020-20260912, codex-map-c-critical:c8-critical-c-wp-diff-020-685f58be1dcb

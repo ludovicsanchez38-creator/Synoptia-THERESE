@@ -572,6 +572,7 @@
 - [?] La construction native de 0.76.0 fonctionne-t-elle sur chaque plateforme cible ? _(rapport WP-057-c14-codex-b)_
 - [?] La copie de travail réelle d'un utilisateur de l'Atelier contient-elle des dossiers illisibles ou des bundles minifiés sous les globs autorisés ? _(rapport WP-051-c11-lecteur-5)_
 - [?] La coque retire-t-elle ses handlers de la pile d'echappement a chaque demontage de panneau ? _(rapport WP-065)_
+- [?] La correction B-1605 a-t-elle été vérifiée de bout en bout dans l'application servie ? _(rapport WP-048-c14-codex-final-b)_
 - [?] La création d'une facture écrit-elle la facture et ses lignes avant l'échec NOT NULL de total_tax, et le numéro de facture est-il consommé ? _(rapport WP-048-c13-d)_
 - [?] La desactivation de « Relancer » couvre-t-elle aussi le rejet de dispatchTask (le bouton redevient-il actif apres un echec) ? _(rapport WP-DIFF-036-c9s-S1)_
 - [?] La description de list_contacts avertit-elle de la troncature au HEAD courant, ou le test s'appuie-t-il sur une racine (tronqu, partiel, incomplet, peut manquer) que la rédaction actuelle ne contient qu'accidentellement ? _(rapport WP-080-c3-R18)_
@@ -959,6 +960,7 @@
 - [?] Le capteur clavier du kanban permet-il réellement de déposer une carte dans une autre rubrique ? Il est enregistré sans coordinateGetter, ce que la stratégie de tri vertical de dnd-kit demande normalement. _(rapport WP-064)_
 - [?] Le cas B-448 tourne-t-il en integration continue sur les trois systemes ? Sur une machine ou `src-tauri/` serait absent (paquet frontend seul), le test echouerait a la lecture. _(rapport WP-DIFF-021-c6-R06)_
 - [?] Le cas `test_le_dossier_src_backend_tests_tient_seul` ecarte par `-k` existe-t-il toujours sous ce nom exact dans src/backend/tests ? _(rapport WP-DIFF-018-c6-R09)_
+- [?] Le cas où les deux opérandes sont finis mais leur produit déborde affiche-t-il effectivement ∞ dans le formulaire avant la réponse 422 ? _(rapport WP-DIFF-006-c14-codex-final-c)_
 - [?] Le cas réel de B-963 (fichier illisible) est-il exercé quelque part sous Windows, où permissions_posix saute le test ? _(rapport WP-DIFF-060-c11-lecteur-10)_
 - [?] Le cas sans en-tête est-il atteignable par le parcours public de la compétence XLSX, ou seulement par appel direct de _add_data ? _(rapport WP-DIFF-042-c9v-V2)_
 - [?] Le cas « 0 messages » de la barre laterale est-il atteignable, ou une conversation vide est-elle toujours filtree avant l'affichage ? _(rapport WP-069)_
@@ -1562,6 +1564,7 @@
 - [?] Le reclassement tourne « en tache de fond au demarrage » d'apres les commentaires : est-il reellement appele par le lifespan de production, et que se passe-t-il si l'application s'arrete en cours de route ? _(rapport WP-078-c6-R09)_
 - [?] Le refus B-998 d'une fiche jamais chargée (Tâche et Rendez-vous) est-il couvert ailleurs ? _(rapport WP-DIFF-067-c11-lecteur-19)_
 - [?] Le refus B-998 d'une tâche jamais chargée est-il testé ? _(rapport WP-068-c11-lecteur-19)_
+- [?] Le refus backend d'une ligne hors plafond est-il présenté clairement dans la notification d'erreur après le total ∞ affiché ? _(rapport WP-C-026-c14-codex-final-c)_
 - [?] Le refus d'agenda ambigu et le refus de contact ambigu sont-ils restitues a l'utilisateur dans l'interface, ou seulement rendus a l'appelant ? _(rapport WP-081-c3-R19)_
 - [?] Le refus d'une cle de 100 000 caracteres vient-il d'une validation Pydantic sur la longueur de key, ou d'un rejet accidentel a un autre etage ? _(rapport WP-DIFF-012-c3-D07)_
 - [?] Le refus d'écriture de la garde de branche protège-t-il aussi le dépôt principal, ou seulement l'arbre de travail ? L'exécuteur du premier agent est construit sans service git, donc sans garde, mais son catalogue ne contient aucun outil d'écriture. _(rapport WP-051-c3-R05)_
@@ -1583,6 +1586,7 @@
 - [?] Le rejeu différé d'une navigation de palette refusée pendant un flux était-il voulu ? _(rapport WP-066-c11-lecteur-19)_
 - [?] Le rendu Markdown des messages affiche-t-il les images distantes ? _(rapport WP-060-c12-b)_
 - [?] Le rendu WebView2 (Windows, source de BUG-181) se comporte-t-il comme Chromium Linux pour ce recouvrement ? _(rapport WP-DIFF-069-c11-lecteur-23)_
+- [?] Le rendu de l'aperçu et le parcours 0,5 puis enregistrement sont-ils corrects dans l'application réellement servie ? _(rapport WP-C-026-c14-codex-final-b)_
 - [?] Le rendu des images distantes est-il bloqué côté frontend pour les corps assainis par `sanitize_html` ? _(rapport WP-052-c4-D04)_
 - [?] Le rendu double de React (StrictMode ou rendu concurrent) provoque-t-il réellement une double exécution de la branche 'navigate' ou 'action_agent' de CommandExecutor ? _(rapport WP-064-c3-R14)_
 - [?] Le rendu et le focus sont-ils identiques dans les binaires Tauri et avec lecteur d'ecran natif ? _(rapport WP-066-c10-b947-b)_
@@ -2781,6 +2785,7 @@
 - [?] Une erreur de lecture de la préférence mode_cabinet au démarrage (base verrouillée, SQLCipher sans clé) est-elle possible en pratique, et le lifespan continue-t-il alors normalement ? _(rapport WP-080-c13s-22)_
 - [?] Une exception levée pendant un flush dans upsert_contact / upsert_project / upsert_task laisse-t-elle la session dans un état « rollback en attente », si bien que toutes les lignes suivantes échouent et que le commit final de /sync transforme toute la synchro en 500 ? Le routeur rattrape ligne par ligne sans rollback ni savepoint. _(rapport WP-049-c13-p)_
 - [?] Une facture ou un avoir mis « En retard » à la main sans passer par « Envoyée » doit-il être daté comme envoyé (sent_at posé à ce moment) ou afficher « Envoi non tracé » ? _(rapport WP-DIFF-028-c13s-d4)_
+- [?] Une facture sans ligne ou à description blanche est-elle rejetée par une autre couche de validation non lue ici ? _(rapport WP-048-c14-codex-final-b)_
 - [?] Une fiche ouverte depuis un autre mois que selectedDate (fiche du jour de l'accueil, canevas Rendez-vous) arrive-t-elle en formulaire avec une clé null dès le premier loadEvents, donc en création déguisée ? _(rapport WP-061-c11-lecteur-17)_
 - [?] Une fiche rangée dans une conversation supprimée reste-t-elle visible dans l'écran Contacts, et comment l'utilisateur la retrouve-t-il ? _(rapport WP-053-c13-k)_
 - [?] Une génération DOCX ou PPTX par exécution de code aboutit-elle réellement dans le sous-processus, ou retombe-t-elle en repli Markdown à cause de la garde de système de fichiers ? C'est la question la plus utile du lot et elle se tranche par une exécution réelle. _(rapport WP-054-c6-R07)_

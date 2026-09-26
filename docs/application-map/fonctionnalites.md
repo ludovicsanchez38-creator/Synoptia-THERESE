@@ -1152,6 +1152,7 @@
 - **?** Contrat frontend du manifeste :  _(rapport WP-070-c8-challenge-b)_
 - **?** Contrat responsive de la coque :  _(rapport WP-066)_
 - **?** Contrat responsive de la coque :  _(rapport WP-066-c3-D03)_
+- **?** Contrat serveur des lignes de facture :  _(rapport WP-048-c14-codex-final-b)_
 - **?** Contrats critiques de facturation :  _(rapport WP-C-026-c8-critical-a)_
 - **?** Contrats critiques de facturation :  _(rapport WP-C-027-c8-critical-a)_
 - **?** Contrats critiques de facturation :  _(rapport WP-DIFF-006-c8-critical-a)_
@@ -1311,6 +1312,7 @@
 - **?** Création et modification d'un événement de calendrier :  _(rapport WP-061-c2-D07)_
 - **?** Création et modification de rendez-vous :  _(rapport WP-061-c13s-09)_
 - **?** Création et renommage d'un projet :  _(rapport WP-048-c13-n)_
+- **?** Création et édition de pièces avec quantités fractionnaires :  _(rapport WP-C-026-c14-codex-final-c)_
 - **?** Créer et lire des fiches depuis la conversation :  _(rapport WP-053-c12-i1)_
 - **?** Créer ou modifier un rendez-vous sans perdre la saisie :  _(rapport WP-061-c11-lecteur-20)_
 - **?** Créer ou modifier une tâche sans perdre la saisie :  _(rapport WP-068-c11-lecteur-20)_
@@ -2884,6 +2886,7 @@
 - **?** Page de retour OAuth servie au navigateur systeme :  _(rapport WP-DIFF-011-c3-R26)_
 - **?** Pagination IMAP :  _(rapport WP-DIFF-022-c8-codex-b)_
 - **?** Pagination des listes :  _(rapport WP-DIFF-013-c3-R27)_
+- **?** Paiement daté d'une facture :  _(rapport WP-C-026-c14-codex-final-b)_
 - **?** Palette de commandes :  _(rapport WP-061)_
 - **?** Palette de commandes :  _(rapport WP-061-c3-R12)_
 - **?** Palette de commandes :  _(rapport WP-061-c6-R02)_
@@ -3754,6 +3757,7 @@
 - **?** Saisie de message vers l'agent de l'Atelier :  _(rapport WP-060-c6-D04)_
 - **?** Saisie de rendez-vous protégée :  _(rapport WP-061-c11-lecteur-18)_
 - **?** Saisie de tâche protégée :  _(rapport WP-068-c11-lecteur-18)_
+- **?** Saisie et enregistrement d'une pièce commerciale :  _(rapport WP-C-026-c14-codex-final-b)_
 - **?** Saisie protégée :  _(rapport WP-DIFF-067-c11-lecteur-21)_
 - **?** Saisie protégée (formulaires Tâche et Rendez-vous) :  _(rapport WP-DIFF-063-c11-lecteur-21)_
 - **?** Saisie protégée (question « Abandonner les modifications ? ») :  _(rapport WP-066-c11-lecteur-17)_
@@ -3934,10 +3938,13 @@
 - **?** Sorties de vue retenues par une saisie modifiée :  _(rapport WP-066-c11-lecteur-20)_
 - **?** Sorties de vue retenues par une saisie modifiée :  _(rapport WP-066-c11-lecteur-22)_
 - **?** Sorties de vue retenues par une saisie modifiée :  _(rapport WP-DIFF-067-c11-lecteur-22)_
+- **?** Soumission contrôlée des devis et factures :  _(rapport WP-DIFF-006-c14-codex-final-a)_
 - **?** Soumission et erreurs de facturation :  _(rapport WP-DIFF-006-c8-codex-b)_
+- **?** Soumission fiable des lignes de devis et facture :  _(rapport WP-DIFF-006-c14-codex-final-c)_
 - **?** Source unique des contacts à l'écran :  _(rapport WP-074-c13s-20)_
 - **?** Sous-titre honnête de la boîte de réception :  _(rapport WP-DIFF-040-c9t-T2)_
 - **?** Statut d'une action a etapes :  _(rapport WP-084-c9t-T1)_
+- **?** Statut d'une pièce émise au contenu figé :  _(rapport WP-C-026-c14-codex-final-c)_
 - **?** Statut de completude du profil emetteur :  _(rapport WP-C-028-b)_
 - **?** Statut des modeles Ollama :  _(rapport WP-078)_
 - **?** Statut du depot de l'Atelier :  _(rapport WP-078)_
@@ -4269,6 +4276,7 @@
 - **?** Utilitaires generiques du frontend :  _(rapport WP-072-c3-D04)_
 - **?** Utilitaires transverses :  _(rapport WP-072)_
 - **?** Valeurs contrôlées des projets (statut, budget) :  _(rapport WP-DIFF-090-c13-u)_
+- **?** Validation commune des échanges API :  _(rapport WP-048-c14-codex-final-b)_
 - **?** Validation d'entrée et forme des réponses :  _(rapport WP-048-c13s-d3)_
 - **?** Validation d'un événement d'agenda à la création :  _(rapport WP-048-c12-h2)_
 - **?** Validation d'un événement d'agenda à la création :  _(rapport WP-048-c12-i3)_
@@ -4276,6 +4284,7 @@
 - **?** Validation des chemins de fichiers :  _(rapport WP-C-025-c2-M06)_
 - **?** Validation des chemins de fichiers :  _(rapport WP-C-025-c2-R1)_
 - **?** Validation des fichiers de capability Tauri :  _(rapport WP-058)_
+- **?** Validation des lignes de devis et factures :  _(rapport WP-048-c14-codex-final-a)_
 - **?** Variables V1 (texte ou liste) et leur substitution :  _(rapport WP-084-c13s-18)_
 - **?** Variables V1 (texte ou liste) et substitution dans le chat :  _(rapport WP-084-c3-R22)_
 - **?** Variables V1 : valeurs nommees reutilisables :  _(rapport WP-084-c3-D05)_
