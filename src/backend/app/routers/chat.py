@@ -3102,6 +3102,12 @@ async def _execute_tools_and_continue(
     # envoi. On mémorise l'identité des actions déjà mises en attente ; une
     # empreinte incalculable (None) laisse toujours passer la carte.
     empreintes_en_attente: set[str] = set()
+    # B-1489 : seuls les outils offerts à ce tour s'exécutent. Un outil retiré
+    # (action déjà en attente, D1 ; plus tard, lecture de fichiers sans accord)
+    # que le modèle rappelle quand même est refusé ici.
+    noms_offerts = {
+        t.get("function", {}).get("name") for t in (tools or []) if t.get("type") == "function"
+    }
 
     for tc in allowed_calls:
         # Finding 3, troisième passe de revue : la boucle d'outils ignorait
@@ -3121,6 +3127,16 @@ async def _execute_tools_and_continue(
         ):
             logger.info("Annulation demandée : les outils restants ne sont pas exécutés")
             return
+
+        if tc.name not in noms_offerts:
+            logger.warning("Outil non proposé pour ce tour, non exécuté : %s", tc.name)
+            tool_results.append(ToolResult(
+                tool_call_id=tc.id,
+                result=f"L'outil {tc.name} n'est pas disponible pour ce tour : il n'a pas été exécuté.",
+                is_error=True,
+            ))
+            exec_records.append((tc.name, "outil non proposé pour ce tour", True))
+            continue
 
         # US-002 : les outils sensibles (envoi de mail) ne s'exécutent jamais
         # automatiquement sur décision du LLM. On met l'action en attente et on

@@ -11,6 +11,12 @@ from app.services.llm import ToolCall
 from app.services.providers.base import StreamEvent
 
 
+def _offerts(appels):
+    """B-1489 : la boucle n'exécute que les outils offerts au tour ; le flux
+    réel lui passe la liste offerte, ces tests offrent donc ce qu'ils appellent."""
+    return [{"type": "function", "function": {"name": a.name}} for a in appels]
+
+
 @pytest.mark.asyncio
 async def test_recursion_accumule_les_tours_dans_prior_turns(client):
     from app.routers.chat import _execute_tools_and_continue
@@ -45,7 +51,7 @@ async def test_recursion_accumule_les_tours_dans_prior_turns(client):
             context=None,
             assistant_content="",
             tool_calls=[ToolCall(id="call_1", name="search_emails", arguments={"query": "a"})],
-            tools=[],
+            tools=_offerts([ToolCall(id="call_1", name="search_emails", arguments={"query": "a"})]),
             conversation_id="conv-1",
             remaining_iterations=3,
             session=AsyncMock(),
@@ -120,7 +126,7 @@ async def test_tool_outcomes_accumule_les_resultats_reels(client):
             context=None,
             assistant_content="",
             tool_calls=[ToolCall(id="c1", name="search_emails", arguments={"query": "q"})],
-            tools=[],
+            tools=_offerts([ToolCall(id="c1", name="search_emails", arguments={"query": "q"})]),
             conversation_id="conv-1",
             remaining_iterations=3,
             tool_outcomes=outcomes,

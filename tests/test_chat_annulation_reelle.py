@@ -19,6 +19,12 @@ from unittest.mock import MagicMock
 import pytest
 
 
+def _offerts(appels):
+    """B-1489 : la boucle n'exécute que les outils offerts au tour ; le flux
+    réel lui passe la liste offerte, ces tests offrent donc ce qu'ils appellent."""
+    return [{"type": "function", "function": {"name": a.name}} for a in appels]
+
+
 class TestAnnulationCoupeLeProducteur:
     @pytest.mark.asyncio
     async def test_un_fournisseur_bloque_est_bien_interrompu(self, monkeypatch):
@@ -195,7 +201,7 @@ class TestAnnulationCoupeLeProducteur:
                 context=[],
                 assistant_content="",
                 tool_calls=appels,
-                tools=[],
+                tools=_offerts(appels),
                 conversation_id=conversation_id,
                 remaining_iterations=3,
                 session=MagicMock(),
