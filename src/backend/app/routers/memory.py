@@ -425,6 +425,29 @@ async def _nettoyer_et_supprimer_projet(
         event.project_id = None
         session.add(event)
 
+    # B-1503 : contacts et sous-dossiers rangés dans le dossier repassent au
+    # périmètre général, comme les conversations. Cloisonnés sur un
+    # identifiant mort, ils ne remontaient plus dans aucune conversation ; leur
+    # vecteur, effacé plus haut avec ceux du dossier, est recréé ici.
+    contacts_ranges = (
+        await session.execute(
+            select(Contact).where(Contact.scope == "project", Contact.scope_id == project_id)
+        )
+    ).scalars().all()
+    sous_dossiers = (
+        await session.execute(
+            select(Project).where(Project.scope == "project", Project.scope_id == project_id)
+        )
+    ).scalars().all()
+    for element in (*contacts_ranges, *sous_dossiers):
+        element.scope = "global"
+        element.scope_id = None
+        session.add(element)
+    for fiche in contacts_ranges:
+        await _embed_contact(fiche)
+    for dossier in sous_dossiers:
+        await _embed_project(dossier)
+
     # B-179 : `Project.tasks` et `Project.deliverables` portent
     # `cascade_delete=True`. Ces deux familles disparaissent donc avec le
     # dossier, sans que le rapport les ait jamais nommées : on lisait une liste
@@ -446,6 +469,8 @@ async def _nettoyer_et_supprimer_projet(
         "conversations_detachees": len(conversations),
         "documents_detaches": len(documents),
         "evenements_detaches": len(events),
+        "contacts_rendus_au_general": len(contacts_ranges),
+        "sous_dossiers_rendus_au_general": len(sous_dossiers),
         "taches_supprimees": len(taches),
         "livrables_supprimes": len(livrables),
     }
