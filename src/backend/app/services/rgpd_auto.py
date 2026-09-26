@@ -14,8 +14,8 @@ from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from app.models.database import get_session_context
-from app.models.entities import Activity, Contact, EmailMessage, Notification
-from app.services.rgpd_identite import effacer_l_identite
+from app.models.entities import Activity, Contact, Notification
+from app.services.rgpd_identite import anonymiser_la_personne
 from sqlalchemy import func
 from sqlmodel import or_, select
 
@@ -216,6 +216,7 @@ async def auto_purge_expired_contacts() -> dict[str, int]:
 
             # Anonymisation le jour J
             anonymized_ids: list[str] = []
+            dossiers_a_purger: list[str] = []
             for contact in contacts_to_purge:
                 # Vérifier qu'on n'a pas déjà notifié l'anonymisation
                 existing = await session.execute(
@@ -227,19 +228,10 @@ async def auto_purge_expired_contacts() -> dict[str, int]:
                 if existing.scalars().first():
                     continue
 
-                # Anonymiser
-                # B-880 puis B-1438 : un seul traitement pour la purge et la
-                # route manuelle (adresse et relance datée comprises).
-                effacer_l_identite(contact, now)
-
-                # RGPD-1 (US-003) : effacer aussi les emails liés (art. 17),
-                # comme l'anonymisation manuelle. Sinon le contenu des mails du
-                # contact purgé restait en base.
-                emails = await session.execute(
-                    select(EmailMessage).where(EmailMessage.contact_id == contact.id)
-                )
-                for email_msg in emails.scalars().all():
-                    await session.delete(email_msg)
+                # B-880, B-1438 puis B-1651 : le même traitement que la route
+                # manuelle (tâches, brouillons, prestations, activités, dossiers
+                # et e-mails compris), décision de Ludo du 26/09.
+                dossiers_a_purger.extend(await anonymiser_la_personne(session, contact, now))
 
                 # Log d'activité
                 activity = Activity(
@@ -272,6 +264,12 @@ async def auto_purge_expired_contacts() -> dict[str, int]:
         # resterait indexée dans Qdrant.
         for cid in anonymized_ids:
             await purge_contact_vector(cid)
+        # B-445 : le dépôt disque des dossiers supprimés, après le commit.
+        if dossiers_a_purger:
+            from app.routers.memory import _purger_le_depot_du_dossier
+
+            for dossier_id in dossiers_a_purger:
+                await _purger_le_depot_du_dossier(dossier_id)
 
         total = results["notifications"] + results["anonymisations"]
         if total > 0:

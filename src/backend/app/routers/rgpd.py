@@ -16,7 +16,6 @@ from app.models.entities import (
     Activity,
     Contact,
     EmailMessage,
-    Invoice,
     Prestation,
     Project,
     Task,
@@ -29,7 +28,7 @@ from app.models.schemas import (
     RGPDStatsResponse,
     RGPDUpdateRequest,
 )
-from app.services.rgpd_identite import effacer_l_identite, exporter_la_fiche
+from app.services.rgpd_identite import anonymiser_la_personne, exporter_la_fiche
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlmodel import select
@@ -204,81 +203,11 @@ async def anonymize_contact(
     if not contact:
         raise HTTPException(status_code=404, detail="Contact non trouvé")
 
-    # B-1438 : le même traitement que la purge automatique (l'adresse et la
-    # relance datée restaient en clair sur la fiche anonymisée).
-    effacer_l_identite(contact, datetime.now(UTC))
-
-    # Incident du 30/08 : l'anonymisation effaçait l'identité mais conservait
-    # l'intitulé, le montant et le financeur sous la fiche [ANONYMISÉ]. Une
-    # prestation sans personne n'a pas de sens et doit disparaître ici aussi.
-    prestations = (
-        await session.execute(
-            select(Prestation).where(Prestation.contact_id == contact_id)
-        )
-    ).scalars().all()
-    for prestation in prestations:
-        await session.delete(prestation)
-
-    # B-169 (P-003, décision de Ludo) : le nom reste sur les pièces déjà émises
-    # (pièce comptable à conserver) ; il disparaît des brouillons, qui n'ont
-    # jamais quitté l'application.
-    brouillons = (
-        await session.execute(
-            select(Invoice).where(Invoice.contact_id == contact_id, Invoice.status == "draft")
-        )
-    ).scalars().all()
-    for piece in brouillons:
-        piece.client_name = "[ANONYMISÉ]"
-        piece.client_company = None
-        piece.client_email = None
-        piece.client_phone = None
-        piece.client_address = None
-        piece.updated_at = datetime.now(UTC)
-        session.add(piece)
-    # Delete activities
-    result = await session.execute(
-        select(Activity).where(Activity.contact_id == contact_id)
-    )
-    activities = result.scalars().all()
-    for activity in activities:
-        await session.delete(activity)
-
-    # B-140 : la destruction du dossier emprunte le MÊME chemin que la route
-    # de suppression de dossier. L'anonymisation avait le sien, qui retirait
-    # la ligne SQLite sans purger les fragments Qdrant du périmètre, sans
-    # effacer les fichiers indexés, sans détacher la racine sur disque ni les
-    # conversations, documents et événements rattachés. Le dossier disparaissait
-    # de la base en restant interrogeable en recherche sémantique.
-    # Les tâches et les livrables suivent par la cascade ORM déclarée sur
-    # Project (entities.py : cascade_delete=True), comme pour la route.
-    from app.routers.memory import _nettoyer_et_supprimer_projet
-
-    result = await session.execute(
-        select(Project).where(Project.contact_id == contact_id)
-    )
-    projects = result.scalars().all()
-    # B-445 (05/09/2026) : les identifiants sont mémorisés AVANT la
-    # suppression, pour purger les dépôts disque après le commit (doctrine
-    # B-021 : jamais avant, jamais oublié). La réponse annonçait « fichiers
-    # rattachés » supprimés alors que les octets restaient sur le disque.
-    dossiers_a_purger = [project.id for project in projects]
-    for project in projects:
-        await _nettoyer_et_supprimer_projet(session, project)
-    dossiers_supprimes = len(projects)
-
-    # Cycle 6 : les tâches rattachées directement au contact ne suivent
-    # aucune cascade de projet ; elles s'effacent ici.
-    result = await session.execute(select(Task).where(Task.contact_id == contact_id))
-    for tache in result.scalars().all():
-        await session.delete(tache)
-
-    # RGPD-1 (US-003) : effacer les emails liés au contact (art. 17). Ils
-    # restaient en base avec le contact_id, contenu intégral inclus.
-    result = await session.execute(
-        select(EmailMessage).where(EmailMessage.contact_id == contact_id)
-    )
-    for email_msg in result.scalars().all():
-        await session.delete(email_msg)
+    # B-1651 : le même traitement que la purge automatique, en un seul
+    # endroit (identité, prestations, brouillons, activités, dossiers, tâches,
+    # e-mails).
+    dossiers_a_purger = await anonymiser_la_personne(session, contact, datetime.now(UTC))
+    dossiers_supprimes = len(dossiers_a_purger)
 
     # Log anonymization activity
     anonymization_log = Activity(

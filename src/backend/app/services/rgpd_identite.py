@@ -66,3 +66,64 @@ def exporter_la_fiche(contact: Contact) -> dict[str, Any]:
         valeur = getattr(contact, champ, None)
         donnees[champ] = valeur.isoformat() if isinstance(valeur, datetime) else valeur
     return donnees
+
+
+async def anonymiser_la_personne(session: Any, contact: Contact, maintenant: datetime) -> list[str]:
+    """B-1651 (décision de Ludo, 26/09) : UN traitement pour l'anonymisation
+    manuelle et la purge automatique, qui n'effaçait que la fiche et ses
+    e-mails. Rend les identifiants des dossiers supprimés, dont le dépôt
+    disque se purge APRÈS le commit (B-445). Ne commite pas."""
+    from app.models.entities import Activity, EmailMessage, Invoice, Prestation, Project, Task
+    from app.routers.memory import _nettoyer_et_supprimer_projet
+    from sqlmodel import select
+
+    contact_id = contact.id
+    # B-1438 : l'identité, l'adresse et la relance datée.
+    effacer_l_identite(contact, maintenant)
+
+    # Incident du 30/08 : une prestation sans personne n'a pas de sens.
+    for prestation in (
+        await session.execute(select(Prestation).where(Prestation.contact_id == contact_id))
+    ).scalars().all():
+        await session.delete(prestation)
+
+    # B-169 (P-003, décision de Ludo) : le nom reste sur les pièces émises
+    # (pièce comptable à conserver) ; il disparaît des brouillons.
+    for piece in (
+        await session.execute(
+            select(Invoice).where(Invoice.contact_id == contact_id, Invoice.status == "draft")
+        )
+    ).scalars().all():
+        piece.client_name = "[ANONYMISÉ]"
+        piece.client_company = None
+        piece.client_email = None
+        piece.client_phone = None
+        piece.client_address = None
+        piece.updated_at = maintenant
+        session.add(piece)
+
+    for activite in (
+        await session.execute(select(Activity).where(Activity.contact_id == contact_id))
+    ).scalars().all():
+        await session.delete(activite)
+
+    # B-140 : le dossier suit le chemin de la route de suppression (fragments,
+    # fichiers indexés, racine, conversations, documents, événements).
+    projets = (
+        await session.execute(select(Project).where(Project.contact_id == contact_id))
+    ).scalars().all()
+    dossiers = [projet.id for projet in projets]
+    for projet in projets:
+        await _nettoyer_et_supprimer_projet(session, projet)
+
+    # Cycle 6 : les tâches rattachées au contact seul.
+    for tache in (await session.execute(select(Task).where(Task.contact_id == contact_id))).scalars().all():
+        await session.delete(tache)
+
+    # RGPD-1 (US-003) : les e-mails liés (art. 17).
+    for email_msg in (
+        await session.execute(select(EmailMessage).where(EmailMessage.contact_id == contact_id))
+    ).scalars().all():
+        await session.delete(email_msg)
+
+    return dossiers
