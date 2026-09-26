@@ -61,3 +61,76 @@ la résolution DNS de `github.com` est refusée par la sandbox. Une archive Git
 vérifiée des commits est disponible à côté de la copie du dépôt, sous
 `../THERESE-cycle14-Codex-2026-09-26.bundle`. Elle transporte la branche et
 requiert le commit de base `375b9df8`, déjà présent dans le dépôt source.
+
+## Reprise dans le dépôt source par Codex, 26/09/2026
+
+Les sections précédentes décrivent la copie de préparation. Cette reprise a
+été effectuée dans le worktree isolé
+`/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c14-codex`, sur la
+branche `codex/cycle-14`. `main` est restée sur `375b9df8` et propre. Le
+bundle a passé `git bundle verify` ; son SHA-256 est
+`daf9ee7c3e795185415ad32e87e1f085b1b703d2545ccb21d1bfea35e93eb2be`.
+Les six commits importés se terminent à `637d81ba` avant la présente note.
+
+### État local réconcilié
+
+- Le dernier événement de la boucle source (cycle 13, `POST_RELEASE`) apparaît
+  dans l'historique de la copie, suivi de 17 événements du cycle 14. La copie
+  ajoute `B-1709` et passe `B-1605` de `deferred` à `fixed` ; aucun autre bug ne
+  diffère. Les 106 calibrations source sont le préfixe exact des 111 entrées de
+  la copie, et les budgets des cycles 1 à 13 sont identiques.
+- Les dossiers ignorés `.app-loop` et `.cartography-work` ont été transférés
+  dans le worktree après ce contrôle. Seuls les chemins opérationnels
+  `state.json:repo` et `inventory.json:repo` ont été reliés au worktree ; la
+  copie a été ajoutée à `repo_precedents`. Le `STOP` posé dans l'ancienne
+  sandbox a été levé par `app_loop.py resume`, avec événement tracé.
+- `cartography.py refresh` a rendu 0 modifié, 0 nouveau, 0 disparu. La
+  validation a rendu `PASS`, 2 071/2 071 fichiers couverts dans
+  `src tests scripts .github`, sans erreur de preuve ni lecteur manquant.
+
+### Calibration et recette sur données jetables
+
+Le dépôt, localhost et Chromium Playwright ont été vérifiés avant la reprise.
+Les contrôles de navigateur ont utilisé 127.0.0.1:1420 et :17393. Le backend
+avait un `HOME` et un `THERESE_DATA_DIR` sous
+`/private/tmp/therese-c14-reprise-jd_nb5om/`, `THERESE_SKIP_SERVICES=1`, le
+mode hors ligne des modèles et les clés API usuelles retirées de son
+environnement. Le port 17293 et `~/.therese` n'ont pas été utilisés. Les deux
+services ont été arrêtés après la recette.
+
+Les cinq instruments ont été rejoués avec contrôles positif et négatif puis
+enregistrés `PASS` pour 24 heures : `test_runner`, `logs`, `runtime_ui`,
+`visual_capture` et `network_capture`. Les preuves brutes sont locales, sous
+`.app-loop/cycles/14/calibration/reprise/` et dans
+`browser-controls-c14-app.json` au niveau `calibration/`. Deux captures saines
+étaient identiques ; le défaut visuel injecté donnait une capture différente.
+Playwright a vu les réponses témoin 200 et 503, sans erreur de page ni requête
+refusée. Les captures ont été inspectées.
+
+Le premier contrôle `standalone` a révélé une erreur dans le témoin réseau du
+script local : le chemin testé finissait par `/fault`, alors que la requête
+visait `/api/calibration/c14-fault`. Sa sortie en échec a été conservée, la
+condition a été corrigée en égalité exacte, puis le contrôle a passé. Ce
+script vit dans `.app-loop`, hors Git ; cette ligne explique la correction à
+rejouer si le script est transporté séparément.
+
+Sur l'application servie, un contact fictif `Cycle14 Jetable` a permis de
+créer un devis et une facture en brouillon avec `0,5` jour chacun. Pour les
+deux, l'UI a envoyé `0.5`, l'API a répondu 200 avec `0.5`, puis une lecture
+indépendante de chaque pièce a retrouvé `0.5`. La quantité `0` et une saisie
+de 400 chiffres ont été refusées avant tout POST. Rapport et captures :
+`.app-loop/cycles/14/calibration/reprise/verifier-b1605-browser.json` et
+`b1605-{devis,facture}-demi-jour.png` dans le même dossier.
+
+### Position actuelle et limites
+
+`app_loop.py status` rend `active`, cycle 14, phase `DISCOVER`, cinq
+calibrations valides, zéro ronde de plateau. Les 301 différés attendent la
+suite de la découverte et de la reproduction. La copie locale des dépendances
+frontend a servi Vite 5.4.21 alors que `package.json` demande `^7.3.6` :
+resynchroniser les dépendances verrouillées et recalibrer avant un plateau ou
+une release. L'indexation du contact fictif a échoué hors ligne faute de modèle
+local ; la recette de facturation a réussi. Aucune suite complète, aucun
+binaire installé, aucune fusion et aucune release n'ont été vérifiés ou
+effectués pendant cette reprise. L'état et les preuves de la boucle restent
+ignorés par Git : la branche seule ne les transporte pas.
