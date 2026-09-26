@@ -112,7 +112,7 @@ function parseDecimalDraft(value: string) {
   const normalized = value.replace(',', '.').trim();
   if (!/^\d*(\.\d*)?$/.test(normalized)) return null;
   const parsed = Number.parseFloat(normalized);
-  return Number.isNaN(parsed) ? null : parsed;
+  return Number.isFinite(parsed) ? parsed : null;
 }
 
 export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: InvoiceFormProps) {

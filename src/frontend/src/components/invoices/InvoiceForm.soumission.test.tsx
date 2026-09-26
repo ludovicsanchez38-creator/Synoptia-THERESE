@@ -156,3 +156,27 @@ describe('B-1605 : quantité fractionnaire à la soumission', () => {
     expect(screen.getByTestId('invoiceform-validation')).toHaveTextContent(/quantité/i);
   });
 });
+
+describe('B-1709 : les nombres non finis ne partent pas à l’API', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    createInvoiceMock.mockResolvedValue({ id: 'inv-1' });
+    getBillingProfileStatusMock.mockResolvedValue({ is_complete: true, missing: [] });
+    useBillingProfileStore.setState({ missing: null });
+  });
+
+  it.each(['Quantité', 'Prix HT'] as const)(
+    'refuse une saisie qui déborde le nombre JavaScript dans %s',
+    async (champ) => {
+      render(<InvoiceForm invoice={null} onClose={vi.fn()} onSave={vi.fn()} />);
+      await remplirLeFormulaire();
+      fireEvent.change(screen.getByLabelText(`${champ} ligne 1`), {
+        target: { value: '9'.repeat(400) },
+      });
+      fireEvent.click(screen.getByRole('button', { name: /Créer/i }));
+
+      expect(createInvoiceMock).not.toHaveBeenCalled();
+      expect(screen.getByTestId('invoiceform-validation')).toHaveTextContent(/nombres valides/i);
+    },
+  );
+});
