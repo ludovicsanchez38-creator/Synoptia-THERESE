@@ -79,7 +79,8 @@ class TestF2VerrouEcriture:
 
 class TestF1AnnulationEtConcurrence:
     @pytest.mark.asyncio
-    async def test_client_deconnecte_avant_les_embeddings(self, fichier, monkeypatch):
+    async def test_client_deconnecte_avant_les_embeddings(self, db_session, fichier, monkeypatch):
+        # B-1632 : une base fermée ne se rouvre plus d'elle-même ; la fixture l'ouvre.
         """Si l'utilisateur a retiré la pièce jointe, on n'encode pas pour rien.
 
         L'extraction déjà lancée va à son terme (un thread ne s'interrompt pas),
@@ -109,7 +110,8 @@ class TestF1AnnulationEtConcurrence:
         )
 
     @pytest.mark.asyncio
-    async def test_sans_abandon_les_embeddings_sont_bien_calcules(self, fichier, monkeypatch):
+    async def test_sans_abandon_les_embeddings_sont_bien_calcules(self, db_session, fichier, monkeypatch):
+        # B-1632 : une base fermée ne se rouvre plus d'elle-même ; la fixture l'ouvre.
         from app.routers import files as files_router
         from app.services import indexation
 
@@ -122,7 +124,8 @@ class TestF1AnnulationEtConcurrence:
         assert faux_qdrant.ajouts, "l'indexation normale n'écrit plus les fragments"
 
     @pytest.mark.asyncio
-    async def test_deux_indexations_du_meme_fichier_sont_serialisees(self, fichier, monkeypatch):
+    async def test_deux_indexations_du_meme_fichier_sont_serialisees(self, db_session, fichier, monkeypatch):
+        # B-1632 : une base fermée ne se rouvre plus d'elle-même ; la fixture l'ouvre.
         """La contrainte `path UNIQUE` ne doit jamais être atteinte en course."""
         from app.routers import files as files_router
         from app.services import indexation

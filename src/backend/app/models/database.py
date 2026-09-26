@@ -1276,8 +1276,15 @@ async def init_db() -> None:
 
 
 async def close_db() -> None:
-    """Close database connections."""
-    global async_engine, sync_engine
+    """Close database connections.
+
+    B-1632 : la fabrique de sessions est retirée aussi. Branchée sur le moteur
+    fermé, elle laissait une sonde /health (qui traverse le mode maintenance)
+    rouvrir une connexion au fichier pendant sa restauration.
+    """
+    global async_engine, sync_engine, AsyncSessionLocal
+
+    AsyncSessionLocal = None
 
     if async_engine:
         await async_engine.dispose()
