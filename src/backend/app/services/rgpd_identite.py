@@ -68,6 +68,24 @@ def exporter_la_fiche(contact: Contact) -> dict[str, Any]:
     return donnees
 
 
+async def detacher_les_dossiers_synchronises(session: Any, contact_id: str) -> None:
+    """B-1685 : détache la racine locale de chaque dossier de la personne.
+
+    `retirer_racine` écrit sur sa propre session. Appelée après une écriture
+    de la session appelante, elle attendait un verrou que cette session tient
+    (« database is locked ») : l'anonymisation d'une personne dont un dossier
+    est synchronisé échouait, et avec elle toute la purge automatique du jour.
+    À appeler avant toute écriture de la session ; ensuite, la suppression du
+    dossier trouve la racine déjà détachée et n'écrit plus rien."""
+    from app.models.entities import Project
+    from app.services.project_sync_service import retirer_racine
+    from sqlmodel import select
+
+    projets = (await session.execute(select(Project.id).where(Project.contact_id == contact_id))).scalars().all()
+    for projet_id in projets:
+        await retirer_racine(projet_id)
+
+
 async def anonymiser_la_personne(session: Any, contact: Contact, maintenant: datetime) -> list[str]:
     """B-1651 (décision de Ludo, 26/09) : UN traitement pour l'anonymisation
     manuelle et la purge automatique, qui n'effaçait que la fiche et ses
@@ -86,6 +104,8 @@ async def anonymiser_la_personne(session: Any, contact: Contact, maintenant: dat
     from sqlmodel import select
 
     contact_id = contact.id
+    # B-1685 : avant la première écriture de la session.
+    await detacher_les_dossiers_synchronises(session, contact_id)
     # B-1438 : l'identité, l'adresse et la relance datée.
     effacer_l_identite(contact, maintenant)
 

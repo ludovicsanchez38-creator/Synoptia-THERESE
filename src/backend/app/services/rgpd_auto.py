@@ -15,7 +15,7 @@ from typing import Any
 
 from app.models.database import get_session_context
 from app.models.entities import Activity, Contact, Notification
-from app.services.rgpd_identite import anonymiser_la_personne
+from app.services.rgpd_identite import anonymiser_la_personne, detacher_les_dossiers_synchronises
 from sqlalchemy import func
 from sqlmodel import or_, select
 
@@ -197,6 +197,11 @@ async def auto_purge_expired_contacts() -> dict[str, int]:
                         contacts_to_warn.append(contact)
                 elif ref_date < warning_threshold:
                     contacts_to_warn.append(contact)
+
+            # B-1685 : les préavis écrivent dans la session ; les dossiers
+            # synchronisés des fiches à anonymiser se détachent avant.
+            for contact in contacts_to_purge:
+                await detacher_les_dossiers_synchronises(session, contact.id)
 
             # Notifications d'avertissement (30 jours avant)
             for contact in contacts_to_warn:
