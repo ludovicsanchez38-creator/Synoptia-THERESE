@@ -692,3 +692,17 @@ def set_cached_profile(profile: UserProfile | None) -> None:
     """Update cached profile."""
     global _cached_profile
     _cached_profile = profile
+
+
+async def recharger_le_profil_en_cache() -> UserProfile | None:
+    """Relit le profil en base et le met en cache (None s'il n'y en a pas).
+
+    Démarrage, et B-1540 après une restauration : le profil d'avant restait
+    servi au prompt et aux PDF de facture jusqu'au redémarrage. Aucun accès
+    au trousseau ici : le déchiffrement se fait à la demande."""
+    from app.models.database import get_session_context
+
+    async with get_session_context() as session:
+        profile = await get_user_profile(session, allow_decrypt=False)
+    set_cached_profile(profile)
+    return profile

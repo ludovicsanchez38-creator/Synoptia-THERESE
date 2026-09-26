@@ -217,15 +217,20 @@ class TestLeModeEstAtteignable:
     revue L6 sans qu'aucun formulaire ne l'envoie.
     """
 
-    def test_le_demarrage_charge_le_reglage(self):
-        import inspect
-
+    @pytest.mark.asyncio
+    async def test_le_demarrage_charge_le_reglage(self, db_session):
+        """Le mode doit survivre à un redémarrage, comme la préférence de
+        recherche web (B-1540 : exécuté, plus lu dans le source de main)."""
         from app import main
+        from app.models.entities import Preference
 
-        assert "poser_mode_cabinet" in inspect.getsource(main), (
-            "le mode doit survivre à un redémarrage, comme la préférence de "
-            "recherche web"
-        )
+        db_session.add(Preference(key="mode_cabinet", value="true", category="general"))
+        await db_session.commit()
+        cloisonnement.poser_mode_cabinet(None)
+
+        await main._load_brave_key()
+
+        assert cloisonnement.mode_cabinet_actif() is True
 
     def test_le_reglage_previent_la_politique_quand_il_change(self):
         import inspect

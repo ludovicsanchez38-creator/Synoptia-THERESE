@@ -121,40 +121,26 @@ async def _load_brave_key():
     # Chantier C : le mode cabinet cloisonne le carnet général par dossier.
     # Même motif de cache que ci-dessus.
     try:
-        from app.models.database import get_session_context
-        from app.models.entities import Preference
-        from app.services.cloisonnement import poser_mode_cabinet
-        from sqlalchemy import select
+        from app.services.cloisonnement import charger_mode_cabinet_depuis_la_base
 
-        async with get_session_context() as session:
-            resultat = await session.execute(
-                select(Preference).where(Preference.key == "mode_cabinet")
-            )
-            preference = resultat.scalar_one_or_none()
-            if preference is not None:
-                poser_mode_cabinet(preference.value.lower() == "true")
-                logger.info(
-                    "Cloisonnement du carnet : %s",
-                    "par dossier" if preference.value.lower() == "true" else "partagé",
-                )
+        actif = await charger_mode_cabinet_depuis_la_base()
+        if actif is not None:
+            logger.info("Cloisonnement du carnet : %s", "par dossier" if actif else "partagé")
     except Exception as e:
         logger.debug(f"Mode cabinet non chargé : {e}")
 
 
 async def _load_user_profile():
     """Load user profile from database and cache it."""
-    from app.models.database import get_session_context
-    from app.services.user_profile import get_user_profile, set_cached_profile
+    from app.services.user_profile import recharger_le_profil_en_cache
 
     try:
-        async with get_session_context() as session:
-            # Ne pas déclencher d'accès trousseau au boot: le déchiffrement se fera à la demande.
-            profile = await get_user_profile(session, allow_decrypt=False)
-            if profile:
-                set_cached_profile(profile)
-                logger.info(f"User profile loaded: {profile.display_name()}")
-            else:
-                logger.info("No user profile configured (or preload deferred)")
+        # Ne pas déclencher d'accès trousseau au boot: le déchiffrement se fera à la demande.
+        profile = await recharger_le_profil_en_cache()
+        if profile:
+            logger.info(f"User profile loaded: {profile.display_name()}")
+        else:
+            logger.info("No user profile configured (or preload deferred)")
     except Exception as e:
         logger.warning(f"Failed to load user profile: {e}")
 

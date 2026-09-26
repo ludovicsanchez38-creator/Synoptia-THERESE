@@ -760,6 +760,10 @@ async def _supprimer_toutes_les_donnees(session: AsyncSession) -> dict[str, Any]
     from app.services.web_search import poser_autorisation_recherche
 
     poser_autorisation_recherche(None)
+    # B-1541 : même chose pour le mode cabinet.
+    from app.services.cloisonnement import poser_mode_cabinet
+
+    poser_mode_cabinet(None)
 
     # B-1124 : jumeau de B-340 pour les clés API. La table Preference est
     # vidée, mais le cache des clés ET le service des modèles déjà créé les
@@ -1850,6 +1854,20 @@ async def restore_backup(
 
     poser_autorisation_recherche(None)
     await charger_autorisation_depuis_la_base()
+
+    # B-1540 : jumeaux de B-1522. Le profil (prompt, PDF de facture), les
+    # consignes de THERESE.md et le mode cabinet d'avant restaient servis
+    # jusqu'au redémarrage.
+    from app.services.cloisonnement import charger_mode_cabinet_depuis_la_base
+    from app.services.llm import reload_therese_md
+    from app.services.user_profile import recharger_le_profil_en_cache
+
+    reload_therese_md()
+    try:
+        await recharger_le_profil_en_cache()
+        await charger_mode_cabinet_depuis_la_base()
+    except Exception:
+        logger.warning("Relecture du profil ou du mode cabinet après restauration en échec", exc_info=True)
 
     # Revue 0.40/0.40.1 : l'archive de sécurité devient une sauvegarde chiffrée
     # visible, ou disparaît si le chiffrement est impossible (US-003 : jamais

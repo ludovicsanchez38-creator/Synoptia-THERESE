@@ -7,6 +7,8 @@ correctement pour le sidecar PyInstaller.
 
 from pathlib import Path
 
+import pytest
+
 # ============================================================
 # freeze_support
 # ============================================================
@@ -204,12 +206,23 @@ class TestZombieCleanup:
 class TestStartupKeychainSafety:
     """Vérifier que le startup n'est pas bloqué par un prompt trousseau."""
 
-    def test_startup_profile_preload_skips_decrypt(self):
-        """Le preload profil au démarrage doit passer allow_decrypt=False."""
-        main_path = Path(__file__).resolve().parent.parent / "src" / "backend" / "app" / "main.py"
-        content = main_path.read_text(encoding="utf-8")
+    @pytest.mark.asyncio
+    async def test_startup_profile_preload_skips_decrypt(self, db_session, monkeypatch):
+        """Le preload profil au démarrage doit passer allow_decrypt=False
+        (B-1540 : exécuté, plus lu dans le source de main)."""
+        from app import main
+        from app.services import user_profile
 
-        assert "get_user_profile(session, allow_decrypt=False)" in content
+        appels: list[bool] = []
+
+        async def lecture_espionnee(session, allow_decrypt=True):
+            appels.append(allow_decrypt)
+            return None
+
+        monkeypatch.setattr(user_profile, "get_user_profile", lecture_espionnee)
+        await main._load_user_profile()
+
+        assert appels == [False]
 
     def test_get_user_profile_supports_allow_decrypt_flag(self):
         """Le service profil doit accepter allow_decrypt pour éviter le keychain au boot."""

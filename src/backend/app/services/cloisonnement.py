@@ -34,6 +34,24 @@ def poser_mode_cabinet(actif: bool | None) -> None:
     _mode_cabinet_cache = actif
 
 
+async def charger_mode_cabinet_depuis_la_base() -> bool | None:
+    """Pose le cache depuis la préférence, ou le défaut si elle est absente.
+
+    Démarrage, et B-1540 après une restauration : la table des préférences
+    vient d'être remplacée, le cache gardait le choix d'avant. Rend la valeur
+    lue (None : préférence absente)."""
+    from app.models.database import get_session_context
+    from app.models.entities import Preference
+    from sqlalchemy import select
+
+    async with get_session_context() as session:
+        resultat = await session.execute(select(Preference).where(Preference.key == "mode_cabinet"))
+        preference = resultat.scalar_one_or_none()
+    actif = None if preference is None else preference.value.lower() == "true"
+    poser_mode_cabinet(actif)
+    return actif
+
+
 def mode_cabinet_actif() -> bool:
     """Défaut : non.
 
