@@ -453,7 +453,11 @@ export function ProjectModal({ isOpen, onClose, onSaved, project, fermerSiIntact
 
             {/* Content - Scrollable */}
             {/* B-1365 : Entrée dans un champ texte valide le formulaire. */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-4" onKeyDown={entreeValide(() => void handleSave(), saving || demoEnabled)}>
+            {/* Recette P-148 : `relative` fait du contenu défilant le bloc
+                conteneur des éléments absolus (étiquettes sr-only). Sans lui,
+                ils débordaient de la fenêtre, qu'un scrollIntoView faisait
+                alors défiler en entier, en-tête compris. */}
+            <div className="relative flex-1 overflow-y-auto p-6 space-y-4" onKeyDown={entreeValide(() => void handleSave(), saving || demoEnabled)}>
               {demoEnabled && (
                 <Alerte ton="attention" titre="Mode démo : lecture seule">
                   Désactive le mode démo dans les paramètres pour modifier ce projet.
@@ -672,7 +676,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project, fermerSiIntact
               {/* P-148 : la même confirmation que la vue Projets, qui dit ce
                   que la suppression emporte (ConfirmationSuppressionProjet). */}
               {showDeleteConfirm && project && (
-                <div ref={confirmationRef} className="flex items-center gap-2 px-3 py-3 bg-error/10 border border-error/20 rounded-md">
+                <div ref={confirmationRef} className="flex flex-wrap items-start gap-2 px-3 py-3 bg-error/10 border border-error/20 rounded-md">
                   <ConfirmationSuppressionProjet
                     variante="en-ligne"
                     projetId={project.id}

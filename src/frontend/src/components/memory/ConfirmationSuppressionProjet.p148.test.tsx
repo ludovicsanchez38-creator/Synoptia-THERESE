@@ -110,6 +110,26 @@ describe.each<Hote>(['fenêtre du projet', 'vue Projets'])('P-148 : la confirmat
     expect(bloc).not.toHaveTextContent(/emporte/);
   });
 
+  it('recette : les boutons ont leur propre ligne, la phrase garde toute la largeur', async () => {
+    const bloc = await demanderLaSuppression(hote);
+    const boutons = within(bloc).getByRole('button', { name: 'Annuler' }).parentElement as HTMLElement;
+    expect(boutons.className).toMatch(/\b(w-full|basis-full)\b/);
+  });
+
+  it('recette : la phrase arrivée, les boutons repoussés sont ramenés dans la vue', async () => {
+    const original = Element.prototype.scrollIntoView;
+    const defilement = vi.fn();
+    Element.prototype.scrollIntoView = defilement;
+    try {
+      const bloc = await demanderLaSuppression(hote);
+      const boutons = within(bloc).getByRole('button', { name: 'Annuler' }).parentElement as HTMLElement;
+      await waitFor(() => expect(within(bloc).getByRole('status')).toHaveTextContent('La suppression emporte'));
+      await waitFor(() => expect(defilement.mock.contexts).toContain(boutons));
+    } finally {
+      Element.prototype.scrollIntoView = original;
+    }
+  });
+
   it('« Supprimer » supprime le projet', async () => {
     const bloc = await demanderLaSuppression(hote);
     await act(async () => { fireEvent.click(within(bloc).getByRole('button', { name: 'Supprimer' })); });

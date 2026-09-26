@@ -89,7 +89,12 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
   const hasCachedTasks = tasks.length > 0;
   const [loading, setLoading] = useState(!hasCachedTasks);
   const [error, setError] = useState<string | null>(null);
-  const [showFilters, setShowFilters] = useState(false);
+  // P-148 : un filtre de projet (posé par « Voir les tâches » d'un projet)
+  // déplie les filtres ; replié, il filtrait la liste sans le dire.
+  const [showFilters, setShowFilters] = useState(() => Boolean(filterProjectId));
+  useEffect(() => {
+    if (filterProjectId) setShowFilters(true);
+  }, [filterProjectId]);
   // BUG-118 : filtres par projet (déjà supporté côté store/backend, UI manquante)
   // et par tag (filtré côté client, absent de l'API tâches).
   const [projects, setProjects] = useState<api.Project[]>([]);

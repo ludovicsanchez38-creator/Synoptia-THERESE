@@ -168,7 +168,9 @@ function LigneDEnsemble({
                     {element.detail && <span className="shrink-0 text-xs text-text-muted">{element.detail}</span>}
                   </button>
                 ) : (
-                  <div className="flex items-center justify-between gap-2 rounded-md border border-border bg-surface-2 px-3 py-2 text-sm">
+                  // Sans destination : une ligne, comme celles des livrables,
+                  // pas la boîte bordée des boutons voisins (recette P-148).
+                  <div className="flex items-center justify-between gap-2 rounded-md bg-surface px-3 py-2 text-sm">
                     <span className="min-w-0 truncate text-text">{element.libelle}</span>
                     {element.detail && <span className="shrink-0 text-xs text-text-muted">{element.detail}</span>}
                   </div>

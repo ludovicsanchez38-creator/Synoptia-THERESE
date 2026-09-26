@@ -13,7 +13,7 @@
  * dans une région `role="status"` (constat 17). Illisible, elle se tait et
  * la mise en garde générale reste, jamais un « 0 tâche » inventé.
  */
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { AlertCircle } from 'lucide-react';
 
 import { lireLEnsembleDuProjet } from '../../services/api';
@@ -46,6 +46,13 @@ export function ConfirmationSuppressionProjet({
   desactive?: boolean;
 }) {
   const [lecture, setLecture] = useState<Lecture>({ etat: 'lecture' });
+  // Recette : la phrase arrive après l'apparition et pousse les boutons sous
+  // le bord de la fenêtre qui défile ; ils sont ramenés dans la vue.
+  const boutonsRef = useRef<HTMLDivElement>(null);
+  const lue = lecture.etat !== 'lecture';
+  useEffect(() => {
+    if (lue) boutonsRef.current?.scrollIntoView?.({ block: 'nearest' });
+  }, [lue]);
 
   useEffect(() => {
     let vivante = true;
@@ -75,7 +82,7 @@ export function ConfirmationSuppressionProjet({
         <h2 id={titreId} className="text-base font-semibold text-text">Supprimer ce projet ?</h2>
         <p className="text-sm text-text-muted mt-2">{phraseDuNom}</p>
         <p role="status" className="text-sm text-text-muted mt-2">{annonce}</p>
-        <div className="flex flex-wrap justify-end gap-2 mt-5">
+        <div ref={boutonsRef} className="flex w-full flex-wrap justify-end gap-2 mt-5">
           {/* B-975 : `data-dialog-autofocus` et non `autoFocus` (piège B-278 :
               posé avant la capture du déclencheur, Échap rendait le focus à BODY). */}
           <Button variant="ghost" size="md" data-dialog-autofocus onClick={onAnnuler}>
@@ -91,13 +98,15 @@ export function ConfirmationSuppressionProjet({
 
   return (
     <>
-      <AlertCircle className="w-4 h-4 text-error shrink-0" />
-      <div className="flex-1">
+      <AlertCircle className="w-4 h-4 mt-0.5 text-error shrink-0" />
+      <div className="flex-1 min-w-0">
         <p className="text-sm text-error font-medium">Supprimer ce projet ?</p>
         <p className="text-sm text-error">{phraseDuNom}</p>
         <p role="status" className="text-sm text-error">{annonce}</p>
       </div>
-      <div className="flex flex-wrap gap-2">
+      {/* Recette : à côté du texte, les boutons le serraient en colonne
+          étroite ; ils prennent leur propre ligne. */}
+      <div ref={boutonsRef} className="flex w-full flex-wrap justify-end gap-2">
         <Button variant="ghost" size="sm" onClick={onAnnuler}>
           Annuler
         </Button>
