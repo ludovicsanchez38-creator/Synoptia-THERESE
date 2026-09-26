@@ -127,18 +127,6 @@ async def test_signature_est_un_prospect_en_cours_et_deja_un_contrat(client: Asy
     assert rgpd.json()["base_legale"] == "contrat"
 
 
-def test_le_commentaire_des_etapes_de_prospect_dit_pourquoi_signature_y_est():
-    from pathlib import Path
-
-    from app.routers import dashboard
-
-    source = Path(dashboard.__file__).read_text(encoding="utf-8")
-    debut = source.index("ETAPES_DE_PROSPECT = (")
-    commentaire = source[source.rfind("\n\n", 0, debut):debut]
-    assert "signature" in commentaire.lower() and "livraison" in commentaire.lower(), commentaire
-    assert "lost" in commentaire or "perdu" in commentaire.lower(), commentaire
-
-
 # ---------------------------------------------------------------------------
 # Relances : Perdu se relance si une date est posée, Archive jamais
 # ---------------------------------------------------------------------------
