@@ -152,10 +152,28 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
   }, [effectiveOpen]);
 
   // BUG-118 : liste des projets pour le filtre par projet
+  const [projetsLus, setProjetsLus] = useState(false);
   useEffect(() => {
     if (!effectiveOpen) return;
-    api.listProjects().then(setProjects).catch(() => setProjects([]));
+    api.listProjects()
+      .then(setProjects)
+      .catch(() => setProjects([]))
+      .finally(() => setProjetsLus(true));
   }, [effectiveOpen]);
+
+  // Revue P-148, constat 9 : la liste s'arrête aux 50 projets les plus
+  // récents. Un projet filtré qui n'y figure pas est lu à part ; sans lui, le
+  // sélecteur natif retombait sur « Tous les projets » sur une liste filtrée.
+  const projetFiltreHorsListe = Boolean(filterProjectId) && !projects.some((p) => p.id === filterProjectId);
+  const [projetLuAPart, setProjetLuAPart] = useState<{ id: string; name: string } | null>(null);
+  useEffect(() => {
+    if (!effectiveOpen || !projetsLus || !filterProjectId || !projetFiltreHorsListe) return;
+    let vivant = true;
+    api.getProject(filterProjectId)
+      .then((projet) => { if (vivant) setProjetLuAPart({ id: projet.id, name: projet.name }); })
+      .catch(() => {});
+    return () => { vivant = false; };
+  }, [effectiveOpen, projetsLus, filterProjectId, projetFiltreHorsListe]);
 
   // Populate demo replacement map when demo mode is enabled
   useEffect(() => {
@@ -312,7 +330,7 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
         className="w-auto"
       />
 
-      {projects.length > 0 && (
+      {(projects.length > 0 || filterProjectId) && (
         <Select
           aria-label="Filtrer par projet"
           value={filterProjectId || ''}
@@ -322,6 +340,14 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
             // Revue P-148, constat 1 : déplié dès qu'un projet est filtré, le
             // sélecteur montrait le vrai nom en démonstration.
             ...projects.map((p) => ({ value: p.id, label: maskProject({ id: p.id, name: p.name }).name })),
+            ...(filterProjectId && projetFiltreHorsListe
+              ? [{
+                  value: filterProjectId,
+                  label: projetLuAPart?.id === filterProjectId
+                    ? maskProject({ id: projetLuAPart.id, name: projetLuAPart.name }).name
+                    : 'Projet filtré',
+                }]
+              : []),
           ]}
           className="w-auto"
         />

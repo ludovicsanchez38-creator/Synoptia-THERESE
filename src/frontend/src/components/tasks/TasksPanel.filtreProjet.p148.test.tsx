@@ -12,14 +12,12 @@ import { maskProject } from '../../lib/demoMask';
 import { useDemoStore } from '../../stores/demoStore';
 import { useTaskStore } from '../../stores/taskStore';
 
+const api = vi.hoisted(() => ({
+  listTasks: vi.fn(), listProjects: vi.fn(), listContacts: vi.fn(), getProject: vi.fn(),
+}));
 vi.mock('../../services/api', async () => {
   const actual = await vi.importActual<Record<string, unknown>>('../../services/api');
-  return {
-    ...actual,
-    listTasks: vi.fn().mockResolvedValue([]),
-    listProjects: vi.fn().mockResolvedValue([{ id: 'p-cuisine', name: 'Cuisine Roux' }]),
-    listContacts: vi.fn().mockResolvedValue([]),
-  };
+  return { ...actual, ...api };
 });
 
 import { TasksPanel } from './TasksPanel';
@@ -32,7 +30,13 @@ function poser(filterProjectId: string | null) {
 }
 
 describe('P-148 : un filtre de projet se voit', () => {
-  beforeEach(() => poser(null));
+  beforeEach(() => {
+    Object.values(api).forEach((mock) => mock.mockReset());
+    api.listTasks.mockResolvedValue([]);
+    api.listProjects.mockResolvedValue([{ id: 'p-cuisine', name: 'Cuisine Roux' }]);
+    api.listContacts.mockResolvedValue([]);
+    poser(null);
+  });
   afterEach(() => cleanup());
 
   it('ouverte filtrée sur un projet, la vue montre le filtre', async () => {
@@ -62,6 +66,58 @@ describe('P-148 : un filtre de projet se voit', () => {
     } finally {
       useDemoStore.setState({ enabled: false, replacementMap: new Map() });
     }
+  });
+
+  /**
+   * Revue P-148, constat 9 : la liste des projets s'arrête aux 50 derniers
+   * modifiés. Un projet filtré absent de la liste faisait retomber le
+   * sélecteur natif sur « Tous les projets » alors que la liste était filtrée.
+   */
+  it('revue P-148, constat 9 : un projet filtré hors des 50 premiers est lu et nommé dans le sélecteur', async () => {
+    api.getProject.mockResolvedValue({ id: 'p-ancien', name: 'Grange Villeneuve' });
+    poser('p-ancien');
+    render(<TasksPanel isOpen onClose={() => {}} standalone />);
+    const filtre = await screen.findByRole('combobox', { name: 'Filtrer par projet' });
+    await waitFor(() => expect(filtre).toHaveValue('p-ancien'));
+    // Le nom arrive avec la lecture à part ; jusque-là, « Projet filtré ».
+    await waitFor(() => expect((filtre as HTMLSelectElement).selectedOptions[0]).toHaveTextContent('Grange Villeneuve'));
+    expect(api.getProject).toHaveBeenCalledWith('p-ancien');
+    // Le projet de la liste reste proposé.
+    expect(screen.getByRole('option', { name: 'Cuisine Roux' })).toBeInTheDocument();
+  });
+
+  it('revue P-148, constat 9 : sans liste de projets lisible, le filtre posé reste visible', async () => {
+    api.listProjects.mockResolvedValue([]);
+    api.getProject.mockRejectedValue(new Error('réseau'));
+    poser('p-ancien');
+    render(<TasksPanel isOpen onClose={() => {}} standalone />);
+    const filtre = await screen.findByRole('combobox', { name: 'Filtrer par projet' });
+    await waitFor(() => expect(filtre).toHaveValue('p-ancien'));
+    expect((filtre as HTMLSelectElement).selectedOptions[0]).toHaveTextContent('Projet filtré');
+    expect(screen.getByRole('button', { name: 'Réinitialiser' })).toBeInTheDocument();
+  });
+
+  it('revue P-148, constat 9 : en démonstration, le projet lu hors de la liste porte son pseudonyme', async () => {
+    useDemoStore.setState({ enabled: true, replacementMap: new Map() });
+    try {
+      api.getProject.mockResolvedValue({ id: 'p-ancien', name: 'Grange Villeneuve' });
+      poser('p-ancien');
+      render(<TasksPanel isOpen onClose={() => {}} standalone />);
+      const filtre = await screen.findByRole('combobox', { name: 'Filtrer par projet' });
+      const pseudonyme = maskProject({ id: 'p-ancien', name: 'Grange Villeneuve' }).name;
+      await waitFor(() => expect((filtre as HTMLSelectElement).selectedOptions[0]).toHaveTextContent(pseudonyme));
+      expect(screen.queryByText(/Grange|Villeneuve/)).toBeNull();
+    } finally {
+      useDemoStore.setState({ enabled: false, replacementMap: new Map() });
+    }
+  });
+
+  it('un projet filtré présent dans la liste n’est pas relu', async () => {
+    poser('p-cuisine');
+    render(<TasksPanel isOpen onClose={() => {}} standalone />);
+    const filtre = await screen.findByRole('combobox', { name: 'Filtrer par projet' });
+    await waitFor(() => expect(filtre).toHaveValue('p-cuisine'));
+    expect(api.getProject).not.toHaveBeenCalled();
   });
 
   it('un filtre de projet posé pendant que la vue est affichée déplie les filtres', async () => {
