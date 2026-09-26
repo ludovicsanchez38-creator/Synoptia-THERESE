@@ -162,6 +162,11 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
     return localDateKey(date);
   });
   const [status, setStatus] = useState(invoice?.status || 'draft');
+  // B-1537 : une facture ou un avoir émis ne repasse pas en brouillon (B-1506,
+  // numérotation continue) ; le moteur le refuse, la modale ne le propose plus.
+  const pieceEmise = Boolean(
+    invoice && invoice.document_type !== 'devis' && (invoice.status !== 'draft' || invoice.sent_at),
+  );
   const [notes, setNotes] = useState(invoice?.notes || '');
   const [validiteJours, setValiditeJours] = useState<number>(
     invoice?.validite_jours ?? 30
@@ -733,7 +738,9 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
                   id="status"
                   value={status}
                   onChange={(e) => setStatus(e.target.value as typeof status)}
-                  options={documentType === 'devis' ? OPTIONS_STATUT_DEVIS : OPTIONS_STATUT_FACTURE}
+                  options={(documentType === 'devis' ? OPTIONS_STATUT_DEVIS : OPTIONS_STATUT_FACTURE).filter(
+                    (option) => !(pieceEmise && option.value === 'draft'),
+                  )}
                 />
               </FormField>
             ) : (

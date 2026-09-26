@@ -39,34 +39,34 @@ function piece(documentType: 'devis' | 'facture') {
   };
 }
 
+// B-1537 : une facture envoyée ne propose plus « Brouillon » ; le sélecteur
+// se trouve par son nom, plus par cette option.
 function statutsProposes(): string[] {
-  const selecteurs = screen.getAllByRole('combobox');
-  const statut = selecteurs.find((s) =>
-    Array.from(s.querySelectorAll('option')).some((o) => o.textContent === 'Brouillon'),
-  );
-  if (!statut) throw new Error('sélecteur de statut introuvable');
+  const statut = screen.getByLabelText('Statut') as HTMLSelectElement;
   return Array.from(statut.querySelectorAll('option')).map((o) => o.value);
 }
 
 describe('Les statuts proposés suivent le type du document', () => {
   it("une facture ne propose pas « Accepté »", async () => {
     render(<InvoiceForm invoice={piece('facture') as never} onClose={vi.fn()} onSave={vi.fn()} />);
-    await screen.findByText('Brouillon');
+    await screen.findByLabelText('Statut');
 
     expect(statutsProposes()).not.toContain('accepted');
   });
 
   it('une facture propose bien ses propres statuts', async () => {
     render(<InvoiceForm invoice={piece('facture') as never} onClose={vi.fn()} onSave={vi.fn()} />);
-    await screen.findByText('Brouillon');
+    await screen.findByLabelText('Statut');
 
     const statuts = statutsProposes();
-    expect(statuts).toEqual(expect.arrayContaining(['draft', 'sent', 'paid', 'overdue', 'cancelled']));
+    // Envoyée, donc émise : plus de retour au brouillon (B-1506, B-1537).
+    expect(statuts).toEqual(expect.arrayContaining(['sent', 'paid', 'overdue', 'cancelled']));
+    expect(statuts).not.toContain('draft');
   });
 
   it('un devis garde « Accepté »', async () => {
     render(<InvoiceForm invoice={piece('devis') as never} onClose={vi.fn()} onSave={vi.fn()} />);
-    await screen.findByText('Brouillon');
+    await screen.findByLabelText('Statut');
 
     expect(statutsProposes()).toContain('accepted');
   });
