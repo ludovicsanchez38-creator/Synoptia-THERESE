@@ -13,7 +13,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Plus, RefreshCw, Filter, AlertCircle } from 'lucide-react';
 import { useContactsStore } from '../../stores/contactsStore';
-import { useTaskStore } from '../../stores/taskStore';
+import { useTaskStore, type FiltresRetires } from '../../stores/taskStore';
 import { TaskKanban } from './TaskKanban';
 import { TaskList } from './TaskList';
 import { TaskForm } from './TaskForm';
@@ -49,6 +49,20 @@ const OPTIONS_PRIORITE = [
   { value: 'low', label: 'Basse' },
 ];
 
+function libelleDe(options: { value: string; label: string }[], valeur: string): string {
+  return options.find((o) => o.value === valeur)?.label ?? valeur;
+}
+
+/** Revue P-148, constat 8 : ce qu'un geste venu d'ailleurs a retiré, en clair. */
+function annonceDesFiltresRetires(retires: FiltresRetires): string {
+  const noms = [
+    retires.statut ? `statut « ${libelleDe(OPTIONS_STATUT, retires.statut)} »` : '',
+    retires.priorite ? `priorité « ${libelleDe(OPTIONS_PRIORITE, retires.priorite)} »` : '',
+    retires.etiquette ? `étiquette « ${retires.etiquette} »` : '',
+  ].filter(Boolean);
+  return `Filtres précédents retirés : ${noms.join(', ')}.`;
+}
+
 /** Trois rangées muettes pendant le premier chargement (§ 8 du design). */
 function RangeesSquelette() {
   return (
@@ -82,6 +96,9 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
     setFilterStatus,
     setFilterPriority,
     setFilterProjectId,
+    filterTag,
+    setFilterTag,
+    filtresRetires,
   } = useTaskStore();
 
   const { enabled: demoEnabled, populateMap, maskProject } = useDemoMask();
@@ -99,7 +116,12 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
   // et par tag (filtré côté client, absent de l'API tâches).
   const [projects, setProjects] = useState<api.Project[]>([]);
   const [availableTags, setAvailableTags] = useState<string[]>([]);
-  const [filterTag, setFilterTag] = useState<string | null>(null);
+  // Revue P-148, constat 8 (B-1543) : l'étiquette vit dans le store, pour que
+  // « Voir les tâches » d'un projet la remette à zéro sur une vue déjà montée.
+  // Elle garde la durée de vie de l'ancien état local : quitter la vue l'oublie.
+  // L'annonce des filtres retirés, elle, survit au démontage : sous
+  // StrictMode, le démontage simulé du premier rendu l'aurait effacée.
+  useEffect(() => () => { useTaskStore.setState({ filterTag: null }); }, []);
   // B-1432 : les tags proposés suivent aussi les tâches affichées (une tâche
   // créée ou modifiée dans l'écran), et gardent le tag du filtre actif pour
   // qu'il reste lisible et révocable.
@@ -316,6 +338,12 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
           ]}
           className="w-auto"
         />
+      )}
+
+      {filtresRetires && (
+        <p role="status" className="basis-full text-sm text-text-muted">
+          {annonceDesFiltresRetires(filtresRetires)}
+        </p>
       )}
 
       {(filterStatus || filterPriority || filterProjectId || filterTag) && (

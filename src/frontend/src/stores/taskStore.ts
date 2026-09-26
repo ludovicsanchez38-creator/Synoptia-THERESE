@@ -43,11 +43,32 @@ interface TaskStore {
   filterStatus: string | null;
   filterPriority: string | null;
   filterProjectId: string | null;
+  /** BUG-118 : filtre par étiquette, appliqué côté client. Non persisté. */
+  filterTag: string | null;
   searchQuery: string;
   setFilterStatus: (status: string | null) => void;
   setFilterPriority: (priority: string | null) => void;
   setFilterProjectId: (projectId: string | null) => void;
+  setFilterTag: (tag: string | null) => void;
   setSearchQuery: (query: string) => void;
+  /**
+   * Revue P-148, constat 8 : les filtres qu'un geste venu d'ailleurs a
+   * retirés, pour que la vue le dise. Effacé au premier changement de filtre.
+   */
+  filtresRetires: FiltresRetires | null;
+  /**
+   * « Voir les tâches » d'un projet : filtre sur ce projet et retire tout ce
+   * qui montrerait moins de tâches qu'annoncé (statut, priorité, étiquette,
+   * recherche), en retenant ce qui a été retiré.
+   */
+  ouvrirSurLeProjet: (projetId: string) => void;
+}
+
+/** Valeurs brutes des filtres retirés (la vue les nomme). */
+export interface FiltresRetires {
+  statut: string | null;
+  priorite: string | null;
+  etiquette: string | null;
 }
 
 export const useTaskStore = create<TaskStore>()(
@@ -120,11 +141,31 @@ export const useTaskStore = create<TaskStore>()(
       filterStatus: null,
       filterPriority: null,
       filterProjectId: null,
+      filterTag: null,
       searchQuery: '',
-      setFilterStatus: (status) => set({ filterStatus: status }),
-      setFilterPriority: (priority) => set({ filterPriority: priority }),
-      setFilterProjectId: (projectId) => set({ filterProjectId: projectId }),
+      filtresRetires: null,
+      setFilterStatus: (status) => set({ filterStatus: status, filtresRetires: null }),
+      setFilterPriority: (priority) => set({ filterPriority: priority, filtresRetires: null }),
+      setFilterProjectId: (projectId) => set({ filterProjectId: projectId, filtresRetires: null }),
+      setFilterTag: (tag) => set({ filterTag: tag, filtresRetires: null }),
       setSearchQuery: (query) => set({ searchQuery: query }),
+      ouvrirSurLeProjet: (projetId) =>
+        set((etat) => {
+          const retires: FiltresRetires = {
+            statut: etat.filterStatus,
+            priorite: etat.filterPriority,
+            etiquette: etat.filterTag,
+          };
+          const aucun = !retires.statut && !retires.priorite && !retires.etiquette;
+          return {
+            filterProjectId: projetId,
+            filterStatus: null,
+            filterPriority: null,
+            filterTag: null,
+            searchQuery: '',
+            filtresRetires: aucun ? null : retires,
+          };
+        }),
     }),
     {
       name: 'task-storage',

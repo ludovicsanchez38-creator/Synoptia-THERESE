@@ -1478,7 +1478,9 @@ export function ConversationCanvasPrototype() {
         if (!openEmbeddedView('tasks')) return;
         // Constat 12 : statut et priorité sont persistés et s'appliquent au
         // chargement ; les garder montrerait moins de tâches qu'annoncé.
-        useTaskStore.setState({ filterProjectId: projetId, filterStatus: null, filterPriority: null });
+        // Revue P-148, constat 8 : l'étiquette aussi, et la vue dit ce qui a
+        // été retiré.
+        useTaskStore.getState().ouvrirSurLeProjet(projetId);
       },
       ouvrirScenario: (scenario) => {
         setScenario(scenario);

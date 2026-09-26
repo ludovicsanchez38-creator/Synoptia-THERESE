@@ -115,6 +115,8 @@ beforeEach(() => {
     isTaskFormOpen: false, currentTaskId: null, tasks: [],
     // Constat 12 : des filtres persistés d'une visite précédente.
     filterStatus: 'done', filterPriority: 'high', filterProjectId: null,
+    // Revue P-148, constat 8 (B-1543) : et une étiquette choisie dans la vue.
+    filterTag: 'devis', filtresRetires: null,
   } as never);
   // Connecté : hors ligne, le champ du message est désactivé et ne prend pas le focus.
   useStatusStore.setState({ notifications: [], connectionState: 'connected' } as never);
@@ -162,9 +164,14 @@ describe.each<Montage>(['vue Projets', 'conteneur global'])('P-148 : mener depui
     });
     await fenetreFermee();
     await waitFor(() => expect(vueAffichee()).toBe('tasks'));
-    const { filterProjectId, filterStatus, filterPriority } = useTaskStore.getState();
-    expect({ filterProjectId, filterStatus, filterPriority }).toEqual({ filterProjectId: PROJET.id, filterStatus: null, filterPriority: null });
+    const { filterProjectId, filterStatus, filterPriority, filterTag } = useTaskStore.getState();
+    expect({ filterProjectId, filterStatus, filterPriority, filterTag }).toEqual({
+      filterProjectId: PROJET.id, filterStatus: null, filterPriority: null, filterTag: null,
+    });
     await waitFor(() => expect(apiTaches.listTasks).toHaveBeenLastCalledWith({ project_id: PROJET.id }));
+    // La vue dit ce que le geste a retiré.
+    expect(await screen.findByText('Filtres précédents retirés : statut « Terminé », priorité « Haute », étiquette « devis ».'))
+      .toBeInTheDocument();
     const titre = document.getElementById('prototype-unified-view-title');
     expect(titre).toHaveTextContent('Tâches');
     await waitFor(() => expect(document.activeElement).toBe(titre));
