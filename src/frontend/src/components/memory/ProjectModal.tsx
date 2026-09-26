@@ -12,6 +12,7 @@ import { useRendreLeFocusALaFermeture, useRevelerALApparition } from '../../hook
 import { ProjectSyncSection } from './ProjectSyncSection';
 import { ProjectDeliverablesSection } from './ProjectDeliverablesSection';
 import { ProjectEnsembleSection } from './ProjectEnsembleSection';
+import { ConfirmationSuppressionProjet } from './ConfirmationSuppressionProjet';
 import { Spinner } from '../ui/Spinner';
 import { Alerte } from '../ui/Alerte';
 import { FormField } from '../ui/FormField';
@@ -668,30 +669,19 @@ export function ProjectModal({ isOpen, onClose, onSaved, project, fermerSiIntact
               )}
 
               {/* Delete confirmation */}
-              {showDeleteConfirm && (
+              {/* P-148 : la même confirmation que la vue Projets, qui dit ce
+                  que la suppression emporte (ConfirmationSuppressionProjet). */}
+              {showDeleteConfirm && project && (
                 <div ref={confirmationRef} className="flex items-center gap-2 px-3 py-3 bg-error/10 border border-error/20 rounded-md">
-                  <AlertCircle className="w-4 h-4 text-error shrink-0" />
-                  <div className="flex-1">
-                    <p className="text-sm text-error font-medium">Supprimer ce projet ?</p>
-                    <p className="text-sm text-error">Cette action est irréversible.</p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setShowDeleteConfirm(false)}
-                    >
-                      Annuler
-                    </Button>
-                    <Button
-                      variant="danger"
-                      size="sm"
-                      onClick={handleDelete}
-                      disabled={deleting || demoEnabled}
-                    >
-                      {deleting ? <Spinner taille="bouton" /> : 'Supprimer'}
-                    </Button>
-                  </div>
+                  <ConfirmationSuppressionProjet
+                    variante="en-ligne"
+                    projetId={project.id}
+                    nom={nomAffiche}
+                    onAnnuler={() => setShowDeleteConfirm(false)}
+                    onConfirmer={handleDelete}
+                    enCours={deleting}
+                    desactive={demoEnabled}
+                  />
                 </div>
               )}
             </div>

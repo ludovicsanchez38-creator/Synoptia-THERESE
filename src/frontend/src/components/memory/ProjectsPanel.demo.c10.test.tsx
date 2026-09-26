@@ -36,7 +36,7 @@ describe('B-939 : confirmation de suppression depuis Projets en mode démo', () 
     useDemoStore.setState({ enabled: false, replacementMap: new Map(REMPLACEMENTS) });
     render(<ProjectsPanel />);
     fireEvent.click(await screen.findByRole('button', { name: `Supprimer ${PROJET.name}` }));
-    expect(screen.getByRole('dialog', { name: 'Supprimer le projet ?' })).toHaveTextContent(PROJET.name);
+    expect(screen.getByRole('dialog', { name: 'Supprimer ce projet ?' })).toHaveTextContent(PROJET.name);
     expect(api.deleteProject).not.toHaveBeenCalled();
   });
 
@@ -47,7 +47,7 @@ describe('B-939 : confirmation de suppression depuis Projets en mode démo', () 
     expect(screen.queryByText(PROJET.name)).toBeNull();
     fireEvent.click(supprimer);
 
-    const confirmation = screen.getByRole('dialog', { name: 'Supprimer le projet ?' });
+    const confirmation = screen.getByRole('dialog', { name: 'Supprimer ce projet ?' });
     expect.soft(confirmation).not.toHaveTextContent(PROJET.name);
     expect.soft(confirmation).toHaveTextContent(NOM_DEMO);
     expect(api.deleteProject).not.toHaveBeenCalled();

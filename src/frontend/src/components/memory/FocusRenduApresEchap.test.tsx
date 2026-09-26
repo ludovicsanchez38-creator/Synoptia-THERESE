@@ -34,16 +34,16 @@ describe('B-975 : Échap rend le focus au bouton qui a ouvert le dialogue', () =
   });
   afterEach(() => { cleanup(); _clearEscapeHandlers(); });
 
-  it('« Supprimer le projet ? » : focus sur Annuler à l’ouverture, retour au bouton Supprimer après Échap', async () => {
+  it('« Supprimer ce projet ? » : focus sur Annuler à l’ouverture, retour au bouton Supprimer après Échap', async () => {
     render(<ProjectsPanel />);
     const declencheur = await screen.findByRole('button', { name: `Supprimer ${PROJET.name}` });
     declencheur.focus();
     fireEvent.click(declencheur);
-    const dialogue = screen.getByRole('dialog', { name: 'Supprimer le projet ?' });
+    const dialogue = screen.getByRole('dialog', { name: 'Supprimer ce projet ?' });
     await waitFor(() => expect(dialogue).toContainElement(document.activeElement as HTMLElement));
 
     act(() => { runTopEscapeHandler(); });
-    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Supprimer le projet ?' })).toBeNull());
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Supprimer ce projet ?' })).toBeNull());
     await waitFor(() => expect(document.activeElement).toBe(declencheur));
   });
 

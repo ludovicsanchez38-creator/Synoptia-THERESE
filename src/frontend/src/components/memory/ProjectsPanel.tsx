@@ -33,6 +33,7 @@ import { useDemoMask } from '../../hooks/useDemoMask';
 import { useStatusStore } from '../../stores/statusStore';
 import { ProjectsKanban } from './ProjectsKanban';
 import { ProjectModal } from './ProjectModal';
+import { ConfirmationSuppressionProjet } from './ConfirmationSuppressionProjet';
 
 /**
  * B-098 : plafond DUR du GET projets (`limit` borné à 200 côté serveur, 201
@@ -283,22 +284,16 @@ export function ProjectsPanel() {
           ref={dialogRef}
         >
           <div className="w-full max-w-sm rounded-md border border-border bg-surface p-5">
-            <h2 id="delete-project-title" className="text-base font-semibold text-text">
-              Supprimer le projet ?
-            </h2>
-            <p className="text-sm text-text-muted mt-2">
-              « {maskText(deleteTarget.name)} » sera supprimé. Cette action est définitive.
-            </p>
-            <div className="flex flex-wrap justify-end gap-2 mt-5">
-              {/* B-975 : `data-dialog-autofocus` et non `autoFocus` (piège B-278 :
-                  posé avant la capture du déclencheur, Échap rendait le focus à BODY). */}
-              <Button variant="ghost" size="md" data-dialog-autofocus onClick={() => setDeleteTarget(null)}>
-                Annuler
-              </Button>
-              <Button variant="danger" size="md" onClick={confirmDelete}>
-                Supprimer
-              </Button>
-            </div>
+            {/* P-148 (constat 8) : la même confirmation que la fenêtre du
+                projet, qui dit ce que la suppression emporte. */}
+            <ConfirmationSuppressionProjet
+              variante="dialogue"
+              titreId="delete-project-title"
+              projetId={deleteTarget.id}
+              nom={maskText(deleteTarget.name)}
+              onAnnuler={() => setDeleteTarget(null)}
+              onConfirmer={confirmDelete}
+            />
           </div>
         </div>
       )}
