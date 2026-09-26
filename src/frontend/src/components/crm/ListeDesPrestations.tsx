@@ -131,49 +131,57 @@ export function ListeDesPrestations({ contactId }: { contactId: string }) {
         </ul>
       )}
 
-      <div className="flex flex-wrap items-end gap-2 border-t border-border pt-3">
-        <label className="text-xs text-text-muted">
-          Intitulé
-          <input
-            className="mt-1 block rounded-sm border border-border bg-surface px-2 py-1 text-sm text-text"
-            value={intitule}
-            onChange={(e) => setIntitule(e.target.value)}
-            placeholder="Accompagnement mensuel, audit, formation…"
-          />
-        </label>
-        <div className="text-xs text-text-muted">
-          {/* P-132 : le mot de la fiche, « Étape », plutôt que « Où ça en est ». */}
-          <label htmlFor={idEtape}>Étape</label>
-          <select
-            id={idEtape}
-            className="mt-1 block rounded-sm border border-border bg-surface px-2 py-1 text-sm text-text"
-            value={phase}
-            onChange={(e) => setPhase(e.target.value as PhaseDePrestation)}
+      {/* Revue du diff P-132, constat 5 : dans la fiche, « Étape » nomme déjà
+          le contrôle qui change l'étape du contact, dès le choix. Celui-ci ne
+          fait que préparer une prestation : il est groupé et nommé à part. */}
+      <fieldset className="m-0 min-w-0 border-0 p-0">
+        <legend className="sr-only">Nouvelle prestation</legend>
+        <div className="flex flex-wrap items-end gap-2 border-t border-border pt-3">
+          <label className="text-xs text-text-muted">
+            Intitulé
+            <input
+              className="mt-1 block rounded-sm border border-border bg-surface px-2 py-1 text-sm text-text"
+              value={intitule}
+              onChange={(e) => setIntitule(e.target.value)}
+              placeholder="Accompagnement mensuel, audit, formation…"
+            />
+          </label>
+          <div className="text-xs text-text-muted">
+            {/* P-132 : le mot de la fiche, « Étape », plutôt que « Où ça en est ». */}
+            <label htmlFor={idEtape}>
+              Étape<span className="sr-only"> de la nouvelle prestation</span>
+            </label>
+            <select
+              id={idEtape}
+              className="mt-1 block rounded-sm border border-border bg-surface px-2 py-1 text-sm text-text"
+              value={phase}
+              onChange={(e) => setPhase(e.target.value as PhaseDePrestation)}
+            >
+              {ETAPES_DE_PRESTATION.map((etape) => (
+                <option key={etape.id} value={etape.id}>
+                  {etape.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <label className="text-xs text-text-muted">
+            Montant HT (facultatif)
+            <input
+              className="mt-1 block w-32 rounded-sm border border-border bg-surface px-2 py-1 text-sm text-text"
+              value={montant}
+              onChange={(e) => setMontant(e.target.value)}
+              inputMode="decimal"
+            />
+          </label>
+          <button
+            type="button"
+            onClick={ajouter}
+            className="rounded-sm bg-accent px-3 py-1.5 text-sm font-medium text-ink-on-fill"
           >
-            {ETAPES_DE_PRESTATION.map((etape) => (
-              <option key={etape.id} value={etape.id}>
-                {etape.label}
-              </option>
-            ))}
-          </select>
+            Ajouter
+          </button>
         </div>
-        <label className="text-xs text-text-muted">
-          Montant HT (facultatif)
-          <input
-            className="mt-1 block w-32 rounded-sm border border-border bg-surface px-2 py-1 text-sm text-text"
-            value={montant}
-            onChange={(e) => setMontant(e.target.value)}
-            inputMode="decimal"
-          />
-        </label>
-        <button
-          type="button"
-          onClick={ajouter}
-          className="rounded-sm bg-accent px-3 py-1.5 text-sm font-medium text-ink-on-fill"
-        >
-          Ajouter
-        </button>
-      </div>
+      </fieldset>
     </div>
   );
 }

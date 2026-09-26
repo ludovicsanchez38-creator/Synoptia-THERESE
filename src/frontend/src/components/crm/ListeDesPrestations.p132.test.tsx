@@ -87,7 +87,11 @@ describe('P-132 : une prestation parle la langue du pipeline', () => {
     creees.length = 0;
     render(<ListeDesPrestations contactId="c1" />);
 
-    const etape = (await screen.findByLabelText('Étape')) as HTMLSelectElement;
+    // Le mot visible est « Étape » ; le nom accessible le distingue de
+    // l'étape du contact (revue du diff, constat 5).
+    const etape = (await screen.findByLabelText('Étape de la nouvelle prestation')) as HTMLSelectElement;
+    expect(document.querySelector(`label[for="${etape.id}"]`)?.firstChild?.textContent).toBe('Étape');
+    expect(screen.getByRole('group', { name: 'Nouvelle prestation' })).toContainElement(etape);
     expect(etape.value).toBe('discovery');
     expect(etape.options[etape.selectedIndex].text).toBe('Découverte');
     expect(screen.queryByText(/où ça en est/i)).toBeNull();

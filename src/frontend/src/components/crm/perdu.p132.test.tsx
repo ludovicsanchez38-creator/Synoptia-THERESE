@@ -116,6 +116,24 @@ describe('P-132 : Perdu sur la fiche et à la création', () => {
     await waitFor(() => expect(etapeChangee).toHaveBeenCalledWith('ct-1', 'lost'));
   });
 
+  it('dans la fiche, un seul contrôle s’appelle « Étape » : celui du contact', async () => {
+    // Revue du diff, constat 5 : le champ de création d'une prestation
+    // portait le même nom accessible que l'étape du contact, qui, elle,
+    // change la fiche dès le choix. Il est groupé sous « Nouvelle prestation ».
+    render(<CRMPanel standalone />);
+    const fiche = await screen.findByRole('region', { name: 'Fiche de Élodie Martin' });
+    await screen.findByRole('group', { name: 'Nouvelle prestation' });
+
+    const etapes = screen.getAllByLabelText('Étape');
+    expect(etapes).toHaveLength(1);
+    expect(within(fiche).getByLabelText('Étape')).toBe(etapes[0]);
+    expect(
+      within(screen.getByRole('group', { name: 'Nouvelle prestation' })).getByLabelText(
+        'Étape de la nouvelle prestation',
+      ),
+    ).toBeInTheDocument();
+  });
+
   it('le formulaire de création ne propose ni Perdu ni Archive', async () => {
     useCRMStore.setState({ projects: [], activeTab: 'pipeline' });
     render(<CRMPanel standalone />);

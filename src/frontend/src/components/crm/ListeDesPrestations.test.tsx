@@ -79,7 +79,7 @@ describe('Les prestations à l’écran', () => {
     fireEvent.change(await screen.findByLabelText(/intitulé/i), {
       target: { value: 'PROPULSER' },
     });
-    fireEvent.change(screen.getByLabelText('Étape'), {
+    fireEvent.change(screen.getByLabelText('Étape de la nouvelle prestation'), {
       target: { value: 'delivery' },
     });
     fireEvent.click(screen.getByRole('button', { name: /ajouter/i }));
@@ -114,7 +114,7 @@ describe('Les prestations à l’écran', () => {
     render(<ListeDesPrestations contactId="c1" />);
 
     // Le choix est à l'écran, nommé, pas caché dans le code.
-    expect(await screen.findByLabelText('Étape')).toBeInTheDocument();
+    expect(await screen.findByLabelText('Étape de la nouvelle prestation')).toBeInTheDocument();
   });
 
   it('refuse d’envoyer un intitulé vide', async () => {
