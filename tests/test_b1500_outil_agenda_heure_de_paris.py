@@ -7,6 +7,7 @@ rendez-vous rangé à 8 h : SQLite jette le décalage. Même règle que
 l'écran depuis B-1487.
 """
 
+import os
 import sys
 import time
 from datetime import datetime
@@ -63,7 +64,15 @@ async def test_un_debut_date_et_une_fin_sans_fuseau_ne_font_pas_planter(client, 
 
 @pytest.fixture(autouse=True)
 def _fuseau_rendu():
+    # B-1692 : la fixture rétablit elle-même TZ. Elle se démontait avant
+    # monkeypatch : tzset relisait encore Europe/Paris et le fuseau fuyait
+    # dans les fichiers de test suivants (la CI tourne en UTC).
+    avant = os.environ.get("TZ")
     yield
+    if avant is None:
+        os.environ.pop("TZ", None)
+    else:
+        os.environ["TZ"] = avant
     # B-1676 : time.tzset n'existe pas sous Windows ; l'appeler au démontage
     # mettait la suite Windows en erreur sur chaque test du fichier.
     if hasattr(time, "tzset"):
