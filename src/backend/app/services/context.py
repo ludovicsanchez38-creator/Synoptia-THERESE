@@ -18,6 +18,10 @@ class ContextWindow:
     messages: list[Message]
     system_prompt: str | None = None
     max_tokens: int = 100000  # Reserve some space for response
+    # B-1502 : configuration qui a réellement servi le premier appel du tour
+    # (bascule du disjoncteur comprise). Les continuations après outils la
+    # reprennent, pour ne pas changer de fournisseur au milieu du tour.
+    config_effective: Any = None
 
     def estimate_tokens(self, text: str) -> int:
         """Rough token estimation (4 chars = 1 token for most languages)."""

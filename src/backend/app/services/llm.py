@@ -972,6 +972,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         # variante (max_tokens) sans écrire dans l'état partagé.
         effective_config = config or self._resolve_with_circuit_breaker()
         provider_switched = effective_config is not self.config
+        context.config_effective = effective_config
 
         # Étiquette « effectif » : renseignée par appel, lue après coup par
         # le chat. Elle reste un attribut partagé (dernier appel gagnant).
@@ -1059,16 +1060,25 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
         assistant_content_brut: "list[Any] | None" = None,
     ) -> AsyncGenerator[StreamEvent, None]:
         """Continue after tool execution (prior_turns = tours d'outils précédents)."""
-        await self._ensure_provider()
+        # B-1502 : même fournisseur que le premier appel du tour. Repartir de
+        # self.config rejouait chez le principal (en panne) des appels
+        # d'outils émis par le fournisseur de repli, dans un autre format.
+        retenue = getattr(context, "config_effective", None)
+        effective_config = retenue if isinstance(retenue, LLMConfig) else self.config
+        if effective_config is not self.config:
+            provider = await self._provider_pour(effective_config)
+        else:
+            await self._ensure_provider()
+            provider = self._provider
 
         # BUG-164 : la continuation après outils est le tour où les résultats
         # anglophones (recherche web, MCP) entrent dans le contexte. C'est donc
         # le moment où la consigne compte le plus.
         context.system_prompt = self._avec_consigne_de_langue(context.system_prompt)
 
-        if self.config.provider == LLMProvider.ANTHROPIC:
+        if effective_config.provider == LLMProvider.ANTHROPIC:
             system_prompt, messages = context.to_anthropic_format()
-        elif self.config.provider == LLMProvider.GEMINI:
+        elif effective_config.provider == LLMProvider.GEMINI:
             system_prompt, messages = context.to_gemini_format()
         else:
             messages = context.to_openai_format()
@@ -1076,12 +1086,12 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
 
         # US-008 (RES4) : la continuation après outils doit aussi compter les
         # erreurs HTTP (429/5xx) au circuit breaker, comme le stream principal.
-        provider_name = self.config.provider.value
+        provider_name = effective_config.provider.value
         cb = get_circuit_breaker()
         had_error = False
         error_detail = ""
 
-        async for event in self._provider.continue_with_tool_results(
+        async for event in provider.continue_with_tool_results(
             system_prompt,
             messages,
             assistant_content,
