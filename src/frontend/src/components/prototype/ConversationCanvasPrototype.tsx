@@ -103,7 +103,8 @@ import {
 import { lienProfondPresent, lireLaVueQuittee, memoriserLaVue } from '../../lib/vueQuittee';
 import { useDemoMask, useRemplirLeMasqueDeDemo } from '../../hooks/useDemoMask';
 import { AUCUN_RESULTAT_DE_DONNEES, chercherDansLesDonnees, type ResultatDeDonnee } from '../../lib/rechercheDeDonnees';
-import { listProjects as listerLesProjetsDeLaPalette } from '../../services/api/memory';
+import { getProject as lireLeProjetDeLaPalette, listProjects as listerLesProjetsDeLaPalette } from '../../services/api/memory';
+import { ApiError } from '../../services/api/core';
 import type { Project as ProjetDeLaPalette } from '../../services/api/memory';
 import { useDocumentStore } from '../../stores/documentStore';
 import { useStatusStore } from '../../stores/statusStore';
@@ -1418,14 +1419,33 @@ export function ConversationCanvasPrototype() {
     return () => window.removeEventListener('therese:preparer-seance', surDemande);
   }, []);
 
+  // P-148, lot 5 : le projet est relu (le résultat de la palette n'en porte
+  // que le nom) ; supprimé entre-temps, il se dit, jamais une fenêtre vide.
+  async function ouvrirLeProjetTrouve(id: string) {
+    try {
+      const projet = await lireLeProjetDeLaPalette(id);
+      usePanelStoreDirect.getState().openEditProject(projet);
+    } catch (erreur) {
+      const disparu = erreur instanceof ApiError && erreur.status === 404;
+      useStatusStore.getState().addNotification(disparu
+        ? { type: 'warning', title: 'Ce projet n’existe plus', message: 'Il a été supprimé depuis. La liste des projets est à jour dans Projets.' }
+        : { type: 'error', title: 'Projet illisible', message: 'Le projet n’a pas pu être lu. Réessaie dans un instant.' });
+    }
+  }
+
   // P-016 : un résultat de données de la palette ouvre son objet.
   function ouvrirUneDonnee(resultat: ResultatDeDonnee) {
+    // P-148 : un projet trouvé ouvre sa fenêtre, par-dessus l'écran courant.
+    // Ce n'est pas une navigation : ni une réponse en cours ni une saisie
+    // modifiée n'ont à la retenir (la fenêtre, elle, le fera pour ses liens).
+    if (resultat.kind === 'projet') {
+      void ouvrirLeProjetTrouve(resultat.id);
+      return;
+    }
     if (blockStreamingNavigation()) return;
     if (resultat.kind === 'contact') {
       chooseScenario('memory');
       setSelectedContactId(resultat.id);
-    } else if (resultat.kind === 'projet') {
-      openEmbeddedView('projects');
     } else {
       useChatStore.getState().loadConversation(resultat.id);
       openChat();

@@ -80,6 +80,8 @@ interface PanelState {
 
   // Projects
   openNewProject: () => void;
+  /** P-148 : jumeau d'openEditContact (la palette ouvre la fenêtre du projet trouvé). */
+  openEditProject: (project: api.Project) => void;
   closeProjectModal: () => void;
 
   // Save Command
@@ -185,6 +187,7 @@ export const usePanelStore = create<PanelState>((set, get) => ({
 
   // Projects
   openNewProject: () => set({ editingProject: null, showProjectModal: true }),
+  openEditProject: (project) => set({ editingProject: project, showProjectModal: true }),
   closeProjectModal: () => set({ showProjectModal: false, editingProject: null }),
 
   // Save Command
