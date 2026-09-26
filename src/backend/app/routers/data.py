@@ -1046,9 +1046,14 @@ def _checkpoint_db() -> bool:
     sont PAS dans l'archive si on copie seulement `therese.db` → perte de
     données. Le checkpoint TRUNCATE les rapatrie dans le fichier principal.
 
-    Retourne ``False`` uniquement lorsque SQLite reste occupé après plusieurs
-    essais : l'appelant doit alors archiver les sidecars WAL/SHM. Toute réponse
-    absente ou incohérente échoue explicitement.
+    Retourne ``False`` uniquement lorsque des frames du WAL n'ont pas pu être
+    recopiées dans le fichier principal : l'appelant archive alors les sidecars.
+    Un SQLite occupé qui a déjà tout recopié (souvent busy=1, log=0,
+    checkpointed=0 : une autre connexion empêche seulement de remettre le WAL
+    à zéro) est un succès. Les sidecars peuvent disparaître avec cette
+    connexion ; les exiger faisait échouer la sauvegarde (« cohérence non
+    garantie ») dès que la suite en laissait une se fermer entre les deux.
+    Toute réponse absente ou incohérente échoue explicitement.
     """
     from contextlib import closing
     from pathlib import Path
@@ -1081,7 +1086,9 @@ def _checkpoint_db() -> bool:
                     f"busy={busy}, log={log_frames}, checkpointed={checkpointed_frames}"
                 )
 
-            if busy == 0 and checkpointed_frames >= log_frames:
+            # busy=1 n'empêche que la remise à zéro du fichier WAL. Si toutes
+            # les frames sont déjà dans therese.db, la copie est cohérente.
+            if checkpointed_frames >= log_frames:
                 return True
 
             logger.warning(

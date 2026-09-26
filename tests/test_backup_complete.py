@@ -199,10 +199,50 @@ class _CheckpointConnection:
         return None
 
 
+def test_un_checkpoint_occupe_sans_frame_en_attente_est_complet(tmp_path, monkeypatch):
+    """B-1704 : SQLite répond busy=1, log=0, checkpointed=0 quand une autre
+    connexion l'empêche de remettre le WAL à zéro, alors que toutes les frames
+    sont déjà dans therese.db.
+
+    Le code traitait ça comme un checkpoint raté et exigeait les sidecars.
+    Ils disparaissent dès que la connexion lâche (suite Linux, UTC) : la
+    sauvegarde levait et l'écran recevait « cohérence non garantie »."""
+    db_path = tmp_path / "therese.db"
+    db_path.write_bytes(b"SQLite format 3\x00")
+    connection = _CheckpointConnection([(1, 0, 0), (1, 0, 0), (1, 0, 0)])
+
+    monkeypatch.setattr(settings, "db_path", db_path)
+    monkeypatch.setattr("app.models.database.db_connect", lambda _path: connection)
+    monkeypatch.setattr("time.sleep", lambda _delay: None)
+
+    assert data_router._checkpoint_db() is True
+
+
+def test_l_archive_se_fait_sans_sidecar_quand_aucune_frame_ne_manque(tmp_path, monkeypatch):
+    db_path = tmp_path / "therese.db"
+    db_path.write_bytes(b"SQLite format 3\x00")
+    archive_path = tmp_path / "backup.tar.gz"
+    connection = _CheckpointConnection([(1, 0, 0), (1, 0, 0), (1, 0, 0)])
+
+    monkeypatch.setattr(settings, "data_dir", tmp_path)
+    monkeypatch.setattr(settings, "db_path", db_path)
+    monkeypatch.setattr(settings, "qdrant_path", tmp_path / "qdrant")
+    monkeypatch.setattr("app.models.database.db_connect", lambda _path: connection)
+    monkeypatch.setattr("time.sleep", lambda _delay: None)
+
+    included = data_router._create_archive(archive_path)
+
+    assert "therese.db" in included
+    assert "therese.db-wal" not in included
+    assert archive_path.is_file()
+
+
 def test_checkpoint_reessaie_quand_sqlite_est_occupe(tmp_path, monkeypatch):
     db_path = tmp_path / "therese.db"
     db_path.write_bytes(b"SQLite format 3\x00")
-    connection = _CheckpointConnection([(1, 4, 2), (1, 4, 4), (0, 0, 0)])
+    # La deuxième ligne a encore des frames hors du fichier principal :
+    # busy=1 avec tout déjà recopié (checkpointed >= log) est un succès.
+    connection = _CheckpointConnection([(1, 4, 2), (1, 5, 3), (0, 0, 0)])
 
     monkeypatch.setattr(settings, "db_path", db_path)
     monkeypatch.setattr("app.models.database.db_connect", lambda _path: connection)
