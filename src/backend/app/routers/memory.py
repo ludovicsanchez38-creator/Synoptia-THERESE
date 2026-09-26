@@ -28,6 +28,19 @@ from app.models.schemas import (
 )
 from app.services.audit import AuditAction, log_activity
 from app.services.civil_time import date_civile_paris
+from app.services.projet_ensemble import (
+    LIMITE_MAXIMALE,
+    LIMITE_PAR_DEFAUT,
+    clause_contacts_ranges,
+    clause_conversations,
+    clause_documents,
+    clause_fichiers,
+    clause_livrables,
+    clause_rendez_vous,
+    clause_sous_dossiers,
+    clause_taches,
+    lire_l_ensemble,
+)
 from app.services.qdrant import get_qdrant_service
 from app.services.scoring import update_contact_score
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
@@ -366,18 +379,17 @@ async def _nettoyer_et_supprimer_projet(
     Qdrant passe avant SQLite et ses erreurs remontent. Après l'incident du
     30/08, supprimer la ligne tout en servant encore ses fragments serait un
     faux succès plus grave qu'une suppression refusée.
+
+    P-148 : chaque famille est lue par la clause de `projet_ensemble`, la même
+    que celle de la route d'ensemble. La confirmation annonce ainsi le compte
+    que cette fonction exécute (et qu'elle rend dans son rapport).
     """
     from app.models.entities import CalendarEvent, Deliverable, Document, Task
     from app.services.project_sync_service import retirer_racine
 
     project_id = project.id
     files = (
-        await session.execute(
-            select(FileMetadata).where(
-                FileMetadata.scope == "project",
-                FileMetadata.scope_id == project_id,
-            )
-        )
+        await session.execute(select(FileMetadata).where(clause_fichiers(project_id)))
     ).scalars().all()
 
     qdrant = get_qdrant_service()
@@ -398,9 +410,7 @@ async def _nettoyer_et_supprimer_projet(
         await session.delete(file)
 
     conversations = (
-        await session.execute(
-            select(Conversation).where(Conversation.project_id == project_id)
-        )
+        await session.execute(select(Conversation).where(clause_conversations(project_id)))
     ).scalars().all()
     for conversation in conversations:
         conversation.project_id = None
@@ -408,18 +418,14 @@ async def _nettoyer_et_supprimer_projet(
         session.add(conversation)
 
     documents = (
-        await session.execute(
-            select(Document).where(Document.project_id == project_id)
-        )
+        await session.execute(select(Document).where(clause_documents(project_id)))
     ).scalars().all()
     for document in documents:
         document.project_id = None
         session.add(document)
 
     events = (
-        await session.execute(
-            select(CalendarEvent).where(CalendarEvent.project_id == project_id)
-        )
+        await session.execute(select(CalendarEvent).where(clause_rendez_vous(project_id)))
     ).scalars().all()
     for event in events:
         event.project_id = None
@@ -430,14 +436,10 @@ async def _nettoyer_et_supprimer_projet(
     # identifiant mort, ils ne remontaient plus dans aucune conversation ; leur
     # vecteur, effacé plus haut avec ceux du dossier, est recréé ici.
     contacts_ranges = (
-        await session.execute(
-            select(Contact).where(Contact.scope == "project", Contact.scope_id == project_id)
-        )
+        await session.execute(select(Contact).where(clause_contacts_ranges(project_id)))
     ).scalars().all()
     sous_dossiers = (
-        await session.execute(
-            select(Project).where(Project.scope == "project", Project.scope_id == project_id)
-        )
+        await session.execute(select(Project).where(clause_sous_dossiers(project_id)))
     ).scalars().all()
     for element in (*contacts_ranges, *sous_dossiers):
         element.scope = "global"
@@ -455,12 +457,10 @@ async def _nettoyer_et_supprimer_projet(
     # par une requête et JAMAIS par `project.tasks` : lire la collection ici
     # déclencherait un chargement paresseux hors du greenlet asyncio.
     taches = (
-        await session.execute(select(Task).where(Task.project_id == project_id))
+        await session.execute(select(Task).where(clause_taches(project_id)))
     ).scalars().all()
     livrables = (
-        await session.execute(
-            select(Deliverable).where(Deliverable.project_id == project_id)
-        )
+        await session.execute(select(Deliverable).where(clause_livrables(project_id)))
     ).scalars().all()
 
     await session.delete(project)
@@ -1320,6 +1320,29 @@ async def get_project(
     )
 
 
+@router.get("/projects/{project_id}/ensemble")
+async def get_project_ensemble(
+    project_id: str,
+    limite: int = Query(default=LIMITE_PAR_DEFAUT, ge=1, le=LIMITE_MAXIMALE),
+    session: AsyncSession = Depends(get_session),
+) -> dict[str, Any]:
+    """P-148 : ce que rassemble un projet (conversations, documents, tâches,
+    contacts), borné à `limite` éléments par famille, et les totaux que sa
+    suppression emporterait ou détacherait.
+
+    Lecture seule. Aucun modèle ne la lit : elle montre à l'utilisatrice ses
+    propres liens, les conversations sont donc listées quel que soit leur
+    périmètre documentaire.
+    """
+    project = await session.get(Project, project_id)
+    if project is None:
+        raise HTTPException(status_code=404, detail="Project not found")
+    # Annoté : mypy strict, lancé sur tout `app`, lisait ce retour comme `Any`
+    # (« Returning Any ») et le cliquet comptait une erreur de plus.
+    ensemble: dict[str, Any] = await lire_l_ensemble(session, project, limite)
+    return ensemble
+
+
 @router.get("/projects/{project_id}/files")
 async def list_project_files(
     project_id: str,
@@ -1329,10 +1352,8 @@ async def list_project_files(
     """Liste les fichiers associés à un projet."""
     # Lot F : un projet crawlé au millier envoyait le millier de lignes
     # au modal, sur la boucle. On borne, et on dit si on a coupé.
-    filtre = (
-        (FileMetadata.scope == "project")
-        & (FileMetadata.scope_id == project_id)
-    )
+    # P-148 : la clause de la route d'ensemble et de la suppression.
+    filtre = clause_fichiers(project_id)
     total = (
         await session.execute(select(func.count()).select_from(FileMetadata).where(filtre))
     ).scalar() or 0
