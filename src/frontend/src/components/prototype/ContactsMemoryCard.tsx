@@ -14,7 +14,7 @@ import { contactMatchesQuery } from '../../stores/contactsStore';
 import { libelleDEtape } from '../crm/pipelineEtapes';
 import { ActivityTimeline } from '../crm/ActivityTimeline';
 import { useDemoMask } from '../../hooks';
-import { listerLesSeancesDuContact } from '../../services/api';
+import { ApiError, getContact, listerLesSeancesDuContact } from '../../services/api';
 import type { CalendarEvent } from '../../services/api/calendar';
 import {
   contactDisplayName,
@@ -223,6 +223,14 @@ function ProchainesSeances({ contactId, aUneAdresse }: { contactId: string; aUne
   );
 }
 
+/** Lecture, par son identifiant, d'une fiche absente du carnet chargé. */
+type LectureDeFiche = {
+  id: string;
+  essai: number;
+  etat: 'prete' | 'introuvable' | 'panne';
+  contact: Contact | null;
+};
+
 export function ContactsMemoryCanvas({
   resource,
   selectedContactId,
@@ -238,17 +246,45 @@ export function ContactsMemoryCanvas({
 }) {
   const [query, setQuery] = useState('');
   const contacts = resource.status === 'ready' ? resource.data : EMPTY_CONTACTS;
-  const filteredContacts = useMemo(() => {
-    const normalized = query.trim();
-    return normalized ? contacts.filter((contact) => contactMatchesQuery(contact, normalized)) : contacts;
-  }, [contacts, query]);
-  const choisi = filteredContacts.find((contact) => contact.id === selectedContactId) ?? filteredContacts[0] ?? null;
+  const requete = query.trim();
+  const filteredContacts = useMemo(
+    () => (requete ? contacts.filter((contact) => contactMatchesQuery(contact, requete)) : contacts),
+    [contacts, requete],
+  );
+  // Revue P-148, constat 5 : le carnet est plafonné (200 fiches). Une fiche
+  // demandée qui n'y figure pas se lit par son identifiant, ou se dit
+  // introuvable ; elle n'est jamais remplacée par la première du carnet.
+  const aLire = resource.status === 'ready' && selectedContactId !== null
+    && !contacts.some((contact) => contact.id === selectedContactId)
+    ? selectedContactId
+    : null;
+  const [essai, setEssai] = useState(0);
+  const [lecture, setLecture] = useState<LectureDeFiche | null>(null);
+  useEffect(() => {
+    if (!aLire) return;
+    let vivant = true;
+    getContact(aLire)
+      .then((contact) => { if (vivant) setLecture({ id: aLire, essai, etat: 'prete', contact }); })
+      .catch((err: unknown) => {
+        if (!vivant) return;
+        const introuvable = err instanceof ApiError && err.status === 404;
+        setLecture({ id: aLire, essai, etat: introuvable ? 'introuvable' : 'panne', contact: null });
+      });
+    return () => { vivant = false; };
+  }, [aLire, essai]);
+  const lectureCourante = aLire && lecture?.id === aLire && lecture.essai === essai ? lecture : null;
+  const etatDeLaLecture = aLire ? lectureCourante?.etat ?? 'lecture' : null;
+  const ficheLue = lectureCourante?.contact ?? null;
+  // Une recherche en cours garde la main sur la fiche montrée (la première
+  // trouvée) ; sans recherche, seule la fiche demandée peut s'afficher.
+  const choisi = filteredContacts.find((contact) => contact.id === selectedContactId)
+    ?? (requete ? filteredContacts[0] ?? null : ficheLue ?? (selectedContactId === null ? contacts[0] ?? null : null));
   // B-1414 : la recherche porte sur les vraies fiches, l'écran n'affiche que
   // leur version masquée en démonstration (famille B-1080).
   const { enabled: demo, maskContact, maskText, populateMap } = useDemoMask();
   useEffect(() => {
-    if (demo) populateMap(contacts, []);
-  }, [demo, contacts, populateMap]);
+    if (demo) populateMap(ficheLue ? [...contacts, ficheLue] : contacts, []);
+  }, [demo, contacts, ficheLue, populateMap]);
   const vu = (contact: Contact): Contact => (demo ? maskContact(contact) : contact);
   const selectedContact = choisi ? vu(choisi) : null;
 
@@ -315,6 +351,30 @@ export function ContactsMemoryCanvas({
           </aside>
 
           <div className="min-h-0 overflow-y-auto p-5">
+            {!selectedContact && !requete && etatDeLaLecture === 'lecture' && (
+              <div role="status" className="flex items-center gap-2 text-sm text-text-muted">
+                <Spinner taille="bouton" className="text-domaine-prospects" />
+                Lecture de la fiche…
+              </div>
+            )}
+            {!selectedContact && !requete && etatDeLaLecture === 'introuvable' && (
+              <div className="text-sm">
+                <p className="font-semibold text-text">Fiche introuvable</p>
+                <p className="mt-1 text-text-muted">Cette fiche n’existe plus dans la mémoire locale.</p>
+              </div>
+            )}
+            {!selectedContact && !requete && etatDeLaLecture === 'panne' && (
+              <div className="text-sm">
+                <p className="font-semibold text-text">La fiche n’a pas pu être lue.</p>
+                <button
+                  type="button"
+                  onClick={() => setEssai((n) => n + 1)}
+                  className="mt-3 rounded-md bg-accent-fill px-3 py-2 text-sm font-semibold text-accent-ink"
+                >
+                  Réessayer
+                </button>
+              </div>
+            )}
             {selectedContact && (
               <div>
                 <div className="flex items-start gap-3">
