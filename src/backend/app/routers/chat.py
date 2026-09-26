@@ -1200,8 +1200,9 @@ async def deep_research_endpoint(
                                 content=full_synthesis,
                                 extra_data=json.dumps({"sources": sources_data}),
                             )
-                            save_session.add(assistant_message)
-                            await save_session.commit()
+                            # B-1513 : même point d'écriture que le chat (B-1494),
+                            # rien n'est écrit si la conversation a été supprimée.
+                            await _ecrire_reponse(save_session, assistant_message)
                     except Exception as e:
                         logger.error(f"Erreur sauvegarde recherche : {e}")
 
