@@ -23,6 +23,7 @@ import { useDemoMask } from '../../hooks/useDemoMask';
 import { useDemoStore } from '../../stores/demoStore';
 import { buildReplacementMap, maskText as appliquerMasque } from '../../lib/demoMask';
 import { entreeValide } from '../../lib/entreeValide';
+import { demanderLOuvertureDuTravail, type DestinationDuTravail } from '../../lib/destinationDuTravail';
 
 interface ProjectModalProps {
   isOpen: boolean;
@@ -128,6 +129,57 @@ export function ProjectModal({ isOpen, onClose, onSaved, project, fermerSiIntact
     fermer: onClose,
     fermerSiIntact,
   });
+
+  // P-148, lot 3 : mener depuis la vue d'ensemble. Une saisie modifiée retient
+  // la destination le temps de la question d'abandon (B-1392) ; la fenêtre ne
+  // se ferme que si la coque a accepté l'ouverture.
+  const [destinationEnAttente, setDestinationEnAttente] = useState<DestinationDuTravail | null>(null);
+  const [navigationRetenue, setNavigationRetenue] = useState(false);
+  const navigationRetenueRef = useRevelerALApparition(navigationRetenue);
+  useEffect(() => {
+    // La question refermée (Échap, « Continuer la saisie ») annule la
+    // navigation qu'elle retenait.
+    if (!abandonDemande) setDestinationEnAttente(null);
+  }, [abandonDemande]);
+  useEffect(() => {
+    setNavigationRetenue(false);
+  }, [isOpen, project]);
+
+  function poursuivre(cible: DestinationDuTravail) {
+    const refus = demanderLOuvertureDuTravail(cible);
+    if (refus === null) {
+      onClose();
+      return;
+    }
+    // Constat 11 : un formulaire modifié sous la fenêtre a posé sa question,
+    // invisible sous le voile. La fenêtre le dit. Une réponse en cours, la
+    // coque l'annonce elle-même.
+    if (refus === 'saisie-en-cours') setNavigationRetenue(true);
+  }
+
+  function mener(cible: DestinationDuTravail) {
+    setNavigationRetenue(false);
+    if (modifie) {
+      setDestinationEnAttente(cible);
+      demanderFermeture();
+      return;
+    }
+    poursuivre(cible);
+  }
+
+  function abandonnerPuisMener() {
+    const cible = destinationEnAttente;
+    continuerSaisie();
+    setDestinationEnAttente(null);
+    if (cible) poursuivre(cible);
+  }
+
+  // La croix, le fond et « Annuler » demandent la fermeture : une navigation
+  // retenue auparavant ne doit pas se glisser derrière cette question-là.
+  function fermerLaFenetre() {
+    setDestinationEnAttente(null);
+    demanderFermeture();
+  }
 
   const loadProjectFiles = useCallback(async (projectId: string, contexte: number) => {
     if (contexte !== fichiersContexteRef.current) return;
@@ -354,7 +406,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project, fermerSiIntact
             exit="exit"
             transition={{ duration: 0.2 }}
             className={`fixed inset-0 bg-text/35 backdrop-blur-sm ${Z_LAYER.MODAL}`}
-            onClick={demanderFermeture}
+            onClick={fermerLaFenetre}
           />
 
           {/* Modal */}
@@ -393,7 +445,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project, fermerSiIntact
                   </p>
                 </div>
               </div>
-              <Button variant="ghost" size="icon" onClick={demanderFermeture} aria-label="Fermer">
+              <Button variant="ghost" size="icon" onClick={fermerLaFenetre} aria-label="Fermer">
                 <X className="w-5 h-5" />
               </Button>
             </div>
@@ -411,7 +463,12 @@ export function ProjectModal({ isOpen, onClose, onSaved, project, fermerSiIntact
               {isEditing && project && (
                 <section aria-labelledby="projectmodal-ensemble-titre" className="space-y-4">
                   <h3 id="projectmodal-ensemble-titre" className="text-sm font-semibold text-text">Ce que rassemble ce projet</h3>
-                  <ProjectEnsembleSection projectId={project.id} masquer={maskText} />
+                  {navigationRetenue && (
+                    <Alerte ref={navigationRetenueRef} ton="attention" icone={<AlertCircle className="w-4 h-4" />}>
+                      Un formulaire modifié, sous cette fenêtre, attend ta réponse : ferme la fenêtre pour y répondre, puis rouvre le projet.
+                    </Alerte>
+                  )}
+                  <ProjectEnsembleSection projectId={project.id} masquer={maskText} onMener={mener} />
                   {/* P-153 : les livrables du projet, ajoutables sans changer de vue. */}
                   <ProjectDeliverablesSection projectId={project.id} lectureSeule={demoEnabled} masquer={maskText} />
 
@@ -659,11 +716,11 @@ export function ProjectModal({ isOpen, onClose, onSaved, project, fermerSiIntact
                 <div className="flex w-full flex-wrap items-center gap-2 rounded-sm border border-warning/40 bg-[var(--color-warning-tint)] px-3 py-2">
                   <p role="alert" className="flex-1 text-sm font-semibold text-text">Abandonner les modifications ?</p>
                   <Button variant="ghost" size="md" onClick={continuerSaisie}>Continuer la saisie</Button>
-                  <Button variant="danger" size="md" onClick={abandonner}>Abandonner</Button>
+                  <Button variant="danger" size="md" onClick={destinationEnAttente ? abandonnerPuisMener : abandonner}>Abandonner</Button>
                 </div>
               )}
               <div className="flex flex-wrap gap-3 max-[840px]:basis-full [&>button]:max-[840px]:flex-1">
-                <Button variant="ghost" onClick={demanderFermeture}>
+                <Button variant="ghost" onClick={fermerLaFenetre}>
                   Annuler
                 </Button>
                 <Button

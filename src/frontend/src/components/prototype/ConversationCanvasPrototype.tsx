@@ -93,7 +93,13 @@ import type { CalendarEvent, CreateEventRequest } from '../../services/api/calen
 import type { ActivityResponse } from '../../services/api/crm-extended';
 import { getProfile, type UserProfile } from '../../services/api/config';
 import { useChatStore } from '../../stores/chatStore';
-import { EVENEMENT_OUVRIR_TRAVAIL, ouvrirLeTravail, type DestinationDuTravail } from '../../lib/destinationDuTravail';
+import {
+  EVENEMENT_OUVRIR_TRAVAIL,
+  ouvrirLeTravail,
+  refuserLOuverture,
+  type DestinationDuTravail,
+  type RefusDOuverture,
+} from '../../lib/destinationDuTravail';
 import { lienProfondPresent, lireLaVueQuittee, memoriserLaVue } from '../../lib/vueQuittee';
 import { useDemoMask, useRemplirLeMasqueDeDemo } from '../../hooks/useDemoMask';
 import { AUCUN_RESULTAT_DE_DONNEES, chercherDansLesDonnees, type ResultatDeDonnee } from '../../lib/rechercheDeDonnees';
@@ -101,6 +107,7 @@ import { listProjects as listerLesProjetsDeLaPalette } from '../../services/api/
 import type { Project as ProjetDeLaPalette } from '../../services/api/memory';
 import { useDocumentStore } from '../../stores/documentStore';
 import { useStatusStore } from '../../stores/statusStore';
+import { useTaskStore } from '../../stores/taskStore';
 import { TraitementsIndicator } from '../traitements/TraitementsIndicator';
 import { CetteSemaine } from './CetteSemaine';
 import { useProcessingTasksStore } from '../../stores/processingTasksStore';
@@ -1088,13 +1095,15 @@ export function ConversationCanvasPrototype() {
     return () => observer.disconnect();
   }, []);
 
-  const blockStreamingNavigation = useCallback(() => {
+  // P-148 : le motif du refus, pour qu'une fenêtre posée par-dessus (celle
+  // d'un projet) sache dire pourquoi elle reste ouverte.
+  const motifDuBlocage = useCallback((): RefusDOuverture | null => {
     // BUG-139 : lire l'état VIVANT du store, pas la valeur capturée au dernier
     // rendu - la navigation déterministe s'exécute juste après la fin du flux,
     // avant le re-rendu, et se faisait refuser par une fermeture périmée.
     // B-978 : un formulaire modifié retient aussi la sortie ; il pose alors
     // lui-même sa question « Abandonner les modifications ? ».
-    if (!useChatStore.getState().isStreaming) return sortieRetenueParUneSaisie();
+    if (!useChatStore.getState().isStreaming) return sortieRetenueParUneSaisie() ? 'saisie-en-cours' : null;
     useStatusStore.getState().addNotification({
       type: 'warning',
       title: 'Réponse en cours',
@@ -1102,8 +1111,9 @@ export function ConversationCanvasPrototype() {
       // B-1369 : le bandeau s'affiche par-dessus le bouton d'arrêt du composeur.
       action: actionArreterLaReponse(),
     });
-    return true;
+    return 'reponse-en-cours';
   }, []);
+  const blockStreamingNavigation = useCallback(() => motifDuBlocage() !== null, [motifDuBlocage]);
 
   const closeConversationDrawer = useCallback(() => {
     setDrawerOpen(false);
@@ -1423,15 +1433,32 @@ export function ConversationCanvasPrototype() {
   }
 
   // P-140 : une ligne de « Travaux » (panneau de l'en-tête) ouvre son objet.
-  const ouvrirLeTravailRef = useRef<(cible: DestinationDuTravail) => void>(() => {});
+  // P-148 : la fenêtre d'un projet aussi ; le refus rend son motif.
+  const ouvrirLeTravailRef = useRef<(cible: DestinationDuTravail) => RefusDOuverture | null>(() => null);
   ouvrirLeTravailRef.current = (cible) => {
-    if (blockStreamingNavigation()) return;
+    const refus = motifDuBlocage();
+    if (refus) return refus;
     ouvrirLeTravail(cible, {
       ouvrirVue: (vue) => openEmbeddedView(vue),
       ouvrirDocument: (id) => useDocumentStore.getState().demanderLOuverture(id),
       ouvrirConversation: (id) => {
         useChatStore.getState().loadConversation(id);
         openChat();
+        // P-148 (constat 13) : la fenêtre ou le panneau qui demandait
+        // disparaît ; le focus rejoint le champ du message, pas la page.
+        setFocusDuComposeurDemande((n) => n + 1);
+      },
+      ouvrirContact: (id) => {
+        // Comme « Cette semaine » : la fiche dans le panneau de contexte, dont
+        // le titre prend le focus à l'ouverture.
+        chooseScenario('memory');
+        setSelectedContactId(id);
+      },
+      ouvrirLesTachesDuProjet: (projetId) => {
+        if (!openEmbeddedView('tasks')) return;
+        // Constat 12 : statut et priorité sont persistés et s'appliquent au
+        // chargement ; les garder montrerait moins de tâches qu'annoncé.
+        useTaskStore.setState({ filterProjectId: projetId, filterStatus: null, filterPriority: null });
       },
       ouvrirScenario: (scenario) => {
         setScenario(scenario);
@@ -1441,11 +1468,15 @@ export function ConversationCanvasPrototype() {
       },
       ouvrirAction: (id) => void useActionsStoreDirect.getState().ouvrirLaTache(id),
     });
+    return null;
   };
   useEffect(() => {
     const surDemande = (event: Event) => {
       const cible = (event as CustomEvent<DestinationDuTravail>).detail;
-      if (cible) ouvrirLeTravailRef.current(cible);
+      if (!cible) return;
+      // P-148 : la demande annulable apprend qu'elle a été refusée, et pourquoi.
+      const refus = ouvrirLeTravailRef.current(cible);
+      if (refus) refuserLOuverture(event, refus);
     };
     window.addEventListener(EVENEMENT_OUVRIR_TRAVAIL, surDemande);
     return () => window.removeEventListener(EVENEMENT_OUVRIR_TRAVAIL, surDemande);

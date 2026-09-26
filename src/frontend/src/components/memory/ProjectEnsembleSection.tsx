@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 import { lireLEnsembleDuProjet, type EnsembleDuProjet } from '../../services/api';
+import type { DestinationDuTravail } from '../../lib/destinationDuTravail';
 import { formatRelativeDate } from '../../lib/utils';
 import { VueDEnsemble, type EtatDeLEnsemble, type FamilleDEnsemble } from '../ui/VueDEnsemble';
 
@@ -38,10 +39,16 @@ function detailDeTache(statut: string, echeance: string | null, enRetard: boolea
 export function ProjectEnsembleSection({
   projectId,
   masquer = (texte: string) => texte,
+  onMener,
 }: {
   projectId: string;
   /** Le masque de la fenêtre : il ne révèle rien tant que les contacts ne sont pas lus. */
   masquer?: (texte: string) => string;
+  /**
+   * Mène à la destination d'un élément (lot 3). Les liens restent actifs en
+   * démonstration : ils mènent en lecture, comme partout.
+   */
+  onMener?: (cible: DestinationDuTravail) => void;
 }) {
   const [ensemble, setEnsemble] = useState<EnsembleDuProjet | null>(null);
   const [etat, setEtat] = useState<EtatDeLEnsemble>('chargement');
@@ -118,7 +125,11 @@ export function ProjectEnsembleSection({
     total: e ? (e.conversations?.total ?? null) : 0,
     elements: conversations.map((c) => {
       const titre = masquer(c.titre || 'Conversation sans titre');
-      return { id: c.id, libelle: titre, detail: formatRelativeDate(c.mise_a_jour), nomAccessible: `Ouvrir la conversation ${titre}` };
+      return {
+        id: c.id, libelle: titre, detail: formatRelativeDate(c.mise_a_jour),
+        nomAccessible: `Ouvrir la conversation ${titre}`,
+        onOuvrir: onMener && (() => onMener({ kind: 'conversation', id: c.id })),
+      };
     }),
     texteDuVide: 'Aucune conversation rattachée. Une conversation se rattache depuis son sélecteur de projet.',
     ...(e?.conversations ? gesteEtComplet('conversations', e.conversations.total, conversations.length,
@@ -132,7 +143,11 @@ export function ProjectEnsembleSection({
     total: e ? (e.documents?.total ?? null) : 0,
     elements: documents.map((d) => {
       const titre = masquer(d.titre);
-      return { id: d.id, libelle: titre, detail: d.statut === 'termine' ? 'Terminé' : 'En cours', nomAccessible: `Ouvrir le document ${titre}` };
+      return {
+        id: d.id, libelle: titre, detail: d.statut === 'termine' ? 'Terminé' : 'En cours',
+        nomAccessible: `Ouvrir le document ${titre}`,
+        onOuvrir: onMener && (() => onMener({ kind: 'document', id: d.id })),
+      };
     }),
     texteDuVide: 'Aucun document. Un document se rattache à un projet à sa création.',
     ...(e?.documents ? gesteEtComplet('documents', e.documents.total, documents.length,
@@ -149,12 +164,22 @@ export function ProjectEnsembleSection({
         ? 'Aucune ouverte'
         : `${pluriel(taches.ouvertes, 'ouverte', 'ouvertes')}${taches.en_retard > 0 ? `, dont ${taches.en_retard} en retard` : ''}`
       : undefined,
+    // Une tâche seule ne s'ouvre pas depuis le bus : l'élément reste un texte,
+    // et le geste mène à toutes les tâches du projet, dans Tâches.
     elements: (taches?.elements ?? []).slice(0, LIMITE_COURTE).map((t) => ({
       id: t.id,
       libelle: masquer(t.titre),
       detail: detailDeTache(t.statut, t.echeance, t.en_retard),
     })),
     texteDuVide: 'Aucune tâche. Une tâche se rattache à un projet depuis son formulaire.',
+    ...(taches && taches.total > 0 && onMener
+      ? {
+          action: {
+            libelle: taches.total > 1 ? `Voir les ${taches.total} tâches dans Tâches` : 'Voir la tâche dans Tâches',
+            onClick: () => onMener({ kind: 'taches-du-projet', projetId: projectId }),
+          },
+        }
+      : {}),
   });
 
   const contacts = e?.contacts ? visibles('contacts', e.contacts.elements) : [];
@@ -169,6 +194,7 @@ export function ProjectEnsembleSection({
         libelle: nom,
         detail: c.associe ? 'Contact associé' : c.entreprise ? masquer(c.entreprise) : 'Rangé dans ce projet',
         nomAccessible: `Ouvrir la fiche de ${nom}`,
+        onOuvrir: onMener && (() => onMener({ kind: 'contact', id: c.id })),
       };
     }),
     texteDuVide: 'Aucun contact associé : choisis-le plus bas, dans Informations du projet.',

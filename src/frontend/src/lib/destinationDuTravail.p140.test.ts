@@ -5,7 +5,13 @@
  */
 import { describe, expect, it, vi } from 'vitest';
 import type { Traitement } from '../services/api';
-import { destinationDuTravail, ouvrirLeTravail } from './destinationDuTravail';
+import {
+  EVENEMENT_OUVRIR_TRAVAIL,
+  demanderLOuvertureDuTravail,
+  destinationDuTravail,
+  ouvrirLeTravail,
+  refuserLOuverture,
+} from './destinationDuTravail';
 
 function travail(partiel: Partial<Traitement>): Traitement {
   return {
@@ -41,7 +47,10 @@ describe('P-140 : la destination d’un travail', () => {
 
 describe('P-140 : ouvrir un travail', () => {
   function actions() {
-    return { ouvrirVue: vi.fn(), ouvrirDocument: vi.fn(), ouvrirConversation: vi.fn(), ouvrirScenario: vi.fn(), ouvrirAction: vi.fn() };
+    return {
+      ouvrirVue: vi.fn(), ouvrirDocument: vi.fn(), ouvrirConversation: vi.fn(), ouvrirScenario: vi.fn(), ouvrirAction: vi.fn(),
+      ouvrirContact: vi.fn(), ouvrirLesTachesDuProjet: vi.fn(),
+    };
   }
   it('un document ouvre la vue Documents puis le document', () => {
     const a = actions();
@@ -57,5 +66,34 @@ describe('P-140 : ouvrir un travail', () => {
     expect(a.ouvrirConversation).toHaveBeenCalledWith('conv-1');
     expect(a.ouvrirVue).toHaveBeenCalledWith('projects');
     expect(a.ouvrirScenario).toHaveBeenCalledWith('board');
+  });
+  it('P-148 : un contact ouvre sa fiche, les tâches d’un projet leur vue filtrée, rien d’autre', () => {
+    const a = actions();
+    ouvrirLeTravail({ kind: 'contact', id: 'c-1' }, a);
+    ouvrirLeTravail({ kind: 'taches-du-projet', projetId: 'p-1' }, a);
+    expect(a.ouvrirContact).toHaveBeenCalledWith('c-1');
+    expect(a.ouvrirLesTachesDuProjet).toHaveBeenCalledWith('p-1');
+    for (const autre of [a.ouvrirVue, a.ouvrirDocument, a.ouvrirConversation, a.ouvrirScenario, a.ouvrirAction]) {
+      expect(autre).not.toHaveBeenCalled();
+    }
+  });
+});
+
+describe('P-148 : la demande d’ouverture est annulable et dit pourquoi elle est refusée', () => {
+  it('sans coque pour la refuser, la demande est acceptée', () => {
+    expect(demanderLOuvertureDuTravail({ kind: 'conversation', id: 'conv-1' })).toBeNull();
+  });
+  it('la coque refuse : le motif revient à qui a demandé', () => {
+    const coque = (evenement: Event) => {
+      expect(evenement.cancelable).toBe(true);
+      expect((evenement as CustomEvent).detail).toEqual({ kind: 'contact', id: 'c-1' });
+      refuserLOuverture(evenement, 'saisie-en-cours');
+    };
+    window.addEventListener(EVENEMENT_OUVRIR_TRAVAIL, coque);
+    try {
+      expect(demanderLOuvertureDuTravail({ kind: 'contact', id: 'c-1' })).toBe('saisie-en-cours');
+    } finally {
+      window.removeEventListener(EVENEMENT_OUVRIR_TRAVAIL, coque);
+    }
   });
 });

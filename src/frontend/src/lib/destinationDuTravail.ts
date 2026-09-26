@@ -12,12 +12,45 @@ import type { Traitement } from '../services/api';
 export type DestinationDuTravail =
   | { kind: 'document'; id: string }
   | { kind: 'conversation'; id: string }
+  // P-148 : la fenêtre d'un projet mène aussi à la fiche d'un contact et aux
+  // tâches du projet. Un seul bus, pas une seconde mécanique de navigation.
+  | { kind: 'contact'; id: string }
+  | { kind: 'taches-du-projet'; projetId: string }
   | { kind: 'vue'; vue: 'projects' | 'files' }
   | { kind: 'scenario'; scenario: 'board' | 'atelier' }
   | { kind: 'action'; id: string };
 
 /** Le panneau des travaux vit dans l'en-tête ; la coque écoute cet événement. */
 export const EVENEMENT_OUVRIR_TRAVAIL = 'therese:ouvrir-travail';
+
+/**
+ * P-148 : pourquoi la coque refuse une ouverture. Une réponse en cours (la
+ * coque l'annonce elle-même), ou un formulaire modifié ailleurs qui retient
+ * la sortie et a posé sa question (constat 11 de la revue : sous une fenêtre,
+ * cette question ne se voit pas, c'est à la fenêtre de le dire).
+ */
+export type RefusDOuverture = 'reponse-en-cours' | 'saisie-en-cours';
+
+const motifsDeRefus = new WeakMap<Event, RefusDOuverture>();
+
+/** Côté coque : refuse la demande reçue, avec son motif. */
+export function refuserLOuverture(evenement: Event, motif: RefusDOuverture): void {
+  motifsDeRefus.set(evenement, motif);
+  evenement.preventDefault();
+}
+
+/**
+ * Côté demandeur : émet la demande en événement annulable. Rend `null` si la
+ * coque l'a acceptée (ou si aucune coque n'écoute), sinon le motif du refus.
+ */
+export function demanderLOuvertureDuTravail(cible: DestinationDuTravail): RefusDOuverture | null {
+  const evenement = new CustomEvent<DestinationDuTravail>(EVENEMENT_OUVRIR_TRAVAIL, {
+    detail: cible,
+    cancelable: true,
+  });
+  if (window.dispatchEvent(evenement)) return null;
+  return motifsDeRefus.get(evenement) ?? 'saisie-en-cours';
+}
 
 export function destinationDuTravail(travail: Traitement): DestinationDuTravail | null {
   const enCours = travail.state === 'running' || travail.state === 'queued';
@@ -49,6 +82,8 @@ export interface ActionsDOuverture {
   ouvrirConversation: (id: string) => void;
   ouvrirScenario: (scenario: 'board' | 'atelier') => void;
   ouvrirAction: (id: string) => void;
+  ouvrirContact: (id: string) => void;
+  ouvrirLesTachesDuProjet: (projetId: string) => void;
 }
 
 export function ouvrirLeTravail(cible: DestinationDuTravail, actions: ActionsDOuverture): void {
@@ -57,6 +92,10 @@ export function ouvrirLeTravail(cible: DestinationDuTravail, actions: ActionsDOu
     actions.ouvrirDocument(cible.id);
   } else if (cible.kind === 'conversation') {
     actions.ouvrirConversation(cible.id);
+  } else if (cible.kind === 'contact') {
+    actions.ouvrirContact(cible.id);
+  } else if (cible.kind === 'taches-du-projet') {
+    actions.ouvrirLesTachesDuProjet(cible.projetId);
   } else if (cible.kind === 'vue') {
     actions.ouvrirVue(cible.vue);
   } else if (cible.kind === 'action') {

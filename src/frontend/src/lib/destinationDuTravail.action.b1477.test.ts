@@ -25,7 +25,10 @@ describe('B-1477 : une action guidée mène à son résultat', () => {
     expect(destinationDuTravail(travail({ entity_id: null }))).toBeNull();
   });
   it('ouvrir la destination ouvre la tâche', () => {
-    const a = { ouvrirVue: vi.fn(), ouvrirDocument: vi.fn(), ouvrirConversation: vi.fn(), ouvrirScenario: vi.fn(), ouvrirAction: vi.fn() };
+    const a = {
+      ouvrirVue: vi.fn(), ouvrirDocument: vi.fn(), ouvrirConversation: vi.fn(), ouvrirScenario: vi.fn(), ouvrirAction: vi.fn(),
+      ouvrirContact: vi.fn(), ouvrirLesTachesDuProjet: vi.fn(),
+    };
     ouvrirLeTravail({ kind: 'action', id: 'tache-1' }, a);
     expect(a.ouvrirAction).toHaveBeenCalledWith('tache-1');
   });
