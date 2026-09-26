@@ -6,7 +6,10 @@ import { useDemoStore } from '../../stores/demoStore';
 import { buildReplacementMap, maskText } from '../../lib/demoMask';
 import { ProjectsPanel } from './ProjectsPanel';
 
-const api = vi.hoisted(() => ({ listProjects: vi.fn(), deleteProject: vi.fn() }));
+// Revue P-148, constat 14 : la confirmation lit la route d'ensemble ; sans
+// ce simulacre, elle retombait en silence sur la mise en garde générale et
+// la phrase des conséquences n'était jamais rendue en démonstration.
+const api = vi.hoisted(() => ({ listProjects: vi.fn(), deleteProject: vi.fn(), lireLEnsembleDuProjet: vi.fn() }));
 vi.mock('../../services/api', () => api);
 // La confirmation étudiée appartient au panneau. Le formulaire dispose de
 // ses propres tests d’intégration, avec ses vrais hooks et sa vraie synchro.
@@ -25,6 +28,27 @@ describe('B-939 : confirmation de suppression depuis Projets en mode démo', () 
     Object.values(api).forEach((mock) => mock.mockReset());
     api.listProjects.mockResolvedValue([PROJET]);
     api.deleteProject.mockResolvedValue(undefined);
+    api.lireLEnsembleDuProjet.mockResolvedValue({
+      conversations: { total: 2, elements: [] }, documents: { total: 1, elements: [] },
+      taches: { total: 3, ouvertes: 1, en_retard: 0, elements: [] },
+      contacts: { total: 1, ranges: 1, elements: [] }, livrables: { total: 1 },
+      fichiers: { total: 1, deposes: 1, indexes_sur_place: 0 }, dossier_synchronise: { rattache: false },
+      rendez_vous: { total: 0 }, sous_dossiers: { total: 0 }, planning: { total: 0, ressources: 0, calculs: 0 },
+      indisponibles: [],
+    });
+  });
+
+  it('revue P-148, constat 14 : en démonstration, la phrase des conséquences s’affiche, sans aucun nom', async () => {
+    useDemoStore.setState({ enabled: true, replacementMap: new Map(REMPLACEMENTS) });
+    render(<ProjectsPanel />);
+    fireEvent.click(await screen.findByRole('button', { name: `Supprimer ${NOM_DEMO}` }));
+    const confirmation = screen.getByRole('dialog', { name: 'Supprimer ce projet ?' });
+    await waitFor(() => expect(within(confirmation).getByRole('status')).toHaveTextContent(
+      'La suppression emporte 3 tâches, 1 livrable et 1 fichier déposé dans THÉRÈSE.',
+    ));
+    expect(api.lireLEnsembleDuProjet).toHaveBeenCalledWith(PROJET.id, 1);
+    expect(confirmation).not.toHaveTextContent(PROJET.name);
+    expect(confirmation).not.toHaveTextContent(/Ardent/);
   });
 
   afterEach(() => {
