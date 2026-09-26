@@ -1029,12 +1029,27 @@ export function ConversationCanvasPrototype() {
   // L'accueil est démonté pendant la vue : on ne garde pas le nœud (il sera
   // détaché) mais de quoi retrouver son équivalent une fois l'accueil remonté.
   const declencheurDeVueRef = useRef<MemoireDuDeclencheur | null>(null);
+  const vuePrecedenteRef = useRef<typeof embeddedView>(null);
   useEffect(() => {
+    const precedente = vuePrecedenteRef.current;
+    vuePrecedenteRef.current = embeddedView;
     if (embeddedView !== null) return;
     const memoire = declencheurDeVueRef.current;
-    if (!memoire) return;
     declencheurDeVueRef.current = null;
-    const minuteur = setTimeout(() => retrouverLeDeclencheur(memoire)?.focus(), 0);
+    if (!memoire && precedente === null) return;
+    const minuteur = setTimeout(() => {
+      const declencheur = memoire ? retrouverLeDeclencheur(memoire) : null;
+      if (declencheur) {
+        declencheur.focus();
+        return;
+      }
+      // B-1544 : une vue rouverte après un rechargement (P-142) n'a pas de
+      // déclencheur ; le focus tombait sur la page. Il revient au composeur,
+      // sans jamais le reprendre à un élément qui l'a déjà.
+      if (!document.activeElement || document.activeElement === document.body) {
+        composerRef.current?.focus();
+      }
+    }, 0);
     return () => clearTimeout(minuteur);
   }, [embeddedView]);
   const [userSlashCommands, setUserSlashCommands] = useState<SlashCommand[]>([]);
