@@ -543,6 +543,8 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     if (isStreaming) {
       setQueuedPrompt(trimmed);
       setInput('');
+      // B-1509 : le brouillon s'efface quand son texte quitte le champ.
+      clearDraft();
       if (textareaRef.current) textareaRef.current.style.height = 'auto';
       return;
     }
@@ -621,6 +623,9 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
     // conversation (le scroll manuel reste respecté PENDANT la réponse).
     window.dispatchEvent(new CustomEvent('therese:scroll-chat-bottom'));
     setInput('');
+    // B-1509 : le brouillon s'efface quand son texte quitte le champ, jamais
+    // à la fin de la réponse (un texte tapé entre-temps y serait perdu).
+    clearDraft();
     setAttachedFiles([]); // Clear attached files after sending
     attachedPathsRef.current.clear();
 
@@ -819,7 +824,6 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       stopBatching();
       // Finalize the message (remove streaming flag)
       updateMessage(assistantMessageId, accumulatedContent);
-      clearDraft();
     } catch (error) {
       // Stop batching on error
       stopBatching();
@@ -834,13 +838,19 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       } else {
         // Le message et ses pièces jointes restent modifiables/réessayables tant
         // que le backend n'a pas confirmé la fin du stream.
-        setInput((current) => current.trim() ? current : trimmed);
+        // B-1510 : le message raté ne revient au champ et au brouillon que si
+        // le champ est vide ; un texte tapé entre-temps n'est jamais écrasé.
+        // Le champ fait foi : la conversation affichée est celle d'origine.
+        const champVide = !(textareaRef.current?.value ?? '').trim();
+        if (champVide) {
+          setInput(trimmed);
+          saveDraft(trimmed);
+        }
         setAttachedFiles((current) => {
           if (current.length > 0) return current;
           for (const file of sentFiles) attachedPathsRef.current.add(file.path);
           return sentFiles;
         });
-        saveDraft(trimmed);
         console.error('Error sending message:', error);
 
         // BUG-070 : conversation fantôme → 404 persistant
