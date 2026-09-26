@@ -26,6 +26,7 @@ import { pushEscapeHandler } from '../../lib/escapeStack';
 import { CLASSE_BARRE_PRIORITE, barrePriorite } from './prioriteBarre';
 import { useContactsStore } from '../../stores/contactsStore';
 import { nomDeLaPersonneLiee } from './personneLiee';
+import { gesteBloqueEnDemo } from '../../lib/gesteEnDemo';
 
 export function TaskList() {
   const { tasks, searchQuery, setCurrentTask, setIsTaskFormOpen, updateTask, removeTask } =
@@ -53,6 +54,9 @@ export function TaskList() {
 
   async function handleToggleComplete(task: Task, e: React.MouseEvent) {
     e.stopPropagation();
+    // B-1697 (suite de B-1621) : terminer une tâche réelle est bloqué en démo,
+    // comme dans le kanban (B-1689).
+    if (gesteBloqueEnDemo()) return;
 
     try {
       if (task.status === 'done') {
@@ -70,6 +74,8 @@ export function TaskList() {
 
   function handleDelete(task: Task, e: React.MouseEvent) {
     e.stopPropagation();
+    // B-1697 : supprimer une tâche réelle est bloqué en démo.
+    if (gesteBloqueEnDemo()) return;
     setTacheASupprimer(task);
   }
 
