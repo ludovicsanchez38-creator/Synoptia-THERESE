@@ -410,9 +410,12 @@ export function TasksPanel({ isOpen, onClose, standalone = false }: TasksPanelPr
           {error}
         </Alerte>
       )}
+      {/* Revue P-148, passe 2, constat 4 : au plafond exact, la liste peut
+          être complète. La route borne `limit` à 1 000 : un surplus d'une
+          tâche ne peut pas être demandé, la vue dit donc ce qu'elle sait. */}
       {listeIncomplete && (
         <p role="status" className="mx-4 mt-2 text-sm text-text-muted">
-          Liste incomplète : seules les {api.PLAFOND_TACHES.toLocaleString('fr-FR')} premières tâches sont chargées.
+          Liste peut-être incomplète : {api.PLAFOND_TACHES.toLocaleString('fr-FR')} tâches chargées, le plafond d’une page.
         </p>
       )}
 

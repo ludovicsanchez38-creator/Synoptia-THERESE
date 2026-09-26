@@ -47,14 +47,21 @@ describe('Revue P-148, constat 10 : la vue Tâches dit quand sa liste est incomp
   });
   afterEach(() => cleanup());
 
-  it('au plafond, la liste se dit incomplète', async () => {
+  /**
+   * Revue P-148, passe 2, constat 4 : à exactement 1 000 tâches, la liste
+   * peut être complète ; « Liste incomplète » l'affirmait à tort. La route
+   * borne `limit` à 1 000 (le=1000) : demander le plafond plus un serait
+   * refusé sans toucher à l'API. La vue dit donc ce qu'elle sait.
+   */
+  it('au plafond, la liste se dit peut-être incomplète, sans l’affirmer', async () => {
     api.listTasks.mockResolvedValue(taches(PLAFOND_TACHES));
     render(<TasksPanel standalone />);
-    const annonce = await screen.findByText(/Liste incomplète/);
+    const annonce = await screen.findByText(/Liste peut-être incomplète/);
     // toHaveTextContent replie les espaces du texte rendu (l'espace fine
     // insécable du séparateur de milliers compris), pas ceux de l'attendu.
     const millier = PLAFOND_TACHES.toLocaleString('fr-FR').replace(/\s/g, ' ');
-    expect(annonce).toHaveTextContent(`Liste incomplète : seules les ${millier} premières tâches sont chargées.`);
+    expect(annonce).toHaveTextContent(`Liste peut-être incomplète : ${millier} tâches chargées, le plafond d’une page.`);
+    expect(screen.queryByText(/^Liste incomplète/)).toBeNull();
   });
 
   it('sous le plafond, rien n’est annoncé', async () => {
@@ -62,7 +69,7 @@ describe('Revue P-148, constat 10 : la vue Tâches dit quand sa liste est incomp
     render(<TasksPanel standalone />);
     await waitFor(() => expect(api.listTasks).toHaveBeenCalled());
     await waitFor(() => expect(useTaskStore.getState().tasks).toHaveLength(PLAFOND_TACHES - 1));
-    expect(screen.queryByText(/Liste incomplète/)).toBeNull();
+    expect(screen.queryByText(/incomplète/)).toBeNull();
   });
 
   it('le client demande bien le plafond à la route', async () => {

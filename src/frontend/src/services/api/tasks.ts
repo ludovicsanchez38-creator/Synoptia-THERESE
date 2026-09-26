@@ -49,7 +49,7 @@ export interface UpdateTaskRequest {
 /**
  * Plafond d'une page de tâches (borne haute de la route, `le=1000`). La vue
  * Tâches demande une seule page : au plafond, elle dit que sa liste est
- * incomplète (revue P-148, constat 10).
+ * peut-être incomplète (revue P-148, constat 10 ; passe 2, constat 4).
  */
 export const PLAFOND_TACHES = 1000;
 
