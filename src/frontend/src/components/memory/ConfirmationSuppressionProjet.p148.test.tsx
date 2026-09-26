@@ -110,11 +110,10 @@ describe.each<Hote>(['fenêtre du projet', 'vue Projets'])('P-148 : la confirmat
     expect(bloc).not.toHaveTextContent(/emporte/);
   });
 
-  it('recette : les boutons ont leur propre ligne, la phrase garde toute la largeur', async () => {
-    const bloc = await demanderLaSuppression(hote);
-    const boutons = within(bloc).getByRole('button', { name: 'Annuler' }).parentElement as HTMLElement;
-    expect(boutons.className).toMatch(/\b(w-full|basis-full)\b/);
-  });
+  // Revue P-148, constat 11 : « les boutons ont leur propre ligne, la phrase
+  // garde toute la largeur » se mesure sur les boîtes réelles, dans la recette
+  // navigateur scripts-recette/recette-p148.mjs (fenêtre du projet et vue
+  // Projets). jsdom ne calcule aucune mise en page ; une classe n'y prouvait rien.
 
   it('recette : la phrase arrivée, les boutons repoussés sont ramenés dans la vue', async () => {
     const original = Element.prototype.scrollIntoView;

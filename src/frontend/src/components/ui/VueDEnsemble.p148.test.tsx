@@ -22,11 +22,12 @@ describe('P-148 : VueDEnsemble', () => {
         ]}
       />,
     );
-    const bouton = screen.getByRole('button', { name: 'Ouvrir la conversation Devis' });
-    expect(bouton.className).toMatch(/\bborder\b/);
+    expect(screen.getByRole('button', { name: 'Ouvrir la conversation Devis' })).toBeInTheDocument();
     const taches = screen.getByRole('list', { name: 'Tâches (1)' });
     expect(within(taches).queryByRole('button')).toBeNull();
-    const ligne = within(taches).getByText('Métrer').parentElement as HTMLElement;
-    expect(ligne.className).not.toMatch(/\bborder\b/);
+    expect(within(taches).getByText('Métrer')).toBeInTheDocument();
+    // Revue P-148, constat 11 : l'allure (la bordure) se mesure dans la
+    // recette navigateur scripts-recette/recette-p148.mjs, sur le style
+    // calculé ; jsdom ne charge pas Tailwind, une classe n'y prouve rien.
   });
 });

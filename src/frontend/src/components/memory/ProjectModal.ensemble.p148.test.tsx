@@ -214,16 +214,12 @@ describe('P-148 : la fenêtre du projet, une vue d’ensemble d’abord', () => 
     expect(screen.getByLabelText(/Nom du projet/)).toHaveValue(pseudonyme);
   });
 
-  it('recette : le contenu défilant contient ses éléments positionnés', async () => {
-    // Mesuré dans l'application lancée : l'étiquette invisible de « Nouveau
-    // livrable » (sr-only, donc absolue) se positionnait sur la fenêtre, qui
-    // débordait ; ramener la confirmation dans la vue faisait alors défiler la
-    // fenêtre entière et cachait son en-tête. Le contenu défilant doit être
-    // le bloc conteneur de ces éléments.
-    await ouvrir();
-    const contenu = screen.getByText('Ce que rassemble ce projet').closest('.overflow-y-auto') as HTMLElement;
-    expect(contenu.className).toMatch(/\brelative\b/);
-  });
+  // Revue P-148, constat 11 : « le contenu défilant contient ses éléments
+  // positionnés » (l'étiquette sr-only de « Nouveau livrable » faisait
+  // défiler la fenêtre entière et cachait son en-tête) se mesure dans la
+  // recette navigateur scripts-recette/recette-p148.mjs : l'en-tête ne bouge
+  // pas quand la confirmation est ramenée dans la vue. jsdom ne calcule ni
+  // mise en page ni défilement ; une classe n'y prouvait rien.
 
   it('démonstration, contacts lus : les noms de la vue d’ensemble sont masqués comme ailleurs', async () => {
     const remplacements = buildReplacementMap([CAMILLE], [PROJET]);
