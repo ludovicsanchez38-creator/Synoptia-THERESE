@@ -707,6 +707,11 @@ async def _supprimer_toutes_les_donnees(session: AsyncSession) -> dict[str, Any]
     from app.services.user_profile import set_cached_profile
 
     set_cached_profile(None)
+    # B-1505 : la préférence de recherche web vient d'être effacée ; son cache
+    # gardait l'ancien choix jusqu'au redémarrage.
+    from app.services.web_search import poser_autorisation_recherche
+
+    poser_autorisation_recherche(None)
 
     # B-1124 : jumeau de B-340 pour les clés API. La table Preference est
     # vidée, mais le cache des clés ET le service des modèles déjà créé les
