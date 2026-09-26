@@ -254,6 +254,16 @@ async function principal() {
         const contexte = await navigateur.newContext({ viewport: { width: largeur, height: 900 }, colorScheme: theme });
         // P-142 : l'écran quitté se rouvrirait ; chaque écran part de l'Accueil.
         await contexte.addInitScript(() => { try { sessionStorage.clear(); } catch { /* sans stockage */ } });
+        // B-1648 : l'application ne lit pas prefers-color-scheme, elle lit son
+        // thème dans le store d'accessibilité persisté ; colorScheme seul
+        // laissait les combinaisons « dark » en clair.
+        await contexte.addInitScript((themeVoulu) => {
+          try {
+            const cle = 'therese-accessibility';
+            const actuel = JSON.parse(localStorage.getItem(cle) ?? 'null') ?? { state: {}, version: 0 };
+            localStorage.setItem(cle, JSON.stringify({ ...actuel, state: { ...actuel.state, theme: themeVoulu } }));
+          } catch { /* sans stockage : l'auto-contrôle du thème le dira */ }
+        }, theme);
         const page = await contexte.newPage();
         const journal = { console: [], reseau: [] };
         page.on('console', (m) => { if (m.type() === 'error') journal.console.push(m.text()); });
@@ -269,6 +279,12 @@ async function principal() {
         });
 
         await ouvrirLEcran(page, args.base, null);
+        // B-1648 : l'instrument se vérifie lui-même. Une combinaison « dark »
+        // relevée en clair attribuerait sa mesure à un thème jamais affiché.
+        const themeAffiche = await page.evaluate(() => document.documentElement.getAttribute('data-theme'));
+        if (themeAffiche !== theme) {
+          throw new Error(`Instrument non calibré : thème « ${theme} » demandé, « ${themeAffiche} » affiché`);
+        }
         const actions = await page.evaluate(() => window.__therese.getActions().map((a) => a.id));
         const ecrans = [{ ecran: 'accueil', action: null }, ...actions
           .filter((id) => ACTIONS_A_OUVRIR.test(id) && !ACTIONS_EXCLUES.test(id))
