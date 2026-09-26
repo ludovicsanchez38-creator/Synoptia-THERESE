@@ -148,17 +148,17 @@ async def anonymiser_la_personne(session: Any, contact: Contact, maintenant: dat
     for tache in (await session.execute(select(Task).where(Task.contact_id == contact_id))).scalars().all():
         await session.delete(tache)
 
-    # B-1640 : les préavis de purge portent le nom (« X sera anonymisé
-    # le … ») ; ils n'ont plus d'objet et ne survivent pas à l'anonymisation.
-    for preavis in (
+    # B-1640 puis B-1688 : les notifications qui visent la fiche portent le
+    # nom (« X sera anonymisé le … », « Relance de X prévue … ») ; elles n'ont
+    # plus d'objet et ne survivent pas à l'anonymisation, quelle que soit leur
+    # source. La notification finale de la purge automatique, sans nom (B-880),
+    # est créée après.
+    for notification in (
         await session.execute(
-            select(Notification).where(
-                Notification.source == "rgpd_purge",
-                Notification.action_url == f"/crm/contacts/{contact_id}",
-            )
+            select(Notification).where(Notification.action_url == f"/crm/contacts/{contact_id}")
         )
     ).scalars().all():
-        await session.delete(preavis)
+        await session.delete(notification)
 
     # RGPD-1 (US-003) : les e-mails liés (art. 17).
     for email_msg in (
