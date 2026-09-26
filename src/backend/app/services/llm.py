@@ -937,8 +937,12 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
                 # « écrit pour l'écran » (frontière providers) : ErreurPourEcran
                 # le fait traverser message_pour_ecran au lieu du générique.
                 if _is_provider_outage(event.content):
+                    # B-1531 : au fournisseur qui a servi le tour (bascule
+                    # comprise), pas au principal.
+                    retenue = getattr(context, "config_effective", None)
+                    en_panne = retenue if isinstance(retenue, LLMConfig) else self.config
                     get_circuit_breaker().record_failure(
-                        self.config.provider.value, (event.content or "")[:200]
+                        en_panne.provider.value, (event.content or "")[:200]
                     )
                 from app.services.error_handler import ErreurPourEcran
                 from app.services.providers.base import message_fournisseur_pour_ecran
