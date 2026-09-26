@@ -230,6 +230,12 @@ def _etats_de_module_neufs(monkeypatch):
     monkeypatch.setattr(bac_a_sable, "_SONDE_VERROU", None)
     # B-1332 : le résultat mémorisé de la sonde aussi.
     monkeypatch.setattr(bac_a_sable, "_SONDE_RESULTAT", None)
+    # B-1532 : le cache des clés API survit au drop_all des tables. La clé
+    # Gemini posée par un test (B-1335) était servie à la sonde du Board d'un
+    # test suivant, avant la variable d'environnement qu'il avait posée.
+    from app.services import llm as _llm
+
+    _llm.invalidate_api_key_cache()
 
 
 @pytest.fixture(scope="function")
