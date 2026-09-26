@@ -58,7 +58,7 @@ function ensemble(partiel: Partial<EnsembleDuProjet> = {}): EnsembleDuProjet {
       ],
     },
     livrables: { total: 0 }, fichiers: { total: 0, deposes: 0, indexes_sur_place: 0 }, rendez_vous: { total: 0 }, dossier_synchronise: { rattache: false },
-    sous_dossiers: { total: 0 }, planning: { total: 0 },
+    sous_dossiers: { total: 0 }, planning: { total: 0, ressources: 0, calculs: 0 },
     indisponibles: [],
     ...partiel,
   };

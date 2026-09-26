@@ -217,7 +217,8 @@ export interface EnsembleDuProjet {
   dossier_synchronise: { rattache: boolean } | null;
   rendez_vous: { total: number } | null;
   sous_dossiers: { total: number } | null;
-  planning: { total: number } | null;
+  /** `ressources` : déclarées par l'utilisatrice ; `calculs` : plannings calculés. */
+  planning: { total: number; ressources: number; calculs: number } | null;
   indisponibles: string[];
 }
 

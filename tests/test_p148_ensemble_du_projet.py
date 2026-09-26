@@ -75,7 +75,8 @@ class TestLaRoute:
         assert ensemble["dossier_synchronise"] == {"rattache": False}
         assert ensemble["rendez_vous"] == {"total": 1}
         assert ensemble["sous_dossiers"] == {"total": 1}
-        assert ensemble["planning"] == {"total": 2}
+        # Une ressource déclarée et un calcul : la suppression emporte les deux.
+        assert ensemble["planning"] == {"total": 2, "ressources": 1, "calculs": 1}
 
     @pytest.mark.asyncio
     async def test_un_horodatage_du_serveur_porte_son_fuseau(self, client):

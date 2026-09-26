@@ -43,7 +43,7 @@ function ensemble(partiel: Partial<EnsembleDuProjet> = {}): EnsembleDuProjet {
     taches: { total: 9, ouvertes: 4, en_retard: 1, elements: [] },
     contacts: { total: 2, ranges: 2, elements: [] },
     livrables: { total: 3 }, fichiers: { total: 0, deposes: 0, indexes_sur_place: 0 }, rendez_vous: { total: 2 }, dossier_synchronise: { rattache: false },
-    sous_dossiers: { total: 1 }, planning: { total: 1 },
+    sous_dossiers: { total: 1 }, planning: { total: 1, ressources: 0, calculs: 1 },
     indisponibles: [],
     ...partiel,
   };

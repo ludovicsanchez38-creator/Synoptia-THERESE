@@ -292,11 +292,12 @@ async def _lire_planning(
     session: AsyncSession, projet_id: str, contact_id: str | None, limite: int, jour: date
 ) -> dict[str, Any]:
     # Ressources et instantanés partent par la cascade du projet
-    # (`Project.planning_resources`, `Project.planning_snapshots`).
-    return {
-        "total": await _compter(session, PlanningResource, clause_ressources_de_planning(projet_id))
-        + await _compter(session, PlanningSnapshot, clause_instantanes_de_planning(projet_id))
-    }
+    # (`Project.planning_resources`, `Project.planning_snapshots`). Revue
+    # P-148, constat 6 : comptés à part, les ressources étant saisies par
+    # l'utilisatrice, les instantanés recalculables.
+    ressources = await _compter(session, PlanningResource, clause_ressources_de_planning(projet_id))
+    calculs = await _compter(session, PlanningSnapshot, clause_instantanes_de_planning(projet_id))
+    return {"total": ressources + calculs, "ressources": ressources, "calculs": calculs}
 
 
 async def lire_l_ensemble(

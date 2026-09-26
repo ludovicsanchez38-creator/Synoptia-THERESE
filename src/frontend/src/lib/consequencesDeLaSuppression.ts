@@ -38,7 +38,12 @@ export function consequencesDeLaSuppression(ensemble: EnsembleDuProjet): string[
     livrables.total > 0 ? compte(livrables.total, 'livrable', 'livrables') : '',
     // Revue P-148, constat 3 : seul le dépôt de THÉRÈSE part du disque.
     fichiers.deposes > 0 ? compte(fichiers.deposes, 'fichier déposé dans THÉRÈSE', 'fichiers déposés dans THÉRÈSE') : '',
-    planning.total > 0 ? 'son planning calculé' : '',
+    // Revue P-148, constat 6 : les ressources déclarées sont des données
+    // saisies, pas un calcul ; elles se nomment à part.
+    planning.ressources > 0
+      ? compte(planning.ressources, 'ressource de planning déclarée', 'ressources de planning déclarées')
+      : '',
+    planning.calculs > 0 ? 'son planning calculé' : '',
   ].filter(Boolean);
   if (emportes.length > 0) phrases.push(`La suppression emporte ${enumerer(emportes)}.`);
 

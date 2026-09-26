@@ -8,7 +8,8 @@ import type { EnsembleDuProjet } from '../services/api';
 import { consequencesDeLaSuppression } from './consequencesDeLaSuppression';
 
 function totaux(t: {
-  taches?: number; livrables?: number; deposes?: number; surPlace?: number; rattache?: boolean; planning?: number;
+  taches?: number; livrables?: number; deposes?: number; surPlace?: number; rattache?: boolean;
+  ressources?: number; calculs?: number;
   conversations?: number; documents?: number; rendez_vous?: number; ranges?: number; associeHorsProjet?: boolean;
   sous_dossiers?: number;
 }): EnsembleDuProjet {
@@ -29,7 +30,9 @@ function totaux(t: {
     dossier_synchronise: { rattache: t.rattache ?? false },
     rendez_vous: { total: t.rendez_vous ?? 0 },
     sous_dossiers: { total: t.sous_dossiers ?? 0 },
-    planning: { total: t.planning ?? 0 },
+    planning: {
+      total: (t.ressources ?? 0) + (t.calculs ?? 0), ressources: t.ressources ?? 0, calculs: t.calculs ?? 0,
+    },
     indisponibles: [],
   };
 }
@@ -37,7 +40,7 @@ function totaux(t: {
 describe('P-148 : ce que la suppression d’un projet emporte', () => {
   it('écrit chaque famille non nulle, dans l’ordre de la RFC', () => {
     expect(consequencesDeLaSuppression(totaux({
-      taches: 9, livrables: 3, deposes: 12, planning: 1,
+      taches: 9, livrables: 3, deposes: 12, calculs: 1,
       conversations: 7, documents: 2, rendez_vous: 2, ranges: 2, sous_dossiers: 1,
     }))).toEqual([
       'La suppression emporte 9 tâches, 3 livrables, 12 fichiers déposés dans THÉRÈSE et son planning calculé.',
@@ -64,6 +67,15 @@ describe('P-148 : ce que la suppression d’un projet emporte', () => {
     ]);
     expect(consequencesDeLaSuppression(totaux({ surPlace: 1 }))).toEqual([
       '1 fichier indexé depuis ton disque sort de l’index ; il reste sur ton disque.',
+    ]);
+  });
+
+  it('revue P-148, constat 6 : les ressources déclarées se nomment à part du planning calculé', () => {
+    expect(consequencesDeLaSuppression(totaux({ ressources: 2, calculs: 3 }))).toEqual([
+      'La suppression emporte 2 ressources de planning déclarées et son planning calculé.',
+    ]);
+    expect(consequencesDeLaSuppression(totaux({ ressources: 1 }))).toEqual([
+      'La suppression emporte 1 ressource de planning déclarée.',
     ]);
   });
 

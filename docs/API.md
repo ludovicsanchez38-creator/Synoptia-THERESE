@@ -191,7 +191,7 @@ inconnu : `404`.
   "dossier_synchronise": { "rattache": true },
   "rendez_vous": { "total": 2 },
   "sous_dossiers": { "total": 0 },
-  "planning": { "total": 1 },
+  "planning": { "total": 1, "ressources": 0, "calculs": 1 },
   "indisponibles": []
 }
 ```
@@ -213,8 +213,8 @@ inconnu : `404`.
   synchronisé), qui y restent. `dossier_synchronise.rattache` : la suppression
   détache le dossier synchronisé, sans toucher au disque.
 - `sous_dossiers` : projets rangés dans ce projet (rendus au général à la
-  suppression) ; `planning` : ressources et instantanés de planning (supprimés
-  avec le projet).
+  suppression) ; `planning` : `ressources` déclarées par l'utilisatrice et
+  `calculs` (instantanés), supprimés avec le projet.
 - Une famille dont la lecture échoue vaut `null` et se nomme dans
   `indisponibles` : une panne n'est pas un vide.
 
