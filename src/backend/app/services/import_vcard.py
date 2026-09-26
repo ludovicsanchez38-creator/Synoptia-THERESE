@@ -76,7 +76,7 @@ async def importer_des_vcard(
 
     bilan: dict[str, Any] = {
         "created": 0, "updated": 0, "deja_a_jour": 0, "skipped": 0,
-        "total": nb_cartes, "ecartees": ecartees,
+        "courriels_gardes": 0, "total": nb_cartes, "ecartees": ecartees,
     }
     if not cartes:
         bilan["message"] = (
@@ -111,6 +111,13 @@ async def importer_des_vcard(
                 for champ in CHAMPS_IMPORTES
                 if carte.get(champ) and getattr(existante, champ) != carte[champ]
             }
+            # B-1658 : une carte retrouvée par le nom apporte son courriel s'il
+            # manque à la fiche ; un courriel différent ne l'écrase pas, il se dit.
+            courriel = carte.get("email")
+            if courriel and not existante.email:
+                changements["email"] = courriel
+            elif courriel and existante.email.strip().lower() != courriel.strip().lower():
+                bilan["courriels_gardes"] += 1
             if not changements:
                 # nathalie-04 : une fiche identique n'est pas « mise à jour ».
                 bilan["deja_a_jour"] += 1
@@ -139,6 +146,10 @@ async def importer_des_vcard(
         morceaux.append(f"{bilan['deja_a_jour']} déjà à jour")
     if bilan["skipped"]:
         morceaux.append(f"{bilan['skipped']} doublon(s) ignoré(s)")
+    if bilan["courriels_gardes"]:
+        morceaux.append(
+            f"{bilan['courriels_gardes']} fiche(s) gardent leur courriel, différent de celui de la carte"
+        )
     # B-1380 : l'écarté se dit.
     if ecartees:
         morceaux.append(resume_des_ecarts(ecartees))
