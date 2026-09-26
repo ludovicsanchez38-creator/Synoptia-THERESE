@@ -11,6 +11,7 @@ import { useQuestionDAbandonDeModale } from '../../hooks/useQuestionDAbandonDeMo
 import { useRendreLeFocusALaFermeture, useRevelerALApparition } from '../../hooks/useRevelerALApparition';
 import { ProjectSyncSection } from './ProjectSyncSection';
 import { ProjectDeliverablesSection } from './ProjectDeliverablesSection';
+import { ProjectEnsembleSection } from './ProjectEnsembleSection';
 import { Spinner } from '../ui/Spinner';
 import { Alerte } from '../ui/Alerte';
 import { FormField } from '../ui/FormField';
@@ -107,6 +108,9 @@ export function ProjectModal({ isOpen, onClose, onSaved, project, fermerSiIntact
   }, [demoEnabled, contactsCharges, masqueLocal]);
 
   const isEditing = !!project;
+  // P-148 : la fenêtre porte le nom du projet. En démonstration, le même
+  // pseudonyme que le champ « Nom » (maskProject), jamais un second.
+  const nomAffiche = project ? maskProject({ id: project.id, name: project.name }).name : '';
 
   // US-013 : piège de focus (Tab + restauration à la fermeture). Pas d'onEscape :
   // Échap reste géré par la cascade de la coque, ou par l'escapeStack du parent.
@@ -358,7 +362,7 @@ export function ProjectModal({ isOpen, onClose, onSaved, project, fermerSiIntact
             ref={dialogRef}
             role="dialog"
             aria-modal="true"
-            aria-label={demoEnabled && isEditing ? 'Consulter le projet' : isEditing ? 'Modifier le projet' : 'Nouveau projet'}
+            aria-label={isEditing ? `Projet ${nomAffiche}` : 'Nouveau projet'}
             variants={modalVariants}
             initial="initial"
             animate="animate"
@@ -367,16 +371,25 @@ export function ProjectModal({ isOpen, onClose, onSaved, project, fermerSiIntact
           >
             {/* Header */}
             <div className="flex items-center justify-between px-6 py-4 border-b border-border/50 shrink-0">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-sm bg-accent-tint border border-accent flex items-center justify-center">
+              <div className="flex min-w-0 items-center gap-3">
+                <div className="w-10 h-10 shrink-0 rounded-sm bg-accent-tint border border-accent flex items-center justify-center">
                   <Briefcase className="w-5 h-5 text-accent" />
                 </div>
-                <div>
-                  <h2 className="text-lg font-semibold text-text">
-                    {demoEnabled && isEditing ? 'Consulter le projet' : isEditing ? 'Modifier le projet' : 'Nouveau projet'}
+                <div className="min-w-0">
+                  {/* P-148 : en édition, le focus initial est ici et non sur
+                      « Nom » : l'ouverture ferait sinon défiler la fenêtre
+                      jusqu'au formulaire et cacherait la vue d'ensemble.
+                      « Consulter le projet » (démo) disparaît : le nom est le
+                      titre, la lecture seule est dite juste dessous. */}
+                  <h2
+                    tabIndex={-1}
+                    data-dialog-autofocus={isEditing ? true : undefined}
+                    className="text-lg font-semibold text-text break-words outline-none"
+                  >
+                    {isEditing ? nomAffiche : 'Nouveau projet'}
                   </h2>
                   <p className="text-sm text-text-muted">
-                    {demoEnabled ? 'Aperçu masqué en lecture seule' : isEditing ? 'Modifie les informations du projet' : 'Crée un nouveau projet'}
+                    {demoEnabled ? 'Aperçu masqué en lecture seule' : isEditing ? 'Ce qu’il rassemble, puis ses informations' : 'Crée un nouveau projet'}
                   </p>
                 </div>
               </div>
@@ -393,9 +406,91 @@ export function ProjectModal({ isOpen, onClose, onSaved, project, fermerSiIntact
                   Désactive le mode démo dans les paramètres pour modifier ce projet.
                 </Alerte>
               )}
-              {/* Name */}
+              {/* P-148 : en édition, la fenêtre montre d'abord ce que le projet
+                  rassemble, puis ses sections existantes, puis le formulaire. */}
+              {isEditing && project && (
+                <section aria-labelledby="projectmodal-ensemble-titre" className="space-y-4">
+                  <h3 id="projectmodal-ensemble-titre" className="text-sm font-semibold text-text">Ce que rassemble ce projet</h3>
+                  <ProjectEnsembleSection projectId={project.id} masquer={maskText} />
+                  {/* P-153 : les livrables du projet, ajoutables sans changer de vue. */}
+                  <ProjectDeliverablesSection projectId={project.id} lectureSeule={demoEnabled} masquer={maskText} />
+
+                  {/* Fichiers du projet (visible uniquement en édition) */}
+                  <div className="space-y-2">
+                    <label className="text-sm text-text-muted flex items-center gap-2">
+                      <Upload className="w-4 h-4" />
+                      Fichiers du projet
+                    </label>
+                    {/* Liste des fichiers */}
+                    {fichiersTronques && (
+                      <p role="alert" className="text-sm text-warning">
+                        Liste incomplète : seuls les fichiers les plus récents sont affichés.
+                      </p>
+                    )}
+                    {projectFiles.length > 0 && (
+                      <div className="space-y-1">
+                        {projectFiles.map((f) => (
+                          <div
+                            key={f.id}
+                            className="flex items-center gap-2 px-3 py-2 bg-surface-2 rounded-md border border-border"
+                          >
+                            {getFileIcon(f.extension)}
+                            <span className="flex-1 text-sm text-text truncate">{maskText(f.name)}</span>
+                            <span className="text-xs text-text-muted">{formatFileSize(f.size)}</span>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              disabled={demoEnabled}
+                              onClick={(event) => {
+                                boutonSuppressionRef.current = event.currentTarget;
+                                setFichierASupprimer(f);
+                              }}
+                              className="text-text-muted hover:text-error"
+                              aria-label={`Supprimer le fichier ${maskText(f.name)}`}
+                              title={`Supprimer le fichier ${maskText(f.name)}`}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {/* Bouton d'upload */}
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      multiple
+                      accept=".md,.txt,.csv,.xlsx,.pdf,.docx"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      disabled={demoEnabled}
+                    />
+                    <Button
+                      variant="ghost"
+                      className="w-full border border-dashed border-border"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={uploadingFile || demoEnabled}
+                    >
+                      {uploadingFile ? (
+                        <><Spinner taille="bouton" className="mr-2" />Upload en cours...</>
+                      ) : (
+                        <><Upload className="w-4 h-4 mr-2" />Ajouter un fichier (.md, .xlsx, .pdf, .docx)</>
+                      )}
+                    </Button>
+                  </div>
+
+                  {/* Dossier synchronisé (0.45) - visible uniquement en édition */}
+                  <ProjectSyncSection projectId={project.id} maskDisplayText={maskText} />
+                </section>
+              )}
+
+              {isEditing && (
+                <h3 className="text-sm font-semibold text-text">Informations du projet</h3>
+              )}
+              {/* Name : le focus initial en création seulement (P-148). */}
               <FormField label="Nom du projet" htmlFor="projectmodal-nom-du-projet" required>
-                <Input id="projectmodal-nom-du-projet" data-dialog-autofocus
+                <Input id="projectmodal-nom-du-projet" data-dialog-autofocus={isEditing ? undefined : true}
                   type="text"
                   value={demoEnabled && formData.name ? maskProject({ id: project?.id ?? '', name: formData.name }).name : formData.name}
                   readOnly={demoEnabled}
@@ -467,83 +562,6 @@ export function ProjectModal({ isOpen, onClose, onSaved, project, fermerSiIntact
                   rows={3}
                 />
               </FormField>
-
-              {/* Dossier synchronisé (0.45) - visible uniquement en édition */}
-              {isEditing && project && (
-                <ProjectSyncSection projectId={project.id} maskDisplayText={maskText} />
-              )}
-
-              {/* P-153 : les livrables du projet, ajoutables sans changer de vue. */}
-              {isEditing && project && (
-                <ProjectDeliverablesSection projectId={project.id} lectureSeule={demoEnabled} masquer={maskText} />
-              )}
-
-              {/* Fichiers du projet (visible uniquement en édition) */}
-              {isEditing && project && (
-                <div className="space-y-2">
-                  <label className="text-sm text-text-muted flex items-center gap-2">
-                    <Upload className="w-4 h-4" />
-                    Fichiers du projet
-                  </label>
-                  {/* Liste des fichiers */}
-                  {fichiersTronques && (
-                    <p role="alert" className="text-sm text-warning">
-                      Liste incomplète : seuls les fichiers les plus récents sont affichés.
-                    </p>
-                  )}
-                  {projectFiles.length > 0 && (
-                    <div className="space-y-1">
-                      {projectFiles.map((f) => (
-                        <div
-                          key={f.id}
-                          className="flex items-center gap-2 px-3 py-2 bg-surface-2 rounded-md border border-border"
-                        >
-                          {getFileIcon(f.extension)}
-                          <span className="flex-1 text-sm text-text truncate">{maskText(f.name)}</span>
-                          <span className="text-xs text-text-muted">{formatFileSize(f.size)}</span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            disabled={demoEnabled}
-                            onClick={(event) => {
-                              boutonSuppressionRef.current = event.currentTarget;
-                              setFichierASupprimer(f);
-                            }}
-                            className="text-text-muted hover:text-error"
-                            aria-label={`Supprimer le fichier ${maskText(f.name)}`}
-                            title={`Supprimer le fichier ${maskText(f.name)}`}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {/* Bouton d'upload */}
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    accept=".md,.txt,.csv,.xlsx,.pdf,.docx"
-                    onChange={handleFileUpload}
-                    className="hidden"
-                    disabled={demoEnabled}
-                  />
-                  <Button
-                    variant="ghost"
-                    className="w-full border border-dashed border-border"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={uploadingFile || demoEnabled}
-                  >
-                    {uploadingFile ? (
-                      <><Spinner taille="bouton" className="mr-2" />Upload en cours...</>
-                    ) : (
-                      <><Upload className="w-4 h-4 mr-2" />Ajouter un fichier (.md, .xlsx, .pdf, .docx)</>
-                    )}
-                  </Button>
-                </div>
-              )}
 
               {/* Tags */}
               <FormField label="Tags (séparés par des virgules)" htmlFor="projectmodal-tags-separes-par-des-virgule">

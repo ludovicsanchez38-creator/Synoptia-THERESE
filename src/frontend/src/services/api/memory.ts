@@ -161,6 +161,67 @@ export async function getProject(id: string): Promise<Project> {
   return request<Project>(`/api/memory/projects/${id}`);
 }
 
+/**
+ * P-148 : ce que rassemble un projet, en une lecture
+ * (`GET /api/memory/projects/{id}/ensemble`). Une famille dont la lecture a
+ * échoué vaut `null` et se nomme dans `indisponibles` : une panne n'est pas
+ * un vide.
+ */
+export interface FamilleListee<T> {
+  total: number;
+  elements: T[];
+}
+
+export interface ConversationDuProjet {
+  id: string;
+  titre: string | null;
+  mise_a_jour: string;
+}
+
+export interface DocumentDuProjet {
+  id: string;
+  titre: string;
+  statut: string;
+  mise_a_jour: string;
+}
+
+export interface TacheDuProjet {
+  id: string;
+  titre: string;
+  statut: string;
+  /** Jour décidé, sans fuseau (comme `Task.due_date`). */
+  echeance: string | null;
+  en_retard: boolean;
+}
+
+export interface ContactDuProjet {
+  id: string;
+  nom: string;
+  entreprise: string | null;
+  /** Le contact associé au projet (sinon, un contact rangé dans le projet). */
+  associe: boolean;
+}
+
+export interface EnsembleDuProjet {
+  conversations: FamilleListee<ConversationDuProjet> | null;
+  documents: FamilleListee<DocumentDuProjet> | null;
+  taches: (FamilleListee<TacheDuProjet> & { ouvertes: number; en_retard: number }) | null;
+  /** `total` : personnes distinctes ; `ranges` : contacts rangés dans le projet. */
+  contacts: (FamilleListee<ContactDuProjet> & { ranges: number }) | null;
+  livrables: { total: number } | null;
+  fichiers: { total: number } | null;
+  rendez_vous: { total: number } | null;
+  sous_dossiers: { total: number } | null;
+  planning: { total: number } | null;
+  indisponibles: string[];
+}
+
+export async function lireLEnsembleDuProjet(id: string, limite = 5): Promise<EnsembleDuProjet> {
+  return request<EnsembleDuProjet>(
+    `/api/memory/projects/${encodeURIComponent(id)}/ensemble?limite=${limite}`,
+  );
+}
+
 export async function createProject(
   data: Partial<Project>
 ): Promise<Project> {

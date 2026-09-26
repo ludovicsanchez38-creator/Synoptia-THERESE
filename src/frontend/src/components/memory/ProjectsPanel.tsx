@@ -222,7 +222,7 @@ export function ProjectsPanel() {
               </Button>
             )}
           >
-            Crée ton premier projet pour rassembler les contacts, documents et tâches d’une même affaire.
+            Crée ton premier projet pour rassembler les conversations, documents, tâches et contacts d’une même affaire.
           </EtatVide>
         ) : (
           <>
