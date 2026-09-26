@@ -65,6 +65,78 @@ async def test_un_travail_de_fond_n_ecrit_rien_apres_la_purge(client):
 
 
 @pytest.mark.asyncio
+async def test_un_traitement_inscrit_pendant_l_attente_est_attendu_aussi(client):
+    """Un travail qui s'inscrit pendant que la purge en attend un autre
+    n'était pas dans l'instantané du registre : il écrivait après."""
+    from app.models.database import get_session_context
+    from app.models.entities import Conversation
+    from app.models.processing import EtatTache
+    from app.services import traitements
+    from app.services.task_registry import TravailNonInterruptible, retirer
+
+    premier = await traitements.creer_traitement(type="board", label="Premier")
+    await premier.demarrer()
+    identifiants = [premier.id]
+    ecrits: list[str] = []
+
+    async def ecrire_puis_terminer(traitement, delai: float, conv_id: str) -> None:
+        await asyncio.sleep(delai)
+        async with get_session_context() as session:
+            session.add(Conversation(id=conv_id, title="Écrit par un travail de fond"))
+            await session.commit()
+        ecrits.append(conv_id)
+        await traitement.terminer(EtatTache.DONE)
+
+    async def second_travail() -> None:
+        await asyncio.sleep(0.1)  # la purge attend déjà le premier
+        second = await traitements.creer_traitement(type="board", label="Second")
+        identifiants.append(second.id)
+        await second.demarrer()
+        await second.lier_adaptateur(TravailNonInterruptible(lambda: None))
+        await ecrire_puis_terminer(second, 0.4, "conv-b1520-second")
+
+    taches = [
+        asyncio.create_task(ecrire_puis_terminer(premier, 0.3, "conv-b1520-premier")),
+        asyncio.create_task(second_travail()),
+    ]
+    await premier.lier_adaptateur(TravailNonInterruptible(lambda: None))
+    try:
+        purge = await _purger_dans_la_meme_boucle()
+        await asyncio.gather(*taches)
+    finally:
+        for tache in taches:
+            tache.cancel()
+        for identifiant in identifiants:
+            retirer(identifiant)
+
+    assert purge.status_code == 200, purge.text
+    assert sorted(ecrits) == ["conv-b1520-premier", "conv-b1520-second"], ecrits
+    async with get_session_context() as session:
+        assert await session.get(Conversation, "conv-b1520-premier") is None
+        assert await session.get(Conversation, "conv-b1520-second") is None
+
+
+@pytest.mark.asyncio
+async def test_une_entree_perimee_du_registre_ne_retient_pas_la_purge(client, monkeypatch):
+    """Une entrée restée au registre sans ligne en base (producteur parti,
+    base remise à neuf) ne produira plus rien : l'état en base fait foi, pas
+    la présence au registre. Sans cela, chaque purge attendait le plafond
+    et répondait 503 (vu en suite complète, les tests précédents laissant
+    des entrées derrière eux)."""
+    from app.routers import data
+    from app.services.task_registry import TravailNonInterruptible, inscrire, retirer
+
+    monkeypatch.setattr(data, "DELAI_MAX_TRAVAUX_DE_FOND_S", 2.0)
+    inscrire("b1520-entree-perimee", TravailNonInterruptible(lambda: None))
+    try:
+        purge = await _purger_dans_la_meme_boucle()
+    finally:
+        retirer("b1520-entree-perimee")
+
+    assert purge.status_code == 200, purge.text
+
+
+@pytest.mark.asyncio
 async def test_la_decision_protegee_du_board_n_ecrit_rien_apres_la_purge(client):
     """Le chemin réel du Board : l'adaptateur vise la tâche porteuse
     (routers/board.py, `AnnulationParTacheAsyncio(tache)`), qui quitte le
