@@ -89,11 +89,18 @@ class LLMConfig:
     def __post_init__(self) -> None:
         # Import local : modeles_catalogue importe LLMProvider d'ici -
         # l'import module-niveau serait un cycle.
-        from app.services.modeles_catalogue import resoudre_effort
+        from app.services.modeles_catalogue import max_tokens_recommande, resoudre_effort
 
         self.effort_resolu = resoudre_effort(
             self.model, self.effort, self.provider.value
         )
+        # B-1582 : chez Opus 5.5, le plafond de sortie couvre la réflexion ET
+        # le texte ; 4096 coupait la réponse après une longue réflexion. Le
+        # défaut suit la recommandation du catalogue ; un plafond explicite
+        # (autre que le défaut) l'emporte.
+        recommande = max_tokens_recommande(self.model)
+        if self.max_tokens == 4096 and recommande and recommande > self.max_tokens:
+            self.max_tokens = recommande
 
 
 @dataclass

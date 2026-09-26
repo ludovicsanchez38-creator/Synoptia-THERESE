@@ -3,7 +3,8 @@
 Chaque conseiller cloud reçoit le FRONTIER de son fournisseur (tête de
 liste du catalogue), l'effort « max » (traduit par le résolveur dans la
 syntaxe du fournisseur) et le max_tokens recommandé - quelles que soient
-les préférences utilisateur. Le chat, lui, garde ses défauts.
+les préférences utilisateur. Le chat garde son effort par défaut ; son
+plafond de sortie suit la recommandation du catalogue depuis B-1582.
 """
 
 import json
@@ -50,7 +51,9 @@ class TestLeHelperOverrides:
         service = get_llm_service_for_provider("anthropic")
         assert service is not None
         assert service.config.effort is None
-        assert service.config.max_tokens == 4096
+        # B-1582 : 4096 ne couvrait pas la réflexion d'Opus 5.5, le plafond
+        # par défaut prend désormais la recommandation du catalogue.
+        assert service.config.max_tokens == max_tokens_recommande(service.config.model)
 
     def test_preferences_non_frontier_ignorees_par_l_override(self, client, monkeypatch):
         """Design : préférence utilisateur gpt-5.5 -> le conseiller reçoit
