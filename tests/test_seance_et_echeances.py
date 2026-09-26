@@ -122,7 +122,7 @@ async def test_la_prestation_porte_sa_date_de_fin(client):
         "/api/memory/contacts", json={"first_name": "Fin", "last_name": "Formation"}
     )).json()
     p = (await client.post("/api/prestations", json={
-        "contact_id": fiche["id"], "intitule": "PROPULSER", "phase": "en_cours",
+        "contact_id": fiche["id"], "intitule": "PROPULSER", "phase": "delivery",
     })).json()
 
     maj = await client.patch(f"/api/prestations/{p['id']}", json={"fin_le": "2026-06-01"})
@@ -140,7 +140,7 @@ async def test_sans_fin_posee_la_prestation_n_annonce_pas_d_echeance(client):
         "/api/memory/contacts", json={"first_name": "Sans", "last_name": "Fin"}
     )).json()
     p = (await client.post("/api/prestations", json={
-        "contact_id": fiche["id"], "intitule": "FORGER", "phase": "piste",
+        "contact_id": fiche["id"], "intitule": "FORGER", "phase": "discovery",
     })).json()
 
     assert p["fin_le"] is None
@@ -163,7 +163,7 @@ async def test_le_delai_de_suivi_se_regle_vraiment(client):
     )).json()
 
     p = (await client.post("/api/prestations", json={
-        "contact_id": fiche["id"], "intitule": "Fuite lavabo", "phase": "en_cours",
+        "contact_id": fiche["id"], "intitule": "Fuite lavabo", "phase": "delivery",
         "fin_le": "2026-09-13", "suivi_apres_jours": 8,
     })).json()
 
@@ -185,7 +185,7 @@ async def test_le_delai_utilise_est_toujours_dit(client):
     )).json()
 
     p = (await client.post("/api/prestations", json={
-        "contact_id": fiche["id"], "intitule": "Chaudiere", "phase": "en_cours",
+        "contact_id": fiche["id"], "intitule": "Chaudiere", "phase": "delivery",
         "fin_le": "2026-09-13",
     })).json()
 
@@ -197,8 +197,9 @@ async def test_l_application_ne_choisit_pas_la_phase_a_ta_place(client):
     """« Une fuite sous un lavabo n'est pas une piste. C'est un client qui a de
     l'eau par terre et qui m'appelle. »
 
-    Sans phase fournie, l'application posait `piste` toute seule : elle
-    affirmait une étape commerciale que personne n'avait choisie.
+    Sans phase fournie, l'application posait `piste` toute seule (Découverte
+    depuis P-132) : elle affirmait une étape commerciale que personne n'avait
+    choisie.
     """
     fiche = (await client.post(
         "/api/memory/contacts", json={"first_name": "Sans", "last_name": "Phase"}

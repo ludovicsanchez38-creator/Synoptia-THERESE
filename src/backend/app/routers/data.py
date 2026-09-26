@@ -259,7 +259,9 @@ def _assembler_export_rgpd() -> dict[str, Any]:
             # Lot D : l'ajout des prestations change le contrat portable. Garder
             # 1.2 ferait croire à un export complet aux anciens consommateurs.
             # B-212 : la section profil suit la même règle, d'où 1.4.
-            "data_format_version": "1.4",
+            # P-132 : les prestations parlent le pipeline (`phase` vaut
+            # discovery, signature… au lieu de piste, gagne…), d'où 1.5.
+            "data_format_version": "1.5",
             "profil": _profil_pour_export(),
             "variables": [
                 {

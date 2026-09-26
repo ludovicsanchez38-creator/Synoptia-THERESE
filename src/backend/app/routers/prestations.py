@@ -37,6 +37,7 @@ class PrestationCreee(BaseModel):
     montant_ht: float | None = None
     # Pas de defaut : « une fuite sous un lavabo n'est pas une piste ».
     # L'application ne choisit pas l'etape a la place de qui travaille.
+    # P-132 : une étape du pipeline (`PHASES_DE_PRESTATION`).
     phase: str
     suivi_apres_jours: int = 90
     financeur: str | None = None

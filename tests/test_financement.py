@@ -22,7 +22,7 @@ async def _prestation(session: AsyncSession, **kw) -> tuple[Contact, Prestation]
     c = Contact(first_name="Nathalie", last_name="Esmieu")
     session.add(c)
     await session.commit()
-    p = Prestation(contact_id=c.id, intitule="PROPULSER", phase="en_cours", **kw)
+    p = Prestation(contact_id=c.id, intitule="PROPULSER", phase="delivery", **kw)
     session.add(p)
     await session.commit()
     return c, p
@@ -43,7 +43,7 @@ async def test_l_api_pose_le_financeur_et_son_statut(client):
         "/api/memory/contacts", json={"first_name": "Andre", "last_name": "Valencot"}
     )).json()
     p = (await client.post("/api/prestations", json={
-        "contact_id": fiche["id"], "intitule": "FORGER", "phase": "gagne",
+        "contact_id": fiche["id"], "intitule": "FORGER", "phase": "signature",
     })).json()
 
     maj = await client.patch(f"/api/prestations/{p['id']}", json={
@@ -61,7 +61,7 @@ async def test_un_statut_de_financement_invente_est_refuse(client):
         "/api/memory/contacts", json={"first_name": "Statut", "last_name": "Faux"}
     )).json()
     p = (await client.post("/api/prestations", json={
-        "contact_id": fiche["id"], "intitule": "FORGER", "phase": "piste",
+        "contact_id": fiche["id"], "intitule": "FORGER", "phase": "discovery",
     })).json()
 
     # AVEC un financeur, sinon c'est l'autre garde qui refuse et ce test ne
@@ -81,7 +81,7 @@ async def test_un_statut_sans_financeur_est_refuse(client):
         "/api/memory/contacts", json={"first_name": "Sans", "last_name": "Financeur"}
     )).json()
     p = (await client.post("/api/prestations", json={
-        "contact_id": fiche["id"], "intitule": "FORGER", "phase": "piste",
+        "contact_id": fiche["id"], "intitule": "FORGER", "phase": "discovery",
     })).json()
 
     reponse = await client.patch(f"/api/prestations/{p['id']}", json={

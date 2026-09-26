@@ -37,6 +37,21 @@ LIBELLES_ETAPES: dict[str, str] = {
 }
 
 
+# P-132 (constat 2 de la revue) : ce que veut dire chaque étape, pour qui la
+# lit sans l'écran (le modèle). « Signature » seul se lisait « en attente de
+# signature » ; une prestation « Signée » avant P-132 y a été rangée.
+DEFINITIONS_ETAPES: dict[str, str] = {
+    "contact": "premier contact, aucun besoin encore qualifié",
+    "discovery": "un besoin est repéré, l'échange est engagé",
+    "proposition": "une offre a été envoyée, elle attend une réponse",
+    "signature": "l'accord est donné ou en cours de formalisation, la livraison n'a pas commencé",
+    "delivery": "la prestation est en cours de réalisation",
+    "active": "client actif",
+    "lost": "la vente n'a pas abouti",
+    "archive": "clos : mené à son terme, ou fiche effacée au titre du RGPD",
+}
+
+
 def libelle_d_etape(identifiant: str) -> str:
     """Le mot de l'écran pour une étape (P-132) : c'est lui qu'on donne à lire,
     au tableur comme au modèle. Un identifiant inconnu reste tel quel."""

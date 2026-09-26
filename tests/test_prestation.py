@@ -33,7 +33,7 @@ async def test_une_personne_porte_plusieurs_prestations(db_session: AsyncSession
     proposition. `Contact.stage` ne peut pas dire les deux.
     """
     c = await _client(db_session)
-    db_session.add(Prestation(contact_id=c.id, intitule="PROPULSER", phase="en_cours"))
+    db_session.add(Prestation(contact_id=c.id, intitule="PROPULSER", phase="delivery"))
     db_session.add(Prestation(contact_id=c.id, intitule="RAYONNER", phase="proposition"))
     await db_session.commit()
 
@@ -47,7 +47,7 @@ async def test_une_personne_porte_plusieurs_prestations(db_session: AsyncSession
 async def test_un_montant_absent_n_est_pas_zero(db_session: AsyncSession):
     """Poser 0 serait affirmer que la prestation est gratuite."""
     c = await _client(db_session)
-    p = Prestation(contact_id=c.id, intitule="Diagnostic IA", phase="piste")
+    p = Prestation(contact_id=c.id, intitule="Diagnostic IA", phase="discovery")
     db_session.add(p)
     await db_session.commit()
 
@@ -72,17 +72,17 @@ async def test_l_api_pose_lit_et_modifie_une_prestation(client):
         "/api/memory/contacts", json={"first_name": "Autre", "last_name": "Client"}
     )).json()
     await client.post("/api/prestations", json={
-        "contact_id": autre["id"], "intitule": "PROPULSER", "phase": "piste",
+        "contact_id": autre["id"], "intitule": "PROPULSER", "phase": "discovery",
     })
 
     listees = await client.get(f"/api/prestations?contact_id={fiche['id']}")
     assert [p["intitule"] for p in listees.json()] == ["FORGER"]
 
     modifiee = await client.patch(
-        f"/api/prestations/{creee.json()['id']}", json={"phase": "gagne"}
+        f"/api/prestations/{creee.json()['id']}", json={"phase": "signature"}
     )
     assert modifiee.status_code == 200, modifiee.text
-    assert modifiee.json()["phase"] == "gagne"
+    assert modifiee.json()["phase"] == "signature"
 
 
 @pytest.mark.asyncio
@@ -108,8 +108,8 @@ async def test_l_etat_courant_derive_des_prestations_ouvertes(db_session: AsyncS
     c = await _client(db_session)
     c.notes = "FORGER 490 EUR"  # le résumé périmé, toujours là
     db_session.add(Prestation(contact_id=c.id, intitule="PROPULSER", montant_ht=2490.0,
-                              phase="en_cours"))
-    db_session.add(Prestation(contact_id=c.id, intitule="FORGER ancien", phase="perdue"))
+                              phase="delivery"))
+    db_session.add(Prestation(contact_id=c.id, intitule="FORGER ancien", phase="lost"))
     await db_session.commit()
 
     charge = json.loads(await execute_memory_tool("read_contact", {"query": "Esmieu"}, db_session))
@@ -118,9 +118,29 @@ async def test_l_etat_courant_derive_des_prestations_ouvertes(db_session: AsyncS
     assert fiche["etat_courant"] is not None
     intitules = [p["intitule"] for p in fiche["etat_courant"]["prestations_ouvertes"]]
     assert intitules == ["PROPULSER"], "seules les prestations OUVERTES sont un état"
+    # P-132 : l'assistante lit le libellé de l'étape, pas l'identifiant.
+    assert fiche["etat_courant"]["prestations_ouvertes"][0]["etape"] == "Livraison"
     assert "FORGER 490 EUR" in " ".join(
         (t.get("texte") or "") for t in fiche["traces"]
     ), "le résumé périmé descend en trace, il ne disparaît pas"
+
+
+@pytest.mark.asyncio
+async def test_l_etat_courant_garde_les_quatre_etapes_ouvertes(db_session: AsyncSession):
+    """P-132 : Découverte, Proposition, Signature et Livraison sont des états
+    courants ; Perdu et Archive (mené à terme) n'en sont plus."""
+    c = await _client(db_session, nom="Ouvertes")
+    for phase in ("discovery", "proposition", "signature", "delivery", "lost", "archive"):
+        db_session.add(Prestation(contact_id=c.id, intitule=f"P-{phase}", phase=phase))
+    await db_session.commit()
+
+    charge = json.loads(await execute_memory_tool("read_contact", {"query": "Ouvertes"}, db_session))
+    ouvertes = charge["contacts"][0]["etat_courant"]["prestations_ouvertes"]
+
+    assert sorted(p["intitule"] for p in ouvertes) == [
+        "P-delivery", "P-discovery", "P-proposition", "P-signature",
+    ]
+    assert sorted(p["etape"] for p in ouvertes) == ["Découverte", "Livraison", "Proposition", "Signature"]
 
 
 @pytest.mark.asyncio
@@ -143,7 +163,7 @@ async def test_supprimer_un_contact_emporte_ses_prestations(client, db_session: 
         "/api/memory/contacts", json={"first_name": "Parti", "last_name": "Client"}
     )).json()
     await client.post("/api/prestations", json={
-        "contact_id": fiche["id"], "intitule": "FORGER", "phase": "piste",
+        "contact_id": fiche["id"], "intitule": "FORGER", "phase": "discovery",
     })
 
     suppression = await client.delete(f"/api/memory/contacts/{fiche['id']}")
@@ -162,7 +182,7 @@ async def test_un_intitule_vide_est_refuse(client):
     )).json()
 
     reponse = await client.post("/api/prestations", json={
-        "contact_id": fiche["id"], "intitule": "   ", "phase": "piste",
+        "contact_id": fiche["id"], "intitule": "   ", "phase": "discovery",
     })
 
     assert reponse.status_code in (400, 422), reponse.text
@@ -172,7 +192,7 @@ async def test_un_intitule_vide_est_refuse(client):
 async def test_une_prestation_sur_un_contact_inconnu_est_refusee(client):
     """Sinon elle serait orpheline dès sa naissance."""
     reponse = await client.post("/api/prestations", json={
-        "contact_id": "ce-contact-n-existe-pas", "intitule": "FORGER", "phase": "piste",
+        "contact_id": "ce-contact-n-existe-pas", "intitule": "FORGER", "phase": "discovery",
     })
 
     assert reponse.status_code == 404, reponse.text
@@ -184,7 +204,8 @@ async def test_aucun_chemin_ne_repose_piste_en_silence(db_session: AsyncSession)
 
     L'API exige la phase depuis la 0.59, mais le MODÈLE gardait
     `default="piste"` : un import, un script ou un test la reposait en
-    silence. Une prestation sans phase ne doit pas pouvoir naître.
+    silence. Une prestation sans phase ne doit pas pouvoir naître. (Depuis
+    P-132, « piste » s'appelle « discovery », Découverte.)
     """
     from sqlalchemy.exc import IntegrityError
 

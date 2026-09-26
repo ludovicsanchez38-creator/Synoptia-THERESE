@@ -5,9 +5,10 @@ Database models for structured data storage.
 """
 
 from datetime import UTC, date, datetime
-from typing import Optional
+from typing import Optional, get_args
 from uuid import uuid4
 
+from app.models.schemas import EtapePipeline
 from sqlalchemy import CheckConstraint, UniqueConstraint
 from sqlmodel import Field, Relationship, SQLModel
 
@@ -110,10 +111,18 @@ class Project(SQLModel, table=True):
     )
 
 
-# piste -> proposition -> gagne / perdue, puis en_cours -> terminee.
-PHASES_DE_PRESTATION = ("piste", "proposition", "gagne", "perdue", "en_cours", "terminee")
+# P-132 : une prestation parle la langue du pipeline. Mêmes identifiants,
+# mêmes libellés (`LIBELLES_ETAPES`), une seule source : le domaine des étapes.
+# Elle n'en prend que six : « contact » et « active » décrivent une personne
+# (un premier contact, un client actif), pas une vente. Avant P-132 : piste,
+# proposition, gagne, perdue, en_cours, terminee (réécrites au démarrage,
+# `migrer_les_phases_de_prestation` dans database.py).
+ETAPES_D_UNE_PERSONNE = frozenset({"contact", "active"})
+PHASES_DE_PRESTATION: tuple[str, ...] = tuple(
+    etape for etape in get_args(EtapePipeline) if etape not in ETAPES_D_UNE_PERSONNE
+)
 # Celles qui font qu'une prestation compte comme un etat courant de la fiche.
-PHASES_OUVERTES = ("piste", "proposition", "gagne", "en_cours")
+PHASES_OUVERTES = ("discovery", "proposition", "signature", "delivery")
 # Le parcours d'un dossier chez un financeur (OPCO, AFDAS, Atlas, FIFPL...).
 # C'est ce que les notes de Ludo corrigent le plus souvent.
 STATUTS_DE_FINANCEMENT = ("depose", "valide", "refuse", "a_retravailler", "solde")
@@ -131,6 +140,13 @@ class Prestation(SQLModel, table=True):
     Ni BANT, ni objections, ni score : `Contact.extra_data` a deja montre que
     ranger une donnee sans surface pour la lire, c'est la jeter avec des
     etapes en plus.
+
+    P-132 : la prestation parle la langue du pipeline (`phase` prend six des
+    huit étapes), mais elle ne pilote pas l'étape de la fiche, et la fiche ne
+    pilote pas ses prestations. Ce couplage automatique est refusé : une
+    personne peut avoir une vente en cours ET une autre en proposition
+    (`tests/test_prestation.py`, premier test). `Contact.stage` dit où en est
+    la relation, `Prestation.phase` où en est chacune de ses ventes.
     """
 
     __tablename__ = "prestations"
@@ -140,10 +156,10 @@ class Prestation(SQLModel, table=True):
     intitule: str
     # Absent n'est pas zero : poser 0 affirmerait que c'est gratuit.
     montant_ht: float | None = None
-    # piste -> proposition -> gagne/perdue, puis en_cours -> terminee.
-    # Six mots qui couvrent la vente ET le suivi, la ou le Kanban des contacts
-    # en a sept qui ne parlent que de vente.
-    # Pas de defaut : l'API l'exige, et un defaut ici ferait revenir « piste »
+    # P-132 : une étape du pipeline (`PHASES_DE_PRESTATION`) : Découverte,
+    # Proposition, Signature, Livraison, Perdu, Archive. Elles couvrent la
+    # vente ET le suivi (Livraison, puis Archive quand c'est mené à terme).
+    # Pas de defaut : l'API l'exige, et un defaut ici ferait revenir une étape
     # par les chemins qui ne passent pas par elle (import, script, test).
     phase: str = Field(index=True)
     # Le financeur, quand il y en a un. La plupart des prestations n'en ont

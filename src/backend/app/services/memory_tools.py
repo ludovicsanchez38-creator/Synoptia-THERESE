@@ -28,7 +28,7 @@ from app.models.entities import (
 from app.models.schemas import adresse_unique_valide
 from app.services.cloisonnement import souvenirs_globaux_visibles
 from app.services.contexte_execution import ContexteExecution
-from app.services.crm_utils import libelle_d_etape
+from app.services.crm_utils import DEFINITIONS_ETAPES, libelle_d_etape
 from app.services.qdrant import get_qdrant_service
 from sqlalchemy import case, false, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -1147,7 +1147,12 @@ def _etat_courant(prestations: list[Any]) -> dict[str, Any] | None:
             {
                 "intitule": p.intitule,
                 "montant_ht": p.montant_ht,
-                "phase": p.phase,
+                # P-132 (constat 2) : le libellé et sa définition, jamais
+                # l'identifiant. Une prestation « Signée » avant P-132 est
+                # en `signature`, que le modèle lisait « en attente de
+                # signature ».
+                "etape": libelle_d_etape(p.phase),
+                "definition_de_l_etape": DEFINITIONS_ETAPES.get(p.phase),
                 "financeur": p.financeur,
                 "statut_financement": p.statut_financement,
             }

@@ -386,6 +386,7 @@ une des causes du « trop d'interfaces » signalé par Ludo.
 | LLM / provider | Service d'IA |
 | MCP | Connecteurs |
 | Réglages / settings | Paramètres (le bouton permanent, l'action, le manifeste - un seul mot) |
+| stage (fiche), phase (prestation) | Étape : Contact, Découverte, Proposition, Signature, Livraison, Actif, Perdu, Archive ; une prestation n'en prend que six (ni Contact ni Actif) ; Signature = accord donné ou en cours de formalisation, livraison pas commencée (P-132, 26/09/2026) |
 
 **Interdits à l'écran standard** (comparés sur les registres, pas le texte
 libre) : sidecar, fencing, Qdrant, generation_id, tools, BYOK, LLM, MCP,

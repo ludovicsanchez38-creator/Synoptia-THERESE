@@ -121,7 +121,7 @@ class TestRGPDAnonymize:
                 "contact_id": contact_id,
                 "intitule": "Accompagnement sensible",
                 "montant_ht": 5000.0,
-                "phase": "en_cours",
+                "phase": "delivery",
                 "financeur": "OPCO",
             },
         )

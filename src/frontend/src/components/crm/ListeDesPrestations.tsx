@@ -1,27 +1,33 @@
 /**
  * Les prestations d'une personne (tranche C du 29/08).
  *
- * Une liste, pas un tableau à colonnes : le Kanban des contacts a sept étapes
- * qui ne parlent que de vente, alors que Ludo suit aussi ce qui est en cours
- * de livraison. Et une phase s'écrit en toutes lettres — la campagne des dix
- * personas a assez dit ce que valent « des petits dessins sans nom ».
+ * Une liste, pas un tableau à colonnes : une personne peut avoir une vente
+ * en cours de livraison et une autre en proposition. Et une étape s'écrit en
+ * toutes lettres — la campagne des dix personas a assez dit ce que valent
+ * « des petits dessins sans nom ».
+ *
+ * P-132 : les étapes sont celles du pipeline (six des huit : ni Contact ni
+ * Actif, qui décrivent une personne), avec les mots des colonnes.
  */
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import {
-  LIBELLE_DE_PHASE,
-  PHASES_DE_PRESTATION,
   changerLaPhase,
   creerUnePrestation,
   listerLesPrestations,
   type PhaseDePrestation,
   type Prestation,
 } from '../../services/api/prestations';
+import { ETAPES_DE_PRESTATION } from './pipelineEtapes';
 
 function montantLisible(montant: number | null): string {
   // Absent n'est pas zéro : afficher 0,00 € affirmerait que c'est gratuit.
   if (montant === null || montant === undefined) return 'Montant non renseigné';
   return `${montant.toLocaleString('fr-FR', { minimumFractionDigits: 2 })} € HT`;
+}
+
+function estUneEtapeDePrestation(valeur: string): boolean {
+  return ETAPES_DE_PRESTATION.some((etape) => etape.id === valeur);
 }
 
 export function ListeDesPrestations({ contactId }: { contactId: string }) {
@@ -35,7 +41,8 @@ export function ListeDesPrestations({ contactId }: { contactId: string }) {
   // Aucun defaut cache : l'application ne choisit pas l'etape a la place de
   // qui travaille (« une fuite sous un lavabo n'est pas une piste »). Le
   // choix est a l'ecran, et il part avec la creation.
-  const [phase, setPhase] = useState<PhaseDePrestation>('piste');
+  const [phase, setPhase] = useState<PhaseDePrestation>('discovery');
+  const idEtape = useId();
 
   const recharger = useCallback(async () => {
     setChargement(true);
@@ -68,7 +75,7 @@ export function ListeDesPrestations({ contactId }: { contactId: string }) {
     });
     setIntitule('');
     setMontant('');
-    setPhase('piste');
+    setPhase('discovery');
     await recharger();
   }
 
@@ -96,22 +103,28 @@ export function ListeDesPrestations({ contactId }: { contactId: string }) {
                   <p className="font-medium text-text">{p.intitule}</p>
                   <p className="text-xs text-text-muted">{montantLisible(p.montant_ht)}</p>
                 </div>
-                <label className="text-xs">
-                  {/* Le selecteur EST l'affichage de la phase : la repeter
-                      en dessous donnait deux fois le meme mot a l'ecran. */}
-                  <span className="sr-only">Phase de {p.intitule}</span>
-                  <select
-                    className="rounded-sm border border-border bg-surface-2 px-2 py-1 text-sm text-text"
-                    value={p.phase}
-                    onChange={(e) => basculer(p.id, e.target.value as PhaseDePrestation)}
-                  >
-                    {PHASES_DE_PRESTATION.map((phase) => (
-                      <option key={phase} value={phase}>
-                        {LIBELLE_DE_PHASE[phase]}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                {/* Le selecteur EST l'affichage de l'etape : la repeter en
+                    dessous donnait deux fois le meme mot a l'ecran. */}
+                <select
+                  aria-label={`Étape de ${p.intitule}`}
+                  className="rounded-sm border border-border bg-surface-2 px-2 py-1 text-sm text-text"
+                  value={p.phase}
+                  onChange={(e) => basculer(p.id, e.target.value as PhaseDePrestation)}
+                >
+                  {/* P-132 : une valeur que le pipeline ne connaît pas se dit
+                      telle quelle ; sans cette option, le sélecteur
+                      afficherait la première étape à sa place. */}
+                  {!estUneEtapeDePrestation(p.phase) && (
+                    <option value={p.phase} disabled>
+                      Étape inconnue : {p.phase}
+                    </option>
+                  )}
+                  {ETAPES_DE_PRESTATION.map((etape) => (
+                    <option key={etape.id} value={etape.id}>
+                      {etape.label}
+                    </option>
+                  ))}
+                </select>
               </div>
             </li>
           ))}
@@ -128,20 +141,22 @@ export function ListeDesPrestations({ contactId }: { contactId: string }) {
             placeholder="Accompagnement mensuel, audit, formation…"
           />
         </label>
-        <label className="text-xs text-text-muted">
-          Où ça en est
+        <div className="text-xs text-text-muted">
+          {/* P-132 : le mot de la fiche, « Étape », plutôt que « Où ça en est ». */}
+          <label htmlFor={idEtape}>Étape</label>
           <select
+            id={idEtape}
             className="mt-1 block rounded-sm border border-border bg-surface px-2 py-1 text-sm text-text"
             value={phase}
             onChange={(e) => setPhase(e.target.value as PhaseDePrestation)}
           >
-            {PHASES_DE_PRESTATION.map((p) => (
-              <option key={p} value={p}>
-                {LIBELLE_DE_PHASE[p]}
+            {ETAPES_DE_PRESTATION.map((etape) => (
+              <option key={etape.id} value={etape.id}>
+                {etape.label}
               </option>
             ))}
           </select>
-        </label>
+        </div>
         <label className="text-xs text-text-muted">
           Montant HT (facultatif)
           <input

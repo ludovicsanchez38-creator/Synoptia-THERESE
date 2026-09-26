@@ -241,6 +241,7 @@ class MemorySearchResponse(BaseModel):
 # enregistrement invisible.
 # P-132 : « Perdu » (`lost`) sépare la vente perdue de l'Archive, qui reste la
 # dernière colonne et le tombeau RGPD (l'anonymisation y pose la fiche).
+# Les prestations parlent la même langue (`PHASES_DE_PRESTATION`, entities.py).
 EtapePipeline = Literal[
     "contact",
     "discovery",

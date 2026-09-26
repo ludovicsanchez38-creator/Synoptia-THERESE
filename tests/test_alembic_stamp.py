@@ -270,6 +270,39 @@ def test_realignement_refuse_sans_la_date_d_envoi(tmp_path):
     assert _read_stamp(db) != ALEMBIC_HEAD_REVISION
 
 
+def _poser_des_prestations(db_path: Path, *phases: str) -> None:
+    with closing(sqlite3.connect(str(db_path))) as conn:
+        conn.execute("CREATE TABLE prestations (id VARCHAR PRIMARY KEY, phase VARCHAR NOT NULL)")
+        for numero, phase in enumerate(phases):
+            conn.execute("INSERT INTO prestations VALUES (?, ?)", (f"p{numero}", phase))
+        conn.commit()
+
+
+def test_realignement_refuse_une_phase_de_prestation_heritee(tmp_path):
+    """P-132 : la révision c9d0e1f2a3b4 n'ajoute aucune colonne, sa preuve est
+    un état des données. Une prestation encore « gagne » dit que la réécriture
+    n'a pas eu lieu : ré-estampiller ferait sauter la migration."""
+    db = tmp_path / "therese.db"
+    _make_patched_tracked_db(db)
+    _poser_des_prestations(db, "signature", "gagne")
+
+    ensure_alembic_stamp(db)
+
+    assert _read_stamp(db) == "c3d4e5f6a7b8"
+
+
+def test_realignement_accepte_des_prestations_au_vocabulaire_du_pipeline(tmp_path):
+    """Une valeur étrangère (ni héritée, ni du pipeline) ne bloque pas la base :
+    la preuve ne regarde que les valeurs héritées."""
+    db = tmp_path / "therese.db"
+    _make_patched_tracked_db(db)
+    _poser_des_prestations(db, "signature", "proposition", "peut-etre")
+
+    ensure_alembic_stamp(db)
+
+    assert _read_stamp(db) == ALEMBIC_HEAD_REVISION
+
+
 @pytest.mark.parametrize(
     "missing_column",
     [

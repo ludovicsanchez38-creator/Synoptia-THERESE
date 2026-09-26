@@ -252,6 +252,84 @@ def reparer_totaux_tva_non_applicable(conn: sqlite3.Connection) -> int:
     return len(a_reparer)
 
 
+# P-132 : les phases de prestation d'avant, vers les étapes du pipeline. La
+# correspondance est injective (six valeurs, six étapes distinctes) : la
+# révision c9d0e1f2a3b4 la défait exactement. « proposition » ne bouge pas.
+PHASES_HERITEES_VERS_ETAPES: dict[str, str] = {
+    "piste": "discovery",
+    "gagne": "signature",
+    "perdue": "lost",
+    "en_cours": "delivery",
+    "terminee": "archive",
+}
+
+
+def _table_presente(conn: Any, table: str) -> bool:
+    return (
+        conn.execute(
+            "SELECT name FROM sqlite_master WHERE type='table' AND name = ?", (table,)
+        ).fetchone()
+        is not None
+    )
+
+
+def reste_des_phases_heritees(conn: Any) -> bool:
+    """Vrai si une prestation porte encore une phase d'avant P-132.
+
+    Une base sans table `prestations` n'a rien à migrer : elle vaut preuve.
+    """
+    if not _table_presente(conn, "prestations"):
+        return False
+    marques = ", ".join("?" for _ in PHASES_HERITEES_VERS_ETAPES)
+    return (
+        conn.execute(
+            f"SELECT 1 FROM prestations WHERE phase IN ({marques}) LIMIT 1",
+            tuple(PHASES_HERITEES_VERS_ETAPES),
+        ).fetchone()
+        is not None
+    )
+
+
+def migrer_les_phases_de_prestation(conn: Any) -> int:
+    """P-132 : réécrit les phases héritées en étapes du pipeline. Idempotente.
+
+    La clause WHERE rend l'étape sans effet dès le deuxième démarrage ; elle
+    ne touche jamais `updated_at` (la prestation n'a pas changé pour qui la
+    suit). Une valeur inconnue (ni héritée, ni du pipeline) traverse intacte,
+    jamais remplacée par un défaut, et se dit une fois dans le journal.
+    Rend le nombre de prestations réécrites.
+    """
+    from app.models.entities import PHASES_DE_PRESTATION
+
+    if not _table_presente(conn, "prestations"):
+        return 0
+    anciennes = tuple(PHASES_HERITEES_VERS_ETAPES)
+    cas = " ".join("WHEN ? THEN ?" for _ in anciennes)
+    marques = ", ".join("?" for _ in anciennes)
+    parametres: list[str] = []
+    for ancienne, etape in PHASES_HERITEES_VERS_ETAPES.items():
+        parametres.extend((ancienne, etape))
+    curseur = conn.execute(
+        f"UPDATE prestations SET phase = CASE phase {cas} END WHERE phase IN ({marques})",
+        (*parametres, *anciennes),
+    )
+    reecrites = int(curseur.rowcount or 0)
+    conn.commit()
+    connues = ", ".join("?" for _ in PHASES_DE_PRESTATION)
+    inconnues = conn.execute(
+        f"SELECT phase, COUNT(*) FROM prestations WHERE phase NOT IN ({connues}) "
+        "GROUP BY phase ORDER BY phase",
+        PHASES_DE_PRESTATION,
+    ).fetchall()
+    if inconnues:
+        logger.warning(
+            "P-132 : prestation(s) à une étape inconnue du pipeline, laissée(s) telle(s) "
+            "quelle(s) : %s",
+            ", ".join(f"{valeur!r} ({nombre})" for valeur, nombre in inconnues),
+        )
+    return reecrites
+
+
 def apply_adhoc_migrations(db_path) -> None:
     """Migrations ad-hoc idempotentes (desktop : pas d'alembic auto historique).
 
@@ -331,7 +409,8 @@ def apply_adhoc_migrations(db_path) -> None:
         conn.execute(
             "CREATE TABLE IF NOT EXISTS prestations ("
             "id TEXT PRIMARY KEY, contact_id TEXT NOT NULL, intitule TEXT NOT NULL, "
-            "montant_ht REAL, phase TEXT NOT NULL DEFAULT 'piste', "
+            # P-132 : plus de défaut (le modèle n'en a plus depuis la 0.59).
+            "montant_ht REAL, phase TEXT NOT NULL, "
             "created_at TIMESTAMP NOT NULL, updated_at TIMESTAMP NOT NULL, "
             "FOREIGN KEY(contact_id) REFERENCES contacts(id))"
         )
@@ -372,6 +451,13 @@ def apply_adhoc_migrations(db_path) -> None:
                 "ON prestations(statut_financement)"
             )
         conn.commit()
+        # P-132 : les prestations parlent la langue du pipeline.
+        reecrites = migrer_les_phases_de_prestation(conn)
+        if reecrites:
+            logger.info(
+                "Migration auto : %d prestation(s) passée(s) au vocabulaire du pipeline (P-132)",
+                reecrites,
+            )
 
         # Tranche B du 29/08 : une trace peut en annuler une autre.
         colonnes_activites = {
@@ -616,7 +702,7 @@ def apply_adhoc_migrations(db_path) -> None:
 # Le test tests/test_alembic_stamp.py vérifie que cette constante suit la
 # vraie tête de src/backend/alembic/versions (épinglée en dur pour que
 # l'app PACKAGÉE puisse estampiller sans embarquer le dossier alembic/).
-ALEMBIC_HEAD_REVISION = "b8c9d0e1f2a3"
+ALEMBIC_HEAD_REVISION = "c9d0e1f2a3b4"
 
 
 def tables_de_synchronisation() -> tuple[str, ...]:
@@ -758,6 +844,10 @@ def ensure_alembic_stamp(db_path) -> None:
                         and has_atelier_history
                         and has_sync_tables
                         and has_planning_tables
+                        # P-132 : c9d0e1f2a3b4 n'ajoute aucune colonne ; sa
+                        # preuve est l'état des données (aucune phase de
+                        # prestation héritée). Table absente = rien à migrer.
+                        and not reste_des_phases_heritees(conn)
                     ):
                         conn.execute(
                             "UPDATE alembic_version SET version_num = ?",

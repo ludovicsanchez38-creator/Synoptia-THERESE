@@ -21,6 +21,21 @@ export const PIPELINE_ETAPES = [
 
 export type IdEtapePipeline = (typeof PIPELINE_ETAPES)[number]['id'];
 
+type EtapePipeline = (typeof PIPELINE_ETAPES)[number];
+type EtapeDePrestation = Exclude<EtapePipeline, { id: 'contact' | 'active' }>;
+
+/**
+ * P-132 : une prestation parle la langue du pipeline, et n'en prend que six
+ * étapes. « Contact » et « Actif » décrivent une personne (un premier
+ * contact, un client actif), pas une vente. Mêmes objets, mêmes mots : aucun
+ * libellé recopié. Même liste que `PHASES_DE_PRESTATION` côté moteur.
+ */
+export const ETAPES_DE_PRESTATION = PIPELINE_ETAPES.filter(
+  (etape): etape is EtapeDePrestation => etape.id !== 'contact' && etape.id !== 'active',
+);
+
+export type IdEtapeDePrestation = EtapeDePrestation['id'];
+
 /** L'explication du score, une seule phrase pour la carte du Pipeline et la fiche (P-144). */
 export const SCORE_AIDE =
   "Score de potentiel commercial, calculé depuis les informations du contact et son étape dans le pipeline. Plus il est haut, plus le prospect est chaud. L'échelle n'est pas plafonnée.";

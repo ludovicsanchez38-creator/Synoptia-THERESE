@@ -35,7 +35,7 @@ async def _create_prestation(client: AsyncClient, contact_id: str) -> dict:
             "contact_id": contact_id,
             "intitule": "Formation confidentielle",
             "montant_ht": 2490.0,
-            "phase": "gagne",
+            "phase": "signature",
             "financeur": "Atlas",
             "statut_financement": "valide",
             "fin_le": "2026-10-15",
@@ -140,7 +140,7 @@ class TestDataExport:
                 "contact_id": contact_id,
                 "intitule": "Formation confidentielle",
                 "montant_ht": 2490.0,
-                "phase": "gagne",
+                "phase": "signature",
                 "financeur": "Atlas",
                 "statut_financement": "valide",
                 "fin_le": "2026-10-15",
@@ -149,7 +149,8 @@ class TestDataExport:
                 "updated_at": prestation["updated_at"],
             }
         ]
-        assert exported["data_format_version"] == "1.4"
+        # P-132 : les prestations parlent le pipeline, le contrat change.
+        assert exported["data_format_version"] == "1.5"
 
     @pytest.mark.asyncio
     async def test_export_all_data_contains_documents_sections_pistes(self, client: AsyncClient):

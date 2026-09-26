@@ -1,8 +1,9 @@
 /**
  * Les prestations d'une personne, à l'écran (tranche C du 29/08).
  *
- * Une liste, pas un Kanban : le Kanban des contacts a sept colonnes qui ne
- * parlent que de vente, alors que Ludo suit aussi ce qui est en cours.
+ * Une liste, pas un Kanban : une personne peut avoir une vente en cours de
+ * livraison et une autre en proposition. P-132 : les étapes sont celles du
+ * pipeline (ListeDesPrestations.p132.test.tsx).
  */
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
@@ -40,7 +41,7 @@ const FORGER = {
 };
 
 describe('Les prestations à l’écran', () => {
-  it("montre l'intitulé, le montant et la phase en toutes lettres", async () => {
+  it("montre l'intitulé, le montant et l'étape en toutes lettres", async () => {
     servir(FORGER);
     render(<ListeDesPrestations contactId="c1" />);
 
@@ -48,9 +49,10 @@ describe('Les prestations à l’écran', () => {
     expect(screen.getByText(/490/)).toBeInTheDocument();
     // Pas une pastille de couleur : le mot, et un contrôle nommé. C'est la
     // plainte de la campagne (« des petits dessins sans nom, je n'ose pas »).
-    const phase = screen.getByLabelText(/phase de FORGER/i) as HTMLSelectElement;
+    const phase = screen.getByLabelText('Étape de FORGER') as HTMLSelectElement;
     expect(phase.value).toBe('proposition');
-    expect(phase.options[phase.selectedIndex].text).toBe('Proposition envoyée');
+    // P-132 : le mot de la colonne du Pipeline.
+    expect(phase.options[phase.selectedIndex].text).toBe('Proposition');
   });
 
   it("n'invente pas un montant quand il n'y en a pas", async () => {
@@ -77,8 +79,8 @@ describe('Les prestations à l’écran', () => {
     fireEvent.change(await screen.findByLabelText(/intitulé/i), {
       target: { value: 'PROPULSER' },
     });
-    fireEvent.change(screen.getByLabelText(/où ça en est/i), {
-      target: { value: 'en_cours' },
+    fireEvent.change(screen.getByLabelText('Étape'), {
+      target: { value: 'delivery' },
     });
     fireEvent.click(screen.getByRole('button', { name: /ajouter/i }));
 
@@ -103,7 +105,7 @@ describe('Les prestations à l’écran', () => {
     await waitFor(() => expect(creees).toHaveLength(1));
     const corps = creees[0] as { phase?: string };
     expect(corps.phase).toBeTruthy();
-    expect(['piste', 'proposition', 'gagne', 'perdue', 'en_cours', 'terminee'])
+    expect(['discovery', 'proposition', 'signature', 'delivery', 'lost', 'archive'])
       .toContain(corps.phase);
   });
 
@@ -112,7 +114,7 @@ describe('Les prestations à l’écran', () => {
     render(<ListeDesPrestations contactId="c1" />);
 
     // Le choix est à l'écran, nommé, pas caché dans le code.
-    expect(await screen.findByLabelText(/où ça en est/i)).toBeInTheDocument();
+    expect(await screen.findByLabelText('Étape')).toBeInTheDocument();
   });
 
   it('refuse d’envoyer un intitulé vide', async () => {

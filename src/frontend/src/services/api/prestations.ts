@@ -6,34 +6,23 @@
  * aurait donné deux listes pour un seul métier.
  */
 import { request } from './core';
+import type { IdEtapeDePrestation } from '../../components/crm/pipelineEtapes';
 
-export const PHASES_DE_PRESTATION = [
-  'piste',
-  'proposition',
-  'gagne',
-  'perdue',
-  'en_cours',
-  'terminee',
-] as const;
-
-export type PhaseDePrestation = (typeof PHASES_DE_PRESTATION)[number];
-
-/** Les mots affichés. Le stockage reste en clé stable. */
-export const LIBELLE_DE_PHASE: Record<PhaseDePrestation, string> = {
-  piste: 'Piste',
-  proposition: 'Proposition envoyée',
-  gagne: 'Signée',
-  perdue: 'Perdue',
-  en_cours: 'En cours',
-  terminee: 'Terminée',
-};
+/**
+ * P-132 : la phase d'une prestation est une étape du pipeline
+ * (`ETAPES_DE_PRESTATION`, pipelineEtapes.ts). Les mots affichés viennent de
+ * cette seule liste ; l'ancien vocabulaire (Piste, Signée, En cours…) n'existe
+ * plus.
+ */
+export type PhaseDePrestation = IdEtapeDePrestation;
 
 export interface Prestation {
   id: string;
   contact_id: string;
   intitule: string;
   montant_ht: number | null;
-  phase: PhaseDePrestation;
+  /** Lu tel que la base le porte : une valeur inconnue reste possible. */
+  phase: string;
   created_at: string;
   updated_at: string;
 }
