@@ -134,6 +134,19 @@ describe('P-132 : Perdu sur la fiche et à la création', () => {
     ).toBeInTheDocument();
   });
 
+  it('un échec sans message dit « Impossible de changer l’étape », pas « stage »', async () => {
+    // Revue du diff, constat 7 : le lexique impose « Étape » ; l'écran
+    // disait encore « Impossible de mettre à jour le stage ».
+    etapeChangee.mockRejectedValue({});
+    render(<CRMPanel standalone />);
+    const fiche = await screen.findByRole('region', { name: 'Fiche de Élodie Martin' });
+
+    fireEvent.change(within(fiche).getByLabelText('Étape'), { target: { value: 'lost' } });
+
+    expect(await screen.findByText('Impossible de changer l’étape')).toBeInTheDocument();
+    expect(screen.queryByText(/stage/)).toBeNull();
+  });
+
   it('le formulaire de création ne propose ni Perdu ni Archive', async () => {
     useCRMStore.setState({ projects: [], activeTab: 'pipeline' });
     render(<CRMPanel standalone />);

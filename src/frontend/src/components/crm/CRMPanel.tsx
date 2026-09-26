@@ -110,7 +110,8 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
       upsertLocal(updated);
     } catch (err: any) {
       console.error('Failed to update stage:', err);
-      setError(err?.message || 'Impossible de mettre à jour le stage');
+      // Lexique (RULES-DESIGN §13) : « Étape », jamais « stage » à l'écran.
+      setError(err?.message || 'Impossible de changer l’étape');
     }
   };
 
