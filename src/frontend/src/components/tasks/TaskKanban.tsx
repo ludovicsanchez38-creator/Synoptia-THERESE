@@ -43,6 +43,7 @@ import { Etiquette, type TonEtiquette } from '../ui/Etiquette';
 import { Button } from '../ui/Button';
 import { cn } from '../../lib/utils';
 import { CLASSE_BARRE_PRIORITE, barrePriorite } from './prioriteBarre';
+import { gesteBloqueEnDemo } from '../../lib/gesteEnDemo';
 
 const COLUMNS: { id: string; label: string; ton: TonEtiquette }[] = [
   { id: 'todo', label: 'À faire', ton: 'neutre' },
@@ -85,6 +86,8 @@ export function TaskKanban() {
   }, [tasks, searchQuery]);
 
   async function handleStatusChange(taskId: string, newStatus: string) {
+    // B-1689 (suite de B-1621) : déplacer une tâche réelle est bloqué en démo.
+    if (gesteBloqueEnDemo()) return;
     try {
       const updated = await api.updateTask(taskId, { status: newStatus });
       updateTask(taskId, updated);

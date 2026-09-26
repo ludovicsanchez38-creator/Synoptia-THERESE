@@ -9,6 +9,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, UserPlus, Upload, Mail, Phone, FileText, Users, AlertCircle } from 'lucide-react';
 import { PipelineView } from './PipelineView';
+import { gesteBloqueEnDemo } from '../../lib/gesteEnDemo';
 import { ActivityTimeline } from './ActivityTimeline';
 import { ListeDesPrestations } from './ListeDesPrestations';
 import { ExplicationDuScore } from './ExplicationDuScore';
@@ -104,6 +105,8 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
   };
 
   const handleStageChange = async (contactId: string, newStage: string) => {
+    // B-1689 (suite de B-1621) : déplacer une fiche réelle est bloqué en démo.
+    if (gesteBloqueEnDemo()) return;
     try {
       setError(null);
       const updated = await updateContactStage(contactId, newStage);
