@@ -328,6 +328,12 @@ class OAuthPKCEService:
                 timeout=30.0,
             )
 
+            if response.status_code >= 500:
+                # B-1488 : une panne du fournisseur n'est pas une session
+                # expirée ; l'écran lit « Token » comme telle.
+                logger.error(f"Token refresh failed: fournisseur en panne ({response.status_code})")
+                raise HTTPException(status_code=503, detail=_FOURNISSEUR_INJOIGNABLE)
+
             if response.status_code != 200:
                 error_data = response.json() if response.content else {}
                 logger.error(f"Token refresh failed: {response.status_code} {error_data}")
@@ -346,8 +352,9 @@ class OAuthPKCEService:
             }
 
         except httpx.HTTPError as e:
+            # B-1488 : réseau coupé ou délai dépassé, le compte reste sain.
             logger.error(f"HTTP error during token refresh: {e}")
-            raise HTTPException(status_code=500, detail=f"Token refresh failed: {str(e)}")
+            raise HTTPException(status_code=503, detail=_FOURNISSEUR_INJOIGNABLE) from e
 
     def cleanup_expired_flows(self):
         """Clean up expired OAuth flows (older than 10 minutes)."""
@@ -368,6 +375,12 @@ class OAuthPKCEService:
 
 
 _oauth_service: OAuthPKCEService | None = None
+
+
+_FOURNISSEUR_INJOIGNABLE = (
+    "Le service de connexion ne répond pas pour le moment (réseau ou panne "
+    "du fournisseur). Ton compte reste connecté : réessaie dans un instant."
+)
 
 
 def get_oauth_service() -> OAuthPKCEService:
