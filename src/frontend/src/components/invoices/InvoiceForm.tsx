@@ -425,7 +425,10 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
       due_date: dueDate,
       lines: validLines,
       notes: notes || undefined,
-      status: status !== 'draft' ? status : undefined,
+      // B-1492 : en modification, le statut part dès qu'il a changé, brouillon
+      // compris (« draft » n'était jamais envoyé : le retour au brouillon était
+      // ignoré en silence) ; à la création, le moteur pose déjà le brouillon.
+      status: (invoice ? status !== invoice.status : status !== 'draft') ? status : undefined,
       validite_jours: documentType === 'devis' ? validiteJours : undefined,
       converted_from_id: documentType === 'avoir' ? (factureOrigineId || null) : undefined,
     };
