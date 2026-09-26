@@ -26,6 +26,7 @@ from app.services.traitements import TraitementHandle
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+from starlette.background import BackgroundTask
 
 if TYPE_CHECKING:  # import différé ailleurs dans le fichier (style local)
     from app.models.processing import EtatTache
@@ -219,7 +220,10 @@ async def deliberate(
             )
             return resultat.scalars().first() is not None
 
+    pris_en_charge = False
+
     async def generate() -> AsyncIterator[str]:
+        nonlocal pris_en_charge
         # La garantie d'arrêt GLOBALE vient de l'annulation de la tâche
         # PORTEUSE : le finally du service ne couvre que la branche cloud
         # parallèle (ni recherche web, ni mode souverain, ni synthèse).
@@ -252,31 +256,41 @@ async def deliberate(
 
             tache = asyncio.create_task(porteur())
 
-            if handle is not None:
-                try:
-                    await handle.demarrer()
-                    await handle.lier_adaptateur(
-                        task_registry.AnnulationParTacheAsyncio(tache)
-                    )
-                except traitements.AnnuleAvantDemarrage:
-                    # demander_arret a déjà posé CANCELLED durable.
-                    tache.cancel()
-                    await asyncio.gather(tache, return_exceptions=True)
-                    yield _sse({"type": "cancelled", "content": ""})
-                    return
-                except Exception as e:
-                    tache.cancel()
-                    await asyncio.gather(tache, return_exceptions=True)
-                    message = message_pour_ecran(e, ou="pendant la délibération")
-                    await _terminer_sans_masquer(handle, EtatTache.FAILED, error=message[:200])
-                    yield _sse({"type": "error", "content": message})
-                    return
+            # B-1539 : un client parti ici (démarrage du suivi, premier
+            # événement) n'entrait dans aucun gestionnaire : la porteuse
+            # délibérait sans lecteur et la ligne restait en attente. La
+            # porteuse est annulée ; la ligne est close par
+            # `clore_si_jamais_pris_en_charge`, après la réponse.
+            try:
+                if handle is not None:
+                    try:
+                        await handle.demarrer()
+                        await handle.lier_adaptateur(
+                            task_registry.AnnulationParTacheAsyncio(tache)
+                        )
+                    except traitements.AnnuleAvantDemarrage:
+                        # demander_arret a déjà posé CANCELLED durable.
+                        tache.cancel()
+                        await asyncio.gather(tache, return_exceptions=True)
+                        yield _sse({"type": "cancelled", "content": ""})
+                        return
+                    except Exception as e:
+                        tache.cancel()
+                        await asyncio.gather(tache, return_exceptions=True)
+                        message = message_pour_ecran(e, ou="pendant la délibération")
+                        await _terminer_sans_masquer(handle, EtatTache.FAILED, error=message[:200])
+                        yield _sse({"type": "error", "content": message})
+                        return
 
-            # Premier événement : l'identité du traitement - sans elle,
-            # aucun bouton Annuler ne peut viser le chemin canonique.
-            yield _sse({"type": "task", "content": handle.id if handle else ""})
+                # Premier événement : l'identité du traitement - sans elle,
+                # aucun bouton Annuler ne peut viser le chemin canonique.
+                yield _sse({"type": "task", "content": handle.id if handle else ""})
+            except (GeneratorExit, asyncio.CancelledError):
+                tache.cancel()
+                raise
 
             try:
+                pris_en_charge = True
                 while True:
                     chunk = await file_evenements.get()
                     if chunk is None:
@@ -351,6 +365,25 @@ async def deliberate(
             if not remis_a_la_cloture:
                 await ressources.aclose()
 
+    async def clore_si_jamais_pris_en_charge() -> None:
+        # B-1539 : un client parti avant la boucle d'événements laissait la
+        # ligne de suivi « en attente » (ou en cours, sans producteur)
+        # jusqu'au redémarrage. Passé l'entrée de la boucle, son propre
+        # nettoyage (ou la clôture détachée) pose l'état terminal.
+        if pris_en_charge or handle is None:
+            return
+        ligne = await traitements.lire(handle.id)
+        if ligne is None or ligne.state in EtatTache.terminaux():
+            return
+        if ligne.state == EtatTache.QUEUED:
+            # Sans producteur, l'arrêt d'une ligne en attente est le CAS
+            # queued -> cancelled.
+            await traitements.demander_arret(handle.id)
+        else:
+            # Démarrée puis abandonnée avant la boucle : la porteuse est
+            # annulée, plus personne d'autre ne clora cette ligne.
+            await _terminer_sans_masquer(handle, EtatTache.CANCELLED)
+
     return StreamingResponse(
         generate(),
         media_type="text/event-stream",
@@ -359,6 +392,7 @@ async def deliberate(
             "Connection": "keep-alive",
             "X-Accel-Buffering": "no",
         },
+        background=BackgroundTask(clore_si_jamais_pris_en_charge),
     )
 
 
