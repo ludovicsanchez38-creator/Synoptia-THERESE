@@ -66,11 +66,13 @@ class EmailProSkill(MarkdownSkill):
         if recipient_name and 'contacts' in memory_context:
             for contact in memory_context['contacts']:
                 if recipient_name.lower() in contact.get('name', '').lower():
+                    # B-1535 : la fiche donne ces clés à None ; `.get(c, défaut)`
+                    # ne retombe sur le défaut que si la clé manque.
                     enrichment['recipient_context'] = f"""
 Informations sur {contact['name']} :
-- Entreprise : {contact.get('company', 'Non renseignée')}
-- Email : {contact.get('email', 'Non renseigné')}
-- Notes : {contact.get('notes', 'Aucune note')}
+- Entreprise : {contact.get('company') or 'Non renseignée'}
+- Email : {contact.get('email') or 'Non renseigné'}
+- Notes : {contact.get('notes') or 'Aucune note'}
 """
                     break
 
@@ -230,11 +232,11 @@ class ProposalSkill(MarkdownSkill):
                 if client_name.lower() in contact.get('name', '').lower():
                     enrichment['client_context'] = f"""
 Informations sur {contact['name']} :
-- Entreprise : {contact.get('company', 'Non renseignée')}
-- Email : {contact.get('email', 'Non renseigné')}
+- Entreprise : {contact.get('company') or 'Non renseignée'}
+- Email : {contact.get('email') or 'Non renseigné'}
 - Étape : {libelle_d_etape(contact['stage']) if contact.get('stage') else 'Non renseignée'}
-- Score : {contact.get('score', 'Non renseigné')}
-- Notes : {contact.get('notes', 'Aucune note')}
+- Score : {contact.get('score') if contact.get('score') is not None else 'Non renseigné'}
+- Notes : {contact.get('notes') or 'Aucune note'}
 """
                     break
 
