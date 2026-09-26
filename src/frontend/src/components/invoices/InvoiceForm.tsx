@@ -335,7 +335,10 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
   function calculateLineTotals(line: InvoiceLineRequest, index: number) {
     const { quantity, unitPrice } = getLineNumericValues(index);
     const totalHT = arrondirAuCentime(quantity * unitPrice);
-    const totalTTC = arrondirAuCentime(totalHT * (1 + line.tva_rate / 100));
+    // B-1518 : une pièce sans TVA applicable a TTC = HT, comme le moteur et
+    // le PDF ; appliquer le taux des lignes affichait un TTC inexistant.
+    const tauxApplique = invoice?.tva_applicable === false ? 0 : line.tva_rate;
+    const totalTTC = arrondirAuCentime(totalHT * (1 + tauxApplique / 100));
     return { totalHT, totalTTC };
   }
 
