@@ -59,6 +59,7 @@ function annonceDesFiltresRetires(retires: FiltresRetires): string {
     retires.statut ? `statut « ${libelleDe(OPTIONS_STATUT, retires.statut)} »` : '',
     retires.priorite ? `priorité « ${libelleDe(OPTIONS_PRIORITE, retires.priorite)} »` : '',
     retires.etiquette ? `étiquette « ${retires.etiquette} »` : '',
+    retires.recherche ? `recherche « ${retires.recherche} »` : '',
   ].filter(Boolean);
   return `Filtres précédents retirés : ${noms.join(', ')}.`;
 }

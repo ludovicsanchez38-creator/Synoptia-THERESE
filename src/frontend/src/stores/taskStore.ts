@@ -69,6 +69,7 @@ export interface FiltresRetires {
   statut: string | null;
   priorite: string | null;
   etiquette: string | null;
+  recherche: string | null;
 }
 
 export const useTaskStore = create<TaskStore>()(
@@ -155,8 +156,9 @@ export const useTaskStore = create<TaskStore>()(
             statut: etat.filterStatus,
             priorite: etat.filterPriority,
             etiquette: etat.filterTag,
+            recherche: etat.searchQuery.trim() || null,
           };
-          const aucun = !retires.statut && !retires.priorite && !retires.etiquette;
+          const aucun = !retires.statut && !retires.priorite && !retires.etiquette && !retires.recherche;
           return {
             filterProjectId: projetId,
             filterStatus: null,

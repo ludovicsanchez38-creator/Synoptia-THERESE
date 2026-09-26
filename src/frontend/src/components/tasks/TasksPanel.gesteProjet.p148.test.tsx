@@ -64,18 +64,26 @@ describe('Revue P-148, constat 8 et B-1543 : le geste « Voir les tâches » d�
     expect(annonce).toHaveTextContent('Filtres précédents retirés : statut « Terminé », étiquette « devis ».');
   });
 
-  it('le geste nomme chaque filtre retiré, y compris la priorité', () => {
+  it('le geste nomme chaque filtre retiré, y compris la priorité et la recherche', () => {
     useTaskStore.setState({ filterStatus: 'in_progress', filterPriority: 'high', filterProjectId: 'p-autre' } as never);
     useTaskStore.getState().setFilterTag('devis');
+    useTaskStore.getState().setSearchQuery('plan');
 
     useTaskStore.getState().ouvrirSurLeProjet('p-cuisine');
 
     const etat = useTaskStore.getState();
     expect({
       filterProjectId: etat.filterProjectId, filterStatus: etat.filterStatus,
-      filterPriority: etat.filterPriority, filterTag: etat.filterTag,
-    }).toEqual({ filterProjectId: 'p-cuisine', filterStatus: null, filterPriority: null, filterTag: null });
-    expect(etat.filtresRetires).toEqual({ statut: 'in_progress', priorite: 'high', etiquette: 'devis' });
+      filterPriority: etat.filterPriority, filterTag: etat.filterTag, searchQuery: etat.searchQuery,
+    }).toEqual({ filterProjectId: 'p-cuisine', filterStatus: null, filterPriority: null, filterTag: null, searchQuery: '' });
+    expect(etat.filtresRetires).toEqual({ statut: 'in_progress', priorite: 'high', etiquette: 'devis', recherche: 'plan' });
+  });
+
+  it('une recherche retirée par le geste est annoncée comme les autres filtres', async () => {
+    useTaskStore.setState({ searchQuery: 'plan' } as never);
+    render(<TasksPanel standalone />);
+    act(() => { useTaskStore.getState().ouvrirSurLeProjet('p-cuisine'); });
+    expect(await screen.findByText('Filtres précédents retirés : recherche « plan ».')).toBeInTheDocument();
   });
 
   it('sans filtre à retirer, rien n’est annoncé', async () => {
