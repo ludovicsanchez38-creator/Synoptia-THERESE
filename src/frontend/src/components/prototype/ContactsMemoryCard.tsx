@@ -234,17 +234,33 @@ type LectureDeFiche = {
 export function ContactsMemoryCanvas({
   resource,
   selectedContactId,
+  demande = 0,
   onSelectContact,
   onRetry,
   onOpenClassic,
 }: {
   resource: ReadResource<Contact[]>;
   selectedContactId: string | null;
+  /**
+   * Revue P-148, passe 2, constat 1 : jeton d'une demande explicite de fiche,
+   * émis par la coque. Chaque nouveau jeton vide la recherche, pour que la
+   * fiche demandée s'affiche plutôt que le premier résultat d'une recherche
+   * tapée plus tôt.
+   */
+  demande?: number;
   onSelectContact: (contactId: string) => void;
   onRetry: () => void;
   onOpenClassic: () => void;
 }) {
   const [query, setQuery] = useState('');
+  // Ajusté pendant le rendu (et non dans un effet) : la fiche demandée
+  // s'affiche dès ce rendu-ci, sans une image intermédiaire du résultat de
+  // la recherche.
+  const [demandeVue, setDemandeVue] = useState(demande);
+  if (demande !== demandeVue) {
+    setDemandeVue(demande);
+    setQuery('');
+  }
   const contacts = resource.status === 'ready' ? resource.data : EMPTY_CONTACTS;
   const requete = query.trim();
   const filteredContacts = useMemo(

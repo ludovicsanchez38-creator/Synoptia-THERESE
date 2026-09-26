@@ -234,3 +234,28 @@ describe('P-148 : un formulaire modifié sous la fenêtre retient la navigation 
     expect(screen.getAllByText('Abandonner les modifications ?').length).toBeGreaterThan(0);
   });
 });
+
+describe('Revue P-148, passe 2, constat 1 : la fiche demandée depuis un projet l’emporte sur une recherche', () => {
+  it('une recherche restée dans le panneau Contacts est vidée, et la fiche demandée s’affiche', async () => {
+    let fenetre = await ouvrirLaFenetre('conteneur global');
+    await act(async () => {
+      fireEvent.click(within(fenetre).getByRole('button', { name: 'Ouvrir la fiche de Camille Roux' }));
+    });
+    await fenetreFermee();
+    expect(await screen.findAllByRole('heading', { name: 'Camille Roux' })).not.toHaveLength(0);
+    // Une recherche qui écarte Camille, laissée dans le panneau resté monté.
+    const champ = screen.getByLabelText('Rechercher un contact');
+    fireEvent.change(champ, { target: { value: 'zzz' } });
+    await waitFor(() => expect(screen.queryByRole('heading', { level: 3, name: 'Camille Roux' })).toBeNull());
+
+    await act(async () => { usePanelStore.setState({ showProjectModal: true, editingProject: PROJET }); });
+    fenetre = await screen.findByRole('dialog', { name: `Projet ${PROJET.name}` }, { timeout: 4000 });
+    await act(async () => {
+      fireEvent.click(await within(fenetre).findByRole('button', { name: 'Ouvrir la fiche de Camille Roux' }));
+    });
+    await fenetreFermee();
+
+    await waitFor(() => expect(screen.getByRole('heading', { level: 3, name: 'Camille Roux' })).toBeInTheDocument());
+    expect(screen.getByLabelText('Rechercher un contact')).toHaveValue('');
+  });
+});

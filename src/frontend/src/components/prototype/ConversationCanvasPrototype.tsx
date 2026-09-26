@@ -237,6 +237,7 @@ function ContextCanvas({
   atelierActionPending,
   selectedInvoiceId,
   selectedContactId,
+  demandeDeFiche,
   onSelectContact,
   onRetryContacts,
   onRetryEmailMessage,
@@ -291,6 +292,8 @@ function ContextCanvas({
   atelierActionPending: AtelierReviewAction | null;
   selectedInvoiceId: string | 'new-devis' | null;
   selectedContactId: string | null;
+  /** Jeton d'une demande explicite de fiche : le panneau Contacts vide sa recherche. */
+  demandeDeFiche: number;
   onSelectContact: (contactId: string) => void;
   onRetryContacts: () => void;
   onRetryEmailMessage: () => void;
@@ -375,6 +378,7 @@ function ContextCanvas({
         <ContactsMemoryCanvas
           resource={contactsResource}
           selectedContactId={selectedContactId}
+          demande={demandeDeFiche}
           onSelectContact={onSelectContact}
           onRetry={onRetryContacts}
           onOpenClassic={() => onOpenView('memory')}
@@ -1013,6 +1017,17 @@ export function ConversationCanvasPrototype() {
   const [trustCenterOpen, setTrustCenterOpen] = useState(false);
   const [selectedCapability, setSelectedCapability] = useState<CapabilityItem | null>(null);
   const [selectedContactId, setSelectedContactId] = useState<string | null>(null);
+  // Revue P-148, passe 2, constat 1 : une demande explicite de fiche (projet,
+  // palette, carte Contacts de l'accueil, Cette semaine, point d'attention)
+  // porte un jeton. Le panneau Contacts, resté monté, vide sa recherche à
+  // chaque jeton : sans quoi une recherche tapée plus tôt montrait son premier
+  // résultat à la place de la fiche demandée. Une sélection faite dans la
+  // liste du panneau n'en émet pas.
+  const [demandeDeFiche, setDemandeDeFiche] = useState(0);
+  const demanderLaFiche = useCallback((id: string) => {
+    setSelectedContactId(id);
+    setDemandeDeFiche((n) => n + 1);
+  }, []);
   const [selectedMeetingTarget, setSelectedMeetingTarget] = useState<MeetingTarget>(null);
   const [selectedInvoiceId, setSelectedInvoiceId] = useState<string | 'new-devis' | null>(null);
   // Entrée 10 : pendant exact de 'new-devis'. « Écrire » ouvre une rédaction,
@@ -1445,7 +1460,7 @@ export function ConversationCanvasPrototype() {
     if (blockStreamingNavigation()) return;
     if (resultat.kind === 'contact') {
       chooseScenario('memory');
-      setSelectedContactId(resultat.id);
+      demanderLaFiche(resultat.id);
     } else {
       useChatStore.getState().loadConversation(resultat.id);
       openChat();
@@ -1472,7 +1487,7 @@ export function ConversationCanvasPrototype() {
         // Comme « Cette semaine » : la fiche dans le panneau de contexte, dont
         // le titre prend le focus à l'ouverture.
         chooseScenario('memory');
-        setSelectedContactId(id);
+        demanderLaFiche(id);
       },
       ouvrirLesTachesDuProjet: (projetId) => {
         if (!openEmbeddedView('tasks')) return;
@@ -2219,7 +2234,7 @@ export function ConversationCanvasPrototype() {
                         }
                         if (cible.kind === 'contact') {
                           chooseScenario('memory');
-                          setSelectedContactId(cible.id);
+                          demanderLaFiche(cible.id);
                           return;
                         }
                         if (cible.view === 'chat') openChat();
@@ -2236,7 +2251,7 @@ export function ConversationCanvasPrototype() {
                     <CetteSemaine
                       onOpenContact={(id) => {
                         chooseScenario('memory');
-                        setSelectedContactId(id);
+                        demanderLaFiche(id);
                       }}
                       onOpenTasks={() => openEmbeddedView('tasks')}
                       onOpenAgenda={() => openEmbeddedView('calendar')}
@@ -2247,7 +2262,7 @@ export function ConversationCanvasPrototype() {
                       resource={contactsResource}
                       onRetry={() => void refreshContacts()}
                       onOpenContact={(contactId) => {
-                        setSelectedContactId(contactId);
+                        demanderLaFiche(contactId);
                         setCanvasOpen(true);
                       }}
                       onOpenClassic={() => openEmbeddedView('memory')}
@@ -2600,6 +2615,7 @@ export function ConversationCanvasPrototype() {
                   atelierActionPending={atelierActionPending}
                   selectedInvoiceId={selectedInvoiceId}
                   selectedContactId={selectedContactId}
+                  demandeDeFiche={demandeDeFiche}
                   onSelectContact={setSelectedContactId}
                   onRetryContacts={() => void refreshContacts()}
                   onRetryEmailMessage={() => void retryEmailMessage()}
