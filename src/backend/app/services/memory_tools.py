@@ -1165,6 +1165,21 @@ def _etat_courant(prestations: list[Any]) -> dict[str, Any] | None:
     }
 
 
+def _changement_d_etape_lisible(activite: Any) -> tuple[str, str] | None:
+    """B-1533 : le titre écrit en base (« Stage: proposition -> lost ») porte
+    les identifiants ; le modèle lit les mots de l'écran, comme la fiche. Les
+    deux étapes viennent de `extra_data` ; illisible, la trace reste brute."""
+    try:
+        donnees = json.loads(activite.extra_data or "")
+        avant, apres = donnees["old_stage"], donnees["new_stage"]
+    except (ValueError, TypeError, KeyError):
+        return None
+    return (
+        f"Étape : {libelle_d_etape(avant)} → {libelle_d_etape(apres)}",
+        "Changement d'étape dans le pipeline commercial",
+    )
+
+
 def _traces_du_contact(contact: Any, activites: list[Any]) -> list[dict[str, Any]]:
     """Tout ce qui a ete ecrit sur cette fiche, a egalite et date.
 
@@ -1183,12 +1198,15 @@ def _traces_du_contact(contact: Any, activites: list[Any]) -> list[dict[str, Any
             }
         )
     for a in activites:
+        titre, texte = a.title, a.description
+        if a.type == "stage_change":
+            titre, texte = _changement_d_etape_lisible(a) or (titre, texte)
         traces.append(
             {
                 "origine": f"activite ({a.type})",
                 "date": a.created_at.isoformat() if a.created_at else None,
-                "titre": a.title,
-                "texte": a.description,
+                "titre": titre,
+                "texte": texte,
                 "statut": getattr(a, "statut", "en_vigueur"),
                 "remplacee_par": getattr(a, "remplace_id", None),
             }
