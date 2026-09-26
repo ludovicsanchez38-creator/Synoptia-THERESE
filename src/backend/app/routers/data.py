@@ -1863,11 +1863,19 @@ async def restore_backup(
     from app.services.user_profile import recharger_le_profil_en_cache
 
     reload_therese_md()
+    # B-1655 : chacun sa garde ; un profil illisible n'empêche plus de relire
+    # le mode cabinet, et un mode cabinet illisible cloisonne par précaution.
     try:
         await recharger_le_profil_en_cache()
+    except Exception:
+        logger.warning("Relecture du profil après restauration en échec", exc_info=True)
+    try:
         await charger_mode_cabinet_depuis_la_base()
     except Exception:
-        logger.warning("Relecture du profil ou du mode cabinet après restauration en échec", exc_info=True)
+        from app.services.cloisonnement import poser_mode_cabinet
+
+        poser_mode_cabinet(True)
+        logger.warning("Mode cabinet illisible après restauration : carnet cloisonné par précaution", exc_info=True)
 
     # Revue 0.40/0.40.1 : l'archive de sécurité devient une sauvegarde chiffrée
     # visible, ou disparaît si le chiffrement est impossible (US-003 : jamais

@@ -127,7 +127,12 @@ async def _load_brave_key():
         if actif is not None:
             logger.info("Cloisonnement du carnet : %s", "par dossier" if actif else "partagé")
     except Exception as e:
-        logger.debug(f"Mode cabinet non chargé : {e}")
+        # B-1655 : un réglage illisible ne rouvre pas le carnet en silence ;
+        # il le cloisonne par précaution et le dit.
+        from app.services.cloisonnement import poser_mode_cabinet
+
+        poser_mode_cabinet(True)
+        logger.warning(f"Mode cabinet illisible ({e}) : carnet cloisonné par précaution")
 
 
 async def _load_user_profile():
