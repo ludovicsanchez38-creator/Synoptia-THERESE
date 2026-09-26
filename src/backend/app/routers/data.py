@@ -1511,6 +1511,25 @@ def _finalize_safety_archive(
 
 
 
+def _ecarter_les_compagnons_de_la_base() -> None:
+    """B-1523 et B-1536 : retire le -wal et le -shm de la base avant de remettre
+    l'état d'avant. Sous Windows, un fichier encore ouvert ne se supprime pas
+    (PermissionError) : il est alors vidé, ce qui suffit, SQLite ne rejoue rien
+    d'un WAL vide et réinitialise un SHM vide. Rien ici n'arrête le retour
+    arrière : s'arrêter laissait la base dans l'état de l'archive fautive."""
+    for suffixe in ("-wal", "-shm"):
+        compagnon = Path(f"{settings.db_path}{suffixe}")
+        try:
+            compagnon.unlink(missing_ok=True)
+        except PermissionError:
+            try:
+                if compagnon.exists():
+                    with open(compagnon, "wb"):
+                        pass
+            except OSError:
+                logger.warning("Compagnon %s de la base ni supprimé ni vidé", compagnon.name)
+
+
 async def _rouvrir_la_base_apres_restauration() -> None:
     """B-1470 : rouvre la base si la restauration l'a fermée, puis invalide le
     service de modèles (sa configuration a pu être lue sans base)."""
@@ -1638,8 +1657,7 @@ async def restore_backup(
             # restaient à côté de la base remise, et SQLite les rejouait à
             # l'ouverture. Ceux de l'état d'avant, s'il y en avait, sont dans
             # l'archive de sécurité et reviennent avec elle.
-            for suffixe in ("-wal", "-shm"):
-                Path(f"{settings.db_path}{suffixe}").unlink(missing_ok=True)
+            _ecarter_les_compagnons_de_la_base()
             with tarfile.open(safety_archive, "r:gz") as tar:
                 _vider_les_elements_couverts(data_dir, elements_couverts(tar))
                 _safe_extractall(tar, data_dir)
