@@ -328,21 +328,34 @@ class OAuthPKCEService:
                 timeout=30.0,
             )
 
-            if response.status_code >= 500:
+            if response.status_code >= 500 or response.status_code in (408, 429):
                 # B-1488 : une panne du fournisseur n'est pas une session
-                # expirée ; l'écran lit « Token » comme telle.
+                # expirée ; l'écran lit « Token » comme telle. B-1529 : un
+                # délai (408) ou une limite de débit (429) non plus.
                 logger.error(f"Token refresh failed: fournisseur en panne ({response.status_code})")
                 raise HTTPException(status_code=503, detail=_FOURNISSEUR_INJOIGNABLE)
 
+            # B-1529 : une réponse qui n'est pas du JSON (portail captif d'un
+            # Wi-Fi, page d'erreur d'un proxy) ne dit rien du compte.
+            try:
+                corps = response.json() if response.content else {}
+            except ValueError:
+                logger.error(f"Token refresh failed: réponse illisible ({response.status_code})")
+                raise HTTPException(status_code=503, detail=_FOURNISSEUR_INJOIGNABLE) from None
+            if not isinstance(corps, dict):
+                raise HTTPException(status_code=503, detail=_FOURNISSEUR_INJOIGNABLE)
+
             if response.status_code != 200:
-                error_data = response.json() if response.content else {}
+                error_data = corps
                 logger.error(f"Token refresh failed: {response.status_code} {error_data}")
                 raise HTTPException(
                     status_code=400,
                     detail=f"Token refresh failed: {error_data.get('error_description', 'Unknown error')}"
                 )
 
-            tokens = response.json()
+            tokens = corps
+            if "access_token" not in tokens:
+                raise HTTPException(status_code=503, detail=_FOURNISSEUR_INJOIGNABLE)
             logger.info("Access token refreshed successfully")
 
             return {

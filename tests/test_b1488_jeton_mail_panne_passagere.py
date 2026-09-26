@@ -66,3 +66,22 @@ async def test_un_refus_explicite_demande_toujours_la_reconnexion(monkeypatch):
     erreur = await _renouveler(monkeypatch, _ClientEnPanne(reponse=reponse))
     assert erreur.status_code != 503
     assert "Token" in erreur.detail
+
+
+@pytest.mark.asyncio
+async def test_b1529_un_429_n_est_pas_une_session_expiree(monkeypatch):
+    requete = httpx.Request("POST", "https://oauth2.googleapis.com/token")
+    reponse = httpx.Response(429, json={"error": "rate_limit_exceeded"}, request=requete)
+    erreur = await _renouveler(monkeypatch, _ClientEnPanne(reponse=reponse))
+    assert erreur.status_code == 503
+    assert not any(m in erreur.detail for m in MARQUEURS_DE_RECONNEXION), erreur.detail
+
+
+@pytest.mark.asyncio
+async def test_b1529_une_page_html_n_est_pas_une_session_expiree(monkeypatch):
+    """Un portail captif (Wi-Fi d'hôtel) répond une page HTML en 200."""
+    requete = httpx.Request("POST", "https://oauth2.googleapis.com/token")
+    reponse = httpx.Response(200, text="<html><body>Connectez-vous au Wi-Fi</body></html>", request=requete)
+    erreur = await _renouveler(monkeypatch, _ClientEnPanne(reponse=reponse))
+    assert erreur.status_code == 503
+    assert not any(m in erreur.detail for m in MARQUEURS_DE_RECONNEXION), erreur.detail
