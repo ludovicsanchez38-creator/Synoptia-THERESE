@@ -166,6 +166,50 @@ data: {"type": "status", "content": "done", "usage": {"input_tokens": 150, "outp
 
 #### PATCH `/api/memory/projects/{id}` - Modifier
 
+#### GET `/api/memory/projects/{id}/ensemble` - Ce que rassemble le projet
+
+Lecture seule (P-148) : chaque famille liée au projet, bornée à `limite`
+éléments, avec son total. Les clauses sont celles que `DELETE` exécute
+(`services/projet_ensemble.py`) : les totaux sont ceux que la suppression
+emporte ou détache.
+
+**Params** : `?limite=5` (défaut 5, de 1 à 200 ; hors bornes : `422`). Projet
+inconnu : `404`.
+
+**Réponse** :
+
+```json
+{
+  "conversations": { "total": 7, "elements": [{ "id": "…", "titre": "…", "mise_a_jour": "2026-09-25T08:00:00+00:00" }] },
+  "documents": { "total": 2, "elements": [{ "id": "…", "titre": "…", "statut": "en_cours", "mise_a_jour": "…" }] },
+  "taches": { "total": 9, "ouvertes": 4, "en_retard": 1,
+              "elements": [{ "id": "…", "titre": "…", "statut": "todo", "echeance": "2026-09-20T12:00:00", "en_retard": true }] },
+  "contacts": { "total": 2, "ranges": 1,
+                "elements": [{ "id": "…", "nom": "…", "entreprise": "…", "associe": true }] },
+  "livrables": { "total": 3 },
+  "fichiers": { "total": 12 },
+  "rendez_vous": { "total": 2 },
+  "sous_dossiers": { "total": 0 },
+  "planning": { "total": 1 },
+  "indisponibles": []
+}
+```
+
+- Conversations et documents du plus récent au plus ancien ; tâches ouvertes
+  (`todo`, `in_progress`) d'abord, puis par échéance, sans échéance en dernier.
+- `en_retard` : tâche ouverte dont l'échéance (jour décidé, sans fuseau) est
+  antérieure au jour civil de Paris.
+- Conversations listées quel que soit leur `memory_scope`.
+- `contacts.total` compte les personnes distinctes (le contact associé en tête,
+  `associe: true`, dédoublonné s'il est aussi rangé dans le projet) ;
+  `contacts.ranges` compte les contacts rangés dans le projet, que la
+  suppression rend au périmètre général.
+- `sous_dossiers` : projets rangés dans ce projet (rendus au général à la
+  suppression) ; `planning` : ressources et instantanés de planning (supprimés
+  avec le projet).
+- Une famille dont la lecture échoue vaut `null` et se nomme dans
+  `indisponibles` : une panne n'est pas un vide.
+
 #### DELETE `/api/memory/projects/{id}` - Supprimer
 
 ### Recherche hybride
