@@ -70,7 +70,9 @@ class TestLaRoute:
             {"id": garni.contact_range_id, "first_name": "Julien", "last_name": "Garnier", "company": None, "associe": False},
         ]
         assert ensemble["livrables"] == {"total": 1}
-        assert ensemble["fichiers"] == {"total": 1}
+        # Le fichier du peuplement est indexé depuis le disque, hors du dépôt.
+        assert ensemble["fichiers"] == {"total": 1, "deposes": 0, "indexes_sur_place": 1}
+        assert ensemble["dossier_synchronise"] == {"rattache": False}
         assert ensemble["rendez_vous"] == {"total": 1}
         assert ensemble["sous_dossiers"] == {"total": 1}
         assert ensemble["planning"] == {"total": 2}
@@ -134,6 +136,59 @@ class TestLaRoute:
         assert ensemble["documents"] is None
         assert ensemble["conversations"]["total"] == 1
         assert ensemble["taches"]["total"] == 2
+
+
+class TestLesFichiersDuProjet:
+    @pytest.mark.asyncio
+    async def test_deposes_et_indexes_sur_place_se_distinguent(self, client, tmp_path, monkeypatch):
+        """Revue P-148, constat 3 : la suppression efface le dépôt de THÉRÈSE,
+        pas les fichiers indexés depuis le dossier synchronisé, qui restent sur
+        le disque (`_purger_le_depot_du_dossier`). La confirmation doit pouvoir
+        le dire, et annoncer le détachement du dossier synchronisé."""
+        from pathlib import Path
+
+        from app.config import settings
+        from app.models import database as db_module
+        from app.models.entities import FileMetadata
+        from app.models.entities_sync import ProjectSyncRoot
+
+        monkeypatch.setattr(settings, "data_dir", tmp_path / "donnees")
+        await _garnir_avec_du_bruit()
+        depot = (Path(settings.data_dir) / "projects" / "projet-cible" / "files").resolve()
+        dossier = (tmp_path / "Mes documents" / "Cuisine").resolve()
+        async with db_module.AsyncSessionLocal() as session:
+            session.add(FileMetadata(
+                id="fichier-depose", path=str(depot / "plan.pdf"), name="plan.pdf",
+                extension=".pdf", size=1, scope="project", scope_id="projet-cible",
+            ))
+            session.add(FileMetadata(
+                id="fichier-synchronise", path=str(dossier / "devis.docx"), name="devis.docx",
+                extension=".docx", size=1, scope="project", scope_id="projet-cible",
+            ))
+            session.add(ProjectSyncRoot(project_id="projet-cible", racine=str(dossier), volume_id=1))
+            await session.commit()
+
+        ensemble = (await client.get("/api/memory/projects/projet-cible/ensemble")).json()
+
+        # Le peuplement pose déjà un fichier indexé hors du dépôt.
+        assert ensemble["fichiers"] == {"total": 3, "deposes": 1, "indexes_sur_place": 2}
+        assert ensemble["dossier_synchronise"] == {"rattache": True}
+        rapport = (await client.delete("/api/memory/projects/projet-cible")).json()["cascade_deleted"]
+        assert rapport["files"] == ensemble["fichiers"]["total"]
+
+    @pytest.mark.asyncio
+    async def test_un_dossier_synchronise_delie_n_est_plus_annonce(self, client):
+        from app.models import database as db_module
+        from app.models.entities_sync import ProjectSyncRoot
+
+        await _garnir_avec_du_bruit()
+        async with db_module.AsyncSessionLocal() as session:
+            session.add(ProjectSyncRoot(project_id="projet-cible", racine="/ancien", volume_id=1, detachee=True))
+            await session.commit()
+
+        ensemble = (await client.get("/api/memory/projects/projet-cible/ensemble")).json()
+
+        assert ensemble["dossier_synchronise"] == {"rattache": False}
 
 
 class TestLeContactAssocie:

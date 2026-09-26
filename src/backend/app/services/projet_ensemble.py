@@ -17,8 +17,10 @@ from __future__ import annotations
 import logging
 from collections.abc import Awaitable, Callable
 from datetime import UTC, date, datetime
+from pathlib import Path
 from typing import Any
 
+from app.config import settings
 from app.models.entities import (
     CalendarEvent,
     Contact,
@@ -31,6 +33,7 @@ from app.models.entities import (
     Project,
     Task,
 )
+from app.models.entities_sync import ProjectSyncRoot
 from app.models.schemas import _iso_utc
 from app.services.civil_time import date_civile_paris
 from sqlalchemy import and_, case, func
@@ -93,6 +96,21 @@ def clause_ressources_de_planning(projet_id: str) -> ColumnElement[bool]:
 
 def clause_instantanes_de_planning(projet_id: str) -> ColumnElement[bool]:
     return col(PlanningSnapshot.project_id) == projet_id
+
+
+def clause_racine_active(projet_id: str) -> ColumnElement[bool]:
+    """Le dossier synchronisé rattaché (un tombeau `detachee` ne compte pas)."""
+    return and_(col(ProjectSyncRoot.project_id) == projet_id, col(ProjectSyncRoot.detachee).is_(False))
+
+
+def racine_des_depots() -> Path:
+    """Le dossier où THÉRÈSE range les fichiers déposés dans un projet.
+
+    Seul `<racine>/<id>` part du disque à la suppression
+    (`_purger_le_depot_du_dossier`) : un fichier indexé ailleurs, depuis le
+    dossier synchronisé de l'utilisatrice, reste sur son disque.
+    """
+    return Path(settings.data_dir).resolve() / "projects"
 
 
 # ============================================================
@@ -248,6 +266,28 @@ def _total(modele: Any, clause: Callable[[str], ColumnElement[bool]]) -> Callabl
     return lire
 
 
+async def _lire_fichiers(
+    session: AsyncSession, projet_id: str, contact_id: str | None, limite: int, jour: date
+) -> dict[str, Any]:
+    # Revue P-148, constat 3 : le total est celui que la suppression retire de
+    # l'index ; les fichiers déposés dans THÉRÈSE partent aussi du disque, les
+    # fichiers indexés sur place (dossier synchronisé) y restent. Les chemins
+    # sont enregistrés résolus (`validate_indexable_file`).
+    depot = racine_des_depots() / projet_id
+    chemins = (
+        await session.execute(select(FileMetadata.path).where(clause_fichiers(projet_id)))
+    ).scalars().all()
+    deposes = sum(1 for chemin in chemins if Path(chemin).is_relative_to(depot))
+    return {"total": len(chemins), "deposes": deposes, "indexes_sur_place": len(chemins) - deposes}
+
+
+async def _lire_dossier_synchronise(
+    session: AsyncSession, projet_id: str, contact_id: str | None, limite: int, jour: date
+) -> dict[str, Any]:
+    # La suppression le détache (`retirer_racine`) ; le dossier reste sur le disque.
+    return {"rattache": await _compter(session, ProjectSyncRoot, clause_racine_active(projet_id)) > 0}
+
+
 async def _lire_planning(
     session: AsyncSession, projet_id: str, contact_id: str | None, limite: int, jour: date
 ) -> dict[str, Any]:
@@ -280,7 +320,8 @@ async def lire_l_ensemble(
         ("taches", _lire_taches),
         ("contacts", _lire_contacts),
         ("livrables", _total(Deliverable, clause_livrables)),
-        ("fichiers", _total(FileMetadata, clause_fichiers)),
+        ("fichiers", _lire_fichiers),
+        ("dossier_synchronise", _lire_dossier_synchronise),
         ("rendez_vous", _total(CalendarEvent, clause_rendez_vous)),
         ("sous_dossiers", _total(Project, clause_sous_dossiers)),
         ("planning", _lire_planning),

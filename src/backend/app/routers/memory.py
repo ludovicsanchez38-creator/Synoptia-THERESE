@@ -8,7 +8,6 @@ import asyncio
 import json
 import logging
 import time
-from pathlib import Path
 from typing import TYPE_CHECKING, Any, Literal
 
 from app.models.database import get_session
@@ -40,6 +39,7 @@ from app.services.projet_ensemble import (
     clause_sous_dossiers,
     clause_taches,
     lire_l_ensemble,
+    racine_des_depots,
 )
 from app.services.qdrant import get_qdrant_service
 from app.services.scoring import update_contact_score
@@ -339,10 +339,10 @@ async def _purger_le_depot_du_dossier(project_id: str) -> None:
     import asyncio
     import shutil
 
-    from app.config import settings
-
     try:
-        racine = Path(settings.data_dir).resolve() / "projects"
+        # P-148 : la même racine que celle qui distingue, dans la route
+        # d'ensemble, les fichiers déposés des fichiers indexés sur place.
+        racine = racine_des_depots()
         # Un identifiant qui contient un séparateur n'est pas un identifiant :
         # `a/../b` se RÉSOUT dans la racine, sur le dépôt d'un autre dossier.
         # Le contrôle porte donc sur la forme AVANT la résolution, et le

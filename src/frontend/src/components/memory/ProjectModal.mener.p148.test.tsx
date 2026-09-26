@@ -46,7 +46,7 @@ const ENSEMBLE: EnsembleDuProjet = {
   documents: { total: 1, elements: [{ id: 'doc-plan', titre: 'Plan de formation', statut: 'en_cours', mise_a_jour: '2026-09-24T08:00:00+00:00' }] },
   taches: { total: 1, ouvertes: 1, en_retard: 0, elements: [{ id: 't-1', titre: 'Métrer', statut: 'todo', echeance: null, en_retard: false }] },
   contacts: { total: 1, ranges: 0, elements: [{ id: 'c-camille', first_name: 'Camille', last_name: 'Roux', company: null, associe: true }] },
-  livrables: { total: 0 }, fichiers: { total: 0 }, rendez_vous: { total: 0 },
+  livrables: { total: 0 }, fichiers: { total: 0, deposes: 0, indexes_sur_place: 0 }, rendez_vous: { total: 0 }, dossier_synchronise: { rattache: false },
   sous_dossiers: { total: 0 }, planning: { total: 0 }, indisponibles: [],
 };
 const QUESTION = 'Abandonner les modifications ?';

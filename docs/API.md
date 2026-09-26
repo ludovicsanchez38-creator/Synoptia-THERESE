@@ -187,7 +187,8 @@ inconnu : `404`.
   "contacts": { "total": 2, "ranges": 1,
                 "elements": [{ "id": "…", "first_name": "…", "last_name": "…", "company": "…", "associe": true }] },
   "livrables": { "total": 3 },
-  "fichiers": { "total": 12 },
+  "fichiers": { "total": 12, "deposes": 3, "indexes_sur_place": 9 },
+  "dossier_synchronise": { "rattache": true },
   "rendez_vous": { "total": 2 },
   "sous_dossiers": { "total": 0 },
   "planning": { "total": 1 },
@@ -206,6 +207,11 @@ inconnu : `404`.
   `associe: true`, dédoublonné s'il est aussi rangé dans le projet) ;
   `contacts.ranges` compte les contacts rangés dans le projet, que la
   suppression rend au périmètre général.
+- `fichiers.total` : lignes d'index retirées par la suppression ; `deposes` :
+  fichiers déposés dans THÉRÈSE (`<data_dir>/projects/<id>/`), effacés du
+  disque ; `indexes_sur_place` : fichiers indexés depuis le disque (dossier
+  synchronisé), qui y restent. `dossier_synchronise.rattache` : la suppression
+  détache le dossier synchronisé, sans toucher au disque.
 - `sous_dossiers` : projets rangés dans ce projet (rendus au général à la
   suppression) ; `planning` : ressources et instantanés de planning (supprimés
   avec le projet).

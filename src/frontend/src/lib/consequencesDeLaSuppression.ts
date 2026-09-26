@@ -21,8 +21,14 @@ function enumerer(parties: string[]): string {
 
 /** Les phrases qui disent les conséquences, ou `null` si une famille manque. */
 export function consequencesDeLaSuppression(ensemble: EnsembleDuProjet): string[] | null {
-  const { taches, livrables, fichiers, planning, conversations, documents, rendez_vous, contacts, sous_dossiers } = ensemble;
-  if (!taches || !livrables || !fichiers || !planning || !conversations || !documents || !rendez_vous || !contacts || !sous_dossiers) {
+  const {
+    taches, livrables, fichiers, dossier_synchronise, planning, conversations, documents, rendez_vous, contacts,
+    sous_dossiers,
+  } = ensemble;
+  if (
+    !taches || !livrables || !fichiers || !dossier_synchronise || !planning || !conversations || !documents
+    || !rendez_vous || !contacts || !sous_dossiers
+  ) {
     return null;
   }
   const phrases: string[] = [];
@@ -30,10 +36,23 @@ export function consequencesDeLaSuppression(ensemble: EnsembleDuProjet): string[
   const emportes = [
     taches.total > 0 ? compte(taches.total, 'tâche', 'tâches') : '',
     livrables.total > 0 ? compte(livrables.total, 'livrable', 'livrables') : '',
-    fichiers.total > 0 ? compte(fichiers.total, 'fichier joint', 'fichiers joints') : '',
+    // Revue P-148, constat 3 : seul le dépôt de THÉRÈSE part du disque.
+    fichiers.deposes > 0 ? compte(fichiers.deposes, 'fichier déposé dans THÉRÈSE', 'fichiers déposés dans THÉRÈSE') : '',
     planning.total > 0 ? 'son planning calculé' : '',
   ].filter(Boolean);
   if (emportes.length > 0) phrases.push(`La suppression emporte ${enumerer(emportes)}.`);
+
+  // Les fichiers indexés depuis le dossier synchronisé quittent l'index de
+  // THÉRÈSE, mais la suppression ne touche pas à leur disque
+  // (`_purger_le_depot_du_dossier`).
+  if (fichiers.indexes_sur_place > 0) {
+    phrases.push(fichiers.indexes_sur_place > 1
+      ? `${fichiers.indexes_sur_place} fichiers indexés depuis ton disque sortent de l’index ; ils restent sur ton disque.`
+      : '1 fichier indexé depuis ton disque sort de l’index ; il reste sur ton disque.');
+  }
+  if (dossier_synchronise.rattache) {
+    phrases.push('Le dossier synchronisé est détaché du projet ; il reste sur ton disque.');
+  }
 
   const detaches = [
     conversations.total > 0 ? compte(conversations.total, 'conversation', 'conversations') : '',

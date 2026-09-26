@@ -211,7 +211,10 @@ export interface EnsembleDuProjet {
   /** `total` : personnes distinctes ; `ranges` : contacts rangés dans le projet. */
   contacts: (FamilleListee<ContactDuProjet> & { ranges: number }) | null;
   livrables: { total: number } | null;
-  fichiers: { total: number } | null;
+  /** `deposes` : dans le dépôt de THÉRÈSE, effacés avec le projet ; `indexes_sur_place` : restent sur le disque. */
+  fichiers: { total: number; deposes: number; indexes_sur_place: number } | null;
+  /** Le dossier synchronisé rattaché, que la suppression détache. */
+  dossier_synchronise: { rattache: boolean } | null;
   rendez_vous: { total: number } | null;
   sous_dossiers: { total: number } | null;
   planning: { total: number } | null;

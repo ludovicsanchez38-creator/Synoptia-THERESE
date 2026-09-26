@@ -66,7 +66,7 @@ const ENSEMBLE: EnsembleDuProjet = {
     elements: [{ id: 't-1', titre: 'Commander le plan de travail', statut: 'todo', echeance: null, en_retard: false }],
   },
   contacts: { total: 1, ranges: 0, elements: [{ id: 'c-camille', first_name: 'Camille', last_name: 'Roux', company: 'Roux SARL', associe: true }] },
-  livrables: { total: 0 }, fichiers: { total: 0 }, rendez_vous: { total: 0 },
+  livrables: { total: 0 }, fichiers: { total: 0, deposes: 0, indexes_sur_place: 0 }, rendez_vous: { total: 0 }, dossier_synchronise: { rattache: false },
   sous_dossiers: { total: 0 }, planning: { total: 0 }, indisponibles: [],
 };
 

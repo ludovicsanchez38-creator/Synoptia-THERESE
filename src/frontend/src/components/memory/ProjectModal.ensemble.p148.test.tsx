@@ -57,7 +57,7 @@ function ensemble(partiel: Partial<EnsembleDuProjet> = {}): EnsembleDuProjet {
         { id: 'c-julien', first_name: 'Julien', last_name: 'Garnier', company: null, associe: false },
       ],
     },
-    livrables: { total: 0 }, fichiers: { total: 0 }, rendez_vous: { total: 0 },
+    livrables: { total: 0 }, fichiers: { total: 0, deposes: 0, indexes_sur_place: 0 }, rendez_vous: { total: 0 }, dossier_synchronise: { rattache: false },
     sous_dossiers: { total: 0 }, planning: { total: 0 },
     indisponibles: [],
     ...partiel,
