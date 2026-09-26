@@ -96,13 +96,25 @@ async def _is_purge_enabled() -> bool:
 PREAVIS_JOURS = 30
 
 
-async def _premier_preavis(session: Any, contact_id: str) -> datetime | None:
-    """B-1641 : date du premier préavis de purge donné pour ce contact."""
+def _debut_de_l_episode(ref_date: datetime, expiration: datetime | None, retention_months: int) -> datetime:
+    """B-1670 : moment où la fiche est devenue échue cette fois-ci (début des
+    avertissements, ou fin du consentement renouvelé). Un préavis antérieur
+    appartient à un épisode passé : relance ou consentement l'ont périmé."""
+    debut = ref_date + timedelta(days=retention_months * 30 - PREAVIS_JOURS)
+    if expiration is not None and expiration > debut:
+        debut = expiration
+    return debut
+
+
+async def _premier_preavis(session: Any, contact_id: str, depuis: datetime) -> datetime | None:
+    """B-1641 : date du premier préavis de purge donné pour ce contact pendant
+    l'épisode en cours (B-1670)."""
     premier = (
         await session.execute(
             select(func.min(Notification.created_at)).where(
                 Notification.source == "rgpd_purge",
                 Notification.action_url == f"/crm/contacts/{contact_id}",
+                Notification.created_at >= depuis,
             )
         )
     ).scalar()
@@ -176,7 +188,9 @@ async def auto_purge_expired_contacts() -> dict[str, int]:
                     # vieille « Dernière interaction » était anonymisé au
                     # démarrage suivant, sans jamais avoir été annoncé. Aucune
                     # anonymisation sans un préavis donné 30 jours avant.
-                    premier_preavis = await _premier_preavis(session, contact.id)
+                    premier_preavis = await _premier_preavis(
+                        session, contact.id, _debut_de_l_episode(ref_date, expiration, retention_months)
+                    )
                     if premier_preavis is not None and premier_preavis <= now - timedelta(days=PREAVIS_JOURS):
                         contacts_to_purge.append(contact)
                     else:
@@ -204,7 +218,12 @@ async def auto_purge_expired_contacts() -> dict[str, int]:
                     if purge_date.tzinfo is None:
                         purge_date = purge_date.replace(tzinfo=UTC)
                     # B-1641 : jamais avant la fin du préavis.
-                    premier_preavis = await _premier_preavis(session, contact.id) or now
+                    expiration = contact.rgpd_date_expiration
+                    if expiration is not None and expiration.tzinfo is None:
+                        expiration = expiration.replace(tzinfo=UTC)
+                    premier_preavis = await _premier_preavis(
+                        session, contact.id, _debut_de_l_episode(purge_date, expiration, retention_months)
+                    ) or now
                     echeance = max(
                         purge_date + timedelta(days=retention_months * 30),
                         premier_preavis + timedelta(days=PREAVIS_JOURS),

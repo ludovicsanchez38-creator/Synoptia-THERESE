@@ -36,4 +36,6 @@ async def test_un_consentement_prolonge_protege_de_la_purge(db_session):
 
 @pytest.mark.asyncio
 async def test_temoin_une_expiration_passee_laisse_purger(db_session):
-    assert await _purger_un_contact(db_session, datetime.now(UTC) - timedelta(days=1)) == "[ANONYMISÉ]"
+    # B-1670 : le préavis (posé il y a 31 jours) doit suivre la fin du
+    # consentement ; un préavis antérieur appartient à un épisode passé.
+    assert await _purger_un_contact(db_session, datetime.now(UTC) - timedelta(days=40)) == "[ANONYMISÉ]"
