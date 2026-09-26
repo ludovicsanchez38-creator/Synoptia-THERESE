@@ -1234,17 +1234,30 @@ def _membre_attendu(dest: str | Path, member: Any) -> bool:
 def _safe_extractall(tar, dest) -> None:
     """Extraction d'une sauvegarde : tout membre inattendu refuse l'archive
     entière AVANT la moindre écriture (B-1497), puis filter='data' (PEP 706)
-    quand Python le connaît."""
+    quand Python le connaît.
+
+    Les liens (symboliques ou physiques) ne sont pas extraits : l'application
+    n'en crée aucun, un lien posé à la main ne doit ni rendre la sauvegarde
+    irrestaurable ni ouvrir un passage vers une autre entrée.
+    """
+    membres = []
+    liens_ignores = 0
     for member in tar.getmembers():
+        if member.issym() or member.islnk():
+            liens_ignores += 1
+            continue
         if not _membre_attendu(dest, member):
             raise HTTPException(
                 status_code=400,
-                detail="Archive de sauvegarde non sûre : elle contient un chemin ou un lien inattendu.",
+                detail="Archive de sauvegarde non sûre : elle contient un chemin inattendu.",
             )
+        membres.append(member)
+    if liens_ignores:
+        logger.warning("Restauration : %d lien(s) de la sauvegarde non restauré(s)", liens_ignores)
     try:
-        tar.extractall(dest, filter="data")
+        tar.extractall(dest, members=membres, filter="data")
     except TypeError:
-        tar.extractall(dest)  # Python < 3.12 : membres déjà vérifiés un à un
+        tar.extractall(dest, members=membres)  # Python < 3.12 : membres vérifiés un à un
 
 
 @router.post("/backup")

@@ -47,9 +47,32 @@ def test_un_chemin_qui_remonte_est_refuse_sans_rien_ecrire(tmp_path):
     assert not (donnees / "therese.db").exists()
 
 
-def test_un_lien_interne_est_refuse(tmp_path):
-    donnees = _extraire(tmp_path, [("outputs/t", "../backups"), ("outputs/t/pre_restore.tar.gz", None)])
+def test_un_lien_interne_n_est_pas_suivi(tmp_path):
+    """Un lien n'est pas extrait : ce qui passait « à travers » lui devient un
+    fichier ordinaire de son entrée, jamais une écriture dans `backups/`."""
+    from app.routers.data import _safe_extractall
+
+    donnees = tmp_path / "donnees"
+    (donnees / "backups").mkdir(parents=True)
+    with _archive(tmp_path, [("outputs/t", "../backups"), ("outputs/t/pre_restore.tar.gz", None)]) as tar:
+        _safe_extractall(tar, donnees)
     assert list((donnees / "backups").iterdir()) == []
+    assert not (donnees / "outputs" / "t").is_symlink()
+
+
+def test_une_sauvegarde_qui_contient_un_lien_se_restaure_quand_meme(tmp_path):
+    """Régression de la première version de B-1497 : un lien posé à la main
+    dans un dossier de données rendait toute la sauvegarde irrestaurable."""
+    from app.routers.data import _safe_extractall
+
+    donnees = tmp_path / "donnees"
+    donnees.mkdir()
+    membres = [("therese.db", None), ("projects/raccourci", "../outputs"), ("outputs/devis.pdf", None)]
+    with _archive(tmp_path, membres) as tar:
+        _safe_extractall(tar, donnees)
+    assert (donnees / "therese.db").exists()
+    assert (donnees / "outputs" / "devis.pdf").exists()
+    assert not (donnees / "projects" / "raccourci").exists()
 
 
 def test_une_entree_hors_de_la_sauvegarde_est_refusee(tmp_path):
