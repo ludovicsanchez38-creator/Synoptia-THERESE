@@ -58,3 +58,21 @@ describe('useAutosave', () => {
     expect(result.current.lastSavedAt).toBeNull();
   });
 });
+
+describe('B-1508 : un brouillon effacé ne revient pas', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.mocked(localStorage.setItem).mockReset();
+  });
+  afterEach(() => vi.useRealTimers());
+
+  it('effacer abandonne la sauvegarde encore en attente', () => {
+    const { result } = renderHook(() => useAutosave('conversation-1'));
+    act(() => {
+      result.current.saveDraft('Message déjà parti');
+      result.current.clearDraft();
+      vi.advanceTimersByTime(6000);
+    });
+    expect(localStorage.setItem).not.toHaveBeenCalled();
+  });
+});

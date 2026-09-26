@@ -132,10 +132,16 @@ export function useAutosave(conversationId: string | null) {
     }
   }, [conversationId]);
 
-  // Supprimer le brouillon (après envoi réussi)
+  // Supprimer le brouillon (quand son texte quitte le champ)
   const clearDraft = useCallback(() => {
     const key = getDraftKey(conversationId);
     if (!key) return;
+    // B-1508 : une sauvegarde encore en attente réécrivait, jusqu'à cinq
+    // secondes plus tard, le texte qu'on venait d'envoyer.
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
     try {
       localStorage.removeItem(key);
       lastSavedValueRef.current = '';
