@@ -11,7 +11,7 @@ import contextlib
 import logging
 import os
 import re
-from datetime import UTC, datetime
+from datetime import datetime
 from pathlib import Path
 from typing import Any, AsyncGenerator
 
@@ -523,10 +523,17 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
             "janvier", "février", "mars", "avril", "mai", "juin",
             "juillet", "août", "septembre", "octobre", "novembre", "décembre",
         ]
-        now = datetime.now(UTC)
+        # B-1528 : l'heure du POSTE, avec son décalage. En UTC, « dans une
+        # heure » tombait deux heures trop tôt à Paris, et entre minuit et
+        # 2 h la date du jour était celle de la veille.
+        now = datetime.now().astimezone()
         day = str(now.day)
         month_fr = _MOIS_FR[now.month - 1]
-        current_date = f"{day} {month_fr} {now.strftime('%Y, %H:%M')} UTC"
+        decalage = now.strftime("%z")
+        current_date = (
+            f"{day} {month_fr} {now.strftime('%Y, %H:%M')} "
+            f"(heure du poste, UTC{decalage[:3]}:{decalage[3:]})"
+        )
         current_date_example = f"{day} {month_fr} {now.strftime('%Y')}"
 
         # Garde-fous factuels (souveraineté + juridique + honnêteté données)
