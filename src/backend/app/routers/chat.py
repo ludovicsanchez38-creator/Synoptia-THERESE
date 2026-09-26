@@ -2159,6 +2159,28 @@ def _texte_du_resultat_mcp(resultat: Any) -> str:
     return json.dumps(resultat, ensure_ascii=False, default=str)
 
 
+async def _ecrire_reponse(session: AsyncSession, message: Message) -> bool:
+    """B-1494 : écrit un message de réponse, sauf si sa conversation a été
+    supprimée pendant la génération.
+
+    L'insertion part d'abord : elle prend le verrou d'écriture de SQLite, si
+    bien qu'aucune suppression ne peut se glisser entre la vérification qui
+    suit et le commit. Conversation disparue : retour arrière, rien n'est
+    écrit, et l'appelant s'arrête là.
+    """
+    session.add(message)
+    await session.flush()
+    existe = (await session.execute(
+        select(Conversation.id).where(Conversation.id == message.conversation_id)
+    )).first()
+    if existe is None:
+        await session.rollback()
+        logger.info("Conversation supprimée pendant la réponse : rien n'est écrit (B-1494)")
+        return False
+    await session.commit()
+    return True
+
+
 async def _persister_message_partiel(
     conversation_id: str, contenu: str, llm_service: Any
 ) -> None:
@@ -2182,14 +2204,13 @@ async def _persister_message_partiel(
             if deja.scalars().first() is not None:
                 return
             fournisseur, modele = _attribution(llm_service)
-            session_partiel.add(Message(
+            await _ecrire_reponse(session_partiel, Message(
                 conversation_id=conversation_id,
                 role="assistant",
                 content=contenu,
                 model=modele,
                 provider=fournisseur,
             ))
-            await session_partiel.commit()
     except Exception:
         logger.warning("Message partiel non persisté", exc_info=True)
 
@@ -2723,8 +2744,7 @@ async def _do_stream_response(
                         # Sinon la carte vit le temps du flux et disparaît au
                         # rechargement (motif BUG-130), fichier toujours là.
                         err_msg.extra_data = json.dumps({"skill_files": fichiers_outils})
-                    session.add(err_msg)
-                    await session.commit()
+                    await _ecrire_reponse(session, err_msg)
                 except Exception as db_err:
                     logger.warning(f"Impossible de persister le message d'erreur: {db_err}")
                 return
@@ -2765,8 +2785,7 @@ async def _do_stream_response(
                 # Sinon la carte vit le temps du flux et disparaît au
                 # rechargement (motif BUG-130), fichier toujours là.
                 err_msg.extra_data = json.dumps({"skill_files": fichiers_outils})
-            session.add(err_msg)
-            await session.commit()
+            await _ecrire_reponse(session, err_msg)
         except Exception as db_err:
             logger.warning(f"Impossible de persister le message d'erreur: {db_err}")
         return
@@ -2849,8 +2868,9 @@ async def _do_stream_response(
         )
         return
 
-    session.add(assistant_message)
-    await session.commit()
+    # B-1494 : conversation supprimée pendant la réponse, aucun effet de plus.
+    if not await _ecrire_reponse(session, assistant_message):
+        return
 
     # Finish performance tracking (US-PERF-01)
     perf_monitor.finish_stream(conversation_id)
