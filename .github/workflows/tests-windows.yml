@@ -15,7 +15,8 @@ jobs:
   backend-autonomous-windows:
     name: Backend autonome (Windows)
     runs-on: windows-latest
-    timeout-minutes: 15
+    # 26/09/2026 : coupé à 15 min sous charge (run 36218757378), tests verts.
+    timeout-minutes: 25
 
     env:
       THERESE_ENV: test
@@ -42,7 +43,7 @@ jobs:
         # du runner ; `--timeout=60` par test et le timeout du job bornent
         # toujours un blocage.
         run: uv run pytest src/backend/tests/ -q --timeout=60 -p no:cacheprovider --junit-xml=junit-windows-backend.xml
-        timeout-minutes: 14
+        timeout-minutes: 22
 
       - name: Bilan des échecs du backend autonome
         if: always()
