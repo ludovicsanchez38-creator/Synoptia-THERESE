@@ -271,7 +271,9 @@ TOOL_ROUTES: dict[str, tuple[str, str]] = {
     "create_task": ("POST", "/api/tasks"),
     "list_events": ("GET", "/api/calendar/events"),
     "create_event": ("POST", "/api/calendar/events"),
-    "search_memory": ("GET", "/api/memory/search"),
+    # B-1496 : la recherche est une lecture servie en POST (corps de requête) ;
+    # en GET, l'outil échouait à chaque appel.
+    "search_memory": ("POST", "/api/memory/search"),
     "get_project": ("GET", "/api/memory/projects/{project_id}"),
 }
 TOOL_ROUTES = {
