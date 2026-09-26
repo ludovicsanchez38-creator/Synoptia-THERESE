@@ -294,6 +294,20 @@ class MCPService:
             if server.enabled:
                 await self.start_server(server.id)
 
+    async def recharger_la_configuration(self) -> None:
+        """B-1498 : relit `mcp_servers.json` après une restauration.
+
+        Le fichier n'était relu qu'au démarrage : jusqu'au redémarrage, la
+        liste en mémoire restait celle d'avant, et la première modification
+        d'un connecteur la réécrivait sur la configuration restaurée. Les
+        connecteurs lancés sont arrêtés ; rien n'est redémarré ici (l'écran
+        demande de redémarrer THÉRÈSE).
+        """
+        for server_id in list(self._processes):
+            await self.stop_server(server_id)
+        self.servers = {}
+        await self._load_config()
+
     async def _load_config(self):
         """Load server configurations from disk."""
         if not self.config_path.exists():

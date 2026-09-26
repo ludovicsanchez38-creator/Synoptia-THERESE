@@ -1690,6 +1690,13 @@ async def restore_backup(
         # échouait et le chat retombait sur le premier modèle Ollama venu. On
         # la rouvre ici, puis le service de modèles relit les préférences.
         await _rouvrir_la_base_apres_restauration()
+        # B-1498 : la liste des connecteurs en mémoire suit le fichier remis.
+        try:
+            from app.services.mcp_service import get_mcp_service
+
+            await get_mcp_service().recharger_la_configuration()
+        except Exception:
+            logger.exception("Relecture des connecteurs après restauration en échec")
         reprendre_les_creations_du_chat()
         maintenance_mode.end()
         # US-003 : ne jamais laisser subsister l'archive déchiffrée en clair.
