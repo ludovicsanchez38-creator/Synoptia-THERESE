@@ -384,3 +384,20 @@ def test_le_contexte_des_skills_porte_l_etape_de_la_fiche():
 
     assert vue["stage"] == "lost"
     assert vue["name"] == "Karim Benali"
+
+
+def test_le_skill_proposition_recoit_le_score_de_la_fiche(tmp_path):
+    """Revue du diff, constat 8 : le score n'était pas transmis, et chaque
+    proposition portait « Score : Non renseigné/100 ». L'échelle n'est pas
+    plafonnée (SCORE_AIDE, pipelineEtapes.ts) : pas de « /100 »."""
+    from app.routers.skills import contact_pour_un_skill
+    from app.services.skills.text_skills import ProposalSkill
+
+    vue = contact_pour_un_skill(Contact(first_name="Karim", last_name="Benali", stage="proposition", score=145))
+    enrichissement = ProposalSkill(tmp_path).get_enrichment_context({}, {
+        "inputs": {"client_name": "Benali"}, "contacts": [vue],
+    })
+
+    assert vue["score"] == 145
+    assert "- Score : 145\n" in enrichissement["client_context"]
+    assert "/100" not in enrichissement["client_context"]

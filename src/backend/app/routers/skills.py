@@ -35,7 +35,7 @@ router = APIRouter()
 
 def contact_pour_un_skill(c: Contact) -> dict[str, Any]:
     """La fiche telle qu'un skill la lit (P-132 : l'étape y figure ; le skill
-    de proposition l'affichait sans jamais la recevoir, donc toujours
+    de proposition affichait étape et score sans jamais les recevoir, donc
     « Non renseigné »). L'identifiant voyage, le skill écrit le libellé."""
     return {
         'name': f"{c.first_name or ''} {c.last_name or ''}".strip(),
@@ -43,6 +43,8 @@ def contact_pour_un_skill(c: Contact) -> dict[str, Any]:
         'email': c.email,
         'notes': c.notes,
         'stage': c.stage,
+        # Revue du diff P-132, constat 8 : le skill de proposition l'affiche.
+        'score': c.score,
     }
 
 

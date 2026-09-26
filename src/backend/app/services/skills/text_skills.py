@@ -233,7 +233,7 @@ Informations sur {contact['name']} :
 - Entreprise : {contact.get('company', 'Non renseignée')}
 - Email : {contact.get('email', 'Non renseigné')}
 - Étape : {libelle_d_etape(contact['stage']) if contact.get('stage') else 'Non renseignée'}
-- Score : {contact.get('score', 'Non renseigné')}/100
+- Score : {contact.get('score', 'Non renseigné')}
 - Notes : {contact.get('notes', 'Aucune note')}
 """
                     break
