@@ -5,8 +5,9 @@ Attendus écrits :
 - nom de projet : ProjectModal.tsx:248 refuse un nom vide, crm_import.py:498
   « Le nom du projet est requis », et les titres de tâche et de livrable sont
   refusés vides (schemas.py:1128-1133, :1366-1369) ;
-- étape : B-167 (schemas.py:237-249), les sept étapes du pipeline, « une étape
-  hors liste faisait disparaître la fiche du pipeline » ; et B-1126 dans la
+- étape : B-167 (schemas.py:237-249), les huit étapes du pipeline (sept avant
+  « Perdu », P-132), « une étape hors liste faisait disparaître la fiche du
+  pipeline » ; et B-1126 dans la
   route même (data.py:1795-1797) : « Une valeur hors règle prend le défaut » ;
 - project_id : sous-point REJETÉ ; une restauration peut importer les
   conversations avant leurs projets, l'identifiant est rétabli tel quel
@@ -51,7 +52,7 @@ async def test_l_import_json_d_un_contact_ne_recopie_pas_une_etape_hors_pipeline
     assert resp.status_code == 200, resp.text
     fiche = (await client.get("/api/memory/contacts/c-b1182")).json()
     assert fiche["stage"] in {
-        "contact", "discovery", "proposition", "signature", "delivery", "active", "archive"
+        "contact", "discovery", "proposition", "signature", "delivery", "active", "lost", "archive"
     }, f"étape stockée : {fiche['stage']!r}"
 
 

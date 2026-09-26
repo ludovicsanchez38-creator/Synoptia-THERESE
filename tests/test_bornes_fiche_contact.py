@@ -6,8 +6,9 @@ porte : `POST /api/memory/contacts`.
 
 **B-167, l'étape hors pipeline.** `stage` était une chaîne libre. Un contact
 créé avec `stage="nimportequoi"` était accepté en 200 et le gardait à la
-relecture. L'écran, lui, groupe les fiches en parcourant les sept colonnes
-connues (`PipelineView.tsx`, `PIPELINE_STAGES.reduce`) : il n'existe pas de
+relecture. L'écran, lui, groupe les fiches en parcourant les colonnes
+connues (huit depuis « Perdu », P-132 ; `PipelineView.tsx`,
+`PIPELINE_STAGES.reduce`) : il n'existe pas de
 colonne de repli, donc la fiche disparaissait de la vue pipeline sans un mot.
 Accepter une valeur que l'écran ne sait pas rendre, c'est promettre un
 enregistrement puis le cacher.
@@ -58,7 +59,7 @@ class TestUneEtapeHorsPipelineEstRefusee:
         )
 
     @pytest.mark.asyncio
-    async def test_les_sept_etapes_connues_passent(self, client):
+    async def test_les_huit_etapes_connues_passent(self, client):
         for etape in (
             "contact",
             "discovery",
@@ -66,6 +67,8 @@ class TestUneEtapeHorsPipelineEstRefusee:
             "signature",
             "delivery",
             "active",
+            # P-132 : une vente perdue a son étape.
+            "lost",
             "archive",
         ):
             reponse = await _creer_contact(

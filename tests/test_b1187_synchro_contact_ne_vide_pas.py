@@ -89,14 +89,14 @@ async def test_temoin_une_ligne_complete_met_bien_la_fiche_a_jour(client):
 @pytest.mark.asyncio
 async def test_mesure_une_etape_hors_pipeline_venue_du_tableur(client):
     """Mesure annexe (B-167, schemas.py:237-249) : l'étape du tableur n'est pas
-    confrontée aux sept étapes du pipeline."""
+    confrontée aux huit étapes du pipeline (sept avant « Perdu », P-132)."""
     avant = await _fiche_pleine(client)
     ligne = {"ID": avant["id"], "Nom": "Alice Martin", "Stage": "Gelé"}
     resp = await client.post("/api/crm/sync/import", json={"clients": [ligne]})
     assert resp.status_code == 200, resp.text
     apres = (await client.get(f"/api/memory/contacts/{avant['id']}")).json()
     assert apres["stage"] in {
-        "contact", "discovery", "proposition", "signature", "delivery", "active", "archive"
+        "contact", "discovery", "proposition", "signature", "delivery", "active", "lost", "archive"
     }, f"étape stockée après synchro : {apres['stage']!r}"
 
 

@@ -1,5 +1,5 @@
 /**
- * B-1426 (tri de la couverture écran P-145, 25/09) : la grille des sept étapes
+ * B-1426 (tri de la couverture écran P-145, 25/09) : la grille des huit étapes
  * défile en largeur, mais ne prenait pas le focus. Au clavier, les colonnes
  * sans carte hors champ (Livraison, Actif, Archive vides) restaient
  * invisibles : aucune flèche ne faisait défiler la grille.

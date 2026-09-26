@@ -640,7 +640,9 @@ async def infer_rgpd_base_legale(
 
     Logique :
     - Clients actifs/signature/delivery → contrat
-    - Prospects (contact/discovery/proposition) → intérêt légitime
+    - Prospects (contact/discovery/proposition), ventes perdues (lost) et
+      fiches archivées → intérêt légitime (P-132 : un prospect perdu n'a
+      jamais signé)
     - Si consentement explicite → consentement
     """
     result = await session.execute(
