@@ -5,11 +5,11 @@ Parse et importe des fichiers .ics (calendrier) et .vcf (contacts).
 """
 
 import logging
-from datetime import UTC
 from typing import Any
 
 import vobject
 from app.services.calendar.base_provider import allday_end_from_wire
+from app.services.civil_time import PARIS
 from app.services.crm_import import _sanitize_field
 from icalendar import Calendar
 
@@ -53,11 +53,14 @@ def parse_ics(content: bytes) -> list[dict]:
             start_str = start_dt.isoformat()
             end_str = end_dt.isoformat()
         else:
-            # S'assurer que c'est un datetime aware
-            if start_dt.tzinfo is None:
-                start_dt = start_dt.replace(tzinfo=UTC)
-            if end_dt.tzinfo is None:
-                end_dt = end_dt.replace(tzinfo=UTC)
+            # B-1486 : l'agenda local range une heure murale de Paris sans
+            # fuseau (B-275), et SQLite jette le décalage. Un instant daté
+            # (Z ou TZID) est donc ramené à Paris ; une heure flottante
+            # (RFC 5545 : l'heure du lieu) reste telle quelle.
+            if start_dt.tzinfo is not None:
+                start_dt = start_dt.astimezone(PARIS).replace(tzinfo=None)
+            if end_dt.tzinfo is not None:
+                end_dt = end_dt.astimezone(PARIS).replace(tzinfo=None)
             start_str = start_dt.isoformat()
             end_str = end_dt.isoformat()
 
