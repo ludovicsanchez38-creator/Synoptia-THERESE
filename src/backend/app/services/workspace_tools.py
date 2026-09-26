@@ -19,6 +19,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
+# B-1624 : le début du message « pas d'agenda », comparé par la carte de confirmation.
+AUCUN_AGENDA = "Aucun agenda configuré"
+
 # Revue 30/08 finding 1 : le chat parlait au premier compte de la table,
 # pas à celui de l'écran. L'identifiant voyage avec la requête (ChatRequest)
 # puis, pour un envoi confirmé plus tard, dans les arguments en attente.
@@ -1197,7 +1200,7 @@ async def _resoudre_calendrier(
         )
     if not auto_create_local:
         return None, (
-            "Aucun agenda configuré. Connecte un compte Google, ou crée un "
+            f"{AUCUN_AGENDA}. Connecte un compte Google, ou crée un "
             "agenda local depuis l'écran Agenda."
         )
     cal = Calendar(
@@ -1248,7 +1251,8 @@ async def get_calendar_confirmation_destination(
         session, calendar_id=calendar_id, auto_create_local=False
     )
     if error:
-        if "Aucun calendrier configure" in (error or ""):
+        # B-1624 : le même texte que le message (B-1431 l'avait réécrit ici seulement).
+        if (error or "").startswith(AUCUN_AGENDA):
             return {
                 "calendar_id": None,
                 "calendar_name": "Mon calendrier",
