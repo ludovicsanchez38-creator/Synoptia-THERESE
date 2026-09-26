@@ -604,30 +604,36 @@ TRAVAUX_DE_FOND_EN_COURS = (
 async def _arreter_les_traitements_vivants() -> None:
     """B-1520 : Board, Atelier, trame, extraction et réponses en cours
     écrivaient leur fin après la purge (la décision du Board, question
-    comprise). Chaque traitement vivant de ce processus reçoit une demande
-    d'arrêt, puis on attend sa fin réelle : sorti du registre ET état
-    terminal en base. Le registre seul ne suffit pas : le Board s'y inscrit
+    comprise). Chaque traitement inscrit au registre de ce processus reçoit
+    une demande d'arrêt, puis on attend son état terminal en base : le
+    producteur le pose après sa dernière écriture (`terminer`), et le seul
+    terminal posé par un autre, le CAS queued → cancelled, empêche le
+    démarrage. La sortie du registre ne suffit pas : le Board s'y inscrit
     par sa tâche porteuse, qui en sort dès son annulation, alors que la
-    décision est commitée par une tâche séparée sous `shield` ; la route ne
-    pose l'état terminal qu'après ce commit. Un producteur qui ne clôt
-    jamais finit au plafond de `_arreter_les_travaux_de_fond` (503, rien
-    d'effacé).
+    décision est commitée par une tâche séparée sous `shield`. La présence
+    au registre ne retient pas non plus : une entrée sans ligne ne produira
+    plus rien. Le registre est relu à chaque tour : un travail qui s'y
+    inscrit pendant l'attente est arrêté et attendu à son tour. Un
+    producteur qui ne clôt jamais finit au plafond de
+    `_arreter_les_travaux_de_fond` (503, rien d'effacé).
     """
     from app.models.processing import EtatTache
     from app.services import task_registry, traitements
 
-    restants = set(task_registry.vivantes())
-    for identifiant in restants:
-        await traitements.demander_arret(identifiant)
-    while restants:
+    arretes: set[str] = set()
+    restants: set[str] = set()
+    while True:
+        for identifiant in set(task_registry.vivantes()) - arretes:
+            arretes.add(identifiant)
+            restants.add(identifiant)
+            await traitements.demander_arret(identifiant)
         for identifiant in list(restants):
-            if task_registry.est_vivante(identifiant):
-                continue
             ligne = await traitements.lire(identifiant)
             if ligne is None or ligne.state in EtatTache.terminaux():
                 restants.discard(identifiant)
-        if restants:
-            await asyncio.sleep(0.05)
+        if not restants and not set(task_registry.vivantes()) - arretes:
+            return
+        await asyncio.sleep(0.05)
 
 
 async def _arreter_les_travaux_de_fond() -> None:
