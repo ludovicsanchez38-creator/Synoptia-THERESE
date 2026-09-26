@@ -1746,6 +1746,17 @@ async def restore_backup(
     # B-1124 : le service des modèles gardait aussi l'ancienne clé.
     _oublier_les_cles_en_memoire()
 
+    # B-1522 : jumeau de B-1505 pour la restauration. La table des
+    # préférences vient d'être remplacée ; l'interrupteur de recherche web
+    # garde sinon le choix d'avant jusqu'au redémarrage.
+    from app.services.web_search import (
+        charger_autorisation_depuis_la_base,
+        poser_autorisation_recherche,
+    )
+
+    poser_autorisation_recherche(None)
+    await charger_autorisation_depuis_la_base()
+
     # Revue 0.40/0.40.1 : l'archive de sécurité devient une sauvegarde chiffrée
     # visible, ou disparaît si le chiffrement est impossible (US-003 : jamais
     # de clair persistant, l'archive contient la clé de chiffrement).
