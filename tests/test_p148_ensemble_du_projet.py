@@ -67,7 +67,7 @@ class TestLaRoute:
         assert ensemble["contacts"]["total"] == 1
         assert ensemble["contacts"]["ranges"] == 1
         assert ensemble["contacts"]["elements"] == [
-            {"id": garni.contact_range_id, "nom": "Julien Garnier", "entreprise": None, "associe": False},
+            {"id": garni.contact_range_id, "first_name": "Julien", "last_name": "Garnier", "company": None, "associe": False},
         ]
         assert ensemble["livrables"] == {"total": 1}
         assert ensemble["fichiers"] == {"total": 1}
@@ -145,8 +145,8 @@ class TestLeContactAssocie:
 
         assert contacts["total"] == 2
         assert contacts["elements"] == [
-            {"id": "contact-camille", "nom": "Camille Roux", "entreprise": "Roux SARL", "associe": True},
-            {"id": garni.contact_range_id, "nom": "Julien Garnier", "entreprise": None, "associe": False},
+            {"id": "contact-camille", "first_name": "Camille", "last_name": "Roux", "company": "Roux SARL", "associe": True},
+            {"id": garni.contact_range_id, "first_name": "Julien", "last_name": "Garnier", "company": None, "associe": False},
         ]
 
     @pytest.mark.asyncio
@@ -167,7 +167,7 @@ class TestLeContactAssocie:
 
         assert contacts["total"] == 1
         assert contacts["elements"] == [
-            {"id": garni.contact_range_id, "nom": "Julien Garnier", "entreprise": None, "associe": True},
+            {"id": garni.contact_range_id, "first_name": "Julien", "last_name": "Garnier", "company": None, "associe": True},
         ]
         # La suppression le rendra au général : il reste compté parmi les rangés.
         assert contacts["ranges"] == 1

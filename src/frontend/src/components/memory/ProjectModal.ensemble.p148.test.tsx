@@ -9,7 +9,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Contact, EnsembleDuProjet, Project } from '../../services/api';
-import { buildReplacementMap, maskProject, maskText } from '../../lib/demoMask';
+import { buildReplacementMap, maskContact, maskProject } from '../../lib/demoMask';
 import { useDemoStore } from '../../stores/demoStore';
 
 const api = vi.hoisted(() => ({
@@ -53,8 +53,8 @@ function ensemble(partiel: Partial<EnsembleDuProjet> = {}): EnsembleDuProjet {
     contacts: {
       total: 2, ranges: 1,
       elements: [
-        { id: 'c-camille', nom: 'Camille Roux', entreprise: 'Roux SARL', associe: true },
-        { id: 'c-julien', nom: 'Julien Garnier', entreprise: null, associe: false },
+        { id: 'c-camille', first_name: 'Camille', last_name: 'Roux', company: 'Roux SARL', associe: true },
+        { id: 'c-julien', first_name: 'Julien', last_name: 'Garnier', company: null, associe: false },
       ],
     },
     livrables: { total: 0 }, fichiers: { total: 0 }, rendez_vous: { total: 0 },
@@ -231,6 +231,25 @@ describe('P-148 : la fenêtre du projet, une vue d’ensemble d’abord', () => 
     await ouvrir();
     const contacts = await screen.findByRole('list', { name: 'Contacts (2)' });
     expect(within(contacts).queryByText('Camille Roux')).toBeNull();
-    expect(within(contacts).getByText(maskText('Camille Roux', remplacements))).toBeInTheDocument();
+    // Le même pseudonyme que le sélecteur « Contact associé » de la fenêtre.
+    const camille = maskContact(CAMILLE);
+    expect(within(contacts).getByText(`${camille.first_name} ${camille.last_name}`)).toBeInTheDocument();
+  });
+
+  it.each([
+    ['carnet lu, sans Julien', () => api.listContacts.mockResolvedValue([CAMILLE])],
+    ['carnet jamais lu', () => api.listContacts.mockReturnValue(new Promise(() => {}))],
+  ])('revue P-148, constat 2 : en démonstration, un contact rangé absent du carnet ne paraît jamais (%s)', async (_cas, carnet) => {
+    carnet();
+    useDemoStore.setState({ enabled: true, replacementMap: new Map() });
+    await ouvrir();
+    const contacts = await screen.findByRole('list', { name: 'Contacts (2)' });
+    for (const reel of ['Julien Garnier', 'Julien', 'Garnier', 'Camille Roux', 'Roux SARL']) {
+      expect(screen.queryByText(reel)).toBeNull();
+      expect(contacts).not.toHaveTextContent(reel);
+    }
+    const julien = maskContact({ id: 'c-julien', first_name: 'Julien', last_name: 'Garnier', company: null });
+    expect(within(contacts).getByText(`${julien.first_name} ${julien.last_name}`)).toBeInTheDocument();
+    expect(within(contacts).getByRole('button', { name: `Ouvrir la fiche de ${julien.first_name} ${julien.last_name}` })).toBeInTheDocument();
   });
 });

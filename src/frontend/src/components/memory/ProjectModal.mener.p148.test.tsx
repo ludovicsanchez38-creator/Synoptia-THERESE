@@ -45,7 +45,7 @@ const ENSEMBLE: EnsembleDuProjet = {
   conversations: { total: 1, elements: [{ id: 'conv-devis', titre: 'Devis cuisine', mise_a_jour: '2026-09-25T08:00:00+00:00' }] },
   documents: { total: 1, elements: [{ id: 'doc-plan', titre: 'Plan de formation', statut: 'en_cours', mise_a_jour: '2026-09-24T08:00:00+00:00' }] },
   taches: { total: 1, ouvertes: 1, en_retard: 0, elements: [{ id: 't-1', titre: 'Métrer', statut: 'todo', echeance: null, en_retard: false }] },
-  contacts: { total: 1, ranges: 0, elements: [{ id: 'c-camille', nom: 'Camille Roux', entreprise: null, associe: true }] },
+  contacts: { total: 1, ranges: 0, elements: [{ id: 'c-camille', first_name: 'Camille', last_name: 'Roux', company: null, associe: true }] },
   livrables: { total: 0 }, fichiers: { total: 0 }, rendez_vous: { total: 0 },
   sous_dossiers: { total: 0 }, planning: { total: 0 }, indisponibles: [],
 };

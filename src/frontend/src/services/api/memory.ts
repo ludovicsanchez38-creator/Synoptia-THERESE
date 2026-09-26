@@ -196,8 +196,10 @@ export interface TacheDuProjet {
 
 export interface ContactDuProjet {
   id: string;
-  nom: string;
-  entreprise: string | null;
+  /** Champs séparés : en démonstration, l'écran applique maskContact. */
+  first_name: string | null;
+  last_name: string | null;
+  company: string | null;
   /** Le contact associé au projet (sinon, un contact rangé dans le projet). */
   associe: boolean;
 }

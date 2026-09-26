@@ -185,7 +185,7 @@ inconnu : `404`.
   "taches": { "total": 9, "ouvertes": 4, "en_retard": 1,
               "elements": [{ "id": "…", "titre": "…", "statut": "todo", "echeance": "2026-09-20T12:00:00", "en_retard": true }] },
   "contacts": { "total": 2, "ranges": 1,
-                "elements": [{ "id": "…", "nom": "…", "entreprise": "…", "associe": true }] },
+                "elements": [{ "id": "…", "first_name": "…", "last_name": "…", "company": "…", "associe": true }] },
   "livrables": { "total": 3 },
   "fichiers": { "total": 12 },
   "rendez_vous": { "total": 2 },
@@ -200,6 +200,8 @@ inconnu : `404`.
 - `en_retard` : tâche ouverte dont l'échéance (jour décidé, sans fuseau) est
   antérieure au jour civil de Paris.
 - Conversations listées quel que soit leur `memory_scope`.
+- Un contact est rendu champ par champ (`first_name`, `last_name`, `company`) :
+  en démonstration, l'écran applique `maskContact`, comme partout ailleurs.
 - `contacts.total` compte les personnes distinctes (le contact associé en tête,
   `associe: true`, dédoublonné s'il est aussi rangé dans le projet) ;
   `contacts.ranges` compte les contacts rangés dans le projet, que la

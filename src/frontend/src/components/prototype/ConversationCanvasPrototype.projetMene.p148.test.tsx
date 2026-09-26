@@ -65,7 +65,7 @@ const ENSEMBLE: EnsembleDuProjet = {
     total: 9, ouvertes: 4, en_retard: 1,
     elements: [{ id: 't-1', titre: 'Commander le plan de travail', statut: 'todo', echeance: null, en_retard: false }],
   },
-  contacts: { total: 1, ranges: 0, elements: [{ id: 'c-camille', nom: 'Camille Roux', entreprise: 'Roux SARL', associe: true }] },
+  contacts: { total: 1, ranges: 0, elements: [{ id: 'c-camille', first_name: 'Camille', last_name: 'Roux', company: 'Roux SARL', associe: true }] },
   livrables: { total: 0 }, fichiers: { total: 0 }, rendez_vous: { total: 0 },
   sous_dossiers: { total: 0 }, planning: { total: 0 }, indisponibles: [],
 };

@@ -196,11 +196,15 @@ async def _lire_taches(
 
 
 def _contact(fiche: Contact, *, associe: bool) -> dict[str, Any]:
-    nom = " ".join(partie for partie in (fiche.first_name, fiche.last_name) if partie)
+    # Revue P-148, constat 2 : les champs séparés, pas un nom composé. En
+    # démonstration, l'écran applique maskContact champ par champ, comme le
+    # sélecteur « Contact associé » ; une substitution de texte ne masquait
+    # pas un contact absent du carnet chargé.
     return {
         "id": fiche.id,
-        "nom": nom or fiche.company or "Sans nom",
-        "entreprise": fiche.company if nom else None,
+        "first_name": fiche.first_name,
+        "last_name": fiche.last_name,
+        "company": fiche.company,
         "associe": associe,
     }
 

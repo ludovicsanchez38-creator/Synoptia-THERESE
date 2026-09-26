@@ -12,6 +12,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { lireLEnsembleDuProjet, type EnsembleDuProjet } from '../../services/api';
 import type { DestinationDuTravail } from '../../lib/destinationDuTravail';
 import { formatRelativeDate } from '../../lib/utils';
+import { useDemoMask } from '../../hooks/useDemoMask';
 import { VueDEnsemble, type EtatDeLEnsemble, type FamilleDEnsemble } from '../ui/VueDEnsemble';
 
 const LIMITE_COURTE = 5;
@@ -50,6 +51,7 @@ export function ProjectEnsembleSection({
    */
   onMener?: (cible: DestinationDuTravail) => void;
 }) {
+  const { maskContact } = useDemoMask();
   const [ensemble, setEnsemble] = useState<EnsembleDuProjet | null>(null);
   const [etat, setEtat] = useState<EtatDeLEnsemble>('chargement');
   const [limite, setLimite] = useState(LIMITE_COURTE);
@@ -188,11 +190,18 @@ export function ProjectEnsembleSection({
     libelle: 'Contacts',
     total: e ? (e.contacts?.total ?? null) : 0,
     elements: contacts.map((c) => {
-      const nom = masquer(c.nom);
+      // Revue P-148, constat 2 : maskContact champ par champ, comme le
+      // sélecteur « Contact associé ». Le masque de texte de la fenêtre ne
+      // connaît que les contacts lus : un contact rangé absent du carnet
+      // sortait en clair.
+      const fiche = maskContact(c);
+      const nomComplet = [fiche.first_name, fiche.last_name].filter(Boolean).join(' ');
+      const nom = nomComplet || fiche.company || 'Contact sans nom';
+      const entreprise = nomComplet ? fiche.company : null;
       return {
         id: c.id,
         libelle: nom,
-        detail: c.associe ? 'Contact associé' : c.entreprise ? masquer(c.entreprise) : 'Rangé dans ce projet',
+        detail: c.associe ? 'Contact associé' : entreprise || 'Rangé dans ce projet',
         nomAccessible: `Ouvrir la fiche de ${nom}`,
         onOuvrir: onMener && (() => onMener({ kind: 'contact', id: c.id })),
       };
