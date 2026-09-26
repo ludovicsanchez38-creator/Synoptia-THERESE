@@ -1961,6 +1961,14 @@ async def delete_backup(backup_name: str):
     return {"deleted": True, "backup_name": backup_name}
 
 
+def _portee_importee(portee: object, projet_id: str | None) -> str:
+    """B-1596 : seule une portée « project » sans projet se rabat sur global."""
+    valeur = portee if isinstance(portee, str) and portee else "global"
+    if valeur == "project" and not projet_id:
+        return "global"
+    return valeur
+
+
 @router.post("/import/conversations")
 async def import_conversations(
     data: dict,
@@ -2029,8 +2037,9 @@ async def import_conversations(
             "title": conv_data.get("title"),
             "summary": conv_data.get("summary"),
             "project_id": projet_id,
-            # Une politique « project » sans projet cloisonnerait sur du vide.
-            "memory_scope": (conv_data.get("memory_scope") or "global") if projet_id else "global",
+            # Une politique « project » sans projet cloisonnerait sur du vide ;
+            # B-1596 : « all » (Tous les projets) n'a pas de projet et reste.
+            "memory_scope": _portee_importee(conv_data.get("memory_scope"), projet_id),
         }
         if conv_data.get("id"):
             conversation_kwargs["id"] = conv_data["id"]
