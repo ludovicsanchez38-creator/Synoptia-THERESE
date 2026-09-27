@@ -652,3 +652,20 @@ dernier enfant VISIBLE (le dernier enfant DOM était un wrapper vide).
 - **Une purge RGPD doit vider chaque mémoire, pas seulement la table** (B-1124, B-1145) : cache des clés, service des modèles, clé Brave, extracteur d'entités, cache de THERESE.md. Tester par le parcours (la clé réellement servie), pas par le cache.
 - **Traduire le code nu « API error: NNN » au moment de lever l'erreur**, après le comptage du disjoncteur qui en a besoin (B-1147).
 - **La garde des arguments d'agent ne confine pas l'exécution** (B-1153) : un `pytest.ini` écrit par l'agent suffit à vider un dossier hors du dépôt.
+
+## Préparation de release 0.76.1 (27/09/2026)
+
+- **Une constante de famille socket Unix peut manquer sous Windows.** Lire
+  `socket.AF_UNIX` par `getattr` et n'exercer `socketpair()` en test que si la
+  famille existe. La suite Windows a révélé cet écart alors que macOS/Linux
+  passaient.
+- **Un Python fils Windows a besoin de `SYSTEMROOT` même dans un profil
+  jetable.** L'omettre de son environnement peut faire échouer l'import
+  d'`asyncio`/`_overlapped` avant le code testé (`WinError 10106`). Conserver
+  les variables système nécessaires tout en isolant HOME, APPDATA et TEMP.
+- **Créer la boucle `asyncio` avant de remplacer `socket.bind` par un spy.**
+  Le Proactor Windows construit son `socketpair` de réveil en TCP : un spy qui
+  simule `bind` sans l'effectuer provoque `WinError 10022` pendant
+  `asyncio.run()`. Préparer la boucle, poser les spies, puis lancer les
+  assertions sur cette boucle. Détail et JUnit dans
+  `docs/SUIVI-CYCLE14-CODEX-2026-09-26.md`.
