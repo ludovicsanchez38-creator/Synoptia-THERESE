@@ -582,3 +582,29 @@ ajoutée : P-157, P-158 et P-159 restent en attente d'un choix de Ludo.
 Ce plateau concerne la pile locale jetable servie par Vite, Chromium et le
 backend hors ligne. Il ne vaut pas recette du binaire Tauri packagé. Aucune
 release n'a été lancée et l'instance réelle n'a pas été modifiée.
+
+## Contre-épreuve temporelle B4
+
+Un audit indépendant a relevé que les navigations A4 et B3 se chevauchaient,
+alors que le skill demande deux rondes successives. Leurs évaluations étaient
+séquentielles, mais cette preuve temporelle restait insuffisante. Une nouvelle
+ronde B4 a donc été exécutée **après** B3, par `/root/audit_plateau` : B3 se
+termine à 14:17:51 UTC et B4 commence à 14:51:29 UTC le 27/09/2026.
+
+Un premier préflight B4 sur une base temporaire vierge affichait uniquement
+l'onboarding et relevait un seul contrôle par écran ; il a été interrompu et
+conservé comme essai invalide. Le backend a ensuite été démarré sur la base
+**jetable déjà configurée**, avec le port 17393 explicite ; le préflight de
+l'Accueil relevait 21 commandes et une garde réseau vide.
+
+La B4 finale a parcouru **21 écrans dans quatre combinaisons**, exercé
+**197 gestes** à 1440 px clair et produit 84 captures. Sa garde est vide.
+Ses trois signalements sont les mêmes que dans B3 et sont arbitrés par de
+nouvelles sondes servies du Pipeline et de l'Agenda. Quatre captures ont été
+inspectées ; la console, le réseau et le journal backend n'ont aucune erreur
+pendant la période. Le manifeste
+`.app-loop/cycles/14/zero-check/plateau-round-b4-final.json` référence le
+rapport écran, les tests verts, la cartographie post-commit à **2081/2081**
+et les **96/96** transitions critiques. `plateau-evaluate` l'a accepté ;
+les deux dernières rondes B3 et B4 sont désormais successives et indépendantes.
+La phase reste `HUMAN_GATE`, avec P-157, P-158 et P-159 en attente.
