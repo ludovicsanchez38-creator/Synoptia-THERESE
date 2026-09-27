@@ -31,6 +31,7 @@ from app.models.schemas import (
 from app.services.audit import AuditAction, log_activity
 from app.services.encryption import decrypt_value, encrypt_value, is_value_encrypted
 from app.services.http_client import get_http_client
+from app.services.preference_security import est_cle_secrete_de_preference
 from app.services.providers.base import LLMProvider
 from app.services.system_resources import OLLAMA_CONTEXT_MARGIN_BYTES, detect_system_memory
 from fastapi import APIRouter, Body, Depends, HTTPException, Request
@@ -519,8 +520,8 @@ async def get_preferences(
             "updated_at": pref.updated_at.isoformat(),
         }
         for pref in preferences
-        # Don't expose API keys
-        if "api_key" not in pref.key
+        # B-1564 : les jetons OAuth et secrets clients restent côté serveur.
+        if not est_cle_secrete_de_preference(pref.key)
     }
 
 
@@ -609,6 +610,14 @@ async def set_preference(
                 "Le mode cabinet s'active par POST /api/config/mode-cabinet, "
                 "qui compte d'abord les fiches concernees."
             ),
+        )
+
+    # B-1563 : le dossier de travail est une frontière de confiance.
+    # Sa route dédiée vérifie le chemin et doit rester l'unique porte d'écriture.
+    if key.lower() == "working_directory":
+        raise HTTPException(
+            status_code=400,
+            detail="Choisis le dossier de travail par POST /api/config/working-directory.",
         )
 
     # Revue dette 0.43.4 : ce detour permettait d'ecrire une adresse de
@@ -850,6 +859,22 @@ async def delete_preference(
                 "Le mode cabinet se coupe par POST /api/config/mode-cabinet, "
                 "qui applique la politique au processus en cours."
             ),
+        )
+
+    # B-1710 : effacer ce choix ferait reprendre au préréglage MCP son dossier
+    # de repli, hors du chemin dédié que l'utilisatrice avait validé.
+    if key.lower() == "working_directory":
+        raise HTTPException(
+            status_code=400,
+            detail="Le dossier de travail se choisit par POST /api/config/working-directory.",
+        )
+
+    # B-1711 : la route dédiée vide aussi les caches LLM et fournisseur.
+    # Ici, une suppression SQL seule laisse la clé utilisable en mémoire.
+    if "api_key" in key.lower():
+        raise HTTPException(
+            status_code=400,
+            detail="Supprime la clé par DELETE /api/config/api-key/{provider}.",
         )
 
     result = await session.execute(select(Preference).where(Preference.key == key))

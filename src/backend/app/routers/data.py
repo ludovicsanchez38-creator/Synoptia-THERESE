@@ -63,6 +63,7 @@ from app.services.crm_utils import etiquettes_ecartees, etiquettes_lues
 from app.services.encryption import decrypt_backup_archive, encrypt_backup_archive
 from app.services.error_handler import message_pour_ecran
 from app.services.maintenance import maintenance_mode
+from app.services.preference_security import est_cle_secrete_de_preference
 from fastapi import APIRouter, Body, Depends, HTTPException, Query
 from fastapi.responses import JSONResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -108,9 +109,6 @@ def _export_row(
 # ============================================================
 
 
-_MOTIFS_DE_SECRET = ("api_key", "apikey", "secret", "token", "password", "passwd", "mot_de_passe")
-
-
 def _valeur_de_preference_exportable(pref: Preference) -> str:
     """La valeur d'une préférence, telle qu'elle peut sortir de l'export."""
     from app.services.user_profile import PROFILE_KEY
@@ -119,8 +117,7 @@ def _valeur_de_preference_exportable(pref: Preference) -> str:
     # OAuth du CRM (crm_sheets_access_token, refresh_token), le secret client
     # Google et les mots de passe de messagerie sortaient tels quels dans
     # l'export de portabilité, chiffrés ou non.
-    cle = pref.key.lower()
-    if any(motif in cle for motif in _MOTIFS_DE_SECRET):
+    if est_cle_secrete_de_preference(pref.key):
         return "[REDACTED]"
     if pref.key == PROFILE_KEY:
         return "[voir la section profil]"
