@@ -4,14 +4,15 @@ import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('../../services/api', () => ({
-  getWorkingDirectory: vi.fn(), indexFile: vi.fn(), listFiles: vi.fn().mockResolvedValue([]),
+  getWorkingDirectory: vi.fn().mockResolvedValue({ path: '/dossier', exists: true }),
+  indexFile: vi.fn(), listFiles: vi.fn().mockResolvedValue([]),
 }));
-vi.mock('@tauri-apps/api/path', () => ({ homeDir: vi.fn(() => Promise.reject(new TypeError('invoke'))), resolve: vi.fn() }));
-vi.mock('@tauri-apps/plugin-fs', () => ({ readDir: vi.fn(() => Promise.reject(new TypeError('invoke'))), stat: vi.fn() }));
+vi.mock('@tauri-apps/api/path', () => ({ homeDir: vi.fn(), resolve: vi.fn() }));
+vi.mock('@tauri-apps/plugin-fs', () => ({ readDir: vi.fn().mockResolvedValue([]), stat: vi.fn() }));
 vi.mock('@tauri-apps/plugin-dialog', () => ({ open: vi.fn(() => Promise.reject(new TypeError('invoke'))) }));
 vi.mock('../../lib/utils', async () => {
   const actual = await vi.importActual<typeof import('../../lib/utils')>('../../lib/utils');
-  return { ...actual, isTauri: () => false };
+  return { ...actual, isTauri: () => true };
 });
 
 import { FileBrowser } from './FileBrowser';

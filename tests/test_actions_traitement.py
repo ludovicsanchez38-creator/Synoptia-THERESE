@@ -275,7 +275,11 @@ class TestLaRouteHistoriqueEstCanonique:
         )
         assert (await _traitement_action(task.task_id)) is not None
 
-        reponse = await client.delete(f"/api/actions/tasks/{task.task_id}")
+        # TestClient.delete est synchrone : le laisser tourner sur la boucle
+        # bloquerait l'action de fond si elle détient encore la transaction SQL.
+        reponse = await asyncio.to_thread(
+            client.delete, f"/api/actions/tasks/{task.task_id}"
+        )
         assert reponse.status_code == 200
 
         relu = await _traitement_action(task.task_id)

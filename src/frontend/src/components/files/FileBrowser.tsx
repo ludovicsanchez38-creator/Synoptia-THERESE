@@ -375,6 +375,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             icon={<Search className="w-4 h-4" />}
+            disabled={!natif}
           />
         </div>
       </div>
@@ -438,7 +439,7 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
 
       {/* File list */}
       <div className="flex-1 overflow-y-auto">
-        {loading ? (
+        {!natif ? null : loading ? (
           <div className="flex items-center justify-center h-32">
             <Spinner taille="zone" className="text-accent" />
           </div>
@@ -546,11 +547,13 @@ export function FileBrowser({ onFileSelect, onFileIndex, className }: FileBrowse
       </div>
 
       {/* Footer stats */}
-      <div className="px-3 py-2 border-t border-border/50 text-xs text-text-muted">
-        {/* B-1450 : accents et accord (« 0 élément », « 3 éléments »). */}
-        {filteredEntries.length} {filteredEntries.length > 1 ? 'éléments' : 'élément'}
-        {searchQuery && ` (filtre : « ${searchQuery} »)`}
-      </div>
+      {natif && (
+        <div className="px-3 py-2 border-t border-border/50 text-xs text-text-muted">
+          {/* B-1450 : accents et accord (« 0 élément », « 3 éléments »). */}
+          {filteredEntries.length} {filteredEntries.length > 1 ? 'éléments' : 'élément'}
+          {searchQuery && ` (filtre : « ${searchQuery} »)`}
+        </div>
+      )}
     </div>
   );
 }

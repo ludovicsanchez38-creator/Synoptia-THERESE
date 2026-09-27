@@ -9,6 +9,8 @@ import { motion } from 'framer-motion';
 import { Mail, Phone, Users, FileText, TrendingUp, ArrowRight } from 'lucide-react';
 import { listActivities, type ActivityResponse } from '../../services/api';
 import { presenterActivite } from '../../lib/activitesCrm';
+import { Alerte } from '../ui/Alerte';
+import { Button } from '../ui/Button';
 import { EtatVide } from '../ui/EtatVide';
 import { useDemoMask } from '../../hooks';
 import { Squelette } from '../ui/Squelette';
@@ -43,6 +45,7 @@ const ACTIVITY_COLORS = {
 export function ActivityTimeline({ contactId, compacte = false }: ActivityTimelineProps) {
   const [activities, setActivities] = useState<ActivityResponse[]>([]);
   const [loading, setLoading] = useState(true);
+  const [erreurActivites, setErreurActivites] = useState(false);
   // B-1414 : une note de séance porte des noms ; en démonstration, masqués.
   const { maskText } = useDemoMask();
 
@@ -55,8 +58,10 @@ export function ActivityTimeline({ contactId, compacte = false }: ActivityTimeli
       setLoading(true);
       const data = await listActivities({ contact_id: contactId, limit: 50 });
       setActivities(data);
+      setErreurActivites(false);
     } catch (error) {
       console.error('Failed to load activities:', error);
+      setErreurActivites(true);
     } finally {
       setLoading(false);
     }
@@ -84,6 +89,17 @@ export function ActivityTimeline({ contactId, compacte = false }: ActivityTimeli
 
   if (loading) {
     return <Squelette lignes={3} />;
+  }
+
+  if (erreurActivites) {
+    return (
+      <Alerte
+        titre="Activités indisponibles"
+        action={<Button type="button" variant="secondary" size="sm" onClick={() => void loadActivities()}>Réessayer</Button>}
+      >
+        Les activités de ce contact n’ont pas pu être lues.
+      </Alerte>
+    );
   }
 
   if (activities.length === 0) {

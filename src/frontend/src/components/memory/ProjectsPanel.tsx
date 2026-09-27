@@ -171,7 +171,7 @@ export function ProjectsPanel() {
               {projects.length}{listeTronquee ? '+' : ''} projet{projects.length > 1 ? 's' : ''}
             </p>
           </div>
-          <Button variant="primary" size="md" className="ml-auto max-[840px]:basis-full max-[840px]:ml-0" onClick={handleNew}>
+          <Button variant="primary" size="md" className="ml-auto max-[840px]:basis-full max-[840px]:ml-0" onClick={handleNew} data-testid="nouveau-projet-entete">
             <Plus className="h-[18px] w-[18px] mr-2" />
             Nouveau projet
           </Button>
@@ -220,7 +220,7 @@ export function ProjectsPanel() {
             data-testid="projets-etat-vide"
             titre="Aucun projet"
             action={(
-              <Button type="button" variant="primary" size="md" onClick={handleNew}>
+              <Button type="button" variant="primary" size="md" onClick={handleNew} data-testid="nouveau-projet-etat-vide">
                 <Plus className="h-[18px] w-[18px] mr-2" />
                 Nouveau projet
               </Button>

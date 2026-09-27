@@ -504,7 +504,10 @@ async def lifespan(app: FastAPI):
         mcp_service = get_mcp_service()
         await mcp_service.shutdown()
         await close_skills()
-        await close_qdrant()
+
+    # /health peut ouvrir Qdrant à la demande même si les autres services ont
+    # été ignorés au démarrage (THERESE_SKIP_SERVICES=1).
+    await close_qdrant()
 
     await close_db()
     logger.info("Cleanup complete")

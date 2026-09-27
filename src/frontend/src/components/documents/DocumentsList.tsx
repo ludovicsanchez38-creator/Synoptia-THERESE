@@ -255,7 +255,7 @@ export function DocumentsList() {
               </p>
             </div>
           </div>
-          <Button variant="primary" size="md" className="max-[840px]:basis-full" onClick={() => setModalOpen(true)}>
+          <Button variant="primary" size="md" className="max-[840px]:basis-full" onClick={() => setModalOpen(true)} data-testid="nouveau-document-entete">
             <Plus className="w-4 h-4 mr-1.5" />
             Nouveau document
           </Button>
@@ -275,7 +275,7 @@ export function DocumentsList() {
           <EtatVide
             titre="Aucun document"
             action={(
-              <Button variant="primary" size="md" onClick={() => setModalOpen(true)}>
+              <Button variant="primary" size="md" onClick={() => setModalOpen(true)} data-testid="nouveau-document-etat-vide">
                 <Plus className="w-4 h-4 mr-1.5" />
                 Nouveau document
               </Button>

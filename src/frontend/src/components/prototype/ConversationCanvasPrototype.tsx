@@ -1653,6 +1653,7 @@ export function ConversationCanvasPrototype() {
 
   // Hotfix 0.48.1 : un panneau latéral est ouvert ET recouvre la zone ?
   const panneauCouvrant = usePanneauCouvrant();
+  const panneauActionsOuvert = useActionsStoreDirect((state) => state.isPanelOpen);
   // B-277 : cette liste ÉNUMÈRE les panneaux par nom, et le tiroir des
   // conversations n'y figurait pas. Il isolait pourtant `main` sous le seuil
   // (B-204, `usePanneauCouvrant`) : le fond ne répondait plus, à pleine
@@ -2000,6 +2001,11 @@ export function ConversationCanvasPrototype() {
   return (
     <div
       className="h-screen w-screen overflow-hidden bg-bg text-text"
+      // B-1728 : Actions est dessiné en fixed à droite, sur 380 px. Au-delà
+      // du seuil côte à côte, sa présence doit retirer cette largeur à la
+      // coque ; sinon ses commandes de droite restent visibles au clavier
+      // mais se trouvent physiquement sous le panneau.
+      style={{ width: panneauActionsOuvert && !panneauCouvrant ? 'calc(100vw - 380px)' : undefined }}
       data-testid="conversation-canvas-prototype"
       data-theme={theme}
       data-high-contrast={highContrast ? 'true' : undefined}

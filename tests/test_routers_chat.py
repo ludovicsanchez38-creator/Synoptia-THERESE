@@ -8,9 +8,21 @@ import pytest
 from httpx import AsyncClient
 
 
+@pytest.fixture(autouse=True)
+def _fournisseur_chat_fictif(monkeypatch):
+    """Exerce le vrai routeur et sa configuration sans transport vers un modèle."""
+    from app.services.llm import LLMService
+    from app.services.providers.base import StreamEvent
+
+    async def flux_hors_reseau(self, *args, **kwargs):
+        yield StreamEvent(type="error", content="Fournisseur fictif indisponible")
+
+    monkeypatch.setattr(LLMService, "stream_response_with_tools", flux_hors_reseau)
+
+
 def _reponse_hermetique(response) -> None:
-    """B-349 (05/09/2026) : le fournisseur est MORT par construction
-    (conftest : OLLAMA_BASE_URL sur un port fermé). Le chat convertit cette
+    """B-349/B-1703 : le fournisseur est fictif dans ce fichier de tests.
+    Le chat convertit cette
     panne en réponse 200 « Désolée : … » (ou en évènement SSE d'erreur) :
     c'est cette réponse-là, déterministe, qu'on attend. Avant, la tolérance
     « 200 ou 401 ou 503 » acceptait aussi bien un vrai modèle du poste
@@ -21,6 +33,44 @@ def _reponse_hermetique(response) -> None:
         return
     contenu = response.json().get("content", "")
     assert contenu.startswith("Désolée"), contenu[:200]
+
+
+@pytest.mark.asyncio
+async def test_b1703_une_cle_cloud_du_poste_ne_declenche_pas_le_modele(
+    client: AsyncClient, monkeypatch
+):
+    """Une clé héritée du poste ne doit jamais faire sortir ce test du harnais."""
+    import socket
+
+    from app.services import llm
+    from app.services.circuit_breaker import CircuitBreakerManager
+    from app.services.providers.anthropic import AnthropicProvider
+
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "cle-factice-b1703")
+    monkeypatch.setattr(llm, "_llm_service", None)
+    monkeypatch.setattr(CircuitBreakerManager, "_instance", None)
+    assert llm.get_llm_service().config.provider.value == "anthropic"
+
+    appels_modele = []
+
+    async def appel_reel_interdit(self, *args, **kwargs):
+        appels_modele.append(self.config.provider.value)
+        raise AssertionError("appel au service LLM réel depuis un test")
+        yield ""  # Rend la méthode compatible avec le flux asynchrone.
+
+    def reseau_interdit(self, adresse):
+        raise AssertionError(f"appel réseau réel depuis un test : {adresse}")
+
+    monkeypatch.setattr(AnthropicProvider, "stream", appel_reel_interdit)
+    monkeypatch.setattr(socket.socket, "connect", reseau_interdit)
+
+    response = await client.post(
+        "/api/chat/send",
+        json={"message": "Bonjour test fictif", "stream": False, "include_memory": False},
+    )
+
+    assert appels_modele == []
+    _reponse_hermetique(response)
 
 
 class TestChatBasics:

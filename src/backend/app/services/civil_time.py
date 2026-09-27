@@ -6,6 +6,19 @@ from zoneinfo import ZoneInfo
 PARIS = ZoneInfo("Europe/Paris")
 
 
+def instant_pour_ecran(valeur: date | datetime | None) -> str | None:
+    """Rend une heure murale de Paris avec son fuseau pour les écrans.
+
+    Les événements locaux sont stockés sans fuseau. Sans décalage, un poste
+    hors de Paris lirait cette heure murale comme sa propre heure locale.
+    """
+    if not isinstance(valeur, datetime):
+        return None
+    if valeur.tzinfo is None:
+        valeur = valeur.replace(tzinfo=PARIS)
+    return valeur.isoformat()
+
+
 def date_civile_paris(instant: datetime | None = None) -> date:
     """Retourne le jour métier à Paris pour un instant absolu."""
     valeur = instant or datetime.now(UTC)

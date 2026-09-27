@@ -44,6 +44,7 @@ from app.services.calendar.provider_factory import (
     test_caldav_connection,
 )
 from app.services.calendar_service import CalendarService
+from app.services.civil_time import instant_pour_ecran as _instant_pour_ecran
 from app.services.encryption import decrypt_value, encrypt_value, is_value_encrypted
 from app.services.error_handler import message_pour_ecran
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile
@@ -108,16 +109,6 @@ def _heure_murale_paris(valeur: str, fuseau: str | None) -> datetime:
     if moment.tzinfo is None:
         moment = moment.replace(tzinfo=ZoneInfo(_validate_timezone(fuseau)))
     return moment.astimezone(ZoneInfo("Europe/Paris")).replace(tzinfo=None)
-
-
-def _instant_pour_ecran(valeur: date | datetime | None) -> str | None:
-    """B-1487 : une heure murale de Paris rendue à l'écran porte son fuseau,
-    sans quoi un poste hors de Paris la lit comme son heure locale."""
-    if not isinstance(valeur, datetime):
-        return None
-    if valeur.tzinfo is None:
-        valeur = valeur.replace(tzinfo=ZoneInfo("Europe/Paris"))
-    return valeur.isoformat()
 
 
 def _google_allday_end_inclusive(start_obj: dict[str, str], end_obj: dict[str, str]) -> str | None:

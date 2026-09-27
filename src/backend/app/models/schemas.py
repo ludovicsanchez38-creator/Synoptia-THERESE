@@ -1278,7 +1278,7 @@ class InvoiceLineRequest(BaseModel):
     """Request pour une ligne de facture.
 
     Bornes posées en 0.55 : le garde-fou n'existait que dans le formulaire
-    (`InvoiceForm.tsx` refuse quantity < 1 et unit_price_ht < 0). L'API et le
+    (`InvoiceForm.tsx` refuse quantity <= 0 et unit_price_ht < 0). L'API et le
     serveur MCP acceptaient tout, et un montant négatif produit un avoir
     FANTÔME - un encours négatif sans qu'aucun avoir existe.
 
