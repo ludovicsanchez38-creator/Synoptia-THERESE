@@ -19,6 +19,10 @@ import os
 import socket
 import subprocess
 
+# Sous Windows, la boucle Proactor construit son socketpair de réveil en TCP.
+# Elle doit exister avant les spies qui simulent bind/connect sans créer de socket.
+boucle = asyncio.new_event_loop()
+
 getaddrinfo_initial = socket.getaddrinfo
 
 def dns_spy(host, *args, **kwargs):
@@ -107,7 +111,7 @@ async def sous_processus_asynchrones_refuses():
         except PermissionError:
             continue
         raise AssertionError('un sous-processus asynchrone a été autorisé')
-asyncio.run(sous_processus_asynchrones_refuses())
+boucle.run_until_complete(sous_processus_asynchrones_refuses())
 
 assert socket.getaddrinfo('localhost', 80, family=socket.AF_INET, type=socket.SOCK_STREAM)
 assert socket.getaddrinfo(
@@ -157,7 +161,8 @@ async def verifier_attestation():
     assert messages[0]['status'] == 404
     assert appels_produit == ['/autre']
 
-asyncio.run(verifier_attestation())
+boucle.run_until_complete(verifier_attestation())
+boucle.close()
 os.environ['THERESE_SKIP_SERVICES'] = '0'
 import_initial = builtins.__import__
 def import_spy(name, *args, **kwargs):

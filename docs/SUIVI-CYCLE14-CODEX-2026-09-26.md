@@ -629,6 +629,13 @@ identifie deux défauts de portabilité des **tests**, sans échec du produit :
   applicatifs et ses répertoires temporaires restent jetables.
 
 Les deux tests ciblés passent localement et Ruff valide les trois fichiers
-touchés. La CI Windows sur le nouveau commit reste à vérifier avant fusion.
-Ces corrections de témoins sont postérieures aux rondes B3 et B4 ; elles ne
-modifient pas le code produit ni le verdict de plateau sur `5e9e418c`.
+touchés. Le deuxième passage Windows sur `8f9f8216` a rendu 4 188 cas,
+un échec et 41 ignorés : le témoin de la garde réseau construisait sa boucle
+`asyncio` après avoir remplacé `socket.bind` par un spy qui ne lie rien. Sous
+Windows, la boucle Proactor construit son `socketpair` de réveil en TCP et
+`listen()` échouait avec `WinError 10022`. Le témoin crée désormais la boucle
+avant les spies, puis exécute ses assertions avec la garde active. Le test
+ciblé, Ruff et `git diff --check` passent localement ; la CI Windows doit
+encore confirmer ce troisième commit avant fusion. Ces corrections de témoins
+sont postérieures aux rondes B3 et B4 ; elles ne modifient pas le code produit
+ni le verdict de plateau sur `5e9e418c`.
