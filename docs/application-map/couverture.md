@@ -1,7 +1,7 @@
 # Couverture et limites de la carte
 
 - Couverture validee : 100.0 %
-- Fichiers attendus : 2074
+- Fichiers attendus : 2080
 - Validation `passed` : True
 
 ## Fichiers non lus (0)
@@ -10,7 +10,7 @@
 ## Doubles lectures manquantes (0)
 
 
-## Invariants divergents, a arbitrer (113)
+## Invariants divergents, a arbitrer (114)
 
 - scripts/check-app-version-sync.py: aucun mot commun entre les invariants de codex-map-challenge-a:c8-challenge-a-wp-046-b42ae547-efdd-4832-ada6-26a38fc715ed, orchestrateur:wp046-orchestrateur
 - src/backend/app/data/capacites.json: aucun mot commun entre les invariants de codex-challenge-b:c8-challenge-b-wp-047-20260912, lecteur-D04:c4-D04-WP-047, wp047-lecteur1:wp047-lecteur1
@@ -35,6 +35,7 @@
 - src/frontend/src/components/chat/followOutput.ts: aucun mot commun entre les invariants de codex-challenge-b:c8-challenge-b-wp-062-20260912, lecteur-D05:c4-D05-WP-062, wp062-lecteur1:wp062-lecteur1
 - src/frontend/src/components/crm/PipelineView.clavier.test.tsx: aucun mot commun entre les invariants de codex-challenge-b:c8-challenge-b-wp-diff-008-20260912, lecteur-R24:c3-R24-WP-DIFF-008
 - src/frontend/src/components/crm/index.ts: aucun mot commun entre les invariants de claude-map-t1:c9t-t1-wp-062-121b20ff-9542-4a6a-9d7a-2783a1fbc54b, wp062-lecteur1:wp062-lecteur1
+- src/frontend/src/components/documents/DocumentsList.test.tsx: aucun mot commun entre les invariants de codex-c14-b1728-lecteur-a:c14-b1728-a-WP-062-e40cf605-5480-4c68-8e02-e6b166482034, codex-c14-plateau-prep-lecteur-b:c14-b1728-lecteur-b-WP-062-f4b618ff-50d3-4ab1-a9bd-39fe005e5382
 - src/frontend/src/components/documents/SectionEditor.annulerTrame.test.tsx: aucun mot commun entre les invariants de codex-challenge-b:c8-challenge-b-wp-diff-024-20260912, lecteur-R05:c6-R05-WP-DIFF-024
 - src/frontend/src/components/email/EmailDetail.transfertHtml.test.tsx: aucun mot commun entre les invariants de claude-map-d3:c9-d3-wp-diff-021-0392e1e6-2f10-4b15-a0d8-257b34ec0c61, lecteur-R10:c4-R10-WP-DIFF-021
 - src/frontend/src/components/email/SignatureEditorModal.chargement.test.tsx: aucun mot commun entre les invariants de codex-challenge-b:c8-challenge-b-wp-diff-021-20260912, lecteur-R10:c4-R10-WP-DIFF-021
@@ -129,7 +130,7 @@
 ## Disparus depuis l'inventaire (0)
 
 
-## Lus sur une version anterieure (732)
+## Lus sur une version anterieure (737)
 
 - .github/workflows/ci.yml
 - .github/workflows/release.yml
@@ -375,6 +376,7 @@
 - src/frontend/src/components/documents/DocumentCreateModal.tsx
 - src/frontend/src/components/documents/DocumentWorkspace.test.tsx
 - src/frontend/src/components/documents/DocumentWorkspace.tsx
+- src/frontend/src/components/documents/DocumentsList.test.tsx
 - src/frontend/src/components/documents/DocumentsList.tsx
 - src/frontend/src/components/documents/OutlineTree.test.tsx
 - src/frontend/src/components/documents/OutlineTree.tsx
@@ -460,6 +462,7 @@
 - src/frontend/src/components/memory/ProjectsKanban.tsx
 - src/frontend/src/components/memory/ProjectsPanel.da.test.tsx
 - src/frontend/src/components/memory/ProjectsPanel.demo.c10.test.tsx
+- src/frontend/src/components/memory/ProjectsPanel.etatVide.p148.test.tsx
 - src/frontend/src/components/memory/ProjectsPanel.tsx
 - src/frontend/src/components/onboarding/CompleteStep.modele.test.tsx
 - src/frontend/src/components/onboarding/CompleteStep.plusTard.test.tsx
@@ -475,6 +478,7 @@
 - src/frontend/src/components/onboarding/WelcomeStep.tsx
 - src/frontend/src/components/onboarding/WorkingDirStep.tsx
 - src/frontend/src/components/onboarding/textes.ts
+- src/frontend/src/components/prompts/PromptLibrary.clavier.c9.test.tsx
 - src/frontend/src/components/prompts/PromptLibrary.cycle6.test.tsx
 - src/frontend/src/components/prompts/PromptLibrary.tsx
 - src/frontend/src/components/prototype/AccueilMoinsCharge.test.tsx
@@ -508,6 +512,7 @@
 - src/frontend/src/components/prototype/HeureDAffichageSuitLeContenu.test.tsx
 - src/frontend/src/components/prototype/ImagesWorkspaceCanvas.erreurs.c9.test.tsx
 - src/frontend/src/components/prototype/ImagesWorkspaceCanvas.tsx
+- src/frontend/src/components/prototype/IndiceDeDefilement.tsx
 - src/frontend/src/components/prototype/InformationsVides.test.tsx
 - src/frontend/src/components/prototype/InvoiceConversationCard.brouillonEnregistre.test.tsx
 - src/frontend/src/components/prototype/InvoiceConversationCard.tsx
@@ -696,6 +701,7 @@
 - src/frontend/vite.config.ts
 - tests/conftest.py
 - tests/couverture/couverture-ecran.mjs
+- tests/couverture/couverture-ecran.test.mjs
 - tests/e2e/README.md
 - tests/e2e/run-e2e-backend.sh
 - tests/e2e/stories/api-endpoints.spec.ts

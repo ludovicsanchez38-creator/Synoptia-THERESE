@@ -1285,18 +1285,24 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
               </>
             )}
           </div>
-          {reglagesDejaOuverts ? (
-            <p className="shrink-0 self-center text-xs text-text-muted">Les réglages sont ouverts : choisis un modèle dans l’onglet IA.</p>
-          ) : (
+          <div className="relative shrink-0 self-center">
+            {/* B-1712 : conserver ce même noeud pendant la modale permet au
+                piège de focus d'y revenir après Échap. Il est seulement retiré
+                de la navigation et de l'affichage tant que les réglages sont ouverts. */}
             <button
               type="button"
-              onClick={() => openSettings('ai')}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-md border border-text bg-surface px-3 py-2 text-sm font-semibold text-text"
+              onClick={() => { if (!reglagesDejaOuverts) openSettings('ai'); }}
+              aria-hidden={reglagesDejaOuverts || undefined}
+              tabIndex={reglagesDejaOuverts ? -1 : undefined}
+              className={`inline-flex items-center gap-1.5 rounded-md border border-text bg-surface px-3 py-2 text-sm font-semibold text-text ${reglagesDejaOuverts ? 'pointer-events-none absolute inset-0 opacity-0' : ''}`}
             >
               <Settings className="h-3.5 w-3.5" />
               Ouvrir les réglages IA
             </button>
-          )}
+            {reglagesDejaOuverts && (
+              <p className="text-xs text-text-muted">Les réglages sont ouverts : choisis un modèle dans l’onglet IA.</p>
+            )}
+          </div>
         </div>
       )}
 

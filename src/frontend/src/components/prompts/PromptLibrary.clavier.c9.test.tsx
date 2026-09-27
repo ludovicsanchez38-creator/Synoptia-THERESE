@@ -21,7 +21,7 @@ describe('PromptLibrary - B-823, carte dépliable au clavier', () => {
 
   it('le titre est un bouton avec aria-expanded, qui déplie le prompt', async () => {
     render(<PromptLibrary onSelectPrompt={() => {}} onClose={() => {}} />);
-    const bascule = await screen.findByRole('button', { name: /Relance facture/ });
+    const bascule = await screen.findByRole('button', { name: /Relance facture/, expanded: false });
     expect(bascule).toHaveAttribute('aria-expanded', 'false');
     fireEvent.click(bascule);
     expect(bascule).toHaveAttribute('aria-expanded', 'true');

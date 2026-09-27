@@ -206,3 +206,200 @@ candidat ou confirmé ne reste dans le registre. La phase a avancé de `REPAIR`
 à `ZERO_CHECK`, avec zéro ronde de plateau acquise : la couverture de tous les
 écrans et les deux rondes indépendantes restent à mesurer. Aucune release
 n'est engagée.
+
+## Couverture écran et retour en réparation, 27/09/2026
+
+La première passe passive sur la pile jetable ouvrait seulement l'onboarding :
+ses 21 identifiants ne prouvaient aucun écran métier. L'onboarding a été
+terminé dans la seule base `/private/tmp/therese-c14-couverture.Hd7bEl/data`.
+Une passe active a alors ouvert 21 écrans dans quatre combinaisons (1440 et
+800 px, clair et sombre) et consigné 141 gestes en 1440 clair. Elle a révélé
+un focus perdu, un indice visuel recouvrant du texte et des lacunes dans son
+propre instrument. La phase est revenue de `ZERO_CHECK` à `REPAIR` ; aucune
+ronde de plateau n'a été acquise.
+
+| Bug | Correction et contrôle |
+| --- | --- |
+| B-1712 | Le bouton « Ouvrir les réglages IA » reste monté, mais masqué et retiré de la navigation tant que la modale est ouverte. Après Échap, Chromium rend le focus au même bouton. Ancien code réintroduit : 1 test rouge ; restauration : 1 vert. |
+| B-1713 | L'indice « Voir la suite » ne recouvre plus les textes de l'Accueil. Mesure Chromium sur la page servie : rouge avec deux collisions à 1440 et une à 800, puis vert sans collision aux deux tailles ; 1024 et 1280 sans collision également. Captures inspectées. |
+| B-1714 | L'instrument refuse toute autre base que 1420/17393, contrôle par lectures authentifiées `data_dir` et `db_path` sous `/private/tmp` avant Chromium, bloque les requêtes hors pile et les écritures, puis retrouve les contrôles par rôle, rang et signature ARIA. Garde réseau neutralisée : test rouge ; restaurée : test vert. |
+| B-1715 | Le filtre de statut « Envoyée », le rafraîchissement GET des tâches et les cinq cartes Actions qui ouvrent seulement leur fiche sont exercés dans leur contexte précis ; l'envoi et le lancement restent exclus. Exceptions neutralisées : test rouge ; restaurées : test vert. |
+| B-1716 | La translation de l'indice introduisait 40 px de contenu rogné à 800 px sur neuf écrans. Un espacement interne garde la même position du bouton sans déborder. Chromium : neuf écrans rouges à 40 px sous sabotage, puis zéro après restauration ; Accueil sans collision à 800, 1024, 1280 et 1440 px. |
+| B-1717 | Les filtres Factures persistent après réouverture. L'instrument restaure uniquement leur clé locale initiale avant de tester le bouton de création : il passe d'« introuvable » à une ouverture réelle de fenêtre. Rouge/vert en Chromium, puis sabotage rouge/vert, sans toucher aux données métier. |
+| B-1718 | Une réponse asynchrone retire « Connecter ton agenda » de la checklist et décale de un le rang de sept boutons encore visibles. L'instrument les relocalise maintenant par signature accessible et occurrence visible. Test Chromium rouge avant et sous sabotage, vert restauré ; neuf tests d'instrument passent. |
+
+Les preuves ciblées et les captures sont sous
+`.app-loop/cycles/14/couverture-ecran/`. L'instrument est versionné dans
+`tests/couverture/couverture-ecran.mjs` avec ses tests
+`tests/couverture/couverture-ecran.test.mjs`. La passe du premier correctif a
+couvert 21 écrans aux quatre combinaisons et 139 gestes. Elle n'a relevé que
+quatre anomalies : le sélecteur de fichiers natif, « Aujourd'hui » déjà actif
+et le défilement voulu de la grille CRM aux deux largeurs. Un lecteur neutre
+a d'abord classé les deux gestes comme insuffisamment prouvés ; il a ensuite
+reçu l'événement `filechooser` sans sélection de fichier, puis mesuré le retour
+de l'agenda d'octobre à septembre 2026. Ces deux gestes sont des faux
+positifs. Les deux débordements CRM sont dans un conteneur défilant ; les
+captures aux deux largeurs ont été inspectées. Le rapport est
+`.app-loop/cycles/14/couverture-ecran/actif-stable-a/rapport.json`, avec
+preuve de tri dans `tri-neutre-a/preuves.json`. Cette passe précède un nouveau
+durcissement de l'instrument et ne compte pas encore comme ronde de plateau.
+L'instrument ne remplace pas la recette des résultats métier de P-146.
+
+Une tentative de reprise a été interrompue quand les deux services temporaires
+ont cessé d'écouter ; elle n'est pas comptée comme une ronde. L'ancienne base
+jetable chiffrée a été laissée intacte après un refus de démarrage faute de
+sa clé. La nouvelle pile utilise
+`/private/tmp/therese-c14-reprise-9ukq24jp/data`, un `HOME` temporaire, les
+ports locaux 1420/17393 et `THERESE_DB_PLAINTEXT=1` sur cette base neuve.
+Son dossier et sa base ont été vérifiés par `/api/config/stats` avant de
+terminer l'onboarding jetable. Au premier démarrage, le préchargement du
+modèle d'embeddings a contacté Hugging Face et téléchargé des métadonnées ;
+le téléchargement des poids a été interrompu à 0 %. Le moteur a ensuite été
+relancé avec `HF_HUB_OFFLINE=1` et `TRANSFORMERS_OFFLINE=1` ; il a continué
+sans ce modèle. Aucun fournisseur LLM payant n'a été appelé.
+
+## Durcissement de la couverture hors ligne
+
+La revue contradictoire de l'instrument a ouvert trois défauts confirmés :
+
+| Bug | Défaut et correction vérifiée |
+| --- | --- |
+| B-1719 | Si une requête est bloquée, la passe s'interrompait avant `rapport.json` et perdait la liste des URL. Elle écrit désormais `interruption.json`, avec écran, cause et garde ; les paramètres d'URL ne sont pas conservés. Test rouge avant, vert après. |
+| B-1720 | Une requête GET locale pouvait déclencher un appel fournisseur depuis le backend (OpenRouter, Gmail, Calendar ou Drive selon les comptes et clés). L'instrument exige maintenant l'attestation d'un wrapper ASGI de test avant jeton et navigateur. Ce wrapper interdit DNS et sockets Python hors loopback, retire les proxies de l'environnement et laisse l'application produit inchangée. Le précontrôle refuse l'ancien backend, puis accepte le nouveau sur la base jetable exacte. Certaines routes GET de rappel OAuth et de découverte fournisseur sont également bloquées côté navigateur. |
+| B-1721 | Après le retrait asynchrone d'un bouton, son rang parmi des boutons homonymes pouvait viser le mauvais. Si le nombre de signatures identiques a changé, l'instrument signale l'ambiguïté sans cliquer. Cas à trois boutons rouge avant, vert après dans Chromium. |
+
+Le wrapper est limité au processus Python Uvicorn unique. Un sous-processus,
+une bibliothèque native contournant `socket`, une socket héritée ou un relais
+local explicite ne sont pas couverts par cette seule garde. Pour cette pile,
+le lancement ajoute un environnement vierge (`env -i`), aucun identifiant
+fournisseur, les services externes désactivés, un `HOME` jetable et les
+variables Hugging Face hors ligne. Un auto-test Python de la garde passe ;
+le démarrage réel répond sur 17393 et l'attestation précède les lectures
+authentifiées. Le code de ce wrapper est
+`tests/couverture/backend_offline.py` et son test
+`tests/couverture/test_backend_offline.py`.
+
+## Relecture de l'instrument avant le plateau
+
+La passe destinée à devenir la première ronde a été interrompue après les
+premiers écrans : la relecture de son code a montré que sa déduplication
+globale par rôle et nom pouvait ignorer un contrôle métier homonyme sur un
+autre écran. Cette tentative reste sous
+`.app-loop/cycles/14/couverture-ecran/zero-check-a-interrompue/` et n'est
+comptée ni comme couverture complète ni comme ronde de plateau.
+
+| Bug | Défaut et correction |
+| --- | --- |
+| B-1722 | L'instrument déduplique uniquement les contrôles de l'en-tête direct et du rail principal de la coque. Il exerce les contrôles métier sur chaque écran, même quand leur nom est identique. Un contrôle commun ne rejoint l'ensemble des gestes exercés qu'après un clic réussi. Le rail est identifié par sa place dans la coque ; une navigation métier homonyme reste distincte. |
+| B-1723 | La relocalisation refuse un groupe de boutons homonymes sans identité explicite. Elle vérifie aussi les identifiants des boutons uniques et tous les attributs d'identité présents lors du relevé : un `data-testid` constant ne masque pas un `data-id` métier changé. Les ambiguïtés sont décrites comme telles dans le rapport. |
+| B-1724 | Le nom d'un contrôle inclus dans un `<label>` englobant est relevé, même sans `id` ni `aria-label`. Une case à cocher ainsi nommée n'est plus éliminée avant l'exercice. |
+
+Les témoins rouges avant correction, les sabotages rouges et les 20 tests
+Chromium verts de l'instrument sont dans
+`.app-loop/cycles/14/couverture-ecran/`. Ils ne remplacent pas la mesure
+complète de l'application servie. La cartographie et les contrôles de
+calibration ont ensuite été actualisés sur les empreintes finales avant les
+deux rondes indépendantes.
+
+La double lecture des deux fichiers de l'instrument sur les SHA finaux
+`cf455966…1e3bd` et `811f6e03…bf48` est complète. La cartographie régénérée
+valide 2 077/2 077 fichiers, sans rapport invalide, double lecture manquante
+ni empreinte périmée. La calibration `screen_coverage` sur la pile servie
+1420/17393 a détecté un contrôle sans nom et un contenu rogné ; la capture
+avec témoin magenta a été inspectée. Une requête témoin externe a été bloquée
+et consignée sans son paramètre secret. L'Accueil sain ne présente aucune
+anomalie avant et après ces contrôles, et `index.html` a retrouvé son SHA
+`2ef2d3c1…b3ca30`. Les preuves et leurs empreintes figurent dans
+`.app-loop/cycles/14/calibration/screen-controls-cf45.json`. La calibration
+est `PASS` ; aucune ronde de plateau n'est encore comptée à ce stade.
+
+## Première ronde exploratoire servie après durcissement
+
+La première passe complète du nouvel instrument a ouvert 21 écrans dans les
+quatre combinaisons 1440/800 px et clair/sombre. Elle a exercé 208 gestes
+en 1440 clair. La garde n'a relevé aucune requête bloquée, fenêtre,
+téléchargement ni accès au port réel. Le rapport brut
+`.app-loop/cycles/14/couverture-ecran/zero-check-a/rapport.json` porte 18
+anomalies dédupliquées. Cette passe a découvert des défauts : elle ne compte
+donc pas comme ronde de plateau.
+
+| Bug | Observation sur l'application servie |
+| --- | --- |
+| B-1725 | Les actions « Copier le prompt » et « Utiliser » sont homonymes sur les cartes de la bibliothèque ; aucun nom accessible n'indique le titre du prompt. |
+| B-1726 | L'overlay de la bibliothèque ne porte pas `role="dialog"` et `aria-modal="true"`. Le parcours tente neuf boutons de l'Accueil derrière lui et obtient neuf clics impossibles. |
+| B-1727 | Dans Projets et Documents, le bouton d'en-tête et celui de l'état vide ont le même nom sans identité DOM distincte. Quatre gestes sont refusés par la relocalisation sûre. |
+| B-1728 | À 1440 px, le panneau Actions fixé à droite couvre notamment « Ouvrir Agenda » et « Message vocal » ; ces boutons restent dans la zone que le moteur croit côte à côte et les deux clics échouent. |
+
+Les deux signalements de défilement horizontal du CRM et le clic sur
+« Aujourd'hui » déjà actif dans l'Agenda reproduisent des faux positifs
+préalablement prouvés dans `tri-neutre-a/preuves.json`. Les corrections
+applicatives B-1725 à B-1728 doivent être vérifiées sur la page servie avant
+de recommencer la ronde A.
+
+## Vérification des corrections B-1725 à B-1728
+
+La vérification ciblée sur la pile locale jetable a parcouru les quatre écrans
+concernés dans les quatre combinaisons 1440/800 px et clair/sombre. Le rapport
+`retest-b1725-b1728/rapport.json` contient zéro anomalie, 60 gestes sûrs en
+1440 clair, aucune sortie bloquée par la garde et l'attestation du répertoire
+de données jetables. Les captures à 1440 et 800 px ont été inspectées : la
+bibliothèque reste dans un dialogue centré, les créations Projets/Documents
+sont accessibles par leurs deux boutons, et Actions occupe sa propre colonne
+à 1440 px tout en devenant un panneau couvrant à 800 px. Les quatre bugs sont
+marqués `fixed`, avec sabotage rouge et contrôle vert associés dans
+`.app-loop/bugs.json`.
+
+La calibration du parcours écran a été rejouée après ces corrections. Le
+contrôle négatif et la restauration sont propres ; les témoins visuels
+produisent `contenu-rogne` et `nom-accessible-vide`, et la requête réseau
+témoin est bloquée avec son paramètre masqué. Le manifeste
+`screen-controls-cf45.json` atteste aussi le retour de `index.html` à son
+SHA-256 initial et l'absence du verrou temporaire. La cartographie actualisée
+valide 2080 fichiers sur 2080 ; les dix fichiers du dernier lot ont deux
+lectures indépendantes. Une divergence de formulation sur
+`DocumentsList.test.tsx` a été arbitrée `concordant` après lecture des deux
+gestes du test. La couverture complète A2 puis la contre-épreuve indépendante
+B restent nécessaires avant de compter une ronde de plateau.
+
+## Ronde complète A2 sur la pile jetable
+
+Le rapport `zero-check-a2/rapport.json` couvre 21 écrans dans quatre
+combinaisons de largeur et de thème, avec 197 gestes sûrs réellement exercés
+en 1440 clair. La garde réseau est vide et atteste le répertoire de données
+jetables. Il contient trois signalements uniques, tous arbitrés dans
+`tri-anomalies-a2-final.json` : les deux largeurs de la grille CRM et le
+bouton « Aujourd'hui » sur le mois déjà courant. Une sonde Chromium
+indépendante prouve que la colonne « Archive » devient visible au clavier
+après des flèches espacées, à 1440 comme à 800 px ; le premier essai,
+envoyé pendant le défilement animé, est conservé comme non concluant.
+Le témoin de l'Agenda prouve le retour depuis le mois suivant. Entrée et
+Espace déplient et replient aussi un prompt à ces deux largeurs.
+
+L'audit `visuel-a2.json` inspecte les captures des panneaux, dialogues et du
+CRM au début puis à la fin du défilement. `journaux-a2.json` relève zéro
+erreur console ou réseau sur les 84 vues et zéro ligne d'erreur du backend
+jetable dans l'intervalle de la ronde. Le frontend complet passe 3343 tests
+sur 3343 ; la compilation passe et le lint termine avec zéro erreur
+(26 avertissements). Le premier JUnit à 3343 tests avait révélé
+un sélecteur trop large dans l'ancien test clavier B-823 après le nouveau
+nommage accessible B-1725 : le test a été précisé puis toute la suite a été
+relancée. La cartographie finale valide à nouveau 2080 fichiers sur 2080.
+La ronde B indépendante et le calcul du plateau restent à effectuer.
+
+## Plateau calculé
+
+La ronde B, menée séparément par `/root/plateau_prep`, a retrouvé les mêmes
+trois identifiants de signalement, sans nouvelle anomalie, sur 21 écrans dans
+quatre combinaisons. Elle a exercé 197 gestes sûrs en 1440 clair ; sa garde
+est vide. Le tri B comprend un témoin Agenda distinct, et les pièces
+`visuel-b.json` et `journaux-b.json` documentent les captures et l'absence
+d'erreurs inexpliquées. Le manifeste `transitions-final-87.json` vérifie
+87 transitions critiques sur 87, en s'appuyant sur les preuves de tests et de
+navigateur associées.
+
+`app_loop.py plateau-evaluate` a accepté successivement
+`plateau-round-a2.json` et `plateau-round-b.json` : deux rondes indépendantes
+propres sur deux. Le cycle 14 est passé de `ZERO_CHECK` à `GAP_SCAN` pour
+examiner les améliorations éventuelles. Le verdict porte sur le périmètre
+couvert et les instruments calibrés ; il ne prouve ni la recette fonctionnelle
+P-146 dans l'application Tauri packagée, ni une release.

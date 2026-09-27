@@ -5,7 +5,7 @@
  * Extrait de ChatLayout.tsx pour réduire sa complexité.
  */
 
-import { lazy, Suspense, useCallback } from 'react';
+import { lazy, Suspense, useCallback, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X } from 'lucide-react';
 import { usePanelStore } from '../../stores/panelStore';
@@ -37,6 +37,43 @@ const PromptLibrary = lazy(() =>
 );
 
 import { Z_LAYER } from '../../styles/z-layers';
+import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
+
+function PromptLibraryDialog({
+  onClose,
+  onSelectPrompt,
+}: {
+  onClose: () => void;
+  onSelectPrompt: (text: string) => void;
+}) {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useDialogFocusTrap(dialogRef, {
+    active: true,
+    onEscape: onClose,
+    isolateBackground: true,
+  });
+
+  return (
+    <div
+      className={`fixed inset-0 ${Z_LAYER.MODAL} flex items-center justify-center bg-black/60 backdrop-blur-sm p-4`}
+      onClick={onClose}
+    >
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Bibliothèque de prompts"
+        tabIndex={-1}
+        className="w-full max-w-3xl h-[85vh] overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <Suspense fallback={<div role="status">Chargement de la bibliothèque...</div>}>
+          <PromptLibrary onSelectPrompt={onSelectPrompt} onClose={onClose} />
+        </Suspense>
+      </div>
+    </div>
+  );
+}
 
 interface PanelContainerProps {
   onUserCommandsRefresh: (commands: SlashCommand[]) => void;
@@ -134,24 +171,18 @@ export function PanelContainer({ onUserCommandsRefresh }: PanelContainerProps) {
         {/* Atelier - Agents IA Embarqués */}
         <AtelierPanel />
 
-        {/* Bibliothèque de prompts globale (KO Syn 2.2) : accessible depuis ⌘K partout */}
-        {showPromptLibrary && (
-          <div
-            className={`fixed inset-0 ${Z_LAYER.MODAL} flex items-center justify-center bg-black/60 backdrop-blur-sm p-4`}
-            onClick={closePromptLibrary}
-          >
-            <div className="w-full max-w-3xl h-[85vh] overflow-hidden" onClick={(e) => e.stopPropagation()}>
-              <PromptLibrary
-                onSelectPrompt={(text) => {
-                  closePromptLibrary();
-                  window.dispatchEvent(new CustomEvent('therese:insert-prompt', { detail: text }));
-                }}
-                onClose={closePromptLibrary}
-              />
-            </div>
-          </div>
-        )}
       </Suspense>
+
+      {/* Bibliothèque globale : la structure modale est montée même pendant le chargement lazy. */}
+      {showPromptLibrary && (
+        <PromptLibraryDialog
+          onClose={closePromptLibrary}
+          onSelectPrompt={(text) => {
+            closePromptLibrary();
+            window.dispatchEvent(new CustomEvent('therese:insert-prompt', { detail: text }));
+          }}
+        />
+      )}
 
       {/* Modale « Enregistrer comme commande » (B-1479) */}
       <AnimatePresence>

@@ -1,4 +1,5 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { useRef } from 'react';
 import { PLACEHOLDER_COMPOSEUR } from '../../lib/etabli';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -6,6 +7,7 @@ import { useChatStore } from '../../stores/chatStore';
 import { usePanelStore } from '../../stores/panelStore';
 import { useStatusStore } from '../../stores/statusStore';
 import { useAccessibilityStore } from '../../stores/accessibilityStore';
+import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { ChatInput } from './ChatInput';
 
 const apiMocks = vi.hoisted(() => ({
@@ -80,6 +82,37 @@ describe('ChatInput sans modèle', () => {
     expect(bandeau).toHaveTextContent('Choisis d’abord un modèle');
     expect(screen.queryByRole('button', { name: 'Ouvrir les réglages IA' })).not.toBeInTheDocument();
     expect(bandeau).toHaveTextContent('Les réglages sont ouverts');
+  });
+
+  it('B-1712 : rend le focus au bouton après fermeture des réglages IA par Échap', async () => {
+    function FenetreDeReglages() {
+      const ouverte = usePanelStore((state) => state.showSettings);
+      const fermer = usePanelStore((state) => state.closeSettings);
+      const dialogueRef = useRef<HTMLDivElement>(null);
+      useDialogFocusTrap(dialogueRef, { active: ouverte, onEscape: fermer, isolateBackground: true });
+      return (
+        <>
+          <ChatInput />
+          {ouverte && (
+            <div ref={dialogueRef} role="dialog" aria-modal="true" aria-label="Réglages IA">
+              <button type="button" onClick={fermer}>Fermer les réglages</button>
+            </div>
+          )}
+        </>
+      );
+    }
+
+    render(<FenetreDeReglages />);
+    await screen.findByTestId('chat-model-unavailable');
+    const declencheur = screen.getByRole('button', { name: 'Ouvrir les réglages IA' });
+    declencheur.focus();
+    fireEvent.click(declencheur);
+    expect(screen.getByRole('dialog', { name: 'Réglages IA' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Ouvrir les réglages IA' })).not.toBeInTheDocument();
+
+    fireEvent.keyDown(document, { key: 'Escape' });
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    expect(document.activeElement).toBe(declencheur);
   });
 
   it('bloque aussi l’envoi pendant la vérification initiale du modèle', () => {

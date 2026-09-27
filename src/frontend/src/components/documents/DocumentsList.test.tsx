@@ -139,6 +139,20 @@ describe('DocumentsList', () => {
     expect(screen.getAllByRole('button', { name: /Nouveau document/i }).length).toBeGreaterThan(0);
   });
 
+  it('B-1727 : les boutons d’en-tête et d’état vide ont des identités distinctes et ouvrent la même modale', async () => {
+    render(<DocumentsList />);
+    const entete = screen.getByTestId('nouveau-document-entete');
+    const vide = screen.getByTestId('nouveau-document-etat-vide');
+    expect(entete).toHaveAccessibleName('Nouveau document');
+    expect(vide).toHaveAccessibleName('Nouveau document');
+    fireEvent.click(entete);
+    const dialogue = await screen.findByRole('dialog', { name: 'Nouveau document' });
+    fireEvent.click(within(dialogue).getByRole('button', { name: 'Fermer' }));
+    await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Nouveau document' })).toBeNull());
+    fireEvent.click(vide);
+    expect(await screen.findByRole('dialog', { name: 'Nouveau document' })).toBeInTheDocument();
+  });
+
   it('clic sur un document appelle openDocument et affiche l\'atelier (DocumentWorkspace, D3)', () => {
     useDocumentStore.setState({
       documents: [makeDocument({ id: 'doc-42', title: 'Rapport annuel' })],

@@ -136,6 +136,7 @@ function PromptCard({
         <button
           type="button"
           aria-expanded={expanded}
+          data-id={prompt.id}
           onClick={() => setExpanded(!expanded)}
           className="flex-1 min-w-0 rounded-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
@@ -149,7 +150,8 @@ function PromptCard({
             size="icon"
             onClick={handleCopy}
             title="Copier le prompt"
-            aria-label="Copier le prompt"
+            aria-label={`Copier le prompt ${prompt.title}`}
+            data-id={prompt.id}
             data-copie={copied ? 'ok' : copieEchouee ? 'echec' : 'idle'}
           >
             {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
@@ -164,6 +166,8 @@ function PromptCard({
               e.stopPropagation();
               onSelect(prompt);
             }}
+            aria-label={`Utiliser ${prompt.title}`}
+            data-id={prompt.id}
             className="text-sm"
           >
             Utiliser
@@ -200,6 +204,8 @@ function PromptCard({
                   e.stopPropagation();
                   onSelect(prompt);
                 }}
+                aria-label={`Insérer ${prompt.title} dans le chat`}
+                data-id={prompt.id}
               >
                 Insérer dans le chat
               </Button>

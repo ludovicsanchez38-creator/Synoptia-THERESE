@@ -1,6 +1,6 @@
 # Carte de l'application
 
-Generee le 2026-09-27T08:05:08+00:00 depuis `.cartography-work/reports` : 1580 rapports, 2111 fichiers lus, 4489 fonctionnalites, 7331 risques, 3212 inconnues, 1700 constats visuels, 4702 dependances.
+Generee le 2026-09-27T12:01:59+00:00 depuis `.cartography-work/reports` : 1620 rapports, 2117 fichiers lus, 4540 fonctionnalites, 7347 risques, 3241 inconnues, 1700 constats visuels, 4735 dependances.
 
 Cette carte est une agregation mecanique des rapports de lecture valides ; elle ne dit
 pas plus que ce que les lecteurs ont prouve. Les limites sont dans `couverture.md`.

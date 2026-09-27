@@ -51,7 +51,10 @@
 - **?** Actions RGPD sur un contact :  _(rapport WP-064-c3-R14)_
 - **?** Actions RGPD sur un contact :  _(rapport WP-064-c6-R06)_
 - **?** Actions agentiques et calendrier :  _(rapport WP-048-c8-codex-a)_
+- **?** Actions contextualisées de prompt :  _(rapport WP-065-c14-b1728-lecteur-b)_
+- **?** Actions contextualisées de prompt :  _(rapport WP-DIFF-122-c14-b1728-lecteur-b)_
 - **?** Actions de navigation déterministes :  _(rapport WP-070-c2-D06)_
+- **?** Actions de prompt contextualisées :  _(rapport WP-065-c14-b1728-lecteur-a)_
 - **?** Actions deterministes du chat :  _(rapport WP-078)_
 - **?** Actions deterministes du chat et variables :  _(rapport WP-051)_
 - **?** Actions et commandes exécutées sans modèle :  _(rapport WP-049-c2-M02)_
@@ -329,6 +332,7 @@
 - **?** Atelier vocal (transcription et synthèse locales) :  _(rapport WP-067-c6-D03)_
 - **?** Atlas des portraits :  _(rapport WP-066)_
 - **?** Attente locale et mouvements réduits :  _(rapport WP-DIFF-055-c10-repair-b)_
+- **?** Attestation de backend hors ligne :  _(rapport WP-DIFF-121-c14-b1720-lecteur-a)_
 - **?** Aucun champ de saisie anonyme :  _(rapport WP-070)_
 - **?** Aucune invitation à cliquer un bouton désactivé :  _(rapport WP-DIFF-037-c9v-V2)_
 - **?** Audio temporaire de la dictée :  _(rapport WP-DIFF-109-c13s-19)_
@@ -360,6 +364,7 @@
 - **?** Bac à sable d'exécution des skills Office :  _(rapport WP-079-c3-R18)_
 - **?** Bac à sable d'exécution du code généré :  _(rapport WP-054-c6-R07)_
 - **?** Bac à sable des commandes d'agents et git de mission durci (B-1153) :  _(rapport WP-DIFF-086-c13-h)_
+- **?** Backend de couverture hors ligne :  _(rapport WP-DIFF-121-c14-offline-lecteur-b)_
 - **?** Badge de priorite d'un e-mail :  _(rapport WP-DIFF-024-c9-R4)_
 - **?** Badge de priorité d'un e-mail :  _(rapport WP-DIFF-024-c9s-S4)_
 - **?** Badge de priorité e-mail sans emoji :  _(rapport WP-DIFF-024-c6-R05)_
@@ -404,6 +409,9 @@
 - **?** Bibliothèque de prompts : recherche après un chargement en échec :  _(rapport WP-DIFF-093-c13-beta)_
 - **?** Bibliothèque de prompts : recherche et copie :  _(rapport WP-DIFF-030-c13-b)_
 - **?** Bibliothèque de prompts : recherche qui rouvre les catégories repliées, copie qui annonce son échec :  _(rapport WP-DIFF-030-c12-p1)_
+- **?** Bibliothèque de prompts en dialogue :  _(rapport WP-061-c14-b1728-lecteur-a)_
+- **?** Bibliothèque de prompts modale :  _(rapport WP-061-c14-b1728-lecteur-b)_
+- **?** Bibliothèque de prompts modale :  _(rapport WP-DIFF-122-c14-b1728-lecteur-b)_
 - **?** Bibliothèque de prompts prêts à l'emploi :  _(rapport WP-065-c13-beta)_
 - **?** Bibliothèque de prompts prêts à l'emploi :  _(rapport WP-065-c6-R07)_
 - **?** Bibliothèque de prompts, compte annoncé :  _(rapport WP-DIFF-044-c9v-V1)_
@@ -639,6 +647,8 @@
 - **?** Carte de consentement avant appel d'agent :  _(rapport WP-C-026-c9-R4)_
 - **?** Carte de consentement avant appel d'agent :  _(rapport WP-C-026-c9t-T5)_
 - **?** Carte de consentement avant un appel d'agent :  _(rapport WP-DIFF-036-c9s-S1)_
+- **?** Carte de prompt dépliable :  _(rapport WP-DIFF-040-c14-b823-lecteur-a)_
+- **?** Carte de prompt dépliable au clavier :  _(rapport WP-DIFF-040-c14-b823-lecteur-b)_
 - **?** Carte de téléchargement d'un document produit en conversation :  _(rapport WP-079-c3-R18)_
 - **?** Carte de téléchargement d'un fichier produit par un outil :  _(rapport WP-079-c4-D04)_
 - **?** Carte de téléchargement d'un fichier produit par un outil du chat :  _(rapport WP-079-c2-D05)_
@@ -1166,6 +1176,7 @@
 - **?** Contrats d'entrée et de sortie de l'API locale :  _(rapport WP-048-c13-d)_
 - **?** Contrats de création et de mise à jour des fiches et des projets :  _(rapport WP-048-c13-t)_
 - **?** Contrats des fournisseurs et du prompt systeme :  _(rapport WP-082-c9-R4)_
+- **?** Contrats du harnais de couverture :  _(rapport WP-DIFF-120-c14-lecteur-b)_
 - **?** Contrats du parcours guidé et de l'exécution de skills :  _(rapport WP-064-c3-R13)_
 - **?** Contre-lecture WP-046 :  _(rapport WP-046-c8-challenge-a)_
 - **?** Contre-lecture WP-049 :  _(rapport WP-049-c8-challenge-a)_
@@ -1278,6 +1289,10 @@
 - **?** Couverture de test de la saisie protégée :  _(rapport WP-DIFF-067-c11-lecteur-20)_
 - **?** Couverture des etats d'erreur par persona :  _(rapport WP-086-c9t-T1)_
 - **?** Couverture écran de la boucle Plateau :  _(rapport WP-DIFF-111-c13r-3)_
+- **?** Couverture écran protégée :  _(rapport WP-DIFF-111-c14-lecteur-a)_
+- **?** Couverture écran protégée :  _(rapport WP-DIFF-111-c14-offline-lecteur-b)_
+- **?** Couverture écran protégée et relocalisée :  _(rapport WP-DIFF-111-c14-b1724-lecteur-b)_
+- **?** Couverture écran reproductible en pile jetable :  _(rapport WP-DIFF-111-c14-lecteur-b)_
 - **?** Coûts, identité de conversation et palette au repos :  _(rapport WP-071-c8-challenge-b)_
 - **?** Creation d'une commande personnalisee :  _(rapport WP-063)_
 - **?** Creation d'une commande personnalisee :  _(rapport WP-063-c6-R09)_
@@ -1318,6 +1333,8 @@
 - **?** Créer et lire des fiches depuis la conversation :  _(rapport WP-053-c12-i1)_
 - **?** Créer ou modifier un rendez-vous sans perdre la saisie :  _(rapport WP-061-c11-lecteur-20)_
 - **?** Créer ou modifier une tâche sans perdre la saisie :  _(rapport WP-068-c11-lecteur-20)_
+- **?** Créer un document depuis la liste ou son état vide :  _(rapport WP-062-c14-b1728-lecteur-a)_
+- **?** Créer un projet depuis l’en-tête ou l’état vide :  _(rapport WP-064-c14-b1728-lecteur-a)_
 - **?** Cycle de vie d'une piece comptable :  _(rapport WP-C-025-c3-D01)_
 - **?** Cycle de vie des connecteurs :  _(rapport WP-068-c9w-W2)_
 - **?** Cycle de vie du backend :  _(rapport WP-047)_
@@ -1587,6 +1604,7 @@
 - **?** Espace Voix et transcription :  _(rapport WP-067)_
 - **?** Espace Voix et transcription :  _(rapport WP-067-c2-D06)_
 - **?** Espace Voix et transcription :  _(rapport WP-067-c3-R16)_
+- **?** Espace réservé au panneau Actions :  _(rapport WP-066-c14-b1728-lecteur-a)_
 - **?** Estampillage Alembic :  _(rapport WP-C-025-c9t-T4)_
 - **?** Estampillage Alembic conditionné à une preuve de schéma :  _(rapport WP-C-025-c9u-U1)_
 - **?** Estimation de cout :  _(rapport WP-050-c3-R04)_
@@ -1614,6 +1632,7 @@
 - **?** Execution CI des parcours de bout en bout :  _(rapport WP-DIFF-001-c2-M16)_
 - **?** Execution d'un skill :  _(rapport WP-073)_
 - **?** Execution d'une commande du centre de capacites :  _(rapport WP-064-c4-R10)_
+- **?** Exercice des gestes métier homonymes sur chaque écran :  _(rapport WP-DIFF-111-c14-b1724-lecteur-a)_
 - **?** Explication du score lisible au clavier (P-152) :  _(rapport WP-DIFF-101-c13s-13)_
 - **?** Explorateur de fichiers :  _(rapport WP-DIFF-016-c3-R28)_
 - **?** Explorateur de fichiers et indexation :  _(rapport WP-063-c4-R04)_
@@ -2301,6 +2320,8 @@
 - **?** Indicateur de réflexion adapté au mouvement réduit :  _(rapport WP-062-c10-repair-a)_
 - **?** Indicateur et panneau des travaux longs de la coque :  _(rapport WP-069-c12-c)_
 - **?** Indicateur et panneau des travaux longs de la coque :  _(rapport WP-DIFF-072-c12-c)_
+- **?** Indice de contenu restant :  _(rapport WP-DIFF-021-c14-lecteur-a)_
+- **?** Indice de contenu restant :  _(rapport WP-DIFF-021-c14-lecteur-b)_
 - **?** Indice de defilement de l'accueil :  _(rapport WP-DIFF-021-c4-R10)_
 - **?** Indice port et mode de sécurité :  _(rapport WP-084-c9u-U1)_
 - **?** Initialisation et configuration du backend :  _(rapport WP-047-c8-codex-a)_
@@ -2921,6 +2942,8 @@
 - **?** Panneau Actions (agents actionnables) :  _(rapport WP-060-c6-R05)_
 - **?** Panneau Actions (agents actionnables) :  _(rapport WP-060-c9-R3)_
 - **?** Panneau Actions : progression et isolation :  _(rapport WP-DIFF-024-c6-R05)_
+- **?** Panneau Actions côte à côte :  _(rapport WP-066-c14-b1728-lecteur-b)_
+- **?** Panneau Actions côte à côte :  _(rapport WP-DIFF-122-c14-b1728-lecteur-b)_
 - **?** Panneau Agenda :  _(rapport WP-061-c11-lecteur-20)_
 - **?** Panneau Agenda :  _(rapport WP-DIFF-008-c4-D05)_
 - **?** Panneau Agenda (en-tête actif pendant la saisie) :  _(rapport WP-061-c11-lecteur-21)_
@@ -3170,6 +3193,9 @@
 - **?** Portes de CI de main et de la release :  _(rapport WP-C-004-c13-t)_
 - **?** Portes de CI et verrou de release :  _(rapport WP-C-004-c13-delta)_
 - **?** Portes de CI qui conditionnent la publication :  _(rapport WP-C-004-c13-beta)_
+- **?** Portes de création de document :  _(rapport WP-062-c14-b1728-lecteur-b)_
+- **?** Portes de création de projet :  _(rapport WP-064-c14-b1728-lecteur-b)_
+- **?** Portes de création de projet :  _(rapport WP-DIFF-102-c14-b1728-lecteur-b)_
 - **?** Portes de la CI :  _(rapport WP-C-004-c13-i)_
 - **?** Portes de la CI et de la release :  _(rapport WP-C-004-c13-q)_
 - **?** Portes de la CI et gate de release :  _(rapport WP-C-004-c13-alpha)_
@@ -3320,6 +3346,8 @@
 - **?** Préréglages de connecteurs MCP :  _(rapport WP-DIFF-104-c13s-d4)_
 - **?** Préserver les fiches lors d'un import vCard ambigu :  _(rapport WP-DIFF-114-c14-codex-c)_
 - **?** Présélection de la mise en route :  _(rapport WP-DIFF-087-c13-l)_
+- **?** Prévol de la pile jetable hors ligne :  _(rapport WP-DIFF-111-c14-b1724-lecteur-a)_
+- **?** Prévol hors ligne avant couverture écran :  _(rapport WP-DIFF-111-c14-b1720-lecteur-a)_
 - **?** Publication d'une version signée pour l'updater :  _(rapport WP-C-004-c6-D03)_
 - **?** Publication des installeurs 3 OS :  _(rapport WP-C-004-c2-D08)_
 - **?** Puces d'actions deterministes :  _(rapport WP-061)_
@@ -3612,6 +3640,9 @@
 - **?** Relecture contradictoire WP-DIFF-029 :  _(rapport WP-DIFF-029-c8-challenge-c)_
 - **?** Relecture contradictoire WP-DIFF-030 :  _(rapport WP-DIFF-030-c8-challenge-c)_
 - **?** Relecture d'une ressource en erreur :  _(rapport WP-DIFF-021-c9t-T4)_
+- **?** Relevé des noms de contrôles :  _(rapport WP-DIFF-111-c14-b1724-lecteur-a)_
+- **?** Relocalisation des gestes après rechargement :  _(rapport WP-DIFF-111-c14-b1718-lecteur-b)_
+- **?** Relocalisation prudente des éléments interactifs :  _(rapport WP-DIFF-111-c14-b1724-lecteur-a)_
 - **?** Remplacement d'un brouillon IMAP :  _(rapport WP-084-c9t-T1)_
 - **?** Remplacement d'un brouillon IMAP :  _(rapport WP-084-c9v-V2)_
 - **?** Remplacement d'un brouillon par son UID serveur :  _(rapport WP-084-c9u-U1)_
@@ -3674,9 +3705,11 @@
 - **?** Retour au chat à l'activation d'une conversation :  _(rapport WP-073-c4-D04)_
 - **?** Retour aux grilles calendrier et fermeture CRM :  _(rapport WP-DIFF-008-c8-codex-b)_
 - **?** Retour d'une vue embarquée avec focus rendu :  _(rapport WP-DIFF-040-c13s-10)_
+- **?** Retour de focus depuis les réglages IA :  _(rapport WP-061-c14-lecteur-b)_
 - **?** Retour deterministe :  _(rapport WP-066)_
 - **?** Retour du focus après Échap dans un dialogue :  _(rapport WP-DIFF-063-c11-lecteur-16)_
 - **?** Retour du focus au déclencheur après Échap :  _(rapport WP-DIFF-063-c13s-12)_
+- **?** Retour du focus depuis les réglages IA :  _(rapport WP-061-c14-lecteur-a)_
 - **?** Retour déterministe entre écrans :  _(rapport WP-066-c3-D03)_
 - **?** Retour à l'accueil depuis le rail :  _(rapport WP-066-c2-D04)_
 - **?** Retours IA et clavier des tâches :  _(rapport WP-DIFF-009-c8-codex-b)_
@@ -3684,6 +3717,7 @@
 - **?** Retrait complet des vecteurs :  _(rapport WP-083-c6-D01)_
 - **?** Retrait d'index fail-closed :  _(rapport WP-083)_
 - **?** Retrait d'un fichier de l'index (fail-closed) :  _(rapport WP-083-c2-D04)_
+- **?** Retrouver un geste après mutation asynchrone de l’écran :  _(rapport WP-DIFF-111-c14-b1718-lecteur-a)_
 - **?** Revue des changements de code :  _(rapport WP-060)_
 - **?** Revue des modifications de l'Atelier :  _(rapport WP-060-c9s-S3)_
 - **?** Risque des presets visible :  _(rapport WP-DIFF-087-c13-l)_
@@ -3747,8 +3781,11 @@
 - **?** Régression clavier de suppression de facture :  _(rapport WP-DIFF-054-c10-repair-a)_
 - **?** Régression clavier des quatre confirmations Contacts :  _(rapport WP-DIFF-055-c10-repair-a)_
 - **?** Régression consultation démo du projet à froid :  _(rapport WP-DIFF-055-c10-repair-a)_
+- **?** Régression de rang des boutons :  _(rapport WP-DIFF-120-c14-b1718-lecteur-a)_
 - **?** Régression des continuations sync inter-projets :  _(rapport WP-DIFF-055-c10-repair-a)_
+- **?** Régression des deux entrées Nouveau projet :  _(rapport WP-DIFF-102-c14-b1728-lecteur-a)_
 - **?** Régression des retours fichiers A/B et close/reopen :  _(rapport WP-DIFF-055-c10-repair-a)_
+- **?** Régression du rang de contrôle variable :  _(rapport WP-DIFF-120-c14-b1718-lecteur-b)_
 - **?** Régression durée locale avec bulle assistant vide :  _(rapport WP-DIFF-055-c10-repair-a)_
 - **?** Régression focus suppression facture :  _(rapport WP-DIFF-054-c10-repair-b)_
 - **?** Régression nom masqué de confirmation kanban :  _(rapport WP-DIFF-055-c10-repair-a)_
@@ -4258,8 +4295,22 @@
 - **?** Tâches locales :  _(rapport WP-050-c3-R05)_
 - **?** Téléchargement et suppression des images générées :  _(rapport WP-DIFF-012-c6-D03)_
 - **?** Télécharger un fichier généré :  _(rapport WP-050-c13s-01)_
+- **?** Témoin de largeur Actions :  _(rapport WP-DIFF-122-c14-b1728-lecteur-a)_
+- **?** Témoin de refus avant jeton sans attestation :  _(rapport WP-DIFF-120-c14-b1720-assertion-lecteur-a)_
+- **?** Témoin de refus avant jeton sans attestation :  _(rapport WP-DIFF-120-c14-b1720-lecteur-a)_
+- **?** Témoin de refus avant lecture du jeton :  _(rapport WP-DIFF-120-c14-b1724-lecteur-a)_
+- **?** Témoin des actions contextualisées :  _(rapport WP-DIFF-122-c14-b1728-lecteur-a)_
+- **?** Témoin du dialogue de prompts :  _(rapport WP-DIFF-122-c14-b1728-lecteur-a)_
+- **?** Témoin du label englobant de checkbox :  _(rapport WP-DIFF-120-c14-b1724-lecteur-a)_
+- **?** Témoin isolé du wrapper ASGI :  _(rapport WP-DIFF-121-c14-b1720-lecteur-a)_
 - **?** Témoins de contraste et d’indétermination :  _(rapport WP-DIFF-055-c10-repair-a)_
+- **?** Témoins de refus ou conservation d’une cible après réouverture :  _(rapport WP-DIFF-120-c14-b1724-lecteur-a)_
+- **?** Témoins de sûreté de la couverture écran :  _(rapport WP-DIFF-120-c14-b1720-lecteur-b)_
+- **?** Témoins de sûreté de la couverture écran :  _(rapport WP-DIFF-120-c14-offline-lecteur-b)_
+- **?** Témoins de sûreté de l’instrument :  _(rapport WP-DIFF-120-c14-lecteur-a)_
+- **?** Témoins de sûreté du parcours écran :  _(rapport WP-DIFF-120-c14-b1724-lecteur-b)_
 - **?** Témoins des gardes de préférences :  _(rapport WP-DIFF-119-c14-reprise-lecteur-a)_
+- **?** Témoins des homonymes de coque et de vues métier :  _(rapport WP-DIFF-120-c14-b1724-lecteur-a)_
 - **?** Témoins du fuseau dans l’Accueil :  _(rapport WP-DIFF-119-c14-reprise-lecteur-a)_
 - **?** Un agent sur modèle local ne bascule jamais vers le cloud (B-968) :  _(rapport WP-051-c11-lecteur-11)_
 - **?** Un agent sur modèle local ne bascule jamais vers le cloud (B-968) :  _(rapport WP-DIFF-062-c11-lecteur-11)_

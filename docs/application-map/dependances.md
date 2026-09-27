@@ -1339,6 +1339,7 @@
 - `src/frontend/src/components/chat/ChatInput.ollamaCloudLocal.b1174.test.tsx` → `src/frontend/src/components/chat/ChatInput.tsx` :
 - `src/frontend/src/components/chat/ChatInput.renseignerVariables.test.tsx` → `src/frontend/src/components/chat/ChatInput.tsx` :
 - `src/frontend/src/components/chat/ChatInput.test.tsx` → `src/frontend/src/components/chat/ChatInput.tsx` :
+- `src/frontend/src/components/chat/ChatInput.test.tsx` → `src/frontend/src/hooks/useDialogFocusTrap.ts` :
 - `src/frontend/src/components/chat/ChatInput.test.tsx` → `src/frontend/src/lib/etabli.ts` :
 - `src/frontend/src/components/chat/ChatInput.tsx` → `lucide-react` :
 - `src/frontend/src/components/chat/ChatInput.tsx` → `react` :
@@ -1369,6 +1370,7 @@
 - `src/frontend/src/components/chat/ChatInput.tsx` → `src/frontend/src/stores/chatStore` :
 - `src/frontend/src/components/chat/ChatInput.tsx` → `src/frontend/src/stores/chatStore.ts` :
 - `src/frontend/src/components/chat/ChatInput.tsx` → `src/frontend/src/stores/emailStore` :
+- `src/frontend/src/components/chat/ChatInput.tsx` → `src/frontend/src/stores/panelStore.ts` :
 - `src/frontend/src/components/chat/CommandPalette.tsx` → `src/frontend/src/hooks/useDialogFocusTrap` :
 - `src/frontend/src/components/chat/CommandPalette.tsx` → `src/frontend/src/lib/actionRegistry` :
 - `src/frontend/src/components/chat/CommandPalette.tsx` → `src/frontend/src/lib/actionRegistry.ts` :
@@ -1416,11 +1418,13 @@
 - `src/frontend/src/components/chat/MessageList.tsx` → `src/frontend/src/hooks/useDemoMask.ts` :
 - `src/frontend/src/components/chat/MessageList.tsx` → `src/frontend/src/stores/chatStore.ts` :
 - `src/frontend/src/components/chat/MessageList.tsx` → `src/frontend/src/stores/toolConfirmationStore.ts` :
+- `src/frontend/src/components/chat/PanelContainer.b1726.test.tsx` → `src/frontend/src/components/chat/PanelContainer.tsx` :
 - `src/frontend/src/components/chat/PanelContainer.tsx` → `src/frontend/src/components/board/BoardPanel.tsx` :
 - `src/frontend/src/components/chat/PanelContainer.tsx` → `src/frontend/src/components/guided/CreateCommandForm.tsx` :
 - `src/frontend/src/components/chat/PanelContainer.tsx` → `src/frontend/src/components/memory/ContactModal.tsx` :
 - `src/frontend/src/components/chat/PanelContainer.tsx` → `src/frontend/src/components/prompts/PromptLibrary.tsx` :
 - `src/frontend/src/components/chat/PanelContainer.tsx` → `src/frontend/src/components/settings/SettingsModal` :
+- `src/frontend/src/components/chat/PanelContainer.tsx` → `src/frontend/src/hooks/useDialogFocusTrap.ts` :
 - `src/frontend/src/components/chat/PanelContainer.tsx` → `src/frontend/src/stores/panelStore.ts` :
 - `src/frontend/src/components/chat/ShortcutsModal.tsx` → `src/frontend/src/components/ui/DialogShell` :
 - `src/frontend/src/components/chat/ShortcutsModal.tsx` → `src/frontend/src/components/ui/DialogShell.tsx` :
@@ -1550,6 +1554,7 @@
 - `src/frontend/src/components/documents/DocumentWorkspace.tsx` → `src/frontend/src/stores/documentStore` :
 - `src/frontend/src/components/documents/DocumentWorkspace.tsx` → `src/frontend/src/stores/documentStore.ts` :
 - `src/frontend/src/components/documents/DocumentsList.c9.test.tsx` → `src/frontend/src/lib/escapeStack.ts` :
+- `src/frontend/src/components/documents/DocumentsList.test.tsx` → `src/frontend/src/components/documents/DocumentsList.tsx` :
 - `src/frontend/src/components/documents/DocumentsList.tsx` → `src/frontend/src/components/documents/DocumentCreateModal.tsx` :
 - `src/frontend/src/components/documents/DocumentsList.tsx` → `src/frontend/src/components/documents/DocumentWorkspace.tsx` :
 - `src/frontend/src/components/documents/DocumentsList.tsx` → `src/frontend/src/lib/escapeStack` :
@@ -2101,6 +2106,8 @@
 - `src/frontend/src/components/memory/ProjectsPanel.demo.c10.test.tsx` → `src/frontend/src/lib/demoMask.ts` :
 - `src/frontend/src/components/memory/ProjectsPanel.demo.c10.test.tsx` → `src/frontend/src/stores/demoStore.ts` :
 - `src/frontend/src/components/memory/ProjectsPanel.demo.c10.test.tsx` → `vitest` :
+- `src/frontend/src/components/memory/ProjectsPanel.etatVide.p148.test.tsx` → `src/frontend/src/components/memory/ProjectModal.tsx` :
+- `src/frontend/src/components/memory/ProjectsPanel.etatVide.p148.test.tsx` → `src/frontend/src/components/memory/ProjectsPanel.tsx` :
 - `src/frontend/src/components/memory/ProjectsPanel.troncature.test.tsx` → `src/frontend/src/components/memory/ProjectsKanban.tsx` :
 - `src/frontend/src/components/memory/ProjectsPanel.tsx` → `../../hooks/useDemoMask` :
 - `src/frontend/src/components/memory/ProjectsPanel.tsx` → `../../hooks/useDialogFocusTrap` :
@@ -2113,6 +2120,7 @@
 - `src/frontend/src/components/memory/ProjectsPanel.tsx` → `src/frontend/src/components/memory/ConfirmationSuppressionProjet.tsx` :
 - `src/frontend/src/components/memory/ProjectsPanel.tsx` → `src/frontend/src/components/memory/ProjectModal.tsx` :
 - `src/frontend/src/components/memory/ProjectsPanel.tsx` → `src/frontend/src/components/memory/ProjectsKanban.tsx` :
+- `src/frontend/src/components/memory/ProjectsPanel.tsx` → `src/frontend/src/components/memory/ProjectsPanel.etatVide.p148.test.tsx` :
 - `src/frontend/src/components/memory/ProjectsPanel.tsx` → `src/frontend/src/components/ui/Carte.tsx` :
 - `src/frontend/src/components/memory/ProjectsPanel.tsx` → `src/frontend/src/components/ui/Spinner.tsx` :
 - `src/frontend/src/components/memory/ProjectsPanel.tsx` → `src/frontend/src/hooks/useDemoMask.ts` :
@@ -2120,6 +2128,7 @@
 - `src/frontend/src/components/memory/ProjectsPanel.tsx` → `src/frontend/src/lib/escapeStack.ts` :
 - `src/frontend/src/components/memory/ProjectsPanel.tsx` → `src/frontend/src/lib/gesteEnDemo.ts` :
 - `src/frontend/src/components/memory/ProjectsPanel.tsx` → `src/frontend/src/services/api` :
+- `src/frontend/src/components/memory/ProjectsPanel.tsx` → `src/frontend/src/services/api/index.ts` :
 - `src/frontend/src/components/memory/ProjectsPanel.tsx` → `src/frontend/src/stores/statusStore.ts` :
 - `src/frontend/src/components/memory/ProjectsPanel.tsx` → `window therese:memory-changed` :
 - `src/frontend/src/components/memory/adresseClient.test.tsx` → `src/frontend/src/components/prototype/InvoiceConversationCard.tsx` :
@@ -2200,6 +2209,8 @@
 - `src/frontend/src/components/onboarding/index.ts` → `src/frontend/src/components/onboarding/ProfileStep.tsx` :
 - `src/frontend/src/components/onboarding/textes.ts` → `src/frontend/src/lib/lexique.test.ts` :
 - `src/frontend/src/components/onboarding/textes.voix.c9.test.ts` → `src/frontend/src/components/onboarding/textes.ts` :
+- `src/frontend/src/components/prompts/PromptLibrary.clavier.c9.test.tsx` → `src/frontend/src/components/prompts/PromptLibrary.tsx` :
+- `src/frontend/src/components/prompts/PromptLibrary.clavier.c9.test.tsx` → `src/frontend/src/services/api/index.ts` :
 - `src/frontend/src/components/prompts/PromptLibrary.clicAvantEffets.test.tsx` → `src/frontend/src/components/prompts/PromptLibrary.tsx` :
 - `src/frontend/src/components/prompts/PromptLibrary.clicAvantEffets.test.tsx` → `src/frontend/src/services/api/index.ts` :
 - `src/frontend/src/components/prompts/PromptLibrary.compteAnnonce.c9.test.tsx` → `src/frontend/src/components/prompts/PromptLibrary.tsx` :
@@ -2212,6 +2223,7 @@
 - `src/frontend/src/components/prompts/PromptLibrary.cycle6.test.tsx` → `src/frontend/vitest.config.ts` :
 - `src/frontend/src/components/prompts/PromptLibrary.cycle6.test.tsx` → `vitest` :
 - `src/frontend/src/components/prompts/PromptLibrary.demontage.test.tsx` → `src/frontend/src/components/prompts/PromptLibrary.tsx` :
+- `src/frontend/src/components/prompts/PromptLibrary.identite.b1725.test.tsx` → `src/frontend/src/components/prompts/PromptLibrary.tsx` :
 - `src/frontend/src/components/prompts/PromptLibrary.recherche.test.tsx` → `./PromptLibrary` :
 - `src/frontend/src/components/prompts/PromptLibrary.recherche.test.tsx` → `@testing-library/react` :
 - `src/frontend/src/components/prompts/PromptLibrary.recherche.test.tsx` → `vitest` :
@@ -2222,9 +2234,11 @@
 - `src/frontend/src/components/prompts/PromptLibrary.tsx` → `framer-motion` :
 - `src/frontend/src/components/prompts/PromptLibrary.tsx` → `navigator.clipboard` :
 - `src/frontend/src/components/prompts/PromptLibrary.tsx` → `react` :
+- `src/frontend/src/components/prompts/PromptLibrary.tsx` → `src/frontend/src/components/prompts/PromptLibrary.identite.b1725.test.tsx` :
 - `src/frontend/src/components/prompts/PromptLibrary.tsx` → `src/frontend/src/components/ui` :
 - `src/frontend/src/components/prompts/PromptLibrary.tsx` → `src/frontend/src/components/ui/Button` :
 - `src/frontend/src/components/prompts/PromptLibrary.tsx` → `src/frontend/src/services/api` :
+- `src/frontend/src/components/prompts/PromptLibrary.tsx` → `src/frontend/src/services/api/index.ts` :
 - `src/frontend/src/components/prompts/PromptLibrary.tsx` → `src/frontend/src/services/api/prompts.ts` :
 - `src/frontend/src/components/prototype/AccueilMoinsCharge.test.tsx` → `@testing-library/react` :
 - `src/frontend/src/components/prototype/AccueilMoinsCharge.test.tsx` → `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` :
@@ -2282,6 +2296,9 @@
 - `src/frontend/src/components/prototype/ContactsMemoryCard.tsx` → `src/backend/app/routers/memory.py` :
 - `src/frontend/src/components/prototype/ContactsMemoryCard.tsx` → `src/frontend/src/hooks/useDemoMask.ts` :
 - `src/frontend/src/components/prototype/ContactsMemoryCard.tsx` → `src/frontend/src/stores/contactsStore.ts` :
+- `src/frontend/src/components/prototype/ConversationCanvasPrototype.actionsCoteACote.b1728.test.tsx` → `src/frontend/src/components/actions/ActionPanel.tsx` :
+- `src/frontend/src/components/prototype/ConversationCanvasPrototype.actionsCoteACote.b1728.test.tsx` → `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` :
+- `src/frontend/src/components/prototype/ConversationCanvasPrototype.actionsCoteACote.b1728.test.tsx` → `src/frontend/src/stores/actionsStore.ts` :
 - `src/frontend/src/components/prototype/ConversationCanvasPrototype.da.test.tsx` → `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` :
 - `src/frontend/src/components/prototype/ConversationCanvasPrototype.da.test.tsx` → `src/frontend/src/components/ui/Ligne.tsx` :
 - `src/frontend/src/components/prototype/ConversationCanvasPrototype.da.test.tsx` → `src/frontend/src/services/api/dashboard.ts` :
@@ -2307,6 +2324,7 @@
 - `src/frontend/src/components/prototype/ConversationCanvasPrototype.travailAction.b1477.test.tsx` → `src/frontend/src/components/traitements/TraitementsPanel.tsx` :
 - `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` → `./BoutonFermerLePanneau` :
 - `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` → `react` :
+- `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` → `src/frontend/src/components/actions/ActionPanel.tsx` :
 - `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` → `src/frontend/src/components/chat/PanelContainer.tsx` :
 - `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` → `src/frontend/src/components/prototype/BoutonFermerLePanneau.tsx` :
 - `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` → `src/frontend/src/components/prototype/CalculatorWorkspaceCanvas.tsx` :
@@ -2317,6 +2335,7 @@
 - `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` → `src/frontend/src/components/prototype/EmailConversationCard.tsx` :
 - `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` → `src/frontend/src/components/prototype/FollowUpsWorkspaceCanvas.tsx` :
 - `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` → `src/frontend/src/components/prototype/ImagesWorkspaceCanvas.tsx` :
+- `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` → `src/frontend/src/components/prototype/IndiceDeDefilement.tsx` :
 - `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` → `src/frontend/src/components/prototype/InvoiceConversationCard.tsx` :
 - `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` → `src/frontend/src/components/prototype/MeetingConversationCard.tsx` :
 - `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` → `src/frontend/src/components/prototype/PrototypeChatSurface.tsx` :
@@ -2429,6 +2448,7 @@
 - `src/frontend/src/components/prototype/ImagesWorkspaceCanvas.tsx` → `src/frontend/src/stores/panelStore.ts` :
 - `src/frontend/src/components/prototype/ImagesWorkspaceCanvas.vignettesConservees.c9.test.tsx` → `src/frontend/src/components/prototype/ImagesWorkspaceCanvas.tsx` :
 - `src/frontend/src/components/prototype/IndiceDeDefilement.test.tsx` → `src/frontend/src/components/prototype/IndiceDeDefilement.tsx` :
+- `src/frontend/src/components/prototype/IndiceDeDefilement.tsx` → `src/frontend/src/components/prototype/PrototypeUnifiedViewCanvas.tsx` :
 - `src/frontend/src/components/prototype/InformationsVides.test.tsx` → `@testing-library/react` :
 - `src/frontend/src/components/prototype/InformationsVides.test.tsx` → `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` :
 - `src/frontend/src/components/prototype/InformationsVides.test.tsx` → `vitest` :
@@ -3511,9 +3531,22 @@
 - `tests/conftest.py` → `src/backend/app/services/qdrant.py` :
 - `tests/conftest.py` → `src/backend/app/services/user_profile.py` :
 - `tests/conftest.py` → `src/backend/app/services/web_search.py` :
+- `tests/couverture/backend_offline.py` → `src/backend/app/main.py` :
+- `tests/couverture/backend_offline.py` → `tests/couverture/couverture-ecran.mjs` :
+- `tests/couverture/couverture-ecran.mjs` → `@playwright/test` :
+- `tests/couverture/couverture-ecran.mjs` → `src/backend/app/routers/config.py` :
 - `tests/couverture/couverture-ecran.mjs` → `src/frontend/src/App.tsx` :
+- `tests/couverture/couverture-ecran.mjs` → `src/frontend/src/components/home/SetupChecklist.tsx` :
 - `tests/couverture/couverture-ecran.mjs` → `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` :
+- `tests/couverture/couverture-ecran.mjs` → `src/frontend/src/lib/actionRegistry.ts` :
 - `tests/couverture/couverture-ecran.mjs` → `src/frontend/src/stores/accessibilityStore.ts` :
+- `tests/couverture/couverture-ecran.mjs` → `src/frontend/src/stores/invoiceStore.ts` :
+- `tests/couverture/couverture-ecran.mjs` → `tests/couverture/backend_offline.py` :
+- `tests/couverture/couverture-ecran.mjs` → `tests/couverture/couverture-ecran.test.mjs` :
+- `tests/couverture/couverture-ecran.test.mjs` → `@playwright/test` :
+- `tests/couverture/couverture-ecran.test.mjs` → `node:test` :
+- `tests/couverture/couverture-ecran.test.mjs` → `tests/couverture/couverture-ecran.mjs` :
+- `tests/couverture/test_backend_offline.py` → `tests/couverture/backend_offline.py` :
 - `tests/e2e/README.md` → `playwright.config.ts` :
 - `tests/e2e/README.md` → `src/frontend/vite.config.ts` :
 - `tests/e2e/conftest.py` → `playwright.sync_api` :
