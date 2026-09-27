@@ -669,3 +669,18 @@ dernier enfant VISIBLE (le dernier enfant DOM était un wrapper vide).
   `asyncio.run()`. Préparer la boucle, poser les spies, puis lancer les
   assertions sur cette boucle. Détail et JUnit dans
   `docs/SUIVI-CYCLE14-CODEX-2026-09-26.md`.
+
+## Publication de release 0.76.1 (27/09/2026)
+
+- **Dans cette draft GitHub, les URLs des assets contenaient `untagged-…`.** La
+  release `v0.76.1-alpha` a affiché ce chemin malgré son `tagName` exact.
+  Vérifier les empreintes et signatures en draft, puis refaire le contrôle
+  des URLs après `--draft=false` ; elles pointent alors vers le tag public.
+- **Le smoke du moteur packagé doit authentifier la route `/`.** `/health`
+  répond sans jeton, mais `/` rend 401 sans `X-Therese-Token`. Lire le jeton
+  créé sous le `THERESE_DATA_DIR` jetable du test, sans l'afficher.
+- **Le parent PyInstaller macOS peut sortir avec `-SIGTERM` après un shutdown
+  gracieux.** La route `/api/shutdown` a rendu 200 et Uvicorn a journalisé
+  `Application shutdown complete.` alors que le parent sortait `-15`.
+  Vérifier ensemble réponse HTTP, journal et ports libérés, plutôt que
+  d'exiger seulement un code de sortie zéro.
