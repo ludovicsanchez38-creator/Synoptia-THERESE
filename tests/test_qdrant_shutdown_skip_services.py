@@ -36,6 +36,20 @@ def test_arret_ferme_qdrant_ouvert_par_la_sante_en_mode_test(tmp_path: Path) -> 
         "PORT": "17394",
         "PYTHONPATH": str(BACKEND),
     }
+    if os.name == "nt":
+        # Windows a besoin de SystemRoot pour charger ses fournisseurs Winsock.
+        # Les chemins de profil et les fichiers temporaires restent jetables.
+        env["SYSTEMROOT"] = os.environ["SYSTEMROOT"]
+        env["WINDIR"] = env["SYSTEMROOT"]
+        env["USERPROFILE"] = str(home_test)
+        env["TEMP"] = str(tmp_path)
+        env["TMP"] = str(tmp_path)
+        for cle, dossier in (
+            ("APPDATA", home_test / "AppData" / "Roaming"),
+            ("LOCALAPPDATA", home_test / "AppData" / "Local"),
+        ):
+            dossier.mkdir(parents=True)
+            env[cle] = str(dossier)
     scenario = """
 import asyncio
 import importlib

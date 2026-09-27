@@ -76,6 +76,18 @@ def doit_refuser(operation):
         return
     raise AssertionError('une destination non locale a été autorisée')
 
+# Reproduit aussi sur Unix l'absence de AF_UNIX du runner Windows.
+af_unix_initial = getattr(socket, 'AF_UNIX', None)
+if af_unix_initial is not None:
+    del socket.AF_UNIX
+try:
+    assert backend_offline._destination_locale(
+        socket.AF_INET, ('localhost', 17393)
+    ) == ('127.0.0.1', 17393)
+finally:
+    if af_unix_initial is not None:
+        socket.AF_UNIX = af_unix_initial
+
 doit_refuser(lambda: socket.getaddrinfo('openrouter.ai', 443))
 doit_refuser(lambda: socket.gethostbyname('openrouter.ai'))
 doit_refuser(lambda: socket.gethostbyaddr('8.8.8.8'))
@@ -106,13 +118,16 @@ with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as local:
     local.bind(('localhost', 0))
     local.connect(('localhost', 17393))
     assert local.connect_ex(('127.0.0.1', 17393)) == 0
-gauche, droite = socket.socketpair()
-try:
-    gauche.sendall(b'local')
-    assert droite.recv(5) == b'local'
-finally:
-    gauche.close()
-    droite.close()
+# Sans AF_UNIX, socketpair utilise des connexions TCP que les spies ci-dessus
+# simulent sans les établir réellement.
+if hasattr(socket, 'AF_UNIX'):
+    gauche, droite = socket.socketpair()
+    try:
+        gauche.sendall(b'local')
+        assert droite.recv(5) == b'local'
+    finally:
+        gauche.close()
+        droite.close()
 
 # Le catch-all produit simulé ne doit jamais voir l'attestation.
 appels_produit = []

@@ -608,3 +608,27 @@ rapport écran, les tests verts, la cartographie post-commit à **2081/2081**
 et les **96/96** transitions critiques. `plateau-evaluate` l'a accepté ;
 les deux dernières rondes B3 et B4 sont désormais successives et indépendantes.
 La phase reste `HUMAN_GATE`, avec P-157, P-158 et P-159 en attente.
+
+## Préparation de release, portabilité Windows des témoins
+
+La PR brouillon [#97](https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/pull/97)
+déclenche la CI du cycle 14 avant toute fusion ou version. Son premier passage
+Windows a rendu 4 188 cas principaux, dont deux échecs et 41 ignorés ; les
+autres portes Linux, macOS, frontend et E2E étaient vertes. Le JUnit téléchargé
+identifie deux défauts de portabilité des **tests**, sans échec du produit :
+
+- La garde hors ligne lisait `socket.AF_UNIX` alors que cette constante est
+  absente sur le runner Windows. Elle traite désormais cette famille seulement
+  lorsqu'elle existe. Son témoin retire aussi la constante sur Unix pour
+  reproduire le cas Windows, et n'appelle `socketpair()` que si cette famille
+  existe : sur Windows, son repli TCP est simulé par les spies du test.
+- Le test de fermeture Qdrant lançait Python avec un environnement jetable
+  sans `SYSTEMROOT`. Windows échouait à importer `_overlapped` avec
+  `WinError 10106`, avant d'atteindre l'application. Le processus fils reçoit
+  uniquement cette variable système nécessaire ; son profil, ses dossiers
+  applicatifs et ses répertoires temporaires restent jetables.
+
+Les deux tests ciblés passent localement et Ruff valide les trois fichiers
+touchés. La CI Windows sur le nouveau commit reste à vérifier avant fusion.
+Ces corrections de témoins sont postérieures aux rondes B3 et B4 ; elles ne
+modifient pas le code produit ni le verdict de plateau sur `5e9e418c`.

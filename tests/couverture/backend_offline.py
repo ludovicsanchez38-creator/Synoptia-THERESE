@@ -60,7 +60,8 @@ def _hote_numerique_local(hote: object, famille: int) -> str | None:
 
 
 def _destination_locale(famille: int, adresse: object) -> object:
-    if famille == socket.AF_UNIX:
+    af_unix = getattr(socket, "AF_UNIX", None)
+    if af_unix is not None and famille == af_unix:
         if isinstance(adresse, (str, bytes)):
             return adresse
         _refuser(adresse)
