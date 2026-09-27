@@ -23,7 +23,7 @@ from app.models.entities import (
     Preference,
     Task,
 )
-from app.services.civil_time import date_civile_paris
+from app.services.civil_time import date_civile_paris, instant_pour_ecran
 from app.services.invoice_status import statut_effectif_facture
 from app.services.user_profile import get_cached_profile
 from fastapi import APIRouter, Depends
@@ -363,9 +363,9 @@ async def get_today_dashboard(session: AsyncSession = Depends(get_session)):
             events_today.append({
                 "id": ev.id,
                 "summary": ev.summary,
-                "start_datetime": ev.start_datetime.isoformat() if ev.start_datetime else None,
+                "start_datetime": instant_pour_ecran(ev.start_datetime),
                 "start_date": ev.start_date,
-                "end_datetime": ev.end_datetime.isoformat() if ev.end_datetime else None,
+                "end_datetime": instant_pour_ecran(ev.end_datetime),
                 "location": ev.location,
                 "all_day": ev.all_day,
                 "attendees_count": len(event_attendees),
@@ -609,7 +609,7 @@ async def get_semaine(session: AsyncSession = Depends(get_session)) -> dict[str,
             ).limit(PLAFOND_SEMAINE)
         )).scalars().all()
         for evenement in rendez_vous:
-            debut = evenement.start_datetime.isoformat() if evenement.start_datetime else evenement.start_date
+            debut = instant_pour_ecran(evenement.start_datetime) or evenement.start_date
             a_venir.append({
                 "kind": "rdv", "id": evenement.id, "contact_id": None,
                 "titre": evenement.summary, "date": debut,
