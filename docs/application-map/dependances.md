@@ -265,6 +265,7 @@
 - `src/backend/app/routers/calendar.py` → `src/backend/app/services/calendar/local_provider.py` :
 - `src/backend/app/routers/calendar.py` → `src/backend/app/services/calendar/provider_factory.py` :
 - `src/backend/app/routers/calendar.py` → `src/backend/app/services/calendar_service.py` :
+- `src/backend/app/routers/calendar.py` → `src/backend/app/services/civil_time.py` :
 - `src/backend/app/routers/calendar.py` → `src/backend/app/services/import_service.py` :
 - `src/backend/app/routers/chat.py` → `app.services.cloisonnement` :
 - `src/backend/app/routers/chat.py` → `app.services.indexation` :
@@ -314,6 +315,7 @@
 - `src/backend/app/routers/config.py` → `src/backend/app/services/modeles_catalogue.py` :
 - `src/backend/app/routers/config.py` → `src/backend/app/services/ollama_capabilites.py` :
 - `src/backend/app/routers/config.py` → `src/backend/app/services/path_security.py` :
+- `src/backend/app/routers/config.py` → `src/backend/app/services/preference_security.py` :
 - `src/backend/app/routers/config.py` → `src/backend/app/services/providers/base.py` :
 - `src/backend/app/routers/config.py` → `src/backend/app/services/user_profile.py` :
 - `src/backend/app/routers/config.py` → `src/backend/app/services/web_search.py` :
@@ -365,6 +367,7 @@
 - `src/backend/app/routers/data.py` → `src/backend/app/services/llm.py` :
 - `src/backend/app/routers/data.py` → `src/backend/app/services/maintenance.py` :
 - `src/backend/app/routers/data.py` → `src/backend/app/services/memory_tools.py` :
+- `src/backend/app/routers/data.py` → `src/backend/app/services/preference_security.py` :
 - `src/backend/app/routers/data.py` → `src/backend/app/services/qdrant.py` :
 - `src/backend/app/routers/data.py` → `src/backend/app/services/task_registry.py` :
 - `src/backend/app/routers/data.py` → `src/backend/app/services/traitements.py` :
@@ -3811,6 +3814,7 @@
 - `tests/test_b1536_retour_arriere_compagnon_ouvert.py` → `tests/test_b1523_retour_arriere_sans_wal_etranger.py` :
 - `tests/test_b1539_board_client_parti_avant_le_debut.py` → `src/backend/app/routers/board.py` :
 - `tests/test_b1540_caches_apres_restauration_et_purge.py` → `src/backend/app/services/cloisonnement.py` :
+- `tests/test_b1553_accueil_fuseau.py` → `src/backend/app/routers/dashboard.py` :
 - `tests/test_b1582_plafond_de_sortie_du_catalogue.py` → `src/backend/app/services/providers/base.py` :
 - `tests/test_b1632_base_fermee_aucune_connexion.py` → `src/backend/app/models/database.py` :
 - `tests/test_b1640_preavis_efface_a_l_anonymisation.py` → `src/backend/app/services/rgpd_identite.py` :
@@ -4404,6 +4408,8 @@
 - `tests/test_pluriel_fournisseur.py` → `pytest` :
 - `tests/test_pluriel_fournisseur.py` → `src/backend/app/routers/config.py` :
 - `tests/test_pluriel_fournisseur.py` → `src/backend/app/services/llm.py` :
+- `tests/test_preferences_securite_cycle14.py` → `src/backend/app/routers/config.py` :
+- `tests/test_preferences_securite_cycle14.py` → `src/backend/app/services/llm.py` :
 - `tests/test_prestation.py` → `src/backend/app/models/entities.py` :
 - `tests/test_prestation.py` → `src/backend/app/routers/prestations.py` :
 - `tests/test_prestation.py` → `src/backend/app/services/memory_tools.py` :
@@ -4525,6 +4531,7 @@
 - `tests/test_routers_calendar.py` → `src/backend/app/routers/calendar.py` :
 - `tests/test_routers_calendar.py` → `tests/conftest.py` :
 - `tests/test_routers_chat.py` → `src/backend/app/routers/chat.py` :
+- `tests/test_routers_chat.py` → `src/backend/app/services/llm.py` :
 - `tests/test_routers_chat.py` → `src/backend/app/services/tool_confirmations.py` :
 - `tests/test_routers_chat.py` → `tests/conftest.py` :
 - `tests/test_routers_commands_v3.py` → `app.services.user_commands.UserCommandsService` :

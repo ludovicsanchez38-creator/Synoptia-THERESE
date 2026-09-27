@@ -805,6 +805,7 @@
 - **?** Classement par priorite :  _(rapport WP-050-c3-R04)_
 - **?** Classification des erreurs calendrier :  _(rapport WP-061-c8-challenge-b)_
 - **?** Classification des erreurs d'agenda :  _(rapport WP-061-c4-D04)_
+- **?** Classification des secrets de préférences :  _(rapport WP-DIFF-118-c14-reprise-lecteur-a)_
 - **?** Cle de jour civil du calendrier :  _(rapport WP-070-c2-M16)_
 - **?** Cles API des fournisseurs :  _(rapport WP-049-c3-R03)_
 - **?** Cles API par fournisseur :  _(rapport WP-049)_
@@ -1139,6 +1140,7 @@
 - **?** Contrat d'entrée des projets (création, renommage) :  _(rapport WP-048-c13-k)_
 - **?** Contrat d'entrée des projets par la route :  _(rapport WP-048-c13-q)_
 - **?** Contrat de direction artistique du prototype :  _(rapport WP-066-c9t-T2)_
+- **?** Contrat de fuseau de l’Accueil :  _(rapport WP-DIFF-119-c14-reprise-lecteur-b)_
 - **?** Contrat de l'API :  _(rapport WP-048-c4-D02)_
 - **?** Contrat de l'API (schemas Pydantic) :  _(rapport WP-048-c4-R03)_
 - **?** Contrat de lecture d'une fiche (chat et pont MCP) :  _(rapport WP-053-c13s-06)_
@@ -1332,6 +1334,7 @@
 - **?** Dates civiles (jour local et jour de Paris) :  _(rapport WP-070-c6-D03)_
 - **?** Dates civiles de l'agenda :  _(rapport WP-DIFF-021-c4-R10)_
 - **?** Dates civiles du calendrier et des taches :  _(rapport WP-070-c3-D04)_
+- **?** Dates civiles et horaires de l’Accueil :  _(rapport WP-049-c14-reprise-lecteur-b)_
 - **?** Dates et retards en jours civils :  _(rapport WP-DIFF-025-c6-R08)_
 - **?** Decision (Board) dans le canevas conversationnel :  _(rapport WP-065-c4-R05)_
 - **?** Decision d'afficher l'assistant de premier lancement :  _(rapport WP-060)_
@@ -1633,6 +1636,7 @@
 - **?** Export RGPD des données (portabilité, Art. 20) :  _(rapport WP-050-c2-D03)_
 - **?** Export RGPD du profil :  _(rapport WP-DIFF-012-c8-challenge-b)_
 - **?** Export RGPD et portabilite :  _(rapport WP-DIFF-012-c3-R27)_
+- **?** Export avec secrets masqués :  _(rapport WP-050-c14-reprise-lecteur-a)_
 - **?** Export complet XLSX sans formule active (B-1192) :  _(rapport WP-DIFF-088-c13-m)_
 - **?** Export complet du CRM :  _(rapport WP-DIFF-090-c13-s)_
 - **?** Export d'un document en md ou docx :  _(rapport WP-050)_
@@ -1823,6 +1827,7 @@
 - **?** Filet de démarrage hors bundle :  _(rapport WP-DIFF-037-c9v-V2)_
 - **?** Filet de démarrage hors bundle (B-805) :  _(rapport WP-DIFF-037-c9s-S2)_
 - **?** Filtrage des modèles Ollama sans outils :  _(rapport WP-053)_
+- **?** Filtre commun des préférences sensibles :  _(rapport WP-DIFF-118-c14-reprise-lecteur-b)_
 - **?** Filtre de périmètre des contacts :  _(rapport WP-DIFF-037-c11-lecteur-24)_
 - **?** Filtre de périmètre des contacts (Mémoire) :  _(rapport WP-DIFF-037-c11-lecteur-23)_
 - **?** Filtre de schéma du runtime (B-964) :  _(rapport WP-DIFF-060-c11-lecteur-8)_
@@ -2118,6 +2123,7 @@
 - **?** Heure « Rafraîchi à » de l’accueil :  _(rapport WP-066-c11-lecteur-20)_
 - **?** Heure « Rafraîchi à » de l’accueil :  _(rapport WP-066-c11-lecteur-22)_
 - **?** Heure « Rafraîchi à » de l’accueil :  _(rapport WP-DIFF-063-c11-lecteur-22)_
+- **?** Heures datées des rendez-vous locaux :  _(rapport WP-048-c14-reprise-lecteur-b)_
 - **?** Heures de l'accueil et des scénarios :  _(rapport WP-066-c11-lecteur-21)_
 - **?** Historique d'activites :  _(rapport WP-062-c4-R10)_
 - **?** Historique de conversations plafonné :  _(rapport WP-068-c2-D08)_
@@ -2488,6 +2494,7 @@
 - **?** Marqueur de mise en route :  _(rapport WP-049)_
 - **?** Marqueur de mise en route :  _(rapport WP-049-c13-epsilon)_
 - **?** Marqueur de mise en route :  _(rapport WP-049-c6-R03)_
+- **?** Masquage des secrets dans la portabilité :  _(rapport WP-050-c14-reprise-lecteur-b)_
 - **?** Masquage des secrets dans les journaux :  _(rapport WP-047)_
 - **?** Masquage des secrets dans les journaux :  _(rapport WP-C-029)_
 - **?** Masquage des secrets dans les journaux :  _(rapport WP-C-029-c2-D03)_
@@ -3298,6 +3305,7 @@
 - **?** Préférences de personnalisation :  _(rapport WP-074)_
 - **?** Préférences de personnalisation persistées :  _(rapport WP-074-c3-R17)_
 - **?** Préférences génériques :  _(rapport WP-049-c2-M02)_
+- **?** Préférences sensibles :  _(rapport WP-049-c14-reprise-lecteur-a)_
 - **?** Préférences typées :  _(rapport WP-049-c13-epsilon)_
 - **?** Préférences typées :  _(rapport WP-049-c4-D02)_
 - **?** Préférences, mode cabinet et recherche web :  _(rapport WP-049-c13s-01)_
@@ -3610,6 +3618,7 @@
 - **?** Rendez-vous créé par l'outil agenda du chat :  _(rapport WP-DIFF-109-c13r-8)_
 - **?** Rendez-vous depuis la conversation :  _(rapport WP-066-c3-D03)_
 - **?** Rendez-vous depuis le chat :  _(rapport WP-055-c13r-2)_
+- **?** Rendez-vous du brief et de la semaine :  _(rapport WP-049-c14-reprise-lecteur-a)_
 - **?** Rendez-vous et séances :  _(rapport WP-DIFF-103-c13s-15)_
 - **?** Rendu Markdown borné des réponses du modèle :  _(rapport WP-061-c3-R13)_
 - **?** Rendu Markdown compact :  _(rapport WP-DIFF-016-c3-R28)_
@@ -3696,6 +3705,7 @@
 - **?** Routage du modèle d'un agent vers son fournisseur (P-103, B-966, B-967, B-968) :  _(rapport WP-053-c12-g2)_
 - **?** Routage du modèle d'un agent vers son fournisseur (P-103, B-966, B-967, B-968) :  _(rapport WP-DIFF-061-c12-g2)_
 - **?** Routage du modèle d'un agent vers son fournisseur (P-103, B-966, B-967, B-968) :  _(rapport WP-DIFF-078-c12-g2)_
+- **?** Routes gardées pour les réglages sensibles :  _(rapport WP-049-c14-reprise-lecteur-b)_
 - **?** Routeur e-mail (IMAP et Gmail) :  _(rapport WP-083)_
 - **?** Rubrique Profil des Paramètres :  _(rapport WP-DIFF-030-c13s-23)_
 - **?** Run TraitementHandle du project.sync :  _(rapport WP-081-c12-o1)_
@@ -3745,6 +3755,7 @@
 - **?** Régression prompts masqués et requête réelle :  _(rapport WP-DIFF-055-c10-repair-a)_
 - **?** Régression sync inconnue, panne et réessai :  _(rapport WP-DIFF-055-c10-repair-a)_
 - **?** Régression sync masquée en lecture seule :  _(rapport WP-DIFF-055-c10-repair-a)_
+- **?** Régressions des gardes de préférences :  _(rapport WP-DIFF-119-c14-reprise-lecteur-b)_
 - **?** Régressions du cycle 11 :  _(rapport WP-DIFF-057-c11-lecteur-1)_
 - **?** Réimport JSON des conversations et des contacts :  _(rapport WP-050-c13-e)_
 - **?** Réimport de projets et de livrables qui n'efface rien d'implicite :  _(rapport WP-DIFF-080-c12-j1)_
@@ -4115,6 +4126,8 @@
 - **?** Sélecteur « Agenda affiché » sous les surfaces superposées (B-1021, BUG-181) :  _(rapport WP-061-c11-lecteur-23)_
 - **?** Sélecteur « Agenda affiché » sous les surfaces superposées (B-1021, BUG-181) :  _(rapport WP-DIFF-067-c11-lecteur-23)_
 - **?** Sélecteur « Agenda affiché » sous les surfaces superposées (B-1021, BUG-181) :  _(rapport WP-DIFF-069-c11-lecteur-23)_
+- **?** Sérialisation civile des horaires :  _(rapport WP-DIFF-002-c14-reprise-lecteur-b)_
+- **?** Sérialisation du temps civil pour écran :  _(rapport WP-DIFF-002-c14-reprise-lecteur-a)_
 - **?** THERESE Server : administration, RBAC et audit :  _(rapport WP-C-031-c3-D05)_
 - **?** TVA auto-entrepreneur :  _(rapport WP-047)_
 - **?** TVA non applicable :  _(rapport WP-DIFF-098-c13s-14)_
@@ -4146,8 +4159,10 @@
 - **?** Tests backend sous Windows :  _(rapport WP-C-004-c13r-2)_
 - **?** Tests backend sous Windows (hors gate) :  _(rapport WP-C-004-c2-R1)_
 - **?** Tests de bout en bout Playwright (API seulement) :  _(rapport WP-DIFF-001-c2-R1)_
+- **?** Tests de chat sans modèle réel :  _(rapport WP-083-c14-reprise-lecteur-b)_
 - **?** Tests de purge qui voient leur propre sabotage :  _(rapport WP-DIFF-088-c13-t)_
 - **?** Tests de régression des réparations du cycle 13 :  _(rapport WP-DIFF-088-c13-n)_
+- **?** Tests du chat sans modèle réel :  _(rapport WP-083-c14-reprise-lecteur-a)_
 - **?** Tests qui prouvent ce qu'ils annoncent (B-1184, B-1186) :  _(rapport WP-DIFF-088-c13-m)_
 - **?** Texte secondaire sans transparence :  _(rapport WP-DIFF-003-c2-D11)_
 - **?** Textes de la mise en route :  _(rapport WP-065-c9v-V1)_
@@ -4244,6 +4259,8 @@
 - **?** Téléchargement et suppression des images générées :  _(rapport WP-DIFF-012-c6-D03)_
 - **?** Télécharger un fichier généré :  _(rapport WP-050-c13s-01)_
 - **?** Témoins de contraste et d’indétermination :  _(rapport WP-DIFF-055-c10-repair-a)_
+- **?** Témoins des gardes de préférences :  _(rapport WP-DIFF-119-c14-reprise-lecteur-a)_
+- **?** Témoins du fuseau dans l’Accueil :  _(rapport WP-DIFF-119-c14-reprise-lecteur-a)_
 - **?** Un agent sur modèle local ne bascule jamais vers le cloud (B-968) :  _(rapport WP-051-c11-lecteur-11)_
 - **?** Un agent sur modèle local ne bascule jamais vers le cloud (B-968) :  _(rapport WP-DIFF-062-c11-lecteur-11)_
 - **?** Un agent sur modèle local ne bascule jamais vers le cloud (B-968) :  _(rapport WP-DIFF-062-c11-lecteur-13)_
@@ -4458,6 +4475,7 @@
 - **?** États et garde de design du panneau Projets :  _(rapport WP-DIFF-029-c10-C1)_
 - **?** États vides contextualisés du carnet :  _(rapport WP-DIFF-008-c10-C1)_
 - **?** Événement « toute la journée » :  _(rapport WP-078-c3-R18)_
+- **?** Événements de calendrier :  _(rapport WP-048-c14-reprise-lecteur-a)_
 - **?** Événements multi-fournisseurs :  _(rapport WP-048-c11-lecteur-16)_
 - **?** Événements « toute la journée » et frontières inclusif/exclusif :  _(rapport WP-078-c2-D07)_
 - **F-046-INDEX** Index des noms genere : Le document committe est identique a la sortie du generateur, verifie par diff le 01/09/2026, et un test le fige (tests/test_index_des_noms.py). _(rapport WP-046)_

@@ -134,3 +134,75 @@ local ; la recette de facturation a réussi. Aucune suite complète, aucun
 binaire installé, aucune fusion et aucune release n'ont été vérifiés ou
 effectués pendant cette reprise. L'état et les preuves de la boucle restent
 ignorés par Git : la branche seule ne les transporte pas.
+
+## Deuxième passage de réparation, 27/09/2026
+
+La boucle a continué de `DISCOVER` à `REPRODUCE`, puis à `REPAIR`, sans PR ni
+release. Les six fiches ci-dessous ont été reproduites sur des données
+jetables, corrigées et fermées dans `.app-loop/bugs.json` après un sabotage
+rouge sous `.agents-sync-paused` et un retour au vert. Le verrou a été retiré
+après chaque restauration vérifiée.
+
+| Bug | Constat et correctif | Preuve ciblée |
+| --- | --- | --- |
+| B-1553 | `/today` et `/semaine` rendaient l'heure murale de Paris sans décalage. Ils réutilisent maintenant le sérialiseur de l'Agenda, déplacé dans `civil_time.py`. | 2 tests rouges avant, 71 voisins verts, 2 rouges au sabotage, 2 verts restaurés. |
+| B-1563 | `POST` et `PUT /preferences` permettaient de changer `working_directory` sans passer par sa route gardée. La porte générique refuse cette clé. | 2 rouges avant et au sabotage, 2 verts restaurés. |
+| B-1564 | `GET /preferences` rendait les jetons et secrets CRM chiffrés. Il partage désormais avec l'export RGPD un prédicat qui filtre les clés sensibles. | 1 rouge avant et au sabotage, 1 vert restauré ; 93 tests voisins sécurité/configuration/export verts. |
+| B-1703 | Six tests du routeur chat pouvaient appeler un fournisseur cloud hérité de l'environnement. Un fixture limité à ce fichier remplace le transport LLM par un flux fictif. | Clé Anthropic factice, réseau interdit : 1 rouge avant et au sabotage ; 101 tests chat et voisins verts. |
+| B-1710 | `DELETE /preferences/working_directory` effaçait le dossier choisi et réactivait le repli MCP vers un dossier plus large. La route générique refuse maintenant cette suppression. | 1 rouge avant, 1 rouge au sabotage, 1 vert restauré. |
+| B-1711 | `DELETE /preferences/anthropic_api_key` effaçait la base mais laissait la clé dans le cache LLM. La route générique refuse les clés API et renvoie vers la suppression dédiée, qui invalide les caches. | Clé factice et données jetables : 1 rouge avant, 1 rouge au sabotage, 1 vert restauré ; 35 tests voisins verts. |
+
+Les JUnit rouges, verts, de sabotage et de restauration sont conservés dans
+`.app-loop/cycles/14/repair-b1553/`, `repair-b1563-b1564/`,
+`repair-b1703/` et `repair-b1710-b1711/`. Le filtre des secrets conserve
+explicitement `token_limits`, qui règle un budget de jetons sans contenir
+d'identifiant : ce cas a d'abord échoué, puis passé après la correction.
+Ruff sur les neuf fichiers de code et de tests touchés et `git diff --check`
+passent. Après les deux dernières gardes, un dernier passage des cinq modules
+de tests concernés a réussi 112/112, avec HOME, base et clés factices isolés
+(`verification-current/final-focused.xml`).
+
+Les dépendances frontend du worktree ont été réinstallées depuis
+`package-lock.json` en mode hors ligne : Vite est à `7.3.6`. `npm run build`
+réussit (TypeScript et build Vite). Sur la pile jetable 1420/17393, avec
+Chromium en fuseau `America/Martinique`, un rendez-vous local fictif créé à
+16 h à Paris apparaît à 10 h dans le brief. Les réponses réelles de `/today`
+et `/semaine` portent `+02:00`. Aucune requête extérieure ni erreur de page ;
+capture inspectée et rapport `repair-b1553/recette-martinique.json`.
+
+La suite backend complète a exécuté 4 188 tests : 4 173 réussis, 5 ignorés,
+10 échoués dans les seuls tests de confinement des commandes d'agents, que la
+sandbox de cette session empêchait de démarrer. Le lot de confinement entier,
+relancé avec les permissions locales requises, passe 15/15 sur HOME et données
+temporaires. Il ne s'agit donc pas d'un passage intégral vert sous la sandbox
+initiale ; les deux résultats et leurs JUnit restent distincts sous
+`.app-loop/cycles/14/verification-current/`.
+
+Le changement de Vite a déclenché une nouvelle calibration sur l'application
+servie : `runtime_ui`, `visual_capture` et `network_capture` sont `PASS` avec
+contrôles positif et négatif, jusqu'au 28/09/2026 à 07:46 UTC. Deux captures
+saines sont identiques, le défaut témoin est visiblement différent, les
+réponses réseau 200 et 503 ont été relevées. Les captures ont été inspectées.
+Les instruments `test_runner` et `logs` restent `PASS` ; `calibration-status`
+rend `PASS` pour les cinq. Le rapport neuf est
+`.app-loop/cycles/14/calibration/browser-controls-c14-app-vite7.json`.
+Playwright 1.58.2 a été copié sous `.app-loop/tools/` pour garder l'outil de
+calibration disponible après `npm ci`, sans changer les dépendances verrouillées.
+
+Le différé B-1240 demeure une question d'architecture : l'accord cloud pour
+générer une réponse à un e-mail reste dans le stockage du navigateur, alors
+qu'une garde fiable dans le moteur aurait besoin d'un état côté serveur.
+B-1499 demande une règle de migration pour des dates anciennes ambiguës ;
+B-1609 et B-1672 restent dans la file des heures hors de Paris. Aucun de ces
+quatre sujets n'a été déclaré corrigé. La pile jetable a été arrêtée après
+recette ; aucun service n'écoute sur 1420 ou 17393. Le port 17293,
+`~/.therese`, `main` et la version installée n'ont pas été modifiés.
+
+La double lecture différentielle des neuf fichiers modifiés ou nouveaux a
+validé les empreintes et les ancres des deux lecteurs. La cartographie couvre
+2 074/2 074 fichiers dans `src`, `tests`, `scripts` et `.github` (`PASS`) ; la
+carte fonctionnelle sous `docs/application-map/` a été régénérée. Aucun bug
+candidat ou confirmé ne reste dans le registre. La phase a avancé de `REPAIR`
+à `ZERO_CHECK`, avec zéro ronde de plateau acquise : la couverture de tous les
+écrans et les deux rondes indépendantes restent à mesurer. Aucune release
+n'est engagée.

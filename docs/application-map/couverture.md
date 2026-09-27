@@ -1,7 +1,7 @@
 # Couverture et limites de la carte
 
 - Couverture validee : 100.0 %
-- Fichiers attendus : 2071
+- Fichiers attendus : 2074
 - Validation `passed` : True
 
 ## Fichiers non lus (0)

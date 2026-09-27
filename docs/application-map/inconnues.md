@@ -230,6 +230,7 @@
 - [?] Des factures émises avec une quantité inférieure à 1 existent-elles réellement (chat, import, API) ? _(rapport WP-C-026-c13r-3)_
 - [?] Des fiches existantes portent-elles déjà une adresse que la règle B-1074 refuse, et leur édition est-elle bloquée à l'écran ? _(rapport WP-048-c12-i1)_
 - [?] Des lignes à quantité inférieure à 1 existent-elles réellement sur des devis ou brouillons (création par le chat, l'API ou un import) ? _(rapport WP-C-026-c13r-7-bis)_
+- [?] Des préférences sensibles sans suffixe api_key ont-elles un cache propre à invalider lorsqu’elles sont supprimées par la route générique ? _(rapport WP-049-c14-reprise-lecteur-b)_
 - [?] Des réponses listProjects inversées peuvent-elles réintroduire une version obsolète après une création ou un rollback de statut ? _(rapport WP-064-c10-C2)_
 - [?] Des secrets (THERESE_DB_KEY, clés de fournisseurs) sont-ils présents dans l'environnement du moteur installé, et donc transmis aux commandes des agents ? _(rapport WP-051-c11-lecteur-2)_
 - [?] Des tests hors test_b1153 font-ils jouer la vraie sonde (sandbox-exec, Seatbelt) et de quel verdict dépendent-ils ? _(rapport WP-078-c13-zeta)_
@@ -300,6 +301,7 @@
 - [?] Existe-t-il une contrainte d'unicité sur (project_id, engine_version, input_hash) de `planning_snapshots` ? _(rapport WP-DIFF-015-c6-R08)_
 - [?] Existe-t-il une garde équivalente pour l'anonymisation MANUELLE, qui suit le même contrat d'effacement ? _(rapport WP-DIFF-047-c9w-W2)_
 - [?] Existe-t-il une interface permettant de consentir au repli TLS permissif pour un compte IMAP (champ de formulaire, colonne en base) ? _(rapport WP-052-c2-M08)_
+- [?] Existe-t-il une préférence fonctionnelle autre que token_limits dont le nom contient un motif de secret ? _(rapport WP-DIFF-118-c14-reprise-lecteur-b)_
 - [?] Existe-t-il une regle de lint ou un test global qui interdit de construire un nom de variable CSS a l'execution ailleurs dans le frontend ? _(rapport WP-DIFF-003-c3-D05)_
 - [?] Existe-t-il une route d'annulation côté serveur pour un agent spawné, que handleCancel pourrait appeler ? _(rapport WP-C-026-c6-D02)_
 - [?] Existe-t-il une suite de tests pour demoMask.ts ? Le fichier porte des règles subtiles (frontières Unicode, seuil de trois caractères, contact sans nom) et aucun test frère n'apparaît dans ce lot. _(rapport WP-071-c2-M15)_
@@ -1741,6 +1743,7 @@
 - [?] Le test de parité entre effortOpenAI.ts et le backend tourne-t-il dans les portes de release (vitest ET pytest) ou seulement d'un côté ? _(rapport WP-DIFF-025-c6-D04)_
 - [?] Le test de parité pytest annoncé par `effortOpenAI.ts` lit-il réellement `effortOpenAI.temoins.json` ? _(rapport WP-DIFF-025-c6-R08)_
 - [?] Le test de suppression sans cascade ne vérifie pas ce qu'il advient des activités CRM, des tâches et des factures rattachées au projet supprimé : sont-elles hors contrat, ou simplement non couvertes ? _(rapport WP-083-c2-M05)_
+- [?] Le test de sélection explicite Anthropic vérifie-t-il le fournisseur réellement choisi après POST /api/config/llm ? _(rapport WP-083-c14-reprise-lecteur-b)_
 - [?] Le test de veracite annonce dans le commentaire d'en-tete couvre-t-il les 22 raccourcis de la table, ou seulement ceux qui ont un gestionnaire ? _(rapport WP-062-c9-R3)_
 - [?] Le test du Studio Images attend deux appels pour la même image : le second part-il de l'effet déclenché par la nouvelle liste, ou d'un autre chemin ? La distinction compte pour savoir si le correctif tient aussi quand aucune génération ne suit. _(rapport WP-DIFF-049-c9w-W1)_
 - [?] Le test du guide 0.66 utilise la fixture client tandis que la suite de planning utilise async_client : les deux fixtures offrent-elles la meme isolation de base ? _(rapport WP-DIFF-018-c3-R28)_
@@ -1828,6 +1831,7 @@
 - [?] Les assertions clavier et propagation d’événement passent-elles dans le navigateur de la release ? _(rapport WP-DIFF-006-c8-critical-b)_
 - [?] Les assertions de navigation sont-elles equivalentes avec les vrais fournisseurs cloud et donnees metier ? _(rapport WP-085-c10-b947-b)_
 - [?] Les assertions de texte source (inspect.getsource / read_text) sont-elles réellement satisfaites par un commentaire dans les modules visés aujourd'hui, ou seulement par du code exécuté ? _(rapport WP-081)_
+- [?] Les assertions du fuseau couvrent-elles aussi le basculement d’heure d’hiver ? _(rapport WP-DIFF-119-c14-reprise-lecteur-b)_
 - [?] Les assertions passent-elles actuellement dans les environnements d’intégration et les binaires publiés ? _(rapport WP-DIFF-055-c10-repair-a)_
 - [?] Les assertions vérifient-elles la même règle lorsqu'un homonyme possède déjà exactement l'email de la carte ? Le présent test crée deux fiches sans email. _(rapport WP-DIFF-114-c14-codex-c)_
 - [?] Les assets de la dernière release portent-ils toujours le préfixe THERESE_ en majuscules (ce qui invaliderait la consigne `therese_*.deb` de la ligne 291) ? _(rapport WP-C-004-c12-i3)_
