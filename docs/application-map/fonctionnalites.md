@@ -1786,6 +1786,8 @@
 - **?** Fenêtre de contexte multi-fournisseurs :  _(rapport WP-051-c9-D3)_
 - **?** Fenêtre et mise à jour desktop :  _(rapport WP-060-c14-codex-b)_
 - **?** Fenêtre et participants d'un rendez-vous :  _(rapport WP-048-c13-e)_
+- **?** Fermeture Qdrant après la sonde :  _(rapport WP-047-c14-b1736-lecteur-a)_
+- **?** Fermeture Qdrant après la sonde :  _(rapport WP-047-c14-b1736-lecteur-b)_
 - **?** Fermeture de l'atelier :  _(rapport WP-074-c9x-X1)_
 - **?** Fermeture de la base pendant une restauration :  _(rapport WP-C-025-c13r-5-bis)_
 - **?** Fermeture de session protégée de l'annulation :  _(rapport WP-DIFF-041-c9u-U3)_
@@ -4319,6 +4321,10 @@
 - **?** Tâches locales :  _(rapport WP-050-c3-R05)_
 - **?** Téléchargement et suppression des images générées :  _(rapport WP-DIFF-012-c6-D03)_
 - **?** Télécharger un fichier généré :  _(rapport WP-050-c13s-01)_
+- **?** Témoin DELETE canonique sans blocage de boucle :  _(rapport WP-078-c14-b1737-lecteur-a)_
+- **?** Témoin DELETE durable compatible avec une action asynchrone :  _(rapport WP-078-c14-b1737-lecteur-b)_
+- **?** Témoin de fermeture Qdrant isolé :  _(rapport WP-DIFF-123-c14-b1736-lecteur-a)_
+- **?** Témoin de fermeture Qdrant isolé :  _(rapport WP-DIFF-123-c14-b1736-lecteur-b)_
 - **?** Témoin de largeur Actions :  _(rapport WP-DIFF-122-c14-b1728-lecteur-a)_
 - **?** Témoin de refus avant jeton sans attestation :  _(rapport WP-DIFF-120-c14-b1720-assertion-lecteur-a)_
 - **?** Témoin de refus avant jeton sans attestation :  _(rapport WP-DIFF-120-c14-b1720-lecteur-a)_

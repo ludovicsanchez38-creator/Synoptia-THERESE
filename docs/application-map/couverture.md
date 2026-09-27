@@ -1,7 +1,7 @@
 # Couverture et limites de la carte
 
 - Couverture validee : 100.0 %
-- Fichiers attendus : 2080
+- Fichiers attendus : 2081
 - Validation `passed` : True
 
 ## Fichiers non lus (0)
@@ -130,7 +130,7 @@
 ## Disparus depuis l'inventaire (0)
 
 
-## Lus sur une version anterieure (740)
+## Lus sur une version anterieure (741)
 
 - .github/workflows/ci.yml
 - .github/workflows/release.yml
@@ -724,6 +724,7 @@
 - tests/protocols/app/personas/A3-lea-power-user.md
 - tests/protocols/server/personas/S3-dsi-admin.md
 - tests/protocols/shared/catastrophes.md
+- tests/test_actions_traitement.py
 - tests/test_agents_config_modeles_locaux.py
 - tests/test_alembic_stamp.py
 - tests/test_atelier_traitement.py

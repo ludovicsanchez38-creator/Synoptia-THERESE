@@ -489,3 +489,96 @@ Trois propositions restent à décider, sans implémentation à ce stade :
 ou `plus tard` pour chaque proposition. Aucun build Tauri ni release n'a été
 effectué dans cette reprise ; l'instance réelle et le port 17293 n'ont pas
 été sollicités.
+
+## Réouverture B-1736 après le premier portail
+
+L'arrêt gracieux du backend de test a exposé un défaut supplémentaire : en
+mode `THERESE_SKIP_SERVICES=1`, une route de santé peut ouvrir Qdrant à la
+demande, mais le nettoyage sautait aussi `close_qdrant()`. Le destructeur de
+`qdrant-client` tentait alors d'importer `portalocker` pendant la fin de
+l'interpréteur et imprimait `ImportError: sys.meta_path is None`. La phase
+est revenue de `HUMAN_GATE` à `REPRODUCE`, puis `REPAIR`, et le compteur du
+plateau a été remis à zéro.
+
+Le test `tests/test_qdrant_shutdown_skip_services.py` exerce le vrai
+`lifespan` dans un sous-processus à environnement limité : `HOME`, données,
+base et index sous un répertoire temporaire, sans clé API ni socket réseau.
+Il appelle `/health` par transport ASGI interne, confirme l'ouverture de
+Qdrant puis exige sa fermeture. Il était rouge avant correction et après
+retrait temporaire du correctif, puis vert après restauration. Le correctif
+minimal ferme Qdrant avant la base, que le démarrage complet des services
+ait été sauté ou non. Les preuves sont dans
+`.app-loop/cycles/14/repair-qdrant-shutdown/`.
+
+La première tentative des rondes suivantes a été interrompue par la garde
+avant toute combinaison complète : le Vite relancé sans
+`VITE_THERESE_BACKEND_PORT=17393` essayait son port de développement par
+défaut, 17293. Ces requêtes ont été bloquées par le navigateur et les
+preuves d'interruption sont conservées. Vite a été redémarré avec le port
+jetable explicite ; un préflight de l'Accueil dans les quatre combinaisons
+a alors passé avec une garde entièrement vide. Les rondes complètes A4/B3
+ont ensuite été relancées sur cette configuration.
+
+## Vérification du backend et reprise des rondes A4/B3
+
+Les rondes A4 et B3 ont ouvert chacune 21 écrans en clair et en sombre, à
+1440 et 800 px. Chaque ronde a exercé 197 gestes sûrs à 1440 px clair. Les
+gardes réseau sont vides et les journaux de leurs périodes ne contiennent
+aucune erreur console, réseau ou backend. Les trois signalements connus ont
+été arbitrés dans chaque ronde par des sondes servies indépendantes : le
+Pipeline atteint sa colonne Archive au clavier à 1440 et 800 px, et le bouton
+« Aujourd'hui » revient au mois courant après navigation vers le mois suivant.
+Des captures de ces vues et des panneaux Actions, Fichiers et Prompts ont été
+inspectées. Les rapports et captures sont dans
+`.app-loop/cycles/14/couverture-ecran/zero-check-a4/` et
+`.app-loop/cycles/14/couverture-ecran/zero-check-b3/` ; les arbitrages,
+sondes et journaux sont dans `.app-loop/cycles/14/zero-check/`.
+
+La première suite backend complète après B-1736 a rencontré des refus de
+confinement et l'absence de Node dans l'environnement de test. Une seconde
+exécution avec le confinement adapté et Node disponible a achevé 4193 tests :
+4187 réussis, cinq ignorés et un échec. Cet échec concerne le test de la
+route DELETE durable des Actions, qui obtenait parfois HTTP 500 après un
+verrou SQLCipher de cinq secondes. Son wrapper `TestClient.delete` est
+synchrone malgré un `await` : il bloquait la boucle du test pendant qu'une
+action de fond devait finir son écriture. B-1737 est confirmé comme défaut
+de synchronisation du **test**, sans changement de comportement produit.
+
+Le test ciblé exécute désormais cet appel dans un thread avec
+`asyncio.to_thread`. Une sonde déterministe, utilisant le vrai wrapper du
+test, était rouge avant correction : aucun battement de la boucle pendant la
+requête. Elle est verte après correction, avec un battement 160,9 ms avant la
+fin de la requête. Les 41 tests des Actions et de leurs voisins passent,
+dont les trois cas DELETE. Les preuves sont dans
+`.app-loop/cycles/14/verification-current/b1737-*`. La suite backend complète
+relancée sur les données jetables a terminé avec **4193 tests, zéro échec,
+zéro erreur et cinq ignorés** ; son JUnit est
+`.app-loop/cycles/14/verification-current/backend-full-post-b1737.xml`.
+B-1737 a été fermé avec sa preuve de sabotage. La cartographie relue couvre
+2081 fichiers sur 2081, sans nouvelle divergence sur les trois fichiers
+modifiés ni fichier périmé ; la carte générée
+dans `docs/application-map/` a été régénérée. Le plateau reste à recalculer
+sur A4 puis B3 avec le manifeste de 96 transitions critiques.
+
+## Plateau recalculé et retour au portail
+
+Le manifeste `transitions-final-96.json` vérifie **96 transitions sur 96**,
+dont B-1736 pour la fermeture Qdrant et B-1737 pour le témoin DELETE. Son
+audit compare les cas des 70 transitions de référence aux JUnit backend et
+frontend actuels ; les références de preuve et leurs empreintes sont
+présentes. Le rapport de cartographie figé pour les rondes couvre
+**2081/2081** fichiers, sans fichier périmé. Les 114 divergences listées
+restent historiques et arbitrées ; aucune ne concerne les trois fichiers
+relus pour B-1736/B-1737.
+
+`plateau-evaluate` a accepté A4 (`/root`) puis B3
+(`/root/plateau_prep`), soit **deux rondes propres indépendantes sur deux**.
+Les preuves finales sont
+`.app-loop/cycles/14/zero-check/plateau-round-a4-final.json` et
+`.app-loop/cycles/14/zero-check/plateau-round-b3-final.json`. Le cycle est
+passé par `GAP_SCAN` puis `HUMAN_GATE`. Aucune nouvelle proposition n'a été
+ajoutée : P-157, P-158 et P-159 restent en attente d'un choix de Ludo.
+
+Ce plateau concerne la pile locale jetable servie par Vite, Chromium et le
+backend hors ligne. Il ne vaut pas recette du binaire Tauri packagé. Aucune
+release n'a été lancée et l'instance réelle n'a pas été modifiée.

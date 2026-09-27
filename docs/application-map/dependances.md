@@ -187,6 +187,7 @@
 - `src/backend/app/main.py` → `src/backend/app/services/cloisonnement.py` :
 - `src/backend/app/main.py` → `src/backend/app/services/maintenance.py` :
 - `src/backend/app/main.py` → `src/backend/app/services/project_sync_service.py` :
+- `src/backend/app/main.py` → `src/backend/app/services/qdrant.py` :
 - `src/backend/app/main.py` → `src/backend/app/services/rgpd_auto.py` :
 - `src/backend/app/main.py` → `src/backend/app/services/task_registry.py` :
 - `src/backend/app/main.py` → `src/backend/app/services/user_profile.py` :
@@ -3668,6 +3669,7 @@
 - `tests/test_actions_traitement.py` → `src/backend/app/services/action_agents.py` :
 - `tests/test_actions_traitement.py` → `src/backend/app/services/llm.py` :
 - `tests/test_actions_traitement.py` → `src/backend/app/services/traitements.py` :
+- `tests/test_actions_traitement.py` → `tests/conftest.py` :
 - `tests/test_adresse_du_client.py` → `src/backend/app/models/database.py` :
 - `tests/test_adresse_du_client.py` → `src/backend/app/models/entities.py` :
 - `tests/test_adresse_du_client.py` → `src/backend/app/routers/memory.py` :
@@ -4496,6 +4498,7 @@
 - `tests/test_providers_asie.py` → `importlib` :
 - `tests/test_providers_asie.py` → `pytest` :
 - `tests/test_qdrant_lock.py` → `src/backend/app/services/qdrant.py` :
+- `tests/test_qdrant_shutdown_skip_services.py` → `src/backend/app/main.py` :
 - `tests/test_raccourcis_des_protocoles.py` → `src/frontend/src/hooks/useKeyboardShortcuts.ts` :
 - `tests/test_rang_de_section_fini.py` → `src/backend/app/routers/documents.py` :
 - `tests/test_rapport_suppression_dossier.py` → `src/backend/app/routers/memory.py` :
