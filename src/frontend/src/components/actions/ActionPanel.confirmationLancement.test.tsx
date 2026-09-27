@@ -21,6 +21,12 @@ describe('ActionPanel : confirmer le lancement (P-051)', () => {
     useActionsStore.setState({ agents: [relance], selectedAgent: null, isPanelOpen: true, isLoading: false, error: null, tasks: [], activeTask: null, loadAgents: vi.fn(async () => {}) } as never);
   });
 
+  it('la carte annonce clairement sa fiche et expose sa description séparément', () => {
+    render(<ActionPanel />);
+    const carte = screen.getByRole('button', { name: 'Ouvrir la fiche Relance clients' });
+    expect(carte).toHaveAccessibleDescription('Relance les factures échues par e-mail');
+  });
+
   it('un agent sans paramètre ouvre sa fiche au clic, ne se lance pas, et la fiche prend le focus', async () => {
     render(<ActionPanel />);
     fireEvent.click(screen.getByRole('button', { name: /Relance clients/ }));

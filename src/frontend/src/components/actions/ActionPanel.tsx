@@ -6,7 +6,7 @@
  * la progression en temps reel et le resultat final.
  */
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useId } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X, Play, Square, ChevronRight, FileBarChart, UserCheck, CalendarCheck, Wallet, Radar, Handshake,
@@ -64,6 +64,7 @@ function AgentCard({
 }) {
   const IconComp = ICON_MAP[agent.icon] || Zap;
   const colorClass = CATEGORY_COLORS[agent.category] || 'text-agent-cyan';
+  const descriptionId = useId();
 
   return (
     <motion.div
@@ -75,6 +76,8 @@ function AgentCard({
         type="button"
         variant="secondary"
         data-agent-id={agent.id}
+        aria-label={`Ouvrir la fiche ${agent.name}`}
+        aria-describedby={descriptionId}
         onClick={() => onSelect(agent)}
         className="group h-auto w-full items-stretch justify-start p-4 text-left"
       >
@@ -92,7 +95,7 @@ function AgentCard({
               className="text-text-muted group-hover:text-text transition-colors flex-shrink-0"
             />
           </div>
-          <p className="text-sm font-normal text-text-muted mt-1 line-clamp-2">
+          <p id={descriptionId} className="text-sm font-normal text-text-muted mt-1 line-clamp-2">
             {agent.description}
           </p>
           <div className="flex items-center gap-2 mt-2">

@@ -130,7 +130,7 @@
 ## Disparus depuis l'inventaire (0)
 
 
-## Lus sur une version anterieure (737)
+## Lus sur une version anterieure (740)
 
 - .github/workflows/ci.yml
 - .github/workflows/release.yml
@@ -296,6 +296,7 @@
 - src/frontend/src/App.tsx
 - src/frontend/src/components/SplashScreen.sidecarFatal.test.tsx
 - src/frontend/src/components/SplashScreen.tsx
+- src/frontend/src/components/actions/ActionPanel.confirmationLancement.test.tsx
 - src/frontend/src/components/actions/ActionPanel.tsx
 - src/frontend/src/components/app/CommonToolConfirmationLayer.tsx
 - src/frontend/src/components/app/ExternalActionConfirmation.tsx
@@ -363,6 +364,7 @@
 - src/frontend/src/components/chat/VoiceDictationButton.test.tsx
 - src/frontend/src/components/chat/VoiceDictationButton.tsx
 - src/frontend/src/components/chat/perimetreConversation.test.tsx
+- src/frontend/src/components/crm/ActivityTimeline.da.test.tsx
 - src/frontend/src/components/crm/ActivityTimeline.scoreLisible.test.tsx
 - src/frontend/src/components/crm/ActivityTimeline.tsx
 - src/frontend/src/components/crm/CRMPanel.da.test.tsx
@@ -401,6 +403,7 @@
 - src/frontend/src/components/email/wizard/SmtpConfigStep.tsx
 - src/frontend/src/components/email/wizard/VerifyStep.tsx
 - src/frontend/src/components/files/DropZone.tsx
+- src/frontend/src/components/files/FileBrowser.compteAccentue.b1450.test.tsx
 - src/frontend/src/components/files/FileBrowser.navigateur.c12.test.tsx
 - src/frontend/src/components/files/FileBrowser.tsx
 - src/frontend/src/components/guided/ActionCard.tsx

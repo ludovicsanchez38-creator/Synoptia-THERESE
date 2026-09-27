@@ -2,7 +2,7 @@
  * DA « Application affinée », lot 4 : la timeline d'un contact
  * (`docs/plans/2026-09-11-da-lot4-contacts-design.md`, § 9).
  */
-import { render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { mockListActivities } = vi.hoisted(() => ({
@@ -27,6 +27,7 @@ const BASE = {
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockListActivities.mockReset();
 });
 
 describe('Lot 4 DA : états de la timeline', () => {
@@ -49,6 +50,20 @@ describe('Lot 4 DA : états de la timeline', () => {
       Array.from(squelettes).some((n) => (n as HTMLElement).className.includes('flex-col')),
     ).toBe(true);
     expect(document.querySelector('[class*="animate-spin"]')).toBeNull();
+  });
+
+  it('distingue une panne du vide et permet de relancer la lecture', async () => {
+    mockListActivities
+      .mockRejectedValueOnce(new Error('panne de lecture'))
+      .mockResolvedValueOnce([{ ...BASE, title: 'Appel de suivi' }]);
+    render(<ActivityTimeline contactId="c1" />);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(/activités.*pas pu être lues/i);
+    expect(screen.queryByText('Aucune activité pour ce contact')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Réessayer' }));
+    expect(await screen.findByText('Appel de suivi')).toBeInTheDocument();
+    expect(mockListActivities).toHaveBeenCalledTimes(2);
   });
 });
 

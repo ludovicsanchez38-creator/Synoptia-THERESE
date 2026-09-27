@@ -1098,6 +1098,7 @@
 - `src/frontend/src/components/SplashScreen.tsx` → `react` :
 - `src/frontend/src/components/SplashScreen.tsx` → `src/frontend/src-tauri/src/lib.rs` :
 - `src/frontend/src/components/SplashScreen.tsx` → `src/frontend/src/services/api/core.ts` :
+- `src/frontend/src/components/actions/ActionPanel.confirmationLancement.test.tsx` → `src/frontend/src/components/actions/ActionPanel.tsx` :
 - `src/frontend/src/components/actions/ActionPanel.confirmationLancement.test.tsx` → `src/frontend/src/services/api/actions.ts` :
 - `src/frontend/src/components/actions/ActionPanel.couvrant.test.tsx` → `src/frontend/src/hooks/usePanneauCouvrant.ts` :
 - `src/frontend/src/components/actions/ActionPanel.pastilleImbriquee.test.tsx` → `src/frontend/src/stores/actionsStore.ts` :
@@ -1467,11 +1468,13 @@
 - `src/frontend/src/components/chat/perimetreConversation.test.tsx` → `node:path` :
 - `src/frontend/src/components/chat/surfacesEchecReseau.test.tsx` → `src/frontend/src/services/api` :
 - `src/frontend/src/components/chat/surfacesEchecReseau.test.tsx` → `src/frontend/src/stores/statusStore.ts` :
+- `src/frontend/src/components/crm/ActivityTimeline.da.test.tsx` → `src/frontend/src/components/crm/ActivityTimeline.tsx` :
 - `src/frontend/src/components/crm/ActivityTimeline.scoreLisible.test.tsx` → `src/frontend/src/components/crm/ActivityTimeline.tsx` :
 - `src/frontend/src/components/crm/ActivityTimeline.scoreLisible.test.tsx` → `src/frontend/src/lib/activitesCrm.ts` :
 - `src/frontend/src/components/crm/ActivityTimeline.tsx` → `framer-motion` :
 - `src/frontend/src/components/crm/ActivityTimeline.tsx` → `react` :
 - `src/frontend/src/components/crm/ActivityTimeline.tsx` → `src/frontend/src/services/api` :
+- `src/frontend/src/components/crm/ActivityTimeline.tsx` → `src/frontend/src/services/api/index.ts` :
 - `src/frontend/src/components/crm/CRMPanel.activitesEnPanne.test.tsx` → `src/frontend/src/components/crm/CRMPanel.tsx` :
 - `src/frontend/src/components/crm/CRMPanel.activitesNommees.test.tsx` → `src/frontend/src/components/crm/CRMPanel.tsx` :
 - `src/frontend/src/components/crm/CRMPanel.activitesNommees.test.tsx` → `src/frontend/src/services/api/memory` :
@@ -1648,6 +1651,7 @@
 - `src/frontend/src/components/email/wizard/VerifyStep.tsx` → `src/frontend/src/services/api` :
 - `src/frontend/src/components/email/wizard/index.ts` → `src/frontend/src/components/email/wizard/EmailSetupWizard.tsx` :
 - `src/frontend/src/components/files/DropZone.tsx` → `src/frontend/src/styles/z-layers` :
+- `src/frontend/src/components/files/FileBrowser.compteAccentue.b1450.test.tsx` → `src/frontend/src/components/files/FileBrowser.tsx` :
 - `src/frontend/src/components/files/FileBrowser.guide066.test.tsx` → `@tauri-apps/plugin-fs` :
 - `src/frontend/src/components/files/FileBrowser.guide066.test.tsx` → `@testing-library/react` :
 - `src/frontend/src/components/files/FileBrowser.guide066.test.tsx` → `vitest` :
@@ -1657,6 +1661,7 @@
 - `src/frontend/src/components/files/FileBrowser.navigateur.c12.test.tsx` → `src/frontend/src/lib/utils` :
 - `src/frontend/src/components/files/FileBrowser.navigateur.c12.test.tsx` → `src/frontend/src/lib/utils.ts` :
 - `src/frontend/src/components/files/FileBrowser.tsx` → `@tauri-apps/plugin-fs` :
+- `src/frontend/src/components/files/FileBrowser.tsx` → `src/frontend/src/components/files/FileBrowser.navigateur.c12.test.tsx` :
 - `src/frontend/src/components/files/FileBrowser.tsx` → `src/frontend/src/components/files/fileBrowserPaths.ts` :
 - `src/frontend/src/components/files/FileBrowser.tsx` → `src/frontend/src/components/ui/Alerte.tsx` :
 - `src/frontend/src/components/files/FileBrowser.tsx` → `src/frontend/src/lib/formatsIndexables.ts` :
@@ -2234,6 +2239,7 @@
 - `src/frontend/src/components/prompts/PromptLibrary.tsx` → `framer-motion` :
 - `src/frontend/src/components/prompts/PromptLibrary.tsx` → `navigator.clipboard` :
 - `src/frontend/src/components/prompts/PromptLibrary.tsx` → `react` :
+- `src/frontend/src/components/prompts/PromptLibrary.tsx` → `src/frontend/src/components/prompts/PromptLibrary.cycle6.test.tsx` :
 - `src/frontend/src/components/prompts/PromptLibrary.tsx` → `src/frontend/src/components/prompts/PromptLibrary.identite.b1725.test.tsx` :
 - `src/frontend/src/components/prompts/PromptLibrary.tsx` → `src/frontend/src/components/ui` :
 - `src/frontend/src/components/prompts/PromptLibrary.tsx` → `src/frontend/src/components/ui/Button` :
@@ -2487,6 +2493,7 @@
 - `src/frontend/src/components/prototype/PrototypeConversationDrawer.da.test.tsx` → `src/frontend/src/components/prototype/PrototypeConversationDrawer.tsx` :
 - `src/frontend/src/components/prototype/PrototypeConversationDrawer.nonEnregistree.test.tsx` → `src/frontend/src/components/prototype/PrototypeConversationDrawer.tsx` :
 - `src/frontend/src/components/prototype/PrototypeConversationDrawer.test.tsx` → `@testing-library/react` :
+- `src/frontend/src/components/prototype/PrototypeConversationDrawer.test.tsx` → `src/frontend/src/components/prototype/PrototypeConversationDrawer.tsx` :
 - `src/frontend/src/components/prototype/PrototypeConversationDrawer.test.tsx` → `vitest` :
 - `src/frontend/src/components/prototype/PrototypeConversationDrawer.tsx` → `lucide-react` :
 - `src/frontend/src/components/prototype/PrototypeConversationDrawer.tsx` → `react` :
@@ -2495,6 +2502,7 @@
 - `src/frontend/src/components/prototype/PrototypeConversationDrawer.tsx` → `src/frontend/src/hooks/useDialogFocusTrap.ts` :
 - `src/frontend/src/components/prototype/PrototypeConversationDrawer.tsx` → `src/frontend/src/lib/escapeStack.ts` :
 - `src/frontend/src/components/prototype/PrototypeConversationDrawer.tsx` → `src/frontend/src/lib/saisieEnCours.ts` :
+- `src/frontend/src/components/prototype/PrototypeConversationDrawer.tsx` → `src/frontend/src/services/api/chat.ts` :
 - `src/frontend/src/components/prototype/PrototypeConversationDrawer.tsx` → `src/frontend/src/services/api/memory.ts` :
 - `src/frontend/src/components/prototype/PrototypeConversationDrawer.tsx` → `src/frontend/src/stores/chatStore.ts` :
 - `src/frontend/src/components/prototype/PrototypeThemeContract.test.ts` → `src/frontend/src/components/prototype/` :
@@ -3536,6 +3544,7 @@
 - `tests/couverture/couverture-ecran.mjs` → `@playwright/test` :
 - `tests/couverture/couverture-ecran.mjs` → `src/backend/app/routers/config.py` :
 - `tests/couverture/couverture-ecran.mjs` → `src/frontend/src/App.tsx` :
+- `tests/couverture/couverture-ecran.mjs` → `src/frontend/src/components/actions/ActionPanel.tsx` :
 - `tests/couverture/couverture-ecran.mjs` → `src/frontend/src/components/home/SetupChecklist.tsx` :
 - `tests/couverture/couverture-ecran.mjs` → `src/frontend/src/components/prototype/ConversationCanvasPrototype.tsx` :
 - `tests/couverture/couverture-ecran.mjs` → `src/frontend/src/lib/actionRegistry.ts` :

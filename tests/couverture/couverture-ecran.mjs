@@ -51,6 +51,7 @@ const GESTES_A_NE_PAS_CONFIRMER =
 // B-1715 : ces cartes ouvrent leur fiche ; le bouton « Lancer » y est distinct.
 // Une exception exige l'écran, le rôle, l'identifiant DOM et le nom attendus.
 const FICHES_ACTIONS_SANS_LANCEMENT = new Map([
+  ['rapport-hebdo', 'Rapport hebdomadaire'],
   ['relance-clients', 'Relance clients'],
   ['prep-rdv', 'Préparation RDV'],
   ['onboarding-client', 'Onboarding client'],
@@ -166,7 +167,8 @@ export function gesteExclu(nom, { ecran, role, agentId } = {}) {
     if (ecran === 'invoices.open' && nom === 'Envoyée') return false;
     if (ecran === 'tasks.open' && nom === 'Rafraîchir les tâches') return false;
     const nomFiche = ecran === 'actions.open' && FICHES_ACTIONS_SANS_LANCEMENT.get(agentId);
-    if (nomFiche && nom.startsWith(nomFiche)) return false;
+    if (nomFiche && nom === `Ouvrir la fiche ${nomFiche}`) return false;
+    if (ecran === 'actions.open' && nom.startsWith('Ouvrir la fiche ')) return true;
   }
   return GESTES_A_NE_PAS_CONFIRMER.test(nom);
 }

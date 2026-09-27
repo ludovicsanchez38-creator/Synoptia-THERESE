@@ -135,6 +135,21 @@ describe('PrototypeConversationDrawer', () => {
     expect(useChatStore.getState().conversations).toHaveLength(0);
   });
 
+  it('retire l’alerte d’export après un nouvel essai réussi', async () => {
+    exportRemote.mockRejectedValueOnce(new Error('export temporairement indisponible'));
+    exportRemote.mockResolvedValueOnce(undefined);
+    render(<PrototypeConversationDrawer onClose={vi.fn()} onOpenChat={vi.fn()} />);
+
+    fireEvent.click(screen.getByRole('button', { name: 'Actions pour Préparation rendez-vous réel' }));
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Exporter en Markdown' }));
+    expect(await screen.findByRole('alert')).toHaveTextContent('L’export Markdown a échoué.');
+    expect(exportRemote).toHaveBeenCalledWith('conversation-1', 'md');
+
+    fireEvent.click(screen.getByRole('menuitem', { name: 'Exporter en Markdown' }));
+    await waitFor(() => expect(exportRemote).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(screen.queryByRole('alert')).not.toBeInTheDocument());
+  });
+
   it('conserve la conversation courante pendant une réponse en cours', () => {
     const onClose = vi.fn();
     const onOpenChat = vi.fn();

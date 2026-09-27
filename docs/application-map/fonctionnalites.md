@@ -146,6 +146,7 @@
 - **?** Aide des raccourcis clavier :  _(rapport WP-062-c10-B1)_
 - **?** Aide et chemins d'acces aux capacites :  _(rapport WP-078-c3-D04)_
 - **?** Aide qsa des protocoles de test :  _(rapport WP-DIFF-012-c3-R26)_
+- **?** Alerte d’export effacée après succès :  _(rapport WP-066-c14-b1733-lecteur-a)_
 - **?** Alignement des versions Tauri Rust et npm :  _(rapport WP-046-c6-D04)_
 - **?** Amorcage de l'application :  _(rapport WP-072)_
 - **?** Amorcage des parcours de bout en bout :  _(rapport WP-DIFF-005-c3-R23)_
@@ -160,6 +161,8 @@
 - **?** Ancrage de recherche web du fournisseur :  _(rapport WP-053)_
 - **?** Ancrage des selecteurs de protocole dans l'interface :  _(rapport WP-DIFF-010-c3-R26)_
 - **?** Ancrage juridique des réponses :  _(rapport WP-052)_
+- **?** Annonce de copie de prompt :  _(rapport WP-065-c14-b1733-lecteur-b)_
+- **?** Annonce de copie de prompt :  _(rapport WP-DIFF-030-c14-b1733-lecteur-b)_
 - **?** Annonce des erreurs visibles :  _(rapport WP-071-c8-codex-b)_
 - **?** Annonce des erreurs à l'écran :  _(rapport WP-071-c6-D03)_
 - **?** Annonce du périmètre documentaire au modèle :  _(rapport WP-081-c2-D08)_
@@ -970,6 +973,7 @@
 - **?** Compte e-mail IMAP/SMTP souverain :  _(rapport WP-084-c3-R21)_
 - **?** Compte e-mail générique IMAP et SMTP :  _(rapport WP-084-c6-D03)_
 - **?** Compte email IMAP/SMTP :  _(rapport WP-DIFF-013-c3-R28)_
+- **?** Compte natif des fichiers préservé :  _(rapport WP-DIFF-101-c14-b1735-lecteur-a)_
 - **?** Compte rendu d'une séance ouverte depuis l'Agenda :  _(rapport WP-DIFF-113-c13r-4)_
 - **?** Compte rendu de séance en premier après la séance :  _(rapport WP-DIFF-103-c13s-d5)_
 - **?** Comptes de messagerie :  _(rapport WP-050-c4-R02)_
@@ -1288,6 +1292,8 @@
 - **?** Couverture Windows des tests backend :  _(rapport WP-C-004-c3-D01)_
 - **?** Couverture de test de la saisie protégée :  _(rapport WP-DIFF-067-c11-lecteur-20)_
 - **?** Couverture des etats d'erreur par persona :  _(rapport WP-086-c9t-T1)_
+- **?** Couverture sûre des fiches Actions :  _(rapport WP-DIFF-111-c14-b1734-lecteur-a)_
+- **?** Couverture sûre des fiches Actions :  _(rapport WP-DIFF-120-c14-b1734-lecteur-a)_
 - **?** Couverture écran de la boucle Plateau :  _(rapport WP-DIFF-111-c13r-3)_
 - **?** Couverture écran protégée :  _(rapport WP-DIFF-111-c14-lecteur-a)_
 - **?** Couverture écran protégée :  _(rapport WP-DIFF-111-c14-offline-lecteur-b)_
@@ -1590,7 +1596,10 @@
 - **?** Envoi de message en flux :  _(rapport WP-061)_
 - **?** Envoi d’un message en flux :  _(rapport WP-061-c13s-09)_
 - **?** Erreur de lecture de la synchronisation d'un projet :  _(rapport WP-DIFF-055-c13s-21)_
+- **?** Erreur du fil d’activités du contact :  _(rapport WP-062-c14-b1733-lecteur-a)_
+- **?** Erreur du fil d’activités du contact :  _(rapport WP-DIFF-029-c14-b1733-lecteur-a)_
 - **?** Erreur du fournisseur traduite après un outil (B-1181) :  _(rapport WP-DIFF-088-c13-m)_
+- **?** Erreur d’export après nouvel essai :  _(rapport WP-066-c14-b1733-lecteur-b)_
 - **?** Erreurs PDF et commandes clavier de facturation :  _(rapport WP-DIFF-006-c8-critical-b)_
 - **?** Erreurs annoncees :  _(rapport WP-071)_
 - **?** Erreurs de fournisseur pour l'écran :  _(rapport WP-053-c13r-1)_
@@ -1787,6 +1796,8 @@
 - **?** Fermeture nommée des panneaux de travail :  _(rapport WP-DIFF-063-c11-lecteur-17)_
 - **?** Fermeture nommée des panneaux de travail :  _(rapport WP-DIFF-063-c11-lecteur-18)_
 - **?** Fiabilité du travail des agents :  _(rapport WP-DIFF-004-c2-M13)_
+- **?** Fiche Actions nommée :  _(rapport WP-060-c14-b1733-lecteur-b)_
+- **?** Fiche Actions nommée :  _(rapport WP-DIFF-024-c14-b1733-lecteur-b)_
 - **?** Fiche contact :  _(rapport WP-064-c13r-4)_
 - **?** Fiche contact (création, mise à jour, réponse) :  _(rapport WP-048-c13-n)_
 - **?** Fiche contact (création, édition, suppression en cascade) :  _(rapport WP-064)_
@@ -1817,6 +1828,8 @@
 - **?** Fiche projet :  _(rapport WP-064)_
 - **?** Fiche projet (édition, fichiers joints, démo en lecture seule) :  _(rapport WP-064-c12-d)_
 - **?** Fiche projet, fichiers contextualisés et consultation démo :  _(rapport WP-064-c10-repair-a)_
+- **?** Fiches Actions nommées :  _(rapport WP-060-c14-b1733-lecteur-a)_
+- **?** Fiches Actions nommées :  _(rapport WP-DIFF-024-c14-b1733-lecteur-a)_
 - **?** Fiches contact et projet : périmètre, identité, null explicite :  _(rapport WP-DIFF-086-c13-h)_
 - **?** Fiches contact et projet de la Mémoire :  _(rapport WP-064-c12-h1)_
 - **?** Fiches contact et projet de la Mémoire :  _(rapport WP-DIFF-077-c12-h1)_
@@ -1830,6 +1843,9 @@
 - **?** Fichiers d'un projet :  _(rapport WP-073)_
 - **?** Fichiers et synchronisation par contexte :  _(rapport WP-DIFF-055-c10-repair-b)_
 - **?** Fichiers générés visibles dans le chat :  _(rapport WP-078-c4-D03)_
+- **?** Fichiers indisponibles hors application native :  _(rapport WP-063-c14-b1735-lecteur-b)_
+- **?** Fichiers indisponibles hors application native :  _(rapport WP-DIFF-072-c14-b1735-lecteur-b)_
+- **?** Fichiers indisponibles hors application native :  _(rapport WP-DIFF-101-c14-b1735-lecteur-b)_
 - **?** Fichiers joints d'un projet :  _(rapport WP-064)_
 - **?** Fichiers locaux, depot et indexation :  _(rapport WP-063-c9-R1)_
 - **?** Fil d'activites du CRM nommant ses contacts :  _(rapport WP-DIFF-008-c9t-T1)_
@@ -2324,6 +2340,8 @@
 - **?** Indice de contenu restant :  _(rapport WP-DIFF-021-c14-lecteur-b)_
 - **?** Indice de defilement de l'accueil :  _(rapport WP-DIFF-021-c4-R10)_
 - **?** Indice port et mode de sécurité :  _(rapport WP-084-c9u-U1)_
+- **?** Indisponibilité des fichiers locaux en navigateur :  _(rapport WP-063-c14-b1735-lecteur-a)_
+- **?** Indisponibilité des fichiers locaux en navigateur :  _(rapport WP-DIFF-072-c14-b1735-lecteur-a)_
 - **?** Initialisation et configuration du backend :  _(rapport WP-047-c8-codex-a)_
 - **?** Initialisation et migration de la base :  _(rapport WP-C-025-c9u-U3)_
 - **?** Installation d'un outil sur mesure :  _(rapport WP-054-c9s-S3)_
@@ -2898,6 +2916,8 @@
 - **?** Ouverture des panneaux par paramètre d'URL :  _(rapport WP-086-c9v-V2)_
 - **?** Ouverture des surfaces dans les parcours E2E :  _(rapport WP-DIFF-005-c2-M16)_
 - **?** Ouverture par lien profond :  _(rapport WP-071-c9-D3)_
+- **?** Ouverture sûre des fiches Actions :  _(rapport WP-DIFF-111-c14-b1733-lecteur-b)_
+- **?** Ouverture sûre des fiches Actions :  _(rapport WP-DIFF-120-c14-b1733-lecteur-b)_
 - **?** Ouverture, chiffrement et migration de la base :  _(rapport WP-C-025-c13s-11)_
 - **?** Ouvrir l'objet d'un travail :  _(rapport WP-DIFF-104-c13s-11)_
 - **?** Ouvrir l'objet d'un travail :  _(rapport WP-DIFF-105-c13s-d3)_
@@ -2936,6 +2956,8 @@
 - **?** Palette ⌘K : recherche locale des données :  _(rapport WP-DIFF-105-c13s-22)_
 - **?** Palette ⌘K de la coque :  _(rapport WP-DIFF-008-c13s-23)_
 - **?** Palette ⌘K et navigation déterministe :  _(rapport WP-070-c13s-08)_
+- **?** Panne du fil d’activités CRM :  _(rapport WP-062-c14-b1733-lecteur-b)_
+- **?** Panne du fil d’activités CRM :  _(rapport WP-DIFF-029-c14-b1733-lecteur-b)_
 - **?** Panne du fournisseur dite en français :  _(rapport WP-053-c13-a)_
 - **?** Panne du fournisseur dite en français :  _(rapport WP-DIFF-073-c13-a)_
 - **?** Panneau Actions (agents actionnables) :  _(rapport WP-060-c13s-12)_
@@ -3705,6 +3727,8 @@
 - **?** Retour au chat à l'activation d'une conversation :  _(rapport WP-073-c4-D04)_
 - **?** Retour aux grilles calendrier et fermeture CRM :  _(rapport WP-DIFF-008-c8-codex-b)_
 - **?** Retour d'une vue embarquée avec focus rendu :  _(rapport WP-DIFF-040-c13s-10)_
+- **?** Retour de copie d’un prompt :  _(rapport WP-065-c14-b1733-lecteur-a)_
+- **?** Retour de copie d’un prompt :  _(rapport WP-DIFF-030-c14-b1733-lecteur-a)_
 - **?** Retour de focus depuis les réglages IA :  _(rapport WP-061-c14-lecteur-b)_
 - **?** Retour deterministe :  _(rapport WP-066)_
 - **?** Retour du focus après Échap dans un dialogue :  _(rapport WP-DIFF-063-c11-lecteur-16)_

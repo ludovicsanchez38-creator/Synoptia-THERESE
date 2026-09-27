@@ -39,6 +39,14 @@ describe('B-1037 : la vue Fichiers en navigateur ne propose pas de gestes natifs
     }
   });
 
+  it('ne fait pas passer l’absence d’accès aux fichiers pour un dossier vide', async () => {
+    render(<FileBrowser />);
+    expect(await screen.findByText(/accessibles depuis l’application THÉRÈSE/)).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'Dossier vide' })).not.toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Filtrer les fichiers' })).toBeDisabled();
+    expect(screen.queryByText('0 élément')).not.toBeInTheDocument();
+  });
+
   // Lecteur F (B-1070) : un « clic forcé » sur un bouton désactivé ne prouvait
   // rien, React ignore onClick quand la prop disabled est vraie. On garde ce
   // qui est observable : le montage en navigateur ne lève rien et n'écrit rien.

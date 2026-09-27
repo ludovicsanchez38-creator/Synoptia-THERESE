@@ -68,7 +68,7 @@ describe('PromptLibrary — cycle 6', () => {
     expect(screen.getByRole('status')).toHaveTextContent(/copie impossible/i);
   });
 
-  it('sophie-03 : une copie réussie garde sa coche', async () => {
+  it('sophie-03 : une copie réussie garde sa coche et annonce le succès', async () => {
     const writeText = vi.fn().mockResolvedValue(undefined);
     Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
     render(<PromptLibrary onSelectPrompt={() => {}} onClose={() => {}} />);
@@ -76,5 +76,6 @@ describe('PromptLibrary — cycle 6', () => {
     const bouton = screen.getAllByTitle('Copier le prompt')[0];
     fireEvent.click(bouton);
     await waitFor(() => expect(bouton.getAttribute('data-copie')).toBe('ok'));
+    expect(screen.getByRole('status')).toHaveTextContent('Le prompt « Relance facture » a été copié.');
   });
 });

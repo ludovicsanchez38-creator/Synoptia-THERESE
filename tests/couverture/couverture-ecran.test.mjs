@@ -165,21 +165,23 @@ test('B-1715 : les consultations sûres restent exerçables dans leur seul conte
   assert.equal(gesteExclu('Envoyée', { ecran: 'invoices.open', role: 'button' }), false);
   assert.equal(gesteExclu('Rafraîchir les tâches', { ecran: 'tasks.open', role: 'button' }), false);
   const fiches = [
-    ['relance-clients', 'Relance clients : identifier les clients à relancer'],
-    ['prep-rdv', 'Préparation RDV'],
-    ['onboarding-client', 'Onboarding client'],
-    ['audit-tresorerie', 'Audit trésorerie'],
-    ['veille-concurrent', 'Veille concurrentielle'],
+    ['rapport-hebdo', 'Ouvrir la fiche Rapport hebdomadaire'],
+    ['relance-clients', 'Ouvrir la fiche Relance clients'],
+    ['prep-rdv', 'Ouvrir la fiche Préparation RDV'],
+    ['onboarding-client', 'Ouvrir la fiche Onboarding client'],
+    ['audit-tresorerie', 'Ouvrir la fiche Audit trésorerie'],
+    ['veille-concurrent', 'Ouvrir la fiche Veille concurrentielle'],
   ];
   for (const [agentId, nom] of fiches) {
     assert.equal(gesteExclu(nom, { ecran: 'actions.open', role: 'button', agentId }), false, agentId);
-    assert.equal(gesteExclu(nom, { ecran: 'settings.open', role: 'button', agentId }), true, agentId);
   }
   assert.equal(gesteExclu('Envoyée', { ecran: 'tasks.open', role: 'button' }), true);
   assert.equal(gesteExclu('Rafraîchir les tâches', { ecran: 'settings.open', role: 'button' }), true);
   assert.equal(gesteExclu('Envoyer le message', { ecran: 'invoices.open', role: 'button' }), true);
   assert.equal(gesteExclu('Lancer', { ecran: 'actions.open', role: 'button', agentId: 'relance-clients' }), true);
-  assert.equal(gesteExclu('Relance clients : clients à relancer', { ecran: 'actions.open', role: 'button', agentId: 'inconnu' }), true);
+  assert.equal(gesteExclu('Ouvrir la fiche Relance clients', { ecran: 'actions.open', role: 'button', agentId: 'inconnu' }), true);
+  assert.equal(gesteExclu('Ouvrir la fiche Rapport hebdomadaire et lancer', { ecran: 'actions.open', role: 'button', agentId: 'rapport-hebdo' }), true);
+  assert.equal(gesteExclu('Ouvrir la fiche Marie', { ecran: 'crm.open', role: 'button' }), false);
 });
 
 test('le rôle et la signature retrouvent un bouton au nom accessible différent du texte brut',

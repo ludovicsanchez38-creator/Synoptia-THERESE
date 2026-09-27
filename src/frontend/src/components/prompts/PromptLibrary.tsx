@@ -156,6 +156,9 @@ function PromptCard({
           >
             {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
           </Button>
+          {copied && (
+            <span role="status" className="sr-only">Le prompt « {prompt.title} » a été copié.</span>
+          )}
           {copieEchouee && (
             <span role="status" className="text-xs text-error">Copie impossible : le presse-papiers est refusé.</span>
           )}

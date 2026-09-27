@@ -403,3 +403,89 @@ propres sur deux. Le cycle 14 est passé de `ZERO_CHECK` à `GAP_SCAN` pour
 examiner les améliorations éventuelles. Le verdict porte sur le périmètre
 couvert et les instruments calibrés ; il ne prouve ni la recette fonctionnelle
 P-146 dans l'application Tauri packagée, ni une release.
+
+## Retour du scan et remise à zéro du plateau
+
+Le scan a révélé sept défauts confirmés après les deux rondes propres. Le
+compteur du plateau a donc été remis à zéro et la phase est revenue à
+`REPRODUCE`, puis `REPAIR`. Chaque correction ci-dessous possède un témoin
+rouge, un contrôle vert et un sabotage rouge dans
+`.app-loop/cycles/14/gap-scan/` ou
+`.app-loop/cycles/14/repair-activity-timeline/`.
+
+| Bug | Défaut corrigé |
+| --- | --- |
+| B-1729 | Une panne de lecture du fil d'activités CRM affichait « Aucune activité ». L'écran distingue maintenant l'échec, annonce une alerte et permet de réessayer. |
+| B-1730 | La copie réussie d'un prompt ne changeait que la coche visuelle. Un statut accessible annonce maintenant le succès et nomme le prompt. |
+| B-1731 | Dans le tiroir de conversations réellement monté, une alerte d'export restait visible après un nouvel export réussi. Le succès l'efface. Le composant `ConversationSidebar` contenant un autre problème d'export n'est pas monté dans l'application actuelle ; son test exploratoire a été placé dans la Corbeille. |
+| B-1732 | Le nom accessible des cartes Actions fusionnait titre, description et badges. Il annonce maintenant l'ouverture de la fiche ; la description reste disponible séparément. |
+| B-1733 | Le contrôle écran sautait la fiche sûre « Rapport hebdomadaire », car sa description contient « Génère ». Les six fiches connues sont identifiées strictement avant le filtre des gestes sortants. |
+| B-1734 | Une première correction de ce filtre excluait aussi toute fiche homonyme du CRM. L'exception et son refus de sécurité sont maintenant bornés à l'écran Actions. |
+| B-1735 | En navigateur, Fichiers affichait simultanément l'indisponibilité de l'accès natif, « Dossier vide », « 0 élément » et un filtre actif. La vue web ne prétend plus avoir lu un dossier ; le mode natif conserve sa liste et son compteur. |
+
+Les tests frontend complets passent **3347/3347** après B-1735. Le build passe ;
+le lint finit avec zéro erreur et 26 avertissements. Le code backend n'a pas
+changé depuis sa suite complète à 4176 tests réussis et cinq ignorés. Le
+contrôle ciblé de l'application servie ouvre Conversations, Prompts, CRM et
+Actions dans quatre combinaisons : 72 gestes sûrs à 1440 clair, six fiches
+Actions effectivement ouvertes, aucune sortie réseau. Ses deux signalements
+uniques concernent les largeurs de la grille CRM déjà arbitrées. La vue
+Fichiers corrigée est vérifiée séparément à 1440/800 px en clair/sombre :
+16 gestes sûrs, zéro anomalie, garde réseau vide ; la capture à 800 sombre a
+été inspectée.
+
+La cartographie après ces changements valide **2080/2080** fichiers, avec
+deux lectures indépendantes des 13 fichiers applicatifs et de test modifiés
+au scan. Les témoins Chromium de l'interface, des captures et du réseau
+repassent sur la pile jetable. La recalibration `screen_coverage` détecte
+les témoins visuels et la requête sortante bloquée. Son premier passage sain
+après restauration signale « Conversations » introuvable pendant la
+réouverture ; un second passage sans modification ne reproduit pas l'anomalie.
+Les deux rapports sont conservés dans
+`.app-loop/cycles/14/calibration/screen-controls-b1735.json`. `index.html`
+est restauré à son SHA exact et le verrou temporaire est absent. Deux
+nouvelles rondes indépendantes restent à calculer avant de déclarer un
+nouveau plateau.
+
+## Nouveau plateau et portail de décision
+
+Les rondes indépendantes A3 (`/root`) et B2 (`/root/plateau_prep`) ont chacune
+parcouru 21 écrans dans quatre combinaisons de largeur et de thème, avec
+197 gestes sûrs exercés, dont les six fiches Actions. Leurs rapports ne
+remontent que les trois mêmes signalements : deux largeurs du Pipeline et
+« Aujourd'hui » déjà sur le mois courant. La navigation clavier du Pipeline
+et le retour au mois courant ont été vérifiés à nouveau dans B2. Les gardes
+réseau et les journaux des deux périodes sont vides ; des captures ont été
+inspectées dans chaque ronde. Les gestes destructifs ou sortants ne font pas
+partie de ces essais.
+
+Le manifeste `transitions-final-94.json` couvre 94 transitions critiques sur
+94 : 70 références historiques contrôlées, 17 transitions déjà qualifiées et
+sept issues des corrections B-1729 à B-1735. Les 301 références de preuve
+internes sont présentes avec leur empreinte attendue. La suite frontend
+actuelle passe 3347 tests sur 3347, les témoins Chromium de l'instrument
+20 sur 20, et la cartographie de référence couvre 2080 fichiers sur 2080.
+Le backend n'a pas été modifié depuis ses 4176 tests réussis, cinq ignorés,
+et les 15 contrôles de confinement complémentaires.
+
+Le premier calcul A3 a été refusé car son manifeste reprenait le SHA Git de
+l'ancien inventaire A2. La référence a été corrigée et le calcul relancé
+avec un nouvel identifiant ; `plateau-evaluate` a alors accepté A3 puis B2,
+soit **deux rondes propres indépendantes sur deux**. L'état est passé de
+`ZERO_CHECK` à `GAP_SCAN`, puis à `HUMAN_GATE` après déduplication des
+propositions. Ce verdict signifie « aucun bug détectable dans le périmètre
+couvert avec les instruments calibrés ». Il ne vaut ni recette de
+l'application Tauri packagée, ni publication.
+
+Trois propositions restent à décider, sans implémentation à ce stade :
+
+| ID | Proposition | Constat et périmètre |
+| --- | --- | --- |
+| P-157 | Signaler visuellement le défilement horizontal du Pipeline | À 800 px, les colonnes suivantes restent hors champ sans indice visuel. Le défilement au clavier et au pointeur fonctionne ; P-071 a accepté la fusion Contacts/Pipeline, sans cette indication. |
+| P-158 | Rendre réglable la largeur du tiroir Conversations | Le tiroir a une largeur fixe de 22rem et tronque les titres. P-068 et P-092 portent sur d'autres changements de structure. |
+| P-159 | Afficher le contexte réellement transmis au modèle | Le chat lit au plus 50 messages passés, en exclut certains, ajoute le message courant et peut ensuite réduire le contexte selon le budget du modèle. `max_history_messages` est stocké mais n'agit pas sur ce parcours ; un réglage éventuel reste une décision distincte. |
+
+`next-action` répond `portail` en phase `HUMAN_GATE` : attendre `oui`, `non`
+ou `plus tard` pour chaque proposition. Aucun build Tauri ni release n'a été
+effectué dans cette reprise ; l'instance réelle et le port 17293 n'ont pas
+été sollicités.
