@@ -59,10 +59,13 @@ class LLMBehaviorSettings(BaseModel):
     dans le prompt système, sur les deux points de passage vers un modèle
     (`LLMService.LANGUE_BLOCK`).
 
-    Les cinq champs restants sont dans le même état — stockés, jamais lus,
-    sans écran. Ils sont conservés faute d'avoir été instruits : les retirer
-    demande de décider s'il faut les brancher ou les supprimer, ce qui dépasse
-    un correctif de bug.
+    Quatre champs restent stockés sans être lus, sans écran. Ils sont
+    conservés faute d'avoir été instruits : les retirer demande de décider
+    s'il faut les brancher ou les supprimer, ce qui dépasse un correctif.
+
+    B-1739 : `max_history_messages` est lu par le chat. S'il est posé, le
+    nombre de messages passés relus est ramené entre 1 et 200. Sinon, 50.
+    Aucun écran ne l'expose.
     """
 
     custom_system_prompt: str = ""

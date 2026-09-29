@@ -1247,6 +1247,46 @@ async def deep_research_endpoint(
 #: B-1368 : titres posés par l'interface avant le premier message.
 _TITRES_PROVISOIRES = {"", "Nouvelle conversation"}
 
+# B-1739 : le chat relisait toujours 50 messages, le réglage restait en base.
+_HISTORIQUE_DEFAUT = 50
+_HISTORIQUE_PLANCHER = 1
+_HISTORIQUE_PLAFOND = 200
+
+
+async def _plafond_messages_historique(session: AsyncSession) -> int:
+    """Nombre de messages passés à relire, 50 si le réglage n'est pas posé.
+
+    `max_history_messages` vit dans la préférence `llm_behavior`. Une valeur
+    posée est ramenée entre 1 et 200. Absente, illisible ou d'un autre type :
+    on reprend 50, le plafond historique.
+    """
+    from app.models.entities import Preference
+    from app.models.schemas_personalisation import LLMBehaviorSettings
+    from pydantic import ValidationError
+
+    result = await session.execute(
+        select(Preference).where(Preference.key == "llm_behavior")
+    )
+    pref = result.scalar_one_or_none()
+    if pref is None or not pref.value:
+        return _HISTORIQUE_DEFAUT
+    try:
+        brut = json.loads(pref.value)
+    except (json.JSONDecodeError, TypeError):
+        return _HISTORIQUE_DEFAUT
+    if not isinstance(brut, dict) or "max_history_messages" not in brut:
+        return _HISTORIQUE_DEFAUT
+    try:
+        reglages = LLMBehaviorSettings.model_validate(brut)
+    except (ValidationError, TypeError, ValueError):
+        return _HISTORIQUE_DEFAUT
+    valeur = reglages.max_history_messages
+    if valeur < _HISTORIQUE_PLANCHER:
+        return _HISTORIQUE_PLANCHER
+    if valeur > _HISTORIQUE_PLAFOND:
+        return _HISTORIQUE_PLAFOND
+    return valeur
+
 
 @router.post("/send")
 async def send_message(
@@ -1272,12 +1312,14 @@ async def send_message(
         session.add(conversation)
         await session.flush()
 
-    # Load conversation history for context (BUG-031 : DESC + reversed = 50 DERNIERS messages)
+    # BUG-031 : DESC + reversed = les DERNIERS messages. B-1739 : le nombre
+    # vient du réglage (1 à 200), 50 s'il n'est pas posé.
+    plafond_historique = await _plafond_messages_historique(session)
     history_result = await session.execute(
         select(Message)
         .where(Message.conversation_id == conversation.id)
         .order_by(Message.created_at.desc(), Message.id.desc())
-        .limit(50)  # Limit history to last 50 messages
+        .limit(plafond_historique)
     )
     history_messages = list(reversed(history_result.scalars().all()))
     # Tranche 0f Variables V4 (finding Codex 4) : les échanges déterministes
