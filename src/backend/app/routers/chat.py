@@ -20,6 +20,7 @@ from app.models.processing import EtatTache as EtatTacheTraitement
 from app.models.schemas import (
     ChatRequest,
     ChatResponse,
+    ContexteTransmis,
     ConversationCreate,
     ConversationProjectUpdate,
     ConversationResponse,
@@ -1288,6 +1289,53 @@ async def _plafond_messages_historique(session: AsyncSession) -> int:
     return valeur
 
 
+def bilan_contexte_transmis(
+    messages_passes: int, messages_dans_fenetre: int
+) -> dict[str, int]:
+    """Messages passés relus, et ceux encore présents après la coupe.
+
+    `messages_dans_fenetre` est la taille de la liste envoyée au modèle,
+    tour courant compris (toujours en dernier : la coupe retire par le début).
+    """
+    relus = messages_passes if messages_passes > 0 else 0
+    transmis = messages_dans_fenetre - 1
+    if transmis < 0:
+        transmis = 0
+    if transmis > relus:
+        transmis = relus
+    return {"messages_relus": relus, "messages_transmis": transmis}
+
+
+def bilan_depuis_fenetre(messages_passes: int, contexte: Any) -> dict[str, int]:
+    """Lit la fenêtre réellement rendue par prepare_context.
+
+    Un faux service de test qui ne renvoie pas de liste de messages ne
+    permet pas de voir la coupe : on rapporte alors les messages relus
+    tels quels, sans inventer une coupe.
+    """
+    fenetre = getattr(contexte, "messages", None)
+    if not isinstance(fenetre, list):
+        return bilan_contexte_transmis(messages_passes, messages_passes + 1)
+    return bilan_contexte_transmis(messages_passes, len(fenetre))
+
+
+def _memoriser_contexte(message: Message, bilan: dict[str, int]) -> None:
+    """Pose le bilan dans extra_data sans effacer le reste (fichiers, sources)."""
+    donnees: dict[str, Any] = {}
+    if message.extra_data:
+        try:
+            brut = json.loads(message.extra_data)
+        except (ValueError, TypeError):
+            brut = None
+        if isinstance(brut, dict):
+            donnees = brut
+    donnees["contexte"] = {
+        "messages_relus": bilan["messages_relus"],
+        "messages_transmis": bilan["messages_transmis"],
+    }
+    message.extra_data = json.dumps(donnees)
+
+
 @router.post("/send")
 async def send_message(
     request: ChatRequest,
@@ -1888,6 +1936,7 @@ async def send_message(
     avertissements_plafonds = verdict_plafonds["warnings"] or None
 
     context = llm_service.prepare_context(messages, memory_context=memory_context)
+    bilan_contexte = bilan_depuis_fenetre(max(0, len(messages) - 1), context)
 
     # Collect full response (non-streaming)
     # raise_on_error=True : sans ça, un StreamEvent(type="error") d'un provider
@@ -1935,6 +1984,7 @@ async def send_message(
         tokens_in=input_tokens,
         tokens_out=output_tokens,
     )
+    _memoriser_contexte(assistant_message, bilan_contexte)
     session.add(assistant_message)
     await session.commit()
 
@@ -1947,6 +1997,7 @@ async def send_message(
         tokens_in=input_tokens,
         tokens_out=output_tokens,
         warnings=avertissements_plafonds,
+        contexte=ContexteTransmis(**bilan_contexte),
         created_at=assistant_message.created_at,
         confirmations=inline_pending_confirmations or None,
     )
@@ -2551,6 +2602,7 @@ async def _do_stream_response(
         )
 
     context = llm_service.prepare_context(messages, memory_context=memory_context)
+    bilan_contexte = bilan_depuis_fenetre(max(0, len(messages) - 1), context)
 
     # Injecter le system prompt du skill si skill_id fourni (Phase 1 v0.2.4)
     if skill_id:
@@ -2994,7 +3046,8 @@ async def _do_stream_response(
         assistant_message.extra_data = json.dumps(
             {"skill_files": skill_files_payloads}
         )
-        await session.commit()
+    _memoriser_contexte(assistant_message, bilan_contexte)
+    await session.commit()
 
     # Send done event with usage info
     done_data = StreamChunk(
@@ -3013,6 +3066,7 @@ async def _do_stream_response(
         "provider": fournisseur,
     }
     done_dict["uncertainty"] = uncertainty
+    done_dict["contexte"] = bilan_contexte
     yield f"data: {json.dumps(done_dict)}\n\n"
 
     # Fire-and-forget entity extraction (PERF-001)

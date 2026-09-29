@@ -119,6 +119,17 @@ class ChatRequest(BaseModel):
     calendar_id: str | None = None
 
 
+class ContexteTransmis(BaseModel):
+    """P-159 : messages passés relus, et ceux encore là après la coupe du modèle.
+
+    Champs optionnels sur la réponse : un client qui les ignore continue
+    de lire `content` comme avant. Absents quand aucun modèle n'a été appelé.
+    """
+
+    messages_relus: int
+    messages_transmis: int
+
+
 class ChatResponse(BaseModel):
     """Chat completion response (non-streaming)."""
 
@@ -134,6 +145,8 @@ class ChatResponse(BaseModel):
     confirmations: list[dict[str, Any]] | None = None  # Mutations préparées, encore non exécutées
     # B-482 : avertissements de plafond (modèle hors grille, budget proche)
     warnings: list[str] | None = None
+    # P-159 : absent (null) quand la réponse n'a pas appelé de modèle.
+    contexte: ContexteTransmis | None = None
     created_at: HorodatageUTC
 
 

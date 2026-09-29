@@ -840,8 +840,13 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
           useToolConfirmationStore.getState().add(chunk.confirmation);
         } else if (chunk.type === 'done') {
           // Store usage and uncertainty metadata (US-ESC-02, US-ESC-01)
-          if (chunk.usage || chunk.uncertainty) {
-            setMessageMetadata(assistantMessageId, chunk.usage, chunk.uncertainty);
+          if (chunk.usage || chunk.uncertainty || chunk.contexte) {
+            setMessageMetadata(
+              assistantMessageId,
+              chunk.usage,
+              chunk.uncertainty,
+              chunk.contexte,
+            );
           }
         } else if (chunk.type === 'warning') {
           // B-482 : avertissement de plafond (modèle hors grille, budget proche).
