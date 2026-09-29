@@ -107,6 +107,18 @@ describe('P-157 : indice de débordement du pipeline', () => {
     expect(screen.queryByRole('button', { name: /à gauche/ })).not.toBeInTheDocument();
   });
 
+  it('le bouton à droite avance quand la première colonne dépasse le cadre', () => {
+    const zone = rendre();
+    simuler(zone, { clientWidth: 200, scrollLeft: 0, largeur: 240, pas: 252 });
+    fireEvent.scroll(zone);
+    const scrollTo = vi.fn();
+    zone.scrollTo = scrollTo as unknown as typeof zone.scrollTo;
+
+    fireEvent.click(screen.getByRole('button', { name: '8 étapes à droite' }));
+
+    expect(scrollTo).toHaveBeenCalledWith({ left: 40, behavior: 'smooth' });
+  });
+
   it('un clic sur la mention fait défiler vers les étapes cachées', () => {
     const zone = rendre();
     simuler(zone, { clientWidth: 800, scrollLeft: 0 });

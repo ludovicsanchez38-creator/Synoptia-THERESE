@@ -70,4 +70,14 @@ describe('P-157 : étapes hors cadre', () => {
     expect(defilementVersEtapesCachees({ scrollLeft: 756, clientWidth: 800 }, colonnes, 'gauche')).toBe(504);
     expect(defilementVersEtapesCachees({ scrollLeft: 0, clientWidth: 2100 }, colonnes, 'droite')).toBeNull();
   });
+
+  it('avance quand la première colonne dépasse déjà la largeur du cadre', () => {
+    const vue = { scrollLeft: 0, clientWidth: 200 };
+    const colonnes = [
+      { gauche: 0, largeur: 240 },
+      { gauche: 252, largeur: 240 },
+    ];
+    // 240 - 200 : amener le bout caché de la colonne dans le cadre, pas rester à 0.
+    expect(defilementVersEtapesCachees(vue, colonnes, 'droite')).toBe(40);
+  });
 });

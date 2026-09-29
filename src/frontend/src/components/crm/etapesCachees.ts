@@ -44,7 +44,9 @@ export function mentionDEtapesCachees(nombre: number, cote: 'gauche' | 'droite')
 
 /**
  * Décalage qui aligne la colonne cachée la plus proche du cadre.
- * À droite : la première qui dépasse. À gauche : la dernière encore coupée.
+ * À droite : la première qui dépasse. Si elle a déjà commencé (plus large
+ * que le cadre), on avance jusqu’à son bord droit visible.
+ * À gauche : la dernière encore coupée.
  */
 export function defilementVersEtapesCachees(
   vue: VuePipeline,
@@ -54,10 +56,16 @@ export function defilementVersEtapesCachees(
   const bordGauche = vue.scrollLeft;
   const bordDroit = vue.scrollLeft + vue.clientWidth;
   let destination: number | null = null;
+  let gaucheChoisie = Number.POSITIVE_INFINITY;
   for (const colonne of colonnes) {
     if (cote === 'droite') {
       const cachee = colonne.gauche + colonne.largeur > bordDroit + TOLERANCE_PX;
-      if (cachee && (destination === null || colonne.gauche < destination)) destination = colonne.gauche;
+      if (!cachee || colonne.gauche >= gaucheChoisie) continue;
+      gaucheChoisie = colonne.gauche;
+      // Aligner le début ne déplace rien quand ce début est déjà à l’écran.
+      destination = colonne.gauche > bordGauche
+        ? colonne.gauche
+        : colonne.gauche + colonne.largeur - vue.clientWidth;
     } else if (colonne.gauche < bordGauche - TOLERANCE_PX && (destination === null || colonne.gauche > destination)) {
       destination = colonne.gauche;
     }
