@@ -59,29 +59,42 @@ Elles ne disent pas « sans rupture » pour le numéro de facture. Elles disent 
 
 ## Design retenu
 
-### B-1615, numéro à l'émission
+### Séries FACT- et AV-
 
-Le § 90 place la numérotation au moment de l'émission, et la veut continue. Un brouillon n'est pas une facture émise. Lui donner un numéro `FACT-` ou `AV-`, puis le supprimer, retire un numéro de la série.
+L'article 242 nonies A, I, 7° admet des séries distinctes « lorsque les conditions d'exercice de l'activité de l'assujetti le justifient », et il demande un usage conforme à cette justification initiale. Le § 90 rappelle, pour chaque série, la chronologie au fil des émissions, la continuité, et l'absence de doublon la même année. Aucune des pages lues ne dit qu'une note d'avoir et une facture forment, à elles seules, deux conditions d'exercice. L'article 289, I, 5 assimile le document qui modifie la facture initiale à une facture.
+
+THÉRÈSE a une activité et un établissement. Sur les pages lues, le 7° n'établit pas la justification de deux séries `FACT-` et `AV-`. Les deux séries sont conservées. Les changer demanderait une décision humaine. Ce point s'arrête là.
+
+### B-1615, numéro et date à l'émission
+
+Le § 90 place la numérotation au moment de l'émission, et la veut continue. La date imprimée suit ce moment : à l'émission, elle devient la date du jour. Un brouillon n'est pas une facture émise. Lui donner un numéro `FACT-` ou `AV-`, puis le supprimer, retire un numéro de la série.
 
 - Une facture ou un avoir créé en brouillon reçoit un jeton unique hors série, préfixe `PROV-`. Ce jeton n'entre pas dans le calcul du prochain `FACT-` ou `AV-`.
-- Le numéro définitif est posé au passage du brouillon vers un statut émis (`sent`, `paid`, `overdue`), y compris par « marquer payée ». Le statut `cancelled` sur un brouillon n'émet pas la pièce et ne prend pas de numéro.
-- L'écran et le PDF d'un brouillon `PROV-` affichent « Brouillon, numéro à l'émission ». Ils n'impriment pas le jeton.
+- Le numéro définitif est posé à toute première transition d'une pièce provisoire vers un statut émis (`sent`, `paid`, `overdue`), y compris après l'annulation du brouillon, par `PUT` ou par « marquer payée ». Un brouillon annulé reste un brouillon annulé, sans numéro définitif.
+- À cette émission, la date d'émission devient la date du jour, sur la même horloge que l'année du numéro. L'échéance est décalée du même nombre de jours. Une pièce déjà émise ne voit pas sa date reculée quand elle passe de envoyée à payée.
+- L'écran, le PDF, la carte de facturation, les livrables, le brief du jour et la confirmation de paiement affichent « Brouillon, numéro à l'émission » ou le numéro définitif renvoyé. Ils n'impriment pas le jeton `PROV-`.
 - Le devis garde `DEV-` dès la création. L'article 242 nonies A et la section II-A du BOI-TVA-DECLA-30-20-20-10 visent la facture.
 
-Migration, sans réécriture des lignes déjà en base. Un brouillon qui porte déjà un numéro définitif (`FACT-…` ou `AV-…`, tout numéro qui ne commence pas par `PROV-`) le conserve à la lecture, à la modification et à l'émission. Le changer surprendrait, et l'abandonner ouvrirait un trou dans une série déjà entamée. S'il est supprimé plus tard, le trou reste : le prochain numéro est le maximum existant de la série plus un, y compris ce numéro historique tant qu'il est en base, et le maximum des numéros restants une fois la ligne effacée. On ne renumérote pas les autres pièces pour boucher ce trou. Les brouillons créés après le correctif n'occupent pas la série : les supprimer ne décale pas le prochain numéro.
+Migration, sans réécriture des lignes déjà en base. Un brouillon qui porte déjà un numéro de série (`FACT-…` ou `AV-…`) le garde à l'émission s'il est encore le dernier de sa série, préfixe et année. S'il ne l'est plus, l'émission lui donne le numéro suivant. L'ancien numéro n'est pas attribué à une autre pièce. Supprimer un tel brouillon est refusé : le supprimer ferait retomber le maximum, et la pièce suivante reprendrait ce numéro. On ne renumérote pas les autres pièces pour boucher un trou. Les brouillons `PROV-` n'occupent pas la série : les supprimer ne décale pas le prochain numéro.
 
-### B-1671, pas de statut « Annulée » sur une facture émise
+### B-1671, pas de statut « Annulée » sur une pièce émise
 
 Le correctif demandé (refuser `cancelled`, message qui dit d'émettre un avoir, retirer « Annulée » du sélecteur d'une facture émise) est retenu comme choix de produit, plus étroit que le § 210.
 
-Le § 210 admet aussi une facture nouvelle qui annule et remplace. Cette seconde voie n'est pas construite dans ce lot. Le message à l'écran indique l'avoir, parce que c'est le document rectificatif que l'application sait déjà émettre, et parce que le lot le demande. Le message ne prétend pas que la loi interdit l'autre voie.
+Le § 210 admet aussi une facture nouvelle qui annule et remplace. Cette seconde voie n'est pas construite dans ce lot. Le message à l'écran indique l'avoir, parce que c'est le document rectificatif que l'application sait déjà émettre, et parce que le lot le demande. Le message dit aussi, pour un avoir, qu'une facture rectificative reste une voie.
 
-- `PUT` avec `cancelled` sur une facture déjà émise (facture, pas devis) répond 409 : « Une facture émise ne s'annule pas. Pour l'annuler, émets un avoir. » La pièce reste à son statut.
-- Le sélecteur d'une facture émise ne propose plus « Annulée ». Un devis reste annulable : les textes cités ne le visent pas. Un brouillon de facture, qui n'est pas émis, peut encore passer à « Annulée » sans prendre de numéro.
-- Un avoir déjà émis peut encore passer à `cancelled` par ce `PUT`. Le I, 5 de l'article 289 assimile la note d'avoir à une facture, donc le même raisonnement pourrait s'y appliquer. Ce lot ne le fait pas : le défaut signalé porte sur la facture.
+- `PUT` avec `cancelled` sur une facture déjà émise répond 409 : « Une facture émise ne s'annule pas. Pour l'annuler, émets un avoir. » La pièce reste à son statut.
+- Le même garde vaut pour un avoir déjà émis. Le I, 5 de l'article 289 l'assimile à une facture. Le `PUT` répond 409 : « Un avoir émis ne s'annule pas. Pour l'annuler, émets un avoir inverse ou une facture rectificative. » Un brouillon d'avoir reste annulable.
+- Un devis reste annulable : les textes cités ne le visent pas. Un brouillon de facture, qui n'est pas émis, peut encore passer à « Annulée » sans prendre de numéro.
+- Le sélecteur d'une facture ou d'un avoir déjà émis ne propose plus « Annulée ». Une pièce dont le statut enregistré est déjà annulé affiche cette valeur. Dès qu'on en choisit une autre, « Annulée » sort de la liste.
+- Un avoir ne cite comme origine qu'une facture déjà émise, à la création, à la conversion et à l'émission. Le § 220 demande la référence de la facture initiale, son numéro et sa date. Un brouillon `PROV-` ne peut pas servir d'origine, et le PDF ne l'imprime pas.
 
 ## Incertain
 
-La page BOFiP de la numérotation porte la date de publication du 18 octobre 2013. Aucune date de fin n'apparaissait sur la page lue. Une version plus récente, si elle existe sous un autre identifiant, n'a pas été trouvée.
+La page BOFiP de la numérotation porte la date de publication du 18 octobre 2013. Aucune date de fin n'apparaissait sur la page lue. Une version plus récente, si elle existe sous un autre identifiant, n'a pas été trouvée. Le § 140 est cité par la revue pour la date de délivrance ; son libellé verbatim n'est pas recopié dans la section des textes lus ci-dessus.
 
-La facture de remplacement du § 240 n'a pas d'écran dans ce lot. Quelqu'un qui voudrait annuler et remplacer en un seul document ne le peut pas ici ; il émet un avoir.
+La facture de remplacement du § 240 n'a pas d'écran dans ce lot. Quelqu'un qui voudrait annuler et remplacer en un seul document ne le peut pas ici ; il émet un avoir, ou il lit le message qui nomme la facture rectificative sans pouvoir la composer dans le formulaire.
+
+Un brouillon historique encore dernier de sa série garde son numéro à l'émission, y compris si l'année écrite dans ce numéro et la date du jour ne coïncident pas. La date d'émission, elle, est recalée sur le jour de l'émission.
+
+La justification des séries `FACT-` et `AV-` reste ouverte : le 7° ne la fournit pas sur les pages lues, et la série n'a pas été changée.
