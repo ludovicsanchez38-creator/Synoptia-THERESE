@@ -10,6 +10,13 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Etiquette } from '../ui/Etiquette';
 import { cn } from '../../lib/utils';
+import {
+  decompteEtapesCachees,
+  defilementVersEtapesCachees,
+  mentionDEtapesCachees,
+  type EtapesHorsCadre,
+  type MesureColonne,
+} from './etapesCachees';
 import { PIPELINE_ETAPES, etiquetteDEtape } from './pipelineEtapes';
 import { ExplicationDuScore } from './ExplicationDuScore';
 import {
@@ -38,6 +45,17 @@ import type { ContactResponse } from '../../services/api';
 
 const PIPELINE_STAGES = PIPELINE_ETAPES;
 
+/** P-157 : pastille discrète, surface unie. Le fondu, lui, n'est pas un bouton. */
+const CLASSE_INDICE =
+  'inline-flex items-center rounded-full border border-border bg-surface px-3 py-1 text-sm font-medium text-text-muted shadow-sm hover:text-text';
+
+function colonnesMesurees(grille: HTMLElement): MesureColonne[] {
+  return Array.from(grille.querySelectorAll<HTMLElement>('[data-colonne]'), (colonne) => ({
+    gauche: colonne.offsetLeft,
+    largeur: colonne.offsetWidth,
+  }));
+}
+
 interface PipelineViewProps {
   contacts: ContactResponse[];
   onContactClick: (contact: ContactResponse) => void;
@@ -53,6 +71,7 @@ export function PipelineView({ contacts, onContactClick, onStageChange }: Pipeli
   // focus. On retient la carte pour lui rendre le focus dans sa colonne.
   const carteDeposee = useRef<{ id: string; stage: string } | null>(null);
   const grilleRef = useRef<HTMLDivElement>(null);
+  const [etapesCachees, setEtapesCachees] = useState<EtapesHorsCadre>({ aGauche: 0, aDroite: 0 });
 
   // B-237 : sans `coordinateGetter`, dnd-kit avance son pointeur virtuel de
   // 25 px par flèche — dans des colonnes minmax(15rem, 1fr), la carte
@@ -95,6 +114,44 @@ export function PipelineView({ contacts, onContactClick, onStageChange }: Pipeli
     if (!activeContact) return;
     return pushEscapeHandler(() => {});
   }, [activeContact]);
+
+  // P-157 : l'indice suit le défilement et le redimensionnement. Tant que
+  // tout tient, il n'y a rien à montrer (y compris à 1440 px).
+  useEffect(() => {
+    const grille = grilleRef.current;
+    if (!grille) return;
+    const mesurer = () => {
+      const suivant = decompteEtapesCachees(
+        { scrollLeft: grille.scrollLeft, clientWidth: grille.clientWidth },
+        colonnesMesurees(grille),
+      );
+      setEtapesCachees((courant) => (
+        courant.aGauche === suivant.aGauche && courant.aDroite === suivant.aDroite ? courant : suivant
+      ));
+    };
+    mesurer();
+    grille.addEventListener('scroll', mesurer, { passive: true });
+    window.addEventListener('resize', mesurer);
+    const observateur = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(mesurer);
+    observateur?.observe(grille);
+    return () => {
+      grille.removeEventListener('scroll', mesurer);
+      window.removeEventListener('resize', mesurer);
+      observateur?.disconnect();
+    };
+  }, []);
+
+  function defilerVers(cote: 'gauche' | 'droite') {
+    const grille = grilleRef.current;
+    if (!grille) return;
+    const destination = defilementVersEtapesCachees(
+      { scrollLeft: grille.scrollLeft, clientWidth: grille.clientWidth },
+      colonnesMesurees(grille),
+      cote,
+    );
+    if (destination === null) return;
+    grille.scrollTo({ left: destination, behavior: 'smooth' });
+  }
 
   /** Colonne visée par une cible de dépôt : une colonne, ou la carte survolée. */
   function stageDepuisCible(overId: string): string | null {
@@ -161,32 +218,85 @@ export function PipelineView({ contacts, onContactClick, onStageChange }: Pipeli
       })}
     >
       {/* B-1426 : la grille défile en largeur ; nommée et focalisable, elle
-          défile aussi aux flèches, colonnes vides comprises. */}
-      <div
-        ref={grilleRef}
-        role="region"
-        aria-label="Étapes du pipeline"
-        tabIndex={0}
-        className="grid grid-flow-col auto-cols-[minmax(15rem,1fr)] gap-3 overflow-x-auto pb-2 snap-x snap-proximity rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-      >
-        {PIPELINE_STAGES.map((stage) => (
-          <DroppableStage key={stage.id} stage={stage} count={contactsByStage[stage.id]?.length || 0}>
-            <SortableContext
-              items={(contactsByStage[stage.id] || []).map((c) => c.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              <AnimatePresence>
-                {contactsByStage[stage.id]?.map((contact) => (
-                  <SortableContactCard
-                    key={contact.id}
-                    contact={contact}
-                    onClick={() => onContactClick(contact)}
-                  />
-                ))}
-              </AnimatePresence>
-            </SortableContext>
-          </DroppableStage>
-        ))}
+          défile aussi aux flèches, colonnes vides comprises.
+          `relative` : offsetParent des colonnes, pour mesurer le débordement. */}
+      <div>
+        <div className="relative">
+          <div
+            ref={grilleRef}
+            role="region"
+            aria-label="Étapes du pipeline"
+            tabIndex={0}
+            className="relative grid grid-flow-col auto-cols-[minmax(15rem,1fr)] gap-3 overflow-x-auto pb-2 snap-x snap-proximity rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          >
+            {PIPELINE_STAGES.map((stage) => (
+              <DroppableStage key={stage.id} stage={stage} count={contactsByStage[stage.id]?.length || 0}>
+                <SortableContext
+                  items={(contactsByStage[stage.id] || []).map((c) => c.id)}
+                  strategy={verticalListSortingStrategy}
+                >
+                  <AnimatePresence>
+                    {contactsByStage[stage.id]?.map((contact) => (
+                      <SortableContactCard
+                        key={contact.id}
+                        contact={contact}
+                        onClick={() => onContactClick(contact)}
+                      />
+                    ))}
+                  </AnimatePresence>
+                </SortableContext>
+              </DroppableStage>
+            ))}
+          </div>
+          {/* P-157 : fondu du côté où des étapes restent. Le fond de page se
+              confond avec les colonnes : le voile prend le jeton texte. */}
+          {etapesCachees.aGauche > 0 && (
+            <div
+              aria-hidden="true"
+              data-fondu="gauche"
+              className="pointer-events-none absolute inset-y-0 left-0 w-10 bg-gradient-to-r from-text/15 to-transparent"
+            />
+          )}
+          {etapesCachees.aDroite > 0 && (
+            <div
+              aria-hidden="true"
+              data-fondu="droite"
+              className="pointer-events-none absolute inset-y-0 right-0 w-10 bg-gradient-to-l from-text/15 to-transparent"
+            />
+          )}
+        </div>
+        {(etapesCachees.aGauche > 0 || etapesCachees.aDroite > 0) && (
+          <div aria-live="polite" className="mt-2 flex items-center gap-2">
+            {etapesCachees.aGauche > 0 && (
+              <button
+                type="button"
+                onClick={() => defilerVers('gauche')}
+                onKeyDown={(event) => {
+                  if (event.key !== 'Enter') return;
+                  event.preventDefault();
+                  defilerVers('gauche');
+                }}
+                className={CLASSE_INDICE}
+              >
+                {mentionDEtapesCachees(etapesCachees.aGauche, 'gauche')}
+              </button>
+            )}
+            {etapesCachees.aDroite > 0 && (
+              <button
+                type="button"
+                onClick={() => defilerVers('droite')}
+                onKeyDown={(event) => {
+                  if (event.key !== 'Enter') return;
+                  event.preventDefault();
+                  defilerVers('droite');
+                }}
+                className={cn(CLASSE_INDICE, 'ml-auto')}
+              >
+                {mentionDEtapesCachees(etapesCachees.aDroite, 'droite')}
+              </button>
+            )}
+          </div>
+        )}
       </div>
 
       <DragOverlay>
