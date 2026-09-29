@@ -706,17 +706,21 @@ async def update_invoice(
                 ),
             )
         # B-1671 : un statut « Annulée » sort la créance de l'encours sans
-        # avoir. Le § 210 du BOI-TVA-DECLA-30-20-20-20 rectifie par un
-        # document nouveau. L'avoir émis n'est pas visé par ce garde.
+        # document nouveau. Le § 210 du BOI-TVA-DECLA-30-20-20-20 rectifie
+        # par une facture de remplacement ou une note d'avoir. L'article 289,
+        # I, 5 assimile l'avoir émis à une facture : même garde.
         if (
             request.status == "cancelled"
-            and invoice.document_type == "facture"
+            and invoice.document_type in ("facture", "avoir")
             and _facture_emise(invoice)
         ):
-            raise HTTPException(
-                status_code=409,
-                detail="Une facture émise ne s'annule pas. Pour l'annuler, émets un avoir.",
+            detail = (
+                "Un avoir émis ne s'annule pas. Pour l'annuler, émets un avoir "
+                "inverse ou une facture rectificative."
+                if invoice.document_type == "avoir"
+                else "Une facture émise ne s'annule pas. Pour l'annuler, émets un avoir."
             )
+            raise HTTPException(status_code=409, detail=detail)
 
     # B-1615 : le numéro définitif naît ici, avant toute autre écriture.
     # La date du jour se pose après la copie des champs (plus bas).

@@ -766,8 +766,8 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
                   options={(documentType === 'devis' ? OPTIONS_STATUT_DEVIS : OPTIONS_STATUT_FACTURE).filter(
                     (option) => {
                       if (pieceEmise && option.value === 'draft') return false;
-                      // B-1671 : une facture émise ne propose plus Annulée. L'avoir émis garde l'option.
-                      if (pieceEmise && documentType === 'facture' && option.value === 'cancelled') return false;
+                      // B-1671 : une facture ou un avoir émis ne propose plus Annulée.
+                      if (pieceEmise && option.value === 'cancelled') return false;
                       return true;
                     },
                   )}

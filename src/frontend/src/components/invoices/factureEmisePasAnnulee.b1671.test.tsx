@@ -16,7 +16,7 @@ vi.mock('../../services/api', async () => {
   };
 });
 
-function piece(documentType: 'devis' | 'facture', status: 'draft' | 'sent') {
+function piece(documentType: 'devis' | 'facture' | 'avoir', status: 'draft' | 'sent') {
   return {
     id: 'inv-1',
     invoice_number: documentType === 'devis' ? 'DEV-2026-001' : 'FACT-2026-001',
@@ -55,6 +55,13 @@ function valeursStatut(): string[] {
 describe('B-1671 : Annulée sort du sélecteur d’une facture émise', () => {
   it('une facture envoyée ne propose pas cancelled', async () => {
     render(<InvoiceForm invoice={piece('facture', 'sent') as never} onClose={vi.fn()} onSave={vi.fn()} />);
+    await screen.findByLabelText('Statut');
+    expect(valeursStatut()).not.toContain('cancelled');
+    expect(valeursStatut()).toEqual(expect.arrayContaining(['sent', 'paid', 'overdue']));
+  });
+
+  it('un avoir envoyé ne propose pas cancelled', async () => {
+    render(<InvoiceForm invoice={piece('avoir', 'sent') as never} onClose={vi.fn()} onSave={vi.fn()} />);
     await screen.findByLabelText('Statut');
     expect(valeursStatut()).not.toContain('cancelled');
     expect(valeursStatut()).toEqual(expect.arrayContaining(['sent', 'paid', 'overdue']));
