@@ -17,6 +17,7 @@ import {
 import { createDeliverable, updateDeliverable, type DeliverableResponse } from '../../services/api/crm-extended';
 import { STATUTS_LIVRABLE, estEnRetard } from '../../lib/livrables';
 import type { Invoice } from '../../services/api/invoices';
+import { numeroAffiche } from '../invoices/presentationFacture';
 import type { Task } from '../../services/api/tasks';
 import {
   usePrototypeDeliverableProjectData,
@@ -131,7 +132,7 @@ function formatMoney(value: number, currency: string): string {
 
 function invoiceLabel(invoice: Invoice): string {
   const types = { devis: 'Devis', facture: 'Facture', avoir: 'Avoir' };
-  return `${types[invoice.document_type]} ${invoice.invoice_number}`;
+  return `${types[invoice.document_type]} ${numeroAffiche(invoice.invoice_number)}`;
 }
 
 function DeliverableRow({ deliverable, onChangerStatut }: { deliverable: DeliverableResponse; onChangerStatut?: (id: string, statut: string) => Promise<void> }) {
