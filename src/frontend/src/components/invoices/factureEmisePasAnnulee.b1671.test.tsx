@@ -2,18 +2,42 @@
  * B-1671 : une facture émise ne propose plus « Annulée ».
  * Un devis envoyé garde « Annulé ».
  */
-import { fireEvent, render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { InvoiceForm } from './InvoiceForm';
+
+const { listContacts, getContact } = vi.hoisted(() => ({
+  listContacts: vi.fn().mockResolvedValue([]),
+  getContact: vi.fn().mockResolvedValue({
+    id: 'c-1', first_name: 'Claire', last_name: 'Roux', company: null, email: null,
+  }),
+}));
 
 vi.mock('../../services/api', async () => {
   const reel = await vi.importActual<Record<string, unknown>>('../../services/api');
   return {
     ...reel,
-    listContacts: vi.fn().mockResolvedValue([]),
+    listContacts,
+    getContact,
+    listInvoices: vi.fn().mockResolvedValue([]),
     getBillingProfileStatus: vi.fn().mockResolvedValue({ is_complete: true, missing: [] }),
   };
+});
+
+beforeEach(() => {
+  listContacts.mockClear();
+  vi.stubGlobal('fetch', vi.fn());
+});
+
+afterEach(async () => {
+  await waitFor(() => expect(listContacts).toHaveBeenCalled());
+  await act(async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+  expect(fetch).not.toHaveBeenCalled();
+  vi.unstubAllGlobals();
 });
 
 function piece(documentType: 'devis' | 'facture' | 'avoir', status: 'draft' | 'sent' | 'cancelled') {

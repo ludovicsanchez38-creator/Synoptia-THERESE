@@ -2,26 +2,37 @@
  * B-1615 : un brouillon de facture n'affiche pas un numéro définitif.
  * Le jeton PROV- reste en base ; l'écran dit que le numéro viendra à l'émission.
  */
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { act, render, screen, waitFor } from '@testing-library/react';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { InvoiceForm } from './InvoiceForm';
 import { InvoicesPanel } from './InvoicesPanel';
 import { useInvoiceStore } from '../../stores/invoiceStore';
 
 const mockListInvoices = vi.fn();
+const { listContacts } = vi.hoisted(() => ({
+  listContacts: vi.fn().mockResolvedValue([]),
+}));
 
 vi.mock('../../services/api', async () => {
   const reel = await vi.importActual<Record<string, unknown>>('../../services/api');
   return {
     ...reel,
-    listContacts: vi.fn().mockResolvedValue([]),
+    listContacts,
+    getContact: vi.fn().mockResolvedValue({
+      id: 'c-1', first_name: 'Claire', last_name: 'Roux', company: null, email: null,
+    }),
     listInvoices: (...args: unknown[]) => mockListInvoices(...args),
     getBillingProfileStatus: vi.fn().mockResolvedValue({ is_complete: true, missing: [] }),
     deleteInvoice: vi.fn(),
     generateInvoicePDF: vi.fn(),
     sendInvoiceByEmail: vi.fn(),
   };
+});
+
+beforeEach(() => {
+  listContacts.mockClear();
+  vi.stubGlobal('fetch', vi.fn());
 });
 
 const brouillon = {
@@ -59,6 +70,13 @@ describe('B-1615 : mention provisoire du brouillon', () => {
     render(<InvoiceForm invoice={brouillon} onClose={vi.fn()} onSave={vi.fn()} />);
     expect(await screen.findByRole('heading', { name: /Brouillon, numéro à l'émission/ })).toBeInTheDocument();
     expect(screen.queryByText(/PROV-abc123/)).not.toBeInTheDocument();
+    await waitFor(() => expect(listContacts).toHaveBeenCalled());
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+    expect(fetch).not.toHaveBeenCalled();
+    vi.unstubAllGlobals();
   });
 
   it('la liste n’affiche pas le jeton PROV-', async () => {
