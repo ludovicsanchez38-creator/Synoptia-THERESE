@@ -10,6 +10,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { InvoiceForm } from './InvoiceForm';
 import { useBillingProfileStore } from '../../stores/billingProfileStore';
+import { useStatusStore } from '../../stores/statusStore';
 import { type Invoice } from '../../services/api';
 import { PrototypeExternalActionConfirmationProvider } from '../app/ExternalActionConfirmation';
 
@@ -82,6 +83,21 @@ describe('P-155 : la date réelle du paiement', () => {
     expect(screen.getByTestId('external-action-confirmation')).toHaveTextContent('20/07/2026');
     fireEvent.click(screen.getByRole('button', { name: 'Confirmer le paiement' }));
     await waitFor(() => expect(markInvoicePaidMock).toHaveBeenCalledWith('invoice-1', '2026-07-20'));
+  });
+
+  it('la confirmation dit le numéro définitif renvoyé, pas le jeton provisoire', async () => {
+    useStatusStore.setState({ notifications: [] });
+    markInvoicePaidMock.mockResolvedValue({ ...invoice, invoice_number: 'FACT-2026-009', status: 'paid' });
+    rendre({ ...invoice, invoice_number: 'PROV-abc123', status: 'draft' });
+    fireEvent.click(screen.getByRole('button', { name: 'Marquer comme payée' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Confirmer le paiement' }));
+    await waitFor(() => {
+      const messages = useStatusStore.getState().notifications.map((n) => n.message).join(' ');
+      expect(messages).toContain('La facture FACT-2026-009 est marquée payée.');
+    });
+    const messages = useStatusStore.getState().notifications.map((n) => n.message).join(' ');
+    expect(messages).not.toContain('PROV-');
+    expect(messages).not.toContain("Brouillon, numéro à l'émission");
   });
 
   it('P-138 : un brouillon est signalé avant de passer payé', () => {

@@ -540,7 +540,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
     }, async () => {
       try {
         const updatedInvoice = await markInvoicePaid(invoice.id, datePaiement);
-        addNotification({ type: 'success', title: 'Facture payée', message: `${numeroAffiche(invoice.invoice_number)} marquée comme payée` });
+        addNotification({ type: 'success', title: 'Facture payée', message: `La facture ${numeroAffiche(updatedInvoice.invoice_number)} est marquée payée.` });
         onSave(updatedInvoice);
       } catch (error) {
         console.error('Failed to mark paid:', error);
