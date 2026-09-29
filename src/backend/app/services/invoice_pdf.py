@@ -745,9 +745,13 @@ class InvoicePDFGenerator:
             # pénalités de retard, ni indemnité de recouvrement. Il cite la
             # facture qu'il corrige quand elle est connue.
             origine = donnees.get("facture_origine") or {}
+            numero_origine = origine.get("numero")
+            # Un jeton PROV- n'est pas la référence de la facture initiale (§ 220).
+            if isinstance(numero_origine, str) and numero_origine.startswith("PROV-"):
+                numero_origine = ""
             reference = (
-                f"Avoir sur la facture n° {_texte_pdf(origine['numero'])} du {_texte_pdf(origine['date'])}.<br/>"
-                if origine.get("numero") and origine.get("date")
+                f"Avoir sur la facture n° {_texte_pdf(numero_origine)} du {_texte_pdf(origine['date'])}.<br/>"
+                if numero_origine and origine.get("date")
                 else ""
             )
             reglement = f"{reference}Montant à déduire du solde dû ou à rembourser au client.<br/>"

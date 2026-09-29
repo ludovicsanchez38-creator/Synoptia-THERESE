@@ -68,7 +68,10 @@ describe('P-154 : un avoir et sa facture d’origine', () => {
     vi.clearAllMocks();
     getBillingProfileStatusMock.mockResolvedValue({ is_complete: true, missing: [] });
     useBillingProfileStore.setState({ missing: null });
-    listInvoicesMock.mockResolvedValue([{ ...invoice, id: 'facture-1', invoice_number: 'FAC-2026-001' }]);
+    listInvoicesMock.mockResolvedValue([
+      { ...invoice, id: 'facture-1', invoice_number: 'FAC-2026-001', status: 'sent' },
+      { ...invoice, id: 'brouillon-1', invoice_number: 'PROV-brouillon', status: 'draft' },
+    ]);
     updateInvoiceMock.mockImplementation(async (id: string, data: object) => ({ ...invoice, id, ...data }));
   });
 
@@ -76,6 +79,8 @@ describe('P-154 : un avoir et sa facture d’origine', () => {
     rendre({ ...invoice, id: 'avoir-1', invoice_number: 'AV-2026-001', document_type: 'avoir', status: 'draft', converted_from_id: null });
     const champ = await screen.findByLabelText('Facture d’origine') as HTMLSelectElement;
     await waitFor(() => expect(Array.from(champ.options).some((o) => (o.textContent ?? '').includes('FAC-2026-001'))).toBe(true));
+    expect(Array.from(champ.options).map((o) => o.value)).not.toContain('brouillon-1');
+    expect(champ.textContent).not.toContain('PROV-');
     expect(listInvoicesMock).toHaveBeenCalledWith({ contact_id: 'contact-1', document_type: 'facture' });
     fireEvent.change(champ, { target: { value: 'facture-1' } });
     fireEvent.click(screen.getByRole('button', { name: 'Mettre à jour' }));

@@ -824,10 +824,15 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
                   disabled={pieceEmise}
                   options={[
                     { value: '', label: 'Aucune' },
-                    ...facturesDuClient.map((f) => ({
-                      value: f.id,
-                      label: `${numeroAffiche(f.invoice_number)} du ${new Date(f.issue_date).toLocaleDateString('fr-FR')}`,
-                    })),
+                    ...facturesDuClient
+                      .filter((f) => (
+                        (f.status === 'sent' || f.status === 'paid' || f.status === 'overdue')
+                        && !f.invoice_number.startsWith('PROV-')
+                      ))
+                      .map((f) => ({
+                        value: f.id,
+                        label: `${numeroAffiche(f.invoice_number)} du ${new Date(f.issue_date).toLocaleDateString('fr-FR')}`,
+                      })),
                   ]}
                 />
               </FormField>

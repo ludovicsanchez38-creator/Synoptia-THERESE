@@ -592,11 +592,21 @@ STATUTS_DE_DEVIS = frozenset(
 STATUTS_DE_FACTURE = frozenset({"draft", "sent", "paid", "overdue", "cancelled"})
 
 
+def _facture_citee_emise(origine: Invoice) -> bool:
+    """Une facture déjà émise, avec un numéro définitif. Le § 220 cite
+    la facture initiale, pas un brouillon PROV-."""
+    return (
+        origine.document_type == "facture"
+        and origine.status in _STATUTS_QUI_EMETTENT
+        and not _numero_provisoire(origine.invoice_number)
+    )
+
+
 async def _verifier_la_facture_d_origine(
     session: AsyncSession, document_type: str, origine_id: str | None
 ) -> None:
     """P-154 : un avoir peut désigner la facture qu'il corrige ; la pièce
-    désignée doit exister et être une facture. Réservé aux avoirs."""
+    désignée doit exister, être une facture, et être déjà émise."""
     if origine_id is None:
         return
     if document_type != "avoir":
@@ -604,6 +614,8 @@ async def _verifier_la_facture_d_origine(
     origine = await session.get(Invoice, origine_id)
     if origine is None or origine.document_type != "facture":
         raise HTTPException(status_code=400, detail="La pièce d'origine d'un avoir doit être une facture existante.")
+    if not _facture_citee_emise(origine):
+        raise HTTPException(status_code=400, detail="Un avoir ne peut citer qu'une facture déjà émise.")
 
 
 @router.post("", response_model=InvoiceResponse, include_in_schema=False)
@@ -763,6 +775,13 @@ async def update_invoice(
     # B-1615 : le numéro définitif naît ici, avant toute autre écriture.
     # La date du jour se pose après la copie des champs (plus bas).
     emet_maintenant = _premiere_emission(invoice, request.status)
+    if emet_maintenant and invoice.document_type == "avoir":
+        origine_id = (
+            request.converted_from_id
+            if "converted_from_id" in request.model_fields_set
+            else invoice.converted_from_id
+        )
+        await _verifier_la_facture_d_origine(session, "avoir", origine_id)
     invoice = await _attribuer_numero_definitif(session, invoice, request.status)
 
     # Mise à jour des champs
@@ -986,6 +1005,8 @@ async def mark_invoice_paid(
 
     # B-1615 : marquer payé un brouillon, c'est l'émettre.
     emet_maintenant = _premiere_emission(invoice, "paid")
+    if emet_maintenant and invoice.document_type == "avoir":
+        await _verifier_la_facture_d_origine(session, "avoir", invoice.converted_from_id)
     invoice = await _attribuer_numero_definitif(session, invoice, "paid")
     if emet_maintenant:
         _poser_dates_demission(invoice)
@@ -1051,9 +1072,13 @@ async def convert_invoice(
         "total_ttc": source.total_ttc,
         "tva_applicable": source.tva_applicable,
         "notes": source.notes or "",
-        # P-154 : un avoir tiré d'une facture la garde comme pièce d'origine.
-        "converted_from_id": source.id if target_type == "avoir" and source_type == "facture" else None,
+        # P-154 : un avoir tiré d'une facture déjà émise la garde comme origine.
+        "converted_from_id": None,
     }
+    if target_type == "avoir" and source_type == "facture":
+        if not _facture_citee_emise(source):
+            raise HTTPException(status_code=400, detail="Un avoir ne peut citer qu'une facture déjà émise.")
+        copie["converted_from_id"] = source.id
     lignes_source = [_snapshot_de_ligne(line) for line in source.lines]
 
     # B-1615 : facture et avoir naissent provisoires ; le devis est numéroté.
@@ -1110,7 +1135,7 @@ async def _facture_d_origine_pour_le_pdf(session: AsyncSession, invoice: Invoice
     if invoice.document_type != "avoir" or not invoice.converted_from_id:
         return None
     origine = await session.get(Invoice, invoice.converted_from_id)
-    if origine is None:
+    if origine is None or not _facture_citee_emise(origine):
         return None
     return {"numero": origine.invoice_number, "date": origine.issue_date.strftime("%d/%m/%Y")}
 
