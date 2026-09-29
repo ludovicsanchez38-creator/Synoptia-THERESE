@@ -87,11 +87,23 @@ describe('P-157 : indice de débordement du pipeline', () => {
     expect(document.querySelector('[data-fondu]')).toBeNull();
   });
 
-  it('à 1440 px, aucun indice quand les huit étapes tiennent dans le cadre', () => {
+  it('à 1440 px, la géométrie réelle laisse des étapes hors cadre, et l’indice disparaît dès que la grille les contient', () => {
     const zone = rendre();
-    // Plus étroites que le minimum réel : le cas où 1 440 px suffit.
-    simuler(zone, { clientWidth: 1440, scrollLeft: 0, largeur: 160, pas: 170 });
+    // Le minimum réel est dans la grille : 15 rem et la gouttière gap-3.
+    // Des colonnes de 160 px ne peuvent pas se produire ici.
+    expect(zone.className).toContain('auto-cols-[minmax(15rem,1fr)]');
+    expect(zone.className).toContain('gap-3');
+    const largeur = 15 * 16;
+    const pas = largeur + 0.75 * 16;
+    simuler(zone, { clientWidth: 1440, scrollLeft: 0, largeur, pas });
     fireEvent.scroll(zone);
+
+    expect(screen.getByRole('button', { name: '3 étapes à droite' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /à gauche/ })).not.toBeInTheDocument();
+
+    const largeurSuffisante = 7 * pas + largeur;
+    expect(largeurSuffisante).toBeGreaterThan(1440);
+    simuler(zone, { clientWidth: largeurSuffisante, scrollLeft: 0, largeur, pas });
     fireEvent(window, new Event('resize'));
 
     expect(screen.queryByRole('button', { name: /étape/ })).not.toBeInTheDocument();
