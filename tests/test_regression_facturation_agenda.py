@@ -128,6 +128,44 @@ class TestRobustesseDesFactures:
         assert e3.json()["invoice_number"] == f"FACT-{annee}-003"
 
     @pytest.mark.asyncio
+    async def test_supprimer_le_plus_grand_fact_historique_ne_le_reattribue_pas(self, client):
+        """Avant B-1615, ce test effaçait un brouillon déjà numéroté FACT- et
+        vérifiait que le suivant ne reprenait pas ce numéro. La version
+        affaiblie n'effaçait qu'un PROV-. Le plus grand FACT- encore brouillon
+        ne s'efface pas : sinon le maximum des lignes restantes le redonne.
+        """
+        from app.models import database as db_module
+        from app.models.entities import Invoice
+
+        contact = await _contact(client)
+        annee = datetime.now(UTC).year
+        premiere = await _facture(client, contact)
+        e1 = await client.put(f"/api/invoices/{premiere['id']}", json={"status": "sent"})
+        assert e1.status_code == 200, e1.text
+        assert e1.json()["invoice_number"] == f"FACT-{annee}-001"
+
+        async with db_module.AsyncSessionLocal() as session:
+            historique = Invoice(
+                invoice_number=f"FACT-{annee}-002",
+                contact_id=contact,
+                document_type="facture",
+                status="draft",
+                due_date=datetime.now(UTC) + timedelta(days=30),
+            )
+            session.add(historique)
+            await session.commit()
+            identifiant = historique.id
+
+        refus = await client.delete(f"/api/invoices/{identifiant}")
+        assert refus.status_code == 409, refus.text
+        assert (await client.get(f"/api/invoices/{identifiant}")).json()["invoice_number"] == f"FACT-{annee}-002"
+
+        suivante = await _facture(client, contact)
+        e2 = await client.put(f"/api/invoices/{suivante['id']}", json={"status": "sent"})
+        assert e2.status_code == 200, e2.text
+        assert e2.json()["invoice_number"] == f"FACT-{annee}-003"
+
+    @pytest.mark.asyncio
     async def test_le_prefixe_suit_le_type_de_document(self, client):
         """Le préfixe définitif suit le type. Facture et avoir l'obtiennent à l'émission (B-1615)."""
         contact = await _contact(client)

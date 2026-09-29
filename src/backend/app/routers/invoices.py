@@ -894,6 +894,18 @@ async def delete_invoice(
             ),
         )
 
+    # Un brouillon hérité porte déjà FACT- ou AV-. L'effacer sortirait ce
+    # numéro du maximum, et la prochaine émission le reprendrait.
+    if invoice.document_type in ("facture", "avoir") and not _numero_provisoire(invoice.invoice_number):
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Ce brouillon porte déjà un numéro de la série. Le supprimer "
+                "permettrait de le donner à une autre pièce. Annule-le si tu "
+                "ne veux plus l'émettre."
+            ),
+        )
+
     invoice_number = invoice.invoice_number
 
     # Supprimer le PDF si existant
