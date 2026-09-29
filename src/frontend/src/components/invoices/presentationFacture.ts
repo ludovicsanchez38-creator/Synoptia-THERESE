@@ -3,6 +3,7 @@
  * Module sans composant (fast refresh).
  */
 import type { Invoice } from '../../services/api';
+import { montantAvecDevise } from '../../lib/devise';
 import type { TonEtiquette } from '../ui/Etiquette';
 import { STATUS_CONFIG } from './statutsFacture';
 
@@ -12,6 +13,24 @@ export const MENTION_NUMERO_PROVISOIRE = "Brouillon, numéro à l'émission";
 export function numeroAffiche(numero: string | null | undefined): string {
   if (typeof numero !== 'string' || !numero.startsWith('PROV-')) return numero ?? '';
   return MENTION_NUMERO_PROVISOIRE;
+}
+
+const TYPE_DE_PIECE: Record<Invoice['document_type'], string> = {
+  devis: 'Devis',
+  facture: 'Facture',
+  avoir: 'Avoir',
+};
+
+/** Nom accessible d'une ligne : type, numéro, date, montant, identité. */
+export function libelleAccessiblePiece(invoice: Invoice): string {
+  const identite = invoice.contact_name?.trim() || 'Client non nommé';
+  return [
+    TYPE_DE_PIECE[invoice.document_type] ?? 'Pièce',
+    numeroAffiche(invoice.invoice_number),
+    dateListe(invoice.issue_date),
+    montantAvecDevise(invoice.total_ttc, invoice.currency),
+    identite,
+  ].join(', ');
 }
 
 export function dateListe(iso: string): string {

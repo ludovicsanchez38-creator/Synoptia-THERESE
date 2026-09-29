@@ -26,7 +26,7 @@ import { Etiquette } from '../ui/Etiquette';
 import { Segments } from '../ui/Segments';
 import { Squelette } from '../ui/Squelette';
 import { STATUS_CONFIG } from './statutsFacture';
-import { cellulesStatut, compteurPieces, numeroAffiche, sousLignePiece } from './presentationFacture';
+import { cellulesStatut, compteurPieces, libelleAccessiblePiece, numeroAffiche, sousLignePiece } from './presentationFacture';
 
 /** Lot F : le GET factures plafonne à 100. Atteint = liste incomplète. */
 const PLAFOND_FACTURES = 100;
@@ -469,7 +469,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
                       handleEdit(invoice);
                     }}
                     className="inline-flex min-h-9 items-center font-semibold text-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
-                    aria-label={invoice.contact_name ? undefined : numeroAffiche(invoice.invoice_number)}
+                    aria-label={libelleAccessiblePiece(invoice)}
                   >
                     {invoice.contact_name || (
                       <span className="text-text-muted">{numeroAffiche(invoice.invoice_number)}</span>
