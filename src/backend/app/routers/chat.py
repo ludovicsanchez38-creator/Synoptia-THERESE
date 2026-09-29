@@ -1280,7 +1280,7 @@ async def _plafond_messages_historique(session: AsyncSession) -> int:
         reglages = LLMBehaviorSettings.model_validate(brut)
     except (ValidationError, TypeError, ValueError):
         return _HISTORIQUE_DEFAUT
-    valeur = reglages.max_history_messages
+    valeur = int(reglages.max_history_messages)
     if valeur < _HISTORIQUE_PLANCHER:
         return _HISTORIQUE_PLANCHER
     if valeur > _HISTORIQUE_PLAFOND:
