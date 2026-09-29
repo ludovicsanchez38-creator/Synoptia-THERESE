@@ -258,3 +258,123 @@ class TestMessageCourantRaccourci:
         assert done["contexte"]["caracteres_retires"] == _caracteres_retires(message, 80, "")
         assert done["contexte"]["messages_relus"] == 0
         assert done["contexte"]["messages_transmis"] == 0
+
+
+class _FauxAvecConversion(_FauxLLM):
+    """Fenêtre réelle : `to_openai_format` écarte les messages sans fond."""
+
+    def __init__(self) -> None:
+        super().__init__(max_tokens=100_000, system_prompt="systeme")
+        self.dernier: ContextWindow | None = None
+
+    def prepare_context(self, messages, memory_context=None):
+        self.dernier = super().prepare_context(messages, memory_context)
+        return self.dernier
+
+
+def _passes_apres_openai(contexte: ContextWindow) -> int:
+    """Messages passés encore présents dans la charge envoyée au fournisseur."""
+    payload = [
+        item
+        for item in contexte.to_openai_format()
+        if isinstance(item, dict) and item.get("role") != "system"
+    ]
+    return max(0, len(payload) - 1)
+
+
+async def _fil_contenus(db_session: AsyncSession, contenus: list[str]) -> str:
+    conv = Conversation(title="Contexte")
+    db_session.add(conv)
+    await db_session.commit()
+    base = datetime(2026, 9, 29, 9, 0, tzinfo=UTC)
+    for i, contenu in enumerate(contenus):
+        db_session.add(
+            Message(
+                conversation_id=conv.id,
+                role="user" if i % 2 == 0 else "assistant",
+                content=contenu,
+                created_at=base + timedelta(seconds=i),
+            )
+        )
+    await db_session.commit()
+    return conv.id
+
+
+class TestComptesApresFiltreFournisseur:
+    @pytest.mark.asyncio
+    async def test_un_ancien_message_vide_n_est_pas_compte_comme_transmis(
+        self, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+        from unittest.mock import patch
+
+        conv_id = await _fil_contenus(db_session, [""])
+        llm = _FauxAvecConversion()
+        with patch("app.routers.chat.get_llm_service", return_value=llm):
+            reponse = await client.post(
+                "/api/chat/send",
+                json={
+                    "message": "question-courante",
+                    "conversation_id": conv_id,
+                    "stream": False,
+                    "include_memory": False,
+                },
+            )
+        assert reponse.status_code == 200, reponse.text
+        assert llm.dernier is not None
+        attendu = _passes_apres_openai(llm.dernier)
+        assert attendu == 0
+        corps = reponse.json()["contexte"]
+        assert corps["messages_transmis"] == attendu
+        assert corps["messages_relus"] == attendu
+
+    @pytest.mark.asyncio
+    async def test_un_message_vide_ne_gonfle_pas_le_compte_d_un_vrai_message(
+        self, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+        from unittest.mock import patch
+
+        conv_id = await _fil_contenus(db_session, ["", "bonjour ancien"])
+        llm = _FauxAvecConversion()
+        with patch("app.routers.chat.get_llm_service", return_value=llm):
+            reponse = await client.post(
+                "/api/chat/send",
+                json={
+                    "message": "question-courante",
+                    "conversation_id": conv_id,
+                    "stream": False,
+                    "include_memory": False,
+                },
+            )
+        assert reponse.status_code == 200, reponse.text
+        assert llm.dernier is not None
+        attendu = _passes_apres_openai(llm.dernier)
+        assert attendu == 1
+        corps = reponse.json()["contexte"]
+        assert corps["messages_transmis"] == attendu
+        assert corps["messages_relus"] == attendu
+
+    @pytest.mark.asyncio
+    async def test_le_flux_compte_apres_le_filtre_du_fournisseur(
+        self, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+        from unittest.mock import patch
+
+        conv_id = await _fil_contenus(db_session, [""])
+        llm = _FauxAvecConversion()
+        with patch("app.routers.chat.get_llm_service", return_value=llm):
+            reponse = await client.post(
+                "/api/chat/send",
+                json={
+                    "message": "question-courante",
+                    "conversation_id": conv_id,
+                    "stream": True,
+                    "include_memory": False,
+                },
+            )
+        assert reponse.status_code == 200, reponse.text
+        done = next(e for e in _evenements(reponse.text) if e.get("type") == "done")
+        assert llm.dernier is not None
+        attendu = _passes_apres_openai(llm.dernier)
+        assert attendu == 0
+        assert done["contexte"]["messages_transmis"] == attendu
+        assert done["contexte"]["messages_relus"] == attendu

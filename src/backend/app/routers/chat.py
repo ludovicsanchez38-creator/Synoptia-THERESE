@@ -1306,6 +1306,44 @@ def bilan_contexte_transmis(
     return {"messages_relus": relus, "messages_transmis": transmis}
 
 
+def _passes_que_le_fournisseur_garde(messages: list[LLMMessage]) -> int:
+    """Messages passés que `to_openai_format` laisserait partir.
+
+    Un message vide est relu en base, puis écarté à la conversion. Une
+    image sans texte part quand même : c'est le critère `_a_du_fond`.
+    """
+    from app.services.context import ContextWindow
+
+    return sum(1 for message in messages[:-1] if ContextWindow._a_du_fond(message))
+
+
+def _taille_fenetre_fournisseur(contexte: Any, fenetre: list[Any]) -> int:
+    """Taille de fenêtre pour `bilan_contexte_transmis` (tour courant compris).
+
+    Avec `to_openai_format`, on ne compte que les messages de conversation
+    encore là : le prompt système ajouté par la conversion n'est pas un
+    message passé, et les messages vides ont déjà été écartés. Sans cette
+    conversion, on garde la longueur brute.
+    """
+    convertir = getattr(contexte, "to_openai_format", None)
+    if not callable(convertir):
+        return len(fenetre)
+    payload = convertir()
+    if not isinstance(payload, list):
+        return len(fenetre)
+    conversation = [
+        item
+        for item in payload
+        if isinstance(item, dict) and item.get("role") != "system"
+    ]
+    from app.services.context import ContextWindow
+
+    dernier = fenetre[-1] if fenetre else None
+    if isinstance(dernier, LLMMessage) and ContextWindow._a_du_fond(dernier):
+        return len(conversation)
+    return len(conversation) + 1
+
+
 def bilan_depuis_fenetre(messages_passes: int, contexte: Any) -> dict[str, int]:
     """Lit la fenêtre réellement rendue par prepare_context.
 
@@ -1320,7 +1358,10 @@ def bilan_depuis_fenetre(messages_passes: int, contexte: Any) -> dict[str, int]:
             contexte,
         )
     return _avec_texte_retire(
-        bilan_contexte_transmis(messages_passes, len(fenetre)),
+        bilan_contexte_transmis(
+            messages_passes,
+            _taille_fenetre_fournisseur(contexte, fenetre),
+        ),
         contexte,
     )
 
@@ -1956,7 +1997,9 @@ async def send_message(
     avertissements_plafonds = verdict_plafonds["warnings"] or None
 
     context = llm_service.prepare_context(messages, memory_context=memory_context)
-    bilan_contexte = bilan_depuis_fenetre(max(0, len(messages) - 1), context)
+    bilan_contexte = bilan_depuis_fenetre(
+        _passes_que_le_fournisseur_garde(messages), context
+    )
 
     # Collect full response (non-streaming)
     # raise_on_error=True : sans ça, un StreamEvent(type="error") d'un provider
@@ -2622,7 +2665,9 @@ async def _do_stream_response(
         )
 
     context = llm_service.prepare_context(messages, memory_context=memory_context)
-    bilan_contexte = bilan_depuis_fenetre(max(0, len(messages) - 1), context)
+    bilan_contexte = bilan_depuis_fenetre(
+        _passes_que_le_fournisseur_garde(messages), context
+    )
 
     # Injecter le system prompt du skill si skill_id fourni (Phase 1 v0.2.4)
     if skill_id:
