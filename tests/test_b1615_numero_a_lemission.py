@@ -85,7 +85,11 @@ async def test_supprimer_le_premier_brouillon_ne_laisse_pas_de_trou(client: Asyn
 
 @pytest.mark.asyncio
 async def test_un_brouillon_deja_numerote_garde_son_numero(client: AsyncClient):
-    """Migration : une ligne déjà en base avec FACT-… ne perd pas ce numéro."""
+    """Migration : le dernier numéro déjà en base, encore brouillon, est gardé.
+
+    Il est le dernier de la série, l'émettre ne casse pas l'ordre. Un numéro
+    plus petit, émis après un plus grand, est couvert par le test suivant.
+    """
     from app.models import database as db_module
     from app.models.entities import Invoice
 
@@ -124,6 +128,47 @@ async def test_un_brouillon_deja_numerote_garde_son_numero(client: AsyncClient):
     assert suivante["invoice_number"] == f"FACT-{annee}-008"
     relue = await client.get(f"/api/invoices/{trouvee['id']}")
     assert relue.json()["invoice_number"] == numero
+
+
+async def _brouillon_historique(contact_id: str, numero: str, statut: str = "draft") -> str:
+    from app.models import database as db_module
+    from app.models.entities import Invoice
+
+    async with db_module.AsyncSessionLocal() as session:
+        piece = Invoice(
+            invoice_number=numero,
+            contact_id=contact_id,
+            document_type="facture",
+            status=statut,
+            issue_date=datetime(2026, 1, 7, tzinfo=UTC),
+            due_date=datetime(2026, 2, 6, tzinfo=UTC),
+        )
+        session.add(piece)
+        await session.commit()
+        return piece.id
+
+
+@pytest.mark.asyncio
+async def test_un_brouillon_historique_hors_ordre_prend_un_nouveau_numero(client: AsyncClient):
+    """FACT-…-007 encore brouillon, émis après FACT-…-008, ne garde pas 007.
+
+    Le § 90 veut la numérotation au fil des émissions. L'ancien numéro,
+    qui n'est plus le dernier de la série, n'est pas réattribué.
+    """
+    contact = await _contact(client)
+    annee = _annee()
+    ancien = await _brouillon_historique(contact, f"FACT-{annee}-007")
+    await _brouillon_historique(contact, f"FACT-{annee}-008", statut="sent")
+
+    emis = await _emet(client, ancien)
+    assert emis["invoice_number"] == f"FACT-{annee}-009"
+    liste = (await client.get("/api/invoices/")).json()
+    numeros = {piece["invoice_number"] for piece in liste}
+    assert f"FACT-{annee}-007" not in numeros
+    assert f"FACT-{annee}-008" in numeros
+
+    suivant = await _emet(client, (await _cree(client, contact))["id"])
+    assert suivant["invoice_number"] == f"FACT-{annee}-010"
 
 
 @pytest.mark.asyncio

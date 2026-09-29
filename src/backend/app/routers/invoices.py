@@ -218,26 +218,60 @@ async def _inserer_piece(
     )
 
 
+def _rang_de_numero(numero: str) -> int | None:
+    try:
+        return int(numero.rsplit("-", 1)[-1])
+    except (ValueError, AttributeError):
+        return None
+
+
+async def _est_le_dernier_de_sa_serie(session: AsyncSession, numero: str) -> bool:
+    """Vrai si ce numéro est le plus haut de son préfixe et de son année.
+
+    Une convention illisible est laissée en place : on ne la renumérote pas.
+    """
+    morceaux = numero.split("-")
+    rang = _rang_de_numero(numero)
+    if rang is None or len(morceaux) < 3:
+        return True
+    prefixe = "-".join(morceaux[:-1])
+    statement = select(Invoice.invoice_number).where(Invoice.invoice_number.like(f"{prefixe}-%"))
+    maximum = rang
+    for autre in (await session.execute(statement)).scalars().all():
+        autre_rang = _rang_de_numero(autre)
+        if autre_rang is not None:
+            maximum = max(maximum, autre_rang)
+    return rang == maximum
+
+
 async def _attribuer_numero_definitif(
     session: AsyncSession,
     invoice: Invoice,
     nouveau_statut: str | None,
 ) -> Invoice:
-    """Pose FACT- ou AV- quand un brouillon PROV passe à un statut émis.
+    """Pose FACT- ou AV- à la première émission d'une pièce encore provisoire.
 
-    Un brouillon qui porte déjà un numéro définitif (pièce créée avant ce
-    correctif) le garde. Appelé avant les autres écritures : le rollback
-    d'une collision expire la session, et des champs pas encore copiés ne
-    peuvent pas être perdus. Le numéro proposé est journalisé avant le
-    flush, parce que l'objet expire si l'insertion est refusée.
+    Un brouillon annulé n'est plus « draft », mais son jeton PROV- n'a jamais
+    été émis : cette première sortie le numérote. Un brouillon qui porte déjà
+    un numéro définitif hérité le garde s'il est encore le dernier de sa
+    série. Sinon il en reçoit un nouveau, à la suite : l'émettre tel quel
+    après un numéro plus haut casserait l'ordre du § 90. L'ancien numéro,
+    inférieur au maximum, n'est pas réattribué.
+
+    Appelé avant les autres écritures : le rollback d'une collision expire
+    la session, et des champs pas encore copiés ne peuvent pas être perdus.
+    Le numéro proposé est journalisé avant le flush, parce que l'objet expire
+    si l'insertion est refusée.
     """
     if nouveau_statut is None or nouveau_statut not in _STATUTS_QUI_EMETTENT:
         return invoice
     if invoice.document_type not in ("facture", "avoir"):
         return invoice
-    # Un brouillon annulé n'est plus « draft », mais son PROV- n'a jamais été
-    # émis. La première sortie vers un statut émis numérote quand même.
-    if invoice.status in _STATUTS_QUI_EMETTENT or not _numero_provisoire(invoice.invoice_number):
+    if invoice.status in _STATUTS_QUI_EMETTENT:
+        return invoice
+    if not _numero_provisoire(invoice.invoice_number) and await _est_le_dernier_de_sa_serie(
+        session, invoice.invoice_number
+    ):
         return invoice
 
     identifiant = invoice.id
@@ -257,7 +291,11 @@ async def _attribuer_numero_definitif(
             if rechargee is None:
                 raise HTTPException(status_code=404, detail="Invoice not found") from collision
             invoice = rechargee
-            if invoice.status in _STATUTS_QUI_EMETTENT or not _numero_provisoire(invoice.invoice_number):
+            if invoice.status in _STATUTS_QUI_EMETTENT:
+                return invoice
+            if not _numero_provisoire(invoice.invoice_number) and await _est_le_dernier_de_sa_serie(
+                session, invoice.invoice_number
+            ):
                 return invoice
             type_document = invoice.document_type
             continue
