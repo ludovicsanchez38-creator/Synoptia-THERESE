@@ -58,6 +58,9 @@ export function formatMessageFromResponse(msg: MessageResponse): Message {
           contexte = {
             messages_relus: brut.messages_relus,
             messages_transmis: brut.messages_transmis,
+            ...(typeof brut.caracteres_retires === 'number' && brut.caracteres_retires > 0
+              ? { caracteres_retires: brut.caracteres_retires }
+              : {}),
           };
         }
       }

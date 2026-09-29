@@ -22,6 +22,9 @@ class ContextWindow:
     # (bascule du disjoncteur comprise). Les continuations après outils la
     # reprennent, pour ne pas changer de fournisseur au milieu du tour.
     config_effective: Any = None
+    # Caractères du dernier message retirés pour tenir dans le budget.
+    # La marque de coupe n'est pas comptée : ce n'est pas du texte d'origine.
+    caracteres_retires: int = 0
 
     def estimate_tokens(self, text: str) -> int:
         """Rough token estimation (4 chars = 1 token for most languages)."""
@@ -61,11 +64,15 @@ class ContextWindow:
             if budget_chars > 0:
                 tete = budget_chars // 2
                 queue = budget_chars - tete
+                origine = dernier.content
                 dernier.content = (
-                    dernier.content[:tete]
+                    origine[:tete]
                     + self._MARQUE_TRONCATURE
-                    + dernier.content[-queue:]
+                    + origine[-queue:]
                 )
+                retires = len(origine) - tete - queue
+                if retires > 0:
+                    self.caracteres_retires = retires
         return self
 
     @staticmethod

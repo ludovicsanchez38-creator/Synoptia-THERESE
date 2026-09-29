@@ -26,8 +26,13 @@ class _Config:
 
 
 class _FauxLLM:
-    def __init__(self, max_tokens: int | None = None) -> None:
+    def __init__(
+        self,
+        max_tokens: int | None = None,
+        system_prompt: str | None = "systeme",
+    ) -> None:
         self.max_tokens = max_tokens
+        self.system_prompt = system_prompt
 
     config = _Config()
 
@@ -36,7 +41,7 @@ class _FauxLLM:
             return type("Ctx", (), {"messages": list(messages), "system_prompt": ""})()
         return ContextWindow(
             messages=list(messages),
-            system_prompt="systeme",
+            system_prompt=self.system_prompt,
             max_tokens=self.max_tokens,
         ).trim_to_fit()
 
@@ -183,3 +188,73 @@ class TestContexteTransmis:
         )
         assert reponse.status_code == 200, reponse.text
         assert reponse.json().get("contexte") is None
+
+
+def _message_rendu(message: str, max_tokens: int, system_prompt: str | None) -> str:
+    from app.services.providers.base import Message as MessageLLM
+
+    return ContextWindow(
+        messages=[MessageLLM(role="user", content=message)],
+        system_prompt=system_prompt,
+        max_tokens=max_tokens,
+    ).trim_to_fit().messages[-1].content
+
+
+def _caracteres_retires(message: str, max_tokens: int, system_prompt: str | None) -> int:
+    """Caractères du message d'origine absents du texte envoyé, marque exclue."""
+    rendu = _message_rendu(message, max_tokens, system_prompt)
+    marque = ContextWindow._MARQUE_TRONCATURE
+    assert marque in rendu
+    return len(message) - (len(rendu) - len(marque))
+
+
+class TestMessageCourantRaccourci:
+    """La coupe du seul message en cours doit se voir, pas seulement les messages passés."""
+
+    @pytest.mark.asyncio
+    async def test_le_message_courant_raccourci_annonce_le_texte_retire(
+        self, client: AsyncClient
+    ) -> None:
+        from unittest.mock import patch
+
+        message = "a" * 1000
+        llm = _FauxLLM(max_tokens=80, system_prompt="")
+        with patch("app.routers.chat.get_llm_service", return_value=llm):
+            reponse = await client.post(
+                "/api/chat/send",
+                json={"message": message, "stream": False, "include_memory": False},
+            )
+        assert reponse.status_code == 200, reponse.text
+        corps = reponse.json()["contexte"]
+        # Aucun message passé : les deux comptes restent à zéro. Le texte retiré, lui, voyage.
+        assert corps["messages_relus"] == 0
+        assert corps["messages_transmis"] == 0
+        assert len(_message_rendu(message, 80, "")) == 307
+        retires = _caracteres_retires(message, 80, "")
+        assert corps["caracteres_retires"] == retires
+        historique = await client.get(
+            f"/api/chat/conversations/{reponse.json()['conversation_id']}/messages"
+        )
+        assistant = [m for m in historique.json() if m["role"] == "assistant"][-1]
+        assert json.loads(assistant["extra_data"])["contexte"]["caracteres_retires"] == retires
+
+    @pytest.mark.asyncio
+    async def test_le_flux_annonce_aussi_le_texte_retire(
+        self, client: AsyncClient
+    ) -> None:
+        from unittest.mock import patch
+
+        message = "a" * 1000
+        with patch(
+            "app.routers.chat.get_llm_service",
+            return_value=_FauxLLM(max_tokens=80, system_prompt=""),
+        ):
+            reponse = await client.post(
+                "/api/chat/send",
+                json={"message": message, "stream": True, "include_memory": False},
+            )
+        assert reponse.status_code == 200, reponse.text
+        done = next(e for e in _evenements(reponse.text) if e.get("type") == "done")
+        assert done["contexte"]["caracteres_retires"] == _caracteres_retires(message, 80, "")
+        assert done["contexte"]["messages_relus"] == 0
+        assert done["contexte"]["messages_transmis"] == 0

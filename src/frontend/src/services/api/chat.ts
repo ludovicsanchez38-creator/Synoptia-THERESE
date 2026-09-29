@@ -108,6 +108,7 @@ export interface StreamChunk {
   contexte?: {
     messages_relus: number;
     messages_transmis: number;
+    caracteres_retires?: number;
   };
 }
 

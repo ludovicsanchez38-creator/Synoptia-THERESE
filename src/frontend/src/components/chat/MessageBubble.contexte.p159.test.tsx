@@ -42,6 +42,15 @@ describe('MessageBubble — contexte transmis (P-159)', () => {
     expect(screen.getByText('Local')).toBeInTheDocument();
   });
 
+  it('dit que ton message a été raccourci pour tenir dans le modèle', () => {
+    render(<MessageBubble message={messageDe({
+      contexte: { messages_relus: 0, messages_transmis: 0, caracteres_retires: 752 },
+    })} />);
+    expect(screen.getByText(
+      'Ton message a été raccourci pour tenir dans le modèle (752 caractères retirés).',
+    )).toBeInTheDocument();
+  });
+
   it('reste masqué tant que la réponse s’écrit', () => {
     render(<MessageBubble message={messageDe({
       isStreaming: true,

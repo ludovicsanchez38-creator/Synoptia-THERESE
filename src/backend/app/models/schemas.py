@@ -16,6 +16,7 @@ from pydantic import (
     Field,
     PlainSerializer,
     field_validator,
+    model_serializer,
     model_validator,
 )
 
@@ -122,12 +123,21 @@ class ChatRequest(BaseModel):
 class ContexteTransmis(BaseModel):
     """P-159 : messages passés relus, et ceux encore là après la coupe du modèle.
 
-    Champs optionnels sur la réponse : un client qui les ignore continue
-    de lire `content` comme avant. Absents quand aucun modèle n'a été appelé.
+    `caracteres_retires` compte le texte du message en cours retiré pour
+    tenir dans le modèle. Il est omis quand ce message part entier, pour
+    que le bilan à deux comptes reste celui d'avant.
     """
 
     messages_relus: int
     messages_transmis: int
+    caracteres_retires: int = 0
+
+    @model_serializer(mode="wrap")
+    def _omettre_troncature_nulle(self, handler: Any) -> dict[str, Any]:
+        data: dict[str, Any] = handler(self)
+        if not data.get("caracteres_retires"):
+            data.pop("caracteres_retires", None)
+        return data
 
 
 class ChatResponse(BaseModel):

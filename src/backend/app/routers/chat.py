@@ -1315,8 +1315,25 @@ def bilan_depuis_fenetre(messages_passes: int, contexte: Any) -> dict[str, int]:
     """
     fenetre = getattr(contexte, "messages", None)
     if not isinstance(fenetre, list):
-        return bilan_contexte_transmis(messages_passes, messages_passes + 1)
-    return bilan_contexte_transmis(messages_passes, len(fenetre))
+        return _avec_texte_retire(
+            bilan_contexte_transmis(messages_passes, messages_passes + 1),
+            contexte,
+        )
+    return _avec_texte_retire(
+        bilan_contexte_transmis(messages_passes, len(fenetre)),
+        contexte,
+    )
+
+
+def _avec_texte_retire(bilan: dict[str, int], contexte: Any) -> dict[str, int]:
+    """Ajoute les caractères retirés du message en cours, s'il y en a.
+
+    Zéro reste absent : un message parti entier garde le bilan à deux comptes.
+    """
+    retires = getattr(contexte, "caracteres_retires", 0)
+    if isinstance(retires, int) and retires > 0:
+        bilan["caracteres_retires"] = retires
+    return bilan
 
 
 def _memoriser_contexte(message: Message, bilan: dict[str, int]) -> None:
@@ -1329,10 +1346,13 @@ def _memoriser_contexte(message: Message, bilan: dict[str, int]) -> None:
             brut = None
         if isinstance(brut, dict):
             donnees = brut
-    donnees["contexte"] = {
+    bloc_contexte: dict[str, int] = {
         "messages_relus": bilan["messages_relus"],
         "messages_transmis": bilan["messages_transmis"],
     }
+    if bilan.get("caracteres_retires"):
+        bloc_contexte["caracteres_retires"] = bilan["caracteres_retires"]
+    donnees["contexte"] = bloc_contexte
     message.extra_data = json.dumps(donnees)
 
 

@@ -29,6 +29,17 @@ describe('formatMessageFromResponse — contexte transmis (P-159)', () => {
     expect(message.skillFile?.file_id).toBe('f1');
   });
 
+  it('restaure la quantité de texte retirée du message en cours', () => {
+    const message = formatMessageFromResponse(reponse(JSON.stringify({
+      contexte: { messages_relus: 0, messages_transmis: 0, caracteres_retires: 752 },
+    })));
+    expect(message.contexte).toEqual({
+      messages_relus: 0,
+      messages_transmis: 0,
+      caracteres_retires: 752,
+    });
+  });
+
   it('ignore un contexte incomplet sans perdre le message', () => {
     const message = formatMessageFromResponse(reponse('{"contexte": {"messages_relus": 4}}'));
     expect(message.contexte).toBeUndefined();
