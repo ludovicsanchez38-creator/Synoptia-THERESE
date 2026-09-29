@@ -235,7 +235,9 @@ async def _attribuer_numero_definitif(
         return invoice
     if invoice.document_type not in ("facture", "avoir"):
         return invoice
-    if invoice.status != "draft" or not _numero_provisoire(invoice.invoice_number):
+    # Un brouillon annulé n'est plus « draft », mais son PROV- n'a jamais été
+    # émis. La première sortie vers un statut émis numérote quand même.
+    if invoice.status in _STATUTS_QUI_EMETTENT or not _numero_provisoire(invoice.invoice_number):
         return invoice
 
     identifiant = invoice.id
@@ -255,7 +257,7 @@ async def _attribuer_numero_definitif(
             if rechargee is None:
                 raise HTTPException(status_code=404, detail="Invoice not found") from collision
             invoice = rechargee
-            if invoice.status != "draft" or not _numero_provisoire(invoice.invoice_number):
+            if invoice.status in _STATUTS_QUI_EMETTENT or not _numero_provisoire(invoice.invoice_number):
                 return invoice
             type_document = invoice.document_type
             continue
@@ -264,6 +266,38 @@ async def _attribuer_numero_definitif(
     raise HTTPException(
         status_code=409,
         detail="Numérotation occupée par d'autres créations simultanées, réessaie.",
+    )
+
+
+def _poser_dates_demission(invoice: Invoice) -> None:
+    """La date imprimée est celle de la délivrance (BOFiP § 140).
+
+    L'échéance se décale du même nombre de jours, pour garder le délai
+    convenu. Appelé après la copie des champs : une date ancienne envoyée
+    avec le changement de statut ne reste pas sur la pièce émise.
+    """
+    maintenant = datetime.now(UTC)
+    ancienne = invoice.issue_date
+    if ancienne.tzinfo is None:
+        ancienne = ancienne.replace(tzinfo=UTC)
+    else:
+        ancienne = ancienne.astimezone(UTC)
+    jours = (maintenant.date() - ancienne.date()).days
+    invoice.issue_date = maintenant
+    echeance = invoice.due_date
+    if echeance.tzinfo is None:
+        echeance = echeance.replace(tzinfo=UTC)
+    else:
+        echeance = echeance.astimezone(UTC)
+    invoice.due_date = echeance + timedelta(days=jours)
+
+
+def _premiere_emission(invoice: Invoice, nouveau_statut: str | None) -> bool:
+    """Première sortie d'une facture ou d'un avoir vers un statut émis."""
+    return (
+        nouveau_statut in _STATUTS_QUI_EMETTENT
+        and invoice.document_type in ("facture", "avoir")
+        and invoice.status not in _STATUTS_QUI_EMETTENT
     )
 
 
@@ -685,6 +719,8 @@ async def update_invoice(
             )
 
     # B-1615 : le numéro définitif naît ici, avant toute autre écriture.
+    # La date du jour se pose après la copie des champs (plus bas).
+    emet_maintenant = _premiere_emission(invoice, request.status)
     invoice = await _attribuer_numero_definitif(session, invoice, request.status)
 
     # Mise à jour des champs
@@ -777,6 +813,9 @@ async def update_invoice(
         invoice.subtotal_ht = subtotal_ht
         invoice.total_tax = total_tax
         invoice.total_ttc = total_ttc
+
+    if emet_maintenant:
+        _poser_dates_demission(invoice)
 
     invoice.updated_at = datetime.now(UTC)
 
@@ -892,7 +931,10 @@ async def mark_invoice_paid(
         )
 
     # B-1615 : marquer payé un brouillon, c'est l'émettre.
+    emet_maintenant = _premiere_emission(invoice, "paid")
     invoice = await _attribuer_numero_definitif(session, invoice, "paid")
+    if emet_maintenant:
+        _poser_dates_demission(invoice)
     invoice.status = "paid"
     invoice.payment_date = payment_date
     invoice.updated_at = datetime.now(UTC)

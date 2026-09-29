@@ -146,6 +146,69 @@ async def test_un_avoir_brouillon_prend_AV_a_lemission(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_un_brouillon_annule_ne_prend_pas_de_numero_mais_son_emission_oui(client: AsyncClient):
+    """Annuler un brouillon ne l'émet pas. L'émettre ensuite, par envoi ou
+    par paiement, est la première sortie vers un statut émis : le PROV-
+    devient le prochain numéro de la série."""
+    contact = await _contact(client)
+    annee = _annee()
+
+    envoye = await _cree(client, contact)
+    annule = await client.put(f"/api/invoices/{envoye['id']}", json={"status": "cancelled"})
+    assert annule.status_code == 200, annule.text
+    assert annule.json()["status"] == "cancelled"
+    assert annule.json()["invoice_number"].startswith("PROV-")
+
+    emis = await client.put(f"/api/invoices/{envoye['id']}", json={"status": "sent"})
+    assert emis.status_code == 200, emis.text
+    assert emis.json()["invoice_number"] == f"FACT-{annee}-001"
+    assert not emis.json()["invoice_number"].startswith("PROV-")
+
+    paye = await _cree(client, contact)
+    refuse = await client.put(f"/api/invoices/{paye['id']}", json={"status": "cancelled"})
+    assert refuse.status_code == 200, refuse.text
+    reglement = await client.patch(f"/api/invoices/{paye['id']}/mark-paid", json={})
+    assert reglement.status_code == 200, reglement.text
+    assert reglement.json()["status"] == "paid"
+    assert reglement.json()["invoice_number"] == f"FACT-{annee}-002"
+
+
+@pytest.mark.asyncio
+async def test_emettre_l_annee_suivante_date_au_jour_et_decale_l_echeance(client: AsyncClient, monkeypatch):
+    """Un brouillon de 2026 émis en 2027 prend FACT-2027 et la date du jour.
+
+    Le BOFiP § 140 rattache la date imprimée à la délivrance. L'échéance
+    avance du même nombre de jours, même si la requête renvoie l'ancienne date.
+    """
+    from app.routers import invoices as module_factures
+
+    contact = await _contact(client)
+    brouillon = await _cree(client, contact)
+
+    class Horloge(datetime):
+        @classmethod
+        def now(cls, tz=None):  # type: ignore[override]
+            return datetime(2027, 3, 15, 9, 0, tzinfo=UTC)
+
+    monkeypatch.setattr(module_factures, "datetime", Horloge)
+    emise = await client.put(
+        f"/api/invoices/{brouillon['id']}",
+        json={
+            "status": "sent",
+            "issue_date": "2026-06-01T00:00:00",
+            "due_date": "2026-07-01T00:00:00",
+        },
+    )
+    assert emise.status_code == 200, emise.text
+    corps = emise.json()
+    assert corps["invoice_number"] == "FACT-2027-001"
+    assert corps["issue_date"].startswith("2027-03-15")
+    jours = (datetime(2027, 3, 15, tzinfo=UTC).date() - datetime(2026, 6, 1).date()).days
+    echeance = datetime.fromisoformat(corps["due_date"].replace("Z", "+00:00"))
+    assert echeance.date() == (datetime(2026, 7, 1) + timedelta(days=jours)).date()
+
+
+@pytest.mark.asyncio
 async def test_marquer_payee_un_brouillon_lui_donne_son_numero(client: AsyncClient):
     contact = await _contact(client)
     brouillon = await _cree(client, contact)
