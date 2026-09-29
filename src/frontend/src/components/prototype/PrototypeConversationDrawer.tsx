@@ -113,6 +113,9 @@ export function PrototypeConversationDrawer({
   // sans inventer de nom (même règle que B-1367).
   const [nomsDesProjets, setNomsDesProjets] = useState<Map<string, string>>(new Map());
   const [filtreProjet, setFiltreProjet] = useState('');
+  // B-1738 : l’attribut title ne s’affiche pas au clavier. Le titre coupé
+  // s’écrit en entier tant que le bouton a le focus.
+  const [titreReveleId, setTitreReveleId] = useState<string | null>(null);
   useEffect(() => {
     let vivant = true;
     Promise.resolve(listProjects())
@@ -386,9 +389,11 @@ export function PrototypeConversationDrawer({
             </div>
             {items.map((conversation) => {
               const apercu = maskText(apercuDuDernierMessage(conversation));
-              // B-1738 : le tiroir reste à 22 rem. Le titre complet est
-              // l'infobulle du bouton (survol et focus) et son nom accessible.
+              // B-1738 : le tiroir reste à 22 rem. Au repos le titre est coupé.
+              // Au focus il s’affiche en entier : l’attribut title ne suffit pas
+              // au clavier, sans lecteur d’écran.
               const titreAffiche = maskText(conversation.title || 'Nouvelle conversation');
+              const titreEntierVisible = titreReveleId === conversation.id;
               return (
               <div key={conversation.id} className="relative mb-1">
                 {editingId === conversation.id ? (
@@ -429,6 +434,10 @@ export function PrototypeConversationDrawer({
                       type="button"
                       title={titreAffiche}
                       onClick={() => openConversation(conversation.id)}
+                      onFocus={() => setTitreReveleId(conversation.id)}
+                      onBlur={() => {
+                        setTitreReveleId((courant) => (courant === conversation.id ? null : courant));
+                      }}
                       aria-current={currentConversationId === conversation.id ? 'page' : undefined}
                       className={cn(
                         'grid w-full grid-cols-[1fr_auto] gap-x-2 gap-y-0.5 rounded-sm px-3 py-2.5 pr-11 text-left',
@@ -436,7 +445,15 @@ export function PrototypeConversationDrawer({
                         currentConversationId === conversation.id ? 'bg-accent-tint' : 'hover:bg-surface-2',
                       )}
                     >
-                      <b className="truncate text-sm font-semibold" title={titreAffiche}>{titreAffiche}</b>
+                      <b
+                        className={cn(
+                          'min-w-0 text-sm font-semibold',
+                          titreEntierVisible ? 'whitespace-normal break-words' : 'truncate',
+                        )}
+                        title={titreAffiche}
+                      >
+                        {titreAffiche}
+                      </b>
                       <span className="text-sm tabular-nums text-text-muted">{updatedLabel(conversation.updatedAt)}</span>
                       <span className="col-span-2 truncate text-sm text-text-muted">
                         {compteMessages(conversation)}{conversation.synced ? '' : ' · non enregistrée'}
