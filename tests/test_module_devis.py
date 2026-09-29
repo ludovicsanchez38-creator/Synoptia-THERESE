@@ -193,9 +193,14 @@ class TestDevisConversion:
 
         assert facture["document_type"] == "facture"
         assert facture["converted_from_id"] == devis["id"]
-
+        # B-1615 : la conversion crée un brouillon. Le FACT- naît à l'émission.
+        # L'assertion d'avant exigeait le préfixe dès ce POST.
+        assert facture["status"] == "draft"
+        assert facture["invoice_number"].startswith("PROV-")
+        emise = await client.put(f"/api/invoices/{facture['id']}", json={"status": "sent"})
+        assert emise.status_code == 200, emise.text
         current_year = datetime.now(UTC).year
-        assert facture["invoice_number"].startswith(f"FACT-{current_year}-")
+        assert emise.json()["invoice_number"].startswith(f"FACT-{current_year}-")
 
         # Le devis source doit etre marque comme converti
         devis_response = await client.get(f"/api/invoices/{devis['id']}")

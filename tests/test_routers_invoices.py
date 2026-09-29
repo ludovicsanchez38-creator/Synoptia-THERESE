@@ -123,21 +123,28 @@ class TestInvoicesCRUD:
 
     @pytest.mark.asyncio
     async def test_invoice_auto_number(self, client: AsyncClient):
-        """Verifie que le numero de facture est au format FACT-YYYY-NNN."""
+        """Le numéro FACT-YYYY-NNN est posé à l'émission (B-1615).
+
+        Avant, le POST d'un brouillon prenait déjà FACT-001. Ce test codifiait
+        ce moment-là. La séquence 001 puis 002 reste exigée, à l'émission.
+        """
         contact_id = await _create_contact(client)
         invoice = await _create_invoice(client, contact_id)
+        assert invoice["status"] == "draft"
+        assert invoice["invoice_number"].startswith("PROV-")
 
+        emise = await client.put(f"/api/invoices/{invoice['id']}", json={"status": "sent"})
+        assert emise.status_code == 200, emise.text
         current_year = datetime.now(UTC).year
-        assert invoice["invoice_number"].startswith(f"FACT-{current_year}-")
-        # Le numero doit etre sur 3 chiffres
-        number_part = invoice["invoice_number"].split("-")[-1]
+        assert emise.json()["invoice_number"].startswith(f"FACT-{current_year}-")
+        number_part = emise.json()["invoice_number"].split("-")[-1]
         assert len(number_part) == 3
         assert number_part == "001"
 
-        # Creer une deuxieme facture - doit incrementer
         invoice2 = await _create_invoice(client, contact_id)
-        number_part2 = invoice2["invoice_number"].split("-")[-1]
-        assert number_part2 == "002"
+        emise2 = await client.put(f"/api/invoices/{invoice2['id']}", json={"status": "sent"})
+        assert emise2.status_code == 200, emise2.text
+        assert emise2.json()["invoice_number"].split("-")[-1] == "002"
 
     @pytest.mark.asyncio
     async def test_invoice_line_calculation(self, client: AsyncClient):

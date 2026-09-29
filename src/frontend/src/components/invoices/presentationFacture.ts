@@ -6,6 +6,13 @@ import type { Invoice } from '../../services/api';
 import type { TonEtiquette } from '../ui/Etiquette';
 import { STATUS_CONFIG } from './statutsFacture';
 
+/** B-1615 : le jeton PROV- reste en base, l'écran ne le montre pas. */
+export const MENTION_NUMERO_PROVISOIRE = "Brouillon, numéro à l'émission";
+
+export function numeroAffiche(numero: string): string {
+  return numero.startsWith('PROV-') ? MENTION_NUMERO_PROVISOIRE : numero;
+}
+
 export function dateListe(iso: string): string {
   return new Date(iso).toLocaleDateString('fr-FR', {
     day: '2-digit',

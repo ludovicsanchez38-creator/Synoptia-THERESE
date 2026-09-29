@@ -21,6 +21,7 @@ import { pushEscapeHandler } from '../../lib/escapeStack';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { useQuestionDAbandonDeModale } from '../../hooks/useQuestionDAbandonDeModale';
 import { libellesDeLaPiece } from './libellesPiece';
+import { numeroAffiche } from './presentationFacture';
 import { useExternalActionConfirmation } from '../app/useExternalActionConfirmation';
 import { Button } from '../ui/Button';
 import { FormField } from '../ui/FormField';
@@ -474,11 +475,11 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
             invoice.id,
             pieceEmise ? { status: status !== invoice.status ? status : undefined } : data,
           );
-          addNotification({ type: 'success', title: libellesDeLaPiece(documentType).misAJour, message: savedInvoice.invoice_number });
+          addNotification({ type: 'success', title: libellesDeLaPiece(documentType).misAJour, message: numeroAffiche(savedInvoice.invoice_number) });
         } else {
           // Creation
           savedInvoice = await createInvoice(data);
-          addNotification({ type: 'success', title: libellesDeLaPiece(documentType).cree, message: savedInvoice.invoice_number });
+          addNotification({ type: 'success', title: libellesDeLaPiece(documentType).cree, message: numeroAffiche(savedInvoice.invoice_number) });
         }
 
         onSave(savedInvoice);
@@ -501,7 +502,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
         description: 'La mise à jour du document ne sera enregistrée qu’après ta confirmation.',
         confirmLabel: 'Confirmer le changement de statut',
         details: [
-          { label: 'Document', value: invoice.invoice_number },
+          { label: 'Document', value: numeroAffiche(invoice.invoice_number) },
           { label: 'Statut actuel', value: invoice.status },
           { label: 'Nouveau statut', value: statusLabel },
           { label: 'Montant TTC', value: montantAvecDevise(totalTTC, currency) },
@@ -531,7 +532,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
         : 'Cette action changera le statut de la facture et enregistrera sa date de paiement.',
       confirmLabel: 'Confirmer le paiement',
       details: [
-        { label: 'Facture', value: invoice.invoice_number },
+        { label: 'Facture', value: numeroAffiche(invoice.invoice_number) },
         { label: 'Montant TTC', value: montantAvecDevise(invoice.total_ttc, invoice.currency) },
         { label: 'Date du paiement', value: `${jour}/${mois}/${annee}` },
         { label: 'Nouveau statut', value: 'Payée' },
@@ -539,7 +540,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
     }, async () => {
       try {
         const updatedInvoice = await markInvoicePaid(invoice.id, datePaiement);
-        addNotification({ type: 'success', title: 'Facture payée', message: `${invoice.invoice_number} marquée comme payée` });
+        addNotification({ type: 'success', title: 'Facture payée', message: `${numeroAffiche(invoice.invoice_number)} marquée comme payée` });
         onSave(updatedInvoice);
       } catch (error) {
         console.error('Failed to mark paid:', error);
@@ -557,7 +558,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
       description: `Cette action changera le statut du devis en « ${accepted ? 'Accepté' : 'Refusé'} ».`,
       confirmLabel: accepted ? 'Confirmer l’acceptation' : 'Confirmer le refus',
       details: [
-        { label: 'Devis', value: invoice.invoice_number },
+        { label: 'Devis', value: numeroAffiche(invoice.invoice_number) },
         { label: 'Montant TTC', value: montantAvecDevise(invoice.total_ttc, invoice.currency) },
         { label: 'Nouveau statut', value: accepted ? 'Accepté' : 'Refusé' },
       ],
@@ -567,7 +568,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
         addNotification({
           type: 'success',
           title: accepted ? 'Devis accepté' : 'Devis refusé',
-          message: invoice.invoice_number,
+          message: numeroAffiche(invoice.invoice_number),
         });
         onSave(updated);
       } catch (err) {
@@ -589,7 +590,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
       addNotification({
         type: 'success',
         title: 'Devis converti en facture',
-        message: `Facture ${newInvoice.invoice_number} créée à partir du devis ${invoice.invoice_number}`,
+        message: `Facture ${numeroAffiche(newInvoice.invoice_number)} créée à partir du devis ${numeroAffiche(invoice.invoice_number)}`,
       });
       onSave(newInvoice);
     } catch (error) {
@@ -616,7 +617,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
     || contact.id;
 
   const titreFormulaire = invoice
-    ? `Modifier ${invoice.invoice_number}`
+    ? `Modifier ${numeroAffiche(invoice.invoice_number)}`
     : documentType === 'devis'
       ? 'Nouveau devis'
       : documentType === 'avoir'
@@ -820,7 +821,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
                     { value: '', label: 'Aucune' },
                     ...facturesDuClient.map((f) => ({
                       value: f.id,
-                      label: `${f.invoice_number} du ${new Date(f.issue_date).toLocaleDateString('fr-FR')}`,
+                      label: `${numeroAffiche(f.invoice_number)} du ${new Date(f.issue_date).toLocaleDateString('fr-FR')}`,
                     })),
                   ]}
                 />
@@ -1094,7 +1095,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
             >
               <h3 className="text-lg font-semibold text-text">Convertir en facture ?</h3>
               <p className="text-sm text-text-muted">
-                Une facture sera créée à partir du devis <strong>{invoice?.invoice_number}</strong> avec
+                Une facture sera créée à partir du devis <strong>{invoice ? numeroAffiche(invoice.invoice_number) : ''}</strong> avec
                 les mêmes lignes et montants. Le devis sera marqué comme converti.
               </p>
               <div className="p-3 rounded-md bg-surface-2 border border-border text-sm space-y-1">

@@ -6,6 +6,7 @@ Phase 4 - Invoicing
 """
 
 import logging
+import uuid
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
@@ -161,6 +162,104 @@ async def _inserer_avec_numero_frais(
             logger.warning("Numéro %s pris par un concurrent, reprise", invoice_number)
             continue
         return candidat
+
+    raise HTTPException(
+        status_code=409,
+        detail="Numérotation occupée par d'autres créations simultanées, réessaie.",
+    )
+
+
+# B-1615 : ces statuts quittent le brouillon et émettent la pièce. `cancelled`
+# ne le fait pas : un brouillon annulé ne consomme pas de numéro.
+_STATUTS_QUI_EMETTENT = frozenset({"sent", "paid", "overdue"})
+
+
+def _jeton_provisoire() -> str:
+    """Hors série FACT/AV. La colonne est NOT NULL et unique."""
+    return f"PROV-{uuid.uuid4().hex}"
+
+
+def _numero_provisoire(numero: str) -> bool:
+    return numero.startswith("PROV-")
+
+
+async def _inserer_piece(
+    session: AsyncSession,
+    document_type: str,
+    fabrique: Callable[[str], Invoice],
+) -> Invoice:
+    """Devis : numéro DEV dès la création. Facture et avoir : jeton PROV.
+
+    Le 7° du I de l'article 242 nonies A et le § 90 du
+    BOI-TVA-DECLA-30-20-20-10 numérotent la facture au fur et à mesure de
+    l'émission. Supprimer un brouillon ne doit pas retirer un numéro de la
+    série. Ces textes ne visent pas le devis.
+    """
+    if document_type == "devis":
+        return await _inserer_avec_numero_frais(session, document_type, fabrique)
+
+    for _ in range(_REPRISES_DE_NUMERO):
+        jeton = _jeton_provisoire()
+        candidat = fabrique(jeton)
+        session.add(candidat)
+        try:
+            await session.flush()
+        except IntegrityError as collision:
+            await session.rollback()
+            if "invoice_number" not in str(collision.orig):
+                raise
+            logger.warning("Jeton %s déjà pris, reprise", jeton)
+            continue
+        return candidat
+
+    raise HTTPException(
+        status_code=409,
+        detail="Numérotation occupée par d'autres créations simultanées, réessaie.",
+    )
+
+
+async def _attribuer_numero_definitif(
+    session: AsyncSession,
+    invoice: Invoice,
+    nouveau_statut: str | None,
+) -> Invoice:
+    """Pose FACT- ou AV- quand un brouillon PROV passe à un statut émis.
+
+    Un brouillon qui porte déjà un numéro définitif (pièce créée avant ce
+    correctif) le garde. Appelé avant les autres écritures : le rollback
+    d'une collision expire la session, et des champs pas encore copiés ne
+    peuvent pas être perdus. Le numéro proposé est journalisé avant le
+    flush, parce que l'objet expire si l'insertion est refusée.
+    """
+    if nouveau_statut is None or nouveau_statut not in _STATUTS_QUI_EMETTENT:
+        return invoice
+    if invoice.document_type not in ("facture", "avoir"):
+        return invoice
+    if invoice.status != "draft" or not _numero_provisoire(invoice.invoice_number):
+        return invoice
+
+    identifiant = invoice.id
+    type_document = invoice.document_type
+    for _ in range(_REPRISES_DE_NUMERO):
+        numero = await _generate_invoice_number(session, type_document)
+        logger.info("Numéro définitif proposé %s pour %s", numero, identifiant)
+        invoice.invoice_number = numero
+        try:
+            await session.flush()
+        except IntegrityError as collision:
+            await session.rollback()
+            if "invoice_number" not in str(collision.orig):
+                raise
+            logger.warning("Numéro %s pris par un concurrent, reprise", numero)
+            rechargee = await _get_invoice_with_lines(session, identifiant)
+            if rechargee is None:
+                raise HTTPException(status_code=404, detail="Invoice not found") from collision
+            invoice = rechargee
+            if invoice.status != "draft" or not _numero_provisoire(invoice.invoice_number):
+                return invoice
+            type_document = invoice.document_type
+            continue
+        return invoice
 
     raise HTTPException(
         status_code=409,
@@ -444,7 +543,8 @@ async def create_invoice(
     """
     Crée une nouvelle facture.
 
-    - Génère automatiquement le numéro de facture (FACT-YYYY-NNN)
+    - Facture et avoir : jeton provisoire, numéro définitif à l'émission
+    - Devis : numéro DEV-YYYY-NNN dès la création
     - Calcule les totaux automatiquement
     - Dates par défaut: issue_date=aujourd'hui, due_date=+30 jours
     """
@@ -472,7 +572,7 @@ async def create_invoice(
     # relu paresseusement au tour suivant, ce qu'une session async interdit.
     snapshot_client = _snapshot_du_contact(contact)
 
-    invoice = await _inserer_avec_numero_frais(
+    invoice = await _inserer_piece(
         session,
         document_type,
         lambda numero: Invoice(
@@ -571,6 +671,9 @@ async def update_invoice(
                     "corriger, émets un avoir."
                 ),
             )
+
+    # B-1615 : le numéro définitif naît ici, avant toute autre écriture.
+    invoice = await _attribuer_numero_definitif(session, invoice, request.status)
 
     # Mise à jour des champs
     # B-1614 : une pièce émise est figée (B-1506, numérotation continue) ;
@@ -776,6 +879,8 @@ async def mark_invoice_paid(
             detail="La date du paiement ne peut pas être dans le futur.",
         )
 
+    # B-1615 : marquer payé un brouillon, c'est l'émettre.
+    invoice = await _attribuer_numero_definitif(session, invoice, "paid")
     invoice.status = "paid"
     invoice.payment_date = payment_date
     invoice.updated_at = datetime.now(UTC)
@@ -843,8 +948,9 @@ async def convert_invoice(
     }
     lignes_source = [_snapshot_de_ligne(line) for line in source.lines]
 
-    # Générer un nouveau numéro pour le type cible, avec reprise (B-338)
-    new_invoice = await _inserer_avec_numero_frais(
+    # B-1615 : facture et avoir naissent provisoires ; le devis est numéroté.
+    # La reprise d'un numéro double (B-338) a lieu à l'émission.
+    new_invoice = await _inserer_piece(
         session, target_type, lambda numero: Invoice(invoice_number=numero, **copie)
     )
 
@@ -1142,7 +1248,7 @@ async def convert_devis_to_invoice(
     }
     lignes_devis = [_snapshot_de_ligne(line) for line in devis.lines]
 
-    new_invoice = await _inserer_avec_numero_frais(
+    new_invoice = await _inserer_piece(
         session, "facture", lambda numero: Invoice(invoice_number=numero, **facture)
     )
     invoice_number = new_invoice.invoice_number
