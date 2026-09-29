@@ -60,8 +60,11 @@ describe('Les statuts proposés suivent le type du document', () => {
 
     const statuts = statutsProposes();
     // Envoyée, donc émise : plus de retour au brouillon (B-1506, B-1537).
-    expect(statuts).toEqual(expect.arrayContaining(['sent', 'paid', 'overdue', 'cancelled']));
+    // B-1671 : « Annulée » n'est plus proposé sur une facture émise. L'ancienne
+    // assertion l'exigeait, parce que le sélecteur l'offrait.
+    expect(statuts).toEqual(expect.arrayContaining(['sent', 'paid', 'overdue']));
     expect(statuts).not.toContain('draft');
+    expect(statuts).not.toContain('cancelled');
   });
 
   it('un devis garde « Accepté »', async () => {

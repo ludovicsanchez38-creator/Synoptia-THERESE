@@ -671,6 +671,18 @@ async def update_invoice(
                     "corriger, émets un avoir."
                 ),
             )
+        # B-1671 : un statut « Annulée » sort la créance de l'encours sans
+        # avoir. Le § 210 du BOI-TVA-DECLA-30-20-20-20 rectifie par un
+        # document nouveau. L'avoir émis n'est pas visé par ce garde.
+        if (
+            request.status == "cancelled"
+            and invoice.document_type == "facture"
+            and _facture_emise(invoice)
+        ):
+            raise HTTPException(
+                status_code=409,
+                detail="Une facture émise ne s'annule pas. Pour l'annuler, émets un avoir.",
+            )
 
     # B-1615 : le numéro définitif naît ici, avant toute autre écriture.
     invoice = await _attribuer_numero_definitif(session, invoice, request.status)
