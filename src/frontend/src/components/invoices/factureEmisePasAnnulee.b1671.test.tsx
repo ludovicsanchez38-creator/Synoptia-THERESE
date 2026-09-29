@@ -2,7 +2,7 @@
  * B-1671 : une facture émise ne propose plus « Annulée ».
  * Un devis envoyé garde « Annulé ».
  */
-import { render, screen } from '@testing-library/react';
+import { fireEvent, render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 
 import { InvoiceForm } from './InvoiceForm';
@@ -16,7 +16,7 @@ vi.mock('../../services/api', async () => {
   };
 });
 
-function piece(documentType: 'devis' | 'facture' | 'avoir', status: 'draft' | 'sent') {
+function piece(documentType: 'devis' | 'facture' | 'avoir', status: 'draft' | 'sent' | 'cancelled') {
   return {
     id: 'inv-1',
     invoice_number: documentType === 'devis' ? 'DEV-2026-001' : 'FACT-2026-001',
@@ -71,6 +71,30 @@ describe('B-1671 : Annulée sort du sélecteur d’une facture émise', () => {
     render(<InvoiceForm invoice={piece('devis', 'sent') as never} onClose={vi.fn()} onSave={vi.fn()} />);
     await screen.findByLabelText('Statut');
     expect(valeursStatut()).toContain('cancelled');
+  });
+
+  it('une facture déjà annulée affiche Annulée, puis ne la propose plus', async () => {
+    render(<InvoiceForm invoice={piece('facture', 'cancelled') as never} onClose={vi.fn()} onSave={vi.fn()} />);
+    const statut = await screen.findByLabelText('Statut') as HTMLSelectElement;
+    expect(statut).toHaveValue('cancelled');
+    expect(statut.selectedOptions[0]?.textContent).toBe('Annulée');
+    fireEvent.change(statut, { target: { value: 'sent' } });
+    expect(statut).toHaveValue('sent');
+    expect(valeursStatut()).not.toContain('cancelled');
+  });
+
+  it('un avoir déjà annulé affiche Annulée', async () => {
+    render(<InvoiceForm invoice={piece('avoir', 'cancelled') as never} onClose={vi.fn()} onSave={vi.fn()} />);
+    const statut = await screen.findByLabelText('Statut') as HTMLSelectElement;
+    expect(statut).toHaveValue('cancelled');
+    expect(statut.selectedOptions[0]?.textContent).toBe('Annulée');
+  });
+
+  it('un devis déjà annulé affiche Annulé', async () => {
+    render(<InvoiceForm invoice={piece('devis', 'cancelled') as never} onClose={vi.fn()} onSave={vi.fn()} />);
+    const statut = await screen.findByLabelText('Statut') as HTMLSelectElement;
+    expect(statut).toHaveValue('cancelled');
+    expect(statut.selectedOptions[0]?.textContent).toBe('Annulé');
   });
 
   it('un brouillon de facture propose encore cancelled', async () => {

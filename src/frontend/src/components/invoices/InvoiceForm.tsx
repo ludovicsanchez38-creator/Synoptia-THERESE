@@ -767,7 +767,9 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
                     (option) => {
                       if (pieceEmise && option.value === 'draft') return false;
                       // B-1671 : une facture ou un avoir émis ne propose plus Annulée.
-                      if (pieceEmise && option.value === 'cancelled') return false;
+                      // Une pièce déjà annulée garde cette valeur à l'écran, sans
+                      // la proposer dès qu'on en sort.
+                      if (pieceEmise && option.value === 'cancelled' && status !== 'cancelled') return false;
                       return true;
                     },
                   )}
