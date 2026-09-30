@@ -71,6 +71,8 @@ export function PipelineView({ contacts, onContactClick, onStageChange }: Pipeli
   // focus. On retient la carte pour lui rendre le focus dans sa colonne.
   const carteDeposee = useRef<{ id: string; stage: string } | null>(null);
   const grilleRef = useRef<HTMLDivElement>(null);
+  const indiceGaucheRef = useRef<HTMLButtonElement>(null);
+  const indiceDroiteRef = useRef<HTMLButtonElement>(null);
   const [etapesCachees, setEtapesCachees] = useState<EtapesHorsCadre>({ aGauche: 0, aDroite: 0 });
 
   // B-237 : sans `coordinateGetter`, dnd-kit avance son pointeur virtuel de
@@ -125,6 +127,16 @@ export function PipelineView({ contacts, onContactClick, onStageChange }: Pipeli
         { scrollLeft: grille.scrollLeft, clientWidth: grille.clientWidth },
         colonnesMesurees(grille),
       );
+      // B-1742 : le bouton du bord atteint va disparaître. Rendre son focus à la
+      // grille avant le démontage permet de poursuivre aux flèches.
+      // Un focus posé ailleurs pendant le défilement reste à sa place.
+      const actif = document.activeElement;
+      if (
+        (suivant.aGauche === 0 && actif === indiceGaucheRef.current)
+        || (suivant.aDroite === 0 && actif === indiceDroiteRef.current)
+      ) {
+        grille.focus({ preventScroll: true });
+      }
       setEtapesCachees((courant) => (
         courant.aGauche === suivant.aGauche && courant.aDroite === suivant.aDroite ? courant : suivant
       ));
@@ -269,6 +281,7 @@ export function PipelineView({ contacts, onContactClick, onStageChange }: Pipeli
           <div aria-live="polite" className="mt-2 flex items-center gap-2">
             {etapesCachees.aGauche > 0 && (
               <button
+                ref={indiceGaucheRef}
                 type="button"
                 onClick={() => defilerVers('gauche')}
                 onKeyDown={(event) => {
@@ -283,6 +296,7 @@ export function PipelineView({ contacts, onContactClick, onStageChange }: Pipeli
             )}
             {etapesCachees.aDroite > 0 && (
               <button
+                ref={indiceDroiteRef}
                 type="button"
                 onClick={() => defilerVers('droite')}
                 onKeyDown={(event) => {

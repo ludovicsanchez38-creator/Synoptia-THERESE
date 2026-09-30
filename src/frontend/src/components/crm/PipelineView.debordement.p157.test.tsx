@@ -4,7 +4,7 @@
  * y compris au lecteur d’écran. Un clic ou Entrée amène ces étapes.
  * jsdom ne mesure pas : le débordement est simulé sur la grille rendue.
  */
-import { fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { _clearEscapeHandlers } from '../../lib/escapeStack';
@@ -153,5 +153,71 @@ describe('P-157 : indice de débordement du pipeline', () => {
     fireEvent.keyDown(screen.getByRole('button', { name: '3 étapes à gauche' }), { key: 'Enter' });
 
     expect(scrollTo).toHaveBeenCalledWith({ left: 504, behavior: 'smooth' });
+  });
+
+  it.each([
+    { cote: 'droite', depart: 1008, arrivee: 1204 },
+    { cote: 'gauche', depart: 252, arrivee: 0 },
+  ])('au bord $cote, la grille reprend le focus du bouton qui disparaît', ({ cote, depart, arrivee }) => {
+    const zone = rendre();
+    simuler(zone, { clientWidth: 800, scrollLeft: depart });
+    fireEvent.scroll(zone);
+    zone.scrollTo = vi.fn();
+    const bouton = screen.getByRole('button', { name: `1 étape à ${cote}` });
+    act(() => { bouton.focus(); });
+    expect(bouton).toHaveFocus();
+
+    fireEvent.keyDown(bouton, { key: 'Enter' });
+    expect(zone.scrollTo).toHaveBeenCalledOnce();
+    // Le navigateur borne le défilement à la largeur réellement disponible.
+    // jsdom ne défile pas : on reproduit la mesure de sa fin de parcours.
+    simuler(zone, { clientWidth: 800, scrollLeft: arrivee });
+    fireEvent.scroll(zone);
+
+    expect(bouton).not.toBeInTheDocument();
+    expect(zone).toHaveFocus();
+  });
+
+  it('garde le focus sur l’indice tant que le défilement ne l’a pas retiré', () => {
+    const zone = rendre();
+    simuler(zone, { clientWidth: 800, scrollLeft: 0 });
+    fireEvent.scroll(zone);
+    const bouton = screen.getByRole('button', { name: '5 étapes à droite' });
+    act(() => { bouton.focus(); });
+
+    simuler(zone, { clientWidth: 800, scrollLeft: 756 });
+    fireEvent.scroll(zone);
+
+    expect(bouton).toHaveFocus();
+    expect(bouton).toHaveAccessibleName('2 étapes à droite');
+  });
+
+  it('rend le focus à la grille quand un redimensionnement retire l’indice focalisé', () => {
+    const zone = rendre();
+    simuler(zone, { clientWidth: 800, scrollLeft: 0 });
+    fireEvent.scroll(zone);
+    const bouton = screen.getByRole('button', { name: '5 étapes à droite' });
+    act(() => { bouton.focus(); });
+
+    simuler(zone, { clientWidth: 2100, scrollLeft: 0 });
+    fireEvent(window, new Event('resize'));
+
+    expect(bouton).not.toBeInTheDocument();
+    expect(zone).toHaveFocus();
+  });
+
+  it('préserve le focus déplacé sur l’autre indice avant d’atteindre le bord', () => {
+    const zone = rendre();
+    simuler(zone, { clientWidth: 800, scrollLeft: 1008 });
+    fireEvent.scroll(zone);
+    const autreBouton = screen.getByRole('button', { name: '4 étapes à gauche' });
+    act(() => { autreBouton.focus(); });
+
+    simuler(zone, { clientWidth: 800, scrollLeft: 1204 });
+    fireEvent.scroll(zone);
+
+    expect(screen.queryByRole('button', { name: /à droite/ })).not.toBeInTheDocument();
+    expect(autreBouton).toHaveFocus();
+    expect(zone).not.toHaveFocus();
   });
 });
