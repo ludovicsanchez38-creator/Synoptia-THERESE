@@ -930,6 +930,7 @@ async def delete_invoice(
     """
     Supprime une facture et son PDF associé.
     """
+    await _verrouiller_emission(session)
     invoice = await _get_invoice_with_lines(session, invoice_id)
 
     if not invoice:
@@ -1367,6 +1368,7 @@ async def convert_devis_to_invoice(
     - Ajoute conditions de paiement et mentions legales
     - Marque le devis source comme "converted"
     """
+    await _verrouiller_emission(session)
     # 1. Recuperer le devis
     devis = await _get_invoice_with_lines(session, invoice_id)
     if not devis:
