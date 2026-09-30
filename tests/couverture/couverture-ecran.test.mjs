@@ -155,7 +155,11 @@ test('B-1719 : une interruption conserve la preuve des requêtes bloquées', asy
 });
 
 test('les gestes sortants et installations restent exclus', () => {
-  for (const nom of ['Installer le modèle', 'Génère un rapport', 'Synchroniser', 'Tester la connexion', 'Publier']) {
+  for (const nom of [
+    'Installer le modèle', 'Générer le PDF', 'générer le PDF', 'GÉNÉRER LE PDF',
+    'Génère un rapport', 'GÉNÈRE UN RAPPORT', 'Generer le PDF', 'generer le PDF',
+    'Synchroniser', 'Tester la connexion', 'Publier',
+  ]) {
     assert.equal(gesteExclu(nom), true, nom);
   }
   assert.equal(gesteExclu('Ouvrir les réglages'), false);
