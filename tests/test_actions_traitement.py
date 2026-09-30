@@ -13,10 +13,12 @@ Contrats (design V2.1) :
 """
 
 import asyncio
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 import pytest
 from app.models.processing import EtatTache, ProcessingTask
-from app.services.action_agents import ActionRunner, TaskStatus
+from app.services.action_agents import ActionRunner, TaskState, TaskStatus
 from sqlmodel import select
 
 
@@ -33,7 +35,11 @@ async def _traitement_action(task_id: str) -> ProcessingTask | None:
         return resultat.scalars().first()
 
 
-def _faux_llm(morceaux=("étape faite",), lent: asyncio.Event | None = None):
+def _faux_llm(
+    morceaux=("étape faite",),
+    lent: asyncio.Event | None = None,
+    entree: asyncio.Event | None = None,
+):
     class FauxLLM:
         config = type(
             "C", (),
@@ -44,6 +50,8 @@ def _faux_llm(morceaux=("étape faite",), lent: asyncio.Event | None = None):
             return type("Ctx", (), {"messages": messages})()
 
         async def stream_response(self, _context, raise_on_error=False):
+            if entree is not None:
+                entree.set()
             if lent is not None:
                 await lent.wait()
             for morceau in morceaux:
@@ -60,6 +68,42 @@ async def _attendre(condition, timeout=5.0):
     return False
 
 
+async def _attendre_entree_flux(entree: asyncio.Event) -> None:
+    # B-1753 : RUNNING précède le contexte local et ne garantit pas encore
+    # qu'une étape LLM est retenue. Attendre sa vraie entrée garde l'attendu
+    # CANCEL_REQUESTED strict pendant que le flux tourne réellement.
+    await asyncio.wait_for(entree.wait(), timeout=5)
+
+
+async def _clore_action_temoin(
+    task: TaskState, verrou: asyncio.Event, taches: set[asyncio.Task[None]]
+) -> None:
+    from app.services import task_registry
+
+    ActionRunner.cancel_task(task.task_id)
+    verrou.set()
+    # La mémoire peut devenir terminale avant son commit durable. Attendre
+    # la coroutine complète avant que la fixture client ne ferme la DB.
+    await asyncio.wait_for(asyncio.gather(*taches), timeout=5)
+    if task._handle is not None:
+        traitement = await _traitement_action(task.task_id)
+        assert traitement is not None and traitement.state in EtatTache.terminaux()
+        assert not task_registry.est_vivante(task._handle.id)
+
+
+@asynccontextmanager
+async def _action_retenue(verrou: asyncio.Event) -> AsyncIterator[TaskState]:
+    avant = set(ActionRunner._taches_de_fond)
+    task = await ActionRunner.run("rapport-hebdo")
+    creees = set(ActionRunner._taches_de_fond) - avant
+    try:
+        yield task
+    finally:
+        # Le nettoyage reste exécuté si une assertion du témoin échoue.
+        # Il ne touche qu'aux tâches créées par ce run.
+        await _clore_action_temoin(task, verrou, creees)
+
+
 class TestLeMensongeEstCorrige:
     @pytest.mark.asyncio
     async def test_cancel_task_ne_pose_plus_l_etat_terminal(
@@ -68,32 +112,32 @@ class TestLeMensongeEstCorrige:
         from app.services import action_agents as module
 
         verrou = asyncio.Event()
+        entree = asyncio.Event()
         monkeypatch.setattr(
-            module, "get_llm_service", lambda: _faux_llm(lent=verrou),
+            module, "get_llm_service", lambda: _faux_llm(lent=verrou, entree=entree),
             raising=False,
         )
         monkeypatch.setattr(
-            "app.services.llm.get_llm_service", lambda: _faux_llm(lent=verrou),
+            "app.services.llm.get_llm_service", lambda: _faux_llm(lent=verrou, entree=entree),
         )
 
-        task = await ActionRunner.run("rapport-hebdo")
-        assert await _attendre(
-            lambda: ActionRunner.get_task(task.task_id).status == TaskStatus.RUNNING
-        )
+        async with _action_retenue(verrou) as task:
+            await _attendre_entree_flux(entree)
+            assert task.status == TaskStatus.RUNNING
 
-        assert ActionRunner.cancel_task(task.task_id) is True
-        etat = ActionRunner.get_task(task.task_id)
-        assert etat.status == TaskStatus.CANCEL_REQUESTED, (
-            "l'arrêt est DEMANDÉ - le flux LLM de l'étape tourne encore, "
-            "annoncer cancelled maintenant est le mensonge historique"
-        )
-        assert etat.completed_at is None
+            assert ActionRunner.cancel_task(task.task_id) is True
+            etat = ActionRunner.get_task(task.task_id)
+            assert etat.status == TaskStatus.CANCEL_REQUESTED, (
+                "l'arrêt est DEMANDÉ - le flux LLM de l'étape tourne encore, "
+                "annoncer cancelled maintenant est le mensonge historique"
+            )
+            assert etat.completed_at is None
 
-        verrou.set()  # l'étape en cours se termine, la boucle constate
-        assert await _attendre(
-            lambda: ActionRunner.get_task(task.task_id).status == TaskStatus.CANCELLED
-        )
-        assert ActionRunner.get_task(task.task_id).completed_at is not None
+            verrou.set()  # l'étape en cours se termine, la boucle constate
+            assert await _attendre(
+                lambda: ActionRunner.get_task(task.task_id).status == TaskStatus.CANCELLED
+            )
+            assert ActionRunner.get_task(task.task_id).completed_at is not None
 
 
 class TestLeRunEstUnTraitement:
@@ -121,35 +165,30 @@ class TestLeRunEstUnTraitement:
         from app.services import traitements
 
         verrou = asyncio.Event()
+        entree = asyncio.Event()
         monkeypatch.setattr(
-            "app.services.llm.get_llm_service", lambda: _faux_llm(lent=verrou),
+            "app.services.llm.get_llm_service", lambda: _faux_llm(lent=verrou, entree=entree),
         )
 
-        task = await ActionRunner.run("rapport-hebdo")
-        assert await _attendre(
-            lambda: ActionRunner.get_task(task.task_id).status == TaskStatus.RUNNING
-        )
-        traitement = await _traitement_action(task.task_id)
-        assert traitement is not None
+        async with _action_retenue(verrou) as task:
+            await _attendre_entree_flux(entree)
+            assert task.status == TaskStatus.RUNNING
+            traitement = await _traitement_action(task.task_id)
+            assert traitement is not None
 
-        await traitements.demander_arret(traitement.id)
-        etat = ActionRunner.get_task(task.task_id)
-        assert etat.status == TaskStatus.CANCEL_REQUESTED, (
-            "l'adaptateur canonique doit passer par la primitive unique - "
-            "sinon le panneau Actions reste running"
-        )
+            await traitements.demander_arret(traitement.id)
+            etat = ActionRunner.get_task(task.task_id)
+            assert etat.status == TaskStatus.CANCEL_REQUESTED, (
+                "l'adaptateur canonique doit passer par la primitive unique - "
+                "sinon le panneau Actions reste running"
+            )
 
-        verrou.set()
-        assert await _attendre(
-            lambda: ActionRunner.get_task(task.task_id).status == TaskStatus.CANCELLED
-        )
-        # relire jusqu'a l'etat terminal (la boucle termine en tache de fond)
-        traitement_final = None
-        for _ in range(50):
-            traitement_final = await _traitement_action(task.task_id)
-            if traitement_final.state == EtatTache.CANCELLED:
-                break
-            await asyncio.sleep(0.05)
+            verrou.set()
+            assert await _attendre(
+                lambda: ActionRunner.get_task(task.task_id).status == TaskStatus.CANCELLED
+            )
+        # Le contexte a attendu la vraie fin du producteur et son commit.
+        traitement_final = await _traitement_action(task.task_id)
         assert traitement_final.state == EtatTache.CANCELLED
 
     @pytest.mark.asyncio
@@ -265,43 +304,39 @@ class TestLaRouteHistoriqueEstCanonique:
         la transition cancel_requested est posée sur le ProcessingTask, qui la
         relaie à la primitive - un seul chemin d'annulation."""
         verrou = asyncio.Event()
+        entree = asyncio.Event()
         monkeypatch.setattr(
-            "app.services.llm.get_llm_service", lambda: _faux_llm(lent=verrou),
+            "app.services.llm.get_llm_service", lambda: _faux_llm(lent=verrou, entree=entree),
         )
 
-        task = await ActionRunner.run("rapport-hebdo")
-        assert await _attendre(
-            lambda: ActionRunner.get_task(task.task_id).status == TaskStatus.RUNNING
-        )
-        assert (await _traitement_action(task.task_id)) is not None
+        async with _action_retenue(verrou) as task:
+            await _attendre_entree_flux(entree)
+            assert task.status == TaskStatus.RUNNING
+            assert (await _traitement_action(task.task_id)) is not None
 
-        # TestClient.delete est synchrone : le laisser tourner sur la boucle
-        # bloquerait l'action de fond si elle détient encore la transaction SQL.
-        reponse = await asyncio.to_thread(
-            client.delete, f"/api/actions/tasks/{task.task_id}"
-        )
-        assert reponse.status_code == 200
+            # TestClient.delete est synchrone : le laisser tourner sur la boucle
+            # bloquerait l'action de fond si elle détient encore la transaction SQL.
+            reponse = await asyncio.to_thread(
+                client.delete, f"/api/actions/tasks/{task.task_id}"
+            )
+            assert reponse.status_code == 200
 
-        relu = await _traitement_action(task.task_id)
-        assert relu.state == EtatTache.CANCEL_REQUESTED, (
-            "la route historique doit passer par le service canonique - "
-            "un cancel purement en mémoire laisse le panneau Traitements "
-            "afficher running"
-        )
-        assert (
-            ActionRunner.get_task(task.task_id).status
-            == TaskStatus.CANCEL_REQUESTED
-        )
+            relu = await _traitement_action(task.task_id)
+            assert relu.state == EtatTache.CANCEL_REQUESTED, (
+                "la route historique doit passer par le service canonique - "
+                "un cancel purement en mémoire laisse le panneau Traitements "
+                "afficher running"
+            )
+            assert (
+                ActionRunner.get_task(task.task_id).status
+                == TaskStatus.CANCEL_REQUESTED
+            )
 
-        verrou.set()
-        assert await _attendre(
-            lambda: ActionRunner.get_task(task.task_id).status == TaskStatus.CANCELLED
-        )
-        for _ in range(50):
-            final = await _traitement_action(task.task_id)
-            if final.state == EtatTache.CANCELLED:
-                break
-            await asyncio.sleep(0.05)
+            verrou.set()
+            assert await _attendre(
+                lambda: ActionRunner.get_task(task.task_id).status == TaskStatus.CANCELLED
+            )
+        final = await _traitement_action(task.task_id)
         assert final.state == EtatTache.CANCELLED
 
     @pytest.mark.asyncio
@@ -310,8 +345,9 @@ class TestLaRouteHistoriqueEstCanonique:
     ):
         """Suivi en panne (fail-open) : le DELETE doit quand même arrêter."""
         verrou = asyncio.Event()
+        entree = asyncio.Event()
         monkeypatch.setattr(
-            "app.services.llm.get_llm_service", lambda: _faux_llm(lent=verrou),
+            "app.services.llm.get_llm_service", lambda: _faux_llm(lent=verrou, entree=entree),
         )
 
         async def suivi_en_panne(**_k):
@@ -323,23 +359,22 @@ class TestLaRouteHistoriqueEstCanonique:
             module.traitements_service, "creer_traitement", suivi_en_panne
         )
 
-        task = await ActionRunner.run("rapport-hebdo")
-        assert await _attendre(
-            lambda: ActionRunner.get_task(task.task_id).status == TaskStatus.RUNNING
-        )
-        assert (await _traitement_action(task.task_id)) is None
+        async with _action_retenue(verrou) as task:
+            await _attendre_entree_flux(entree)
+            assert task.status == TaskStatus.RUNNING
+            assert (await _traitement_action(task.task_id)) is None
 
-        reponse = await client.delete(f"/api/actions/tasks/{task.task_id}")
-        assert reponse.status_code == 200
-        assert (
-            ActionRunner.get_task(task.task_id).status
-            == TaskStatus.CANCEL_REQUESTED
-        )
+            reponse = await client.delete(f"/api/actions/tasks/{task.task_id}")
+            assert reponse.status_code == 200
+            assert (
+                ActionRunner.get_task(task.task_id).status
+                == TaskStatus.CANCEL_REQUESTED
+            )
 
-        verrou.set()
-        assert await _attendre(
-            lambda: ActionRunner.get_task(task.task_id).status == TaskStatus.CANCELLED
-        )
+            verrou.set()
+            assert await _attendre(
+                lambda: ActionRunner.get_task(task.task_id).status == TaskStatus.CANCELLED
+            )
 
 
 class TestLaFenetreDEnrolement:
