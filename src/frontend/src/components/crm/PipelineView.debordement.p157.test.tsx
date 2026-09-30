@@ -8,6 +8,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { _clearEscapeHandlers } from '../../lib/escapeStack';
+import type { ContactResponse } from '../../services/api';
 import { PipelineView } from './PipelineView';
 
 afterEach(() => {
@@ -43,6 +44,30 @@ function rendre() {
 }
 
 describe('P-157 : indice de débordement du pipeline', () => {
+  it('B-1756 : les indices précèdent la grille et ses cartes dans l’ordre clavier', () => {
+    const contact: ContactResponse = {
+      id: 'contact-ordre-clavier', first_name: 'Témoin', last_name: 'Pipeline',
+      company: null, email: null, phone: null, address: null, notes: null, tags: null,
+      stage: 'contact', score: 0, source: null, last_interaction: null,
+      created_at: '2026-09-30T10:00:00Z', updated_at: '2026-09-30T10:00:00Z',
+    };
+    render(<PipelineView contacts={[contact]} onContactClick={vi.fn()} onStageChange={vi.fn()} />);
+    const zone = grille();
+    simuler(zone, { clientWidth: 800, scrollLeft: 756 });
+    fireEvent.scroll(zone);
+
+    const carte = screen.getByRole('button', { name: 'Témoin Pipeline' });
+    for (const indice of [
+      screen.getByRole('button', { name: '3 étapes à gauche' }),
+      screen.getByRole('button', { name: '2 étapes à droite' }),
+    ]) {
+      // Boutons natifs et tabindex=0 suivent cet ordre au clavier. La recette
+      // Chromium vérifie que leur focus ne descend plus sous une grille dense.
+      expect(indice.compareDocumentPosition(zone) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+      expect(indice.compareDocumentPosition(carte) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    }
+  });
+
   it('à 800 px, annonce les étapes à droite et fond ce bord', () => {
     const zone = rendre();
     simuler(zone, { clientWidth: 800, scrollLeft: 0 });

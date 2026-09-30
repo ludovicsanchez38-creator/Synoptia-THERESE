@@ -233,6 +233,42 @@ export function PipelineView({ contacts, onContactClick, onStageChange }: Pipeli
           défile aussi aux flèches, colonnes vides comprises.
           `relative` : offsetParent des colonnes, pour mesurer le débordement. */}
       <div>
+        {/* B-1756 : les indices précèdent la grille, pour que leur focus ne
+            descende pas sous toutes les cartes d’une colonne dense. */}
+        {(etapesCachees.aGauche > 0 || etapesCachees.aDroite > 0) && (
+          <div aria-live="polite" className="mb-2 flex items-center gap-2">
+            {etapesCachees.aGauche > 0 && (
+              <button
+                ref={indiceGaucheRef}
+                type="button"
+                onClick={() => defilerVers('gauche')}
+                onKeyDown={(event) => {
+                  if (event.key !== 'Enter') return;
+                  event.preventDefault();
+                  defilerVers('gauche');
+                }}
+                className={CLASSE_INDICE}
+              >
+                {mentionDEtapesCachees(etapesCachees.aGauche, 'gauche')}
+              </button>
+            )}
+            {etapesCachees.aDroite > 0 && (
+              <button
+                ref={indiceDroiteRef}
+                type="button"
+                onClick={() => defilerVers('droite')}
+                onKeyDown={(event) => {
+                  if (event.key !== 'Enter') return;
+                  event.preventDefault();
+                  defilerVers('droite');
+                }}
+                className={cn(CLASSE_INDICE, 'ml-auto')}
+              >
+                {mentionDEtapesCachees(etapesCachees.aDroite, 'droite')}
+              </button>
+            )}
+          </div>
+        )}
         <div className="relative">
           <div
             ref={grilleRef}
@@ -277,40 +313,6 @@ export function PipelineView({ contacts, onContactClick, onStageChange }: Pipeli
             />
           )}
         </div>
-        {(etapesCachees.aGauche > 0 || etapesCachees.aDroite > 0) && (
-          <div aria-live="polite" className="mt-2 flex items-center gap-2">
-            {etapesCachees.aGauche > 0 && (
-              <button
-                ref={indiceGaucheRef}
-                type="button"
-                onClick={() => defilerVers('gauche')}
-                onKeyDown={(event) => {
-                  if (event.key !== 'Enter') return;
-                  event.preventDefault();
-                  defilerVers('gauche');
-                }}
-                className={CLASSE_INDICE}
-              >
-                {mentionDEtapesCachees(etapesCachees.aGauche, 'gauche')}
-              </button>
-            )}
-            {etapesCachees.aDroite > 0 && (
-              <button
-                ref={indiceDroiteRef}
-                type="button"
-                onClick={() => defilerVers('droite')}
-                onKeyDown={(event) => {
-                  if (event.key !== 'Enter') return;
-                  event.preventDefault();
-                  defilerVers('droite');
-                }}
-                className={cn(CLASSE_INDICE, 'ml-auto')}
-              >
-                {mentionDEtapesCachees(etapesCachees.aDroite, 'droite')}
-              </button>
-            )}
-          </div>
-        )}
       </div>
 
       <DragOverlay>
