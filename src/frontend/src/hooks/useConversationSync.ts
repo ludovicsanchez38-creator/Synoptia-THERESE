@@ -29,6 +29,7 @@ export function formatMessageFromResponse(msg: MessageResponse): Message {
   // BUG-136 : nouveau format {skill_files: [...]} (liste), lecture du legacy
   // {skill_file: {...}} conservée pour les messages persistés avant le fix.
   let skillFiles: NonNullable<Message['skillFiles']> = [];
+  let contexte: Message['contexte'];
   // Revue Soso : le frontend doit savoir qu'un message portait des pièces
   // jointes. Sans cela, une conversation rechargée ignore que le backend va
   // rejouer ces documents, et le consentement demandé ne mentionne rien.
@@ -47,6 +48,21 @@ export function formatMessageFromResponse(msg: MessageResponse): Message {
         if (Array.isArray(parsed.sources)) {
           webSources = parsed.sources as NonNullable<Message['webSources']>;
         }
+        const brut = parsed.contexte;
+        if (
+          brut
+          && typeof brut === 'object'
+          && typeof brut.messages_relus === 'number'
+          && typeof brut.messages_transmis === 'number'
+        ) {
+          contexte = {
+            messages_relus: brut.messages_relus,
+            messages_transmis: brut.messages_transmis,
+            ...(typeof brut.caracteres_retires === 'number' && brut.caracteres_retires > 0
+              ? { caracteres_retires: brut.caracteres_retires }
+              : {}),
+          };
+        }
       }
     } catch {
       // extra_data non-JSON ou corrompu : on ignore, le message reste affichable.
@@ -63,6 +79,7 @@ export function formatMessageFromResponse(msg: MessageResponse): Message {
       ? { skillFile: skillFiles[0], skillFiles }
       : {}),
     ...(webSources.length > 0 ? { webSources } : {}),
+    ...(contexte ? { contexte } : {}),
   };
 }
 

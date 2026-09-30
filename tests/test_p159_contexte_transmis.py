@@ -1,0 +1,380 @@
+"""P-159 : la réponse dit combien de messages passés ont été transmis.
+
+Le chat relit un historique, ajoute le tour courant, puis `trim_to_fit`
+peut en retirer pour tenir dans le modèle. Ces deux comptes doivent
+voyager avec la réponse, hors flux et dans l'événement `done`.
+"""
+
+import json
+from datetime import UTC, datetime, timedelta
+
+import pytest
+from app.models.entities import Conversation, Message
+from app.services.context import ContextWindow
+from app.services.providers.base import StreamEvent
+from httpx import AsyncClient
+from sqlalchemy.ext.asyncio import AsyncSession
+
+
+class _Fournisseur:
+    value = "anthropic"
+
+
+class _Config:
+    provider = _Fournisseur()
+    model = "faux-modele"
+
+
+class _FauxLLM:
+    def __init__(
+        self,
+        max_tokens: int | None = None,
+        system_prompt: str | None = "systeme",
+    ) -> None:
+        self.max_tokens = max_tokens
+        self.system_prompt = system_prompt
+
+    config = _Config()
+
+    def prepare_context(self, messages, memory_context=None):
+        if self.max_tokens is None:
+            return type("Ctx", (), {"messages": list(messages), "system_prompt": ""})()
+        return ContextWindow(
+            messages=list(messages),
+            system_prompt=self.system_prompt,
+            max_tokens=self.max_tokens,
+        ).trim_to_fit()
+
+    async def stream_response(self, context, raise_on_error=False, usage_sink=None):
+        if usage_sink is not None:
+            usage_sink["input_tokens"] = 3
+            usage_sink["output_tokens"] = 2
+        yield "Réponse courte."
+
+    async def stream_response_with_tools(self, context, tools=None):
+        yield StreamEvent(type="text", content="Réponse courte.")
+        yield StreamEvent(type="done", stop_reason="end_turn")
+
+
+def _attendu(messages: list, max_tokens: int | None) -> dict[str, int]:
+    """Même coupe que le faux service : le test ne recopie pas la formule."""
+    if max_tokens is None:
+        fenetre = list(messages)
+    else:
+        fenetre = ContextWindow(
+            messages=list(messages),
+            system_prompt="systeme",
+            max_tokens=max_tokens,
+        ).trim_to_fit().messages
+    relus = max(0, len(messages) - 1)
+    transmis = max(0, len(fenetre) - 1)
+    if transmis > relus:
+        transmis = relus
+    return {"messages_relus": relus, "messages_transmis": transmis}
+
+
+async def _fil(db_session: AsyncSession, nb: int, taille: int = 12) -> str:
+    conv = Conversation(title="Contexte")
+    db_session.add(conv)
+    await db_session.commit()
+    base = datetime(2026, 9, 29, 9, 0, tzinfo=UTC)
+    for i in range(nb):
+        db_session.add(
+            Message(
+                conversation_id=conv.id,
+                role="user" if i % 2 == 0 else "assistant",
+                content=f"passe-{i:02d}-" + ("x" * taille),
+                created_at=base + timedelta(seconds=i),
+            )
+        )
+    await db_session.commit()
+    return conv.id
+
+
+def _evenements(texte: str) -> list[dict]:
+    return [
+        json.loads(ligne.removeprefix("data: "))
+        for ligne in texte.splitlines()
+        if ligne.startswith("data: ")
+    ]
+
+
+class TestContexteTransmis:
+    @pytest.mark.asyncio
+    async def test_reponse_hors_flux_donne_les_messages_relus(
+        self, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+        from unittest.mock import patch
+
+        conv_id = await _fil(db_session, 3)
+        llm = _FauxLLM()
+        with patch("app.routers.chat.get_llm_service", return_value=llm):
+            reponse = await client.post(
+                "/api/chat/send",
+                json={
+                    "message": "question-courante",
+                    "conversation_id": conv_id,
+                    "stream": False,
+                    "include_memory": False,
+                },
+            )
+        assert reponse.status_code == 200, reponse.text
+        corps = reponse.json()
+        assert corps["contexte"] == {"messages_relus": 3, "messages_transmis": 3}, corps
+        assert "content" in corps and "conversation_id" in corps
+
+    @pytest.mark.asyncio
+    async def test_coupe_du_modele_diminue_les_messages_transmis(
+        self, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+        from unittest.mock import patch
+
+        conv_id = await _fil(db_session, 8, taille=400)
+        llm = _FauxLLM(max_tokens=80)
+        with patch("app.routers.chat.get_llm_service", return_value=llm):
+            reponse = await client.post(
+                "/api/chat/send",
+                json={
+                    "message": "question-courante",
+                    "conversation_id": conv_id,
+                    "stream": False,
+                    "include_memory": False,
+                },
+            )
+        assert reponse.status_code == 200, reponse.text
+        # Le faux service coupe vraiment : 8 messages longs ne tiennent pas.
+        attendu = _attendu(
+            [type("M", (), {"content": "x" * 400, "role": "user"})() for _ in range(8)]
+            + [type("M", (), {"content": "question-courante", "role": "user"})()],
+            80,
+        )
+        assert attendu["messages_transmis"] < attendu["messages_relus"]
+        assert reponse.json()["contexte"]["messages_relus"] == 8
+        assert reponse.json()["contexte"]["messages_transmis"] == attendu["messages_transmis"]
+        historique = await client.get(f"/api/chat/conversations/{conv_id}/messages")
+        assistant = [m for m in historique.json() if m["role"] == "assistant"][-1]
+        extra = json.loads(assistant["extra_data"])
+        assert extra["contexte"] == reponse.json()["contexte"]
+
+    @pytest.mark.asyncio
+    async def test_flux_porte_le_contexte_sur_done(
+        self, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+        from unittest.mock import patch
+
+        conv_id = await _fil(db_session, 2)
+        with patch("app.routers.chat.get_llm_service", return_value=_FauxLLM()):
+            reponse = await client.post(
+                "/api/chat/send",
+                json={
+                    "message": "question-courante",
+                    "conversation_id": conv_id,
+                    "stream": True,
+                    "include_memory": False,
+                },
+            )
+        assert reponse.status_code == 200, reponse.text
+        done = next(e for e in _evenements(reponse.text) if e.get("type") == "done")
+        assert done["contexte"] == {"messages_relus": 2, "messages_transmis": 2}
+        assert "usage" in done
+
+    @pytest.mark.asyncio
+    async def test_action_locale_ne_porte_pas_de_contexte(
+        self, client: AsyncClient
+    ) -> None:
+        reponse = await client.post(
+            "/api/chat/send",
+            json={"message": "{action: ouvrir crm}", "stream": False},
+        )
+        assert reponse.status_code == 200, reponse.text
+        assert reponse.json().get("contexte") is None
+
+
+def _message_rendu(message: str, max_tokens: int, system_prompt: str | None) -> str:
+    from app.services.providers.base import Message as MessageLLM
+
+    return ContextWindow(
+        messages=[MessageLLM(role="user", content=message)],
+        system_prompt=system_prompt,
+        max_tokens=max_tokens,
+    ).trim_to_fit().messages[-1].content
+
+
+def _caracteres_retires(message: str, max_tokens: int, system_prompt: str | None) -> int:
+    """Caractères du message d'origine absents du texte envoyé, marque exclue."""
+    rendu = _message_rendu(message, max_tokens, system_prompt)
+    marque = ContextWindow._MARQUE_TRONCATURE
+    assert marque in rendu
+    return len(message) - (len(rendu) - len(marque))
+
+
+class TestMessageCourantRaccourci:
+    """La coupe du seul message en cours doit se voir, pas seulement les messages passés."""
+
+    @pytest.mark.asyncio
+    async def test_le_message_courant_raccourci_annonce_le_texte_retire(
+        self, client: AsyncClient
+    ) -> None:
+        from unittest.mock import patch
+
+        message = "a" * 1000
+        llm = _FauxLLM(max_tokens=80, system_prompt="")
+        with patch("app.routers.chat.get_llm_service", return_value=llm):
+            reponse = await client.post(
+                "/api/chat/send",
+                json={"message": message, "stream": False, "include_memory": False},
+            )
+        assert reponse.status_code == 200, reponse.text
+        corps = reponse.json()["contexte"]
+        # Aucun message passé : les deux comptes restent à zéro. Le texte retiré, lui, voyage.
+        assert corps["messages_relus"] == 0
+        assert corps["messages_transmis"] == 0
+        assert len(_message_rendu(message, 80, "")) == 307
+        retires = _caracteres_retires(message, 80, "")
+        assert corps["caracteres_retires"] == retires
+        historique = await client.get(
+            f"/api/chat/conversations/{reponse.json()['conversation_id']}/messages"
+        )
+        assistant = [m for m in historique.json() if m["role"] == "assistant"][-1]
+        assert json.loads(assistant["extra_data"])["contexte"]["caracteres_retires"] == retires
+
+    @pytest.mark.asyncio
+    async def test_le_flux_annonce_aussi_le_texte_retire(
+        self, client: AsyncClient
+    ) -> None:
+        from unittest.mock import patch
+
+        message = "a" * 1000
+        with patch(
+            "app.routers.chat.get_llm_service",
+            return_value=_FauxLLM(max_tokens=80, system_prompt=""),
+        ):
+            reponse = await client.post(
+                "/api/chat/send",
+                json={"message": message, "stream": True, "include_memory": False},
+            )
+        assert reponse.status_code == 200, reponse.text
+        done = next(e for e in _evenements(reponse.text) if e.get("type") == "done")
+        assert done["contexte"]["caracteres_retires"] == _caracteres_retires(message, 80, "")
+        assert done["contexte"]["messages_relus"] == 0
+        assert done["contexte"]["messages_transmis"] == 0
+
+
+class _FauxAvecConversion(_FauxLLM):
+    """Fenêtre réelle : `to_openai_format` écarte les messages sans fond."""
+
+    def __init__(self) -> None:
+        super().__init__(max_tokens=100_000, system_prompt="systeme")
+        self.dernier: ContextWindow | None = None
+
+    def prepare_context(self, messages, memory_context=None):
+        self.dernier = super().prepare_context(messages, memory_context)
+        return self.dernier
+
+
+def _passes_apres_openai(contexte: ContextWindow) -> int:
+    """Messages passés encore présents dans la charge envoyée au fournisseur."""
+    payload = [
+        item
+        for item in contexte.to_openai_format()
+        if isinstance(item, dict) and item.get("role") != "system"
+    ]
+    return max(0, len(payload) - 1)
+
+
+async def _fil_contenus(db_session: AsyncSession, contenus: list[str]) -> str:
+    conv = Conversation(title="Contexte")
+    db_session.add(conv)
+    await db_session.commit()
+    base = datetime(2026, 9, 29, 9, 0, tzinfo=UTC)
+    for i, contenu in enumerate(contenus):
+        db_session.add(
+            Message(
+                conversation_id=conv.id,
+                role="user" if i % 2 == 0 else "assistant",
+                content=contenu,
+                created_at=base + timedelta(seconds=i),
+            )
+        )
+    await db_session.commit()
+    return conv.id
+
+
+class TestComptesApresFiltreFournisseur:
+    @pytest.mark.asyncio
+    async def test_un_ancien_message_vide_n_est_pas_compte_comme_transmis(
+        self, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+        from unittest.mock import patch
+
+        conv_id = await _fil_contenus(db_session, [""])
+        llm = _FauxAvecConversion()
+        with patch("app.routers.chat.get_llm_service", return_value=llm):
+            reponse = await client.post(
+                "/api/chat/send",
+                json={
+                    "message": "question-courante",
+                    "conversation_id": conv_id,
+                    "stream": False,
+                    "include_memory": False,
+                },
+            )
+        assert reponse.status_code == 200, reponse.text
+        assert llm.dernier is not None
+        attendu = _passes_apres_openai(llm.dernier)
+        assert attendu == 0
+        corps = reponse.json()["contexte"]
+        assert corps["messages_transmis"] == attendu
+        assert corps["messages_relus"] == attendu
+
+    @pytest.mark.asyncio
+    async def test_un_message_vide_ne_gonfle_pas_le_compte_d_un_vrai_message(
+        self, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+        from unittest.mock import patch
+
+        conv_id = await _fil_contenus(db_session, ["", "bonjour ancien"])
+        llm = _FauxAvecConversion()
+        with patch("app.routers.chat.get_llm_service", return_value=llm):
+            reponse = await client.post(
+                "/api/chat/send",
+                json={
+                    "message": "question-courante",
+                    "conversation_id": conv_id,
+                    "stream": False,
+                    "include_memory": False,
+                },
+            )
+        assert reponse.status_code == 200, reponse.text
+        assert llm.dernier is not None
+        attendu = _passes_apres_openai(llm.dernier)
+        assert attendu == 1
+        corps = reponse.json()["contexte"]
+        assert corps["messages_transmis"] == attendu
+        assert corps["messages_relus"] == attendu
+
+    @pytest.mark.asyncio
+    async def test_le_flux_compte_apres_le_filtre_du_fournisseur(
+        self, client: AsyncClient, db_session: AsyncSession
+    ) -> None:
+        from unittest.mock import patch
+
+        conv_id = await _fil_contenus(db_session, [""])
+        llm = _FauxAvecConversion()
+        with patch("app.routers.chat.get_llm_service", return_value=llm):
+            reponse = await client.post(
+                "/api/chat/send",
+                json={
+                    "message": "question-courante",
+                    "conversation_id": conv_id,
+                    "stream": True,
+                    "include_memory": False,
+                },
+            )
+        assert reponse.status_code == 200, reponse.text
+        done = next(e for e in _evenements(reponse.text) if e.get("type") == "done")
+        assert llm.dernier is not None
+        attendu = _passes_apres_openai(llm.dernier)
+        assert attendu == 0
+        assert done["contexte"]["messages_transmis"] == attendu
+        assert done["contexte"]["messages_relus"] == attendu
