@@ -10,6 +10,10 @@ import { useChatStore } from '../../stores/chatStore';
 import { useDemoStore } from '../../stores/demoStore';
 import { PrototypeConversationDrawer } from './PrototypeConversationDrawer';
 
+vi.mock('../../services/api/memory', () => ({
+  listProjects: vi.fn().mockResolvedValue([]),
+}));
+
 const TITRE = 'Relance du devis de la boulangerie Martin, vitrine réfrigérée et planning de pose sur trois semaines';
 
 function poser(titre: string) {
