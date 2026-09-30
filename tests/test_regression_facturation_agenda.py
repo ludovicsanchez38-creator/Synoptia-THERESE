@@ -174,9 +174,10 @@ class TestRobustesseDesFactures:
         emise = await client.put(f"/api/invoices/{facture['id']}", json={"status": "sent"})
         assert emise.json()["invoice_number"].startswith("FACT-")
         assert (await _facture(client, contact, document_type="devis"))["invoice_number"].startswith("DEV-")
-        avoir = await _facture(client, contact, document_type="avoir")
+        avoir = await _facture(client, contact, document_type="avoir", converted_from_id=facture["id"])
         assert avoir["invoice_number"].startswith("PROV-")
         avoir_emis = await client.put(f"/api/invoices/{avoir['id']}", json={"status": "sent"})
+        assert avoir_emis.status_code == 200, avoir_emis.text
         assert avoir_emis.json()["invoice_number"].startswith("AV-")
 
     @pytest.mark.asyncio

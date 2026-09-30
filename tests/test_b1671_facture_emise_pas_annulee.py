@@ -60,15 +60,19 @@ async def test_un_avoir_emis_refuse_le_statut_annulee(client: AsyncClient):
     """L'article 289, I, 5 assimile l'avoir à une facture. Le passer à
     « Annulée » retirerait sa déduction de l'encours sans document nouveau."""
     contact = await _contact(client)
+    facture = await _piece(client, contact, "facture")
+    origine = await client.put(f"/api/invoices/{facture['id']}", json={"status": "sent"})
+    assert origine.status_code == 200, origine.text
     avoir = await _piece(client, contact, "avoir")
+    reference = await client.put(f"/api/invoices/{avoir['id']}", json={"converted_from_id": facture["id"]})
+    assert reference.status_code == 200, reference.text
     emis = await client.put(f"/api/invoices/{avoir['id']}", json={"status": "sent"})
     assert emis.status_code == 200, emis.text
     assert emis.json()["invoice_number"].startswith("AV-")
 
     refus = await client.put(f"/api/invoices/{avoir['id']}", json={"status": "cancelled"})
     assert refus.status_code == 409, refus.text
-    assert "avoir inverse" in refus.text
-    assert "facture rectificative" in refus.text
+    assert "expert-comptable" in refus.text
 
     relue = await client.get(f"/api/invoices/{avoir['id']}")
     assert relue.json()["status"] == "sent"

@@ -164,20 +164,24 @@ class TestLesAutresCheminsDInsertion:
         assert reponse.status_code == 200, reponse.text[:200]
         return reponse.json()["id"]
 
-    def _double_le_prochain_numero(self, monkeypatch, contact_id: str) -> dict:
+    async def _double_le_prochain_numero(self, monkeypatch, contact_id: str) -> dict:
         from app.routers import invoices as module
 
+        # La réservation SQLite empêche un concurrent d’insérer pendant
+        # l’allocation. Un numéro déjà occupé, proposé une fois par un
+        # générateur périmé, exerce encore la reprise réelle d’IntegrityError.
+        numero_occupe = f"FACT-{datetime.now(UTC).year}-001"
+        await _pose_document(numero_occupe, contact_id)
         original = module._generate_invoice_number
         course = {"doublee": False}
 
-        async def numero_puis_double(session, document_type="facture"):
-            numero = await original(session, document_type)
+        async def premier_numero_perime(session, document_type="facture"):
             if not course["doublee"]:
                 course["doublee"] = True
-                await _pose_document(numero, contact_id)
-            return numero
+                return numero_occupe
+            return await original(session, document_type)
 
-        monkeypatch.setattr(module, "_generate_invoice_number", numero_puis_double)
+        monkeypatch.setattr(module, "_generate_invoice_number", premier_numero_perime)
         return course
 
     @pytest.mark.asyncio
@@ -188,7 +192,7 @@ class TestLesAutresCheminsDInsertion:
         annee = datetime.now(UTC).year
         contact_id = await _cree_contact(client)
         devis_id = await self._devis_cree(client, contact_id)
-        course = self._double_le_prochain_numero(monkeypatch, contact_id)
+        course = await self._double_le_prochain_numero(monkeypatch, contact_id)
 
         conversion = await client.post(
             f"/api/invoices/{devis_id}/convert", json={"target_type": "facture"}
@@ -216,7 +220,7 @@ class TestLesAutresCheminsDInsertion:
         annee = datetime.now(UTC).year
         contact_id = await _cree_contact(client)
         devis_id = await self._devis_cree(client, contact_id)
-        course = self._double_le_prochain_numero(monkeypatch, contact_id)
+        course = await self._double_le_prochain_numero(monkeypatch, contact_id)
 
         conversion = await client.post(f"/api/invoices/{devis_id}/convert-to-invoice", json={})
         assert conversion.status_code == 200, conversion.text[:200]

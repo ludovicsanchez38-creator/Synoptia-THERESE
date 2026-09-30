@@ -15,6 +15,15 @@ export function numeroAffiche(numero: string | null | undefined): string {
   return MENTION_NUMERO_PROVISOIRE;
 }
 
+/** Une annulation historique n'efface pas l'émission ; un PROV annulé reste un brouillon. */
+export function pieceEstEmise(invoice: Invoice): boolean {
+  return invoice.document_type !== 'devis' && Boolean(
+    invoice.sent_at
+    || ['sent', 'paid', 'overdue'].includes(invoice.status)
+    || (invoice.status === 'cancelled' && !invoice.invoice_number.startsWith('PROV-')),
+  );
+}
+
 const TYPE_DE_PIECE: Record<Invoice['document_type'], string> = {
   devis: 'Devis',
   facture: 'Facture',

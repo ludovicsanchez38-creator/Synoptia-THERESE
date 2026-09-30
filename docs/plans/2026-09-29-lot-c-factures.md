@@ -63,7 +63,7 @@ Elles ne disent pas « sans rupture » pour le numéro de facture. Elles disent 
 
 L'article 242 nonies A, I, 7° admet des séries distinctes « lorsque les conditions d'exercice de l'activité de l'assujetti le justifient », et il demande un usage conforme à cette justification initiale. Le § 90 rappelle, pour chaque série, la chronologie au fil des émissions, la continuité, et l'absence de doublon la même année. Aucune des pages lues ne dit qu'une note d'avoir et une facture forment, à elles seules, deux conditions d'exercice. L'article 289, I, 5 assimile le document qui modifie la facture initiale à une facture.
 
-THÉRÈSE a une activité et un établissement. Sur les pages lues, le 7° n'établit pas la justification de deux séries `FACT-` et `AV-`. Les deux séries sont conservées. Les changer demanderait une décision humaine. Ce point s'arrête là.
+Pour une installation dont les conditions d’exercice ne sont pas documentées, le 7° n'établit pas la justification de deux séries `FACT-` et `AV-`. Les deux séries sont conservées. Les changer demanderait une décision humaine. Ce point s'arrête là.
 
 ### B-1615, numéro et date à l'émission
 
@@ -81,10 +81,10 @@ Migration, sans réécriture des lignes déjà en base. Un brouillon qui porte d
 
 Le correctif demandé (refuser `cancelled`, message qui dit d'émettre un avoir, retirer « Annulée » du sélecteur d'une facture émise) est retenu comme choix de produit, plus étroit que le § 210.
 
-Le § 210 admet aussi une facture nouvelle qui annule et remplace. Cette seconde voie n'est pas construite dans ce lot. Le message à l'écran indique l'avoir, parce que c'est le document rectificatif que l'application sait déjà émettre, et parce que le lot le demande. Le message dit aussi, pour un avoir, qu'une facture rectificative reste une voie.
+Le § 210 admet aussi une facture nouvelle qui annule et remplace. Cette seconde voie n'est pas construite dans ce lot. Le message à l'écran indique l'avoir, parce que c'est le document rectificatif que l'application sait déjà émettre, et parce que le lot le demande. Pour corriger un avoir déjà émis, le message demande un avis comptable : le modèle de données ne fournit pas encore de lien vers un avoir antérieur.
 
 - `PUT` avec `cancelled` sur une facture déjà émise répond 409 : « Une facture émise ne s'annule pas. Pour l'annuler, émets un avoir. » La pièce reste à son statut.
-- Le même garde vaut pour un avoir déjà émis. Le I, 5 de l'article 289 l'assimile à une facture. Le `PUT` répond 409 : « Un avoir émis ne s'annule pas. Pour l'annuler, émets un avoir inverse ou une facture rectificative. » Un brouillon d'avoir reste annulable.
+- Le même garde vaut pour un avoir déjà émis. Le I, 5 de l'article 289 l'assimile à une facture. Le `PUT` répond 409 : « Un avoir émis ne s'annule pas. Demande à ton expert-comptable comment établir le document rectificatif adapté. » Un brouillon d'avoir reste annulable.
 - Un devis reste annulable : les textes cités ne le visent pas. Un brouillon de facture, qui n'est pas émis, peut encore passer à « Annulée » sans prendre de numéro.
 - Le sélecteur d'une facture ou d'un avoir déjà émis ne propose plus « Annulée ». Une pièce dont le statut enregistré est déjà annulé affiche cette valeur. Dès qu'on en choisit une autre, « Annulée » sort de la liste.
 - Un avoir ne cite comme origine qu'une facture déjà émise, à la création, à la conversion et à l'émission. Le § 220 demande la référence de la facture initiale, son numéro et sa date. Un brouillon `PROV-` ne peut pas servir d'origine, et le PDF ne l'imprime pas.
@@ -93,8 +93,16 @@ Le § 210 admet aussi une facture nouvelle qui annule et remplace. Cette seconde
 
 La page BOFiP de la numérotation porte la date de publication du 18 octobre 2013. Aucune date de fin n'apparaissait sur la page lue. Une version plus récente, si elle existe sous un autre identifiant, n'a pas été trouvée. Le § 140 est cité par la revue pour la date de délivrance ; son libellé verbatim n'est pas recopié dans la section des textes lus ci-dessus.
 
-La facture de remplacement du § 240 n'a pas d'écran dans ce lot. Quelqu'un qui voudrait annuler et remplacer en un seul document ne le peut pas ici ; il émet un avoir, ou il lit le message qui nomme la facture rectificative sans pouvoir la composer dans le formulaire.
+La facture de remplacement du § 240 n'a pas d'écran dans ce lot. Quelqu'un qui voudrait annuler et remplacer en un seul document ne le peut pas ici ; il peut corriger une facture par un avoir lié à la facture initiale. Le formulaire ne permet pas encore de rectifier un avoir émis ; le message ne promet donc plus un avoir inverse que l'application ne sait pas référencer.
 
 Un brouillon historique encore dernier de sa série garde son numéro à l'émission, y compris si l'année écrite dans ce numéro et la date du jour ne coïncident pas. La date d'émission, elle, est recalée sur le jour de l'émission.
 
 La justification des séries `FACT-` et `AV-` reste ouverte : le 7° ne la fournit pas sur les pages lues, et la série n'a pas été changée.
+
+## Reprise Codex du 30/09/2026
+
+B-1743 : une pièce déjà émise puis annulée dans une ancienne version conserve son numéro, ses dates et sa référence PDF. B-1744 : un PROV annulé sans envoi demeure un brouillon modifiable et supprimable. B-1745 : un avoir ordinaire peut rester sans origine au brouillon ; son émission exige une facture initiale émise, dont le PDF cite le numéro et la date. Les tests HTTP et UI ont reproduit les défauts avant correction. La question des séries FACT/AV attend toujours la décision humaine.
+
+La reprise conserve l’état émis chargé avant allocation pour autoriser le payload complet lors de la première émission d’un PROV annulé. Les refus de suppression, de modification et de retour au brouillon d’un avoir émis, ainsi que son bandeau, orientent vers un avis comptable : le formulaire ne référence pas encore un avoir antérieur.
+
+B-1746 : PUT et mark-paid réservent l’écriture SQLite (`BEGIN IMMEDIATE`) avant de lire la pièce et gardent cette réservation jusqu’au commit. Les collisions de numéro occupé se reprennent dans un SAVEPOINT, sans libérer la réservation externe. Cinq scénarios ASGI sur connexions SQLCipher distinctes conservent numéro et dates ; l’effet entre processus découle du verrou SQLite et n’a pas été rejoué par ce test.

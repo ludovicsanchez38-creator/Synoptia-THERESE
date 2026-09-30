@@ -21,7 +21,7 @@ import { pushEscapeHandler } from '../../lib/escapeStack';
 import { useDialogFocusTrap } from '../../hooks/useDialogFocusTrap';
 import { useQuestionDAbandonDeModale } from '../../hooks/useQuestionDAbandonDeModale';
 import { libellesDeLaPiece } from './libellesPiece';
-import { numeroAffiche } from './presentationFacture';
+import { numeroAffiche, pieceEstEmise } from './presentationFacture';
 import { useExternalActionConfirmation } from '../app/useExternalActionConfirmation';
 import { Button } from '../ui/Button';
 import { FormField } from '../ui/FormField';
@@ -165,9 +165,7 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
   const [status, setStatus] = useState(invoice?.status || 'draft');
   // B-1537 : une facture ou un avoir émis ne repasse pas en brouillon (B-1506,
   // numérotation continue) ; le moteur le refuse, la modale ne le propose plus.
-  const pieceEmise = Boolean(
-    invoice && invoice.document_type !== 'devis' && (invoice.status !== 'draft' || invoice.sent_at),
-  );
+  const pieceEmise = Boolean(invoice && pieceEstEmise(invoice));
   const [notes, setNotes] = useState(invoice?.notes || '');
   const [validiteJours, setValiditeJours] = useState<number>(
     invoice?.validite_jours ?? 30
@@ -707,7 +705,9 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
           {pieceEmise && (
             <p className="rounded-md border border-border bg-surface-2 p-3 text-sm text-text">
               Pièce émise : son contenu est figé (numérotation continue). Seul son statut change ;
-              pour la corriger, émets un avoir.
+              {' '}{documentType === 'avoir'
+                ? 'Demande à ton expert-comptable comment établir le document rectificatif adapté.'
+                : 'Pour la corriger, émets un avoir.'}
             </p>
           )}
 
@@ -818,17 +818,17 @@ export function InvoiceForm({ invoice, onClose, onSave, defaultDocumentType }: I
             </FormField>
 
             {documentType === 'avoir' && (
-              <FormField label="Facture d’origine" htmlFor="factureOrigine" description="La facture que cet avoir corrige ; le PDF la cite.">
+              <FormField label="Facture d’origine" htmlFor="factureOrigine" description="Choisis la facture que cet avoir corrige avant de l’émettre ; le PDF cite son numéro et sa date.">
                 <Select
                   id="factureOrigine"
                   value={factureOrigineId}
                   onChange={(e) => setFactureOrigineId(e.target.value)}
                   disabled={pieceEmise}
                   options={[
-                    { value: '', label: 'Aucune' },
+                    { value: '', label: 'À choisir avant émission' },
                     ...facturesDuClient
                       .filter((f) => (
-                        (f.status === 'sent' || f.status === 'paid' || f.status === 'overdue')
+                        pieceEstEmise(f)
                         && !f.invoice_number.startsWith('PROV-')
                       ))
                       .map((f) => ({

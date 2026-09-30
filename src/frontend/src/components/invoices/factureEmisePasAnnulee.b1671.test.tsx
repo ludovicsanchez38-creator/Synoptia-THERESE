@@ -89,6 +89,8 @@ describe('B-1671 : Annulée sort du sélecteur d’une facture émise', () => {
     await screen.findByLabelText('Statut');
     expect(valeursStatut()).not.toContain('cancelled');
     expect(valeursStatut()).toEqual(expect.arrayContaining(['sent', 'paid', 'overdue']));
+    expect(screen.getByText(/expert-comptable/)).toBeVisible();
+    expect(screen.queryByText(/émets un avoir/)).toBeNull();
   });
 
   it('un devis envoyé propose encore cancelled', async () => {
@@ -125,5 +127,19 @@ describe('B-1671 : Annulée sort du sélecteur d’une facture émise', () => {
     render(<InvoiceForm invoice={piece('facture', 'draft') as never} onClose={vi.fn()} onSave={vi.fn()} />);
     await screen.findByLabelText('Statut');
     expect(valeursStatut()).toContain('cancelled');
+  });
+
+  it('un brouillon PROV annulé peut revenir au brouillon et reste modifiable', async () => {
+    render(<InvoiceForm invoice={{ ...piece('facture', 'cancelled'), invoice_number: 'PROV-jetable' } as never} onClose={vi.fn()} onSave={vi.fn()} />);
+    await screen.findByLabelText('Statut');
+    expect(valeursStatut()).toContain('draft');
+    expect(screen.getByLabelText(/Date d.émission/)).not.toBeDisabled();
+  });
+
+  it('un PROV avec un horodatage d’envoi reste figé malgré son statut annulé', async () => {
+    render(<InvoiceForm invoice={{ ...piece('facture', 'cancelled'), invoice_number: 'PROV-ancien', sent_at: '2026-08-01T00:00:00Z' } as never} onClose={vi.fn()} onSave={vi.fn()} />);
+    await screen.findByLabelText('Statut');
+    expect(valeursStatut()).not.toContain('draft');
+    expect(screen.getByLabelText(/Date d.émission/)).toBeDisabled();
   });
 });
