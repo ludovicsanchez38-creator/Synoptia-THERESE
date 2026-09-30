@@ -2048,10 +2048,10 @@ async def send_message(
         tokens_out=output_tokens,
     )
     _memoriser_contexte(assistant_message, bilan_contexte)
-    session.add(assistant_message)
-    await session.commit()
-
-    return ChatResponse(
+    # B-1494, voie non diffusée : la suppression pendant la génération
+    # l'emporte aussi ici. Construire la réponse avant un éventuel rollback
+    # évite de relire une conversation dont les attributs SQL sont expirés.
+    response = ChatResponse(
         id=assistant_message.id,
         conversation_id=conversation.id,
         content=assistant_content,
@@ -2064,6 +2064,8 @@ async def send_message(
         created_at=assistant_message.created_at,
         confirmations=inline_pending_confirmations or None,
     )
+    await _ecrire_reponse(session, assistant_message)
+    return response
 
 
 async def _stream_response(
