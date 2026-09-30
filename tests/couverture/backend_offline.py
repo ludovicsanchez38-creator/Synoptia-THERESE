@@ -60,11 +60,9 @@ def _hote_numerique_local(hote: object, famille: int) -> str | None:
 
 
 def _destination_locale(famille: int, adresse: object) -> object:
-    af_unix = getattr(socket, "AF_UNIX", None)
-    if af_unix is not None and famille == af_unix:
-        if isinstance(adresse, (str, bytes)):
-            return adresse
-        _refuser(adresse)
+    # Une socket Unix nommée peut joindre n'importe quel service local, dont
+    # un mandataire. La paire anonyme de réveil asyncio n'utilise pas ces appels
+    # adressés et reste disponible via socketpair/send/recv.
     if famille in (socket.AF_INET, socket.AF_INET6):
         if isinstance(adresse, tuple) and adresse:
             hote = _hote_numerique_local(adresse[0], famille)
@@ -78,11 +76,14 @@ def _refuser(adresse: object) -> None:
 
 
 def installer_garde_socket() -> None:
-    """Refuse DNS, sockets hors loopback et sous-processus dans l'ASGI."""
-    global _garde_installee
-    if _garde_installee:
-        return
+    """Refuse DNS, destinations Unix, sorties hors loopback et sous-processus.
 
+    Les proxies d'environnement sont neutralisés à chaque installation ; s'ils
+    réapparaissent ensuite, les opérations socket adressées échouent avant
+    l'appel natif. Les appels natifs hors Python et proxies explicites configurés
+    en code ne sont pas couverts par cette garde.
+    """
+    global _garde_installee
     # Un proxy sur loopback pourrait relayer une demande cloud malgré la garde
     # socket. On retire les proxies d'environnement avant tout import backend.
     for cle in tuple(os.environ):
@@ -90,6 +91,8 @@ def installer_garde_socket() -> None:
             os.environ.pop(cle, None)
     os.environ["NO_PROXY"] = "*"
     os.environ["no_proxy"] = "*"
+    if _garde_installee:
+        return
 
     getaddrinfo = socket.getaddrinfo
     getnameinfo = socket.getnameinfo
@@ -146,6 +149,13 @@ def installer_garde_socket() -> None:
         return getnameinfo((numerique, *adresse[1:]), flags | socket.NI_NUMERICHOST | socket.NI_NUMERICSERV)
 
     def verifier_socket(sock: socket.socket, adresse: object) -> object:
+        if any(
+            cle.upper().endswith("_PROXY")
+            and cle.upper() != "NO_PROXY"
+            and valeur.strip()
+            for cle, valeur in os.environ.items()
+        ):
+            _refuser("proxy d'environnement réintroduit")
         return _destination_locale(sock.family, adresse)
 
     def connect_local(sock: socket.socket, adresse: object) -> None:
@@ -236,11 +246,15 @@ class BackendOffline:
 
 
 def create_app() -> BackendOffline:
-    """Installe la garde puis construit l'application produit inchangée."""
+    """Exige un dossier explicite, puis installe la garde avant l'import produit."""
     if os.environ.get("THERESE_SKIP_SERVICES") != "1":
         raise RuntimeError("THERESE_SKIP_SERVICES=1 est requis pour la couverture hors ligne")
+    if not os.environ.get("THERESE_DATA_DIR"):
+        raise RuntimeError("THERESE_DATA_DIR explicite est requis pour la couverture hors ligne")
     if "app.main" in sys.modules:
         raise RuntimeError("app.main a été importé avant la garde hors ligne")
+    if "app.config" in sys.modules:
+        raise RuntimeError("app.config a été importé avant la garde hors ligne")
     installer_garde_socket()
     from app.main import app
 
