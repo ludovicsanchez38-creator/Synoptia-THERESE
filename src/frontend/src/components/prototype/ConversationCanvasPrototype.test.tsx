@@ -19,6 +19,36 @@ const activityHarness = vi.hoisted(() => ({
   cancelAtelier: vi.fn().mockResolvedValue(undefined),
 }));
 
+function mesurerLeComposeur(hauteurInitiale: number) {
+  let hauteur = hauteurInitiale;
+  const callbacks = new Map<Element, ResizeObserverCallback>();
+  const mesurerAvant = HTMLElement.prototype.getBoundingClientRect;
+  const mesure = vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+    const rect = mesurerAvant.call(this);
+    return this.dataset.testid === 'prototype-composer-backdrop'
+      ? { ...rect, height: hauteur } as DOMRect
+      : rect;
+  });
+  vi.stubGlobal('ResizeObserver', class {
+    private elements = new Set<Element>();
+    constructor(private callback: ResizeObserverCallback) {}
+    observe(element: Element) {
+      this.elements.add(element);
+      callbacks.set(element, this.callback);
+    }
+    unobserve(element: Element) { this.elements.delete(element); callbacks.delete(element); }
+    disconnect() { for (const element of this.elements) callbacks.delete(element); }
+  });
+  return {
+    hauteur: (valeur: number) => { hauteur = valeur; },
+    notifier(element: Element) {
+      expect(callbacks.has(element)).toBe(true);
+      act(() => callbacks.get(element)!([], {} as ResizeObserver));
+    },
+    restore() { mesure.mockRestore(); vi.unstubAllGlobals(); },
+  };
+}
+
 vi.mock('../../hooks/useVoiceRecorder', () => ({
   useVoiceRecorder: vi.fn((options: { onTranscript?: (text: string) => void }) => {
     voiceHarness.onTranscript = options.onTranscript ?? null;
@@ -199,12 +229,50 @@ describe('ConversationCanvasPrototype - recette UI 16/07', () => {
     expect(shell).toHaveAttribute('data-high-contrast', 'true');
     expect(screen.getByTestId('prototype-composer-backdrop').className).toContain('var(--color-bg)');
     expect(
-      Number.parseInt(screen.getByTestId('prototype-conversation-scroll').style.paddingBottom, 10),
+      Number.parseInt(screen.getByTestId('prototype-conversation-scroll').style.marginBottom, 10),
     ).toBeGreaterThanOrEqual(224);
 
     act(() => useAccessibilityStore.setState({ theme: 'light', highContrast: false }));
     expect(shell).toHaveAttribute('data-theme', 'light');
     expect(shell).not.toHaveAttribute('data-high-contrast');
+  });
+
+  it('B-1713 : réserve le viewport hors du composeur et suit sa hauteur sans ajouter du blanc au fil', () => {
+    const mesure = mesurerLeComposeur(210);
+    const vue = render(<ConversationCanvasPrototype />);
+    try {
+      const fil = screen.getByTestId('prototype-conversation-scroll');
+      expect(fil.style.marginBottom).toBe('234px');
+      expect(fil.style.paddingBottom).toBe('');
+      mesure.hauteur(300);
+      mesure.notifier(screen.getByTestId('prototype-composer-backdrop'));
+      expect(fil.style.marginBottom).toBe('324px');
+      expect(fil.style.paddingBottom).toBe('');
+    } finally {
+      vue.unmount();
+      mesure.restore();
+    }
+  });
+
+  it('B-1713 : remesure le composeur remonté au retour Accueil, puis observe ses changements', async () => {
+    const mesure = mesurerLeComposeur(210);
+    const vue = render(<ConversationCanvasPrototype />);
+    try {
+      const ancien = screen.getByTestId('prototype-composer-backdrop');
+      await act(async () => runAction('invoices.open'));
+      expect(ancien.isConnected).toBe(false);
+      mesure.hauteur(270);
+      await act(async () => runAction('home.open'));
+      const nouveau = screen.getByTestId('prototype-composer-backdrop');
+      expect(nouveau).not.toBe(ancien);
+      expect(screen.getByTestId('prototype-conversation-scroll').style.marginBottom).toBe('294px');
+      mesure.hauteur(310);
+      mesure.notifier(nouveau);
+      expect(screen.getByTestId('prototype-conversation-scroll').style.marginBottom).toBe('334px');
+    } finally {
+      vue.unmount();
+      mesure.restore();
+    }
   });
 
   it('ne laisse pas de languette de réouverction après fermeture d’un canevas (retirée, recette Ludo)', () => {

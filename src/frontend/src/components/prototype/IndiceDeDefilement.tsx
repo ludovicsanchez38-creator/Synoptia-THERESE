@@ -31,10 +31,9 @@ export function IndiceDeDefilement({ cible }: { cible: RefObject<HTMLDivElement 
 
   if (!resteDuContenu) return null;
   return (
-    // B-1713 : sur l'Accueil large, le centrage recouvrait « Prospects en cours ».
-    // À 800 px, le pousser après le résumé ; sur écran large, le placer dans
-    // l'espace entre les deux colonnes garde leurs textes lisibles.
-    <div className="pointer-events-none flex justify-center pb-2 pl-20 lg:pl-0 lg:pr-48">
+    // B-1713 : le fil s'arrête avant cette zone réservée au composeur.
+    // L'indice n'a plus besoin d'un décalage horizontal lié au contenu.
+    <div className="pointer-events-none flex justify-center pb-2">
       <button
         type="button"
         onClick={() => cible.current?.scrollTo({ top: cible.current.scrollHeight, behavior: 'smooth' })}
