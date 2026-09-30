@@ -10,6 +10,7 @@ import type { Contact } from '../../services/api/memory';
 import type { DomaineEtiquette } from '../ui/Etiquette';
 import type { AppView } from '../../stores/navigationStore';
 import { parisDateKey } from '../../lib/civilDate';
+import { numeroAffiche } from '../invoices/presentationFacture';
 
 export type AttentionKind = 'event' | 'task' | 'follow_up' | 'invoice' | 'prospect';
 
@@ -91,8 +92,8 @@ function invoiceToAttention(invoice: DashboardInvoice): TodayAttentionItem {
     // B4 : l'artisan lisait « Facture FACT-2026-001 » — une référence, pas un
     // client. Le nom d'abord, la référence en repli quand il manque.
     title: invoice.contact_name
-      ? `${invoice.contact_name} · ${invoice.invoice_number}`
-      : `Facture ${invoice.invoice_number}`,
+      ? `${invoice.contact_name} · ${numeroAffiche(invoice.invoice_number)}`
+      : `Facture ${numeroAffiche(invoice.invoice_number)}`,
     detail: [formatMoney(invoice), dueLabel ? `échéance ${dueLabel}` : 'échéance non renseignée'].join(' · '),
     badge: 'À relancer',
     urgent: true,

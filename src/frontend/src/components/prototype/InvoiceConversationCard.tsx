@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import type { Contact, CreateInvoiceRequest, Invoice } from '../../services/api';
 import type { InvoiceWorkspaceData } from './usePrototypeInvoiceData';
+import { numeroAffiche } from '../invoices/presentationFacture';
 import { PLAFOND_CONTACTS } from '../../stores/contactsStore';
 import type { ReadResource } from './usePrototypeReadData';
 import { Spinner } from '../ui/Spinner';
@@ -228,7 +229,7 @@ export function InvoiceWorkspaceCard({
                 </span>
                 <span className="min-w-0 flex-1">
                   <span className="flex flex-wrap items-center gap-2">
-                    <strong className="text-sm text-text">{invoice.invoice_number}</strong>
+                    <strong className="text-sm text-text">{numeroAffiche(invoice.invoice_number)}</strong>
                     <span className="rounded-full bg-bg px-2 py-0.5 text-xs font-semibold text-text-muted">{statusLabels[invoice.status] || invoice.status}</span>
                   </span>
                   <span className="mt-0.5 block truncate text-xs text-text-muted">{nomDuClient(invoice, contact, resource.data.unavailableSources.includes('contacts'))} · {invoice.document_type}</span>
@@ -258,7 +259,7 @@ function ExistingInvoiceDetail({ data, invoice }: { data: InvoiceWorkspaceData; 
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.12em] text-text-muted">{invoice.document_type}</div>
-            <h3 className="mt-1 text-lg font-bold text-text">{invoice.invoice_number}</h3>
+            <h3 className="mt-1 text-lg font-bold text-text">{numeroAffiche(invoice.invoice_number)}</h3>
             <p className="mt-1 flex items-center gap-1.5 text-xs text-text-muted"><Users className="h-3.5 w-3.5" />{nomDuClient(invoice, contact, data.unavailableSources.includes('contacts'))}</p>
           </div>
           <div className="text-right">
@@ -646,7 +647,7 @@ function DevisDraftForm({
         {created && !hasUnsavedChanges && (
           <div role="status" className="mt-3 flex items-start gap-2 rounded-md border border-success/40 bg-[var(--color-success-tint)] p-3 text-sm text-success" data-testid="devis-draft-saved">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
-            <span><strong>{created.invoice_number} enregistré comme brouillon.</strong> Aucun PDF n’a été généré et aucun email n’a été envoyé.</span>
+            <span><strong>{numeroAffiche(created.invoice_number)} enregistré comme brouillon.</strong> Aucun PDF n’a été généré et aucun email n’a été envoyé.</span>
           </div>
         )}
 
@@ -655,7 +656,7 @@ function DevisDraftForm({
             <div className="flex items-start gap-2 text-xs text-accent">
               <ShieldCheck className="h-4 w-4 shrink-0" />
               <div>
-                <strong>{brouillonEnregistre ? `Confirmer la mise à jour de ${brouillonEnregistre.invoice_number}` : 'Confirmer la création du devis brouillon'}</strong>
+                <strong>{brouillonEnregistre ? `Confirmer la mise à jour de ${numeroAffiche(brouillonEnregistre.invoice_number)}` : 'Confirmer la création du devis brouillon'}</strong>
                 <p className="mt-1">Destinataire : {confirmationSnapshot.recipient}</p>
                 <p>Montant TTC : {formatMoney(confirmationSnapshot.totalTtc, confirmationSnapshot.request.currency)}</p>
                 <p>Échéance : {formatDate(confirmationSnapshot.request.due_date)}</p>

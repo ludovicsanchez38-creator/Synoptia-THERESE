@@ -99,25 +99,86 @@ class TestPdfDeFacture:
 class TestRobustesseDesFactures:
     @pytest.mark.asyncio
     async def test_les_numeros_ne_se_reutilisent_pas_apres_une_suppression(self, client):
+        """BUG-073 : MAX des numéros émis, pas COUNT.
+
+        B-1615 : un brouillon PROV n'entre pas dans la série. Le supprimer ne
+        doit ni réutiliser un FACT déjà émis, ni sauter un rang. L'ancienne
+        version supprimait le premier brouillon déjà numéroté FACT- et vérifiait
+        que le suivant n'héritait pas de ce numéro. Ce comportement de création
+        n'existe plus : la preuve se fait sur des pièces émises.
+        """
         contact = await _contact(client)
+        annee = datetime.now(UTC).year
         premiere = await _facture(client, contact)
         seconde = await _facture(client, contact)
-        assert premiere["invoice_number"] != seconde["invoice_number"]
-        suppression = await client.delete(f"/api/invoices/{premiere['id']}")
-        assert suppression.status_code in (200, 204), suppression.text
+        e1 = await client.put(f"/api/invoices/{premiere['id']}", json={"status": "sent"})
+        e2 = await client.put(f"/api/invoices/{seconde['id']}", json={"status": "sent"})
+        assert e1.status_code == 200 and e2.status_code == 200
+        assert e1.json()["invoice_number"] == f"FACT-{annee}-001"
+        assert e2.json()["invoice_number"] == f"FACT-{annee}-002"
+        assert (await client.delete(f"/api/invoices/{premiere['id']}")).status_code == 409
+
+        brouillon = await _facture(client, contact)
+        assert brouillon["invoice_number"].startswith("PROV-")
+        assert (await client.delete(f"/api/invoices/{brouillon['id']}")).status_code == 200
 
         troisieme = await _facture(client, contact)
+        e3 = await client.put(f"/api/invoices/{troisieme['id']}", json={"status": "sent"})
+        assert e3.status_code == 200, e3.text
+        assert e3.json()["invoice_number"] == f"FACT-{annee}-003"
 
-        assert troisieme["invoice_number"] not in (premiere["invoice_number"], seconde["invoice_number"]), (
-            "un numéro déjà émis ne doit jamais être réattribué (BUG-073, séquence par MAX et non par COUNT)"
-        )
+    @pytest.mark.asyncio
+    async def test_supprimer_le_plus_grand_fact_historique_ne_le_reattribue_pas(self, client):
+        """Avant B-1615, ce test effaçait un brouillon déjà numéroté FACT- et
+        vérifiait que le suivant ne reprenait pas ce numéro. La version
+        affaiblie n'effaçait qu'un PROV-. Le plus grand FACT- encore brouillon
+        ne s'efface pas : sinon le maximum des lignes restantes le redonne.
+        """
+        from app.models import database as db_module
+        from app.models.entities import Invoice
+
+        contact = await _contact(client)
+        annee = datetime.now(UTC).year
+        premiere = await _facture(client, contact)
+        e1 = await client.put(f"/api/invoices/{premiere['id']}", json={"status": "sent"})
+        assert e1.status_code == 200, e1.text
+        assert e1.json()["invoice_number"] == f"FACT-{annee}-001"
+
+        async with db_module.AsyncSessionLocal() as session:
+            historique = Invoice(
+                invoice_number=f"FACT-{annee}-002",
+                contact_id=contact,
+                document_type="facture",
+                status="draft",
+                due_date=datetime.now(UTC) + timedelta(days=30),
+            )
+            session.add(historique)
+            await session.commit()
+            identifiant = historique.id
+
+        refus = await client.delete(f"/api/invoices/{identifiant}")
+        assert refus.status_code == 409, refus.text
+        assert (await client.get(f"/api/invoices/{identifiant}")).json()["invoice_number"] == f"FACT-{annee}-002"
+
+        suivante = await _facture(client, contact)
+        e2 = await client.put(f"/api/invoices/{suivante['id']}", json={"status": "sent"})
+        assert e2.status_code == 200, e2.text
+        assert e2.json()["invoice_number"] == f"FACT-{annee}-003"
 
     @pytest.mark.asyncio
     async def test_le_prefixe_suit_le_type_de_document(self, client):
+        """Le préfixe définitif suit le type. Facture et avoir l'obtiennent à l'émission (B-1615)."""
         contact = await _contact(client)
-        assert (await _facture(client, contact, document_type="facture"))["invoice_number"].startswith("FACT-")
+        facture = await _facture(client, contact, document_type="facture")
+        assert facture["invoice_number"].startswith("PROV-")
+        emise = await client.put(f"/api/invoices/{facture['id']}", json={"status": "sent"})
+        assert emise.json()["invoice_number"].startswith("FACT-")
         assert (await _facture(client, contact, document_type="devis"))["invoice_number"].startswith("DEV-")
-        assert (await _facture(client, contact, document_type="avoir"))["invoice_number"].startswith("AV-")
+        avoir = await _facture(client, contact, document_type="avoir", converted_from_id=facture["id"])
+        assert avoir["invoice_number"].startswith("PROV-")
+        avoir_emis = await client.put(f"/api/invoices/{avoir['id']}", json={"status": "sent"})
+        assert avoir_emis.status_code == 200, avoir_emis.text
+        assert avoir_emis.json()["invoice_number"].startswith("AV-")
 
     @pytest.mark.asyncio
     async def test_un_contact_inconnu_ou_un_type_inconnu_sont_refuses(self, client):

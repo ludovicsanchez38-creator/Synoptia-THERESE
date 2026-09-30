@@ -32,6 +32,7 @@ vi.mock('../../services/api', async () => {
         email: 'jean@example.com',
       },
     ]),
+    getContact: vi.fn().mockResolvedValue({ id: 'contact-1', first_name: 'Jean', last_name: 'Dupont', email: 'jean@example.com' }),
     createInvoice: createInvoiceMock,
     updateInvoice: updateInvoiceMock,
     markInvoicePaid: markInvoicePaidMock,
@@ -68,7 +69,10 @@ describe('P-154 : un avoir et sa facture d’origine', () => {
     vi.clearAllMocks();
     getBillingProfileStatusMock.mockResolvedValue({ is_complete: true, missing: [] });
     useBillingProfileStore.setState({ missing: null });
-    listInvoicesMock.mockResolvedValue([{ ...invoice, id: 'facture-1', invoice_number: 'FAC-2026-001' }]);
+    listInvoicesMock.mockResolvedValue([
+      { ...invoice, id: 'facture-1', invoice_number: 'FAC-2026-001', status: 'sent' },
+      { ...invoice, id: 'brouillon-1', invoice_number: 'PROV-brouillon', status: 'draft' },
+    ]);
     updateInvoiceMock.mockImplementation(async (id: string, data: object) => ({ ...invoice, id, ...data }));
   });
 
@@ -76,6 +80,8 @@ describe('P-154 : un avoir et sa facture d’origine', () => {
     rendre({ ...invoice, id: 'avoir-1', invoice_number: 'AV-2026-001', document_type: 'avoir', status: 'draft', converted_from_id: null });
     const champ = await screen.findByLabelText('Facture d’origine') as HTMLSelectElement;
     await waitFor(() => expect(Array.from(champ.options).some((o) => (o.textContent ?? '').includes('FAC-2026-001'))).toBe(true));
+    expect(Array.from(champ.options).map((o) => o.value)).not.toContain('brouillon-1');
+    expect(champ.textContent).not.toContain('PROV-');
     expect(listInvoicesMock).toHaveBeenCalledWith({ contact_id: 'contact-1', document_type: 'facture' });
     fireEvent.change(champ, { target: { value: 'facture-1' } });
     fireEvent.click(screen.getByRole('button', { name: 'Mettre à jour' }));
@@ -86,5 +92,16 @@ describe('P-154 : un avoir et sa facture d’origine', () => {
   it('une facture n’a pas ce champ', () => {
     rendre(invoice);
     expect(screen.queryByLabelText('Facture d’origine')).toBeNull();
+  });
+
+  it('propose aussi une facture historiquement émise puis annulée', async () => {
+    listInvoicesMock.mockResolvedValue([
+      { ...invoice, id: 'ancienne-1', invoice_number: 'FACT-2026-007', status: 'cancelled', sent_at: '2026-07-01T00:00:00Z' },
+      { ...invoice, id: 'annulee-provisoire', invoice_number: 'PROV-jetable', status: 'cancelled', sent_at: null },
+    ]);
+    rendre({ ...invoice, id: 'avoir-1', invoice_number: 'PROV-avoir', document_type: 'avoir', status: 'draft' });
+    const champ = await screen.findByLabelText('Facture d’origine') as HTMLSelectElement;
+    await waitFor(() => expect(Array.from(champ.options).map((o) => o.value)).toContain('ancienne-1'));
+    expect(Array.from(champ.options).map((o) => o.value)).not.toContain('annulee-provisoire');
   });
 });

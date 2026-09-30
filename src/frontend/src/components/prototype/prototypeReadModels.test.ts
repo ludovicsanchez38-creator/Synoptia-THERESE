@@ -59,6 +59,15 @@ const contact = (id: string, updatedAt: string, over: Partial<Contact> = {}): Co
 });
 
 describe('prototypeReadModels', () => {
+  it('ne montre pas un jeton PROV- dans le brief du jour', () => {
+    const data = dashboard();
+    data.overdue_invoices[0].invoice_number = 'PROV-abc123';
+    data.overdue_invoices[0].contact_name = 'Claire Roux';
+    const facture = buildTodayAttentionItems(data).find((item) => item.id === 'invoice-i1');
+    expect(facture?.title).toContain("Brouillon, numéro à l'émission");
+    expect(facture?.title).not.toContain('PROV-');
+  });
+
   it('place les urgences avant les éléments de lecture courante', () => {
     const items = buildTodayAttentionItems(dashboard());
     expect(items.map((item) => item.id)).toEqual([

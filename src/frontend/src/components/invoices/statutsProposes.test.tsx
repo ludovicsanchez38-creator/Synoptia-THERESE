@@ -11,18 +11,40 @@
  * la branche `documentType === 'devis' ? … : …` était juste sous les yeux et
  * proposait la même option des deux côtés.
  */
-import { render, screen } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { act, render, screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { InvoiceForm } from './InvoiceForm';
+
+const { listContacts } = vi.hoisted(() => ({
+  listContacts: vi.fn().mockResolvedValue([]),
+}));
 
 vi.mock('../../services/api', async () => {
   const reel = await vi.importActual<Record<string, unknown>>('../../services/api');
   return {
     ...reel,
-    listContacts: vi.fn().mockResolvedValue([]),
+    listContacts,
+    getContact: vi.fn().mockResolvedValue({
+      id: 'c-1', first_name: 'Claire', last_name: 'Roux', company: null, email: null,
+    }),
     getBillingProfileStatus: vi.fn().mockResolvedValue({ is_complete: true, missing: [] }),
   };
+});
+
+beforeEach(() => {
+  listContacts.mockClear();
+  vi.stubGlobal('fetch', vi.fn());
+});
+
+afterEach(async () => {
+  await waitFor(() => expect(listContacts).toHaveBeenCalled());
+  await act(async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+  });
+  expect(fetch).not.toHaveBeenCalled();
+  vi.unstubAllGlobals();
 });
 
 function piece(documentType: 'devis' | 'facture') {
@@ -60,8 +82,11 @@ describe('Les statuts proposés suivent le type du document', () => {
 
     const statuts = statutsProposes();
     // Envoyée, donc émise : plus de retour au brouillon (B-1506, B-1537).
-    expect(statuts).toEqual(expect.arrayContaining(['sent', 'paid', 'overdue', 'cancelled']));
+    // B-1671 : « Annulée » n'est plus proposé sur une facture émise. L'ancienne
+    // assertion l'exigeait, parce que le sélecteur l'offrait.
+    expect(statuts).toEqual(expect.arrayContaining(['sent', 'paid', 'overdue']));
     expect(statuts).not.toContain('draft');
+    expect(statuts).not.toContain('cancelled');
   });
 
   it('un devis garde « Accepté »', async () => {

@@ -3,8 +3,44 @@
  * Module sans composant (fast refresh).
  */
 import type { Invoice } from '../../services/api';
+import { montantAvecDevise } from '../../lib/devise';
 import type { TonEtiquette } from '../ui/Etiquette';
 import { STATUS_CONFIG } from './statutsFacture';
+
+/** B-1615 : le jeton PROV- reste en base, l'écran ne le montre pas. */
+export const MENTION_NUMERO_PROVISOIRE = "Brouillon, numéro à l'émission";
+
+export function numeroAffiche(numero: string | null | undefined): string {
+  if (typeof numero !== 'string' || !numero.startsWith('PROV-')) return numero ?? '';
+  return MENTION_NUMERO_PROVISOIRE;
+}
+
+/** Une annulation historique n'efface pas l'émission ; un PROV annulé reste un brouillon. */
+export function pieceEstEmise(invoice: Invoice): boolean {
+  return invoice.document_type !== 'devis' && Boolean(
+    invoice.sent_at
+    || ['sent', 'paid', 'overdue'].includes(invoice.status)
+    || (invoice.status === 'cancelled' && !invoice.invoice_number.startsWith('PROV-')),
+  );
+}
+
+const TYPE_DE_PIECE: Record<Invoice['document_type'], string> = {
+  devis: 'Devis',
+  facture: 'Facture',
+  avoir: 'Avoir',
+};
+
+/** Nom accessible d'une ligne : type, numéro, date, montant, identité. */
+export function libelleAccessiblePiece(invoice: Invoice): string {
+  const identite = invoice.contact_name?.trim() || 'Client non nommé';
+  return [
+    TYPE_DE_PIECE[invoice.document_type] ?? 'Pièce',
+    numeroAffiche(invoice.invoice_number),
+    dateListe(invoice.issue_date),
+    montantAvecDevise(invoice.total_ttc, invoice.currency),
+    identite,
+  ].join(', ');
+}
 
 export function dateListe(iso: string): string {
   return new Date(iso).toLocaleDateString('fr-FR', {

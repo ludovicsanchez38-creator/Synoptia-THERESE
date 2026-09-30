@@ -30,6 +30,16 @@ from reportlab.platypus import (
 
 logger = logging.getLogger(__name__)
 
+# B-1615 : le jeton PROV- n'est pas un numéro de facture. Apostrophe ASCII,
+# comme le libellé affiché à l'écran.
+_MENTION_NUMERO_PROVISOIRE = "Brouillon, numéro à l'émission"
+
+
+def _numero_imprime(numero: str) -> str:
+    if str(numero).startswith("PROV-"):
+        return _MENTION_NUMERO_PROVISOIRE
+    return str(numero)
+
 # Taux TVA francais
 TVA_RATES = {
     20.0: "TVA normale 20%",
@@ -735,9 +745,13 @@ class InvoicePDFGenerator:
             # pénalités de retard, ni indemnité de recouvrement. Il cite la
             # facture qu'il corrige quand elle est connue.
             origine = donnees.get("facture_origine") or {}
+            numero_origine = origine.get("numero")
+            # Un jeton PROV- n'est pas la référence de la facture initiale (§ 220).
+            if isinstance(numero_origine, str) and numero_origine.startswith("PROV-"):
+                numero_origine = ""
             reference = (
-                f"Avoir sur la facture n° {_texte_pdf(origine['numero'])} du {_texte_pdf(origine['date'])}.<br/>"
-                if origine.get("numero") and origine.get("date")
+                f"Avoir sur la facture n° {_texte_pdf(numero_origine)} du {_texte_pdf(origine['date'])}.<br/>"
+                if numero_origine and origine.get("date")
                 else ""
             )
             reglement = f"{reference}Montant à déduire du solde dû ou à rembourser au client.<br/>"
@@ -779,8 +793,11 @@ class InvoicePDFGenerator:
         theme = self.theme
         currency_symbol = CURRENCY_SYMBOLS.get(currency, currency)
         invoice_number = invoice_data["invoice_number"]
+        # Le nom de fichier garde le jeton (unique). L'impression, non.
         filename = f"{invoice_number}.pdf"
         filepath = self.output_dir / filename
+        numero_affiche = _numero_imprime(invoice_number)
+        donnees_imprimees = {**invoice_data, "invoice_number": numero_affiche}
 
         document_type = invoice_data.get("document_type", "facture")
         tva_applicable = invoice_data.get("tva_applicable", True)
@@ -812,13 +829,13 @@ class InvoicePDFGenerator:
         story: list[Any] = []
 
         # 1. Titre du document (dans l'espace sous la bande d'en-tête)
-        story.extend(self._build_doc_title_block(document_type, invoice_number))
+        story.extend(self._build_doc_title_block(document_type, numero_affiche))
 
         # 2. Emetteur / Destinataire
         story.extend(self._build_parties_block(user_profile, contact_data))
 
         # 3. Informations facture
-        story.extend(self._build_info_block(invoice_data, document_type))
+        story.extend(self._build_info_block(donnees_imprimees, document_type))
 
         # 4. Lignes de facturation
         story.extend(

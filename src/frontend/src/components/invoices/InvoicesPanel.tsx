@@ -26,7 +26,7 @@ import { Etiquette } from '../ui/Etiquette';
 import { Segments } from '../ui/Segments';
 import { Squelette } from '../ui/Squelette';
 import { STATUS_CONFIG } from './statutsFacture';
-import { cellulesStatut, compteurPieces, sousLignePiece } from './presentationFacture';
+import { cellulesStatut, compteurPieces, libelleAccessiblePiece, numeroAffiche, sousLignePiece } from './presentationFacture';
 
 /** Lot F : le GET factures plafonne à 100. Atteint = liste incomplète. */
 const PLAFOND_FACTURES = 100;
@@ -148,7 +148,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
       try {
         const { open } = await import('@tauri-apps/plugin-shell');
         await open(result.pdf_path);
-        addNotification({ type: 'success', title: 'PDF généré et ouvert', message: result.invoice_number });
+        addNotification({ type: 'success', title: 'PDF généré et ouvert', message: numeroAffiche(result.invoice_number) });
       } catch (openError) {
         // En prévisualisation web, le système ne peut pas ouvrir un chemin local.
         // Le PDF est tout de même généré et son emplacement reste accessible.
@@ -457,7 +457,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
                 onClick={() => handleEdit(invoice)}
               >
                 <td className="px-4 py-2.5 border-b border-border align-middle">
-                  <span className="font-mono text-sm whitespace-nowrap">{invoice.invoice_number}</span>
+                  <span className="font-mono text-sm whitespace-nowrap">{numeroAffiche(invoice.invoice_number)}</span>
                   <p className="text-xs font-medium text-text-muted">{sousLignePiece(invoice)}</p>
                 </td>
                 <td className="px-4 py-2.5 border-b border-border align-middle">
@@ -469,10 +469,10 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
                       handleEdit(invoice);
                     }}
                     className="inline-flex min-h-9 items-center font-semibold text-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
-                    aria-label={invoice.contact_name ? undefined : invoice.invoice_number}
+                    aria-label={libelleAccessiblePiece(invoice)}
                   >
                     {invoice.contact_name || (
-                      <span className="text-text-muted">{invoice.invoice_number}</span>
+                      <span className="text-text-muted">{numeroAffiche(invoice.invoice_number)}</span>
                     )}
                   </button>
                 </td>
@@ -577,10 +577,10 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
         <h3 className="text-lg font-semibold text-text">Supprimer {libellesDeLaPiece(deletingInvoice.document_type).nomDefini} ?</h3>
         <p className="text-sm text-text-muted">
           {deletingInvoice.document_type === 'devis'
-            ? <>Le devis <strong>{deletingInvoice.invoice_number}</strong> sera définitivement supprimé.</>
+            ? <>Le devis <strong>{numeroAffiche(deletingInvoice.invoice_number)}</strong> sera définitivement supprimé.</>
             : deletingInvoice.document_type === 'avoir'
-              ? <>L’avoir <strong>{deletingInvoice.invoice_number}</strong> sera définitivement supprimé.</>
-              : <>La facture <strong>{deletingInvoice.invoice_number}</strong> sera définitivement supprimée.</>}{' '}
+              ? <>L’avoir <strong>{numeroAffiche(deletingInvoice.invoice_number)}</strong> sera définitivement supprimé.</>
+              : <>La facture <strong>{numeroAffiche(deletingInvoice.invoice_number)}</strong> sera définitivement supprimée.</>}{' '}
           Cette action est irréversible.
         </p>
         <div className="flex items-center justify-end gap-3">
