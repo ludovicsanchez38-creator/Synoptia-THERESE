@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- L'alpha ad hoc charge les bibliothèques du onefile PyInstaller,
+         signées ad hoc sans Team ID. Tauri applique ce même plist au sidecar
+         et au GUI. Conserver le hardened runtime ; seule sa validation des
+         bibliothèques est exemptée. Requalifier avec une future Developer ID. -->
+    <key>com.apple.security.cs.disable-library-validation</key>
+    <true/>
+</dict>
+</plist>
