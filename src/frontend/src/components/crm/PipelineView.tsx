@@ -348,7 +348,7 @@ function DroppableStage({ stage, count, children }: DroppableStageProps) {
       ref={setNodeRef}
       data-colonne={stage.id}
       className={cn(
-        'snap-start min-h-[22rem] bg-surface-2 rounded-md p-2 grid gap-2 content-start',
+        'snap-start min-w-0 min-h-[22rem] bg-surface-2 rounded-md p-2 grid gap-2 content-start',
         isOver && 'ring-2 ring-ring bg-accent-tint',
       )}
     >
@@ -402,6 +402,7 @@ function SortableContactCard({ contact, onClick }: SortableContactCardProps) {
       style={style}
       {...attributes}
       {...listeners}
+      className="min-w-0"
       aria-label={nomAccessible}
       data-carte={contact.id}
     >
@@ -438,23 +439,23 @@ function ContactCard({ contact, onClick, isOverlay }: ContactCardProps) {
       exit={isOverlay ? undefined : { opacity: 0, y: -10 }}
       onClick={onClick}
       className={cn(
-        'bg-surface border border-border rounded-sm p-3 cursor-grab text-sm',
+        'min-w-0 bg-surface border border-border rounded-sm p-3 cursor-grab text-sm',
         isOverlay && 'outline outline-2 outline-dashed outline-accent outline-offset-2 bg-accent-tint',
       )}
     >
       {/* B-845 : en démonstration, la carte passe par le même masque que
           l'annonce de déplacement ; sinon le vrai client restait à l'écran. */}
-      <div className="font-semibold">
+      <div className="min-w-0 break-words font-semibold">
         {masquer(contactDisplayName(contact))}
       </div>
 
       {/* B-1443 : sans prénom ni nom, l'entreprise est déjà le titre. */}
       {contact.company && (contact.first_name || contact.last_name) && (
-        <p className="text-sm text-text-muted truncate">{masquer(contact.company)}</p>
+        <p className="min-w-0 text-sm text-text-muted truncate">{masquer(contact.company)}</p>
       )}
 
       {contact.email && (
-        <p className="text-sm text-text-muted truncate">{masquer(contact.email)}</p>
+        <p className="min-w-0 text-sm text-text-muted truncate">{masquer(contact.email)}</p>
       )}
 
       {/* B-877 : un vrai bouton pour ouvrir la fiche au clavier ; le conteneur

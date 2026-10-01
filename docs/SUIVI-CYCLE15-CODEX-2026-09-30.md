@@ -15,12 +15,17 @@ preuve est conservée dans
 `.app-loop/cycles/15/reprise/release-go/echeance-conversion/rouge-corrige-20261001T103905.120517Z/manifest.json`.
 La première tentative, avec erreur de harnais, reste distincte et exclue.
 
-Le correctif B1760 est en validation. Le compteur plateau est remis à zéro.
+Le correctif B1760 est vérifié et commité ; le bump prépare 0.77.0-alpha.
+L'audit frais ajoute des cartes longues débordantes (B1762), des oracles
+d'interface à corriger (B1763/B1764), l'audit de dépendances (B1765) et les
+transactions DDL des fixtures (B1766). Leurs ciblés et limites sont centralisés
+dans le rapport de release. La boucle courante est en REPAIR, en attente des
+deux rondes sur la nouvelle source figée. Le compteur plateau est à zéro.
 Les sections et preuves d4 ci-dessous sont historiques ; elles ne qualifient
 pas le nouveau code. L'état courant des portes de release est porté par le
 [rapport v0.77.0-alpha](releases/v0.77.0-alpha.md).
 
-## État vérifié après les décisions déléguées
+## État historique d4 après les décisions déléguées
 
 La source finale des lots P160/P162 est `d4f19d7478dabb58ce640e701725367df92037bc`, poussée sur `origin/codex/cycle-15`. Les **25 corrections ciblées couvrent 18 défauts produit et sept défauts de contrôle**. P160 et P162 sont implémentées ; P161 est livrée comme cadrage documentaire, avec le parcours financier encore à développer. Le CLI canonique accepte **deux nouvelles rondes indépendantes : 2/2**, après B1759. La phase courante est `HUMAN_GATE`, sans nouvelle proposition en attente de décision. La publication d’une nouvelle version reste soumise au périmètre du skill `release-therese`. Les anciennes rondes restent historiques et le passage préliminaire ayant révélé B1759 est exclu du plateau.
 

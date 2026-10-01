@@ -234,21 +234,25 @@ test.describe('Prototype conversationnel - parcours unifiés des capacités', ()
       });
 
       // La base des parcours est presque vide : le fil tient souvent au-dessus
-      // du composeur sans aucun dégagement, et la seule mesure du dernier
+      // du composeur sans aucune réserve, et la seule mesure du dernier
       // contenu serait verte par construction (sabotage du 10/09/2026 :
-      // `paddingBottom: 0` passait). L'invariant mécanique est donc mesuré
-      // aussi : le dégagement bas du fil couvre la hauteur du fond du composeur.
-      const degagementBas = await fil.evaluate((element) => parseFloat(getComputedStyle(element).paddingBottom));
+      // `paddingBottom: 0` passait). Depuis B-1713, la réserve est extérieure
+      // au viewport du fil : la marge couvre le fond du composeur et le
+      // viewport s'arrête avant ce fond, sans ajouter de blanc au contenu.
+      const reserveExterieure = await fil.evaluate((element) => parseFloat(getComputedStyle(element).marginBottom));
       const fondBox = await page.getByTestId('prototype-composer-backdrop').boundingBox();
       expect(fondBox).not.toBeNull();
-      expect(degagementBas).toBeGreaterThanOrEqual(fondBox!.height);
+      expect(reserveExterieure).toBeGreaterThanOrEqual(fondBox!.height);
 
-      const [contenuBox, carteBox] = await Promise.all([
+      const [contenuBox, carteBox, filBox] = await Promise.all([
         dernierContenu.boundingBox(),
         carteDuComposeur.boundingBox(),
+        fil.boundingBox(),
       ]);
       expect(contenuBox).not.toBeNull();
       expect(carteBox).not.toBeNull();
+      expect(filBox).not.toBeNull();
+      expect(filBox!.y + filBox!.height).toBeLessThanOrEqual(fondBox!.y);
       expect(contenuBox!.y + contenuBox!.height).toBeLessThanOrEqual(carteBox!.y);
 
       await page.screenshot({
@@ -268,7 +272,7 @@ test.describe('Prototype conversationnel - parcours unifiés des capacités', ()
     const hauteurAvecIndice = await fond.evaluate(element => element.getBoundingClientRect().height);
 
     // Vrai clic : la disparition de l'indice ne doit pas changer la hauteur
-    // observée, sinon padding -> scrollHeight -> indice forme une boucle.
+    // observée, sinon réserve -> taille du viewport -> indice forme une boucle.
     await indice.click();
     await expect(indice).toBeHidden();
     const hauteurSansIndice = await fond.evaluate(element => element.getBoundingClientRect().height);
@@ -289,7 +293,9 @@ test.describe('Prototype conversationnel - parcours unifiés des capacités', ()
         const enfants = [...scroll.firstElementChild!.children].filter(element => element.getBoundingClientRect().height > 0);
         resultat.push({
           hauteur: backdrop.getBoundingClientRect().height,
-          degagement: parseFloat(getComputedStyle(scroll).paddingBottom),
+          reserveExterieure: parseFloat(getComputedStyle(scroll).marginBottom),
+          basDuViewport: scroll.getBoundingClientRect().bottom,
+          hautDuFond: backdrop.getBoundingClientRect().top,
           basDuContenu: enfants.at(-1)!.getBoundingClientRect().bottom,
           hautDeLaCarte: carte.getBoundingClientRect().top,
         });
@@ -298,7 +304,8 @@ test.describe('Prototype conversationnel - parcours unifiés des capacités', ()
     });
     for (const mesure of mesures) {
       expect(mesure.hauteur).toBe(hauteurAvecIndice);
-      expect(mesure.degagement).toBeGreaterThanOrEqual(mesure.hauteur);
+      expect(mesure.reserveExterieure).toBeGreaterThanOrEqual(mesure.hauteur);
+      expect(mesure.basDuViewport).toBeLessThanOrEqual(mesure.hautDuFond);
       expect(mesure.basDuContenu).toBeLessThanOrEqual(mesure.hautDeLaCarte);
     }
   });

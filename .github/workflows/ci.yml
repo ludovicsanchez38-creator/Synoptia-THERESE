@@ -306,10 +306,24 @@ jobs:
       #   trust_remote_code) sur les 3 OS packagés : à traiter dans le bump
       #   groupé torch 2.10 + transformers 5.x, pas dans un lot « CI verte ».
       #   Surface réduite : usage local hors ligne (TRANSFORMERS_OFFLINE=1).
+      # Cycle 15 : urllib3 2.8.0 et oauthlib 4.0.0 sont mis à jour dans le lock.
+      # Deux nouveaux avis modèles restent des exceptions EXACTES décidées et
+      # bornées dans docs/SECURITE-DEPENDANCES-CYCLE15.md. Le runtime natif n'est
+      # pas assimilé à la CI offline. TrustTrue accepte déjà le code Nomic ;
+      # aucun autre modèle ENV/cache ni future révision n'est qualifié ici.
       - name: Audit Python (prod) - BLOQUANT avec exceptions justifiées
         shell: bash
         run: |
-          pip-audit -r <(uv export --no-hashes --no-dev) --no-deps --disable-pip \
+          python - <<'PY'
+          import pathlib
+          import tomllib
+          versions = {p["name"]: p["version"] for p in tomllib.loads(pathlib.Path("uv.lock").read_text())["package"]}
+          expected = {"sentence-transformers": "5.2.0", "transformers": "4.57.6"}
+          for name, version in expected.items():
+              if versions.get(name) != version:
+                  raise SystemExit(f"Exception {name} à réexaminer : attendu {version}, trouvé {versions.get(name)}")
+          PY
+          pip-audit -r <(uv export --locked --no-hashes --no-dev) --no-deps --disable-pip \
             --ignore-vuln PYSEC-2026-139 \
             --ignore-vuln CVE-2025-3000 \
             --ignore-vuln CVE-2025-3001 \
@@ -320,7 +334,9 @@ jobs:
             --ignore-vuln PYSEC-2026-249 \
             --ignore-vuln PYSEC-2026-2286 \
             --ignore-vuln PYSEC-2026-2290 \
-            --ignore-vuln CVE-2026-9856
+            --ignore-vuln CVE-2026-9856 \
+            --ignore-vuln CVE-2026-68770 \
+            --ignore-vuln CVE-2026-80047
 
   mypy:
     name: Typage (mypy, baseline)

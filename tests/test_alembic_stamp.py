@@ -64,14 +64,20 @@ def _creer_tables_sync_reelles(db_path: Path) -> None:
     from sqlmodel import SQLModel
 
     engine = create_engine(f"sqlite:///{db_path}")
-    SQLModel.metadata.create_all(engine, tables=[
-        SQLModel.metadata.tables[t]
-        for t in (
-            "project_sync_roots", "project_sync_entries",
-            "sync_plans", "sync_operations",
-        )
-    ])
-    engine.dispose()
+    try:
+        with engine.begin() as conn:
+            # B-1766 : SQLite ne démarre pas sa transaction sur le DDL.
+            # Sans BEGIN réel, chaque table/index est validé séparément.
+            conn.exec_driver_sql("BEGIN")
+            SQLModel.metadata.create_all(conn, tables=[
+                SQLModel.metadata.tables[t]
+                for t in (
+                    "project_sync_roots", "project_sync_entries",
+                    "sync_plans", "sync_operations",
+                )
+            ])
+    finally:
+        engine.dispose()
 
 
 def _creer_tables_planning_reelles(db_path: Path) -> None:
@@ -80,20 +86,24 @@ def _creer_tables_planning_reelles(db_path: Path) -> None:
     from sqlmodel import SQLModel
 
     engine = create_engine(f"sqlite:///{db_path}")
-    SQLModel.metadata.create_all(
-        engine,
-        tables=[
-            SQLModel.metadata.tables[table]
-            for table in (
-                "task_schedules",
-                "task_dependencies",
-                "planning_resources",
-                "task_allocations",
-                "planning_snapshots",
+    try:
+        with engine.begin() as conn:
+            conn.exec_driver_sql("BEGIN")
+            SQLModel.metadata.create_all(
+                conn,
+                tables=[
+                    SQLModel.metadata.tables[table]
+                    for table in (
+                        "task_schedules",
+                        "task_dependencies",
+                        "planning_resources",
+                        "task_allocations",
+                        "planning_snapshots",
+                    )
+                ],
             )
-        ],
-    )
-    engine.dispose()
+    finally:
+        engine.dispose()
 
 def _make_patched_tracked_db(
     db_path: Path, missing_column: str | None = None, sans_date_d_envoi: bool = False,
