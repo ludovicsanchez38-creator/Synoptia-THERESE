@@ -16,6 +16,7 @@ from pydantic import (
     Field,
     PlainSerializer,
     field_validator,
+    model_serializer,
     model_validator,
 )
 
@@ -119,6 +120,26 @@ class ChatRequest(BaseModel):
     calendar_id: str | None = None
 
 
+class ContexteTransmis(BaseModel):
+    """P-159 : messages passés relus, et ceux encore là après la coupe du modèle.
+
+    `caracteres_retires` compte le texte du message en cours retiré pour
+    tenir dans le modèle. Il est omis quand ce message part entier, pour
+    que le bilan à deux comptes reste celui d'avant.
+    """
+
+    messages_relus: int
+    messages_transmis: int
+    caracteres_retires: int = 0
+
+    @model_serializer(mode="wrap")
+    def _omettre_troncature_nulle(self, handler: Any) -> dict[str, Any]:
+        data: dict[str, Any] = handler(self)
+        if not data.get("caracteres_retires"):
+            data.pop("caracteres_retires", None)
+        return data
+
+
 class ChatResponse(BaseModel):
     """Chat completion response (non-streaming)."""
 
@@ -134,6 +155,8 @@ class ChatResponse(BaseModel):
     confirmations: list[dict[str, Any]] | None = None  # Mutations préparées, encore non exécutées
     # B-482 : avertissements de plafond (modèle hors grille, budget proche)
     warnings: list[str] | None = None
+    # P-159 : absent (null) quand la réponse n'a pas appelé de modèle.
+    contexte: ContexteTransmis | None = None
     created_at: HorodatageUTC
 
 

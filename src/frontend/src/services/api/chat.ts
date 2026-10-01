@@ -104,6 +104,12 @@ export interface StreamChunk {
     confidence_score: number;
     uncertainty_phrases: string[];
   };
+  /** P-159 : présent sur l'événement done quand un modèle a été appelé. */
+  contexte?: {
+    messages_relus: number;
+    messages_transmis: number;
+    caracteres_retires?: number;
+  };
 }
 
 export interface ConversationResponse {

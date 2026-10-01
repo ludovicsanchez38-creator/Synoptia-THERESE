@@ -20,6 +20,7 @@ from app.models.processing import EtatTache as EtatTacheTraitement
 from app.models.schemas import (
     ChatRequest,
     ChatResponse,
+    ContexteTransmis,
     ConversationCreate,
     ConversationProjectUpdate,
     ConversationResponse,
@@ -1247,6 +1248,154 @@ async def deep_research_endpoint(
 #: B-1368 : titres posés par l'interface avant le premier message.
 _TITRES_PROVISOIRES = {"", "Nouvelle conversation"}
 
+# B-1739 : le chat relisait toujours 50 messages, le réglage restait en base.
+_HISTORIQUE_DEFAUT = 50
+_HISTORIQUE_PLANCHER = 1
+_HISTORIQUE_PLAFOND = 200
+
+
+async def _plafond_messages_historique(session: AsyncSession) -> int:
+    """Nombre de messages passés à relire, 50 si le réglage n'est pas posé.
+
+    `max_history_messages` vit dans la préférence `llm_behavior`. Une valeur
+    posée est ramenée entre 1 et 200. Absente, illisible ou d'un autre type :
+    on reprend 50, le plafond historique.
+    """
+    from app.models.entities import Preference
+    from app.models.schemas_personalisation import LLMBehaviorSettings
+    from pydantic import ValidationError
+
+    result = await session.execute(
+        select(Preference).where(Preference.key == "llm_behavior")
+    )
+    pref = result.scalar_one_or_none()
+    if pref is None or not pref.value:
+        return _HISTORIQUE_DEFAUT
+    try:
+        brut = json.loads(pref.value)
+    except (json.JSONDecodeError, TypeError):
+        return _HISTORIQUE_DEFAUT
+    if not isinstance(brut, dict) or "max_history_messages" not in brut:
+        return _HISTORIQUE_DEFAUT
+    try:
+        reglages = LLMBehaviorSettings.model_validate(brut)
+    except (ValidationError, TypeError, ValueError):
+        return _HISTORIQUE_DEFAUT
+    valeur = int(reglages.max_history_messages)
+    if valeur < _HISTORIQUE_PLANCHER:
+        return _HISTORIQUE_PLANCHER
+    if valeur > _HISTORIQUE_PLAFOND:
+        return _HISTORIQUE_PLAFOND
+    return valeur
+
+
+def bilan_contexte_transmis(
+    messages_passes: int, messages_dans_fenetre: int
+) -> dict[str, int]:
+    """Messages passés relus, et ceux encore présents après la coupe.
+
+    `messages_dans_fenetre` est la taille de la liste envoyée au modèle,
+    tour courant compris (toujours en dernier : la coupe retire par le début).
+    """
+    relus = messages_passes if messages_passes > 0 else 0
+    transmis = messages_dans_fenetre - 1
+    if transmis < 0:
+        transmis = 0
+    if transmis > relus:
+        transmis = relus
+    return {"messages_relus": relus, "messages_transmis": transmis}
+
+
+def _passes_que_le_fournisseur_garde(messages: list[LLMMessage]) -> int:
+    """Messages passés que `to_openai_format` laisserait partir.
+
+    Un message vide est relu en base, puis écarté à la conversion. Une
+    image sans texte part quand même : c'est le critère `_a_du_fond`.
+    """
+    from app.services.context import ContextWindow
+
+    return sum(1 for message in messages[:-1] if ContextWindow._a_du_fond(message))
+
+
+def _taille_fenetre_fournisseur(contexte: Any, fenetre: list[Any]) -> int:
+    """Taille de fenêtre pour `bilan_contexte_transmis` (tour courant compris).
+
+    Avec `to_openai_format`, on ne compte que les messages de conversation
+    encore là : le prompt système ajouté par la conversion n'est pas un
+    message passé, et les messages vides ont déjà été écartés. Sans cette
+    conversion, on garde la longueur brute.
+    """
+    convertir = getattr(contexte, "to_openai_format", None)
+    if not callable(convertir):
+        return len(fenetre)
+    payload = convertir()
+    if not isinstance(payload, list):
+        return len(fenetre)
+    conversation = [
+        item
+        for item in payload
+        if isinstance(item, dict) and item.get("role") != "system"
+    ]
+    from app.services.context import ContextWindow
+
+    dernier = fenetre[-1] if fenetre else None
+    if isinstance(dernier, LLMMessage) and ContextWindow._a_du_fond(dernier):
+        return len(conversation)
+    return len(conversation) + 1
+
+
+def bilan_depuis_fenetre(messages_passes: int, contexte: Any) -> dict[str, int]:
+    """Lit la fenêtre réellement rendue par prepare_context.
+
+    Un faux service de test qui ne renvoie pas de liste de messages ne
+    permet pas de voir la coupe : on rapporte alors les messages relus
+    tels quels, sans inventer une coupe.
+    """
+    fenetre = getattr(contexte, "messages", None)
+    if not isinstance(fenetre, list):
+        return _avec_texte_retire(
+            bilan_contexte_transmis(messages_passes, messages_passes + 1),
+            contexte,
+        )
+    return _avec_texte_retire(
+        bilan_contexte_transmis(
+            messages_passes,
+            _taille_fenetre_fournisseur(contexte, fenetre),
+        ),
+        contexte,
+    )
+
+
+def _avec_texte_retire(bilan: dict[str, int], contexte: Any) -> dict[str, int]:
+    """Ajoute les caractères retirés du message en cours, s'il y en a.
+
+    Zéro reste absent : un message parti entier garde le bilan à deux comptes.
+    """
+    retires = getattr(contexte, "caracteres_retires", 0)
+    if isinstance(retires, int) and retires > 0:
+        bilan["caracteres_retires"] = retires
+    return bilan
+
+
+def _memoriser_contexte(message: Message, bilan: dict[str, int]) -> None:
+    """Pose le bilan dans extra_data sans effacer le reste (fichiers, sources)."""
+    donnees: dict[str, Any] = {}
+    if message.extra_data:
+        try:
+            brut = json.loads(message.extra_data)
+        except (ValueError, TypeError):
+            brut = None
+        if isinstance(brut, dict):
+            donnees = brut
+    bloc_contexte: dict[str, int] = {
+        "messages_relus": bilan["messages_relus"],
+        "messages_transmis": bilan["messages_transmis"],
+    }
+    if bilan.get("caracteres_retires"):
+        bloc_contexte["caracteres_retires"] = bilan["caracteres_retires"]
+    donnees["contexte"] = bloc_contexte
+    message.extra_data = json.dumps(donnees)
+
 
 @router.post("/send")
 async def send_message(
@@ -1272,12 +1421,14 @@ async def send_message(
         session.add(conversation)
         await session.flush()
 
-    # Load conversation history for context (BUG-031 : DESC + reversed = 50 DERNIERS messages)
+    # BUG-031 : DESC + reversed = les DERNIERS messages. B-1739 : le nombre
+    # vient du réglage (1 à 200), 50 s'il n'est pas posé.
+    plafond_historique = await _plafond_messages_historique(session)
     history_result = await session.execute(
         select(Message)
         .where(Message.conversation_id == conversation.id)
         .order_by(Message.created_at.desc(), Message.id.desc())
-        .limit(50)  # Limit history to last 50 messages
+        .limit(plafond_historique)
     )
     history_messages = list(reversed(history_result.scalars().all()))
     # Tranche 0f Variables V4 (finding Codex 4) : les échanges déterministes
@@ -1846,6 +1997,9 @@ async def send_message(
     avertissements_plafonds = verdict_plafonds["warnings"] or None
 
     context = llm_service.prepare_context(messages, memory_context=memory_context)
+    bilan_contexte = bilan_depuis_fenetre(
+        _passes_que_le_fournisseur_garde(messages), context
+    )
 
     # Collect full response (non-streaming)
     # raise_on_error=True : sans ça, un StreamEvent(type="error") d'un provider
@@ -1893,10 +2047,11 @@ async def send_message(
         tokens_in=input_tokens,
         tokens_out=output_tokens,
     )
-    session.add(assistant_message)
-    await session.commit()
-
-    return ChatResponse(
+    _memoriser_contexte(assistant_message, bilan_contexte)
+    # B-1494, voie non diffusée : la suppression pendant la génération
+    # l'emporte aussi ici. Construire la réponse avant un éventuel rollback
+    # évite de relire une conversation dont les attributs SQL sont expirés.
+    response = ChatResponse(
         id=assistant_message.id,
         conversation_id=conversation.id,
         content=assistant_content,
@@ -1905,9 +2060,12 @@ async def send_message(
         tokens_in=input_tokens,
         tokens_out=output_tokens,
         warnings=avertissements_plafonds,
+        contexte=ContexteTransmis(**bilan_contexte),
         created_at=assistant_message.created_at,
         confirmations=inline_pending_confirmations or None,
     )
+    await _ecrire_reponse(session, assistant_message)
+    return response
 
 
 async def _stream_response(
@@ -2509,6 +2667,9 @@ async def _do_stream_response(
         )
 
     context = llm_service.prepare_context(messages, memory_context=memory_context)
+    bilan_contexte = bilan_depuis_fenetre(
+        _passes_que_le_fournisseur_garde(messages), context
+    )
 
     # Injecter le system prompt du skill si skill_id fourni (Phase 1 v0.2.4)
     if skill_id:
@@ -2952,7 +3113,8 @@ async def _do_stream_response(
         assistant_message.extra_data = json.dumps(
             {"skill_files": skill_files_payloads}
         )
-        await session.commit()
+    _memoriser_contexte(assistant_message, bilan_contexte)
+    await session.commit()
 
     # Send done event with usage info
     done_data = StreamChunk(
@@ -2971,6 +3133,7 @@ async def _do_stream_response(
         "provider": fournisseur,
     }
     done_dict["uncertainty"] = uncertainty
+    done_dict["contexte"] = bilan_contexte
     yield f"data: {json.dumps(done_dict)}\n\n"
 
     # Fire-and-forget entity extraction (PERF-001)

@@ -6,7 +6,7 @@
  */
 
 import { montantAvecDevise } from '../../lib/devise';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AlertCircle, FileText, Plus, X } from 'lucide-react';
 import { filtresAvecType, statutsProposesPour, useInvoiceStore } from '../../stores/invoiceStore';
@@ -26,7 +26,7 @@ import { Etiquette } from '../ui/Etiquette';
 import { Segments } from '../ui/Segments';
 import { Squelette } from '../ui/Squelette';
 import { STATUS_CONFIG } from './statutsFacture';
-import { cellulesStatut, compteurPieces, sousLignePiece } from './presentationFacture';
+import { cellulesStatut, compteurPieces, libelleAccessiblePiece, numeroAffiche, sousLignePiece } from './presentationFacture';
 
 /** Lot F : le GET factures plafonne à 100. Atteint = liste incomplète. */
 const PLAFOND_FACTURES = 100;
@@ -76,6 +76,10 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
   const deleteDialogRef = useRef<HTMLDivElement>(null);
   const creationRef = useRef<HTMLButtonElement>(null);
   const retourSuppressionRef = useRef<HTMLDivElement | null>(null);
+  const tableauRef = useRef<HTMLDivElement>(null);
+  const contenuTableauRef = useRef<HTMLTableElement>(null);
+  const indiceColonnesId = useId();
+  const [colonnesHorsCadre, setColonnesHorsCadre] = useState({ gauche: false, droite: false });
   const effectiveOpen = standalone || isInvoicePanelOpen;
   useDialogFocusTrap(deleteDialogRef, {
     active: Boolean(deletingInvoice) && effectiveOpen,
@@ -148,7 +152,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
       try {
         const { open } = await import('@tauri-apps/plugin-shell');
         await open(result.pdf_path);
-        addNotification({ type: 'success', title: 'PDF généré et ouvert', message: result.invoice_number });
+        addNotification({ type: 'success', title: 'PDF généré et ouvert', message: numeroAffiche(result.invoice_number) });
       } catch (openError) {
         // En prévisualisation web, le système ne peut pas ouvrir un chemin local.
         // Le PDF est tout de même généré et son emplacement reste accessible.
@@ -258,6 +262,51 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
     (filters.status && filters.status !== 'all') || filters.document_type || filters.contact_id,
   );
   const echues = filteredInvoices.filter((invoice) => invoice.status === 'overdue').length;
+  const tableauActif = effectiveOpen && !isLoading && !loadError && filteredInvoices.length > 0;
+
+  // P162 : le repère décrit le vrai cadre horizontal, pas la Carte qui
+  // l'entoure. Aucun bouton ni gestionnaire clavier ne remplace le natif.
+  useEffect(() => {
+    const cadre = tableauRef.current;
+    const tableau = contenuTableauRef.current;
+    if (!tableauActif || !cadre || !tableau) {
+      setColonnesHorsCadre((courant) => (
+        courant.gauche || courant.droite ? { gauche: false, droite: false } : courant
+      ));
+      return;
+    }
+    const mesurer = () => {
+      const limite = Math.max(0, cadre.scrollWidth - cadre.clientWidth);
+      const position = Math.min(limite, Math.max(0, cadre.scrollLeft));
+      const suivant = {
+        gauche: cadre.clientWidth > 0 && position > 1,
+        droite: cadre.clientWidth > 0 && limite - position > 1,
+      };
+      setColonnesHorsCadre((courant) => (
+        courant.gauche === suivant.gauche && courant.droite === suivant.droite ? courant : suivant
+      ));
+    };
+    mesurer();
+    cadre.addEventListener('scroll', mesurer, { passive: true });
+    window.addEventListener('resize', mesurer);
+    const observateur = typeof ResizeObserver === 'undefined' ? null : new ResizeObserver(mesurer);
+    observateur?.observe(cadre);
+    // Un nom ou une valeur plus longue peut élargir le contenu sans changer
+    // le cadre. Le remontage après chargement réarme aussi cette observation.
+    observateur?.observe(tableau);
+    return () => {
+      cadre.removeEventListener('scroll', mesurer);
+      window.removeEventListener('resize', mesurer);
+      observateur?.disconnect();
+    };
+  }, [tableauActif, filteredInvoices.length]);
+
+  const directionColonnes = colonnesHorsCadre.gauche && colonnesHorsCadre.droite
+    ? 'à gauche et à droite'
+    : colonnesHorsCadre.gauche ? 'à gauche' : 'à droite';
+  const mentionColonnes = tableauActif && (colonnesHorsCadre.gauche || colonnesHorsCadre.droite)
+    ? `Colonnes ${directionColonnes}. Fais défiler le tableau.`
+    : null;
 
   if (!effectiveOpen) return null;
 
@@ -422,7 +471,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
     }
 
     return (
-      <table className="w-full border-collapse">
+      <table ref={contenuTableauRef} className="w-full border-collapse">
         <thead>
           <tr>
             <th className="text-left text-xs font-semibold text-text-muted px-4 py-2 border-b border-border tracking-wide">
@@ -457,7 +506,7 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
                 onClick={() => handleEdit(invoice)}
               >
                 <td className="px-4 py-2.5 border-b border-border align-middle">
-                  <span className="font-mono text-sm whitespace-nowrap">{invoice.invoice_number}</span>
+                  <span className="font-mono text-sm whitespace-nowrap">{numeroAffiche(invoice.invoice_number)}</span>
                   <p className="text-xs font-medium text-text-muted">{sousLignePiece(invoice)}</p>
                 </td>
                 <td className="px-4 py-2.5 border-b border-border align-middle">
@@ -469,10 +518,10 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
                       handleEdit(invoice);
                     }}
                     className="inline-flex min-h-9 items-center font-semibold text-sm text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
-                    aria-label={invoice.contact_name ? undefined : invoice.invoice_number}
+                    aria-label={libelleAccessiblePiece(invoice)}
                   >
                     {invoice.contact_name || (
-                      <span className="text-text-muted">{invoice.invoice_number}</span>
+                      <span className="text-text-muted">{numeroAffiche(invoice.invoice_number)}</span>
                     )}
                   </button>
                 </td>
@@ -548,8 +597,22 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
 
   const invoicesList = (
     <div className="flex-1 min-h-0 overflow-y-auto p-6">
-      <Carte as="section" className="overflow-x-auto">
-        {corpsListe}
+      {mentionColonnes && (
+        <p id={indiceColonnesId} aria-live="polite" className="mb-2 text-sm text-text-muted">
+          {mentionColonnes}
+        </p>
+      )}
+      <Carte as="section" className="overflow-hidden">
+        <div
+          ref={tableauRef}
+          role="region"
+          aria-label="Tableau des devis et factures"
+          aria-describedby={mentionColonnes ? indiceColonnesId : undefined}
+          tabIndex={tableauActif ? 0 : -1}
+          className="overflow-x-auto rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset"
+        >
+          {corpsListe}
+        </div>
       </Carte>
     </div>
   );
@@ -577,10 +640,10 @@ export function InvoicesPanel({ standalone = false }: InvoicesPanelProps) {
         <h3 className="text-lg font-semibold text-text">Supprimer {libellesDeLaPiece(deletingInvoice.document_type).nomDefini} ?</h3>
         <p className="text-sm text-text-muted">
           {deletingInvoice.document_type === 'devis'
-            ? <>Le devis <strong>{deletingInvoice.invoice_number}</strong> sera définitivement supprimé.</>
+            ? <>Le devis <strong>{numeroAffiche(deletingInvoice.invoice_number)}</strong> sera définitivement supprimé.</>
             : deletingInvoice.document_type === 'avoir'
-              ? <>L’avoir <strong>{deletingInvoice.invoice_number}</strong> sera définitivement supprimé.</>
-              : <>La facture <strong>{deletingInvoice.invoice_number}</strong> sera définitivement supprimée.</>}{' '}
+              ? <>L’avoir <strong>{numeroAffiche(deletingInvoice.invoice_number)}</strong> sera définitivement supprimé.</>
+              : <>La facture <strong>{numeroAffiche(deletingInvoice.invoice_number)}</strong> sera définitivement supprimée.</>}{' '}
           Cette action est irréversible.
         </p>
         <div className="flex items-center justify-end gap-3">

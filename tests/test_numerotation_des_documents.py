@@ -103,8 +103,8 @@ class TestLaCourseAuNumero:
         original = module._generate_invoice_number
         course = {"doublee": False}
 
-        async def numero_puis_double(session, document_type="facture"):
-            numero = await original(session, document_type)
+        async def numero_puis_double(session, document_type="facture", **kwargs):
+            numero = await original(session, document_type, **kwargs)
             if not course["doublee"]:
                 course["doublee"] = True
                 await _pose_document(numero, contact_id)
@@ -131,8 +131,8 @@ class TestLaCourseAuNumero:
         original = module._generate_invoice_number
         course = {"doublee": False}
 
-        async def numero_puis_double(session, document_type="facture"):
-            numero = await original(session, document_type)
+        async def numero_puis_double(session, document_type="facture", **kwargs):
+            numero = await original(session, document_type, **kwargs)
             if not course["doublee"]:
                 course["doublee"] = True
                 await _pose_document(numero, contact_id)
@@ -164,36 +164,50 @@ class TestLesAutresCheminsDInsertion:
         assert reponse.status_code == 200, reponse.text[:200]
         return reponse.json()["id"]
 
-    def _double_le_prochain_numero(self, monkeypatch, contact_id: str) -> dict:
+    async def _double_le_prochain_numero(self, monkeypatch, contact_id: str) -> dict:
         from app.routers import invoices as module
 
+        # La réservation SQLite empêche un concurrent d’insérer pendant
+        # l’allocation. Un numéro déjà occupé, proposé une fois par un
+        # générateur périmé, exerce encore la reprise réelle d’IntegrityError.
+        numero_occupe = f"FACT-{datetime.now(UTC).year}-001"
+        await _pose_document(numero_occupe, contact_id)
         original = module._generate_invoice_number
         course = {"doublee": False}
 
-        async def numero_puis_double(session, document_type="facture"):
-            numero = await original(session, document_type)
+        async def premier_numero_perime(session, document_type="facture", **kwargs):
             if not course["doublee"]:
                 course["doublee"] = True
-                await _pose_document(numero, contact_id)
-            return numero
+                return numero_occupe
+            return await original(session, document_type, **kwargs)
 
-        monkeypatch.setattr(module, "_generate_invoice_number", numero_puis_double)
+        monkeypatch.setattr(module, "_generate_invoice_number", premier_numero_perime)
         return course
 
     @pytest.mark.asyncio
     async def test_la_conversion_de_type_reprend_un_numero_double(self, client, monkeypatch):
+        """B-1615 : la conversion crée un brouillon PROV. La course au numéro
+        FACT, et sa reprise (B-338), ont lieu au passage à « envoyée ».
+        """
         annee = datetime.now(UTC).year
         contact_id = await _cree_contact(client)
         devis_id = await self._devis_cree(client, contact_id)
-        course = self._double_le_prochain_numero(monkeypatch, contact_id)
+        course = await self._double_le_prochain_numero(monkeypatch, contact_id)
 
-        reponse = await client.post(
+        conversion = await client.post(
             f"/api/invoices/{devis_id}/convert", json={"target_type": "facture"}
+        )
+        assert conversion.status_code == 200, conversion.text[:200]
+        assert conversion.json()["invoice_number"].startswith("PROV-")
+        assert not course["doublee"], "la conversion ne doit plus tirer un FACT-"
+
+        reponse = await client.put(
+            f"/api/invoices/{conversion.json()['id']}", json={"status": "sent"}
         )
 
         assert course["doublee"], "la collision n'a pas ete provoquee"
         assert reponse.status_code == 200, (
-            f"la conversion de type doit reprendre un numero double, pas rendre "
+            f"l'émission doit reprendre un numero double, pas rendre "
             f"{reponse.status_code} {reponse.text[:200]}"
         )
         assert reponse.json()["invoice_number"] == f"FACT-{annee}-002"
@@ -202,16 +216,23 @@ class TestLesAutresCheminsDInsertion:
     async def test_la_conversion_du_devis_en_facture_reprend_un_numero_double(
         self, client, monkeypatch
     ):
+        """Même déplacement qu'au-dessus : la reprise se prouve à l'émission."""
         annee = datetime.now(UTC).year
         contact_id = await _cree_contact(client)
         devis_id = await self._devis_cree(client, contact_id)
-        course = self._double_le_prochain_numero(monkeypatch, contact_id)
+        course = await self._double_le_prochain_numero(monkeypatch, contact_id)
 
-        reponse = await client.post(f"/api/invoices/{devis_id}/convert-to-invoice", json={})
+        conversion = await client.post(f"/api/invoices/{devis_id}/convert-to-invoice", json={})
+        assert conversion.status_code == 200, conversion.text[:200]
+        assert conversion.json()["invoice_number"].startswith("PROV-")
+
+        reponse = await client.put(
+            f"/api/invoices/{conversion.json()['id']}", json={"status": "sent"}
+        )
 
         assert course["doublee"], "la collision n'a pas ete provoquee"
         assert reponse.status_code == 200, (
-            f"la conversion du devis doit reprendre un numero double, pas rendre "
+            f"l'émission doit reprendre un numero double, pas rendre "
             f"{reponse.status_code} {reponse.text[:200]}"
         )
         assert reponse.json()["invoice_number"] == f"FACT-{annee}-002"

@@ -562,10 +562,14 @@ fichier n'a aucune édition non commitée.
 ## Un e2e « au-dessus du composeur » vert par construction sur une base vide (10/09/2026)
 
 B-320 réécrit : sur la base presque vide des parcours, le dernier contenu
-tient au-dessus du composeur même sans dégagement, et le sabotage
-(`paddingBottom: 0`) passait. Mesurer aussi l'invariant mécanique
-(`paddingBottom` du fil ≥ hauteur du fond du composeur), et cibler le
-dernier enfant VISIBLE (le dernier enfant DOM était un wrapper vide).
+tient au-dessus du composeur même sans réserve, et le sabotage historique
+(`paddingBottom: 0`) passait. Depuis B-1713, la réserve est extérieure au
+viewport du fil : mesurer `marginBottom` du fil ≥ hauteur du fond du
+composeur et vérifier que le bas du viewport reste avant le haut de ce
+fond. Conserver la mesure du dernier enfant VISIBLE face au haut de la
+carte (le dernier enfant DOM était un wrapper vide). Un témoin qui lit
+encore `paddingBottom` échoue pour une ancienne implémentation ; le
+sabotage pertinent enlève désormais la marge extérieure.
 
 ## Playwright : un glob `**/api/x**` attrape aussi le module Vite `/src/services/api/x.ts` (11/09/2026)
 
@@ -684,3 +688,51 @@ dernier enfant VISIBLE (le dernier enfant DOM était un wrapper vide).
   `Application shutdown complete.` alors que le parent sortait `-15`.
   Vérifier ensemble réponse HTTP, journal et ports libérés, plutôt que
   d'exiger seulement un code de sortie zéro.
+
+## Cycle 15 : échéance du brouillon converti (B1760, 01/10/2026)
+
+- **Changer `due_date` peut laisser une ancienne date dans les mentions du
+  PDF.** La conversion génère une première ligne de date, puis la première
+  émission décale l'échéance pour conserver le délai convenu. Le rouge HTTP
+  et PDF a montré deux dates différentes sur la même facture.
+- **Synchroniser seulement la ligne auto-générée reconnue.** À l'édition
+  d'échéance d'un brouillon et à sa première émission, remplacer la première
+  ligne exactement égale à l'ancienne date. Conserver le suffixe des mentions,
+  le délai, le moyen de paiement, le taux et la devise, sans régénérer tout
+  le texte. Les pièces déjà émises restent immuables. Les brouillons anciens
+  déjà désynchronisés ne portent pas de provenance permettant leur réparation
+  automatique avec cette règle.
+- **Vérifier les deux échéances du PDF réel.** Une assertion sur le seul
+  champ de l'API manquerait la contradiction entre l'en-tête et les conditions
+  imprimées. Couvrir l'émission par statut et par paiement, une date éditée,
+  la relecture persistée et les mentions personnalisées.
+
+## Signature du bundle macOS complet (01/10/2026)
+
+- **Une signature du sidecar et du binaire Rust ne scelle pas le bundle.**
+  Sur l'app 0.76.1 installée, `codesign` lit une signature issue du linker,
+  mais `Contents/_CodeSignature/CodeResources` est absent et le contrôle
+  strict du bundle échoue. Une copie du même bundle signée ad hoc passe,
+  le retrait du sceau la fait rougir, sa restauration la fait repasser.
+- **Déclarer la signature de bundle dans Tauri et contrôler l'artefact.**
+  Le réglage `bundle.macOS.signingIdentity: "-"` suit la
+  [documentation Tauri](https://v2.tauri.app/distribute/sign/macos/#ad-hoc-signing).
+  La CI doit exiger le sceau puis `codesign --verify --deep --strict` après
+  bundling, et la release rester en draft si ce gate échoue. Refaire ce
+  contrôle sur l'app téléchargée avant installation. La signature ad hoc
+  ne remplace ni un certificat Apple ni la notarisation.
+
+## Fixtures SQLite et audit de dépendances (cycle 15, 01/10/2026)
+
+- **Un `engine.begin()` SQLAlchemy ne suffit pas à transactionner le DDL du
+  driver SQLite en mode legacy.** Les vrais helpers de fixtures exécutaient
+  leurs créations de tables et d'index avec `DBAPI.in_transaction=False`.
+  Un `BEGIN` SQL explicite avant `create_all` et `drop_all` regroupe ces
+  opérations, sans changer le schéma. Disposer les moteurs Alembic dans un
+  `finally` conserve aussi le nettoyage après une interruption. Les témoins
+  et les limites de validation Windows sont liés dans le rapport de release.
+  Voir [SQLAlchemy SQLite](https://docs.sqlalchemy.org/en/20/dialects/sqlite.html#legacy-transaction-mode-with-the-sqlite3-driver).
+- **Une exception d'audit ne corrige pas la dépendance concernée.** La
+  décision, les avis exacts, le chemin transitif du modèle d'embeddings et les
+  conditions de réexamen du cycle 15 sont centralisés dans
+  [la décision de sécurité](SECURITE-DEPENDANCES-CYCLE15.md).

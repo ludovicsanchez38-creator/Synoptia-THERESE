@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import type { ContexteTransmis } from '../lib/contexteTransmis';
 import { texteDuContenu } from '../lib/texteDuContenu';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { generateId } from '../lib/utils';
@@ -45,6 +46,8 @@ export interface Message {
   detectedEntities?: DetectedEntities;
   usage?: MessageUsage;
   uncertainty?: MessageUncertainty;
+  /** P-159 : messages passés relus, et ceux gardés après la coupe du modèle. */
+  contexte?: ContexteTransmis;
   imageId?: string;
   skillFile?: MessageSkillFile;
   // Revue Soso : ce message portait-il des pièces jointes ? Le backend les
@@ -99,7 +102,12 @@ interface ChatStore {
   updateMessage: (id: string, content: string, meta?: Partial<Message>) => void;
   setMessageEntities: (id: string, entities: DetectedEntities) => void;
   clearMessageEntities: (id: string) => void;
-  setMessageMetadata: (id: string, usage?: MessageUsage, uncertainty?: MessageUncertainty) => void;
+  setMessageMetadata: (
+    id: string,
+    usage?: MessageUsage,
+    uncertainty?: MessageUncertainty,
+    contexte?: ContexteTransmis,
+  ) => void;
   setMessageSkillFile: (id: string, skillFile: MessageSkillFile) => void;
   setStreaming: (isStreaming: boolean) => void;
   setFournisseurCourant: (fournisseur: string | null) => void;
@@ -296,7 +304,7 @@ export const useChatStore = create<ChatStore>()(
         }));
       },
 
-      setMessageMetadata: (id, usage, uncertainty) => {
+      setMessageMetadata: (id, usage, uncertainty, contexte) => {
         set((state) => ({
           conversations: state.conversations.map((c) =>
             c.messages.some((m) => m.id === id)
@@ -308,6 +316,7 @@ export const useChatStore = create<ChatStore>()(
                           ...m,
                           ...(usage && { usage }),
                           ...(uncertainty && { uncertainty }),
+                          ...(contexte && { contexte }),
                         }
                       : m
                   ),

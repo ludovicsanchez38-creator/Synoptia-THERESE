@@ -14,7 +14,7 @@ tag v* poussé
    │
    ▼
 GitHub Actions (release.yml)
-   ├─ build 3 OS (macOS .app.tar.gz, Windows NSIS .zip, Linux .deb)
+   ├─ build 3 OS (macOS .app.tar.gz, Windows .exe et .msi, Linux .deb)
    ├─ --config src-tauri/updater-ci.conf.json → createUpdaterArtifacts=true
    │    (activé SEULEMENT en CI : les builds locaux `make build` ne sont pas
    │     impactés et n'ont pas besoin de la clé)
@@ -86,9 +86,28 @@ gh secret set TAURI_SIGNING_PRIVATE_KEY_PASSWORD \
   la 2ᵉ moitié d'US-007, volontairement reportée.
 - **Windows** : l'updater NSIS fonctionne. SmartScreen peut encore avertir tant
   qu'il n'y a pas de certificat Authenticode.
-- **Linux** : pas d'auto-update. Le bundle `.deb` n'est pas un format updater
-  Tauri (seul l'AppImage le serait). Les utilisateurs Linux mettent à jour via
-  `sudo dpkg -i`. Aucun artefact updater Linux n'est généré, c'est attendu.
+- **Linux** : le plugin `tauri-plugin-updater 2.10.0` du lock courant prend
+  en charge le format `.deb`. Après vérification de la signature, son chemin
+  `Installer::Deb` appelle `dpkg -i` avec une demande de privilèges (pkexec,
+  dialogue graphique ou sudo). La release publique `v0.76.1-alpha` expose
+  un `.deb.sig` et les cibles `linux-x86_64` et `linux-x86_64-deb` dans
+  `latest.json`. Ces artefacts et ce chemin de code ont été relus le
+  01/10/2026 ; ils ne constituent pas un parcours N→N+1 Linux exécuté.
+  L'installation manuelle reste possible avec `sudo dpkg -i`. Pour la
+  qualification de la prochaine release, contrôler le paquet produit et
+  les signatures ; ne pas annoncer une mise à jour Linux installée sans
+  observation du parcours réel.
+
+## Sources du contrôle Linux
+
+La version du plugin est épinglée dans `src/frontend/src-tauri/Cargo.lock`.
+Le code officiel de
+[tauri-plugin-updater 2.10.0](https://docs.rs/tauri-plugin-updater/2.10.0/src/tauri_plugin_updater/updater.rs.html)
+porte la sélection `Installer::Deb`, la validation du format et la demande
+de privilèges pour `dpkg`. Les artefacts précédents sont consultables dans
+[la release v0.76.1-alpha](https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/releases/tag/v0.76.1-alpha).
+Le contrôle des assets courants et ses limites sont centralisés dans le
+[rapport de release](releases/v0.77.0-alpha.md).
 
 ## Test bout-en-bout N → N+1
 

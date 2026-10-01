@@ -6,6 +6,8 @@ Phase 4 - Invoicing
 """
 
 import logging
+import re
+import uuid
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 from decimal import ROUND_HALF_UP, Decimal
@@ -27,8 +29,8 @@ from app.services.invoice_pdf import InvoicePDFGenerator
 from app.services.invoice_status import statut_effectif_facture
 from app.services.user_profile import get_cached_profile
 from fastapi import APIRouter, Depends, HTTPException, Query
-from sqlalchemy import and_, or_
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy import and_, or_, text
+from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 from sqlmodel import select
@@ -68,6 +70,26 @@ async def _get_invoice_output_dir(session: AsyncSession) -> str:
     return fallback
 
 
+async def _verrouiller_emission(session: AsyncSession) -> None:
+    """B-1746 : réserve l'écriture SQLite avant la première lecture de la pièce.
+
+    PUT et mark-paid doivent lire l'état issu du commit précédent, même dans
+    deux processus. La contrainte unique ne protège pas deux UPDATE de la même
+    ligne. Un verrou pris après lecture laisserait les dates et le booléen de
+    première émission calculés sur une instance périmée. Le commit/rollback
+    de la session libère cette réservation ; busy_timeout borne l'attente.
+    """
+    try:
+        await session.execute(text("BEGIN IMMEDIATE"))
+    except OperationalError as erreur:
+        if "database is locked" not in str(erreur.orig).casefold():
+            raise
+        raise HTTPException(
+            status_code=409,
+            detail="La base de facturation est occupée. Réessaie dans quelques secondes.",
+        ) from erreur
+
+
 async def _get_invoice_with_lines(session: AsyncSession, invoice_id: str) -> Invoice | None:
     """Load an invoice with its lines eagerly loaded (async-safe)."""
     statement = (
@@ -79,14 +101,15 @@ async def _get_invoice_with_lines(session: AsyncSession, invoice_id: str) -> Inv
     return result.scalar_one_or_none()
 
 
-async def _generate_invoice_number(session: AsyncSession, document_type: str = "facture") -> str:
+async def _generate_invoice_number(
+    session: AsyncSession, document_type: str = "facture", *, emission: datetime | None = None,
+) -> str:
     """
     Génère le prochain numéro de document.
 
     Format selon le type :
     - devis : DEV-YYYY-NNN
-    - facture : FACT-YYYY-NNN
-    - avoir : AV-YYYY-NNN
+    - facture et avoir : FACT-YYYY-NNN, séquence commune à l'émission
 
     B-159 (02/09/2026) : le rang se compare en NOMBRE, pas en texte.
     `invoice_number` est une colonne texte, et `MAX()` y range
@@ -102,10 +125,12 @@ async def _generate_invoice_number(session: AsyncSession, document_type: str = "
     prefix_map = {
         "devis": "DEV",
         "facture": "FACT",
-        "avoir": "AV",
+        "avoir": "FACT",
     }
     prefix = prefix_map.get(document_type, "FACT")
-    current_year = datetime.now(UTC).year
+    # B-1757 : l'année et la date imprimée viennent du même instant, même
+    # lorsqu'une première émission traverse minuit le 31 décembre.
+    current_year = (emission if emission is not None else datetime.now(UTC)).year
 
     statement = select(Invoice.invoice_number).where(
         Invoice.invoice_number.like(f"{prefix}-{current_year}-%")
@@ -165,6 +190,206 @@ async def _inserer_avec_numero_frais(
     raise HTTPException(
         status_code=409,
         detail="Numérotation occupée par d'autres créations simultanées, réessaie.",
+    )
+
+
+# B-1615 : ces statuts quittent le brouillon et émettent la pièce. `cancelled`
+# ne le fait pas : un brouillon annulé ne consomme pas de numéro.
+_STATUTS_QUI_EMETTENT = frozenset({"sent", "paid", "overdue"})
+
+
+def _jeton_provisoire() -> str:
+    """Hors série FACT. La colonne est NOT NULL et unique."""
+    return f"PROV-{uuid.uuid4().hex}"
+
+
+def _numero_provisoire(numero: str) -> bool:
+    return numero.startswith("PROV-")
+
+
+async def _inserer_piece(
+    session: AsyncSession,
+    document_type: str,
+    fabrique: Callable[[str], Invoice],
+) -> Invoice:
+    """Devis : numéro DEV dès la création. Facture et avoir : jeton PROV.
+
+    Le 7° du I de l'article 242 nonies A et le § 90 du
+    BOI-TVA-DECLA-30-20-20-10 numérotent la facture au fur et à mesure de
+    l'émission. Supprimer un brouillon ne doit pas retirer un numéro de la
+    série. Ces textes ne visent pas le devis.
+    """
+    if document_type == "devis":
+        return await _inserer_avec_numero_frais(session, document_type, fabrique)
+
+    for _ in range(_REPRISES_DE_NUMERO):
+        jeton = _jeton_provisoire()
+        candidat = fabrique(jeton)
+        session.add(candidat)
+        try:
+            await session.flush()
+        except IntegrityError as collision:
+            await session.rollback()
+            if "invoice_number" not in str(collision.orig):
+                raise
+            logger.warning("Jeton %s déjà pris, reprise", jeton)
+            continue
+        return candidat
+
+    raise HTTPException(
+        status_code=409,
+        detail="Numérotation occupée par d'autres créations simultanées, réessaie.",
+    )
+
+
+def _rang_de_numero(numero: str) -> int | None:
+    try:
+        return int(numero.rsplit("-", 1)[-1])
+    except (ValueError, AttributeError):
+        return None
+
+
+async def _est_le_dernier_de_sa_serie(session: AsyncSession, numero: str) -> bool:
+    """Vrai si ce numéro est le plus haut de son préfixe et de son année.
+
+    Une convention illisible est laissée en place : on ne la renumérote pas.
+    """
+    morceaux = numero.split("-")
+    rang = _rang_de_numero(numero)
+    if rang is None or len(morceaux) < 3:
+        return True
+    prefixe = "-".join(morceaux[:-1])
+    statement = select(Invoice.invoice_number).where(Invoice.invoice_number.like(f"{prefixe}-%"))
+    maximum = rang
+    for autre in (await session.execute(statement)).scalars().all():
+        autre_rang = _rang_de_numero(autre)
+        if autre_rang is not None:
+            maximum = max(maximum, autre_rang)
+    return rang == maximum
+
+
+def _numero_de_la_serie_courante(numero: str, emission: datetime) -> bool:
+    """Seul un FACT de l'année d'émission peut conserver son rang au brouillon.
+
+    P160 : les anciens AV et les conventions importées ne sont plus prolongés.
+    Une pièce déjà émise reste conservée avant que cette règle soit consultée.
+    """
+    reconnu = re.fullmatch(rf"FACT-{emission.year}-([0-9]+)", numero)
+    if reconnu is None:
+        return False
+    rang = int(reconnu.group(1))
+    return rang > 0 and reconnu.group(1) == f"{rang:03d}"
+
+
+async def _attribuer_numero_definitif(
+    session: AsyncSession,
+    invoice: Invoice,
+    nouveau_statut: str | None,
+    *, emission: datetime | None = None,
+) -> Invoice:
+    """Pose un FACT commun aux factures et avoirs à la première émission.
+
+    Un brouillon annulé n'est plus « draft », mais son jeton PROV- n'a jamais
+    été émis : cette première sortie le numérote. Un brouillon qui porte déjà
+    un numéro définitif hérité le garde s'il est un FACT de l'année courante,
+    encore dernier de sa série. Sinon il en reçoit un nouveau, à la suite : l'émettre tel quel
+    après un numéro plus haut casserait l'ordre du § 90. L'ancien numéro,
+    inférieur au maximum, n'est pas réattribué.
+
+    Appelé avant les autres écritures. Une collision annule seulement son
+    SAVEPOINT, pour conserver la réservation SQLite jusqu’au commit final.
+    Le numéro proposé est journalisé avant le flush, parce que l'objet expire
+    si l'insertion est refusée.
+    """
+    if nouveau_statut is None or nouveau_statut not in _STATUTS_QUI_EMETTENT:
+        return invoice
+    if invoice.document_type not in ("facture", "avoir"):
+        return invoice
+    if _facture_emise(invoice):
+        return invoice
+    if emission is None:
+        emission = datetime.now(UTC)
+    if _numero_de_la_serie_courante(invoice.invoice_number, emission) and await _est_le_dernier_de_sa_serie(
+        session, invoice.invoice_number
+    ):
+        return invoice
+
+    identifiant = invoice.id
+    type_document = invoice.document_type
+    for _ in range(_REPRISES_DE_NUMERO):
+        numero = await _generate_invoice_number(session, type_document, emission=emission)
+        logger.info("Numéro définitif proposé %s pour %s", numero, identifiant)
+        try:
+            async with session.begin_nested():
+                invoice.invoice_number = numero
+                await session.flush()
+        except IntegrityError as collision:
+            if "invoice_number" not in str(collision.orig):
+                raise
+            logger.warning("Numéro %s pris par un concurrent, reprise", numero)
+            rechargee = await _get_invoice_with_lines(session, identifiant)
+            if rechargee is None:
+                raise HTTPException(status_code=404, detail="Invoice not found") from collision
+            invoice = rechargee
+            if _facture_emise(invoice):
+                return invoice
+            if _numero_de_la_serie_courante(invoice.invoice_number, emission) and await _est_le_dernier_de_sa_serie(
+                session, invoice.invoice_number
+            ):
+                return invoice
+            type_document = invoice.document_type
+            continue
+        return invoice
+
+    raise HTTPException(
+        status_code=409,
+        detail="Numérotation occupée par d'autres créations simultanées, réessaie.",
+    )
+
+
+def _poser_echeance(invoice: Invoice, echeance: datetime) -> None:
+    """B-1760 : garder la date auto-générée cohérente avec l'échéance.
+
+    Seule la première ligne reconnue est remplacée. Les conditions négociées
+    et les mentions personnalisées restent intactes, sans recalcul du taux.
+    """
+    mentions = invoice.legal_mentions
+    ancienne_ligne = f"Date d'échéance : {invoice.due_date:%d/%m/%Y}."
+    if mentions and (mentions == ancienne_ligne or mentions.startswith(ancienne_ligne + "\n")):
+        nouvelle_ligne = f"Date d'échéance : {echeance:%d/%m/%Y}."
+        invoice.legal_mentions = nouvelle_ligne + mentions[len(ancienne_ligne):]
+    invoice.due_date = echeance
+
+
+def _poser_dates_demission(invoice: Invoice, emission: datetime) -> None:
+    """La date imprimée est celle de la délivrance (BOFiP § 140).
+
+    L'échéance se décale du même nombre de jours, pour garder le délai
+    convenu. Appelé après la copie des champs : une date ancienne envoyée
+    avec le changement de statut ne reste pas sur la pièce émise.
+    """
+    maintenant = emission
+    ancienne = invoice.issue_date
+    if ancienne.tzinfo is None:
+        ancienne = ancienne.replace(tzinfo=UTC)
+    else:
+        ancienne = ancienne.astimezone(UTC)
+    jours = (maintenant.date() - ancienne.date()).days
+    invoice.issue_date = maintenant
+    echeance = invoice.due_date
+    if echeance.tzinfo is None:
+        echeance = echeance.replace(tzinfo=UTC)
+    else:
+        echeance = echeance.astimezone(UTC)
+    _poser_echeance(invoice, echeance + timedelta(days=jours))
+
+
+def _premiere_emission(invoice: Invoice, nouveau_statut: str | None) -> bool:
+    """Première sortie d'une facture ou d'un avoir vers un statut émis."""
+    return (
+        nouveau_statut in _STATUTS_QUI_EMETTENT
+        and invoice.document_type in ("facture", "avoir")
+        and not _facture_emise(invoice)
     )
 
 
@@ -421,18 +646,36 @@ STATUTS_DE_DEVIS = frozenset(
 STATUTS_DE_FACTURE = frozenset({"draft", "sent", "paid", "overdue", "cancelled"})
 
 
+def _facture_citee_emise(origine: Invoice) -> bool:
+    """Une facture déjà émise, avec un numéro définitif. Le § 220 cite
+    la facture initiale, pas un brouillon PROV-."""
+    return (
+        origine.document_type == "facture"
+        and _facture_emise(origine)
+        and not _numero_provisoire(origine.invoice_number)
+    )
+
+
 async def _verifier_la_facture_d_origine(
-    session: AsyncSession, document_type: str, origine_id: str | None
+    session: AsyncSession, document_type: str, origine_id: str | None,
+    *, obligatoire: bool = False,
 ) -> None:
     """P-154 : un avoir peut désigner la facture qu'il corrige ; la pièce
-    désignée doit exister et être une facture. Réservé aux avoirs."""
+    désignée doit exister, être une facture, et être déjà émise."""
     if origine_id is None:
+        if obligatoire and document_type == "avoir":
+            raise HTTPException(
+                status_code=409,
+                detail="Sélectionne la facture d'origine avant d'émettre cet avoir.",
+            )
         return
     if document_type != "avoir":
         raise HTTPException(status_code=400, detail="La facture d'origine est réservée aux avoirs.")
     origine = await session.get(Invoice, origine_id)
     if origine is None or origine.document_type != "facture":
         raise HTTPException(status_code=400, detail="La pièce d'origine d'un avoir doit être une facture existante.")
+    if not _facture_citee_emise(origine):
+        raise HTTPException(status_code=400, detail="Un avoir ne peut citer qu'une facture déjà émise.")
 
 
 @router.post("", response_model=InvoiceResponse, include_in_schema=False)
@@ -444,7 +687,8 @@ async def create_invoice(
     """
     Crée une nouvelle facture.
 
-    - Génère automatiquement le numéro de facture (FACT-YYYY-NNN)
+    - Facture et avoir : jeton provisoire, numéro définitif à l'émission
+    - Devis : numéro DEV-YYYY-NNN dès la création
     - Calcule les totaux automatiquement
     - Dates par défaut: issue_date=aujourd'hui, due_date=+30 jours
     """
@@ -472,7 +716,7 @@ async def create_invoice(
     # relu paresseusement au tour suivant, ce qu'une session async interdit.
     snapshot_client = _snapshot_du_contact(contact)
 
-    invoice = await _inserer_avec_numero_frais(
+    invoice = await _inserer_piece(
         session,
         document_type,
         lambda numero: Invoice(
@@ -538,6 +782,7 @@ async def update_invoice(
 
     - Si les lignes sont modifiées, recalcule les totaux
     """
+    await _verrouiller_emission(session)
     invoice = await _get_invoice_with_lines(session, invoice_id)
 
     if not invoice:
@@ -567,15 +812,50 @@ async def update_invoice(
             raise HTTPException(
                 status_code=409,
                 detail=(
-                    "Une facture émise ne repasse pas en brouillon : pour la "
-                    "corriger, émets un avoir."
+                    "Une pièce émise ne repasse pas en brouillon. "
+                    + _conseil_pour_rectifier(invoice)
                 ),
             )
+        # B-1671 : un statut « Annulée » sort la créance de l'encours sans
+        # document nouveau. Le § 210 du BOI-TVA-DECLA-30-20-20-20 rectifie
+        # par une facture de remplacement ou une note d'avoir. L'article 289,
+        # I, 5 assimile l'avoir émis à une facture : même garde.
+        if (
+            request.status == "cancelled"
+            and invoice.document_type in ("facture", "avoir")
+            and _facture_emise(invoice)
+        ):
+            detail = (
+                "Un avoir émis ne s'annule pas. Demande à ton expert-comptable "
+                "comment établir le document rectificatif adapté."
+                if invoice.document_type == "avoir"
+                else "Une facture émise ne s'annule pas. Pour l'annuler, émets un avoir."
+            )
+            raise HTTPException(status_code=409, detail=detail)
+
+    # B-1744 : l’immuabilité se décide sur la pièce chargée, avant qu’un
+    # PROV annulé reçoive son premier numéro définitif.
+    deja_emise = _facture_emise(invoice)
+
+    # B-1615 : le numéro définitif naît ici, avant toute autre écriture.
+    # La date du jour se pose après la copie des champs (plus bas).
+    emet_maintenant = _premiere_emission(invoice, request.status)
+    instant_emission = datetime.now(UTC) if emet_maintenant else None
+    if emet_maintenant and invoice.document_type == "avoir":
+        origine_id = (
+            request.converted_from_id
+            if "converted_from_id" in request.model_fields_set
+            else invoice.converted_from_id
+        )
+        await _verifier_la_facture_d_origine(session, "avoir", origine_id, obligatoire=True)
+    invoice = await _attribuer_numero_definitif(
+        session, invoice, request.status, emission=instant_emission,
+    )
 
     # Mise à jour des champs
     # B-1614 : une pièce émise est figée (B-1506, numérotation continue) ;
     # seul son statut change encore, jamais vers le brouillon.
-    if _facture_emise(invoice):
+    if deja_emise:
         champs = {
             champ for champ in request.model_fields_set
             if champ != "status" and (getattr(request, champ) is not None or champ == "converted_from_id")
@@ -584,8 +864,8 @@ async def update_invoice(
             raise HTTPException(
                 status_code=409,
                 detail=(
-                    "Une facture émise ne se modifie pas : seul son statut change. "
-                    "Pour la corriger, émets un avoir."
+                    "Une pièce émise ne se modifie pas : seul son statut change. "
+                    + _conseil_pour_rectifier(invoice)
                 ),
             )
 
@@ -605,10 +885,10 @@ async def update_invoice(
         invoice.issue_date = _date_du_client(request.issue_date, "Date d'émission")
 
     if request.due_date is not None:
-        invoice.due_date = _date_du_client(request.due_date, "Date d'échéance")
+        _poser_echeance(invoice, _date_du_client(request.due_date, "Date d'échéance"))
 
     if request.status is not None:
-        _dater_le_premier_envoi(invoice, request.status)
+        _dater_le_premier_envoi(invoice, request.status, emission=instant_emission)
         invoice.status = request.status
 
     if "converted_from_id" in request.model_fields_set:
@@ -663,6 +943,9 @@ async def update_invoice(
         invoice.total_tax = total_tax
         invoice.total_ttc = total_ttc
 
+    if instant_emission is not None:
+        _poser_dates_demission(invoice, instant_emission)
+
     invoice.updated_at = datetime.now(UTC)
 
     session.add(invoice)
@@ -684,6 +967,7 @@ async def delete_invoice(
     """
     Supprime une facture et son PDF associé.
     """
+    await _verrouiller_emission(session)
     invoice = await _get_invoice_with_lines(session, invoice_id)
 
     if not invoice:
@@ -693,8 +977,20 @@ async def delete_invoice(
         raise HTTPException(
             status_code=409,
             detail=(
-                "Une facture émise ne se supprime pas : sa numérotation doit "
-                "rester continue. Pour l'annuler, émets un avoir."
+                "Une pièce émise ne se supprime pas : sa numérotation doit "
+                "rester continue. " + _conseil_pour_rectifier(invoice)
+            ),
+        )
+
+    # Un brouillon hérité porte déjà FACT- ou AV-. L'effacer sortirait ce
+    # numéro du maximum, et la prochaine émission le reprendrait.
+    if invoice.document_type in ("facture", "avoir") and not _numero_provisoire(invoice.invoice_number):
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "Ce brouillon porte déjà un numéro de la série. Le supprimer "
+                "permettrait de le donner à une autre pièce. Annule-le si tu "
+                "ne veux plus l'émettre."
             ),
         )
 
@@ -714,24 +1010,39 @@ async def delete_invoice(
     return {"message": "Invoice deleted successfully"}
 
 
+def _conseil_pour_rectifier(invoice: Invoice) -> str:
+    """Le formulaire référence une facture, pas encore un avoir antérieur."""
+    if invoice.document_type == "avoir":
+        return "Demande à ton expert-comptable comment établir le document rectificatif adapté."
+    return "Pour la corriger, émets un avoir."
+
+
 def _facture_emise(invoice: Invoice) -> bool:
-    """B-1506 : une facture ou un avoir qui a quitté le brouillon est émis.
+    """Une pièce réellement émise reste figée, quel que soit son statut.
 
     Sa numérotation appartient à une séquence chronologique et continue
     (BOFiP, BOI-TVA-DECLA-30-20-20-10) : on ne le supprime pas et il ne
     repasse pas en brouillon, on l'annule par un avoir. Un devis n'entre pas
     dans cette séquence.
+
+    B-1743/B-1744 : un PROV- annulé sans envoi n'a jamais été émis.
+    Une ancienne pièce annulée avec numéro définitif reste conservée comme
+    émise, même si son horodatage d'envoi n'avait pas été enregistré.
     """
     return invoice.document_type in ("facture", "avoir") and (
-        invoice.sent_at is not None or invoice.status != "draft"
+        invoice.sent_at is not None
+        or invoice.status in _STATUTS_QUI_EMETTENT
+        or (invoice.status == "cancelled" and not _numero_provisoire(invoice.invoice_number))
     )
 
 
-def _dater_le_premier_envoi(invoice: Invoice, nouveau_statut: str) -> None:
+def _dater_le_premier_envoi(
+    invoice: Invoice, nouveau_statut: str, *, emission: datetime | None = None,
+) -> None:
     """P-139 : la date du premier passage à « envoyé » est gardée, jamais
     réécrite (un renvoi ou un aller-retour de statut ne la déplace pas)."""
     if nouveau_statut == "sent" and invoice.sent_at is None:
-        invoice.sent_at = datetime.now(UTC)
+        invoice.sent_at = emission if emission is not None else datetime.now(UTC)
 
 
 @router.patch("/{invoice_id}/mark-paid", response_model=InvoiceResponse)
@@ -743,6 +1054,7 @@ async def mark_invoice_paid(
     """
     Marque une facture comme payée.
     """
+    await _verrouiller_emission(session)
     invoice = await _get_invoice_with_lines(session, invoice_id)
 
     if not invoice:
@@ -776,6 +1088,14 @@ async def mark_invoice_paid(
             detail="La date du paiement ne peut pas être dans le futur.",
         )
 
+    # B-1615 : marquer payé un brouillon, c'est l'émettre.
+    emet_maintenant = _premiere_emission(invoice, "paid")
+    instant_emission = datetime.now(UTC) if emet_maintenant else None
+    if emet_maintenant and invoice.document_type == "avoir":
+        await _verifier_la_facture_d_origine(session, "avoir", invoice.converted_from_id, obligatoire=True)
+    invoice = await _attribuer_numero_definitif(session, invoice, "paid", emission=instant_emission)
+    if instant_emission is not None:
+        _poser_dates_demission(invoice, instant_emission)
     invoice.status = "paid"
     invoice.payment_date = payment_date
     invoice.updated_at = datetime.now(UTC)
@@ -838,13 +1158,18 @@ async def convert_invoice(
         "total_ttc": source.total_ttc,
         "tva_applicable": source.tva_applicable,
         "notes": source.notes or "",
-        # P-154 : un avoir tiré d'une facture la garde comme pièce d'origine.
-        "converted_from_id": source.id if target_type == "avoir" and source_type == "facture" else None,
+        # P-154 : un avoir tiré d'une facture déjà émise la garde comme origine.
+        "converted_from_id": None,
     }
+    if target_type == "avoir" and source_type == "facture":
+        if not _facture_citee_emise(source):
+            raise HTTPException(status_code=400, detail="Un avoir ne peut citer qu'une facture déjà émise.")
+        copie["converted_from_id"] = source.id
     lignes_source = [_snapshot_de_ligne(line) for line in source.lines]
 
-    # Générer un nouveau numéro pour le type cible, avec reprise (B-338)
-    new_invoice = await _inserer_avec_numero_frais(
+    # B-1615 : facture et avoir naissent provisoires ; le devis est numéroté.
+    # La reprise d'un numéro double (B-338) a lieu à l'émission.
+    new_invoice = await _inserer_piece(
         session, target_type, lambda numero: Invoice(invoice_number=numero, **copie)
     )
 
@@ -896,7 +1221,7 @@ async def _facture_d_origine_pour_le_pdf(session: AsyncSession, invoice: Invoice
     if invoice.document_type != "avoir" or not invoice.converted_from_id:
         return None
     origine = await session.get(Invoice, invoice.converted_from_id)
-    if origine is None:
+    if origine is None or not _facture_citee_emise(origine):
         return None
     return {"numero": origine.invoice_number, "date": origine.issue_date.strftime("%d/%m/%Y")}
 
@@ -1079,10 +1404,11 @@ async def convert_devis_to_invoice(
     Convertit un devis accepte en facture.
 
     - Copie toutes les lignes du devis
-    - Genere un nouveau numero FACT-YYYY-NNN
+    - Crée un brouillon provisoire, numéroté dans FACT à sa première émission
     - Ajoute conditions de paiement et mentions legales
     - Marque le devis source comme "converted"
     """
+    await _verrouiller_emission(session)
     # 1. Recuperer le devis
     devis = await _get_invoice_with_lines(session, invoice_id)
     if not devis:
@@ -1142,7 +1468,7 @@ async def convert_devis_to_invoice(
     }
     lignes_devis = [_snapshot_de_ligne(line) for line in devis.lines]
 
-    new_invoice = await _inserer_avec_numero_frais(
+    new_invoice = await _inserer_piece(
         session, "facture", lambda numero: Invoice(invoice_number=numero, **facture)
     )
     invoice_number = new_invoice.invoice_number

@@ -5,6 +5,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 RACINE = Path(__file__).resolve().parents[1]
 BACKEND = RACINE / "src" / "backend"
 
@@ -39,7 +41,10 @@ def test_arret_ferme_qdrant_ouvert_par_la_sante_en_mode_test(tmp_path: Path) -> 
     if os.name == "nt":
         # Windows a besoin de SystemRoot pour charger ses fournisseurs Winsock.
         # Les chemins de profil et les fichiers temporaires restent jetables.
-        env["SYSTEMROOT"] = os.environ["SYSTEMROOT"]
+        systemroot = os.environ.get("SYSTEMROOT") or os.environ.get("WINDIR")
+        if not systemroot:
+            pytest.skip("SYSTEMROOT ou WINDIR est requis pour le témoin Windows")
+        env["SYSTEMROOT"] = systemroot
         env["WINDIR"] = env["SYSTEMROOT"]
         env["USERPROFILE"] = str(home_test)
         env["TEMP"] = str(tmp_path)
@@ -99,3 +104,38 @@ asyncio.run(verifier())
     assert "QDRANT_OPENED=1" in resultat.stdout
     assert "QDRANT_CLOSED=1" in resultat.stdout
     assert "Exception ignored in: <function QdrantClient.__del__" not in resultat.stderr
+
+
+def test_preparation_windows_utilise_windir_sans_systemroot(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    environnements = []
+
+    def processus_simule(*args, **kwargs):
+        environnements.append(kwargs["env"])
+        return subprocess.CompletedProcess(
+            args[0], 0, "QDRANT_OPENED=1\nQDRANT_CLOSED=1\n", "",
+        )
+
+    with monkeypatch.context() as contexte:
+        contexte.setattr(os, "name", "nt")
+        contexte.setattr(os, "environ", {"WINDIR": r"C:\Windows"})
+        contexte.setattr(subprocess, "run", processus_simule)
+        test_arret_ferme_qdrant_ouvert_par_la_sante_en_mode_test(tmp_path)
+    assert environnements[0]["SYSTEMROOT"] == r"C:\Windows"
+    assert environnements[0]["WINDIR"] == r"C:\Windows"
+    assert environnements[0]["USERPROFILE"] == str(tmp_path / "home")
+
+
+def test_preparation_windows_signale_le_prerequis_absent(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def processus_interdit(*args, **kwargs):
+        raise AssertionError("un processus est lancé sans prérequis Windows")
+
+    with monkeypatch.context() as contexte:
+        contexte.setattr(os, "name", "nt")
+        contexte.setattr(os, "environ", {})
+        contexte.setattr(subprocess, "run", processus_interdit)
+        with pytest.raises(pytest.skip.Exception, match="SYSTEMROOT ou WINDIR"):
+            test_arret_ferme_qdrant_ouvert_par_la_sante_en_mode_test(tmp_path)

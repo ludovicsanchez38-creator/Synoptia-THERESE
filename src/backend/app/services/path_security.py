@@ -190,7 +190,10 @@ def validate_file_path(file_path: str | Path, allowed_base: Path | None = None) 
         FileNotFoundError: Si le fichier n'existe pas
     """
     path = Path(file_path).expanduser().resolve()
-    home = Path.home()
+    # Le chemin demandé est résolu : son dossier personnel doit l'être aussi.
+    # Un HOME symbolique (sur macOS /var -> /private/var, ou un home déplacé)
+    # rendait sinon relative_to inopérant et rouvrait les répertoires sensibles.
+    home = Path.home().resolve()
 
     # Verifier les repertoires systeme interdits
     # 31/08 : sur macOS le dossier temporaire de l'utilisateur vit sous

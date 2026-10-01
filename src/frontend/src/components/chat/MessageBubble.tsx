@@ -1,4 +1,5 @@
 import { memo, useState, useCallback, useMemo, useEffect } from 'react';
+import { texteContexteTransmis } from '../../lib/contexteTransmis';
 import { formaterCout } from '../../lib/coutAffiche';
 import { motion } from 'framer-motion';
 import ReactMarkdown from 'react-markdown';
@@ -682,7 +683,7 @@ export const MessageBubble = memo(function MessageBubble({
         )}
 
         {/* Message metadata (US-ESC-01, US-ESC-02) */}
-        {!isUser && !message.isStreaming && (message.uncertainty || message.usage) && (
+        {!isUser && !message.isStreaming && (message.uncertainty || message.usage || message.contexte) && (
           <div className="mt-3 pt-2 border-t border-border/50 flex flex-wrap items-center gap-3 text-xs text-text-muted">
             {/* Uncertainty indicator */}
             {message.uncertainty?.is_uncertain && (
@@ -730,6 +731,15 @@ export const MessageBubble = memo(function MessageBubble({
                 </div>
               );
             })()}
+
+            {message.contexte && (
+              <p
+                tabIndex={0}
+                className="text-text-muted rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-bg"
+              >
+                {texteContexteTransmis(message.contexte)}
+              </p>
+            )}
 
             {/* Usage/cost display */}
             {message.usage && (

@@ -149,6 +149,9 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
     import app.models.database as database_module
 
     async with engine.begin() as conn:
+        # B-1766 : le BEGIN SQLAlchemy est logique ; le driver SQLite legacy
+        # ne démarre pas la transaction pour le DDL, coûteux sur Windows.
+        await conn.exec_driver_sql("BEGIN")
         await conn.run_sync(SQLModel.metadata.create_all)
 
     moteur_sync_test = create_engine(
@@ -168,6 +171,7 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
         moteur_sync_test.dispose()
 
     async with engine.begin() as conn:
+        await conn.exec_driver_sql("BEGIN")
         await conn.run_sync(SQLModel.metadata.drop_all)
 
 

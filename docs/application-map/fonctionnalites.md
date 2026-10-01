@@ -171,6 +171,7 @@
 - **?** Annonces et contrastes :  _(rapport WP-DIFF-104-c13s-11)_
 - **?** Annonces et contrastes :  _(rapport WP-DIFF-105-c13s-22)_
 - **?** Annonces françaises du glisser-déposer :  _(rapport WP-DIFF-008-c3-D06)_
+- **?** Annulation avant exécution et pendant l’enrôlement :  _(rapport c15-primary-actions-traitement-b1753-511dd0cc504842478684d13ae0d0c7c2)_
 - **?** Annulation canonique d'une deliberation :  _(rapport WP-060)_
 - **?** Annulation cooperative et fencing par generation :  _(rapport WP-079)_
 - **?** Annulation d'une délibération du Board :  _(rapport WP-060-c2-D08)_
@@ -359,14 +360,19 @@
 - **?** Avertissement de profil émetteur incomplet :  _(rapport WP-C-028-c3-R09)_
 - **?** Avertissement numéro de TVA de l'émetteur (P-136) :  _(rapport WP-DIFF-110-c13s-20)_
 - **?** Avertissements de confidentialite a la mise en route :  _(rapport WP-065-c9v-V5)_
+- **?** Avoir et première émission :  _(rapport c15-codex-front-facturation-wp-c-026)_
 - **?** Avoir relié à la facture qu'il corrige (P-154) :  _(rapport WP-DIFF-097-c13r-4-bis)_
 - **?** Avoir relié à sa facture (P-154) :  _(rapport WP-DIFF-110-c13s-20)_
 - **?** Avoir relié à sa facture d'origine :  _(rapport WP-DIFF-097-c13s-23)_
+- **?** B1615 : PROV caché et historique conservé :  _(rapport c15-codex-front-facturation-wp-diff-126)_
+- **?** B1671/B1743/B1744 : émission distincte du statut annulé :  _(rapport c15-codex-front-facturation-wp-diff-126)_
+- **?** B1738 : titre long lisible au focus :  _(rapport c15-codex-front-wp-diff-124)_
 - **?** Bac a sable des permissions du webview :  _(rapport WP-057-c9t-T3)_
 - **?** Bac a sable disque du webview :  _(rapport WP-057)_
 - **?** Bac à sable d'exécution des skills Office :  _(rapport WP-079-c3-R18)_
 - **?** Bac à sable d'exécution du code généré :  _(rapport WP-054-c6-R07)_
 - **?** Bac à sable des commandes d'agents et git de mission durci (B-1153) :  _(rapport WP-DIFF-086-c13-h)_
+- **?** Backend de couverture cantonné au loopback :  _(rapport WP-DIFF-121-c15-g1)_
 - **?** Backend de couverture hors ligne :  _(rapport WP-DIFF-121-c14-offline-lecteur-b)_
 - **?** Badge de priorite d'un e-mail :  _(rapport WP-DIFF-024-c9-R4)_
 - **?** Badge de priorité d'un e-mail :  _(rapport WP-DIFF-024-c9s-S4)_
@@ -534,6 +540,7 @@
 - **?** Brief du jour et modèles de lecture du prototype :  _(rapport WP-067-c3-R16)_
 - **?** Brief du jour tolerant aux reponses incompletes :  _(rapport WP-DIFF-003-c3-R23)_
 - **?** Brief du jour, tolerance aux reponses incompletes :  _(rapport WP-DIFF-003-c2-M14)_
+- **?** Brief sans numéro interne :  _(rapport c15-codex-front-facturation-wp-067)_
 - **?** Brouillon d'e-mail, péremption sur le seul texte :  _(rapport WP-DIFF-044-c9v-V1)_
 - **?** Brouillon d'email :  _(rapport WP-072)_
 - **?** Brouillon de devis dans le panneau Facturer du canevas :  _(rapport WP-DIFF-099-c13s-24)_
@@ -819,6 +826,7 @@
 - **?** Classification des erreurs calendrier :  _(rapport WP-061-c8-challenge-b)_
 - **?** Classification des erreurs d'agenda :  _(rapport WP-061-c4-D04)_
 - **?** Classification des secrets de préférences :  _(rapport WP-DIFF-118-c14-reprise-lecteur-a)_
+- **?** Classification et identité des gestes de couverture :  _(rapport c15-primary-b1755-instrument-f4392bab8f5e443daed3faf7d637236b)_
 - **?** Cle de jour civil du calendrier :  _(rapport WP-070-c2-M16)_
 - **?** Cles API des fournisseurs :  _(rapport WP-049-c3-R03)_
 - **?** Cles API par fournisseur :  _(rapport WP-049)_
@@ -832,6 +840,7 @@
 - **?** Client HTTP de l'agenda :  _(rapport WP-072-c4-D05)_
 - **?** Client HTTP du moteur :  _(rapport WP-072-c13s-16)_
 - **?** Client des skills et téléchargement natif :  _(rapport WP-073-c6-D04)_
+- **?** Client lisible sans inventer d’absence :  _(rapport c15-codex-front-facturation-wp-c-027)_
 - **?** Cliquet de typage :  _(rapport WP-DIFF-012-c4-R12)_
 - **?** Cliquet mypy de la CI :  _(rapport WP-DIFF-012-c13s-23)_
 - **?** Cliquet mypy de la CI :  _(rapport WP-DIFF-012-c6-R09)_
@@ -1138,6 +1147,7 @@
 - **?** Contexte local d'un agent d'action :  _(rapport WP-DIFF-018-c3-R28)_
 - **?** Contexte local des actions :  _(rapport WP-DIFF-022-c4-R09)_
 - **?** Continuation d'outils chez le fournisseur du tour :  _(rapport WP-DIFF-109-c13s-d5)_
+- **?** Continuité de navigation B1752 :  _(rapport c15-codex-front-crm-focus-b1752-wp-diff-130)_
 - **?** Contraste AA des couleurs de domaine et des remplissages :  _(rapport WP-074-c2-D11)_
 - **?** Contraste du texte secondaire :  _(rapport WP-DIFF-003-c8-challenge-b)_
 - **?** Contraste et accessibilité mesurés :  _(rapport WP-074)_
@@ -1157,14 +1167,17 @@
 - **?** Contrat de fuseau de l’Accueil :  _(rapport WP-DIFF-119-c14-reprise-lecteur-b)_
 - **?** Contrat de l'API :  _(rapport WP-048-c4-D02)_
 - **?** Contrat de l'API (schemas Pydantic) :  _(rapport WP-048-c4-R03)_
+- **?** Contrat de l'indice passif P162 :  _(rapport c15-codex-p162-secondaire-wp-diff-132)_
 - **?** Contrat de lecture d'une fiche (chat et pont MCP) :  _(rapport WP-053-c13s-06)_
 - **?** Contrat de lecture d'une fiche contact :  _(rapport WP-079-c3-D04)_
 - **?** Contrat de mise a jour signee :  _(rapport WP-082-c9-R4)_
+- **?** Contrat de table et accessibilité :  _(rapport c15-codex-front-facturation-wp-diff-028)_
 - **?** Contrat de theme de la coque :  _(rapport WP-066)_
 - **?** Contrat des commandes :  _(rapport WP-074)_
 - **?** Contrat des fournisseurs LLM (Gemini, Ollama) :  _(rapport WP-080-c3-D05)_
 - **?** Contrat des fournisseurs d'agenda :  _(rapport WP-051-c3-R05)_
 - **?** Contrat des outils de memoire :  _(rapport WP-079)_
+- **?** Contrat du contexte effectivement transmis :  _(rapport c15-codex-back-models)_
 - **?** Contrat frontend du manifeste :  _(rapport WP-070-c8-challenge-b)_
 - **?** Contrat responsive de la coque :  _(rapport WP-066)_
 - **?** Contrat responsive de la coque :  _(rapport WP-066-c3-D03)_
@@ -1179,6 +1192,15 @@
 - **?** Contrats d'entrée et de sortie de l'API :  _(rapport WP-048-c13s-08)_
 - **?** Contrats d'entrée et de sortie de l'API locale :  _(rapport WP-048-c13-d)_
 - **?** Contrats de création et de mise à jour des fiches et des projets :  _(rapport WP-048-c13-t)_
+- **?** Contrats de facturation :  _(rapport c15-codex-facturation-wp-080-a5cc1517)_
+- **?** Contrats de facturation :  _(rapport c15-codex-facturation-wp-c-025-a5cc1517)_
+- **?** Contrats de facturation :  _(rapport c15-codex-facturation-wp-c-029-a5cc1517)_
+- **?** Contrats de facturation :  _(rapport c15-codex-facturation-wp-diff-013-a5cc1517)_
+- **?** Contrats de facturation :  _(rapport c15-codex-facturation-wp-diff-027-a5cc1517)_
+- **?** Contrats de facturation :  _(rapport c15-codex-facturation-wp-diff-110-a5cc1517)_
+- **?** Contrats de facturation :  _(rapport c15-codex-facturation-wp-diff-128-a5cc1517)_
+- **?** Contrats de garde de la couverture :  _(rapport c15-primary-b1755-tests-fdcfac6658654f328209526e29d40a61)_
+- **?** Contrats de statut et d’origine :  _(rapport c15-codex-front-facturation-wp-c-027)_
 - **?** Contrats des fournisseurs et du prompt systeme :  _(rapport WP-082-c9-R4)_
 - **?** Contrats du harnais de couverture :  _(rapport WP-DIFF-120-c14-lecteur-b)_
 - **?** Contrats du parcours guidé et de l'exécution de skills :  _(rapport WP-064-c3-R13)_
@@ -1223,12 +1245,15 @@
 - **?** Contrôle de génération entre l'interface et le sidecar :  _(rapport WP-070-c6-D03)_
 - **?** Contrôle du fuseau horaire à l'entrée :  _(rapport WP-DIFF-019-c4-R01)_
 - **?** Contrôles de fenêtre par plateforme :  _(rapport WP-069-c4-D04)_
+- **?** Convergence des cycles de vie mémoire et durable :  _(rapport c15-primary-actions-traitement-b1753-511dd0cc504842478684d13ae0d0c7c2)_
 - **?** Conversation :  _(rapport WP-049-c4-R01)_
 - **?** Conversation :  _(rapport WP-061-c4-R07)_
 - **?** Conversation : fil virtualisé et attente locale :  _(rapport WP-061-c10-repair-b)_
 - **?** Conversation avec le modele :  _(rapport WP-049-c3-R03)_
 - **?** Conversation avec un agent :  _(rapport WP-060-c9t-T3)_
 - **?** Conversation avec un agent de l'atelier :  _(rapport WP-C-026-c9s-S4)_
+- **?** Conversation durable et export local :  _(rapport c15-codex-back-chat)_
+- **?** Conversation durable et export local :  _(rapport c15-codex-back-chat-repair)_
 - **?** Conversation streamee avec outils :  _(rapport WP-049)_
 - **?** Conversation streamee avec un agent spawne :  _(rapport WP-C-026-c9-R4)_
 - **?** Conversations :  _(rapport WP-072)_
@@ -1249,6 +1274,7 @@
 - **?** Conversion Markdown vers DOCX :  _(rapport WP-054-c8-challenge-b)_
 - **?** Conversion d'un devis en facture :  _(rapport WP-DIFF-097-c13s-23)_
 - **?** Conversion d'un devis en facture :  _(rapport WP-DIFF-097-c13s-d4)_
+- **?** Conversions multimodales et continuation cohérente :  _(rapport c15-codex-back-context)_
 - **?** Copie figée du destinataire d'une pièce comptable :  _(rapport WP-047-c2-M11)_
 - **?** Coque Tauri et droits du webview :  _(rapport WP-057-c3-R09)_
 - **?** Coque Tauri et fenetre principale :  _(rapport WP-060-c4-R09)_
@@ -1276,10 +1302,12 @@
 - **?** Coque desktop, confirmations, catalogue agent et board :  _(rapport WP-060-c8-codex-a)_
 - **?** Coque et distribution Tauri :  _(rapport WP-060-c10-C1)_
 - **?** Coque et parcours conversationnels :  _(rapport WP-066-c10-b947-a)_
+- **?** Coque et surfaces de travail :  _(rapport c15-codex-front-accueil-b1713-wp-066)_
 - **?** Coque unifiee (accueil conversationnel) :  _(rapport WP-066-c4-R08)_
 - **?** Coque unifiee (accueil, parcours, canevas) :  _(rapport WP-066-c9u-U2)_
 - **?** Coque unifiee THERESE :  _(rapport WP-066)_
 - **?** Coque unifiée :  _(rapport WP-066-c9u-U4)_
+- **?** Coque, navigation canonique et parcours métier :  _(rapport c15-codex-facturation-wp-066-accueil-ce7640e4)_
 - **?** Coque, navigation et composants frontend :  _(rapport WP-082-c3-R20)_
 - **?** Coquille desktop Tauri 2 (fenêtre, greffons, sidecar, mises à jour) :  _(rapport WP-057-c13-b)_
 - **?** Coquille desktop Tauri 2 (fenêtre, greffons, sidecar, mises à jour) :  _(rapport WP-060-c13-b)_
@@ -1288,12 +1316,15 @@
 - **?** Couche de fournisseurs LLM en streaming :  _(rapport WP-053-c3-R07)_
 - **?** Couleurs d'etat issues du theme :  _(rapport WP-071-c4-D01)_
 - **?** Couleurs d'etat par tokens de theme :  _(rapport WP-071)_
+- **?** Coupe de l’historique et mesure de la coupe du tour courant :  _(rapport c15-codex-back-context)_
 - **?** Courrier depuis le chat :  _(rapport WP-055-c13r-2)_
 - **?** Couverture Windows des tests backend :  _(rapport WP-C-004-c3-D01)_
 - **?** Couverture de test de la saisie protégée :  _(rapport WP-DIFF-067-c11-lecteur-20)_
 - **?** Couverture des etats d'erreur par persona :  _(rapport WP-086-c9t-T1)_
 - **?** Couverture sûre des fiches Actions :  _(rapport WP-DIFF-111-c14-b1734-lecteur-a)_
 - **?** Couverture sûre des fiches Actions :  _(rapport WP-DIFF-120-c14-b1734-lecteur-a)_
+- **?** Couverture écran P145 avec garde des gestes de génération B1755 :  _(rapport c15-codex-tests-garde-generer-b1755-wp-diff-111)_
+- **?** Couverture écran P145 avec garde des gestes de génération B1755 :  _(rapport c15-codex-tests-garde-generer-b1755-wp-diff-120)_
 - **?** Couverture écran de la boucle Plateau :  _(rapport WP-DIFF-111-c13r-3)_
 - **?** Couverture écran protégée :  _(rapport WP-DIFF-111-c14-lecteur-a)_
 - **?** Couverture écran protégée :  _(rapport WP-DIFF-111-c14-offline-lecteur-b)_
@@ -1336,6 +1367,7 @@
 - **?** Création et modification de rendez-vous :  _(rapport WP-061-c13s-09)_
 - **?** Création et renommage d'un projet :  _(rapport WP-048-c13-n)_
 - **?** Création et édition de pièces avec quantités fractionnaires :  _(rapport WP-C-026-c14-codex-final-c)_
+- **?** Création, import et activités CRM :  _(rapport c15-codex-facturation-wp-062-focus-1d29ac08)_
 - **?** Créer et lire des fiches depuis la conversation :  _(rapport WP-053-c12-i1)_
 - **?** Créer ou modifier un rendez-vous sans perdre la saisie :  _(rapport WP-061-c11-lecteur-20)_
 - **?** Créer ou modifier une tâche sans perdre la saisie :  _(rapport WP-068-c11-lecteur-20)_
@@ -1352,6 +1384,7 @@
 - **?** DA « Application affinée », lot 5 (écran Devis et factures) :  _(rapport WP-DIFF-028-c13s-d4)_
 - **?** Date du premier envoi (P-139) :  _(rapport WP-DIFF-110-c13s-20)_
 - **?** Date du premier envoi d'une pièce (P-139) :  _(rapport WP-DIFF-096-c13s-20)_
+- **?** Date et heure du poste B1528/B1754 :  _(rapport c15-codex-back-date-b1754-wp-diff-027)_
 - **?** Date réelle du paiement (P-155) :  _(rapport WP-DIFF-110-c13s-20)_
 - **?** Dates civiles (calendrier, échéances de tâches) :  _(rapport WP-070-c3-R17)_
 - **?** Dates civiles (jour local et jour de Paris) :  _(rapport WP-070-c6-D03)_
@@ -1367,6 +1400,7 @@
 - **?** Delai maximal commun :  _(rapport WP-072)_
 - **?** Delais justifies du parcours de configuration :  _(rapport WP-072)_
 - **?** Deliberation du Board en SSE, cloture apres deconnexion :  _(rapport WP-DIFF-026-c6-R03)_
+- **?** Demande d’arrêt d’une action en cours et clôture du témoin :  _(rapport c15-primary-actions-traitement-b1753-511dd0cc504842478684d13ae0d0c7c2)_
 - **?** Demande explicite de fiche (jeton) :  _(rapport WP-DIFF-103-c13s-15)_
 - **?** Demande explicite de fiche contact (jeton P-148) :  _(rapport WP-066-c13s-d2)_
 - **?** Demarrage de l'application desktop :  _(rapport WP-060)_
@@ -1387,6 +1421,7 @@
 - **?** Devis brouillon avec confirmation figée :  _(rapport WP-C-027)_
 - **?** Devis brouillon confirmé :  _(rapport WP-C-027-c13s-d1)_
 - **?** Devis brouillon herite du client :  _(rapport WP-066)_
+- **?** Devis confirmé à partir d’un état figé :  _(rapport c15-codex-front-facturation-wp-c-027)_
 - **?** Devis du panneau Facturer (coque) :  _(rapport WP-DIFF-099-c13r-3-bis)_
 - **?** Devis et facturation :  _(rapport WP-047)_
 - **?** Devis et factures :  _(rapport WP-C-026-c3-D02)_
@@ -1398,6 +1433,7 @@
 - **?** Devis et factures - le client nomme a l'ecran :  _(rapport WP-C-027-c3-D02)_
 - **?** Devis et factures - persistance des filtres :  _(rapport WP-DIFF-020-c4-R12)_
 - **?** Devis et factures - état et filtres :  _(rapport WP-C-028-c4-R12)_
+- **?** Devis local depuis la conversation :  _(rapport c15-codex-challenge-front-facturation-wp-c-027)_
 - **?** Devis, avoirs et TVA optionnelle :  _(rapport WP-047-c3-D01)_
 - **?** Devis, factures et avoirs :  _(rapport WP-080)_
 - **?** Devis, factures et avoirs :  _(rapport WP-C-025-c13r-2)_
@@ -1441,6 +1477,7 @@
 - **?** Document Office produit par le chat :  _(rapport WP-055-c13s-d3)_
 - **?** Documentation des protocoles exhaustifs :  _(rapport WP-086-c8-challenge-b)_
 - **?** Documents de l'atelier :  _(rapport WP-050-c3-R04)_
+- **?** Documents et images dans la conversation :  _(rapport c15-codex-front-wp-061)_
 - **?** Documents, sections, pistes et export :  _(rapport WP-050-c12-e)_
 - **?** Domaine ferme des etapes de pipeline :  _(rapport WP-048-c3-D01)_
 - **?** Domaine ferme et rattachements reels des taches :  _(rapport WP-DIFF-013-c9-D2)_
@@ -1478,6 +1515,10 @@
 - **?** Décodage robuste du flux d'entrée :  _(rapport WP-053-c9v-V2)_
 - **?** Découverte d'Ollama par le moteur :  _(rapport WP-DIFF-044-c9v-V2)_
 - **?** Déduplication fermée sans périmètre (B-1190) :  _(rapport WP-DIFF-088-c13-m)_
+- **?** Défi indépendant MessageBubble.contexte.p159.test.tsx :  _(rapport c15-root-challenge-MessageBubble-contexte-p159-test-tsx)_
+- **?** Défi indépendant PipelineView.tsx :  _(rapport c15-root-challenge-PipelineView-tsx)_
+- **?** Défi indépendant chatStore.ts :  _(rapport c15-root-challenge-chatStore-ts)_
+- **?** Défi indépendant schemas.py :  _(rapport c15-root-challenge-schemas-py)_
 - **?** Défilement sous le composeur flottant :  _(rapport WP-066-c10-b947-a)_
 - **?** Délais client des actions longues :  _(rapport WP-DIFF-105-c13s-22)_
 - **?** Délais d'attente du parcours de configuration :  _(rapport WP-072-c9-D3)_
@@ -1595,6 +1636,7 @@
 - **?** Envoi d'un message et réponse en flux (SSE) :  _(rapport WP-049-c13-j)_
 - **?** Envoi de message en flux :  _(rapport WP-061)_
 - **?** Envoi d’un message en flux :  _(rapport WP-061-c13s-09)_
+- **?** Envoi gardé et métadonnées P159 :  _(rapport c15-codex-front-wp-061)_
 - **?** Erreur de lecture de la synchronisation d'un projet :  _(rapport WP-DIFF-055-c13s-21)_
 - **?** Erreur du fil d’activités du contact :  _(rapport WP-062-c14-b1733-lecteur-a)_
 - **?** Erreur du fil d’activités du contact :  _(rapport WP-DIFF-029-c14-b1733-lecteur-a)_
@@ -1752,10 +1794,12 @@
 - **?** Facturation : devise des documents et PDF conforme :  _(rapport WP-C-025-c2-D04)_
 - **?** Facturation : numerotation des devis et factures :  _(rapport WP-DIFF-013-c3-R27)_
 - **?** Facturation : panneau Devis et factures + formulaire :  _(rapport WP-C-026-c2-D01)_
+- **?** Facturation du contact sans jeton interne :  _(rapport c15-codex-front-facturation-wp-066)_
 - **?** Facturation, CRM, calendrier, email et RGPD :  _(rapport WP-082-c3-R20)_
 - **?** Facture d'origine d'un avoir :  _(rapport WP-DIFF-097-c13r-3)_
 - **?** Facture d'origine d'un avoir (P-154) :  _(rapport WP-C-026-c13s-18)_
 - **?** Facture d'origine d'un avoir (P-154) :  _(rapport WP-DIFF-097-c13s-d4)_
+- **?** Facture initiale émise :  _(rapport c15-codex-front-facturation-wp-diff-097)_
 - **?** Facture émise figée côté moteur :  _(rapport WP-DIFF-114-c13r-4)_
 - **?** Facture émise figée dans le formulaire :  _(rapport WP-DIFF-112-c13r-7-bis)_
 - **?** Facture émise intouchable :  _(rapport WP-DIFF-109-c13s-19)_
@@ -1785,9 +1829,11 @@
 - **?** Fenêtre de contexte des modèles :  _(rapport WP-051-c13s-14)_
 - **?** Fenêtre de contexte multi-fournisseurs :  _(rapport WP-051-c9-D3)_
 - **?** Fenêtre et mise à jour desktop :  _(rapport WP-060-c14-codex-b)_
+- **?** Fenêtre et paquet bureau :  _(rapport WP-060-c15-g1)_
 - **?** Fenêtre et participants d'un rendez-vous :  _(rapport WP-048-c13-e)_
 - **?** Fermeture Qdrant après la sonde :  _(rapport WP-047-c14-b1736-lecteur-a)_
 - **?** Fermeture Qdrant après la sonde :  _(rapport WP-047-c14-b1736-lecteur-b)_
+- **?** Fermeture de Qdrant malgré les services sautés :  _(rapport WP-DIFF-123-c15-g1)_
 - **?** Fermeture de l'atelier :  _(rapport WP-074-c9x-X1)_
 - **?** Fermeture de la base pendant une restauration :  _(rapport WP-C-025-c13r-5-bis)_
 - **?** Fermeture de session protégée de l'annulation :  _(rapport WP-DIFF-041-c9u-U3)_
@@ -1877,6 +1923,8 @@
 - **?** Flux OAuth 2.0 PKCE Google et fraicheur du jeton :  _(rapport WP-C-029)_
 - **?** Flux SSE des fournisseurs de modèle :  _(rapport WP-DIFF-032-c9-D1)_
 - **?** Flux SSE du chat et son annulation :  _(rapport WP-078)_
+- **?** Flux annulable et effets soumis à confirmation :  _(rapport c15-codex-back-chat)_
+- **?** Flux annulable et effets soumis à confirmation :  _(rapport c15-codex-back-chat-repair)_
 - **?** Flux de réponse du fournisseur Perplexity :  _(rapport WP-DIFF-038-c9s-S4)_
 - **?** Focus de la recherche mémoire à la demande :  _(rapport WP-DIFF-024-c6-R05)_
 - **?** Focus des dialogues de confirmation :  _(rapport WP-DIFF-055-c13s-21)_
@@ -2016,6 +2064,7 @@
 - **?** Garde des composants atteignables (home/ et guided/) :  _(rapport WP-DIFF-008-c6-R02)_
 - **?** Garde des couleurs de domaine et de la cohérence graphique :  _(rapport WP-074-c9s-S2)_
 - **?** Garde des rayons (trois valeurs, deux jetons) :  _(rapport WP-074-c6-D02)_
+- **?** Garde du tableau et de ses états visibles :  _(rapport c15-codex-challenge-front-facturation-wp-diff-028)_
 - **?** Garde sur le fuseau de l'horodatage des variables :  _(rapport WP-DIFF-045-c9u-U1)_
 - **?** Garde sur le repli d'identifiants OAuth du CRM :  _(rapport WP-DIFF-045-c9u-U1)_
 - **?** Garde-budget des appels de modele :  _(rapport WP-C-025-c4-D01)_
@@ -2138,6 +2187,7 @@
 - **?** Génération de trame sans modèle joignable :  _(rapport WP-DIFF-073-c12-h1)_
 - **?** Génération non diffusée et panne du modèle jusqu'à l'écran (B-1033, B-1065, B-1066) :  _(rapport WP-053-c12-g2)_
 - **?** Génération non diffusée et panne du modèle jusqu'à l'écran (B-1033, B-1065, B-1066) :  _(rapport WP-DIFF-073-c12-g2)_
+- **?** HOME symbolique sécurisé :  _(rapport c15-codex-back-secondary-wp-c-025)_
 - **?** Habillage du glisser-deposer de fichiers :  _(rapport WP-063-c9-D2)_
 - **?** Harnais Vitest :  _(rapport WP-074-c13s-20)_
 - **?** Harnais de test backend :  _(rapport WP-078)_
@@ -2162,6 +2212,8 @@
 - **?** Heure « Rafraîchi à » de l’accueil :  _(rapport WP-DIFF-063-c11-lecteur-22)_
 - **?** Heures datées des rendez-vous locaux :  _(rapport WP-048-c14-reprise-lecteur-b)_
 - **?** Heures de l'accueil et des scénarios :  _(rapport WP-066-c11-lecteur-21)_
+- **?** Historique configuré et contexte lisible :  _(rapport c15-codex-back-chat)_
+- **?** Historique configuré et contexte lisible :  _(rapport c15-codex-back-chat-repair)_
 - **?** Historique d'activites :  _(rapport WP-062-c4-R10)_
 - **?** Historique de conversations plafonné :  _(rapport WP-068-c2-D08)_
 - **?** Historique de l'Atelier :  _(rapport WP-047)_
@@ -2200,6 +2252,7 @@
 - **?** Identité d'une conversation entre rattachement et envoi :  _(rapport WP-071-c2-D09)_
 - **?** Identité d'une fiche au sens du RGPD (B-1438) :  _(rapport WP-DIFF-096-c13s-20)_
 - **?** Identité du profil (nom, surnom) :  _(rapport WP-DIFF-107-c13s-24)_
+- **?** Identité et portée des cibles Chromium :  _(rapport c15-primary-b1755-tests-fdcfac6658654f328209526e29d40a61)_
 - **?** Image du modèle jamais chargée (B-1050) :  _(rapport WP-DIFF-074-c12-d)_
 - **?** Image jointe au chat :  _(rapport WP-084)_
 - **?** Images jointes au message :  _(rapport WP-052-c9t-T4)_
@@ -2338,9 +2391,11 @@
 - **?** Indicateur de réflexion adapté au mouvement réduit :  _(rapport WP-062-c10-repair-a)_
 - **?** Indicateur et panneau des travaux longs de la coque :  _(rapport WP-069-c12-c)_
 - **?** Indicateur et panneau des travaux longs de la coque :  _(rapport WP-DIFF-072-c12-c)_
+- **?** Indication et accès à la fin du fil :  _(rapport c15-codex-facturation-wp-diff-021-accueil-ce7640e4)_
 - **?** Indice de contenu restant :  _(rapport WP-DIFF-021-c14-lecteur-a)_
 - **?** Indice de contenu restant :  _(rapport WP-DIFF-021-c14-lecteur-b)_
 - **?** Indice de defilement de l'accueil :  _(rapport WP-DIFF-021-c4-R10)_
+- **?** Indice passif des colonnes hors cadre P162 :  _(rapport c15-codex-p162-secondaire-wp-c-026)_
 - **?** Indice port et mode de sécurité :  _(rapport WP-084-c9u-U1)_
 - **?** Indisponibilité des fichiers locaux en navigateur :  _(rapport WP-063-c14-b1735-lecteur-a)_
 - **?** Indisponibilité des fichiers locaux en navigateur :  _(rapport WP-DIFF-072-c14-b1735-lecteur-a)_
@@ -2351,6 +2406,8 @@
 - **?** Installation et retrait d'outils de skills :  _(rapport WP-DIFF-038-c9s-S4)_
 - **?** Installation jetable par THERESE_DATA_DIR :  _(rapport WP-080-c13-h)_
 - **?** Instants serveur sérialisés avec leur fuseau (B-216, B-206) :  _(rapport WP-048-c12-i3)_
+- **?** Instrument hors ligne et fermeture de services :  _(rapport c15-codex-facturation-wp-diff-121-a5cc1517)_
+- **?** Instrument hors ligne et fermeture de services :  _(rapport c15-codex-facturation-wp-diff-123-a5cc1517)_
 - **?** Instrument « couverture écran » de la boucle Plateau (P-145) :  _(rapport WP-DIFF-111-c13s-18)_
 - **?** Interactions sûres et confidentialité locale :  _(rapport WP-DIFF-029-c8-codex-c)_
 - **?** Interdiction des couleurs brutes :  _(rapport WP-074-c2-D11)_
@@ -2465,6 +2522,7 @@
 - **?** Liste Devis et factures : trois colonnes Envoi, Paiement, Échéance :  _(rapport WP-DIFF-028-c13s-15)_
 - **?** Liste Devis et factures en tableau à trois colonnes de statut :  _(rapport WP-DIFF-028-c13s-d4)_
 - **?** Liste blanche des voix de synthese locale :  _(rapport WP-DIFF-013-c9-D2)_
+- **?** Liste de documents avec noms accessibles :  _(rapport c15-codex-challenge-front-facturation-wp-c-026)_
 - **?** Liste de facturation filtrée et plafonnée :  _(rapport WP-C-026-c10-B1)_
 - **?** Liste des devis et factures :  _(rapport WP-DIFF-098-c13s-14)_
 - **?** Liste des devis et factures en largeur étroite :  _(rapport WP-DIFF-098-c13s-d3)_
@@ -2487,6 +2545,7 @@
 - **?** Liste des sessions de l'Atelier :  _(rapport WP-DIFF-023-c6-D04)_
 - **?** Liste des tâches :  _(rapport WP-068-c6-D03)_
 - **?** Liste des tâches :  _(rapport WP-068-c6-R05)_
+- **?** Liste et actions nommées :  _(rapport c15-codex-front-facturation-wp-c-026)_
 - **?** Liste et création des calendriers, calendrier local par défaut :  _(rapport WP-048-c11-lecteur-16)_
 - **?** Liste et filtres des devis, factures et avoirs :  _(rapport WP-C-028-c3-R09)_
 - **?** Liste et révocation des accords cloud (B-1175) :  _(rapport WP-068-c13-l)_
@@ -2586,6 +2645,7 @@
 - **?** Mesure de performance du streaming :  _(rapport WP-053)_
 - **?** Mesure de performance et SLA affichés :  _(rapport WP-084-c2-M15)_
 - **?** Mesure de performance et index de recherche en mémoire :  _(rapport WP-053-c3-R07)_
+- **?** Mesures de couverture et restitution :  _(rapport c15-primary-b1755-instrument-f4392bab8f5e443daed3faf7d637236b)_
 - **?** Mesuré des flux de réponse :  _(rapport WP-053-c4-D02)_
 - **?** Metriques de performance :  _(rapport WP-073)_
 - **?** Migration Alembic unique et ré-estampillage :  _(rapport WP-078-c13s-16)_
@@ -2751,6 +2811,7 @@
 - **?** Mémoire vectorielle vide et utilisable après « Effacer toutes mes données » (B-1130, B-1186) :  _(rapport WP-DIFF-086-c13-m)_
 - **?** Ménage de suppression d'un dossier :  _(rapport WP-083-c2-M05)_
 - **?** Ménage des audios temporaires :  _(rapport WP-051-c13r-1)_
+- **?** Métadonnées persistées et identité des conversations :  _(rapport c15-codex-front-wp-073)_
 - **?** Mêmes options TLS au test et à l'envoi :  _(rapport WP-084-c9u-U1)_
 - **?** Navigateur de fichiers locaux et indexation :  _(rapport WP-063-c12-c)_
 - **?** Navigateur de fichiers locaux et indexation :  _(rapport WP-DIFF-072-c12-c)_
@@ -2761,6 +2822,8 @@
 - **?** Navigation de la coque (vues embarquées et store) :  _(rapport WP-066-c11-lecteur-19)_
 - **?** Navigation de la coque conversationnelle :  _(rapport WP-074-c4-D04)_
 - **?** Navigation de la coque et pile de retour :  _(rapport WP-066-c13s-04)_
+- **?** Navigation des étapes hors cadre P157 et placement clavier B1756 :  _(rapport c15-codex-front-pipeline-b1756-wp-062)_
+- **?** Navigation des étapes hors cadre P157 et placement clavier B1756 :  _(rapport c15-codex-front-pipeline-b1756-wp-diff-124)_
 - **?** Navigation déterministe demandée par le backend :  _(rapport WP-070)_
 - **?** Navigation entre accueil, chat et vues embarquées :  _(rapport WP-066-c11-lecteur-17)_
 - **?** Navigation par vues :  _(rapport WP-074)_
@@ -2780,6 +2843,7 @@
 - **?** Nom affiché d'un contact :  _(rapport WP-067-c13s-07)_
 - **?** Nom d'une fiche sans prénom ni nom (B-1443) :  _(rapport WP-DIFF-101-c13s-13)_
 - **?** Nom de projet requis, étape et rôle contrôlés à l'import JSON (B-1182) :  _(rapport WP-DIFF-088-c13-m)_
+- **?** Nom du client et choix de statuts réels :  _(rapport c15-codex-challenge-front-facturation-wp-c-027)_
 - **?** Nom du client à l'écran et statuts par type de document :  _(rapport WP-C-027-c2-D02)_
 - **?** Nom du profil et nom affiché :  _(rapport WP-DIFF-094-c13s-03)_
 - **?** Nom humain des destinataires d'un accord cloud :  _(rapport WP-DIFF-031-c13-r)_
@@ -2788,6 +2852,7 @@
 - **?** Non-régression comportementale du socle backend :  _(rapport WP-DIFF-027-c8-zero-check-b)_
 - **?** Non-régression de géométrie du composeur :  _(rapport WP-085-c10-b947-a)_
 - **?** Non-régression des candidats du cycle 4 :  _(rapport WP-DIFF-027-c13s-18)_
+- **?** Non-régression des fournisseurs :  _(rapport c15-codex-back-date-b1754-wp-diff-027)_
 - **?** Non-régression par le comportement :  _(rapport WP-DIFF-027-c6-R04)_
 - **?** Note de rendez-vous au CRM :  _(rapport WP-066)_
 - **?** Notes de version et commandes de secours par système (B-1085) :  _(rapport WP-C-004-c12-i3)_
@@ -2809,6 +2874,7 @@
 - **?** Numérotation et conversions :  _(rapport WP-C-025-c13r-5-bis)_
 - **?** OAuth 2.0 PKCE Gmail et rafraîchissement anticipé :  _(rapport WP-C-029-c2-D03)_
 - **?** OAuth 2.0 PKCE Google :  _(rapport WP-C-029-c3-D04)_
+- **?** Observation du composeur et retour Accueil B1713 :  _(rapport c15-codex-front-accueil-b1713-wp-065)_
 - **?** Ollama Cloud jamais pris pour local :  _(rapport WP-DIFF-086-c13-h)_
 - **?** Onboarding en six étapes :  _(rapport WP-086-c9v-V2)_
 - **?** Onboarding, bibliothèque de prompts et capacités du prototype :  _(rapport WP-065-c8-codex-a)_
@@ -2913,6 +2979,9 @@
 - **?** Outils sensibles sous confirmation :  _(rapport WP-083-c4-R09)_
 - **?** Ouverture au clavier d'une décision de l'Historique :  _(rapport WP-DIFF-046-c9v-V4)_
 - **?** Ouverture d'un travail ou d'un objet du projet (P-140, P-148) :  _(rapport WP-066-c13s-04)_
+- **?** Ouverture de fiche au clavier B1752 :  _(rapport c15-codex-front-crm-focus-b1752-wp-062)_
+- **?** Ouverture de la fiche CRM avec continuité du focus :  _(rapport c15-codex-facturation-wp-062-focus-1d29ac08)_
+- **?** Ouverture de la fiche CRM avec continuité du focus :  _(rapport c15-codex-facturation-wp-diff-130-focus-1d29ac08)_
 - **?** Ouverture demandée d'un document et réouverture après rechargement :  _(rapport WP-DIFF-101-c13s-d5)_
 - **?** Ouverture des panneaux métier par l'URL :  _(rapport WP-086-c9u-U1)_
 - **?** Ouverture des panneaux par paramètre d'URL :  _(rapport WP-086-c9v-V2)_
@@ -2925,6 +2994,23 @@
 - **?** Ouvrir l'objet d'un travail :  _(rapport WP-DIFF-105-c13s-d3)_
 - **?** Ouvrir l'objet d'un travail (Travaux, fenêtre projet) :  _(rapport WP-DIFF-105-c13s-22)_
 - **?** Ouvrir un travail depuis Travaux (P-140, P-148) :  _(rapport WP-066-c13s-d2)_
+- **?** P157 : étapes cachées et focus sans perte de contenu :  _(rapport c15-primary-b1756-pipeline-61875167a2664508b0183e69efa56e95)_
+- **?** P157 : étapes cachées et focus sans perte de contenu :  _(rapport c15-primary-b1756-tests-042acc51b87745b6871b7972ab83d342)_
+- **?** P157/B1742 : calcul du débordement et maintien du focus :  _(rapport c15-codex-front-wp-diff-124)_
+- **?** P159 : indication du contexte transmis :  _(rapport c15-codex-front-wp-diff-124)_
+- **?** P159 restauré après rechargement :  _(rapport c15-codex-front-wp-069)_
+- **?** P160 : séquence FACT commune ; B1757 : instant annuel cohérent :  _(rapport c15-primary-p160-wp-c-025)_
+- **?** P160 : séquence FACT commune ; B1757 : instant annuel cohérent :  _(rapport c15-primary-p160-wp-diff-013)_
+- **?** P160 : séquence FACT commune ; B1757 : instant annuel cohérent :  _(rapport c15-primary-p160-wp-diff-027)_
+- **?** P160 : séquence FACT commune ; B1757 : instant annuel cohérent :  _(rapport c15-primary-p160-wp-diff-128)_
+- **?** P160 : séquence FACT commune ; B1757 : instant annuel cohérent :  _(rapport c15-primary-p160-wp-diff-131)_
+- **?** P160/B1757 : invoices.py :  _(rapport c15-p160-secondaire-review-ee52ef67f79d40ed8ed67b738d2b2ccc-wp-c-025)_
+- **?** P160/B1757 : test_b1615_numero_a_lemission.py :  _(rapport c15-p160-secondaire-review-ee52ef67f79d40ed8ed67b738d2b2ccc-wp-diff-128)_
+- **?** P160/B1757 : test_b1671_facture_emise_pas_annulee.py :  _(rapport c15-p160-secondaire-review-ee52ef67f79d40ed8ed67b738d2b2ccc-wp-diff-128)_
+- **?** P160/B1757 : test_c15_emission_concurrente.py :  _(rapport c15-p160-secondaire-review-ee52ef67f79d40ed8ed67b738d2b2ccc-wp-diff-128)_
+- **?** P160/B1757 : test_numerotation_des_documents.py :  _(rapport c15-p160-secondaire-review-ee52ef67f79d40ed8ed67b738d2b2ccc-wp-diff-013)_
+- **?** P160/B1757 : test_p160_serie_commune.py :  _(rapport c15-p160-secondaire-review-ee52ef67f79d40ed8ed67b738d2b2ccc-wp-diff-131)_
+- **?** P160/B1757 : test_regression_facturation_agenda.py :  _(rapport c15-p160-secondaire-review-ee52ef67f79d40ed8ed67b738d2b2ccc-wp-diff-027)_
 - **?** PDF conforme d'une pièce de facturation :  _(rapport WP-C-025-c13s-11)_
 - **?** PDF d'une pièce :  _(rapport WP-C-025-c13s-d1)_
 - **?** PDF de devis, facture et avoir :  _(rapport WP-DIFF-017-c4-R08)_
@@ -2933,10 +3019,14 @@
 - **?** PDF de facture et complétude de l'émetteur :  _(rapport WP-C-025-c13r-5-bis)_
 - **?** PDF de facture et de devis :  _(rapport WP-DIFF-017-c3-D07)_
 - **?** PDF de facture et de devis :  _(rapport WP-DIFF-017-c3-R28)_
+- **?** PDF de pièce historique :  _(rapport c15-codex-back-secondary-wp-c-025)_
+- **?** PROV invisible dans les livrables :  _(rapport c15-codex-front-facturation-wp-diff-127)_
 - **?** Page de retour OAuth servie au navigateur systeme :  _(rapport WP-DIFF-011-c3-R26)_
 - **?** Pagination IMAP :  _(rapport WP-DIFF-022-c8-codex-b)_
 - **?** Pagination des listes :  _(rapport WP-DIFF-013-c3-R27)_
+- **?** Paiement civil et origine d’avoir :  _(rapport c15-codex-challenge-front-facturation-wp-diff-097)_
 - **?** Paiement daté d'une facture :  _(rapport WP-C-026-c14-codex-final-b)_
+- **?** Paiement daté et numéro renvoyé :  _(rapport c15-codex-front-facturation-wp-diff-097)_
 - **?** Palette de commandes :  _(rapport WP-061)_
 - **?** Palette de commandes :  _(rapport WP-061-c3-R12)_
 - **?** Palette de commandes :  _(rapport WP-061-c6-R02)_
@@ -2952,6 +3042,7 @@
 - **?** Palette de commandes du canevas de conversation :  _(rapport WP-DIFF-008-c3-R25)_
 - **?** Palette de commandes ⌘K :  _(rapport WP-066-c11-lecteur-22)_
 - **?** Palette de recherche de la coque :  _(rapport WP-DIFF-009-c9-D1)_
+- **?** Palette et profil :  _(rapport c15-codex-facturation-wp-066-accueil-ce7640e4)_
 - **?** Palette ⌘K :  _(rapport WP-066-c13s-d2)_
 - **?** Palette ⌘K : commandes, capacités et données :  _(rapport WP-066-c13s-04)_
 - **?** Palette ⌘K : commandes, capacités et données :  _(rapport WP-DIFF-103-c13s-15)_
@@ -3065,6 +3156,7 @@
 - **?** Perimetre des contacts au-dela du plafond :  _(rapport WP-DIFF-037-c9t-T4)_
 - **?** Perimetre des permissions fichiers de la coque Tauri :  _(rapport WP-DIFF-009-c3-R26)_
 - **?** Perimetre documentaire d'une conversation :  _(rapport WP-049)_
+- **?** Persistance après suppression en réponse non diffusée :  _(rapport c15-codex-facturation-wp-diff-129-4befc429)_
 - **?** Persistance deboncee des stores :  _(rapport WP-071-c9t-T3)_
 - **?** Persistance debouncee du chat :  _(rapport WP-071)_
 - **?** Persistance debouncee du chat :  _(rapport WP-071-c4-D01)_
@@ -3086,6 +3178,7 @@
 - **?** Pile de navigation et autorité d'Échap de la coque :  _(rapport WP-066-c13s-d2)_
 - **?** Pile de notifications :  _(rapport WP-069-c6-R09)_
 - **?** Pile de sécurité HTTP :  _(rapport WP-047-c13r-1)_
+- **?** Pile jetable et réseau contrôlé :  _(rapport c15-primary-b1755-instrument-f4392bab8f5e443daed3faf7d637236b)_
 - **?** Pile Échap partagée :  _(rapport WP-DIFF-021-c9-D3)_
 - **?** Pilotage d'agents OpenClaw :  _(rapport WP-053)_
 - **?** Pilotage des agents OpenClaw :  _(rapport WP-053-c9-D4)_
@@ -3123,6 +3216,7 @@
 - **?** Pipeline commercial et scoring :  _(rapport WP-083-c9-D4)_
 - **?** Pipeline commercial, activités et livrables :  _(rapport WP-049-c13-j)_
 - **?** Pipeline et fiche contact :  _(rapport WP-062-c13s-02)_
+- **?** Pipeline et fiche du contact :  _(rapport c15-codex-facturation-wp-062-focus-1d29ac08)_
 - **?** Pipeline à huit étapes avec Perdu et vocabulaire unique des prestations (P-132) :  _(rapport WP-DIFF-101-c13s-13)_
 - **?** Pistes de redaction :  _(rapport WP-050-c3-R04)_
 - **?** Pistes de redaction :  _(rapport WP-063)_
@@ -3137,8 +3231,11 @@
 - **?** Pièce émise figée dans le formulaire :  _(rapport WP-DIFF-112-c13r-4-bis)_
 - **?** Pièce émise intouchable (B-1506, B-1537) :  _(rapport WP-DIFF-097-c13s-d4)_
 - **?** Pièces jointes et indexation :  _(rapport WP-061-c3-R12)_
+- **?** Pièces jointes et mémoire cloisonnée :  _(rapport c15-codex-back-chat)_
+- **?** Pièces jointes et mémoire cloisonnée :  _(rapport c15-codex-back-chat-repair)_
 - **?** Pièces jointes lues, images montrées :  _(rapport WP-049-c2-M02)_
 - **?** Pièces émises : date d'envoi, TVA, intangibilité :  _(rapport WP-047-c13s-15)_
+- **?** Pièces émises et historique annulé :  _(rapport c15-codex-front-facturation-wp-c-026)_
 - **?** Piège de focus des dialogues :  _(rapport WP-070-c3-R16)_
 - **?** Piégeage du focus des dialogues :  _(rapport WP-070)_
 - **?** Placement de la carte de confirmation d'action :  _(rapport WP-DIFF-008-c9t-T1)_
@@ -3240,6 +3337,7 @@
 - **?** Preferences de personnalisation :  _(rapport WP-074-c6-R06)_
 - **?** Preferences utilisateur :  _(rapport WP-DIFF-012-c3-D07)_
 - **?** Preferences, recherche web et mode cabinet :  _(rapport WP-049-c6-R03)_
+- **?** Première émission sérialisée :  _(rapport c15-codex-back-secondary-wp-c-025)_
 - **?** Preparation d'un rendez-vous :  _(rapport WP-066-c6-R01)_
 - **?** Preparer un rendez-vous :  _(rapport WP-066)_
 - **?** Presets de connecteurs MCP (recherche, risque, variables) :  _(rapport WP-068-c13-r)_
@@ -3337,6 +3435,7 @@
 - **?** Prompt système : garde-fous, identité, date et heure :  _(rapport WP-053-c13s-06)_
 - **?** Prompt système : identité, date, garde-fous et consigne de langue :  _(rapport WP-053-c12-g2)_
 - **?** Prompt système du générateur de réponses email :  _(rapport WP-079-c2-D05)_
+- **?** Prompt à l’heure du poste :  _(rapport c15-primary-regression-fournisseurs-b1754-d41aff95d5794375bc15b52daebe580b)_
 - **?** Proposition de reponse :  _(rapport WP-050-c3-R04)_
 - **?** Protocole de recette du persona administrateur (Server) :  _(rapport WP-C-031-c6-R09)_
 - **?** Protocole persona A1 (découverte non technicienne) :  _(rapport WP-086-c9w-W1)_
@@ -3350,10 +3449,12 @@
 - **?** Prototype conversationnel : preparer un rendez-vous :  _(rapport WP-085-c3-D05)_
 - **?** Prototypes conversationnels en lecture seule :  _(rapport WP-085-c2-M10)_
 - **?** Providers LLM et boucle d'outils :  _(rapport WP-082-c3-R20)_
+- **?** Préférence de fenêtre historique :  _(rapport c15-codex-back-models)_
 - **?** Préférence de mouvement réduit :  _(rapport WP-070)_
 - **?** Préférences d'accessibilité et thème :  _(rapport WP-073-c4-D04)_
 - **?** Préférences de personnalisation :  _(rapport WP-074)_
 - **?** Préférences de personnalisation persistées :  _(rapport WP-074-c3-R17)_
+- **?** Préférences et repli de configuration :  _(rapport c15-primary-regression-fournisseurs-b1754-d41aff95d5794375bc15b52daebe580b)_
 - **?** Préférences génériques :  _(rapport WP-049-c2-M02)_
 - **?** Préférences sensibles :  _(rapport WP-049-c14-reprise-lecteur-a)_
 - **?** Préférences typées :  _(rapport WP-049-c13-epsilon)_
@@ -3368,6 +3469,7 @@
 - **?** Préparer une séance et en écrire le compte rendu :  _(rapport WP-067-c13r-4)_
 - **?** Prérequis des préréglages MCP :  _(rapport WP-DIFF-104-c13s-11)_
 - **?** Préréglages de connecteurs MCP :  _(rapport WP-DIFF-104-c13s-d4)_
+- **?** Présentation honnête des pièces et de leurs étapes :  _(rapport c15-codex-challenge-front-facturation-wp-diff-028)_
 - **?** Préserver les fiches lors d'un import vCard ambigu :  _(rapport WP-DIFF-114-c14-codex-c)_
 - **?** Présélection de la mise en route :  _(rapport WP-DIFF-087-c13-l)_
 - **?** Prévol de la pile jetable hors ligne :  _(rapport WP-DIFF-111-c14-b1724-lecteur-a)_
@@ -3533,6 +3635,7 @@
 - **?** Recherche de pièces et encours :  _(rapport WP-055-c6-R05)_
 - **?** Recherche en memoire :  _(rapport WP-DIFF-013-c3-R27)_
 - **?** Recherche en memoire : contrat de champ client/serveur :  _(rapport WP-DIFF-003-c2-M14)_
+- **?** Recherche et gestion des conversations :  _(rapport c15-codex-front-wp-066)_
 - **?** Recherche et installation des presets de connecteurs :  _(rapport WP-068-c13-t)_
 - **?** Recherche et lecture de fichiers par les agents (search_codebase, read_file) :  _(rapport WP-DIFF-073-c12-j1)_
 - **?** Recherche et navigation web :  _(rapport WP-055)_
@@ -3590,6 +3693,7 @@
 - **?** Registre des traitements longs :  _(rapport WP-073-c3-D04)_
 - **?** Registre des traitements longs et annulation :  _(rapport WP-081-c4-D05)_
 - **?** Registre d’actions de l’application :  _(rapport WP-070-c11-lecteur-22)_
+- **?** Registre et flux OpenRouter :  _(rapport c15-primary-regression-fournisseurs-b1754-d41aff95d5794375bc15b52daebe580b)_
 - **?** Registre runtime des traitements longs :  _(rapport WP-054-c13s-17)_
 - **?** Registre unifié des commandes :  _(rapport WP-051-c2-M12)_
 - **?** Registre unifié des commandes :  _(rapport WP-051-c6-R08)_
@@ -3700,6 +3804,7 @@
 - **?** Reprise des traitements et missions orphelins au démarrage (B-1086) :  _(rapport WP-054-c13-f)_
 - **?** Reprise du stockage vectoriel après verrou périmé :  _(rapport WP-081-c6-D04)_
 - **?** Reprise silencieuse de la messagerie :  _(rapport WP-DIFF-040-c9t-T2)_
+- **?** Requêtes Ollama et erreurs lisibles :  _(rapport c15-primary-regression-fournisseurs-b1754-d41aff95d5794375bc15b52daebe580b)_
 - **?** Resolution d'intention de skill :  _(rapport WP-054-c4-D05)_
 - **?** Respect de la réduction des animations :  _(rapport WP-070-c6-D03)_
 - **?** Ressources de lecture du prototype :  _(rapport WP-067-c4-R11)_
@@ -3718,6 +3823,7 @@
 - **?** Restauration de sauvegarde et purge « Effacer toutes mes données » :  _(rapport WP-DIFF-109-c13s-19)_
 - **?** Restauration en échec qui dit la vérité (B-1179) :  _(rapport WP-DIFF-088-c13-m)_
 - **?** Restauration et effacement total :  _(rapport WP-DIFF-108-c13s-21)_
+- **?** Restauration locale bornée de Factures :  _(rapport c15-primary-b1755-tests-fdcfac6658654f328209526e29d40a61)_
 - **?** Restitution d'une génération d'image :  _(rapport WP-064-c9s-S4)_
 - **?** Restitution d'une production de fichier :  _(rapport WP-064-c9s-S4)_
 - **?** Restitution du focus après fermeture :  _(rapport WP-DIFF-033-c8-zero-check-b)_
@@ -3785,6 +3891,7 @@
 - **?** Rédaction guidée d'une section de document :  _(rapport WP-063-c12-d)_
 - **?** Rédaction guidée en flux :  _(rapport WP-074-c9w-W2)_
 - **?** Rédaction guidée par section :  _(rapport WP-063-c2-M09)_
+- **?** Référence provisoire, identité accessible et émission :  _(rapport c15-codex-challenge-front-facturation-wp-diff-126)_
 - **?** Régime de TVA déclaré et mention légale au PDF (P-119, B-1445) :  _(rapport WP-DIFF-110-c13s-20)_
 - **?** Réglages IA et profil :  _(rapport WP-DIFF-030-c8-codex-c)_
 - **?** Réglages IA, taille des tâches et notifications :  _(rapport WP-DIFF-009-c8-challenge-b)_
@@ -3792,6 +3899,7 @@
 - **?** Réglages d'accessibilité :  _(rapport WP-067-c6-R08)_
 - **?** Réglages d'accessibilité et d'affichage :  _(rapport WP-067-c13s-07)_
 - **?** Réglages d'accessibilité et d'apparence :  _(rapport WP-067)_
+- **?** Réglages d'exécution du backend :  _(rapport WP-047-c15-g1)_
 - **?** Réglages d'échantillonnage par famille de modèle :  _(rapport WP-080-c9-D3)_
 - **?** Réglages d'économie d'énergie :  _(rapport WP-053)_
 - **?** Réglages d'économie d'énergie :  _(rapport WP-053-c4-D02)_
@@ -3825,13 +3933,17 @@
 - **?** Réinitialisation à la réouverture de l'assistant :  _(rapport WP-DIFF-037-c9v-V2)_
 - **?** Répertoires requis dans le bundle (B-948) :  _(rapport WP-DIFF-056-c11-lecteur-1)_
 - **?** Répertoires requis du bundle (B-948) :  _(rapport WP-DIFF-056-c11-lecteur-2)_
+- **?** Répertoires secrets derrière un alias HOME :  _(rapport c15-codex-back-secondary-wp-diff-129)_
 - **?** Réponse conversationnelle en flux :  _(rapport WP-049-c2-M02)_
+- **?** Réservation du viewport Accueil B1713 :  _(rapport c15-codex-facturation-wp-066-accueil-ce7640e4)_
+- **?** Réservation du viewport B1713 :  _(rapport c15-codex-front-accueil-b1713-wp-066)_
 - **?** Résilience des hooks et stores :  _(rapport WP-DIFF-031-c8-codex-c)_
 - **?** Saisie d'une facture multidevise :  _(rapport WP-DIFF-023-c6-D04)_
 - **?** Saisie de message vers l'agent de l'Atelier :  _(rapport WP-060-c6-D04)_
 - **?** Saisie de rendez-vous protégée :  _(rapport WP-061-c11-lecteur-18)_
 - **?** Saisie de tâche protégée :  _(rapport WP-068-c11-lecteur-18)_
 - **?** Saisie et enregistrement d'une pièce commerciale :  _(rapport WP-C-026-c14-codex-final-b)_
+- **?** Saisie et suivi d’une pièce commerciale :  _(rapport c15-codex-challenge-front-facturation-wp-c-026)_
 - **?** Saisie protégée :  _(rapport WP-DIFF-067-c11-lecteur-21)_
 - **?** Saisie protégée (formulaires Tâche et Rendez-vous) :  _(rapport WP-DIFF-063-c11-lecteur-21)_
 - **?** Saisie protégée (question « Abandonner les modifications ? ») :  _(rapport WP-066-c11-lecteur-17)_
@@ -4191,6 +4303,7 @@
 - **?** Sélecteur « Agenda affiché » sous les surfaces superposées (B-1021, BUG-181) :  _(rapport WP-DIFF-069-c11-lecteur-23)_
 - **?** Sérialisation civile des horaires :  _(rapport WP-DIFF-002-c14-reprise-lecteur-b)_
 - **?** Sérialisation du temps civil pour écran :  _(rapport WP-DIFF-002-c14-reprise-lecteur-a)_
+- **?** Sérialisation suppression et conversion :  _(rapport c15-codex-facturation-wp-diff-129-4befc429)_
 - **?** THERESE Server : administration, RBAC et audit :  _(rapport WP-C-031-c3-D05)_
 - **?** TVA auto-entrepreneur :  _(rapport WP-047)_
 - **?** TVA non applicable :  _(rapport WP-DIFF-098-c13s-14)_
@@ -4257,6 +4370,7 @@
 - **?** Tiroir des conversations :  _(rapport WP-DIFF-103-c13s-15)_
 - **?** Tiroir des conversations (P-126, P-127, B-1352) :  _(rapport WP-066-c13s-04)_
 - **?** Tiroir des conversations du canevas :  _(rapport WP-DIFF-024-c6-R05)_
+- **?** Titre complet au clavier B1738 :  _(rapport c15-codex-front-wp-066)_
 - **?** Titres d'alerte du studio Images :  _(rapport WP-DIFF-040-c9t-T2)_
 - **?** Toasts d'etat :  _(rapport WP-069)_
 - **?** Toasts éphémères :  _(rapport WP-069-c3-R16)_
@@ -4291,6 +4405,7 @@
 - **?** Transcription et synthese vocales locales :  _(rapport WP-DIFF-022-c4-R09)_
 - **?** Transfert et réponse sur un message HTML seul :  _(rapport WP-DIFF-021-c9-D3)_
 - **?** Transmission de l'effort de raisonnement OpenAI :  _(rapport WP-DIFF-025-c6-D04)_
+- **?** Transport du chat et contexte P159 :  _(rapport c15-codex-front-wp-072)_
 - **?** Travaux :  _(rapport WP-DIFF-085-c13-g)_
 - **?** Travaux (traitements de fond) :  _(rapport WP-DIFF-108-c13s-21)_
 - **?** Travaux (traitements longs et annulation) :  _(rapport WP-054-c6-D02)_
@@ -4333,6 +4448,7 @@
 - **?** Témoin du dialogue de prompts :  _(rapport WP-DIFF-122-c14-b1728-lecteur-a)_
 - **?** Témoin du label englobant de checkbox :  _(rapport WP-DIFF-120-c14-b1724-lecteur-a)_
 - **?** Témoin isolé du wrapper ASGI :  _(rapport WP-DIFF-121-c14-b1720-lecteur-a)_
+- **?** Témoins de comportement de la coque et du remontage B1713 :  _(rapport c15-codex-facturation-wp-065-accueil-ce7640e4)_
 - **?** Témoins de contraste et d’indétermination :  _(rapport WP-DIFF-055-c10-repair-a)_
 - **?** Témoins de refus ou conservation d’une cible après réouverture :  _(rapport WP-DIFF-120-c14-b1724-lecteur-a)_
 - **?** Témoins de sûreté de la couverture écran :  _(rapport WP-DIFF-120-c14-b1720-lecteur-b)_
@@ -4342,6 +4458,7 @@
 - **?** Témoins des gardes de préférences :  _(rapport WP-DIFF-119-c14-reprise-lecteur-a)_
 - **?** Témoins des homonymes de coque et de vues métier :  _(rapport WP-DIFF-120-c14-b1724-lecteur-a)_
 - **?** Témoins du fuseau dans l’Accueil :  _(rapport WP-DIFF-119-c14-reprise-lecteur-a)_
+- **?** Témoins d’annulation synchronisés B1753 :  _(rapport c15-codex-back-races-b1753-wp-078)_
 - **?** Un agent sur modèle local ne bascule jamais vers le cloud (B-968) :  _(rapport WP-051-c11-lecteur-11)_
 - **?** Un agent sur modèle local ne bascule jamais vers le cloud (B-968) :  _(rapport WP-DIFF-062-c11-lecteur-11)_
 - **?** Un agent sur modèle local ne bascule jamais vers le cloud (B-968) :  _(rapport WP-DIFF-062-c11-lecteur-13)_
@@ -4352,6 +4469,7 @@
 - **?** Un contrôle de protocole doit pouvoir échouer :  _(rapport WP-DIFF-010-c9-D4)_
 - **?** Un echec reseau reste visible dans le fil :  _(rapport WP-DIFF-008-c9t-T1)_
 - **?** Un mot par chose :  _(rapport WP-071)_
+- **?** Un numéro lisible dans tous les états :  _(rapport c15-codex-front-facturation-wp-diff-028)_
 - **?** Un seul emplacement d'attente dans le fil :  _(rapport WP-DIFF-040-c9t-T2)_
 - **?** Une seule adresse e-mail par fiche contact :  _(rapport WP-048-c13-a)_
 - **?** Une seule adresse e-mail par fiche contact :  _(rapport WP-DIFF-078-c12-j1)_
@@ -4381,6 +4499,7 @@
 - **?** Validation des chemins de fichiers :  _(rapport WP-C-025)_
 - **?** Validation des chemins de fichiers :  _(rapport WP-C-025-c2-M06)_
 - **?** Validation des chemins de fichiers :  _(rapport WP-C-025-c2-R1)_
+- **?** Validation des données métier aux frontières API :  _(rapport c15-codex-back-models)_
 - **?** Validation des fichiers de capability Tauri :  _(rapport WP-058)_
 - **?** Validation des lignes de devis et factures :  _(rapport WP-048-c14-codex-final-a)_
 - **?** Variables V1 (texte ou liste) et leur substitution :  _(rapport WP-084-c13s-18)_
@@ -4423,6 +4542,7 @@
 - **?** Verrous de non-régression du backend :  _(rapport WP-082-c9s-S2)_
 - **?** Verrous de packaging et d'installation :  _(rapport WP-082-c2-M01)_
 - **?** Verrous fonctionnels sur objets et routes :  _(rapport WP-082-c2-M01)_
+- **?** Version annoncée du backend :  _(rapport WP-047-c15-g1)_
 - **?** Version applicative :  _(rapport WP-047)_
 - **?** Version de l'application :  _(rapport WP-047-c13-a)_
 - **?** Version de l'application desktop :  _(rapport WP-056-c14-codex-b)_
@@ -4430,11 +4550,13 @@
 - **?** Version de l'application desktop :  _(rapport WP-060-c14-codex-b)_
 - **?** Version du backend :  _(rapport WP-047-c14-codex-a)_
 - **?** Version du backend :  _(rapport WP-047-c2-M11)_
+- **?** Version du binaire natif :  _(rapport WP-057-c15-g1)_
 - **?** Version du paquet backend :  _(rapport WP-047-c10-A1)_
 - **?** Version du paquet backend :  _(rapport WP-047-c6-R06)_
 - **?** Version et identité :  _(rapport WP-067-c9s-S3)_
 - **?** Version et mises à jour :  _(rapport WP-067)_
 - **?** Version lue d'une fiche contact :  _(rapport WP-DIFF-101-c13s-d5)_
+- **?** Version npm du frontend :  _(rapport WP-056-c15-g1)_
 - **?** Version unique de l'application :  _(rapport WP-047-c12-b)_
 - **?** Version unique du backend :  _(rapport WP-047-c9-R4)_
 - **?** Visibilite des fonctionnalites :  _(rapport WP-073)_
@@ -4442,6 +4564,7 @@
 - **?** Voie de migration unique :  _(rapport WP-078)_
 - **?** Voie de migration unique (Alembic) :  _(rapport WP-078-c3-R17)_
 - **?** Voile des panneaux couvrants :  _(rapport WP-066)_
+- **?** Voir la suite :  _(rapport c15-codex-front-accueil-b1713-wp-diff-021)_
 - **?** Voix (dictee et synthese) :  _(rapport WP-051)_
 - **?** Voix et transcription :  _(rapport WP-067-c11-lecteur-15)_
 - **?** Voix et transcription :  _(rapport WP-067-c12-h2)_
@@ -4494,7 +4617,14 @@
 - **?** Vérité d'exécution des outils :  _(rapport WP-052)_
 - **?** Vérité des libellés de cloisonnement :  _(rapport WP-062)_
 - **?** Widgets de l'accueil v2 (bandeau, actions rapides, conversations récentes) :  _(rapport WP-064)_
+- **?** path_security.py :  _(rapport c15-root-primary-path_security-py)_
 - **?** project.sync : rattacher un dossier a un projet et l'indexer :  _(rapport WP-081-c3-D05)_
+- **?** source :  _(rapport c15-primary-p162-source-wp-c-026)_
+- **?** test :  _(rapport c15-primary-p162-test-wp-diff-132)_
+- **?** test_b1739_historique_reglable.py :  _(rapport c15-root-primary-test_b1739_historique_reglable-py)_
+- **?** test_c15_home_symbolique.py :  _(rapport c15-root-primary-test_c15_home_symbolique-py)_
+- **?** test_p159_contexte_plusieurs_tours.py :  _(rapport c15-root-primary-test_p159_contexte_plusieurs_tours-py)_
+- **?** test_p159_contexte_transmis.py :  _(rapport c15-root-primary-test_p159_contexte_transmis-py)_
 - **?** « Cette semaine » (P-135) :  _(rapport WP-049-c13s-d4)_
 - **?** « Cette semaine » sur l'Accueil (P-135) :  _(rapport WP-DIFF-102-c13s-18)_
 - **?** À propos et vérification des mises à jour :  _(rapport WP-067-c2-D06)_
@@ -4518,6 +4648,7 @@
 - **?** Écriture des réponses du chat et outils offerts :  _(rapport WP-DIFF-109-c13s-19)_
 - **?** Édition d'un événement :  _(rapport WP-DIFF-049-c9w-W2)_
 - **?** Égalité des options TLS entre test et envoi :  _(rapport WP-084-c9v-V2)_
+- **?** Émission et relecture HTTP :  _(rapport c15-codex-back-secondary-wp-c-029)_
 - **?** Épinglage des actions tierces de la release :  _(rapport WP-DIFF-086-c13-h)_
 - **?** Établi : « Écrire » ouvre un brouillon :  _(rapport WP-066-c2-D04)_
 - **?** Établi au bord du composeur :  _(rapport WP-066-c9u-U4)_
@@ -4535,6 +4666,7 @@
 - **?** Étape sécurité et consentement cloud :  _(rapport WP-C-027-c3-R08)_
 - **?** Étape « Perdu » du pipeline (P-132 lot 1) :  _(rapport WP-DIFF-110-c13s-20)_
 - **?** Étapes du pipeline (P-132b, étape « Perdu ») :  _(rapport WP-DIFF-108-c13s-21)_
+- **?** Étapes masquées P157 et focus B1742 :  _(rapport c15-codex-front-wp-062)_
 - **?** État annoncé du champ obligatoire de la mise en route :  _(rapport WP-DIFF-008-c9-D4)_
 - **?** État d'Ollama et ressources machine :  _(rapport WP-049-c2-M02)_
 - **?** État de mise en route :  _(rapport WP-049-c13s-02)_

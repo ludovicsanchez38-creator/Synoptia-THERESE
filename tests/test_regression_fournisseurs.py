@@ -173,15 +173,64 @@ class TestPromptSystemeDuJour:
             service = LLMService.__new__(LLMService)
             return service._get_system_prompt_with_identity()
 
-    def test_la_date_du_jour_est_substituee_en_francais_sans_zero_initial(self):
-        maintenant = datetime.now(UTC)
-        mois = ["janvier", "février", "mars", "avril", "mai", "juin", "juillet", "août",
-                "septembre", "octobre", "novembre", "décembre"][maintenant.month - 1]
-        prompt = self._prompt()
-        assert "{current_date}" not in prompt
-        assert f"{maintenant.day} {mois} {maintenant.year}" in prompt, (
-            "la date doit être écrite jour mois année, sans %-d (absent sous Windows)"
+    @pytest.mark.parametrize("avec_profil", [False, True], ids=["sans-profil", "avec-profil"])
+    @pytest.mark.parametrize(
+        ("instant_local", "attendu_local", "date_utc"),
+        [
+            pytest.param(
+                "2026-10-01T00:30:00+02:00",
+                "1 octobre 2026, 00:30 (heure du poste, UTC+02:00)",
+                "30 septembre 2026",
+                id="plus02-apres-minuit",
+            ),
+            pytest.param(
+                "2026-09-30T18:30:00-08:00",
+                "30 septembre 2026, 18:30 (heure du poste, UTC-08:00)",
+                "1 octobre 2026",
+                id="moins08-utc-deja-demain",
+            ),
+            pytest.param(
+                "2027-01-01T00:30:00+14:00",
+                "1 janvier 2027, 00:30 (heure du poste, UTC+14:00)",
+                "31 décembre 2026",
+                id="plus14-changement-annee",
+            ),
+        ],
+    )
+    def test_la_date_du_jour_est_substituee_en_francais_sans_zero_initial(
+        self, monkeypatch, instant_local, attendu_local, date_utc, avec_profil
+    ):
+        from app.services import llm
+        from app.services.user_profile import UserProfile
+
+        locale = datetime.fromisoformat(instant_local)
+        assert locale.date() != locale.astimezone(UTC).date()
+
+        class HorlogeDuPoste(datetime):
+            @classmethod
+            def now(cls, tz=None):
+                return cls.fromtimestamp(locale.timestamp(), tz or locale.tzinfo)
+
+            def astimezone(self, tz=None):
+                # B-1754 : figer le poste sans dépendre du fuseau de la machine
+                # et sans modifier TZ globalement. Une conversion UTC reste réelle.
+                return super().astimezone(locale.tzinfo if tz is None else tz)
+
+        monkeypatch.setattr(llm, "datetime", HorlogeDuPoste)
+        profil = UserProfile(name="Jérôme") if avec_profil else None
+        prompt = self._prompt(profil)
+        assert "{current_date}" not in prompt and "{current_date_example}" not in prompt
+        assert f"## Date et heure actuelles\n{attendu_local}\n" in prompt, (
+            "le modèle doit recevoir la date française et l'heure du poste "
+            "avec son décalage exact, même si le jour UTC diffère"
         )
+        assert date_utc not in prompt
+        date_fr = attendu_local.split(",", 1)[0]
+        if locale.day < 10:
+            assert f"0{date_fr}" not in prompt, "le jour ne doit pas avoir de zéro initial"
+        if avec_profil:
+            assert "Jérôme" in prompt
+            assert f"- Date : {date_fr}\n" in prompt
 
     def test_avec_un_profil_la_date_exemple_est_aussi_substituee(self):
         from app.services.user_profile import UserProfile

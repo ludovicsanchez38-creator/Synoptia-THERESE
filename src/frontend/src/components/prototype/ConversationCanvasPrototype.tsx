@@ -1092,10 +1092,9 @@ export function ConversationCanvasPrototype() {
   const toggleDemoMode = useDemoStore((state) => state.toggle);
   useConversationSync();
 
-  // B-320 : le composeur flotte au-dessus du fil et peut grandir (capacité,
-  // erreur de dictée, destination). Le bas du fil doit suivre sa hauteur
-  // réelle, sinon la dernière rangée de parcours reste dessous et ne peut pas
-  // être lue. 224 px sert de garde avant la première mesure.
+  // B-320 / B-1713 : le composeur peut grandir (capacité, erreur de dictée,
+  // destination). Réserver sa hauteur hors du viewport du fil empêche ses
+  // textes de passer derrière l'indice. 224 px précède la première mesure.
   useEffect(() => {
     const composer = composerBackdropRef.current;
     if (!composer) return;
@@ -1109,7 +1108,7 @@ export function ConversationCanvasPrototype() {
     const observer = new ResizeObserver(reserveComposer);
     observer.observe(composer);
     return () => observer.disconnect();
-  }, []);
+  }, [chatOpen, embeddedView]);
 
   // P-148 : le motif du refus, pour qu'une fenêtre posée par-dessus (celle
   // d'un projet) sache dire pourquoi elle reste ouverte.
@@ -2163,8 +2162,8 @@ export function ConversationCanvasPrototype() {
               <div
                 ref={conversationScrollRef}
                 data-testid="prototype-conversation-scroll"
-                className="flex-1 overflow-y-auto px-5 pt-7 sm:px-8"
-                style={{ paddingBottom: composerClearance }}
+                className="min-h-0 flex-1 overflow-y-auto px-5 pt-7 sm:px-8"
+                style={{ marginBottom: composerClearance }}
               >
                 <div className={`mx-auto transition-[max-width] duration-200 ${canvasOpen ? 'max-w-[760px]' : 'max-w-colonne'}`}>
                   {(boardRun.status === 'running' || atelierRun.status === 'running') && (

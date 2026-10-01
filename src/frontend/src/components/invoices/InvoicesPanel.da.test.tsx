@@ -115,7 +115,9 @@ describe('Lot 5 DA : une ligne est un tr', () => {
     expect(row.getAttribute('tabindex')).toBeNull();
     expect(row.getAttribute('tabIndex')).toBeNull();
 
-    expect(within(row).getByRole('button', { name: 'Marie Test' })).toBeInTheDocument();
+    const client = within(row).getByRole('button', { name: /Marie Test/ });
+    expect(client).toHaveAccessibleName(/Facture, FAC-001,/);
+    expect(client).toHaveTextContent('Marie Test');
     expect(within(row).getByTitle('Générer et ouvrir le PDF')).toBeInTheDocument();
     expect(within(row).getByRole('button', { name: 'Générer et ouvrir le PDF' })).toHaveTextContent(
       'PDF',
@@ -467,7 +469,7 @@ describe('Lot 5 DA : plancher, jetons, hauteurs', () => {
       [0, 'FAC-777'],
       [1, 'FAC-778'],
     ] as const) {
-      const commande = within(rangees[rang]).getByRole('button', { name: numero });
+      const commande = within(rangees[rang]).getByRole('button', { name: new RegExp(`Facture, ${numero},`) });
       expect(commande.textContent?.trim(), numero).toBe(numero);
       expect(commande.className, numero).toMatch(/\bmin-h-9\b/);
       const muted = commande.querySelector('.text-text-muted');

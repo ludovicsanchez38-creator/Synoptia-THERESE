@@ -69,6 +69,7 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
   const [showAddActivity, setShowAddActivity] = useState(false);
   const [activityRefreshKey, setActivityRefreshKey] = useState(0);
   const vcfInputRef = useRef<HTMLInputElement>(null);
+  const focusFicheDemande = useRef<{ contactId: string; origine: Element | null } | null>(null);
   const { enabled: demoEnabled, maskContact, populateMap } = useDemoMask();
 
   const effectiveOpen = standalone || isOpen;
@@ -119,6 +120,9 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
   };
 
   const handleContactClick = (contact: ContactResponse) => {
+    // B-1752 : la sortie animée retire le bouton qui porte le focus. La fiche
+    // le recevra à son montage, si l'utilisateur ne l'a pas déplacé ailleurs.
+    focusFicheDemande.current = { contactId: contact.id, origine: document.activeElement };
     setSelectedContact(contact.id);
     setActiveTab('activities');
   };
@@ -308,7 +312,20 @@ export function CRMPanel({ isOpen, onClose, standalone = false }: CRMPanelProps)
                     coordonnées, ni étape, ni score. */}
                 <section
                   aria-label={`Fiche de ${displaySelectedContact.first_name} ${displaySelectedContact.last_name}`}
-                  className="px-4 pb-4"
+                  tabIndex={-1}
+                  ref={(element) => {
+                    const demande = focusFicheDemande.current;
+                    if (!element || demande?.contactId !== displaySelectedContact.id) return;
+                    // AnimatePresence(mode="wait") monte cette section après la
+                    // disparition du Pipeline. Consommer la demande une seule fois
+                    // évite de reprendre le focus à chaque relecture de la fiche.
+                    focusFicheDemande.current = null;
+                    const actif = document.activeElement;
+                    if (!actif || actif === document.body || actif === demande.origine) {
+                      element.focus({ preventScroll: true });
+                    }
+                  }}
+                  className="rounded-md px-4 pb-4 focus-visible:outline focus-visible:outline-[3px] focus-visible:outline-offset-2 focus-visible:outline-ring"
                 >
                   <dl className="grid grid-cols-1 gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
                     <div>
