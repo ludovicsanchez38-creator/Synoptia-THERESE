@@ -19,11 +19,40 @@ Le correctif B1760 est vérifié et commité ; le bump prépare 0.77.0-alpha.
 L'audit frais ajoute des cartes longues débordantes (B1762), des oracles
 d'interface à corriger (B1763/B1764), l'audit de dépendances (B1765) et les
 transactions DDL des fixtures (B1766). Leurs ciblés et limites sont centralisés
-dans le rapport de release. La boucle courante est en REPAIR, en attente des
-deux rondes sur la nouvelle source figée. Le compteur plateau est à zéro.
-Les sections et preuves d4 ci-dessous sont historiques ; elles ne qualifient
-pas le nouveau code. L'état courant des portes de release est porté par le
+dans le rapport de release. La source corrigée est maintenant
+`92f72f3d1873c2e96e479fb7797d2dc5f143a5e7`, committée et poussée. Le cycle
+comprend **32 corrections ciblées : 21 produit et 11 contrôles**. Les portes
+locales mesurent **7 747 cas unitaires distincts réussis** (4 315 backend +
+3 432 frontend), avec quatre skips backend ; mypy conserve une baseline de
+937 erreurs respectée par nombre, sans promesse de typage intégral. Les
+trois workflows CI sur ce HEAD ont réussi, dont les deux suites Windows.
+La cartographie est PASS, 2 111/2 111 fichiers. Les sources, reçus et limites
+actuels sont centralisés dans le
 [rapport v0.77.0-alpha](releases/v0.77.0-alpha.md).
+
+Les deux manifestes critiques **115/115** ont leurs audits valides et le
+CLI canonique accepte les deux rondes indépendantes : **2/2**, à 15:34:47
+puis 15:56:49 UTC le 01/10. [Preuves et limites des deux rondes](releases/v0.77.0-alpha.md#deux-rondes-finales-sur-92f72f3d).
+Les tests et captures portent le vrai HEAD de code 92f72f3d ; un futur commit
+limité aux documents n’est pas présenté comme nouvelle exécution. Aucun tag, build de release, asset
+0.77.0, publication, landing/updater, message Discord, installation ou
+lancement GUI n'est attesté. Les sections et preuves d4 ci-dessous sont
+historiques ; elles ne qualifient pas le nouveau code. Leurs mentions
+« courant », « final » ou « non autorisé » décrivent l'état ancien avant
+l'audit et le GO de release, pas celui de la préparation présente.
+
+## GAP_SCAN courant borné
+
+Le [rapport après les correctifs 115](../.app-loop/cycles/15/reprise/gap-scan/post-correctifs115-release-92f72f3d-20261001T154919Z/rapport-final-apres-cli2sur2.json)
+relit le registre courant et les besoins déjà dédupliqués. Aucun engagement
+de code supplémentaire des choix P160/P161/P162 n’est établi comme manquant
+avant 0.77. P161 livre le cadrage documentaire ; le futur parcours financier
+reste à développer. Les chantiers acceptés antérieurs ne sont pas tous
+annoncés implémentés. P146 reste une limite de preuve : 1440 clair porte les
+gestes, les trois autres contextes sont statiques, refus/exclusions restent
+tels quels ; aucune recette exhaustive des capacités ni conformité fiscale
+globale n’est prétendue. P147 concerne la boucle suivant le plateau. Root
+conserve les transitions normales et le GO de publication déjà donné.
 
 ## État historique d4 après les décisions déléguées
 
@@ -178,7 +207,7 @@ Limites conservées : 295 fiches différées antérieures, dont B-1558 (suffixe 
 
 Le [changelog](CHANGELOG.md) porte une section « Non publié ». Aucune nouvelle version, publication, release, PR ou intégration à main n’est réalisée par cette reprise.
 
-### Périmètre de release
+### Périmètre historique de release avant le GO du 01/10
 
 Le skill `release-therese` classe cette reprise en correctifs et évolutions acceptées. Il exige un accord explicite sur la version et sa publication avant la publication complète ; les accords antérieurs du cycle 14 ne sont pas étendus à une nouvelle release. Les décisions P160/P161/P162 déléguées sont exécutées dans leur périmètre, sans nouvelle décision métier en attente.
 
