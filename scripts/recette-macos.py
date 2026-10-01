@@ -208,6 +208,19 @@ def main() -> int:
                 raise RuntimeError(f"version inattendue : {health.get('version')}")
             if health.get("status") not in ("healthy", "degraded"):
                 raise RuntimeError("état de santé invalide")
+            # Refaire l'attribution juste avant la seconde requête de santé.
+            listeners = subprocess.run(
+                ["/usr/sbin/lsof", "-nP", "-a", f"-iTCP@127.0.0.1:{port}", "-sTCP:LISTEN", "-Fp"],
+                capture_output=True, text=True,
+            )
+            pids = {int(line[1:]) for line in listeners.stdout.splitlines() if line.startswith("p")}
+            owned = set(membres_groupe(proc.pid))
+            receipt["listener_observations"].append({
+                "exit_code": listeners.returncode, "listener_pids": sorted(pids),
+                "owned_group_members": sorted(owned),
+            })
+            if listeners.returncode != 0 or not pids or not pids <= owned:
+                raise RuntimeError("listener de services non attribué, aucun HTTP autorisé")
             with opener.open(f"http://127.0.0.1:{port}/health/services", timeout=5) as response:
                 services = json.load(response)
             receipt["http"].append({"path": "/health/services", "response": services})
