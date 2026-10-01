@@ -2,7 +2,7 @@
 
 ## État vérifié
 
-Mise à jour le 1er octobre 2026. La reprise demandée par Ludo a récupéré les lots commencés dans Claude Code puis interrompus faute de budget. Les **22 fiches ciblées sont corrigées : 17 sur le produit et 5 sur les contrôles**. L’évaluateur canonique a accepté **deux rondes indépendantes successives : 2/2**, sur la source `fbfa29f1`, avant les nouvelles évolutions. Ludo a ensuite délégué les trois décisions selon la logique et la législation ; P160, P161 et P162 sont acceptées. La boucle est en `IMPLEMENT`, P160 en premier. B-1757, confirmé puis corrigé, reliait un numéro 2026 à une date d’émission 2027 sur deux routes. Le plateau courant est à 0 ; les deux rondes antérieures restent des preuves historiques. Les transitions de cette reprise sont normales ; les 23 anciennes transitions forcées restent historiques.
+Mise à jour le 1er octobre 2026. La reprise demandée par Ludo a récupéré les lots commencés dans Claude Code puis interrompus faute de budget. Les **22 fiches ciblées sont corrigées : 17 sur le produit et 5 sur les contrôles**. L’évaluateur canonique a accepté **deux rondes indépendantes successives : 2/2**, sur la source `fbfa29f1`, avant les nouvelles évolutions. Ludo a ensuite délégué les trois décisions selon la logique et la législation ; P160, P161 et P162 sont acceptées. La boucle est en `IMPLEMENT` : P160 est stabilisée, P161 livrée comme cadrage et P162 codée, revue sans blocage, en attente du vert natif sur commit. B-1757, confirmé puis corrigé, reliait un numéro 2026 à une date d’émission 2027 sur deux routes. Le plateau courant est à 0 ; les deux rondes antérieures restent des preuves historiques. Les transitions de cette reprise sont normales ; les 23 anciennes transitions forcées restent historiques.
 
 Source figée : `fbfa29f1b8fd69ab7bf7af0652aa0775d71798cd`, branche `codex/cycle-15`, dans `/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex`. Le push sur `origin` est vérifié par `ls-remote`. Le dépôt d’origine est propre et `main` local/distant reste à `887669c37f1488034512cab846c04d257a2e45f2`, version `0.76.1`.
 
@@ -12,9 +12,13 @@ La [matrice canonique des corrections](../.app-loop/cycles/15/reprise/matrice-co
 
 ## P160 et P161 après délégation
 
-P160 est implémentée dans un lot distinct. Les 12 nouveaux cas et 177 voisins passent, sans échec, erreur ou skip, sous SQLCipher et garde avant imports : [vert ciblé](../.app-loop/cycles/15/reprise/p160-serie-commune/vert-final-et-voisins-20261001T052958.432084Z/manifest.json). Les sabotages en copies exactes produisent 4 échecs pour les séries, 5 pour l’héritage et 2 pour la frontière annuelle, sans erreur ni skip. La comparaison naïve/UTC invalide du premier vert est conservée et exclue. Le lot conserve les pièces émises et traite les brouillons AV, anciens, importés, rang zéro ou alias de rang. Les portes complètes et la recette UI doivent encore passer avant P162.
+P160 est implémentée dans un lot distinct. Les 12 nouveaux cas et 177 voisins passent, sans échec, erreur ou skip, sous SQLCipher et garde avant imports : [vert ciblé](../.app-loop/cycles/15/reprise/p160-serie-commune/vert-final-et-voisins-20261001T052958.432084Z/manifest.json). Les sabotages en copies exactes produisent 4 échecs pour les séries, 5 pour l’héritage et 2 pour la frontière annuelle, sans erreur ni skip. La comparaison naïve/UTC invalide du premier vert est conservée et exclue. Le lot conserve les pièces émises et traite les brouillons AV, anciens, importés, rang zéro ou alias de rang. La recette Chromium P160 sur `1991c13c` passe, avec quatre captures inspectées : FACT-2026-008 puis avoir FACT-2026-009, type et origine conservés. Mypy reste à 937. La première porte complète donne 4 300 cas avec deux échecs du harnais B-1758 : les sentinelles attendent un index Git dans la copie. L’index isolé est ajouté, les deux sentinelles passent et leur désactivation reproduit les deux échecs. La porte complète corrigée passe 4 300 cas, zéro échec/erreur, cinq skips et Ruff 0 : [preuve](../.app-loop/cycles/15/reprise/portes-preservees-backend-20261001T054758.736479Z/backend-manifest.json). Les fichiers copiés et les 69 preuves historiques sont contrôlés avant/après. P160 est stable ; P162 démarre comme second lot.
 
-Le total corrigé ciblé devient 23 fiches (18 produit, 5 contrôles), dont B-1757. P160 est une évolution acceptée distincte de ce comptage. P161 est livré comme [cadrage](plans/2026-10-01-decisions-et-cadrage-cycle15.md), avec une relecture documentaire indépendante sans blocage ; le futur parcours financier reste à développer.
+Le total corrigé ciblé devient 24 fiches (18 produit, 6 contrôles), dont B-1757 et B-1758. P160 est une évolution acceptée distincte de ce comptage. P161 est livré comme [cadrage](plans/2026-10-01-decisions-et-cadrage-cycle15.md), avec une relecture documentaire indépendante sans blocage ; le futur parcours financier reste à développer.
+
+## P162 : indice de colonnes
+
+L’indice est placé avant le tableau et suit le débordement réel, le défilement et les changements de largeur. La région se rejoint avec Tab ; les flèches et la molette restent natives. Les 18 nouveaux cas et les 55 voisins passent (73 au total), TypeScript et ESLint passent avec un avertissement préexistant. Trois copies sabotées échouent comme attendu sur 15, 1 et 14 assertions, sans erreur ni skip. La source et le test restent identiques après les sabotages ; la relecture indépendante ne trouve aucun blocage. [Gel et preuves](../.app-loop/cycles/15/reprise/p162-indice/gel-code-23833dc7.json). Le vert Chromium à deux largeurs et dans deux thèmes reste à exécuter après commit.
 
 ## Correctifs vérifiés
 
@@ -43,7 +47,7 @@ Les preuves détaillées sont rangées sous `../.app-loop/cycles/15/reprise/` da
 
 Le rouge et le sabotage source ont chacun une assertion attendue sur 14 cas, sans erreur ; le vert passe les 30 voisins. Le sabotage DOM retrouve le déplacement à 886. Le [vert natif courant](../.app-loop/cycles/15/reprise/pipeline-vertical-scroll/native-vert-af1nf5_d/mesures.json) conserve titres et premières cartes dans la zone affichée, `scrollTop=0` au focus des indices et aux Entrées. Tab peut aligner la région à 62 px sans masquer le contenu. La colonne partiellement présente au bord horizontal peut garder son titre coupé : `headerVisible` mesure une intersection après clipping, pas une lecture intégrale ; l’indice gauche permet de la rejoindre. Ce cas reste distinct de la disparition verticale corrigée. Ses 54 contacts synthétiques sont strictement identiques avant/après, en nombre et en empreinte. Les assertions trop strictes de Tab à zéro et du nombre historique 45 sont exclues et conservées.
 
-## Portes complètes et carte
+## Portes complètes et carte avant les décisions déléguées
 
 | Contrôle sur la source figée | Résultat | Preuve |
 | --- | --- | --- |
@@ -68,7 +72,7 @@ Les six instruments passent témoins positifs, négatifs et restauration dans le
 
 Outils constatés : Node 22.19.0, Playwright 1.58.2, Chromium 145.0.7632.6, pytest 9.0.2 et Vitest 4.0.17. Les recettes UI utilisent Chromium ; elles ne valident pas le packaging natif.
 
-## Rondes finales
+## Rondes finales avant les décisions déléguées
 
 La [première ronde finale](../.app-loop/cycles/15/reprise/plateau-c15-r1-fbfa29f1-v2/evidence.json), exécutée par root et arbitrée par `cycle15_lots_review`, puis la [seconde](../.app-loop/cycles/15/reprise/plateau-c15-r2-fbfa29f1/evidence.json), exécutée par `cycle15_lots_review` et arbitrée par `cycle15_inventory`, sont acceptées : **2/2**. Les journaux d’évaluation sont conservés dans les mêmes dossiers. Aucune couverture précédente n’est assimilée à une ronde propre : celle sur `6bf4f66d` a révélé B1755 ; celle sur `5f291d40` a révélé B1756. La source `fbfa29f1` est restée figée pendant les deux rondes.
 
