@@ -1167,6 +1167,7 @@
 - **?** Contrat de fuseau de l’Accueil :  _(rapport WP-DIFF-119-c14-reprise-lecteur-b)_
 - **?** Contrat de l'API :  _(rapport WP-048-c4-D02)_
 - **?** Contrat de l'API (schemas Pydantic) :  _(rapport WP-048-c4-R03)_
+- **?** Contrat de l'indice passif P162 :  _(rapport c15-codex-p162-secondaire-wp-diff-132)_
 - **?** Contrat de lecture d'une fiche (chat et pont MCP) :  _(rapport WP-053-c13s-06)_
 - **?** Contrat de lecture d'une fiche contact :  _(rapport WP-079-c3-D04)_
 - **?** Contrat de mise a jour signee :  _(rapport WP-082-c9-R4)_
@@ -2394,6 +2395,7 @@
 - **?** Indice de contenu restant :  _(rapport WP-DIFF-021-c14-lecteur-a)_
 - **?** Indice de contenu restant :  _(rapport WP-DIFF-021-c14-lecteur-b)_
 - **?** Indice de defilement de l'accueil :  _(rapport WP-DIFF-021-c4-R10)_
+- **?** Indice passif des colonnes hors cadre P162 :  _(rapport c15-codex-p162-secondaire-wp-c-026)_
 - **?** Indice port et mode de sécurité :  _(rapport WP-084-c9u-U1)_
 - **?** Indisponibilité des fichiers locaux en navigateur :  _(rapport WP-063-c14-b1735-lecteur-a)_
 - **?** Indisponibilité des fichiers locaux en navigateur :  _(rapport WP-DIFF-072-c14-b1735-lecteur-a)_
@@ -2997,6 +2999,18 @@
 - **?** P157/B1742 : calcul du débordement et maintien du focus :  _(rapport c15-codex-front-wp-diff-124)_
 - **?** P159 : indication du contexte transmis :  _(rapport c15-codex-front-wp-diff-124)_
 - **?** P159 restauré après rechargement :  _(rapport c15-codex-front-wp-069)_
+- **?** P160 : séquence FACT commune ; B1757 : instant annuel cohérent :  _(rapport c15-primary-p160-wp-c-025)_
+- **?** P160 : séquence FACT commune ; B1757 : instant annuel cohérent :  _(rapport c15-primary-p160-wp-diff-013)_
+- **?** P160 : séquence FACT commune ; B1757 : instant annuel cohérent :  _(rapport c15-primary-p160-wp-diff-027)_
+- **?** P160 : séquence FACT commune ; B1757 : instant annuel cohérent :  _(rapport c15-primary-p160-wp-diff-128)_
+- **?** P160 : séquence FACT commune ; B1757 : instant annuel cohérent :  _(rapport c15-primary-p160-wp-diff-131)_
+- **?** P160/B1757 : invoices.py :  _(rapport c15-p160-secondaire-review-ee52ef67f79d40ed8ed67b738d2b2ccc-wp-c-025)_
+- **?** P160/B1757 : test_b1615_numero_a_lemission.py :  _(rapport c15-p160-secondaire-review-ee52ef67f79d40ed8ed67b738d2b2ccc-wp-diff-128)_
+- **?** P160/B1757 : test_b1671_facture_emise_pas_annulee.py :  _(rapport c15-p160-secondaire-review-ee52ef67f79d40ed8ed67b738d2b2ccc-wp-diff-128)_
+- **?** P160/B1757 : test_c15_emission_concurrente.py :  _(rapport c15-p160-secondaire-review-ee52ef67f79d40ed8ed67b738d2b2ccc-wp-diff-128)_
+- **?** P160/B1757 : test_numerotation_des_documents.py :  _(rapport c15-p160-secondaire-review-ee52ef67f79d40ed8ed67b738d2b2ccc-wp-diff-013)_
+- **?** P160/B1757 : test_p160_serie_commune.py :  _(rapport c15-p160-secondaire-review-ee52ef67f79d40ed8ed67b738d2b2ccc-wp-diff-131)_
+- **?** P160/B1757 : test_regression_facturation_agenda.py :  _(rapport c15-p160-secondaire-review-ee52ef67f79d40ed8ed67b738d2b2ccc-wp-diff-027)_
 - **?** PDF conforme d'une pièce de facturation :  _(rapport WP-C-025-c13s-11)_
 - **?** PDF d'une pièce :  _(rapport WP-C-025-c13s-d1)_
 - **?** PDF de devis, facture et avoir :  _(rapport WP-DIFF-017-c4-R08)_
@@ -4605,6 +4619,8 @@
 - **?** Widgets de l'accueil v2 (bandeau, actions rapides, conversations récentes) :  _(rapport WP-064)_
 - **?** path_security.py :  _(rapport c15-root-primary-path_security-py)_
 - **?** project.sync : rattacher un dossier a un projet et l'indexer :  _(rapport WP-081-c3-D05)_
+- **?** source :  _(rapport c15-primary-p162-source-wp-c-026)_
+- **?** test :  _(rapport c15-primary-p162-test-wp-diff-132)_
 - **?** test_b1739_historique_reglable.py :  _(rapport c15-root-primary-test_b1739_historique_reglable-py)_
 - **?** test_c15_home_symbolique.py :  _(rapport c15-root-primary-test_c15_home_symbolique-py)_
 - **?** test_p159_contexte_plusieurs_tours.py :  _(rapport c15-root-primary-test_p159_contexte_plusieurs_tours-py)_

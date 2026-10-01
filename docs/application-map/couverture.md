@@ -1,7 +1,7 @@
 # Couverture et limites de la carte
 
 - Couverture validee : 100.0 %
-- Fichiers attendus : 2107
+- Fichiers attendus : 2109
 - Validation `passed` : True
 
 ## Fichiers non lus (0)
@@ -127,7 +127,7 @@
 ## Disparus depuis l'inventaire (0)
 
 
-## Lus sur une version anterieure (752)
+## Lus sur une version anterieure (755)
 
 - .github/workflows/ci.yml
 - .github/workflows/release.yml
@@ -759,8 +759,10 @@
 - tests/test_b1438_rgpd_adresse_fiche.py
 - tests/test_b1500_outil_agenda_heure_de_paris.py
 - tests/test_b1516_audio_temporaire_orphelin.py
+- tests/test_b1615_numero_a_lemission.py
 - tests/test_b1658_vcard_courriel_apparie_par_le_nom.py
 - tests/test_b1667_purge_respecte_le_consentement_renouvele.py
+- tests/test_b1671_facture_emise_pas_annulee.py
 - tests/test_b948_repertoires_bundle.py
 - tests/test_b949_environnement_sous_processus.py
 - tests/test_b957_b958_outils_agents.py
@@ -778,6 +780,7 @@
 - tests/test_brouillon_email_cause_visible.py
 - tests/test_bugs_guide_066_metier.py
 - tests/test_bump_version_index_des_noms.py
+- tests/test_c15_emission_concurrente.py
 - tests/test_calendar_allday_semantics.py
 - tests/test_chat_annulation_reelle.py
 - tests/test_chat_capacites_annoncees.py

@@ -826,6 +826,7 @@
 - [?] La spec passe-t-elle aujourd'hui sur la pile jetable (17393) avec le libellé B-1406, et la sortie « rail Accueil » vise-t-elle toujours le bon bouton (getByRole Accueil exact, .first()) ? _(rapport WP-DIFF-066-c13s-09)_
 - [?] La stabilisation B-1196 tient-elle sous charge CI (runner lent) au-delà des 100 exécutions locales citées ? _(rapport WP-DIFF-046-c13-l)_
 - [?] La stabilité persiste-t-elle sur moteur WebKit/Tauri natif et avec des paramètres de zoom ou de typographie non standards ? _(rapport WP-066-c10-b947-a)_
+- [?] La structure et le focus logique verts se traduisent-ils en défilement et anneau visibles dans Chromium ? _(rapport c15-codex-p162-secondaire-wp-diff-132)_
 - [?] La substitution PROCESS-GLOBALE de aiosqlite.core.sqlite3 par sqlcipher3.dbapi2 (database.py L733) a-t-elle un autre consommateur d'aiosqlite dans le processus, aujourd'hui ou apres l'ajout d'un second moteur async ? _(rapport WP-C-025)_
 - [?] La substitution process-globale de aiosqlite.core.sqlite3 par sqlcipher3.dbapi2 n'est jamais restauree par close_db : un second moteur async apparu depuis en subit-il l'effet ? _(rapport WP-C-025-c4-R04)_
 - [?] La suite Playwright passe-t-elle aujourd'hui ? 192 tests sont collectes, mais aucun n'a ete execute pendant cette lecture. _(rapport WP-085)_
@@ -1632,6 +1633,7 @@
 - [?] Le rendu des images distantes est-il bloqué côté frontend pour les corps assainis par `sanitize_html` ? _(rapport WP-052-c4-D04)_
 - [?] Le rendu double de React (StrictMode ou rendu concurrent) provoque-t-il réellement une double exécution de la branche 'navigate' ou 'action_agent' de CommandExecutor ? _(rapport WP-064-c3-R14)_
 - [?] Le rendu et le focus sont-ils identiques dans les binaires Tauri et avec lecteur d'ecran natif ? _(rapport WP-066-c10-b947-b)_
+- [?] Le rendu natif final après commit conserve-t-il l'anneau et la visibilité verticale des en-têtes/premières valeurs lors du Tab dans les quatre combinaisons prévues ? _(rapport c15-codex-p162-secondaire-wp-c-026)_
 - [?] Le renommage doit-il se fermer seul sur Échap, le tiroir restant ouvert, comme l'annonce l'en-tête du test B-992 ? _(rapport WP-066-c11-lecteur-19)_
 - [?] Le renommage types -> entity_types cote client suppose que le serveur attend bien le singulier ; la conversion pluriel/singulier est-elle exhaustive pour tous les types de memoire, au-dela de contact et project ? _(rapport WP-DIFF-003-c2-M14)_
 - [?] Le renouvellement du consentement ou l'exclusion de la purge doivent-ils effacer ou périmer les préavis déjà émis (décision produit) ? _(rapport WP-050-c13r-1)_
