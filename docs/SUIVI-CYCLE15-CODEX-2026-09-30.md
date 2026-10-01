@@ -2,13 +2,19 @@
 
 ## État vérifié
 
-Mise à jour le 1er octobre 2026. La reprise demandée par Ludo a récupéré les lots commencés dans Claude Code puis interrompus faute de budget. Les **22 fiches ciblées sont corrigées : 17 sur le produit et 5 sur les contrôles**. L’évaluateur canonique a accepté **deux rondes indépendantes successives : 2/2**, sur la source figée `fbfa29f1`. La revue des propositions est terminée ; la boucle est en `HUMAN_GATE`, avec trois décisions en attente. Les transitions de cette reprise sont normales ; les 23 anciennes transitions forcées restent historiques.
+Mise à jour le 1er octobre 2026. La reprise demandée par Ludo a récupéré les lots commencés dans Claude Code puis interrompus faute de budget. Les **22 fiches ciblées sont corrigées : 17 sur le produit et 5 sur les contrôles**. L’évaluateur canonique a accepté **deux rondes indépendantes successives : 2/2**, sur la source `fbfa29f1`, avant les nouvelles évolutions. Ludo a ensuite délégué les trois décisions selon la logique et la législation ; P160, P161 et P162 sont acceptées. La boucle est en `IMPLEMENT`, P160 en premier. B-1757, confirmé puis corrigé, reliait un numéro 2026 à une date d’émission 2027 sur deux routes. Le plateau courant est à 0 ; les deux rondes antérieures restent des preuves historiques. Les transitions de cette reprise sont normales ; les 23 anciennes transitions forcées restent historiques.
 
 Source figée : `fbfa29f1b8fd69ab7bf7af0652aa0775d71798cd`, branche `codex/cycle-15`, dans `/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex`. Le push sur `origin` est vérifié par `ls-remote`. Le dépôt d’origine est propre et `main` local/distant reste à `887669c37f1488034512cab846c04d257a2e45f2`, version `0.76.1`.
 
 Le lot final de documentation porte uniquement le suivi, le changelog et la carte générée. Les portes et captures gardent leur vrai HEAD de code `fbfa29f1` ; un commit de documentation ultérieur ne vaut pas un rejeu des tests.
 
 La [matrice canonique des corrections](../.app-loop/cycles/15/reprise/matrice-corrections.json) indexe les rouges, verts et sabotages. Son [audit](../.app-loop/cycles/15/reprise/audit-matrice-22-fbfa29f1.json) vérifie 69 références uniques sans erreur d’empreinte. Les suites ciblées se recouvrent ; leurs nombres ne s’additionnent pas.
+
+## P160 et P161 après délégation
+
+P160 est implémentée dans un lot distinct. Les 12 nouveaux cas et 177 voisins passent, sans échec, erreur ou skip, sous SQLCipher et garde avant imports : [vert ciblé](../.app-loop/cycles/15/reprise/p160-serie-commune/vert-final-et-voisins-20261001T052958.432084Z/manifest.json). Les sabotages en copies exactes produisent 4 échecs pour les séries, 5 pour l’héritage et 2 pour la frontière annuelle, sans erreur ni skip. La comparaison naïve/UTC invalide du premier vert est conservée et exclue. Le lot conserve les pièces émises et traite les brouillons AV, anciens, importés, rang zéro ou alias de rang. Les portes complètes et la recette UI doivent encore passer avant P162.
+
+Le total corrigé ciblé devient 23 fiches (18 produit, 5 contrôles), dont B-1757. P160 est une évolution acceptée distincte de ce comptage. P161 est livré comme [cadrage](plans/2026-10-01-decisions-et-cadrage-cycle15.md), avec une relecture documentaire indépendante sans blocage ; le futur parcours financier reste à développer.
 
 ## Correctifs vérifiés
 
@@ -79,19 +85,19 @@ La [recette complémentaire Factures R2](../.app-loop/cycles/15/reprise/runtime/
 
 ## Décisions et limites
 
-P-157 (indices Pipeline) et P-159 (historique/contexte transmis) sont acceptées et implémentées. P-158 a été rejetée et remplacée par B-1738 ; aucun tiroir redimensionnable n’est ajouté. P-160 reste en attente : choisir la règle des prochaines séries factures/avoirs. Aucun numéro historique n’est modifié.
+P-157 (indices Pipeline) et P-159 (historique/contexte transmis) sont acceptées et implémentées. P-158 a été rejetée et remplacée par B-1738 ; aucun tiroir redimensionnable n’est ajouté. La [décision déléguée du 01/10 et le cadrage](plans/2026-10-01-decisions-et-cadrage-cycle15.md) retiennent la série FACT commune pour les prochaines émissions, le cadrage de rectification d’un avoir et un indice avant le tableau Factures. Aucun numéro historique n’est modifié. Le lot P160 est implémenté et vérifié de manière ciblée ; sa validation complète est en cours.
 
 ### Revue des propositions après plateau
 
 Le scan borné couvre les personas métier/comptable, chat et petit écran/clavier, à partir des parcours R2 et des 160 propositions lues. Les [preuves et déduplication](../.app-loop/cycles/15/reprise/gap-scan/synthese-canonique-c15.json) réunissent deux rapports : métier/chat (27 références, 16 pointeurs et 14 ancres vérifiés) et petit écran/clavier (130 fichiers SHA et 49 pointeurs vérifiés), sans erreur. Aucun test ou appel supplémentaire n’est lancé pour ce scan. Le besoin d’indice dans Factures, observé par deux lecteurs, devient une seule proposition ; le chat n’en ajoute aucune. Les copies exactes des registres au moment de la lecture sont conservées avant l’ajout canonique.
 
-| Proposition en attente | Observation et choix demandé | Impact / effort / recommandation |
+| Proposition au portail initial | Observation et choix demandé | Impact / effort / recommandation |
 | --- | --- | --- |
 | P-160 | Choisir une série commune pour les prochaines factures/avoirs, ou conserver FACT/AV distinctes après justification comptable. | Impact métier ; lot isolé avec migration/concurrence après décision. Recommandation : série commune pour les prochaines émissions. |
 | P-161 | Cadrer un parcours pour rectifier un avoir déjà émis : l’écran renvoie actuellement vers un avis comptable, sans pièce rectificative liée dans le formulaire. Distinct de P154 (avoir lié à une facture). | Impact moyen ; cadrage avant estimation/code. Recommandation : décider d’abord du cadrage comptable. |
 | P-162 | Signaler les colonnes hors cadre dans Devis et factures : à 800 px elles sont accessibles par défilement, mais aucun indice ne les annonce. Distinct des étapes du Pipeline P157. | Impact moyen ; petit effort estimé à confirmer par maquette. Recommandation : indice discret. |
 
-Le skill `boucle-amelioration-app` attend une réponse humaine sur ces propositions : oui, non ou plus tard ; P160 demande aussi le choix de série. Les propositions restent `pending`, sans décision supposée. La boucle reste active au portail humain. Une éventuelle implémentation devra reprendre la stabilisation et les contrôles de la zone modifiée.
+Ce portail initial a reçu la délégation explicite de Ludo le 01/10 : les trois propositions sont désormais `accepted`, avec leurs raisons enregistrées par `app_loop.py`. Le document de décision porte les critères et les sources officielles relues. P161 est un livrable de cadrage documentaire ; une proposition de code est traitée à la fois, avec stabilisation et contrôles de la zone modifiée.
 
 La disponibilité des modèles est déclarée : Claude `quota_exhausted`, Grok `unavailable`, GPT disponible, diversité dégradée. Aucun fallback payant ni appel de fournisseur réel n’est utilisé. Les anciens compteurs estimatifs ne constituent pas une mesure actuelle des jetons de la reprise.
 

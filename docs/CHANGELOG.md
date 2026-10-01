@@ -15,10 +15,11 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 - Conversations : rend les titres longs lisibles au survol et au focus. Le réglage du nombre de messages historiques est appliqué ; le bilan des messages historiques effectivement transmis est affiché et conservé au rechargement. La coupe du texte courant est signalée.
 - Confidentialité : une réponse non diffusée n’est plus conservée après suppression de sa conversation. Les dossiers sensibles restent protégés quand le chemin du dossier personnel contient un lien symbolique.
 - Facturation : attribue le numéro définitif à la première émission et préserve les numéros et dates des pièces déjà émises. À sa première émission, un avoir ordinaire requiert une référence à une facture déjà émise. Les brouillons annulés restent modifiables ; deux émissions concurrentes conservent un numéro unique.
+- Numérotation : les prochaines factures et avoirs partagent la série FACT. Les anciens numéros restent conservés ; un brouillon hérité rejoint la série à son émission. Le numéro annuel et la date de première émission utilisent le même instant, y compris au changement d’année.
 - Facturation simultanée : la suppression ne peut plus effacer une pièce devenue émise ; une double conversion du même devis ne crée qu’un brouillon. Une base occupée renvoie une invitation à réessayer.
 - Contrôles : renforce le confinement réseau et le profil jetable des recettes hors ligne. Les témoins d’annulation attendent le début réel du flux et terminent leurs tâches même après une assertion en échec. Les tests de date couvrent le changement de jour local à horloge fixe. L’instrument écran exclut aussi les boutons « Générer » avec leurs accents.
 
-Les correctifs ont passé deux rondes indépendantes sur la branche `codex/cycle-15`. La règle des prochaines séries factures/avoirs attend une décision humaine. Suivi et limites : [reprise du cycle 15](SUIVI-CYCLE15-CODEX-2026-09-30.md).
+Les 22 premiers correctifs ont passé deux rondes indépendantes sur la branche `codex/cycle-15`. La numérotation commune est ensuite implémentée et passe ses tests ciblés ; la validation complète de cette évolution est en cours. Le cadrage de rectification d’un avoir est documenté, avant développement du parcours. Suivi et limites : [reprise du cycle 15](SUIVI-CYCLE15-CODEX-2026-09-30.md).
 
 ## [v0.67.0-alpha] - 5 septembre 2026 - 194 correctifs du cycle 3 de la boucle
 

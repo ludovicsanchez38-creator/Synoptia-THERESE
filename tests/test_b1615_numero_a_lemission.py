@@ -182,7 +182,7 @@ async def test_un_devis_prend_son_numero_des_la_creation(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_un_avoir_brouillon_prend_AV_a_lemission(client: AsyncClient):
+async def test_un_avoir_brouillon_partage_FACT_a_lemission(client: AsyncClient):
     contact = await _contact(client)
     avoir = await _cree(client, contact, "avoir")
     assert avoir["invoice_number"].startswith("PROV-")
@@ -190,7 +190,7 @@ async def test_un_avoir_brouillon_prend_AV_a_lemission(client: AsyncClient):
     reference = await client.put(f"/api/invoices/{avoir['id']}", json={"converted_from_id": origine["id"]})
     assert reference.status_code == 200, reference.text
     emis = await _emet(client, avoir["id"])
-    assert emis["invoice_number"] == f"AV-{_annee()}-001"
+    assert emis["invoice_number"] == f"FACT-{_annee()}-002"
 
 
 @pytest.mark.asyncio

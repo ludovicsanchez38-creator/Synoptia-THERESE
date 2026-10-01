@@ -5,6 +5,10 @@
 
 ---
 
+## Session du 1er octobre 2026 : décisions du cycle 15
+
+La reprise, les corrections et leurs preuves sont consignées dans le [suivi du cycle 15](SUIVI-CYCLE15-CODEX-2026-09-30.md). Les décisions déléguées par Ludo et le cadrage de rectification d’un avoir sont dans le [document de décision](plans/2026-10-01-decisions-et-cadrage-cycle15.md). Le [changelog non publié](CHANGELOG.md) résume les changements destinés aux utilisateurs.
+
 ## Session 21 janvier 2026 - MVP Chat (v1.0)
 
 ### Frontend Tauri (src/frontend/)

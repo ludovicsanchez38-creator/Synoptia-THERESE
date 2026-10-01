@@ -68,7 +68,7 @@ async def test_un_avoir_emis_refuse_le_statut_annulee(client: AsyncClient):
     assert reference.status_code == 200, reference.text
     emis = await client.put(f"/api/invoices/{avoir['id']}", json={"status": "sent"})
     assert emis.status_code == 200, emis.text
-    assert emis.json()["invoice_number"].startswith("AV-")
+    assert emis.json()["invoice_number"] == origine.json()["invoice_number"].rsplit("-", 1)[0] + "-002"
 
     refus = await client.put(f"/api/invoices/{avoir['id']}", json={"status": "cancelled"})
     assert refus.status_code == 409, refus.text

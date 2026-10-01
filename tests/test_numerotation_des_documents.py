@@ -103,8 +103,8 @@ class TestLaCourseAuNumero:
         original = module._generate_invoice_number
         course = {"doublee": False}
 
-        async def numero_puis_double(session, document_type="facture"):
-            numero = await original(session, document_type)
+        async def numero_puis_double(session, document_type="facture", **kwargs):
+            numero = await original(session, document_type, **kwargs)
             if not course["doublee"]:
                 course["doublee"] = True
                 await _pose_document(numero, contact_id)
@@ -131,8 +131,8 @@ class TestLaCourseAuNumero:
         original = module._generate_invoice_number
         course = {"doublee": False}
 
-        async def numero_puis_double(session, document_type="facture"):
-            numero = await original(session, document_type)
+        async def numero_puis_double(session, document_type="facture", **kwargs):
+            numero = await original(session, document_type, **kwargs)
             if not course["doublee"]:
                 course["doublee"] = True
                 await _pose_document(numero, contact_id)
@@ -175,11 +175,11 @@ class TestLesAutresCheminsDInsertion:
         original = module._generate_invoice_number
         course = {"doublee": False}
 
-        async def premier_numero_perime(session, document_type="facture"):
+        async def premier_numero_perime(session, document_type="facture", **kwargs):
             if not course["doublee"]:
                 course["doublee"] = True
                 return numero_occupe
-            return await original(session, document_type)
+            return await original(session, document_type, **kwargs)
 
         monkeypatch.setattr(module, "_generate_invoice_number", premier_numero_perime)
         return course

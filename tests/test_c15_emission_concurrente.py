@@ -110,6 +110,7 @@ async def test_deux_emissions_concurrentes_conservent_un_numero_unique(
 
         async def attribuer_avec_temoin(
             session: AsyncSession, piece: Invoice, statut: str | None,
+            *, emission: datetime | None = None,
         ) -> Invoice:
             if piece.id == identifiant:
                 ordre = ordres_sessions[id(session)]
@@ -125,7 +126,7 @@ async def test_deux_emissions_concurrentes_conservent_un_numero_unique(
                     # La seconde requête a lu la pièce, puis l'allocation
                     # attend le commit ET la réponse complète de la première.
                     await asyncio.wait_for(premiere_reponse.wait(), timeout=5)
-            return await attribuer(session, piece, statut)
+            return await attribuer(session, piece, statut, emission=emission)
 
         monkeypatch.setattr(factures, "_get_invoice_with_lines", charger_avec_temoin)
         monkeypatch.setattr(factures, "_attribuer_numero_definitif", attribuer_avec_temoin)

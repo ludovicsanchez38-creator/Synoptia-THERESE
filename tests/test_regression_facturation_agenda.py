@@ -166,8 +166,8 @@ class TestRobustesseDesFactures:
         assert e2.json()["invoice_number"] == f"FACT-{annee}-003"
 
     @pytest.mark.asyncio
-    async def test_le_prefixe_suit_le_type_de_document(self, client):
-        """Le préfixe définitif suit le type. Facture et avoir l'obtiennent à l'émission (B-1615)."""
+    async def test_devis_a_part_facture_et_avoir_partagent_la_serie(self, client):
+        """DEV reste propre au devis ; facture et avoir partagent FACT à l'émission (P160)."""
         contact = await _contact(client)
         facture = await _facture(client, contact, document_type="facture")
         assert facture["invoice_number"].startswith("PROV-")
@@ -178,7 +178,7 @@ class TestRobustesseDesFactures:
         assert avoir["invoice_number"].startswith("PROV-")
         avoir_emis = await client.put(f"/api/invoices/{avoir['id']}", json={"status": "sent"})
         assert avoir_emis.status_code == 200, avoir_emis.text
-        assert avoir_emis.json()["invoice_number"].startswith("AV-")
+        assert avoir_emis.json()["invoice_number"] == emise.json()["invoice_number"].rsplit("-", 1)[0] + "-002"
 
     @pytest.mark.asyncio
     async def test_un_contact_inconnu_ou_un_type_inconnu_sont_refuses(self, client):
