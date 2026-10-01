@@ -1,6 +1,32 @@
 # Reprise du cycle 15 THÉRÈSE
 
-## GO de release et reprise après audit
+## État courant B1767 au HEAD `b73769f9`
+
+Le code mesuré `b73769f9e0d900075365f8cb2a57f18fd175ce98` corrige pypdf,
+avec **33 corrections ciblées : 21 produit et 12 contrôles**. Les portes,
+la carte, la CI 12/12, les exceptions conservées et les deux matrices33
+sont centralisées dans le
+[rapport de release](releases/v0.77.0-alpha.md#mesures-actuelles-sur-b73769f9).
+Le CLI a accepté normalement R1 à **17:50:21 UTC** puis R2 à
+**18:08:30 UTC** le 01/10/2026 : **2/2**, acteurs et lecteurs indépendants.
+La phase réelle au snapshot de lecture est `GAP_SCAN` ; les
+transitions suivantes appartiennent à root. Le message console R1 reste
+une observation acceptée d’origine indéterminée. Tag, assets, publication,
+Discord et installation ne sont pas encore attestés.
+
+Le [GAP final après B1767](../.app-loop/cycles/15/reprise/gap-scan/post-b1767-b73769f9-final-review-20261001T181534.133711Z/rapport-final-apres-cli2sur2.json) conserve
+**137 propositions acceptées, 15 différées et 10 rejetées**, sans annoncer
+leur implémentation exhaustive. P161 livre le cadrage ; son parcours
+financier reste futur. P146 conserve ses limites, P147 la suite de boucle
+et B1558/B1635 leurs statuts différés. Aucun besoin nouveau étayé n’est
+ajouté dans ce périmètre borné après les deux acceptations réelles.
+
+Les liens `.app-loop` désignent des archives locales ignorées par Git,
+non téléversées sur GitHub ; les liens CI publics figurent dans le rapport
+central. Les sections suivantes conservent leurs vrais HEAD historiques.
+Elles ne requalifient pas les anciennes captures comme nouvelles rondes.
+
+## Historique du GO et de la reprise jusqu’à `92f72f3d`
 
 Le GO de Ludo du 01/10 autorise le workflow complet avec changelog. La version
 calculée est `0.77.0-alpha`, selon la règle MINOR pour P160 et P162. Le pré-vol
@@ -32,7 +58,7 @@ actuels sont centralisés dans le
 
 Les deux manifestes critiques **115/115** ont leurs audits valides et le
 CLI canonique accepte les deux rondes indépendantes : **2/2**, à 15:34:47
-puis 15:56:49 UTC le 01/10. [Preuves et limites des deux rondes](releases/v0.77.0-alpha.md#deux-rondes-finales-sur-92f72f3d).
+puis 15:56:49 UTC le 01/10. [Preuves et limites des deux rondes](releases/v0.77.0-alpha.md#deux-rondes-historiques-sur-92f72f3d).
 Les tests et captures portent le vrai HEAD de code 92f72f3d ; un futur commit
 limité aux documents n’est pas présenté comme nouvelle exécution. Aucun tag, build de release, asset
 0.77.0, publication, landing/updater, message Discord, installation ou
@@ -41,7 +67,7 @@ historiques ; elles ne qualifient pas le nouveau code. Leurs mentions
 « courant », « final » ou « non autorisé » décrivent l'état ancien avant
 l'audit et le GO de release, pas celui de la préparation présente.
 
-## GAP_SCAN courant borné
+## GAP_SCAN borné avant le rouge B1767
 
 Le [rapport après les correctifs 115](../.app-loop/cycles/15/reprise/gap-scan/post-correctifs115-release-92f72f3d-20261001T154919Z/rapport-final-apres-cli2sur2.json)
 relit le registre courant et les besoins déjà dédupliqués. Aucun engagement

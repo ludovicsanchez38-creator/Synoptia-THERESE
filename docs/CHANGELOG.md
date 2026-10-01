@@ -19,11 +19,25 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 - Devis et factures : signale les colonnes à gauche ou à droite avant le tableau, selon le défilement. La région est accessible au clavier et conserve les montants/actions collés au bord. L’indice disparaît quand tout tient ou que la liste est vide.
 - Facturation simultanée : la suppression ne peut plus effacer une pièce devenue émise ; une double conversion du même devis ne crée qu’un brouillon. Une base occupée renvoie une invitation à réessayer.
 - Échéance des factures converties : synchronise la date auto-générée reconnue dans les mentions avec l’échéance du brouillon et sa première émission, sans modifier les autres conditions de paiement. Les pièces émises restent figées et les anciens brouillons déjà désynchronisés ne sont pas réparés automatiquement.
-- Dépendances : met à jour urllib3 et oauthlib pour quatre avis de sécurité. Deux avis de la pile d’embeddings restent des exceptions bornées et une dette documentée dans [la décision de sécurité](SECURITE-DEPENDANCES-CYCLE15.md).
-- Validation : corrige les oracles de réserve du composeur et de visibilité verticale du Pipeline ; regroupe le DDL SQLite des fixtures dans une transaction réelle. Les suites principale et autonome Windows ont réussi sur `92f72f3d`.
+- Dépendances : relève pypdf à 6.19.0 pour huit avis signalés par l’audit de main ; l’audit ciblé et 74 tests PDF passent, dont sept cas du lecteur produit. Met aussi à jour urllib3 et oauthlib pour les quatre avis initiaux. Deux avis de la pile d’embeddings restent des exceptions bornées et une dette documentée dans [la décision de sécurité](SECURITE-DEPENDANCES-CYCLE15.md).
+- Validation : corrige les oracles de réserve du composeur et de visibilité verticale du Pipeline ; regroupe le DDL SQLite des fixtures dans une transaction réelle. Les suites principale et autonome Windows de la CI ont réussi sur `b73769f9`.
 - Contrôles : renforce le confinement réseau et le profil jetable des recettes hors ligne. Les témoins d’annulation attendent le début réel du flux et terminent leurs tâches même après une assertion en échec. Les tests de date couvrent le changement de jour local à horloge fixe. L’instrument écran exclut aussi les boutons « Générer » avec leurs accents. Les portes en copies exactes conservent un index Git isolé ; l’assemblage des preuves est qualifié par sabotage et restauration. La cartographie traite les liens symboliques de dossiers sans les lire comme des fichiers.
 
-Le cycle comprend **32 corrections ciblées : 21 sur le produit et 11 sur les contrôles**, ainsi que les évolutions P160 et P162. Sur la source `92f72f3d`, **7 747 cas unitaires distincts réussissent** (4 315 backend + 3 432 frontend), avec quatre skips backend. Les trois workflows CI ont réussi, dont les deux suites Windows. Mypy respecte une baseline de 937 erreurs par nombre ; cela ne signifie pas un typage intégral. Les suites ciblées et les rejeux ne sont pas additionnés. Les anciennes rondes sur `d4f19d74` sont historiques ; deux nouvelles rondes indépendantes sont acceptées par le CLI canonique (2/2), chacune avec un manifeste critique 115/115 audité. Les gestes refusés ou exclus ne deviennent pas des réussites et P146 n’est pas annoncé comme recette exhaustive. P161 est un cadrage de rectification d’un avoir, avec le parcours financier encore à développer. La section reste **non publiée**. Les états, preuves et limites font foi dans le [rapport préparatoire v0.77.0-alpha](releases/v0.77.0-alpha.md), avec le détail dans la [reprise du cycle 15](SUIVI-CYCLE15-CODEX-2026-09-30.md).
+Le cycle comprend **33 corrections ciblées : 21 produit et 12 contrôles**,
+ainsi que les évolutions P160 et P162. Sur la source `b73769f9`,
+**7 754 cas unitaires distincts réussissent** (4 322 backend + 3 432 frontend),
+avec quatre skips backend. Les trois workflows CI réussissent, douze jobs,
+dont les suites Windows. Mypy conserve une baseline de 937 erreurs par
+nombre ; ce résultat ne signifie pas un typage intégral. Suites ciblées,
+rejeux et assertions UI ne s’ajoutent pas au total. Les deux nouvelles
+rondes indépendantes sont acceptées par le CLI (2/2), chacune avec un
+manifeste critique115 audité et une matrice33 qualifiée. Les anciens plateaux restent historiques. Les refus
+et exclusions ne deviennent pas des réussites ; P146 n’est pas une recette
+exhaustive et P161 reste un cadrage, avec le parcours financier à développer.
+Les deux exceptions modèles et les avis ignorés restent une dette.
+La section est **non publiée**. Les preuves actuelles et portes restantes
+sont centralisées dans le [rapport de release](releases/v0.77.0-alpha.md#mesures-actuelles-sur-b73769f9),
+avec le [suivi du cycle](SUIVI-CYCLE15-CODEX-2026-09-30.md).
 
 ## [v0.67.0-alpha] - 5 septembre 2026 - 194 correctifs du cycle 3 de la boucle
 

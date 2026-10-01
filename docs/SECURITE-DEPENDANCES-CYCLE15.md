@@ -1,11 +1,79 @@
 # Dépendances du cycle 15 : décision de release
 
 Décision technique de Codex, dans le périmètre de release délégué par Ludo
-le 01/10/2026. Cette décision traite les six nouveaux avis du gate Python.
+le 01/10/2026. Cette décision traite les six avis initiaux du gate Python,
+puis les huit avis pypdf apparus dans l’audit de main.
 Elle ne constitue pas un verdict de sécurité général ni une correction de
 tous les avis historiques déjà documentés dans la CI.
 
-## Quatre avis traités par mise à jour
+## B1767 : huit avis pypdf et contrôle du lecteur
+
+Les liens `.app-loop` ci-dessous désignent des archives locales ignorées par Git,
+non téléversées sur GitHub. Le rapport de release porte aussi les liens publics CI.
+
+Après l’intégration de la PR98 sur `main` `39ac49bd`, l’audit Python
+échoue sur huit avis de pypdf 6.16.2. Les onze autres jobs des trois workflows CI réussissent.
+Le [constat CI final](../.app-loop/cycles/15/reprise/release-go/ci-main-final-39ac49bd-20261001T163653Z/index.json) conserve les trois workflows et leurs
+vrais SHA. Les portes vertes et le plateau 2/2 sur `92f72f3d` deviennent
+historiques ; le compteur de nouvelles rondes est remis à zéro.
+
+Les [sources primaires et leur chronologie](../.app-loop/cycles/15/reprise/release-go/pypdf-security/avis.md) indiquent
+6.19.0 comme maximum des premières versions corrigées des huit avis.
+L’identité des sources entre les deux CI et leurs dates étayent une
+actualisation de la base de vulnérabilités. Cette causalité reste une
+inférence : la réponse réseau utilisée par le premier audit n’a pas été
+capturée. Elle ne traduit pas un nouveau changement applicatif entre ces CI.
+
+La correction sélective relève le minimum à `pypdf>=6.19.0` et verrouille
+pypdf 6.19.0. Aucune version d’un autre paquet n’est changée. Le workflow,
+ses treize arguments d’exception et les versions modèles restent inchangés.
+Aucun des huit avis pypdf n’est ajouté aux exceptions.
+
+L’[audit réel en quatre états](../.app-loop/cycles/15/reprise/release-go/pypdf-b1767/audit-quatre-etats-20261001T164121.103494Z/receipt.json) utilise l’export production
+`uv export --locked --no-hashes --no-dev` dans des copies, avec la garde
+exacte des versions modèles. Les deux gardes sortent zéro :
+
+| État audité | pypdf | Avis non exemptés | Code de sortie |
+| --- | --- | --- | --- |
+| Ancien export | 6.16.2 | 8 | 1 |
+| Nouveau lock exporté | 6.19.0 | 0 | 0 |
+| Sabotage, seul pypdf réintroduit dans l’export copié | 6.16.2 | 8 | 1 |
+| Export restauré exact | 6.19.0 | 0 | 0 |
+
+Les empreintes de pyproject/lock/CI sont conservées pendant ces quatre
+audits. L’export contient 132 dépendances versionnées et une entrée
+éditable non identifiable par pip-audit, explicitement ignorée.
+Les 18 avis ignorés sont les dettes et alias déjà présents, associés aux
+treize arguments inchangés. Zéro avis non exempté ne signifie pas zéro
+risque, ni une inspection du modèle/cache natif ou de l’environnement installé.
+
+La [qualification du lecteur et des PDF](../.app-loop/cycles/15/reprise/release-go/pypdf-b1767/tests-pdf-20261001T164532.712744Z/qualification.json) passe réellement
+74/74 cas, sans échec, erreur ni skip, sous pypdf 6.19.0. Ses sept nouveaux
+cas exercent le parseur produit et `read_file` sur de vrais PDF : ordre
+des pages et accents, flux brut/compressé, borne de 100 pages avec
+troncature signalée, PDF tronqué et périmètre de projet. Ces cas ne
+reproduisent pas les huit CVE et ne qualifient pas un bundle natif.
+
+B1767 est marqué `fixed` par le CLI canonique après ces preuves ciblées.
+Le commit final `b73769f9e0d900075365f8cb2a57f18fd175ce98` porte seulement
+`pyproject.toml`, `uv.lock` et les sept cas de `test_b1767_lecteur_pdf.py`.
+Les versions réellement installées, les 33 cas PDF de la porte complète
+fraîche et le delta B1765 sont liés dans la
+[qualification actuelle B1767](../.app-loop/cycles/15/reprise/transitions/requalification-b1767-r1-b73769f9-final/b1767-qualification.json).
+Les quatre états ciblés restent leurs vrais exports historiques, sans
+réécriture ; les anciennes pages Apple ne sont pas annoncées comme rendus
+nouveaux sous pypdf 6.19.
+
+La [CI actuelle](../.app-loop/cycles/15/reprise/release-go/ci-pr99-all-pass-b73769f9-20261001T173643Z/index.json)
+termine ses douze jobs avec succès. Le premier timeout Rust pendant apt
+et le snapshot initial restent conservés ; ce rejeu ne change pas le code.
+Les deux rondes fraîches sont acceptées par le CLI au même HEAD. Le
+[rapport de release](releases/v0.77.0-alpha.md#mesures-actuelles-sur-b73769f9)
+centralise les portes et les vraies acceptations. Aucun asset publié,
+bundle natif, cache privé ou modèle configurable supplémentaire n’est
+qualifié par ces résultats.
+
+## Quatre avis initiaux traités par mise à jour
 
 - `urllib3` passe de 2.7.0 à 2.8.0. Le correctif éditeur traite
   CVE-2026-97687, CVE-2026-97688 et CVE-2026-97689. Les contraintes requests
