@@ -684,3 +684,36 @@ dernier enfant VISIBLE (le dernier enfant DOM était un wrapper vide).
   `Application shutdown complete.` alors que le parent sortait `-15`.
   Vérifier ensemble réponse HTTP, journal et ports libérés, plutôt que
   d'exiger seulement un code de sortie zéro.
+
+## Cycle 15 : échéance du brouillon converti (B1760, 01/10/2026)
+
+- **Changer `due_date` peut laisser une ancienne date dans les mentions du
+  PDF.** La conversion génère une première ligne de date, puis la première
+  émission décale l'échéance pour conserver le délai convenu. Le rouge HTTP
+  et PDF a montré deux dates différentes sur la même facture.
+- **Synchroniser seulement la ligne auto-générée reconnue.** À l'édition
+  d'échéance d'un brouillon et à sa première émission, remplacer la première
+  ligne exactement égale à l'ancienne date. Conserver le suffixe des mentions,
+  le délai, le moyen de paiement, le taux et la devise, sans régénérer tout
+  le texte. Les pièces déjà émises restent immuables. Les brouillons anciens
+  déjà désynchronisés ne portent pas de provenance permettant leur réparation
+  automatique avec cette règle.
+- **Vérifier les deux échéances du PDF réel.** Une assertion sur le seul
+  champ de l'API manquerait la contradiction entre l'en-tête et les conditions
+  imprimées. Couvrir l'émission par statut et par paiement, une date éditée,
+  la relecture persistée et les mentions personnalisées.
+
+## Signature du bundle macOS complet (01/10/2026)
+
+- **Une signature du sidecar et du binaire Rust ne scelle pas le bundle.**
+  Sur l'app 0.76.1 installée, `codesign` lit une signature issue du linker,
+  mais `Contents/_CodeSignature/CodeResources` est absent et le contrôle
+  strict du bundle échoue. Une copie du même bundle signée ad hoc passe,
+  le retrait du sceau la fait rougir, sa restauration la fait repasser.
+- **Déclarer la signature de bundle dans Tauri et contrôler l'artefact.**
+  Le réglage `bundle.macOS.signingIdentity: "-"` suit la
+  [documentation Tauri](https://v2.tauri.app/distribute/sign/macos/#ad-hoc-signing).
+  La CI doit exiger le sceau puis `codesign --verify --deep --strict` après
+  bundling, et la release rester en draft si ce gate échoue. Refaire ce
+  contrôle sur l'app téléchargée avant installation. La signature ad hoc
+  ne remplace ni un certificat Apple ni la notarisation.

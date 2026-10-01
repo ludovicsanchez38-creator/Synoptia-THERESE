@@ -92,6 +92,11 @@ Chat multi-LLM, Memoire (contacts/projets/recherche semantique), Skills Office (
 
 ## Dette technique
 
+> **Cycle 15, v0.77.0-alpha en préparation après GO** : consulter
+> `docs/releases/v0.77.0-alpha.md` pour les portes actuelles, la correction
+> B1760 et les limites. P161 reste un cadrage ; B1558/B1635 et les 295 fiches
+> différées demeurent dans le suivi canonique du cycle 15.
+
 > **Cycle 14 fusionné par la PR #97, release 0.76.1-alpha en préparation** :
 > consulter `docs/releases/v0.76.1-alpha.md` pour les contrôles et les
 > réserves à traiter, notamment les préférences OAuth accessibles par la route

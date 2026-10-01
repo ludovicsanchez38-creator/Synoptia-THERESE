@@ -48,6 +48,7 @@
     "resources": [],
     "macOS": {
       "minimumSystemVersion": "10.15",
+      "signingIdentity": "-",
       "frameworks": [],
       "entitlements": null,
       "exceptionDomain": ""

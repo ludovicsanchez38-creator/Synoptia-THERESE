@@ -347,6 +347,20 @@ async def _attribuer_numero_definitif(
     )
 
 
+def _poser_echeance(invoice: Invoice, echeance: datetime) -> None:
+    """B-1760 : garder la date auto-générée cohérente avec l'échéance.
+
+    Seule la première ligne reconnue est remplacée. Les conditions négociées
+    et les mentions personnalisées restent intactes, sans recalcul du taux.
+    """
+    mentions = invoice.legal_mentions
+    ancienne_ligne = f"Date d'échéance : {invoice.due_date:%d/%m/%Y}."
+    if mentions and (mentions == ancienne_ligne or mentions.startswith(ancienne_ligne + "\n")):
+        nouvelle_ligne = f"Date d'échéance : {echeance:%d/%m/%Y}."
+        invoice.legal_mentions = nouvelle_ligne + mentions[len(ancienne_ligne):]
+    invoice.due_date = echeance
+
+
 def _poser_dates_demission(invoice: Invoice, emission: datetime) -> None:
     """La date imprimée est celle de la délivrance (BOFiP § 140).
 
@@ -367,7 +381,7 @@ def _poser_dates_demission(invoice: Invoice, emission: datetime) -> None:
         echeance = echeance.replace(tzinfo=UTC)
     else:
         echeance = echeance.astimezone(UTC)
-    invoice.due_date = echeance + timedelta(days=jours)
+    _poser_echeance(invoice, echeance + timedelta(days=jours))
 
 
 def _premiere_emission(invoice: Invoice, nouveau_statut: str | None) -> bool:
@@ -871,7 +885,7 @@ async def update_invoice(
         invoice.issue_date = _date_du_client(request.issue_date, "Date d'émission")
 
     if request.due_date is not None:
-        invoice.due_date = _date_du_client(request.due_date, "Date d'échéance")
+        _poser_echeance(invoice, _date_du_client(request.due_date, "Date d'échéance"))
 
     if request.status is not None:
         _dater_le_premier_envoi(invoice, request.status, emission=instant_emission)

@@ -1,5 +1,25 @@
 # Reprise du cycle 15 THÉRÈSE
 
+## GO de release et reprise après audit
+
+Le GO de Ludo du 01/10 autorise le workflow complet avec changelog. La version
+calculée est `0.77.0-alpha`, selon la règle MINOR pour P160 et P162. Le pré-vol
+vérifie main `887669c3`, la branche `b690ca7b`, le tag libre et les accès GitHub
+et VPS. Le passage normal HUMAN_GATE vers RELEASE est suivi d'un retour
+REPRODUCE puis REPAIR après le rouge produit B1760, sans transition forcée.
+
+La conversion au 01/10 puis émission au 08/10 donne deux échéances dans un
+PDF réel : 07/11 en en-tête, 31/10 dans les conditions. Les cinq HTTP rendent
+200 ; le témoin JUnit donne un échec d'assertion, aucune erreur ni skip. La
+preuve est conservée dans
+`.app-loop/cycles/15/reprise/release-go/echeance-conversion/rouge-corrige-20261001T103905.120517Z/manifest.json`.
+La première tentative, avec erreur de harnais, reste distincte et exclue.
+
+Le correctif B1760 est en validation. Le compteur plateau est remis à zéro.
+Les sections et preuves d4 ci-dessous sont historiques ; elles ne qualifient
+pas le nouveau code. L'état courant des portes de release est porté par le
+[rapport v0.77.0-alpha](releases/v0.77.0-alpha.md).
+
 ## État vérifié après les décisions déléguées
 
 La source finale des lots P160/P162 est `d4f19d7478dabb58ce640e701725367df92037bc`, poussée sur `origin/codex/cycle-15`. Les **25 corrections ciblées couvrent 18 défauts produit et sept défauts de contrôle**. P160 et P162 sont implémentées ; P161 est livrée comme cadrage documentaire, avec le parcours financier encore à développer. Le CLI canonique accepte **deux nouvelles rondes indépendantes : 2/2**, après B1759. La phase courante est `HUMAN_GATE`, sans nouvelle proposition en attente de décision. La publication d’une nouvelle version reste soumise au périmètre du skill `release-therese`. Les anciennes rondes restent historiques et le passage préliminaire ayant révélé B1759 est exclu du plateau.

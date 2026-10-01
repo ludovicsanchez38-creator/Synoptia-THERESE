@@ -303,6 +303,15 @@ jobs:
           # casser les builds locaux qui n'ont pas la cle de signature.
           args: ${{ runner.os == 'Linux' && '--bundles deb --config src-tauri/tauri.linux.conf.json --config src-tauri/updater-ci.conf.json' || '--config src-tauri/updater-ci.conf.json' }}
 
+      # La signature du seul sidecar ne scelle pas le bundle .app complet.
+      # Les assets restent en draft si cette vérification native échoue.
+      - name: Vérifier la signature du bundle macOS complet
+        if: runner.os == 'macOS'
+        run: |
+          APP="src/frontend/src-tauri/target/release/bundle/macos/THERESE.app"
+          test -f "$APP/Contents/_CodeSignature/CodeResources"
+          codesign --verify --deep --strict --verbose=2 "$APP"
+
       # P-099 (décision de Ludo, 24/09/2026) : recette du paquet .deb PRODUIT,
       # porte de la release. B-948 ne se voyait qu'en ouvrant le paquet publié.
       # Le script extrait le .deb, le rend non inscriptible comme /usr/lib,
