@@ -182,6 +182,11 @@ jobs:
 
       - name: Signer le sidecar (macOS ad-hoc)
         if: runner.os == 'macOS'
+        # tauri.conf.json garde hardenedRuntime=true avec l'identité « - » :
+        # les bibliothèques du onefile PyInstaller sont ad hoc, sans Team ID.
+        # Entitlements.plist exempte uniquement leur validation. Tauri resigne
+        # sidecar ET GUI avec ce plist commun, sans autre permission ajoutée.
+        # Une future Developer ID devra requalifier les identités des bibliothèques.
         run: |
           codesign --force --deep -s - src/frontend/src-tauri/binaries/backend-${{ matrix.platform.target }}
           echo "Sidecar signé (ad-hoc) pour macOS"
@@ -311,6 +316,25 @@ jobs:
           APP="src/frontend/src-tauri/target/release/bundle/macos/THERESE.app"
           test -f "$APP/Contents/_CodeSignature/CodeResources"
           codesign --verify --deep --strict --verbose=2 "$APP"
+
+      # Le sceau statique ne charge pas le Python extrait par le onefile.
+      # Exécuter le sidecar FINAL signé, jamais celui d'avant tauri-action.
+      - name: Recette du sidecar signé dans le bundle macOS
+        if: runner.os == 'macOS'
+        timeout-minutes: 6
+        run: |
+          VERSION="$(python3 -c "import json; print(json.load(open('src/frontend/src-tauri/tauri.conf.json'))['version'])")"
+          python3 scripts/recette-macos.py \
+            src/frontend/src-tauri/target/release/bundle/macos/THERESE.app \
+            "$VERSION" --output "$RUNNER_TEMP/recette-macos" --timeout 180
+
+      - name: Conserver les preuves de la recette macOS
+        if: always() && runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: recette-macos-${{ github.run_id }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/recette-macos/
+          if-no-files-found: warn
 
       # P-099 (décision de Ludo, 24/09/2026) : recette du paquet .deb PRODUIT,
       # porte de la release. B-948 ne se voyait qu'en ouvrant le paquet publié.
