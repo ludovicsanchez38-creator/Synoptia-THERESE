@@ -7,6 +7,19 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ---
 
+## [Non publié] - Cycle 15
+
+- Accueil : réserve une zone réelle au composeur et à l’indice « Voir la suite », suit leur hauteur et rend le bas des cartes lisible après défilement, même dans une petite fenêtre.
+- CRM : l’ouverture d’une fiche au clavier transmet le focus à la fiche après l’animation, sans reprendre un focus déplacé par l’utilisateur.
+- Pipeline : indique les étapes hors cadre et permet de les atteindre au clavier, avec conservation du focus au bord. Les boutons placés avant les cartes gardent le haut des colonnes et les premières cartes à l’écran dans un pipeline dense.
+- Conversations : rend les titres longs lisibles au survol et au focus. Le réglage du nombre de messages historiques est appliqué ; le bilan des messages historiques effectivement transmis est affiché et conservé au rechargement. La coupe du texte courant est signalée.
+- Confidentialité : une réponse non diffusée n’est plus conservée après suppression de sa conversation. Les dossiers sensibles restent protégés quand le chemin du dossier personnel contient un lien symbolique.
+- Facturation : attribue le numéro définitif à la première émission et préserve les numéros et dates des pièces déjà émises. À sa première émission, un avoir ordinaire requiert une référence à une facture déjà émise. Les brouillons annulés restent modifiables ; deux émissions concurrentes conservent un numéro unique.
+- Facturation simultanée : la suppression ne peut plus effacer une pièce devenue émise ; une double conversion du même devis ne crée qu’un brouillon. Une base occupée renvoie une invitation à réessayer.
+- Contrôles : renforce le confinement réseau et le profil jetable des recettes hors ligne. Les témoins d’annulation attendent le début réel du flux et terminent leurs tâches même après une assertion en échec. Les tests de date couvrent le changement de jour local à horloge fixe. L’instrument écran exclut aussi les boutons « Générer » avec leurs accents.
+
+Les correctifs ont passé deux rondes indépendantes sur la branche `codex/cycle-15`. La règle des prochaines séries factures/avoirs attend une décision humaine. Suivi et limites : [reprise du cycle 15](SUIVI-CYCLE15-CODEX-2026-09-30.md).
+
 ## [v0.67.0-alpha] - 5 septembre 2026 - 194 correctifs du cycle 3 de la boucle
 
 Troisième cycle de la boucle autonome d'amélioration depuis la 0.66.1 : chaque défaut reproduit puis fermé avec son test (289 tests ajoutés). Détail par thème dans le changelog Discord et `docs/releases/v0.67.0-alpha.md`.

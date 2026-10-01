@@ -1,7 +1,7 @@
 # Couverture et limites de la carte
 
 - Couverture validee : 100.0 %
-- Fichiers attendus : 2081
+- Fichiers attendus : 2107
 - Validation `passed` : True
 
 ## Fichiers non lus (0)
@@ -10,7 +10,7 @@
 ## Doubles lectures manquantes (0)
 
 
-## Invariants divergents, a arbitrer (114)
+## Invariants divergents, a arbitrer (111)
 
 - scripts/check-app-version-sync.py: aucun mot commun entre les invariants de codex-map-challenge-a:c8-challenge-a-wp-046-b42ae547-efdd-4832-ada6-26a38fc715ed, orchestrateur:wp046-orchestrateur
 - src/backend/app/data/capacites.json: aucun mot commun entre les invariants de codex-challenge-b:c8-challenge-b-wp-047-20260912, lecteur-D04:c4-D04-WP-047, wp047-lecteur1:wp047-lecteur1
@@ -59,7 +59,6 @@
 - src/frontend/src/components/prototype/MeetingConversationCard.test.tsx: aucun mot commun entre les invariants de codex-map-c-challenge:c8-challenge-c-wp-066-376f2b7725b9, lecteur-D03:c3-D03-WP-066, lecteur-cartographie-wp066:wp066-lecteur1
 - src/frontend/src/components/prototype/PrototypeConversationDrawer.da.test.tsx: aucun mot commun entre les invariants de claude-map-t4:c9t-t4-wp-diff-030-b3daeb4f-73dd-4ca5-9d3c-32387be660cf, codex-map-c:cycle8-wp-diff-030-d9ea9e37-747f-47e1-8914-7619d8f5abe8
 - src/frontend/src/components/prototype/VoiceWorkspaceCanvas.test.tsx: aucun mot commun entre les invariants de codex-challenge-b:c8-challenge-b-wp-067-20260912, lecteur-D03:c6-D03-WP-067, lecteur-R16:c3-R16-WP-067
-- src/frontend/src/components/prototype/prototypeReadModels.test.ts: aucun mot commun entre les invariants de codex-map-challenge-a:c8-challenge-a-wp-067-e1d4184b-6ee1-48a2-822a-69101c73c02c, lecteur-D03:c3-D03-WP-067, lecteur-R16:c3-R16-WP-067
 - src/frontend/src/components/rfc/RFCChat.tsx: aucun mot commun entre les invariants de codex-map-b:c8-codex-b-wp-067-20260912, codex-map-c-challenge:c8-challenge-c-wp-067-f4ac35aa54d8
 - src/frontend/src/components/settings/LLMTab.qwen.test.tsx: aucun mot commun entre les invariants de claude-map-d2:c9-d2-wp-068-c292cf7b-fd37-490b-b642-254f9fe2dbf7, codex-map-b:c8-codex-b-wp-068-20260912
 - src/frontend/src/components/tasks/TaskKanban.da.test.tsx: aucun mot commun entre les invariants de claude-map-d4:c9-d4-wp-diff-030-8a8c86bc-34ff-4196-b1dd-392d45a0c284, codex-map-c:cycle8-wp-diff-030-d9ea9e37-747f-47e1-8914-7619d8f5abe8
@@ -118,9 +117,7 @@
 - tests/test_plafonds_silencieux.py: aucun mot commun entre les invariants de codex-challenge-b:c8-challenge-b-wp-081-20260912, lecteur-wp081:wp081-lecteur1
 - tests/test_pluriel_fournisseur.py: aucun mot commun entre les invariants de codex-map-c-challenge:c8-challenge-c-wp-081-e874b2390071, lecteur-D04:c6-D04-WP-081, lecteur-wp081:wp081-lecteur1
 - tests/test_providers_asie.py: aucun mot commun entre les invariants de codex-challenge-b:c8-challenge-b-wp-081-20260912, lecteur-D08:c2-D08-WP-081, lecteur-wp081:wp081-lecteur1
-- tests/test_regression_facturation_agenda.py: aucun mot commun entre les invariants de codex-map-c-challenge:c8-challenge-c-wp-diff-027-8ddee3187c04, lecteur-R04:c6-R04-WP-DIFF-027
 - tests/test_routers_dashboard.py: aucun mot commun entre les invariants de codex-challenge-b:c8-challenge-b-wp-083-20260912, lecteur-R09:c6-R09-WP-083
-- tests/test_routers_invoices.py: aucun mot commun entre les invariants de lecteur-D04:c3-D04-WP-C-029, lecteur-R17:c3-R17-WP-C-029
 - tests/test_routers_mcp.py: aucun mot commun entre les invariants de codex-map-c-challenge:c8-challenge-c-wp-083-10f768d16f56, lecteur-D04:c2-D04-WP-083, lecteur-cartographie:wp083-lecteur1
 - tests/test_services_web_search.py: aucun mot commun entre les invariants de lecteur-D03:c6-D03-WP-084, lecteur-M15:c2-M15-WP-084
 - tests/test_slash_commands.py: aucun mot commun entre les invariants de codex-challenge-b:c8-challenge-b-wp-084-20260912, lecteur-D09:c2-D09-WP-084, wp084-lecteur1:wp084-lecteur1
@@ -130,7 +127,7 @@
 ## Disparus depuis l'inventaire (0)
 
 
-## Lus sur une version anterieure (741)
+## Lus sur une version anterieure (752)
 
 - .github/workflows/ci.yml
 - .github/workflows/release.yml
@@ -154,6 +151,7 @@
 - src/backend/app/models/schemas_documents.py
 - src/backend/app/models/schemas_email.py
 - src/backend/app/models/schemas_escalation.py
+- src/backend/app/models/schemas_personalisation.py
 - src/backend/app/routers/__init__.py
 - src/backend/app/routers/actions.py
 - src/backend/app/routers/agents.py
@@ -373,6 +371,7 @@
 - src/frontend/src/components/crm/ListeDesPrestations.test.tsx
 - src/frontend/src/components/crm/ListeDesPrestations.tsx
 - src/frontend/src/components/crm/PipelineView.da.test.tsx
+- src/frontend/src/components/crm/PipelineView.debordement.p157.test.tsx
 - src/frontend/src/components/crm/PipelineView.tsx
 - src/frontend/src/components/crm/pipelineEtapes.ts
 - src/frontend/src/components/documents/DocumentCreateModal.tsx
@@ -425,6 +424,7 @@
 - src/frontend/src/components/home/composantsAtteignables.test.ts
 - src/frontend/src/components/home/index.ts
 - src/frontend/src/components/invoices/InvoiceForm.da.test.tsx
+- src/frontend/src/components/invoices/InvoiceForm.datePaiement.p155.test.tsx
 - src/frontend/src/components/invoices/InvoiceForm.echap.test.tsx
 - src/frontend/src/components/invoices/InvoiceForm.emiseFigee.b1614.test.tsx
 - src/frontend/src/components/invoices/InvoiceForm.factureDOrigine.p154.test.tsx
@@ -614,6 +614,7 @@
 - src/frontend/src/hooks/useAbandonDeSaisie.ts
 - src/frontend/src/hooks/useAutosave.test.ts
 - src/frontend/src/hooks/useAutosave.ts
+- src/frontend/src/hooks/useConversationSync.ts
 - src/frontend/src/hooks/useDemoMask.ts
 - src/frontend/src/hooks/useDialogFocusTrap.ts
 - src/frontend/src/hooks/useKeyboardShortcuts.ts
@@ -703,8 +704,10 @@
 - src/frontend/src/test/setup.ts
 - src/frontend/vite.config.ts
 - tests/conftest.py
+- tests/couverture/backend_offline.py
 - tests/couverture/couverture-ecran.mjs
 - tests/couverture/couverture-ecran.test.mjs
+- tests/couverture/test_backend_offline.py
 - tests/e2e/README.md
 - tests/e2e/run-e2e-backend.sh
 - tests/e2e/stories/api-endpoints.spec.ts
@@ -818,9 +821,11 @@
 - tests/test_modeles_catalogue.py
 - tests/test_modeles_disponibles.py
 - tests/test_modeles_sync.py
+- tests/test_module_devis.py
 - tests/test_numerotation_des_documents.py
 - tests/test_p100_arguments_commandes_agents.py
 - tests/test_p103_fournisseur_du_modele_agent.py
+- tests/test_p154_avoir_et_sa_facture.py
 - tests/test_plafond_tests_textuels.py
 - tests/test_pluriel_agenda_chat.py
 - tests/test_pluriel_contacts.py
@@ -830,10 +835,13 @@
 - tests/test_project_sync_service.py
 - tests/test_provider_tools.py
 - tests/test_provider_usage.py
+- tests/test_qdrant_shutdown_skip_services.py
 - tests/test_recherche_agents_dette_c12.py
 - tests/test_recherche_agents_multiplateforme.py
 - tests/test_recherche_web_autorisation.py
 - tests/test_regression.py
+- tests/test_regression_facturation_agenda.py
+- tests/test_regression_fournisseurs.py
 - tests/test_regression_socle.py
 - tests/test_relance_une_seule_definition.py
 - tests/test_rgpd_purge_adresse_et_nom_c9.py
