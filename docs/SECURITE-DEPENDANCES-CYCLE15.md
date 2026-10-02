@@ -173,5 +173,6 @@ accepte sa restauration. Les avis ignorés restent des dettes, y compris les
 deux nouveaux avis modèles. Ce résultat local ne remplace pas la CI finale.
 
 Les index liés donnent les empreintes et les limites de chaque lecture.
-Les portes finales du [rapport de release](releases/v0.77.0-alpha.md)
-porteront les verdicts réellement exécutés.
+Les portes actuelles sont centralisées dans le
+[rapport canonique 0.77.1](releases/v0.77.1-alpha.md). Les mesures et liens
+antérieurs de cette décision conservent leurs HEAD historiques.

@@ -736,3 +736,40 @@ sabotage pertinent enlève désormais la marge extérieure.
   décision, les avis exacts, le chemin transitif du modèle d'embeddings et les
   conditions de réexamen du cycle 15 sont centralisés dans
   [la décision de sécurité](SECURITE-DEPENDANCES-CYCLE15.md).
+
+## QA native macOS : fermer sans réobserver l’application (02/10/2026)
+
+- **Une observation après Quit peut être suivie d’une nouvelle instance.**
+  Lors du contrôle 0.77.1, un nouveau GUI et son sidecar ont été observés après
+  Quit et une observation d’application. Ce sidecar a ouvert le profil réel.
+  La cause de la relance n’est pas isolée : ne pas attribuer automatiquement
+  cet effet à Cua. La base et la clé étaient identiques à la baseline, mais
+  des fichiers de runtime et des journaux avaient changé. Le premier contrôle
+  a donc été conservé comme incident, sans qualification d’intégrité intacte.
+  Après le seul geste Quit normal, vérifier les PID possédés avec `ps` et
+  l’absence du listener avec `lsof`, sans nouvel accès Cua/AX à l’application.
+- **HOME privé ne suffit pas à isoler WebKit et les préférences natives.**
+  Les contrôles suivants ont utilisé un profil neuf, un réseau confiné et
+  une transaction récupérable sur 13 chemins de stores et deux domaines
+  CFPreferences, chacun dans les portées any-host et current-host. Restaurer après fermeture et disparition des processus,
+  puis comparer réellement profil, bundle, stores et préférences à leurs
+  baselines. Conserver les réserves de métadonnées éventuelles ; le confinement
+  réseau ne démontre pas à lui seul l’absence de mutations locales.
+- **L’original d’une capture outil est une preuve distincte de sa conversion.**
+  Extraire le JPEG du bloc base64 original, sans réencodage ni recomposition ;
+  conserver octets, empreinte, sortie outil/JSONL et reçu d’extraction. Un autre
+  lecteur inspecte ce JPEG avec `view_image`. Distinguer l’acteur qui lance et
+  restaure de celui qui capture et clique Quit ; n’attribuer ni Cua ni lecture
+  visuelle à un agent qui a seulement exécuté les contrôles moteur.
+- **Une référence hors dépôt ne se copie pas par résolution relative générique.**
+  Les reçus CFPreferences peuvent pointer vers une archive privée extérieure
+  au dépôt. Une résolution systématique depuis la racine du repo a bloqué le
+  collecteur. Conserver le chemin d’origine et son SHA, archiver les octets
+  exacts sous une destination nouvelle, vérifier la correspondance et nommer
+  la copie de collecte. Ne pas fabriquer une validation de préférence ni
+  assouplir le gate pour résoudre une erreur de transport de preuve.
+
+Ces observations portent sur les contrôles natifs du cycle 15. Elles ne
+constituent pas une attestation de notarisation, d’updater ni de publication.
+Les reçus détaillés sont centralisés dans le suivi du cycle et ses preuves
+`release-go/native0771-local-20261001T2318`.

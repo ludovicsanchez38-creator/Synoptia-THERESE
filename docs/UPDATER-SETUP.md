@@ -1,7 +1,10 @@
 # Mises à jour automatiques (updater Tauri) — US-007
 
-THÉRÈSE se met à jour toute seule via le plugin updater de Tauri 2, **sans
-certificat de signature de code** (Apple Developer ID / Windows Authenticode).
+THÉRÈSE utilise le plugin updater de Tauri 2 et une clé minisign dédiée,
+**sans certificat de signature de code** (Apple Developer ID / Windows Authenticode).
+Le support du format et les signatures ne constituent pas la preuve d'un parcours
+N vers N+1 effectivement exécuté. Les limites et verdicts courants sont centralisés
+dans le [rapport canonique 0.77.1](releases/v0.77.1-alpha.md).
 Les artefacts de mise à jour sont signés par une clé **minisign** dédiée
 (différente d'un certificat d'éditeur : elle prouve juste que la mise à jour
 vient bien de nous, elle ne supprime pas l'avertissement Gatekeeper / SmartScreen
@@ -79,12 +82,15 @@ gh secret set TAURI_SIGNING_PRIVATE_KEY_PASSWORD \
 
 ## Limites connues (sans certificat de signature de code)
 
-- **macOS** : la mise à jour s'installe, mais l'app reste seulement signée
+- **macOS** : le format de mise à jour est produit, mais le parcours N vers N+1
+  de la release courante n'a pas été exercé. L'app reste seulement signée
   ad-hoc (pas notarisée). Au premier lancement d'une version mise à jour,
   Gatekeeper peut encore demander une confirmation. La notarisation
   (suppression de l'avertissement) nécessite un compte Apple Developer — c'est
   la 2ᵉ moitié d'US-007, volontairement reportée.
-- **Windows** : l'updater NSIS fonctionne. SmartScreen peut encore avertir tant
+- **Windows** : les installateurs MSI/NSIS et leurs signatures updater sont
+  distincts de la validation d'un parcours N vers N+1, non exercé pour la release
+  courante. SmartScreen peut encore avertir tant
   qu'il n'y a pas de certificat Authenticode.
 - **Linux** : le plugin `tauri-plugin-updater 2.10.0` du lock courant prend
   en charge le format `.deb`. Après vérification de la signature, son chemin
@@ -107,7 +113,7 @@ porte la sélection `Installer::Deb`, la validation du format et la demande
 de privilèges pour `dpkg`. Les artefacts précédents sont consultables dans
 [la release v0.76.1-alpha](https://github.com/ludovicsanchez38-creator/Synoptia-THERESE/releases/tag/v0.76.1-alpha).
 Le contrôle des assets courants et ses limites sont centralisés dans le
-[rapport de release](releases/v0.77.0-alpha.md).
+[rapport de release courant](releases/v0.77.1-alpha.md).
 
 ## Test bout-en-bout N → N+1
 

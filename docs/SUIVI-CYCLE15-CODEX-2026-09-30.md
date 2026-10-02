@@ -1,6 +1,38 @@
 # Reprise du cycle 15 THÉRÈSE
 
-## État courant B1767 au HEAD `b73769f9`
+## État courant de 0.77.1
+
+La source native/tag est H `66c0ec5d143aae040c29185c664a1af426bd81e9`.
+Le nouvel ID de release est `401401742`, distinct du candidat 0.77.0 resté privé
+après son échec GUI. Les portes, la CI H, le contrat 116/34, les verdicts natifs,
+les limites et toute la chaîne de publication sont centralisés dans le
+[rapport canonique 0.77.1](releases/v0.77.1-alpha.md).
+
+Les deux nouvelles rondes natives sur H passent. Le CLI les accepte à
+07:22:32 puis 07:41:36 UTC le 02/10/2026, **2/2**, zéro bug actif,
+116/116 transitions et matrices34. La progression normale atteint RELEASE à
+07:43:04 UTC ; le compteur historique de forçages reste 23.
+
+La publication GitHub de `v0.77.1-alpha` est confirmée à 07:59:38 UTC
+le 02/10/2026, relue par GET à 08:00:15 UTC.
+
+La publication GitHub, les trois liens d’installation publics, le site/updater,
+les quatre messages Discord et la mise à jour V4 des mémoires sont vérifiés
+par les reçus du rapport. Les documents finaux restent dans une copie locale.
+
+Au checkpoint de reprise, le dernier état réel du CLI est **RELEASE**, cycle 15,
+plateau **2/2**, compteur historique de forçages **23**. Les passages POST_RELEASE
+et RESTART, l’état prêt pour le cycle 16, le commit documentaire final et sa
+synchronisation ne sont pas encore attestés. Le cycle 16 n’est pas démarré.
+L’agent principal s’est interrompu sur une erreur de capacité du modèle ;
+aucune clôture ni synchronisation n’est déduite des livraisons déjà réussies.
+
+Les sections ci-dessous gardent leurs HEAD et leur statut au moment de leurs
+lectures historiques. Leurs mentions « courant », « final » et « pas attesté »
+ne décrivent pas automatiquement la nouvelle release. Aucun ancien screenshot
+n'est compté comme image nouvelle et aucun ancien plateau n'est accepté une seconde fois.
+
+## État historique B1767 au HEAD `b73769f9`
 
 Le code mesuré `b73769f9e0d900075365f8cb2a57f18fd175ce98` corrige pypdf,
 avec **33 corrections ciblées : 21 produit et 12 contrôles**. Les portes,

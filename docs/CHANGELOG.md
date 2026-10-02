@@ -7,7 +7,7 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ---
 
-## [Non publié] - Cycle 15
+## [v0.77.1-alpha] - 2 octobre 2026 - 34 corrections ciblées du cycle 15
 
 - Accueil : réserve une zone réelle au composeur et à l’indice « Voir la suite », suit leur hauteur et rend le bas des cartes lisible après défilement, même dans une petite fenêtre.
 - CRM : l’ouverture d’une fiche au clavier transmet le focus à la fiche après l’animation, sans reprendre un focus déplacé par l’utilisateur.
@@ -20,24 +20,18 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 - Facturation simultanée : la suppression ne peut plus effacer une pièce devenue émise ; une double conversion du même devis ne crée qu’un brouillon. Une base occupée renvoie une invitation à réessayer.
 - Échéance des factures converties : synchronise la date auto-générée reconnue dans les mentions avec l’échéance du brouillon et sa première émission, sans modifier les autres conditions de paiement. Les pièces émises restent figées et les anciens brouillons déjà désynchronisés ne sont pas réparés automatiquement.
 - Dépendances : relève pypdf à 6.19.0 pour huit avis signalés par l’audit de main ; l’audit ciblé et 74 tests PDF passent, dont sept cas du lecteur produit. Met aussi à jour urllib3 et oauthlib pour les quatre avis initiaux. Deux avis de la pile d’embeddings restent des exceptions bornées et une dette documentée dans [la décision de sécurité](SECURITE-DEPENDANCES-CYCLE15.md).
-- Validation : corrige les oracles de réserve du composeur et de visibilité verticale du Pipeline ; regroupe le DDL SQLite des fixtures dans une transaction réelle. Les suites principale et autonome Windows de la CI ont réussi sur `b73769f9`.
+- Validation : corrige les oracles de réserve du composeur et de visibilité verticale du Pipeline ; regroupe le DDL SQLite des fixtures dans une transaction réelle. Les suites principale et autonome Windows de la CI ont réussi sur H `66c0ec5d` ; les résultats antérieurs gardent leur HEAD historique.
 - Contrôles : renforce le confinement réseau et le profil jetable des recettes hors ligne. Les témoins d’annulation attendent le début réel du flux et terminent leurs tâches même après une assertion en échec. Les tests de date couvrent le changement de jour local à horloge fixe. L’instrument écran exclut aussi les boutons « Générer » avec leurs accents. Les portes en copies exactes conservent un index Git isolé ; l’assemblage des preuves est qualifié par sabotage et restauration. La cartographie traite les liens symboliques de dossiers sans les lire comme des fichiers.
 
-Le cycle comprend **33 corrections ciblées : 21 produit et 12 contrôles**,
-ainsi que les évolutions P160 et P162. Sur la source `b73769f9`,
-**7 754 cas unitaires distincts réussissent** (4 322 backend + 3 432 frontend),
-avec quatre skips backend. Les trois workflows CI réussissent, douze jobs,
-dont les suites Windows. Mypy conserve une baseline de 937 erreurs par
-nombre ; ce résultat ne signifie pas un typage intégral. Suites ciblées,
-rejeux et assertions UI ne s’ajoutent pas au total. Les deux nouvelles
-rondes indépendantes sont acceptées par le CLI (2/2), chacune avec un
-manifeste critique115 audité et une matrice33 qualifiée. Les anciens plateaux restent historiques. Les refus
-et exclusions ne deviennent pas des réussites ; P146 n’est pas une recette
-exhaustive et P161 reste un cadrage, avec le parcours financier à développer.
-Les deux exceptions modèles et les avis ignorés restent une dette.
-La section est **non publiée**. Les preuves actuelles et portes restantes
-sont centralisées dans le [rapport de release](releases/v0.77.0-alpha.md#mesures-actuelles-sur-b73769f9),
-avec le [suivi du cycle](SUIVI-CYCLE15-CODEX-2026-09-30.md).
+- Packaging macOS : conserve le hardened runtime et ajoute l'unique exception de chargement des bibliothèques au GUI et au sidecar pour B-1768. Le verdict du moteur et du GUI reste celui du rapport courant.
+
+Cette entrée couvre la version **0.77.1-alpha** et ses **34 corrections ciblées**.
+La publication GitHub est confirmée le 2 octobre 2026 à 09:59:38 (Europe/Paris).
+Les mesures, verdicts natifs, preuves 116/34, CI/build, assets, publication,
+installation, updater, Discord et agents sont centralisés dans le
+[rapport canonique 0.77.1](releases/v0.77.1-alpha.md).
+Les deux exceptions modèles, la baseline mypy et les limites historiques restent
+celles du rapport. P161 est un cadrage ; son parcours financier reste à développer.
 
 ## [v0.67.0-alpha] - 5 septembre 2026 - 194 correctifs du cycle 3 de la boucle
 
