@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, waitFor, act } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, act } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ResponseGeneratorModal } from './ResponseGeneratorModal';
 import * as api from '../../services/api';
