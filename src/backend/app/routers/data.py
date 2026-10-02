@@ -1831,19 +1831,23 @@ async def restore_backup(
         # n'était rouverte qu'au redémarrage : la lecture des préférences
         # échouait et le chat retombait sur le premier modèle Ollama venu. On
         # la rouvre ici, puis le service de modèles relit les préférences.
-        await _rouvrir_la_base_apres_restauration()
-        # B-1498 : la liste des connecteurs en mémoire suit le fichier remis.
         try:
-            from app.services.mcp_service import get_mcp_service
+            await _rouvrir_la_base_apres_restauration()
+            # B-1498 : la liste des connecteurs en mémoire suit le fichier remis.
+            try:
+                from app.services.mcp_service import get_mcp_service
 
-            await get_mcp_service().recharger_la_configuration()
-        except Exception:
-            logger.exception("Relecture des connecteurs après restauration en échec")
-        reprendre_les_creations_du_chat()
-        maintenance_mode.end()
-        # US-003 : ne jamais laisser subsister l'archive déchiffrée en clair.
-        if decrypted_temp is not None:
-            decrypted_temp.unlink(missing_ok=True)
+                await get_mcp_service().recharger_la_configuration()
+            except Exception:
+                logger.exception("Relecture des connecteurs après restauration en échec")
+        finally:
+            # B-1686 : une annulation à l'un des await doit remonter après
+            # le nettoyage local, sans laisser le chat ou la maintenance bloqués.
+            reprendre_les_creations_du_chat()
+            maintenance_mode.end()
+            # US-003 : ne jamais laisser subsister l'archive déchiffrée en clair.
+            if decrypted_temp is not None:
+                decrypted_temp.unlink(missing_ok=True)
 
     # B-023 : la restauration a remplacé la table `preferences` ENTIÈRE, clés
     # API comprises, sans passer par POST/DELETE /api-key - les deux seules

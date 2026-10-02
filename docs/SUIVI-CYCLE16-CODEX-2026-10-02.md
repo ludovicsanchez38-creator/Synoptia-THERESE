@@ -48,6 +48,7 @@ Une nouvelle calibration reste obligatoire après la modification visuelle.
 | B-1771 | Trois noms de callbacks du test modal ne correspondaient pas au hook. Le test corrigé est vert sur le hook sain et rouge sur une copie laissant t/p/o traverser le dialogue. | `lecteur-interface/shortcut-pouvoir-echec.xml`, `reparation-interface/shortcut-power-receipt.json` |
 | B-1772 | Après remplacement de la base et de sa clé par B, le cache gardait A. L'instance existante est invalidée sans IO avant réouverture, y compris après retour arrière. | `reproduction-securite/receipt.json`, `reparation-cle/ast-vert-receipt.json`, `reparation-cle/vert-voisins.xml` |
 | B-1773 | DELETE réussi puis GET rejeté produisait une notification de charte restaurée avec l'ancienne valeur. La relecture rend désormais son résultat ; l'échec est expliqué à l'écran. | `lecteur-interface/relecture-correctifs/complement.xml`, `reparation-interface/production-cibles.xml` |
+| B-1686 (historique repris) | Une annulation à l'un des deux await du finally sautait reprise chat, sortie de maintenance et suppression du temporaire. Un finally interne protège les trois gestes synchrones, sans absorber l'annulation. | `reproduction-annulation/rouge.stdout`, `rouge.stderr`, `reparation-annulation/vert.stdout`, `vert.stderr` |
 
 Les chemins du tableau sont relatifs à `.app-loop/cycles/16/`. Les premiers
 contrôles ciblés couvrent 12 cas frontend et 37 backend, dont cinq nouveaux
