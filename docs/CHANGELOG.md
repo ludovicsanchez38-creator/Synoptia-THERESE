@@ -16,6 +16,8 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 - Restauration annulée : finalise une seule fois l'archive de sécurité existante avant les attentes annulables, reprend le chat, quitte le mode maintenance et supprime le temporaire clair. Une annulation avant création ne purge pas les précédentes sauvegardes. Les réponses du retour arrière sont préservées et l'annulation continue de remonter ; le défaut historique B-1686 est repris au cycle 16.
 - Contrôles clavier : utilise les trois callbacks de navigation réellement consommés par le hook et vérifie aussi leur fonctionnement hors modale. Le test corrigé échoue sur une copie laissant traverser ces raccourcis.
 
+- Vérification : 7 780 tests unitaires distincts réussis et 4 skips backend au commit produit c62312eb. Les campagnes automatiques et signatures du build privé sont documentées séparément ; les deux rondes restent non acceptées tant que les contrôles Chrome Mac et GUI natif ne sont pas qualifiés.
+
 Ces changements appartiennent à un cycle distinct de la 0.77.1-alpha. Ils ne
 constituent pas une nouvelle publication ; suivi et limites dans le
 [journal du cycle 16](SUIVI-CYCLE16-CODEX-2026-10-02.md).
