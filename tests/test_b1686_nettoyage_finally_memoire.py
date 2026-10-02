@@ -67,6 +67,8 @@ def isolated_finally(cancel_at: str | None):
     end = Mock(side_effect=end_maintenance)
     unlink = Mock(side_effect=unlink_temporary)
     ns = {
+        # Ce contrôle vise les trois nettoyages ; l’archive est déjà finalisée.
+        "safety_finalized": True,
         "_rouvrir_la_base_apres_restauration": reopen,
         "get_mcp_service": lambda: SimpleNamespace(recharger_la_configuration=reload_mcp),
         "reprendre_les_creations_du_chat": resume,

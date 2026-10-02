@@ -1694,6 +1694,8 @@ async def restore_backup(
     current_backup_name = f"pre_restore_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S_%f')}"
     safety_archive = backup_dir / f"{current_backup_name}.tar.gz"
     safety_included: list[str] = []
+    safety_finalized = False
+    safety_kept = False
 
     def _wipe_volatile_dirs() -> None:
         # Restore PROPRE : les fichiers produits après la sauvegarde ne doivent
@@ -1794,6 +1796,7 @@ async def restore_backup(
             kept = _finalize_safety_archive(
                 backup_dir, current_backup_name, safety_archive, password, safety_included
             )
+            safety_finalized = True
             if not retabli and isinstance(exc.detail, str):
                 # B-1203 : la vérification promet « tes données actuelles
                 # sont intactes » ; ce n'est vrai que si le rollback a réussi.
@@ -1813,6 +1816,7 @@ async def restore_backup(
             kept = _finalize_safety_archive(
                 backup_dir, current_backup_name, safety_archive, password, safety_included
             )
+            safety_finalized = True
             suffix = (
                 " L'état d'avant tentative est conservé en sauvegarde chiffrée "
                 "avec la passphrase saisie."
@@ -1832,6 +1836,12 @@ async def restore_backup(
         # échouait et le chat retombait sur le premier modèle Ollama venu. On
         # la rouvre ici, puis le service de modèles relit les préférences.
         try:
+            # B-1686 : avant tout await annulable, convertir ou supprimer
+            # l'archive de sécurité claire, sauf si le retour arrière l'a déjà fait.
+            if not safety_finalized:
+                safety_kept = _finalize_safety_archive(
+                    backup_dir, current_backup_name, safety_archive, password, safety_included
+                )
             await _rouvrir_la_base_apres_restauration()
             # B-1498 : la liste des connecteurs en mémoire suit le fichier remis.
             try:
@@ -1888,13 +1898,6 @@ async def restore_backup(
 
         poser_mode_cabinet(True)
         logger.warning("Mode cabinet illisible après restauration : carnet cloisonné par précaution", exc_info=True)
-
-    # Revue 0.40/0.40.1 : l'archive de sécurité devient une sauvegarde chiffrée
-    # visible, ou disparaît si le chiffrement est impossible (US-003 : jamais
-    # de clair persistant, l'archive contient la clé de chiffrement).
-    safety_kept = _finalize_safety_archive(
-        backup_dir, current_backup_name, safety_archive, password, safety_included
-    )
 
     # Load metadata if exists
     metadata = {}
