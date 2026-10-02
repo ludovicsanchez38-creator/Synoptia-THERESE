@@ -59,6 +59,10 @@ export function ResponseGeneratorModal({
   // panne se retrouvait à la place de la réponse, et l'utilisateur devait
   // fermer puis rouvrir la fenêtre pour réessayer. Elle a désormais sa place.
   const [erreur, setErreur] = useState<string | null>(null);
+  const generationRef = useRef(0);
+  const contexteRef = useRef({ isOpen, messageId, accountId });
+  contexteRef.current = { isOpen, messageId, accountId };
+  const resultatRef = useRef<{ messageId: string; accountId: string } | null>(null);
 
   // US-013 : piège de focus + Échap. onClose vient du parent sous forme de fléchée
   // recréée à chaque rendu : on le stabilise (ref) pour ne pas réarmer le piège
@@ -71,14 +75,22 @@ export function ResponseGeneratorModal({
   const handleEscape = useCallback(() => onCloseRef.current(), []);
   useDialogFocusTrap(dialogRef, { active: isOpen, onEscape: handleEscape });
 
-  const generateResponse = async () => {
+  const generateResponse = async (requestedTone: Tone = tone, requestedLength: Length = length) => {
+    const generation = ++generationRef.current;
+    const estCourante = () => generation === generationRef.current
+      && contexteRef.current.isOpen
+      && contexteRef.current.messageId === messageId
+      && contexteRef.current.accountId === accountId;
     setIsGenerating(true);
     setErreur(null);
     try {
-      const response = await api.generateEmailResponse(messageId, accountId, tone, length);
+      const response = await api.generateEmailResponse(messageId, accountId, requestedTone, requestedLength);
+      if (!estCourante()) return;
+      resultatRef.current = { messageId, accountId };
       setDraft(response.draft);
       setHasGenerated(true);
     } catch (error) {
+      if (!estCourante()) return;
       // Le backend renvoie une cause déjà traduite et nettoyée : clé refusée,
       // modèle sans outils, délai dépassé, fournisseur injoignable. On
       // l'affiche telle quelle plutôt que de la remplacer par un message
@@ -90,7 +102,7 @@ export function ResponseGeneratorModal({
           : "La rédaction assistée n'a pas abouti. Réessaie, ou vérifie ton modèle dans Réglages, rubrique IA.",
       );
     } finally {
-      setIsGenerating(false);
+      if (estCourante()) setIsGenerating(false);
     }
   };
 
@@ -100,6 +112,9 @@ export function ResponseGeneratorModal({
 
   const handleUse = (e: React.MouseEvent) => {
     e.stopPropagation();
+    if (!isOpen || isGenerating || !hasGenerated
+      || resultatRef.current?.messageId !== messageId
+      || resultatRef.current?.accountId !== accountId) return;
     try {
       onUseResponse(draft);
     } catch (err) {
@@ -112,21 +127,19 @@ export function ResponseGeneratorModal({
   };
 
   React.useEffect(() => {
-    if (isOpen && !hasGenerated) {
-      // Auto-generate on open
-      generateResponse();
-    }
-  }, [isOpen]);
-
-  React.useEffect(() => {
-    if (!isOpen) {
-      // Reset state on close
-      setDraft('');
-      setHasGenerated(false);
-      setTone('formal');
-      setLength('medium');
-    }
-  }, [isOpen]);
+    // Chaque ouverture et chaque message a sa session. Les réponses, erreurs
+    // et finally d'une session quittée ne touchent jamais la suivante.
+    generationRef.current += 1;
+    resultatRef.current = null;
+    setDraft('');
+    setHasGenerated(false);
+    setIsGenerating(false);
+    setErreur(null);
+    setTone('formal');
+    setLength('medium');
+    if (isOpen) void generateResponse('formal', 'medium');
+    return () => { generationRef.current += 1; };
+  }, [isOpen, messageId, accountId]);
 
   // Portal vers document.body pour éviter les problèmes de stacking context
   // (transform Framer Motion sur les ancêtres + overflow-hidden qui cassent position:fixed)

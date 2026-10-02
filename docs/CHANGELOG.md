@@ -7,6 +7,18 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ---
 
+## [Non publié] - Cycle 16 ouvert le 2 octobre 2026
+
+- Messagerie : ignore les réponses et erreurs tardives d'une génération quittée ou d'un autre compte/message ; seul le brouillon courant peut être utilisé.
+- Profil d'export Word : conserve les saisies effectuées pendant une sauvegarde ou un import, bloque les mutations simultanées et indique que les nouvelles modifications restent à enregistrer.
+- Réinitialisation du profil d'export : distingue la suppression réussie d'une relecture en échec, sans annoncer que l'ancienne valeur affichée est la charte restaurée.
+- Restauration : invalide la clé maîtresse en mémoire avant la réouverture d'une base remise ou d'un retour arrière. La validation entre profils reste limitée au témoin SQLCipher isolé ; la reproduction HTTP complète a été refusée automatiquement et n'a pas été exécutée.
+- Contrôles clavier : utilise les trois callbacks de navigation réellement consommés par le hook et vérifie aussi leur fonctionnement hors modale. Le test corrigé échoue sur une copie laissant traverser ces raccourcis.
+
+Ces changements appartiennent à un cycle distinct de la 0.77.1-alpha. Ils ne
+constituent pas une nouvelle publication ; suivi et limites dans le
+[journal du cycle 16](SUIVI-CYCLE16-CODEX-2026-10-02.md).
+
 ## [v0.77.1-alpha] - 2 octobre 2026 - 34 corrections ciblées du cycle 15
 
 - Accueil : réserve une zone réelle au composeur et à l’indice « Voir la suite », suit leur hauteur et rend le bas des cartes lisible après défilement, même dans une petite fenêtre.

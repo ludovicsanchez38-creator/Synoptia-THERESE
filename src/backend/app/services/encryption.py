@@ -443,6 +443,21 @@ class EncryptionService:
 _encryption_service: EncryptionService | None = None
 
 
+def invalidate_encryption_service() -> None:
+    """Oublie la clé en mémoire après remplacement du profil, sans aucun IO.
+
+    À appeler sous maintenance, moteurs fermés, avant leur réouverture.
+    L'instance est conservée pour invalider aussi ses références existantes.
+    Le prochain usage relit la clé du profil restauré (ou du retour arrière).
+    """
+    with EncryptionService._lock:
+        service = _encryption_service or EncryptionService._instance
+        if service is not None:
+            service._fernet = None
+            service._master_key = None
+            service._using_keychain = False
+
+
 def get_db_key_hex() -> str:
     """US-014 : clé SQLCipher (64 hex) pour le chiffrement de therese.db.
 

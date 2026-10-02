@@ -22,14 +22,18 @@ export function ExportProfileSection() {
   const [warning, setWarning] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const draftRevision = useRef(0);
+  const operationEnCours = useRef(false);
 
-  const refresh = useCallback(async () => {
+  const refresh = useCallback(async (revision = draftRevision.current) => {
     try {
       const data = await getExportProfile();
-      setProfile(data.profile);
+      if (draftRevision.current === revision) setProfile(data.profile);
       setWarning(data.warning);
+      return true;
     } catch (err) {
       console.error('Profil export illisible:', err);
+      return false;
     }
   }, []);
 
@@ -41,24 +45,47 @@ export function ExportProfileSection() {
     useStatusStore.getState().addNotification({ type, title, message });
 
   async function handleSave() {
-    if (!profile) return;
+    if (!profile || operationEnCours.current) return;
+    operationEnCours.current = true;
+    const revision = draftRevision.current;
     setSaving(true);
     try {
       const data = await saveExportProfile(profile);
-      setProfile(data.profile);
+      const saisiePlusRecente = draftRevision.current !== revision;
+      if (!saisiePlusRecente) setProfile(data.profile);
       setWarning(null);
-      notify('success', 'Profil d\'export enregistré');
+      notify('success', 'Profil d\'export enregistré', saisiePlusRecente
+        ? 'Tes modifications plus récentes restent à enregistrer.' : undefined);
     } catch (err) {
       notify('error', 'Profil invalide', err instanceof Error ? err.message : undefined);
     } finally {
+      operationEnCours.current = false;
       setSaving(false);
     }
   }
 
   async function handleReset() {
-    await resetExportProfile();
-    await refresh();
-    notify('success', 'Profil réinitialisé', 'Charte Synoptia par défaut restaurée.');
+    if (operationEnCours.current) return;
+    operationEnCours.current = true;
+    const revision = draftRevision.current;
+    setSaving(true);
+    try {
+      await resetExportProfile();
+      if (!await refresh(revision)) {
+        const message = 'Le profil a été réinitialisé, mais ses valeurs n’ont pas pu être relues. Rouvre les réglages pour les charger.';
+        setWarning(message);
+        notify('error', 'Relecture du profil impossible', message);
+        return;
+      }
+      notify('success', 'Profil réinitialisé', draftRevision.current === revision
+        ? 'Charte Synoptia par défaut restaurée.'
+        : 'Tes modifications plus récentes restent à enregistrer.');
+    } catch (err) {
+      notify('error', 'Réinitialisation impossible', err instanceof Error ? err.message : undefined);
+    } finally {
+      operationEnCours.current = false;
+      setSaving(false);
+    }
   }
 
   function handleExportJson() {
@@ -73,22 +100,36 @@ export function ExportProfileSection() {
   }
 
   async function handleImportJson(file: File) {
+    if (operationEnCours.current) return;
+    operationEnCours.current = true;
+    const revision = draftRevision.current;
+    setSaving(true);
     try {
       const text = await file.text();
       const data = await saveExportProfile(JSON.parse(text));
-      setProfile(data.profile);
+      if (draftRevision.current === revision) setProfile(data.profile);
       setWarning(null);
-      notify('success', 'Profil importé');
+      notify('success', 'Profil importé', draftRevision.current !== revision
+        ? 'Tes modifications plus récentes restent à enregistrer.' : undefined);
     } catch (err) {
       notify('error', 'Import impossible', err instanceof Error ? err.message : undefined);
+    } finally {
+      operationEnCours.current = false;
+      setSaving(false);
     }
   }
 
   if (!profile) return null;
 
-  const set = (patch: Partial<ExportProfile>) => setProfile({ ...profile, ...patch });
-  const setMargin = (side: keyof ExportProfile['margins_cm'], value: number) =>
-    setProfile({ ...profile, margins_cm: { ...profile.margins_cm, [side]: value } });
+  const set = (patch: Partial<ExportProfile>) => {
+    draftRevision.current += 1;
+    setProfile((current) => current ? { ...current, ...patch } : current);
+  };
+  const setMargin = (side: keyof ExportProfile['margins_cm'], value: number) => {
+    draftRevision.current += 1;
+    setProfile((current) => current
+      ? { ...current, margins_cm: { ...current.margins_cm, [side]: value } } : current);
+  };
 
   const inputCls =
     'px-2.5 py-1.5 bg-background/60 border border-border/50 rounded-md text-sm text-text w-full focus:outline-none focus:ring-2 focus:ring-ring/50';
@@ -181,19 +222,20 @@ export function ExportProfileSection() {
         <Button variant="primary" size="sm" onClick={handleSave} disabled={saving}>
           {saving ? 'Enregistrement…' : 'Enregistrer'}
         </Button>
-        <Button variant="ghost" size="sm" onClick={handleReset}>
+        <Button variant="ghost" size="sm" onClick={handleReset} disabled={saving}>
           Réinitialiser
         </Button>
         <Button variant="ghost" size="sm" onClick={handleExportJson}>
           Exporter JSON
         </Button>
-        <Button variant="ghost" size="sm" onClick={() => fileInputRef.current?.click()}>
+        <Button variant="ghost" size="sm" onClick={() => fileInputRef.current?.click()} disabled={saving}>
           Importer JSON
         </Button>
         <input
           ref={fileInputRef}
           type="file"
           accept="application/json"
+          disabled={saving}
           className="hidden"
           onChange={(e) => {
             const f = e.target.files?.[0];

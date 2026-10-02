@@ -1588,9 +1588,13 @@ async def _rouvrir_la_base_apres_restauration() -> None:
     """B-1470 : rouvre la base si la restauration l'a fermée, puis invalide le
     service de modèles (sa configuration a pu être lue sans base)."""
     from app.models import database as base
+    from app.services.encryption import invalidate_encryption_service
     from app.services.llm import invalidate_llm_service
 
     if base.sync_engine is None:
+        # La restauration peut remettre une autre clé maîtresse. Le probe
+        # SQLCipher doit relire cette clé, et aussi celle d'un rollback.
+        invalidate_encryption_service()
         try:
             await base.init_db()
         except Exception:
