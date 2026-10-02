@@ -75,6 +75,18 @@ module = ast.fix_missing_locations(module)
 assert not any(isinstance(n, (ast.Import, ast.ImportFrom)) for n in ast.walk(module))
 COMPILED = compile(module, str(SOURCE), "exec")
 
+# Pour la frontière avant création, exercer aussi le finaliseur produit réel.
+# Ses objets chemin et sa purge sont entièrement simulés en mémoire.
+FINALIZER_NODE = copy.deepcopy(next(n for n in TREE.body
+                                  if isinstance(n, ast.FunctionDef)
+                                  and n.name == "_finalize_safety_archive"))
+for argument in FINALIZER_NODE.args.args:
+    argument.annotation = None
+FINALIZER_NODE.returns = None
+FINALIZER_MODULE = ast.fix_missing_locations(
+    ast.Module(body=[FINALIZER_NODE], type_ignores=[]))
+FINALIZER_COMPILED = compile(FINALIZER_MODULE, str(SOURCE), "exec")
+
 
 class MemoryHTTPError(Exception):
     """Témoin de l'exception produit, sans bibliothèque HTTP."""
@@ -84,14 +96,20 @@ class MemoryHTTPError(Exception):
         super().__init__(detail)
 
 
-def isolated_path(cancel_at=None, error=None, kept=True):
-    state = SimpleNamespace(safety_plain_present=True, decrypted_temp_present=True,
+def isolated_path(cancel_at=None, error=None, kept=True, archive_created=True,
+                  real_finalizer=False):
+    state = SimpleNamespace(safety_plain_present=archive_created, decrypted_temp_present=True,
                             chat_suspended=True, maintenance_active=True,
-                            safety_encrypted_present=False)
+                            safety_encrypted_present=False, prior_backups_present=True)
     reopen = AsyncMock(side_effect=asyncio.CancelledError if cancel_at == "reopen" else None)
     reload_mcp = AsyncMock(side_effect=asyncio.CancelledError if cancel_at == "mcp" else None)
     restore = AsyncMock(side_effect=error)
-    archive = object()  # Pas un Path ; aucune méthode de fichier n'est disponible.
+    def unlink_archive(*, missing_ok):
+        assert missing_ok is True
+        state.safety_plain_present = False
+
+    archive = SimpleNamespace(exists=lambda: state.safety_plain_present,
+                              unlink=unlink_archive)
     included = ["temoin-synthetique"]
 
     def finalize(backup_dir, name, plain_archive, password, contents):
@@ -131,6 +149,14 @@ def isolated_path(cancel_at=None, error=None, kept=True):
         "message_pour_ecran": lambda exc, *, ou: f"Erreur simulée {exc} {ou}",
         "logger": Mock(),
     }
+    if real_finalizer:
+        def prune_prior(_backup_dir, *, keep):
+            assert keep == "archive-simulee"
+            state.prior_backups_present = False
+        ns["_prune_pre_restore_backups"] = Mock(side_effect=prune_prior)
+        exec(FINALIZER_COMPILED, ns)
+        finalizer = Mock(side_effect=ns["_finalize_safety_archive"])
+        ns["_finalize_safety_archive"] = finalizer
     for n in TREE.body:
         if isinstance(n, ast.Assign) and len(n.targets) == 1 and isinstance(n.targets[0], ast.Name):
             if n.targets[0].id in {"DONNEES_INTACTES", "RETOUR_ARRIERE_REUSSI", "ECHEC_DU_RETOUR_ARRIERE"}:
@@ -211,6 +237,18 @@ class TestSafetyMemory(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(asyncio.CancelledError):
             await path()
         self.assert_finalized_once("cancel_at_mcp", state, finalizer, awaits)
+
+    async def test_annulation_avant_creation_ne_purge_pas_les_sauvegardes_precedentes(self):
+        path, state, finalizer, _ = isolated_path(
+            error=asyncio.CancelledError(), archive_created=False, real_finalizer=True)
+        with self.assertRaises(asyncio.CancelledError):
+            await path()
+        finalizer.assert_not_called()
+        self.assertTrue(state.prior_backups_present)
+        self.assertFalse(state.safety_plain_present)
+        self.assertFalse(state.decrypted_temp_present)
+        self.assertFalse(state.chat_suspended)
+        self.assertFalse(state.maintenance_active)
 
 
 if __name__ == "__main__":

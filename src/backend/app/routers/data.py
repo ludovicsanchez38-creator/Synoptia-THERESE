@@ -1838,7 +1838,7 @@ async def restore_backup(
         try:
             # B-1686 : avant tout await annulable, convertir ou supprimer
             # l'archive de sécurité claire, sauf si le retour arrière l'a déjà fait.
-            if not safety_finalized:
+            if not safety_finalized and safety_archive.exists():
                 safety_kept = _finalize_safety_archive(
                     backup_dir, current_backup_name, safety_archive, password, safety_included
                 )

@@ -13,7 +13,7 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 - Profil d'export Word : conserve les saisies effectuées pendant une sauvegarde ou un import, bloque les mutations simultanées et indique que les nouvelles modifications restent à enregistrer.
 - Réinitialisation du profil d'export : distingue la suppression réussie d'une relecture en échec, sans annoncer que l'ancienne valeur affichée est la charte restaurée.
 - Restauration : invalide la clé maîtresse en mémoire avant la réouverture d'une base remise ou d'un retour arrière. La validation entre profils reste limitée au témoin SQLCipher isolé ; la reproduction HTTP complète a été refusée automatiquement et n'a pas été exécutée.
-- Restauration annulée : finalise une seule fois l'archive de sécurité avant les attentes annulables, reprend le chat, quitte le mode maintenance et supprime le temporaire clair. Les réponses du retour arrière sont préservées et l'annulation continue de remonter ; le défaut historique B-1686 est repris au cycle 16.
+- Restauration annulée : finalise une seule fois l'archive de sécurité existante avant les attentes annulables, reprend le chat, quitte le mode maintenance et supprime le temporaire clair. Une annulation avant création ne purge pas les précédentes sauvegardes. Les réponses du retour arrière sont préservées et l'annulation continue de remonter ; le défaut historique B-1686 est repris au cycle 16.
 - Contrôles clavier : utilise les trois callbacks de navigation réellement consommés par le hook et vérifie aussi leur fonctionnement hors modale. Le test corrigé échoue sur une copie laissant traverser ces raccourcis.
 
 Ces changements appartiennent à un cycle distinct de la 0.77.1-alpha. Ils ne
