@@ -258,3 +258,33 @@ Une demande explicite de GO pour pousser cette branche a été transmise à Ludo
 dans la tâche principale ; sa réponse reste attendue. Ce GO ne couvre ni merge,
 tag, release, installation ou annonce Discord.
 Le blocage WebKit demeure technique, distinct de cette autorisation manquante.
+
+## Décision de Ludo du 3 octobre 2026 : abandon de la VM macOS
+
+Ludo demande dans la conversation de suivi : « On laisse beton le similateur
+mac os c'est innutile. » La piste UTM/macOS invité est abandonnée pour le cycle
+16. Ne plus poursuivre sa configuration, son écran noir, une nouvelle
+installation ou les gestes de réveil demandés précédemment. Cette décision
+remplace l'attente du geste physique décrite dans
+`.app-loop/cycles/16/reprise/reprise-demandee-20261003T1743/TRANSMISSION-RESULTAT.md`.
+Les reçus et captures antérieurs restent historiques.
+
+La tentative d'accès à UTM dans cette conversation a répondu « Computer Use
+was not approved to use UTM ». Aucun arrêt de VM n'est donc attesté ici. Le
+contrôle de cette application n'a pas été réessayé après ce retour ; ses disques
+et fichiers n'ont pas été supprimés.
+
+La prochaine qualification doit rechercher une voie directe sur l'application,
+avec données et profils de test isolés, sans réintroduire de VM. L'abandon de
+cette piste ne valide aucune ronde et ne dispense pas de vérifier les écritures
+WebKit avant un lancement natif. Le cycle conserve ZERO_CHECK, 0/2 rondes
+acceptées et 23 transitions forcées historiques. La pause technique reste
+en place pendant ce changement de méthode.
+
+Au contrôle de cette conversation, la branche est `codex/cycle-16`, le HEAD
+produit `1905aa19206d5a1764da48bf56e481a5fd2b89fb` et les CI générale, Windows et
+E2E sont enregistrées réussies dans
+`.app-loop/cycles/16/suivi-ci-20261003-root/index-final.json`. Le refus de push
+raconté plus haut est historique : ce HEAD est déjà suivi sur origin. Le présent
+lot ne modifie que le suivi et le motif de pause ; aucune nouvelle recette,
+fusion, installation, release ou annonce Discord n'est exécutée.
