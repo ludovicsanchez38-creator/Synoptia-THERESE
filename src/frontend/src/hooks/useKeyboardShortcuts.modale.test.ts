@@ -22,10 +22,10 @@ describe('B-638 : un dialogue modal absorbe les raccourcis de navigation', () =>
     document.body.innerHTML = '<div role="dialog" aria-modal="true" aria-label="Décision"></div>';
     const handlers = {
       onToggleEmailPanel: vi.fn(),
-      onOpenTasks: vi.fn(),
+      onToggleTasksPanel: vi.fn(),
       onToggleInvoicesPanel: vi.fn(),
-      onOpenPipeline: vi.fn(),
-      onOpenFiles: vi.fn(),
+      onToggleCRMPanel: vi.fn(),
+      onOpenFile: vi.fn(),
       onEscape: vi.fn(),
     };
     renderHook(() => useKeyboardShortcuts(handlers));
@@ -36,19 +36,22 @@ describe('B-638 : un dialogue modal absorbe les raccourcis de navigation', () =>
     });
 
     expect(handlers.onToggleEmailPanel).not.toHaveBeenCalled();
-    expect(handlers.onOpenTasks).not.toHaveBeenCalled();
+    expect(handlers.onToggleTasksPanel).not.toHaveBeenCalled();
     expect(handlers.onToggleInvoicesPanel).not.toHaveBeenCalled();
-    expect(handlers.onOpenPipeline).not.toHaveBeenCalled();
-    expect(handlers.onOpenFiles).not.toHaveBeenCalled();
+    expect(handlers.onToggleCRMPanel).not.toHaveBeenCalled();
+    expect(handlers.onOpenFile).not.toHaveBeenCalled();
     expect(handlers.onEscape).toHaveBeenCalledTimes(1);
   });
 
-  it('sans modale, ⌘E fonctionne comme avant', () => {
-    const handlers = { onToggleEmailPanel: vi.fn() };
+  it('sans modale, les cinq callbacks de navigation sont exercés', () => {
+    const handlers = {
+      onToggleEmailPanel: vi.fn(), onToggleTasksPanel: vi.fn(),
+      onToggleInvoicesPanel: vi.fn(), onToggleCRMPanel: vi.fn(), onOpenFile: vi.fn(),
+    };
     renderHook(() => useKeyboardShortcuts(handlers));
     act(() => {
-      document.dispatchEvent(frappe('e'));
+      for (const key of ['e', 't', 'i', 'p', 'o']) document.dispatchEvent(frappe(key));
     });
-    expect(handlers.onToggleEmailPanel).toHaveBeenCalledTimes(1);
+    for (const handler of Object.values(handlers)) expect(handler).toHaveBeenCalledTimes(1);
   });
 });
