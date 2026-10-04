@@ -1588,9 +1588,13 @@ async def _rouvrir_la_base_apres_restauration() -> None:
     """B-1470 : rouvre la base si la restauration l'a fermée, puis invalide le
     service de modèles (sa configuration a pu être lue sans base)."""
     from app.models import database as base
+    from app.services.encryption import invalidate_encryption_service
     from app.services.llm import invalidate_llm_service
 
     if base.sync_engine is None:
+        # La restauration peut remettre une autre clé maîtresse. Le probe
+        # SQLCipher doit relire cette clé, et aussi celle d'un rollback.
+        invalidate_encryption_service()
         try:
             await base.init_db()
         except Exception:
@@ -1690,6 +1694,8 @@ async def restore_backup(
     current_backup_name = f"pre_restore_{datetime.now(UTC).strftime('%Y%m%d_%H%M%S_%f')}"
     safety_archive = backup_dir / f"{current_backup_name}.tar.gz"
     safety_included: list[str] = []
+    safety_finalized = False
+    safety_kept = False
 
     def _wipe_volatile_dirs() -> None:
         # Restore PROPRE : les fichiers produits après la sauvegarde ne doivent
@@ -1790,6 +1796,7 @@ async def restore_backup(
             kept = _finalize_safety_archive(
                 backup_dir, current_backup_name, safety_archive, password, safety_included
             )
+            safety_finalized = True
             if not retabli and isinstance(exc.detail, str):
                 # B-1203 : la vérification promet « tes données actuelles
                 # sont intactes » ; ce n'est vrai que si le rollback a réussi.
@@ -1809,6 +1816,7 @@ async def restore_backup(
             kept = _finalize_safety_archive(
                 backup_dir, current_backup_name, safety_archive, password, safety_included
             )
+            safety_finalized = True
             suffix = (
                 " L'état d'avant tentative est conservé en sauvegarde chiffrée "
                 "avec la passphrase saisie."
@@ -1827,19 +1835,29 @@ async def restore_backup(
         # n'était rouverte qu'au redémarrage : la lecture des préférences
         # échouait et le chat retombait sur le premier modèle Ollama venu. On
         # la rouvre ici, puis le service de modèles relit les préférences.
-        await _rouvrir_la_base_apres_restauration()
-        # B-1498 : la liste des connecteurs en mémoire suit le fichier remis.
         try:
-            from app.services.mcp_service import get_mcp_service
+            # B-1686 : avant tout await annulable, convertir ou supprimer
+            # l'archive de sécurité claire, sauf si le retour arrière l'a déjà fait.
+            if not safety_finalized and safety_archive.exists():
+                safety_kept = _finalize_safety_archive(
+                    backup_dir, current_backup_name, safety_archive, password, safety_included
+                )
+            await _rouvrir_la_base_apres_restauration()
+            # B-1498 : la liste des connecteurs en mémoire suit le fichier remis.
+            try:
+                from app.services.mcp_service import get_mcp_service
 
-            await get_mcp_service().recharger_la_configuration()
-        except Exception:
-            logger.exception("Relecture des connecteurs après restauration en échec")
-        reprendre_les_creations_du_chat()
-        maintenance_mode.end()
-        # US-003 : ne jamais laisser subsister l'archive déchiffrée en clair.
-        if decrypted_temp is not None:
-            decrypted_temp.unlink(missing_ok=True)
+                await get_mcp_service().recharger_la_configuration()
+            except Exception:
+                logger.exception("Relecture des connecteurs après restauration en échec")
+        finally:
+            # B-1686 : une annulation à l'un des await doit remonter après
+            # le nettoyage local, sans laisser le chat ou la maintenance bloqués.
+            reprendre_les_creations_du_chat()
+            maintenance_mode.end()
+            # US-003 : ne jamais laisser subsister l'archive déchiffrée en clair.
+            if decrypted_temp is not None:
+                decrypted_temp.unlink(missing_ok=True)
 
     # B-023 : la restauration a remplacé la table `preferences` ENTIÈRE, clés
     # API comprises, sans passer par POST/DELETE /api-key - les deux seules
@@ -1880,13 +1898,6 @@ async def restore_backup(
 
         poser_mode_cabinet(True)
         logger.warning("Mode cabinet illisible après restauration : carnet cloisonné par précaution", exc_info=True)
-
-    # Revue 0.40/0.40.1 : l'archive de sécurité devient une sauvegarde chiffrée
-    # visible, ou disparaît si le chiffrement est impossible (US-003 : jamais
-    # de clair persistant, l'archive contient la clé de chiffrement).
-    safety_kept = _finalize_safety_archive(
-        backup_dir, current_backup_name, safety_archive, password, safety_included
-    )
 
     # Load metadata if exists
     metadata = {}

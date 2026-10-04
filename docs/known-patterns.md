@@ -773,3 +773,46 @@ Ces observations portent sur les contrôles natifs du cycle 15. Elles ne
 constituent pas une attestation de notarisation, d’updater ni de publication.
 Les reçus détaillés sont centralisés dans le suivi du cycle et ses preuves
 `release-go/native0771-local-20261001T2318`.
+
+
+## Cycle16 : réponses tardives, annulation et preuves (02/10/2026)
+
+- Une réponse asynchrone conserve son compte/message/session et une révision
+  de saisie. Vérifier aussi catch/finally : un résultat ancien ne doit pas
+  modifier le dialogue neuf ou lever son état d'attente. Un succès serveur
+  n'annule pas les saisies effectuées pendant cet appel.
+- Après suppression puis relecture échouée, annoncer les deux résultats.
+  L'ancienne valeur encore visible ne prouve pas une remise à zéro aboutie.
+- Les nettoyages locaux après annulation doivent s'exécuter même si la
+  réouverture de la base ou la relecture des connecteurs est annulée. Finaliser synchroniquement l'archive de sécurité existante
+  avant les await ; sans archive créée, conserver les sauvegardes précédentes.
+  Invalider le cache de clé de l'instance existante avant réouverture de base,
+  sans créer une instance ou IO supplémentaires dans ce chemin.
+- Un test de callbacks inconnus passe sans exercer le hook : relire le contrat,
+  vérifier le comportement sain hors modale et un mutant qui laisse passer
+  les mêmes raccourcis dans la modale. Les répétitions restent des preuves,
+  pas des tests distincts à additionner.
+- Pour qualifier un reçu, vérifier l'acteur et le relecteur dans les vrais
+  appels, puis le pointeur dans le même brut. Un autre fichier contenant un
+  pass ne remplace pas ce pointeur. Conserver les trois rouges du consommateur
+  et leurs corrections ; ne pas les compter comme trois bugs du produit.
+- Un scroll local d'une grille peut être voulu. Vérifier que le clavier,
+  les indices et le focus permettent d'atteindre le contenu sans perdre
+  montants/actions ; ne pas confondre ce scroll avec un débordement de main.
+- Le blocage d'une sélection Chrome avant état/AX/capture ne produit aucun
+  geste. Les captures Chromium ne deviennent pas des contrôles Chrome Mac.
+  Une campagne exécutée ne devient une ronde acceptée qu'après ses portes.
+- La lecture de sources WebKit et un helper Foundation ne démontrent pas les
+  écritures déléguées XPC. Ne pas lancer le GUI dans le profil réel ni prétendre
+  qu'un HOME privé suffit ; garder le contrat natif en attente si l'instrument
+  ne peut pas établir le confinement avant les sondes de persistance.
+- Lire un indice de scroll au moment auquel l'assertion se rapporte. Le bouton
+  droit absent au bord droit peut redevenir visible après retour gauche :
+  conserver ce premier rouge d'oracle et la mesure au bon moment, sans
+  attribuer un défaut à l'interface.
+- `pytest_sessionfinish` peut terminer par `os._exit` ; un rapport prévu après
+  `pytest.main` n'existe alors jamais. Collecter avant cette sortie, puis vérifier
+  le fichier réellement créé. Un code de sortie vert ne remplace pas ce reçu.
+- Une sonde d'import urllib3 peut essayer de bind `::1:0` puis absorber le refus.
+  Conserver tentative, adresse, stack et refus ; ne pas assouplir le réseau ou
+  annoncer « aucune tentative » parce que les cas passent.
