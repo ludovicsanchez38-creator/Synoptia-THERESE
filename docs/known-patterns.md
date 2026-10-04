@@ -816,3 +816,12 @@ Les reçus détaillés sont centralisés dans le suivi du cycle et ses preuves
 - Une sonde d'import urllib3 peut essayer de bind `::1:0` puis absorber le refus.
   Conserver tentative, adresse, stack et refus ; ne pas assouplir le réseau ou
   annoncer « aucune tentative » parce que les cas passent.
+
+- Pour qualifier un bundle macOS signé, distinguer le paquet original de sa
+  copie locale. Un codesign vert sur le bundle monté peut coexister avec un
+  refus sur une copie dont les métadonnées ont été ajoutées pendant la
+  copie. Lire les attributs étendus et comparer les fichiers avant
+  toute intervention. Garder l’échec, qualifier l’original intact et vérifier
+  à nouveau la copie installée ; ne pas refaire la signature pour obtenir un
+  vert. Le [rapport 0.77.2](releases/v0.77.2-alpha.md) porte l’observation et
+  ses preuves.
