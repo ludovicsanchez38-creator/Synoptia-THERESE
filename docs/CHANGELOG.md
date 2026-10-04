@@ -7,7 +7,7 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 
 ---
 
-## [0.77.2-alpha en préparation] - Cycle 16
+## [v0.77.2-alpha] - 4 octobre 2026 - Fiabilité du cycle 16
 
 - Messagerie : ignore les réponses et erreurs tardives d'une génération quittée ou d'un autre compte/message ; seul le brouillon courant peut être utilisé.
 - Profil d'export Word : conserve les saisies effectuées pendant une sauvegarde ou un import, bloque les mutations simultanées et indique que les nouvelles modifications restent à enregistrer.
@@ -16,12 +16,12 @@ Format inspiré de [Keep a Changelog](https://keepachangelog.com/fr/1.1.0/).
 - Restauration annulée : finalise une seule fois l'archive de sécurité existante avant les attentes annulables, reprend le chat, quitte le mode maintenance et supprime le temporaire clair. Une annulation avant création ne purge pas les précédentes sauvegardes. Les réponses du retour arrière sont préservées et l'annulation continue de remonter ; le défaut historique B-1686 est repris au cycle 16.
 - Contrôles clavier : utilise les trois callbacks de navigation réellement consommés par le hook et vérifie aussi leur fonctionnement hors modale. Le test corrigé échoue sur une copie laissant traverser ces raccourcis.
 
-- Vérification : 7 780 tests unitaires distincts réussis et 4 skips backend au commit produit c62312eb. Les deux rondes directes sur le Mac sont acceptées au 4 octobre 2026, avec 212 obligations et 122 transitions critiques par ronde. Les signatures du build QA privé et ces rondes ne qualifient pas les futurs binaires de distribution.
+- Vérification : 7 780 tests unitaires distincts réussis et 4 skips backend au commit produit c62312eb. Les deux rondes directes sur le Mac sont acceptées au 4 octobre 2026, avec 212 obligations et 122 transitions critiques par ronde. Les signatures du build QA privé et ces rondes ne suffisent pas à qualifier les binaires de distribution.
 
-Ces changements appartiennent à un cycle distinct de la 0.77.1-alpha. Ils ne
-constituent pas une nouvelle publication ; suivi et limites dans le
-[journal du cycle 16](SUIVI-CYCLE16-CODEX-2026-10-02.md) et le
-[rapport du candidat 0.77.2-alpha](releases/v0.77.2-alpha.md).
+La 0.77.2-alpha est publiée. Les preuves de distribution, installation,
+changelog Discord et agents, ainsi que les limites, sont centralisées dans le
+[rapport de release 0.77.2-alpha](releases/v0.77.2-alpha.md). Le
+[journal du cycle 16](SUIVI-CYCLE16-CODEX-2026-10-02.md) conserve la campagne QA.
 
 ## [v0.77.1-alpha] - 2 octobre 2026 - 34 corrections ciblées du cycle 15
 

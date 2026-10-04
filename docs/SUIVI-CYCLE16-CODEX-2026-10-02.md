@@ -411,3 +411,9 @@ estimés au total du cycle. Cette estimation comprend les trois acteurs de
 la campagne directe ; ce n'est pas une mesure API ni un nombre d'appels
 fournisseur. La fenêtre de 48 heures a commencé le 2 octobre à 12:07:46 UTC
 et expire le 4 octobre à 12:07:46 UTC, sans extension.
+
+
+La suite manuelle autorisée après cette campagne est centralisée dans le
+[rapport de release 0.77.2-alpha](releases/v0.77.2-alpha.md). Ce journal garde
+les états et mesures historiques de la QA ; le rapport porte seul les preuves
+de publication, installation, Discord et agents.
