@@ -288,3 +288,126 @@ E2E sont enregistrées réussies dans
 raconté plus haut est historique : ce HEAD est déjà suivi sur origin. Le présent
 lot ne modifie que le suivi et le motif de pause ; aucune nouvelle recette,
 fusion, installation, release ou annonce Discord n'est exécutée.
+
+## 4 octobre 2026 : cycle direct sur le Mac, plateau accepté
+
+La demande « Pas d'utm, pas de vm on fait un cycle direct sur le mac » est
+exécutée. Le cycle 16 a repris normalement, sans nouvelle VM ni contrôle
+d'UTM dans cette campagne. Il atteint **HUMAN_GATE, 2/2 rondes indépendantes
+acceptées** le 4 octobre à 08:41:52 UTC. Le plateau est accepté à 08:39:30 UTC.
+Les passages ZERO_CHECK vers
+GAP_SCAN puis HUMAN_GATE utilisent la commande canonique, sans `--force`.
+Les 23 transitions forcées précédentes restent historiques.
+
+La qualification est figée sur `34777416102c85bd4676a1c597b92a63bb420a47`,
+branche `codex/cycle-16`. Les commits `1905aa19` et `34777416` ne changent que
+la documentation : le dernier HEAD produit est
+`c62312eb397d934bcd8a5171c4260aef218c2df9`. Les arbres `src`, `tests`,
+`scripts` et `.github` sont comparés identiques. Le présent ajout documentaire
+vient après cette qualification, sans nouveau changement produit.
+
+### Résultat et preuves canoniques
+
+Chaque ronde qualifie **212 obligations et 122 transitions sur 122**, avec
+zéro reçu manquant et zéro blocage. Les acteurs d'exécution sont `/root` pour
+la ronde A et `/root/qa_directe_plan` pour B4. A est relue par
+`/root/qa_directe_native`, B4 par `/root`. Le compteur passe à 1/2 puis 2/2
+par deux appels réels à `plateau-evaluate`, après les audits stricts.
+
+Le dossier de preuves est
+`.app-loop/cycles/16/direct-mac/qualification-34777416/` :
+
+- `audit-complet-A-final.json` et `audit-complet-B4-final.json` : qualification
+  des assertions, acteurs, sources, sélections exactes et relectures ;
+- `plateau-round-A.json` et `plateau-round-B4.json` : preuves effectivement
+  acceptées par la commande du cycle ;
+- `byte-preservation-closure-final.json` : 572 fichiers de A et 663 de B4
+  retrouvés avec leurs empreintes dans les copies canoniques ;
+- `error-observation-scope-final.json` : portée réelle des logs et des canaux
+  d'erreurs, sans transformer un canal absent en tableau vide ;
+- `gap-scan-final.json` : aucune nouvelle proposition distincte étayée après
+  déduplication avec les registres ; B-1558 reste différé.
+
+La cartographie conservée couvre 2 122 fichiers sur 2 122 dans le périmètre
+requis. Les portes unitaires du 2 octobre restent applicables au produit
+inchangé : 4 338 succès pytest, quatre skips et 3 442 succès Vitest, soit
+**7 780 succès distincts**. Les répétitions ciblées de cette campagne ne
+s'ajoutent pas à ce nombre. La dette mypy existante de 937 éléments demeure.
+Les CI générale, Windows et E2E du 3 octobre restent des résultats historiques
+au code identique, pas des exécutions nouvelles au commit documentaire final.
+
+### Exécution native et interfaces réellement servies
+
+Le bundle privé `THERESE C16 QA Mac direct.app` utilise le port 17494, un
+identifiant d'application et un UUID WebKit dédiés. HOME, données, caches et
+répertoire temporaire sont privés. La politique de lancement interdit le
+profil réel et limite le réseau au moteur QA. Les adaptations QA explicites
+portent notamment sur le port, l'UUID WebKit et la désactivation du nettoyage
+global des anciens moteurs. Ce bundle n'est pas une release publiée.
+
+Deux lancements natifs du même bundle et du même profil sont observés par
+captures et accessibilité : onboarding jetable au premier, reprise sans
+onboarding au second, puis arrêt par le menu Quitter. Les signatures, scellés
+et empreintes des exécutables sont vérifiés. Les deux journaux montrent un
+arrêt moteur terminé puis « Force kill envoyé » ; un arrêt entièrement
+gracieux n'est donc pas revendiqué. Groupes de processus et listener QA sont
+vides aux contrôles de fin. Les preuves natives sont conservées dans
+`.app-loop/cycles/16/direct-mac/native-preserve/`.
+
+Les deux rondes Chrome Mac utilisent des profils et services QA distincts,
+aux ports 17493 et 5173, avec navigateur visible et sandbox activée. Chacune
+apporte 84 captures de 21 écrans, aux largeurs 800/1440 et thèmes clair/sombre.
+Les 198 gestes de couverture concernent 1440 clair ; les autres combinaisons
+apportent leurs états visuels. Les compléments denses testent réellement
+défilement, Tab, Entrée et confinement du focus. Dix exports PDF par ronde
+sont joints par UUID et nodeid aux réponses HTTP en processus et aux données
+SQLCipher, puis inspectés page par page avec Apple PDFKit.
+
+Les six familles d'instruments ont des témoins sains et fautifs réellement
+exécutés. Leur enregistrement différé utilise les copies exactes des reçus de
+A, avec une validité CLI conservatrice jusqu'à 18:37 UTC le 4 octobre. Les
+adaptateurs ont aussi des témoins : 37 négatifs pour les 78 contrats,
+neuf négatifs et un sain pour leur dispatch root, plus les contrôles séparés
+natifs et partagés.
+Ces contrôles d'instruments ne sont pas des succès produit supplémentaires.
+
+Tous les services QA sont arrêtés. Le dernier contrôle réel des ports 17493,
+5173 et 17494 renvoie `lsof` exit 1 et aucune ligne. Le port réel 17293 et le
+profil réel `~/.therese` restent exclus des instruments de cette campagne.
+
+### Limites conservées et décision suivante
+
+La console JavaScript native WKWebView n'est pas collectée. Les recettes
+décrivent précisément leurs abonnements console, pageerror et HTTP. Les
+fonctions IA, embeddings, mail et comptes externes non configurés restent
+hors preuve. Les warnings hors ligne sont classés, sans succès de
+vectorisation revendiqué. La diversité des modèles reste dégradée selon le
+registre du cycle ; les trois acteurs de cette campagne utilisent GPT.
+
+B-1755 est un témoin HTML synthétique de filtrage des actions. Certaines
+recettes initient le focus par programmation ; seuls leurs gestes clavier
+effectivement exécutés sont décrits comme tels. Le titre CRM avec « null »
+est le B-1558 connu, différé, de sévérité faible ; aucune nouvelle décision
+de correction n'est prise. A possède une vraie copie du manifeste actif.
+B4 conserve les observations contemporaines de son empreinte ; le digest
+inverse est dérivé en mémoire du delta d'arrêt, sans faux reçu actif créé.
+
+Les copies canoniques des preuves restent locales dans `.app-loop`, ignoré
+par Git ; le suivi documentaire est versionné et poussé. Les fichiers QA et
+relectures sont préservés sans réécrire leurs références
+internes. Un réaudit après nettoyage de `/private/tmp` devra résoudre ces
+références avec les index origine vers copie canonique. La tentative de
+préservation B4 rejetée après un changement du générateur d'inventaire reste
+conservée comme antécédent, séparément de la clôture exacte finale.
+
+Le cycle attend à HUMAN_GATE. Aucune nouvelle proposition produit n'est
+soumise dans cette campagne. Toute préparation ou publication de release
+suit le workflow canonique et une décision explicite de Ludo ; aucune fusion,
+publication, installation dans le profil réel ou annonce Discord n'est
+effectuée ici.
+
+Le budget est mis à jour par la CLI : 55 lots logiques, 3 755 000 tokens
+estimés au total du cycle. Cette estimation comprend les trois acteurs de
+la campagne directe ; ce n'est pas une mesure API ni un nombre d'appels
+fournisseur. La fenêtre de 48 heures a commencé le 2 octobre à 12:07:46 UTC
+et expire le 4 octobre à 12:07:46 UTC, sans extension.
