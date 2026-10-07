@@ -1077,3 +1077,51 @@ sont expirées ; ces canaris ne les renouvellent pas. HEAD documentaire
 Les modifications antérieures de la carte et de la fiche release restent
 hors de ce lot. Ni tag, build produit, release, installation, publication,
 heartbeat prolongé ou donnée réelle ne sont modifiés.
+
+### Raccord de portée et résumé des lancements, gel pur suivant
+
+Copie neuve `root-stage-scope-pure-RLhd2r`, index `8608ed00…`, 35 références
+rehashées. Deux sources changent seulement : Session dérive les champs
+`launched_services` et `unlaunched_handles` des handles réellement enregistrés,
+avec birth libérée et reçu de démarrage ; le consommateur exige désormais
+la portée et la ronde exactes. Une liste de handles non lancés vide ne prouve
+pas la présence de toutes les étapes du plan.
+
+La portée est dérivée après relecture de l'admission initiale. Les modes
+canari ne sont jamais acceptés comme A/B. Le vrai `finish` tente le nettoyage
+avant ce contrôle : admission refusée ou mutée produit une portée non vérifiée,
+une erreur et un taint avant tout reçu vert. Cette copie ne contient pas encore
+le loader listener V4 ; son étiquette disponible ne l'admet pas.
+
+L'auteur exécute 43 tests purs puis root les rejoue séparément, code 0,
+pytest 0,26 seconde côté root, stderr vide, sources avant/après identiques.
+Les trois cas du vrai `finish` vide passent : admission valide, refusée, mutée.
+Stdout root SHA-256
+`9f9543cc1aa7e6121251c77d4356209dcb37ea7f10026236941f6b7dcaa80019`.
+Il s'agit des mêmes 43 cas sur deux exécutions, pas de 86 tests distincts.
+La revue indépendante est favorable au delta fermé, sans qualification OS.
+Les anciens 37 tests de relais sont copiés, pas relancés dans ce lot.
+
+Les deux arbres source/preuves root sont conservés ; comparaison byte-exacte
+41 fichiers, 444 568 octets, manifeste SHA-256
+`f2d2c5c3be27fbe6c73e144fc1d9bd1e42e9c47b144759122b6c91e1f2ce67aa`.
+Checkpoint : `qualification/scope-root-closed-FtuXAG7m/checkpoint.json`.
+Les vieux gels et bruts sont inchangés. Budget CLI : 56 lots logiques,
+8 967 975 tokens au plancher conservateur ; plafond GPT effectivement relu
+à 10 000 000, inchangé. Ce plafond n'est ni une cible à consommer, ni une mesure
+de facturation.
+
+La lecture ciblée G5 confirme pourquoi le raccord réel reste nécessaire :
+`g5_capture_port.py` porte cinq appels, mais son helper renderer lance directement
+l'enfant sans capture préalable G1. Le `JointOwner` mesuré, lui, utilise une
+fixture, une birth et des slots uniques. Le prochain port doit conserver son
+rendez-vous pré-lancement et sa barrière de birth, puis indexer les demandes
+par étape/nonce et traiter les marqueurs normaux et timeout avec leur ACK exact.
+Une bascule de flags ou la copie du renderer ne qualifie pas ce mécanisme.
+
+Aucune nouvelle ronde, calibration, capacité, release ou publication.
+HEAD documentaire à cette revue : `390d2ec4…` ; les pins historiques source
+`b517daed…` ne sont pas retargetés. L'admission, les quatre capacités, les profils
+complets, le raccord listener/multi-enfants et le watchdog global restent à
+qualifier avant les deux rondes réelles. Le goal natif reste actif ; ce suivi
+ne prolonge pas le heartbeat expiré.
