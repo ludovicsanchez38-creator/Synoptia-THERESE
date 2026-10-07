@@ -1245,3 +1245,53 @@ n'est relevé ni temps parallèle ajouté. L'état reste `active`, `DISCOVER`,
 zéro ronde, 23 transitions forcées historiques. Aucun canari ne renouvelle
 les calibrations expirées. Goal natif actif, heartbeat non prolongé, pas de
 publication ou d'action sur les données réelles.
+
+## Lot 58 : vrais appelants G5, politique de sortie et coupe-circuit
+
+Le renderer G5 et les cinq sources originales sont relus, avec trois avis
+distincts terminés. Les appels ne sont pas des fixtures interchangeables :
+pytest/Vitest attendent 1/0/1/0 et des XML exacts ; le témoin réseau Node attend
+un code non nul et son oracle JSON ; le mutant SQL doit retourner 1 avec la
+bonne assertion avant que son wrapper puisse conclure. Les bornes et les
+environnements métier doivent rester distincts du contexte des helpers.
+Les cinq remplacements ne couvrent pas Git, Chrome Playwright et `lsof`.
+
+Arbitrage technique : un lancement centralisé dans la Session root paraît
+viable, sous nouveau contrat causal et transport non bloquant pendant
+`Session.wait`. Le parent OS observé et la chaîne logique demandeur/enfant
+ne doivent pas être confondus. Le relais root/stage existant ne fournit pas
+ce transport. Aucun RPC de lancement n'est implémenté ou mesuré dans ce lot,
+aucun reçu ancien n'est requalifié. Détails et conditions de reprise dans
+`qualification/G5-real-port-policy-E3PqfI/REPRISE-RPC.md`.
+
+Root exécute six tests purs du corps AST réel de `Session.wait`, avec doubles
+de processus, ledger et fermeture. Codes métier 0/1/2 conservés ; timeout,
+taint et cleanup incomplet refusés. Code 0, six cas distincts verts, sans
+import G1 complet, processus OS ni produit. Root rehash 74 références du reçu
+et constate les 35 pins source avant/après inchangés. Ce n'est ni un test du
+transport proposé, ni un canari réel, ni une calibration ou une ronde.
+Reçu `de067fde007570967cd507666e8764f86eda9b8babffda86f1ea1cedb8d74662`,
+15 878 octets, conservé avec les six stages explicitement synthétiques.
+
+Le nouveau dossier fermé est archivé sous `G5-real-port-policy-E3PqfI`.
+Copie byte-exacte effectivement contrôlée : 13 fichiers, 31 559 octets.
+Manifeste `G5-real-port-policy-copy-20261007.json`, SHA-256
+`365e93456862ddb42058a7ec44a036d9cca0bad2d0bf6522ebc318feed8584d5`.
+Ni inodes de la copie qualifiés, ni références originales rebasées.
+Les anciens gels, le produit et les modifications préexistantes sont préservés.
+
+La lecture native du goal donne 10 019 552 tokens conservateurs. Correction
+positive effectivement enregistrée : 337 870 tokens, un lot logique, durée 0
+pour ne pas additionner le temps parallèle. Usage local : 58 lots et
+10 019 552 tokens, plafond GPT 10 000 000 inchangé. Ce compteur n'est pas une
+facture API. `record-usage` et `budget-check` sortent 75 ; le second indique
+`Budget: STOP`. `next-action` retourne `[arret] DISCOVER` pour dépassement.
+Aucune nouvelle exécution ou implémentation n'est lancée après ce constat.
+La clôture, la documentation et leur sauvegarde sont seules poursuivies.
+
+Le relèvement exact de 10 à 12 millions est demandé à Ludo et reste sans
+réponse humaine dans ce lot. Pas de `new-cycle`, de hausse implicite ou de
+transition forcée pour contourner ce coupe-circuit. Le goal reste actif et
+non accompli : transport réel, attribution complète, HEAD frais, cinq
+calibrations et deux rondes indépendantes manquent toujours. Aucune nouvelle
+release, publication, installation ou prolongation du heartbeat.
