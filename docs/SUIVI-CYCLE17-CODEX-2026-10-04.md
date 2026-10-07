@@ -805,3 +805,163 @@ carte ou de la fiche release. Ses preuves conservent leur HEAD exact testé
 `b517daed…` ; un commit de documentation ne les retargete pas. Avant toute
 exécution future exigeant le HEAD courant, reconstruire et relire le gel
 approprié, sans réutiliser un reçu ancien comme résultat d'une nouvelle ronde.
+
+## Reprise après l'accord limité aux métadonnées, 7 octobre
+
+Le « ok » humain répond à la question exacte sur `file-read-metadata` des
+deux littéraux `/private` et `/private/tmp`. Il n'autorise ni contenu,
+descendants, permissions globales, publication ou prolongation de la reprise
+nocturne. Le reçu de périmètre est conservé dans le contrôleur QA
+`/private/tmp/therese-c17-r08-root-9S4sNn9t/` ; SHA-256
+`352607dbda8a748abf845935269b05cd7931c5278162c4e5a7f82439de573203`.
+
+Deux définitions nouvelles sont lues et rehashées sans modifier les gels r07.
+Le canari direct r08 porte l'index `d97f12e9…` et 29 références ; la copie
+conjointe SQL r08 porte l'index `a7624cb8…` et 25 références. Le seul changement
+fonctionnel de profil est la ligne de 73 octets autorisée. Aucun accès réseau,
+écriture, signal ou contenu supplémentaire n'est ajouté. Les états de
+préparation inscrits dans les INDEX restent historiques ; les résultats
+effectivement exécutés sont séparés.
+
+Les 27 tests purs du protocole conjoint sont réellement exécutés avant les
+canaris : 27 PASSED, code outil 0, pytest 0,01 seconde. Les 23 références de
+leur définition sont identiques avant/après. Leur stdout a pour SHA-256
+`c9a7bade531c966416d5b6e497aa60d103a12b1f6375eeb750ff14c4beef2fa8`.
+Ce sont des fixtures synthétiques, pas une qualification OS ou produit.
+
+### Deux canaris directs r08 effectivement observés
+
+Le positif s'exécute sur la racine fraîche
+`/private/tmp/therese-c17-g1-canary-positive-mjq74g5e/` : code 0, workload
+inerte sorti normalement, 0,08553458399546798 seconde selon le reçu. Nettoyage
+stage 0,00422662500932347 seconde et arrêt 0,00421558300149627 seconde,
+tous deux sous 8 secondes, sans signal, résidu, ambiguïté ou erreur.
+Les bruts sont stables et les gestionnaires restaurés. Reçu SHA-256
+`dba5c94169670cca0455c2ac3ebea83e40d0bdd8dfd5ba7cb7dd59fb6f52969b`.
+
+Le timeout s'exécute séparément sur
+`/private/tmp/therese-c17-g1-canary-timeout-fdq03ajd/` : code outil 0 car le
+résultat attendu est bien observé, mais workload arrêté avec exit -15 et
+timeout d'instrument, jamais succès produit. Durée reçue
+3,0326072919997387 secondes ; nettoyage stage 0,013324500003363937 seconde
+et arrêt 0,007531750001362525 seconde. Les cinq signaux réels ciblent seulement
+la birth canonique du workload : trois SIGSTOP, SIGTERM, SIGCONT. Les taints
+attendus sont conservés ; aucune stabilité de logs après timeout n'est
+affirmée. Reçu SHA-256
+`402237ecf45e8c618d932b9ad77787014f20214d63dccfd2424f481af290a3c0`.
+
+Root vérifie les deux bruts, leurs SHA, les bornes stage/stop, les taints
+exacts et les identités, sans s'appuyer sur le seul exit 0 du runner.
+Le premier vérificateur échoue en tentant de parser un stderr vide comme
+JSON ; son code et ses sorties rouges sont conservés. Une copie V2 lit les
+flux comme octets, sans abaisser les assertions. Elle réussit, ainsi que
+huit mutations explicitement synthétiques en mémoire. Ces mutations ne sont
+ni de nouvelles exécutions OS, ni des tests produit.
+
+### Premier raccord imbriqué r08 : rouge d'instrument préservé
+
+Le vrai canari conjoint positif échoue avant le grant de lancement imbriqué :
+`ValueError: joint exact request environment_sha256`. Racine fraîche
+`/private/tmp/therese-c17-g1-canary-positive-9ozdv1tk/`, reçu SHA-256
+`e8670cbd2a956903e94e1b1511a16afa6877270f648367bd812daa36ac48542b`.
+Aucun enfant imbriqué n'est lancé. L'abort ferme seulement le helper attribué,
+nettoyage 0,030613458002335392 seconde, sans résidu, ambiguïté ou erreur.
+Le timeout conjoint n'est pas relancé avec la même cause déterministe.
+
+La reconstruction pure à partir de l'environnement et de la demande physiques
+donne l'attendu `11960e1f…`. L'ajout unique
+`__CF_USER_TEXT_ENCODING=0x1F5:0:0` reproduit exactement le hash demandé
+`9ea3a1ea…`, sans retirer de clé ou modifier d'autre valeur. Cela isole le
+delta de jointure ; l'injecteur système exact n'est pas prouvé. Le correctif
+est préparé dans une nouvelle copie : fournir explicitement cette valeur
+liée à l'UID dans l'environnement admis, en conservant l'empreinte complète.
+Aucun filtre silencieux ou changement de permission n'est accepté.
+
+Les diagnostics externes des seuls PID attribués 73627, 73630, 73707,
+73708, 74269 et 74270, puis des seuls ports QA 17593/5173, ne retournent
+aucune ligne. Ces diagnostics ne qualifient pas l'API G1 d'absence des ports.
+Les cinq arbres source/reçus sont conservés dans les dossiers
+`qualification/G1-r08-*` et `qualification/G1-G5-r08-*` nommés par leurs
+identifiants ci-dessus. Comparaison byte-exacte : 96 fichiers, 1 099 138
+octets, SHA manifeste `a07ca70b…`, sans rebasing ni preuve d'inode des copies.
+
+La nouvelle lecture native du goal le trouve `active`, contrairement au
+checkpoint précédent. Il s'agit du retour réel du produit, pas d'une
+mutation de statut par le code QA. Cela ne prolonge pas le heartbeat expiré
+et ne valide pas de ronde. Les admissions FULL, quatre capacités G1 et les
+deux rondes produit restent non qualifiées à cette étape.
+
+### Correctif de jointure et deux essais imbriqués effectivement qualifiés
+
+La nouvelle copie porte l'index `604dd16b…`, 39 références rehashées exactes.
+Le delta G1 est limité à la constante obligatoire
+`__CF_USER_TEXT_ENCODING=f"0x{os.getuid():X}:0:0"`. Le runner durcit également
+les bornes de nettoyage stage/stop et les booléens de taint ; son prédicat
+est extrait pour des tests purs. Les gates, protocole, owner, helper,
+capture imbriquée, fixture et profil SQL r08 sont inchangés. Aucun flag de
+capacité ou admission n'est ouvert.
+
+Les 52 tests purs sont réellement exécutés : 27 cas précédents et 25 nouveaux,
+pytest 0,09 seconde, code 0, stderr vide, sources avant/après identiques.
+L'ancien rouge est reproduit ; les contrôles de hash complet ET l'allowlist
+réelle sélectionnée par AST refusent une clé absente, une valeur différente
+ou une clé supplémentaire. Reçu SHA-256
+`0070f59d023fe30dcc95b47f6dcb98c434a3f0fb8e40b86b04dc8abb9ed32fc7`.
+Ce deuxième passage de 27 cas n'est pas compté comme 27 tests distincts en plus.
+
+Après lecture root et revue indépendante, un nouveau GO exact est établi
+pour chaque variante et le gel corrigé. Le positif réel est exécuté dans
+`/private/tmp/therese-c17-g1-canary-positive-18ixt1ew/` : reçu
+`7da050cbd2be28669bc45511dce91069f9c1727d1d9d0ce7c3baf6b63fad43df`,
+durée 0,3621015829994576 seconde. La birth enfant est capturée avant release,
+le helper reste vivant jusqu'à l'ACK, les flux sont effectivement stables.
+Nettoyage imbriqué 0,05675712499942165 seconde, stage
+0,006847083001048304 seconde et arrêt 0,006174207999720238 seconde. Zéro signal,
+taint, résidu, ambiguïté ou erreur ; handlers restaurés.
+
+Le timeout réel suit seulement après validation physique du positif, dans
+`/private/tmp/therese-c17-g1-canary-timeout-yuqq9tok/` : reçu
+`66fb59426ab4fa2fe5d01d163a216c2448fd3122a562a5d832b5760a7cf3c1b9`,
+durée 2,380147208008566 secondes. La limite imbriquée de 2 secondes est observée,
+pas le watchdog externe. STOP trois fois, TERM et CONT ciblent exclusivement
+l'enfant birth `77531/1791357590/212770`, UID 501, PGID 77530 ; le helper
+77530 reste vivant avant ACK et sort ensuite avec exit 86. Nettoyage imbriqué
+0,06567416701000184 seconde, stage 0,008596166997449473 seconde et arrêt
+0,007137916007195599 seconde, tous sous 8 secondes. Les taints exacts et la
+classification timeout d'instrument sont conservés ; aucun vert produit.
+
+Le vérificateur root V2 contrôle les SHA/taille, contextes, environnement
+intégral, grants, birth réservée, ACK, bruts, taints et bornes, puis rejette
+14 mutations explicitement synthétiques en mémoire. Son premier mode à un
+seul positif ne prétend pas vérifier une paire ; le passage final vérifie
+bien deux racines et deux variantes distinctes. Une seconde relecture
+indépendante confirme les reçus et 12 publications hardlink physiques,
+incluant les deux child-gates. Elle ne rejoue aucun OS. Les audits de
+processus non attribués ne sont pas présentés comme confinement hostile
+exhaustif ou absence de course Darwin lecture/signal.
+
+Les six PID attribués et les deux ports QA sont de nouveau absents au
+diagnostic externe, sans signal. Les trois nouvelles copies sont conservées
+dans `qualification/G1-G5-env-fix-*` ; comparaison byte-exacte de 96 fichiers,
+1 119 319 octets, manifeste `20367c3a…`. Le rouge précédent reste intact.
+
+Le raccord mesuré est volontairement un canari inerte à un seul enfant.
+Il ne devient pas par copie un renderer produit multi-enfants. L'observation
+des listeners/absence des ports, le relais root des bindings, l'environnement
+du successeur, les bornes manquantes et le raccord G5 multi-enfants restent
+à intégrer et à vérifier avant une ronde complète. Zéro ronde/FULL est ajouté,
+aucun build, tag ou release produit n'est déclaré livré.
+
+### Comptabilisation : plancher natif distinct des estimations
+
+Le compteur natif du goal est effectivement lu à 7 528 002 tokens pendant
+ce lot, avec statut `active`. Le goal a commencé après le cycle 17 ; il ne
+prouve pas une mesure complète du cycle, ni une facturation API. Le budget
+local ne comptait jusque-là que 1 680 000 tokens estimés. Pour que son
+coupe-circuit ne dépende plus uniquement de cette sous-estimation, le CLI
+enregistre une correction positive de 5 848 002 tokens et un seul lot logique.
+Retour réel : 54 lots, 7 528 002 tokens comptabilisés comme plancher
+conservateur. Ce n'est pas 54 appels fournisseur. Les anciens événements
+estimés restent intacts, le temps parallèle n'est pas cumulé et aucun plafond
+n'est relevé. Les préparations listener/relais encore en cours seront suivies
+séparément. Aucun forçage de phase, plateau ou ronde n'est ajouté.
