@@ -1125,3 +1125,123 @@ HEAD documentaire à cette revue : `390d2ec4…` ; les pins historiques source
 complets, le raccord listener/multi-enfants et le watchdog global restent à
 qualifier avant les deux rondes réelles. Le goal natif reste actif ; ce suivi
 ne prolonge pas le heartbeat expiré.
+
+### G5 séquentiel : trois enfants inertes réellement mesurés
+
+Lot du 7 octobre, clôture des preuves vers 19 h 25 UTC. Branche documentaire
+`codex/cycle-17`, HEAD avant ce lot `bb56eb47…`, push précédent réellement
+terminé et référence distante concordante. Le GO humain sur les métadonnées
+de `/private` et `/private/tmp` ne vaut ni nouveau périmètre ni publication.
+La QA native isolée reste dans le périmètre du précédent « termine ».
+
+La copie neuve `G5-sequential-source-3yaUMY`, index SHA-256
+`2dc83d82aa1f6efd8751899dca4268d8abb1e06d0af70534f22508b957a97a0d`,
+11 504 octets, ferme exactement trois fixtures Python directes. G1, gate
+initial, SQL r08 et fixture restent byte-exacts au gel mono précédent.
+Les sept deltas, préimages et défauts pré-revue sont conservés. Aucun ancien
+reçu n'est relabellé, rebasé ou présenté comme mesure de cette copie.
+
+Quatre incohérences de l'instrument sont corrigées avant le canari OS :
+bootstrap de la clé contrat absente, audit du namespace par noms exacts,
+rehash final des ACK même après sortie immédiate du helper, puis inclusion
+du gate physique dans les sept références de chaque enfant. Elles ne sont
+pas classées comme bugs THÉRÈSE. Root lit les sources/deltas, et deux agents
+relisent le gel sans import G1 complet ni exécution OS.
+
+L'auteur mesure 72 tests purs puis root rejoue séparément les mêmes cas :
+code 0, 13 pins avant/après inchangés. Root relit les deux flux et rehash
+29 références du reçu pur ; stdout indique `FULL_G1_IMPORTED False`.
+Stderr contient le rapport unittest avec 72 noms `ok`, pas un flux vide.
+Reçu root SHA-256
+`4e1fc13093ee20b70923c5686370e3a975d8bf78a9e4bccf51eac735ab402bf2`.
+Ce sont 72 cas distincts, pas 144 ; les anciens tests mono ne sont pas rejoués.
+Les doubles et extractions AST ne deviennent pas des observations du kernel.
+
+La table parent ferme index, nonce, argv, cwd, environnement intégral,
+bornes et sinks distincts avant le premier enfant. Chaque lancement exige
+un grant de la vraie Session, puis capture de birth et réservation du rôle
+avant release du workload. Le helper consomme l'ACK exact avant la demande
+suivante, qui rejoint cet ACK. Outer 30 s et cleanup 8 s restent inchangés ;
+un budget frais insuffisant refuse un enfant, sans promesse de faire rentrer
+les trois pires cas dans ces 30 secondes.
+
+Après les revues et deux GO root exacts séparés, deux canaris OS sont mesurés :
+
+- Positif, `G5-sequential-positive-8_f07gq4` : trois terminaisons normales,
+  aucun signal enfant, helper exit 0, pas de taint, stage et Session fermés.
+  Durée du reçu 0,985864959002356 seconde ; SHA-256
+  `07b3d31b9cce03cc0a5bacefeb5fec79a88f1451a9663f15bf6c4d1a70fe4b85`.
+- Timeout, `G5-sequential-timeout-_8ixi59t` : deux enfants normaux puis le
+  troisième borné à 2 s, cleanup 0,07013858400750905 seconde. Les cinq signaux
+  SIGSTOP/SIGTERM/SIGCONT ciblent seulement sa birth
+  `20924/1791400872/81091`, jamais le helper `20921`, vivant avant l'ACK.
+  Helper exit 86, taint monotone, stage `raw_stable=false`, erreur d'instrument
+  conservée. Aucun quatrième enfant observé, aucune assertion métier verte.
+  Durée du reçu 2,9849783749959897 secondes ; SHA-256
+  `09cd43ba4fa002a0ba5a24abdefd510c26cfa349fbbb36dbcec90b47e09627c7`.
+
+Les deux wrappers sortent 0, sans événement watchdog coopératif de 90 s ;
+stdout/stderr exclusifs sont conservés, stderr OS vide. Le code du wrapper
+ne remplace pas le contrôle des bruts. Root vérifie physiquement 105
+références et 38 hardlinks : tableaux, GO, grants, gates, releases, markers,
+cleanups, ACK, flux et stages/stops. Les ACK consommés sont chaînés et les
+six births/rôles/sinks sont distincts. Rapport SHA-256 `4909b203…`.
+Une seconde relecture indépendante lit tables, demandes, flux helper,
+cleanups et fermeture, sans relancer ce vérificateur ni prétendre recompter
+ses 105 références. Aucun défaut concret dans cette portée limitée.
+
+Le contrôle root `ps` sur les seuls dix PID déjà attribués retourne code 1,
+aucune ligne ni erreur. Aucun signal externe, aucun profil réel ni port réel
+inspecté ou modifié. La comparaison produit `git diff --quiet b517daed… --
+src tests scripts` retourne 0. Les pins historiques restent historiques.
+
+Sources et trois arbres de preuves sont copiés dans quatre destinations
+neuves sous `qualification/G5-sequential-*`. Comparaison byte-exacte :
+179 fichiers, 1 591 397 octets ; manifeste `G5-sequential-copy-manifest-20261007.json`,
+SHA-256 `a132a4c3acc71188a06dc5596d8040229e7af6f37e1cabe9bd063c7ea1a6e2fd`.
+Les inodes/hardlinks des copies ne sont pas qualifiés et les références
+originales ne sont pas rebasées. Contrôleur fermé et détail des preuves :
+`qualification/G5-sequential-root-closed-lGxqUtsK/checkpoint.json`.
+
+### Deux releases existantes vérifiées en lecture seule
+
+Le skill Codex `release-therese`, sa commande canonique Claude et sa checklist
+sont lus pour la vérification. Aucun lock de publication, merge, bump, tag,
+build, installation ou message Discord n'est lancé. Les rapports canoniques
+restent `docs/releases/v0.77.2-alpha.md` et `docs/releases/v0.77.1-alpha.md` ;
+les changements préexistants de ce dernier sont préservés.
+
+Les API GitHub effectivement consultées confirment les deux dernières releases
+publiées : `v0.77.2-alpha` le 4 octobre à 15:47:27 UTC et `v0.77.1-alpha` le
+2 octobre à 07:59:38 UTC, dix assets chacune, non brouillons et préreleases.
+Les deux workflows existants sont `completed/success`, sur les commits
+indiqués par leurs métadonnées ; aucune CI n'est relancée.
+
+Le GET public de l'updater sert 0.77.2, sept plateformes, URLs du bon tag.
+Ses 5 260 octets et SHA-256 `5794240f…` concordent avec le digest de l'asset
+GitHub. Le GET de la landing contient `Alpha v0.77.2` et trois liens du même
+tag. Cette vérification HTTP n'est ni une recette visuelle, ni un nouveau
+contrôle des binaires/signatures ou de l'installation. Relevé réel dans
+`qualification/G5-sequential-root-closed-lGxqUtsK/release-readonly-checkpoint.json`.
+Aucune nouvelle release préparée ou publiée.
+
+### Limites et point de reprise
+
+Le prochain port doit encore traiter les helpers indirects, Node/Vitest et
+les sorties métier normales non nulles, puis raccorder les cinq appels réels.
+Le gate actuel est Python seulement et le helper doit être enfant direct
+de G1. Ce canari ne qualifie ni petits-enfants, ni fork hostile exhaustif,
+ni héritage des FD, ni primitive atomique birth/signal ou hard realtime.
+Les quatre caps, l'admission FULL, les profils/API complets, le loader listener
+et le watchdog global restent fermés. Il manque aussi un gel du HEAD courant,
+cinq calibrations fraîches et les deux rondes réelles indépendantes A/B.
+
+Budget CLI effectivement relu après correction positive de 713 707 tokens :
+57 lots logiques, 9 681 682 tokens au plancher natif conservateur, pas une
+facture API. Plafond GPT 10 000 000 inchangé, contrôle `Budget: PASS` ; le
+plancher laisse 318 318 tokens à cet instant, avant la fin documentaire.
+Ce reste ne garantit pas l'achèvement des rondes/release. Aucun plafond
+n'est relevé ni temps parallèle ajouté. L'état reste `active`, `DISCOVER`,
+zéro ronde, 23 transitions forcées historiques. Aucun canari ne renouvelle
+les calibrations expirées. Goal natif actif, heartbeat non prolongé, pas de
+publication ou d'action sur les données réelles.
