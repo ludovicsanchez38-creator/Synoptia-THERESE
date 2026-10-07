@@ -965,3 +965,115 @@ conservateur. Ce n'est pas 54 appels fournisseur. Les anciens événements
 estimés restent intacts, le temps parallèle n'est pas cumulé et aucun plafond
 n'est relevé. Les préparations listener/relais encore en cours seront suivies
 séparément. Aucun forçage de phase, plateau ou ronde n'est ajouté.
+
+### Listeners QA : rouge physique conservé puis positif V4
+
+La lecture root et une revue indépendante trouvent trois refus déterministes
+dans la préparation initiale : le gate ne reconnaît pas la racine listener,
+le runner omet `bytes` dans les références comparées au GO, et la métrique
+`finish` ne couvre pas les scans de ports ultérieurs. Les gels V1/V2 restent
+historiques. La nouvelle V3 distingue la branche canari, vérifie les références
+physiques complètes et publie des durées de phase séparées. Aucun profil
+Seatbelt ni droit supplémentaire n'est ajouté.
+
+Le diagnostic lsof utilise sa propre barrière : birth libproc attribuée au
+ledger avant exec, deux flux distincts, timeout rouge et nettoyage par les
+seules births admises. La commande est `-F p`, sans `-t`, qui supprimerait
+les avertissements. Cette observation sous les droits courants ne prouve pas
+une visibilité exhaustive. Les PIPE diagnostiques ne sont pas présentés
+comme les sinks exclusifs de stages G1.
+
+V3, index `486a2eb0…`, est rehashée 29/29 ; root exécute effectivement ses
+13 tests purs, code 0, 0,004 seconde. Son canari réel échoue dans la racine
+`/private/tmp/therese-c17-listener-canary-mv7yrcOi/` : lsof retourne code 0,
+stderr vide et stdout exact `p6126\nf3\n`. Le parseur n'accepte que les
+champs `p`. Le manuel lsof installé indique que `f`, descripteur de fichier,
+est toujours sélectionné. Le rouge est donc un défaut d'instrument, pas un
+bug produit ni la présence d'un processus étranger. Reçu SHA-256
+`adf4b4ea8898993192aa07f5820b357275af64249063929b20ab9a41ada1a4d5`.
+
+La fermeture du rouge est relue sur ses vrais bruts : sonde puis deux témoins
+attribués uniquement, zéro résidu, ambiguïté ou erreur d'attribution, handlers
+restaurés. `finish` mesure 0,007299750010133721 seconde pour la sonde,
+0,007233541997266002 pour les services et 0,0058972090046154335 pour la
+fermeture finale. Les taints et le faux `log_stability_proved` sont conservés.
+Les deux reçus de fin observent chacun quatre scans de ports vides.
+
+Une V4 neuve, index `f8b7eb48…`, corrige seulement le parseur exécutable :
+grammaire bornée `(pPID fFD+)+`, sans filtrage silencieux. Les sorties
+malformées, groupes incomplets, doublons, champs inconnus, NUL/CR et plusieurs
+listeners restent refusés. Les 36 références sont exactes ; les 15 tests
+purs passent réellement, 0,004 seconde, code 0. Ils incluent les cas V3,
+donc les deux passages ne sont pas additionnés en 28 tests distincts.
+
+Après lecture root, revue indépendante et nouveau GO exact, le positif V4
+s'exécute dans `/private/tmp/therese-c17-listener-canary-bEQ2Oh8z/` : code 0,
+durée reçue 0,8516174999967916 seconde, SHA-256
+`2f8d8a9884ec67be35e2f18b97689f4cb60e6edda79017f4ec731d31222c23eb`.
+Deux scripts inertes, pas THÉRÈSE/Vite, écoutent uniquement les deux ports QA.
+La sonde demande effectivement deux observations au parent vivant ; chacune
+porte deux scans concordants et la birth exacte du service attendu. Les
+réponses RPC sont liées aux demandes et aux SHA des observations.
+
+Births : backend `7485/1791397178/158574`, vite `7488/1791397178/192175`,
+sonde `7489/1791397178/244162`, owner `7476/1791397177/924051`, UID 501.
+La sonde termine normalement, stderr vide. Les signaux ne ciblent que les
+deux témoins admis, jamais l'owner ou les diagnostics. Zéro taint, résidu,
+ambiguïté ou erreur ; handlers restaurés. `finish` mesure respectivement
+0,006344084002193995, 0,007866291998652741 et 0,006217207992449403 seconde.
+Les phases services/final, scans inclus avant publication finale, mesurent
+0,15713737499027047 et 0,15497508300177287 seconde. Le watchdog coopératif de
+90 secondes ne se déclenche pas ; aucune garantie hard realtime n'est affirmée.
+
+Le vérificateur root et une seconde relecture indépendante valident les bruts.
+La revue indépendante rehash 71 références et contrôle dix publications
+hardlink physiques. Le premier vérificateur root échoue sur des noms de
+champs de scans incorrects ; une copie V2, conservant ce rouge, lit le vrai
+schéma `scans` et vérifie effectivement les deux résultats. Les PID attribués
+et les deux ports ne retournent ensuite aucune ligne au contrôle root.
+Le premier `ps` est refusé par le sandbox ; le contrôle escaladé, limité aux
+huit PID déjà attribués, retourne code 1 et aucun flux. Aucun signal externe.
+
+Limite de provenance : les reçus d'étape conservent encore le libellé hérité
+`execution_scope=g1_g5_joint_inert_canary_only`. Le résultat et l'admission
+portent la bonne portée listener. Les bruts ne sont pas relabellés : ce
+canari ne devient ni une ronde produit, ni une capacité FULL.
+
+### Relais root/stage : tests purs réussis, intégration encore fermée
+
+Le gel `root-stage-relay-pure-XVKXbS`, index `eb0e59d7…`, contient les trois
+méthodes de livraison root/binding tardif. Root lit les quatre diffs, le
+contrat pur, les bornes et les tests ; les 34 références sont exactes.
+Les 37 tests purs sont effectivement exécutés, code 0, 0,02 seconde, sans
+import de Session complète, libproc ou processus produit. La revue indépendante
+confirme l'environnement propre, les bornes et les liens de livraison.
+
+Le plafond de ronde calculé, 12 884 secondes, reste une proposition non
+mesurée et non admise. Le watchdog global, les profils/API complets,
+le raccord listener et le G5 multi-enfants manquent encore. Deux refus
+contractuels supplémentaires sont repérés : le consommateur exige
+`launched_services` et `unlaunched_handles`, que G1 n'émet pas ; le libellé
+de portée doit aussi distinguer une vraie ronde du canari. Un correctif
+séparé est préparé, sans modifier ce gel ni ouvrir ses flags.
+
+Les six arbres de ce lot sont conservés sous `qualification/G1-listener-*`,
+`qualification/root-stage-relay-pure-XVKXbS` et
+`qualification/listener-root-closed-ZLM4Dg5R`. Comparaison byte-exacte :
+186 fichiers, 2 290 498 octets, manifeste SHA-256
+`48146bb8ef85cfbecf1590e738c9c6962d7094b10a5b29ad1b21c7f206accf0c`.
+Les références originales ne sont pas rebasées ; les inodes des copies
+ne sont pas présentés comme qualifiés. Le checkpoint détaillé est dans le
+contrôleur fermé, `checkpoint.json`.
+
+Comptabilisation réelle CLI : 55 lots logiques, 8 713 694 tokens au plancher
+natif conservateur. La correction positive est 1 185 692 par rapport au
+plancher précédent, sans relever de plafond ni additionner le temps parallèle.
+Il ne s'agit toujours pas d'une mesure API ou d'une facture.
+
+L'état effectivement relu reste `active`, `DISCOVER`, zéro ronde et 23
+transitions forcées historiques. Les calibrations test/UI/captures/réseau/logs
+sont expirées ; ces canaris ne les renouvellent pas. HEAD documentaire
+`96371340…`, source historique `b517daed…`, sans diff `src/tests/scripts`.
+Les modifications antérieures de la carte et de la fiche release restent
+hors de ce lot. Ni tag, build produit, release, installation, publication,
+heartbeat prolongé ou donnée réelle ne sont modifiés.
