@@ -1,0 +1,36 @@
+{
+  "actor": "/root",
+  "approved_outputs": [
+    "campaign-sentinel.txt",
+    "complements/b1760-identites-historiques-completes.json",
+    "complements/contrats-normalises-proposes.json",
+    "complements/instruments/ipv6-capacity-guard.py",
+    "complements/instruments/observer-b1760-export.py",
+    "complements/instruments/test_b1753_frontiere_suivante.py",
+    "complements/instruments/trace-b1753.py",
+    "runtime/calibrate-logs.py"
+  ],
+  "binding_ref": {
+    "bytes": 4373,
+    "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/authorization/support-binding.json",
+    "sha256": "b561e773099e0412094af8f9f8985ab041e8fb59bdee87598c9b560e6e50a4e5"
+  },
+  "constructor_ref": {
+    "bytes": 14338,
+    "path": "/private/tmp/therese-c17-rpc-integration-UctqC8UG/support-v2/prepare_support.py",
+    "sha256": "3895e5782fb1668cb2ed058c6eb7fe9c789dd65ef3cd8dd34232013dbbbe878e"
+  },
+  "decision_id": "therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3",
+  "head": "2d69e30c9c6dd18823ee6102271876003a6a67cc",
+  "root": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3",
+  "root_authorization_origin": {
+    "bytes": 865,
+    "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/authorization/support-origin.json",
+    "sha256": "34b2cf5c127d1361875d5e6d3181429353b387ee0e79599445c63151b9bebfce"
+  },
+  "round_id": "therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3",
+  "schema": "c17-wrapper-support-preparation-decision-v1",
+  "scope": "WRAPPER_CANARY",
+  "status": "go_prepare_static_support_only",
+  "supplied_by": "/root"
+}

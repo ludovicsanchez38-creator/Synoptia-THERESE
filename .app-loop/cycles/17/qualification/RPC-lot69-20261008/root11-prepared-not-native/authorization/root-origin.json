@@ -1,0 +1,21 @@
+{
+  "actor": "/root",
+  "builder_ref": {
+    "bytes": 81180,
+    "path": "/private/tmp/therese-c17-wrapper-profile-three-builder-G8n4Ef/build_fresh_wrapper.py",
+    "sha256": "ecca6ab61c8114f827ee020a6b28c2eb8a9c53a8942db646ae62fb059b34a9dc"
+  },
+  "external_origin_ref": {
+    "bytes": 5071,
+    "path": "/private/tmp/therese-c17-root-fresh11-controls-5eCuk7hB/prepare-go.json",
+    "sha256": "17382f10805491b8e73401533392e377ef204309fc6ea971f1196ecdb0e40c9f"
+  },
+  "head": "2d69e30c9c6dd18823ee6102271876003a6a67cc",
+  "origin_kind": "root_tool_call",
+  "preparation_only": true,
+  "root": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3",
+  "round_id": "therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3",
+  "runtime_GO_not_consumed": true,
+  "schema": "c17-root-instrument-preparation-origin-v1",
+  "scope": "WRAPPER_CANARY"
+}

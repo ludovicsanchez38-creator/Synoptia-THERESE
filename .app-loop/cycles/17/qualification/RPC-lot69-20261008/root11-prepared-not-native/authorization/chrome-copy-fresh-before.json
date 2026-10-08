@@ -1,0 +1,38 @@
+{
+  "all_bytes_modes_UID_GID_links_equal": true,
+  "codesign_reexecuted": false,
+  "copy_manifest_equal": true,
+  "copy_manifest_ref": {
+    "bytes": 403262,
+    "path": "/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/v3-copy-after.json",
+    "sha256": "d89e52ec0d6877aed99653b6f24d654cb20929c2d0007e45eb5d81ec276be472"
+  },
+  "copy_snapshot_sha256": "9cd92c95330653ad6e29f22431f7097b7eadd729b669f46e9a1be1c485eb13f6",
+  "entries": 1339,
+  "limit": "Read-only finite scan with before/after stat checks, not an atomic hostile-filesystem snapshot.",
+  "no_hardlinks_to_source": true,
+  "observed_at_utc": "2026-10-08T16:47:15.331665+00:00",
+  "root_copy_receipt_ref": {
+    "bytes": 17160,
+    "path": "/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/v3-receipt.json",
+    "sha256": "f97793cb43454051da734685185cb5d4e5b5ffbabc516580287195ef3d32993c"
+  },
+  "runtime_qualified": false,
+  "schema": "c17-chrome-copy-fresh-filesystem-observation-v1",
+  "source": "/Applications/Google Chrome.app",
+  "source_and_copy_inodes_match_archived_snapshots": true,
+  "source_manifest_equal": true,
+  "source_manifest_ref": {
+    "bytes": 403189,
+    "path": "/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/v3-source-after.json",
+    "sha256": "c0194aef8706fde7c8fdc252e820f3357daa1679f2366508a22d030d56316820"
+  },
+  "source_snapshot_sha256": "9c553093f496bf4aa0ad11ffffb8a7d529466cdf9891301d18f0d71ff0f8df89",
+  "target": "/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app",
+  "types": {
+    "directory": 635,
+    "file": 697,
+    "symlink": 7
+  },
+  "xattrs_currently_measured": false
+}

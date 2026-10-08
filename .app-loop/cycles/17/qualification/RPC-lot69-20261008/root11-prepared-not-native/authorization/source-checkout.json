@@ -1,0 +1,25 @@
+{
+  "git_head": "2d69e30c9c6dd18823ee6102271876003a6a67cc",
+  "git_head_ref": {
+    "bytes": 41,
+    "path": "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source/.git/HEAD",
+    "sha256": "4897ce1a0b3c0edc6b24594d6e5332811446a5f1e2a68a8df540828e45b5cfa4"
+  },
+  "git_tree_verified": true,
+  "head": "2d69e30c9c6dd18823ee6102271876003a6a67cc",
+  "metadata_only_not_runtime_qualification": true,
+  "product_source_root": "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source",
+  "schema": "c17-wrapper-canary-source-checkout-v1",
+  "source_manifest_original_ref": {
+    "bytes": 1537061,
+    "path": "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/proofs/qa-source-files.json",
+    "sha256": "0904574e2b35b523b8454b33156f595f05a62e21609453a65db59ae516423b89"
+  },
+  "source_manifest_ref": {
+    "bytes": 1537061,
+    "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/authorization/source-files.json",
+    "sha256": "0904574e2b35b523b8454b33156f595f05a62e21609453a65db59ae516423b89"
+  },
+  "symlinks_verified": 0,
+  "tracked_files_verified": 3579
+}

@@ -1,0 +1,11 @@
+--- /private/tmp/therese-c17-test-runner-boundary-eUIHsp/preimages/wrapper_blueprint.py	2026-10-08 13:08:54
++++ /private/tmp/therese-c17-test-runner-boundary-eUIHsp/source/wrapper_blueprint.py	2026-10-08 13:08:54
+@@ -206,7 +206,7 @@
+                 env["C17_TEST_RUNNER_DEFECT"] = "1"
+             if tool == "pytest":
+                 argv = [str(QA_PYTHON), "-m", "pytest", "--noconftest",
+-                        str(test_out / "test_temoin_c17.py"), "--junitxml=" + str(xml),
++                        "--rootdir=" + str(test_out), str(test_out / "test_temoin_c17.py"), "--junitxml=" + str(xml),
+                         "-p", "no:cacheprovider"]
+             else:
+                 argv = [str(FRONT / "node_modules/.bin/vitest"), "run", "--config",

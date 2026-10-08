@@ -1,0 +1,213 @@
+{
+  "schema": "c17-root-main11-preparation-script-documentary-index-v1",
+  "actor": "/root/shared4_execution",
+  "prepared_at": "2026-10-08T16:38:40Z",
+  "status": "documentary_proposal_unexecuted_no_authority",
+  "scope": "MAIN_preparation_script_only_not_builder_not_native",
+  "deadline_checkpoint": "2026-10-08T16:52:30Z",
+  "future_root": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3",
+  "future_root_observed_absent_and_not_symlink": true,
+  "current_documentary_head_provided_by_MAIN_not_recaptured": "5f89164ca0907ed92058fb244847893fc34a059b",
+  "historical_WRAPPER_head_unchanged": "2d69e30c9c6dd18823ee6102271876003a6a67cc",
+  "original_script": {
+    "path": "/private/tmp/therese-c17-root-fresh10-authority-5v3bqKwd/prepare-authority.mjs",
+    "sha256": "be45a1be9bad9351887090afa0b84133215edba9e9c89b80c530f5d1334d2f5b",
+    "bytes": 5465
+  },
+  "script_ref": {
+    "path": "/private/tmp/therese-c17-root-fresh11-controls-5eCuk7hB/prepare-authority.mjs",
+    "sha256": "35688cc980ed2f26a130d0c611378e33916a32068b53c21c7cd8811c9d1b7a3b",
+    "bytes": 5846
+  },
+  "preimage_ref": {
+    "path": "/private/tmp/therese-c17-root-fresh11-controls-5eCuk7hB/preimages/prepare-authority-v10.mjs",
+    "sha256": "be45a1be9bad9351887090afa0b84133215edba9e9c89b80c530f5d1334d2f5b",
+    "bytes": 5465
+  },
+  "forward_diff": {
+    "path": "/private/tmp/therese-c17-root-fresh11-controls-5eCuk7hB/diffs/prepare-authority-forward.diff",
+    "sha256": "d43b2aabb58f22de15b571af65eba6dcb91b3094af0a370964dad8cd33884133",
+    "bytes": 4807
+  },
+  "inverse_diff": {
+    "path": "/private/tmp/therese-c17-root-fresh11-controls-5eCuk7hB/diffs/prepare-authority-inverse.diff",
+    "sha256": "5d7cb871bd88d91627bb3106de0f7a7900c36a29a686ad25a019a211a7503461",
+    "bytes": 4807
+  },
+  "unchanged_base_V10_builder_index_ref": {
+    "path": "/private/tmp/therese-c17-fresh-wrapper-builder-v10-ynPAzC/INDEX.json",
+    "sha256": "ad4cbc19f3c156f0b0d4ff2e3d36b31eccc9bda109cb18cc6c77194aefce1007",
+    "bytes": 8012
+  },
+  "additional_dedicated_builder_proposal_index_ref": {
+    "path": "/private/tmp/therese-c17-wrapper-profile-three-builder-G8n4Ef/PLAN-INDEX.json",
+    "sha256": "d159911e9ffc2886448760fa82936bfee155af911a05c3c685ad21ff0175338f",
+    "bytes": 14533
+  },
+  "preserved_V10_71_pure_replay_ref": {
+    "path": "/private/tmp/therese-c17-root-v10-71-replay-v3-zRFPBqd5/receipt.json",
+    "sha256": "c0864b435265a4c485c78837207184d3964e966689eb97785fe3ab4ff9e3f8e5",
+    "bytes": 68793
+  },
+  "additional_profile_derivation_17_pure_ref": {
+    "path": "/private/tmp/therese-c17-wrapper-profile-three-builder-G8n4Ef/pure-receipt.json",
+    "sha256": "74b6d7a57f23217e8b55c32d9086ba744de01ba000dc4c4d552e9a1530c52742",
+    "bytes": 1705
+  },
+  "preparation_out": "/private/tmp/therese-c17-root-fresh11-controls-5eCuk7hB",
+  "expected_directory_before_future_MAIN_execution": [
+    "INDEX.json",
+    "MAIN11-REVIEW-OBSERVATION.md",
+    "README.md",
+    "diffs",
+    "preimages",
+    "prepare-authority.mjs"
+  ],
+  "future_MAIN_review": {
+    "path": "/private/tmp/therese-c17-root-fresh11-controls-5eCuk7hB/MAIN11-REVIEW-OBSERVATION.md",
+    "required": true,
+    "created_by_this_lot": false,
+    "exists_at_closure": false,
+    "its_contents_must_be_real_MAIN_observation_not_template_or_old_review": true
+  },
+  "observed_static_checks": {
+    "old_preimage_SHA_and_bytes_exact": true,
+    "whole_inverse_restores_original_script": true,
+    "allowed_bounded_replacement_blocks": 8,
+    "checked_literal_refs_rehashed": 16,
+    "mismatches": [],
+    "original_authority_schemas_statuses_flags_preserved": true,
+    "source79_core18_overlay28_19_and_bounds5_50_8_not_derived": true,
+    "script_directory_mode": 448,
+    "script_or_Node_run": false
+  },
+  "limits": {
+    "authority_JSON_registry_GO_created": false,
+    "build_invoked": false,
+    "native_invoked": false,
+    "QA_root_created": false,
+    "G1_imported": false,
+    "profile_compiled_or_executed": false,
+    "repo_canon_Git_changed_or_captured": false,
+    "old_gels_builder_profiles_ROOT10_changed": false,
+    "actual_actor_review_and_next_external_MAIN_tool_required": true,
+    "no_current_Full_or_AB_head_inferred": true,
+    "causal_claim": false,
+    "FULL": false,
+    "release": false
+  },
+  "local_refs": [
+    {
+      "path": "/private/tmp/therese-c17-root-fresh11-controls-5eCuk7hB/prepare-authority.mjs",
+      "sha256": "35688cc980ed2f26a130d0c611378e33916a32068b53c21c7cd8811c9d1b7a3b",
+      "bytes": 5846
+    },
+    {
+      "path": "/private/tmp/therese-c17-root-fresh11-controls-5eCuk7hB/preimages/prepare-authority-v10.mjs",
+      "sha256": "be45a1be9bad9351887090afa0b84133215edba9e9c89b80c530f5d1334d2f5b",
+      "bytes": 5465
+    },
+    {
+      "path": "/private/tmp/therese-c17-root-fresh11-controls-5eCuk7hB/diffs/prepare-authority-forward.diff",
+      "sha256": "d43b2aabb58f22de15b571af65eba6dcb91b3094af0a370964dad8cd33884133",
+      "bytes": 4807
+    },
+    {
+      "path": "/private/tmp/therese-c17-root-fresh11-controls-5eCuk7hB/diffs/prepare-authority-inverse.diff",
+      "sha256": "5d7cb871bd88d91627bb3106de0f7a7900c36a29a686ad25a019a211a7503461",
+      "bytes": 4807
+    },
+    {
+      "path": "/private/tmp/therese-c17-root-fresh11-controls-5eCuk7hB/README.md",
+      "sha256": "92ae1eb6f8edb74a1ad24be36cc2bdb55663cb73b7fb5a28735afeae82bc6f67",
+      "bytes": 3788
+    }
+  ],
+  "source_refs": [
+    {
+      "path": "/private/tmp/therese-c17-wrapper-profile-three-builder-G8n4Ef/profile/chrome.sb",
+      "sha256": "bee3c2e780e58cbc80ed7e37d64115adf08997aab39dae8f11b56050785633a9",
+      "bytes": 2375
+    },
+    {
+      "path": "/private/tmp/therese-c17-test-runner-boundary-eUIHsp/INDEX.json",
+      "sha256": "771565210b1ab41ca7e5a43c89fa63a034c57872515a698a12161e47adfe11b7",
+      "bytes": 5567
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-profile-three-builder-G8n4Ef/build_fresh_wrapper.py",
+      "sha256": "ecca6ab61c8114f827ee020a6b28c2eb8a9c53a8942db646ae62fb059b34a9dc",
+      "bytes": 81180
+    },
+    {
+      "path": "/private/tmp/therese-c17-fresh-wrapper-builder-v10-ynPAzC/INDEX.json",
+      "sha256": "ad4cbc19f3c156f0b0d4ff2e3d36b31eccc9bda109cb18cc6c77194aefce1007",
+      "bytes": 8012
+    },
+    {
+      "path": "/private/tmp/therese-c17-web-root-metadata-POjxSafe/web.sb",
+      "sha256": "51ff2e21500393704ea8709fb9bd177dc1f88793d1e92d09c68be70d905807ff",
+      "bytes": 1780
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-ea92e9f2c3a9485a88dc906c302f42ff/proofs/system-profiler-displays.raw",
+      "sha256": "92d6e897ef52659540e9497649283da5bd4ff4c443c5d0d07f50bbb37d5bc4d0",
+      "bytes": 186
+    },
+    {
+      "path": "/private/tmp/therese-c17-root-v10-71-replay-v3-zRFPBqd5/receipt.json",
+      "sha256": "c0864b435265a4c485c78837207184d3964e966689eb97785fe3ab4ff9e3f8e5",
+      "bytes": 68793
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-profile-three-builder-G8n4Ef/PLAN-INDEX.json",
+      "sha256": "d159911e9ffc2886448760fa82936bfee155af911a05c3c685ad21ff0175338f",
+      "bytes": 14533
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-profile-three-builder-G8n4Ef/pure-receipt.json",
+      "sha256": "74b6d7a57f23217e8b55c32d9086ba744de01ba000dc4c4d552e9a1530c52742",
+      "bytes": 1705
+    },
+    {
+      "path": "/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/v3-receipt.json",
+      "sha256": "f97793cb43454051da734685185cb5d4e5b5ffbabc516580287195ef3d32993c",
+      "bytes": 17160
+    },
+    {
+      "path": "/private/tmp/therese-c17-chrome-policy-assess-WyJvs5Z0/receipt.json",
+      "sha256": "92dbaaed5278671635b2a0d35f8cb4362ea99b589f0892a180c512fd48932c44",
+      "bytes": 1346
+    },
+    {
+      "path": "/private/tmp/therese-c17-root8-system-diagnostic-wFhTKOw6/receipt.json",
+      "sha256": "ca8b417a39d68cda55eea22694806590d2c3999eefd0b187c82654725beee05a",
+      "bytes": 1403
+    },
+    {
+      "path": "/private/tmp/therese-c17-rpc-cause-observability-NRYrmF/INDEX.json",
+      "sha256": "604e4e02062dd37cafbf9e67b2545b7697bad70a7aeac2825598cefaa63d7596",
+      "bytes": 6675
+    },
+    {
+      "path": "/private/tmp/therese-c17-rpc-cause-observability-NRYrmF/ORIGINS.json",
+      "sha256": "6b1a49683e195f6f35d7456027ca3b03d0d6956c3d220eb3f9b7db94c4ab4846",
+      "bytes": 6591
+    },
+    {
+      "path": "/private/tmp/therese-c17-rpc-cause-observability-NRYrmF/source/rpc_diagnostics.py",
+      "sha256": "ae86d9b538429ca2f168cc386ea7a6e4d05ddad4e8b9f926a29dfbb4f5533058",
+      "bytes": 6826
+    },
+    {
+      "path": "/private/tmp/therese-c17-rpc-cause-pure-root-tLe4Fm0P/receipt.json",
+      "sha256": "e54ec67ce25f22ff88468a9eae2cf9fd7fdaf4e460b3de3057160b264bd75855",
+      "bytes": 11392
+    },
+    {
+      "path": "/private/tmp/therese-c17-root-fresh10-authority-5v3bqKwd/prepare-authority.mjs",
+      "sha256": "be45a1be9bad9351887090afa0b84133215edba9e9c89b80c530f5d1334d2f5b",
+      "bytes": 5465
+    }
+  ]
+}

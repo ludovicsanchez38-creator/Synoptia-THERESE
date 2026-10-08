@@ -1,0 +1,11 @@
+--- frozen_definition
++++ fresh_root_copy
+@@ -19,7 +19,7 @@
+ NODE_ROOT = Path("/Users/synoptia/.nvm/versions/node/v22.19.0")
+ NODE = NODE_ROOT / "bin/node"
+ FRONT = QA_SOURCE / "src/frontend"
+-SQL_CONTRACT_SHA = "b1d4e8ab0b01f18066bdc8b1cf09989a90e8bbd517230f2d07e5a8efe14a2a7d"
++SQL_CONTRACT_SHA = 'f53d7e7159cf81b473a3b47a202e24ab841b18c922152d4b0f20beeb2b9d0c4e'
+ PROFILE_LABEL = "service"
+ DIRECT_ORDER = ("backend", "vite", "calibrate", "B1753", "B1760", "B1753-power")
+ 

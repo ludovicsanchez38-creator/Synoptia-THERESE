@@ -1,0 +1,29 @@
+--- preimages/session_rpc_adapter.py
++++ source/session_rpc_adapter.py
+@@ -234,6 +234,7 @@
+             self._tokens[token]["entry"] = entry
+             self._tokens[token]["state"] = "running"
+         except BaseException as launch_error:
++            self._tokens[token]["exception_diagnostic"] = self.protocol.exception_diagnostic(launch_error)
+             self.session.log_stability_tainted = True
+             self._tokens[token]["state"] = "launch_error"
+             recorded = self.session.handles.get(name)
+@@ -324,6 +325,9 @@
+             "cleanup_deadline_met": deadline_met,
+             "stdout_ref": stdout_ref, "stderr_ref": stderr_ref,
+             "tainted": self.session.log_stability_tainted or state != "complete"}
++        diagnostic = self.protocol.validated_exception_diagnostic(slot.get("exception_diagnostic"))
++        if diagnostic is not None:
++            summary["exception_diagnostic"] = diagnostic
+         if auxiliary_ref is not None:
+             summary['auxiliary_terminal_ref'] = auxiliary_ref
+         cleanup_path = entry["folder"] / "rpc-cleanup.json"
+@@ -335,6 +339,8 @@
+             "termination_proved": receipt.get("termination_proved") is True,
+             "log_stability_proved": normal, "signals": cleanup.get("signals"),
+             "tainted": summary["tainted"], "cleanup_deadline_met": summary["cleanup_deadline_met"]}
++        if diagnostic is not None:
++            result["exception_diagnostic"] = diagnostic
+         if auxiliary_ref is not None:
+             result['auxiliary_terminal_ref'] = auxiliary_ref
+         slot["terminal"] = result

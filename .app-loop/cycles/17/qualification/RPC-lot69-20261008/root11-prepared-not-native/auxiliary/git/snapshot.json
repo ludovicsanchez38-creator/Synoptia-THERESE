@@ -1,0 +1,30 @@
+{
+  "branch": null,
+  "branch_scope": "detached_QA_HEAD_not_product_branch_claim",
+  "commit_raw": {
+    "bytes": 282,
+    "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/auxiliary/git/commit.raw",
+    "sha256": "3e1049b07302459477652253d84091ac381f00f922f7bff9fa9f3e12bbf33680"
+  },
+  "head": "2d69e30c9c6dd18823ee6102271876003a6a67cc",
+  "head_stdout": {
+    "bytes": 41,
+    "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/auxiliary/git/head.stdout",
+    "sha256": "4897ce1a0b3c0edc6b24594d6e5332811446a5f1e2a68a8df540828e45b5cfa4"
+  },
+  "physical_refs": [
+    {
+      "bytes": 41,
+      "path": "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source/.git/HEAD",
+      "sha256": "4897ce1a0b3c0edc6b24594d6e5332811446a5f1e2a68a8df540828e45b5cfa4"
+    }
+  ],
+  "schema": "c17-wrapper-physical-git-snapshot-v1",
+  "source_root": "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source",
+  "status": "root_observed_source_definition_not_execution_admission",
+  "tree_raw": {
+    "bytes": 375699,
+    "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/auxiliary/git/tree.raw",
+    "sha256": "e7b850bdeb4d6c31847c58e40cd28443188f620d47a2244cce913828de539b7d"
+  }
+}

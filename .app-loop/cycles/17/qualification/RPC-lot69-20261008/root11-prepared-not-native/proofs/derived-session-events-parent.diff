@@ -1,0 +1,11 @@
+--- frozen_definition
++++ fresh_root_copy
+@@ -125,7 +125,7 @@
+     require(root.resolve(strict=True) == root and root.is_dir() and not root.is_symlink(),
+             "Root QA physique absent")
+     paths = blueprint.paths(root)
+-    for folder in (root / "session-rpc", root / "output", root / "runtime/calibration",
++    for folder in (root / "session-events", root / "session-rpc", root / "output", root / "runtime/calibration",
+                    paths["profile"], paths["home"], paths["tmp"], paths["data"],
+                    paths["test_data"], paths["logs_data"], paths["vite_cache"]):
+         require(folder == root or folder.is_relative_to(root), "Création hors QA")

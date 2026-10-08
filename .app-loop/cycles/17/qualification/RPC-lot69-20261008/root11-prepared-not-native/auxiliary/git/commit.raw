@@ -1,0 +1,6 @@
+tree 066dc772f2dbc651ebb2605944cda30e2ea77d10
+parent 6cb0102947e9d605dbdff69b8c928b53a487884f
+author Ludovic Sanchez <synoptia@device-67.home> 1791450754 +0200
+committer Ludovic Sanchez <synoptia@device-67.home> 1791450754 +0200
+
+Consigner les canaris RPC natifs positif et timeout

@@ -1,0 +1,12 @@
+--- preimages/rpc_protocol.py
++++ source/rpc_protocol.py
+@@ -8,6 +8,9 @@
+ from pathlib import Path
+ import re
+ import stat
++
++from rpc_diagnostics import (exception_diagnostic, exception_fields,
++    exception_record_text, validated_exception_diagnostic)
+ 
+ PROTOCOL = "exclusive-pending-fsync-hardlink-v1"
+ CONTEXT_SCHEMA = "c17-g5-root-rpc-context-v1"

@@ -1,0 +1,11 @@
+--- preimages/rpc_client.py
++++ source/rpc_client.py
+@@ -201,7 +201,7 @@
+         for key, value in p.common(self.context).items():
+             p.require(ack.get(key) == value, "RPC ACK context " + key)
+         if ack.get("state") != "complete":
+-            raise RpcInstrumentError("RPC instrument refused/timeout: " + str(ack.get("instrument_error")))
++            raise RpcInstrumentError("RPC instrument refused/timeout: " + p.exception_record_text(ack.get("instrument_error")))
+         p.require(type(ack.get("exit_code")) is int and ack.get("tainted") is False
+             and ack.get("termination_proved") is True and ack.get("log_stability_proved") is True
+             and ack.get("cleanup_deadline_met") is True and ack.get("signals") == [], "RPC normal closure unproved")

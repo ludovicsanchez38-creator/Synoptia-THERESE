@@ -1,0 +1,83 @@
+{
+  "OS_qualified": false,
+  "argv": [
+    "/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "--disable-field-trial-config",
+    "--disable-background-networking",
+    "--disable-background-timer-throttling",
+    "--disable-backgrounding-occluded-windows",
+    "--disable-back-forward-cache",
+    "--disable-breakpad",
+    "--disable-client-side-phishing-detection",
+    "--disable-component-extensions-with-background-pages",
+    "--disable-component-update",
+    "--no-default-browser-check",
+    "--disable-default-apps",
+    "--disable-dev-shm-usage",
+    "--disable-extensions",
+    "--disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,Translate,AutoDeElevate,RenderDocument,OptimizationHints",
+    "--enable-features=CDPScreenshotNewSurface",
+    "--allow-pre-commit-input",
+    "--disable-hang-monitor",
+    "--disable-ipc-flooding-protection",
+    "--disable-popup-blocking",
+    "--disable-prompt-on-repost",
+    "--disable-renderer-backgrounding",
+    "--force-color-profile=srgb",
+    "--metrics-recording-only",
+    "--no-first-run",
+    "--password-store=basic",
+    "--use-mock-keychain",
+    "--no-service-autorun",
+    "--export-tagged-pdf",
+    "--disable-search-engine-choice-screen",
+    "--unsafely-disable-devtools-self-xss-warnings",
+    "--edge-skip-compat-layer-relaunch",
+    "--enable-automation",
+    "--disable-infobars",
+    "--disable-search-engine-choice-screen",
+    "--disable-sync",
+    "--user-data-dir=/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/auxiliary/aux-chrome-rpc-all-runtime_ui-visual_capture-network_capture/profile",
+    "--remote-debugging-port=17594",
+    "--no-startup-window",
+    "--remote-debugging-address=127.0.0.1"
+  ],
+  "cdp_difference": "cdpPort17594 replaces default pipe; loopback address appended, isPersistent remains false",
+  "executable": "/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/MacOS/Google Chrome",
+  "gpu_observation_origin_ref": {
+    "bytes": 186,
+    "path": "/private/tmp/therese-c17-wrapper-canary-ea92e9f2c3a9485a88dc906c302f42ff/proofs/system-profiler-displays.raw",
+    "sha256": "92d6e897ef52659540e9497649283da5bd4ff4c443c5d0d07f50bbb37d5bc4d0"
+  },
+  "gpu_observation_ref": {
+    "bytes": 186,
+    "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/proofs/system-profiler-displays.raw",
+    "sha256": "92d6e897ef52659540e9497649283da5bd4ff4c443c5d0d07f50bbb37d5bc4d0"
+  },
+  "has_gpu_mac": true,
+  "method": "installed Playwright defaultArgs and _innerDefaultArgs exact source bodies, pure vm",
+  "original_options": {
+    "channel": "chrome",
+    "chromiumSandbox": true,
+    "headless": false
+  },
+  "runtime_executed": false,
+  "schema": "c17-wrapper-chrome-launch-defaults-v1",
+  "sources": [
+    {
+      "bytes": 18246,
+      "path": "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source/node_modules/playwright-core/lib/server/chromium/chromium.js",
+      "sha256": "3da2c7355ea37fd89c072680cf559129943730b2a684809b1dbe43d19cabc745"
+    },
+    {
+      "bytes": 4566,
+      "path": "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source/node_modules/playwright-core/lib/server/chromium/chromiumSwitches.js",
+      "sha256": "37d1a75c1c4e0cbc02b31d65f3b80d21b1bdf227a09146603e181a6ec54f293a"
+    },
+    {
+      "bytes": 6612,
+      "path": "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source/node_modules/playwright-core/lib/server/utils/hostPlatform.js",
+      "sha256": "c08f01de2ed3496e4cb6134b669562fd3b23e43da676f67cc83e2818a2654cc1"
+    }
+  ]
+}

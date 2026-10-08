@@ -1,0 +1,11 @@
+--- frozen_definition
++++ fresh_root_copy
+@@ -206,7 +206,7 @@
+                 env["C17_TEST_RUNNER_DEFECT"] = "1"
+             if tool == "pytest":
+                 argv = [str(QA_PYTHON), "-m", "pytest", "--noconftest",
+-                        str(test_out / "test_temoin_c17.py"), "--junitxml=" + str(xml),
++                        "--rootdir=" + str(test_out), str(test_out / "test_temoin_c17.py"), "--junitxml=" + str(xml),
+                         "-p", "no:cacheprovider"]
+             else:
+                 argv = [str(FRONT / "node_modules/.bin/vitest"), "run", "--config",

@@ -1992,3 +1992,38 @@ durée parallèle zéro, pas une facture API. Budget réel PASS, plafond tokens
 désactivé, autres limites et deadline inchangées. Neuf documents préexistants
 inchangés (`9e52e7`). Aucun produit, version, main, tag, release, installation,
 landing, updater, Discord, mail, VPS ou DNS modifié ; publication toujours fermée.
+
+## Lot 69 : WRAPPER11 préparé, contrôle statique encore rouge
+
+Le constructeur `ecca6ab6…`, PLAN-INDEX `d159911e…`, conserve V10 hors
+constantes profil et vérificateur exact du suffixe. Profil `bee3c2e7…`, trois
+règles nommées, bornes 5/50/8 et 79 sources inchangées. Dix-sept tests purs
+réels consignés, revue Gate favorable à la préparation seule, sans causalité.
+
+HEAD documentaire observé `5f89164c…`, QA WRAPPER historique `2d69…`, ni
+A/B ni produit courant qualifiés. Script de préparation `35688cc9…`, INDEX
+`ef5b39a1…`, 22 refs rehashées MAIN `0d32b8`. Registre réel MAIN observé,
+note de revue MAIN distincte ; invocation `f9d1f4` crée seulement les deux
+JSON exclusifs : autorité `17382f10…`, registre `670890d3…`.
+
+Construction mécanique `f2ace6`, clôture `187f22` code0 : ROOT11 `eff7b4e4…`,
+reçu `d638ebb7…`, GO préparatoire `eccbc5bb…`, SQL36 `f53d7e71…` lu
+entièrement par MAIN (`a80c53`). Aucun G1, Chrome, Session ou profil lancé.
+Premier contrôleur : oracle HEAD19979 erroné, refus statique conservé ;
+successeur v2 `e8ea3ec9…`, INDEX `1b4ba999…`, seul oracle corrigé vers5f891.
+
+Contrôle v2 MAIN réel `fa326c` puis `e6e3d3` code1 : refus de propriétaire
+sur le profil Apple primaire GameOverlayUI, UID0, alors que ref exige UID501.
+Les trois sources système sont régulières, canoniques, UID/GID0, mode644,
+nlink1 et SHA/taille exacts (`8b97aa`). Il ne s'agit pas d'un essai natif.
+Un v3 non exécuté est préparé sous `hK9Iql`, INDEX `ab62bbb3…`, script
+`218074ae…` : exception strictement limitée aux trois fichiers système
+épinglés, à relire indépendamment avant usage ; autres refs restent UID501.
+
+Copie canonique `f7c34e`, lot69 : 159 fichiers, 3 585 122 octets, manifeste
+`62dfc30f…`. Préparation et rouge v2 préservés, aucun reçu requalifié ; les
+copies ne donnent pas une preuve live d'inode ou d'ownership. Usage `a44439` :
+69 lots, plancher30 201 597 tokens, ajout623 870, durée parallèle zéro,
+pas une facture API. Dernier budget réel PASS `786fad`. Deadline16:52:30 UTC
+inchangée ; prolongation de deux heures demandée, non accordée à ce lot.
+CALIBRATE0/2, FULL, A/B et release restent fermés, aucune publication.

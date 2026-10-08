@@ -1,0 +1,37 @@
+--- frozen_definition
++++ fresh_root_copy
+@@ -34,7 +34,7 @@
+ AUXILIARY_NAMES = {job: "aux-chrome-" + job for job in CHROME_JOBS}
+ AUXILIARY_ROLES = frozenset("auxiliary-" + name for name in AUXILIARY_NAMES.values())
+ AUXILIARY_PORT = 17594  # politique proposée distincte, aucune qualification native.
+-CHROME = Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")
++CHROME = Path('/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/MacOS/Google Chrome')
+ PERSISTENT = frozenset(("persistent-backend", "persistent-vite"))
+ PUBLICATION_PROTOCOL = "exclusive-pending-fsync-hardlink-v1"
+ API_SCHEMA = "c17-runtime78-session-api-v1"
+@@ -47,7 +47,7 @@
+ ADMISSION_TABLE: dict[str, dict] = {}
+ # Instrument seul : le root devra émettre un slot après revue du nouveau gel.
+ # Paths/id/HEAD seulement, jamais hash futur de décision (pas de cycle).
+-WRAPPER_ADMISSION_TABLE: dict[str, dict] = {}
++WRAPPER_ADMISSION_TABLE: dict[str, dict] = {'therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3': {'decision_path': '/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/decision.json', 'binding_path': '/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/binding.json', 'actor': '/root', 'round_id': 'therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3', 'round_name': 'WRAPPER_CANARY', 'qa_root': '/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3', 'head': '2d69e30c9c6dd18823ee6102271876003a6a67cc', 'product_source_root': '/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source', 'qa_python': '/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source/.venv-conforme/bin/python'}}
+ WRAPPER_SCOPE = "g1_rpc_real_instrument_wrappers_canary_only"
+ WRAPPER_PARENTS = frozenset(("calibrate", "B1753", "B1760", "B1753-power"))
+ WRAPPER_STAGES = WRAPPER_PARENTS | frozenset(("backend", "vite"))
+@@ -920,6 +920,7 @@
+                 and defaults.get("argv") == row["argv"] and defaults.get("executable") == str(CHROME),
+                 "Arguments Chrome ne conservent pas options/defaults physiquement relus")
+         require(isinstance(row["argv"], list) and row["argv"] and row["argv"][0] == str(CHROME)
++                and row["executable"] == str(CHROME)
+                 and "--user-data-dir=" + row["profile"] in row["argv"]
+                 and "--remote-debugging-port=17594" in row["argv"]
+                 and "--remote-debugging-address=127.0.0.1" in row["argv"]
+@@ -936,7 +937,7 @@
+                               source_root=product_source, stage=row["name"])
+     files_ref = binding.get("chrome_files_ref")
+     manifest = checked_json_ref(files_ref, root)
+-    bundle = Path("/Applications/Google Chrome.app")
++    bundle = Path('/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app')
+     require(manifest.get("schema") == "c17-wrapper-chrome-bundle-files-v1"
+             and manifest.get("bundle_root") == str(bundle) and isinstance(manifest.get("files"), list)
+             and len(manifest["files"]) >= 2, "Binaire/frameworks Chrome non physiquement pinnés")

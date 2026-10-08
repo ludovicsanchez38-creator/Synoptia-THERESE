@@ -1,0 +1,21 @@
+(version 1)
+(deny default)
+(allow process-fork process-exec sysctl-read)
+(allow file-read* file-map-executable
+  (subpath "/System") (subpath "/usr") (subpath "/bin") (subpath "/sbin")
+  (subpath "/Library/Developer/CommandLineTools")
+  (subpath (param "SOURCE_ROOT")) (subpath (param "PREPARATION_ROOT"))
+  (subpath (param "NODE_ROOT")) (subpath (param "PYTHON_ROOT"))
+  (subpath (param "QA_ROOT"))
+  (literal "/dev/null") (literal "/dev/urandom") (literal "/dev/random")
+  (literal "/private/etc/localtime") (subpath "/private/var/db/timezone"))
+(allow file-read-metadata (literal "/Users/synoptia/.local/share/uv/python/cpython-3.13-macos-aarch64-none"))
+(allow file-read-metadata (literal "/private") (literal "/private/tmp"))
+(allow file-read-data (literal "/"))
+(allow file-write* (subpath (param "QA_ROOT")) (literal "/dev/null"))
+(deny file-read* file-write* (subpath (string-append (param "QA_ROOT") "/synthetic-denied")))
+(allow signal (target self) (target children))
+; Le helper est client d'un seul socket Unix root sous QA. Aucun bind ou IP.
+(allow system-socket (socket-domain AF_UNIX))
+(allow network-outbound
+  (remote unix-socket (path-literal (string-append (param "QA_ROOT") "/session-rpc/peer.sock"))))

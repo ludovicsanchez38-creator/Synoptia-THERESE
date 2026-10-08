@@ -1,0 +1,87 @@
+{
+  "actor": "/root",
+  "constructor_ref": {
+    "bytes": 14318,
+    "path": "/private/tmp/therese-c17-rpc-integration-UctqC8UG/successor/prepare-rpc-instruments.py",
+    "sha256": "793277ccd0bb00bfc62b06095230698c746bc8d35bd4e4f8a15a5ccd5f4392dc"
+  },
+  "definition_refs": {
+    "complements/instruments/preparer-et-executer-harness-root-stack.py": {
+      "bytes": 13194,
+      "path": "/private/tmp/therese-c17-full-suite-ps_tgzy5/proofs/runtime78-constructor/preview-04/definitions/complements/instruments/preparer-et-executer-harness-root-stack.py",
+      "sha256": "d4adf8b4790993a2ba7dc2326b164ed8029a1cd285bc4a41ebd02aeb7667723d"
+    },
+    "complements/instruments/preparer-harness-b1753-power.py": {
+      "bytes": 15966,
+      "path": "/private/tmp/therese-c17-full-suite-ps_tgzy5/proofs/runtime78-constructor/preview-04/definitions/complements/instruments/preparer-harness-b1753-power.py",
+      "sha256": "db0a3fbcf0bd13b60205206b97767300eb23500add1eb24de71ce21f5c0f9f43"
+    },
+    "runtime/calibrate-all.py": {
+      "bytes": 1559,
+      "path": "/private/tmp/therese-c17-web-j-of4457m6/runtime/calibrate-all.py",
+      "sha256": "b5b146d1e71526495e279f639f379abe7c034b9aaee81669068c86176c9d890e"
+    },
+    "runtime/calibrate-screen.py": {
+      "bytes": 5726,
+      "path": "/private/tmp/therese-c17-web-j-of4457m6/runtime/calibrate-screen.py",
+      "sha256": "a4157e7bba967225611e41ac8e407651b7c5f16907755eb688afba4f2a93cef1"
+    },
+    "runtime/calibrate-test-runner.py": {
+      "bytes": 3547,
+      "path": "/private/tmp/therese-c17-web-j-of4457m6/runtime/calibrate-test-runner.py",
+      "sha256": "57b31542829aeddd09400f63c660d15acec7f4584b2c04765c5026661582d88b"
+    }
+  },
+  "head": "2d69e30c9c6dd18823ee6102271876003a6a67cc",
+  "helper_ref": {
+    "bytes": 72,
+    "path": "/private/tmp/therese-c17-rpc-integration-UctqC8UG/successor/nested_capture_helper.py",
+    "sha256": "197ebd4a8b51bf78f44cf6b266ff8b17004326596c1a0fc237b126d5793c0263"
+  },
+  "outputs": [
+    "complements/instruments/nested_capture.py",
+    "complements/instruments/preparer-et-executer-harness-root-stack.py",
+    "complements/instruments/preparer-harness-b1753-power.py",
+    "complements/instruments/rpc_client.py",
+    "complements/instruments/rpc_protocol.py",
+    "runtime/calibrate-all.py",
+    "runtime/calibrate-screen.py",
+    "runtime/calibrate-test-runner.py",
+    "runtime/nested_capture.py",
+    "runtime/rpc_client.py",
+    "runtime/rpc_protocol.py"
+  ],
+  "product_source_root": "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source",
+  "qa_python": "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source/.venv-conforme/bin/python",
+  "renderer_ref": {
+    "bytes": 10946,
+    "path": "/private/tmp/therese-c17-rpc-integration-UctqC8UG/source/render_rpc_ports.py",
+    "sha256": "4c71d4ecd054cf1e26ed85d8c1c0f06a376af140f64ab032cf7d81fd2b470b4d"
+  },
+  "root": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3",
+  "root_authorization_origin": {
+    "bytes": 868,
+    "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/authorization/root-origin.json",
+    "sha256": "380fea347380cb95f67d72bc6f29639efa566654adff3331db378ac94c18a7b1"
+  },
+  "round_id": "therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3",
+  "rpc_dependencies": {
+    "rpc_client.py": {
+      "bytes": 15240,
+      "path": "/private/tmp/therese-c17-rpc-integration-UctqC8UG/source/rpc_client.py",
+      "sha256": "f71867bbb426d88ca3518e16e3618e46d5dbba3ff8186d47e4d433e9d3767051"
+    },
+    "rpc_protocol.py": {
+      "bytes": 11845,
+      "path": "/private/tmp/therese-c17-rpc-integration-UctqC8UG/source/rpc_protocol.py",
+      "sha256": "11595f84c76752dbe3675be1d815434cac1ff09b8413b53d521a0123ee63fb4b"
+    }
+  },
+  "schema": "c17-rpc-instruments-preparation-binding-v1",
+  "scope": "WRAPPER_CANARY",
+  "source_checkout_ref": {
+    "bytes": 1087,
+    "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/authorization/source-checkout.json",
+    "sha256": "4e08b6395206356887929b533a05ceda50876d4052bcd1ba024299f2fe47e9a0"
+  }
+}

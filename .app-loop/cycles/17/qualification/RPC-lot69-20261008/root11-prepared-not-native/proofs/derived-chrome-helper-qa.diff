@@ -1,0 +1,11 @@
+--- frozen_chrome_contract
++++ fresh_root_QA_chrome_contract
+@@ -3,7 +3,7 @@
+ 
+ JOBS = ('rpc-all-runtime_ui-visual_capture-network_capture', 'rpc-screen-negative',
+         'rpc-screen-positive-visual', 'rpc-screen-positive-network', 'rpc-screen-restored')
+-CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
++CHROME = '/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/MacOS/Google Chrome'
+ CDP_PORT = 17594  # candidat, ni réservation réelle ni permission admise.
+ 
+ 

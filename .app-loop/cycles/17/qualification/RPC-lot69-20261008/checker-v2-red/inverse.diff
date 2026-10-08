@@ -1,0 +1,11 @@
+--- verify-prepared-wrapper.mjs
++++ preimages/verify-prepared-wrapper-main11-v1.mjs
+@@ -105,7 +105,7 @@
+ need(sameRef(authority.builder_index_ref,historicalBuilderIndexRef)
+   &&sameRef(authority.builder_proposal_index_ref,builderProposalIndexRef)
+   &&sameRef(authority.builder_ref,builderRef)
+-  &&authority.repo_head_observed==='5f89164ca0907ed92058fb244847893fc34a059b'
++  &&authority.repo_head_observed==='19979e8a5ea9bd8e886d35d54793b3d1a560cd77'
+   &&authority.historical_source_WRAPPER_only_not_current_FULL===true,'Autorité V10 ou périmètre historique divergent');
+ const diagnostic='/private/tmp/therese-c17-rpc-cause-observability-NRYrmF';
+ const diagnosticIndex=ref(diagnostic+'/INDEX.json'),diagnosticOrigins=ref(diagnostic+'/ORIGINS.json');

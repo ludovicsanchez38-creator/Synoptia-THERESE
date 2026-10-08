@@ -1,0 +1,60 @@
+{
+  "schema": "c17-root11-static-controller-preparation-index-v1",
+  "actor": "/root/environment_routes",
+  "status": "prepared_only_not_executed_not_authority",
+  "future_root": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3",
+  "future_root_absent_when_prepared": true,
+  "scope": "WRAPPER_CANARY_diagnostic_only",
+  "preimage": {
+    "path": "/private/tmp/therese-c17-root10-static-controls-v2-lTW3IXqj/verify-prepared-wrapper.mjs",
+    "sha256": "5f588a8941b9b03b0243e7754cf21afcabd065a44e1913fea182fb896bc7093d",
+    "bytes": 16018
+  },
+  "files": [
+    {"path": "/private/tmp/therese-c17-root11-static-controls-oFr0O6/preimages/verify-prepared-wrapper-root10.mjs", "sha256": "5f588a8941b9b03b0243e7754cf21afcabd065a44e1913fea182fb896bc7093d", "bytes": 16018},
+    {"path": "/private/tmp/therese-c17-root11-static-controls-oFr0O6/verify-prepared-wrapper.mjs", "sha256": "f51583a1f163dfb2636b13ebc6c133166f92daa2c4eb4efb0108dde0bd09017a", "bytes": 19296},
+    {"path": "/private/tmp/therese-c17-root11-static-controls-oFr0O6/forward.diff", "sha256": "b6c3dc35230ebde6aef370302874a7aa7f9fcf6dd3419a4c6d66e1db13e9644d", "bytes": 7350},
+    {"path": "/private/tmp/therese-c17-root11-static-controls-oFr0O6/inverse.diff", "sha256": "ec062b588e9f71d4754db069ac199c8e31e9253bbc78d0881d2e0bc9300cc29d", "bytes": 7350},
+    {"path": "/private/tmp/therese-c17-root11-static-controls-oFr0O6/README.md", "sha256": "773025917801a1ea473b0708c1089371a03c1b943209683df26667c7f2a6f244", "bytes": 2173}
+  ],
+  "source_refs": [
+    {"path": "/private/tmp/therese-c17-wrapper-profile-three-builder-G8n4Ef/PLAN-INDEX.json", "sha256": "d159911e9ffc2886448760fa82936bfee155af911a05c3c685ad21ff0175338f", "bytes": 14533},
+    {"path": "/private/tmp/therese-c17-wrapper-profile-three-builder-G8n4Ef/build_fresh_wrapper.py", "sha256": "ecca6ab61c8114f827ee020a6b28c2eb8a9c53a8942db646ae62fb059b34a9dc", "bytes": 81180},
+    {"path": "/private/tmp/therese-c17-wrapper-profile-three-builder-G8n4Ef/profile/chrome.sb", "sha256": "bee3c2e780e58cbc80ed7e37d64115adf08997aab39dae8f11b56050785633a9", "bytes": 2375},
+    {"path": "/private/tmp/therese-c17-fresh-wrapper-builder-v10-ynPAzC/INDEX.json", "sha256": "ad4cbc19f3c156f0b0d4ff2e3d36b31eccc9bda109cb18cc6c77194aefce1007", "bytes": 8012},
+    {"path": "/private/tmp/therese-c17-fresh-wrapper-builder-v10-ynPAzC/profile/chrome.sb", "sha256": "19808ee2cac3169e9fb8c71c24385bcbb97f924c5ed785f4651817ecaa179b0c", "bytes": 2067},
+    {"path": "/private/tmp/therese-c17-chrome-targeted-three-McWh5vFc/INDEX.json", "sha256": "499ed6c8c75ba66857e6797728b0c1a39a2fb93bff6f96827049639195b6d966", "bytes": 9151}
+  ],
+  "changes": [
+    "MAIN11 root literal only",
+    "new builder full ref and proposal index ref, historical V10 builder_index_ref retained",
+    "Chrome V10 preimage plus exact three-rule suffix, full refs through construction/core/authority/GO"
+  ],
+  "preserved_oracles": {
+    "source_refs": 79,
+    "core_copies": 18,
+    "overlay_outputs": 28,
+    "overlay_scripts": 19,
+    "original_outputs": 11,
+    "SQL_sources": 36,
+    "Git_tree_files": 3579,
+    "RPC_diagnostic_helpers": 3,
+    "deltas": 6,
+    "FULL": false,
+    "release": false
+  },
+  "checks": {
+    "preimage_sha_and_bytes": true,
+    "forward_diff_exact": true,
+    "inverse_diff_exact": true,
+    "future_root_absent": true,
+    "checker_executed": false,
+    "Node_executed": false,
+    "G1_or_browser_executed": false
+  },
+  "limitations": [
+    "No MAIN11 QA root, GO, authority or builder output exists yet",
+    "Three Chrome rules remain a diagnostic hypothesis, not a causal proof",
+    "No Apple profile compilation or native qualification"
+  ]
+}

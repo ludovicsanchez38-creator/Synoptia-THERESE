@@ -1,0 +1,20 @@
+--- frozen_definition
++++ fresh_root_copy
+@@ -25,7 +25,7 @@
+     vitest_source.write_text('it("détecte le défaut puis l’état sain", () => { expect(process.env.C17_TEST_RUNNER_DEFECT === "1" ? 2 : 1).toBe(1); });\n', encoding="utf-8")
+     config = out / "vitest.runtime.config.mjs"
+     vite_module = str((FRONT / "node_modules/vite/dist/node/index.js").resolve())
+-    config.write_text(f'import {{ defineConfig }} from {json.dumps(vite_module)};\nexport default defineConfig({{root: {json.dumps(str(out))}, test: {{globals: true, environment: "node", include: ["calibrationC17.test.ts"], cache: false}}}});\n', encoding="utf-8")
++    config.write_text(f'import {{ defineConfig }} from {json.dumps(vite_module)};\nexport default defineConfig({{root: {json.dumps(str(out))}, server: {{host: "127.0.0.1"}}, test: {{globals: true, environment: "node", include: ["calibrationC17.test.ts"], cache: false}}}});\n', encoding="utf-8")
+     data = manifest()
+     proofs = {}
+     for tool in ("pytest", "vitest"):
+@@ -34,7 +34,7 @@
+             env = environment(Path(data["temporary_root"]) / "test-data")
+             if defect:
+                 env["C17_TEST_RUNNER_DEFECT"] = "1"
+-            command = ([str(PYTHON), "-m", "pytest", "--noconftest", str(pytest_source),
++            command = ([str(PYTHON), "-m", "pytest", "--noconftest", f"--rootdir={out}", str(pytest_source),
+                         f"--junitxml={xml}", "-p", "no:cacheprovider"] if tool == "pytest"
+                        else [str(FRONT / "node_modules/.bin/vitest"), "run", "--config", str(config),
+                              "--reporter=junit", f"--outputFile={xml}"])

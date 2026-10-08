@@ -1,0 +1,46 @@
+--- preimages/build_fresh_wrapper-v10.py
++++ build_fresh_wrapper.py
+@@ -48,8 +48,10 @@
+ CHROME_ROOTDOMAIN_INDEX = Path('/private/tmp/therese-c17-chrome-rootdomain-h5whIv/INDEX.json')
+ CHROME_V8_PROFILE = {'path': '/private/tmp/therese-c17-fresh-wrapper-builder-v7-cnR8Hm/profile/chrome.sb',
+                      'sha256': 'c9101b2a356679057f3e116c72a2546f51e851ee997e404c6120cb59627580e8', 'bytes': 1949}
+-CHROME_PROFILE = {'path': '/private/tmp/therese-c17-fresh-wrapper-builder-v10-ynPAzC/profile/chrome.sb',
++CHROME_PREIMAGE_PROFILE = {'path': '/private/tmp/therese-c17-fresh-wrapper-builder-v10-ynPAzC/profile/chrome.sb',
+                   'sha256': '19808ee2cac3169e9fb8c71c24385bcbb97f924c5ed785f4651817ecaa179b0c', 'bytes': 2067}
++CHROME_PROFILE = {'path': '/private/tmp/therese-c17-wrapper-profile-three-builder-G8n4Ef/profile/chrome.sb',
++                  'sha256': 'bee3c2e780e58cbc80ed7e37d64115adf08997aab39dae8f11b56050785633a9', 'bytes': 2375}
+ CHROME_INDEX = Path('/private/tmp/therese-c17-fresh-wrapper-builder-v7-cnR8Hm/profile/INDEX.json')
+ WITNESS = Path('/private/tmp/therese-c17-test-runner-boundary-eUIHsp')
+ WITNESS_FILES = ('source/runner_boundary.py', 'INDEX.json', 'tests/test_runner_boundary.py',
+@@ -519,8 +521,8 @@
+ 
+ 
+ def checked_chrome_successor(chrome_ref):
+-    """V8 exact puis trois lectures littérales de répertoires, sans autre droit."""
+-    need(chrome_ref == CHROME_PROFILE, 'Seul successor Chrome V9 trois littéraux exacts admis')
++    """V9 exact puis trois règles nominatives diagnostic_only, sans autre droit."""
++    need(chrome_ref == CHROME_PROFILE, 'Seule proposition Chrome trois règles nominatives exactes admise')
+     before, v8 = checked_chrome_v8_successor(CHROME_V8_PROFILE)
+     metadata = '(allow file-read-metadata (literal "/") (literal "/Applications") (literal "/private") (literal "/private/tmp"))'
+     metadata_v9 = ('(allow file-read-metadata (literal "/") (literal "/Applications") (literal "/private") (literal "/private/tmp")\n'
+@@ -530,9 +532,18 @@
+                '  (literal (param "QA_ROOT")))')
+     need(v8.count(metadata) == v8.count(data) == 1, 'Ancres lectures V8 absentes/dupliquées')
+     expected = v8.replace(metadata, metadata_v9, 1).replace(data, data_v9, 1)
+-    after = checked(chrome_ref).decode()
++    after = checked(CHROME_PREIMAGE_PROFILE).decode()
+     need(after == expected, 'Delta Chrome hors des trois lectures littérales de répertoires')
+-    return before, after
++    # Proposition diagnostic_only : trois refus kernel réels, causalité non prouvée.
++    candidate = checked(chrome_ref).decode()
++    delta = (
++        '; ROOT10 diagnostic_only : refus ciblés, causalité non prouvée, profil non admis.\n'
++        '(allow mach-lookup (global-name "com.apple.CARenderServer"))\n'
++        '(allow iokit-open-user-client (iokit-user-client-class "IOSurfaceRootUserClient"))\n'
++        '(allow iokit-open-user-client (iokit-user-client-class "AGXDeviceUserClient"))\n'
++    )
++    need(candidate == after + delta, 'Delta Chrome hors des trois règles nominatives exactes')
++    return before, candidate
+ 
+ 
+ def g1_chrome_copy_delta(source: str) -> str:

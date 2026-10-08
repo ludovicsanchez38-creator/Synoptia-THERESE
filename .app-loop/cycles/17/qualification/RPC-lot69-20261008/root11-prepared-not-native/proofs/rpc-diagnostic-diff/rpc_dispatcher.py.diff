@@ -1,0 +1,61 @@
+--- preimages/rpc_dispatcher.py
++++ source/rpc_dispatcher.py
+@@ -53,7 +53,7 @@
+                     self.adapter.abort(job["token"], job["abort_reason"])
+                 except BaseException as error:
+                     job["state"] = "cleanup_pending"
+-                    job["last_cleanup_error"] = {"type": type(error).__name__, "reason": str(error)}
++                    job["last_cleanup_error"] = p.exception_fields(error)
+ 
+     def _pump_transport(self):
+         result = self.transport.pump()
+@@ -161,7 +161,7 @@
+ 
+     def _refuse(self, row, request_ref, error):
+         self._taint(row["requester_id"])
+-        record = {"id": row["id"], "type": type(error).__name__, "reason": str(error), "phase": "accept_or_begin_refused"}
++        record = {"id": row["id"], "phase": "accept_or_begin_refused"} | p.exception_fields(error)
+         self.errors.append(record)
+         ack_ref = self._ack(row, request_ref, "error", error=record)
+         self.jobs[row["id"]] = {"row": row, "state": "error", "token": None, "request_ref": request_ref,
+@@ -193,8 +193,7 @@
+         except BaseException as error:
+             if begin_called and not isinstance(error, p.RpcPrelaunchRefused):
+                 self._taint(row["requester_id"])
+-                record = {"id": row["id"], "phase": "begin_cleanup_uncertain",
+-                          "type": type(error).__name__, "reason": str(error)}
++                record = {"id": row["id"], "phase": "begin_cleanup_uncertain"} | p.exception_fields(error)
+                 self.errors.append(record)
+                 self.jobs[row["id"]] = {"row": row, "state": "cleanup_pending",
+                     "token": getattr(error, "token", None), "request_ref": request_ref,
+@@ -277,14 +276,19 @@
+             if state != "complete":
+                 self._taint(row["requester_id"])
+             error = None if state == "complete" else {"type": "instrument_" + state, "reason": job["abort_reason"]}
++            if error is not None:
++                diagnostic = p.validated_exception_diagnostic(observation.get("exception_diagnostic"))
++                if diagnostic is not None:
++                    error["diagnostic"] = diagnostic
+             job["ack_ref"] = self._ack(row, job["request_ref"], state, error=error, observation=observation, evidence=evidence)
+             job["state"] = state
+             if state == "complete":
+                 self.next_index[row["requester_id"]] = row["index"] + 1
+         except BaseException as error:
+             self._taint(row["requester_id"])
+-            self.errors.append({"id": row["id"], "phase": "terminal_refusal", "reason": str(error)})
+-            job["ack_ref"] = self._ack(row, job["request_ref"], "error", error={"type": type(error).__name__, "reason": str(error)})
++            record = p.exception_fields(error)
++            self.errors.append({"id": row["id"], "phase": "terminal_refusal"} | record)
++            job["ack_ref"] = self._ack(row, job["request_ref"], "error", error=record)
+             job["state"] = "error"
+ 
+     def poll(self):
+@@ -317,7 +321,7 @@
+                 except BaseException as error:
+                     self._taint(job["row"]["requester_id"])
+                     job["state"] = "cleanup_pending"
+-                    job["last_cleanup_error"] = {"type": type(error).__name__, "reason": str(error)}
++                    job["last_cleanup_error"] = p.exception_fields(error)
+                 self.last_poll_work += 1
+         if self.transport is not None:
+             self._pump_transport()  # ACK exact vers la connexion maintenue, après closure prouvée.

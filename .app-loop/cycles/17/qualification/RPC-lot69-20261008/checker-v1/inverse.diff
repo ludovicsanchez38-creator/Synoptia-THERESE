@@ -1,0 +1,95 @@
+--- verify-prepared-wrapper.mjs
++++ preimages/verify-prepared-wrapper-root10.mjs
+@@ -4,8 +4,8 @@
+ import path from 'node:path';
+ const root=process.argv[2];
+ const need=(x,m)=>{if(!x)throw Error(m);};
+-need(root==='/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3'
+-  &&/^\/private\/tmp\/therese-c17-wrapper-canary-[a-f0-9]{32}$/.test(root),'Racine MAIN11 exacte requise');
++need(root==='/private/tmp/therese-c17-wrapper-canary-b90937dbae4845ca9d04b93aa4cdf9aa'
++  &&/^\/private\/tmp\/therese-c17-wrapper-canary-[a-f0-9]{32}$/.test(root),'Racine ROOT10 exacte requise');
+ function sameRef(a,b){
+   const exact=x=>x!==null&&typeof x==='object'&&!Array.isArray(x)
+     &&Object.keys(x).sort().join(',')==='bytes,path,sha256'
+@@ -21,15 +21,6 @@
+   need(s.isFile()&&!s.isSymbolicLink()&&s.uid===process.getuid()&&fs.realpathSync(p)===p,'Ref non canonique '+p);
+   return {path:p,sha256:crypto.createHash('sha256').update(b).digest('hex'),bytes:b.length};
+ };
+-const builderRef=ref('/private/tmp/therese-c17-wrapper-profile-three-builder-G8n4Ef/build_fresh_wrapper.py');
+-const builderProposalIndexRef=ref('/private/tmp/therese-c17-wrapper-profile-three-builder-G8n4Ef/PLAN-INDEX.json');
+-const historicalBuilderIndexRef=ref('/private/tmp/therese-c17-fresh-wrapper-builder-v10-ynPAzC/INDEX.json');
+-need(builderRef.sha256==='ecca6ab61c8114f827ee020a6b28c2eb8a9c53a8942db646ae62fb059b34a9dc'
+-  &&builderRef.bytes===81180
+-  &&builderProposalIndexRef.sha256==='d159911e9ffc2886448760fa82936bfee155af911a05c3c685ad21ff0175338f'
+-  &&builderProposalIndexRef.bytes===14533
+-  &&historicalBuilderIndexRef.sha256==='ad4cbc19f3c156f0b0d4ff2e3d36b31eccc9bda109cb18cc6c77194aefce1007'
+-  &&historicalBuilderIndexRef.bytes===8012,'Constructeur/proposition MAIN11 différents');
+ const read=p=>JSON.parse(fs.readFileSync(p));
+ const refs=new Map(),pending=[],historicalObservations=[];
+ const historicalG1ReceiptPaths=new Set([
+@@ -66,45 +57,10 @@
+ }
+ const core=read(construction.core18_ref.path);need(core.copies.length===18,'Core18 absent');
+ for(const row of core.copies)if(row.derivation==='byte_exact')need(ref(row.input.path).sha256===ref(row.output.path).sha256,'Copie non byte-exacte');
++need(construction.builder_ref.sha256==='e697ec7733e691681bb104ffee6e083a251f1779abab895e63e316bcfaf72e2f'
++  &&construction.builder_ref.bytes===80319,'Builder autre que V10');
+ const authority=read(construction.authority_ref.path);
+-const chromeV10Ref=ref('/private/tmp/therese-c17-fresh-wrapper-builder-v10-ynPAzC/profile/chrome.sb');
+-const chromeCandidateRef=ref('/private/tmp/therese-c17-wrapper-profile-three-builder-G8n4Ef/profile/chrome.sb');
+-const chromeProposalRef=ref('/private/tmp/therese-c17-chrome-targeted-three-McWh5vFc/INDEX.json');
+-const builderProposal=read(builderProposalIndexRef.path);
+-const chromeProposal=read(chromeProposalRef.path);
+-need(chromeV10Ref.sha256==='19808ee2cac3169e9fb8c71c24385bcbb97f924c5ed785f4651817ecaa179b0c'
+-  &&chromeV10Ref.bytes===2067
+-  &&chromeCandidateRef.sha256==='bee3c2e780e58cbc80ed7e37d64115adf08997aab39dae8f11b56050785633a9'
+-  &&chromeCandidateRef.bytes===2375
+-  &&chromeProposalRef.sha256==='499ed6c8c75ba66857e6797728b0c1a39a2fb93bff6f96827049639195b6d966'
+-  &&sameRef(builderProposal.candidate_profile,chromeCandidateRef)
+-  &&sameRef(builderProposal.source_profile_proposal_index,chromeProposalRef)
+-  &&chromeProposal.preimage.sha256===chromeV10Ref.sha256
+-  &&chromeProposal.candidate.sha256===chromeCandidateRef.sha256
+-  &&chromeProposal.status==='prepared_static_only_unexecuted_profile_not_admitted',
+-  'Chaîne proposition Chrome non exacte ou admise');
+-const threeRuleSuffix=[
+-  '; ROOT10 diagnostic_only : refus ciblés, causalité non prouvée, profil non admis.',
+-  '(allow mach-lookup (global-name "com.apple.CARenderServer"))',
+-  '(allow iokit-open-user-client (iokit-user-client-class "IOSurfaceRootUserClient"))',
+-  '(allow iokit-open-user-client (iokit-user-client-class "AGXDeviceUserClient"))',
+-].join('\n')+'\n';
+-need(fs.readFileSync(chromeCandidateRef.path).equals(Buffer.concat([
+-  fs.readFileSync(chromeV10Ref.path),Buffer.from(threeRuleSuffix)])),
+-  'Profil proposé autre que préimage V10 suivie des trois règles exactes');
+-const chromeCoreRows=core.copies.filter(r=>r.output.path===root+'/g1/chrome.sb');
+-need(chromeCoreRows.length===1
+-  &&chromeCoreRows[0].derivation==='pinned_chrome_ui_exact_successor'
+-  &&sameRef(chromeCoreRows[0].output,ref(root+'/g1/chrome.sb'))
+-  &&sameRef(core.chrome_profile_ref,chromeCandidateRef)
+-  &&sameRef(construction.chrome_profile_ref,chromeCandidateRef)
+-  &&sameRef(authority.chrome_profile_ref,chromeCandidateRef)
+-  &&ref(root+'/g1/chrome.sb').sha256===chromeCandidateRef.sha256,
+-  'Profil Chrome physique/core/autorité divergent');
+-need(sameRef(construction.builder_ref,builderRef),'Builder autre que MAIN11');
+-need(sameRef(authority.builder_index_ref,historicalBuilderIndexRef)
+-  &&sameRef(authority.builder_proposal_index_ref,builderProposalIndexRef)
+-  &&sameRef(authority.builder_ref,builderRef)
++need(authority.builder_index_ref.sha256==='ad4cbc19f3c156f0b0d4ff2e3d36b31eccc9bda109cb18cc6c77194aefce1007'
+   &&authority.repo_head_observed==='19979e8a5ea9bd8e886d35d54793b3d1a560cd77'
+   &&authority.historical_source_WRAPPER_only_not_current_FULL===true,'Autorité V10 ou périmètre historique divergent');
+ const diagnostic='/private/tmp/therese-c17-rpc-cause-observability-NRYrmF';
+@@ -214,9 +170,6 @@
+   &&observations[0].copy_snapshot_sha256===observations[1].copy_snapshot_sha256
+   &&Date.parse(observations[0].observed_at_utc)<=Date.parse(observations[1].observed_at_utc),'Observations Chrome discordantes');
+ const go=read(construction.root_go_ref.path),auxiliary=read(go.auxiliary_ref.path);
+-need(sameRef(go.chrome_profile_origin_ref,chromeCandidateRef)
+-  &&sameRef(go.chrome_profile_ref,ref(root+'/g1/chrome.sb')),
+-  'GO Chrome non relié à la proposition exacte');
+ for(const key of ['chrome_contract_qa_ref','chrome_contract_delta_ref','chrome_copy_fresh_before_ref','chrome_copy_fresh_after_ref','chrome_qa_copy_ref'])
+   need(JSON.stringify(go[key])===JSON.stringify(construction[key]),'GO non joint '+key);
+ const executable='/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/MacOS/Google Chrome';
+@@ -253,5 +206,5 @@
+ }
+ for(const name of ['binding.json','decision.json','runtime/readiness.json','runtime/pile-reprise.json','runtime/services-running.json','wrapper-canary-result.json'])need(!fs.existsSync(root+'/'+name),'État natif prématuré '+name);
+ need(ref(root+'/g1/web.sb').sha256==='51ff2e21500393704ea8709fb9bd177dc1f88793d1e92d09c68be70d905807ff'
+-  &&ref(root+'/g1/chrome.sb').sha256==='bee3c2e780e58cbc80ed7e37d64115adf08997aab39dae8f11b56050785633a9','Profils autres successeurs');
++  &&ref(root+'/g1/chrome.sb').sha256==='19808ee2cac3169e9fb8c71c24385bcbb97f924c5ed785f4651817ecaa179b0c','Profils autres successeurs');
+ console.log(JSON.stringify({status:'prepared_only_static_verified',root,refs:refs.size,historical_observations:historicalObservations,sources:79,core_copies:18,overlay_outputs:28,diagnostic_origins:4,diagnostic_helpers:3,git_tree_files:3579,git_modes:true,git_blobs:true,SQL_sources:36,SQL_relations_unchanged:true,original11:true,deltas:6,witness_copies:7,native:false,FULL:false,release:false}));

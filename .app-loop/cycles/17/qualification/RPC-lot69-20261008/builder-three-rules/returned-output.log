@@ -1,0 +1,23 @@
+test_every_byte_outside_profile_nodes_identical (test_profile_derivation.ProfileOnlyBuilderTests.test_every_byte_outside_profile_nodes_identical) ... ok
+test_extra_mach_rule_refused (test_profile_derivation.ProfileOnlyBuilderTests.test_extra_mach_rule_refused) ... ok
+test_forward_builder_diff_exact (test_profile_derivation.ProfileOnlyBuilderTests.test_forward_builder_diff_exact) ... ok
+test_inverse_builder_diff_exact (test_profile_derivation.ProfileOnlyBuilderTests.test_inverse_builder_diff_exact) ... ok
+test_missing_new_rule_refused (test_profile_derivation.ProfileOnlyBuilderTests.test_missing_new_rule_refused) ... ok
+test_no_new_runtime_function_or_helper (test_profile_derivation.ProfileOnlyBuilderTests.test_no_new_runtime_function_or_helper) ... ok
+test_original_constructor_full_preimage_exact (test_profile_derivation.ProfileOnlyBuilderTests.test_original_constructor_full_preimage_exact) ... ok
+test_original_network_rule_change_refused (test_profile_derivation.ProfileOnlyBuilderTests.test_original_network_rule_change_refused) ... ok
+test_profile_forward_and_inverse_diffs_exact (test_profile_derivation.ProfileOnlyBuilderTests.test_profile_forward_and_inverse_diffs_exact) ... ok
+test_profile_inputs_physical_exact (test_profile_derivation.ProfileOnlyBuilderTests.test_profile_inputs_physical_exact) ... ok
+test_real_selected_validator_accepts_exact_suffix (test_profile_derivation.ProfileOnlyBuilderTests.test_real_selected_validator_accepts_exact_suffix) ... ok
+test_reference_extra_field_refused (test_profile_derivation.ProfileOnlyBuilderTests.test_reference_extra_field_refused) ... ok
+test_wildcard_iokit_refused (test_profile_derivation.ProfileOnlyBuilderTests.test_wildcard_iokit_refused) ... ok
+test_wrong_base_profile_refused_by_preserved_v9_oracle (test_profile_derivation.ProfileOnlyBuilderTests.test_wrong_base_profile_refused_by_preserved_v9_oracle) ... ok
+test_wrong_reference_bytes_refused (test_profile_derivation.ProfileOnlyBuilderTests.test_wrong_reference_bytes_refused) ... ok
+test_wrong_reference_path_refused (test_profile_derivation.ProfileOnlyBuilderTests.test_wrong_reference_path_refused) ... ok
+test_wrong_reference_sha_refused (test_profile_derivation.ProfileOnlyBuilderTests.test_wrong_reference_sha_refused) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 0.148s
+
+OK
+STATIC_ONLY tests=17 failures=0 errors=0 builder_imported=False build_executed=False

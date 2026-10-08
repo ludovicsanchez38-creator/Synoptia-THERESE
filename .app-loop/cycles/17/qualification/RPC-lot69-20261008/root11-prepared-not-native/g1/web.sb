@@ -1,0 +1,29 @@
+(version 1)
+(deny default)
+; Profil candidat strict : aucune adaptation automatique sur refus.
+(allow process-fork process-exec sysctl-read)
+(allow file-read* file-map-executable
+  (subpath "/System") (subpath "/usr") (subpath "/bin") (subpath "/sbin")
+  (subpath "/Library/Developer/CommandLineTools")
+  (subpath "/Applications/Google Chrome.app")
+  (subpath (param "SOURCE_ROOT")) (subpath (param "PREPARATION_ROOT"))
+  (subpath (param "NODE_ROOT")) (subpath (param "PYTHON_ROOT"))
+  (subpath (param "QA_ROOT"))
+  (literal "/dev/null") (literal "/dev/urandom") (literal "/dev/random")
+  (literal "/private/etc/localtime") (subpath "/private/var/db/timezone"))
+(allow file-read-metadata (literal "/Users/synoptia/.local/share/uv/python/cpython-3.13-macos-aarch64-none"))
+(allow file-read-metadata (literal "/") (literal "/private") (literal "/private/tmp")
+  (literal "/private/tmp/therese-c17-wrapper-source-kGvU1hdx"))
+(allow file-read-data (literal "/"))
+(allow file-write* (subpath (param "QA_ROOT")) (literal "/dev/null"))
+(deny file-read* file-write* (subpath (string-append (param "QA_ROOT") "/synthetic-denied")))
+(allow signal (target self) (target children))
+(allow network-bind network-inbound (local ip "localhost:17593") (local ip "localhost:5173"))
+(allow network-outbound (remote ip "localhost:17593") (remote ip "localhost:5173"))
+; Node client CDP du seul service auxiliaire root privé.
+(allow network-outbound (remote ip "localhost:17594"))
+; Même canal RPC que SQL : client du seul socket root QA, jamais bind/Unix libre.
+(allow system-socket (socket-domain AF_UNIX))
+(allow network-outbound
+  (remote unix-socket (path-literal (string-append (param "QA_ROOT") "/session-rpc/peer.sock"))))
+; Aucun mach-lookup / AppleEvent / real HOME / profil Chrome admis.

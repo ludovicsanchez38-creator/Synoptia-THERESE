@@ -1,0 +1,10 @@
+--- profile/chrome.sb
++++ preimages/chrome-v10.sb
+@@ -31,7 +31,3 @@
+ (allow iokit-open-user-client (iokit-user-client-class "RootDomainUserClient"))
+ ; Deux lookups UI exacts issus du diagnostic ROOT4 ; aucun Mach global,
+ ; AppleEvents, HOME réel, presse-papiers, profil personnel ou sortie Internet.
+-; ROOT10 diagnostic_only : refus ciblés, causalité non prouvée, profil non admis.
+-(allow mach-lookup (global-name "com.apple.CARenderServer"))
+-(allow iokit-open-user-client (iokit-user-client-class "IOSurfaceRootUserClient"))
+-(allow iokit-open-user-client (iokit-user-client-class "AGXDeviceUserClient"))

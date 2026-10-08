@@ -1,0 +1,22 @@
+test_blueprint_changed_preimage_is_refused (__main__.RunnerBoundaryTests.test_blueprint_changed_preimage_is_refused) ... ok
+test_codes_one_zero_and_xml_oracles_remain_exact (__main__.RunnerBoundaryTests.test_codes_one_zero_and_xml_oracles_remain_exact) ... ok
+test_double_application_is_refused (__main__.RunnerBoundaryTests.test_double_application_is_refused) ... ok
+test_native_failure_codes_are_not_reclassified_as_causal_pass (__main__.RunnerBoundaryTests.test_native_failure_codes_are_not_reclassified_as_causal_pass) ... ok
+test_no_non_test_descriptor_or_env_bound_changes (__main__.RunnerBoundaryTests.test_no_non_test_descriptor_or_env_bound_changes) ... ok
+test_old_blueprint_does_not_equal_new_pytest_request (__main__.RunnerBoundaryTests.test_old_blueprint_does_not_equal_new_pytest_request) ... ok
+test_old_wrapper_reproduces_missing_rootdir_and_host_in_pure_double (__main__.RunnerBoundaryTests.test_old_wrapper_reproduces_missing_rootdir_and_host_in_pure_double) ... ok
+test_overlay_emitted_or_admitted_is_refused (__main__.RunnerBoundaryTests.test_overlay_emitted_or_admitted_is_refused) ... ok
+test_overlay_stale_ref_is_refused (__main__.RunnerBoundaryTests.test_overlay_stale_ref_is_refused) ... ok
+test_overlay_updates_only_runner_payload_and_both_refs (__main__.RunnerBoundaryTests.test_overlay_updates_only_runner_payload_and_both_refs) ... ok
+test_pinned_derivations_equal_supplied_sources (__main__.RunnerBoundaryTests.test_pinned_derivations_equal_supplied_sources) ... ok
+test_pytest_has_one_exact_rootdir_for_each_variant (__main__.RunnerBoundaryTests.test_pytest_has_one_exact_rootdir_for_each_variant) ... ok
+test_real_wrapper_four_calls_match_blueprint_exactly (__main__.RunnerBoundaryTests.test_real_wrapper_four_calls_match_blueprint_exactly) ... ok
+test_restoring_three_anchors_is_byte_exact (__main__.RunnerBoundaryTests.test_restoring_three_anchors_is_byte_exact) ... ok
+test_runner_changed_preimage_is_refused (__main__.RunnerBoundaryTests.test_runner_changed_preimage_is_refused) ... ok
+test_vitest_generated_host_is_numeric_and_options_preserved (__main__.RunnerBoundaryTests.test_vitest_generated_host_is_numeric_and_options_preserved) ... ok
+test_wrong_xml_failure_count_remains_red (__main__.RunnerBoundaryTests.test_wrong_xml_failure_count_remains_red) ... ok
+
+----------------------------------------------------------------------
+Ran 17 tests in 0.019s
+
+OK

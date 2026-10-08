@@ -1,0 +1,127 @@
+{
+  "schema": "c17-runner-boundary-preparation-index-v1",
+  "status": "prepared_pure_17_pass_not_native_not_admitted",
+  "actor": "/root/shared4_execution",
+  "actual_index_at": "2026-10-08 11:13:37 UTC",
+  "head": "2d69e30c9c6dd18823ee6102271876003a6a67cc",
+  "references": [
+    {
+      "path": "/private/tmp/therese-c17-test-runner-boundary-eUIHsp/source/runner_boundary.py",
+      "sha256": "84afccb602792b5d97bef0e3f214da1ad411a79f9813f88f291243e3febac8f9",
+      "bytes": 4042
+    },
+    {
+      "path": "/private/tmp/therese-c17-test-runner-boundary-eUIHsp/source/calibrate-test-runner.py",
+      "sha256": "0dbd16d6c7b36f31192c0eb9ab98feac70d6aa962fcbdfff70d3f4cb3f85df72",
+      "bytes": 3824
+    },
+    {
+      "path": "/private/tmp/therese-c17-test-runner-boundary-eUIHsp/source/wrapper_blueprint.py",
+      "sha256": "50e8547c8278de48cd8d0b4f604a0c7da4ce08cf0c78ea5196c72a7248b372ec",
+      "bytes": 21259
+    },
+    {
+      "path": "/private/tmp/therese-c17-test-runner-boundary-eUIHsp/tests/test_runner_boundary.py",
+      "sha256": "6f069809e187b1e953dff72cdabc576c3c31dfd92c3147dce0e361593a2cf4c2",
+      "bytes": 14741
+    },
+    {
+      "path": "/private/tmp/therese-c17-test-runner-boundary-eUIHsp/preimages/calibrate-test-runner.py",
+      "sha256": "8150bae5865dea1a27179b2ae65bbcbbc7710d44825b3a0da93b14edc6d54d76",
+      "bytes": 3773
+    },
+    {
+      "path": "/private/tmp/therese-c17-test-runner-boundary-eUIHsp/preimages/wrapper_blueprint.py",
+      "sha256": "f55bd3522a22207195070d14c84be67e420e848d43ed34ec98f5ceafc72e60ad",
+      "bytes": 21229
+    },
+    {
+      "path": "/private/tmp/therese-c17-test-runner-boundary-eUIHsp/proofs/returned-output.log",
+      "sha256": "98830edc69e9c379fa7b1f24ce5058f9a157105ff63e20dd30995f4e76958fa7",
+      "bytes": 2399
+    },
+    {
+      "path": "/private/tmp/therese-c17-test-runner-boundary-eUIHsp/proofs/pure-test-receipt.json",
+      "sha256": "6ccfb3e2f78836b5a6ffd258a9bd3fe05ff5f9b2d7d817d0723b776b87e615a7",
+      "bytes": 9127
+    },
+    {
+      "path": "/private/tmp/therese-c17-test-runner-boundary-eUIHsp/diffs/calibrate-test-runner.py.diff",
+      "sha256": "8805df982bbeff3dcb049dbcf58e1babce0cc9dfc341c86feff20fbaccb75a8f",
+      "bytes": 1830
+    },
+    {
+      "path": "/private/tmp/therese-c17-test-runner-boundary-eUIHsp/diffs/wrapper_blueprint.py.diff",
+      "sha256": "38aa8533946c129f319c2e390e82ea17d4988a489661385eafa67f1ce8162b8d",
+      "bytes": 756
+    },
+    {
+      "path": "/private/tmp/therese-c17-test-runner-boundary-eUIHsp/README.md",
+      "sha256": "a238b60047695d4b7c829f2e8949ddb57eda5917200fb456d7d088c0eec74d8d",
+      "bytes": 3223
+    }
+  ],
+  "input_references": [
+    {
+      "path": "/private/tmp/therese-c17-rpc-integration-UctqC8UG/coordinator/rpc_instrument_contract.py",
+      "sha256": "8c1e54f5af315e316d3631b9c52ac1e3146012aad6e1ded8b78c9f17e39c38a4",
+      "bytes": 15101
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-1dcde39a4c49462fa21d5928c41bb406/auxiliary-ports/runtime/calibrate-test-runner.py",
+      "sha256": "8150bae5865dea1a27179b2ae65bbcbbc7710d44825b3a0da93b14edc6d54d76",
+      "bytes": 3773
+    },
+    {
+      "path": "/private/tmp/therese-c17-rpc-integration-UctqC8UG/coordinator/wrapper_blueprint.py",
+      "sha256": "f55bd3522a22207195070d14c84be67e420e848d43ed34ec98f5ceafc72e60ad",
+      "bytes": 21229
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-1dcde39a4c49462fa21d5928c41bb406/coordinator/wrapper_blueprint.py",
+      "sha256": "5bd282de1217c8b4d628529297e3c58ced897175c359d910630b79af44a105f8",
+      "bytes": 21229
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-1dcde39a4c49462fa21d5928c41bb406/wrapper-canary-result.json",
+      "sha256": "ede79b7d6327c17f3534d0aff710bb267c71b27d7be8e2b619088c76cb4db395",
+      "bytes": 2778
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-1dcde39a4c49462fa21d5928c41bb406/runtime/calibration/test-runner-rpc/pytest-positive.log",
+      "sha256": "a00c9c7b90d9be8b1b7bd2f16e5450e9e76fa22518d9f470f146a6518ffda28c",
+      "bytes": 1777
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-1dcde39a4c49462fa21d5928c41bb406/runtime/calibration/test-runner-rpc/pytest-negative.log",
+      "sha256": "5c36c3d624ddff068cab34979c720bcd7dd1090daaae60ead8e2e00523276de7",
+      "bytes": 1777
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-1dcde39a4c49462fa21d5928c41bb406/runtime/calibration/test-runner-rpc/vitest-positive.log",
+      "sha256": "dc0a7210c1e0e79487905cfe975195c3d5622ebd6207db506ac502b44b04cd4b",
+      "bytes": 320
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-1dcde39a4c49462fa21d5928c41bb406/runtime/calibration/test-runner-rpc/vitest-negative.log",
+      "sha256": "dc0a7210c1e0e79487905cfe975195c3d5622ebd6207db506ac502b44b04cd4b",
+      "bytes": 320
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source/src/frontend/node_modules/vite/dist/node/chunks/config.js",
+      "sha256": "c2fcfa51206dc1f8d22120ef4a82af8b9acdc02f4476520b6a0897d12a724ba3",
+      "bytes": 1336507
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source/.venv-conforme/lib/python3.13/site-packages/_pytest/config/findpaths.py",
+      "sha256": "d22abddac47a73a81504569cc0c356fa0145ce57ef58d3b8e9d5fdc77f609c88",
+      "bytes": 12878
+    }
+  ],
+  "tests": 17,
+  "FULL": false,
+  "A_B": false,
+  "G1_imported": false,
+  "native_workload_launched": false,
+  "mutated_previous_roots": false
+}

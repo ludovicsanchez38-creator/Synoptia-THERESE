@@ -1,0 +1,23 @@
+{
+  "bundle_root": "/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app",
+  "chrome_qa_copy_ref": {
+    "bytes": 17160,
+    "path": "/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/v3-receipt.json",
+    "sha256": "f97793cb43454051da734685185cb5d4e5b5ffbabc516580287195ef3d32993c"
+  },
+  "files": [
+    {
+      "bytes": 367696,
+      "path": "/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/MacOS/Google Chrome",
+      "sha256": "764f5f6ee523e6d52caf6e56ce7501e932c4f6e52d06d267887cb7ea70350102"
+    },
+    {
+      "bytes": 517043520,
+      "path": "/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.99/Google Chrome Framework",
+      "sha256": "7c2c82aa54bf5fa7a14d42b0fb0062faaf018d4ace78e413a326f4d7f7b84633"
+    }
+  ],
+  "runtime_executed": false,
+  "schema": "c17-wrapper-chrome-bundle-files-v1",
+  "signature_verified_at_preparation": true
+}

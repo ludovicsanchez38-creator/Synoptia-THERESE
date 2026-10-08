@@ -1,0 +1,448 @@
+{
+  "FULL": false,
+  "G1_imported": false,
+  "SQL_definition_review_required": true,
+  "actor": "/root",
+  "authority_ref": {
+    "bytes": 5071,
+    "path": "/private/tmp/therese-c17-root-fresh11-controls-5eCuk7hB/prepare-go.json",
+    "sha256": "17382f10805491b8e73401533392e377ef204309fc6ea971f1196ecdb0e40c9f"
+  },
+  "base11_ref": {
+    "bytes": 8261,
+    "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime78-rpc-instruments-preparation.json",
+    "sha256": "7cd53843b0aae5adc1b9b2b17a119f402430153d032f4fa0fd88853dd5a9dc05"
+  },
+  "base11_unchanged": true,
+  "builder_ref": {
+    "bytes": 81180,
+    "path": "/private/tmp/therese-c17-wrapper-profile-three-builder-G8n4Ef/build_fresh_wrapper.py",
+    "sha256": "ecca6ab61c8114f827ee020a6b28c2eb8a9c53a8942db646ae62fb059b34a9dc"
+  },
+  "chrome5_ref": {
+    "bytes": 26493,
+    "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/authorization/chrome-preparation.json",
+    "sha256": "05a9b929dd87df962dd79f95adb3deec0ccbeac6c3de4baf7f7720862a5c216f"
+  },
+  "chrome_contract_delta_ref": {
+    "bytes": 519,
+    "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/proofs/derived-chrome-helper-qa.diff",
+    "sha256": "881b80387d8ddcee196d42878874c55e5af5aebe99f7e55ecdbc369bacf093d9"
+  },
+  "chrome_contract_qa_ref": {
+    "bytes": 4118,
+    "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/source/chrome_contract.py",
+    "sha256": "7922a13bdc239338ea9dedf37bf06ef1c91931b77a5275a2db6007d89a9a42ba"
+  },
+  "chrome_copy_fresh_after_ref": {
+    "bytes": 1598,
+    "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/authorization/chrome-copy-fresh-after.json",
+    "sha256": "5ea51fea1ec21a52f11d7762da504cfe6e57ed3b5d730b3ccc873a51dbbb68d9"
+  },
+  "chrome_copy_fresh_before_ref": {
+    "bytes": 1598,
+    "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/authorization/chrome-copy-fresh-before.json",
+    "sha256": "215b41cf7f47b24e4f3125f6728b4e643e1212136b62bb3669b03fa989ec2b1a"
+  },
+  "chrome_profile_ref": {
+    "bytes": 2375,
+    "path": "/private/tmp/therese-c17-wrapper-profile-three-builder-G8n4Ef/profile/chrome.sb",
+    "sha256": "bee3c2e780e58cbc80ed7e37d64115adf08997aab39dae8f11b56050785633a9"
+  },
+  "chrome_qa_copy_ref": {
+    "bytes": 17160,
+    "path": "/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/v3-receipt.json",
+    "sha256": "f97793cb43454051da734685185cb5d4e5b5ffbabc516580287195ef3d32993c"
+  },
+  "coordinator3_refs": [
+    {
+      "bytes": 15101,
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/coordinator/rpc_instrument_contract.py",
+      "sha256": "8c1e54f5af315e316d3631b9c52ac1e3146012aad6e1ded8b78c9f17e39c38a4"
+    },
+    {
+      "bytes": 21259,
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/coordinator/wrapper_blueprint.py",
+      "sha256": "091aaef22d907e712098982a50429628befbac088e32bbc152f26fb28e0e696e"
+    },
+    {
+      "bytes": 29245,
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/coordinator/run_wrapper_canary.py",
+      "sha256": "d1dec48b595439c05f6f4fc4b8846a6a08e0cc2e35f7822f85d616878a2290b5"
+    }
+  ],
+  "core18_ref": {
+    "bytes": 16461,
+    "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/authorization/core-preparation.json",
+    "sha256": "da3c000c757a222af3b601ff30b1aa1e718a3eb8c83e119e96a28def33ec45b7"
+  },
+  "deltas": [
+    {
+      "bytes": 3104,
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/proofs/root-wrapper-admission.diff",
+      "sha256": "120cd35f40caf6ddd24629b2c682c6385ab3217458bb383e93e9abdca6922bb7"
+    },
+    {
+      "bytes": 477,
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/proofs/derived-sql-pin.diff",
+      "sha256": "9dd8499dd104b880bab59b4ff461f69111d8622b28696481963294aa3cfba5c8"
+    },
+    {
+      "bytes": 681,
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/proofs/derived-session-events-parent.diff",
+      "sha256": "01ba391114d92867865f9435e9aca0918f580a48525df3e95819ee918cf32fd5"
+    },
+    {
+      "bytes": 1651,
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/proofs/derived-test-runner-boundary.diff",
+      "sha256": "6e2a083d58d0ad0ae08eaec904fca07886b80d81d48daedd0bc3557acde8c1a7"
+    },
+    {
+      "bytes": 585,
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/proofs/derived-pytest-rootdir-blueprint.diff",
+      "sha256": "dd2b0cf0c4dbcb2be0d9a14e8321e57b66ef3110f35ac24f8bfb934375e45bb1"
+    },
+    {
+      "bytes": 2695,
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/proofs/derived-chrome-ui-exact.diff",
+      "sha256": "30715d821b093ecebf8ff285bfb57948a56d1efd3c420a7089c06a54f0964207"
+    }
+  ],
+  "dependencies_observed": {
+    "all_dependency_package_bodies_rehashed": false,
+    "byte_level_dependency_copy_parity_newly_qualified": false,
+    "metadata_only_not_runtime_qualification": true,
+    "node": [
+      {
+        "installed": 3,
+        "lock_ref": {
+          "bytes": 2320,
+          "path": "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source/package-lock.json",
+          "sha256": "abc9dbf623fbfe60c0e23e2693b266e63f56e149d9bc8bc0fd4c54ac79e5ce00"
+        },
+        "missing_optional": 1,
+        "root": "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source"
+      },
+      {
+        "installed": 427,
+        "lock_ref": {
+          "bytes": 263242,
+          "path": "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source/src/frontend/package-lock.json",
+          "sha256": "5ddb837a4573200c5fd239d92fbed8e57eaefabb7ec96ffc6a60e24c178cd909"
+        },
+        "missing_optional": 86,
+        "root": "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source/src/frontend"
+      }
+    ],
+    "pth": {
+      "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source/.venv-conforme/lib/python3.13/site-packages/_virtualenv.pth": {
+        "bytes": 18,
+        "path": "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source/.venv-conforme/lib/python3.13/site-packages/_virtualenv.pth",
+        "sha256": "69ac3d8f27e679c81b94ab30b3b56e9cd138219b1ba94a1fa3606d5a76a1433d"
+      },
+      "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source/.venv-conforme/lib/python3.13/site-packages/a1_coverage.pth": {
+        "bytes": 205,
+        "path": "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source/.venv-conforme/lib/python3.13/site-packages/a1_coverage.pth",
+        "sha256": "ef2ed06d19867ec669c09a804060666a9cd5e383af0a9d11aa2de79b77d448e8"
+      },
+      "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source/.venv-conforme/lib/python3.13/site-packages/distutils-precedence.pth": {
+        "bytes": 151,
+        "path": "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source/.venv-conforme/lib/python3.13/site-packages/distutils-precedence.pth",
+        "sha256": "2638ce9e2500e572a5e0de7faed6661eb569d1b696fcba07b0dd223da5f5d224"
+      },
+      "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source/.venv-conforme/lib/python3.13/site-packages/urllib3_future.pth": {
+        "bytes": 2187,
+        "path": "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source/.venv-conforme/lib/python3.13/site-packages/urllib3_future.pth",
+        "sha256": "6ffad53a56ba1247213563e632620a7351f6b1523cded6376f01e48ecdc65e52"
+      }
+    },
+    "pth_baseline_ref": {
+      "bytes": 35032,
+      "path": "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/proofs/python-metadata-result.json",
+      "sha256": "5e32c122a845df3f598258b39dd18e150d50f26104f350d25756449fabcebf82"
+    },
+    "python_count": 149,
+    "python_lock_ref": {
+      "bytes": 722003,
+      "path": "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source/uv.lock",
+      "sha256": "7417fca3f2762aba2ebddca71f4c49cd0122bbf8bc9f3a0310ca28cd4a1ea558"
+    },
+    "urllib3_ref": {
+      "bytes": 3884,
+      "path": "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source/.venv-conforme/lib/python3.13/site-packages/urllib3/util/connection.py",
+      "sha256": "412d8dab54efff6c201501e71e66b67c71563272b3ac1b046f85125349a26d2e"
+    }
+  },
+  "derived_chrome_ui_exact_ref": {
+    "bytes": 2695,
+    "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/proofs/derived-chrome-ui-exact.diff",
+    "sha256": "30715d821b093ecebf8ff285bfb57948a56d1efd3c420a7089c06a54f0964207"
+  },
+  "derived_pytest_blueprint_ref": {
+    "bytes": 585,
+    "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/proofs/derived-pytest-rootdir-blueprint.diff",
+    "sha256": "dd2b0cf0c4dbcb2be0d9a14e8321e57b66ef3110f35ac24f8bfb934375e45bb1"
+  },
+  "derived_qa_parent_dirs_ref": {
+    "bytes": 681,
+    "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/proofs/derived-session-events-parent.diff",
+    "sha256": "01ba391114d92867865f9435e9aca0918f580a48525df3e95819ee918cf32fd5"
+  },
+  "derived_test_runner_ref": {
+    "bytes": 1651,
+    "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/proofs/derived-test-runner-boundary.diff",
+    "sha256": "6e2a083d58d0ad0ae08eaec904fca07886b80d81d48daedd0bc3557acde8c1a7"
+  },
+  "git_tree_files_verified": 3579,
+  "head": "2d69e30c9c6dd18823ee6102271876003a6a67cc",
+  "overlay28_ref": {
+    "bytes": 33778,
+    "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/authorization/auxiliary-overlay.json",
+    "sha256": "da7a7a6294cdc37b77295850896276ea2d1783a1916e85dee31fa2856330762c"
+  },
+  "release": false,
+  "root": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3",
+  "root_go_ref": {
+    "bytes": 3408,
+    "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/authorization/root-go.json",
+    "sha256": "eccbc5bb6040770468c5ab06535dab0820790085c073f69938e500c8925b967d"
+  },
+  "rpc_diagnostic_derivation_refs": [
+    {
+      "origin": {
+        "bytes": 17374,
+        "path": "/private/tmp/therese-c17-rpc-cause-observability-NRYrmF/preimages/rpc_protocol.py",
+        "sha256": "59cbe5069d0c5a5c5353dea4094f4eaf61147970be0bd6708d71fdc93e0f04a9"
+      },
+      "output": {
+        "bytes": 17374,
+        "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/proofs/rpc-diagnostic-preimage/rpc_protocol.py",
+        "sha256": "59cbe5069d0c5a5c5353dea4094f4eaf61147970be0bd6708d71fdc93e0f04a9"
+      }
+    },
+    {
+      "origin": {
+        "bytes": 354,
+        "path": "/private/tmp/therese-c17-rpc-cause-observability-NRYrmF/diffs/rpc_protocol.py.diff",
+        "sha256": "71615b1a566720bc64b0e19b9f2347b29a2286c913e1f57816978b7392c449dd"
+      },
+      "output": {
+        "bytes": 354,
+        "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/proofs/rpc-diagnostic-diff/rpc_protocol.py.diff",
+        "sha256": "71615b1a566720bc64b0e19b9f2347b29a2286c913e1f57816978b7392c449dd"
+      }
+    },
+    {
+      "origin": {
+        "bytes": 15764,
+        "path": "/private/tmp/therese-c17-rpc-cause-observability-NRYrmF/preimages/rpc_client.py",
+        "sha256": "ab38715552963e6f00ecc4f2ca0c45fbdd36af3759f0075a03290fad9f2cf3fa"
+      },
+      "output": {
+        "bytes": 15764,
+        "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/proofs/rpc-diagnostic-preimage/rpc_client.py",
+        "sha256": "ab38715552963e6f00ecc4f2ca0c45fbdd36af3759f0075a03290fad9f2cf3fa"
+      }
+    },
+    {
+      "origin": {
+        "bytes": 788,
+        "path": "/private/tmp/therese-c17-rpc-cause-observability-NRYrmF/diffs/rpc_client.py.diff",
+        "sha256": "4321dcf521e32e39786fe4075f7c38a6a3a90962c500100dad0a0b8b927f51e5"
+      },
+      "output": {
+        "bytes": 788,
+        "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/proofs/rpc-diagnostic-diff/rpc_client.py.diff",
+        "sha256": "4321dcf521e32e39786fe4075f7c38a6a3a90962c500100dad0a0b8b927f51e5"
+      }
+    },
+    {
+      "origin": {
+        "bytes": 20971,
+        "path": "/private/tmp/therese-c17-rpc-cause-observability-NRYrmF/preimages/rpc_dispatcher.py",
+        "sha256": "97130b76ea4738cfb785d9638aae09ef994aa02e8e679c75b515ebfb7d0c9f2c"
+      },
+      "output": {
+        "bytes": 20971,
+        "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/proofs/rpc-diagnostic-preimage/rpc_dispatcher.py",
+        "sha256": "97130b76ea4738cfb785d9638aae09ef994aa02e8e679c75b515ebfb7d0c9f2c"
+      }
+    },
+    {
+      "origin": {
+        "bytes": 3613,
+        "path": "/private/tmp/therese-c17-rpc-cause-observability-NRYrmF/diffs/rpc_dispatcher.py.diff",
+        "sha256": "6238b8644321a8c5afe8fdc4e46e214ff4074e6aceca4f5407107d81b6b82b50"
+      },
+      "output": {
+        "bytes": 3613,
+        "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/proofs/rpc-diagnostic-diff/rpc_dispatcher.py.diff",
+        "sha256": "6238b8644321a8c5afe8fdc4e46e214ff4074e6aceca4f5407107d81b6b82b50"
+      }
+    },
+    {
+      "origin": {
+        "bytes": 21984,
+        "path": "/private/tmp/therese-c17-rpc-cause-observability-NRYrmF/preimages/session_rpc_adapter.py",
+        "sha256": "f7fb203f885def5ea65310744f3ed904c553e5dfd8a0638f082f137a1b242db4"
+      },
+      "output": {
+        "bytes": 21984,
+        "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/proofs/rpc-diagnostic-preimage/session_rpc_adapter.py",
+        "sha256": "f7fb203f885def5ea65310744f3ed904c553e5dfd8a0638f082f137a1b242db4"
+      }
+    },
+    {
+      "origin": {
+        "bytes": 1604,
+        "path": "/private/tmp/therese-c17-rpc-cause-observability-NRYrmF/diffs/session_rpc_adapter.py.diff",
+        "sha256": "38d0cd48476b75ef9003d094da3f67c75f595d7d1716d3a3fb7e12ac0ff26ae1"
+      },
+      "output": {
+        "bytes": 1604,
+        "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/proofs/rpc-diagnostic-diff/session_rpc_adapter.py.diff",
+        "sha256": "38d0cd48476b75ef9003d094da3f67c75f595d7d1716d3a3fb7e12ac0ff26ae1"
+      }
+    }
+  ],
+  "rpc_diagnostic_origin_index_ref": {
+    "bytes": 6675,
+    "path": "/private/tmp/therese-c17-rpc-cause-observability-NRYrmF/INDEX.json",
+    "sha256": "604e4e02062dd37cafbf9e67b2545b7697bad70a7aeac2825598cefaa63d7596"
+  },
+  "runner_boundary_definition_refs": [
+    {
+      "bytes": 4042,
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/authorization/runner-boundary/source/runner_boundary.py",
+      "sha256": "84afccb602792b5d97bef0e3f214da1ad411a79f9813f88f291243e3febac8f9"
+    },
+    {
+      "bytes": 5567,
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/authorization/runner-boundary/INDEX.json",
+      "sha256": "771565210b1ab41ca7e5a43c89fa63a034c57872515a698a12161e47adfe11b7"
+    },
+    {
+      "bytes": 14741,
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/authorization/runner-boundary/tests/test_runner_boundary.py",
+      "sha256": "6f069809e187b1e953dff72cdabc576c3c31dfd92c3147dce0e361593a2cf4c2"
+    },
+    {
+      "bytes": 9127,
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/authorization/runner-boundary/proofs/pure-test-receipt.json",
+      "sha256": "6ccfb3e2f78836b5a6ffd258a9bd3fe05ff5f9b2d7d817d0723b776b87e615a7"
+    },
+    {
+      "bytes": 2399,
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/authorization/runner-boundary/proofs/returned-output.log",
+      "sha256": "98830edc69e9c379fa7b1f24ce5058f9a157105ff63e20dd30995f4e76958fa7"
+    },
+    {
+      "bytes": 1830,
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/authorization/runner-boundary/diffs/calibrate-test-runner.py.diff",
+      "sha256": "8805df982bbeff3dcb049dbcf58e1babce0cc9dfc341c86feff20fbaccb75a8f"
+    },
+    {
+      "bytes": 756,
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/authorization/runner-boundary/diffs/wrapper_blueprint.py.diff",
+      "sha256": "38aa8533946c129f319c2e390e82ea17d4988a489661385eafa67f1ce8162b8d"
+    }
+  ],
+  "runtime_executed": false,
+  "schema": "c17-fresh-wrapper-construction-receipt-v1",
+  "source_indexes": [
+    {
+      "bytes": 2937,
+      "path": "/private/tmp/therese-c17-rpc-integration-UctqC8UG/successor/SUCCESSOR-RPC-INDEX.json",
+      "sha256": "9b6daaf60d095fbfda38efae717191147cf2dc90881ffff2566166fc90cfc737"
+    },
+    {
+      "bytes": 2970,
+      "path": "/private/tmp/therese-c17-rpc-integration-UctqC8UG/support-v2/SUPPORT-V2-INDEX.json",
+      "sha256": "60c2de8a956434d3dc395ad9b93ec9c6be24691922f8a0c97471ae8eb0fb525d"
+    },
+    {
+      "bytes": 8841,
+      "path": "/private/tmp/therese-c17-rpc-integration-UctqC8UG/g1-review-26/INDEX.json",
+      "sha256": "0138215a9d5e5d20b9033bc8e6ee0887ffc8423a6a163108bc7daae38e797737"
+    },
+    {
+      "bytes": 26803,
+      "path": "/private/tmp/therese-c17-rpc-integration-UctqC8UG/auxiliary/INDEX.json",
+      "sha256": "dbc5a8ec553333715d9c858441b683a1695a3bfa2328ddcc1d90cd4dbb049bd7"
+    },
+    {
+      "bytes": 3027,
+      "path": "/private/tmp/therese-c17-rpc-integration-UctqC8UG/coordinator/COORDINATOR-INDEX.json",
+      "sha256": "0ce723809e99a066c4581fb70930d057ee3aa117c8a5c52b2e96eeabfd1a28e3"
+    },
+    {
+      "bytes": 1200,
+      "path": "/private/tmp/therese-c17-web-root-metadata-POjxSafe/INDEX.json",
+      "sha256": "6081b027d60263f3785b8c3462963021f9c362a3e7f411b2b98c4118a3b2b4cb"
+    },
+    {
+      "bytes": 2758,
+      "path": "/private/tmp/therese-c17-chrome-ui-exact-LvZDmsDL/INDEX.json",
+      "sha256": "d1205f29371042b801bdd92293a03287b4fd8f0bf10aecd0b1ccd3442ce0a46e"
+    },
+    {
+      "bytes": 2456,
+      "path": "/private/tmp/therese-c17-chrome-unixbind-PUUOvY00/INDEX.json",
+      "sha256": "5f2a3e941e5c66e43c64a9970e528228ea68cc49586ccb5cb6134216c6611bd5"
+    },
+    {
+      "bytes": 2605,
+      "path": "/private/tmp/therese-c17-chrome-rootdomain-h5whIv/INDEX.json",
+      "sha256": "c0f542c377d37efd8e88103e2d760fdc126b785793f167755a319f0f5fb8d3c6"
+    },
+    {
+      "bytes": 1060,
+      "path": "/private/tmp/therese-c17-fresh-wrapper-builder-v7-cnR8Hm/profile/INDEX.json",
+      "sha256": "64636dce1646b3bb8bf67489bf1c9cf90cb6bd562037d84ff569e67fff3797f6"
+    },
+    {
+      "bytes": 5567,
+      "path": "/private/tmp/therese-c17-test-runner-boundary-eUIHsp/INDEX.json",
+      "sha256": "771565210b1ab41ca7e5a43c89fa63a034c57872515a698a12161e47adfe11b7"
+    },
+    {
+      "bytes": 6675,
+      "path": "/private/tmp/therese-c17-rpc-cause-observability-NRYrmF/INDEX.json",
+      "sha256": "604e4e02062dd37cafbf9e67b2545b7697bad70a7aeac2825598cefaa63d7596"
+    }
+  ],
+  "source_refs_count": 79,
+  "source_refs_ref": {
+    "bytes": 27735,
+    "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/authorization/source-refs.json",
+    "sha256": "3040d205b7a0e009eb02f3f693f9e699e79a0cf2bc304a1bac63a4b827067ddf"
+  },
+  "sql_contract_ref": {
+    "bytes": 7702,
+    "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/complements/contrats-normalises-proposes.json",
+    "sha256": "f53d7e7159cf81b473a3b47a202e24ab841b18c922152d4b0f20beeb2b9d0c4e"
+  },
+  "status": "prepared_only_native_tool_GO_required",
+  "support8_ref": {
+    "bytes": 9478,
+    "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/support-preparation.json",
+    "sha256": "865f09f7c0075f34768fc4e9a930fc2547f2ee2dfca1b79b7895dd182e072fd9"
+  },
+  "vite2_refs": [
+    {
+      "bytes": 2342,
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/vite.canonique.mjs",
+      "sha256": "b645385ee31037d0af094879668427239a59a242af3c52b858f2c213e4396fff"
+    },
+    {
+      "bytes": 1142,
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/vite.runtime.config.mjs",
+      "sha256": "4ecdbc5d22d4e0d458606a256293dec0e509946f5da84ee452b354d59cdf1892"
+    }
+  ],
+  "web_profile_ref": {
+    "bytes": 1780,
+    "path": "/private/tmp/therese-c17-web-root-metadata-POjxSafe/web.sb",
+    "sha256": "51ff2e21500393704ea8709fb9bd177dc1f88793d1e92d09c68be70d905807ff"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "schema": "c17-root11-static-controller-head-correction-index-v2",
+  "actor": "/root/environment_routes",
+  "status": "prepared_only_not_executed_not_authority",
+  "source_v1_index": {
+    "path": "/private/tmp/therese-c17-root11-static-controls-oFr0O6/INDEX.json",
+    "sha256": "9b4f68968a3cf32e6471df34327765b03baf4921a070f1d524b7d454ca44771d",
+    "bytes": 3688
+  },
+  "preimage": {
+    "path": "/private/tmp/therese-c17-root11-static-controls-oFr0O6/verify-prepared-wrapper.mjs",
+    "sha256": "f51583a1f163dfb2636b13ebc6c133166f92daa2c4eb4efb0108dde0bd09017a",
+    "bytes": 19296
+  },
+  "single_delta": {
+    "field": "authority.repo_head_observed",
+    "old": "19979e8a5ea9bd8e886d35d54793b3d1a560cd77",
+    "new": "5f89164ca0907ed92058fb244847893fc34a059b",
+    "root_direct_observation_chunk": "14bb5b",
+    "v1_mismatch_status": "static_red_observation_not_executed"
+  },
+  "files": [
+    {"path": "/private/tmp/therese-c17-root11-static-controls-v2-loPvxR/preimages/verify-prepared-wrapper-main11-v1.mjs", "sha256": "f51583a1f163dfb2636b13ebc6c133166f92daa2c4eb4efb0108dde0bd09017a", "bytes": 19296},
+    {"path": "/private/tmp/therese-c17-root11-static-controls-v2-loPvxR/verify-prepared-wrapper.mjs", "sha256": "e8ea3ec950f8defce2e28fddfbfe1697b90425207b6dbcee045c88ffb5284a72", "bytes": 19296},
+    {"path": "/private/tmp/therese-c17-root11-static-controls-v2-loPvxR/forward.diff", "sha256": "d12afbfeab7db9f8cfcce186407b99a67aea8f77507179da07ca31c9bcbe9929", "bytes": 758},
+    {"path": "/private/tmp/therese-c17-root11-static-controls-v2-loPvxR/inverse.diff", "sha256": "bf014a6a583697045595991ddbc593944d3d728257ff3457c1aff567a340297b", "bytes": 758},
+    {"path": "/private/tmp/therese-c17-root11-static-controls-v2-loPvxR/README.md", "sha256": "7148ef3d753908c81e4b3816b52f7748bb0a66c26ab8aaa41e6b34f8d60aabab", "bytes": 1248}
+  ],
+  "unchanged_literal_pins": {
+    "future_root": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3",
+    "builder_sha256": "ecca6ab61c8114f827ee020a6b28c2eb8a9c53a8942db646ae62fb059b34a9dc",
+    "builder_proposal_index_sha256": "d159911e9ffc2886448760fa82936bfee155af911a05c3c685ad21ff0175338f",
+    "chrome_v10_preimage_sha256": "19808ee2cac3169e9fb8c71c24385bcbb97f924c5ed785f4651817ecaa179b0c",
+    "chrome_candidate_sha256": "bee3c2e780e58cbc80ed7e37d64115adf08997aab39dae8f11b56050785633a9"
+  },
+  "verification": {
+    "preimage_byte_exact": true,
+    "forward_diff_exact": true,
+    "inverse_diff_exact": true,
+    "only_one_line_changed": true,
+    "checker_executed": false,
+    "Node_or_G1_or_native_executed": false,
+    "QA_root_created": false,
+    "FULL": false,
+    "release": false
+  }
+}
