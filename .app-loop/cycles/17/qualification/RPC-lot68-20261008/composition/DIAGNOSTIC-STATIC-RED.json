@@ -1,0 +1,12 @@
+{
+  "schema": "c17-ab-git-listener-static-instrument-red-v1",
+  "tool_chunk": "cf3bad",
+  "exit_code": 1,
+  "scope": "read_only_ast_hash_diff_comparison",
+  "stdout": "Traceback (most recent call last):\n  File \"<stdin>\", line 39, in <module>\nAssertionError\n",
+  "renderer_executed": false,
+  "tests_executed": false,
+  "cause_verified_by_chunk": "74680f",
+  "cause": "Le contrôle reconstruisait les en-têtes de diff '(before)/(owned-listener)', alors que le gel original utilise les noms exacts 'a/.../b/...'. Les hunks complets sont identiques, pour les trois différences. Ce refus de comparateur statique n'est pas une erreur des textes produits ni un résultat produit.",
+  "followup": "Reconstruire exactement les en-têtes a/b réellement enregistrés. Aucun texte de renderer, recette, helper, contexte ou diff historique n'est modifié."
+}

@@ -1,0 +1,238 @@
+{
+  "schema": "c17-chrome-targeted-three-profile-preparation-index-v1",
+  "actor": "/root/shared4_execution",
+  "prepared_at": "2026-10-08T16:20:45Z",
+  "status": "prepared_static_only_unexecuted_profile_not_admitted",
+  "scope": "diagnostic_only_three_literal_rules_ROOT10_hypothesis",
+  "origin": {
+    "profile": {
+      "path": "/private/tmp/therese-c17-wrapper-canary-b90937dbae4845ca9d04b93aa4cdf9aa/g1/chrome.sb",
+      "sha256": "19808ee2cac3169e9fb8c71c24385bcbb97f924c5ed785f4651817ecaa179b0c",
+      "bytes": 2067
+    },
+    "root10_result": {
+      "path": "/private/tmp/therese-c17-wrapper-canary-b90937dbae4845ca9d04b93aa4cdf9aa/wrapper-canary-result.json",
+      "sha256": "49b980383365fd98d87cab77b113946eacbdc7881b1bdd60ef20b71e767901dc",
+      "bytes": 2778
+    },
+    "kernel_receipt": {
+      "path": "/private/tmp/therese-c17-root10-system-diagnostic-25smI0KQ/receipt.json",
+      "sha256": "abed48bd77c7bb3d0bb7ee3ef242dfd6fd903243662ef708722c4e91ad440d96",
+      "bytes": 2474
+    },
+    "kernel_raw": {
+      "path": "/private/tmp/therese-c17-root10-system-diagnostic-25smI0KQ/stdout.json",
+      "sha256": "6593b92a19c9368dda614ce78e5c41042c3a28cdbc531d865d63eb7869a076fa",
+      "bytes": 139932
+    },
+    "native_execution_actor": "/root",
+    "ROOT10_remains_RED": true
+  },
+  "candidate": {
+    "path": "/private/tmp/therese-c17-chrome-targeted-three-McWh5vFc/chrome.sb",
+    "sha256": "bee3c2e780e58cbc80ed7e37d64115adf08997aab39dae8f11b56050785633a9",
+    "bytes": 2375
+  },
+  "preimage": {
+    "path": "/private/tmp/therese-c17-chrome-targeted-three-McWh5vFc/preimage-chrome.sb",
+    "sha256": "19808ee2cac3169e9fb8c71c24385bcbb97f924c5ed785f4651817ecaa179b0c",
+    "bytes": 2067
+  },
+  "forward_diff": {
+    "path": "/private/tmp/therese-c17-chrome-targeted-three-McWh5vFc/PROFILE.diff",
+    "sha256": "bc505d053923b0735ccf1ced070658a5071f2bcea2bf435a06fe81c9f1cde456",
+    "bytes": 602
+  },
+  "inverse_diff": {
+    "path": "/private/tmp/therese-c17-chrome-targeted-three-McWh5vFc/PROFILE-INVERSE.diff",
+    "sha256": "63d00c362c19f0a813322ca6243fb3d294c1aac40188f06e73a6192457224e07",
+    "bytes": 602
+  },
+  "exact_added_rules": [
+    "(allow mach-lookup (global-name \"com.apple.CARenderServer\"))",
+    "(allow iokit-open-user-client (iokit-user-client-class \"IOSurfaceRootUserClient\"))",
+    "(allow iokit-open-user-client (iokit-user-client-class \"AGXDeviceUserClient\"))"
+  ],
+  "original_prefix_bytes": 2067,
+  "added_bytes": 308,
+  "original_prefix_byte_exact": true,
+  "syntax_primary_sources": [
+    {
+      "reference": {
+        "path": "/System/Library/Sandbox/Profiles/com.apple.GameOverlayUI.sb",
+        "sha256": "6320ed0b8a6933b3c62cbfc8c3149a9f1dcc0a968cbfbc6f99a1270ab2c99257",
+        "bytes": 10845
+      },
+      "lines": "112-118",
+      "use": "mach-lookup/global-name literal CARenderServer only"
+    },
+    {
+      "reference": {
+        "path": "/System/Library/Sandbox/Profiles/com.apple.gputoolsserviced.sb",
+        "sha256": "fb1381764287e32128b8d6db40353059667ca4a2a64e7b778d1ef5773bb51841",
+        "bytes": 7234
+      },
+      "lines": "28-29,45",
+      "use": "iokit-open-user-client/iokit-user-client-class exact named classes only"
+    },
+    {
+      "reference": {
+        "path": "/System/Library/Sandbox/Profiles/appsandbox-common.sb",
+        "sha256": "b9ffebd2141aca32c609f4a707f5a6b980ae4be45299ee3f3c18534b69cb7cea",
+        "bytes": 32355
+      },
+      "lines": "669-671",
+      "use": "same family as existing RootDomainUserClient"
+    }
+  ],
+  "bounds": {
+    "controller_delta": false,
+    "CDP_seconds": 5,
+    "auxiliary_startup_seconds": 50,
+    "cleanup_seconds": 8,
+    "note": "unchanged contextual controller bounds; no controller derived or executed"
+  },
+  "permission_scope": {
+    "literal_rules_added": 3,
+    "clipboard_or_pasteboard_added": false,
+    "AppleEvents_added": false,
+    "HID_added": false,
+    "configd_added": false,
+    "lsd_modifydb_added": false,
+    "real_preferences_added": false,
+    "IOKit_wildcard_added": false,
+    "global_Mach_wildcard_added": false,
+    "network_or_data_or_write_or_subpath_added": false
+  },
+  "pure_tests": {
+    "executed": true,
+    "tests": 14,
+    "failures": 0,
+    "errors": 0,
+    "exit_code": 0,
+    "returned_tool_chunk": "edbf5b",
+    "profile_compiler_invoked": false,
+    "receipt": {
+      "path": "/private/tmp/therese-c17-chrome-targeted-three-McWh5vFc/pure-receipt.json",
+      "sha256": "b68980c48883c057e456c849ef1257b13ffd117d93d2c55dfcac64d84c05a55f",
+      "bytes": 2617
+    }
+  },
+  "authority": {
+    "decision_created": false,
+    "QA_root_created": false,
+    "admission_created": false,
+    "capabilities_opened": false,
+    "profile_installed": false,
+    "new_OS_observation": false,
+    "Node_or_Chrome_or_G1_launched": false,
+    "causal_claim": false,
+    "FULL": false,
+    "A_B": false,
+    "release": false
+  },
+  "files": [
+    {
+      "path": "/private/tmp/therese-c17-chrome-targeted-three-McWh5vFc/README.md",
+      "sha256": "bc2af4f302b61565ff8edc3b23b0274bce0b97e53b8028abd422f360f340ed84",
+      "bytes": 4302
+    },
+    {
+      "path": "/private/tmp/therese-c17-chrome-targeted-three-McWh5vFc/kernel-evidence.json",
+      "sha256": "b21e52540c11e299fbac530d623b87492a1d9ef9a5df3384a554cba7e034d3f0",
+      "bytes": 6337
+    },
+    {
+      "path": "/private/tmp/therese-c17-chrome-targeted-three-McWh5vFc/returned-output.log",
+      "sha256": "49bc9cd35e4ab75064e2ea20e7aca9508c814c2adc3bdc800e89e24a998174c5",
+      "bytes": 1673
+    },
+    {
+      "path": "/private/tmp/therese-c17-chrome-targeted-three-McWh5vFc/pure-receipt.json",
+      "sha256": "b68980c48883c057e456c849ef1257b13ffd117d93d2c55dfcac64d84c05a55f",
+      "bytes": 2617
+    },
+    {
+      "path": "/private/tmp/therese-c17-chrome-targeted-three-McWh5vFc/preimage-chrome.sb",
+      "sha256": "19808ee2cac3169e9fb8c71c24385bcbb97f924c5ed785f4651817ecaa179b0c",
+      "bytes": 2067
+    },
+    {
+      "path": "/private/tmp/therese-c17-chrome-targeted-three-McWh5vFc/chrome.sb",
+      "sha256": "bee3c2e780e58cbc80ed7e37d64115adf08997aab39dae8f11b56050785633a9",
+      "bytes": 2375
+    },
+    {
+      "path": "/private/tmp/therese-c17-chrome-targeted-three-McWh5vFc/PROFILE.diff",
+      "sha256": "bc505d053923b0735ccf1ced070658a5071f2bcea2bf435a06fe81c9f1cde456",
+      "bytes": 602
+    },
+    {
+      "path": "/private/tmp/therese-c17-chrome-targeted-three-McWh5vFc/PROFILE-INVERSE.diff",
+      "sha256": "63d00c362c19f0a813322ca6243fb3d294c1aac40188f06e73a6192457224e07",
+      "bytes": 602
+    },
+    {
+      "path": "/private/tmp/therese-c17-chrome-targeted-three-McWh5vFc/verify_profile.py",
+      "sha256": "b085371ed12cefe35bce86e1a3ba15f3baebfaafe9162851ffb696dfae3fe177",
+      "bytes": 4208
+    },
+    {
+      "path": "/private/tmp/therese-c17-chrome-targeted-three-McWh5vFc/test_verify_profile.py",
+      "sha256": "674c5f6b3b349a4195b7cf13463e7e2ae6fdad246d509f4862e7b8e161598454",
+      "bytes": 3020
+    }
+  ],
+  "source_refs": [
+    {
+      "path": "/private/tmp/therese-c17-root10-system-diagnostic-25smI0KQ/receipt.json",
+      "sha256": "abed48bd77c7bb3d0bb7ee3ef242dfd6fd903243662ef708722c4e91ad440d96",
+      "bytes": 2474
+    },
+    {
+      "path": "/private/tmp/therese-c17-root10-system-diagnostic-25smI0KQ/stdout.json",
+      "sha256": "6593b92a19c9368dda614ce78e5c41042c3a28cdbc531d865d63eb7869a076fa",
+      "bytes": 139932
+    },
+    {
+      "path": "/private/tmp/therese-c17-root10-system-diagnostic-25smI0KQ/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/private/tmp/therese-c17-root10-system-diagnostic-25smI0KQ/collect.mjs",
+      "sha256": "769cdcc2c5794992de8ad9d693176c4632f2119577e268caee72a6b90b7b1465",
+      "bytes": 3339
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-b90937dbae4845ca9d04b93aa4cdf9aa/wrapper-canary-result.json",
+      "sha256": "49b980383365fd98d87cab77b113946eacbdc7881b1bdd60ef20b71e767901dc",
+      "bytes": 2778
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-b90937dbae4845ca9d04b93aa4cdf9aa/ledger/aux-chrome-rpc-all-runtime_ui-visual_capture-network_capture/receipt.json",
+      "sha256": "3d624a8d02990f27ee383f1b4f51e5d55351f6e5ae677ba0a55bd42e1741bc0d",
+      "bytes": 287985
+    },
+    {
+      "path": "/System/Library/Sandbox/Profiles/com.apple.gputoolsserviced.sb",
+      "sha256": "fb1381764287e32128b8d6db40353059667ca4a2a64e7b778d1ef5773bb51841",
+      "bytes": 7234
+    },
+    {
+      "path": "/System/Library/Sandbox/Profiles/com.apple.GameOverlayUI.sb",
+      "sha256": "6320ed0b8a6933b3c62cbfc8c3149a9f1dcc0a968cbfbc6f99a1270ab2c99257",
+      "bytes": 10845
+    },
+    {
+      "path": "/System/Library/Sandbox/Profiles/appsandbox-common.sb",
+      "sha256": "b9ffebd2141aca32c609f4a707f5a6b980ae4be45299ee3f3c18534b69cb7cea",
+      "bytes": 32355
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-b90937dbae4845ca9d04b93aa4cdf9aa/g1/chrome.sb",
+      "sha256": "19808ee2cac3169e9fb8c71c24385bcbb97f924c5ed785f4651817ecaa179b0c",
+      "bytes": 2067
+    }
+  ]
+}

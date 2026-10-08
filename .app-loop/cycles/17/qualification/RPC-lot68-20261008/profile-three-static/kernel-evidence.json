@@ -1,0 +1,176 @@
+{
+  "schema": "c17-chrome-three-rules-static-evidence-v1",
+  "actor": "/root/shared4_execution",
+  "diagnostic_only": true,
+  "causal_claim": false,
+  "event_count": 139,
+  "unique_messages": 61,
+  "birth": {
+    "pid": 70792,
+    "ppid": 70354,
+    "uid": 501,
+    "pgid": 70792,
+    "status": 2,
+    "start_sec": 1791474774,
+    "start_usec": 727823,
+    "role": "auxiliary-aux-chrome-rpc-all-runtime_ui-visual_capture-network_capture",
+    "parent_birth": [
+      70354,
+      1791474736,
+      659266
+    ],
+    "attribution": "popen_child_before_workload",
+    "captured_at": "2026-10-08T15:52:54.731064+00:00"
+  },
+  "birth_exactly_equals_closed_chrome_stage": true,
+  "literal_denial_counts_excluding_duplicate_notice": {
+    "com.apple.CARenderServer": 4,
+    "IOSurfaceRootUserClient": 1,
+    "AGXDeviceUserClient": 1
+  },
+  "selected_events": [
+    {
+      "timestamp": "2026-10-08 17:52:59.302813+0200",
+      "processImagePath": "/kernel",
+      "eventMessage": "Sandbox: Google Chrome(70792) deny(1) mach-lookup com.apple.CARenderServer"
+    },
+    {
+      "timestamp": "2026-10-08 17:52:59.620435+0200",
+      "processImagePath": "/kernel",
+      "eventMessage": "Sandbox: Google Chrome(70792) deny(1) iokit-open-user-client IOSurfaceRootUserClient"
+    },
+    {
+      "timestamp": "2026-10-08 17:52:59.620439+0200",
+      "processImagePath": "/kernel",
+      "eventMessage": "IOUC IOSurfaceRootUserClient failed MACF in process pid 70792, Google Chrome"
+    },
+    {
+      "timestamp": "2026-10-08 17:52:59.645825+0200",
+      "processImagePath": "/kernel",
+      "eventMessage": "Sandbox: Google Chrome(70792) deny(1) mach-lookup com.apple.CARenderServer"
+    },
+    {
+      "timestamp": "2026-10-08 17:52:59.765902+0200",
+      "processImagePath": "/kernel",
+      "eventMessage": "Sandbox: Google Chrome(70792) deny(1) mach-lookup com.apple.CARenderServer"
+    },
+    {
+      "timestamp": "2026-10-08 17:52:59.772621+0200",
+      "processImagePath": "/kernel",
+      "eventMessage": "Sandbox: Google Chrome(70792) deny(1) mach-lookup com.apple.CARenderServer"
+    },
+    {
+      "timestamp": "2026-10-08 17:52:59.785749+0200",
+      "processImagePath": "/kernel",
+      "eventMessage": "1 duplicate report for Sandbox: Google Chrome(70792) deny(1) mach-lookup com.apple.CARenderServer"
+    },
+    {
+      "timestamp": "2026-10-08 17:52:59.786570+0200",
+      "processImagePath": "/kernel",
+      "eventMessage": "Sandbox: Google Chrome(70792) deny(1) iokit-open-user-client AGXDeviceUserClient"
+    },
+    {
+      "timestamp": "2026-10-08 17:52:59.786571+0200",
+      "processImagePath": "/kernel",
+      "eventMessage": "IOUC AGXDeviceUserClient failed MACF in process pid 70792, Google Chrome"
+    }
+  ],
+  "source_refs": [
+    {
+      "path": "/private/tmp/therese-c17-root10-system-diagnostic-25smI0KQ/receipt.json",
+      "sha256": "abed48bd77c7bb3d0bb7ee3ef242dfd6fd903243662ef708722c4e91ad440d96",
+      "bytes": 2474
+    },
+    {
+      "path": "/private/tmp/therese-c17-root10-system-diagnostic-25smI0KQ/stdout.json",
+      "sha256": "6593b92a19c9368dda614ce78e5c41042c3a28cdbc531d865d63eb7869a076fa",
+      "bytes": 139932
+    },
+    {
+      "path": "/private/tmp/therese-c17-root10-system-diagnostic-25smI0KQ/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/private/tmp/therese-c17-root10-system-diagnostic-25smI0KQ/collect.mjs",
+      "sha256": "769cdcc2c5794992de8ad9d693176c4632f2119577e268caee72a6b90b7b1465",
+      "bytes": 3339
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-b90937dbae4845ca9d04b93aa4cdf9aa/wrapper-canary-result.json",
+      "sha256": "49b980383365fd98d87cab77b113946eacbdc7881b1bdd60ef20b71e767901dc",
+      "bytes": 2778
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-b90937dbae4845ca9d04b93aa4cdf9aa/ledger/aux-chrome-rpc-all-runtime_ui-visual_capture-network_capture/receipt.json",
+      "sha256": "3d624a8d02990f27ee383f1b4f51e5d55351f6e5ae677ba0a55bd42e1741bc0d",
+      "bytes": 287985
+    },
+    {
+      "path": "/System/Library/Sandbox/Profiles/com.apple.gputoolsserviced.sb",
+      "sha256": "fb1381764287e32128b8d6db40353059667ca4a2a64e7b778d1ef5773bb51841",
+      "bytes": 7234
+    },
+    {
+      "path": "/System/Library/Sandbox/Profiles/com.apple.GameOverlayUI.sb",
+      "sha256": "6320ed0b8a6933b3c62cbfc8c3149a9f1dcc0a968cbfbc6f99a1270ab2c99257",
+      "bytes": 10845
+    },
+    {
+      "path": "/System/Library/Sandbox/Profiles/appsandbox-common.sb",
+      "sha256": "b9ffebd2141aca32c609f4a707f5a6b980ae4be45299ee3f3c18534b69cb7cea",
+      "bytes": 32355
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-b90937dbae4845ca9d04b93aa4cdf9aa/g1/chrome.sb",
+      "sha256": "19808ee2cac3169e9fb8c71c24385bcbb97f924c5ed785f4651817ecaa179b0c",
+      "bytes": 2067
+    }
+  ],
+  "source_checks": [
+    {
+      "path": "/private/tmp/therese-c17-root10-system-diagnostic-25smI0KQ/receipt.json",
+      "matches": true
+    },
+    {
+      "path": "/private/tmp/therese-c17-root10-system-diagnostic-25smI0KQ/stdout.json",
+      "matches": true
+    },
+    {
+      "path": "/private/tmp/therese-c17-root10-system-diagnostic-25smI0KQ/stderr.log",
+      "matches": true
+    },
+    {
+      "path": "/private/tmp/therese-c17-root10-system-diagnostic-25smI0KQ/collect.mjs",
+      "matches": true
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-b90937dbae4845ca9d04b93aa4cdf9aa/wrapper-canary-result.json",
+      "matches": true
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-b90937dbae4845ca9d04b93aa4cdf9aa/ledger/aux-chrome-rpc-all-runtime_ui-visual_capture-network_capture/receipt.json",
+      "matches": true
+    },
+    {
+      "path": "/System/Library/Sandbox/Profiles/com.apple.gputoolsserviced.sb",
+      "matches": true
+    },
+    {
+      "path": "/System/Library/Sandbox/Profiles/com.apple.GameOverlayUI.sb",
+      "matches": true
+    },
+    {
+      "path": "/System/Library/Sandbox/Profiles/appsandbox-common.sb",
+      "matches": true
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-b90937dbae4845ca9d04b93aa4cdf9aa/g1/chrome.sb",
+      "matches": true
+    }
+  ],
+  "new_OS_observation": false,
+  "profile_executed": false,
+  "admitted": false,
+  "FULL": false
+}

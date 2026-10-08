@@ -1,0 +1,507 @@
+{
+  "schema": "c17-ab-git-readonly-preparation-index-v1",
+  "scope": "closed_preparation_only",
+  "actor": "/root/cycle17_gate_review",
+  "round_id": null,
+  "head": null,
+  "runtime_enabled": false,
+  "os_startup_qualified": false,
+  "full_admitted": false,
+  "admission_table": {},
+  "capabilities": {},
+  "files": [
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/COMMAND-PROPOSED.json",
+      "sha256": "f92e18d1be526ae18e6f9b515f3b7874172b0f1e2825ad1a6d034f87adb4618b",
+      "bytes": 1331
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/FIRST-STATIC-RED.json",
+      "sha256": "a4dc1ac9b1eb807c6697d538639c8c6d94f587d16b852c7a7b713dd190a48546",
+      "bytes": 686
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/INPUTS.json",
+      "sha256": "880e0197e64117fcbd11087ec61663877edf0ba86edd68138d3f79c7432618f5",
+      "bytes": 11532
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/README.md",
+      "sha256": "681a07fcb0ed8cfc1e9819bc0d150560031f9375950a3f25ff001315ac40b7c9",
+      "bytes": 5453
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/STATIC-AUDIT.json",
+      "sha256": "0c57b75a9218c48a8d84c9554fbb50bce0931cf680588d6b4d2bc03852b59b97",
+      "bytes": 5601
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/diffs/aux_node_append_only.diff",
+      "sha256": "63695ce6b1a155ae8f7b00f5f3112a58f29849a1c79b4ebb199b8b4a8115043c",
+      "bytes": 1046
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/diffs/complements__instruments__b1713-clavier-v3.mjs.diff",
+      "sha256": "7a3eaf6526cc18e6dcef9b3e9eeec667e8587a7492506ad09ca47aea43c866d1",
+      "bytes": 1840
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/diffs/complements__instruments__contexte-v3.mjs.diff",
+      "sha256": "e862fb6b571f706f4bd7d5e5d8a43da4bace2e94c2f4373b07260a8798322a98",
+      "bytes": 1231
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/diffs/complements__instruments__p162-colonnes-v3.mjs.diff",
+      "sha256": "eac15598a0d0f801b1d1f209a57e284bf8048bf91469e7ccd28b609c59c2e27b",
+      "bytes": 1231
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/diffs/first_static_syntax_fix.diff",
+      "sha256": "6ca3911c3be855afb8c35d007fbf13e14ed590c41df8a4b60e241d87820ae110",
+      "bytes": 379
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/diffs/runtime__recette-c17.mjs.diff",
+      "sha256": "ea015d8b0cbcfbcd6e2339bb5b9b993252e1edd5153f0160b11db353bec90591",
+      "bytes": 1187
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/diffs/runtime__recette-crm-focus.mjs.diff",
+      "sha256": "80d4c9097e40b33b9110313261ec5b5fd4be1e18dc86637979d8f4d6cfc7e2ae",
+      "bytes": 1535
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/diffs/runtime__recette-facturation-p160-v2.mjs.diff",
+      "sha256": "f168fbb93f6c4364e8f071e9dc52683548967ded80c1015d029d0036afd4cf18",
+      "bytes": 1666
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preimages/ab_auxiliary_table.py",
+      "sha256": "84e164e06b914952264e0c1d9b96ed2a8b8c8eaf73f62e18f85c7fe1eaae0152",
+      "bytes": 3295
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preimages/aux_node.mjs",
+      "sha256": "64555c1d39590d944bce79a84479bc7deca7d1bdcdfd4552f842651bc307baf3",
+      "bytes": 14247
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preimages/complements/instruments/b1713-clavier-v3.mjs",
+      "sha256": "fdd51132997612eb96d3a2834e9f13986c544c437c037d451d4ee6b5ceeeaf56",
+      "bytes": 7445
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preimages/complements/instruments/b1755-garde-v3.mjs",
+      "sha256": "f461a931f8f5f2dd68f233067ba4b775cb1f5849dedd2b68331342aad149af08",
+      "bytes": 3921
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preimages/complements/instruments/p157-pipeline-root-oracle.mjs",
+      "sha256": "a80fd37f3db40d3bda491fbdd5a6354619f10d69052264a1ac8b3647785e5d40",
+      "bytes": 14451
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preimages/complements/instruments/p162-colonnes-v3.mjs",
+      "sha256": "f11a627e29770c0ab62d4fa0762664920cc6051d55a0108f959611cf2cd8f76c",
+      "bytes": 18200
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preimages/complements/instruments/p162-garde-get-v3.mjs",
+      "sha256": "fef15097299ed92444f272bbc983592101644f173995192ae53b0e5f38c1dbcb",
+      "bytes": 2511
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preimages/contexte-v3.mjs",
+      "sha256": "a5c41e69b8943496853326b59a5a34664a5897d2601b6b6c73ac5fa81b44a3e1",
+      "bytes": 7276
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preimages/git_snapshot.py",
+      "sha256": "4baa737fa21a7efe7a4e54ee730b22a470a081b026ed19cf623df00e225fbd0d",
+      "bytes": 7005
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preimages/ownership-only.mjs",
+      "sha256": "41eb7fcd151e66a675935608379bfc29e49e13e0cae3d63ee94af3de0964aa90",
+      "bytes": 2095
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preimages/render_direct_cdp.py",
+      "sha256": "8a34fbda9c1e84ea7a5191aa3947241778019c74db08f572ec510b7c9dfa1482",
+      "bytes": 6578
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preimages/run_python_pure-at-46.py",
+      "sha256": "f636071e78079dc6f2c2c5ff948ec714a70534f8d38d756633082fc1fa782f85",
+      "bytes": 3679
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preimages/run_python_pure-before-static-syntax-red.py",
+      "sha256": "be885f402726441f755d55581393fe1016d651e9e5a06719bc82b0c757e1f193",
+      "bytes": 3679
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preimages/runtime/couverture-ecran-c17.mjs",
+      "sha256": "3d30adcfe5169fb32ae87c1f2c2456fc7d62836d3e3342d48024112f857a41c9",
+      "bytes": 34607
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preimages/runtime/recette-c17.mjs",
+      "sha256": "50b4621409eaf8af0951d1135769199761b3a401cc9138ea681b65af59282b76",
+      "bytes": 7356
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preimages/runtime/recette-crm-focus.mjs",
+      "sha256": "5018b2a0c438b131ef3e67329b43a013751b2a6192fc4bc7ecd2fa024d5bce26",
+      "bytes": 5656
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preimages/runtime/recette-facturation-p160-v2.mjs",
+      "sha256": "fdcfc57197f945d21cbd0a2b3acd35d418154d99a7021c2310c23d09f63dccea",
+      "bytes": 7411
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preimages/runtime78_coordinator.py",
+      "sha256": "99cd7011d81d60ad89471deb81d1ddae2675c709043b516f4b38839d923348da",
+      "bytes": 32680
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preimages/test_render_git_readonly-at-46.py",
+      "sha256": "5f9bbacdd543dd130b091a9c683a00279d832fa3a7af59c599952c71fe5798cc",
+      "bytes": 12685
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preimages/trace-after-cdp-definition-only.mjs",
+      "sha256": "93f3fef0b0a02c2dda0357c25766b87b604da2afcfc15431d803a285eaac1f2f",
+      "bytes": 2936
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preimages/trace-chrome.mjs",
+      "sha256": "2e0c3181b470cae2c49e7905f54489463be9383c234286b1d20fbecb15c3a2a4",
+      "bytes": 2846
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/auxiliary-ports/runtime/aux_node.mjs",
+      "sha256": "f302e0fd1cb6f64d87c606eabcf6a8b7184b1ca05654024bfd52ec569c1478db",
+      "bytes": 15031
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/complements/instruments/b1713-clavier-v3.mjs",
+      "sha256": "690b3f82a8342dc415802fc41fc43fd693d328ad9fb6af43c4eb12c9a80ebb64",
+      "bytes": 7405
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/complements/instruments/b1755-garde-v3.mjs",
+      "sha256": "f461a931f8f5f2dd68f233067ba4b775cb1f5849dedd2b68331342aad149af08",
+      "bytes": 3921
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/complements/instruments/contexte-v3.mjs",
+      "sha256": "9960ba63b5984dd00a918e73292a541729e1579582952d3a7ec14860ebbda38f",
+      "bytes": 7244
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/complements/instruments/p157-pipeline-root-oracle.mjs",
+      "sha256": "a80fd37f3db40d3bda491fbdd5a6354619f10d69052264a1ac8b3647785e5d40",
+      "bytes": 14451
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/complements/instruments/p162-colonnes-v3.mjs",
+      "sha256": "b341e9bba0a6940988b49690ce2dfd4d8689cda630bbb7236020dbd40a6185af",
+      "bytes": 18168
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/complements/instruments/p162-garde-get-v3.mjs",
+      "sha256": "fef15097299ed92444f272bbc983592101644f173995192ae53b0e5f38c1dbcb",
+      "bytes": 2511
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/runtime/couverture-ecran-c17.mjs",
+      "sha256": "3d30adcfe5169fb32ae87c1f2c2456fc7d62836d3e3342d48024112f857a41c9",
+      "bytes": 34607
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/runtime/recette-c17.mjs",
+      "sha256": "c95be80e6dfcfa0acdde63c26a06fc8dcce41c3a888529f926b0000a7a447bf2",
+      "bytes": 7321
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/runtime/recette-crm-focus.mjs",
+      "sha256": "b3937b6c6b304150f4adc8e12b9f400def70a578566213a9d855aea1cab52f19",
+      "bytes": 5621
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/runtime/recette-facturation-p160-v2.mjs",
+      "sha256": "11f29b24795479ef68a10bbe588b66be9521da6d9c1890b0810b4f7eec4dead4",
+      "bytes": 7376
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/trace-chrome.mjs",
+      "sha256": "93f3fef0b0a02c2dda0357c25766b87b604da2afcfc15431d803a285eaac1f2f",
+      "bytes": 2936
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/pure_git_cases.mjs",
+      "sha256": "f225159257d868f962f0376f3d99927dcf020e0f9e5c1c6502fa3e383d815352",
+      "bytes": 12722
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/render_git_readonly.py",
+      "sha256": "d433c2932324ad5f0977cae181466cab142e696a07f1e7771fa6bcbfb768d886",
+      "bytes": 8016
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/run_node_pure.mjs",
+      "sha256": "17582014a9da15948c9e214edcbea23858d8887a6bea7b04804c729b5aa6941d",
+      "bytes": 2161
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/run_python_pure.py",
+      "sha256": "fdc6cdda14c7f3073ece27abbbae85eb19400e91f789f5f7185d53a1520b328f",
+      "bytes": 3831
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/test_render_git_readonly.py",
+      "sha256": "c66b100b1d31309e05795cb5a71479cb8103d441d6c5237fc281b5d3159164b1",
+      "bytes": 13309
+    }
+  ],
+  "origins": [
+    {
+      "path": "/private/tmp/therese-c17-ab-direct-cdp-n4yu8cV6/preimages-complete/runtime/recette-c17.mjs",
+      "sha256": "50b4621409eaf8af0951d1135769199761b3a401cc9138ea681b65af59282b76",
+      "bytes": 7356
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-direct-cdp-n4yu8cV6/preimages-complete/runtime/recette-facturation-p160-v2.mjs",
+      "sha256": "fdcfc57197f945d21cbd0a2b3acd35d418154d99a7021c2310c23d09f63dccea",
+      "bytes": 7411
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-direct-cdp-n4yu8cV6/preimages-complete/runtime/recette-crm-focus.mjs",
+      "sha256": "5018b2a0c438b131ef3e67329b43a013751b2a6192fc4bc7ecd2fa024d5bce26",
+      "bytes": 5656
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-direct-cdp-n4yu8cV6/preimages-complete/runtime/couverture-ecran-c17.mjs",
+      "sha256": "3d30adcfe5169fb32ae87c1f2c2456fc7d62836d3e3342d48024112f857a41c9",
+      "bytes": 34607
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-direct-cdp-n4yu8cV6/preimages-complete/complements/instruments/b1713-clavier-v3.mjs",
+      "sha256": "fdd51132997612eb96d3a2834e9f13986c544c437c037d451d4ee6b5ceeeaf56",
+      "bytes": 7445
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-direct-cdp-n4yu8cV6/preimages-complete/complements/instruments/p157-pipeline-root-oracle.mjs",
+      "sha256": "a80fd37f3db40d3bda491fbdd5a6354619f10d69052264a1ac8b3647785e5d40",
+      "bytes": 14451
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-direct-cdp-n4yu8cV6/preimages-complete/complements/instruments/b1755-garde-v3.mjs",
+      "sha256": "f461a931f8f5f2dd68f233067ba4b775cb1f5849dedd2b68331342aad149af08",
+      "bytes": 3921
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-direct-cdp-n4yu8cV6/preimages-complete/complements/instruments/p162-colonnes-v3.mjs",
+      "sha256": "f11a627e29770c0ab62d4fa0762664920cc6051d55a0108f959611cf2cd8f76c",
+      "bytes": 18200
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-direct-cdp-n4yu8cV6/preimages-complete/complements/instruments/p162-garde-get-v3.mjs",
+      "sha256": "fef15097299ed92444f272bbc983592101644f173995192ae53b0e5f38c1dbcb",
+      "bytes": 2511
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-direct-cdp-n4yu8cV6/preimages-complete/trace-chrome.mjs",
+      "sha256": "2e0c3181b470cae2c49e7905f54489463be9383c234286b1d20fbecb15c3a2a4",
+      "bytes": 2846
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-direct-cdp-n4yu8cV6/preimages-complete/aux_node.mjs",
+      "sha256": "64555c1d39590d944bce79a84479bc7deca7d1bdcdfd4552f842651bc307baf3",
+      "bytes": 14247
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-direct-cdp-n4yu8cV6/preimages-complete/ab_auxiliary_table.py",
+      "sha256": "84e164e06b914952264e0c1d9b96ed2a8b8c8eaf73f62e18f85c7fe1eaae0152",
+      "bytes": 3295
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-direct-cdp-n4yu8cV6/preimages-complete/runtime78_coordinator.py",
+      "sha256": "99cd7011d81d60ad89471deb81d1ddae2675c709043b516f4b38839d923348da",
+      "bytes": 32680
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-direct-cdp-n4yu8cV6/preimages-complete/contexte-v3.mjs",
+      "sha256": "a5c41e69b8943496853326b59a5a34664a5897d2601b6b6c73ac5fa81b44a3e1",
+      "bytes": 7276
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-direct-cdp-n4yu8cV6/preimages-complete/ownership-only.mjs",
+      "sha256": "41eb7fcd151e66a675935608379bfc29e49e13e0cae3d63ee94af3de0964aa90",
+      "bytes": 2095
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-direct-cdp-n4yu8cV6/preview-definition-only/trace-chrome.mjs",
+      "sha256": "93f3fef0b0a02c2dda0357c25766b87b604da2afcfc15431d803a285eaac1f2f",
+      "bytes": 2936
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-direct-cdp-n4yu8cV6/render_direct_cdp.py",
+      "sha256": "8a34fbda9c1e84ea7a5191aa3947241778019c74db08f572ec510b7c9dfa1482",
+      "bytes": 6578
+    },
+    {
+      "path": "/private/tmp/therese-c17-rpc-integration-UctqC8UG/auxiliary/source/git_snapshot.py",
+      "sha256": "4baa737fa21a7efe7a4e54ee730b22a470a081b026ed19cf623df00e225fbd0d",
+      "bytes": 7005
+    }
+  ],
+  "receipts": [
+    {
+      "path": "/private/tmp/therese-c17-ab-git-python-O6A0dAEM/receipt.json",
+      "sha256": "641d61b1ee3d2b3c443f80af3c41240aa2f07e6bc5f3dd5e15e55cfa3e16db55",
+      "bytes": 19147
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-python-O6A0dAEM/stdout.log",
+      "sha256": "3259b0860a0c0bc784f7cc298a16570caf35e46685f65d37d9c75c4112864dc0",
+      "bytes": 5031
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-python-O6A0dAEM/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-python-ds9xtRZb/receipt.json",
+      "sha256": "9b78d13420d9c96d6eb1852b3e9940d1608884eafad3f31dd46dc9a6001f75bd",
+      "bytes": 25867
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-python-ds9xtRZb/stdout.log",
+      "sha256": "8de13996dbc74cc14089cf7343f29e285607568b8401ab05475f7a6575744f2e",
+      "bytes": 5195
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-python-ds9xtRZb/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    }
+  ],
+  "external_definition_policy_refs": [
+    {
+      "path": "/private/tmp/therese-c17-ab-direct-cdp-n4yu8cV6/INDEX.json",
+      "sha256": "a68753294239bff31ac7ceb4c57f5fb763a0c5f6372805646850d7a5d09c5886",
+      "bytes": 22723
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-direct-cdp-root-read-ly2OJfDr/INDEX.json",
+      "sha256": "6cb6523d74fa052fa543a6e875f5e29c471ac46fec9453fd5b8f8b1578a64d12",
+      "bytes": 28671
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-direct-cdp-root-read-ly2OJfDr/node-pure-root-read.sb",
+      "sha256": "468a30e15b06a23ff8d45d1d15c8e45938ae306f3394810f92cf3e1521651039",
+      "bytes": 960
+    }
+  ],
+  "historical_source_observations": [
+    {
+      "receipt_ref": {
+        "path": "/private/tmp/therese-c17-ab-git-python-O6A0dAEM/receipt.json",
+        "sha256": "641d61b1ee3d2b3c443f80af3c41240aa2f07e6bc5f3dd5e15e55cfa3e16db55",
+        "bytes": 19147
+      },
+      "fields": [
+        "pins_before",
+        "pins_after"
+      ],
+      "observed": {
+        "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/test_render_git_readonly.py",
+        "sha256": "5f9bbacdd543dd130b091a9c683a00279d832fa3a7af59c599952c71fe5798cc",
+        "bytes": 12685
+      },
+      "preserved_preimage": {
+        "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preimages/test_render_git_readonly-at-46.py",
+        "sha256": "5f9bbacdd543dd130b091a9c683a00279d832fa3a7af59c599952c71fe5798cc",
+        "bytes": 12685
+      },
+      "scope": "historical_observation_not_current_definition"
+    },
+    {
+      "receipt_ref": {
+        "path": "/private/tmp/therese-c17-ab-git-python-O6A0dAEM/receipt.json",
+        "sha256": "641d61b1ee3d2b3c443f80af3c41240aa2f07e6bc5f3dd5e15e55cfa3e16db55",
+        "bytes": 19147
+      },
+      "fields": [
+        "pins_before",
+        "pins_after"
+      ],
+      "observed": {
+        "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/run_python_pure.py",
+        "sha256": "f636071e78079dc6f2c2c5ff948ec714a70534f8d38d756633082fc1fa782f85",
+        "bytes": 3679
+      },
+      "preserved_preimage": {
+        "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preimages/run_python_pure-at-46.py",
+        "sha256": "f636071e78079dc6f2c2c5ff948ec714a70534f8d38d756633082fc1fa782f85",
+        "bytes": 3679
+      },
+      "scope": "historical_observation_not_current_definition"
+    }
+  ],
+  "results": {
+    "python_final": {
+      "tests": 47,
+      "failures": 0,
+      "errors": 0,
+      "skips": 0,
+      "passed": true,
+      "pins_count": 54,
+      "pins_unchanged": true,
+      "denied_events": [],
+      "receipt_ref": {
+        "path": "/private/tmp/therese-c17-ab-git-python-ds9xtRZb/receipt.json",
+        "sha256": "9b78d13420d9c96d6eb1852b3e9940d1608884eafad3f31dd46dc9a6001f75bd",
+        "bytes": 25867
+      }
+    },
+    "python_prior_46": "preserved distinct, not additive",
+    "javascript": "prepared, not executed",
+    "first_static_refusal": {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/FIRST-STATIC-RED.json",
+      "sha256": "a4dc1ac9b1eb807c6697d538639c8c6d94f587d16b852c7a7b713dd190a48546",
+      "bytes": 686
+    }
+  },
+  "delta": {
+    "six_unique_Git_metadata_sites": true,
+    "helper_append_only": true,
+    "old_gitHead_environmentContext_unchanged": true,
+    "old_helper_pin": {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preimages/aux_node.mjs",
+      "sha256": "64555c1d39590d944bce79a84479bc7deca7d1bdcdfd4552f842651bc307baf3",
+      "bytes": 14247
+    },
+    "new_helper_pin": {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/auxiliary-ports/runtime/aux_node.mjs",
+      "sha256": "f302e0fd1cb6f64d87c606eabcf6a8b7184b1ca05654024bfd52ec569c1478db",
+      "bytes": 15031
+    },
+    "composition_order": [
+      "CDP with old helper64555",
+      "Git with new helper f302e0fd"
+    ],
+    "new_profile_or_permission": false
+  },
+  "limits": [
+    "No HEAD, checkout, snapshot, Session or root authority is produced",
+    "JS gitHead rechecks physical refs; recursive tree verification remains a root obligation",
+    "Existing Git/environment readers remain byte-exact; no cache or subprocess fallback",
+    "Existing lsof calls/ownership-only and physical A/B lifecycle remain separate",
+    "No historical schema/result is a current A/B proof"
+  ]
+}

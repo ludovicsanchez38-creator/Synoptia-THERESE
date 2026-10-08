@@ -1,0 +1,141 @@
+{
+  "schema": "c17-ab-git-readonly-static-audit-v1",
+  "scope": "definition_only_not_runtime",
+  "outputs": [
+    {
+      "name": "complements/instruments/p162-colonnes-v3.mjs",
+      "ref": {
+        "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/complements/instruments/p162-colonnes-v3.mjs",
+        "sha256": "b341e9bba0a6940988b49690ce2dfd4d8689cda630bbb7236020dbd40a6185af",
+        "bytes": 18168
+      },
+      "changed": true
+    },
+    {
+      "name": "runtime/recette-c17.mjs",
+      "ref": {
+        "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/runtime/recette-c17.mjs",
+        "sha256": "c95be80e6dfcfa0acdde63c26a06fc8dcce41c3a888529f926b0000a7a447bf2",
+        "bytes": 7321
+      },
+      "changed": true
+    },
+    {
+      "name": "complements/instruments/b1755-garde-v3.mjs",
+      "ref": {
+        "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/complements/instruments/b1755-garde-v3.mjs",
+        "sha256": "f461a931f8f5f2dd68f233067ba4b775cb1f5849dedd2b68331342aad149af08",
+        "bytes": 3921
+      },
+      "changed": false
+    },
+    {
+      "name": "complements/instruments/p157-pipeline-root-oracle.mjs",
+      "ref": {
+        "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/complements/instruments/p157-pipeline-root-oracle.mjs",
+        "sha256": "a80fd37f3db40d3bda491fbdd5a6354619f10d69052264a1ac8b3647785e5d40",
+        "bytes": 14451
+      },
+      "changed": false
+    },
+    {
+      "name": "complements/instruments/p162-garde-get-v3.mjs",
+      "ref": {
+        "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/complements/instruments/p162-garde-get-v3.mjs",
+        "sha256": "fef15097299ed92444f272bbc983592101644f173995192ae53b0e5f38c1dbcb",
+        "bytes": 2511
+      },
+      "changed": false
+    },
+    {
+      "name": "complements/instruments/b1713-clavier-v3.mjs",
+      "ref": {
+        "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/complements/instruments/b1713-clavier-v3.mjs",
+        "sha256": "690b3f82a8342dc415802fc41fc43fd693d328ad9fb6af43c4eb12c9a80ebb64",
+        "bytes": 7405
+      },
+      "changed": true
+    },
+    {
+      "name": "runtime/recette-facturation-p160-v2.mjs",
+      "ref": {
+        "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/runtime/recette-facturation-p160-v2.mjs",
+        "sha256": "11f29b24795479ef68a10bbe588b66be9521da6d9c1890b0810b4f7eec4dead4",
+        "bytes": 7376
+      },
+      "changed": true
+    },
+    {
+      "name": "trace-chrome.mjs",
+      "ref": {
+        "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/trace-chrome.mjs",
+        "sha256": "93f3fef0b0a02c2dda0357c25766b87b604da2afcfc15431d803a285eaac1f2f",
+        "bytes": 2936
+      },
+      "changed": false
+    },
+    {
+      "name": "runtime/couverture-ecran-c17.mjs",
+      "ref": {
+        "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/runtime/couverture-ecran-c17.mjs",
+        "sha256": "3d30adcfe5169fb32ae87c1f2c2456fc7d62836d3e3342d48024112f857a41c9",
+        "bytes": 34607
+      },
+      "changed": false
+    },
+    {
+      "name": "complements/instruments/contexte-v3.mjs",
+      "ref": {
+        "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/complements/instruments/contexte-v3.mjs",
+        "sha256": "9960ba63b5984dd00a918e73292a541729e1579582952d3a7ec14860ebbda38f",
+        "bytes": 7244
+      },
+      "changed": true
+    },
+    {
+      "name": "runtime/recette-crm-focus.mjs",
+      "ref": {
+        "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/runtime/recette-crm-focus.mjs",
+        "sha256": "b3937b6c6b304150f4adc8e12b9f400def70a578566213a9d855aea1cab52f19",
+        "bytes": 5621
+      },
+      "changed": true
+    },
+    {
+      "name": "auxiliary-ports/runtime/aux_node.mjs",
+      "ref": {
+        "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/auxiliary-ports/runtime/aux_node.mjs",
+        "sha256": "f302e0fd1cb6f64d87c606eabcf6a8b7184b1ca05654024bfd52ec569c1478db",
+        "bytes": 15031
+      },
+      "changed": true
+    }
+  ],
+  "helper_before": {
+    "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preimages/aux_node.mjs",
+    "sha256": "64555c1d39590d944bce79a84479bc7deca7d1bdcdfd4552f842651bc307baf3",
+    "bytes": 14247
+  },
+  "helper_after": {
+    "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/auxiliary-ports/runtime/aux_node.mjs",
+    "sha256": "f302e0fd1cb6f64d87c606eabcf6a8b7184b1ca05654024bfd52ec569c1478db",
+    "bytes": 15031
+  },
+  "whole_old_helper_bytes_preserved": true,
+  "six_unique_calls_reversed_exactly": true,
+  "environment_context_no_owned_recursion": true,
+  "context_calls_head_before_after": 2,
+  "runtime_enabled": false,
+  "os_startup_qualified": false,
+  "admissions": {},
+  "capabilities": {},
+  "javascript_executed": false,
+  "snapshot_or_checkout_produced": false,
+  "limits": [
+    "No HEAD, checkout, snapshot, Session or root authority is produced",
+    "JS gitHead rechecks physical refs; recursive tree verification remains a root obligation",
+    "Existing Git/environment readers remain byte-exact; no cache or subprocess fallback",
+    "Existing lsof calls/ownership-only and physical A/B lifecycle remain separate",
+    "No historical schema/result is a current A/B proof"
+  ]
+}

@@ -1,0 +1,10 @@
+{
+  "schema":"therese-c17-native-root10-archive-plan-v1",
+  "status":"prepared_only_not_executed",
+  "archive_limit_bytes":67108864,
+  "archives":[
+    {"id":"35-root10-native-red","class":"native_red_cleanup_verified","root":"/private/tmp/therese-c17-wrapper-canary-b90937dbae4845ca9d04b93aa4cdf9aa","anchor":"wrapper-canary-result.json","anchor_sha256":"49b980383365fd98d87cab77b113946eacbdc7881b1bdd60ef20b71e767901dc","result":{"file":"wrapper-canary-result.json","field":"passed","equals":false}},
+    {"id":"36-root10-closure-proof","class":"physical_closure_only","root":"/private/tmp/therese-c17-root10-closure-review-BawAYTLf","anchor":"receipt.json","anchor_sha256":"315c9c8df2b06b5fc732cb8808510dd31aacd3183f065876701e4a83ca0583a0","result":{"file":"receipt.json","field":"physical_cleanup_proved","equals":true}},
+    {"id":"37-root10-policy-diagnostic","class":"diagnostic_only_not_causal","root":"/private/tmp/therese-c17-root10-system-diagnostic-25smI0KQ","anchor":"receipt.json","anchor_sha256":"abed48bd77c7bb3d0bb7ee3ef242dfd6fd903243662ef708722c4e91ad440d96","result":{"file":"receipt.json","field":"passed","equals":true}}
+  ]
+}

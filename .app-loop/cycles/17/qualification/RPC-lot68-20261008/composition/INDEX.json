@@ -1,0 +1,242 @@
+{
+  "schema": "c17-ab-git-listener-preparation-index-v1",
+  "scope": "definition_only_not_runtime",
+  "status": "frozen_prepared_not_executed",
+  "prepared_by": "/root/cycle17_gate_review",
+  "root": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx",
+  "files": [
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/DIAGNOSTIC-STATIC-RED.json",
+      "sha256": "823c17914a80140da90aba518afa5cf66ad1d438f6b62a68d2f3fd7104e1c515",
+      "bytes": 855
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/README.md",
+      "sha256": "ee365a1f36b7abca96ccccc75a6d5f079860a0cef537e744ffcbdd60de2376c5",
+      "bytes": 3725
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/STATIC-PREPARATION.json",
+      "sha256": "27c12bc2ad150c1626adb2d7f48051721bf0671a209938110983e51d39b9ba82",
+      "bytes": 6057
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/diffs/couverture-ecran-c17.diff",
+      "sha256": "42f8009ac3ed588d8c834ace5e5834b724915483bcafd76645cbefbe2b791a09",
+      "bytes": 2263
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/diffs/couverture-ecran-c17.reverse.diff",
+      "sha256": "8b2caa5410fd3b006a4b9837b1fb10d20805022e927d0690a6d17cb02e77706b",
+      "bytes": 2263
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/diffs/ownership-only.diff",
+      "sha256": "14119b535e5bc90ed85c873640b716b40a31ce2910e2ca19eafbbbc8b7cdcdc7",
+      "bytes": 2689
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/diffs/ownership-only.reverse.diff",
+      "sha256": "71511ddf26b6a1cb49aee878d961065f0ca417ef7cae42e0b6df40b183d3a056",
+      "bytes": 2689
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/diffs/renderer-listener-to-git-listener.diff",
+      "sha256": "4b0762ccb904729d3770e9a99c486607f01487a2f3c824ae2557ced7735cb59b",
+      "bytes": 6879
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/diffs/trace-chrome.diff",
+      "sha256": "1603920387363d8335f91de294fb4e857761cbbe84f9d66dd27b2a1cd09592d1",
+      "bytes": 1870
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/diffs/trace-chrome.reverse.diff",
+      "sha256": "5adfe0c89975399235d17d26a7bdd87b239f15b0cc3b866a97e9527562e2f5dc",
+      "bytes": 1870
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/expected-definition-only/complements/instruments/ownership-only.mjs",
+      "sha256": "ba7ecf684e5ac8025e9189795ae19df1fc1060d9cb1dcbf8f95059f9ca1cfa72",
+      "bytes": 431
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/expected-definition-only/runtime/couverture-ecran-c17.mjs",
+      "sha256": "c9bc366e069bf1d64ff48a8888dd14f44785f3a54e0ac733a23c3900a14afec3",
+      "bytes": 35195
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/expected-definition-only/trace-chrome.mjs",
+      "sha256": "df8c9db808d75060886d947f65b5033124cca97cf105de22f864e7e1b37b546b",
+      "bytes": 3863
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/origins/git-index.json",
+      "sha256": "e28e4aa076f66b09d490a28f6d895ca951a4e2d12fe76ff5877ad9b4e819e689",
+      "bytes": 21596
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/origins/git-static-audit.json",
+      "sha256": "0c57b75a9218c48a8d84c9554fbb50bce0931cf680588d6b4d2bc03852b59b97",
+      "bytes": 5601
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/origins/listener-index.json",
+      "sha256": "04382da83862fe2f23597617db1f576b30535611c4a93eac20264956ed41d340",
+      "bytes": 9938
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/ab_auxiliary_table.py",
+      "sha256": "84e164e06b914952264e0c1d9b96ed2a8b8c8eaf73f62e18f85c7fe1eaae0152",
+      "bytes": 3295
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/aux_node-before-git.mjs",
+      "sha256": "64555c1d39590d944bce79a84479bc7deca7d1bdcdfd4552f842651bc307baf3",
+      "bytes": 14247
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/aux_node-git.mjs",
+      "sha256": "f302e0fd1cb6f64d87c606eabcf6a8b7184b1ca05654024bfd52ec569c1478db",
+      "bytes": 15031
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/contexte-before-git.mjs",
+      "sha256": "a5c41e69b8943496853326b59a5a34664a5897d2601b6b6c73ac5fa81b44a3e1",
+      "bytes": 7276
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/complements/instruments/b1713-clavier-v3.mjs",
+      "sha256": "690b3f82a8342dc415802fc41fc43fd693d328ad9fb6af43c4eb12c9a80ebb64",
+      "bytes": 7405
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/complements/instruments/b1755-garde-v3.mjs",
+      "sha256": "f461a931f8f5f2dd68f233067ba4b775cb1f5849dedd2b68331342aad149af08",
+      "bytes": 3921
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/complements/instruments/contexte-v3.mjs",
+      "sha256": "9960ba63b5984dd00a918e73292a541729e1579582952d3a7ec14860ebbda38f",
+      "bytes": 7244
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/complements/instruments/ownership-only.mjs",
+      "sha256": "41eb7fcd151e66a675935608379bfc29e49e13e0cae3d63ee94af3de0964aa90",
+      "bytes": 2095
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/complements/instruments/p157-pipeline-root-oracle.mjs",
+      "sha256": "a80fd37f3db40d3bda491fbdd5a6354619f10d69052264a1ac8b3647785e5d40",
+      "bytes": 14451
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/complements/instruments/p162-colonnes-v3.mjs",
+      "sha256": "b341e9bba0a6940988b49690ce2dfd4d8689cda630bbb7236020dbd40a6185af",
+      "bytes": 18168
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/complements/instruments/p162-garde-get-v3.mjs",
+      "sha256": "fef15097299ed92444f272bbc983592101644f173995192ae53b0e5f38c1dbcb",
+      "bytes": 2511
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/runtime/couverture-ecran-c17.mjs",
+      "sha256": "3d30adcfe5169fb32ae87c1f2c2456fc7d62836d3e3342d48024112f857a41c9",
+      "bytes": 34607
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/runtime/recette-c17.mjs",
+      "sha256": "c95be80e6dfcfa0acdde63c26a06fc8dcce41c3a888529f926b0000a7a447bf2",
+      "bytes": 7321
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/runtime/recette-crm-focus.mjs",
+      "sha256": "b3937b6c6b304150f4adc8e12b9f400def70a578566213a9d855aea1cab52f19",
+      "bytes": 5621
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/runtime/recette-facturation-p160-v2.mjs",
+      "sha256": "11f29b24795479ef68a10bbe588b66be9521da6d9c1890b0810b4f7eec4dead4",
+      "bytes": 7376
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/trace-chrome.mjs",
+      "sha256": "93f3fef0b0a02c2dda0357c25766b87b604da2afcfc15431d803a285eaac1f2f",
+      "bytes": 2936
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/pure_listener_cases.mjs",
+      "sha256": "38356ce8f1578a0c2cebf3cdc059d37d6ea44082d60352a3a73e689ff413c2f4",
+      "bytes": 7223
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/render_git_readonly.py",
+      "sha256": "d433c2932324ad5f0977cae181466cab142e696a07f1e7771fa6bcbfb768d886",
+      "bytes": 8016
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/render_listener_port.py",
+      "sha256": "af6a4af5d9abf3d2919f21665394f1c2df10f5dfec8f71acb61c011e3a70a161",
+      "bytes": 6931
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/render_git_listener.py",
+      "sha256": "4528d73f21b9ef852fc069b8276d4301d7d18b36006b51f99f02af2979828192",
+      "bytes": 9250
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/tests/test_render_git_listener.py",
+      "sha256": "072df9ac23dc204a42a2a8ae40f8d7545b00dd1f137a4fb0acd0bb51f923b947",
+      "bytes": 4956
+    }
+  ],
+  "origins": [
+    {
+      "path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/INDEX.json",
+      "sha256": "e28e4aa076f66b09d490a28f6d895ca951a4e2d12fe76ff5877ad9b4e819e689",
+      "bytes": 21596
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-listener-port-t64tpB/INDEX.json",
+      "sha256": "04382da83862fe2f23597617db1f576b30535611c4a93eac20264956ed41d340",
+      "bytes": 9938
+    },
+    {
+      "path": "/private/tmp/therese-c17-listener-pure-root-jZjeZnUY/receipt.json",
+      "sha256": "b5022850241fa4ee63d8c99157f250808f0dd72adf66df25d5d2b4e583a8846e",
+      "bytes": 3828
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-git-node-gsBRXtrd/receipt.json",
+      "sha256": "81101013e4411b7cd0751558fe1db30f39dcdfc6e166f59b68020a28d3edc240",
+      "bytes": 8006
+    }
+  ],
+  "composition_order": [
+    "CDP helper64555 (definition origin)",
+    "Git helperf302/context9960 (actual pure renderer output)",
+    "listener three exact textual ports (prepared composition only)"
+  ],
+  "input_definitions": 12,
+  "changed_definition_paths": 3,
+  "direct_sites": 9,
+  "rpc_sites": 5,
+  "total_sites": 14,
+  "python_test_methods_prepared": 10,
+  "renderer_executed": false,
+  "python_tests_executed": false,
+  "node_executed": false,
+  "runtime_enabled": false,
+  "os_startup_qualified": false,
+  "admissions": {},
+  "capabilities": {},
+  "limits": [
+    "Historical definition inputs retain legacy QA paths; no physical A/B source preparation",
+    "Expected fixtures copied byte-exact from listener gel; not new rendered outputs",
+    "Root listener6/Git35 receipts are separate pure measurements, not composition test results",
+    "No checkout/snapshot/current HEAD/identity/admission/round/service or native proof produced",
+    "Original Git and listener gels are unchanged; no obligation or oracle modified"
+  ]
+}
+

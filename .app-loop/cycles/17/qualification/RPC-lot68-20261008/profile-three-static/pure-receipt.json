@@ -1,0 +1,65 @@
+{
+  "schema": "c17-chrome-targeted-profile-pure-receipt-v1",
+  "actor": "/root/shared4_execution",
+  "reviewed_at": "2026-10-08T16:20:45Z",
+  "command": "python3 -I -B -c 'import sys,unittest; sys.path.insert(0,\"/private/tmp/therese-c17-chrome-targeted-three-McWh5vFc\"); import test_verify_profile; suite=unittest.defaultTestLoader.loadTestsFromModule(test_verify_profile); run=unittest.TextTestRunner(verbosity=2).run(suite); print(\"STATIC_RESULT tests=%d failures=%d errors=%d profile_executed=False\" % (run.testsRun,len(run.failures),len(run.errors))); raise SystemExit(0 if run.wasSuccessful() else 1)'",
+  "tool_chunk_id": "edbf5b",
+  "exit_code": 0,
+  "tests_run": 14,
+  "failures": 0,
+  "errors": 0,
+  "unittest_reported_seconds": 0.002,
+  "returned_output_kind": "combined_tool_return_text_not_direct_stdout_stderr_sinks",
+  "scope": "static_bytes_and_S_expressions_only",
+  "compiled_or_executed_profile": false,
+  "new_OS_observation": false,
+  "causal_claim": false,
+  "admitted": false,
+  "FULL": false,
+  "original_profile_sha256": "19808ee2cac3169e9fb8c71c24385bcbb97f924c5ed785f4651817ecaa179b0c",
+  "candidate_profile_sha256": "bee3c2e780e58cbc80ed7e37d64115adf08997aab39dae8f11b56050785633a9",
+  "candidate_profile_bytes": 2375,
+  "added_rules": 3,
+  "source_checks": [
+    {
+      "path": "/private/tmp/therese-c17-root10-system-diagnostic-25smI0KQ/receipt.json",
+      "matches": true
+    },
+    {
+      "path": "/private/tmp/therese-c17-root10-system-diagnostic-25smI0KQ/stdout.json",
+      "matches": true
+    },
+    {
+      "path": "/private/tmp/therese-c17-root10-system-diagnostic-25smI0KQ/stderr.log",
+      "matches": true
+    },
+    {
+      "path": "/private/tmp/therese-c17-root10-system-diagnostic-25smI0KQ/collect.mjs",
+      "matches": true
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-b90937dbae4845ca9d04b93aa4cdf9aa/wrapper-canary-result.json",
+      "matches": true
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-b90937dbae4845ca9d04b93aa4cdf9aa/ledger/aux-chrome-rpc-all-runtime_ui-visual_capture-network_capture/receipt.json",
+      "matches": true
+    },
+    {
+      "path": "/System/Library/Sandbox/Profiles/com.apple.gputoolsserviced.sb",
+      "matches": true
+    },
+    {
+      "path": "/System/Library/Sandbox/Profiles/com.apple.GameOverlayUI.sb",
+      "matches": true
+    },
+    {
+      "path": "/System/Library/Sandbox/Profiles/appsandbox-common.sb",
+      "matches": true
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-b90937dbae4845ca9d04b93aa4cdf9aa/g1/chrome.sb",
+      "matches": true
+    }
+  ]
+}

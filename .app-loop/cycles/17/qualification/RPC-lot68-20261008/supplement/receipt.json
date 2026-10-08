@@ -1,0 +1,1030 @@
+{
+  "schema": "therese-c17-lot68-supplement-archive-receipt-v2",
+  "status": "archives_verified_not_runtime_qualification",
+  "plan_sha256": "be976d1451b269a913b10f4645fcdc17467a3fe3e896c1e528851669f99c7a63",
+  "max_archive_bytes": 67108864,
+  "archive_count": 12,
+  "archives": [
+    {
+      "id": "01-preallocation-root-v1-controls",
+      "class": "control_unqualified",
+      "archive": "/private/tmp/therese-c17-lot68-supplement-archive-8C53E85B-E3C9-478B-9C4C-732248A1ED0C/01-preallocation-root-v1-controls.tar.gz",
+      "sha256": "395f460c1fdde9dac88bf234dc9674224c5155db5ed92c7fd9b537c8aea145d6",
+      "bytes": 3078,
+      "member_count": 2,
+      "excluded": [],
+      "members": [
+        {
+          "path": "01-preallocation-root-v1-controls/pure.sb",
+          "sha256": "a8c7d6991e320fabfb00f54936ca1ce5a4b8ca739851bf59cddf1014932f37c5",
+          "bytes": 753,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "01-preallocation-root-v1-controls/run-pure.py",
+          "sha256": "a58b5265f91dba432494d9421709b62edbd58eee215770db13421b094703f04a",
+          "bytes": 6637,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        }
+      ]
+    },
+    {
+      "id": "02-preallocation-root-v2-controls",
+      "class": "control_unqualified",
+      "archive": "/private/tmp/therese-c17-lot68-supplement-archive-8C53E85B-E3C9-478B-9C4C-732248A1ED0C/02-preallocation-root-v2-controls.tar.gz",
+      "sha256": "6f8d43579d77c03f3ed6a67a86a9d207f8c44e72f97dd77d7ba3c55ebd797a6a",
+      "bytes": 6111,
+      "member_count": 6,
+      "excluded": [],
+      "members": [
+        {
+          "path": "02-preallocation-root-v2-controls/preimage-author-tests.py",
+          "sha256": "25c1629978f6f8a8541de592ea36a0e7312c7957c59ea263832a4d08c805c03f",
+          "bytes": 10453,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "02-preallocation-root-v2-controls/preimage-v1-profile.sb",
+          "sha256": "a8c7d6991e320fabfb00f54936ca1ce5a4b8ca739851bf59cddf1014932f37c5",
+          "bytes": 753,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "02-preallocation-root-v2-controls/preimage-v1-runner.py",
+          "sha256": "a58b5265f91dba432494d9421709b62edbd58eee215770db13421b094703f04a",
+          "bytes": 6637,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "02-preallocation-root-v2-controls/pure.sb",
+          "sha256": "1a8942f5ff7a360fed09d3c6256c0b28ce77be8549655f7963357480bc53d5a3",
+          "bytes": 835,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "02-preallocation-root-v2-controls/run-pure.py",
+          "sha256": "10bfde39cecddde01f5b3dfd8aa2fb58521fcfd9dfa918ce38c560e6dd1cc2e3",
+          "bytes": 7144,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "02-preallocation-root-v2-controls/test_prepare_ab_inputs.py",
+          "sha256": "13ab35ed2382fed4cd94dc4ea6b0ff83bf92cca3d42271c21c50413fb5a52478",
+          "bytes": 10524,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        }
+      ]
+    },
+    {
+      "id": "03-git-definition",
+      "class": "definition_unqualified",
+      "archive": "/private/tmp/therese-c17-lot68-supplement-archive-8C53E85B-E3C9-478B-9C4C-732248A1ED0C/03-git-definition.tar.gz",
+      "sha256": "fdb91f85710b05e9af570ada793b10422a655eb27aec34d24fc523ef7edf54d0",
+      "bytes": 118005,
+      "member_count": 52,
+      "excluded": [],
+      "members": [
+        {
+          "path": "03-git-definition/COMMAND-PROPOSED.json",
+          "sha256": "f92e18d1be526ae18e6f9b515f3b7874172b0f1e2825ad1a6d034f87adb4618b",
+          "bytes": 1331,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/diffs/aux_node_append_only.diff",
+          "sha256": "63695ce6b1a155ae8f7b00f5f3112a58f29849a1c79b4ebb199b8b4a8115043c",
+          "bytes": 1046,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/diffs/complements__instruments__b1713-clavier-v3.mjs.diff",
+          "sha256": "7a3eaf6526cc18e6dcef9b3e9eeec667e8587a7492506ad09ca47aea43c866d1",
+          "bytes": 1840,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/diffs/complements__instruments__contexte-v3.mjs.diff",
+          "sha256": "e862fb6b571f706f4bd7d5e5d8a43da4bace2e94c2f4373b07260a8798322a98",
+          "bytes": 1231,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/diffs/complements__instruments__p162-colonnes-v3.mjs.diff",
+          "sha256": "eac15598a0d0f801b1d1f209a57e284bf8048bf91469e7ccd28b609c59c2e27b",
+          "bytes": 1231,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/diffs/first_static_syntax_fix.diff",
+          "sha256": "6ca3911c3be855afb8c35d007fbf13e14ed590c41df8a4b60e241d87820ae110",
+          "bytes": 379,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/diffs/runtime__recette-c17.mjs.diff",
+          "sha256": "ea015d8b0cbcfbcd6e2339bb5b9b993252e1edd5153f0160b11db353bec90591",
+          "bytes": 1187,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/diffs/runtime__recette-crm-focus.mjs.diff",
+          "sha256": "80d4c9097e40b33b9110313261ec5b5fd4be1e18dc86637979d8f4d6cfc7e2ae",
+          "bytes": 1535,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/diffs/runtime__recette-facturation-p160-v2.mjs.diff",
+          "sha256": "f168fbb93f6c4364e8f071e9dc52683548967ded80c1015d029d0036afd4cf18",
+          "bytes": 1666,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/FIRST-STATIC-RED.json",
+          "sha256": "a4dc1ac9b1eb807c6697d538639c8c6d94f587d16b852c7a7b713dd190a48546",
+          "bytes": 686,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/INDEX.json",
+          "sha256": "e28e4aa076f66b09d490a28f6d895ca951a4e2d12fe76ff5877ad9b4e819e689",
+          "bytes": 21596,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/INPUTS.json",
+          "sha256": "880e0197e64117fcbd11087ec61663877edf0ba86edd68138d3f79c7432618f5",
+          "bytes": 11532,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/preimages/ab_auxiliary_table.py",
+          "sha256": "84e164e06b914952264e0c1d9b96ed2a8b8c8eaf73f62e18f85c7fe1eaae0152",
+          "bytes": 3295,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/preimages/aux_node.mjs",
+          "sha256": "64555c1d39590d944bce79a84479bc7deca7d1bdcdfd4552f842651bc307baf3",
+          "bytes": 14247,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/preimages/complements/instruments/b1713-clavier-v3.mjs",
+          "sha256": "fdd51132997612eb96d3a2834e9f13986c544c437c037d451d4ee6b5ceeeaf56",
+          "bytes": 7445,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/preimages/complements/instruments/b1755-garde-v3.mjs",
+          "sha256": "f461a931f8f5f2dd68f233067ba4b775cb1f5849dedd2b68331342aad149af08",
+          "bytes": 3921,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/preimages/complements/instruments/p157-pipeline-root-oracle.mjs",
+          "sha256": "a80fd37f3db40d3bda491fbdd5a6354619f10d69052264a1ac8b3647785e5d40",
+          "bytes": 14451,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/preimages/complements/instruments/p162-colonnes-v3.mjs",
+          "sha256": "f11a627e29770c0ab62d4fa0762664920cc6051d55a0108f959611cf2cd8f76c",
+          "bytes": 18200,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/preimages/complements/instruments/p162-garde-get-v3.mjs",
+          "sha256": "fef15097299ed92444f272bbc983592101644f173995192ae53b0e5f38c1dbcb",
+          "bytes": 2511,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/preimages/contexte-v3.mjs",
+          "sha256": "a5c41e69b8943496853326b59a5a34664a5897d2601b6b6c73ac5fa81b44a3e1",
+          "bytes": 7276,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/preimages/git_snapshot.py",
+          "sha256": "4baa737fa21a7efe7a4e54ee730b22a470a081b026ed19cf623df00e225fbd0d",
+          "bytes": 7005,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/preimages/ownership-only.mjs",
+          "sha256": "41eb7fcd151e66a675935608379bfc29e49e13e0cae3d63ee94af3de0964aa90",
+          "bytes": 2095,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/preimages/render_direct_cdp.py",
+          "sha256": "8a34fbda9c1e84ea7a5191aa3947241778019c74db08f572ec510b7c9dfa1482",
+          "bytes": 6578,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/preimages/run_python_pure-at-46.py",
+          "sha256": "f636071e78079dc6f2c2c5ff948ec714a70534f8d38d756633082fc1fa782f85",
+          "bytes": 3679,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/preimages/run_python_pure-before-static-syntax-red.py",
+          "sha256": "be885f402726441f755d55581393fe1016d651e9e5a06719bc82b0c757e1f193",
+          "bytes": 3679,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/preimages/runtime/couverture-ecran-c17.mjs",
+          "sha256": "3d30adcfe5169fb32ae87c1f2c2456fc7d62836d3e3342d48024112f857a41c9",
+          "bytes": 34607,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/preimages/runtime/recette-c17.mjs",
+          "sha256": "50b4621409eaf8af0951d1135769199761b3a401cc9138ea681b65af59282b76",
+          "bytes": 7356,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/preimages/runtime/recette-crm-focus.mjs",
+          "sha256": "5018b2a0c438b131ef3e67329b43a013751b2a6192fc4bc7ecd2fa024d5bce26",
+          "bytes": 5656,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/preimages/runtime/recette-facturation-p160-v2.mjs",
+          "sha256": "fdcfc57197f945d21cbd0a2b3acd35d418154d99a7021c2310c23d09f63dccea",
+          "bytes": 7411,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/preimages/runtime78_coordinator.py",
+          "sha256": "99cd7011d81d60ad89471deb81d1ddae2675c709043b516f4b38839d923348da",
+          "bytes": 32680,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/preimages/test_render_git_readonly-at-46.py",
+          "sha256": "5f9bbacdd543dd130b091a9c683a00279d832fa3a7af59c599952c71fe5798cc",
+          "bytes": 12685,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/preimages/trace-after-cdp-definition-only.mjs",
+          "sha256": "93f3fef0b0a02c2dda0357c25766b87b604da2afcfc15431d803a285eaac1f2f",
+          "bytes": 2936,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/preimages/trace-chrome.mjs",
+          "sha256": "2e0c3181b470cae2c49e7905f54489463be9383c234286b1d20fbecb15c3a2a4",
+          "bytes": 2846,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/preview-definition-only/auxiliary-ports/runtime/aux_node.mjs",
+          "sha256": "f302e0fd1cb6f64d87c606eabcf6a8b7184b1ca05654024bfd52ec569c1478db",
+          "bytes": 15031,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/preview-definition-only/complements/instruments/b1713-clavier-v3.mjs",
+          "sha256": "690b3f82a8342dc415802fc41fc43fd693d328ad9fb6af43c4eb12c9a80ebb64",
+          "bytes": 7405,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/preview-definition-only/complements/instruments/b1755-garde-v3.mjs",
+          "sha256": "f461a931f8f5f2dd68f233067ba4b775cb1f5849dedd2b68331342aad149af08",
+          "bytes": 3921,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/preview-definition-only/complements/instruments/contexte-v3.mjs",
+          "sha256": "9960ba63b5984dd00a918e73292a541729e1579582952d3a7ec14860ebbda38f",
+          "bytes": 7244,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/preview-definition-only/complements/instruments/p157-pipeline-root-oracle.mjs",
+          "sha256": "a80fd37f3db40d3bda491fbdd5a6354619f10d69052264a1ac8b3647785e5d40",
+          "bytes": 14451,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/preview-definition-only/complements/instruments/p162-colonnes-v3.mjs",
+          "sha256": "b341e9bba0a6940988b49690ce2dfd4d8689cda630bbb7236020dbd40a6185af",
+          "bytes": 18168,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/preview-definition-only/complements/instruments/p162-garde-get-v3.mjs",
+          "sha256": "fef15097299ed92444f272bbc983592101644f173995192ae53b0e5f38c1dbcb",
+          "bytes": 2511,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/preview-definition-only/runtime/couverture-ecran-c17.mjs",
+          "sha256": "3d30adcfe5169fb32ae87c1f2c2456fc7d62836d3e3342d48024112f857a41c9",
+          "bytes": 34607,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/preview-definition-only/runtime/recette-c17.mjs",
+          "sha256": "c95be80e6dfcfa0acdde63c26a06fc8dcce41c3a888529f926b0000a7a447bf2",
+          "bytes": 7321,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/preview-definition-only/runtime/recette-crm-focus.mjs",
+          "sha256": "b3937b6c6b304150f4adc8e12b9f400def70a578566213a9d855aea1cab52f19",
+          "bytes": 5621,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/preview-definition-only/runtime/recette-facturation-p160-v2.mjs",
+          "sha256": "11f29b24795479ef68a10bbe588b66be9521da6d9c1890b0810b4f7eec4dead4",
+          "bytes": 7376,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/preview-definition-only/trace-chrome.mjs",
+          "sha256": "93f3fef0b0a02c2dda0357c25766b87b604da2afcfc15431d803a285eaac1f2f",
+          "bytes": 2936,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/pure_git_cases.mjs",
+          "sha256": "f225159257d868f962f0376f3d99927dcf020e0f9e5c1c6502fa3e383d815352",
+          "bytes": 12722,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/README.md",
+          "sha256": "681a07fcb0ed8cfc1e9819bc0d150560031f9375950a3f25ff001315ac40b7c9",
+          "bytes": 5453,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/render_git_readonly.py",
+          "sha256": "d433c2932324ad5f0977cae181466cab142e696a07f1e7771fa6bcbfb768d886",
+          "bytes": 8016,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/run_node_pure.mjs",
+          "sha256": "17582014a9da15948c9e214edcbea23858d8887a6bea7b04804c729b5aa6941d",
+          "bytes": 2161,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/run_python_pure.py",
+          "sha256": "fdc6cdda14c7f3073ece27abbbae85eb19400e91f789f5f7185d53a1520b328f",
+          "bytes": 3831,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/STATIC-AUDIT.json",
+          "sha256": "0c57b75a9218c48a8d84c9554fbb50bce0931cf680588d6b4d2bc03852b59b97",
+          "bytes": 5601,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "03-git-definition/test_render_git_readonly.py",
+          "sha256": "c66b100b1d31309e05795cb5a71479cb8103d441d6c5237fc281b5d3159164b1",
+          "bytes": 13309,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        }
+      ]
+    },
+    {
+      "id": "04-git-python46-historical",
+      "class": "pure_green_historical_not_additive",
+      "archive": "/private/tmp/therese-c17-lot68-supplement-archive-8C53E85B-E3C9-478B-9C4C-732248A1ED0C/04-git-python46-historical.tar.gz",
+      "sha256": "7da126d23d20e9348fcff2e8e4a2d0ae3140c41892a372aa3dcc83410892e708",
+      "bytes": 3068,
+      "member_count": 3,
+      "excluded": [],
+      "members": [
+        {
+          "path": "04-git-python46-historical/receipt.json",
+          "sha256": "641d61b1ee3d2b3c443f80af3c41240aa2f07e6bc5f3dd5e15e55cfa3e16db55",
+          "bytes": 19147,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "04-git-python46-historical/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "04-git-python46-historical/stdout.log",
+          "sha256": "3259b0860a0c0bc784f7cc298a16570caf35e46685f65d37d9c75c4112864dc0",
+          "bytes": 5031,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        }
+      ]
+    },
+    {
+      "id": "05-git-python47-final",
+      "class": "pure_green_definition_only",
+      "archive": "/private/tmp/therese-c17-lot68-supplement-archive-8C53E85B-E3C9-478B-9C4C-732248A1ED0C/05-git-python47-final.tar.gz",
+      "sha256": "aaf25cb990fd94fb4687ba23373c1298246878cd7cdef5b354fae2b28aca2fb3",
+      "bytes": 3619,
+      "member_count": 3,
+      "excluded": [],
+      "members": [
+        {
+          "path": "05-git-python47-final/receipt.json",
+          "sha256": "9b78d13420d9c96d6eb1852b3e9940d1608884eafad3f31dd46dc9a6001f75bd",
+          "bytes": 25867,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "05-git-python47-final/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "05-git-python47-final/stdout.log",
+          "sha256": "8de13996dbc74cc14089cf7343f29e285607568b8401ab05475f7a6575744f2e",
+          "bytes": 5195,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        }
+      ]
+    },
+    {
+      "id": "06-git-node-pure",
+      "class": "pure_green_doubles_only",
+      "archive": "/private/tmp/therese-c17-lot68-supplement-archive-8C53E85B-E3C9-478B-9C4C-732248A1ED0C/06-git-node-pure.tar.gz",
+      "sha256": "f89dfca230c65e785dc18e1cdf03904f903689a87acf6c288aacd0ad81cb2dea",
+      "bytes": 1719,
+      "member_count": 3,
+      "excluded": [],
+      "members": [
+        {
+          "path": "06-git-node-pure/receipt.json",
+          "sha256": "81101013e4411b7cd0751558fe1db30f39dcdfc6e166f59b68020a28d3edc240",
+          "bytes": 8006,
+          "mode": 384,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "06-git-node-pure/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "06-git-node-pure/stdout.log",
+          "sha256": "df4057e3e6844dac393bcc0ef6fded0add7e66fc4168c1bc638e2c3eb2973eff",
+          "bytes": 98,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        }
+      ]
+    },
+    {
+      "id": "07-listener-definition",
+      "class": "definition_unqualified",
+      "archive": "/private/tmp/therese-c17-lot68-supplement-archive-8C53E85B-E3C9-478B-9C4C-732248A1ED0C/07-listener-definition.tar.gz",
+      "sha256": "5b57d0225cb0c4550def5b53833b7b36ead129726bfdda55dd1094c4c6cc4e42",
+      "bytes": 39327,
+      "member_count": 18,
+      "excluded": [],
+      "members": [
+        {
+          "path": "07-listener-definition/candidate/complements/instruments/ownership-only.mjs",
+          "sha256": "ba7ecf684e5ac8025e9189795ae19df1fc1060d9cb1dcbf8f95059f9ca1cfa72",
+          "bytes": 431,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "07-listener-definition/candidate/runtime/couverture-ecran-c17.mjs",
+          "sha256": "c9bc366e069bf1d64ff48a8888dd14f44785f3a54e0ac733a23c3900a14afec3",
+          "bytes": 35195,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "07-listener-definition/candidate/trace-chrome.mjs",
+          "sha256": "df8c9db808d75060886d947f65b5033124cca97cf105de22f864e7e1b37b546b",
+          "bytes": 3863,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "07-listener-definition/diffs/couverture-ecran-c17.diff",
+          "sha256": "42f8009ac3ed588d8c834ace5e5834b724915483bcafd76645cbefbe2b791a09",
+          "bytes": 2263,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "07-listener-definition/diffs/couverture-ecran-c17.reverse.diff",
+          "sha256": "8b2caa5410fd3b006a4b9837b1fb10d20805022e927d0690a6d17cb02e77706b",
+          "bytes": 2263,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "07-listener-definition/diffs/ownership-only.diff",
+          "sha256": "14119b535e5bc90ed85c873640b716b40a31ce2910e2ca19eafbbbc8b7cdcdc7",
+          "bytes": 2689,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "07-listener-definition/diffs/ownership-only.reverse.diff",
+          "sha256": "71511ddf26b6a1cb49aee878d961065f0ca417ef7cae42e0b6df40b183d3a056",
+          "bytes": 2689,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "07-listener-definition/diffs/trace-chrome.diff",
+          "sha256": "1603920387363d8335f91de294fb4e857761cbbe84f9d66dd27b2a1cd09592d1",
+          "bytes": 1870,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "07-listener-definition/diffs/trace-chrome.reverse.diff",
+          "sha256": "5adfe0c89975399235d17d26a7bdd87b239f15b0cc3b866a97e9527562e2f5dc",
+          "bytes": 1870,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "07-listener-definition/freeze.py",
+          "sha256": "40ce129f9ab4ed0ed18ef02ad302046dd57d3b25ccdd32e07f2f676ad3b8b1b9",
+          "bytes": 4159,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "07-listener-definition/INDEX.json",
+          "sha256": "04382da83862fe2f23597617db1f576b30535611c4a93eac20264956ed41d340",
+          "bytes": 9938,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "07-listener-definition/preimages/couverture-ecran-c17.mjs",
+          "sha256": "3d30adcfe5169fb32ae87c1f2c2456fc7d62836d3e3342d48024112f857a41c9",
+          "bytes": 34607,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "07-listener-definition/preimages/ownership-only.mjs",
+          "sha256": "41eb7fcd151e66a675935608379bfc29e49e13e0cae3d63ee94af3de0964aa90",
+          "bytes": 2095,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "07-listener-definition/preimages/trace-chrome.mjs",
+          "sha256": "93f3fef0b0a02c2dda0357c25766b87b604da2afcfc15431d803a285eaac1f2f",
+          "bytes": 2936,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "07-listener-definition/README.md",
+          "sha256": "e44bbb261728981f693cb6e84f7a791cdfefbd57232c8e49eae51304568ba739",
+          "bytes": 3707,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "07-listener-definition/render_listener_port.py",
+          "sha256": "af6a4af5d9abf3d2919f21665394f1c2df10f5dfec8f71acb61c011e3a70a161",
+          "bytes": 6931,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "07-listener-definition/tests/pure_listener_cases.mjs",
+          "sha256": "38356ce8f1578a0c2cebf3cdc059d37d6ea44082d60352a3a73e689ff413c2f4",
+          "bytes": 7223,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "07-listener-definition/tests/test_render_listener_port.py",
+          "sha256": "e77af669936b36910b10b73f4d45a187842330bc92722b49cd21db2f6a305197",
+          "bytes": 4909,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        }
+      ]
+    },
+    {
+      "id": "08-listener-root-controls",
+      "class": "control_unqualified",
+      "archive": "/private/tmp/therese-c17-lot68-supplement-archive-8C53E85B-E3C9-478B-9C4C-732248A1ED0C/08-listener-root-controls.tar.gz",
+      "sha256": "944c86525add9bcdaa829944371066695ba6ef344d72739a3bc440dea9760870",
+      "bytes": 21812,
+      "member_count": 7,
+      "excluded": [],
+      "members": [
+        {
+          "path": "08-listener-root-controls/aux_node.mjs",
+          "sha256": "64555c1d39590d944bce79a84479bc7deca7d1bdcdfd4552f842651bc307baf3",
+          "bytes": 14247,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "08-listener-root-controls/couverture-ecran-c17.mjs",
+          "sha256": "c9bc366e069bf1d64ff48a8888dd14f44785f3a54e0ac733a23c3900a14afec3",
+          "bytes": 35195,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "08-listener-root-controls/node-pure.sb",
+          "sha256": "468a30e15b06a23ff8d45d1d15c8e45938ae306f3394810f92cf3e1521651039",
+          "bytes": 960,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "08-listener-root-controls/ownership-only.mjs",
+          "sha256": "ba7ecf684e5ac8025e9189795ae19df1fc1060d9cb1dcbf8f95059f9ca1cfa72",
+          "bytes": 431,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "08-listener-root-controls/pure_listener_cases.mjs",
+          "sha256": "38356ce8f1578a0c2cebf3cdc059d37d6ea44082d60352a3a73e689ff413c2f4",
+          "bytes": 7223,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "08-listener-root-controls/run-listener-pure.mjs",
+          "sha256": "95ebea5b6afae39cbb5091c5dd47c098c657ab39b4edc63ef16ceec02f27224c",
+          "bytes": 2712,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "08-listener-root-controls/trace-chrome.mjs",
+          "sha256": "df8c9db808d75060886d947f65b5033124cca97cf105de22f864e7e1b37b546b",
+          "bytes": 3863,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        }
+      ]
+    },
+    {
+      "id": "09-listener-node-pure",
+      "class": "pure_green_doubles_only",
+      "archive": "/private/tmp/therese-c17-lot68-supplement-archive-8C53E85B-E3C9-478B-9C4C-732248A1ED0C/09-listener-node-pure.tar.gz",
+      "sha256": "13bd2765c05d99faf3c72971d42245231067541dc87bb8775da18c4144b01bfd",
+      "bytes": 1110,
+      "member_count": 3,
+      "excluded": [],
+      "members": [
+        {
+          "path": "09-listener-node-pure/receipt.json",
+          "sha256": "b5022850241fa4ee63d8c99157f250808f0dd72adf66df25d5d2b4e583a8846e",
+          "bytes": 3828,
+          "mode": 384,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "09-listener-node-pure/stderr.log",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "09-listener-node-pure/stdout.log",
+          "sha256": "ca6c2962adeb8675a2b6976e61c76c2d3940b6e8c5ef8d19b0eaf611d7d727fc",
+          "bytes": 38,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        }
+      ]
+    },
+    {
+      "id": "10-chrome-signature-red",
+      "class": "signature_recheck_red_not_native",
+      "archive": "/private/tmp/therese-c17-lot68-supplement-archive-8C53E85B-E3C9-478B-9C4C-732248A1ED0C/10-chrome-signature-red.tar.gz",
+      "sha256": "23c27f99d69c216ab8f881a36f79addf4777d3a13f44509794dfd64e1eb3eb25",
+      "bytes": 53239,
+      "member_count": 5,
+      "excluded": [],
+      "members": [
+        {
+          "path": "10-chrome-signature-red/copy-current.json",
+          "sha256": "d89e52ec0d6877aed99653b6f24d654cb20929c2d0007e45eb5d81ec276be472",
+          "bytes": 403262,
+          "mode": 384,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "10-chrome-signature-red/recheck-receipt.json",
+          "sha256": "5f92af6295e47727b322cddda1f5f4b7fdc78feecaa2704134a23962e4d82f87",
+          "bytes": 2189,
+          "mode": 384,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "10-chrome-signature-red/source-current.json",
+          "sha256": "c0194aef8706fde7c8fdc252e820f3357daa1679f2366508a22d030d56316820",
+          "bytes": 403189,
+          "mode": 384,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "10-chrome-signature-red/strict.stderr",
+          "sha256": "5f44dda261a99f30d3e7f0dd3ea02026d49230843413189175ad43ab1c11fb81",
+          "bytes": 148,
+          "mode": 384,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "10-chrome-signature-red/strict.stdout",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "mode": 384,
+          "uid": 501,
+          "gid": 0
+        }
+      ]
+    },
+    {
+      "id": "11-chrome-signature-green",
+      "class": "signature_recheck_green_not_native",
+      "archive": "/private/tmp/therese-c17-lot68-supplement-archive-8C53E85B-E3C9-478B-9C4C-732248A1ED0C/11-chrome-signature-green.tar.gz",
+      "sha256": "62b676a6f3f442b270c95dc1fe994737be2d61c015ccbe2cece880d7457bf890",
+      "bytes": 53645,
+      "member_count": 5,
+      "excluded": [],
+      "members": [
+        {
+          "path": "11-chrome-signature-green/copy-current.json",
+          "sha256": "d89e52ec0d6877aed99653b6f24d654cb20929c2d0007e45eb5d81ec276be472",
+          "bytes": 403262,
+          "mode": 384,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "11-chrome-signature-green/recheck-receipt.json",
+          "sha256": "77c5fd49ffd18453c045d9131955ade7aa20e6dbcfbc5d4c4f313ca83dbeb210",
+          "bytes": 2097,
+          "mode": 384,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "11-chrome-signature-green/source-current.json",
+          "sha256": "c0194aef8706fde7c8fdc252e820f3357daa1679f2366508a22d030d56316820",
+          "bytes": 403189,
+          "mode": 384,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "11-chrome-signature-green/strict.stderr",
+          "sha256": "68d279d46b9b8604b762d4ff43a59aad5d486484a288d292e7e928051c88eb65",
+          "bytes": 13701,
+          "mode": 384,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "11-chrome-signature-green/strict.stdout",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "bytes": 0,
+          "mode": 384,
+          "uid": 501,
+          "gid": 0
+        }
+      ]
+    },
+    {
+      "id": "12-original-archive-controller",
+      "class": "controller_unqualified",
+      "archive": "/private/tmp/therese-c17-lot68-supplement-archive-8C53E85B-E3C9-478B-9C4C-732248A1ED0C/12-original-archive-controller.tar.gz",
+      "sha256": "d28c7c38d835b2aae9b1dc8cdbfa0100f64c37bf2a0f6165f2067353b19435fb",
+      "bytes": 9304,
+      "member_count": 4,
+      "excluded": [],
+      "members": [
+        {
+          "path": "12-original-archive-controller/archive_lot68.mjs",
+          "sha256": "a22f341a9c956235b4f4feaa8eca12ba91334e3b81c6271d67936836c175b97c",
+          "bytes": 15014,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "12-original-archive-controller/INDEX.json",
+          "sha256": "ef368c3f75ef2e10fb0f2c6416c6f0648b5fc1545cc16fa05b70b6995a5b809d",
+          "bytes": 1701,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "12-original-archive-controller/PLAN.json",
+          "sha256": "cad8bac4434138b1ad7e8fdaa4e036ec1ffe1a1419d6d74f8afcf1afde3259c3",
+          "bytes": 6155,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        },
+        {
+          "path": "12-original-archive-controller/README.md",
+          "sha256": "dd36b26c1a780cafb9d8bd056e80b08a2f76019ef5e657bed69142b24deca970",
+          "bytes": 2721,
+          "mode": 420,
+          "uid": 501,
+          "gid": 0
+        }
+      ]
+    }
+  ],
+  "native_root_deferred": "/private/tmp/therese-c17-wrapper-canary-b90937dbae4845ca9d04b93aa4cdf9aa"
+}

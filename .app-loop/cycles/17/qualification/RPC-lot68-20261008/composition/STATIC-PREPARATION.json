@@ -1,0 +1,116 @@
+{
+  "schema": "c17-ab-git-listener-static-preparation-v1",
+  "scope": "definition_only_not_runtime",
+  "status": "prepared_not_executed",
+  "source_inputs": [
+    {
+      "name": "runtime/recette-c17.mjs",
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/runtime/recette-c17.mjs",
+      "sha256": "c95be80e6dfcfa0acdde63c26a06fc8dcce41c3a888529f926b0000a7a447bf2",
+      "bytes": 7321,
+      "origin_path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/runtime/recette-c17.mjs"
+    },
+    {
+      "name": "runtime/recette-facturation-p160-v2.mjs",
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/runtime/recette-facturation-p160-v2.mjs",
+      "sha256": "11f29b24795479ef68a10bbe588b66be9521da6d9c1890b0810b4f7eec4dead4",
+      "bytes": 7376,
+      "origin_path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/runtime/recette-facturation-p160-v2.mjs"
+    },
+    {
+      "name": "runtime/recette-crm-focus.mjs",
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/runtime/recette-crm-focus.mjs",
+      "sha256": "b3937b6c6b304150f4adc8e12b9f400def70a578566213a9d855aea1cab52f19",
+      "bytes": 5621,
+      "origin_path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/runtime/recette-crm-focus.mjs"
+    },
+    {
+      "name": "runtime/couverture-ecran-c17.mjs",
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/runtime/couverture-ecran-c17.mjs",
+      "sha256": "3d30adcfe5169fb32ae87c1f2c2456fc7d62836d3e3342d48024112f857a41c9",
+      "bytes": 34607,
+      "origin_path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/runtime/couverture-ecran-c17.mjs"
+    },
+    {
+      "name": "complements/instruments/b1713-clavier-v3.mjs",
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/complements/instruments/b1713-clavier-v3.mjs",
+      "sha256": "690b3f82a8342dc415802fc41fc43fd693d328ad9fb6af43c4eb12c9a80ebb64",
+      "bytes": 7405,
+      "origin_path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/complements/instruments/b1713-clavier-v3.mjs"
+    },
+    {
+      "name": "complements/instruments/p157-pipeline-root-oracle.mjs",
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/complements/instruments/p157-pipeline-root-oracle.mjs",
+      "sha256": "a80fd37f3db40d3bda491fbdd5a6354619f10d69052264a1ac8b3647785e5d40",
+      "bytes": 14451,
+      "origin_path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/complements/instruments/p157-pipeline-root-oracle.mjs"
+    },
+    {
+      "name": "complements/instruments/b1755-garde-v3.mjs",
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/complements/instruments/b1755-garde-v3.mjs",
+      "sha256": "f461a931f8f5f2dd68f233067ba4b775cb1f5849dedd2b68331342aad149af08",
+      "bytes": 3921,
+      "origin_path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/complements/instruments/b1755-garde-v3.mjs"
+    },
+    {
+      "name": "complements/instruments/p162-colonnes-v3.mjs",
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/complements/instruments/p162-colonnes-v3.mjs",
+      "sha256": "b341e9bba0a6940988b49690ce2dfd4d8689cda630bbb7236020dbd40a6185af",
+      "bytes": 18168,
+      "origin_path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/complements/instruments/p162-colonnes-v3.mjs"
+    },
+    {
+      "name": "complements/instruments/p162-garde-get-v3.mjs",
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/complements/instruments/p162-garde-get-v3.mjs",
+      "sha256": "fef15097299ed92444f272bbc983592101644f173995192ae53b0e5f38c1dbcb",
+      "bytes": 2511,
+      "origin_path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/complements/instruments/p162-garde-get-v3.mjs"
+    },
+    {
+      "name": "complements/instruments/contexte-v3.mjs",
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/complements/instruments/contexte-v3.mjs",
+      "sha256": "9960ba63b5984dd00a918e73292a541729e1579582952d3a7ec14860ebbda38f",
+      "bytes": 7244,
+      "origin_path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/complements/instruments/contexte-v3.mjs"
+    },
+    {
+      "name": "trace-chrome.mjs",
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/trace-chrome.mjs",
+      "sha256": "93f3fef0b0a02c2dda0357c25766b87b604da2afcfc15431d803a285eaac1f2f",
+      "bytes": 2936,
+      "origin_path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preview-definition-only/trace-chrome.mjs"
+    },
+    {
+      "name": "complements/instruments/ownership-only.mjs",
+      "path": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/complements/instruments/ownership-only.mjs",
+      "sha256": "41eb7fcd151e66a675935608379bfc29e49e13e0cae3d63ee94af3de0964aa90",
+      "bytes": 2095,
+      "origin_path": "/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ/preimages/ownership-only.mjs"
+    }
+  ],
+  "static_checks": {
+    "ast_syntax": 2,
+    "unchanged_listener_constants": 4,
+    "unchanged_three_transform_body_ast": true,
+    "paired_exact_diffs": [
+      "complements/instruments/ownership-only.mjs",
+      "trace-chrome.mjs",
+      "runtime/couverture-ecran-c17.mjs"
+    ],
+    "git_helper_and_old_prefix_exact": true,
+    "direct_sites": 9,
+    "rpc_sites": 5,
+    "total_sites": 14,
+    "tests_prepared_not_executed": 10
+  },
+  "renderer_executed": false,
+  "python_tests_executed": false,
+  "node_executed": false,
+  "g1_imported": false,
+  "checkout_or_snapshot_created": false,
+  "runtime_enabled": false,
+  "os_startup_qualified": false,
+  "admissions": {},
+  "capabilities": {}
+}
+

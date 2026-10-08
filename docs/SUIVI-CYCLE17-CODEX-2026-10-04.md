@@ -1911,3 +1911,84 @@ ajout 1 290 005, durée parallèle zéro, pas une facture API. Budget PASS,
 deadline/limites inchangées. Sources produit inchangées (`f49b41`). Aucun
 tag, version, main, installation, publication, release, FULL ou ronde A/B.
 Les nouveaux modèles restent dédiés à la prochaine boucle, lot62.
+
+## Lot 68 : raccords purs, ROOT10 clos rouge et hypothèse graphique bornée
+
+Les contrôles isolés réellement exécutés ont passé : préallocation7,
+contexte worker40, diagnostics RPC34, constructeur V10 71, CDP Python19
+et Node35, Git Python47 et Node35, listener Python6 et Node6. Les comptes
+ne s'additionnent pas en couverture native ; Python46 reste historique.
+Le premier préallocateur et les deux premiers contrôles V10 rouges sont
+conservés, ainsi que le premier Node CDP abort134, sans tests exécutés.
+Les corrections de fixtures et de profils sont distinctes des résultats.
+
+Composition Git/listener fermée `4VBlvfDx`, INDEX `9b18f54b…` : helper
+`f302e0fd…`, contexte `9960ba63…`, trois textes listener, neuf autres
+textes inchangés et table quatorze sites (9 directs/5 RPC). Les dix tests
+principaux `3e92c7` passent, reçu `7b4bb288…`, 37 pins locaux stables ;
+guard Python interdisant OS/processus/socket/ctypes et écritures hors preuve.
+Aucune admission native ou qualification de transport réel n'en découle.
+
+Source QA fraîche `F4KirwuR`, HEAD `19979e8a…`, 3 586 blobs/modes vérifiés.
+Préflight A `a8ad20` seul, reçu `f4b8b6d…` : entrées exactes, plan préparé,
+racine future absente. Ni ronde A, ni B, ni Session, ni FULL. La copie de
+dépendances QA et le verrou UV ont été contrôlés séparément ; cinq fichiers
+source littéraux seulement, plus dix-neuf preuves, sont archivés. Après
+le prochain commit, ce HEAD devient historique et demande un nouveau gel.
+
+ROOT10 neuf `b90937db…`, QA WRAPPER historique `2d69…`, GO `59cc2fe7…`,
+SQL36 `5fd2cfc1…`. Signature Chrome QA strict/deep verte hors sandbox outils
+`77c5fd49…`, manifeste inchangé ; son contrôle rouge dans la sandbox outils
+est aussi conservé. Aucun Chrome installé ou QA resigné/modifié.
+Contrôle statique corrigé par comparaison stricte des trois champs de ref,
+six permutations positives et quinze cas négatifs ; aucune autorité créée.
+
+Natif unique `7b3ec8`, clôture `e96370` exit86, résultat `49b98038…` :
+7 ACK sur 15. Le septième conserve désormais la chaîne réelle du refus :
+Chrome absent/changé ou admission CDP hors délai5s, avant feuille Node.
+Chrome70792/birth1791474774/727823, owner70354/birth1791474736/659266,
+terminé -9 par le nettoyage borné ; pas de nouvelle cause OS inventée.
+
+Clôture principale `32835a`, reçu `315c9c8d…` : 1 318 refs, 79 sources,
+34 paires hardlink et 36 jointures signaux/birth. Revue Shared favorable.
+Quatre XML1/0/1/0, chaînes ACK/stderr exactes, transport fermé, aucun résidu,
+erreur ou ambiguïté et deux scans sur les trois ports, handlers restaurés.
+Chrome/services/Session nettoyés en 3,899 / 1,017178 / 0,904120 s.
+Nettoyage physique prouvé, mais taint vraie, clean/logstability/ownedshutdown
+false et résultat natif rouge intégralement conservés. CALIBRATE reste0/2.
+
+Diagnostic système fermé `a45bbd` après recharge, reçu `abed48bd…`, brut
+`6593b92a…` : 139 événements/61 messages distincts, intervalle17s exact.
+La première demande d'exécution refusée faute de crédits n'avait rien lancé.
+Les refus CARenderServer, IOSurfaceRootUserClient et AGXDeviceUserClient
+justifient une hypothèse ciblée, pas une cause démontrée. Profil proposé
+`bee3c2e7…`, INDEX `499ed6c8…`, préimage2067 +308 octets exacts, seuls
+trois droits nommés ajoutés ; quatorze tests statiques verts, revue indépendante
+Environment favorable. Ni compilation Apple, ni installation, ni lancement
+de ce profil ; clipboard, AppleEvents, HID et wildcards toujours exclus.
+Chrome normal ouvert par Ludo le08/10 : contrôle CUA et page visible vérifiés.
+Ce test utilisateur n'est pas adopté comme mesure QA isolée, A/B ou FULL.
+
+Archives canoniques sous `.app-loop/cycles/17/qualification/RPC-lot68-20261008/` :
+primary22, reçu `bf4d34a4…`, 307 membres, 1 836 662 octets compressés ;
+supplement12, reçu `eb117f84…`, 111 membres, 314 037 octets ;
+native3, reçu `1bf99dc2…`, 2 700 membres, 6 112 312 octets.
+Contrôles MAIN `3c40d3`, `b43bf9`, `59e81f` puis relecture indépendante Gate :
+USTAR, SHA/octets/modes/UID/GID, types et bornes64MiB/4096 conformes.
+Contrôleur initial refusé avant destination sur fixtures/.git ; v2 n'exclut
+que quatre fixtures synthétiques top-level avec ancres/statuts validés.
+Natif : quatre liens Singleton et deux sockets exacts exclus sans suivi,
+metadata conservée et revérifiée. L'extraction n'est jamais une preuve live
+d'inode, hardlink ou ownership. Copie MAIN `e89f88` : 110 fichiers,
+9 674 112 octets, manifeste `79184222…`, reçus bruts byte-exacts.
+Le hook Git refuse ensuite l'archive35 de6 032 202 octets (limite3Mo),
+sans commit créé. Fragmentation mécanique `aa7886`, trois fragments≤2MiB,
+reconstruction SHA `2074bb9f…` exacte. Original complet préservé en TMP,
+manifeste initial conservé, manifeste dérivé `148c99f1…` : 112 pins exacts,
+37 archives logiques, aucun ALLOW_BIG ni modification d'un reçu brut.
+
+Usage : 68 lots logiques, plancher natif 29 577 727 tokens, ajout4 123 272,
+durée parallèle zéro, pas une facture API. Budget réel PASS, plafond tokens
+désactivé, autres limites et deadline inchangées. Neuf documents préexistants
+inchangés (`9e52e7`). Aucun produit, version, main, tag, release, installation,
+landing, updater, Discord, mail, VPS ou DNS modifié ; publication toujours fermée.

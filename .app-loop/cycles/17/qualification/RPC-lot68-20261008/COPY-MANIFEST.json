@@ -1,0 +1,723 @@
+{
+  "schema": "therese-c17-lot68-canonical-copy-split-main-v2",
+  "source_head": "19979e8a5ea9bd8e886d35d54793b3d1a560cd77",
+  "archives": 37,
+  "files": [
+    {
+      "path": "primary/receipt.json",
+      "source": "/private/tmp/therese-c17-lot68-archive-1DB75B4A-F593-4345-8724-2372DD2EED59/receipt.json",
+      "sha256": "bf4d34a4ebf2ccfb3f1400c7eb9b48d2aa8454e5c1c01fa5aa495f0b508135b0",
+      "bytes": 92175
+    },
+    {
+      "path": "primary/01-worker-definition.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-archive-1DB75B4A-F593-4345-8724-2372DD2EED59/01-worker-definition.tar.gz",
+      "sha256": "678d969828d6e37d127f4f0569da328e3c9c60b6b6c87f0cff0fcccd12da8b79",
+      "bytes": 286021
+    },
+    {
+      "path": "primary/02-worker-controls.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-archive-1DB75B4A-F593-4345-8724-2372DD2EED59/02-worker-controls.tar.gz",
+      "sha256": "7c987bf2f70ef9ee84cf0c095d8dcc2c3dea0bef83b5ddca465352ef68912d2f",
+      "bytes": 3310
+    },
+    {
+      "path": "primary/03-worker-pure-green.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-archive-1DB75B4A-F593-4345-8724-2372DD2EED59/03-worker-pure-green.tar.gz",
+      "sha256": "79538333ac3534b9c3a2bea2d7b0b2d88c84ccbc1a70c569ca2b2ee2fd31eaf6",
+      "bytes": 6136
+    },
+    {
+      "path": "primary/04-preallocation-definition.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-archive-1DB75B4A-F593-4345-8724-2372DD2EED59/04-preallocation-definition.tar.gz",
+      "sha256": "b2667688f1b117a8751b03a7f7ad2d48099d57059c1b576c002764eabcce085c",
+      "bytes": 25056
+    },
+    {
+      "path": "primary/05-preallocation-v1-red.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-archive-1DB75B4A-F593-4345-8724-2372DD2EED59/05-preallocation-v1-red.tar.gz",
+      "sha256": "0acc2d4a6424a0926e47c63c5e93da0e2325130a4f762e01eb75e0f719447c8a",
+      "bytes": 2439
+    },
+    {
+      "path": "primary/06-preallocation-v2-pure-green.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-archive-1DB75B4A-F593-4345-8724-2372DD2EED59/06-preallocation-v2-pure-green.tar.gz",
+      "sha256": "792137228ae55db48ab5c577d0d6dcef65b1d907305c7ed495c2f325afeac4bf",
+      "bytes": 2097
+    },
+    {
+      "path": "primary/07-rpc-diagnostics-definition.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-archive-1DB75B4A-F593-4345-8724-2372DD2EED59/07-rpc-diagnostics-definition.tar.gz",
+      "sha256": "9a42ff1ba08e9d611b578bc3daf10601e6a9102640d2bf79ad6a867ba8ab1214",
+      "bytes": 50376
+    },
+    {
+      "path": "primary/08-rpc-diagnostics-controls.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-archive-1DB75B4A-F593-4345-8724-2372DD2EED59/08-rpc-diagnostics-controls.tar.gz",
+      "sha256": "38fa4f1ee0747c1ddf7524a608078c1d0b33bb75d9c21b4cd729df596b8de1b1",
+      "bytes": 3733
+    },
+    {
+      "path": "primary/09-rpc-diagnostics-pure-green.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-archive-1DB75B4A-F593-4345-8724-2372DD2EED59/09-rpc-diagnostics-pure-green.tar.gz",
+      "sha256": "63933c442077ca075a55df5224a1dbcba7dc3d35283e104f36cf348c6be84d25",
+      "bytes": 2871
+    },
+    {
+      "path": "primary/10-v10-definition.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-archive-1DB75B4A-F593-4345-8724-2372DD2EED59/10-v10-definition.tar.gz",
+      "sha256": "30625c779416c1a9835a7bef89b2c3ebbd3fa682795f9e7322451ab66097f62d",
+      "bytes": 232071
+    },
+    {
+      "path": "primary/11-v10-replay-v1-controls.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-archive-1DB75B4A-F593-4345-8724-2372DD2EED59/11-v10-replay-v1-controls.tar.gz",
+      "sha256": "048c0667796f66449e3d25499140c4771aab2c338b6ce10c7299edaa8762e111",
+      "bytes": 2919
+    },
+    {
+      "path": "primary/12-v10-replay-v2-red.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-archive-1DB75B4A-F593-4345-8724-2372DD2EED59/12-v10-replay-v2-red.tar.gz",
+      "sha256": "c40c26319abd38431e0dc57f9fff4757e3cb0edc08ae2c71433881d5096afb42",
+      "bytes": 22245
+    },
+    {
+      "path": "primary/13-v10-replay-v3-pure-green.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-archive-1DB75B4A-F593-4345-8724-2372DD2EED59/13-v10-replay-v3-pure-green.tar.gz",
+      "sha256": "0ab9090e78da9db338a0f6593ac41f8af9ed9f1e5e8ca9a533e4db832296be3b",
+      "bytes": 22526
+    },
+    {
+      "path": "primary/14-fresh-source-selected.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-archive-1DB75B4A-F593-4345-8724-2372DD2EED59/14-fresh-source-selected.tar.gz",
+      "sha256": "5a89727bf87b07497c230bd0994621092001e7322f20c6936a75ca03f8b2a188",
+      "bytes": 721241
+    },
+    {
+      "path": "primary/15-ab-preflight-definition.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-archive-1DB75B4A-F593-4345-8724-2372DD2EED59/15-ab-preflight-definition.tar.gz",
+      "sha256": "68bd930c786fdeb7238070166f1172a1f70cae122c6616c7a25c601d39dd10ff",
+      "bytes": 26064
+    },
+    {
+      "path": "primary/16-ab-preflight-output.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-archive-1DB75B4A-F593-4345-8724-2372DD2EED59/16-ab-preflight-output.tar.gz",
+      "sha256": "7dbd47a922936faac838a75a2cf9b01421bc258eb74c06b16d17842eab96c164",
+      "bytes": 207092
+    },
+    {
+      "path": "primary/17-ab-cdp-definition.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-archive-1DB75B4A-F593-4345-8724-2372DD2EED59/17-ab-cdp-definition.tar.gz",
+      "sha256": "089ca4fe27a898f9d1df40b0169e4be042e943963cafba83b94eebcc785689e3",
+      "bytes": 114709
+    },
+    {
+      "path": "primary/18-ab-cdp-diagnostic.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-archive-1DB75B4A-F593-4345-8724-2372DD2EED59/18-ab-cdp-diagnostic.tar.gz",
+      "sha256": "f573f7b62a74601258a5f745a50269affdcaa1fefb278d5caeac27b5ca526a7a",
+      "bytes": 73472
+    },
+    {
+      "path": "primary/19-ab-cdp-node-red.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-archive-1DB75B4A-F593-4345-8724-2372DD2EED59/19-ab-cdp-node-red.tar.gz",
+      "sha256": "b8337bde712d3eb5346d097302fbd1305ea67f4f906b0160eb950b60cf3b9ff3",
+      "bytes": 1037
+    },
+    {
+      "path": "primary/20-ab-cdp-node-pure-green.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-archive-1DB75B4A-F593-4345-8724-2372DD2EED59/20-ab-cdp-node-pure-green.tar.gz",
+      "sha256": "152e1b69648c9ebf3fcb131c1928f082a810a1f0728b1139908d3f7e57c7d1f3",
+      "bytes": 3063
+    },
+    {
+      "path": "primary/21-root10-static-controls.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-archive-1DB75B4A-F593-4345-8724-2372DD2EED59/21-root10-static-controls.tar.gz",
+      "sha256": "0632cc4c9b02c883a47eb24e7d9c2a36db6931c9eec03f0ad189922a9deb0139",
+      "bytes": 7471
+    },
+    {
+      "path": "primary/22-root10-authority.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-archive-1DB75B4A-F593-4345-8724-2372DD2EED59/22-root10-authority.tar.gz",
+      "sha256": "167c5dbd8e61eeda10636c9e88384146a4b9eba6242c93ea36bbc1efc00f88dc",
+      "bytes": 20713
+    },
+    {
+      "path": "supplement/receipt.json",
+      "source": "/private/tmp/therese-c17-lot68-supplement-archive-8C53E85B-E3C9-478B-9C4C-732248A1ED0C/receipt.json",
+      "sha256": "eb117f84f902df150dcadd25b355f1bb0c35755b83d5f6638ef2c3c5be5fe8c7",
+      "bytes": 35441
+    },
+    {
+      "path": "supplement/01-preallocation-root-v1-controls.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-supplement-archive-8C53E85B-E3C9-478B-9C4C-732248A1ED0C/01-preallocation-root-v1-controls.tar.gz",
+      "sha256": "395f460c1fdde9dac88bf234dc9674224c5155db5ed92c7fd9b537c8aea145d6",
+      "bytes": 3078
+    },
+    {
+      "path": "supplement/02-preallocation-root-v2-controls.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-supplement-archive-8C53E85B-E3C9-478B-9C4C-732248A1ED0C/02-preallocation-root-v2-controls.tar.gz",
+      "sha256": "6f8d43579d77c03f3ed6a67a86a9d207f8c44e72f97dd77d7ba3c55ebd797a6a",
+      "bytes": 6111
+    },
+    {
+      "path": "supplement/03-git-definition.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-supplement-archive-8C53E85B-E3C9-478B-9C4C-732248A1ED0C/03-git-definition.tar.gz",
+      "sha256": "fdb91f85710b05e9af570ada793b10422a655eb27aec34d24fc523ef7edf54d0",
+      "bytes": 118005
+    },
+    {
+      "path": "supplement/04-git-python46-historical.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-supplement-archive-8C53E85B-E3C9-478B-9C4C-732248A1ED0C/04-git-python46-historical.tar.gz",
+      "sha256": "7da126d23d20e9348fcff2e8e4a2d0ae3140c41892a372aa3dcc83410892e708",
+      "bytes": 3068
+    },
+    {
+      "path": "supplement/05-git-python47-final.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-supplement-archive-8C53E85B-E3C9-478B-9C4C-732248A1ED0C/05-git-python47-final.tar.gz",
+      "sha256": "aaf25cb990fd94fb4687ba23373c1298246878cd7cdef5b354fae2b28aca2fb3",
+      "bytes": 3619
+    },
+    {
+      "path": "supplement/06-git-node-pure.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-supplement-archive-8C53E85B-E3C9-478B-9C4C-732248A1ED0C/06-git-node-pure.tar.gz",
+      "sha256": "f89dfca230c65e785dc18e1cdf03904f903689a87acf6c288aacd0ad81cb2dea",
+      "bytes": 1719
+    },
+    {
+      "path": "supplement/07-listener-definition.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-supplement-archive-8C53E85B-E3C9-478B-9C4C-732248A1ED0C/07-listener-definition.tar.gz",
+      "sha256": "5b57d0225cb0c4550def5b53833b7b36ead129726bfdda55dd1094c4c6cc4e42",
+      "bytes": 39327
+    },
+    {
+      "path": "supplement/08-listener-root-controls.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-supplement-archive-8C53E85B-E3C9-478B-9C4C-732248A1ED0C/08-listener-root-controls.tar.gz",
+      "sha256": "944c86525add9bcdaa829944371066695ba6ef344d72739a3bc440dea9760870",
+      "bytes": 21812
+    },
+    {
+      "path": "supplement/09-listener-node-pure.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-supplement-archive-8C53E85B-E3C9-478B-9C4C-732248A1ED0C/09-listener-node-pure.tar.gz",
+      "sha256": "13bd2765c05d99faf3c72971d42245231067541dc87bb8775da18c4144b01bfd",
+      "bytes": 1110
+    },
+    {
+      "path": "supplement/10-chrome-signature-red.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-supplement-archive-8C53E85B-E3C9-478B-9C4C-732248A1ED0C/10-chrome-signature-red.tar.gz",
+      "sha256": "23c27f99d69c216ab8f881a36f79addf4777d3a13f44509794dfd64e1eb3eb25",
+      "bytes": 53239
+    },
+    {
+      "path": "supplement/11-chrome-signature-green.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-supplement-archive-8C53E85B-E3C9-478B-9C4C-732248A1ED0C/11-chrome-signature-green.tar.gz",
+      "sha256": "62b676a6f3f442b270c95dc1fe994737be2d61c015ccbe2cece880d7457bf890",
+      "bytes": 53645
+    },
+    {
+      "path": "supplement/12-original-archive-controller.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-supplement-archive-8C53E85B-E3C9-478B-9C4C-732248A1ED0C/12-original-archive-controller.tar.gz",
+      "sha256": "d28c7c38d835b2aae9b1dc8cdbfa0100f64c37bf2a0f6165f2067353b19435fb",
+      "bytes": 9304
+    },
+    {
+      "path": "native/receipt.json",
+      "source": "/private/tmp/therese-c17-lot68-archive-99DDFE69-F942-427C-9872-8D06DF711496/receipt.json",
+      "sha256": "1bf99dc2a61280bd367605db428872bd2cbc683e0971acb2f374ab086ad292bc",
+      "bytes": 786874
+    },
+    {
+      "path": "native/36-root10-closure-proof.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-archive-99DDFE69-F942-427C-9872-8D06DF711496/36-root10-closure-proof.tar.gz",
+      "sha256": "54ee905a0d8fab8d53fb0672f2ec2b09e1cfdee30d4bde97c92b4954411442b8",
+      "bytes": 73488
+    },
+    {
+      "path": "native/37-root10-policy-diagnostic.tar.gz",
+      "source": "/private/tmp/therese-c17-lot68-archive-99DDFE69-F942-427C-9872-8D06DF711496/37-root10-policy-diagnostic.tar.gz",
+      "sha256": "ab98a31a70fc41ffbba4efb4a28f980ecbebf1108553fba635c62caf2073f2d4",
+      "bytes": 6622
+    },
+    {
+      "path": "composition/DIAGNOSTIC-STATIC-RED.json",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/DIAGNOSTIC-STATIC-RED.json",
+      "sha256": "823c17914a80140da90aba518afa5cf66ad1d438f6b62a68d2f3fd7104e1c515",
+      "bytes": 855
+    },
+    {
+      "path": "composition/INDEX.json",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/INDEX.json",
+      "sha256": "9b18f54b717430c01f03a4a1c884913f6fe1e41be040b3e910b607de1ce6b62a",
+      "bytes": 10479
+    },
+    {
+      "path": "composition/README.md",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/README.md",
+      "sha256": "ee365a1f36b7abca96ccccc75a6d5f079860a0cef537e744ffcbdd60de2376c5",
+      "bytes": 3725
+    },
+    {
+      "path": "composition/STATIC-PREPARATION.json",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/STATIC-PREPARATION.json",
+      "sha256": "27c12bc2ad150c1626adb2d7f48051721bf0671a209938110983e51d39b9ba82",
+      "bytes": 6057
+    },
+    {
+      "path": "composition/diffs/couverture-ecran-c17.diff",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/diffs/couverture-ecran-c17.diff",
+      "sha256": "42f8009ac3ed588d8c834ace5e5834b724915483bcafd76645cbefbe2b791a09",
+      "bytes": 2263
+    },
+    {
+      "path": "composition/diffs/couverture-ecran-c17.reverse.diff",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/diffs/couverture-ecran-c17.reverse.diff",
+      "sha256": "8b2caa5410fd3b006a4b9837b1fb10d20805022e927d0690a6d17cb02e77706b",
+      "bytes": 2263
+    },
+    {
+      "path": "composition/diffs/ownership-only.diff",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/diffs/ownership-only.diff",
+      "sha256": "14119b535e5bc90ed85c873640b716b40a31ce2910e2ca19eafbbbc8b7cdcdc7",
+      "bytes": 2689
+    },
+    {
+      "path": "composition/diffs/ownership-only.reverse.diff",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/diffs/ownership-only.reverse.diff",
+      "sha256": "71511ddf26b6a1cb49aee878d961065f0ca417ef7cae42e0b6df40b183d3a056",
+      "bytes": 2689
+    },
+    {
+      "path": "composition/diffs/renderer-listener-to-git-listener.diff",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/diffs/renderer-listener-to-git-listener.diff",
+      "sha256": "4b0762ccb904729d3770e9a99c486607f01487a2f3c824ae2557ced7735cb59b",
+      "bytes": 6879
+    },
+    {
+      "path": "composition/diffs/trace-chrome.diff",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/diffs/trace-chrome.diff",
+      "sha256": "1603920387363d8335f91de294fb4e857761cbbe84f9d66dd27b2a1cd09592d1",
+      "bytes": 1870
+    },
+    {
+      "path": "composition/diffs/trace-chrome.reverse.diff",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/diffs/trace-chrome.reverse.diff",
+      "sha256": "5adfe0c89975399235d17d26a7bdd87b239f15b0cc3b866a97e9527562e2f5dc",
+      "bytes": 1870
+    },
+    {
+      "path": "composition/expected-definition-only/complements/instruments/ownership-only.mjs",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/expected-definition-only/complements/instruments/ownership-only.mjs",
+      "sha256": "ba7ecf684e5ac8025e9189795ae19df1fc1060d9cb1dcbf8f95059f9ca1cfa72",
+      "bytes": 431
+    },
+    {
+      "path": "composition/expected-definition-only/runtime/couverture-ecran-c17.mjs",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/expected-definition-only/runtime/couverture-ecran-c17.mjs",
+      "sha256": "c9bc366e069bf1d64ff48a8888dd14f44785f3a54e0ac733a23c3900a14afec3",
+      "bytes": 35195
+    },
+    {
+      "path": "composition/expected-definition-only/trace-chrome.mjs",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/expected-definition-only/trace-chrome.mjs",
+      "sha256": "df8c9db808d75060886d947f65b5033124cca97cf105de22f864e7e1b37b546b",
+      "bytes": 3863
+    },
+    {
+      "path": "composition/origins/git-index.json",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/origins/git-index.json",
+      "sha256": "e28e4aa076f66b09d490a28f6d895ca951a4e2d12fe76ff5877ad9b4e819e689",
+      "bytes": 21596
+    },
+    {
+      "path": "composition/origins/git-static-audit.json",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/origins/git-static-audit.json",
+      "sha256": "0c57b75a9218c48a8d84c9554fbb50bce0931cf680588d6b4d2bc03852b59b97",
+      "bytes": 5601
+    },
+    {
+      "path": "composition/origins/listener-index.json",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/origins/listener-index.json",
+      "sha256": "04382da83862fe2f23597617db1f576b30535611c4a93eac20264956ed41d340",
+      "bytes": 9938
+    },
+    {
+      "path": "composition/preimages/ab_auxiliary_table.py",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/ab_auxiliary_table.py",
+      "sha256": "84e164e06b914952264e0c1d9b96ed2a8b8c8eaf73f62e18f85c7fe1eaae0152",
+      "bytes": 3295
+    },
+    {
+      "path": "composition/preimages/aux_node-before-git.mjs",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/aux_node-before-git.mjs",
+      "sha256": "64555c1d39590d944bce79a84479bc7deca7d1bdcdfd4552f842651bc307baf3",
+      "bytes": 14247
+    },
+    {
+      "path": "composition/preimages/aux_node-git.mjs",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/aux_node-git.mjs",
+      "sha256": "f302e0fd1cb6f64d87c606eabcf6a8b7184b1ca05654024bfd52ec569c1478db",
+      "bytes": 15031
+    },
+    {
+      "path": "composition/preimages/contexte-before-git.mjs",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/contexte-before-git.mjs",
+      "sha256": "a5c41e69b8943496853326b59a5a34664a5897d2601b6b6c73ac5fa81b44a3e1",
+      "bytes": 7276
+    },
+    {
+      "path": "composition/preimages/definitions/complements/instruments/b1713-clavier-v3.mjs",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/complements/instruments/b1713-clavier-v3.mjs",
+      "sha256": "690b3f82a8342dc415802fc41fc43fd693d328ad9fb6af43c4eb12c9a80ebb64",
+      "bytes": 7405
+    },
+    {
+      "path": "composition/preimages/definitions/complements/instruments/b1755-garde-v3.mjs",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/complements/instruments/b1755-garde-v3.mjs",
+      "sha256": "f461a931f8f5f2dd68f233067ba4b775cb1f5849dedd2b68331342aad149af08",
+      "bytes": 3921
+    },
+    {
+      "path": "composition/preimages/definitions/complements/instruments/contexte-v3.mjs",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/complements/instruments/contexte-v3.mjs",
+      "sha256": "9960ba63b5984dd00a918e73292a541729e1579582952d3a7ec14860ebbda38f",
+      "bytes": 7244
+    },
+    {
+      "path": "composition/preimages/definitions/complements/instruments/ownership-only.mjs",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/complements/instruments/ownership-only.mjs",
+      "sha256": "41eb7fcd151e66a675935608379bfc29e49e13e0cae3d63ee94af3de0964aa90",
+      "bytes": 2095
+    },
+    {
+      "path": "composition/preimages/definitions/complements/instruments/p157-pipeline-root-oracle.mjs",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/complements/instruments/p157-pipeline-root-oracle.mjs",
+      "sha256": "a80fd37f3db40d3bda491fbdd5a6354619f10d69052264a1ac8b3647785e5d40",
+      "bytes": 14451
+    },
+    {
+      "path": "composition/preimages/definitions/complements/instruments/p162-colonnes-v3.mjs",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/complements/instruments/p162-colonnes-v3.mjs",
+      "sha256": "b341e9bba0a6940988b49690ce2dfd4d8689cda630bbb7236020dbd40a6185af",
+      "bytes": 18168
+    },
+    {
+      "path": "composition/preimages/definitions/complements/instruments/p162-garde-get-v3.mjs",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/complements/instruments/p162-garde-get-v3.mjs",
+      "sha256": "fef15097299ed92444f272bbc983592101644f173995192ae53b0e5f38c1dbcb",
+      "bytes": 2511
+    },
+    {
+      "path": "composition/preimages/definitions/runtime/couverture-ecran-c17.mjs",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/runtime/couverture-ecran-c17.mjs",
+      "sha256": "3d30adcfe5169fb32ae87c1f2c2456fc7d62836d3e3342d48024112f857a41c9",
+      "bytes": 34607
+    },
+    {
+      "path": "composition/preimages/definitions/runtime/recette-c17.mjs",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/runtime/recette-c17.mjs",
+      "sha256": "c95be80e6dfcfa0acdde63c26a06fc8dcce41c3a888529f926b0000a7a447bf2",
+      "bytes": 7321
+    },
+    {
+      "path": "composition/preimages/definitions/runtime/recette-crm-focus.mjs",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/runtime/recette-crm-focus.mjs",
+      "sha256": "b3937b6c6b304150f4adc8e12b9f400def70a578566213a9d855aea1cab52f19",
+      "bytes": 5621
+    },
+    {
+      "path": "composition/preimages/definitions/runtime/recette-facturation-p160-v2.mjs",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/runtime/recette-facturation-p160-v2.mjs",
+      "sha256": "11f29b24795479ef68a10bbe588b66be9521da6d9c1890b0810b4f7eec4dead4",
+      "bytes": 7376
+    },
+    {
+      "path": "composition/preimages/definitions/trace-chrome.mjs",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/definitions/trace-chrome.mjs",
+      "sha256": "93f3fef0b0a02c2dda0357c25766b87b604da2afcfc15431d803a285eaac1f2f",
+      "bytes": 2936
+    },
+    {
+      "path": "composition/preimages/pure_listener_cases.mjs",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/pure_listener_cases.mjs",
+      "sha256": "38356ce8f1578a0c2cebf3cdc059d37d6ea44082d60352a3a73e689ff413c2f4",
+      "bytes": 7223
+    },
+    {
+      "path": "composition/preimages/render_git_readonly.py",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/render_git_readonly.py",
+      "sha256": "d433c2932324ad5f0977cae181466cab142e696a07f1e7771fa6bcbfb768d886",
+      "bytes": 8016
+    },
+    {
+      "path": "composition/preimages/render_listener_port.py",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/preimages/render_listener_port.py",
+      "sha256": "af6a4af5d9abf3d2919f21665394f1c2df10f5dfec8f71acb61c011e3a70a161",
+      "bytes": 6931
+    },
+    {
+      "path": "composition/render_git_listener.py",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/render_git_listener.py",
+      "sha256": "4528d73f21b9ef852fc069b8276d4301d7d18b36006b51f99f02af2979828192",
+      "bytes": 9250
+    },
+    {
+      "path": "composition/tests/test_render_git_listener.py",
+      "source": "/private/tmp/therese-c17-ab-git-listener-4VBlvfDx/tests/test_render_git_listener.py",
+      "sha256": "072df9ac23dc204a42a2a8ae40f8d7545b00dd1f137a4fb0acd0bb51f923b947",
+      "bytes": 4956
+    },
+    {
+      "path": "composition-main-pure/receipt.json",
+      "source": "/private/tmp/therese-c17-root-composition-pure-kDX5u4q0/receipt.json",
+      "sha256": "7b4bb288129936295fcd6c308c4bbb29b0a45c6dc43707651368285bf71c8cfc",
+      "bytes": 8400
+    },
+    {
+      "path": "composition-main-pure/run_composition.py",
+      "source": "/private/tmp/therese-c17-root-composition-pure-kDX5u4q0/run_composition.py",
+      "sha256": "aa946977c9d2cfc849d73b8ffa1eb2c3031ea655fc7963fad97867f95eca63f4",
+      "bytes": 3886
+    },
+    {
+      "path": "composition-main-pure/unittest-output.log",
+      "source": "/private/tmp/therese-c17-root-composition-pure-kDX5u4q0/unittest-output.log",
+      "sha256": "2fcf486dfcca11ea46fff25ed228cdf78ffda9dd86389bac436a189935cf51a1",
+      "bytes": 1525
+    },
+    {
+      "path": "profile-three-static/INDEX.json",
+      "source": "/private/tmp/therese-c17-chrome-targeted-three-McWh5vFc/INDEX.json",
+      "sha256": "499ed6c8c75ba66857e6797728b0c1a39a2fb93bff6f96827049639195b6d966",
+      "bytes": 9151
+    },
+    {
+      "path": "profile-three-static/PROFILE-INVERSE.diff",
+      "source": "/private/tmp/therese-c17-chrome-targeted-three-McWh5vFc/PROFILE-INVERSE.diff",
+      "sha256": "63d00c362c19f0a813322ca6243fb3d294c1aac40188f06e73a6192457224e07",
+      "bytes": 602
+    },
+    {
+      "path": "profile-three-static/PROFILE.diff",
+      "source": "/private/tmp/therese-c17-chrome-targeted-three-McWh5vFc/PROFILE.diff",
+      "sha256": "bc505d053923b0735ccf1ced070658a5071f2bcea2bf435a06fe81c9f1cde456",
+      "bytes": 602
+    },
+    {
+      "path": "profile-three-static/README.md",
+      "source": "/private/tmp/therese-c17-chrome-targeted-three-McWh5vFc/README.md",
+      "sha256": "bc2af4f302b61565ff8edc3b23b0274bce0b97e53b8028abd422f360f340ed84",
+      "bytes": 4302
+    },
+    {
+      "path": "profile-three-static/chrome.sb",
+      "source": "/private/tmp/therese-c17-chrome-targeted-three-McWh5vFc/chrome.sb",
+      "sha256": "bee3c2e780e58cbc80ed7e37d64115adf08997aab39dae8f11b56050785633a9",
+      "bytes": 2375
+    },
+    {
+      "path": "profile-three-static/kernel-evidence.json",
+      "source": "/private/tmp/therese-c17-chrome-targeted-three-McWh5vFc/kernel-evidence.json",
+      "sha256": "b21e52540c11e299fbac530d623b87492a1d9ef9a5df3384a554cba7e034d3f0",
+      "bytes": 6337
+    },
+    {
+      "path": "profile-three-static/preimage-chrome.sb",
+      "source": "/private/tmp/therese-c17-chrome-targeted-three-McWh5vFc/preimage-chrome.sb",
+      "sha256": "19808ee2cac3169e9fb8c71c24385bcbb97f924c5ed785f4651817ecaa179b0c",
+      "bytes": 2067
+    },
+    {
+      "path": "profile-three-static/pure-receipt.json",
+      "source": "/private/tmp/therese-c17-chrome-targeted-three-McWh5vFc/pure-receipt.json",
+      "sha256": "b68980c48883c057e456c849ef1257b13ffd117d93d2c55dfcac64d84c05a55f",
+      "bytes": 2617
+    },
+    {
+      "path": "profile-three-static/returned-output.log",
+      "source": "/private/tmp/therese-c17-chrome-targeted-three-McWh5vFc/returned-output.log",
+      "sha256": "49bc9cd35e4ab75064e2ea20e7aca9508c814c2adc3bdc800e89e24a998174c5",
+      "bytes": 1673
+    },
+    {
+      "path": "profile-three-static/test_verify_profile.py",
+      "source": "/private/tmp/therese-c17-chrome-targeted-three-McWh5vFc/test_verify_profile.py",
+      "sha256": "674c5f6b3b349a4195b7cf13463e7e2ae6fdad246d509f4862e7b8e161598454",
+      "bytes": 3020
+    },
+    {
+      "path": "profile-three-static/verify_profile.py",
+      "source": "/private/tmp/therese-c17-chrome-targeted-three-McWh5vFc/verify_profile.py",
+      "sha256": "b085371ed12cefe35bce86e1a3ba15f3baebfaafe9162851ffb696dfae3fe177",
+      "bytes": 4208
+    },
+    {
+      "path": "archive-controller-v2/INDEX.json",
+      "source": "/private/tmp/therese-c17-lot68-archive-v2-ofXPUt/INDEX.json",
+      "sha256": "c8903c8fee441cf475edcb75c3a4bea4de8a4bc73ce691a408ad6a5dc74ef284",
+      "bytes": 1486
+    },
+    {
+      "path": "archive-controller-v2/PLAN.json",
+      "source": "/private/tmp/therese-c17-lot68-archive-v2-ofXPUt/PLAN.json",
+      "sha256": "cad8bac4434138b1ad7e8fdaa4e036ec1ffe1a1419d6d74f8afcf1afde3259c3",
+      "bytes": 6155
+    },
+    {
+      "path": "archive-controller-v2/README.md",
+      "source": "/private/tmp/therese-c17-lot68-archive-v2-ofXPUt/README.md",
+      "sha256": "db2e25a1393bc64ac7ab5319ba6444ee13a8e229e90883988f97d159bab9aabf",
+      "bytes": 1354
+    },
+    {
+      "path": "archive-controller-v2/ROOT-V1-RED-OBSERVATION.md",
+      "source": "/private/tmp/therese-c17-lot68-archive-v2-ofXPUt/ROOT-V1-RED-OBSERVATION.md",
+      "sha256": "e0fbb3af05a7bf831bd137b95e9c82e4e2903a8b229021662823105413b8fb3b",
+      "bytes": 1418
+    },
+    {
+      "path": "archive-controller-v2/archive_lot68-v1-v2.diff",
+      "source": "/private/tmp/therese-c17-lot68-archive-v2-ofXPUt/archive_lot68-v1-v2.diff",
+      "sha256": "d6197de2c014012b032180c247eebfed81e89f6cf8618963d2a7a28830b6b3c8",
+      "bytes": 4376
+    },
+    {
+      "path": "archive-controller-v2/archive_lot68_v2.mjs",
+      "source": "/private/tmp/therese-c17-lot68-archive-v2-ofXPUt/archive_lot68_v2.mjs",
+      "sha256": "b37507b5603fa355749c53ed04763b3c877f88f63d190036f85bf39dc9574740",
+      "bytes": 15681
+    },
+    {
+      "path": "archive-controller-v2/preimages/archive_lot68-v1.mjs",
+      "source": "/private/tmp/therese-c17-lot68-archive-v2-ofXPUt/preimages/archive_lot68-v1.mjs",
+      "sha256": "a22f341a9c956235b4f4feaa8eca12ba91334e3b81c6271d67936836c175b97c",
+      "bytes": 15014
+    },
+    {
+      "path": "supplement-controller-v2/INDEX.json",
+      "source": "/private/tmp/therese-c17-lot68-archive-supplement-v2-qvX6gv/INDEX.json",
+      "sha256": "21567b60cbe09af7051235648178af2814f1880a192a68972bdfa72e843f8e4a",
+      "bytes": 1790
+    },
+    {
+      "path": "supplement-controller-v2/PLAN.json",
+      "source": "/private/tmp/therese-c17-lot68-archive-supplement-v2-qvX6gv/PLAN.json",
+      "sha256": "be976d1451b269a913b10f4645fcdc17467a3fe3e896c1e528851669f99c7a63",
+      "bytes": 3607
+    },
+    {
+      "path": "supplement-controller-v2/README.md",
+      "source": "/private/tmp/therese-c17-lot68-archive-supplement-v2-qvX6gv/README.md",
+      "sha256": "cf89a4c0c671c23dbfa52e54d46f7560dc6e3a33c07391954f2a72e74402a4f5",
+      "bytes": 2022
+    },
+    {
+      "path": "supplement-controller-v2/archive-controller-v2-to-supplement-v2.diff",
+      "source": "/private/tmp/therese-c17-lot68-archive-supplement-v2-qvX6gv/archive-controller-v2-to-supplement-v2.diff",
+      "sha256": "c6bba9b08ed6a93a48925b513bbbba7b3225179bbed4d45360f9f8b193988b09",
+      "bytes": 3319
+    },
+    {
+      "path": "supplement-controller-v2/archive_lot68_supplement_v2.mjs",
+      "source": "/private/tmp/therese-c17-lot68-archive-supplement-v2-qvX6gv/archive_lot68_supplement_v2.mjs",
+      "sha256": "a62bdfd6a454c022a324a2a53d4be4999363adddcb8f889a16cde6c48cb7c34b",
+      "bytes": 15720
+    },
+    {
+      "path": "supplement-controller-v2/preimages/archive_lot68_supplement-v1.mjs",
+      "source": "/private/tmp/therese-c17-lot68-archive-supplement-v2-qvX6gv/preimages/archive_lot68_supplement-v1.mjs",
+      "sha256": "cfab70b44598455a7b67a55c8f56d50dcc33d78d8bdfbacfe3de9d1bcb4aae18",
+      "bytes": 15071
+    },
+    {
+      "path": "supplement-controller-v2/preimages/archive_lot68_v2.mjs",
+      "source": "/private/tmp/therese-c17-lot68-archive-supplement-v2-qvX6gv/preimages/archive_lot68_v2.mjs",
+      "sha256": "b37507b5603fa355749c53ed04763b3c877f88f63d190036f85bf39dc9574740",
+      "bytes": 15681
+    },
+    {
+      "path": "native-archive-controller/PLAN.json",
+      "source": "/private/tmp/therese-c17-root-native-archive-controls-iK8xBkik/PLAN.json",
+      "sha256": "f8502e80fb9a6ec0d3f4e259629caea1207712572880dc81e5fc3b817596b064",
+      "bytes": 1149
+    },
+    {
+      "path": "native-archive-controller/README.md",
+      "source": "/private/tmp/therese-c17-root-native-archive-controls-iK8xBkik/README.md",
+      "sha256": "26c7cc14e88bae4ec1e82a61a412b5ff477904591a6e1c3b2bd57d40c759b437",
+      "bytes": 1118
+    },
+    {
+      "path": "native-archive-controller/archive-native.mjs",
+      "source": "/private/tmp/therese-c17-root-native-archive-controls-iK8xBkik/archive-native.mjs",
+      "sha256": "c3fe6e8f49cc82ba47287e13615d425271588adefa54572f5a9ff39fb02f046e",
+      "bytes": 17727
+    },
+    {
+      "path": "native-archive-controller/preimage-lot68-v1.mjs",
+      "source": "/private/tmp/therese-c17-root-native-archive-controls-iK8xBkik/preimage-lot68-v1.mjs",
+      "sha256": "a22f341a9c956235b4f4feaa8eca12ba91334e3b81c6271d67936836c175b97c",
+      "bytes": 15014
+    },
+    {
+      "path": "native/35-root10-native-red.tar.gz.part-001",
+      "source": "/private/tmp/therese-c17-root-canonical-lot68-JPc37u83/35-root10-native-red.unsplit.tar.gz",
+      "sha256": "719f734b60a31331134695d4a3561663c4b59f4943969e08bdb874a2002036e0",
+      "bytes": 2097152,
+      "offset": 0
+    },
+    {
+      "path": "native/35-root10-native-red.tar.gz.part-002",
+      "source": "/private/tmp/therese-c17-root-canonical-lot68-JPc37u83/35-root10-native-red.unsplit.tar.gz",
+      "sha256": "fe750ff043018766878fcc011e52f34dfca7b84de6d3a9c725f1e913ececa1cc",
+      "bytes": 2097152,
+      "offset": 2097152
+    },
+    {
+      "path": "native/35-root10-native-red.tar.gz.part-003",
+      "source": "/private/tmp/therese-c17-root-canonical-lot68-JPc37u83/35-root10-native-red.unsplit.tar.gz",
+      "sha256": "ac9c22044525f8108b6e1952d4fd581422649d5c5d34bc101f453cdfd531f5d0",
+      "bytes": 1837898,
+      "offset": 4194304
+    }
+  ],
+  "source_files_changed": false,
+  "native_passed": false,
+  "FULL": false,
+  "rounds": 0,
+  "release": false,
+  "raw_receipts_byte_exact": true,
+  "archive_extraction_is_not_live_ownership_proof": true,
+  "profile_is_static_only_unexecuted": true,
+  "original_copy_manifest_sha256": "7918422283262e47bdbc60fb258238b935adfffe237e13ab1ad11e51c86f3859",
+  "original_archive": {
+    "path": "native/35-root10-native-red.tar.gz",
+    "sha256": "2074bb9ffdb178f23d97a38f680e40bfe340fd09a4a46d3d3dbc303b47baa892",
+    "bytes": 6032202,
+    "preserved_in_TMP": "/private/tmp/therese-c17-root-canonical-lot68-JPc37u83/35-root10-native-red.unsplit.tar.gz",
+    "parts": [
+      {
+        "path": "native/35-root10-native-red.tar.gz.part-001",
+        "source": "/private/tmp/therese-c17-root-canonical-lot68-JPc37u83/35-root10-native-red.unsplit.tar.gz",
+        "sha256": "719f734b60a31331134695d4a3561663c4b59f4943969e08bdb874a2002036e0",
+        "bytes": 2097152,
+        "offset": 0
+      },
+      {
+        "path": "native/35-root10-native-red.tar.gz.part-002",
+        "source": "/private/tmp/therese-c17-root-canonical-lot68-JPc37u83/35-root10-native-red.unsplit.tar.gz",
+        "sha256": "fe750ff043018766878fcc011e52f34dfca7b84de6d3a9c725f1e913ececa1cc",
+        "bytes": 2097152,
+        "offset": 2097152
+      },
+      {
+        "path": "native/35-root10-native-red.tar.gz.part-003",
+        "source": "/private/tmp/therese-c17-root-canonical-lot68-JPc37u83/35-root10-native-red.unsplit.tar.gz",
+        "sha256": "ac9c22044525f8108b6e1952d4fd581422649d5c5d34bc101f453cdfd531f5d0",
+        "bytes": 1837898,
+        "offset": 4194304
+      }
+    ]
+  },
+  "reconstruction_verified": true,
+  "archive_count_unchanged": 37,
+  "fragment_limit_bytes": 2097152
+}

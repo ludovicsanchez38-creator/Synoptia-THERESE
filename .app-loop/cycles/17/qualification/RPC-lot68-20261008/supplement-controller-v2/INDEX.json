@@ -1,0 +1,19 @@
+{
+  "schema": "therese-c17-lot68-supplement-controller-index-v2",
+  "status": "prepared_only_not_executed",
+  "source_controller_v2_index": {"path":"/private/tmp/therese-c17-lot68-archive-v2-ofXPUt/INDEX.json","sha256":"c8903c8fee441cf475edcb75c3a4bea4de8a4bc73ce691a408ad6a5dc74ef284"},
+  "historical_supplement_index": {"path":"/private/tmp/therese-c17-lot68-archive-supplement-qFaQPh/INDEX.json","sha256":"76fa3750a522620694d4a1b646286c749f909d5d50867be521b3c6fdf269361b"},
+  "files": [
+    {"path":"preimages/archive_lot68_v2.mjs","sha256":"b37507b5603fa355749c53ed04763b3c877f88f63d190036f85bf39dc9574740","bytes":15681},
+    {"path":"preimages/archive_lot68_supplement-v1.mjs","sha256":"cfab70b44598455a7b67a55c8f56d50dcc33d78d8bdfbacfe3de9d1bcb4aae18","bytes":15071},
+    {"path":"archive_lot68_supplement_v2.mjs","sha256":"a62bdfd6a454c022a324a2a53d4be4999363adddcb8f889a16cde6c48cb7c34b","bytes":15720},
+    {"path":"archive-controller-v2-to-supplement-v2.diff","sha256":"c6bba9b08ed6a93a48925b513bbbba7b3225179bbed4d45360f9f8b193988b09","bytes":3319},
+    {"path":"PLAN.json","sha256":"be976d1451b269a913b10f4645fcdc17467a3fe3e896c1e528851669f99c7a63","bytes":3607},
+    {"path":"README.md","sha256":"cf89a4c0c671c23dbfa52e54d46f7560dc6e3a33c07391954f2a72e74402a4f5","bytes":2022}
+  ],
+  "plan_archive_count": 12,
+  "plan_classes": ["control_unqualified", "definition_unqualified", "pure_green_historical_not_additive", "pure_green_definition_only", "pure_green_doubles_only", "signature_recheck_red_not_native", "signature_recheck_green_not_native", "controller_unqualified"],
+  "native_root_included": false,
+  "syntax_check": "node --check archive_lot68_supplement_v2.mjs exit 0",
+  "not_performed": ["controller execution", "TAR creation", "canonical copy", "Git mutation"]
+}

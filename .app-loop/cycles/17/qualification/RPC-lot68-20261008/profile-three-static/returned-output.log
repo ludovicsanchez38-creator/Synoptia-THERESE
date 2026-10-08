@@ -1,0 +1,20 @@
+test_exact_candidate (test_verify_profile.TargetedProfileTests.test_exact_candidate) ... ok
+test_forward_diff_exact (test_verify_profile.TargetedProfileTests.test_forward_diff_exact) ... ok
+test_global_mach_refused (test_verify_profile.TargetedProfileTests.test_global_mach_refused) ... ok
+test_inverse_diff_exact (test_verify_profile.TargetedProfileTests.test_inverse_diff_exact) ... ok
+test_iokit_wildcard_refused (test_verify_profile.TargetedProfileTests.test_iokit_wildcard_refused) ... ok
+test_missing_rule_refused (test_verify_profile.TargetedProfileTests.test_missing_rule_refused) ... ok
+test_modified_preimage_refused (test_verify_profile.TargetedProfileTests.test_modified_preimage_refused) ... ok
+test_network_permission_refused (test_verify_profile.TargetedProfileTests.test_network_permission_refused) ... ok
+test_original_prefix_and_forms (test_verify_profile.TargetedProfileTests.test_original_prefix_and_forms) ... ok
+test_original_rule_modified_refused (test_verify_profile.TargetedProfileTests.test_original_rule_modified_refused) ... ok
+test_other_iokit_class_refused (test_verify_profile.TargetedProfileTests.test_other_iokit_class_refused) ... ok
+test_parser_rejects_unbalanced (test_verify_profile.TargetedProfileTests.test_parser_rejects_unbalanced) ... ok
+test_parser_rejects_unterminated_string (test_verify_profile.TargetedProfileTests.test_parser_rejects_unterminated_string) ... ok
+test_pasteboard_refused (test_verify_profile.TargetedProfileTests.test_pasteboard_refused) ... ok
+
+----------------------------------------------------------------------
+Ran 14 tests in 0.002s
+
+OK
+STATIC_RESULT tests=14 failures=0 errors=0 profile_executed=False

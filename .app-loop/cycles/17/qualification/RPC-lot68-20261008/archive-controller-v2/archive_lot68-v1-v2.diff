@@ -1,0 +1,75 @@
+--- before/archive_lot68.mjs
++++ after/archive_lot68_v2.mjs
+@@ -1,5 +1,5 @@
+ #!/usr/bin/env node
+-// Préparation lot 68 : ce fichier n'archive rien sans --execute et les deux pins externes.
++// Lot 68 v2 : seule exception, fixtures top-level d'une sortie de test validée.
+ import fs from 'node:fs';
+ import path from 'node:path';
+ import crypto from 'node:crypto';
+@@ -60,7 +60,7 @@
+   try { return JSON.parse(record.bytes.toString('utf8')); }
+   catch { fail(`JSON invalide: ${file}`); }
+ }
+-function collectRecursive(root) {
++function collectRecursive(root, excludeTestFixtures = false) {
+   const files = [];
+   const excluded = [];
+   let visited = 0;
+@@ -69,6 +69,13 @@
+       if (++visited > 10000) fail(`limite de parcours dépassée: ${root}`);
+       const full = path.join(dir, entry.name);
+       exactChild(root, full);
++      if (excludeTestFixtures && dir === root && entry.name === 'fixtures') {
++        const fixture = fs.lstatSync(full);
++        if (!fixture.isDirectory() || fixture.isSymbolicLink() || fs.realpathSync(full) !== full)
++          fail(`fixtures top-level non physiques: ${full}`);
++        excluded.push('fixtures/');
++        continue;
++      }
+       if (entry.name.startsWith('._') || entry.name === '__pycache__') {
+         excluded.push(path.relative(root, full)); continue;
+       }
+@@ -132,11 +139,16 @@
+   const anchorPath = path.join(root, row.anchor);
+   const anchor = readStable(anchorPath, root);
+   if (anchor.sha256 !== row.anchor_sha256) fail(`ancre différente: ${anchorPath}`);
++  let validatedResult = false;
+   if (row.result) {
+     const receipt = readJsonPinned(path.join(root, row.result.file), root, row.anchor_sha256);
+     if (receipt[row.result.field] !== row.result.equals) fail(`classification rouge/vert non prouvée: ${root}`);
++    validatedResult = true;
+   }
+-  const selection = row.selection ? collectSourceSelected(root, row.anchor_sha256) : collectRecursive(root);
++  const excludeTestFixtures = validatedResult && row.result.file === row.anchor &&
++    row.result.field === 'passed' && typeof row.result.equals === 'boolean' &&
++    (row.class === 'pure_green' || row.class === 'raw_red');
++  const selection = row.selection ? collectSourceSelected(root, row.anchor_sha256) : collectRecursive(root, excludeTestFixtures);
+   if (!selection.files.includes(anchorPath)) fail(`ancre absente de sélection: ${root}`);
+   return { ...row, ...selection };
+ }
+@@ -261,7 +273,7 @@
+ function main() {
+   const args=process.argv.slice(2);
+   if (args.length!==5 || args[0]!=='--execute' || args[1]!=='--expected-plan-sha256' || args[3]!=='--out-dir' || !isHex(args[2]))
+-    fail('usage: node archive_lot68.mjs --execute --expected-plan-sha256 <sha256> --out-dir /private/tmp/therese-c17-lot68-archive-<id>');
++    fail('usage: node archive_lot68_v2.mjs --execute --expected-plan-sha256 <sha256> --out-dir /private/tmp/therese-c17-lot68-archive-<id>');
+   const outDir=args[4];
+   if (!/^\/private\/tmp\/therese-c17-lot68-archive-[A-Za-z0-9_-]+$/.test(outDir) || outDir===HERE || fs.existsSync(outDir))
+     fail('destination non neuve ou hors périmètre');
+@@ -274,13 +286,13 @@
+   const done=[];
+   try {
+     for (const row of rows) done.push(archiveRow(row,outDir));
+-    const receipt={schema:'therese-c17-lot68-archive-receipt-v1',status:'archives_verified_not_runtime_qualification',
++    const receipt={schema:'therese-c17-lot68-archive-receipt-v2',status:'archives_verified_not_runtime_qualification',
+       plan_sha256:args[2],max_archive_bytes:LIMIT,archive_count:done.length,archives:done,
+       native_root_deferred:plan.native_root_deferred};
+     fs.writeFileSync(path.join(outDir,'receipt.json'),JSON.stringify(receipt,null,2)+'\n',{flag:'wx',mode:0o600});
+     process.stdout.write(JSON.stringify({status:receipt.status,receipt:path.join(outDir,'receipt.json'),archive_count:done.length})+'\n');
+   } catch(error) {
+-    const failed={schema:'therese-c17-lot68-archive-failure-v1',status:'archive_incomplete_not_qualified',
++    const failed={schema:'therese-c17-lot68-archive-failure-v2',status:'archive_incomplete_not_qualified',
+       plan_sha256:args[2],error:String(error),completed_archives:done.map(x=>({id:x.id,sha256:x.sha256,bytes:x.bytes}))};
+     fs.writeFileSync(path.join(outDir,'failure.json'),JSON.stringify(failed,null,2)+'\n',{flag:'wx',mode:0o600});
+     throw error;

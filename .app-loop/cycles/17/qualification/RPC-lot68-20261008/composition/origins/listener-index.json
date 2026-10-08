@@ -1,0 +1,237 @@
+{
+  "schema": "c17-ab-owned-listener-text-port-v1",
+  "status": "prepared_static_not_executed",
+  "source_index": {
+    "path": "/private/tmp/therese-c17-ab-direct-cdp-n4yu8cV6/INDEX.json",
+    "sha256": "a68753294239bff31ac7ceb4c57f5fb763a0c5f6372805646850d7a5d09c5886",
+    "bytes": 22723
+  },
+  "outputs": [
+    {
+      "name": "ownership-only",
+      "output_path": "complements/instruments/ownership-only.mjs",
+      "origin": {
+        "path": "/private/tmp/therese-c17-ab-direct-cdp-n4yu8cV6/preimages-complete/ownership-only.mjs",
+        "sha256": "41eb7fcd151e66a675935608379bfc29e49e13e0cae3d63ee94af3de0964aa90",
+        "bytes": 2095
+      },
+      "preimage": {
+        "path": "/private/tmp/therese-c17-ab-listener-port-t64tpB/preimages/ownership-only.mjs",
+        "sha256": "41eb7fcd151e66a675935608379bfc29e49e13e0cae3d63ee94af3de0964aa90",
+        "bytes": 2095
+      },
+      "candidate": {
+        "path": "/private/tmp/therese-c17-ab-listener-port-t64tpB/candidate/complements/instruments/ownership-only.mjs",
+        "sha256": "ba7ecf684e5ac8025e9189795ae19df1fc1060d9cb1dcbf8f95059f9ca1cfa72",
+        "bytes": 431
+      },
+      "diff": {
+        "path": "/private/tmp/therese-c17-ab-listener-port-t64tpB/diffs/ownership-only.diff",
+        "sha256": "14119b535e5bc90ed85c873640b716b40a31ce2910e2ca19eafbbbc8b7cdcdc7",
+        "bytes": 2689
+      },
+      "reverse_diff": {
+        "path": "/private/tmp/therese-c17-ab-listener-port-t64tpB/diffs/ownership-only.reverse.diff",
+        "sha256": "71511ddf26b6a1cb49aee878d961065f0ca417ef7cae42e0b6df40b183d3a056",
+        "bytes": 2689
+      }
+    },
+    {
+      "name": "trace-chrome",
+      "output_path": "trace-chrome.mjs",
+      "origin": {
+        "path": "/private/tmp/therese-c17-ab-direct-cdp-n4yu8cV6/preview-definition-only/trace-chrome.mjs",
+        "sha256": "93f3fef0b0a02c2dda0357c25766b87b604da2afcfc15431d803a285eaac1f2f",
+        "bytes": 2936
+      },
+      "preimage": {
+        "path": "/private/tmp/therese-c17-ab-listener-port-t64tpB/preimages/trace-chrome.mjs",
+        "sha256": "93f3fef0b0a02c2dda0357c25766b87b604da2afcfc15431d803a285eaac1f2f",
+        "bytes": 2936
+      },
+      "candidate": {
+        "path": "/private/tmp/therese-c17-ab-listener-port-t64tpB/candidate/trace-chrome.mjs",
+        "sha256": "df8c9db808d75060886d947f65b5033124cca97cf105de22f864e7e1b37b546b",
+        "bytes": 3863
+      },
+      "diff": {
+        "path": "/private/tmp/therese-c17-ab-listener-port-t64tpB/diffs/trace-chrome.diff",
+        "sha256": "1603920387363d8335f91de294fb4e857761cbbe84f9d66dd27b2a1cd09592d1",
+        "bytes": 1870
+      },
+      "reverse_diff": {
+        "path": "/private/tmp/therese-c17-ab-listener-port-t64tpB/diffs/trace-chrome.reverse.diff",
+        "sha256": "5adfe0c89975399235d17d26a7bdd87b239f15b0cc3b866a97e9527562e2f5dc",
+        "bytes": 1870
+      }
+    },
+    {
+      "name": "couverture-ecran-c17",
+      "output_path": "runtime/couverture-ecran-c17.mjs",
+      "origin": {
+        "path": "/private/tmp/therese-c17-ab-direct-cdp-n4yu8cV6/preimages-complete/runtime/couverture-ecran-c17.mjs",
+        "sha256": "3d30adcfe5169fb32ae87c1f2c2456fc7d62836d3e3342d48024112f857a41c9",
+        "bytes": 34607
+      },
+      "preimage": {
+        "path": "/private/tmp/therese-c17-ab-listener-port-t64tpB/preimages/couverture-ecran-c17.mjs",
+        "sha256": "3d30adcfe5169fb32ae87c1f2c2456fc7d62836d3e3342d48024112f857a41c9",
+        "bytes": 34607
+      },
+      "candidate": {
+        "path": "/private/tmp/therese-c17-ab-listener-port-t64tpB/candidate/runtime/couverture-ecran-c17.mjs",
+        "sha256": "c9bc366e069bf1d64ff48a8888dd14f44785f3a54e0ac733a23c3900a14afec3",
+        "bytes": 35195
+      },
+      "diff": {
+        "path": "/private/tmp/therese-c17-ab-listener-port-t64tpB/diffs/couverture-ecran-c17.diff",
+        "sha256": "42f8009ac3ed588d8c834ace5e5834b724915483bcafd76645cbefbe2b791a09",
+        "bytes": 2263
+      },
+      "reverse_diff": {
+        "path": "/private/tmp/therese-c17-ab-listener-port-t64tpB/diffs/couverture-ecran-c17.reverse.diff",
+        "sha256": "8b2caa5410fd3b006a4b9837b1fb10d20805022e927d0690a6d17cb02e77706b",
+        "bytes": 2263
+      }
+    }
+  ],
+  "references": [
+    {
+      "path": "/private/tmp/therese-c17-ab-direct-cdp-n4yu8cV6/INDEX.json",
+      "sha256": "a68753294239bff31ac7ceb4c57f5fb763a0c5f6372805646850d7a5d09c5886",
+      "bytes": 22723
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-direct-cdp-n4yu8cV6/preimages-complete/ownership-only.mjs",
+      "sha256": "41eb7fcd151e66a675935608379bfc29e49e13e0cae3d63ee94af3de0964aa90",
+      "bytes": 2095
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-listener-port-t64tpB/preimages/ownership-only.mjs",
+      "sha256": "41eb7fcd151e66a675935608379bfc29e49e13e0cae3d63ee94af3de0964aa90",
+      "bytes": 2095
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-listener-port-t64tpB/candidate/complements/instruments/ownership-only.mjs",
+      "sha256": "ba7ecf684e5ac8025e9189795ae19df1fc1060d9cb1dcbf8f95059f9ca1cfa72",
+      "bytes": 431
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-listener-port-t64tpB/diffs/ownership-only.diff",
+      "sha256": "14119b535e5bc90ed85c873640b716b40a31ce2910e2ca19eafbbbc8b7cdcdc7",
+      "bytes": 2689
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-listener-port-t64tpB/diffs/ownership-only.reverse.diff",
+      "sha256": "71511ddf26b6a1cb49aee878d961065f0ca417ef7cae42e0b6df40b183d3a056",
+      "bytes": 2689
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-direct-cdp-n4yu8cV6/preview-definition-only/trace-chrome.mjs",
+      "sha256": "93f3fef0b0a02c2dda0357c25766b87b604da2afcfc15431d803a285eaac1f2f",
+      "bytes": 2936
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-listener-port-t64tpB/preimages/trace-chrome.mjs",
+      "sha256": "93f3fef0b0a02c2dda0357c25766b87b604da2afcfc15431d803a285eaac1f2f",
+      "bytes": 2936
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-listener-port-t64tpB/candidate/trace-chrome.mjs",
+      "sha256": "df8c9db808d75060886d947f65b5033124cca97cf105de22f864e7e1b37b546b",
+      "bytes": 3863
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-listener-port-t64tpB/diffs/trace-chrome.diff",
+      "sha256": "1603920387363d8335f91de294fb4e857761cbbe84f9d66dd27b2a1cd09592d1",
+      "bytes": 1870
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-listener-port-t64tpB/diffs/trace-chrome.reverse.diff",
+      "sha256": "5adfe0c89975399235d17d26a7bdd87b239f15b0cc3b866a97e9527562e2f5dc",
+      "bytes": 1870
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-direct-cdp-n4yu8cV6/preimages-complete/runtime/couverture-ecran-c17.mjs",
+      "sha256": "3d30adcfe5169fb32ae87c1f2c2456fc7d62836d3e3342d48024112f857a41c9",
+      "bytes": 34607
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-listener-port-t64tpB/preimages/couverture-ecran-c17.mjs",
+      "sha256": "3d30adcfe5169fb32ae87c1f2c2456fc7d62836d3e3342d48024112f857a41c9",
+      "bytes": 34607
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-listener-port-t64tpB/candidate/runtime/couverture-ecran-c17.mjs",
+      "sha256": "c9bc366e069bf1d64ff48a8888dd14f44785f3a54e0ac733a23c3900a14afec3",
+      "bytes": 35195
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-listener-port-t64tpB/diffs/couverture-ecran-c17.diff",
+      "sha256": "42f8009ac3ed588d8c834ace5e5834b724915483bcafd76645cbefbe2b791a09",
+      "bytes": 2263
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-listener-port-t64tpB/diffs/couverture-ecran-c17.reverse.diff",
+      "sha256": "8b2caa5410fd3b006a4b9837b1fb10d20805022e927d0690a6d17cb02e77706b",
+      "bytes": 2263
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-direct-cdp-n4yu8cV6/preimages-complete/contexte-v3.mjs",
+      "sha256": "a5c41e69b8943496853326b59a5a34664a5897d2601b6b6c73ac5fa81b44a3e1",
+      "bytes": 7276
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-direct-cdp-n4yu8cV6/preimages-complete/aux_node.mjs",
+      "sha256": "64555c1d39590d944bce79a84479bc7deca7d1bdcdfd4552f842651bc307baf3",
+      "bytes": 14247
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-listener-port-t64tpB/render_listener_port.py",
+      "sha256": "af6a4af5d9abf3d2919f21665394f1c2df10f5dfec8f71acb61c011e3a70a161",
+      "bytes": 6931
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-listener-port-t64tpB/tests/test_render_listener_port.py",
+      "sha256": "e77af669936b36910b10b73f4d45a187842330bc92722b49cd21db2f6a305197",
+      "bytes": 4909
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-listener-port-t64tpB/tests/pure_listener_cases.mjs",
+      "sha256": "38356ce8f1578a0c2cebf3cdc059d37d6ea44082d60352a3a73e689ff413c2f4",
+      "bytes": 7223
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-listener-port-t64tpB/README.md",
+      "sha256": "e44bbb261728981f693cb6e84f7a791cdfefbd57232c8e49eae51304568ba739",
+      "bytes": 3707
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-listener-port-t64tpB/freeze.py",
+      "sha256": "40ce129f9ab4ed0ed18ef02ad302046dd57d3b25ccdd32e07f2f676ad3b8b1b9",
+      "bytes": 4159
+    }
+  ],
+  "output_count": 3,
+  "unchanged": [
+    {
+      "path": "/private/tmp/therese-c17-ab-direct-cdp-n4yu8cV6/preimages-complete/contexte-v3.mjs",
+      "sha256": "a5c41e69b8943496853326b59a5a34664a5897d2601b6b6c73ac5fa81b44a3e1",
+      "bytes": 7276
+    },
+    {
+      "path": "/private/tmp/therese-c17-ab-direct-cdp-n4yu8cV6/preimages-complete/aux_node.mjs",
+      "sha256": "64555c1d39590d944bce79a84479bc7deca7d1bdcdfd4552f842651bc307baf3",
+      "bytes": 14247
+    }
+  ],
+  "pure_python_tests": {
+    "command": "python3 -I -B -m unittest discover -s tests -p test_render_listener_port.py -v",
+    "observed_exit_code": 0,
+    "observed_tests": 6
+  },
+  "js_tests": "prepared_not_executed",
+  "native_runtime": "not_executed",
+  "admission": false,
+  "full": false
+}

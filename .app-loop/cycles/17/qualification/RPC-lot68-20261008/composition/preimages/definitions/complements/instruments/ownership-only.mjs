@@ -1,0 +1,42 @@
+import {execFile} from 'node:child_process';
+import {readFileSync} from 'node:fs';
+
+// Un seul scan lsof global par port est partagé uniquement tant qu'il est en
+// cours. Il n'y a ni résultat mémorisé ni TTL entre deux vagues de requêtes.
+export function validerScanListener(port, stack, raw) {
+  const role = port === 17593 ? 'backend' : port === 5173 ? 'vite' : null;
+  if (!role || !stack[role]?.pid) throw new Error('Port ou processus QA non attribué');
+  const pids = [...new Set(raw.split('\n').filter(line => /^p\d+$/.test(line)).map(line => Number(line.slice(1))))];
+  if (pids.length !== 1 || pids[0] !== stack[role].pid) throw new Error('Listener étranger : aucune requête envoyée');
+}
+export function creerVerificationListener({ lancerLsof, lireManifest }) {
+  const scansEnCours = new Map();
+  return async function verifierListenerPossede(port) {
+    if (port !== 17593 && port !== 5173) throw new Error('Port ou processus QA non attribué');
+    let scan = scansEnCours.get(port);
+    if (!scan) {
+      let resoudre;
+      let rejeter;
+      scan = new Promise((resolve, reject) => { resoudre = resolve; rejeter = reject; });
+      scansEnCours.set(port, scan);
+      try {
+        lancerLsof('/usr/sbin/lsof', ['-nP', `-iTCP:${port}`, '-sTCP:LISTEN', '-Fp'], {encoding: 'utf8'}, (erreur, stdout) => {
+          // Effacer avant de réveiller les attentes : la suivante rescannera.
+          if (scansEnCours.get(port) === scan) scansEnCours.delete(port);
+          if (erreur) rejeter(erreur);
+          else resoudre(stdout);
+        });
+      } catch (erreur) {
+        if (scansEnCours.get(port) === scan) scansEnCours.delete(port);
+        rejeter(erreur);
+      }
+    }
+    const raw = await scan;
+    // Chaque continuation relit le manifest après le scan global partagé.
+    validerScanListener(port, lireManifest(), raw);
+  };
+}
+export const verifierListenerPossede = creerVerificationListener({
+  lancerLsof: execFile,
+  lireManifest: () => JSON.parse(readFileSync("/private/tmp/therese-c17-direct-round-UNALLOCATED/runtime/pile-reprise.json", 'utf8')),
+});

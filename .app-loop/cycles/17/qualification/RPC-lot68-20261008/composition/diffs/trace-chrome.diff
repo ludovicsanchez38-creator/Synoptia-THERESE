@@ -1,0 +1,31 @@
+--- a/trace-chrome.mjs
++++ b/trace-chrome.mjs
+@@ -1,4 +1,4 @@
+-import {connectOwnedChrome} from './auxiliary-ports/runtime/aux_node.mjs';
++import {connectOwnedChrome,requestOwnedListener} from './auxiliary-ports/runtime/aux_node.mjs';
+ // Instrumentation neuve : collecte les gestes de la future execution, jamais de resultats historiques.
+ import {readFileSync,writeFileSync} from 'node:fs';
+ import {join} from 'node:path';
+@@ -9,6 +9,22 @@
+ const trace={cycle:17,actor:config.actor,round_id:config.round_id,head:config.head,
+   started_at:new Date().toISOString(),status:'observing',launches:[],pages:[],events:[],
+   source_imported:import.meta.url,limits:'Trace DOM des gestes de Playwright ; ne se presente pas comme une lecture AX native.'};
++// Les cinq sites complementaires passent deja par contexte-v3. Les trois
++// recettes runtime et la couverture sont autonomes : leur fetch Node attend
++// la meme observation root, avant toute emission, sans second lsof local.
++const directFetchStages=new Set(['recipe-general','recipe-invoices','recipe-crm','coverage']);
++if(directFetchStages.has(process.env.C17_SESSION_STAGE)){
++  const fetchOriginal=globalThis.fetch.bind(globalThis);
++  globalThis.fetch=async(input,options={})=>{
++    const address=typeof input==='string'||input instanceof URL?String(input):input?.url;
++    const url=new URL(address);
++    if(url.protocol!=='http:'||url.hostname!=='127.0.0.1'||
++       !['17593','5173'].includes(url.port)||url.username||url.password||url.hash)
++      throw new Error('Fetch Node hors ports QA attribues');
++    await requestOwnedListener(Number(url.port));
++    return fetchOriginal(input,options);
++  };
++}
+ const originalLaunch=options=>connectOwnedChrome(chromium,options);
+ chromium.launch=async(options={})=>{
+   if(options.channel!=='chrome'||options.headless!==false||options.chromiumSandbox!==true)

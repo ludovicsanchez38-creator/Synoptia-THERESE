@@ -1,0 +1,20 @@
+{
+  "schema": "therese-c17-lot68-supplement-plan-v1",
+  "status": "prepared_only_not_executed",
+  "archive_limit_bytes": 67108864,
+  "native_root_deferred": "/private/tmp/therese-c17-wrapper-canary-b90937dbae4845ca9d04b93aa4cdf9aa",
+  "archives": [
+    {"id":"01-preallocation-root-v1-controls","class":"control_unqualified","root":"/private/tmp/therese-c17-root-ab-preallocation-controls-9ADktgi4","anchor":"run-pure.py","anchor_sha256":"a58b5265f91dba432494d9421709b62edbd58eee215770db13421b094703f04a"},
+    {"id":"02-preallocation-root-v2-controls","class":"control_unqualified","root":"/private/tmp/therese-c17-root-ab-preallocation-controls-v2-bu5nGgxr","anchor":"run-pure.py","anchor_sha256":"10bfde39cecddde01f5b3dfd8aa2fb58521fcfd9dfa918ce38c560e6dd1cc2e3"},
+    {"id":"03-git-definition","class":"definition_unqualified","root":"/private/tmp/therese-c17-ab-git-readonly-LgbRf1NJ","anchor":"INDEX.json","anchor_sha256":"e28e4aa076f66b09d490a28f6d895ca951a4e2d12fe76ff5877ad9b4e819e689"},
+    {"id":"04-git-python46-historical","class":"pure_green_historical_not_additive","root":"/private/tmp/therese-c17-ab-git-python-O6A0dAEM","anchor":"receipt.json","anchor_sha256":"641d61b1ee3d2b3c443f80af3c41240aa2f07e6bc5f3dd5e15e55cfa3e16db55","result":{"file":"receipt.json","field":"passed","equals":true}},
+    {"id":"05-git-python47-final","class":"pure_green_definition_only","root":"/private/tmp/therese-c17-ab-git-python-ds9xtRZb","anchor":"receipt.json","anchor_sha256":"9b78d13420d9c96d6eb1852b3e9940d1608884eafad3f31dd46dc9a6001f75bd","result":{"file":"receipt.json","field":"passed","equals":true}},
+    {"id":"06-git-node-pure","class":"pure_green_doubles_only","root":"/private/tmp/therese-c17-ab-git-node-gsBRXtrd","anchor":"receipt.json","anchor_sha256":"81101013e4411b7cd0751558fe1db30f39dcdfc6e166f59b68020a28d3edc240","result":{"file":"receipt.json","field":"passed","equals":true}},
+    {"id":"07-listener-definition","class":"definition_unqualified","root":"/private/tmp/therese-c17-ab-listener-port-t64tpB","anchor":"INDEX.json","anchor_sha256":"04382da83862fe2f23597617db1f576b30535611c4a93eac20264956ed41d340"},
+    {"id":"08-listener-root-controls","class":"control_unqualified","root":"/private/tmp/therese-c17-root-listener-pure-controls-hybPNml4","anchor":"run-listener-pure.mjs","anchor_sha256":"95ebea5b6afae39cbb5091c5dd47c098c657ab39b4edc63ef16ceec02f27224c"},
+    {"id":"09-listener-node-pure","class":"pure_green_doubles_only","root":"/private/tmp/therese-c17-listener-pure-root-jZjeZnUY","anchor":"receipt.json","anchor_sha256":"b5022850241fa4ee63d8c99157f250808f0dd72adf66df25d5d2b4e583a8846e","result":{"file":"receipt.json","field":"passed","equals":true}},
+    {"id":"10-chrome-signature-red","class":"signature_recheck_red_not_native","root":"/private/tmp/therese-c17-chrome-recheck-t5bYMNfx","anchor":"recheck-receipt.json","anchor_sha256":"5f92af6295e47727b322cddda1f5f4b7fdc78feecaa2704134a23962e4d82f87","result":{"file":"recheck-receipt.json","field":"passed","equals":false}},
+    {"id":"11-chrome-signature-green","class":"signature_recheck_green_not_native","root":"/private/tmp/therese-c17-chrome-recheck-PdAoX6mT","anchor":"recheck-receipt.json","anchor_sha256":"77c5fd49ffd18453c045d9131955ade7aa20e6dbcfbc5d4c4f313ca83dbeb210","result":{"file":"recheck-receipt.json","field":"passed","equals":true}},
+    {"id":"12-original-archive-controller","class":"controller_unqualified","root":"/private/tmp/therese-c17-lot68-archive-controller-vVzFqI","anchor":"INDEX.json","anchor_sha256":"ef368c3f75ef2e10fb0f2c6416c6f0648b5fc1545cc16fa05b70b6995a5b809d"}
+  ]
+}

@@ -1,0 +1,48 @@
+--- before/archive_lot68_v2.mjs
++++ after/archive_lot68_supplement_v2.mjs
+@@ -1,5 +1,5 @@
+ #!/usr/bin/env node
+-// Lot 68 v2 : seule exception, fixtures top-level d'une sortie de test validée.
++// Supplément lot 68 v2, dérivé du contrôleur22 v2 fermé.
+ import fs from 'node:fs';
+ import path from 'node:path';
+ import crypto from 'node:crypto';
+@@ -117,8 +117,8 @@
+   return { files: [indexPath, ...index.selected_refs.map(x => x.path)], excluded: [], expected };
+ }
+ function validatePlan(plan) {
+-  if (plan.schema !== 'therese-c17-lot68-archive-plan-v1' || plan.status !== 'prepared_only_not_executed' ||
+-      plan.archive_limit_bytes !== LIMIT || !Array.isArray(plan.archives) || plan.archives.length !== 22)
++  if (plan.schema !== 'therese-c17-lot68-supplement-plan-v1' || plan.status !== 'prepared_only_not_executed' ||
++      plan.archive_limit_bytes !== LIMIT || !Array.isArray(plan.archives) || plan.archives.length !== 12)
+     fail('plan ou cardinalité inattendus');
+   const roots = new Set(), ids = new Set();
+   for (const row of plan.archives) {
+@@ -273,9 +273,9 @@
+ function main() {
+   const args=process.argv.slice(2);
+   if (args.length!==5 || args[0]!=='--execute' || args[1]!=='--expected-plan-sha256' || args[3]!=='--out-dir' || !isHex(args[2]))
+-    fail('usage: node archive_lot68_v2.mjs --execute --expected-plan-sha256 <sha256> --out-dir /private/tmp/therese-c17-lot68-archive-<id>');
++    fail('usage: node archive_lot68_supplement_v2.mjs --execute --expected-plan-sha256 <sha256> --out-dir /private/tmp/therese-c17-lot68-supplement-archive-<id>');
+   const outDir=args[4];
+-  if (!/^\/private\/tmp\/therese-c17-lot68-archive-[A-Za-z0-9_-]+$/.test(outDir) || outDir===HERE || fs.existsSync(outDir))
++  if (!/^\/private\/tmp\/therese-c17-lot68-supplement-archive-[A-Za-z0-9_-]+$/.test(outDir) || outDir===HERE || fs.existsSync(outDir))
+     fail('destination non neuve ou hors périmètre');
+   const planBytes=fs.readFileSync(PLAN_PATH);
+   if (sha(planBytes)!==args[2]) fail('pin externe PLAN.json divergent');
+@@ -286,13 +286,13 @@
+   const done=[];
+   try {
+     for (const row of rows) done.push(archiveRow(row,outDir));
+-    const receipt={schema:'therese-c17-lot68-archive-receipt-v2',status:'archives_verified_not_runtime_qualification',
++    const receipt={schema:'therese-c17-lot68-supplement-archive-receipt-v2',status:'archives_verified_not_runtime_qualification',
+       plan_sha256:args[2],max_archive_bytes:LIMIT,archive_count:done.length,archives:done,
+       native_root_deferred:plan.native_root_deferred};
+     fs.writeFileSync(path.join(outDir,'receipt.json'),JSON.stringify(receipt,null,2)+'\n',{flag:'wx',mode:0o600});
+     process.stdout.write(JSON.stringify({status:receipt.status,receipt:path.join(outDir,'receipt.json'),archive_count:done.length})+'\n');
+   } catch(error) {
+-    const failed={schema:'therese-c17-lot68-archive-failure-v2',status:'archive_incomplete_not_qualified',
++    const failed={schema:'therese-c17-lot68-supplement-archive-failure-v2',status:'archive_incomplete_not_qualified',
+       plan_sha256:args[2],error:String(error),completed_archives:done.map(x=>({id:x.id,sha256:x.sha256,bytes:x.bytes}))};
+     fs.writeFileSync(path.join(outDir,'failure.json'),JSON.stringify(failed,null,2)+'\n',{flag:'wx',mode:0o600});
+     throw error;

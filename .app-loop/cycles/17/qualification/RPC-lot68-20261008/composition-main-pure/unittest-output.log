@@ -1,0 +1,15 @@
+test_context_before_git_is_refused (prepared_test_only.CompositionTests.test_context_before_git_is_refused) ... ok
+test_divergent_representation_of_context_is_refused (prepared_test_only.CompositionTests.test_divergent_representation_of_context_is_refused) ... ok
+test_fourteen_site_table_remains_definition_only_and_closed (prepared_test_only.CompositionTests.test_fourteen_site_table_remains_definition_only_and_closed) ... ok
+test_git_context_and_helper_are_preserved (prepared_test_only.CompositionTests.test_git_context_and_helper_are_preserved) ... ok
+test_missing_or_extra_definition_is_refused (prepared_test_only.CompositionTests.test_missing_or_extra_definition_is_refused) ... ok
+test_old_helper_is_refused_even_with_its_true_pin (prepared_test_only.CompositionTests.test_old_helper_is_refused_even_with_its_true_pin) ... ok
+test_rehashed_changed_git_helper_is_refused (prepared_test_only.CompositionTests.test_rehashed_changed_git_helper_is_refused) ... ok
+test_rehashed_changed_recipe_is_refused (prepared_test_only.CompositionTests.test_rehashed_changed_recipe_is_refused) ... ok
+test_three_exact_listener_fixtures_and_nine_git_texts_unchanged (prepared_test_only.CompositionTests.test_three_exact_listener_fixtures_and_nine_git_texts_unchanged) ... ok
+test_wrong_sha_bytes_or_extra_reference_field_is_refused (prepared_test_only.CompositionTests.test_wrong_sha_bytes_or_extra_reference_field_is_refused) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.010s
+
+OK

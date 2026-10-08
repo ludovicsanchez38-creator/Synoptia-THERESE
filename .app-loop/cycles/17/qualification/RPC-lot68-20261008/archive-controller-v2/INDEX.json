@@ -1,0 +1,19 @@
+{
+  "schema": "therese-c17-lot68-archive-controller-index-v2",
+  "status": "prepared_only_not_executed",
+  "predecessor_index": {"path":"/private/tmp/therese-c17-lot68-archive-controller-vVzFqI/INDEX.json","sha256":"ef368c3f75ef2e10fb0f2c6416c6f0648b5fc1545cc16fa05b70b6995a5b809d"},
+  "files": [
+    {"path":"preimages/archive_lot68-v1.mjs","sha256":"a22f341a9c956235b4f4feaa8eca12ba91334e3b81c6271d67936836c175b97c","bytes":15014},
+    {"path":"archive_lot68_v2.mjs","sha256":"b37507b5603fa355749c53ed04763b3c877f88f63d190036f85bf39dc9574740","bytes":15681},
+    {"path":"PLAN.json","sha256":"cad8bac4434138b1ad7e8fdaa4e036ec1ffe1a1419d6d74f8afcf1afde3259c3","bytes":6155},
+    {"path":"archive_lot68-v1-v2.diff","sha256":"d6197de2c014012b032180c247eebfed81e89f6cf8618963d2a7a28830b6b3c8","bytes":4376},
+    {"path":"ROOT-V1-RED-OBSERVATION.md","sha256":"e0fbb3af05a7bf831bd137b95e9c82e4e2903a8b229021662823105413b8fb3b","bytes":1418},
+    {"path":"README.md","sha256":"db2e25a1393bc64ac7ab5319ba6444ee13a8e229e90883988f97d159bab9aabf","bytes":1354}
+  ],
+  "plan_archive_count": 22,
+  "selected_source_refs": 24,
+  "fixture_exclusion": "top-level fixtures/ only after pinned row.result validation for pure_green/raw_red",
+  "red_v1": "main tool chunk 8cd0c2; refusal before destination allocation",
+  "syntax_check": "node --check archive_lot68_v2.mjs exit 0",
+  "not_performed": ["controller execution", "TAR creation", "canonical copy", "ROOT10 native inclusion", "Git mutation"]
+}

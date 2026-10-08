@@ -1,0 +1,53 @@
+--- b/runtime/couverture-ecran-c17.mjs
++++ a/runtime/couverture-ecran-c17.mjs
+@@ -33,7 +33,6 @@
+ import { isAbsolute, join, resolve, sep } from 'node:path';
+ import { fileURLToPath } from 'node:url';
+ import { chromium } from "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/node_modules/playwright/index.mjs";
+-import { requestOwnedListener } from '../auxiliary-ports/runtime/aux_node.mjs';
+ 
+ const PORT_REEL = 17293;
+ const BASE_JETABLE = 'http://127.0.0.1:5173/?port=17493';
+@@ -176,38 +175,22 @@
+ 
+ export function installerGardeReseau(contexte, garde) {
+   return Promise.all([
+-    contexte.route('**/*', async (route) => {
++    contexte.route('**/*', (route) => {
+       const requete = route.request();
+-      if (requeteAutorisee(requete.method(), requete.url())) {
+-        try {
+-          await requestOwnedListener(Number(new URL(requete.url()).port));
+-        } catch {
+-          garde.bloquees.push({ methode: requete.method(), url: adresseSansSecrets(requete.url()) });
+-          return route.abort('blockedbyclient');
+-        }
+-        return route.continue();
+-      }
++      if (requeteAutorisee(requete.method(), requete.url())) return route.continue();
+       garde.bloquees.push({ methode: requete.method(), url: adresseSansSecrets(requete.url()) });
+       try {
+         if (new URL(requete.url()).port === String(PORT_REEL)) garde.portReel = true;
+       } catch { /* URL invalide : déjà bloquée */ }
+       return route.abort('blockedbyclient');
+     }),
+-    contexte.routeWebSocket(/.*/, async (route) => {
++    contexte.routeWebSocket(/.*/, (route) => {
+       let autorisee = false;
+       try {
+         const url = new URL(route.url());
+         autorisee = url.protocol === 'ws:' && url.origin === 'ws://127.0.0.1:5173';
+       } catch { /* URL invalide : bloquée */ }
+-      if (autorisee) {
+-        try {
+-          await requestOwnedListener(5173);
+-        } catch {
+-          garde.websockets_bloques.push(adresseSansSecrets(route.url()));
+-          return route.close();
+-        }
+-        return route.connectToServer();
+-      }
++      if (autorisee) return route.connectToServer();
+       garde.websockets_bloques.push(adresseSansSecrets(route.url()));
+       return route.close();
+     }),
