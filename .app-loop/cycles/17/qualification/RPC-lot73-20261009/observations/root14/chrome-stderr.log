@@ -1,0 +1,7 @@
+[1009/001229.131898:ERROR:third_party/crashpad/crashpad/util/mach/bootstrap.cc:65] bootstrap_check_in org.chromium.crashpad.child_port_handshake.52395.5254283.EWAIKJGNMQMFPXWB: Permission denied (1100)
+[1009/001229.132404:ERROR:third_party/crashpad/crashpad/util/file/file_io.cc:103] ReadExactly: expected 4, observed 0
+[52371:5254247:1009/001229.424431:ERROR:base/power_monitor/thermal_state_observer_mac.mm:122] ThermalStateObserverMac unable to register to power notifications. Result: 9
+[52371:5254349:1009/001229.472976:ERROR:net/dns/dns_config_service_posix.cc:138] DNS config watch failed to start.
+[52371:5254347:1009/001229.475439:ERROR:net/cert/internal/trust_store_mac.cc:773] SecItemCopyMatching error: Error Domain=NSOSStatusErrorDomain Code=-50 "paramErr: error in user parameter list" (-50)
+[52371:5254345:1009/001229.487329:ERROR:mojo/public/cpp/platform/named_platform_channel_mac.cc:44] bootstrap_check_in com.google.Chrome.apps.F6AAB0F8F650E4664C7EE04F785E0676B24AB4E227E067B9CB53034CD5A78CED: Permission denied (1100)
+[52371:5254366:1009/001229.488704:FATAL:base/apple/mach_port_rendezvous_mac.cc:159] Check failed: kr == KERN_SUCCESS. bootstrap_check_in com.google.Chrome.MachPortRendezvousServer.52371: Permission denied (1100)

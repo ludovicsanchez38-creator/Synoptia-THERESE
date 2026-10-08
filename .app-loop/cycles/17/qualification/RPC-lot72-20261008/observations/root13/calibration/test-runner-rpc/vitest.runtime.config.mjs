@@ -1,0 +1,2 @@
+import { defineConfig } from "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source/src/frontend/node_modules/vite/dist/node/index.js";
+export default defineConfig({root: "/private/tmp/therese-c17-wrapper-canary-8612f55886284332a3ac6a7bc9615021/runtime/calibration/test-runner-rpc", server: {host: "127.0.0.1"}, test: {globals: true, environment: "node", include: ["calibrationC17.test.ts"], cache: false}});

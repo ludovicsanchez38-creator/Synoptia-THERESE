@@ -1,0 +1,44 @@
+{
+  "schema": "c17-root12-chrome40332-system-log-v1",
+  "actor": "/root/environment_routes",
+  "scope": "PID 40332 and system messages naming only PID 40332, local 23:21:39–23:21:44",
+  "executable": "/usr/bin/log",
+  "argv": [
+    "show",
+    "--style",
+    "json",
+    "--start",
+    "2026-10-08 23:21:39",
+    "--end",
+    "2026-10-08 23:21:44",
+    "--predicate",
+    "(processID == 40332 OR ((process == \"kernel\" OR process == \"sandboxd\" OR process == \"syspolicyd\" OR process == \"amfid\" OR process == \"taskgated\") AND eventMessage CONTAINS \"40332\"))"
+  ],
+  "started_at": "2026-10-08T21:24:20.857Z",
+  "completed_at": "2026-10-08T21:24:22.364Z",
+  "exit_code": 0,
+  "signal": null,
+  "error": null,
+  "parse_error": null,
+  "stdout_ref": {
+    "path": "/private/tmp/therese-c17-root12-chrome40332-log-authorized-uWc2pv/stdout.json",
+    "sha256": "b7118cc01c33afae91b1b89cac8c466e5463a3bcb16cb38096aec7ffa1d5c57d",
+    "bytes": 121996
+  },
+  "stderr_ref": {
+    "path": "/private/tmp/therese-c17-root12-chrome40332-log-authorized-uWc2pv/stderr.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "script_ref": {
+    "path": "/private/tmp/therese-c17-root12-chrome40332-log-authorized-uWc2pv/collect.mjs",
+    "sha256": "6ff145fcf05e4650fd6cbdc5d96801b02e63e328cc587399134f8cb6b95e4639",
+    "bytes": 2498
+  },
+  "event_count": 100,
+  "passed": true,
+  "diagnostic_only": true,
+  "G1_imported": false,
+  "profile_changed": false,
+  "FULL": false
+}

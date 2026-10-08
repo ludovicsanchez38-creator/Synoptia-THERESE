@@ -1,0 +1,72 @@
+--- /private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/build_fresh_wrapper.py
++++ /private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/preimages/build_fresh_wrapper-13.py
+@@ -28,7 +28,7 @@
+ QA = Path('/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source')
+ PROOFS = QA.parent / 'proofs'
+ HEAD = '2d69e30c9c6dd18823ee6102271876003a6a67cc'
+-FUTURE_ROOT = Path('/private/tmp/therese-c17-wrapper-canary-187602c63a0b498a95d25c19843000a8')
++FUTURE_ROOT = Path('/private/tmp/therese-c17-wrapper-canary-8612f55886284332a3ac6a7bc9615021')
+ NODE = Path('/Users/synoptia/.nvm/versions/node/v22.19.0/bin/node')
+ PYTHON_PHYSICAL = Path('/Users/synoptia/.local/share/uv/python/cpython-3.13.5-macos-aarch64-none/bin/python3.13')
+ SOURCE_MANIFEST_SHA = '0904574e2b35b523b8454b33156f595f05a62e21609453a65db59ae516423b89'
+@@ -532,7 +532,6 @@
+         env = {'__CF_USER_TEXT_ENCODING': f'0x{os.getuid():X}:0:0',
+             'PATH': str(NODE.parent) + ':/usr/bin:/bin:/usr/sbin:/sbin', 'HOME': str(folder / 'home'),
+             'CFFIXED_USER_HOME': str(folder / 'home'), 'TMPDIR': str(folder / 'tmp'),
+-            'MAC_CHROMIUM_TMPDIR': str(folder / 'tmp'),
+             'LANG': 'en_US.UTF-8', 'LC_ALL': 'en_US.UTF-8', 'PYTHONNOUSERSITE': '1', 'PYTHONDONTWRITEBYTECODE': '1',
+             'PYTHONPATH': str(QA) + ':' + str(QA / 'src/backend')}
+         row.update(launch_defaults_ref=launch_ref, argv=argv, env=env, cwd=str(root), deadline=50)
+@@ -786,43 +785,6 @@
+     need(derived.replace(addition, anchor, 1) == source,
+          'Delta G1 hors paramètre parent auxiliaire exact')
+     ast.parse(derived)
+-    validate_closed_g1(derived)
+-    return derived
+-
+-
+-def g1_chromium_tmpdir_delta(source: str) -> str:
+-    """ROOT14 seul : clé Chrome égale au TMPDIR QA exact, aucune allowlist globale."""
+-    anchor = (
+-        '    require(isinstance(env, dict) and REQUIRED_ENV <= env.keys()\n'
+-        '            and set(env) <= ENV_CONSTANTS.keys() | ENV_PATHS | ENV_CONTEXT | ({"C17_AUX_GIT_SNAPSHOT_REF"} if WRAPPER_PATTERN.fullmatch(root.name) else set()), "Env manquant/hors allowlist (aucun héritage)")\n'
+-        '    require(all(isinstance(k, str) and isinstance(v, str) and "\\x00" not in k + v for k, v in env.items()), "Env invalide")\n'
+-    )
+-    replacement = (
+-        '    chromium_tmpdir_allowed = (mode == "chrome"\n'
+-        '        and root == Path(' + repr(str(FUTURE_ROOT)) + ')\n'
+-        '        and WRAPPER_PATTERN.fullmatch(root.name) is not None\n'
+-        '        and stage in AUXILIARY_NAMES.values())\n'
+-        '    require(isinstance(env, dict) and REQUIRED_ENV <= env.keys()\n'
+-        '            and set(env) <= ENV_CONSTANTS.keys() | ENV_PATHS | ENV_CONTEXT | ({"C17_AUX_GIT_SNAPSHOT_REF"} if WRAPPER_PATTERN.fullmatch(root.name) else set()) | ({"MAC_CHROMIUM_TMPDIR"} if chromium_tmpdir_allowed else set()), "Env manquant/hors allowlist (aucun héritage)")\n'
+-        '    require(all(isinstance(k, str) and isinstance(v, str) and "\\x00" not in k + v for k, v in env.items()), "Env invalide")\n'
+-        '    if chromium_tmpdir_allowed:\n'
+-        '        chromium_tmpdir = root / "auxiliary" / stage / "tmp"\n'
+-        '        require(env.get("MAC_CHROMIUM_TMPDIR") == env["TMPDIR"] == str(chromium_tmpdir)\n'
+-        '                and chromium_tmpdir.resolve(strict=True) == chromium_tmpdir\n'
+-        '                and child_path(root, chromium_tmpdir) == chromium_tmpdir\n'
+-        '                and chromium_tmpdir.is_dir(), "MAC_CHROMIUM_TMPDIR hors TMPDIR Chrome ROOT14 exact")\n'
+-    )
+-    need(source.count(anchor) == 1 and replacement not in source,
+-         'Ancre environnement Chrome ROOT14 non unique')
+-    derived = source.replace(anchor, replacement, 1)
+-    need(derived.replace(replacement, anchor, 1) == source,
+-         'Delta G1 hors garde MAC_CHROMIUM_TMPDIR ROOT14 exacte')
+-    before, after = ast.parse(source), ast.parse(derived)
+-    left = next(n for n in before.body if isinstance(n, ast.FunctionDef) and n.name == 'validate_environment')
+-    right = next(n for n in after.body if isinstance(n, ast.FunctionDef) and n.name == 'validate_environment')
+-    right.body = left.body
+-    need(ast.dump(before, include_attributes=False) == ast.dump(after, include_attributes=False),
+-         'Autre delta AST G1 interdit')
+     validate_closed_g1(derived)
+     return derived
+ 
+@@ -1143,7 +1105,7 @@
+     boundary = load_pure('c17_runner_boundary_definition', WITNESS / 'source/runner_boundary.py')
+     base_g1 = regular_bytes(PREP / 'g1-26/runtime_session.py').decode()
+     validate_closed_g1(base_g1)
+-    qa_g1 = g1_chromium_tmpdir_delta(g1_auxiliary_parent_delta(g1_chrome_executable_guard(g1_chrome_copy_delta(base_g1))))
++    qa_g1 = g1_auxiliary_parent_delta(g1_chrome_executable_guard(g1_chrome_copy_delta(base_g1)))
+     runtime = assignment_delta(qa_g1, 'WRAPPER_ADMISSION_TABLE', {}, wrapper_slot(root))
+     runner_base = regular_bytes(PREP / 'coordinator/run_wrapper_canary.py').decode()
+     runner_derived = runner_events_delta(runner_base)

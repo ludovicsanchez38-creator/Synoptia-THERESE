@@ -1,0 +1,75 @@
+--- /private/tmp/therese-c17-full-physical-builder-v2-dxGPne/preimages-v1/build_full_round.py	2026-10-08 23:47:17
++++ /private/tmp/therese-c17-full-physical-builder-v2-dxGPne/build_full_round.py	2026-10-08 23:49:42
+@@ -323,6 +323,27 @@
+                 'CHROME = Path(' + repr(chrome) + ')')
+     text = text.replace('bundle = Path("/Applications/Google Chrome.app")',
+                         'bundle = Path(' + repr(request['copied_chrome']) + ')')
++    # Exact MAIN12 delta: the candidate Chrome profile reads metadata on the
++    # immediate auxiliary parent. Never add a free context key or a broad path.
++    chrome_anchor = (
++        '            extra.extend(["-D", key + "=" + value])\n'
++        '    else:\n'
++        '        require(chrome_context is None, "Params Chrome sur profil ordinaire")\n'
++    )
++    chrome_port = (
++        '            extra.extend(["-D", key + "=" + value])\n'
++        '        auxiliary_parent = root / "auxiliary"\n'
++        '        require(auxiliary_parent.resolve(strict=True) == auxiliary_parent\n'
++        '                and child_path(root, auxiliary_parent) == auxiliary_parent,\n'
++        '                "Parent auxiliaire Chrome hors QA exact")\n'
++        '        extra.extend(["-D", "AUXILIARY_PARENT=" + str(auxiliary_parent)])\n'
++        '    else:\n'
++        '        require(chrome_context is None, "Params Chrome sur profil ordinaire")\n'
++    )
++    before_chrome_port = text
++    text = once(text, chrome_anchor, chrome_port)
++    need(text.replace(chrome_port, chrome_anchor, 1) == before_chrome_port,
++         'Delta parent auxiliaire Chrome non réversible')
+     constants = {}
+     for node in ast.parse(text).body:
+         if isinstance(node, ast.Assign) and len(node.targets) == 1 and isinstance(node.targets[0], ast.Name):
+@@ -403,9 +424,15 @@
+         result[target] = text.encode()
+         origins.append({'source': ref, 'target': str(root / target), 'kind': 'definition_only',
+                         'old_result_imported': False})
++        if target == 'auxiliary-ports/runtime/aux_node.mjs':
++            origins[-1]['additional_sources'] = [assets['definition-inputs/aux_node-git.mjs']]
++        if target == 'complements/b1760-identites-historiques-completes.json':
++            origins[-1].update({'transformation': 'historical_definition_projection',
++                                'raw_preimage_in_round': False, 'raw_diff_in_round': False,
++                                'historical_source_kept_external': True})
+         if target in ('g1/web.sb', 'g1/sql.sb', 'g1/chrome.sb'):
+             origins[-1]['effective_profile_source'] = request['profiles'][Path(target).stem]
+-        if result[target] != raw:
++        if result[target] != raw and target != 'complements/b1760-identites-historiques-completes.json':
+             diff_name = 'construction-diffs/' + target.replace('/', '__') + '.diff'
+             result[diff_name] = ''.join(difflib.unified_diff(raw.decode().splitlines(keepends=True),
+                 text.splitlines(keepends=True), fromfile=ref['path'], tofile=str(root / target))).encode()
+@@ -537,13 +564,15 @@
+     diffs = []
+     for name, ref in bases.items():
+         original, final = checked(ref), result[name]
+-        if original != final:
++        if original != final and name != 'complements/b1760-identites-historiques-completes.json':
+             diff_name = 'construction-diffs/' + name.replace('/', '__') + '.diff'
+             result[diff_name] = ''.join(difflib.unified_diff(original.decode().splitlines(keepends=True),
+                 final.decode().splitlines(keepends=True), fromfile=ref['path'], tofile=str(root / name))).encode()
+             result['construction-preimages/' + name] = original
+             diffs.append(diff_name)
+-    for name in ('runtime/runtime.py', 'runtime/common.py', 'runtime/git_snapshot.py'):
++    for name in ('runtime/runtime.py', 'runtime/common.py', 'runtime/git_snapshot.py',
++                 'runtime/calibrate-all.py', 'runtime/calibrate-test-runner.py',
++                 'runtime/calibrate-screen.py', 'runtime/calibrate-browser.mjs'):
+         origins.append({'source': bases[name], 'target': str(root / name), 'kind': 'derived_definition_only',
+                         'old_result_imported': False})
+     result['runtime78-successor/frozen-inputs.json'] = encoded({'schema': 'c17-runtime78-successor-frozen-inputs-v1',
+@@ -569,6 +598,9 @@
+     authority(request, authority_ref, asset_ref)  # BEFORE any allocation.
+     need(set(request.get('profiles', {})) == {'web','sql','chrome'}, 'Trois profils relus exacts requis')
+     for ref in request['profiles'].values(): checked(ref)
++    chrome_profile = checked(request['profiles']['chrome']).decode('utf-8')
++    need(chrome_profile.count('(param "AUXILIARY_PARENT")') == 1,
++         'Profil Chrome sans paramètre parent auxiliaire exact')
+     checked(request['session_contract_ref']); checked(request['rpc_contract_ref'])
+     source = source_inputs(request, assets); deps = dependency_inputs(request, assets); chrome = verify_chrome(request)
+     # Table fourteen closed from the actual source, not request-provided arbitrary names.

@@ -1,0 +1,112 @@
+--- /private/tmp/therese-c17-full-physical-builder-v2-dxGPne/preimages-v1/test_builder.py	2026-10-08 23:47:19
++++ /private/tmp/therese-c17-full-physical-builder-v2-dxGPne/tests/test_builder.py	2026-10-08 23:49:46
+@@ -72,6 +72,7 @@
+             'python_audit_ref':b.planned_ref(cls.base/'synthetic-not-emitted-python-audit.json',b'fixture'),
+             'node_audit_ref':b.planned_ref(cls.base/'synthetic-not-emitted-node-audit.json',b'fixture'),
+             'rpc_contract_ref':cls.assets['runtime78-successor/rpc-abi-contract.json']}
++        cls.request['profiles']['chrome'] = b.reference(HERE/'fixtures/chrome-candidate.sb')
+         api = {'schema':'c17-runtime78-session-api-v1','features':['definition_only'],
+                'runtime_admitted':False,'synthetic_fixture':True}
+         (cls.base / 'api.json').write_bytes(b.encoded(api)); cls.request['session_contract_ref'] = b.reference(cls.base / 'api.json')
+@@ -231,6 +232,55 @@
+         self.assertIs(constants['RUNTIME_ENABLED'],False); self.assertIs(constants['OS_STARTUP_QUALIFIED'],False)
+         self.assertEqual(constants['ADMISSION_TABLE'],{}); self.assertEqual(constants['WRAPPER_ADMISSION_TABLE'],{})
+         self.assertTrue(all(v is False for v in constants['CAPABILITIES'].values()))
++
++    def test_rendered_g1_chrome_parent_parameter_and_web_exclusion(self):
++        """Exécute la fonction sandbox réellement rendue, sans import G1/OS."""
++        root = self.base/'sandbox-fixture'; auxiliary = root/'auxiliary'; auxiliary.mkdir(parents=True,exist_ok=True)
++        chrome = auxiliary/'aux-chrome-fixture'; chrome.mkdir(exist_ok=True)
++        home = root/'home'; tmp = root/'tmp'; home.mkdir(exist_ok=True); tmp.mkdir(exist_ok=True)
++        pyroot = self.base/'sandbox-python-root'; (pyroot/'bin').mkdir(parents=True,exist_ok=True)
++        physical_python = pyroot/'bin/python3.13'; physical_python.write_bytes(b'synthetic python, never executed\n')
++        alias = self.base/'sandbox-python-alias'; alias.symlink_to(pyroot,target_is_directory=True)
++        qa_python = self.base/'sandbox-qa-python'; qa_python.symlink_to(physical_python)
++        node = self.base/'sandbox-node'; node.mkdir(exist_ok=True)
++        def require(value, message):
++            if not value: raise ValueError(message)
++        funcs = b.selected_definitions(self.out['g1/runtime_session.py'],('child_path','sandbox'),
++            {'Path':Path,'SOURCE':self.qa,'PYTHON':qa_python,'PYTHON_ROOT':pyroot,
++             'RPC_CANARY_PYTHON':physical_python,'PYTHON_ALIAS':alias,'NODE_ROOT':node,
++             'HERE':self.base,'require':require})
++        ctx={'AUXILIARY_ROOT':str(chrome),'HOME_ROOT':str(home),'TMP_ROOT':str(tmp)}
++        argv=funcs['sandbox'](root,'chrome',['/fixture/chrome'],source_root=self.qa,
++            qa_python=qa_python,chrome_context=ctx)
++        self.assertEqual(argv.count('AUXILIARY_PARENT='+str(auxiliary)),1)
++        self.assertEqual(argv[argv.index('-D')+1],'AUXILIARY_ROOT='+str(chrome))
++        web=funcs['sandbox'](root,'web',['/fixture/python'],source_root=self.qa,qa_python=qa_python)
++        self.assertNotIn('AUXILIARY_PARENT='+str(auxiliary),web)
++        with self.assertRaisesRegex(ValueError,'Params Chrome manquants'):
++            funcs['sandbox'](root,'chrome',['/fixture/chrome'],source_root=self.qa,
++                qa_python=qa_python,chrome_context=dict(ctx,AUXILIARY_PARENT=str(auxiliary)))
++        with self.assertRaisesRegex(ValueError,'hors QA'):
++            funcs['sandbox'](root,'chrome',['/fixture/chrome'],source_root=self.qa,
++                qa_python=qa_python,chrome_context=dict(ctx,AUXILIARY_ROOT=str(self.base)))
++
++    def test_chrome_profile_parent_requirement_and_reversible_g1_port(self):
++        profile=b.checked(self.request['profiles']['chrome']).decode()
++        self.assertEqual(profile.count('(param "AUXILIARY_PARENT")'),1)
++        original=b.checked(self.assets['g1/runtime_session.py']).decode()
++        rendered=b.derive_g1(original,self.request)
++        anchor=('            extra.extend(["-D", key + "=" + value])\n'
++                '    else:\n'
++                '        require(chrome_context is None, "Params Chrome sur profil ordinaire")\n')
++        port=('            extra.extend(["-D", key + "=" + value])\n'
++              '        auxiliary_parent = root / "auxiliary"\n'
++              '        require(auxiliary_parent.resolve(strict=True) == auxiliary_parent\n'
++              '                and child_path(root, auxiliary_parent) == auxiliary_parent,\n'
++              '                "Parent auxiliaire Chrome hors QA exact")\n'
++              '        extra.extend(["-D", "AUXILIARY_PARENT=" + str(auxiliary_parent)])\n'
++              '    else:\n'
++              '        require(chrome_context is None, "Params Chrome sur profil ordinaire")\n')
++        self.assertEqual(rendered.count(port),1)
++        self.assertEqual(rendered.replace(port,anchor,1).count(anchor),1)
+ 
+     def test_uuid_existing_preimage_refused(self):
+         raw = b.checked(self.assets['g1/runtime_session.py']).decode().replace('import time\n','import time\nimport uuid\n')
+@@ -308,6 +358,33 @@
+         self.assertIs(data['historical_results_not_imported'],True)
+         self.assertEqual(set(data['historical_exports'][0]),{'obligation_id','historical_mode','historical_nodeid','candidate_species','mapping_limit'})
+ 
++    def test_historical_b1760_raw_never_emitted_in_round(self):
++        raw=b.checked(self.assets['complements/b1760-identites-historiques-completes.json'])
++        self.assertIn(b'four_historical_runs',raw)
++        self.assertFalse(any(name.startswith(('construction-preimages/','construction-diffs/'))
++            and 'b1760-identites-historiques-completes.json' in name for name in self.out))
++        self.assertFalse(any(b'four_historical_runs' in payload for payload in self.out.values()))
++        origin=json.loads(self.out['full-construction-origin.json'])
++        entry=next(row for row in origin['definitions'] if row['target'].endswith('/complements/b1760-identites-historiques-completes.json'))
++        self.assertEqual(entry['source'],self.assets['complements/b1760-identites-historiques-completes.json'])
++        self.assertIs(entry['historical_source_kept_external'],True)
++        self.assertIs(entry['raw_preimage_in_round'],False)
++        self.assertIs(entry['raw_diff_in_round'],False)
++
++    def test_all_derived_executables_have_origin_and_node_two_sources(self):
++        origin=json.loads(self.out['full-construction-origin.json'])
++        rows={row['target']:row for row in origin['definitions']}
++        root=Path(self.request['root'])
++        for name in ('calibrate-all.py','calibrate-test-runner.py','calibrate-screen.py','calibrate-browser.mjs'):
++            target=str(root/'runtime'/name)
++            self.assertIn(target,rows)
++            self.assertEqual(rows[target]['source'],self.assets['auxiliary-ports/runtime/'+name])
++            self.assertEqual(self.out['runtime/'+name],self.out['auxiliary-ports/runtime/'+name])
++        node=rows[str(root/'auxiliary-ports/runtime/aux_node.mjs')]
++        self.assertEqual(node['additional_sources'],[self.assets['definition-inputs/aux_node-git.mjs']])
++        appendix=b.checked(self.assets['definition-inputs/aux_node-git.mjs']).decode().split('// Fresh A/B metadata only:',1)[1]
++        self.assertIn(appendix,self.out['auxiliary-ports/runtime/aux_node.mjs'].decode())
++
+     def test_exact_seven_identity_anchors_retained(self):
+         anchors = json.loads(b.checked(self.assets['runtime78-successor/identity-anchors.json']))['anchors']
+         text = self.out['runtime/couverture-ecran-c17.mjs'].decode()
+@@ -423,7 +500,10 @@
+             self.assertTrue(self.out[diff].startswith(b'--- ')); self.assertIn(b'+++ ',self.out[diff])
+         for name, ref in self.assets.items():
+             if name in self.out and self.out[name] != b.checked(ref):
+-                self.assertIn('construction-diffs/'+name.replace('/','__')+'.diff',origin['diffs'])
++                if name == 'complements/b1760-identites-historiques-completes.json':
++                    self.assertNotIn('construction-diffs/'+name.replace('/','__')+'.diff',origin['diffs'])
++                else:
++                    self.assertIn('construction-diffs/'+name.replace('/','__')+'.diff',origin['diffs'])
+ 
+     def test_source_and_output_pins_immutable(self):
+         frozen = json.loads(self.out['runtime78-successor/frozen-inputs.json'])

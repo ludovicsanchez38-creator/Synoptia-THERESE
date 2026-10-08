@@ -1,0 +1,28 @@
+test_01_origin_builder_and_profile_byte_exact (test_wrapper14_static.Wrapper14Static.test_01_origin_builder_and_profile_byte_exact) ... ok
+test_02_exact_root_absent_no_allocation (test_wrapper14_static.Wrapper14Static.test_02_exact_root_absent_no_allocation) ... ok
+test_03_actual_chrome_prepare_only_env_key_changes (test_wrapper14_static.Wrapper14Static.test_03_actual_chrome_prepare_only_env_key_changes) ... ok
+test_04_old_real_guard_refuses_added_key (test_wrapper14_static.Wrapper14Static.test_04_old_real_guard_refuses_added_key) ... ok
+test_05_new_real_guard_accepts_exact_five_envs (test_wrapper14_static.Wrapper14Static.test_05_new_real_guard_accepts_exact_five_envs) ... ok
+test_06_missing_key_refused (test_wrapper14_static.Wrapper14Static.test_06_missing_key_refused) ... ok
+test_07_other_modes_refused (test_wrapper14_static.Wrapper14Static.test_07_other_modes_refused) ... ok
+test_08_other_root_refused (test_wrapper14_static.Wrapper14Static.test_08_other_root_refused) ... ok
+test_09_unknown_or_leaf_stage_refused (test_wrapper14_static.Wrapper14Static.test_09_unknown_or_leaf_stage_refused) ... ok
+test_10_wrong_value_refused_without_personal_path_read (test_wrapper14_static.Wrapper14Static.test_10_wrong_value_refused_without_personal_path_read) ... ok
+test_11_both_values_wrong_stage_path_refused (test_wrapper14_static.Wrapper14Static.test_11_both_values_wrong_stage_path_refused) ... ok
+test_12_synthetic_symlink_target_refused (test_wrapper14_static.Wrapper14Static.test_12_synthetic_symlink_target_refused) ... ok
+test_13_synthetic_missing_directory_refused (test_wrapper14_static.Wrapper14Static.test_13_synthetic_missing_directory_refused) ... ok
+test_14_extra_key_refused (test_wrapper14_static.Wrapper14Static.test_14_extra_key_refused) ... ok
+test_15_existing_constant_refusal_preserved (test_wrapper14_static.Wrapper14Static.test_15_existing_constant_refusal_preserved) ... ok
+test_16_no_global_env_set_changed (test_wrapper14_static.Wrapper14Static.test_16_no_global_env_set_changed) ... ok
+test_17_only_g1_validate_environment_ast_changed (test_wrapper14_static.Wrapper14Static.test_17_only_g1_validate_environment_ast_changed) ... ok
+test_18_non_chrome_env_without_key_unchanged (test_wrapper14_static.Wrapper14Static.test_18_non_chrome_env_without_key_unchanged) ... ok
+test_19_anchors_changed_or_duplicate_refused (test_wrapper14_static.Wrapper14Static.test_19_anchors_changed_or_duplicate_refused) ... ok
+test_20_builder_only_allowed_functions_and_root_changed (test_wrapper14_static.Wrapper14Static.test_20_builder_only_allowed_functions_and_root_changed) ... ok
+test_21_helpers_binding_equality_actual_body_preserved (test_wrapper14_static.Wrapper14Static.test_21_helpers_binding_equality_actual_body_preserved) ... ok
+test_22_sources79_and_three_historical_routes_unchanged (test_wrapper14_static.Wrapper14Static.test_22_sources79_and_three_historical_routes_unchanged) ... ok
+test_23_forward_inverse_diffs_exact (test_wrapper14_static.Wrapper14Static.test_23_forward_inverse_diffs_exact) ... ok
+
+----------------------------------------------------------------------
+Ran 23 tests in 5.003s
+
+OK

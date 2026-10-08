@@ -1,0 +1,7691 @@
+{
+  "execution_scope": "g1_rpc_real_instrument_wrappers_canary_only",
+  "round_name": "WRAPPER_CANARY",
+  "cleanup": {
+    "roles": [],
+    "signals": [],
+    "remaining_attributed": [],
+    "termination_of_exact_targets_proved": true,
+    "clean": true,
+    "ambiguities": [],
+    "errors": [],
+    "snapshot_totals": {
+      "snapshots": 943,
+      "listed": 557533,
+      "read": 382991,
+      "ESRCH": 19409,
+      "unattributed_permission_refusals": 174523
+    },
+    "snapshot_audits_tail": [
+      {
+        "at": "2026-10-08T21:21:40.550389+00:00",
+        "listed": 588,
+        "read": 403,
+        "ESRCH": 28,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:40.565178+00:00",
+        "listed": 588,
+        "read": 403,
+        "ESRCH": 28,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:40.581232+00:00",
+        "listed": 588,
+        "read": 403,
+        "ESRCH": 28,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:40.597452+00:00",
+        "listed": 588,
+        "read": 403,
+        "ESRCH": 28,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:40.613669+00:00",
+        "listed": 588,
+        "read": 403,
+        "ESRCH": 28,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:40.629905+00:00",
+        "listed": 588,
+        "read": 403,
+        "ESRCH": 28,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:40.646163+00:00",
+        "listed": 588,
+        "read": 403,
+        "ESRCH": 28,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:40.662545+00:00",
+        "listed": 588,
+        "read": 403,
+        "ESRCH": 28,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:40.664995+00:00",
+        "listed": 588,
+        "read": 403,
+        "ESRCH": 28,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:40.666238+00:00",
+        "listed": 588,
+        "read": 403,
+        "ESRCH": 28,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:40.711287+00:00",
+        "listed": 588,
+        "read": 403,
+        "ESRCH": 29,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40335
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:40.766472+00:00",
+        "listed": 588,
+        "read": 403,
+        "ESRCH": 30,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40335,
+          40337
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:40.768020+00:00",
+        "listed": 588,
+        "read": 403,
+        "ESRCH": 30,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40335,
+          40337
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:40.808191+00:00",
+        "listed": 588,
+        "read": 403,
+        "ESRCH": 31,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40335,
+          40337,
+          40339
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:40.858687+00:00",
+        "listed": 588,
+        "read": 403,
+        "ESRCH": 32,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40335,
+          40337,
+          40339,
+          40341
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:40.860268+00:00",
+        "listed": 588,
+        "read": 403,
+        "ESRCH": 32,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40335,
+          40337,
+          40339,
+          40341
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:40.900407+00:00",
+        "listed": 588,
+        "read": 403,
+        "ESRCH": 33,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:40.950202+00:00",
+        "listed": 588,
+        "read": 403,
+        "ESRCH": 34,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:40.951779+00:00",
+        "listed": 588,
+        "read": 403,
+        "ESRCH": 34,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:40.991717+00:00",
+        "listed": 588,
+        "read": 403,
+        "ESRCH": 35,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:41.047303+00:00",
+        "listed": 588,
+        "read": 403,
+        "ESRCH": 36,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:41.048914+00:00",
+        "listed": 588,
+        "read": 403,
+        "ESRCH": 36,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:41.088871+00:00",
+        "listed": 588,
+        "read": 403,
+        "ESRCH": 37,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:41.143703+00:00",
+        "listed": 589,
+        "read": 403,
+        "ESRCH": 39,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:41.145359+00:00",
+        "listed": 589,
+        "read": 403,
+        "ESRCH": 38,
+        "unattributed_permission_refusals": 186,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:41.184719+00:00",
+        "listed": 589,
+        "read": 404,
+        "ESRCH": 39,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:41.241484+00:00",
+        "listed": 590,
+        "read": 405,
+        "ESRCH": 40,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:41.243138+00:00",
+        "listed": 590,
+        "read": 405,
+        "ESRCH": 40,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:41.313068+00:00",
+        "listed": 590,
+        "read": 405,
+        "ESRCH": 41,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:41.365556+00:00",
+        "listed": 590,
+        "read": 405,
+        "ESRCH": 42,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:41.367233+00:00",
+        "listed": 590,
+        "read": 405,
+        "ESRCH": 42,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:41.436968+00:00",
+        "listed": 591,
+        "read": 406,
+        "ESRCH": 43,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367,
+          40369
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:41.498988+00:00",
+        "listed": 591,
+        "read": 405,
+        "ESRCH": 45,
+        "unattributed_permission_refusals": 186,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367,
+          40369,
+          40371,
+          40373
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:41.500846+00:00",
+        "listed": 591,
+        "read": 405,
+        "ESRCH": 45,
+        "unattributed_permission_refusals": 186,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367,
+          40369,
+          40371,
+          40373
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:41.541458+00:00",
+        "listed": 591,
+        "read": 405,
+        "ESRCH": 46,
+        "unattributed_permission_refusals": 186,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367,
+          40369,
+          40371,
+          40373,
+          40376
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:41.595680+00:00",
+        "listed": 591,
+        "read": 404,
+        "ESRCH": 48,
+        "unattributed_permission_refusals": 186,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367,
+          40369,
+          40371,
+          40373,
+          40376,
+          40378
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:41.597381+00:00",
+        "listed": 590,
+        "read": 404,
+        "ESRCH": 48,
+        "unattributed_permission_refusals": 186,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40332,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367,
+          40369,
+          40371,
+          40373,
+          40376,
+          40378
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:41.598861+00:00",
+        "listed": 590,
+        "read": 404,
+        "ESRCH": 48,
+        "unattributed_permission_refusals": 186,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40332,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367,
+          40369,
+          40371,
+          40373,
+          40376,
+          40378
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:41.600328+00:00",
+        "listed": 590,
+        "read": 404,
+        "ESRCH": 48,
+        "unattributed_permission_refusals": 186,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40332,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367,
+          40369,
+          40371,
+          40373,
+          40376,
+          40378
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:41.601806+00:00",
+        "listed": 590,
+        "read": 404,
+        "ESRCH": 48,
+        "unattributed_permission_refusals": 186,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40332,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367,
+          40369,
+          40371,
+          40373,
+          40376,
+          40378
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:42.392052+00:00",
+        "listed": 590,
+        "read": 404,
+        "ESRCH": 48,
+        "unattributed_permission_refusals": 186,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40332,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367,
+          40369,
+          40371,
+          40373,
+          40376,
+          40378
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:42.393742+00:00",
+        "listed": 590,
+        "read": 404,
+        "ESRCH": 48,
+        "unattributed_permission_refusals": 186,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40332,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367,
+          40369,
+          40371,
+          40373,
+          40376,
+          40378
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:42.395217+00:00",
+        "listed": 590,
+        "read": 404,
+        "ESRCH": 48,
+        "unattributed_permission_refusals": 186,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40332,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367,
+          40369,
+          40371,
+          40373,
+          40376,
+          40378
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:42.396723+00:00",
+        "listed": 590,
+        "read": 404,
+        "ESRCH": 48,
+        "unattributed_permission_refusals": 186,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40332,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367,
+          40369,
+          40371,
+          40373,
+          40376,
+          40378
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:43.149849+00:00",
+        "listed": 590,
+        "read": 403,
+        "ESRCH": 49,
+        "unattributed_permission_refusals": 186,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40332,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367,
+          40369,
+          40371,
+          40373,
+          40376,
+          40378
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:43.154587+00:00",
+        "listed": 589,
+        "read": 403,
+        "ESRCH": 49,
+        "unattributed_permission_refusals": 186,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40277,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40332,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367,
+          40369,
+          40371,
+          40373,
+          40376,
+          40378
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:43.156239+00:00",
+        "listed": 589,
+        "read": 403,
+        "ESRCH": 49,
+        "unattributed_permission_refusals": 186,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40277,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40332,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367,
+          40369,
+          40371,
+          40373,
+          40376,
+          40378
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:43.157795+00:00",
+        "listed": 589,
+        "read": 403,
+        "ESRCH": 49,
+        "unattributed_permission_refusals": 186,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40277,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40332,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367,
+          40369,
+          40371,
+          40373,
+          40376,
+          40378
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:43.159214+00:00",
+        "listed": 589,
+        "read": 403,
+        "ESRCH": 49,
+        "unattributed_permission_refusals": 186,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40277,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40332,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367,
+          40369,
+          40371,
+          40373,
+          40376,
+          40378
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:43.886796+00:00",
+        "listed": 590,
+        "read": 403,
+        "ESRCH": 49,
+        "unattributed_permission_refusals": 187,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40277,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40332,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367,
+          40369,
+          40371,
+          40373,
+          40376,
+          40378
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:43.888434+00:00",
+        "listed": 590,
+        "read": 403,
+        "ESRCH": 49,
+        "unattributed_permission_refusals": 187,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40277,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40332,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367,
+          40369,
+          40371,
+          40373,
+          40376,
+          40378
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:43.890034+00:00",
+        "listed": 590,
+        "read": 403,
+        "ESRCH": 49,
+        "unattributed_permission_refusals": 187,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40277,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40332,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367,
+          40369,
+          40371,
+          40373,
+          40376,
+          40378
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:43.891524+00:00",
+        "listed": 590,
+        "read": 403,
+        "ESRCH": 49,
+        "unattributed_permission_refusals": 187,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40277,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40332,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367,
+          40369,
+          40371,
+          40373,
+          40376,
+          40378
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:43.893064+00:00",
+        "listed": 590,
+        "read": 402,
+        "ESRCH": 50,
+        "unattributed_permission_refusals": 187,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40277,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40332,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367,
+          40369,
+          40371,
+          40373,
+          40376,
+          40378
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:43.924795+00:00",
+        "listed": 588,
+        "read": 401,
+        "ESRCH": 51,
+        "unattributed_permission_refusals": 187,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40231,
+          40234,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40277,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40332,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367,
+          40369,
+          40371,
+          40373,
+          40376,
+          40378
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:43.956560+00:00",
+        "listed": 588,
+        "read": 401,
+        "ESRCH": 51,
+        "unattributed_permission_refusals": 187,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40231,
+          40234,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40277,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40332,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367,
+          40369,
+          40371,
+          40373,
+          40376,
+          40378
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:43.988319+00:00",
+        "listed": 588,
+        "read": 401,
+        "ESRCH": 51,
+        "unattributed_permission_refusals": 187,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40231,
+          40234,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40277,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40332,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367,
+          40369,
+          40371,
+          40373,
+          40376,
+          40378
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:44.020379+00:00",
+        "listed": 589,
+        "read": 402,
+        "ESRCH": 51,
+        "unattributed_permission_refusals": 187,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40231,
+          40234,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40277,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40332,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367,
+          40369,
+          40371,
+          40373,
+          40376,
+          40378
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:45.778011+00:00",
+        "listed": 600,
+        "read": 412,
+        "ESRCH": 52,
+        "unattributed_permission_refusals": 188,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40227,
+          40231,
+          40234,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40277,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40332,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367,
+          40369,
+          40371,
+          40373,
+          40376,
+          40378
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:45.942991+00:00",
+        "listed": 602,
+        "read": 413,
+        "ESRCH": 55,
+        "unattributed_permission_refusals": 189,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40227,
+          40231,
+          40234,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40277,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40332,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367,
+          40369,
+          40371,
+          40373,
+          40376,
+          40378,
+          40405,
+          40408,
+          40411
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:46.122300+00:00",
+        "listed": 607,
+        "read": 416,
+        "ESRCH": 58,
+        "unattributed_permission_refusals": 191,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40227,
+          40231,
+          40234,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40277,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40332,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367,
+          40369,
+          40371,
+          40373,
+          40376,
+          40378,
+          40405,
+          40408,
+          40411,
+          40413,
+          40419,
+          40425
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:46.124150+00:00",
+        "listed": 607,
+        "read": 415,
+        "ESRCH": 59,
+        "unattributed_permission_refusals": 191,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40227,
+          40231,
+          40234,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40277,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40332,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367,
+          40369,
+          40371,
+          40373,
+          40376,
+          40378,
+          40405,
+          40408,
+          40411,
+          40413,
+          40419,
+          40425
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:46.125787+00:00",
+        "listed": 607,
+        "read": 415,
+        "ESRCH": 59,
+        "unattributed_permission_refusals": 191,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40227,
+          40231,
+          40234,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40277,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40332,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367,
+          40369,
+          40371,
+          40373,
+          40376,
+          40378,
+          40405,
+          40408,
+          40411,
+          40413,
+          40419,
+          40425
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T21:21:46.127372+00:00",
+        "listed": 607,
+        "read": 415,
+        "ESRCH": 59,
+        "unattributed_permission_refusals": 191,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 107,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          40213,
+          40215,
+          40217,
+          40219,
+          40221,
+          40223,
+          40227,
+          40231,
+          40234,
+          40237,
+          40239,
+          40245,
+          40247,
+          40251,
+          40253,
+          40255,
+          40259,
+          40261,
+          40265,
+          40267,
+          40269,
+          40277,
+          40282,
+          40286,
+          40293,
+          40300,
+          40303,
+          40304,
+          40309,
+          40315,
+          40316,
+          40321,
+          40332,
+          40335,
+          40337,
+          40339,
+          40341,
+          40343,
+          40345,
+          40347,
+          40349,
+          40353,
+          40355,
+          40360,
+          40362,
+          40365,
+          40367,
+          40369,
+          40371,
+          40373,
+          40376,
+          40378,
+          40405,
+          40408,
+          40411,
+          40413,
+          40419,
+          40425
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      }
+    ]
+  },
+  "cleanup_error": null,
+  "clean": false,
+  "remaining_handles": [],
+  "log_stability_tainted": true,
+  "cleanup_elapsed_seconds": 0.7668827500019688,
+  "cleanup_deadline_met": true,
+  "cleanup_taint": [
+    "session_tainted_before_receipts"
+  ],
+  "interruptions": [],
+  "attribution_errors": [],
+  "launched_services": [
+    "backend",
+    "vite"
+  ],
+  "unlaunched_handles": [],
+  "ports_absent": [
+    17593,
+    5173
+  ],
+  "auxiliary_ports_absent": [
+    17594
+  ],
+  "ports_absence_proved": true,
+  "ports_absence_receipt": {
+    "path": "/private/tmp/therese-c17-wrapper-canary-9818b6b4163e451892dbd3956e1bb492/ledger/ports-absence-3.json",
+    "sha256": "e11e3876b1054204f9d122f9918572ad573ec141bbdbfa6593dd3813107590d1",
+    "bytes": 7819
+  },
+  "port_absence_elapsed_seconds": 0.21935354199376889,
+  "session_stop_pre_receipt_elapsed_seconds": 1.7027952079952229,
+  "cleanup_elapsed_scope": "finish_only_excludes_post_cleanup_port_scan_and_receipt_publication",
+  "phase_elapsed_scope": "finish_plus_port_scan_before_final_receipt_write",
+  "schema": "c17-runtime78-owned-session-close-v1",
+  "cycle": 17,
+  "actor": "/root",
+  "round_id": "therese-c17-wrapper-canary-9818b6b4163e451892dbd3956e1bb492",
+  "head": "2d69e30c9c6dd18823ee6102271876003a6a67cc",
+  "qa_root": "/private/tmp/therese-c17-wrapper-canary-9818b6b4163e451892dbd3956e1bb492",
+  "admission": {
+    "path": "/private/tmp/therese-c17-wrapper-canary-9818b6b4163e451892dbd3956e1bb492/decision.json",
+    "sha256": "4880cb5f77158c9f3584f020a0b495b6e7a91481793d82f1be69e21f29dc31af",
+    "bytes": 18622
+  },
+  "binding": {
+    "path": "/private/tmp/therese-c17-wrapper-canary-9818b6b4163e451892dbd3956e1bb492/binding.json",
+    "sha256": "0de852d562c82aa5352a49e10f3c340e5198f8c83da52915ce85b69875889094",
+    "bytes": 428702
+  },
+  "call": "Session.stop",
+  "kind": "actual_in_process_owned_controller_phase",
+  "actual_coordinator_argv": [
+    "/private/tmp/therese-c17-wrapper-canary-9818b6b4163e451892dbd3956e1bb492/coordinator/run_wrapper_canary.py",
+    "--root",
+    "/private/tmp/therese-c17-wrapper-canary-9818b6b4163e451892dbd3956e1bb492",
+    "--go-sha256",
+    "b5acb167c3bc0e8500cfe9c636749c62d18c0c40b99eefeec8f60606f4cdd66b",
+    "--execute"
+  ],
+  "attempt": 1,
+  "pre_restore_receipt": {
+    "path": "/private/tmp/therese-c17-wrapper-canary-9818b6b4163e451892dbd3956e1bb492/ledger/session-close-1.pre-restore.json",
+    "sha256": "31952d514f6d02b9da0fb55966eada0813a3da91a0d8c4c7e2fb53d039b0fa96",
+    "bytes": 144674
+  },
+  "prelaunch_errors": [],
+  "interrupt_handlers_restored": true,
+  "interrupt_restore_error": null,
+  "session_closed": true,
+  "log_stability_proved": false
+}

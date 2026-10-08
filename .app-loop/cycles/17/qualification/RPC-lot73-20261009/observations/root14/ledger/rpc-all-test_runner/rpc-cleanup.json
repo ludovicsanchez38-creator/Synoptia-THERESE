@@ -1,0 +1,55 @@
+{
+  "schema": "c17-g1-rpc-child-cleanup-v1",
+  "stage": "rpc-all-test_runner",
+  "requester_id": "calibrate",
+  "logical_parent_id": "calibrate",
+  "child_identity": {
+    "pid": 52309,
+    "ppid": 52214,
+    "uid": 501,
+    "pgid": 52309,
+    "status": 2,
+    "start_sec": 1791497530,
+    "start_usec": 525944,
+    "role": "stage-rpc-all-test_runner",
+    "parent_birth": [
+      52214,
+      1791497515,
+      555159
+    ],
+    "attribution": "popen_child_before_workload",
+    "captured_at": "2026-10-08T22:12:10.539351+00:00"
+  },
+  "receipt_ref": {
+    "path": "/private/tmp/therese-c17-wrapper-canary-187602c63a0b498a95d25c19843000a8/ledger/rpc-all-test_runner/receipt.json",
+    "sha256": "f7e0e0a3ce2f06131552fd430b79b4087303c2ea049a01368223d201dab286fb",
+    "bytes": 148719
+  },
+  "request_ref": {
+    "path": "/private/tmp/therese-c17-wrapper-canary-187602c63a0b498a95d25c19843000a8/session-rpc/request/rpc-all-test_runner-dcd04c87fa2d9dbc31ba98a870fd0f99.json",
+    "sha256": "83eac7798221264b8dba315e2c897fce5954a2c8b57e26ea4bb09b3bdcbc3309",
+    "bytes": 21039
+  },
+  "exit_code": 0,
+  "state": "complete",
+  "clean": true,
+  "termination_proved": true,
+  "log_stability_proved": true,
+  "remaining_attributed": [],
+  "ambiguities": [],
+  "errors": [],
+  "signals": [],
+  "cleanup_elapsed_seconds": 0.7127269160118885,
+  "cleanup_deadline_met": true,
+  "stdout_ref": {
+    "path": "/private/tmp/therese-c17-wrapper-canary-187602c63a0b498a95d25c19843000a8/runtime/calibration/all-rpc/test_runner.stdout",
+    "sha256": "85487e97c64feefe69aeb0443618b57d2faa9faeebd7588a41aca04509329467",
+    "bytes": 168
+  },
+  "stderr_ref": {
+    "path": "/private/tmp/therese-c17-wrapper-canary-187602c63a0b498a95d25c19843000a8/runtime/calibration/all-rpc/test_runner.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "tainted": false
+}

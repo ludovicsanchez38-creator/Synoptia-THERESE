@@ -1,0 +1,60 @@
+{
+  "schema": "c17-independent-full-builders-v2-v3-review-index-v1",
+  "actor": "/root/cycle17_gate_review",
+  "observed_at_utc": "2026-10-08T22:14:18.579721+00:00",
+  "status": "favorable_preparation_review_only_no_runtime",
+  "refs": [
+    {
+      "path": "/private/tmp/therese-c17-independent-full-builders-review-HDGgpJzx/checked-refs.json",
+      "sha256": "e7dbc7cc7000a6016f1f5605f626cc4a4e9117cbd9d63b874d0cd6455fa352de",
+      "bytes": 49576
+    },
+    {
+      "path": "/private/tmp/therese-c17-independent-full-builders-review-HDGgpJzx/receipt.json",
+      "sha256": "217093a1ee021e921f30554edb21b8cfd190330046955a41fe1d736c4fa15b3e",
+      "bytes": 10680
+    },
+    {
+      "path": "/private/tmp/therese-c17-independent-full-builders-review-HDGgpJzx/REVIEW.txt",
+      "sha256": "5a8edcde7982876f468d9d4bf29bfcdc1de529214120af1d426829fd8617fea2",
+      "bytes": 2889
+    }
+  ],
+  "reviewed_indices": [
+    {
+      "path": "/private/tmp/therese-c17-full-physical-builder-v2-dxGPne/INDEX.json",
+      "sha256": "2e6fa077f923236cd1a5c87143f2fbd82f1d18f74269e5b6278c9cb825a08659",
+      "bytes": 38532
+    },
+    {
+      "path": "/private/tmp/therese-c17-full-physical-builder-v3-A0yyXP/INDEX.json",
+      "sha256": "67b9dffbf6f872a393096aadf8e9b4fa0e807963fc4cba7805dca10a2f495c38",
+      "bytes": 46523
+    }
+  ],
+  "unique_source_refs_checked": 214,
+  "source_refs_record": "checked-refs.json",
+  "v2": {
+    "local_refs": 50,
+    "definition_assets": 88,
+    "diff_directions": 8,
+    "author_cases": 55,
+    "main_same_cases_replay": 55
+  },
+  "v3": {
+    "local_refs": 75,
+    "definition_assets": 88,
+    "diff_directions": 6,
+    "author_cases": 59,
+    "main_same_cases_replay": 59
+  },
+  "reviewer_tests_executed": false,
+  "constructor_invoked": false,
+  "new_AB_root_created": false,
+  "G1_imported": false,
+  "native_executed": false,
+  "admission_created": false,
+  "FULL": false,
+  "release": false,
+  "rounds_counted": 0
+}

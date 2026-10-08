@@ -1,0 +1,3 @@
+{"timestamp": "2026-10-08T22:12:24.768404+00:00", "level": "INFO", "module": "logging_config", "message": "Logging configure : console (lisible) + fichier JSON (/private/tmp/therese-c17-wrapper-canary-187602c63a0b498a95d25c19843000a8/profiles/service/logs-rpc/logs/therese.log), niveau=INFO", "extra": {"asctime": "2026-10-08 22:12:24"}}
+{"timestamp": "2026-10-08T22:12:24.768582+00:00", "level": "INFO", "module": "calibrate-logs", "message": "TEMOIN-C17-SAIN", "extra": {"calibration_run": "logs-rpc", "asctime": "2026-10-08 22:12:24"}}
+{"timestamp": "2026-10-08T22:12:24.768679+00:00", "level": "ERROR", "module": "calibrate-logs", "message": "TEMOIN-C17-ERREUR-INJECTEE", "extra": {"calibration_run": "logs-rpc", "asctime": "2026-10-08 22:12:24"}}

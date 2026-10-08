@@ -1,0 +1,24 @@
+--- /private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/preview/runtime_session-after-env.py
++++ /private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/preimages/runtime_session-before-env.py
+@@ -1073,19 +1073,9 @@
+ 
+ def validate_environment(root: Path, env: dict[str, str], mode: str, actor: str, round_id: str,
+                          *, source_root: Path = SOURCE, stage: str | None = None) -> dict[str, str]:
+-    chromium_tmpdir_allowed = (mode == "chrome"
+-        and root == Path('/private/tmp/therese-c17-wrapper-canary-187602c63a0b498a95d25c19843000a8')
+-        and WRAPPER_PATTERN.fullmatch(root.name) is not None
+-        and stage in AUXILIARY_NAMES.values())
+-    require(isinstance(env, dict) and REQUIRED_ENV <= env.keys()
+-            and set(env) <= ENV_CONSTANTS.keys() | ENV_PATHS | ENV_CONTEXT | ({"C17_AUX_GIT_SNAPSHOT_REF"} if WRAPPER_PATTERN.fullmatch(root.name) else set()) | ({"MAC_CHROMIUM_TMPDIR"} if chromium_tmpdir_allowed else set()), "Env manquant/hors allowlist (aucun héritage)")
++    require(isinstance(env, dict) and REQUIRED_ENV <= env.keys()
++            and set(env) <= ENV_CONSTANTS.keys() | ENV_PATHS | ENV_CONTEXT | ({"C17_AUX_GIT_SNAPSHOT_REF"} if WRAPPER_PATTERN.fullmatch(root.name) else set()), "Env manquant/hors allowlist (aucun héritage)")
+     require(all(isinstance(k, str) and isinstance(v, str) and "\x00" not in k + v for k, v in env.items()), "Env invalide")
+-    if chromium_tmpdir_allowed:
+-        chromium_tmpdir = root / "auxiliary" / stage / "tmp"
+-        require(env.get("MAC_CHROMIUM_TMPDIR") == env["TMPDIR"] == str(chromium_tmpdir)
+-                and chromium_tmpdir.resolve(strict=True) == chromium_tmpdir
+-                and child_path(root, chromium_tmpdir) == chromium_tmpdir
+-                and chromium_tmpdir.is_dir(), "MAC_CHROMIUM_TMPDIR hors TMPDIR Chrome ROOT14 exact")
+     for key, value in env.items():
+         if key in ENV_CONSTANTS:
+             expected = (str(root / "source") + ":" + str(root / "g1")

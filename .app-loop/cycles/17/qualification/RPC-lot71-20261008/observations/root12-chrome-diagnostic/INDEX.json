@@ -1,0 +1,27 @@
+{
+  "schema": "c17-root12-chrome40332-diagnostic-index-v1",
+  "actor": "/root/environment_routes",
+  "status": "diagnostic_only_unqualified",
+  "qa_root": "/private/tmp/therese-c17-wrapper-canary-9818b6b4163e451892dbd3956e1bb492",
+  "pid": 40332,
+  "window_local": ["2026-10-08 23:21:39 +0200", "2026-10-08 23:21:44 +0200"],
+  "references": [
+    {"path": "/private/tmp/therese-c17-root12-chrome40332-diagnostic-Bx0LdE/DIAGNOSTIC.md", "sha256": "2b1332197eb14bb0b2107bd94a31c6a14fc635033301a7b2c1a1c9b92697f819", "bytes": 3535},
+    {"path": "/private/tmp/therese-c17-root12-chrome40332-diagnostic-Bx0LdE/raw/receipt.json", "sha256": "ba833212843935773eb3a4d5fe7afc2b190b40a52d66505f44ed0d286440696e", "bytes": 174634},
+    {"path": "/private/tmp/therese-c17-root12-chrome40332-diagnostic-Bx0LdE/raw/service-start.json", "sha256": "7c65bccc6fa5676e6394d5cc42631c34b76825d73accf8105b672050a20adddf", "bytes": 7035},
+    {"path": "/private/tmp/therese-c17-root12-chrome40332-diagnostic-Bx0LdE/raw/stderr.log", "sha256": "3eddb80bd30892fb794c12f268c8610b07e836632d794b427955d98a4c4b6443", "bytes": 933},
+    {"path": "/private/tmp/therese-c17-root12-chrome40332-diagnostic-Bx0LdE/raw/stdout.log", "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "bytes": 0},
+    {"path": "/private/tmp/therese-c17-root12-chrome40332-diagnostic-Bx0LdE/raw/Google Chrome-2026-10-08-232144.ips", "sha256": "771438ec2d829ee7911c39f949afaa8d76701aa5120f8a85603ed03fb651036e", "bytes": 57483},
+    {"path": "/private/tmp/therese-c17-root12-chrome40332-log-authorized-uWc2pv/collect.mjs", "sha256": "6ff145fcf05e4650fd6cbdc5d96801b02e63e328cc587399134f8cb6b95e4639", "bytes": 2498},
+    {"path": "/private/tmp/therese-c17-root12-chrome40332-log-authorized-uWc2pv/receipt.json", "sha256": "edac040f0d22a4d698884b27ce93be4a7bf8043f417ac54df20ce7cc58bc52ba", "bytes": 1524},
+    {"path": "/private/tmp/therese-c17-root12-chrome40332-log-authorized-uWc2pv/stdout.json", "sha256": "b7118cc01c33afae91b1b89cac8c466e5463a3bcb16cb38096aec7ffa1d5c57d", "bytes": 121996},
+    {"path": "/private/tmp/therese-c17-root12-chrome40332-log-authorized-uWc2pv/stderr.log", "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "bytes": 0},
+    {"path": "/private/tmp/therese-c17-root12-chrome40332-diagnostic-Bx0LdE/receipt.json", "sha256": "469453a73e4d3ffb846a5e4aa7425e1656605ed30bec33533288f1d9df609e4e", "bytes": 1547}
+  ],
+  "system_log_exit_code": 0,
+  "system_log_events": 100,
+  "chrome_stage_exit_code": -5,
+  "FULL": false,
+  "profile_changed": false,
+  "runtime_restarted": false
+}

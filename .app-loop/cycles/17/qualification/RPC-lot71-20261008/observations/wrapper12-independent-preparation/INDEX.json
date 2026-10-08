@@ -1,0 +1,24 @@
+{
+  "schema": "c17-independent-wrapper12-preparation-review-index-v1",
+  "author": "/root/cycle17_gate_review",
+  "status": "favorable_static_preparation_only",
+  "refs": [
+    {
+      "path": "/private/tmp/therese-c17-independent-wrapper12-review-fZezwyXq/REVIEW.md",
+      "sha256": "191069fba0e5eff08d1a6b920d7a686237e09e1cd60f42e6606d0e761d67f7b9",
+      "bytes": 4200
+    },
+    {
+      "path": "/private/tmp/therese-c17-independent-wrapper12-review-fZezwyXq/receipt.json",
+      "sha256": "8e3f5747f08740a1cb52d5a612603d9db77463c124d203913879e5cbd325307e",
+      "bytes": 6707
+    }
+  ],
+  "source_refs_rehashed": 20,
+  "source_mismatches": [],
+  "new_native_admission_created": false,
+  "G1_imported": false,
+  "native_executed": false,
+  "FULL": false,
+  "release": false
+}

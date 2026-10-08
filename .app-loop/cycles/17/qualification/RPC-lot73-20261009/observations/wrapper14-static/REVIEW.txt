@@ -1,0 +1,35 @@
+Revue indépendante WRAPPER14 et checker statique
+
+Acteur : /root/cycle17_gate_review
+Observation : 2026-10-08T22:08:53.985083+00:00
+Avis : favorable pour préparation fermée seulement.
+
+INDEX Shared14 : e135223b023a771e3080f7ecb280ad350098783afbeeb5133d3221b6880ed7e6, 14704 octets.
+42 références physiques régulières canoniques rehashées sans écart.
+Les huit diffs du gel reconstruisent exactement leurs quatre couples.
+Le seul corps G1 changé est validate_environment. Les ensembles ENV restent inchangés.
+Le profil 2ecae3a24ec871a44827b3f712ced1ef5e84d8f778906c37b3a5b51bb374dcdf / 2499 octets reste identique.
+Le reçu auteur final post-compose26 est 3bc4cf56a109688d4c9c4dfd2b977c26ef2d88f4b06455a96083323d19eb3fb2 : 23 PASS, zéro échec/erreur/saut, 18 pins before/after égaux. Les tests n'ont pas été rejoués par ce réviseur.
+
+Checker : 20d143335b8795adc2a0ffd587a3b9865704b793f644564aee2c68c5556b2ec6, 37787 octets.
+Préimage MAIN13 : 834caa7e1988ca2502cd4978ad3b67488c2be270a89dbc94b183b1571a2ea2f1, 29121 octets.
+Quatorze ancres exactes et inverses rendent la préimage byte-identique.
+L'INDEX14 est ciblé explicitement sans alias PLAN-INDEX. L'origine profil CLI reste celle de MAIN13.
+La chaîne V10/trois règles/metadata parent/dirhelper et les trois routes IPS historiques restent contrôlées.
+Le checker compare le corps entier validate_environment physique au preview pinné, et les cinq MAC/TMPDIR aux dossiers QA exacts, sans héritage ni nouveau droit.
+
+Complément historique autorisé dans la tâche parent :
+Deux reçus purs exacts contiennent trois snapshots anciens au même chemin désormais modifié. Six pointeurs before/after seulement routent vers deux préimages physiques conservées.
+517977ab… conserve son ancien 23 PASS ; c764bd31… conserve une erreur, passed false et exit 1.
+Chaque origine, pointeur, triple path/SHA/bytes, copie physique canonique UID501/GID0/mode100644/nlink1 et valeur actuelle attendue est contrôlé.
+L'observation est rendue transparente dans historical_observations. Aucun LIVE79 ni autre pointeur ne reçoit d'exemption.
+
+Aucun checker, constructeur, Node, G1, Chrome, service ou natif exécuté par ce lot.
+Racine future absente au moment de l'observation. Aucune admission, ronde A/B, FULL ou release produite.
+Les délais startup50/CDP5/cleanup8, ports17593/5173/17594, SQL36, Git3579 et les autres assertions restent en place.
+Le repère Chromium main n'établit pas le comportement de Chrome154 ni la causalité du rouge ROOT13.
+
+Commande future uniquement pour MAIN, après revue/autorité/construction neuves :
+/Users/synoptia/.nvm/versions/node/v22.19.0/bin/node /private/tmp/therese-c17-wrapper14-static-controls-v8N7I1yV/verify-prepared-wrapper14.mjs /private/tmp/therese-c17-wrapper-canary-187602c63a0b498a95d25c19843000a8
+
+Cette commande n'a pas été exécutée. Un résultat statique vert ne fournira pas le GO natif et ne qualifiera pas FULL.

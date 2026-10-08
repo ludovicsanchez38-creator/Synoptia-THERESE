@@ -1,0 +1,252 @@
+--- /private/tmp/therese-c17-wrapper12-metadata-parent-MtcoJZ/preimages/build_fresh_wrapper-main11.py	2026-10-08 18:26:56
++++ /private/tmp/therese-c17-wrapper12-metadata-parent-MtcoJZ/build_fresh_wrapper.py	2026-10-08 23:12:29
+@@ -50,8 +50,10 @@
+                      'sha256': 'c9101b2a356679057f3e116c72a2546f51e851ee997e404c6120cb59627580e8', 'bytes': 1949}
+ CHROME_PREIMAGE_PROFILE = {'path': '/private/tmp/therese-c17-fresh-wrapper-builder-v10-ynPAzC/profile/chrome.sb',
+                   'sha256': '19808ee2cac3169e9fb8c71c24385bcbb97f924c5ed785f4651817ecaa179b0c', 'bytes': 2067}
+-CHROME_PROFILE = {'path': '/private/tmp/therese-c17-wrapper-profile-three-builder-G8n4Ef/profile/chrome.sb',
+-                  'sha256': 'bee3c2e780e58cbc80ed7e37d64115adf08997aab39dae8f11b56050785633a9', 'bytes': 2375}
++CHROME_PREVIOUS_PROFILE = {'path': '/private/tmp/therese-c17-wrapper-profile-three-builder-G8n4Ef/profile/chrome.sb',
++                           'sha256': 'bee3c2e780e58cbc80ed7e37d64115adf08997aab39dae8f11b56050785633a9', 'bytes': 2375}
++CHROME_PROFILE = {'path': '/private/tmp/therese-c17-wrapper12-metadata-parent-MtcoJZ/profile/chrome.sb',
++                  'sha256': '980b12368975718d33dba1572ce94da04ca378ca827df1be10a1ed15a7104cdb', 'bytes': 2439}
+ CHROME_INDEX = Path('/private/tmp/therese-c17-fresh-wrapper-builder-v7-cnR8Hm/profile/INDEX.json')
+ WITNESS = Path('/private/tmp/therese-c17-test-runner-boundary-eUIHsp')
+ WITNESS_FILES = ('source/runner_boundary.py', 'INDEX.json', 'tests/test_runner_boundary.py',
+@@ -93,6 +95,19 @@
+ JOBS = ('rpc-all-runtime_ui-visual_capture-network_capture', 'rpc-screen-negative',
+         'rpc-screen-positive-visual', 'rpc-screen-positive-network', 'rpc-screen-restored')
+ OLD_SQL_SHA = 'b1d4e8ab0b01f18066bdc8b1cf09989a90e8bbd517230f2d07e5a8efe14a2a7d'
++HISTORICAL_IPS = {'path': '/Users/synoptia/Library/Logs/DiagnosticReports/Google Chrome-2026-10-08-143832.000.ips',
++                  'sha256': '2e1d81e295a1a75af7498e1698b4284c53206f7a031058ebd3331aad6fc8a3b3', 'bytes': 31835}
++ARCHIVED_IPS = Path('/private/tmp/therese-c17-root-close6-I9BhiHpZ/chrome25577.ips')
++HISTORICAL_EVIDENCE = {'path': '/private/tmp/therese-c17-chrome-rootdomain-h5whIv/EVIDENCE.json',
++                       'sha256': '57253794719541add1642bc011ff0437248eb922eb798ec4b6132a8ff81c5f6a', 'bytes': 803}
++HISTORICAL_REPLAYS = {
++    Path('/private/tmp/therese-c17-root-v10-71-replay-v3-zRFPBqd5/receipt.json'):
++        {'sha256': 'c0864b435265a4c485c78837207184d3964e966689eb97785fe3ab4ff9e3f8e5',
++         'bytes': 68793, 'source_refs': 307, 'passed': True, 'errors': 0},
++    Path('/private/tmp/therese-c17-root-v10-71-replay-v2-eaECHtDi/receipt.json'):
++        {'sha256': '1955d363f88493a62d6423baeed094f10ab53fbb6ced7eaac94251ba73cdfb57',
++         'bytes': 66947, 'source_refs': 303, 'passed': False, 'errors': 3},
++}
+ 
+ 
+ def need(ok, why):
+@@ -161,35 +176,116 @@
+     return root
+ 
+ 
+-def gather_pins(value, relative_root=PREP):
++def gather_pins(value, relative_root=PREP, pointer=''):
+     if isinstance(value, list):
+-        for item in value:
+-            yield from gather_pins(item, relative_root)
++        for index, item in enumerate(value):
++            yield from gather_pins(item, relative_root, pointer + '/' + str(index))
+     elif isinstance(value, dict):
+         if isinstance(value.get('path'), str) and re.fullmatch('[a-f0-9]{64}', str(value.get('sha256', ''))):
+             path = Path(value['path'])
+             if not path.is_absolute():
+                 path = relative_root / path
+-            yield path, value['sha256'], value.get('bytes')
++            yield path, value['sha256'], value.get('bytes'), pointer
+         else:
+-            for item in value.values():
+-                yield from gather_pins(item, relative_root)
++            for key, item in value.items():
++                escaped = str(key).replace('~', '~0').replace('/', '~1')
++                yield from gather_pins(item, relative_root, pointer + '/' + escaped)
++
++
++def historical_ips_archive(origin: Path, pointer: str, value: dict) -> tuple[dict, dict]:
++    """Trois seules observations anciennes : octets archivés, jamais une ref live au chemin absent."""
++    need(type(value) is dict and value == HISTORICAL_IPS, 'Triple IPS historique différent')
++    if origin == CHROME_ROOTDOMAIN_INDEX:
++        need(pointer == '/origin_refs/4' and reference(origin) ==
++             {'path': str(origin), 'sha256': INDEX_PINS[origin], 'bytes': 2605},
++             'Index/pointeur IPS historique différent')
++        evidence = json_checked(HISTORICAL_EVIDENCE)
++        need(evidence.get('diagnostic_only') is True and evidence.get('chrome_pid') == 25577
++             and evidence.get('origin_crash_report') == HISTORICAL_IPS['path'],
++             'IPS historique hors diagnostic')
++        kind, passed, errors = 'diagnostic_index', None, None
++    else:
++        expected = HISTORICAL_REPLAYS.get(origin)
++        need(expected is not None and pointer == '/source_refs/267', 'Origine/pointeur IPS non autorisé')
++        need(reference(origin) == {'path': str(origin), 'sha256': expected['sha256'],
++                                   'bytes': expected['bytes']}, 'Rejeu historique changé')
++        receipt = json.loads(regular_bytes(origin))
++        need(receipt.get('schema') == 'c17-root-v10-71-pure-replay-v1'
++             and receipt.get('actor') == '/root' and receipt.get('tests') == 71
++             and receipt.get('unchanged') is True and receipt.get('passed') is expected['passed']
++             and receipt.get('errors') == expected['errors'] and receipt.get('failures') == 0
++             and receipt.get('skipped') == 0 and receipt.get('root_built') is False
++             and receipt.get('G1_imported') is False and receipt.get('native_workload_executed') is False
++             and receipt.get('FULL') is False and receipt.get('release') is False
++             and receipt.get('forbidden_attempts') == []
++             and type(receipt.get('source_refs')) is list
++             and len(receipt['source_refs']) == expected['source_refs']
++             and receipt['source_refs'][267] == HISTORICAL_IPS,
++             'Rejeu pur historique réétiqueté')
++        if expected['passed']:
++            red = next(path for path, row in HISTORICAL_REPLAYS.items() if row['passed'] is False)
++            need(receipt.get('fixture_entries_after_cleanup') == []
++                 and receipt.get('earlier_red_receipt_ref') ==
++                 {'path': str(red), 'sha256': HISTORICAL_REPLAYS[red]['sha256'],
++                  'bytes': HISTORICAL_REPLAYS[red]['bytes']},
++                 'Rejeu vert détaché du rouge')
++        kind, passed, errors = ('pure_replay_green' if expected['passed'] else 'pure_replay_red',
++                                expected['passed'], expected['errors'])
++    try:
++        Path(HISTORICAL_IPS['path']).lstat()
++    except FileNotFoundError:
++        pass
++    else:
++        need(False, 'Ancien chemin IPS présent ; résolution archivale refusée')
++    archived_stat = ARCHIVED_IPS.lstat()
++    need(stat.S_ISREG(archived_stat.st_mode) and archived_stat.st_uid == 501
++         and archived_stat.st_gid == 0 and archived_stat.st_mode == 0o100600
++         and archived_stat.st_nlink == 1 and ARCHIVED_IPS.resolve(strict=True) == ARCHIVED_IPS,
++         'Copie IPS archivale non canonique')
++    archive_ref = reference(ARCHIVED_IPS)
++    need(archive_ref['sha256'] == HISTORICAL_IPS['sha256']
++         and archive_ref['bytes'] == HISTORICAL_IPS['bytes'], 'Octets IPS archivés différents')
++    observation = {'origin': str(origin), 'pointer': pointer, 'kind': kind,
++                   'old_path': HISTORICAL_IPS['path'], 'old_path_absent': True,
++                   'old_sha256': HISTORICAL_IPS['sha256'], 'old_bytes': HISTORICAL_IPS['bytes'],
++                   'archive_path': str(ARCHIVED_IPS), 'archive_sha256': archive_ref['sha256'],
++                   'archive_bytes': archive_ref['bytes'], 'archive_uid': archived_stat.st_uid,
++                   'archive_gid': archived_stat.st_gid, 'archive_mode': archived_stat.st_mode,
++                   'archive_nlink': archived_stat.st_nlink, 'passed': passed, 'errors': errors,
++                   'runtime_qualification': False, 'close6_receipt_provenance_claimed': False}
++    return archive_ref, observation
+ 
+ 
+ def validate_indexes():
+-    pins, documents = {}, {}
++    pins, documents, observations = {}, {}, []
+     for path, digest in INDEX_PINS.items():
+         row = reference(path)
+         need(row['sha256'] == digest, 'Index changé : ' + str(path))
+         documents[path] = json.loads(regular_bytes(path))
+         pins[str(path)] = row
+         relative_root = path.parent if path in {CHROME_UNIX_INDEX, CHROME_ROOTDOMAIN_INDEX, CHROME_INDEX} else PREP
+-        for source, sha, size in gather_pins(documents[path], relative_root):
+-            actual = reference(source)
++        for source, sha, size, pointer in gather_pins(documents[path], relative_root):
++            if str(source) == HISTORICAL_IPS['path']:
++                actual, observation = historical_ips_archive(path, pointer,
++                    {'path': str(source), 'sha256': sha, 'bytes': size})
++                observations.append(observation)
++            else:
++                actual = reference(source)
+             need(actual['sha256'] == sha and (size is None or actual['bytes'] == size), 'Pin index changé : ' + str(source))
+-            need(str(source) not in pins or pins[str(source)] == actual, 'Index contradictoires')
+-            pins[str(source)] = actual
+-    return pins, documents
++            need(actual['path'] not in pins or pins[actual['path']] == actual, 'Index contradictoires')
++            pins[actual['path']] = actual
++    for replay in HISTORICAL_REPLAYS:
++        receipt = json.loads(regular_bytes(replay))
++        archive_ref, observation = historical_ips_archive(replay, '/source_refs/267',
++                                                          receipt['source_refs'][267])
++        observations.append(observation)
++        pins[str(replay)] = reference(replay)
++        need(str(ARCHIVED_IPS) not in pins or pins[str(ARCHIVED_IPS)] == archive_ref,
++             'Copie IPS historique contradictoire')
++        pins[str(ARCHIVED_IPS)] = archive_ref
++    need(len(observations) == 3 and len({(o['origin'], o['pointer']) for o in observations}) == 3,
++         'Trois observations IPS exactes requises')
++    return pins, documents, observations
+ 
+ 
+ def load_pure(name, path, aliases=None):
+@@ -521,8 +617,8 @@
+ 
+ 
+ def checked_chrome_successor(chrome_ref):
+-    """V9 exact puis trois règles nominatives diagnostic_only, sans autre droit."""
+-    need(chrome_ref == CHROME_PROFILE, 'Seule proposition Chrome trois règles nominatives exactes admise')
++    """Chaîne MAIN11 intacte, puis le seul parent auxiliaire en metadata littérale."""
++    need(chrome_ref == CHROME_PROFILE, 'Seule proposition Chrome parent auxiliaire exact admise')
+     before, v8 = checked_chrome_v8_successor(CHROME_V8_PROFILE)
+     metadata = '(allow file-read-metadata (literal "/") (literal "/Applications") (literal "/private") (literal "/private/tmp"))'
+     metadata_v9 = ('(allow file-read-metadata (literal "/") (literal "/Applications") (literal "/private") (literal "/private/tmp")\n'
+@@ -535,14 +631,19 @@
+     after = checked(CHROME_PREIMAGE_PROFILE).decode()
+     need(after == expected, 'Delta Chrome hors des trois lectures littérales de répertoires')
+     # Proposition diagnostic_only : trois refus kernel réels, causalité non prouvée.
+-    candidate = checked(chrome_ref).decode()
++    previous = checked(CHROME_PREVIOUS_PROFILE).decode()
+     delta = (
+         '; ROOT10 diagnostic_only : refus ciblés, causalité non prouvée, profil non admis.\n'
+         '(allow mach-lookup (global-name "com.apple.CARenderServer"))\n'
+         '(allow iokit-open-user-client (iokit-user-client-class "IOSurfaceRootUserClient"))\n'
+         '(allow iokit-open-user-client (iokit-user-client-class "AGXDeviceUserClient"))\n'
+     )
+-    need(candidate == after + delta, 'Delta Chrome hors des trois règles nominatives exactes')
++    need(previous == after + delta, 'Préimage MAIN11 Chrome différente')
++    candidate = checked(chrome_ref).decode()
++    auxiliary_delta = '(allow file-read-metadata (literal (param "AUXILIARY_PARENT")))\n'
++    need(candidate == previous + auxiliary_delta
++         and candidate.count(auxiliary_delta) == 1,
++         'Delta Chrome hors metadata du parent auxiliaire exact')
+     return before, candidate
+ 
+ 
+@@ -650,6 +751,28 @@
+     need(source.count(anchor) == 1 and replacement not in source, 'Ancre égalité executable G1 non unique')
+     derived = source.replace(anchor, replacement, 1)
+     need(derived.replace(replacement, anchor, 1) == source, 'Delta garde G1 hors égalité exacte')
++    ast.parse(derived)
++    validate_closed_g1(derived)
++    return derived
++
++
++def g1_auxiliary_parent_delta(source: str) -> str:
++    """Paramètre chrome seul, dérivé de root/auxiliary canonique ; aucune clé libre."""
++    anchor = '            extra.extend(["-D", key + "=" + value])\n    else:\n'
++    addition = (
++        '            extra.extend(["-D", key + "=" + value])\n'
++        '        auxiliary_parent = root / "auxiliary"\n'
++        '        require(auxiliary_parent.resolve(strict=True) == auxiliary_parent\n'
++        '                and child_path(root, auxiliary_parent) == auxiliary_parent,\n'
++        '                "Parent auxiliaire Chrome hors QA exact")\n'
++        '        extra.extend(["-D", "AUXILIARY_PARENT=" + str(auxiliary_parent)])\n'
++        '    else:\n'
++    )
++    need(source.count(anchor) == 1 and addition not in source,
++         'Ancre paramètres Chrome G1 non unique')
++    derived = source.replace(anchor, addition, 1)
++    need(derived.replace(addition, anchor, 1) == source,
++         'Delta G1 hors paramètre parent auxiliaire exact')
+     ast.parse(derived)
+     validate_closed_g1(derived)
+     return derived
+@@ -938,7 +1061,7 @@
+     chrome_before, chrome_after = checked_chrome_successor(chrome_profile_ref)
+     physical_observations = {}
+     authority = construction_authority(root, authority_ref, web_profile_ref, chrome_profile_ref, physical_observations)
+-    pins, documents = validate_indexes()
++    pins, documents, historical_observations = validate_indexes()
+     diagnostic = verify_observability()
+     raw_manifest = regular_bytes(PROOFS / 'qa-source-files.json')
+     need(hashlib.sha256(raw_manifest).hexdigest() == SOURCE_MANIFEST_SHA, 'Manifest frais autre checkout')
+@@ -971,7 +1094,7 @@
+     boundary = load_pure('c17_runner_boundary_definition', WITNESS / 'source/runner_boundary.py')
+     base_g1 = regular_bytes(PREP / 'g1-26/runtime_session.py').decode()
+     validate_closed_g1(base_g1)
+-    qa_g1 = g1_chrome_executable_guard(g1_chrome_copy_delta(base_g1))
++    qa_g1 = g1_auxiliary_parent_delta(g1_chrome_executable_guard(g1_chrome_copy_delta(base_g1)))
+     runtime = assignment_delta(qa_g1, 'WRAPPER_ADMISSION_TABLE', {}, wrapper_slot(root))
+     runner_base = regular_bytes(PREP / 'coordinator/run_wrapper_canary.py').decode()
+     runner_derived = runner_events_delta(runner_base)
+@@ -1176,6 +1299,7 @@
+             'runner_boundary_definition_refs': witness_copies,
+             'source_refs_count': len(source_refs), 'dependencies_observed': deps,
+             'git_tree_files_verified': len(observed), 'source_indexes': [reference(p) for p in INDEX_PINS],
++            'historical_ips_observations': historical_observations,
+             'base11_ref': base['manifest_ref'], 'base11_unchanged': True, 'support8_ref': supports['manifest_ref'],
+             'overlay28_ref': overlay_ref, 'chrome5_ref': chrome_ref, 'core18_ref': core_ref,
+             'coordinator3_refs': coord, 'vite2_refs': vite, 'source_refs_ref': refs_ref, 'root_go_ref': go_ref,

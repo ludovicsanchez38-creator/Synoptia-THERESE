@@ -1,0 +1,44 @@
+{
+  "schema": "c17-full-physical-builder-independent-static-review-v1",
+  "status": "read_only_review_blocking_findings_no_runtime_or_admission",
+  "reviewer": "/root/environment_routes",
+  "frozen_builder_index": {
+    "path": "/private/tmp/therese-c17-full-physical-builder-LVOOtP/INDEX.json",
+    "sha256": "181a8ecb41b5fbb95c64bf8fde4f285d64f4268337a731c88493cd321940dacd",
+    "bytes": 41142
+  },
+  "builder": {
+    "path": "/private/tmp/therese-c17-full-physical-builder-LVOOtP/build_full_round.py",
+    "sha256": "a9de2517201fe97f953a4c5334a291cb71cee64e8cb3a55e443c000358438dc1",
+    "bytes": 43887
+  },
+  "assets": {
+    "path": "/private/tmp/therese-c17-full-physical-builder-LVOOtP/assets.json",
+    "sha256": "db28068ff9dc25794b4fcc5c5800bbde7659224ccfbeff78151b99428f965383",
+    "bytes": 25126
+  },
+  "historical_b1760_origin": {
+    "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/16/direct-mac/round-B4-preserve/complements/b1760-identites-historiques-completes.json",
+    "sha256": "25fc182d2db450362780f9d7bdb7b67895c5406d35bf70131ce6836c42e233bf",
+    "bytes": 188886
+  },
+  "chrome_candidate_profile_observed": {
+    "path": "/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/profile/chrome.sb",
+    "sha256": "2ecae3a24ec871a44827b3f712ced1ef5e84d8f778906c37b3a5b51bb374dcdf",
+    "bytes": 2499
+  },
+  "rehash": {
+    "frozen_index_file_refs": 30,
+    "frozen_index_file_ref_mismatches": 0,
+    "definition_assets": 88,
+    "definition_asset_ref_mismatches": 0
+  },
+  "report": {
+    "path": "/private/tmp/therese-c17-full-physical-review-Bm51Uu/REVIEW.md",
+    "sha256": "6a2feb97aeea813ac7f17cf12791b211117cbb333fde754fbc05de1238f2f09d",
+    "bytes": 4506
+  },
+  "native_workload_executed": false,
+  "G1_imported": false,
+  "FULL_qualified": false
+}

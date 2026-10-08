@@ -1,0 +1,132 @@
+{
+  "schema": "c17-root-fresh-wrapper-preparation-go-v1",
+  "status": "go_prepare_only",
+  "scope": "WRAPPER_CANARY",
+  "actor": "/root",
+  "root": "/private/tmp/therese-c17-wrapper-canary-187602c63a0b498a95d25c19843000a8",
+  "head": "2d69e30c9c6dd18823ee6102271876003a6a67cc",
+  "repo_head_observed": "d1486c2ad1d1879b1c10196fe269e16b35b85e6e",
+  "historical_source_WRAPPER_only_not_current_FULL": true,
+  "product_source_root": "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source",
+  "origin_kind": "root_tool_call",
+  "builder_ref": {
+    "path": "/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/build_fresh_wrapper.py",
+    "sha256": "b2e3a75cf1a2a090087f967115c105f098b28cd602744a5d951f502277c09e02",
+    "bytes": 93120
+  },
+  "builder_index_ref": {
+    "path": "/private/tmp/therese-c17-fresh-wrapper-builder-v10-ynPAzC/INDEX.json",
+    "sha256": "ad4cbc19f3c156f0b0d4ff2e3d36b31eccc9bda109cb18cc6c77194aefce1007",
+    "bytes": 8012
+  },
+  "web_profile_ref": {
+    "path": "/private/tmp/therese-c17-web-root-metadata-POjxSafe/web.sb",
+    "sha256": "51ff2e21500393704ea8709fb9bd177dc1f88793d1e92d09c68be70d905807ff",
+    "bytes": 1780
+  },
+  "chrome_profile_ref": {
+    "path": "/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/profile/chrome.sb",
+    "sha256": "2ecae3a24ec871a44827b3f712ced1ef5e84d8f778906c37b3a5b51bb374dcdf",
+    "bytes": 2499
+  },
+  "runner_boundary_index_ref": {
+    "path": "/private/tmp/therese-c17-test-runner-boundary-eUIHsp/INDEX.json",
+    "sha256": "771565210b1ab41ca7e5a43c89fa63a034c57872515a698a12161e47adfe11b7",
+    "bytes": 5567
+  },
+  "identity_registry_ref": {
+    "path": "/private/tmp/therese-c17-root-fresh14-controls-ZNqqLhtv/identity-registry.json",
+    "sha256": "182aab332085dc1bccec049e3dfb22e4ff7e9c5d1e43752791a690ed8f63af10",
+    "bytes": 1103
+  },
+  "gpu_observation_ref": {
+    "path": "/private/tmp/therese-c17-wrapper-canary-ea92e9f2c3a9485a88dc906c302f42ff/proofs/system-profiler-displays.raw",
+    "sha256": "92d6e897ef52659540e9497649283da5bd4ff4c443c5d0d07f50bbb37d5bc4d0",
+    "bytes": 186
+  },
+  "gpu_observation_historical_only_not_native_qualification": true,
+  "pure_replay_ref": {
+    "path": "/private/tmp/therese-c17-root-v10-71-replay-v3-zRFPBqd5/receipt.json",
+    "sha256": "c0864b435265a4c485c78837207184d3964e966689eb97785fe3ab4ff9e3f8e5",
+    "bytes": 68793
+  },
+  "builder_proposal_index_ref": {
+    "path": "/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/INDEX.json",
+    "sha256": "e135223b023a771e3080f7ecb280ad350098783afbeeb5133d3221b6880ed7e6",
+    "bytes": 14704
+  },
+  "profile_derivation_pure_ref": {
+    "path": "/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/proofs/pure-bc7q7o5k/receipt.json",
+    "sha256": "3bc4cf56a109688d4c9c4dfd2b977c26ef2d88f4b06455a96083323d19eb3fb2",
+    "bytes": 10863
+  },
+  "chrome_qa_copy_ref": {
+    "path": "/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/v3-receipt.json",
+    "sha256": "f97793cb43454051da734685185cb5d4e5b5ffbabc516580287195ef3d32993c",
+    "bytes": 17160
+  },
+  "chrome_spctl_assessment_ref": {
+    "path": "/private/tmp/therese-c17-chrome-policy-assess-WyJvs5Z0/receipt.json",
+    "sha256": "92dbaaed5278671635b2a0d35f8cb4362ea99b589f0892a180c512fd48932c44",
+    "bytes": 1346
+  },
+  "root8_diagnostic_ref": {
+    "path": "/private/tmp/therese-c17-root8-system-diagnostic-wFhTKOw6/receipt.json",
+    "sha256": "ca8b417a39d68cda55eea22694806590d2c3999eefd0b187c82654725beee05a",
+    "bytes": 1403
+  },
+  "rpc_diagnostic_index_ref": {
+    "path": "/private/tmp/therese-c17-rpc-cause-observability-NRYrmF/INDEX.json",
+    "sha256": "604e4e02062dd37cafbf9e67b2545b7697bad70a7aeac2825598cefaa63d7596",
+    "bytes": 6675
+  },
+  "rpc_diagnostic_origins_ref": {
+    "path": "/private/tmp/therese-c17-rpc-cause-observability-NRYrmF/ORIGINS.json",
+    "sha256": "6b1a49683e195f6f35d7456027ca3b03d0d6956c3d220eb3f9b7db94c4ab4846",
+    "bytes": 6591
+  },
+  "rpc_diagnostic_helper_ref": {
+    "path": "/private/tmp/therese-c17-rpc-cause-observability-NRYrmF/source/rpc_diagnostics.py",
+    "sha256": "ae86d9b538429ca2f168cc386ea7a6e4d05ddad4e8b9f926a29dfbb4f5533058",
+    "bytes": 6826
+  },
+  "rpc_diagnostic_pure_receipt_ref": {
+    "path": "/private/tmp/therese-c17-rpc-cause-pure-root-tLe4Fm0P/receipt.json",
+    "sha256": "e54ec67ce25f22ff88468a9eae2cf9fd7fdaf4e460b3de3057160b264bd75855",
+    "bytes": 11392
+  },
+  "independent_static_review_ref": {
+    "path": "/private/tmp/therese-c17-wrapper14-static-controls-v8N7I1yV/INDEX.json",
+    "sha256": "a2e4955e798ac3a62bc0ba3e2780dec34ce34a3b65b55dac62c65142e1ea257d",
+    "bytes": 4069
+  },
+  "independent_static_review_received": true,
+  "preparation_script_ref": {
+    "path": "/private/tmp/therese-c17-root-fresh14-controls-ZNqqLhtv/prepare-authority.mjs",
+    "sha256": "88223ba8c8b735882c2f1ca6badf2af4e54439a79c59505cedf0f72c1b319689",
+    "bytes": 5570
+  },
+  "authority_is_exact_next_external_preparation_tool_not_this_JSON": true,
+  "native_runtime_GO_still_required": true,
+  "FULL": false,
+  "release": false,
+  "profile_derivation_pure_ref_is_transcription_not_raw": false,
+  "independent_MAIN_pure_test_observation": {
+    "tool_chunk": "16fa28",
+    "initial_tool_chunk": "802797",
+    "tests": 23,
+    "exit_code": 0,
+    "sources_count": 18,
+    "sources_unchanged": true,
+    "forbidden_attempts": 0,
+    "G1_imported": false,
+    "native_executed": false,
+    "output_not_fabricated_or_written_here": true
+  },
+  "historical_template_ref": {
+    "path": "/private/tmp/therese-c17-root-fresh11-controls-5eCuk7hB/prepare-go.json",
+    "sha256": "17382f10805491b8e73401533392e377ef204309fc6ea971f1196ecdb0e40c9f",
+    "bytes": 5071
+  },
+  "historical_template_not_authority": true
+}

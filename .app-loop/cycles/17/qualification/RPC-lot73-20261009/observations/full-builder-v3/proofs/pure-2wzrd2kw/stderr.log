@@ -1,0 +1,65 @@
+test_all_derived_executables_have_origin_and_node_two_sources (test_builder.BuilderTests.test_all_derived_executables_have_origin_and_node_two_sources) ... ok
+test_author_as_executor_refused (test_builder.BuilderTests.test_author_as_executor_refused) ... ok
+test_business_environment_exact_common_blueprint (test_builder.BuilderTests.test_business_environment_exact_common_blueprint) ... ok
+test_chrome_body_mutation_refused (test_builder.BuilderTests.test_chrome_body_mutation_refused) ... ok
+test_chrome_expired_signature_refused (test_builder.BuilderTests.test_chrome_expired_signature_refused) ... ok
+test_chrome_extra_file_refused (test_builder.BuilderTests.test_chrome_extra_file_refused) ... ok
+test_chrome_hardlink_refused (test_builder.BuilderTests.test_chrome_hardlink_refused) ... ok
+test_chrome_is_explicit_copy (test_builder.BuilderTests.test_chrome_is_explicit_copy) ... ok
+test_chrome_mode_refused (test_builder.BuilderTests.test_chrome_mode_refused) ... ok
+test_chrome_other_bundle_refused (test_builder.BuilderTests.test_chrome_other_bundle_refused) ... ok
+test_chrome_profile_parent_requirement_and_reversible_g1_port (test_builder.BuilderTests.test_chrome_profile_parent_requirement_and_reversible_g1_port) ... ok
+test_chrome_signature_failure_refused (test_builder.BuilderTests.test_chrome_signature_failure_refused) ... ok
+test_chrome_tree_all_1339_synthetic_entries (test_builder.BuilderTests.test_chrome_tree_all_1339_synthetic_entries) ... ok
+test_chromium_tmpdir_actual_g1_guard_mutants (test_builder.BuilderTests.test_chromium_tmpdir_actual_g1_guard_mutants) ... ok
+test_chromium_tmpdir_each_of_fourteen_names_admitted_only_with_own_value (test_builder.BuilderTests.test_chromium_tmpdir_each_of_fourteen_names_admitted_only_with_own_value) ... ok
+test_chromium_tmpdir_fourteen_closed_rows (test_builder.BuilderTests.test_chromium_tmpdir_fourteen_closed_rows) ... ok
+test_chromium_tmpdir_only_validate_environment_changed (test_builder.BuilderTests.test_chromium_tmpdir_only_validate_environment_changed) ... ok
+test_diff_ledger_covers_final_modified_definitions (test_builder.BuilderTests.test_diff_ledger_covers_final_modified_definitions) ... ok
+test_direct_node_context_targets_qa_not_personal_repo (test_builder.BuilderTests.test_direct_node_context_targets_qa_not_personal_repo) ... ok
+test_exact_ref_rehash (test_builder.BuilderTests.test_exact_ref_rehash) ... ok
+test_exact_seven_identity_anchors_retained (test_builder.BuilderTests.test_exact_seven_identity_anchors_retained) ... ok
+test_extra_ref_key_refused (test_builder.BuilderTests.test_extra_ref_key_refused) ... ok
+test_fifteen_actual_blueprint_descriptors (test_builder.BuilderTests.test_fifteen_actual_blueprint_descriptors) ... ok
+test_fourteen_chrome_contexts_no_birth (test_builder.BuilderTests.test_fourteen_chrome_contexts_no_birth) ... ok
+test_g1_uuid_only_and_closed_flags (test_builder.BuilderTests.test_g1_uuid_only_and_closed_flags) ... ok
+test_git_body_mutation_refused (test_builder.BuilderTests.test_git_body_mutation_refused) ... ok
+test_git_hardlink_refused (test_builder.BuilderTests.test_git_hardlink_refused) ... ok
+test_git_mode_mutation_refused (test_builder.BuilderTests.test_git_mode_mutation_refused) ... ok
+test_git_other_raw_ref_refused (test_builder.BuilderTests.test_git_other_raw_ref_refused) ... ok
+test_git_raw_tree_blobs_verified (test_builder.BuilderTests.test_git_raw_tree_blobs_verified) ... ok
+test_git_wrong_requested_head_refused (test_builder.BuilderTests.test_git_wrong_requested_head_refused) ... ok
+test_guarded_no_process_socket_import (test_builder.BuilderTests.test_guarded_no_process_socket_import) ... ok
+test_head_not_inferred_from_old_definition (test_builder.BuilderTests.test_head_not_inferred_from_old_definition) ... ok
+test_historical_b1760_raw_never_emitted_in_round (test_builder.BuilderTests.test_historical_b1760_raw_never_emitted_in_round) ... ok
+test_identical_actors_refused (test_builder.BuilderTests.test_identical_actors_refused) ... ok
+test_identity_b_distinct_actor (test_builder.BuilderTests.test_identity_b_distinct_actor) ... ok
+test_identity_logical_physical (test_builder.BuilderTests.test_identity_logical_physical) ... ok
+test_missing_authority_refuses_before_allocation (test_builder.BuilderTests.test_missing_authority_refuses_before_allocation) ... ok
+test_personal_source_refused (test_builder.BuilderTests.test_personal_source_refused) ... ok
+test_physical_campaign_mismatch_refused (test_builder.BuilderTests.test_physical_campaign_mismatch_refused) ... ok
+test_port_mutations_refused (test_builder.BuilderTests.test_port_mutations_refused) ... ok
+test_prepare_has_no_legacy_launch_or_git (test_builder.BuilderTests.test_prepare_has_no_legacy_launch_or_git) ... ok
+test_prepare_script_true_body_synthetic (test_builder.BuilderTests.test_prepare_script_true_body_synthetic) ... ok
+test_profiles_are_unmodified (test_builder.BuilderTests.test_profiles_are_unmodified) ... ok
+test_pth_guard_exact_set_before_allocation (test_builder.BuilderTests.test_pth_guard_exact_set_before_allocation) ... ok
+test_python_definitions_all_parse_no_import (test_builder.BuilderTests.test_python_definitions_all_parse_no_import) ... ok
+test_real_calibrate_wrapper_four_rpc_calls_match (test_builder.BuilderTests.test_real_calibrate_wrapper_four_rpc_calls_match) ... ok
+test_ref_symlink_refused (test_builder.BuilderTests.test_ref_symlink_refused) ... ok
+test_rendered_g1_chrome_parent_parameter_and_web_exclusion (test_builder.BuilderTests.test_rendered_g1_chrome_parent_parameter_and_web_exclusion)
+Exécute la fonction sandbox réellement rendue, sans import G1/OS. ... ok
+test_rpc_contract_reader_derived_only (test_builder.BuilderTests.test_rpc_contract_reader_derived_only) ... ok
+test_runtime_rpc_plan_not_fabricated (test_builder.BuilderTests.test_runtime_rpc_plan_not_fabricated) ... ok
+test_source_and_output_pins_immutable (test_builder.BuilderTests.test_source_and_output_pins_immutable) ... ok
+test_source_checkout_round_join (test_builder.BuilderTests.test_source_checkout_round_join) ... ok
+test_species_are_definitions_only (test_builder.BuilderTests.test_species_are_definitions_only) ... ok
+test_sql_paths_fresh_qa_and_oracles_not_changed (test_builder.BuilderTests.test_sql_paths_fresh_qa_and_oracles_not_changed) ... ok
+test_uuid_existing_preimage_refused (test_builder.BuilderTests.test_uuid_existing_preimage_refused) ... ok
+test_vite_anchor_change_refused (test_builder.BuilderTests.test_vite_anchor_change_refused) ... ok
+test_vite_config_from_source_not_old_repo (test_builder.BuilderTests.test_vite_config_from_source_not_old_repo) ... ok
+test_wrong_digest_refused (test_builder.BuilderTests.test_wrong_digest_refused) ... ok
+
+----------------------------------------------------------------------
+Ran 59 tests in 1.159s
+
+OK

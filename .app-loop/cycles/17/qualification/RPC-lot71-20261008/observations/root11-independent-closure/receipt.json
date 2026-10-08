@@ -1,0 +1,255 @@
+{
+  "schema": "c17-independent-root11-closure-analysis-v1",
+  "author": "/root/cycle17_gate_review",
+  "qa_root": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3",
+  "performed_at": "2026-10-08T21:11:21.952069+00:00",
+  "scope": "read_only_analysis_not_runtime_admission",
+  "runtime_executed_by_reviewer": false,
+  "FULL": false,
+  "release": false,
+  "native_canary_qualified": false,
+  "refs": [
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/wrapper-canary-result.json",
+      "sha256": "40534457f99a62dba89a0b8dc9ad91eb215f23d8f0dbc1ba9ce3def9e0239919",
+      "bytes": 2778
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/authorization/source-refs.json",
+      "sha256": "3040d205b7a0e009eb02f3f693f9e699e79a0cf2bc304a1bac63a4b827067ddf",
+      "bytes": 27735
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/binding.json",
+      "sha256": "f4b697a53c4c2938636f3a66cbf839b062a57047707a921bb0d27add22d694f2",
+      "bytes": 428701
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/decision.json",
+      "sha256": "6f8789266fa3a8dcaf574dfbac52409e824ad9cba830eaf92b3046e06f7f4b65",
+      "bytes": 18622
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/g1/runtime_session.py",
+      "sha256": "f127fc34d39549fead6897f4ab2953e2dca1e9820c7aac93532d3f2d7ff4832d",
+      "bytes": 186114
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/source/session_rpc_adapter.py",
+      "sha256": "b495f590fcde816529ae050565540183b3f380ed2f7acc715a382771a325448b",
+      "bytes": 22374
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/readiness.json",
+      "sha256": "f41136bdd1951ed37560f2b4b4e0751322910634e75dfa7b1597e3b4ad314915",
+      "bytes": 1850
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/output/calibrate.stderr",
+      "sha256": "f6acfdac1f74a8d1662bdeea5c02a55a176d78741c85cae717eff7d4edd09926",
+      "bytes": 2118
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/session-close-1.json",
+      "sha256": "69a588307a593a12c33b89ef50f5643a25353395799649fb0dc22eaab5b07e64",
+      "bytes": 251220
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/session-close-1.pre-restore.json",
+      "sha256": "a09fc9fafbaecdc904a41e037760c8d7ee8a83abe8107cd0847120d66d4dc390",
+      "bytes": 250087
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/session-stop-services-1.json",
+      "sha256": "3deb1df1500773e07588e50f443a641c0347f0465cb203daa842efcc1f4a8902",
+      "bytes": 254458
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/ports-absence-2.json",
+      "sha256": "d63507ed461412546fdcadd0c8ead9c071738767b4f4510c83c1178e9400ac95",
+      "bytes": 7812
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/ports-absence-3.json",
+      "sha256": "58e3e11e67c433846aa81ad70617ad2061bb32ed500323eec2e90487a4931bac",
+      "bytes": 7814
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/calibrate/receipt.json",
+      "sha256": "426f25c8f34b77c1c03e60202192d1f06a6941844fef49888fb42533d468d2ad",
+      "bytes": 314580
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/backend/receipt.json",
+      "sha256": "7fab2daef96579726a357ae422aaffff9b65197347687034248cffe159701f87",
+      "bytes": 318866
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/vite/receipt.json",
+      "sha256": "be1a8f2ef9214402e7a3ee79c2ae733abe67618e6b5d042daf4c7337bb9ad107",
+      "bytes": 319073
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/aux-chrome-rpc-all-runtime_ui-visual_capture-network_capture/receipt.json",
+      "sha256": "622015a931189b17f270fd8975f55e5eabf4b63983c0ec67d4c803e4754ddcaa",
+      "bytes": 323552
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/aux-chrome-rpc-all-runtime_ui-visual_capture-network_capture/service-start.json",
+      "sha256": "cf03f5ad6cf0482893dcb36320ea14341e6be1169751066b3bb2466dd8888647",
+      "bytes": 7031
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/auxiliary/aux-chrome-rpc-all-runtime_ui-visual_capture-network_capture/stdout.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/auxiliary/aux-chrome-rpc-all-runtime_ui-visual_capture-network_capture/stderr.log",
+      "sha256": "8cf2a28b16fd7c75e801705e57df7d224c2d0bb7110d6804363423d858f224b7",
+      "bytes": 2876
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/test-runner-controls.json",
+      "sha256": "01aca274e5e1e9a46034e732a3de638f58b3d442b63da7008619315a2a440971",
+      "bytes": 2616
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/logs-rpc/logs-controls.json",
+      "sha256": "ec4da45c5ef0e1f98807e359751ab38c07c5d32e6a202ae7ffa10ef44bfb6396",
+      "bytes": 716
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/logs-rpc/therese-temoin.log",
+      "sha256": "b9b5425d5fff43ff57d871c0d09f09130045d69e0ae080390e320333e6a0fea8",
+      "bytes": 752
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/pytest-positive.xml",
+      "sha256": "889095cc9d9737e3aa58874ad147f027fb4cc4e66469a21d7ad23c6269c7a6c6",
+      "bytes": 647
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/pytest-negative.xml",
+      "sha256": "1bd90b6bab7843a951e993c025c89b6641fac1905af2178c0080412c3afd6357",
+      "bytes": 326
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/vitest-positive.xml",
+      "sha256": "2cba55fc2fc8c25ec2edbbccc6143d19d6c149274b92129896389b8f08fe949c",
+      "bytes": 710
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/vitest-negative.xml",
+      "sha256": "8c42aa038843d22bc8878fa6fdc29668ce2aaaca31464ff4b0a32ee8eff61e1b",
+      "bytes": 471
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/listener-observation-1.json",
+      "sha256": "d43c46225d637d8d6241977473f1844b6e090d1ac348ad3f27d12689e9f186e0",
+      "bytes": 4278
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/listener-observation-2.json",
+      "sha256": "ed54db5055de4b17a20ab7f6b2f9693108b656f93d99700a6463cbb725765adb",
+      "bytes": 4295
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/listener-observation-3.json",
+      "sha256": "39f6f0d43bf26ce825df2d51cadfa31ff0f7535c454c7c2964f897e2303d924c",
+      "bytes": 4292
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/listener-observation-4.json",
+      "sha256": "fc896b132c82c53add6a5796a28aa54fc0f8b8283ed17f469ce8e9ef89d78946",
+      "bytes": 4278
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/listener-observation-5.json",
+      "sha256": "95f02393fa83c83a31ec110a8e9f6590b804d10ed275d43d25b7ffd536396e05",
+      "bytes": 4291
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/listener-observation-6.json",
+      "sha256": "3f16701f59226365db06e200c122e15b175a1712fd9d1460f2f605451abbc36b",
+      "bytes": 4277
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/ack/rpc-all-logs-28fe1bb346eed0da217eb5a25745aa4f.json",
+      "sha256": "8bbd92130a84a609a3c002dca9efe18249324bc74953e22bd9adc26ae35879c2",
+      "bytes": 2317
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/ack/rpc-all-runtime_ui-visual_capture-network_capture-5ce2f6e238c5681d0972ab34446191f1.json",
+      "sha256": "5bc1eaef898ca3d3f6761f6468171e9067789d0b96480bee1e47b0aa986d1f2a",
+      "bytes": 1905
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/ack/rpc-all-test_runner-4cf75d08bf693aa25635581dc5043ed2.json",
+      "sha256": "c11f9869785b79810674b6b2b609186e16fdadc01128e155b2e2138f6d83ee41",
+      "bytes": 2366
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/ack/rpc-test-pytest-negative-d59a2891221d0d8b817e58e9cc17d7c5.json",
+      "sha256": "c399db7f74ddc60bd0d654c6293fc1c4a896270ad61c3c1f248de98c317b6c70",
+      "bytes": 2415
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/ack/rpc-test-pytest-positive-e88c179dfcfd95fb8789d451442fa533.json",
+      "sha256": "884c6425463641564b304157ea018839022acdff6bd0b92d8bbeb8d7d53e1528",
+      "bytes": 2416
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/ack/rpc-test-vitest-negative-ac2297ac8c3b9acb52710dc160f322dc.json",
+      "sha256": "f5edc0277fdf997edf63ce5cb608bcdb30f7f338c290fb13f1ba6a3f051f4b97",
+      "bytes": 2415
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/ack/rpc-test-vitest-positive-b91b7aee1ca64279e8827a49dfb37171.json",
+      "sha256": "1ce851286262d6e1de8c3ba004fa169da76b9715f9c107a18ce45e06f9df14c9",
+      "bytes": 2415
+    }
+  ],
+  "source_refs_rehashed": 79,
+  "source_mismatches": [],
+  "native_physical_ref_checks": 218,
+  "native_physical_ref_mismatches": [],
+  "hardlink_pairs_checked": 34,
+  "hardlink_pair_failures": [],
+  "signals_unique": 21,
+  "signals_birth_uid_pgid_role_joined": 21,
+  "service_final_port_scans": 12,
+  "final_port_scans_two_by_three_per_receipt": true,
+  "cleanup_seconds": {
+    "chrome": 3.7697289579955395,
+    "services": 0.9397572500165552,
+    "session": 0.7399079169845209
+  },
+  "original_flags_preserved": {
+    "canary_passed": false,
+    "owned_shutdown_proved": false,
+    "services_clean": false,
+    "session_clean": false,
+    "stage_raw_stable": false,
+    "log_stability_tainted": true
+  },
+  "cdp_window_analysis": {
+    "launched_lsof_identities": 106,
+    "first_capture": "2026-10-08T20:59:40.634624+00:00",
+    "last_capture": "2026-10-08T20:59:45.581649+00:00",
+    "chrome_started_monotonic": 214294.5689705,
+    "cleanup_started_monotonic": 214301.120439625,
+    "cdp_deadline_monotonic_recorded": false,
+    "per_call_global_scan_elapsed_recorded": false,
+    "conclusion": "not_starved_before_first_listener_scan; global_scan_cost_possible_not_measured; exact_CDP_unavailability_cause_not_proved",
+    "paired_observation_cycles_inferred": 53
+  },
+  "limitations": [
+    "Observed attributed process family only; no hostile/exhaustive child attribution claim",
+    "Signals checked from existing receipts, no current process/syscall observed by reviewer",
+    "Chrome exit -9 is controller SIGKILL; not spontaneous crash",
+    "53 paired scan cycles inferred from 106 attributed lsof identities and code; individual failed-CDP raw scans not saved",
+    "Original final flags remain false/tainted; physical closure does not qualify FULL/A-B/release",
+    "Counter totals include entire campaign and cleanup, not exclusive CDP five seconds"
+  ]
+}

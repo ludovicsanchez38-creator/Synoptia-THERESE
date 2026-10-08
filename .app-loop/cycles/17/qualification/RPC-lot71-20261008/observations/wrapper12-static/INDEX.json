@@ -1,0 +1,24 @@
+{
+  "schema": "c17-wrapper12-static-control-preparation-v1",
+  "status": "prepared_read_only_not_executed",
+  "actor": "/root/environment_routes",
+  "future_root": "/private/tmp/therese-c17-wrapper-canary-9818b6b4163e451892dbd3956e1bb492",
+  "builder_plan_index_ref": {"path": "/private/tmp/therese-c17-wrapper12-metadata-parent-MtcoJZ/PLAN-INDEX.json", "sha256": "e7ab1ad86f5ba0dde5dde38bb2feeb3dd31b1d53d18981ac3a9d34aa29f12a15", "bytes": 4788},
+  "preimage_ref": {"path": "/private/tmp/therese-c17-root11-static-controls-v5-CWh0zu/verify-prepared-wrapper.mjs", "sha256": "2b1be55655a6db0dbbb96dd0726cf5317672487de62babe373eb012fb49e9840", "bytes": 25610},
+  "expected_preparation_only": true,
+  "expected_sources": 79,
+  "expected_core_copies": 18,
+  "expected_overlay_outputs": 28,
+  "expected_chrome_descriptors": 5,
+  "expected_historical_ips_observations": 3,
+  "native_qualification": false,
+  "FULL": false,
+  "release": false,
+  "refs": [
+    {"path": "/private/tmp/therese-c17-wrapper12-static-controls-joVOhA/verify-prepared-wrapper12.mjs", "sha256": "a626e40143e0092b0928180493b5ee3b33709b3bc4f28195b9addc44d819b88f", "bytes": 27514},
+    {"path": "/private/tmp/therese-c17-wrapper12-static-controls-joVOhA/preimages/verify-prepared-wrapper-main11.mjs", "sha256": "2b1be55655a6db0dbbb96dd0726cf5317672487de62babe373eb012fb49e9840", "bytes": 25610},
+    {"path": "/private/tmp/therese-c17-wrapper12-static-controls-joVOhA/diffs/checker-forward.diff", "sha256": "cd71a8bb8f65fe226893af99173a387b45c6cafffff11b35bac1d146d1737dbb", "bytes": 9566},
+    {"path": "/private/tmp/therese-c17-wrapper12-static-controls-joVOhA/diffs/checker-inverse.diff", "sha256": "f656d5f61bcbd4be74755dd5c3cffb18596273e7d70a53634e429141c7fbec1f", "bytes": 9567},
+    {"path": "/private/tmp/therese-c17-wrapper12-static-controls-joVOhA/README.md", "sha256": "da984aa799fa49477d2ae9c76b3ef3693f1257802eee787e41893c128d2fbc26", "bytes": 1900}
+  ]
+}

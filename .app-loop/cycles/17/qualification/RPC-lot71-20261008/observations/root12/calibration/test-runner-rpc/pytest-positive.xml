@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="1" time="0.017" timestamp="2026-10-08T21:21:25.188484+00:00" hostname="device-67.home"><testcase classname="test_temoin_c17" name="test_temoin_c17" time="0.000"><failure message="assert 2 == 1">def test_temoin_c17():
+&gt;       assert (2 if os.environ.get("C17_TEST_RUNNER_DEFECT") == "1" else 1) == 1
+E       assert 2 == 1
+
+../../therese-c17-wrapper-canary-9818b6b4163e451892dbd3956e1bb492/runtime/calibration/test-runner-rpc/test_temoin_c17.py:4: AssertionError</failure></testcase></testsuite></testsuites>

@@ -1,0 +1,33 @@
+--- /private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/tests/test_wrapper14_static.py
++++ /private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/preimages/test-before-compose-body.py
+@@ -14,7 +14,6 @@
+ from pathlib import Path
+ import re
+ import subprocess
+-from types import SimpleNamespace
+ import unittest
+ from unittest.mock import patch
+ 
+@@ -262,22 +261,6 @@
+ 
+     def test_21_helpers_binding_equality_actual_body_preserved(self):
+         raw = self.qa_after
+-        source = (builder.PREP / 'coordinator/run_wrapper_canary.py').read_text()
+-        function = next(n for n in ast.parse(source).body if isinstance(n, ast.FunctionDef)
+-                        and n.name == 'compose_26_commands')
+-        namespace = {'Path': Path, 'require': builder.need, 'CHROME_JOBS': builder.JOBS,
+-                     'blueprint': SimpleNamespace(QA_SOURCE=builder.QA)}
+-        exec(compile(ast.Module([function], type_ignores=[]), '<actual-compose26-pure-body>', 'exec'), namespace)
+-        rows, *_ = self.rows()
+-        synthetic_base21 = {'synthetic-' + str(i): {'env': {'SYNTHETIC': 'no_native_launch'}} for i in range(21)}
+-        commands = namespace['compose_26_commands'](builder.FUTURE_ROOT, synthetic_base21, rows)
+-        self.assertEqual(len(commands), 26)
+-        for job, row in rows.items():
+-            self.assertEqual(commands[row['name']]['env'], row['env'])
+-            self.assertEqual(commands[row['name']]['env']['MAC_CHROMIUM_TMPDIR'], row['env']['TMPDIR'])
+-            self.assertEqual(commands[row['name']]['argv'], row['argv'])
+-            self.assertEqual(commands[row['name']]['timeout_seconds'], 50)
+-        self.assertTrue(all('MAC_CHROMIUM_TMPDIR' not in commands[name]['env'] for name in synthetic_base21))
+         self.assertIn('"env": row["env"]', raw)
+         self.assertIn('validate_environment(root, row["env"], "chrome"', raw)
+         self.assertIn('env=dict(spec["env"])', raw)

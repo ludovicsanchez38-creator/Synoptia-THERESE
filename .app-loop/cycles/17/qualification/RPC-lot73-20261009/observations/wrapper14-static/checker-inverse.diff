@@ -1,0 +1,232 @@
+--- /private/tmp/therese-c17-wrapper14-static-controls-v8N7I1yV/verify-prepared-wrapper14.mjs
++++ /private/tmp/therese-c17-wrapper14-static-controls-v8N7I1yV/preimage-main13.mjs
+@@ -4,8 +4,8 @@
+ import path from 'node:path';
+ const root=process.argv[2];
+ const need=(x,m)=>{if(!x)throw Error(m);};
+-need(root==='/private/tmp/therese-c17-wrapper-canary-187602c63a0b498a95d25c19843000a8'
+-  &&/^\/private\/tmp\/therese-c17-wrapper-canary-[a-f0-9]{32}$/.test(root),'Racine WRAPPER14 exacte requise');
++need(root==='/private/tmp/therese-c17-wrapper-canary-8612f55886284332a3ac6a7bc9615021'
++  &&/^\/private\/tmp\/therese-c17-wrapper-canary-[a-f0-9]{32}$/.test(root),'Racine WRAPPER13 exacte requise');
+ function sameRef(a,b){
+   const exact=x=>x!==null&&typeof x==='object'&&!Array.isArray(x)
+     &&Object.keys(x).sort().join(',')==='bytes,path,sha256'
+@@ -36,15 +36,15 @@
+   need(s.isFile()&&!s.isSymbolicLink()&&ownerExact&&fs.realpathSync(p)===p,'Ref non canonique ou propriétaire non admis '+p);
+   return {path:p,sha256,bytes:b.length};
+ };
+-const builderRef=ref('/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/build_fresh_wrapper.py');
+-const builderProposalIndexRef=ref('/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/INDEX.json');
++const builderRef=ref('/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/build_fresh_wrapper.py');
++const builderProposalIndexRef=ref('/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/PLAN-INDEX.json');
+ const historicalBuilderIndexRef=ref('/private/tmp/therese-c17-fresh-wrapper-builder-v10-ynPAzC/INDEX.json');
+-need(builderRef.sha256==='b2e3a75cf1a2a090087f967115c105f098b28cd602744a5d951f502277c09e02'
+-  &&builderRef.bytes===93120
+-  &&builderProposalIndexRef.sha256==='e135223b023a771e3080f7ecb280ad350098783afbeeb5133d3221b6880ed7e6'
+-  &&builderProposalIndexRef.bytes===14704
++need(builderRef.sha256==='f76830c89475c58ea63599d7633d9a5031777a0655b2c0c3a838bdea96fe5719'
++  &&builderRef.bytes===90352
++  &&builderProposalIndexRef.sha256==='0956da6b74598f64639c4dd491cdaf21378247b14316a5ac7e2084cd018529e9'
++  &&builderProposalIndexRef.bytes===4918
+   &&historicalBuilderIndexRef.sha256==='ad4cbc19f3c156f0b0d4ff2e3d36b31eccc9bda109cb18cc6c77194aefce1007'
+-  &&historicalBuilderIndexRef.bytes===8012,'Constructeur/proposition WRAPPER14 différents');
++  &&historicalBuilderIndexRef.bytes===8012,'Constructeur/proposition WRAPPER13 différents');
+ const read=p=>JSON.parse(fs.readFileSync(p));
+ const refs=new Map(),pending=[],historicalObservations=[];
+ const historicalG1ReceiptPaths=new Set([
+@@ -72,39 +72,6 @@
+       bytes:66947,kind:'pure_replay_red',source_refs:303,passed:false,errors:3}],
+ ]);
+ const archivalCrashPath='/private/tmp/therese-c17-root-close6-I9BhiHpZ/chrome25577.ips';
+-const historicalWrapper14PureOrigins=new Map([
+-  ['/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/proofs/pure-ip_4qaah/receipt.json',{
+-    sha256:'517977ab83a493bfb153355be4d4c86a4e53eab9b475ba0a24812dc0a5ae9dc1',bytes:10863,
+-    tests:23,passed:true,errors:0,exit_code:0,
+-    routes:new Map([
+-      ['/source_before/1','test'],['/source_after/1','test'],
+-    ]),
+-  }],
+-  ['/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/proofs/pure-lb53c5ys/receipt.json',{
+-    sha256:'c764bd31f06477e55ea62a0a31134324b2b28ace4b4ae3793f6299f8137b9371',bytes:8908,
+-    tests:1,passed:false,errors:1,exit_code:1,
+-    routes:new Map([
+-      ['/source_before/1','test'],['/source_after/1','test'],
+-      ['/source_before/2','runner'],['/source_after/2','runner'],
+-    ]),
+-  }],
+-]);
+-const historicalWrapper14Sources=new Map([
+-  ['test',{
+-    original:{path:'/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/tests/test_wrapper14_static.py',
+-      sha256:'1ee928ff417b04d30079375f4cda965d09f3928a0b23a909b9e94cab55b70370',bytes:15345},
+-    current:{path:'/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/tests/test_wrapper14_static.py',
+-      sha256:'0e5d6843c601f59b0e0d044d173ed1f6fe43ce71ecd14a62c8fe8f8da6cc30aa',bytes:16647},
+-    archive:'/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/preimages/test-before-compose-body.py',
+-  }],
+-  ['runner',{
+-    original:{path:'/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/run_pure.py',
+-      sha256:'2aa86648ec8adfb9fc0bb8baba85a54e9872d9b454491afdf860a222f16f4cb6',bytes:4349},
+-    current:{path:'/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/run_pure.py',
+-      sha256:'7767596480f237c2931e8d91e4a285df41e52ee54bc4de99baced1843e18e9b6',bytes:4440},
+-    archive:'/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/preimages/run_pure-before-mock-import.py',
+-  }],
+-]);
+ const pointerChild=(pointer,key)=>pointer+'/'+String(key).replace(/~/g,'~0').replace(/\//g,'~1');
+ const collect=(x,origin='direct',pointer='')=>{
+   if(Array.isArray(x))x.forEach((y,i)=>collect(y,origin,pointerChild(pointer,i)));
+@@ -177,47 +144,6 @@
+         archival_ref:archivedRef,archival_metadata:{uid:archivedStat.uid,gid:archivedStat.gid,
+           mode:archivedStat.mode,nlink:archivedStat.nlink},measured_at:new Date().toISOString(),
+         close6_receipt_provenance_claimed:false});
+-    }else if(historicalWrapper14PureOrigins.get(origin)?.routes.has(pointer)){
+-      const expectedOrigin=historicalWrapper14PureOrigins.get(origin);
+-      const expected=historicalWrapper14Sources.get(expectedOrigin.routes.get(pointer));
+-      need(sameRef(x,expected.original),'Snapshot pur historique WRAPPER14 différent');
+-      const originRef=ref(origin),receipt=read(origin);
+-      need(originRef.sha256===expectedOrigin.sha256&&originRef.bytes===expectedOrigin.bytes,
+-        'Origine du snapshot pur WRAPPER14 non exacte');
+-      need(receipt.schema==='c17-wrapper14-chromium-tmp-pure-tests-v1'
+-        &&receipt.actor==='/root/shared4_execution'
+-        &&receipt.tests===expectedOrigin.tests&&receipt.passed===expectedOrigin.passed
+-        &&receipt.errors===expectedOrigin.errors&&receipt.exit_code===expectedOrigin.exit_code
+-        &&receipt.failures===0&&receipt.skipped===0&&receipt.sources_unchanged===true
+-        &&receipt.source_before?.length===18
+-        &&JSON.stringify(receipt.source_before)===JSON.stringify(receipt.source_after)
+-        &&receipt.forbidden_attempts?.length===0&&receipt.forbidden_imports?.length===0
+-        &&receipt.G1_imported===false&&receipt.constructor_invoked===false
+-        &&receipt.native_executed===false&&receipt.profile_compiled===false
+-        &&receipt.FULL===false&&receipt.release===false,
+-        'Résultat historique WRAPPER14 modifié ou requalifié');
+-      let originalAbsent=false,currentRef=null;
+-      try{fs.lstatSync(expected.original.path);}
+-      catch(error){originalAbsent=error?.code==='ENOENT';need(originalAbsent,'Erreur stat snapshot historique');}
+-      if(!originalAbsent){
+-        currentRef=ref(expected.original.path);
+-        need(sameRef(currentRef,expected.current)&&!sameRef(currentRef,expected.original),
+-          'Chemin courant du snapshot historique non exactement changé');
+-      }
+-      const archivedStat=fs.lstatSync(expected.archive),archivedRef=ref(expected.archive);
+-      need(archivedStat.isFile()&&!archivedStat.isSymbolicLink()
+-        &&archivedStat.uid===501&&archivedStat.gid===0&&archivedStat.mode===0o100644
+-        &&archivedStat.nlink===1&&fs.realpathSync(expected.archive)===expected.archive
+-        &&archivedRef.sha256===expected.original.sha256&&archivedRef.bytes===expected.original.bytes,
+-        'Préimage physique du snapshot historique WRAPPER14 différente');
+-      collect(archivedRef,origin,pointer+'/archival');
+-      historicalObservations.push({kind:'historical_wrapper14_pure_source_archival_byte_match',
+-        origin:originRef,origin_pointer:pointer,original_ref:expected.original,
+-        original_path_absent_ENOENT:originalAbsent,current_ref:currentRef,
+-        archival_ref:archivedRef,archival_metadata:{uid:archivedStat.uid,gid:archivedStat.gid,
+-          mode:archivedStat.mode,nlink:archivedStat.nlink},
+-        historical_tests:receipt.tests,historical_passed:receipt.passed,historical_errors:receipt.errors,
+-        runtime_qualification:false,measured_at:new Date().toISOString()});
+     }else if(typeof x.path==='string'&&x.path.startsWith('/')&&/^[a-f0-9]{64}$/.test(x.sha256)&&Object.keys(x).every(k=>['path','sha256','bytes','git_blob'].includes(k))){
+       const old=refs.get(x.path);need(!old||old.sha256===x.sha256,'Pins contradictoires '+x.path+' origine='+origin+' '+JSON.stringify({old,new:x}));
+       if(!old){refs.set(x.path,x);pending.push(x);}
+@@ -257,9 +183,6 @@
+ const getconfIndexRef=ref('/private/tmp/therese-c17-getconf-dirhelper-XeZCB9/INDEX.json');
+ const chromeProposalRef=ref('/private/tmp/therese-c17-chrome-targeted-three-McWh5vFc/INDEX.json');
+ const builderProposal=read(builderProposalIndexRef.path);
+-const main13IndexRef=ref('/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/PLAN-INDEX.json');
+-const main13=read(main13IndexRef.path);
+-const wrapper14ProfileRef=ref('/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/profile/chrome.sb');
+ const chromeProposal=read(chromeProposalRef.path);
+ need(chromeV10Ref.sha256==='19808ee2cac3169e9fb8c71c24385bcbb97f924c5ed785f4651817ecaa179b0c'
+   &&chromeV10Ref.bytes===2067
+@@ -276,32 +199,14 @@
+   &&getconfIndexRef.sha256==='72a3724edd8687408184b9a0a425247f0c152a17373e602e655ef2281b66cb9c'
+   &&getconfIndexRef.bytes===2141
+   &&chromeProposalRef.sha256==='499ed6c8c75ba66857e6797728b0c1a39a2fb93bff6f96827049639195b6d966'
+-  &&main13IndexRef.sha256==='0956da6b74598f64639c4dd491cdaf21378247b14316a5ac7e2084cd018529e9'
+-  &&main13IndexRef.bytes===4918&&sameRef(main13.candidate_chrome_profile,chromeCandidateRef)
+-  &&sameRef(main13.historical_main11_builder_index,
++  &&sameRef(builderProposal.candidate_chrome_profile,chromeCandidateRef)
++  &&sameRef(builderProposal.historical_main11_builder_index,
+     ref('/private/tmp/therese-c17-wrapper-profile-three-builder-G8n4Ef/PLAN-INDEX.json'))
+-  &&sameRef(main13.historical_main12_builder_index,chromeMain12IndexRef)
+-  &&sameRef(main13.getconf_preparation_index,getconfIndexRef)
+-  &&main13.schema==='c17-wrapper13-dirhelper-static-proposal-v1'
+-  &&main13.future_root==='/private/tmp/therese-c17-wrapper-canary-8612f55886284332a3ac6a7bc9615021'
+-  &&main13.future_root_created===false&&main13.status==='prepared_static_pure_only_not_native_qualified'
+-  &&sameRef(builderProposal.builder_ref,builderRef)
+-  &&sameRef(builderProposal.profile_ref,wrapper14ProfileRef)
+-  &&wrapper14ProfileRef.sha256===chromeCandidateRef.sha256&&wrapper14ProfileRef.bytes===chromeCandidateRef.bytes
+-  &&Array.isArray(builderProposal.origin_refs)
+-  &&builderProposal.origin_refs.some(r=>sameRef(r,main13IndexRef))
+-  &&builderProposal.origin_refs.some(r=>sameRef(r,chromeCandidateRef))
+-  &&builderProposal.schema==='c17-wrapper14-chromium-tmp-static-proposal-v1'
++  &&sameRef(builderProposal.historical_main12_builder_index,chromeMain12IndexRef)
++  &&sameRef(builderProposal.getconf_preparation_index,getconfIndexRef)
++  &&builderProposal.schema==='c17-wrapper13-dirhelper-static-proposal-v1'
+   &&builderProposal.future_root===root&&builderProposal.future_root_created===false
+   &&builderProposal.status==='prepared_static_pure_only_not_native_qualified'
+-  &&builderProposal.native_executed===false&&builderProposal.construction_invoked===false
+-  &&builderProposal.G1_imported===false&&builderProposal.admission_created===false
+-  &&builderProposal.FULL===false&&builderProposal.release===false
+-  &&builderProposal.g1_only_changed_function==='validate_environment'
+-  &&builderProposal.g1_other_AST_bodies_unchanged===true&&builderProposal.profile_byte_exact===true
+-  &&builderProposal.three_historical_IPS_routes_code_unchanged===true
+-  &&builderProposal.source_refs_count_preserved===79
+-  &&builderProposal.CDP_seconds===5&&builderProposal.Chrome_startup_seconds===50&&builderProposal.cleanup_seconds===8
+   &&chromeProposal.preimage.sha256===chromeV10Ref.sha256
+   &&chromeProposal.candidate.sha256===chromeMain11Ref.sha256
+   &&chromeProposal.status==='prepared_static_only_unexecuted_profile_not_admitted',
+@@ -339,23 +244,7 @@
+   &&runtime.includes('auxiliary_parent = root / "auxiliary"')
+   &&runtime.includes('child_path(root, auxiliary_parent) == auxiliary_parent'),
+   'Paramètre G1 du parent auxiliaire Chrome absent ou dupliqué');
+-const wrapper14G1BeforeRef=ref('/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/preimages/runtime_session-before-env.py');
+-const wrapper14G1AfterRef=ref('/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/preview/runtime_session-after-env.py');
+-need(wrapper14G1BeforeRef.sha256==='355a54df40ea754541972283f14fb487dc2030036cc683752985a3360538fbe6'
+-  &&wrapper14G1BeforeRef.bytes===185723
+-  &&wrapper14G1AfterRef.sha256==='a84da2041b8ddf87e5c4d56e10dbcd717f26322cfbac2d5017fd6442c4d81ce2'
+-  &&wrapper14G1AfterRef.bytes===186477,'Préimage/preview G1 environnement différents');
+-const environmentBody=text=>{
+-  const begin='\ndef validate_environment(',end='\n\ndef validate_rpc_environment(';
+-  need(text.split(begin).length===2&&text.split(end).length===2
+-    &&text.indexOf(end)>text.indexOf(begin),'Ancres du corps environnement non uniques');
+-  return text.slice(text.indexOf(begin),text.indexOf(end));
+-};
+-need(environmentBody(runtime)===environmentBody(fs.readFileSync(wrapper14G1AfterRef.path,'utf8'))
+-  &&environmentBody(runtime)!==environmentBody(fs.readFileSync(wrapper14G1BeforeRef.path,'utf8')),
+-  'Corps G1 environnement autre que le delta ROOT14 exact');
+-collect(wrapper14G1BeforeRef);collect(wrapper14G1AfterRef);
+-need(sameRef(construction.builder_ref,builderRef),'Builder autre que WRAPPER14');
++need(sameRef(construction.builder_ref,builderRef),'Builder autre que WRAPPER13');
+ need(sameRef(authority.builder_index_ref,historicalBuilderIndexRef)
+   &&sameRef(authority.builder_proposal_index_ref,builderProposalIndexRef)
+   &&sameRef(authority.builder_ref,builderRef)
+@@ -474,22 +363,12 @@
+ for(const key of ['chrome_contract_qa_ref','chrome_contract_delta_ref','chrome_copy_fresh_before_ref','chrome_copy_fresh_after_ref','chrome_qa_copy_ref'])
+   need(JSON.stringify(go[key])===JSON.stringify(construction[key]),'GO non joint '+key);
+ const executable='/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/MacOS/Google Chrome';
+-const chromeJobs=['rpc-all-runtime_ui-visual_capture-network_capture','rpc-screen-negative',
+-  'rpc-screen-positive-visual','rpc-screen-positive-network','rpc-screen-restored'];
+-need(JSON.stringify(Object.keys(auxiliary.auxiliary_descriptors).sort())===JSON.stringify(chromeJobs.sort()),
+-  'Chrome jobs différents des cinq identités exactes');
+-for(const [job,row] of Object.entries(auxiliary.auxiliary_descriptors)){
++need(Object.keys(auxiliary.auxiliary_descriptors).length===5,'Chrome jobs autre que5');
++for(const row of Object.values(auxiliary.auxiliary_descriptors)){
+   const defaults=read(row.launch_defaults_ref.path);
+   need(row.executable===executable&&row.argv[0]===executable&&defaults.executable===executable
+     &&JSON.stringify(defaults.argv)===JSON.stringify(row.argv)&&row.port===17594
+-    &&row.profile===root+'/auxiliary/aux-chrome-'+job+'/profile'
+-    &&row.name==='aux-chrome-'+job&&row.role==='auxiliary-'+row.name&&row.job===job
+-    &&row.deadline===50,'Descripteur/defaults Chrome divergents');
+-  const tmp=root+'/auxiliary/'+row.name+'/tmp',tmpStat=fs.lstatSync(tmp);
+-  need(row.env.MAC_CHROMIUM_TMPDIR===tmp&&row.env.TMPDIR===tmp
+-    &&tmpStat.isDirectory()&&!tmpStat.isSymbolicLink()&&tmpStat.uid===501
+-    &&fs.realpathSync(tmp)===tmp,'MAC_CHROMIUM_TMPDIR/TMPDIR non QA exact Chrome');
+-
++    &&row.profile.startsWith(root+'/auxiliary/'),'Descripteur/defaults Chrome divergents');
+ }
+ const sql=read(construction.sql_contract_ref.path);
+ need(sql.head===head&&sql.round_id===path.basename(root)&&sql.root_reviewed===false&&sql.root_review_required===true,'Contrat SQL incorrect');
+@@ -515,8 +394,6 @@
+   const r=pending[i],a=ref(r.path);need(a.sha256===r.sha256&&(r.bytes===undefined||a.bytes===r.bytes),'Ref changée '+r.path);
+   if(r.path.endsWith('.json')&&r.path!==sql.historical_contract_definition.path)collect(read(r.path),r.path);
+ }
+-need(historicalObservations.filter(o=>o.kind==='historical_wrapper14_pure_source_archival_byte_match').length===6,
+-  'Six observations before/after des trois seuls snapshots historiques absentes');
+ for(const name of ['binding.json','decision.json','runtime/readiness.json','runtime/pile-reprise.json','runtime/services-running.json','wrapper-canary-result.json'])need(!fs.existsSync(root+'/'+name),'État natif prématuré '+name);
+ need(ref(root+'/g1/web.sb').sha256==='51ff2e21500393704ea8709fb9bd177dc1f88793d1e92d09c68be70d905807ff'
+   &&ref(root+'/g1/chrome.sb').sha256==='2ecae3a24ec871a44827b3f712ced1ef5e84d8f778906c37b3a5b51bb374dcdf','Profils autres successeurs');

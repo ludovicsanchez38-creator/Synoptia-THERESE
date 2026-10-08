@@ -1,0 +1,66 @@
+{
+  "schema": "c17-root12-getconf-dirhelper-case-v1",
+  "diagnostic_only": true,
+  "started_at": "2026-10-08T21:34:51.192Z",
+  "completed_at": "2026-10-08T21:34:51.202Z",
+  "elapsed_ms": 8.968958,
+  "timeout_ms": 10000,
+  "max_output_bytes": 65536,
+  "profile": "main12",
+  "profile_ref": {
+    "path": "/private/tmp/therese-c17-getconf-dirhelper-XeZCB9/profiles/main12.sb",
+    "sha256": "980b12368975718d33dba1572ce94da04ca378ca827df1be10a1ed15a7104cdb",
+    "bytes": 2439
+  },
+  "key": "DARWIN_USER_DIR",
+  "executable": "/usr/bin/sandbox-exec",
+  "argv": [
+    "-D",
+    "QA_ROOT=/private/tmp/therese-c17-getconf-dirhelper-run-8a8cc69977f44172b868bc77b68b663d/qa",
+    "-D",
+    "AUXILIARY_PARENT=/private/tmp/therese-c17-getconf-dirhelper-run-8a8cc69977f44172b868bc77b68b663d/qa/auxiliary",
+    "-D",
+    "AUXILIARY_ROOT=/private/tmp/therese-c17-getconf-dirhelper-run-8a8cc69977f44172b868bc77b68b663d/qa/auxiliary/getconf-probe",
+    "-D",
+    "HOME_ROOT=/private/tmp/therese-c17-getconf-dirhelper-run-8a8cc69977f44172b868bc77b68b663d/qa/auxiliary/getconf-probe/home",
+    "-D",
+    "TMP_ROOT=/private/tmp/therese-c17-getconf-dirhelper-run-8a8cc69977f44172b868bc77b68b663d/qa/auxiliary/getconf-probe/tmp",
+    "-f",
+    "/private/tmp/therese-c17-getconf-dirhelper-XeZCB9/profiles/main12.sb",
+    "/usr/bin/getconf",
+    "DARWIN_USER_DIR"
+  ],
+  "cwd": "/private/tmp/therese-c17-getconf-dirhelper-run-8a8cc69977f44172b868bc77b68b663d/qa",
+  "qa_parameter_paths": {
+    "QA_ROOT": "/private/tmp/therese-c17-getconf-dirhelper-run-8a8cc69977f44172b868bc77b68b663d/qa",
+    "AUXILIARY_PARENT": "/private/tmp/therese-c17-getconf-dirhelper-run-8a8cc69977f44172b868bc77b68b663d/qa/auxiliary",
+    "AUXILIARY_ROOT": "/private/tmp/therese-c17-getconf-dirhelper-run-8a8cc69977f44172b868bc77b68b663d/qa/auxiliary/getconf-probe",
+    "HOME_ROOT": "/private/tmp/therese-c17-getconf-dirhelper-run-8a8cc69977f44172b868bc77b68b663d/qa/auxiliary/getconf-probe/home",
+    "TMP_ROOT": "/private/tmp/therese-c17-getconf-dirhelper-run-8a8cc69977f44172b868bc77b68b663d/qa/auxiliary/getconf-probe/tmp"
+  },
+  "environment_keys": [
+    "CFFIXED_USER_HOME",
+    "HOME",
+    "LANG",
+    "LC_ALL",
+    "PATH",
+    "TMPDIR",
+    "__CF_USER_TEXT_ENCODING"
+  ],
+  "pid": 43184,
+  "exit_code": 71,
+  "signal": null,
+  "error": null,
+  "stdout_ref": {
+    "path": "/private/tmp/therese-c17-getconf-dirhelper-run-8a8cc69977f44172b868bc77b68b663d/raw/main12-DARWIN_USER_DIR.stdout.bin",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "stderr_ref": {
+    "path": "/private/tmp/therese-c17-getconf-dirhelper-run-8a8cc69977f44172b868bc77b68b663d/raw/main12-DARWIN_USER_DIR.stderr.bin",
+    "sha256": "1e035dce2769ea65a649795dcf19f0e0affed1cfd486d46fdac973aa3ca72edf",
+    "bytes": 54
+  },
+  "stdout_never_decoded_or_printed": true,
+  "returned_path_never_opened_or_listed": true
+}

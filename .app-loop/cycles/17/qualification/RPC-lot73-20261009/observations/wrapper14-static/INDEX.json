@@ -1,0 +1,98 @@
+{
+  "schema": "c17-independent-wrapper14-static-checker-preparation-index-v1",
+  "actor": "/root/cycle17_gate_review",
+  "frozen_at_utc": "2026-10-08T22:09:53.097562+00:00",
+  "status": "prepared_readonly_review_definition_only_not_executed",
+  "future_root": "/private/tmp/therese-c17-wrapper-canary-187602c63a0b498a95d25c19843000a8",
+  "builder_proposal_index_ref": {
+    "path": "/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/INDEX.json",
+    "sha256": "e135223b023a771e3080f7ecb280ad350098783afbeeb5133d3221b6880ed7e6",
+    "bytes": 14704
+  },
+  "checker_ref": {
+    "path": "/private/tmp/therese-c17-wrapper14-static-controls-v8N7I1yV/verify-prepared-wrapper14.mjs",
+    "sha256": "20d143335b8795adc2a0ffd587a3b9865704b793f644564aee2c68c5556b2ec6",
+    "bytes": 37787
+  },
+  "checker_preimage_ref": {
+    "path": "/private/tmp/therese-c17-wrapper14-static-controls-v8N7I1yV/preimage-main13.mjs",
+    "sha256": "834caa7e1988ca2502cd4978ad3b67488c2be270a89dbc94b183b1571a2ea2f1",
+    "bytes": 29121
+  },
+  "refs": [
+    {
+      "path": "/private/tmp/therese-c17-wrapper14-static-controls-v8N7I1yV/preimage-main13.mjs",
+      "sha256": "834caa7e1988ca2502cd4978ad3b67488c2be270a89dbc94b183b1571a2ea2f1",
+      "bytes": 29121
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper14-static-controls-v8N7I1yV/verify-prepared-wrapper14.mjs",
+      "sha256": "20d143335b8795adc2a0ffd587a3b9865704b793f644564aee2c68c5556b2ec6",
+      "bytes": 37787
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper14-static-controls-v8N7I1yV/derivation-anchors.json",
+      "sha256": "df9446b95b7c6f64714f4b50da3865b1ed0d987a8925629b93d85d8860753d0c",
+      "bytes": 14123
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper14-static-controls-v8N7I1yV/checker-forward.diff",
+      "sha256": "c41b17040551f4a35533bc648129d44a0613527d920c95077145e453fec79421",
+      "bytes": 16957
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper14-static-controls-v8N7I1yV/checker-inverse.diff",
+      "sha256": "3c41b190663986bec1b892b6882fd8c48be3c558254cacc9f91e189f272da9c1",
+      "bytes": 16957
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper14-static-controls-v8N7I1yV/REVIEW.txt",
+      "sha256": "1c480d93230ed20a9b3aa960d7969ace0ec9f123fc7dee2dd84534cf5a97ddca",
+      "bytes": 2942
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper14-static-controls-v8N7I1yV/receipt.json",
+      "sha256": "1b97a8afe8faaf52488d0fc167f1257ec4cc94e39b966afdf34909f54f1f1c01",
+      "bytes": 19442
+    }
+  ],
+  "source_review_refs_count": 42,
+  "source_review_record_in": "receipt.json",
+  "replacement_anchors": 14,
+  "forward_inverse_diffs": 2,
+  "inverse_exact_to_MAIN13": true,
+  "archival_source_routes": 3,
+  "archival_source_pointers": 6,
+  "old_IPS_routes_preserved": 3,
+  "profile_unchanged_sha256": "2ecae3a24ec871a44827b3f712ced1ef5e84d8f778906c37b3a5b51bb374dcdf",
+  "historical_source_HEAD": "2d69e30c9c6dd18823ee6102271876003a6a67cc",
+  "documentary_HEAD_parent_confirmed": "d1486c2ad1d1879b1c10196fe269e16b35b85e6e",
+  "author_pure_result_read_not_replayed": {
+    "receipt_ref": {
+      "bytes": 10863,
+      "path": "/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/proofs/pure-bc7q7o5k/receipt.json",
+      "sha256": "3bc4cf56a109688d4c9c4dfd2b977c26ef2d88f4b06455a96083323d19eb3fb2"
+    },
+    "tests": 23,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0,
+    "source_pins": 18,
+    "pins_before_after_equal": true
+  },
+  "checker_executed": false,
+  "constructor_invoked": false,
+  "G1_imported": false,
+  "Node_executed": false,
+  "native_executed": false,
+  "admission_created": false,
+  "FULL": false,
+  "release": false,
+  "rounds_counted": 0,
+  "limits": [
+    "This index is a review and definition, not a root GO or native qualification.",
+    "Live79, SQL36, Git3579, Chrome options, ports and bounds unchanged.",
+    "No generic missing reference waiver; only two origin receipts and six exact pointers route to archived old sources.",
+    "Historical green and red remain historical and exact."
+  ]
+}

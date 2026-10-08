@@ -1,0 +1,31 @@
+{
+  "schema": "c17-independent-root14-closure-review-index-v1",
+  "reviewer_actor": "/root/cycle17_gate_review",
+  "scope": "readonly_actual_closure_review_only",
+  "root": "/private/tmp/therese-c17-wrapper-canary-187602c63a0b498a95d25c19843000a8",
+  "verdict": "archivable_instrument_red_finite_owned_cleanup_checked",
+  "files": [
+    {
+      "path": "/private/tmp/therese-c17-independent-root14-review-0aSe6XZd/receipt.json",
+      "sha256": "092d747d6ac74570c7eeee727e6746f8b7aa2d2c0226424798f91351f1eb35cd",
+      "bytes": 87120
+    },
+    {
+      "path": "/private/tmp/therese-c17-independent-root14-review-0aSe6XZd/CHECKED-REFS.json",
+      "sha256": "8045f1c2c7b329626a200233d9bc2ed0e8026c5d4d91868205a7127378e816be",
+      "bytes": 74677
+    },
+    {
+      "path": "/private/tmp/therese-c17-independent-root14-review-0aSe6XZd/REVIEW.md",
+      "sha256": "b9494369676deffaa573c46e6eacbaf48a8aa99f8145b5d6392bfc3c298bdebe",
+      "bytes": 3987
+    }
+  ],
+  "input_physical_ref_count": 223,
+  "physical_ref_recheck_errors": [],
+  "runtime_executed_by_reviewer": false,
+  "original_root_mutated": false,
+  "FULL": false,
+  "release": false
+}
+

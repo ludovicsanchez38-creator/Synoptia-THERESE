@@ -1,0 +1,17 @@
+E
+======================================================================
+ERROR: setUpClass (__main__.BuilderTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/therese-c17-full-physical-builder-LVOOtP/tests/test_builder.py", line 82, in setUpClass
+    cls.out = b.payloads(cls.request, cls.assets, cls.source, cls.deps, cls.chrome)
+              ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/therese-c17-full-physical-builder-LVOOtP/build_full_round.py", line 497, in payloads
+    'bundle_root': request['copied_chrome'], 'files': chrome['files'], 'tree_origin': request['chrome_tree_ref']})
+                                                                                      ~~~~~~~^^^^^^^^^^^^^^^^^^^
+KeyError: 'chrome_tree_ref'
+
+----------------------------------------------------------------------
+Ran 0 tests in 0.133s
+
+FAILED (errors=1)

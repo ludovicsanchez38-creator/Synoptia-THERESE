@@ -1,0 +1,28 @@
+{
+  "schema": "c17-wrapper-canary-live-identity-registry-v1",
+  "round_id": "therese-c17-wrapper-canary-9818b6b4163e451892dbd3956e1bb492",
+  "head": "2d69e30c9c6dd18823ee6102271876003a6a67cc",
+  "repo_head_observed": "d1486c2ad1d1879b1c10196fe269e16b35b85e6e",
+  "historical_product_source_instrument_only": true,
+  "chrome_profile_ref": {
+    "path": "/private/tmp/therese-c17-wrapper12-metadata-parent-MtcoJZ/profile/chrome.sb",
+    "sha256": "980b12368975718d33dba1572ce94da04ca378ca827df1be10a1ed15a7104cdb",
+    "bytes": 2439
+  },
+  "runner_boundary_index_ref": {
+    "path": "/private/tmp/therese-c17-test-runner-boundary-eUIHsp/INDEX.json",
+    "sha256": "771565210b1ab41ca7e5a43c89fa63a034c57872515a698a12161e47adfe11b7",
+    "bytes": 5567
+  },
+  "actors": [
+    {
+      "actor": "/root",
+      "observed_by": "Actual collaboration.list_agents immediately before this MAIN preparation",
+      "observed_at_utc": "2026-10-08T21:19:16.425Z",
+      "role": "Root orchestrateur ; aucun PID futur ou reviewer historique relabellé"
+    }
+  ],
+  "OS_qualified": false,
+  "FULL": false,
+  "release": false
+}

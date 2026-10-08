@@ -1,0 +1,77 @@
+{
+  "schema": "c17-wrapper14-checker-exact-anchors-v1",
+  "source": "/private/tmp/therese-c17-wrapper13-static-controls-rbBJ653M/verify-prepared-wrapper13.mjs",
+  "source_sha256": "834caa7e1988ca2502cd4978ad3b67488c2be270a89dbc94b183b1571a2ea2f1",
+  "edits": [
+    {
+      "label": "future root exact",
+      "before": "root==='/private/tmp/therese-c17-wrapper-canary-8612f55886284332a3ac6a7bc9615021'",
+      "after": "root==='/private/tmp/therese-c17-wrapper-canary-187602c63a0b498a95d25c19843000a8'"
+    },
+    {
+      "label": "root diagnostic",
+      "before": "'Racine WRAPPER13 exacte requise'",
+      "after": "'Racine WRAPPER14 exacte requise'"
+    },
+    {
+      "label": "builder current path",
+      "before": "const builderRef=ref('/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/build_fresh_wrapper.py');",
+      "after": "const builderRef=ref('/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/build_fresh_wrapper.py');"
+    },
+    {
+      "label": "proposal current path",
+      "before": "const builderProposalIndexRef=ref('/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/PLAN-INDEX.json');",
+      "after": "const builderProposalIndexRef=ref('/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/INDEX.json');"
+    },
+    {
+      "label": "builder/proposal pins",
+      "before": "builderRef.sha256==='f76830c89475c58ea63599d7633d9a5031777a0655b2c0c3a838bdea96fe5719'\n  &&builderRef.bytes===90352\n  &&builderProposalIndexRef.sha256==='0956da6b74598f64639c4dd491cdaf21378247b14316a5ac7e2084cd018529e9'\n  &&builderProposalIndexRef.bytes===4918",
+      "after": "builderRef.sha256==='b2e3a75cf1a2a090087f967115c105f098b28cd602744a5d951f502277c09e02'\n  &&builderRef.bytes===93120\n  &&builderProposalIndexRef.sha256==='e135223b023a771e3080f7ecb280ad350098783afbeeb5133d3221b6880ed7e6'\n  &&builderProposalIndexRef.bytes===14704"
+    },
+    {
+      "label": "pin diagnostic",
+      "before": "'Constructeur/proposition WRAPPER13 différents'",
+      "after": "'Constructeur/proposition WRAPPER14 différents'"
+    },
+    {
+      "label": "two historical pure origins and three source routes",
+      "before": "const pointerChild=(pointer,key)=>",
+      "after": "const historicalWrapper14PureOrigins=new Map([\n  ['/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/proofs/pure-ip_4qaah/receipt.json',{\n    sha256:'517977ab83a493bfb153355be4d4c86a4e53eab9b475ba0a24812dc0a5ae9dc1',bytes:10863,\n    tests:23,passed:true,errors:0,exit_code:0,\n    routes:new Map([\n      ['/source_before/1','test'],['/source_after/1','test'],\n    ]),\n  }],\n  ['/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/proofs/pure-lb53c5ys/receipt.json',{\n    sha256:'c764bd31f06477e55ea62a0a31134324b2b28ace4b4ae3793f6299f8137b9371',bytes:8908,\n    tests:1,passed:false,errors:1,exit_code:1,\n    routes:new Map([\n      ['/source_before/1','test'],['/source_after/1','test'],\n      ['/source_before/2','runner'],['/source_after/2','runner'],\n    ]),\n  }],\n]);\nconst historicalWrapper14Sources=new Map([\n  ['test',{\n    original:{path:'/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/tests/test_wrapper14_static.py',\n      sha256:'1ee928ff417b04d30079375f4cda965d09f3928a0b23a909b9e94cab55b70370',bytes:15345},\n    current:{path:'/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/tests/test_wrapper14_static.py',\n      sha256:'0e5d6843c601f59b0e0d044d173ed1f6fe43ce71ecd14a62c8fe8f8da6cc30aa',bytes:16647},\n    archive:'/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/preimages/test-before-compose-body.py',\n  }],\n  ['runner',{\n    original:{path:'/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/run_pure.py',\n      sha256:'2aa86648ec8adfb9fc0bb8baba85a54e9872d9b454491afdf860a222f16f4cb6',bytes:4349},\n    current:{path:'/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/run_pure.py',\n      sha256:'7767596480f237c2931e8d91e4a285df41e52ee54bc4de99baced1843e18e9b6',bytes:4440},\n    archive:'/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/preimages/run_pure-before-mock-import.py',\n  }],\n]);\nconst pointerChild=(pointer,key)=>"
+    },
+    {
+      "label": "strict historical snapshots before ordinary refs",
+      "before": "    }else if(typeof x.path==='string'&&x.path.startsWith('/')",
+      "after": "    }else if(historicalWrapper14PureOrigins.get(origin)?.routes.has(pointer)){\n      const expectedOrigin=historicalWrapper14PureOrigins.get(origin);\n      const expected=historicalWrapper14Sources.get(expectedOrigin.routes.get(pointer));\n      need(sameRef(x,expected.original),'Snapshot pur historique WRAPPER14 différent');\n      const originRef=ref(origin),receipt=read(origin);\n      need(originRef.sha256===expectedOrigin.sha256&&originRef.bytes===expectedOrigin.bytes,\n        'Origine du snapshot pur WRAPPER14 non exacte');\n      need(receipt.schema==='c17-wrapper14-chromium-tmp-pure-tests-v1'\n        &&receipt.actor==='/root/shared4_execution'\n        &&receipt.tests===expectedOrigin.tests&&receipt.passed===expectedOrigin.passed\n        &&receipt.errors===expectedOrigin.errors&&receipt.exit_code===expectedOrigin.exit_code\n        &&receipt.failures===0&&receipt.skipped===0&&receipt.sources_unchanged===true\n        &&receipt.source_before?.length===18\n        &&JSON.stringify(receipt.source_before)===JSON.stringify(receipt.source_after)\n        &&receipt.forbidden_attempts?.length===0&&receipt.forbidden_imports?.length===0\n        &&receipt.G1_imported===false&&receipt.constructor_invoked===false\n        &&receipt.native_executed===false&&receipt.profile_compiled===false\n        &&receipt.FULL===false&&receipt.release===false,\n        'Résultat historique WRAPPER14 modifié ou requalifié');\n      let originalAbsent=false,currentRef=null;\n      try{fs.lstatSync(expected.original.path);}\n      catch(error){originalAbsent=error?.code==='ENOENT';need(originalAbsent,'Erreur stat snapshot historique');}\n      if(!originalAbsent){\n        currentRef=ref(expected.original.path);\n        need(sameRef(currentRef,expected.current)&&!sameRef(currentRef,expected.original),\n          'Chemin courant du snapshot historique non exactement changé');\n      }\n      const archivedStat=fs.lstatSync(expected.archive),archivedRef=ref(expected.archive);\n      need(archivedStat.isFile()&&!archivedStat.isSymbolicLink()\n        &&archivedStat.uid===501&&archivedStat.gid===0&&archivedStat.mode===0o100644\n        &&archivedStat.nlink===1&&fs.realpathSync(expected.archive)===expected.archive\n        &&archivedRef.sha256===expected.original.sha256&&archivedRef.bytes===expected.original.bytes,\n        'Préimage physique du snapshot historique WRAPPER14 différente');\n      collect(archivedRef,origin,pointer+'/archival');\n      historicalObservations.push({kind:'historical_wrapper14_pure_source_archival_byte_match',\n        origin:originRef,origin_pointer:pointer,original_ref:expected.original,\n        original_path_absent_ENOENT:originalAbsent,current_ref:currentRef,\n        archival_ref:archivedRef,archival_metadata:{uid:archivedStat.uid,gid:archivedStat.gid,\n          mode:archivedStat.mode,nlink:archivedStat.nlink},\n        historical_tests:receipt.tests,historical_passed:receipt.passed,historical_errors:receipt.errors,\n        runtime_qualification:false,measured_at:new Date().toISOString()});\n    }else if(typeof x.path==='string'&&x.path.startsWith('/')"
+    },
+    {
+      "label": "preserved MAIN13 chain and local unchanged profile",
+      "before": "const builderProposal=read(builderProposalIndexRef.path);",
+      "after": "const builderProposal=read(builderProposalIndexRef.path);\nconst main13IndexRef=ref('/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/PLAN-INDEX.json');\nconst main13=read(main13IndexRef.path);\nconst wrapper14ProfileRef=ref('/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/profile/chrome.sb');"
+    },
+    {
+      "label": "v14 proposal joined to unchanged MAIN13 profile chain",
+      "before": "  &&sameRef(builderProposal.candidate_chrome_profile,chromeCandidateRef)\n  &&sameRef(builderProposal.historical_main11_builder_index,\n    ref('/private/tmp/therese-c17-wrapper-profile-three-builder-G8n4Ef/PLAN-INDEX.json'))\n  &&sameRef(builderProposal.historical_main12_builder_index,chromeMain12IndexRef)\n  &&sameRef(builderProposal.getconf_preparation_index,getconfIndexRef)\n  &&builderProposal.schema==='c17-wrapper13-dirhelper-static-proposal-v1'\n  &&builderProposal.future_root===root&&builderProposal.future_root_created===false\n  &&builderProposal.status==='prepared_static_pure_only_not_native_qualified'\n",
+      "after": "  &&main13IndexRef.sha256==='0956da6b74598f64639c4dd491cdaf21378247b14316a5ac7e2084cd018529e9'\n  &&main13IndexRef.bytes===4918&&sameRef(main13.candidate_chrome_profile,chromeCandidateRef)\n  &&sameRef(main13.historical_main11_builder_index,\n    ref('/private/tmp/therese-c17-wrapper-profile-three-builder-G8n4Ef/PLAN-INDEX.json'))\n  &&sameRef(main13.historical_main12_builder_index,chromeMain12IndexRef)\n  &&sameRef(main13.getconf_preparation_index,getconfIndexRef)\n  &&main13.schema==='c17-wrapper13-dirhelper-static-proposal-v1'\n  &&main13.future_root==='/private/tmp/therese-c17-wrapper-canary-8612f55886284332a3ac6a7bc9615021'\n  &&main13.future_root_created===false&&main13.status==='prepared_static_pure_only_not_native_qualified'\n  &&sameRef(builderProposal.builder_ref,builderRef)\n  &&sameRef(builderProposal.profile_ref,wrapper14ProfileRef)\n  &&wrapper14ProfileRef.sha256===chromeCandidateRef.sha256&&wrapper14ProfileRef.bytes===chromeCandidateRef.bytes\n  &&Array.isArray(builderProposal.origin_refs)\n  &&builderProposal.origin_refs.some(r=>sameRef(r,main13IndexRef))\n  &&builderProposal.origin_refs.some(r=>sameRef(r,chromeCandidateRef))\n  &&builderProposal.schema==='c17-wrapper14-chromium-tmp-static-proposal-v1'\n  &&builderProposal.future_root===root&&builderProposal.future_root_created===false\n  &&builderProposal.status==='prepared_static_pure_only_not_native_qualified'\n  &&builderProposal.native_executed===false&&builderProposal.construction_invoked===false\n  &&builderProposal.G1_imported===false&&builderProposal.admission_created===false\n  &&builderProposal.FULL===false&&builderProposal.release===false\n  &&builderProposal.g1_only_changed_function==='validate_environment'\n  &&builderProposal.g1_other_AST_bodies_unchanged===true&&builderProposal.profile_byte_exact===true\n  &&builderProposal.three_historical_IPS_routes_code_unchanged===true\n  &&builderProposal.source_refs_count_preserved===79\n  &&builderProposal.CDP_seconds===5&&builderProposal.Chrome_startup_seconds===50&&builderProposal.cleanup_seconds===8\n"
+    },
+    {
+      "label": "whole real validator equality before current builder guard",
+      "before": "need(sameRef(construction.builder_ref,builderRef),'Builder autre que WRAPPER13');",
+      "after": "const wrapper14G1BeforeRef=ref('/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/preimages/runtime_session-before-env.py');\nconst wrapper14G1AfterRef=ref('/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/preview/runtime_session-after-env.py');\nneed(wrapper14G1BeforeRef.sha256==='355a54df40ea754541972283f14fb487dc2030036cc683752985a3360538fbe6'\n  &&wrapper14G1BeforeRef.bytes===185723\n  &&wrapper14G1AfterRef.sha256==='a84da2041b8ddf87e5c4d56e10dbcd717f26322cfbac2d5017fd6442c4d81ce2'\n  &&wrapper14G1AfterRef.bytes===186477,'Préimage/preview G1 environnement différents');\nconst environmentBody=text=>{\n  const begin='\\ndef validate_environment(',end='\\n\\ndef validate_rpc_environment(';\n  need(text.split(begin).length===2&&text.split(end).length===2\n    &&text.indexOf(end)>text.indexOf(begin),'Ancres du corps environnement non uniques');\n  return text.slice(text.indexOf(begin),text.indexOf(end));\n};\nneed(environmentBody(runtime)===environmentBody(fs.readFileSync(wrapper14G1AfterRef.path,'utf8'))\n  &&environmentBody(runtime)!==environmentBody(fs.readFileSync(wrapper14G1BeforeRef.path,'utf8')),\n  'Corps G1 environnement autre que le delta ROOT14 exact');\ncollect(wrapper14G1BeforeRef);collect(wrapper14G1AfterRef);\nneed(sameRef(construction.builder_ref,builderRef),'Builder autre que WRAPPER14');"
+    },
+    {
+      "label": "exact five job identities",
+      "before": "need(Object.keys(auxiliary.auxiliary_descriptors).length===5,'Chrome jobs autre que5');\nfor(const row of Object.values(auxiliary.auxiliary_descriptors)){",
+      "after": "const chromeJobs=['rpc-all-runtime_ui-visual_capture-network_capture','rpc-screen-negative',\n  'rpc-screen-positive-visual','rpc-screen-positive-network','rpc-screen-restored'];\nneed(JSON.stringify(Object.keys(auxiliary.auxiliary_descriptors).sort())===JSON.stringify(chromeJobs.sort()),\n  'Chrome jobs différents des cinq identités exactes');\nfor(const [job,row] of Object.entries(auxiliary.auxiliary_descriptors)){"
+    },
+    {
+      "label": "exact Chrome environment and directory",
+      "before": "    &&row.profile.startsWith(root+'/auxiliary/'),'Descripteur/defaults Chrome divergents');",
+      "after": "    &&row.profile===root+'/auxiliary/aux-chrome-'+job+'/profile'\n    &&row.name==='aux-chrome-'+job&&row.role==='auxiliary-'+row.name&&row.job===job\n    &&row.deadline===50,'Descripteur/defaults Chrome divergents');\n  const tmp=root+'/auxiliary/'+row.name+'/tmp',tmpStat=fs.lstatSync(tmp);\n  need(row.env.MAC_CHROMIUM_TMPDIR===tmp&&row.env.TMPDIR===tmp\n    &&tmpStat.isDirectory()&&!tmpStat.isSymbolicLink()&&tmpStat.uid===501\n    &&fs.realpathSync(tmp)===tmp,'MAC_CHROMIUM_TMPDIR/TMPDIR non QA exact Chrome');\n"
+    },
+    {
+      "label": "six exact historical pointer observations required",
+      "before": "for(const name of ['binding.json','decision.json','runtime/readiness.json'",
+      "after": "need(historicalObservations.filter(o=>o.kind==='historical_wrapper14_pure_source_archival_byte_match').length===6,\n  'Six observations before/after des trois seuls snapshots historiques absentes');\nfor(const name of ['binding.json','decision.json','runtime/readiness.json'"
+    }
+  ]
+}

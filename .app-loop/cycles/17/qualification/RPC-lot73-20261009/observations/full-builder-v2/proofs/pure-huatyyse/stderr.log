@@ -1,0 +1,26 @@
+setUpClass (test_builder.BuilderTests) ... ERROR
+
+======================================================================
+ERROR: setUpClass (test_builder.BuilderTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/therese-c17-full-physical-builder-v2-dxGPne/tests/test_builder.py", line 88, in setUpClass
+    cls.out = b.payloads(cls.request, cls.assets, cls.source, cls.deps, cls.chrome)
+              ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/therese-c17-full-physical-builder-v2-dxGPne/build_full_round.py", line 393, in payloads
+    text = derive_g1(text, request)
+  File "/private/tmp/therese-c17-full-physical-builder-v2-dxGPne/build_full_round.py", line 339, in derive_g1
+    text = once(text, chrome_anchor, chrome_port)
+  File "/private/tmp/therese-c17-full-physical-builder-v2-dxGPne/build_full_round.py", line 85, in once
+    need(text.count(before) == 1, 'Ancre non unique : ' + before[:90])
+    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/therese-c17-full-physical-builder-v2-dxGPne/build_full_round.py", line 40, in need
+    raise ValueError(message)
+ValueError: Ancre non unique :             extra.extend(["-D", key + "=" + value])
+    else:
+
+
+----------------------------------------------------------------------
+Ran 0 tests in 0.063s
+
+FAILED (errors=1)

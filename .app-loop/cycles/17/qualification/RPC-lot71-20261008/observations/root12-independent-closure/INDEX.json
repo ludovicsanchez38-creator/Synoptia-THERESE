@@ -1,0 +1,22 @@
+{
+  "schema": "c17-independent-root12-closure-review-index-v1",
+  "author": "/root/cycle17_gate_review",
+  "status": "archivable_analysis_original_native_red_preserved",
+  "refs": [
+    {
+      "path": "/private/tmp/therese-c17-independent-root12-review-86tghbyh/REVIEW.md",
+      "sha256": "e5a1ec1c8aa40062f41149f98f57db375f93a571026c0184e75855bf93cd42b8",
+      "bytes": 5056
+    },
+    {
+      "path": "/private/tmp/therese-c17-independent-root12-review-86tghbyh/receipt.json",
+      "sha256": "2b9b660fac4391f617a01f79f9092810bf845edd5db9ad19a6174ffb708f8772",
+      "bytes": 13011
+    }
+  ],
+  "raw_refs_rehashed": 36,
+  "raw_refs_unchanged": true,
+  "native_qualified": false,
+  "FULL": false,
+  "release": false
+}

@@ -1,0 +1,241 @@
+{
+  "FULL": false,
+  "G1_imported": false,
+  "actor": "/root/shared4_execution",
+  "completed_at": "2026-10-08T21:58:48.060311+00:00",
+  "constructor_invoked": false,
+  "errors": 0,
+  "exit_code": 0,
+  "failures": 0,
+  "fixture_identity": "explicit_synthetic_Paths_and_VM_and_emitter_doubles",
+  "forbidden_attempts": [],
+  "forbidden_imports": [],
+  "native_executed": false,
+  "passed": true,
+  "profile_compiled": false,
+  "release": false,
+  "schema": "c17-wrapper14-chromium-tmp-pure-tests-v1",
+  "skipped": 0,
+  "source_after": [
+    {
+      "bytes": 93120,
+      "path": "/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/build_fresh_wrapper.py",
+      "sha256": "b2e3a75cf1a2a090087f967115c105f098b28cd602744a5d951f502277c09e02"
+    },
+    {
+      "bytes": 15345,
+      "path": "/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/tests/test_wrapper14_static.py",
+      "sha256": "1ee928ff417b04d30079375f4cda965d09f3928a0b23a909b9e94cab55b70370"
+    },
+    {
+      "bytes": 4440,
+      "path": "/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/run_pure.py",
+      "sha256": "7767596480f237c2931e8d91e4a285df41e52ee54bc4de99baced1843e18e9b6"
+    },
+    {
+      "bytes": 90352,
+      "path": "/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/preimages/build_fresh_wrapper-13.py",
+      "sha256": "f76830c89475c58ea63599d7633d9a5031777a0655b2c0c3a838bdea96fe5719"
+    },
+    {
+      "bytes": 2499,
+      "path": "/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/profile/chrome.sb",
+      "sha256": "2ecae3a24ec871a44827b3f712ced1ef5e84d8f778906c37b3a5b51bb374dcdf"
+    },
+    {
+      "bytes": 185723,
+      "path": "/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/preimages/runtime_session-before-env.py",
+      "sha256": "355a54df40ea754541972283f14fb487dc2030036cc683752985a3360538fbe6"
+    },
+    {
+      "bytes": 186477,
+      "path": "/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/preview/runtime_session-after-env.py",
+      "sha256": "a84da2041b8ddf87e5c4d56e10dbcd717f26322cfbac2d5017fd6442c4d81ce2"
+    },
+    {
+      "bytes": 5051,
+      "path": "/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/diffs/builder-forward.diff",
+      "sha256": "7511ab8458f964f5a6f17d90e4ef88446b56d98c6fb452fddb62b05d85c51606"
+    },
+    {
+      "bytes": 5051,
+      "path": "/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/diffs/builder-inverse.diff",
+      "sha256": "d3e42b9699b3d429996e35c60578ba89d1a7f47ea05770ee851501bba98f4526"
+    },
+    {
+      "bytes": 1935,
+      "path": "/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/diffs/g1-forward.diff",
+      "sha256": "f352319fd8d8a3573c521203efe9faef52fa256f7a1c965d2b9778ae73d2eb26"
+    },
+    {
+      "bytes": 1935,
+      "path": "/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/diffs/g1-inverse.diff",
+      "sha256": "c576741d71ac087e6bda0d71982fb2efd8a0bfacfe008f41dab6fdc337bdfeb1"
+    },
+    {
+      "bytes": 90352,
+      "path": "/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/build_fresh_wrapper.py",
+      "sha256": "f76830c89475c58ea63599d7633d9a5031777a0655b2c0c3a838bdea96fe5719"
+    },
+    {
+      "bytes": 2499,
+      "path": "/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/profile/chrome.sb",
+      "sha256": "2ecae3a24ec871a44827b3f712ced1ef5e84d8f778906c37b3a5b51bb374dcdf"
+    },
+    {
+      "bytes": 4918,
+      "path": "/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/PLAN-INDEX.json",
+      "sha256": "0956da6b74598f64639c4dd491cdaf21378247b14316a5ac7e2084cd018529e9"
+    },
+    {
+      "bytes": 185272,
+      "path": "/private/tmp/therese-c17-rpc-integration-UctqC8UG/g1-26/runtime_session.py",
+      "sha256": "f8e9daacbb9b88b628aeefbd33ba86df45135eba571241c26d3d5721b3a4e781"
+    },
+    {
+      "bytes": 4644,
+      "path": "/private/tmp/therese-c17-rpc-integration-UctqC8UG/g1-26/runtime_launch_gate.py",
+      "sha256": "864e1994c0fe7252aef2492b498d18c5dbcb5091d9b8e29b971b4b08108c1e8c"
+    },
+    {
+      "bytes": 29220,
+      "path": "/private/tmp/therese-c17-rpc-integration-UctqC8UG/coordinator/run_wrapper_canary.py",
+      "sha256": "a91275bfa8c4733cc931dff246e6c65ed1280bea29a3d13e5d59a426c6b400d8"
+    },
+    {
+      "bytes": 4118,
+      "path": "/private/tmp/therese-c17-fresh-wrapper-builder-v8-pB5tPP/preview/chrome_contract-qa.py",
+      "sha256": "7922a13bdc239338ea9dedf37bf06ef1c91931b77a5275a2db6007d89a9a42ba"
+    }
+  ],
+  "source_before": [
+    {
+      "bytes": 93120,
+      "path": "/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/build_fresh_wrapper.py",
+      "sha256": "b2e3a75cf1a2a090087f967115c105f098b28cd602744a5d951f502277c09e02"
+    },
+    {
+      "bytes": 15345,
+      "path": "/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/tests/test_wrapper14_static.py",
+      "sha256": "1ee928ff417b04d30079375f4cda965d09f3928a0b23a909b9e94cab55b70370"
+    },
+    {
+      "bytes": 4440,
+      "path": "/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/run_pure.py",
+      "sha256": "7767596480f237c2931e8d91e4a285df41e52ee54bc4de99baced1843e18e9b6"
+    },
+    {
+      "bytes": 90352,
+      "path": "/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/preimages/build_fresh_wrapper-13.py",
+      "sha256": "f76830c89475c58ea63599d7633d9a5031777a0655b2c0c3a838bdea96fe5719"
+    },
+    {
+      "bytes": 2499,
+      "path": "/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/profile/chrome.sb",
+      "sha256": "2ecae3a24ec871a44827b3f712ced1ef5e84d8f778906c37b3a5b51bb374dcdf"
+    },
+    {
+      "bytes": 185723,
+      "path": "/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/preimages/runtime_session-before-env.py",
+      "sha256": "355a54df40ea754541972283f14fb487dc2030036cc683752985a3360538fbe6"
+    },
+    {
+      "bytes": 186477,
+      "path": "/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/preview/runtime_session-after-env.py",
+      "sha256": "a84da2041b8ddf87e5c4d56e10dbcd717f26322cfbac2d5017fd6442c4d81ce2"
+    },
+    {
+      "bytes": 5051,
+      "path": "/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/diffs/builder-forward.diff",
+      "sha256": "7511ab8458f964f5a6f17d90e4ef88446b56d98c6fb452fddb62b05d85c51606"
+    },
+    {
+      "bytes": 5051,
+      "path": "/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/diffs/builder-inverse.diff",
+      "sha256": "d3e42b9699b3d429996e35c60578ba89d1a7f47ea05770ee851501bba98f4526"
+    },
+    {
+      "bytes": 1935,
+      "path": "/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/diffs/g1-forward.diff",
+      "sha256": "f352319fd8d8a3573c521203efe9faef52fa256f7a1c965d2b9778ae73d2eb26"
+    },
+    {
+      "bytes": 1935,
+      "path": "/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/diffs/g1-inverse.diff",
+      "sha256": "c576741d71ac087e6bda0d71982fb2efd8a0bfacfe008f41dab6fdc337bdfeb1"
+    },
+    {
+      "bytes": 90352,
+      "path": "/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/build_fresh_wrapper.py",
+      "sha256": "f76830c89475c58ea63599d7633d9a5031777a0655b2c0c3a838bdea96fe5719"
+    },
+    {
+      "bytes": 2499,
+      "path": "/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/profile/chrome.sb",
+      "sha256": "2ecae3a24ec871a44827b3f712ced1ef5e84d8f778906c37b3a5b51bb374dcdf"
+    },
+    {
+      "bytes": 4918,
+      "path": "/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/PLAN-INDEX.json",
+      "sha256": "0956da6b74598f64639c4dd491cdaf21378247b14316a5ac7e2084cd018529e9"
+    },
+    {
+      "bytes": 185272,
+      "path": "/private/tmp/therese-c17-rpc-integration-UctqC8UG/g1-26/runtime_session.py",
+      "sha256": "f8e9daacbb9b88b628aeefbd33ba86df45135eba571241c26d3d5721b3a4e781"
+    },
+    {
+      "bytes": 4644,
+      "path": "/private/tmp/therese-c17-rpc-integration-UctqC8UG/g1-26/runtime_launch_gate.py",
+      "sha256": "864e1994c0fe7252aef2492b498d18c5dbcb5091d9b8e29b971b4b08108c1e8c"
+    },
+    {
+      "bytes": 29220,
+      "path": "/private/tmp/therese-c17-rpc-integration-UctqC8UG/coordinator/run_wrapper_canary.py",
+      "sha256": "a91275bfa8c4733cc931dff246e6c65ed1280bea29a3d13e5d59a426c6b400d8"
+    },
+    {
+      "bytes": 4118,
+      "path": "/private/tmp/therese-c17-fresh-wrapper-builder-v8-pB5tPP/preview/chrome_contract-qa.py",
+      "sha256": "7922a13bdc239338ea9dedf37bf06ef1c91931b77a5275a2db6007d89a9a42ba"
+    }
+  ],
+  "sources_unchanged": true,
+  "started_at": "2026-10-08T21:58:43.287568+00:00",
+  "stderr_ref": {
+    "bytes": 3134,
+    "path": "/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/proofs/pure-ip_4qaah/stderr.log",
+    "sha256": "a6e1bb5ac89aecaa9c0c9aa2ce33d31011d30b55b501c13d5151be8b5a923a41"
+  },
+  "stdout_ref": {
+    "bytes": 0,
+    "path": "/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/proofs/pure-ip_4qaah/stdout.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "test_ids": [
+    "test_wrapper14_static.Wrapper14Static.test_01_origin_builder_and_profile_byte_exact",
+    "test_wrapper14_static.Wrapper14Static.test_02_exact_root_absent_no_allocation",
+    "test_wrapper14_static.Wrapper14Static.test_03_actual_chrome_prepare_only_env_key_changes",
+    "test_wrapper14_static.Wrapper14Static.test_04_old_real_guard_refuses_added_key",
+    "test_wrapper14_static.Wrapper14Static.test_05_new_real_guard_accepts_exact_five_envs",
+    "test_wrapper14_static.Wrapper14Static.test_06_missing_key_refused",
+    "test_wrapper14_static.Wrapper14Static.test_07_other_modes_refused",
+    "test_wrapper14_static.Wrapper14Static.test_08_other_root_refused",
+    "test_wrapper14_static.Wrapper14Static.test_09_unknown_or_leaf_stage_refused",
+    "test_wrapper14_static.Wrapper14Static.test_10_wrong_value_refused_without_personal_path_read",
+    "test_wrapper14_static.Wrapper14Static.test_11_both_values_wrong_stage_path_refused",
+    "test_wrapper14_static.Wrapper14Static.test_12_synthetic_symlink_target_refused",
+    "test_wrapper14_static.Wrapper14Static.test_13_synthetic_missing_directory_refused",
+    "test_wrapper14_static.Wrapper14Static.test_14_extra_key_refused",
+    "test_wrapper14_static.Wrapper14Static.test_15_existing_constant_refusal_preserved",
+    "test_wrapper14_static.Wrapper14Static.test_16_no_global_env_set_changed",
+    "test_wrapper14_static.Wrapper14Static.test_17_only_g1_validate_environment_ast_changed",
+    "test_wrapper14_static.Wrapper14Static.test_18_non_chrome_env_without_key_unchanged",
+    "test_wrapper14_static.Wrapper14Static.test_19_anchors_changed_or_duplicate_refused",
+    "test_wrapper14_static.Wrapper14Static.test_20_builder_only_allowed_functions_and_root_changed",
+    "test_wrapper14_static.Wrapper14Static.test_21_helpers_binding_equality_actual_body_preserved",
+    "test_wrapper14_static.Wrapper14Static.test_22_sources79_and_three_historical_routes_unchanged",
+    "test_wrapper14_static.Wrapper14Static.test_23_forward_inverse_diffs_exact"
+  ],
+  "tests": 23
+}

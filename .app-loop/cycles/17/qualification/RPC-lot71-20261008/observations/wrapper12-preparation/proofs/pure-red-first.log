@@ -1,0 +1,6 @@
+Première exécution pure, avant correction du seul test de comparaison des en-têtes de diff.
+Commande : python3 -I -B -m unittest discover -s /private/tmp/therese-c17-wrapper12-metadata-parent-MtcoJZ/tests -p 'test_*.py' -v
+Ran 9 tests in 0.417s
+FAILED (failures=1), exit 1.
+test_forward_inverse_diffs_exact : le fichier diff -u portait un horodatage dans ses deux lignes d'en-tête, absent du rendu difflib attendu. Les huit autres tests étaient OK.
+Aucun profil compilé, G1 importé, service ou Chrome lancé.

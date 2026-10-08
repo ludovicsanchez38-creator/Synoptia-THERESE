@@ -1,0 +1,13 @@
+Commande : python3 -I -B -m unittest discover -s /private/tmp/therese-c17-wrapper12-metadata-parent-MtcoJZ/tests -p 'test_*.py' -v
+test_forward_inverse_diffs_exact ... ok
+test_future_root_is_old_closed_prefix_without_allocation ... ok
+test_g1_changed_anchor_refused ... ok
+test_g1_parameter_is_chrome_only_and_reversible ... ok
+test_historical_three_routes_are_archival_not_native ... ok
+test_historical_wrong_pointer_or_ref_refused ... ok
+test_profile_broadening_or_other_class_refused ... ok
+test_profile_only_one_literal_metadata_rule ... ok
+test_real_chrome_derivation_accepts_exact_profile ... ok
+Ran 9 tests in 0.363s
+OK, exit 0.
+Aucun profil compilé, G1 importé, service ou Chrome lancé.

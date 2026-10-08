@@ -1,0 +1,6 @@
+[1008/232141.143896:ERROR:third_party/crashpad/crashpad/util/mach/bootstrap.cc:65] bootstrap_check_in org.chromium.crashpad.child_port_handshake.40358.5179390.CBDHUWOQJIOUVPNF: Permission denied (1100)
+[1008/232141.144618:ERROR:third_party/crashpad/crashpad/util/file/file_io.cc:103] ReadExactly: expected 4, observed 0
+[40332:5179340:1008/232141.489121:ERROR:base/power_monitor/thermal_state_observer_mac.mm:122] ThermalStateObserverMac unable to register to power notifications. Result: 9
+[40332:5179469:1008/232141.544380:ERROR:net/dns/dns_config_service_posix.cc:138] DNS config watch failed to start.
+[40332:5179466:1008/232141.546682:ERROR:net/cert/internal/trust_store_mac.cc:773] SecItemCopyMatching error: Error Domain=NSOSStatusErrorDomain Code=-50 "paramErr: error in user parameter list" (-50)
+[40332:5179490:1008/232141.546709:FATAL:content/browser/sandbox_parameters_mac.mm:82] Check failed: . : Input/output error (5)

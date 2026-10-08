@@ -1,0 +1,267 @@
+{
+  "schema": "c17-independent-full-builders-v2-v3-preparation-review-v1",
+  "actor": "/root/cycle17_gate_review",
+  "observed_at_utc": "2026-10-08T22:14:18.579721+00:00",
+  "verdict": "favorable_preparation_only_not_constructed_not_admitted",
+  "versions": {
+    "v2": {
+      "index_ref": {
+        "path": "/private/tmp/therese-c17-full-physical-builder-v2-dxGPne/INDEX.json",
+        "sha256": "2e6fa077f923236cd1a5c87143f2fbd82f1d18f74269e5b6278c9cb825a08659",
+        "bytes": 38532
+      },
+      "local_refs": 50,
+      "definition_refs": 88,
+      "reviewed_code_diff_directions": 8,
+      "forward_and_inverse_reconstructed_exact": true,
+      "predecessor_preimages_byte_exact": true,
+      "measures": [
+        {
+          "kind": "author",
+          "receipt_ref": {
+            "bytes": 66318,
+            "path": "/private/tmp/therese-c17-full-physical-builder-v2-dxGPne/proofs/pure-093gk8e_/receipt.json",
+            "sha256": "bb15fedae1e243820d9d5847664f04cebe4e0ce9f6ee7d3288f298497f4a6100"
+          },
+          "summary": {
+            "actor": "/root/environment_routes",
+            "actor_provenance": "explicit_cli_declaration_only_not_runtime_authority",
+            "tests_run": 55,
+            "errors": [],
+            "failures": [],
+            "skipped": [],
+            "passed": true,
+            "process_or_network_calls": 0,
+            "G1_imported": false,
+            "product_imported": false,
+            "actual_round_allocated": false,
+            "FULL": false,
+            "runtime_admitted": false,
+            "release": false
+          },
+          "before_after_equal": true,
+          "source_pins": 86,
+          "raw_log_read": true,
+          "raw_stdout_ref": {
+            "bytes": 0,
+            "path": "/private/tmp/therese-c17-full-physical-builder-v2-dxGPne/proofs/pure-093gk8e_/stdout.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "raw_stderr_ref": {
+            "bytes": 6232,
+            "path": "/private/tmp/therese-c17-full-physical-builder-v2-dxGPne/proofs/pure-093gk8e_/stderr.log",
+            "sha256": "73a9c77a118f606600141a47d1c48dc99f153811b8f4c9c080e24dea3a8ac972"
+          },
+          "replayed_by_reviewer": false
+        },
+        {
+          "kind": "main",
+          "receipt_ref": {
+            "path": "/private/tmp/therese-c17-full-physical-builder-v2-dxGPne/proofs/pure-d7jzy2lq/receipt.json",
+            "sha256": "66872c25bbdee7ed80a1fc29001008a081a6683998fb3998934cce602abd956d",
+            "bytes": 66299
+          },
+          "summary": {
+            "actor": "/root",
+            "actor_provenance": "explicit_cli_declaration_only_not_runtime_authority",
+            "tests_run": 55,
+            "errors": [],
+            "failures": [],
+            "skipped": [],
+            "passed": true,
+            "process_or_network_calls": 0,
+            "G1_imported": false,
+            "product_imported": false,
+            "actual_round_allocated": false,
+            "FULL": false,
+            "runtime_admitted": false,
+            "release": false
+          },
+          "before_after_equal": true,
+          "source_pins": 86,
+          "raw_log_read": true,
+          "raw_stdout_ref": {
+            "bytes": 0,
+            "path": "/private/tmp/therese-c17-full-physical-builder-v2-dxGPne/proofs/pure-d7jzy2lq/stdout.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "raw_stderr_ref": {
+            "bytes": 6232,
+            "path": "/private/tmp/therese-c17-full-physical-builder-v2-dxGPne/proofs/pure-d7jzy2lq/stderr.log",
+            "sha256": "f50c4ea806086bae41fadbe8b0e438d8c6a46c9221d5a7944d6223134089642b"
+          },
+          "replayed_by_reviewer": false
+        }
+      ],
+      "flags": {
+        "FULL": false,
+        "runtime_enabled": false,
+        "release": false,
+        "rounds_counted": 0,
+        "admission_created": false,
+        "actual_AB_roots_created": false,
+        "source_HEAD": null
+      }
+    },
+    "v3": {
+      "index_ref": {
+        "path": "/private/tmp/therese-c17-full-physical-builder-v3-A0yyXP/INDEX.json",
+        "sha256": "67b9dffbf6f872a393096aadf8e9b4fa0e807963fc4cba7805dca10a2f495c38",
+        "bytes": 46523
+      },
+      "local_refs": 75,
+      "definition_refs": 88,
+      "reviewed_code_diff_directions": 6,
+      "forward_and_inverse_reconstructed_exact": true,
+      "predecessor_preimages_byte_exact": true,
+      "measures": [
+        {
+          "kind": "author",
+          "receipt_ref": {
+            "bytes": 66664,
+            "path": "/private/tmp/therese-c17-full-physical-builder-v3-A0yyXP/proofs/pure-2wzrd2kw/receipt.json",
+            "sha256": "9f05193bfb8d037c5dc0d6062fd8c44afb344c771c3604779e18dcf73d31f5d0"
+          },
+          "summary": {
+            "actor": "/root/environment_routes",
+            "actor_provenance": "explicit_cli_declaration_only_not_runtime_authority",
+            "tests_run": 59,
+            "errors": [],
+            "failures": [],
+            "skipped": [],
+            "passed": true,
+            "process_or_network_calls": 0,
+            "G1_imported": false,
+            "product_imported": false,
+            "actual_round_allocated": false,
+            "FULL": false,
+            "runtime_admitted": false,
+            "release": false
+          },
+          "before_after_equal": true,
+          "source_pins": 86,
+          "raw_log_read": true,
+          "raw_stdout_ref": {
+            "bytes": 0,
+            "path": "/private/tmp/therese-c17-full-physical-builder-v3-A0yyXP/proofs/pure-2wzrd2kw/stdout.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "raw_stderr_ref": {
+            "bytes": 6802,
+            "path": "/private/tmp/therese-c17-full-physical-builder-v3-A0yyXP/proofs/pure-2wzrd2kw/stderr.log",
+            "sha256": "1a2253e6572994ff570da28fb1550a1fc316720945155a2ea3004146bddf78c9"
+          },
+          "replayed_by_reviewer": false
+        },
+        {
+          "kind": "main",
+          "receipt_ref": {
+            "path": "/private/tmp/therese-c17-full-physical-builder-v3-A0yyXP/proofs/pure-xqsb4xr3/receipt.json",
+            "sha256": "4c934baf1ef0e3020a9ff6bad90d5800c02b2e8b73ab2fa7c5c333f5302aaa2b",
+            "bytes": 66646
+          },
+          "summary": {
+            "actor": "/root",
+            "actor_provenance": "explicit_cli_declaration_only_not_runtime_authority",
+            "tests_run": 59,
+            "errors": [],
+            "failures": [],
+            "skipped": [],
+            "passed": true,
+            "process_or_network_calls": 0,
+            "G1_imported": false,
+            "product_imported": false,
+            "actual_round_allocated": false,
+            "FULL": false,
+            "runtime_admitted": false,
+            "release": false
+          },
+          "before_after_equal": true,
+          "source_pins": 86,
+          "raw_log_read": true,
+          "raw_stdout_ref": {
+            "bytes": 0,
+            "path": "/private/tmp/therese-c17-full-physical-builder-v3-A0yyXP/proofs/pure-xqsb4xr3/stdout.log",
+            "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+          },
+          "raw_stderr_ref": {
+            "bytes": 6802,
+            "path": "/private/tmp/therese-c17-full-physical-builder-v3-A0yyXP/proofs/pure-xqsb4xr3/stderr.log",
+            "sha256": "8dc0a4e5d09f4016fa369f83cb19b25ea4380c5fe39300a68689da608170ab0b"
+          },
+          "replayed_by_reviewer": false
+        }
+      ],
+      "flags": {
+        "FULL": false,
+        "runtime_enabled": false,
+        "release": false,
+        "rounds_counted": 0,
+        "admission_created": false,
+        "actual_AB_roots_created": false,
+        "source_HEAD": null
+      }
+    }
+  },
+  "unique_physical_refs_checked": 214,
+  "mismatches": [],
+  "v2_review": {
+    "fixes": [
+      "AUXILIARY_PARENT canonical only in Chrome sandbox branch",
+      "B1760 raw historical_runs stays external; filtered definition only, no raw preimage/diff emitted inside round",
+      "Four runtime alias origins plus aux_node-git second source",
+      "Pure actor explicitly supplied by CLI, not claimed runtime authority"
+    ],
+    "changed_builder_functions": [
+      "derive_g1",
+      "payloads",
+      "inputs"
+    ],
+    "old_first_red_preserved": {
+      "receipt_sha256": "92dc1d00a9b84e4305b7ebbf06e4529e0dc17791bbb8f1f1edae9dbf653ce935",
+      "tests_run": 0,
+      "passed": false
+    },
+    "documentation_detail": "v2 README describes six code/test/runner diffs; INDEX correctly includes eight counting README forward/inverse. v3 wording corrected, old gel not changed."
+  },
+  "v3_review": {
+    "changes": [
+      "Distinct A/B-only MAC_CHROMIUM_TMPDIR guard: chrome mode, exact ROUND_PATTERN root under /private/tmp, fourteen ab_aux.NAMES, equals TMPDIR and canonical existing root/auxiliary/stage/tmp",
+      "Fourteen required environment-value pairs emitted as definitions, not complete admitted environment/binding/owner",
+      "Fourteen private tmp dirs created by future construct only"
+    ],
+    "changed_builder_functions": [
+      "derive_g1",
+      "payloads",
+      "construct"
+    ],
+    "new_builder_function": "port_ab_chromium_tmpdir",
+    "global_ENV_sets_unchanged": true,
+    "WRAPPER14_tests_not_transposed_to_AB": true
+  },
+  "review_reader_diagnostic": {
+    "first_attempt": "TypeError: string indices must be integers, not str",
+    "cause": "The v3 INDEX.files is a dict, while v2 INDEX.files is a list.",
+    "resolution": "Read the exact schema and iterate dict values. No producer code changed or test executed.",
+    "instrument_or_product_result": false
+  },
+  "sources_read_only": true,
+  "old_gels_mutated": false,
+  "reviewer_replayed_tests": false,
+  "constructor_invoked": false,
+  "new_AB_root_created": false,
+  "Node_executed": false,
+  "G1_imported": false,
+  "native_executed": false,
+  "admission_created": false,
+  "FULL": false,
+  "release": false,
+  "rounds_counted": 0,
+  "limits": [
+    "The reviewed 55 and 59 case suites are separate same-case author/main replays, never summed.",
+    "All test identity/Chrome/code-sign fixtures are explicit doubles, not native observations.",
+    "Current QA source/head/dependencies/real authority/profiles/Chrome and fourteen runtime bindings/enrollments remain prerequisites.",
+    "Dependency body parity, exhaustive process attribution and hard-realtime deadline guarantees are not established.",
+    "No success from WRAPPER is projected onto either A/B round."
+  ]
+}

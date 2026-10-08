@@ -2122,3 +2122,242 @@ la reprise manuelle et l'automatisation bornée ; aucun outil ne simule un
 resume du goal. Coupe-circuit réel `076f5a` PASS, plafonds inchangés.
 Contrôle `fc0898` : 187 copies exactes et neuf documents préexistants
 byte-identiques ; `416420` : diff sans erreur de whitespace.
+
+## Lot 71 : WRAPPER12 rouge fermé et diagnostic différentiel borné
+
+Le profil MAIN12 `980b1236…`, 2439 octets, ne diffère du MAIN11 que par
+la lecture de metadata de son parent auxiliaire exact. Neuf tests purs
+MAIN `73526a` passent. Le contrôle statique MAIN `b1bb3b`, code 0, vérifie
+4934 références, 79 sources et les 36 relations SQL inchangées. Ces faits
+ne qualifient pas un runtime produit. Les logs purs de l'auteur sont des
+transcriptions condensées de retours outils, pas des stdout bruts.
+
+HEAD documentaire courant réellement vérifié :
+`d1486c2ad1d1879b1c10196fe269e16b35b85e6e`. La source du canari reste le
+checkout QA historique `2d69e30c…`, distinct de la future source FULL.
+Autorité préparatoire fraîche MAIN `adf2b3`, SHA `5c7c9bc9…`, et construction
+réelle `9ba4d6` : nouvelle racine `9818b6b4…`, aucune réutilisation d'un
+ancien GO comme admission. Contrat SQL lu intégralement MAIN `d05068` ;
+la note externe `REVUE-SQL-MAIN12.md` n'altère pas son flag préparatoire.
+
+Canari natif MAIN `d5b084`, session 4213, terminal `db05fd` code 86.
+Résultat `6ec067fe…` : sept ACK sur quinze, aucun des quatre parents complet,
+sources inchangées et transport RPC fermé, mais propreté globale et
+fermeture qualifiée restent fausses. Les six premiers ACK passent leurs
+conditions attendues ; le septième refuse le prélaunch de la feuille Node.
+Les cinq calibrations et la qualification complète ne sont pas acquises.
+
+Chrome PID40332, birth `1791494499/845497`, se termine lui-même en -5,
+sans timeout, interruption ou signal de nettoyage. Son stderr réel
+`3eddb80b…`, 933 octets, contient un FATAL `sandbox_parameters_mac.mm:82`
+avec erreur I/O. Cela diffère du SIGKILL de nettoyage observé en MAIN11.
+Crashpad40358 n'est nommé que dans stderr, sans identité admise au ledger.
+Il ne permet ni adoption ni promesse de fermeture exhaustive.
+
+Revue indépendante `de68fe68…` : 79 sources intactes, 216 références et
+34 paires hardlink vérifiées ; douze scans finaux des ports QA vides.
+Les 15 événements uniques de signal visent uniquement le backend et Vite
+attribués. Aucune fermeture physique ne transforme le taint en PASS.
+Le contrôle ports supplémentaire MAIN `c3fc4f` est vide. Aucun accès au
+profil Thérèse réel, à son port 17293 ou au Chrome personnel.
+
+Diagnostic exact sur PID40332 et la fenêtre locale 23:21:39 à 23:21:44 :
+100 événements système, dont 18 mentions de refus `com.apple.bsd.dirhelper`,
+et un IPS de ce seul PID, SIGTRAP. Le collector sandboxé rouge est préservé ;
+la collecte autorisée réelle `edac040f…` passe. Les dernières mentions ne
+prouvent pas à elles seules le droit causal du FATAL.
+
+Un pilote séparé compare trois appels `getconf` sous deux profils QA avec
+le seul delta `(allow mach-lookup (global-name "com.apple.bsd.dirhelper"))`.
+INDEX préparatoire `72a3724e…`, pilote `c97191b0…`, trois tests statiques
+MAIN `ba090f` et neuf pins MAIN `d266c6` vérifiés avant l'essai.
+Exécution réelle hors sandbox outil MAIN `ae61b3`, code 0, six cas complets,
+reçu `fcfe7e3c…` : profil MAIN12, USER/CACHE codes71, TEMP code0 ; profil
+candidat `2ecae3a2…`, trois codes0. Aucun signal, timeout ou erreur de
+lancement. Ce résultat établit la contribution du droit à ces appels
+système, pas encore la résolution du crash Chrome ou l'accès CDP.
+
+Les six stdout Darwin restent privés en mode600 dans le TMP du pilote,
+jamais décodés ni copiés dans Git. Aucun chemin retourné n'est ouvert ou
+parcouru. Ce pilote court ne promet pas le cleanup exhaustif de descendants
+inconnus et n'est pas une calibration G1/native/FULL.
+
+Archive canonique réelle MAIN `49ad7d` : 212 fichiers, 4 455 967 octets,
+manifeste `1bee9379…`, sources et copies réhashées. Sont conservés le rouge
+MAIN12, les gels préparatoires, ses diagnostics, les revues indépendantes
+ROOT11/ROOT12 et le comparatif getconf. Les six stdout privés sont exclus
+avec metadata/empreintes ; le socket RPC n'est pas ouvert ou copié.
+Aucune preuve d'inode ou d'ownership live n'est attribuée aux copies.
+
+La préparation WRAPPER13 utilise seulement ce delta dirhelper, sur une
+racine neuve `8612f558…`. Au moment de cet ajout, aucun canari13 n'est lancé.
+Le constructeur physique FULL reste une préparation distincte, sans
+allocation A/B ni admission fabriquée. État réel CALIBRATE, zéro ronde
+complète propre et aucune publication. Budget MAIN `201907` PASS ; délai
+9 octobre 23:58:30 Paris et plafonds inchangés, heartbeat existant actif.
+
+Usage LOT71 réel MAIN `d57bc8` : 71 lots logiques. Le plancher antérieur
+30 259 333 tokens reste inchangé parce que le compteur natif est figé ;
+les tokens supplémentaires sont non mesurés. Le delta zéro enregistré
+n'est ni zéro consommation ni une mesure de facturation API.
+Contrôle MAIN `f2c9cc` : 212 copies exactes, six stdout Darwin privés exclus
+et aucun stdout.bin dans l'archive. MAIN `bdae9d` : diff sans erreur.
+
+## Lot 72 : WRAPPER13 rouge différent et revue FULL v1 contradictoire
+
+Le gel WRAPPER13 `0956da6b…`, builder `f76830c8…`, ajoute seulement le
+lookup dirhelper au profil MAIN12. MAIN `1c8b53` : dix tests purs PASS,
+0,333 s. Revue indépendante préparatoire et checker `23d107d9…` : 23
+références intactes. Le HEAD documentaire reste réellement `d148…`.
+Autorité13 fraîche `8da935`, SHA `95235fb0…`, registry `7287f966…` ; le
+template ancien sert seulement de source, pas d'admission transposée.
+
+Le premier appel constructeur MAIN `fcc06c` refuse un mauvais chemin web
+fourni par MAIN. La racine est encore absente (`3d2b37`). L'appel corrigé
+MAIN `5c56ac` / `3a7cfa`, code0, utilise `POjxSafe` exactement, sans ignorer
+ce refus. Construction `6234b311…`, ROOT GO `7c2419aa…`, nouvelle racine
+`8612f558…`. Contrat SQL lu intégralement MAIN `4785c7`, note séparée
+`REVUE-SQL-MAIN13.md`. Statique MAIN `876f39` code0 : 4960 références,
+79 sources, 3579 fichiers Git et SQL36 inchangés, pas une qualification.
+
+Canari natif MAIN `c87cfc`, session26586, terminal `16bd23` code86.
+Résultat `6b42e669…` : sept ACK sur quinze, aucun parent complet, sources
+inchangées et RPC clos, mais taint/log-stabilité/propreté globale/fermeture
+qualifiée restent rouges. Les six premiers ACK satisfont leurs conditions
+attendues ; le septième reste un prélaunch refusé sans naissance de feuille.
+
+Différence physique vérifiée : Chrome46190, birth `1791496023/756297`,
+retour21, pas -5, sans timeout, interruption ou signal de cleanup. Le
+stderr `39d06362…`, 769 octets, indique échec de création du socketdir
+ProcessSingleton. La disparition du FATAL antérieur ne prouve ni la guérison
+complète ni CDP. Crashpad46336 cité dans stderr reste hors attribution.
+Ports MAIN `2e6d0c` vides ; aucune fermeture exhaustive hostile affirmée.
+
+Revue indépendante `ca336187…` : 79 sources rehashées deux fois, 179 refs,
+37 paires hardlink, 15 signaux uniques joints aux trois identités services
+et douze scans finaux de ports exacts. Les quatre parents et FULL restent
+absents malgré la cleanup physique bornée à huit secondes. Aucun taint
+réécrit et aucun rapport historique requalifié.
+
+Diagnostic système MAIN `85fc68`, reçu `eb476e9b…`, 55 événements ciblés
+sur le PID46190, fenêtre Paris23:47:03–23:47:10. À 23:47:08.099155, le
+noyau refuse la metadata du répertoire temporaire Darwin utilisateur.
+Ce refus précède le message ProcessSingleton23:47:08.131465 et oriente
+le diagnostic, sans démontrer seul une causalité unique. Aucun droit
+d'écriture/lecture de contenu n'est ajouté sur ce répertoire personnel.
+
+La source primaire [Chromium file_util_apple.mm](https://raw.githubusercontent.com/chromium/chromium/main/base/files/file_util_apple.mm)
+fait de `MAC_CHROMIUM_TMPDIR` la préférence des runs hermétiques Mac,
+avant `NSTemporaryDirectory`. Les sources
+[ProcessSingleton](https://chromium.googlesource.com/chromium/src/+/main/chrome/browser/process_singleton_posix.cc)
+et [ScopedTempDir](https://raw.githubusercontent.com/chromium/chromium/main/base/files/scoped_temp_dir.cc)
+relient le socketdir à cette API. Ces sources `main` ne sont pas le tag
+exact du Chrome154 installé. Le futur WRAPPER14 testera cette seule
+variable vers le TMP QA canonique, profil `2ecae3…` intact. G1 doit la
+valider uniquement pour Chrome/root/stage exacts et refuser toute autre
+clé ou sortie de QA. Aucun canari14 lancé au moment de cet ajout.
+
+Le constructeur FULL v1 `181a8ecb…`, builder `a9de2517…`, propose 88
+définitions ; 51 tests purs auteur réussis sur doubles et sources stables,
+pas des calibrations natives. MAIN lit le constructeur, ses dérivations
+et limites ; `e82798` rehash30 fichiers. Son runner v1 code l'acteur auteur
+en dur et n'est donc pas rejoué en simulant un reçu ROOT.
+
+Revue indépendante `8915cda3…`, rapport `6a2feb97…`, bloque sa consommation
+A/B pour trois constats : paramètre AUXILIARY_PARENT absent côté G1,
+ancien brut B1760 recopié dans une préimage malgré attestation inverse,
+ledger incomplet des quatre aliases et de la seconde source aux_node.
+Un gel FULL v2 séparé est préparé pour corriger ces trois points ; v1 et
+ses premiers rouges sont conservés. V2 doit être relu et testé par MAIN,
+et ne comporte aucune admission/source actuelle/owner vivant fabriqué.
+
+Archive réelle MAIN `db5f3b` : 210 fichiers, 5 279 440 octets, manifeste
+`52a60cdf…`, rehash de toutes les copies MAIN `fd42e1`. Contient rouge
+ROOT13, préparations/autorité/checker, Chrome stderr, diagnostic exact,
+revue de clôture et proposition FULL v1 rejetée avec sa contradiction.
+Les copies ne deviennent pas preuves live d'inode ou d'ownership.
+Les neuf modifications utilisateur préexistantes restent hors lot.
+
+Maintien nocturne borné : secteur/batterie100% vérifiés MAIN `9dc439`,
+manuel OS `b6f425` lu. MAIN `486ed4` crée uniquement une assertion
+`caffeinate -s -t`, PID48691, 86458s, automatiquement expirante avant
+le 09/10 23:58:30 Paris. MAIN `5082e5` prouve l'assertion et son timeout.
+Elle n'agit que sur secteur, sans changer pmset, maintenir l'écran ou
+modifier un autre processus. Reçu et script privés sous
+`/private/tmp/therese-c17-overnight-awake-XnUFzEAm/`. La naissance de ce PID
+n'est pas qualifiée pour un futur signal ; aucune adoption/suppression
+par seul numéro n'est autorisée. Le heartbeat reste celui du produit,
+actif et revérifié MAIN `a7ee50`, sans nouvelle automation ou tâche.
+
+État réel : CALIBRATE, zéro ronde complète propre, aucune release ni
+publication. Dernier coupe-circuit MAIN `4b2a5b` PASS, durée et autres
+plafonds inchangés. La préparation/exécution suivante poursuit le GO
+humain sans redemander les étapes ordinaires déjà autorisées.
+
+## Lot 73 : WRAPPER14 rouge Mach et préparations FULL v2/v3 relues
+
+WRAPPER14 INDEX `e135223b…`, builder `b2e3a75c…`, conserve le profil
+Chrome `2ecae3a2…`. Seul delta natif : MAC_CHROMIUM_TMPDIR égal au TMPDIR
+privé du stage, garde G1 bornée au mode/root/cinq noms Chrome. Les autres
+modes, permissions et délais restent inchangés. Rejeu pur MAIN `802797`
+/ `16fa28` : 23 tests, sources avant/après égales, pas d'appel OS.
+Les premiers rouges auteur et leurs préimages restent historiques.
+
+Autorité fraîche MAIN `07b5eb` : registry `182aab33…`, autorité `782212de…`.
+Construction réelle `09078e` / `632ca5`, code0, ROOT GO `78226454…`, nouvelle
+racine `187602c6…`. Contrat SQL `f83732d5…` lu intégralement MAIN `da3e15`,
+revue externe `REVUE-SQL-MAIN14.md`. Statique `a008e7` / `f545fd` : 4997
+références, 79 sources, 3579 fichiers Git et SQL36. Les routes historiques
+restent explicites, aucun ignore-missing générique.
+
+Natif MAIN `192832`, session52812, terminal `86e6fa`, code86. Résultat
+`93e325cb…` : sept ACK sur quinze, aucun parent complet, sources inchangées
+et RPC fermé, mais clean/owned_shutdown faux et taint vrai. Chrome52371,
+birth `1791497547/819649`, sort en -5 sans timeout, interruption ou signal
+de cleanup. Stderr `637af0aa…` : FATAL bootstrap_check_in du nom exact
+`com.google.Chrome.MachPortRendezvousServer.52371`, refus1100. Le message
+ProcessSingleton précédent a disparu ; Chrome/CDP/confinement restent
+non qualifiés. Crashpad52395 cité dans stderr n'est pas attribué au ledger.
+
+Diagnostic ciblé `9cc619` / `dd5368`, reçu `9e9879ff…` : 87 événements,
+fenêtre Paris09/10 00:12:27–00:12:34 ; refus mach-register du même nom
+à00:12:29.499381 joint au FATAL. Aucun droit Darwin personnel, Mach global
+ou lookup additionnel accordé. Revue indépendante ROOT14 `87a730c7…`,
+lue MAIN `060815` / `8663cc` : 223 refs exactes, catalogue79 intact,
+37 paires hardlinks, 15 signaux uniques attribués et douze scans finaux
+de ports QA vides. L'arrêt physique des identités connues ne répare pas
+le taint et ne prouve pas une fermeture exhaustive de descendants inconnus.
+
+FULL v2 traite les trois constats v1 ; rejeu MAIN `16313e`, 55 tests PASS,
+reçu `66872c25…`. FULL v3 porte MAC_CHROMIUM_TMPDIR sur les quatorze
+auxiliaires A/B fermés, sans élargir ENV ou inventer owners/bindings ;
+rejeu MAIN `9b68cb` / `b2bda1`, 59 tests PASS, reçu `4c934baf…`, rehash
+`5ad762`. Les suites auteur/MAIN ne sont pas additionnées. Revue indépendante
+v2/v3 `5cb19341…`, 214 refs uniques exactes, avis favorable pour préparation
+seulement : source_HEAD null, runtime/FULL/release faux, aucun A/B exécuté.
+
+Archive canonique réelle MAIN `a88399` : 339 fichiers, 7 465 428 octets,
+manifeste `d5cae51b04d05eaee780c42266eb9e16dbb902e6cdcffec389a779efa4f2a926`.
+Sources et copies réhashées ; socket RPC non ouvert/non copié. Les détails,
+preuves et sources primaires sont dans `RPC-lot73-20261009/observations`,
+notamment `main-reviews/WRAPPER14.md`, `DIAGNOSTIC-MAIN14.md`, `FULL-V2.md`
+et `FULL-V3.md`. Aucune identité, ownership ou admission live n'est attribuée
+aux copies. Le script fermé est `archive-observations.mjs` du présent lot.
+
+Écart préparatoire détecté avant clone : la recette source v1 `6deb1695…`
+refuse les observations documentaires suivies du vrai HEAD, car elle accepte
+seulement qualification/*.tar.gz. Elle n'est pas exécutée avec cette garde
+incompatible. V2 devra exiger une allowlist documentaire externe revue,
+liée au HEAD final et à l'ensemble exact chemins/modes/blobs Git. Aucun
+filtre du clone, état vivant ou historique adopté comme admission. Les
+18 tests purs v1 ne prouvent pas l'acceptation de notre tree réel.
+
+Usage LOT72 `4324b1` : 72 lots logiques ; LOT73 `e94fcd` : 73. Plancher
+30 259 333 tokens inchangé car compteur natif figé ; tokens/durées ajoutés
+non mesurés, pas zéro consommation ou facturation API. Aucun plafond ou
+goal bloqué réinitialisé. Coupe-circuit courant `883c6a` PASS, borne09/10
+23:58:30 Paris inchangée, heartbeat et maintien secteur temporaire conservés.
+
+État réel CALIBRATE, zéro ronde complète propre, aucune release/publication.
+Suite autonome : microcanari Mach limité au nom propre exact et source QA
+neuve, sans redemander les validations ordinaires déjà données.

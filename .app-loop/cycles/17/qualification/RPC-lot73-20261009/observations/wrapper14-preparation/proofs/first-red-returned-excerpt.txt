@@ -1,0 +1,11 @@
+Retour réel outil 4f00d9, exit_code=1. Extrait seulement, pas un sink direct complet.
+test_23_forward_inverse_diffs_exact (test_wrapper14_static.Wrapper14Static.test_23_forward_inverse_diffs_exact) ... FAIL
+FAIL: test_23_forward_inverse_diffs_exact (test_wrapper14_static.Wrapper14Static.test_23_forward_inverse_diffs_exact)
+Traceback (most recent call last):
+  File "/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/tests/test_wrapper14_static.py", line 285, in test_23_forward_inverse_diffs_exact
+    self.assertEqual((HERE / 'diffs' / f'{kind}-{suffix}.diff').read_text(), expected)
+    ~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: '--- [1514 chars]@ -785,6 +786,43 @@\n     need(derived.replace[3696 chars]e)\n' != '--- [1514 chars]@ -789,6 +790,43 @@\n     return derived\n \n [3683 chars]e)\n'
+Diff is 5544 characters long. Set self.maxDiff to None to see it.
+Ran 23 tests in 4.705s
+FAILED (failures=1)

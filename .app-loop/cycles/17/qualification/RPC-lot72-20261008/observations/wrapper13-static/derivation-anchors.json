@@ -1,0 +1,65 @@
+{
+  "schema": "c17-wrapper13-checker-exact-anchor-derivation-v1",
+  "anchors": [
+    {
+      "before": "/private/tmp/therese-c17-wrapper-canary-9818b6b4163e451892dbd3956e1bb492",
+      "after": "/private/tmp/therese-c17-wrapper-canary-8612f55886284332a3ac6a7bc9615021"
+    },
+    {
+      "before": "'Racine MAIN11 exacte requise'",
+      "after": "'Racine WRAPPER13 exacte requise'"
+    },
+    {
+      "before": "const builderRef=ref('/private/tmp/therese-c17-wrapper12-metadata-parent-MtcoJZ/build_fresh_wrapper.py');",
+      "after": "const builderRef=ref('/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/build_fresh_wrapper.py');"
+    },
+    {
+      "before": "const builderProposalIndexRef=ref('/private/tmp/therese-c17-wrapper12-metadata-parent-MtcoJZ/PLAN-INDEX.json');",
+      "after": "const builderProposalIndexRef=ref('/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/PLAN-INDEX.json');"
+    },
+    {
+      "before": "builderRef.sha256==='ff305cdeae3ff9fd21b9a66a6ad6f40f9dfc06baa73274bffbe209c8668b8db2'",
+      "after": "builderRef.sha256==='f76830c89475c58ea63599d7633d9a5031777a0655b2c0c3a838bdea96fe5719'"
+    },
+    {
+      "before": "builderRef.bytes===89417",
+      "after": "builderRef.bytes===90352"
+    },
+    {
+      "before": "builderProposalIndexRef.sha256==='e7ab1ad86f5ba0dde5dde38bb2feeb3dd31b1d53d18981ac3a9d34aa29f12a15'",
+      "after": "builderProposalIndexRef.sha256==='0956da6b74598f64639c4dd491cdaf21378247b14316a5ac7e2084cd018529e9'"
+    },
+    {
+      "before": "builderProposalIndexRef.bytes===4788",
+      "after": "builderProposalIndexRef.bytes===4918"
+    },
+    {
+      "before": "'Constructeur/proposition MAIN11 différents'",
+      "after": "'Constructeur/proposition WRAPPER13 différents'"
+    },
+    {
+      "before": "const chromeCandidateRef=ref('/private/tmp/therese-c17-wrapper12-metadata-parent-MtcoJZ/profile/chrome.sb');",
+      "after": "const chromeMain12Ref=ref('/private/tmp/therese-c17-wrapper12-metadata-parent-MtcoJZ/profile/chrome.sb');\nconst chromeMain12IndexRef=ref('/private/tmp/therese-c17-wrapper12-metadata-parent-MtcoJZ/PLAN-INDEX.json');\nconst chromeCandidateRef=ref('/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/profile/chrome.sb');\nconst getconfProfileRef=ref('/private/tmp/therese-c17-getconf-dirhelper-XeZCB9/profiles/dirhelper.sb');\nconst getconfIndexRef=ref('/private/tmp/therese-c17-getconf-dirhelper-XeZCB9/INDEX.json');"
+    },
+    {
+      "before": "  &&chromeCandidateRef.sha256==='980b12368975718d33dba1572ce94da04ca378ca827df1be10a1ed15a7104cdb'\n  &&chromeCandidateRef.bytes===2439",
+      "after": "  &&chromeMain12Ref.sha256==='980b12368975718d33dba1572ce94da04ca378ca827df1be10a1ed15a7104cdb'\n  &&chromeMain12Ref.bytes===2439\n  &&chromeMain12IndexRef.sha256==='e7ab1ad86f5ba0dde5dde38bb2feeb3dd31b1d53d18981ac3a9d34aa29f12a15'\n  &&chromeMain12IndexRef.bytes===4788\n  &&chromeCandidateRef.sha256==='2ecae3a24ec871a44827b3f712ced1ef5e84d8f778906c37b3a5b51bb374dcdf'\n  &&chromeCandidateRef.bytes===2499\n  &&getconfProfileRef.sha256===chromeCandidateRef.sha256\n  &&getconfProfileRef.bytes===chromeCandidateRef.bytes\n  &&getconfIndexRef.sha256==='72a3724edd8687408184b9a0a425247f0c152a17373e602e655ef2281b66cb9c'\n  &&getconfIndexRef.bytes===2141"
+    },
+    {
+      "before": "  &&builderProposal.status==='prepared_static_pure_only_not_native_qualified'",
+      "after": "  &&sameRef(builderProposal.historical_main12_builder_index,chromeMain12IndexRef)\n  &&sameRef(builderProposal.getconf_preparation_index,getconfIndexRef)\n  &&builderProposal.schema==='c17-wrapper13-dirhelper-static-proposal-v1'\n  &&builderProposal.future_root===root&&builderProposal.future_root_created===false\n  &&builderProposal.status==='prepared_static_pure_only_not_native_qualified'"
+    },
+    {
+      "before": "need(fs.readFileSync(chromeCandidateRef.path).equals(Buffer.concat([\n  fs.readFileSync(chromeMain11Ref.path),Buffer.from(parentRule)])),\n  'Profil WRAPPER12 autre que MAIN11 suivi du seul parent auxiliaire metadata');",
+      "after": "need(fs.readFileSync(chromeMain12Ref.path).equals(Buffer.concat([\n  fs.readFileSync(chromeMain11Ref.path),Buffer.from(parentRule)])),\n  'Profil MAIN12 autre que MAIN11 suivi du seul parent auxiliaire metadata');\nconst dirhelperRule='(allow mach-lookup (global-name \"com.apple.bsd.dirhelper\"))\\n';\nneed(fs.readFileSync(chromeCandidateRef.path).equals(Buffer.concat([\n  fs.readFileSync(chromeMain12Ref.path),Buffer.from(dirhelperRule)]))\n  &&fs.readFileSync(chromeCandidateRef.path).equals(fs.readFileSync(getconfProfileRef.path)),\n  'Profil WRAPPER13 autre que MAIN12 suivi du seul lookup dirhelper exact');"
+    },
+    {
+      "before": "'Builder autre que WRAPPER12'",
+      "after": "'Builder autre que WRAPPER13'"
+    },
+    {
+      "before": "ref(root+'/g1/chrome.sb').sha256==='980b12368975718d33dba1572ce94da04ca378ca827df1be10a1ed15a7104cdb'",
+      "after": "ref(root+'/g1/chrome.sb').sha256==='2ecae3a24ec871a44827b3f712ced1ef5e84d8f778906c37b3a5b51bb374dcdf'"
+    }
+  ]
+}

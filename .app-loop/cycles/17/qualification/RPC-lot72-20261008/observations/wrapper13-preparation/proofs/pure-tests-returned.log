@@ -1,0 +1,15 @@
+test_forward_inverse_diffs_exact (test_wrapper13_static.Wrapper13Static.test_forward_inverse_diffs_exact) ... ok
+test_future_root_is_one_exact_closed_path_without_allocation (test_wrapper13_static.Wrapper13Static.test_future_root_is_one_exact_closed_path_without_allocation) ... ok
+test_g1_changed_anchor_refused (test_wrapper13_static.Wrapper13Static.test_g1_changed_anchor_refused) ... ok
+test_g1_parameter_is_chrome_only_and_reversible (test_wrapper13_static.Wrapper13Static.test_g1_parameter_is_chrome_only_and_reversible) ... ok
+test_historical_three_routes_are_archival_not_native (test_wrapper13_static.Wrapper13Static.test_historical_three_routes_are_archival_not_native) ... ok
+test_historical_wrong_pointer_or_ref_refused (test_wrapper13_static.Wrapper13Static.test_historical_wrong_pointer_or_ref_refused) ... ok
+test_profile_broadening_or_other_class_refused (test_wrapper13_static.Wrapper13Static.test_profile_broadening_or_other_class_refused) ... ok
+test_profile_only_one_literal_mach_lookup (test_wrapper13_static.Wrapper13Static.test_profile_only_one_literal_mach_lookup) ... ok
+test_real_chrome_derivation_accepts_exact_profile (test_wrapper13_static.Wrapper13Static.test_real_chrome_derivation_accepts_exact_profile) ... ok
+test_wrong_main12_or_getconf_origin_refused (test_wrapper13_static.Wrapper13Static.test_wrong_main12_or_getconf_origin_refused) ... ok
+
+----------------------------------------------------------------------
+Ran 10 tests in 0.284s
+
+OK

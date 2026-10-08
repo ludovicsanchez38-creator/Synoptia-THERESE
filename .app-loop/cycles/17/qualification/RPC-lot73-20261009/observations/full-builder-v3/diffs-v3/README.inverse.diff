@@ -1,0 +1,78 @@
+--- /private/tmp/therese-c17-full-physical-builder-v3-A0yyXP/README.md	2026-10-09 00:07:43
++++ /private/tmp/therese-c17-full-physical-builder-v3-A0yyXP/preimages-v2/README.md	2026-10-09 00:04:11
+@@ -1,17 +1,16 @@
+-# Constructeur physique FULL A/B v3 proposé, préparation seulement
++# Constructeur physique FULL A/B v2 proposé
+ 
+-Auteur du gel v1 : `/root/shared4_execution` ; corrections v2/v3 :
++Auteur du gel v1 : `/root/shared4_execution` ; correction v2 :
+ `/root/environment_routes`. Préparation seulement. Aucun checkout,
+ root A/B, admission, GO, Session, browser ou workload n'a été construit/lancé
+ par ce lot. Les anciens gels et le dépôt sont inchangés.
+ 
+-Préimages v1 et v2 exactes sous `preimages-v1/` et `preimages-v2/` ; gels
+-originaux `/private/tmp/therese-c17-full-physical-builder-LVOOtP/INDEX.json`
+-et `/private/tmp/therese-c17-full-physical-builder-v2-dxGPne/INDEX.json`.
+-Les huit fichiers de diff direct/inverse de v2 restent historiques ; les
+-nouveaux diffs v3 sont sous `diffs-v3/`. Les reçus sous `proofs/` antérieurs
+-au v3 sont des copies historiques et ne lui sont pas réattribués. Le rouge
+-v2 `proofs/pure-huatyyse/` demeure conservé.
++Préimage v1 exacte : `preimages-v1/` et gel d'origine
++`/private/tmp/therese-c17-full-physical-builder-LVOOtP/INDEX.json`.
++Les six diffs `diffs-v2/` (sens direct/inverse) portent uniquement le constructeur,
++ses tests et son runner pur. Les anciens reçus sous `proofs/` sont des copies
++historiques et ne sont pas attribués au v2 ; le premier rouge v2
++`proofs/pure-huatyyse/` est conservé.
+ 
+ Le HEAD documentaire courant transmis par MAIN est
+ `d1486c2ad1d1879b1c10196fe269e16b35b85e6e`. Il n'est pas une valeur par défaut
+@@ -74,20 +73,6 @@
+ branche Chrome avec ancre réversible, profils exacts paramétrés, sept ancres identité v2,
+ Vite canonique du checkout QA, préparation du manifeste sans legacy start/stop,
+ pins lecteurs ABI sur les octets rendus et ajout Git Node après le port A/B CDP.
+-V3 porte séparément le seul delta WRAPPER14 `MAC_CHROMIUM_TMPDIR` au contrat A/B :
+-garde `validate_environment` pour `mode=chrome`, racine canonique
+-`/private/tmp/therese-c17-direct-round-[ab]-12hex` et les 14 noms exacts de
+-`ab_aux.NAMES.values()` ; valeur obligatoire identique à `TMPDIR` et à
+-`root/auxiliary/<nom>/tmp`, répertoire canonique existant. Aucun ajout aux
+-ensembles globaux d'environnement ni aux services, parents, feuilles ou
+-WRAPPER historiques. Le constructeur futur crée les 14 répertoires privés ;
+-`authorization/auxiliary-definition-table.json` émet leurs 14 paires de clés
+-requises, mais pas des descriptors ou un owner futur. Le binding root réel doit
+-ensuite émettre l'environnement complet et G1 le compare avant FD/Popen.
+-L'origine du port est le gel WRAPPER14 `INDEX.json` SHA
+-`e135223b023a771e3080f7ecb280ad350098783afbeeb5133d3221b6880ed7e6`.
+-Ses cinq stages et sa racine littérale ne sont pas relabellés A/B ; le corps
+-du garde est une adaptation distincte.
+ Les scénarios, oracles, codes métier, timeouts et types de contrôle existants
+ sont conservés. Les pures rendent les vrais textes et la vraie blueprint.
+ 
+@@ -106,14 +91,9 @@
+ 
+ ## Mesures pures et limites
+ 
+-Mesure v3 finale : 59 tests PASS, zéro failure/error/skip, sources avant/après
+-égales. Reçu `proofs/pure-2wzrd2kw/receipt.json` SHA
+-`9f05193bfb8d037c5dc0d6062fd8c44afb344c771c3604779e18dcf73d31f5d0` ;
+-les trois passages v3 antérieurs restent historiques dans `proofs/pure-j9kr70rk`,
+-`proofs/pure-00ppkkdo` et `proofs/pure-kjg8ip5s`.
+-Les sinks stdout/stderr sont directs. V2 a séparément 55 tests PASS, reçus historiques
+-`proofs/pure-093gk8e_/receipt.json` et root `proofs/pure-d7jzy2lq/receipt.json`.
+-L'acteur `/root/environment_routes` a été explicitement passé à `run_pure.py --actor`.
++Mesure v2 : 55 tests PASS, zéro failure/error/skip, sources avant/après
++égales. Reçu `proofs/pure-093gk8e_/receipt.json`, sinks directs stdout/stderr,
++acteur `/root/environment_routes` explicitement passé à `run_pure.py --actor`.
+ Ce champ est une déclaration CLI et ne prouve ni autorité root ni acteur OS.
+ Rejeu futur de la même suite : `python3 -I -B run_pure.py --actor /root` depuis
+ ce dossier, avec nouveau reçu et sources avant/après ; ne pas réétiqueter
+@@ -144,8 +124,8 @@
+ complète et admission G1 A/B courante, table/plan15/bindings14/enrollments issus
+ du root vivant, origin/auth peer réel, trois revues SQL tardives/Q post-STOP.
+ Le diagnostic ROOT13 sur `MAC_CHROMIUM_TMPDIR` est un raccord d'environnement
+-encore à éprouver séparément ; v3 prépare seulement sa transmission A/B et ne
+-présente pas le profil Chrome ni le canari WRAPPER14 comme qualifiés pour A/B.
++encore à éprouver séparément ; ce v2 ne l'ajoute pas et ne présente pas le
++profil Chrome comme qualifié.
+ G1/core gardent RUNTIME/OS/caps false et tables d'admission vides. Il faudra un
+ nouveau gel/admission root explicite pour ouvrir leur exécution, pas modifier
+ une copie fermée par un simple booléen de l'auteur.

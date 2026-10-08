@@ -1,0 +1,167 @@
+{
+  "status": "owned",
+  "port": 5173,
+  "pid": 52257,
+  "identity": {
+    "pid": 52257,
+    "ppid": 52214,
+    "uid": 501,
+    "pgid": 52257,
+    "status": 2,
+    "start_sec": 1791497521,
+    "start_usec": 8964,
+    "role": "persistent-vite",
+    "parent_birth": [
+      52214,
+      1791497515,
+      555159
+    ],
+    "attribution": "popen_child_before_workload",
+    "captured_at": "2026-10-08T22:12:01.011684+00:00"
+  },
+  "root_identity": {
+    "pid": 52257,
+    "ppid": 52214,
+    "uid": 501,
+    "pgid": 52257,
+    "status": 2,
+    "start_sec": 1791497521,
+    "start_usec": 8964,
+    "role": "persistent-vite",
+    "parent_birth": [
+      52214,
+      1791497515,
+      555159
+    ],
+    "attribution": "popen_child_before_workload",
+    "captured_at": "2026-10-08T22:12:01.011684+00:00"
+  },
+  "chain": [
+    {
+      "pid": 52257,
+      "ppid": 52214,
+      "uid": 501,
+      "pgid": 52257,
+      "status": 2,
+      "start_sec": 1791497521,
+      "start_usec": 8964,
+      "role": "persistent-vite",
+      "parent_birth": [
+        52214,
+        1791497515,
+        555159
+      ],
+      "attribution": "popen_child_before_workload",
+      "captured_at": "2026-10-08T22:12:01.011684+00:00"
+    }
+  ],
+  "scans": [
+    {
+      "port": 5173,
+      "argv": [
+        "/usr/sbin/lsof",
+        "-nP",
+        "-iTCP:5173",
+        "-sTCP:LISTEN",
+        "-F",
+        "p"
+      ],
+      "launch": [
+        "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source/.venv-conforme/bin/python",
+        "-I",
+        "-B",
+        "/private/tmp/therese-c17-wrapper-canary-187602c63a0b498a95d25c19843000a8/g1/lsof_gate.py",
+        "5173"
+      ],
+      "identity": {
+        "pid": 52296,
+        "ppid": 52214,
+        "uid": 501,
+        "pgid": 52296,
+        "status": 2,
+        "start_sec": 1791497527,
+        "start_usec": 274621,
+        "role": "diagnostic-lsof",
+        "parent_birth": [
+          52214,
+          1791497515,
+          555159
+        ],
+        "attribution": "popen_child_before_workload",
+        "captured_at": "2026-10-08T22:12:07.277080+00:00"
+      },
+      "returncode": 0,
+      "stdout": "p52257\nf20\n",
+      "stderr": "",
+      "cleanup": null,
+      "elapsed_seconds": 0.03699766701902263,
+      "pids": [
+        52257
+      ],
+      "observed_at": "2026-10-08T22:12:07.311627+00:00"
+    },
+    {
+      "port": 5173,
+      "argv": [
+        "/usr/sbin/lsof",
+        "-nP",
+        "-iTCP:5173",
+        "-sTCP:LISTEN",
+        "-F",
+        "p"
+      ],
+      "launch": [
+        "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source/.venv-conforme/bin/python",
+        "-I",
+        "-B",
+        "/private/tmp/therese-c17-wrapper-canary-187602c63a0b498a95d25c19843000a8/g1/lsof_gate.py",
+        "5173"
+      ],
+      "identity": {
+        "pid": 52298,
+        "ppid": 52214,
+        "uid": 501,
+        "pgid": 52298,
+        "status": 2,
+        "start_sec": 1791497527,
+        "start_usec": 313107,
+        "role": "diagnostic-lsof",
+        "parent_birth": [
+          52214,
+          1791497515,
+          555159
+        ],
+        "attribution": "popen_child_before_workload",
+        "captured_at": "2026-10-08T22:12:07.314477+00:00"
+      },
+      "returncode": 0,
+      "stdout": "p52257\nf20\n",
+      "stderr": "",
+      "cleanup": null,
+      "elapsed_seconds": 0.035628040990559384,
+      "pids": [
+        52257
+      ],
+      "observed_at": "2026-10-08T22:12:07.348731+00:00"
+    }
+  ],
+  "owner": {
+    "pid": 52214,
+    "ppid": 75818,
+    "uid": 501,
+    "pgid": 52214,
+    "status": 2,
+    "start_sec": 1791497515,
+    "start_usec": 555159
+  },
+  "observed_at": "2026-10-08T22:12:07.348794+00:00",
+  "schema": "c17-runtime78-owned-listener-observation-v1",
+  "actor": "/root",
+  "round_id": "therese-c17-wrapper-canary-187602c63a0b498a95d25c19843000a8",
+  "head": "2d69e30c9c6dd18823ee6102271876003a6a67cc",
+  "stage": "calibrate",
+  "qa_root": "/private/tmp/therese-c17-wrapper-canary-187602c63a0b498a95d25c19843000a8",
+  "journal": "/private/tmp/therese-c17-wrapper-canary-187602c63a0b498a95d25c19843000a8/ownership-traces.jsonl",
+  "decision_id": "therese-c17-wrapper-canary-187602c63a0b498a95d25c19843000a8",
+  "binding_sha256": "a6f48d4c52833b57b83fd406b464f87481a15f319b5ff94b2e262b028ed21f32"
+}

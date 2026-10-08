@@ -1,0 +1,26 @@
+{
+  "schema": "c17-getconf-dirhelper-preparation-v1",
+  "actor": "/root/environment_routes",
+  "status": "prepared_not_executed",
+  "scope": "getconf DARWIN_USER_DIR/CACHE_DIR/TEMP_DIR sous deux profils QA ; aucun Chrome",
+  "origin_main12": {
+    "path": "/private/tmp/therese-c17-wrapper-canary-9818b6b4163e451892dbd3956e1bb492/g1/chrome.sb",
+    "sha256": "980b12368975718d33dba1572ce94da04ca378ca827df1be10a1ed15a7104cdb",
+    "bytes": 2439
+  },
+  "references": [
+    {"path": "/private/tmp/therese-c17-getconf-dirhelper-XeZCB9/profiles/main12.sb", "sha256": "980b12368975718d33dba1572ce94da04ca378ca827df1be10a1ed15a7104cdb", "bytes": 2439},
+    {"path": "/private/tmp/therese-c17-getconf-dirhelper-XeZCB9/profiles/dirhelper.sb", "sha256": "2ecae3a24ec871a44827b3f712ced1ef5e84d8f778906c37b3a5b51bb374dcdf", "bytes": 2499},
+    {"path": "/private/tmp/therese-c17-getconf-dirhelper-XeZCB9/preimages/MAIN12-chrome.sb", "sha256": "980b12368975718d33dba1572ce94da04ca378ca827df1be10a1ed15a7104cdb", "bytes": 2439},
+    {"path": "/private/tmp/therese-c17-getconf-dirhelper-XeZCB9/profile.diff", "sha256": "e3faf92dfc48c6ab70d8a2a1f386e325eef835b8e8f1edf49e4c7042f06d2e44", "bytes": 357},
+    {"path": "/private/tmp/therese-c17-getconf-dirhelper-XeZCB9/profile.inverse.diff", "sha256": "659f38679c41988015e2730b3462cf0fb20538d298e96e38247d87a732f72113", "bytes": 357},
+    {"path": "/private/tmp/therese-c17-getconf-dirhelper-XeZCB9/run_getconf.mjs", "sha256": "c97191b0dbb9412968ef5f23be7d182ec68684e3b65169764c7570b424e3ca5b", "bytes": 7598},
+    {"path": "/private/tmp/therese-c17-getconf-dirhelper-XeZCB9/tests/plan.test.mjs", "sha256": "28fabc060c310d2833589a8ad457555860ae0bc62d85b18d56ab4b7f98bfcef9", "bytes": 2117},
+    {"path": "/private/tmp/therese-c17-getconf-dirhelper-XeZCB9/README.md", "sha256": "bc4f5190a337f65a1ec3685dbf74d64a6641905424a60f248ab0a6f871f77b26", "bytes": 3845}
+  ],
+  "pure_tests": {"command": "node --test tests/plan.test.mjs", "observed_exit_code": 0, "observed_pass": 3, "observed_fail": 0},
+  "native_diagnostic_executed": false,
+  "Chrome_launched": false,
+  "profile_admitted": false,
+  "FULL": false
+}

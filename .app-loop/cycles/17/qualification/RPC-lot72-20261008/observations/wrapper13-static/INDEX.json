@@ -1,0 +1,137 @@
+{
+  "schema": "c17-wrapper13-static-checker-and-independent-review-index-v1",
+  "actor": "/root/cycle17_gate_review",
+  "status": "frozen_preparation_only_not_executed",
+  "observed_at_utc": "2026-10-08T21:44:34.905106+00:00",
+  "future_root": "/private/tmp/therese-c17-wrapper-canary-8612f55886284332a3ac6a7bc9615021",
+  "proposal_ref": {
+    "path": "/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/PLAN-INDEX.json",
+    "sha256": "0956da6b74598f64639c4dd491cdaf21378247b14316a5ac7e2084cd018529e9",
+    "bytes": 4918
+  },
+  "refs": [
+    {
+      "path": "/private/tmp/therese-c17-wrapper13-static-controls-rbBJ653M/preimages/verify-prepared-wrapper12.mjs",
+      "sha256": "a626e40143e0092b0928180493b5ee3b33709b3bc4f28195b9addc44d819b88f",
+      "bytes": 27514
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper13-static-controls-rbBJ653M/verify-prepared-wrapper13.mjs",
+      "sha256": "834caa7e1988ca2502cd4978ad3b67488c2be270a89dbc94b183b1571a2ea2f1",
+      "bytes": 29121
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper13-static-controls-rbBJ653M/diffs/checker-forward.diff",
+      "sha256": "33cc31f37e71419288ebb0cb7d9aafd0da381bc05297ddf0c8dc8ce075a36b32",
+      "bytes": 8358
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper13-static-controls-rbBJ653M/diffs/checker-inverse.diff",
+      "sha256": "1b1246ce2823d0e0307dd56240fd6fa6b175bf6583975a156208b9db76e1f3cf",
+      "bytes": 8359
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper13-static-controls-rbBJ653M/derivation-anchors.json",
+      "sha256": "f646ce11ab1590aaae13f7c48e8073b5fcb4e06fc4d4aae3f6a314eb06bd88bd",
+      "bytes": 5036
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper13-static-controls-rbBJ653M/receipt.json",
+      "sha256": "10493e7bf31accd58a4118f2a4d3692a1fc219f14522deabc00c4847b358300e",
+      "bytes": 8256
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper13-static-controls-rbBJ653M/REVIEW.md",
+      "sha256": "4d720e4065217a639a1a9cc79f19bfc4c8058e37c549adcb9ea8af2090b830a6",
+      "bytes": 3325
+    }
+  ],
+  "origin_refs": [
+    {
+      "path": "/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/build_fresh_wrapper.py",
+      "sha256": "f76830c89475c58ea63599d7633d9a5031777a0655b2c0c3a838bdea96fe5719",
+      "bytes": 90352
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/profile/chrome.sb",
+      "sha256": "2ecae3a24ec871a44827b3f712ced1ef5e84d8f778906c37b3a5b51bb374dcdf",
+      "bytes": 2499
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/preimages/build_fresh_wrapper-main12.py",
+      "sha256": "ff305cdeae3ff9fd21b9a66a6ad6f40f9dfc06baa73274bffbe209c8668b8db2",
+      "bytes": 89417
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/preimages/chrome-main12.sb",
+      "sha256": "980b12368975718d33dba1572ce94da04ca378ca827df1be10a1ed15a7104cdb",
+      "bytes": 2439
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/preimages/test_wrapper12_static.py",
+      "sha256": "b96396692f3be4162ef46e37745210367cf073295ec6a98fb8fc8e3be0bc760f",
+      "bytes": 6856
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/diffs/builder-forward.diff",
+      "sha256": "87c3d8621621bc3cd5d6d7a745930c82edd9a70cc15ec12009812475521433fb",
+      "bytes": 4670
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/diffs/builder-inverse.diff",
+      "sha256": "cea0c8cf143180d9e2b2cad0565033b0862a10cdc96ab33a3164744e9504117d",
+      "bytes": 4625
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/diffs/profile-forward.diff",
+      "sha256": "cbfa557910d7fd311199fcf8431f16fcda4ff7fad1b96ec79cf7bf66bdaaf9dc",
+      "bytes": 465
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/diffs/profile-inverse.diff",
+      "sha256": "c34775087eb1717b8c3721f9dbffc10a21ae73dba9f6ed12d5c6e02dd30b23ab",
+      "bytes": 465
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/tests/test_wrapper13_static.py",
+      "sha256": "b268436526d7230d8f0963b3867459909a3e519fe2803bf9de2489b99f0a9bfe",
+      "bytes": 7927
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/proofs/pure-tests-returned.log",
+      "sha256": "bb83fcc74bdc1ec7fb586466a75e7350fbddb4d4702c29c36d66aeb885f4e806",
+      "bytes": 1477
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/README.md",
+      "sha256": "1ef16ae9a1089868147a800ae8139338320629c63826486d3cb62d19ea3f1837",
+      "bytes": 3464
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper-profile-three-builder-G8n4Ef/PLAN-INDEX.json",
+      "sha256": "d159911e9ffc2886448760fa82936bfee155af911a05c3c685ad21ff0175338f",
+      "bytes": 14533
+    },
+    {
+      "path": "/private/tmp/therese-c17-wrapper12-metadata-parent-MtcoJZ/PLAN-INDEX.json",
+      "sha256": "e7ab1ad86f5ba0dde5dde38bb2feeb3dd31b1d53d18981ac3a9d34aa29f12a15",
+      "bytes": 4788
+    },
+    {
+      "path": "/private/tmp/therese-c17-getconf-dirhelper-XeZCB9/INDEX.json",
+      "sha256": "72a3724edd8687408184b9a0a425247f0c152a17373e602e655ef2281b66cb9c",
+      "bytes": 2141
+    }
+  ],
+  "preimage_reconstructed_exact": true,
+  "diffs_reconstructed_exact": true,
+  "independent_builder_preparation_verdict": "favorable_bounded",
+  "checker_executed": false,
+  "Node_executed": false,
+  "G1_imported": false,
+  "native_executed": false,
+  "FULL": false,
+  "release": false,
+  "authority_created_by_reviewer": false,
+  "GO_created_by_reviewer": false
+}

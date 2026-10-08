@@ -1,0 +1,41 @@
+--- /private/tmp/therese-c17-full-physical-builder-v2-dxGPne/preimages-v1/run_pure.py	2026-10-08 23:47:21
++++ /private/tmp/therese-c17-full-physical-builder-v2-dxGPne/run_pure.py	2026-10-08 23:48:57
+@@ -1,11 +1,13 @@
+ """Runner stdlib pur ; sinks directs et sources avant/après, pas de sous-processus."""
+ from __future__ import annotations
++import argparse
+ import contextlib
+ from datetime import UTC, datetime
+ import hashlib
+ import json
+ import os
+ from pathlib import Path
++import re
+ import socket
+ import subprocess
+ import tempfile
+@@ -25,8 +27,13 @@
+     return [name for test in suite for name in (names(test) if isinstance(test,unittest.TestSuite) else [test.id()])]
+ 
+ def main():
++    parser=argparse.ArgumentParser(description=__doc__)
++    parser.add_argument('--actor',required=True)
++    args=parser.parse_args()
++    if re.fullmatch(r'/root(?:/[a-z][a-z0-9_]*)?',args.actor) is None:
++        parser.error('acteur de relecture canonique explicite requis')
+     origins=json.loads((HERE/'assets.json').read_text())['assets']
+-    paths={Path(item['path']) for item in origins.values()} | {HERE/'assets.json',HERE/'build_full_round.py',HERE/'run_pure.py',HERE/'tests/test_builder.py'}
++    paths={Path(item['path']) for item in origins.values()} | {HERE/'assets.json',HERE/'build_full_round.py',HERE/'run_pure.py',HERE/'tests/test_builder.py',HERE/'fixtures/chrome-candidate.sb'}
+     before={str(path):ref(path) for path in sorted(paths)}
+     out=Path(tempfile.mkdtemp(prefix='pure-',dir=HERE/'proofs')); os.chmod(out,0o700)
+     started=datetime.now(UTC).isoformat(); clock=time.monotonic()
+@@ -37,7 +44,8 @@
+             result=unittest.TextTestRunner(stream=stderr,verbosity=2).run(suite)
+         stdout.flush(); stderr.flush(); os.fsync(stdout.fileno()); os.fsync(stderr.fileno())
+     after={str(path):ref(path) for path in sorted(paths)}
+-    value={'schema':'c17-full-physical-builder-pure-receipt-v1','actor':'/root/shared4_execution',
++    value={'schema':'c17-full-physical-builder-pure-receipt-v1','actor':args.actor,
++        'actor_provenance':'explicit_cli_declaration_only_not_runtime_authority',
+         'started_at':started,'completed_at':datetime.now(UTC).isoformat(),'elapsed_seconds':time.monotonic()-clock,
+         'tests_run':result.testsRun,'test_names':test_names,
+         'failures':[(test.id(),error) for test,error in result.failures],

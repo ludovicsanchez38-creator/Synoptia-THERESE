@@ -1,0 +1,149 @@
+--- /private/tmp/therese-c17-full-physical-builder-LVOOtP/preimages/tests-before-complete-fixture.py
++++ /private/tmp/therese-c17-full-physical-builder-LVOOtP/tests/test_builder.py
+@@ -7,7 +7,7 @@
+ 
+ import ast
+ from copy import deepcopy
+-from datetime import UTC, datetime
++from datetime import UTC, datetime, timedelta
+ import hashlib
+ import importlib.util
+ import json
+@@ -69,6 +69,8 @@
+             'profiles':{name:b.reference(Path(cls.assets['g1/' + name + '.sb']['path'])) for name in ('web','sql','chrome')},
+             'copied_chrome':'/private/tmp/therese-c17-chrome-qa-copy-pure-unused/Google Chrome.app',
+             'chrome_tree_ref':b.planned_ref(cls.base/'synthetic-not-emitted-chrome-tree.json',b'[]'),
++            'python_audit_ref':b.planned_ref(cls.base/'synthetic-not-emitted-python-audit.json',b'fixture'),
++            'node_audit_ref':b.planned_ref(cls.base/'synthetic-not-emitted-node-audit.json',b'fixture'),
+             'rpc_contract_ref':cls.assets['runtime78-successor/rpc-abi-contract.json']}
+         api = {'schema':'c17-runtime78-session-api-v1','features':['definition_only'],
+                'runtime_admitted':False,'synthetic_fixture':True}
+@@ -98,10 +100,36 @@
+                          for name in cls.contract.REQUESTERS}
+         cls.descriptors = cls.blueprint.descriptors(Path(cls.request['root']),{'context_id':'1'*32},cls.envelopes,
+             metadata_by_job=cls.metadata,source_refs=[b.planned_ref(Path(cls.request['root'])/'runtime78-successor/full_rpc_blueprint.py',cls.out['runtime78-successor/full_rpc_blueprint.py'])])
++        cls.chrome_temp=tempfile.TemporaryDirectory(prefix='therese-c17-chrome-qa-copy-pure-',dir='/private/tmp')
++        cls.cb=Path(cls.chrome_temp.name); cls.bundle=cls.cb/'Google Chrome.app'
++        (cls.bundle/'Contents/MacOS').mkdir(parents=True)
++        cls.executable=cls.bundle/'Contents/MacOS/Google Chrome'; cls.executable.write_bytes(b'synthetic executable, never run\n'); cls.executable.chmod(0o700)
++        for index in range(1335): (cls.bundle/('fixture-'+str(index))).write_bytes(b'')
++        chrome_rows=[]
++        for path in [cls.bundle]+sorted(cls.bundle.rglob('*')):
++            meta=path.lstat(); row={'relative':str(path.relative_to(cls.bundle)) if path!=cls.bundle else '',
++                'mode':stat.S_IMODE(meta.st_mode),'uid':meta.st_uid,'gid':meta.st_gid,'dev':meta.st_dev,'ino':meta.st_ino,
++                'type':'directory' if path.is_dir() else 'file'}
++            if row['type']=='file': row.update(sha256=hashlib.sha256(path.read_bytes()).hexdigest(),bytes=path.stat().st_size)
++            chrome_rows.append(row)
++        cls.chrome_tree=cls.cb/'tree.json'; cls.chrome_tree.write_bytes(b.encoded(chrome_rows))
++        cls.chrome_stdout=cls.cb/'codesign.stdout'; cls.chrome_stdout.write_bytes(b'')
++        cls.chrome_stderr=cls.cb/'codesign.stderr'; cls.chrome_stderr.write_bytes(b'SYNTHETIC only, no codesign call\n')
++        cls.chrome_signature=cls.cb/'signature.json'
++        cls.signature={'schema':'c17-root-independent-chrome-copy-recheck-v1','actor':'/root','passed':True,
++            'copy':str(cls.bundle),'copy_current_ref':b.reference(cls.chrome_tree),'synthetic_fixture':True,
++            'source_copy_byte_mode_uid_gid_links_equal':True,'no_source_copy_hardlinks':True,
++            'runtime_admitted':False,'FULL':False,'completed_at':datetime.now(UTC).isoformat(),
++            'strict_codesign':{'argv':['/usr/bin/codesign','--verify','--deep','--strict','--verbose=4',str(cls.bundle)],
++                'status':0,'signal':None,'error':None,'stdout':b.reference(cls.chrome_stdout),'stderr':b.reference(cls.chrome_stderr)}}
++        cls.chrome_signature.write_bytes(b.encoded(cls.signature))
++        cls.chrome_request={'copied_chrome':str(cls.bundle),'chrome_tree_ref':b.reference(cls.chrome_tree),
++                            'chrome_signature_ref':b.reference(cls.chrome_signature)}
+ 
+     @classmethod
+     def tearDownClass(cls):
+         cls.temp.cleanup()
++        cls.chrome_temp.cleanup()
+ 
+     def mutate(self, **updates):
+         req = deepcopy(self.request); req.update(updates); return req
+@@ -168,6 +196,12 @@
+             path.chmod(0o755)
+             with self.assertRaisesRegex(ValueError,'Mode/type'): b.source_inputs(self.request,self.assets)
+         finally: path.chmod(stat.S_IMODE(original))
++
++    def test_git_hardlink_refused(self):
++        path=self.qa/'tests/witness.py'; linked=self.base/'own-hardlink-fixture'; os.link(path,linked)
++        try:
++            with self.assertRaisesRegex(ValueError,'hardlink'): b.source_inputs(self.request,self.assets)
++        finally: linked.unlink()  # only this exact synthetic fixture, never a source/QA root
+ 
+     def test_git_body_mutation_refused(self):
+         path = self.qa / 'tests/witness.py'; raw = path.read_bytes()
+@@ -186,6 +220,7 @@
+         original = b.checked(self.assets['g1/runtime_session.py']).decode()
+         expected = b.contextualize(b.derive_g1(original,self.request), self.request).encode()
+         self.assertEqual(raw,expected)
++        self.assertIn('HEAD = '+repr(self.head),raw.decode())
+         constants = {}
+         for n in tree.body:
+             if isinstance(n,(ast.Assign,ast.AnnAssign)):
+@@ -205,6 +240,47 @@
+         text = self.out['g1/runtime_session.py'].decode()
+         self.assertIn('CHROME = Path('+repr(self.chrome['executable'])+')',text)
+         self.assertNotIn('bundle = Path("/Applications/Google Chrome.app")',text)
++
++    def test_chrome_tree_all_1339_synthetic_entries(self):
++        self.assertEqual(len(json.loads(b.checked(self.chrome_request['chrome_tree_ref']))),1339)
++        self.assertEqual(len(b.verify_chrome(self.chrome_request)['files']),1336)
++
++    def test_chrome_extra_file_refused(self):
++        path=self.bundle/'extra-fixture'; path.write_bytes(b'')
++        try:
++            with self.assertRaisesRegex(ValueError,'extras'): b.verify_chrome(self.chrome_request)
++        finally: path.unlink()
++
++    def test_chrome_mode_refused(self):
++        path=self.bundle/'fixture-0'; original=stat.S_IMODE(path.stat().st_mode); path.chmod(0o700)
++        try:
++            with self.assertRaisesRegex(ValueError,'mode'): b.verify_chrome(self.chrome_request)
++        finally: path.chmod(original)
++
++    def test_chrome_hardlink_refused(self):
++        linked=self.cb/'own-link-fixture'; os.link(self.bundle/'fixture-0',linked)
++        try:
++            with self.assertRaisesRegex(ValueError,'hardlink'): b.verify_chrome(self.chrome_request)
++        finally: linked.unlink()
++
++    def test_chrome_other_bundle_refused(self):
++        with self.assertRaisesRegex(ValueError,'copie QA'): b.verify_chrome(dict(self.chrome_request,copied_chrome='/Applications/Google Chrome.app'))
++
++    def test_chrome_expired_signature_refused(self):
++        body=deepcopy(self.signature); body['completed_at']=(datetime.now(UTC)-timedelta(seconds=121)).isoformat()
++        path=self.cb/'expired-signature.json'; path.write_bytes(b.encoded(body))
++        with self.assertRaisesRegex(ValueError,'fraîche'): b.verify_chrome(dict(self.chrome_request,chrome_signature_ref=b.reference(path)))
++
++    def test_chrome_signature_failure_refused(self):
++        body=deepcopy(self.signature); body['strict_codesign']['status']=1
++        path=self.cb/'failed-signature.json'; path.write_bytes(b.encoded(body))
++        with self.assertRaisesRegex(ValueError,'Codesign'): b.verify_chrome(dict(self.chrome_request,chrome_signature_ref=b.reference(path)))
++
++    def test_chrome_body_mutation_refused(self):
++        path=self.bundle/'fixture-0'; path.write_bytes(b'mutation')
++        try:
++            with self.assertRaisesRegex(ValueError,'SHA/bytes'): b.verify_chrome(self.chrome_request)
++        finally: path.write_bytes(b'')
+ 
+     def test_python_definitions_all_parse_no_import(self):
+         candidates = [name for name in self.out if name.endswith('.py') and not name.startswith('construction-preimages/')]
+@@ -309,6 +385,22 @@
+         power=self.out['auxiliary-ports/complements/instruments/preparer-harness-b1753-power.py'].decode()
+         self.assertIn('returncode==1',power.replace(' ',''))
+ 
++    def test_direct_node_context_targets_qa_not_personal_repo(self):
++        text=self.out['complements/instruments/contexte-v3.mjs'].decode()
++        self.assertIn('const repo='+repr(str(self.qa)),text)
++        self.assertNotIn("const repo="+repr(b.OLD_REPO),text)
++
++    def test_pth_guard_exact_set_before_allocation(self):
++        site=self.qa/'.venv-conforme/lib/python3.13/site-packages'; site.mkdir(parents=True)
++        known=site/'known.pth'; known.write_bytes(b'fixture\n')
++        audit=self.base/'synthetic-audit.json'; audit.write_bytes(b.encoded({'pth':[b.reference(known)]}))
++        req=self.mutate(python_audit_ref=b.reference(audit))
++        readers={'audit_python':lambda *_:{'synthetic':True},'audit_node':lambda *_:{'synthetic':True}}
++        with patch.object(b,'selected_definitions',return_value=readers):
++            self.assertFalse(b.dependency_inputs(req,self.assets)['body_parity_claimed'])
++            extra=site/'extra.pth'; extra.write_bytes(b'/Users/synoptia/.therese\n')
++            with self.assertRaisesRegex(ValueError,'Ensemble .pth'): b.dependency_inputs(req,self.assets)
++
+     def test_rpc_contract_reader_derived_only(self):
+         data = json.loads(self.out['runtime78-successor/rpc-abi-contract.json'])
+         before = b.read_json(self.request['rpc_contract_ref'])

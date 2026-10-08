@@ -1,0 +1,7 @@
+--- profiles/main12.sb
++++ profiles/dirhelper.sb
+@@ -36,3 +36,4 @@
+ (allow iokit-open-user-client (iokit-user-client-class "IOSurfaceRootUserClient"))
+ (allow iokit-open-user-client (iokit-user-client-class "AGXDeviceUserClient"))
+ (allow file-read-metadata (literal (param "AUXILIARY_PARENT")))
++(allow mach-lookup (global-name "com.apple.bsd.dirhelper"))

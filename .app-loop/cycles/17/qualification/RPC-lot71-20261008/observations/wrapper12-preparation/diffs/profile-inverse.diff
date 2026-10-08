@@ -1,0 +1,7 @@
+--- /private/tmp/therese-c17-wrapper12-metadata-parent-MtcoJZ/profile/chrome.sb	2026-10-08 23:09:16
++++ /private/tmp/therese-c17-wrapper12-metadata-parent-MtcoJZ/preimages/chrome-main11.sb	2026-10-08 18:26:56
+@@ -35,4 +35,3 @@
+ (allow mach-lookup (global-name "com.apple.CARenderServer"))
+ (allow iokit-open-user-client (iokit-user-client-class "IOSurfaceRootUserClient"))
+ (allow iokit-open-user-client (iokit-user-client-class "AGXDeviceUserClient"))
+-(allow file-read-metadata (literal (param "AUXILIARY_PARENT")))

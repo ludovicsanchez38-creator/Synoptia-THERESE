@@ -1,0 +1,109 @@
+--- /private/tmp/therese-c17-wrapper13-static-controls-rbBJ653M/verify-prepared-wrapper13.mjs
++++ /private/tmp/therese-c17-wrapper13-static-controls-rbBJ653M/preimages/verify-prepared-wrapper12.mjs
+@@ -4,8 +4,8 @@
+ import path from 'node:path';
+ const root=process.argv[2];
+ const need=(x,m)=>{if(!x)throw Error(m);};
+-need(root==='/private/tmp/therese-c17-wrapper-canary-8612f55886284332a3ac6a7bc9615021'
+-  &&/^\/private\/tmp\/therese-c17-wrapper-canary-[a-f0-9]{32}$/.test(root),'Racine WRAPPER13 exacte requise');
++need(root==='/private/tmp/therese-c17-wrapper-canary-9818b6b4163e451892dbd3956e1bb492'
++  &&/^\/private\/tmp\/therese-c17-wrapper-canary-[a-f0-9]{32}$/.test(root),'Racine MAIN11 exacte requise');
+ function sameRef(a,b){
+   const exact=x=>x!==null&&typeof x==='object'&&!Array.isArray(x)
+     &&Object.keys(x).sort().join(',')==='bytes,path,sha256'
+@@ -36,15 +36,15 @@
+   need(s.isFile()&&!s.isSymbolicLink()&&ownerExact&&fs.realpathSync(p)===p,'Ref non canonique ou propriétaire non admis '+p);
+   return {path:p,sha256,bytes:b.length};
+ };
+-const builderRef=ref('/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/build_fresh_wrapper.py');
+-const builderProposalIndexRef=ref('/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/PLAN-INDEX.json');
++const builderRef=ref('/private/tmp/therese-c17-wrapper12-metadata-parent-MtcoJZ/build_fresh_wrapper.py');
++const builderProposalIndexRef=ref('/private/tmp/therese-c17-wrapper12-metadata-parent-MtcoJZ/PLAN-INDEX.json');
+ const historicalBuilderIndexRef=ref('/private/tmp/therese-c17-fresh-wrapper-builder-v10-ynPAzC/INDEX.json');
+-need(builderRef.sha256==='f76830c89475c58ea63599d7633d9a5031777a0655b2c0c3a838bdea96fe5719'
+-  &&builderRef.bytes===90352
+-  &&builderProposalIndexRef.sha256==='0956da6b74598f64639c4dd491cdaf21378247b14316a5ac7e2084cd018529e9'
+-  &&builderProposalIndexRef.bytes===4918
++need(builderRef.sha256==='ff305cdeae3ff9fd21b9a66a6ad6f40f9dfc06baa73274bffbe209c8668b8db2'
++  &&builderRef.bytes===89417
++  &&builderProposalIndexRef.sha256==='e7ab1ad86f5ba0dde5dde38bb2feeb3dd31b1d53d18981ac3a9d34aa29f12a15'
++  &&builderProposalIndexRef.bytes===4788
+   &&historicalBuilderIndexRef.sha256==='ad4cbc19f3c156f0b0d4ff2e3d36b31eccc9bda109cb18cc6c77194aefce1007'
+-  &&historicalBuilderIndexRef.bytes===8012,'Constructeur/proposition WRAPPER13 différents');
++  &&historicalBuilderIndexRef.bytes===8012,'Constructeur/proposition MAIN11 différents');
+ const read=p=>JSON.parse(fs.readFileSync(p));
+ const refs=new Map(),pending=[],historicalObservations=[];
+ const historicalG1ReceiptPaths=new Set([
+@@ -176,11 +176,7 @@
+ const authority=read(construction.authority_ref.path);
+ const chromeV10Ref=ref('/private/tmp/therese-c17-fresh-wrapper-builder-v10-ynPAzC/profile/chrome.sb');
+ const chromeMain11Ref=ref('/private/tmp/therese-c17-wrapper-profile-three-builder-G8n4Ef/profile/chrome.sb');
+-const chromeMain12Ref=ref('/private/tmp/therese-c17-wrapper12-metadata-parent-MtcoJZ/profile/chrome.sb');
+-const chromeMain12IndexRef=ref('/private/tmp/therese-c17-wrapper12-metadata-parent-MtcoJZ/PLAN-INDEX.json');
+-const chromeCandidateRef=ref('/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/profile/chrome.sb');
+-const getconfProfileRef=ref('/private/tmp/therese-c17-getconf-dirhelper-XeZCB9/profiles/dirhelper.sb');
+-const getconfIndexRef=ref('/private/tmp/therese-c17-getconf-dirhelper-XeZCB9/INDEX.json');
++const chromeCandidateRef=ref('/private/tmp/therese-c17-wrapper12-metadata-parent-MtcoJZ/profile/chrome.sb');
+ const chromeProposalRef=ref('/private/tmp/therese-c17-chrome-targeted-three-McWh5vFc/INDEX.json');
+ const builderProposal=read(builderProposalIndexRef.path);
+ const chromeProposal=read(chromeProposalRef.path);
+@@ -188,24 +184,12 @@
+   &&chromeV10Ref.bytes===2067
+   &&chromeMain11Ref.sha256==='bee3c2e780e58cbc80ed7e37d64115adf08997aab39dae8f11b56050785633a9'
+   &&chromeMain11Ref.bytes===2375
+-  &&chromeMain12Ref.sha256==='980b12368975718d33dba1572ce94da04ca378ca827df1be10a1ed15a7104cdb'
+-  &&chromeMain12Ref.bytes===2439
+-  &&chromeMain12IndexRef.sha256==='e7ab1ad86f5ba0dde5dde38bb2feeb3dd31b1d53d18981ac3a9d34aa29f12a15'
+-  &&chromeMain12IndexRef.bytes===4788
+-  &&chromeCandidateRef.sha256==='2ecae3a24ec871a44827b3f712ced1ef5e84d8f778906c37b3a5b51bb374dcdf'
+-  &&chromeCandidateRef.bytes===2499
+-  &&getconfProfileRef.sha256===chromeCandidateRef.sha256
+-  &&getconfProfileRef.bytes===chromeCandidateRef.bytes
+-  &&getconfIndexRef.sha256==='72a3724edd8687408184b9a0a425247f0c152a17373e602e655ef2281b66cb9c'
+-  &&getconfIndexRef.bytes===2141
++  &&chromeCandidateRef.sha256==='980b12368975718d33dba1572ce94da04ca378ca827df1be10a1ed15a7104cdb'
++  &&chromeCandidateRef.bytes===2439
+   &&chromeProposalRef.sha256==='499ed6c8c75ba66857e6797728b0c1a39a2fb93bff6f96827049639195b6d966'
+   &&sameRef(builderProposal.candidate_chrome_profile,chromeCandidateRef)
+   &&sameRef(builderProposal.historical_main11_builder_index,
+     ref('/private/tmp/therese-c17-wrapper-profile-three-builder-G8n4Ef/PLAN-INDEX.json'))
+-  &&sameRef(builderProposal.historical_main12_builder_index,chromeMain12IndexRef)
+-  &&sameRef(builderProposal.getconf_preparation_index,getconfIndexRef)
+-  &&builderProposal.schema==='c17-wrapper13-dirhelper-static-proposal-v1'
+-  &&builderProposal.future_root===root&&builderProposal.future_root_created===false
+   &&builderProposal.status==='prepared_static_pure_only_not_native_qualified'
+   &&chromeProposal.preimage.sha256===chromeV10Ref.sha256
+   &&chromeProposal.candidate.sha256===chromeMain11Ref.sha256
+@@ -221,14 +205,9 @@
+   fs.readFileSync(chromeV10Ref.path),Buffer.from(threeRuleSuffix)])),
+   'Préimage MAIN11 autre que V10 suivi des trois règles exactes');
+ const parentRule='(allow file-read-metadata (literal (param "AUXILIARY_PARENT")))\n';
+-need(fs.readFileSync(chromeMain12Ref.path).equals(Buffer.concat([
++need(fs.readFileSync(chromeCandidateRef.path).equals(Buffer.concat([
+   fs.readFileSync(chromeMain11Ref.path),Buffer.from(parentRule)])),
+-  'Profil MAIN12 autre que MAIN11 suivi du seul parent auxiliaire metadata');
+-const dirhelperRule='(allow mach-lookup (global-name "com.apple.bsd.dirhelper"))\n';
+-need(fs.readFileSync(chromeCandidateRef.path).equals(Buffer.concat([
+-  fs.readFileSync(chromeMain12Ref.path),Buffer.from(dirhelperRule)]))
+-  &&fs.readFileSync(chromeCandidateRef.path).equals(fs.readFileSync(getconfProfileRef.path)),
+-  'Profil WRAPPER13 autre que MAIN12 suivi du seul lookup dirhelper exact');
++  'Profil WRAPPER12 autre que MAIN11 suivi du seul parent auxiliaire metadata');
+ const chromeCoreRows=core.copies.filter(r=>r.output.path===root+'/g1/chrome.sb');
+ need(chromeCoreRows.length===1
+   &&chromeCoreRows[0].derivation==='pinned_chrome_ui_exact_successor'
+@@ -244,7 +223,7 @@
+   &&runtime.includes('auxiliary_parent = root / "auxiliary"')
+   &&runtime.includes('child_path(root, auxiliary_parent) == auxiliary_parent'),
+   'Paramètre G1 du parent auxiliaire Chrome absent ou dupliqué');
+-need(sameRef(construction.builder_ref,builderRef),'Builder autre que WRAPPER13');
++need(sameRef(construction.builder_ref,builderRef),'Builder autre que WRAPPER12');
+ need(sameRef(authority.builder_index_ref,historicalBuilderIndexRef)
+   &&sameRef(authority.builder_proposal_index_ref,builderProposalIndexRef)
+   &&sameRef(authority.builder_ref,builderRef)
+@@ -396,5 +375,5 @@
+ }
+ for(const name of ['binding.json','decision.json','runtime/readiness.json','runtime/pile-reprise.json','runtime/services-running.json','wrapper-canary-result.json'])need(!fs.existsSync(root+'/'+name),'État natif prématuré '+name);
+ need(ref(root+'/g1/web.sb').sha256==='51ff2e21500393704ea8709fb9bd177dc1f88793d1e92d09c68be70d905807ff'
+-  &&ref(root+'/g1/chrome.sb').sha256==='2ecae3a24ec871a44827b3f712ced1ef5e84d8f778906c37b3a5b51bb374dcdf','Profils autres successeurs');
++  &&ref(root+'/g1/chrome.sb').sha256==='980b12368975718d33dba1572ce94da04ca378ca827df1be10a1ed15a7104cdb','Profils autres successeurs');
+ console.log(JSON.stringify({status:'prepared_only_static_verified',root,refs:refs.size,historical_observations:historicalObservations,sources:79,core_copies:18,overlay_outputs:28,diagnostic_origins:4,diagnostic_helpers:3,git_tree_files:3579,git_modes:true,git_blobs:true,SQL_sources:36,SQL_relations_unchanged:true,original11:true,deltas:6,witness_copies:7,native:false,FULL:false,release:false}));

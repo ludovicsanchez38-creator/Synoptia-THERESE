@@ -1,0 +1,44 @@
+{
+  "schema": "c17-root13-chrome46190-system-log-v1",
+  "actor": "/root",
+  "scope": "PID46190 et messages système nommant ce seul PID ; 23:47:03–23:47:10 Paris",
+  "executable": "/usr/bin/log",
+  "argv": [
+    "show",
+    "--style",
+    "json",
+    "--start",
+    "2026-10-08 23:47:03",
+    "--end",
+    "2026-10-08 23:47:10",
+    "--predicate",
+    "(processID == 46190 OR ((process == \"kernel\" OR process == \"sandboxd\" OR process == \"syspolicyd\" OR process == \"amfid\" OR process == \"taskgated\") AND eventMessage CONTAINS \"46190\"))"
+  ],
+  "started_at": "2026-10-08T21:50:14.010Z",
+  "completed_at": "2026-10-08T21:50:15.481Z",
+  "exit_code": 0,
+  "signal": null,
+  "error": null,
+  "parse_error": null,
+  "stdout_ref": {
+    "path": "/private/tmp/therese-c17-root13-chrome46190-log-dDgUuiqY/stdout.json",
+    "sha256": "4fb193aed64338f64c6185657be0046f4999d4dfe0f6e0f3362be772b2a7ec36",
+    "bytes": 55466
+  },
+  "stderr_ref": {
+    "path": "/private/tmp/therese-c17-root13-chrome46190-log-dDgUuiqY/stderr.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "script_ref": {
+    "path": "/private/tmp/therese-c17-root13-chrome46190-log-dDgUuiqY/collect.mjs",
+    "sha256": "e675a340a3f53079d7ca82e9eb90f26d4bcea9d7d7a3182b139e224123efe127",
+    "bytes": 2274
+  },
+  "event_count": 55,
+  "passed": true,
+  "diagnostic_only": true,
+  "G1_imported": false,
+  "profile_changed": false,
+  "FULL": false
+}

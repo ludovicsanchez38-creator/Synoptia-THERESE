@@ -1,0 +1,97 @@
+--- /private/tmp/therese-c17-full-physical-builder-v2-dxGPne/preimages-v1/README.md	2026-10-08 23:52:20
++++ /private/tmp/therese-c17-full-physical-builder-v2-dxGPne/README.md	2026-10-08 23:52:14
+@@ -1,9 +1,17 @@
+-# Constructeur physique FULL A/B proposé
++# Constructeur physique FULL A/B v2 proposé
+ 
+-Auteur : `/root/shared4_execution`. Préparation seulement. Aucun checkout,
++Auteur du gel v1 : `/root/shared4_execution` ; correction v2 :
++`/root/environment_routes`. Préparation seulement. Aucun checkout,
+ root A/B, admission, GO, Session, browser ou workload n'a été construit/lancé
+ par ce lot. Les anciens gels et le dépôt sont inchangés.
+ 
++Préimage v1 exacte : `preimages-v1/` et gel d'origine
++`/private/tmp/therese-c17-full-physical-builder-LVOOtP/INDEX.json`.
++Les six diffs `diffs-v2/` (sens direct/inverse) portent uniquement le constructeur,
++ses tests et son runner pur. Les anciens reçus sous `proofs/` sont des copies
++historiques et ne sont pas attribués au v2 ; le premier rouge v2
++`proofs/pure-huatyyse/` est conservé.
++
+ Le HEAD documentaire courant transmis par MAIN est
+ `d1486c2ad1d1879b1c10196fe269e16b35b85e6e`. Il n'est pas une valeur par défaut
+ du constructeur et aucune source QA actuelle n'est revendiquée ici. HEAD2d69
+@@ -36,7 +44,7 @@
+ | `git_head_ref`, `git_commit_ref`, `git_tree_ref`, `git_manifest_ref` | Refs exactes `{path,sha256,bytes}`, raw root concordants ; commit SHA1, tree reconstruit, blobs/modes/liens et corps sources rehashés ; aucun hardlink source |
+ | `python_audit_ref`, `node_audit_ref` | Audits physiques du même source/HEAD, locks/package metadata/pth/graph ; ensemble `.pth` exact |
+ | `copied_chrome`, `chrome_tree_ref`, `chrome_signature_ref` | Copie QA explicite, 1339 entrées physiques exactes, octets/modes/UID/GID/dev/inode/liens ; codesign réel root rc0 avec refs et âge ≤120 s ; aucun lancement par le constructeur |
+-| `profiles` | Trois refs `web/sql/chrome` revues root ; octets copiés sans dérivation ni compilation |
++| `profiles` | Trois refs `web/sql/chrome` revues root ; octets copiés sans dérivation ni compilation. Chrome doit contenir exactement un `(param "AUXILIARY_PARENT")`. |
+ | `session_contract_ref` | Définition ABI Session physique et relue avec `features` ; pin `module` dérivé vers la copie, sans admission implicite |
+ | `rpc_contract_ref` | Contrat exact du composite déjà pinné par assets ; seul son pin lecteur est dérivé, les 16 exigences restent inchangées |
+ 
+@@ -52,12 +60,17 @@
+ 
+ Le rendu fermé réutilise 88 sources exactes de définitions : composite A/B,
+ wrappers RPC corrigés, port CDP/Git/listener et table78. Les différences de
+-chaque définition finale sont enregistrées avec préimage byte-exacte et diff.
+-Les résultats/calibrations historiques ne sont jamais copiés comme preuves.
++chaque définition finale ordinaire sont enregistrées avec préimage byte-exacte
++et diff. Exception volontaire : le B1760 brut C16 contient
++`four_historical_runs` ; la racine A/B reçoit seulement sa projection de
++définition, ni préimage ni diff brut. La source C16 reste hors de la ronde,
++référencée par SHA/bytes dans `assets.json` et `full-construction-origin.json`.
++Les résultats/calibrations historiques ne sont pas copiés comme preuves.
+ Les dix espèces B1760 sont des définitions filtrées, pas les anciens exports.
+ 
+ Les dérivations fonctionnelles proposées sont bornées : import `uuid` de G1,
+-HEAD/QA/Chrome explicites, profils exacts paramétrés, sept ancres identité v2,
++HEAD/QA/Chrome explicites, parent `root/auxiliary` injecté uniquement dans la
++branche Chrome avec ancre réversible, profils exacts paramétrés, sept ancres identité v2,
+ Vite canonique du checkout QA, préparation du manifeste sans legacy start/stop,
+ pins lecteurs ABI sur les octets rendus et ajout Git Node après le port A/B CDP.
+ Les scénarios, oracles, codes métier, timeouts et types de contrôle existants
+@@ -78,14 +91,19 @@
+ 
+ ## Mesures pures et limites
+ 
+-Mesure finale : 51 tests PASS, zéro failure/error/skip, sources avant/après
+-égales. Reçu `proofs/pure-qc5aaeit/receipt.json`, sinks directs stdout/stderr.
++Mesure v2 : 55 tests PASS, zéro failure/error/skip, sources avant/après
++égales. Reçu `proofs/pure-093gk8e_/receipt.json`, sinks directs stdout/stderr,
++acteur `/root/environment_routes` explicitement passé à `run_pure.py --actor`.
++Ce champ est une déclaration CLI et ne prouve ni autorité root ni acteur OS.
++Rejeu futur de la même suite : `python3 -I -B run_pure.py --actor /root` depuis
++ce dossier, avec nouveau reçu et sources avant/après ; ne pas réétiqueter
++le reçu auteur ni celui de cette revue.
+ Les fixtures Git/Chrome/signature/enrollment sont explicitement synthétiques.
+ Le vrai `calibrate-all` est parcouru contre un transport double ; aucune des
+ 15 feuilles réelles n'est lancée. Les tests ne qualifient pas Chrome, G1,
+ confinement OS, identité peer, A/B, runtime78 ou FULL.
+ 
+-Trois essais préalables rouges sont conservés :
++Trois essais v1 préalables rouges sont conservés comme historique copié :
+ 
+ 1. `abd8b8`, code5, zéro test exécuté : le source écran portait encore les sept
+    anciennes ancres. Le port v2 exact a été ajouté, source avant conservée.
+@@ -93,7 +111,10 @@
+ 3. `4f7dc5`, code1, zéro test exécuté : fixture sans `python_audit_ref` ; reçu
+    et sinks directs `proofs/pure-3osto88c` conservés.
+ 
+-Les deux premiers logs sont copies du texte réellement retourné par l'outil,
++Le v2 conserve aussi `proofs/pure-huatyyse/receipt.json` : zéro test exécuté,
++ancre Chrome initialement ambiguë avec la boucle Q. L'ancre a été resserrée
++sur l'`else` Chrome exact avant le PASS 55. Les deux premiers logs v1 sont
++copies du texte réellement retourné par l'outil,
+ pas des sinks directs rétroactivement créés. Les passages 40/49 antérieurs
+ restent séparés de la suite finale51. Aucune donnée manquante n'est complétée.
+ 
+@@ -102,6 +123,9 @@
+ revus/qualifiés, vraie autorisation externe de construction, ABI Session
+ complète et admission G1 A/B courante, table/plan15/bindings14/enrollments issus
+ du root vivant, origin/auth peer réel, trois revues SQL tardives/Q post-STOP.
++Le diagnostic ROOT13 sur `MAC_CHROMIUM_TMPDIR` est un raccord d'environnement
++encore à éprouver séparément ; ce v2 ne l'ajoute pas et ne présente pas le
++profil Chrome comme qualifié.
+ G1/core gardent RUNTIME/OS/caps false et tables d'admission vides. Il faudra un
+ nouveau gel/admission root explicite pour ouvrir leur exécution, pas modifier
+ une copie fermée par un simple booléen de l'auteur.

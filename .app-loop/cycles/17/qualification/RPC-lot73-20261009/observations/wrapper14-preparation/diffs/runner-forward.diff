@@ -1,0 +1,10 @@
+--- /private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/preimages/run_pure-before-mock-import.py
++++ /private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/run_pure.py
+@@ -11,6 +11,7 @@
+ import sys
+ import tempfile
+ import unittest
++import unittest.mock  # Précharge SSL/asyncio stdlib avant substitution de socket.socket.
+ 
+ HERE = Path(__file__).resolve().parent
+ PATHS = ['build_fresh_wrapper.py', 'tests/test_wrapper14_static.py', 'run_pure.py',

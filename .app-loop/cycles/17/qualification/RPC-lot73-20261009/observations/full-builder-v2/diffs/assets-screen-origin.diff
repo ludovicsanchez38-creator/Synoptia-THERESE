@@ -1,0 +1,15 @@
+--- /private/tmp/therese-c17-full-physical-builder-LVOOtP/preimages/assets-before-screen.json
++++ /private/tmp/therese-c17-full-physical-builder-LVOOtP/assets.json
+@@ -338,9 +338,9 @@
+       "bytes": 2511
+     },
+     "runtime/couverture-ecran-c17.mjs": {
+-      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot68-20261008/composition/expected-definition-only/runtime/couverture-ecran-c17.mjs",
+-      "sha256": "c9bc366e069bf1d64ff48a8888dd14f44785f3a54e0ac733a23c3900a14afec3",
+-      "bytes": 35195
++      "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/auxiliary-ports/runtime/couverture-ecran-c17.mjs",
++      "sha256": "0ca67c653ddfc3da22fb452857910f13fbfa76e28de0ffc37f6d752c436bbc27",
++      "bytes": 37914
+     },
+     "runtime/recette-c17.mjs": {
+       "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot68-20261008/composition/preimages/definitions/runtime/recette-c17.mjs",

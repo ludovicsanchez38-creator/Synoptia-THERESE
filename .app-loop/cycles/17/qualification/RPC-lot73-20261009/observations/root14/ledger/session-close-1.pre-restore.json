@@ -1,0 +1,7559 @@
+{
+  "execution_scope": "g1_rpc_real_instrument_wrappers_canary_only",
+  "round_name": "WRAPPER_CANARY",
+  "cleanup": {
+    "roles": [],
+    "signals": [],
+    "remaining_attributed": [],
+    "termination_of_exact_targets_proved": true,
+    "clean": true,
+    "ambiguities": [],
+    "errors": [],
+    "snapshot_totals": {
+      "snapshots": 945,
+      "listed": 546036,
+      "read": 371300,
+      "ESRCH": 19353,
+      "unattributed_permission_refusals": 174694
+    },
+    "snapshot_audits_tail": [
+      {
+        "at": "2026-10-08T22:12:28.655079+00:00",
+        "listed": 571,
+        "read": 389,
+        "ESRCH": 28,
+        "unattributed_permission_refusals": 182,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:28.671343+00:00",
+        "listed": 572,
+        "read": 390,
+        "ESRCH": 28,
+        "unattributed_permission_refusals": 182,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:28.686908+00:00",
+        "listed": 572,
+        "read": 390,
+        "ESRCH": 28,
+        "unattributed_permission_refusals": 182,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:28.703386+00:00",
+        "listed": 572,
+        "read": 390,
+        "ESRCH": 28,
+        "unattributed_permission_refusals": 182,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:28.719649+00:00",
+        "listed": 572,
+        "read": 390,
+        "ESRCH": 28,
+        "unattributed_permission_refusals": 182,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:28.735884+00:00",
+        "listed": 572,
+        "read": 390,
+        "ESRCH": 28,
+        "unattributed_permission_refusals": 182,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:28.752142+00:00",
+        "listed": 572,
+        "read": 390,
+        "ESRCH": 28,
+        "unattributed_permission_refusals": 182,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:28.768335+00:00",
+        "listed": 572,
+        "read": 390,
+        "ESRCH": 28,
+        "unattributed_permission_refusals": 182,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:28.780156+00:00",
+        "listed": 572,
+        "read": 390,
+        "ESRCH": 28,
+        "unattributed_permission_refusals": 182,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:28.796383+00:00",
+        "listed": 573,
+        "read": 390,
+        "ESRCH": 28,
+        "unattributed_permission_refusals": 183,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:28.812737+00:00",
+        "listed": 573,
+        "read": 390,
+        "ESRCH": 28,
+        "unattributed_permission_refusals": 183,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:28.816107+00:00",
+        "listed": 573,
+        "read": 390,
+        "ESRCH": 28,
+        "unattributed_permission_refusals": 183,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:28.817518+00:00",
+        "listed": 573,
+        "read": 390,
+        "ESRCH": 28,
+        "unattributed_permission_refusals": 183,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:28.860063+00:00",
+        "listed": 573,
+        "read": 390,
+        "ESRCH": 29,
+        "unattributed_permission_refusals": 183,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52379
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:28.914695+00:00",
+        "listed": 573,
+        "read": 390,
+        "ESRCH": 30,
+        "unattributed_permission_refusals": 183,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52379,
+          52381
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:28.916184+00:00",
+        "listed": 573,
+        "read": 390,
+        "ESRCH": 30,
+        "unattributed_permission_refusals": 183,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52379,
+          52381
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:28.956089+00:00",
+        "listed": 573,
+        "read": 390,
+        "ESRCH": 31,
+        "unattributed_permission_refusals": 183,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52379,
+          52381,
+          52383
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:29.011534+00:00",
+        "listed": 573,
+        "read": 390,
+        "ESRCH": 32,
+        "unattributed_permission_refusals": 183,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52379,
+          52381,
+          52383,
+          52385
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:29.013111+00:00",
+        "listed": 573,
+        "read": 390,
+        "ESRCH": 32,
+        "unattributed_permission_refusals": 183,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52379,
+          52381,
+          52383,
+          52385
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:29.054627+00:00",
+        "listed": 573,
+        "read": 390,
+        "ESRCH": 33,
+        "unattributed_permission_refusals": 183,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:29.107325+00:00",
+        "listed": 573,
+        "read": 390,
+        "ESRCH": 34,
+        "unattributed_permission_refusals": 183,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:29.108899+00:00",
+        "listed": 573,
+        "read": 390,
+        "ESRCH": 34,
+        "unattributed_permission_refusals": 183,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:29.148052+00:00",
+        "listed": 574,
+        "read": 391,
+        "ESRCH": 35,
+        "unattributed_permission_refusals": 183,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:29.200715+00:00",
+        "listed": 574,
+        "read": 391,
+        "ESRCH": 36,
+        "unattributed_permission_refusals": 183,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:29.202397+00:00",
+        "listed": 574,
+        "read": 391,
+        "ESRCH": 36,
+        "unattributed_permission_refusals": 183,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:29.243417+00:00",
+        "listed": 574,
+        "read": 391,
+        "ESRCH": 37,
+        "unattributed_permission_refusals": 183,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:29.294366+00:00",
+        "listed": 574,
+        "read": 391,
+        "ESRCH": 38,
+        "unattributed_permission_refusals": 183,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:29.295984+00:00",
+        "listed": 574,
+        "read": 391,
+        "ESRCH": 38,
+        "unattributed_permission_refusals": 183,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:29.336776+00:00",
+        "listed": 574,
+        "read": 391,
+        "ESRCH": 39,
+        "unattributed_permission_refusals": 183,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:29.387471+00:00",
+        "listed": 575,
+        "read": 392,
+        "ESRCH": 40,
+        "unattributed_permission_refusals": 183,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:29.389248+00:00",
+        "listed": 575,
+        "read": 392,
+        "ESRCH": 40,
+        "unattributed_permission_refusals": 183,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:29.429994+00:00",
+        "listed": 573,
+        "read": 390,
+        "ESRCH": 42,
+        "unattributed_permission_refusals": 183,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407,
+          52408,
+          52410
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:29.485144+00:00",
+        "listed": 574,
+        "read": 390,
+        "ESRCH": 43,
+        "unattributed_permission_refusals": 184,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407,
+          52408,
+          52410,
+          52412
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:29.486835+00:00",
+        "listed": 574,
+        "read": 390,
+        "ESRCH": 43,
+        "unattributed_permission_refusals": 184,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407,
+          52408,
+          52410,
+          52412
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:29.526160+00:00",
+        "listed": 574,
+        "read": 389,
+        "ESRCH": 45,
+        "unattributed_permission_refusals": 184,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407,
+          52408,
+          52410,
+          52412,
+          52415
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:29.579829+00:00",
+        "listed": 574,
+        "read": 389,
+        "ESRCH": 46,
+        "unattributed_permission_refusals": 184,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407,
+          52408,
+          52410,
+          52412,
+          52415,
+          52417
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:29.581718+00:00",
+        "listed": 573,
+        "read": 389,
+        "ESRCH": 46,
+        "unattributed_permission_refusals": 184,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52371,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407,
+          52408,
+          52410,
+          52412,
+          52415,
+          52417
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:29.583273+00:00",
+        "listed": 573,
+        "read": 389,
+        "ESRCH": 46,
+        "unattributed_permission_refusals": 184,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52371,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407,
+          52408,
+          52410,
+          52412,
+          52415,
+          52417
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:29.584623+00:00",
+        "listed": 573,
+        "read": 389,
+        "ESRCH": 46,
+        "unattributed_permission_refusals": 184,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52371,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407,
+          52408,
+          52410,
+          52412,
+          52415,
+          52417
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:29.586042+00:00",
+        "listed": 573,
+        "read": 389,
+        "ESRCH": 46,
+        "unattributed_permission_refusals": 184,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52371,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407,
+          52408,
+          52410,
+          52412,
+          52415,
+          52417
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:30.366461+00:00",
+        "listed": 573,
+        "read": 389,
+        "ESRCH": 46,
+        "unattributed_permission_refusals": 184,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52371,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407,
+          52408,
+          52410,
+          52412,
+          52415,
+          52417
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:30.367946+00:00",
+        "listed": 573,
+        "read": 389,
+        "ESRCH": 46,
+        "unattributed_permission_refusals": 184,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52371,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407,
+          52408,
+          52410,
+          52412,
+          52415,
+          52417
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:30.369394+00:00",
+        "listed": 573,
+        "read": 389,
+        "ESRCH": 46,
+        "unattributed_permission_refusals": 184,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52371,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407,
+          52408,
+          52410,
+          52412,
+          52415,
+          52417
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:30.370842+00:00",
+        "listed": 573,
+        "read": 389,
+        "ESRCH": 46,
+        "unattributed_permission_refusals": 184,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52371,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407,
+          52408,
+          52410,
+          52412,
+          52415,
+          52417
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:31.113586+00:00",
+        "listed": 573,
+        "read": 388,
+        "ESRCH": 47,
+        "unattributed_permission_refusals": 184,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52371,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407,
+          52408,
+          52410,
+          52412,
+          52415,
+          52417
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:31.118232+00:00",
+        "listed": 572,
+        "read": 388,
+        "ESRCH": 47,
+        "unattributed_permission_refusals": 184,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52302,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52371,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407,
+          52408,
+          52410,
+          52412,
+          52415,
+          52417
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:31.119763+00:00",
+        "listed": 572,
+        "read": 388,
+        "ESRCH": 47,
+        "unattributed_permission_refusals": 184,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52302,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52371,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407,
+          52408,
+          52410,
+          52412,
+          52415,
+          52417
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:31.121219+00:00",
+        "listed": 572,
+        "read": 388,
+        "ESRCH": 47,
+        "unattributed_permission_refusals": 184,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52302,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52371,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407,
+          52408,
+          52410,
+          52412,
+          52415,
+          52417
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:31.122697+00:00",
+        "listed": 572,
+        "read": 388,
+        "ESRCH": 47,
+        "unattributed_permission_refusals": 184,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52302,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52371,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407,
+          52408,
+          52410,
+          52412,
+          52415,
+          52417
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:31.872747+00:00",
+        "listed": 572,
+        "read": 387,
+        "ESRCH": 47,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52302,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52371,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407,
+          52408,
+          52410,
+          52412,
+          52415,
+          52417
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:31.874373+00:00",
+        "listed": 572,
+        "read": 387,
+        "ESRCH": 47,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52302,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52371,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407,
+          52408,
+          52410,
+          52412,
+          52415,
+          52417
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:31.875864+00:00",
+        "listed": 572,
+        "read": 387,
+        "ESRCH": 47,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52302,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52371,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407,
+          52408,
+          52410,
+          52412,
+          52415,
+          52417
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:31.877336+00:00",
+        "listed": 572,
+        "read": 387,
+        "ESRCH": 47,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52302,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52371,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407,
+          52408,
+          52410,
+          52412,
+          52415,
+          52417
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:31.878860+00:00",
+        "listed": 572,
+        "read": 386,
+        "ESRCH": 48,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52302,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52371,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407,
+          52408,
+          52410,
+          52412,
+          52415,
+          52417
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:31.908435+00:00",
+        "listed": 570,
+        "read": 385,
+        "ESRCH": 49,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52257,
+          52262,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52302,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52371,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407,
+          52408,
+          52410,
+          52412,
+          52415,
+          52417
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:31.934373+00:00",
+        "listed": 570,
+        "read": 385,
+        "ESRCH": 49,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52257,
+          52262,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52302,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52371,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407,
+          52408,
+          52410,
+          52412,
+          52415,
+          52417
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:31.960699+00:00",
+        "listed": 570,
+        "read": 385,
+        "ESRCH": 49,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52257,
+          52262,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52302,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52371,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407,
+          52408,
+          52410,
+          52412,
+          52415,
+          52417
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:31.988412+00:00",
+        "listed": 570,
+        "read": 385,
+        "ESRCH": 49,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52257,
+          52262,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52302,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52371,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407,
+          52408,
+          52410,
+          52412,
+          52415,
+          52417
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:33.479043+00:00",
+        "listed": 566,
+        "read": 381,
+        "ESRCH": 50,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52244,
+          52257,
+          52262,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52302,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52371,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407,
+          52408,
+          52410,
+          52412,
+          52415,
+          52417
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:33.593351+00:00",
+        "listed": 566,
+        "read": 381,
+        "ESRCH": 53,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52244,
+          52257,
+          52262,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52302,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52371,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407,
+          52408,
+          52410,
+          52412,
+          52415,
+          52417,
+          52430,
+          52432,
+          52434
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:33.705391+00:00",
+        "listed": 566,
+        "read": 381,
+        "ESRCH": 56,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52244,
+          52257,
+          52262,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52302,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52371,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407,
+          52408,
+          52410,
+          52412,
+          52415,
+          52417,
+          52430,
+          52432,
+          52434,
+          52436,
+          52438,
+          52440
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:33.706891+00:00",
+        "listed": 566,
+        "read": 381,
+        "ESRCH": 56,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52244,
+          52257,
+          52262,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52302,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52371,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407,
+          52408,
+          52410,
+          52412,
+          52415,
+          52417,
+          52430,
+          52432,
+          52434,
+          52436,
+          52438,
+          52440
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:33.708283+00:00",
+        "listed": 566,
+        "read": 381,
+        "ESRCH": 56,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52244,
+          52257,
+          52262,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52302,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52371,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407,
+          52408,
+          52410,
+          52412,
+          52415,
+          52417,
+          52430,
+          52432,
+          52434,
+          52436,
+          52438,
+          52440
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      },
+      {
+        "at": "2026-10-08T22:12:33.709788+00:00",
+        "listed": 566,
+        "read": 381,
+        "ESRCH": 56,
+        "unattributed_permission_refusals": 185,
+        "unattributed_refusal_sample": [
+          {
+            "pid": 1,
+            "errno": 1
+          },
+          {
+            "pid": 340,
+            "errno": 1
+          },
+          {
+            "pid": 342,
+            "errno": 1
+          },
+          {
+            "pid": 344,
+            "errno": 1
+          },
+          {
+            "pid": 345,
+            "errno": 1
+          },
+          {
+            "pid": 348,
+            "errno": 1
+          },
+          {
+            "pid": 352,
+            "errno": 1
+          },
+          {
+            "pid": 354,
+            "errno": 1
+          },
+          {
+            "pid": 355,
+            "errno": 1
+          },
+          {
+            "pid": 359,
+            "errno": 1
+          },
+          {
+            "pid": 363,
+            "errno": 1
+          },
+          {
+            "pid": 365,
+            "errno": 1
+          },
+          {
+            "pid": 369,
+            "errno": 1
+          },
+          {
+            "pid": 371,
+            "errno": 1
+          },
+          {
+            "pid": 372,
+            "errno": 1
+          },
+          {
+            "pid": 376,
+            "errno": 1
+          }
+        ],
+        "error": null,
+        "supplemental_known_pids": [
+          52229,
+          52231,
+          52233,
+          52235,
+          52237,
+          52239,
+          52244,
+          52257,
+          52262,
+          52263,
+          52265,
+          52269,
+          52271,
+          52276,
+          52278,
+          52283,
+          52285,
+          52290,
+          52292,
+          52296,
+          52298,
+          52302,
+          52309,
+          52314,
+          52321,
+          52328,
+          52333,
+          52334,
+          52341,
+          52344,
+          52349,
+          52354,
+          52371,
+          52379,
+          52381,
+          52383,
+          52385,
+          52387,
+          52391,
+          52393,
+          52399,
+          52401,
+          52403,
+          52405,
+          52407,
+          52408,
+          52410,
+          52412,
+          52415,
+          52417,
+          52430,
+          52432,
+          52434,
+          52436,
+          52438,
+          52440
+        ],
+        "scope": "observed_attribution_not_hostile_exhaustiveness"
+      }
+    ]
+  },
+  "cleanup_error": null,
+  "clean": false,
+  "remaining_handles": [],
+  "log_stability_tainted": true,
+  "cleanup_elapsed_seconds": 0.7490162499889266,
+  "cleanup_deadline_met": true,
+  "cleanup_taint": [
+    "session_tainted_before_receipts"
+  ],
+  "interruptions": [],
+  "attribution_errors": [],
+  "launched_services": [
+    "backend",
+    "vite"
+  ],
+  "unlaunched_handles": [],
+  "ports_absent": [
+    17593,
+    5173
+  ],
+  "auxiliary_ports_absent": [
+    17594
+  ],
+  "ports_absence_proved": true,
+  "ports_absence_receipt": {
+    "path": "/private/tmp/therese-c17-wrapper-canary-187602c63a0b498a95d25c19843000a8/ledger/ports-absence-3.json",
+    "sha256": "3b86e33cd9d2835a98745a52ebeb893e58b96cfbeea7eed38c5f1f67cbafc62e",
+    "bytes": 7819
+  },
+  "port_absence_elapsed_seconds": 0.22349441700498573,
+  "session_stop_pre_receipt_elapsed_seconds": 1.7395824580162298,
+  "cleanup_elapsed_scope": "finish_only_excludes_post_cleanup_port_scan_and_receipt_publication",
+  "phase_elapsed_scope": "finish_plus_port_scan_before_final_receipt_write",
+  "schema": "c17-runtime78-owned-session-close-pre-restore-v1",
+  "actor": "/root",
+  "round_id": "therese-c17-wrapper-canary-187602c63a0b498a95d25c19843000a8",
+  "head": "2d69e30c9c6dd18823ee6102271876003a6a67cc",
+  "qa_root": "/private/tmp/therese-c17-wrapper-canary-187602c63a0b498a95d25c19843000a8",
+  "attempt": 1,
+  "owned_processes_closed_candidate": true,
+  "session_closed": false,
+  "interrupt_handlers_restored": false,
+  "log_stability_proved": false,
+  "prelaunch_errors": []
+}

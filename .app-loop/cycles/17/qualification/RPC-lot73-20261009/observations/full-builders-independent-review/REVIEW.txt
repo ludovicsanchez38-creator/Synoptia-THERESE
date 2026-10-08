@@ -1,0 +1,30 @@
+Revue indépendante des constructeurs FULL fermés v2 et v3
+Acteur : /root/cycle17_gate_review
+Observation : 2026-10-08T22:14:18.579721+00:00
+Avis favorable pour préparation seulement. Aucun constructeur, test, G1, Node, Chrome ou runtime exécuté par ce réviseur.
+
+V2 : INDEX 2e6fa077f923236cd1a5c87143f2fbd82f1d18f74269e5b6278c9cb825a08659 /38532 octets.
+50 refs locales,88 assets et les86 pins finaux contrôlés. Huit diffs direct/inverse reconstruits ; préimages v1 exactes.
+AUXILIARY_PARENT est borné au parent QA dans la seule branche Chrome.
+Le brut B1760 avec four_historical_runs demeure hors de la ronde ; seule projection de définition émise, sans copie de préimage/diff brut dans A/B.
+Quatre aliases runtime et seconde source aux_node-git sont tracés.
+L'acteur pur est explicitement déclaré par CLI, pas authentifié comme identité OS.
+Auteur55PASS bb15feda… et MAIN55PASS66872c25… lus avec raws,86 pins before/after égaux. Ils sont deux mesures de la même suite, pas110 cas.
+Le premier rouge v2 reste zéro test et passed false.
+Le détail README six/huit diffs est purement rédactionnel ; aucun gel ancien modifié.
+
+V3 : INDEX 67b9dffbf6f872a393096aadf8e9b4fa0e807963fc4cba7805dca10a2f495c38 /46523 octets.
+75 refs locales,88 assets et les86 pins finaux contrôlés. Six diffs direct/inverse reconstruits ; préimages v2 exactes.
+Seuls derive_g1/payloads/construct et nouveau port_ab_chromium_tmpdir changent.
+Le port MAC exige modeChrome, racine A/B exacte sous /private/tmp et un des14noms ab_aux.NAMES, MAC=TMPDIR=root/auxiliary/stage/tmp existant/canonique/directory.
+Les ensembles ENV, les services/parents/feuilles ordinaires et les profils ne sont pas élargis.
+Mapping14 des valeurs requises et mkdir privé700 sont préparés ; les environnements complets/owner/bindings réels restent différés. Le gel WRAPPER14 n'est pas relabellé A/B.
+Auteur59PASS9f05193b… et MAIN59PASS4c934baf… lus avec raws,86 pins before/after égaux. Ils ne font pas118 cas.
+
+214 références physiques uniques sont rehashées dans checked-refs.json, sans écart.
+Le premier essai du simple lecteur de revue a rencontré INDEX.files dict au lieu de list. Après lecture du schéma, itération values corrigée ; aucun producteur, oracle ni assertion changé. Ce diagnostic de lecteur n'est pas un résultat de test produit.
+
+RUNTIME/FULL/release/admission false,source_HEAD null,rounds0 conservés.
+Les sources/HEAD QA réels, audits dépendances, signature physique fraîche Chrome, profils qualifiés, autorité externe, runtime binding15/14/enrollments, origine peer et revues SQL/Q post-STOP restent à obtenir pour A/B.
+Les contrats SQL/oracles,CDP5/startup50/cleanup8,ports et dénominateurs ne changent pas.
+Aucune preuve native, parité complète des corps de dépendances, exhaustivité forks/PID ou préemption hard-realtime ne découle de cette revue.

@@ -1,0 +1,44 @@
+{
+  "schema": "c17-root12-chrome40332-system-log-v1",
+  "actor": "/root/environment_routes",
+  "scope": "PID 40332 and system messages naming only PID 40332, local 23:21:39–23:21:44",
+  "executable": "/usr/bin/log",
+  "argv": [
+    "show",
+    "--style",
+    "json",
+    "--start",
+    "2026-10-08 23:21:39",
+    "--end",
+    "2026-10-08 23:21:44",
+    "--predicate",
+    "(processID == 40332 OR ((process == \"kernel\" OR process == \"sandboxd\" OR process == \"syspolicyd\" OR process == \"amfid\" OR process == \"taskgated\") AND eventMessage CONTAINS \"40332\"))"
+  ],
+  "started_at": "2026-10-08T21:23:57.979Z",
+  "completed_at": "2026-10-08T21:23:57.986Z",
+  "exit_code": 64,
+  "signal": null,
+  "error": null,
+  "parse_error": "SyntaxError: Unexpected end of JSON input",
+  "stdout_ref": {
+    "path": "/private/tmp/therese-c17-root12-chrome40332-diagnostic-Bx0LdE/stdout.json",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "stderr_ref": {
+    "path": "/private/tmp/therese-c17-root12-chrome40332-diagnostic-Bx0LdE/stderr.log",
+    "sha256": "3d1bfc20628becabc4bda68e57c58ad567d3a8aa0c8aa281f68b58bb28a3d0e5",
+    "bytes": 32
+  },
+  "script_ref": {
+    "path": "/private/tmp/therese-c17-root12-chrome40332-diagnostic-Bx0LdE/collect.mjs",
+    "sha256": "22f6dcacda54cfdb10d9af7ee1d60368d96053a95b1cda0d58239f7a2614fc6b",
+    "bytes": 2494
+  },
+  "event_count": 0,
+  "passed": false,
+  "diagnostic_only": true,
+  "G1_imported": false,
+  "profile_changed": false,
+  "FULL": false
+}

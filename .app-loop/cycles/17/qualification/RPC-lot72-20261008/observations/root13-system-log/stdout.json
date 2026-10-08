@@ -1,0 +1,1706 @@
+[{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5216842,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:04.578249+0200",
+  "machTimestamp" : 7509116566259,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) file-read-data \/dev\/dtracehelper",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5216842,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:07.520996+0200",
+  "machTimestamp" : 7509187192190,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) file-read-data \/dev\/dtracehelper",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5216731,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:07.807282+0200",
+  "machTimestamp" : 7509194063032,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.logd",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5216731,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:07.807419+0200",
+  "machTimestamp" : 7509194066328,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.system.notification_center",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5215907,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:07.810504+0200",
+  "machTimestamp" : 7509194140379,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.system.opendirectoryd.libinfo",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5216842,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:07.811214+0200",
+  "machTimestamp" : 7509194157410,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) file-read-data \/private\/etc\/passwd",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5216842,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:07.811227+0200",
+  "machTimestamp" : 7509194157719,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) file-read-metadata \/private\/etc\/passwd",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5215907,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:07.811424+0200",
+  "machTimestamp" : 7509194162441,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.system.opendirectoryd.libinfo",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5217154,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:07.811452+0200",
+  "machTimestamp" : 7509194163130,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) file-read-data \/private\/etc\/passwd",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5217154,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:07.811463+0200",
+  "machTimestamp" : 7509194163385,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) file-read-metadata \/private\/etc\/passwd",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5216731,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:07.811479+0200",
+  "machTimestamp" : 7509194163772,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.system.opendirectoryd.libinfo",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5217154,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:07.811501+0200",
+  "machTimestamp" : 7509194164299,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) file-read-data \/private\/etc\/passwd",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5217154,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:07.811509+0200",
+  "machTimestamp" : 7509194164487,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) file-read-metadata \/private\/etc\/passwd",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5215907,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:07.811522+0200",
+  "machTimestamp" : 7509194164799,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.system.opendirectoryd.libinfo",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5217154,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:07.811541+0200",
+  "machTimestamp" : 7509194165264,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) file-read-data \/private\/etc\/passwd",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5217154,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:07.811549+0200",
+  "machTimestamp" : 7509194165451,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) file-read-metadata \/private\/etc\/passwd",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5216731,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:07.811561+0200",
+  "machTimestamp" : 7509194165731,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.system.opendirectoryd.libinfo",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5217154,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:07.811578+0200",
+  "machTimestamp" : 7509194166156,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) file-read-data \/private\/etc\/passwd",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5217154,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:07.811585+0200",
+  "machTimestamp" : 7509194166318,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) file-read-metadata \/private\/etc\/passwd",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5217154,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:07.811884+0200",
+  "machTimestamp" : 7509194173493,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) file-read-data \/Library\/Preferences\/.GlobalPreferences.plist",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5216731,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:07.869219+0200",
+  "machTimestamp" : 7509195549537,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.pasteboard.1",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5216731,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:07.869343+0200",
+  "machTimestamp" : 7509195552502,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.distributed_notifications@Uv3",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5216731,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:07.876666+0200",
+  "machTimestamp" : 7509195728248,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.tccd.system",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5216842,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:07.897851+0200",
+  "machTimestamp" : 7509196236692,
+  "eventMessage" : "1 duplicate report for Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.tccd.system",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5216842,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:07.897854+0200",
+  "machTimestamp" : 7509196236763,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) file-read-metadata \/private\/var\/db\/.AppleSetupDone",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5216842,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:07.902610+0200",
+  "machTimestamp" : 7509196350908,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) file-issue-extension target:\/private\/tmp\/therese-c17-chrome-qa-copy-RoZmwsja\/Google Chrome.app extension-class:com.apple.app-sandbox.read",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5215907,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:07.913576+0200",
+  "machTimestamp" : 7509196614091,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.analyticsd",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5215907,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:07.913653+0200",
+  "machTimestamp" : 7509196615936,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.CoreServices.coreservicesd",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5216731,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:07.914342+0200",
+  "machTimestamp" : 7509196632474,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.DiskArbitration.diskarbitrationd",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5215907,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:07.915340+0200",
+  "machTimestamp" : 7509196656425,
+  "eventMessage" : "1 duplicate report for Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.DiskArbitration.diskarbitrationd",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5215907,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:07.915341+0200",
+  "machTimestamp" : 7509196656458,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.lsd.mapdb",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5216731,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:07.940294+0200",
+  "machTimestamp" : 7509197255341,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.lsd.modifydb",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5217153,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:08.012865+0200",
+  "machTimestamp" : 7509198997024,
+  "eventMessage" : "379 duplicate reports for Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.lsd.modifydb",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5217153,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:08.012868+0200",
+  "machTimestamp" : 7509198997103,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) file-read-metadata \/Applications\/Xcode.app",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5216731,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:08.013349+0200",
+  "machTimestamp" : 7509199008661,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.lsd.modifydb",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5215110,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:08.017359+0200",
+  "machTimestamp" : 7509199104891,
+  "eventMessage" : "28 duplicate reports for Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.lsd.modifydb",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5215110,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:08.017361+0200",
+  "machTimestamp" : 7509199104948,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.system.opendirectoryd.libinfo",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5217153,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:08.017398+0200",
+  "machTimestamp" : 7509199105823,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) file-read-data \/private\/etc\/passwd",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5217153,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:08.017408+0200",
+  "machTimestamp" : 7509199106072,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) file-read-metadata \/private\/etc\/passwd",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5215110,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:08.039745+0200",
+  "machTimestamp" : 7509199642160,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.lsd.mapdb",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5215110,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:08.039798+0200",
+  "machTimestamp" : 7509199643436,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.lsd.modifydb",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5216731,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:08.039991+0200",
+  "machTimestamp" : 7509199648056,
+  "eventMessage" : "2 duplicate reports for Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.lsd.modifydb",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5216731,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:08.039993+0200",
+  "machTimestamp" : 7509199648102,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.lsd.mapdb",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5216731,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:08.040061+0200",
+  "machTimestamp" : 7509199649744,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.lsd.modifydb",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5215110,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:08.040188+0200",
+  "machTimestamp" : 7509199652788,
+  "eventMessage" : "1 duplicate report for Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.lsd.modifydb",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5215110,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:08.040189+0200",
+  "machTimestamp" : 7509199652814,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.lsd.mapdb",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5215110,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:08.040319+0200",
+  "machTimestamp" : 7509199655943,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.lsd.modifydb",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5215110,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:08.040443+0200",
+  "machTimestamp" : 7509199658904,
+  "eventMessage" : "1 duplicate report for Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.lsd.modifydb",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5215110,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:08.040444+0200",
+  "machTimestamp" : 7509199658929,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.lsd.mapdb",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5215110,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:08.040492+0200",
+  "machTimestamp" : 7509199660075,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.lsd.modifydb",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5215110,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:08.042190+0200",
+  "machTimestamp" : 7509199700847,
+  "eventMessage" : "1 duplicate report for Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.lsd.modifydb",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5215110,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:08.042192+0200",
+  "machTimestamp" : 7509199700875,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.dock.server",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5216731,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:08.085762+0200",
+  "machTimestamp" : 7509200746553,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.system.opendirectoryd.membership",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5216842,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:08.099152+0200",
+  "machTimestamp" : 7509201067930,
+  "eventMessage" : "1 duplicate report for Sandbox: Google Chrome(46190) deny(1) mach-lookup com.apple.system.opendirectoryd.membership",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+},{
+  "timezoneName" : "",
+  "messageType" : "Error",
+  "eventType" : "logEvent",
+  "source" : null,
+  "formatString" : "%s",
+  "userID" : 0,
+  "activityIdentifier" : 0,
+  "subsystem" : "",
+  "category" : "",
+  "threadID" : 5216842,
+  "senderImageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C",
+  "backtrace" : {
+    "frames" : [
+      {
+        "imageOffset" : 168412,
+        "imageUUID" : "D4780E99-68D4-3902-8072-5151727ABD4C"
+      }
+    ]
+  },
+  "bootUUID" : "316F8919-9D2F-43EB-9AF9-D8DDB82C3CB5",
+  "processImagePath" : "\/kernel",
+  "senderImagePath" : "\/System\/Library\/Extensions\/Sandbox.kext\/Contents\/MacOS\/Sandbox",
+  "timestamp" : "2026-10-08 23:47:08.099155+0200",
+  "machTimestamp" : 7509201068001,
+  "eventMessage" : "Sandbox: Google Chrome(46190) deny(1) file-read-metadata \/private\/var\/folders\/h9\/jc5lqq916pz1jqx8lzf0cdyw0000gn\/T",
+  "processImageUUID" : "B445A6D8-ED24-3577-AD36-B69EFB660E50",
+  "traceID" : 17575040258052,
+  "processID" : 0,
+  "senderProgramCounter" : 168412,
+  "parentActivityIdentifier" : 0
+}]

@@ -1,0 +1,67 @@
+--- /private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/preimages/build_fresh_wrapper-main12.py
++++ /private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/build_fresh_wrapper.py
+@@ -28,6 +28,7 @@
+ QA = Path('/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source')
+ PROOFS = QA.parent / 'proofs'
+ HEAD = '2d69e30c9c6dd18823ee6102271876003a6a67cc'
++FUTURE_ROOT = Path('/private/tmp/therese-c17-wrapper-canary-8612f55886284332a3ac6a7bc9615021')
+ NODE = Path('/Users/synoptia/.nvm/versions/node/v22.19.0/bin/node')
+ PYTHON_PHYSICAL = Path('/Users/synoptia/.local/share/uv/python/cpython-3.13.5-macos-aarch64-none/bin/python3.13')
+ SOURCE_MANIFEST_SHA = '0904574e2b35b523b8454b33156f595f05a62e21609453a65db59ae516423b89'
+@@ -52,8 +53,12 @@
+                   'sha256': '19808ee2cac3169e9fb8c71c24385bcbb97f924c5ed785f4651817ecaa179b0c', 'bytes': 2067}
+ CHROME_PREVIOUS_PROFILE = {'path': '/private/tmp/therese-c17-wrapper-profile-three-builder-G8n4Ef/profile/chrome.sb',
+                            'sha256': 'bee3c2e780e58cbc80ed7e37d64115adf08997aab39dae8f11b56050785633a9', 'bytes': 2375}
+-CHROME_PROFILE = {'path': '/private/tmp/therese-c17-wrapper12-metadata-parent-MtcoJZ/profile/chrome.sb',
+-                  'sha256': '980b12368975718d33dba1572ce94da04ca378ca827df1be10a1ed15a7104cdb', 'bytes': 2439}
++CHROME_MAIN12_PROFILE = {'path': '/private/tmp/therese-c17-wrapper12-metadata-parent-MtcoJZ/profile/chrome.sb',
++                         'sha256': '980b12368975718d33dba1572ce94da04ca378ca827df1be10a1ed15a7104cdb', 'bytes': 2439}
++CHROME_GETCONF_PROFILE = {'path': '/private/tmp/therese-c17-getconf-dirhelper-XeZCB9/profiles/dirhelper.sb',
++                          'sha256': '2ecae3a24ec871a44827b3f712ced1ef5e84d8f778906c37b3a5b51bb374dcdf', 'bytes': 2499}
++CHROME_PROFILE = {'path': '/private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/profile/chrome.sb',
++                  'sha256': '2ecae3a24ec871a44827b3f712ced1ef5e84d8f778906c37b3a5b51bb374dcdf', 'bytes': 2499}
+ CHROME_INDEX = Path('/private/tmp/therese-c17-fresh-wrapper-builder-v7-cnR8Hm/profile/INDEX.json')
+ WITNESS = Path('/private/tmp/therese-c17-test-runner-boundary-eUIHsp')
+ WITNESS_FILES = ('source/runner_boundary.py', 'INDEX.json', 'tests/test_runner_boundary.py',
+@@ -169,7 +174,7 @@
+ 
+ def future_root(root: Path):
+     root = Path(root)
+-    need(root.is_absolute() and root.parent == Path('/private/tmp')
++    need(root == FUTURE_ROOT and root.is_absolute() and root.parent == Path('/private/tmp')
+          and re.fullmatch(r'therese-c17-wrapper-canary-[a-z0-9_]{8,64}', root.name)
+          and root.parent.resolve(strict=True) == root.parent
+          and not root.exists() and not root.is_symlink(), 'Root neuf canonique absent requis')
+@@ -617,8 +622,8 @@
+ 
+ 
+ def checked_chrome_successor(chrome_ref):
+-    """Chaîne MAIN11 intacte, puis le seul parent auxiliaire en metadata littérale."""
+-    need(chrome_ref == CHROME_PROFILE, 'Seule proposition Chrome parent auxiliaire exact admise')
++    """Chaîne MAIN12 intacte, puis seul lookup dirhelper mesuré par getconf."""
++    need(chrome_ref == CHROME_PROFILE, 'Seule proposition Chrome dirhelper exacte admise')
+     before, v8 = checked_chrome_v8_successor(CHROME_V8_PROFILE)
+     metadata = '(allow file-read-metadata (literal "/") (literal "/Applications") (literal "/private") (literal "/private/tmp"))'
+     metadata_v9 = ('(allow file-read-metadata (literal "/") (literal "/Applications") (literal "/private") (literal "/private/tmp")\n'
+@@ -639,11 +644,17 @@
+         '(allow iokit-open-user-client (iokit-user-client-class "AGXDeviceUserClient"))\n'
+     )
+     need(previous == after + delta, 'Préimage MAIN11 Chrome différente')
++    main12 = checked(CHROME_MAIN12_PROFILE).decode()
++    auxiliary_delta = '(allow file-read-metadata (literal (param "AUXILIARY_PARENT")))\n'
++    need(main12 == previous + auxiliary_delta
++         and main12.count(auxiliary_delta) == 1,
++         'Préimage MAIN12 hors metadata du parent auxiliaire exact')
+     candidate = checked(chrome_ref).decode()
+-    auxiliary_delta = '(allow file-read-metadata (literal (param "AUXILIARY_PARENT")))\n'
+-    need(candidate == previous + auxiliary_delta
+-         and candidate.count(auxiliary_delta) == 1,
+-         'Delta Chrome hors metadata du parent auxiliaire exact')
++    dirhelper_delta = '(allow mach-lookup (global-name "com.apple.bsd.dirhelper"))\n'
++    need(candidate == main12 + dirhelper_delta
++         and candidate.count(dirhelper_delta) == 1
++         and checked(CHROME_GETCONF_PROFILE).decode() == candidate,
++         'Delta Chrome hors du seul lookup dirhelper mesuré par getconf')
+     return before, candidate
+ 
+ 

@@ -1,0 +1,7 @@
+--- /private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/preimages/chrome-main12.sb
++++ /private/tmp/therese-c17-wrapper13-dirhelper-P5WQpQ/profile/chrome.sb
+@@ -36,3 +36,4 @@
+ (allow iokit-open-user-client (iokit-user-client-class "IOSurfaceRootUserClient"))
+ (allow iokit-open-user-client (iokit-user-client-class "AGXDeviceUserClient"))
+ (allow file-read-metadata (literal (param "AUXILIARY_PARENT")))
++(allow mach-lookup (global-name "com.apple.bsd.dirhelper"))

@@ -1,0 +1,18 @@
+setUpClass (test_builder.BuilderTests) ... ERROR
+
+======================================================================
+ERROR: setUpClass (test_builder.BuilderTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/therese-c17-full-physical-builder-LVOOtP/tests/test_builder.py", line 85, in setUpClass
+    cls.out = b.payloads(cls.request, cls.assets, cls.source, cls.deps, cls.chrome)
+              ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/therese-c17-full-physical-builder-LVOOtP/build_full_round.py", line 542, in payloads
+    'definitions': origins, 'diffs': diffs, 'source_input_refs': {key: request[key] for key in (
+                                                                       ~~~~~~~^^^^^
+KeyError: 'python_audit_ref'
+
+----------------------------------------------------------------------
+Ran 0 tests in 0.132s
+
+FAILED (errors=1)

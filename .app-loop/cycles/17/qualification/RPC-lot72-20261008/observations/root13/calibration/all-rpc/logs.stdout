@@ -1,0 +1,4 @@
+2026-10-08 21:47:00 - app.core.logging_config - INFO - Logging configure : console (lisible) + fichier JSON (/private/tmp/therese-c17-wrapper-canary-8612f55886284332a3ac6a7bc9615021/profiles/service/logs-rpc/logs/therese.log), niveau=INFO
+2026-10-08 21:47:00 - calibration.cycle17.reprise - INFO - TEMOIN-C17-SAIN
+2026-10-08 21:47:00 - calibration.cycle17.reprise - ERROR - TEMOIN-C17-ERREUR-INJECTEE
+{"status": "passed", "proof": "/private/tmp/therese-c17-wrapper-canary-8612f55886284332a3ac6a7bc9615021/runtime/calibration/logs-rpc/logs-controls.json"}

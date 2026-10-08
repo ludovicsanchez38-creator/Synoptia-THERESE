@@ -1,0 +1,4 @@
+[1008/234707.897866:ERROR:third_party/crashpad/crashpad/util/mach/bootstrap.cc:65] bootstrap_check_in org.chromium.crashpad.child_port_handshake.46336.5217156.NCROEWRQZLNJGXPO: Permission denied (1100)
+[1008/234707.898394:ERROR:third_party/crashpad/crashpad/util/file/file_io.cc:103] ReadExactly: expected 4, observed 0
+[46190:5216842:1008/234708.131465:ERROR:chrome/browser/process_singleton_posix.cc:1043] Failed to create socket directory.
+[46190:5216842:1008/234708.131720:ERROR:chrome/app/chrome_main_delegate.cc:562] Failed to create a ProcessSingleton for your profile directory. This means that running multiple instances would start multiple browser processes rather than opening a new window in the existing process. Aborting now to avoid profile corruption.

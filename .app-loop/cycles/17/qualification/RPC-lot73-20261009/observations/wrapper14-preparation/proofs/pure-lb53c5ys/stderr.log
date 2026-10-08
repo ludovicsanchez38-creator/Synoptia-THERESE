@@ -1,0 +1,31 @@
+test_wrapper14_static (unittest.loader._FailedTest.test_wrapper14_static) ... ERROR
+
+======================================================================
+ERROR: test_wrapper14_static (unittest.loader._FailedTest.test_wrapper14_static)
+----------------------------------------------------------------------
+ImportError: Failed to import test module: test_wrapper14_static
+Traceback (most recent call last):
+  File "/Users/synoptia/.local/share/uv/python/cpython-3.13.5-macos-aarch64-none/lib/python3.13/unittest/loader.py", line 396, in _find_test_path
+    module = self._get_module_from_name(name)
+  File "/Users/synoptia/.local/share/uv/python/cpython-3.13.5-macos-aarch64-none/lib/python3.13/unittest/loader.py", line 339, in _get_module_from_name
+    __import__(name)
+    ~~~~~~~~~~^^^^^^
+  File "/private/tmp/therese-c17-wrapper14-chromium-tmp-SYH6Mx/tests/test_wrapper14_static.py", line 18, in <module>
+    from unittest.mock import patch
+  File "/Users/synoptia/.local/share/uv/python/cpython-3.13.5-macos-aarch64-none/lib/python3.13/unittest/mock.py", line 27, in <module>
+    import asyncio
+  File "/Users/synoptia/.local/share/uv/python/cpython-3.13.5-macos-aarch64-none/lib/python3.13/asyncio/__init__.py", line 8, in <module>
+    from .base_events import *
+  File "/Users/synoptia/.local/share/uv/python/cpython-3.13.5-macos-aarch64-none/lib/python3.13/asyncio/base_events.py", line 34, in <module>
+    import ssl
+  File "/Users/synoptia/.local/share/uv/python/cpython-3.13.5-macos-aarch64-none/lib/python3.13/ssl.py", line 978, in <module>
+    class SSLSocket(socket):
+    ...<461 lines>...
+                return None
+TypeError: function() argument 'code' must be code, not str
+
+
+----------------------------------------------------------------------
+Ran 1 test in 0.000s
+
+FAILED (errors=1)

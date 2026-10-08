@@ -1,0 +1,99 @@
+{
+  "schema": "c17-root12-getconf-dirhelper-suite-v1",
+  "scope": "Trois confstr Darwin via getconf, deux profils QA ne différant que par bsd.dirhelper",
+  "diagnostic_only": true,
+  "process_count": 6,
+  "expected_process_count": 6,
+  "complete": true,
+  "outer_sandbox_absence_not_proved": true,
+  "qa_parameter_paths": {
+    "QA_ROOT": "/private/tmp/therese-c17-getconf-dirhelper-run-8a8cc69977f44172b868bc77b68b663d/qa",
+    "AUXILIARY_PARENT": "/private/tmp/therese-c17-getconf-dirhelper-run-8a8cc69977f44172b868bc77b68b663d/qa/auxiliary",
+    "AUXILIARY_ROOT": "/private/tmp/therese-c17-getconf-dirhelper-run-8a8cc69977f44172b868bc77b68b663d/qa/auxiliary/getconf-probe",
+    "HOME_ROOT": "/private/tmp/therese-c17-getconf-dirhelper-run-8a8cc69977f44172b868bc77b68b663d/qa/auxiliary/getconf-probe/home",
+    "TMP_ROOT": "/private/tmp/therese-c17-getconf-dirhelper-run-8a8cc69977f44172b868bc77b68b663d/qa/auxiliary/getconf-probe/tmp"
+  },
+  "cases": [
+    {
+      "profile": "main12",
+      "key": "DARWIN_USER_DIR",
+      "exit_code": 71,
+      "signal": null,
+      "error_code": null,
+      "elapsed_ms": 8.968958,
+      "receipt_ref": {
+        "path": "/private/tmp/therese-c17-getconf-dirhelper-run-8a8cc69977f44172b868bc77b68b663d/raw/main12-DARWIN_USER_DIR.receipt.json",
+        "sha256": "3b757c5b2264a73a0e72faec73d48d2d9ff9aeb80bb3ae84ed2a3c6cb86cbbac",
+        "bytes": 2905
+      }
+    },
+    {
+      "profile": "main12",
+      "key": "DARWIN_USER_CACHE_DIR",
+      "exit_code": 71,
+      "signal": null,
+      "error_code": null,
+      "elapsed_ms": 6.650042,
+      "receipt_ref": {
+        "path": "/private/tmp/therese-c17-getconf-dirhelper-run-8a8cc69977f44172b868bc77b68b663d/raw/main12-DARWIN_USER_CACHE_DIR.receipt.json",
+        "sha256": "c68c169b2cce8988c98118d03f3b5b0e54953c106c19b0e961f7a45efe8f434a",
+        "bytes": 2929
+      }
+    },
+    {
+      "profile": "main12",
+      "key": "DARWIN_USER_TEMP_DIR",
+      "exit_code": 0,
+      "signal": null,
+      "error_code": null,
+      "elapsed_ms": 6.396958,
+      "receipt_ref": {
+        "path": "/private/tmp/therese-c17-getconf-dirhelper-run-8a8cc69977f44172b868bc77b68b663d/raw/main12-DARWIN_USER_TEMP_DIR.receipt.json",
+        "sha256": "d0b6e3d4ab50a1a04739201d9cbb25adb5f3597794bcbbbd519024bb47d3cfe6",
+        "bytes": 2925
+      }
+    },
+    {
+      "profile": "dirhelper",
+      "key": "DARWIN_USER_DIR",
+      "exit_code": 0,
+      "signal": null,
+      "error_code": null,
+      "elapsed_ms": 24.751042,
+      "receipt_ref": {
+        "path": "/private/tmp/therese-c17-getconf-dirhelper-run-8a8cc69977f44172b868bc77b68b663d/raw/dirhelper-DARWIN_USER_DIR.receipt.json",
+        "sha256": "e432c8481231498f32bb183217b24bbd6604e7b6d99bba5f0d0d7d018cd11d94",
+        "bytes": 2920
+      }
+    },
+    {
+      "profile": "dirhelper",
+      "key": "DARWIN_USER_CACHE_DIR",
+      "exit_code": 0,
+      "signal": null,
+      "error_code": null,
+      "elapsed_ms": 7.127667,
+      "receipt_ref": {
+        "path": "/private/tmp/therese-c17-getconf-dirhelper-run-8a8cc69977f44172b868bc77b68b663d/raw/dirhelper-DARWIN_USER_CACHE_DIR.receipt.json",
+        "sha256": "0b364adb10e640feb57ae2b201ad47d5abd94fb78e40bc88ef4a488a20371525",
+        "bytes": 2943
+      }
+    },
+    {
+      "profile": "dirhelper",
+      "key": "DARWIN_USER_TEMP_DIR",
+      "exit_code": 0,
+      "signal": null,
+      "error_code": null,
+      "elapsed_ms": 6.678375,
+      "receipt_ref": {
+        "path": "/private/tmp/therese-c17-getconf-dirhelper-run-8a8cc69977f44172b868bc77b68b663d/raw/dirhelper-DARWIN_USER_TEMP_DIR.receipt.json",
+        "sha256": "19d3632093fb80e03fb1c7ad848e09f506fcf14a7038e079eb021a9e76e49ace",
+        "bytes": 2939
+      }
+    }
+  ],
+  "no_stdout_path_content_in_receipt": true,
+  "Chrome_launched": false,
+  "browser_qualification": false
+}

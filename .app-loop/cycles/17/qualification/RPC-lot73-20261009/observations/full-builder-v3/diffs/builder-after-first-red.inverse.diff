@@ -1,0 +1,81 @@
+--- /private/tmp/therese-c17-full-physical-builder-LVOOtP/build_full_round.py
++++ /private/tmp/therese-c17-full-physical-builder-LVOOtP/preimages/build-before-identity-fix.py
+@@ -107,8 +107,7 @@
+     need(root.is_absolute() and root.parent == Path('/private/tmp') and match
+          and '..' not in root.parts and str(root) == str(Path(str(root))), 'Racine A/B exacte requise')
+     need(request['campaign'] == match[2].upper() and request['actor'] in ACTORS
+-         and type(request['expected_head']) is str and HEAD_RE.fullmatch(request['expected_head']),
+-         'Campagne/acteur/HEAD divergent')
++         and HEAD_RE.fullmatch(request['expected_head']), 'Campagne/acteur/HEAD divergent')
+     need(type(request.get('ports')) is dict and request['ports'] == PORTS
+          and all(type(value) is int for value in request['ports'].values()), 'Ports QA hors table fermée')
+     partner = request.get('other_round')
+@@ -156,8 +155,6 @@
+         ('need', 'checked_bytes', 'tree_rows', 'verify_files'),
+         {'Path': Path, 'os': os, 'stat': stat, 'hashlib': hashlib, 're': re})
+     verify['verify_files'](source, manifest, tree)
+-    need(all(Path(row['path']).lstat().st_nlink == 1 for row in manifest['files']),
+-         'Source Git liée par hardlink : isolation non démontrée')
+     need(checked(head_ref) == (head + '\n').encode(), 'HEAD changé pendant recheck')
+     rows = manifest['files']
+     product = {str(Path(row['path']).relative_to(source)): row['sha256'] for row in rows
+@@ -181,12 +178,6 @@
+     source = Path(request['qa_source']); head = request['expected_head']
+     python = readers['audit_python'](source, head, request['python_audit_ref'])
+     node = readers['audit_node'](source, head, request['node_audit_ref'])
+-    audit = read_json(request['python_audit_ref'])
+-    site = source / '.venv-conforme/lib/python3.13/site-packages'
+-    declared = audit.get('pth', [])
+-    need(type(declared) is list and len({ref['path'] for ref in declared}) == len(declared)
+-         and {ref['path'] for ref in declared} == {str(path) for path in site.glob('*.pth')},
+-         'Ensemble .pth physique différent des références root préobservées')
+     return {'python': python, 'node': node, 'body_parity_claimed': False}
+ 
+ 
+@@ -307,7 +298,6 @@
+     text = text.replace("HEAD='b517daedc45480e5191eac5e37cdc6c2bf111cc4'", "HEAD=" + repr(head))
+     text = text.replace("REPO=Path(" + repr(OLD_REPO) + ")", "REPO=Path(" + repr(source) + ")")
+     text = text.replace('repo="' + OLD_REPO + '"', 'repo=' + json.dumps(source))
+-    text = text.replace("repo='" + OLD_REPO + "'", 'repo=' + repr(source))
+     text = text.replace('couverture-ecran-c16.mjs', 'couverture-ecran-c17.mjs')
+     return text
+ 
+@@ -316,8 +306,6 @@
+     need(not any(isinstance(n, (ast.Import, ast.ImportFrom)) and any(a.name == 'uuid' for a in n.names)
+                  for n in ast.parse(text).body), 'uuid déjà présent : nouvelle préimage requise')
+     text = once(text, 'import time\n', 'import time\nimport uuid\n')
+-    text = once(text, 'HEAD = "542cc6f7b7ef764a7730a9b99918df5ac02d54f2"',
+-                'HEAD = ' + repr(request['expected_head']))
+     chrome = str(Path(request['copied_chrome']) / 'Contents/MacOS/Google Chrome')
+     text = once(text, 'CHROME = Path("/Applications/Google Chrome.app/Contents/MacOS/Google Chrome")',
+                 'CHROME = Path(' + repr(chrome) + ')')
+@@ -411,17 +399,15 @@
+                 text.splitlines(keepends=True), fromfile=ref['path'], tofile=str(root / target))).encode()
+             result['construction-preimages/' + target] = raw
+             diffs.append(diff_name)
+-    # Seven identity-v2 anchors are ported from the actual old coverage text.
++    # Five exact identity selectors carried into current coverage, before launch.
+     coverage = result['runtime/couverture-ecran-c17.mjs'].decode()
+     anchors = json.loads(checked(assets['runtime78-successor/identity-anchors.json']))
+     need(len(anchors['anchors']) == 7, 'Sept ancres identité requises')
+-    identity_port = selected_definitions(checked(assets['runtime78-successor/identity_port.py']),
+-                                         ('port_identity_v2',), {})
+-    coverage = identity_port['port_identity_v2'](coverage, anchors)
+     for row in anchors['anchors']:
+-        need(coverage.count(row['after']) == 1, 'Ancre identité v2 différente : ' + row['label'])
++        # This definition already carries the seven observed v2 anchors.
++        need(coverage.count(row['after']) == 1 and row['before'] not in coverage,
++             'Identité v2 de la définition écran différente : ' + row['label'])
+     result['runtime/couverture-ecran-c17.mjs'] = coverage.encode()
+-    result['auxiliary-ports/runtime/couverture-ecran-c17.mjs'] = coverage.encode()
+     # Root QA source supplies Vite canonical bytes, not a historical repo config.
+     canonical, vite = vite_texts(request, (qa / 'src/frontend/vite.config.ts').read_text())
+     result['runtime/vite.canonique.mjs'] = canonical.encode()
+@@ -653,6 +639,6 @@
+ if __name__ == '__main__':
+     try:
+         raise SystemExit(main())
+-    except (ValueError, TypeError, KeyError, OSError) as error:
++    except (ValueError, KeyError, FileNotFoundError) as error:
+         print(json.dumps({'status':'construction_refused_before_runtime', 'error':str(error), 'FULL':False}), file=sys.stderr)
+         raise SystemExit(2)

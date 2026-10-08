@@ -1,0 +1,44 @@
+{
+  "schema": "c17-root14-chrome52371-system-log-v1",
+  "actor": "/root",
+  "scope": "PID52371 et messages système nommant ce seul PID ; 00:12:27–00:12:34 Paris",
+  "executable": "/usr/bin/log",
+  "argv": [
+    "show",
+    "--style",
+    "json",
+    "--start",
+    "2026-10-09 00:12:27",
+    "--end",
+    "2026-10-09 00:12:34",
+    "--predicate",
+    "(processID == 52371 OR ((process == \"kernel\" OR process == \"sandboxd\" OR process == \"syspolicyd\" OR process == \"amfid\" OR process == \"taskgated\") AND eventMessage CONTAINS \"52371\"))"
+  ],
+  "started_at": "2026-10-08T22:14:03.653Z",
+  "completed_at": "2026-10-08T22:14:05.235Z",
+  "exit_code": 0,
+  "signal": null,
+  "error": null,
+  "parse_error": null,
+  "stdout_ref": {
+    "path": "/private/tmp/therese-c17-root14-chrome52371-log-sLdxZLOA/stdout.json",
+    "sha256": "7b7b7e7b5ec47ff3d8bfe72fc0bb7795ea3588f7435a21be648cbbbe1246e105",
+    "bytes": 88142
+  },
+  "stderr_ref": {
+    "path": "/private/tmp/therese-c17-root14-chrome52371-log-sLdxZLOA/stderr.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "script_ref": {
+    "path": "/private/tmp/therese-c17-root14-chrome52371-log-sLdxZLOA/collect.mjs",
+    "sha256": "64abad8c66a0b47db32e18833fe06c1875507868e9cfd05d9ed03165d8598d66",
+    "bytes": 2274
+  },
+  "event_count": 87,
+  "passed": true,
+  "diagnostic_only": true,
+  "G1_imported": false,
+  "profile_changed": false,
+  "FULL": false
+}

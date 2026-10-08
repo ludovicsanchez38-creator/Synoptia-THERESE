@@ -1,0 +1,21 @@
+E
+======================================================================
+ERROR: setUpClass (__main__.BuilderTests)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/private/tmp/therese-c17-full-physical-builder-LVOOtP/tests/test_builder.py", line 82, in setUpClass
+    cls.out = b.payloads(cls.request, cls.assets, cls.source, cls.deps, cls.chrome)
+              ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/therese-c17-full-physical-builder-LVOOtP/build_full_round.py", line 408, in payloads
+    need(coverage.count(row['after']) == 1 and row['before'] not in coverage,
+    ~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+         'Identité v2 de la définition écran différente : ' + row['label'])
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/private/tmp/therese-c17-full-physical-builder-LVOOtP/build_full_round.py", line 40, in need
+    raise ValueError(message)
+ValueError: Identité v2 de la définition écran différente : preuve d'identité sans aria-controls
+
+----------------------------------------------------------------------
+Ran 0 tests in 0.133s
+
+FAILED (errors=1)

@@ -1,0 +1,135 @@
+--- /private/tmp/therese-c17-full-physical-builder-v3-A0yyXP/tests/test_builder.py	2026-10-09 00:07:35
++++ /private/tmp/therese-c17-full-physical-builder-v3-A0yyXP/preimages-v2/test_builder.py	2026-10-09 00:04:11
+@@ -26,18 +26,6 @@
+ spec = importlib.util.spec_from_file_location('pure_full_builder', HERE / 'build_full_round.py')
+ b = importlib.util.module_from_spec(spec)
+ spec.loader.exec_module(b)
+-
+-
+-class SyntheticPath(type(Path())):
+-    """Chemin de test pur : aucune racine A/B réelle n'est allouée."""
+-    redirected: set[str] = set()
+-    absent: set[str] = set()
+-
+-    def resolve(self, strict=False):
+-        return type(self)(self / 'redirected') if str(self) in self.redirected else self
+-
+-    def is_dir(self):
+-        return str(self) not in self.absent
+ 
+ 
+ class BuilderTests(unittest.TestCase):
+@@ -532,113 +520,7 @@
+     def test_guarded_no_process_socket_import(self):
+         names = {n.names[0].name for n in ast.parse((HERE/'build_full_round.py').read_text()).body if isinstance(n,ast.Import)}
+         self.assertFalse(names & {'subprocess','socket','ctypes','runtime_session'})
+-
+-    def selected_g1_environment(self, raw):
+-        tree = ast.parse(raw)
+-        constants = {'ENV_CONSTANTS','ENV_PATHS','ENV_CONTEXT','REQUIRED_ENV','ROUND_PATTERN','WRAPPER_PATTERN'}
+-        nodes = []
+-        for node in tree.body:
+-            if isinstance(node, ast.FunctionDef) and node.name in ('validate_environment','child_path'):
+-                nodes.append(node)
+-            elif isinstance(node, (ast.Assign,ast.AnnAssign)):
+-                targets = [node.target] if isinstance(node,ast.AnnAssign) else node.targets
+-                if any(isinstance(target,ast.Name) and target.id in constants for target in targets):
+-                    nodes.append(node)
+-        def require(condition, message):
+-            if not condition: raise ValueError(message)
+-        aux = types.SimpleNamespace(JOBS=tuple(self.request['auxiliary_jobs']),
+-            NAMES={job:'aux-chrome-'+job for job in self.request['auxiliary_jobs']})
+-        scope = {'Path':SyntheticPath,'os':os,'re':re,'SOURCE':self.qa,
+-            'NODE_ROOT':Path('/synthetic/node-root'),'ab_aux':aux,
+-            'direct_round':types.SimpleNamespace(DIRECT_PARENTS=()),'require':require}
+-        exec(compile(ast.Module(body=nodes,type_ignores=[]),'<selected-real-G1-functions>','exec'),scope)
+-        return scope
+-
+-    def test_chromium_tmpdir_fourteen_closed_rows(self):
+-        table = json.loads(self.out['authorization/auxiliary-definition-table.json'])
+-        wanted = table['required_chromium_tmpdir_env']
+-        self.assertEqual(set(wanted),set(self.request['auxiliary_jobs']))
+-        for job in self.request['auxiliary_jobs']:
+-            folder = str(Path(self.request['root'])/'auxiliary'/('aux-chrome-'+job)/'tmp')
+-            self.assertEqual(wanted[job],{'MAC_CHROMIUM_TMPDIR':folder,'TMPDIR':folder})
+-        self.assertIn('chromium_tmpdir.is_dir()',self.out['g1/runtime_session.py'].decode())
+-        self.assertIn("('aux-chrome-' + job) / 'tmp').mkdir(mode=0o700)",(HERE/'build_full_round.py').read_text())
+-
+-    def test_chromium_tmpdir_only_validate_environment_changed(self):
+-        original = b.checked(self.assets['g1/runtime_session.py']).decode()
+-        after = b.derive_g1(original,self.request)
+-        self.assertIn('    ab_chromium_tmpdir_allowed = (mode == "chrome"',after)
+-        with self.assertRaisesRegex(ValueError,'Ancre'):
+-            b.port_ab_chromium_tmpdir(after)
+-        for name in ('ENV_CONSTANTS','ENV_PATHS','ENV_CONTEXT','REQUIRED_ENV'):
+-            self.assertEqual(self.selected_g1_environment(original)[name],
+-                             self.selected_g1_environment(self.out['g1/runtime_session.py'])[name])
+-
+-    def test_chromium_tmpdir_actual_g1_guard_mutants(self):
+-        SyntheticPath.redirected = set(); SyntheticPath.absent = set()
+-        ns = self.selected_g1_environment(self.out['g1/runtime_session.py'])
+-        original_ns = self.selected_g1_environment(b.checked(self.assets['g1/runtime_session.py']))
+-        root = SyntheticPath(self.request['root'])
+-        job = self.request['auxiliary_jobs'][0]
+-        stage = 'aux-chrome-'+job
+-        expected = str(root/'auxiliary'/stage/'tmp')
+-        env = dict(ns['ENV_CONSTANTS'])
+-        env.update(HOME=str(root/'profiles/runtime/home'),CFFIXED_USER_HOME=str(root/'profiles/runtime/home'),
+-                   TMPDIR=expected,MAC_CHROMIUM_TMPDIR=expected)
+-        def verify(value, *, root=root, mode='chrome', stage=stage, scope=ns):
+-            return scope['validate_environment'](root,value,mode,'/root',root.name,source_root=self.qa,stage=stage)
+-        self.assertEqual(verify(env),env)
+-        with self.assertRaises(ValueError):
+-            original_ns['validate_environment'](root,env,'chrome','/root',root.name,
+-                                                 source_root=self.qa,stage=stage)
+-        negatives = []
+-        missing=dict(env); missing.pop('MAC_CHROMIUM_TMPDIR'); negatives.append(missing)
+-        mismatch=dict(env,MAC_CHROMIUM_TMPDIR=str(root/'auxiliary'/stage/'profile')); negatives.append(mismatch)
+-        other_tmp=dict(env,TMPDIR=str(root/'profiles/runtime/tmp')); negatives.append(other_tmp)
+-        extra=dict(env,OTHER='1'); negatives.append(extra)
+-        for value in negatives:
+-            with self.subTest(value=value),self.assertRaises(ValueError): verify(value)
+-        for mode in ('web','sql'):
+-            with self.assertRaises(ValueError): verify(env,mode=mode)
+-        with self.assertRaises(ValueError): verify(env,stage='aux-chrome-unknown')
+-        with self.assertRaises(ValueError): verify(env,root=SyntheticPath('/private/tmp/therese-c17-wrapper-canary-12345678'))
+-        with self.assertRaises(ValueError): verify(env,root=SyntheticPath('/private/tmp/therese-c17-direct-round-a-010203040506/child'))
+-        SyntheticPath.redirected.add(expected)
+-        with self.assertRaises(ValueError): verify(env)
+-        SyntheticPath.redirected.clear(); SyntheticPath.absent.add(expected)
+-        with self.assertRaises(ValueError): verify(env)
+-        SyntheticPath.absent.clear()
+-        ordinary=dict(env); ordinary.pop('MAC_CHROMIUM_TMPDIR'); ordinary['TMPDIR']=str(root/'profiles/runtime/tmp')
+-        self.assertEqual(verify(ordinary,mode='web',stage='backend'),
+-                         original_ns['validate_environment'](root,ordinary,'web','/root',root.name,
+-                                                              source_root=self.qa,stage='backend'))
+ 
+-    def test_chromium_tmpdir_each_of_fourteen_names_admitted_only_with_own_value(self):
+-        SyntheticPath.redirected = set(); SyntheticPath.absent = set()
+-        ns = self.selected_g1_environment(self.out['g1/runtime_session.py'])
+-        root = SyntheticPath(self.request['root'])
+-        table = json.loads(self.out['authorization/auxiliary-definition-table.json'])
+-        for job in self.request['auxiliary_jobs']:
+-            stage = table['jobs'][job]['name']
+-            value = table['required_chromium_tmpdir_env'][job]
+-            env = dict(ns['ENV_CONSTANTS'])
+-            env.update(HOME=str(root/'profiles/runtime/home'),CFFIXED_USER_HOME=str(root/'profiles/runtime/home'),**value)
+-            with self.subTest(job=job):
+-                self.assertEqual(ns['validate_environment'](root,env,'chrome','/root',root.name,
+-                    source_root=self.qa,stage=stage),env)
+-                wrong=dict(env,MAC_CHROMIUM_TMPDIR=str(root/'auxiliary'/'aux-chrome-other'/'tmp'))
+-                with self.assertRaises(ValueError):
+-                    ns['validate_environment'](root,wrong,'chrome','/root',root.name,
+-                        source_root=self.qa,stage=stage)
+-        other = SyntheticPath('/private/tmp/therese-c17-direct-round-b-060504030201')
+-        stage = table['jobs'][self.request['auxiliary_jobs'][0]]['name']
+-        tmp = str(other/'auxiliary'/stage/'tmp')
+-        env = dict(ns['ENV_CONSTANTS'])
+-        env.update(HOME=str(other/'profiles/runtime/home'),CFFIXED_USER_HOME=str(other/'profiles/runtime/home'),
+-                   TMPDIR=tmp,MAC_CHROMIUM_TMPDIR=tmp)
+-        self.assertEqual(ns['validate_environment'](other,env,'chrome','/root',other.name,
+-            source_root=self.qa,stage=stage),env)
+ 
+-
+ if __name__ == '__main__':
+     unittest.main()
