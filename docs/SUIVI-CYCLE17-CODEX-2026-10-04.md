@@ -1850,3 +1850,64 @@ Usage : 66 lots logiques, plancher natif conservateur 24 164 450 tokens,
 ajout 600 310, durée parallèle ajoutée zéro, pas une facture API. Budget
 effectivement contrôlé PASS, limites et deadline inchangées. Aucune version,
 release, publication, installation, ronde A/B ou FULL validée par ce lot.
+
+## Lot 67 : V9 et composite relus, ROOT9 clos rouge
+
+V9 fermé `1G4jE1`, INDEX `c217e93a…`, ajoute uniquement trois lectures
+ciblées au profil V8. Revue Shared favorable aux dérivations, trente et une
+autres fonctions builder AST exactes. Rejeu principal `23519e`, 67 PASS,
+zéro échec/erreur/saut, reçu `9b6de42a…`, 7,165 s ; sources inchangées,
+aucun import G1 complet, processus, socket ou mesure native.
+
+Composite FULL fermé `9I2loX52`, INDEX `0f7b28ca…`, relu intégralement et
+revue Environment favorable aux axes composés SQL48/A-B80/watchdog47.
+Quatre sources dérivées, six modules RPC matériels, reader `fd5256f0…`
+et relais `9b271297…`. Rejeu principal `cb5a6f`, 71 PASS, reçu `e36231ba…`,
+1,597 s : les 47 mêmes assertions watchdog et 24 raccords, aucun nouveau
+dénominateur runtime. Chrome original/profil A-B restent non qualifiés.
+Le constructeur physique, les API/contexts workers et les consommateurs
+FULL actuels restent des travaux séparés ; un import uuid manquant a été
+repéré ensuite, sans modifier le composite fermé ni ROOT9.
+
+ROOT9 neuf `42f8fa9d…`, HEAD documentaire observé `9bbee124…`, QA produit
+historique `2d69…` explicitement WRAPPER. Construction `e4596471…`, GO
+`556f0475…`, SQL `206c301f…` lu entièrement. Contrôle principal `5a5bb5` :
+4 706 refs, 76 sources, 3 579 blobs/modes, SQL36. Préflight Shared favorable :
+4 036 occurrences, 3 769 chemins, core17 et six dérivations/sept diffs exacts,
+Chrome5/options/sinks cohérents. Signature stricte/deep QA recontrôlée à
+14:40:00 UTC, reçu `54e114c5…`, aucun changement de Chrome installé ou QA.
+La readiness WRAPPER n'appelle pas l'export listener affecté par uuid.
+
+Natif unique `4531c3`, clôture `fb5fb4` exit86 : résultat original `c094078b…`,
+sept ACK sur quinze, six témoins initiaux conformes, septième refus avant
+la feuille Node, pas de birth inventée. Chrome PID56446,
+birth1791471012/453073, owner56102 birth1791470968/512200 ; exit -9 après
+STOP trois fois/TERM/CONT/KILL de nettoyage exact. stderr `a45faf9d…`,
+3 027 octets, sans exception NSBundle visible. Diagnostic système borné
+`d23453`, reçu `67e6524e…`, 141 événements dans treize secondes : refus
+Mach/IOKit/fichiers observés, cause non démontrée, aucune permission ajoutée.
+La chaîne de causes RPC perdue exige un successeur diagnostique distinct.
+
+Clôture principale `315e15` : 1 248 refs, 36 jointures, reçu `95ad8101…`.
+Premier lecteur refusé sur INDEX V6/V7 historiques copiés ; pins et sources
+inchangés, correction limitée à leur statut de données historiques. Revue
+Shared : 3 484 occurrences, 186 chemins, 37 hardlinks, dix jointures
+gate/birth/release, 21 actions de signaux distinctes sur quatre births.
+Chrome/services/Session nettoyés en 3,947269 / 1,033187 / 0,895535 s,
+aucun résidu/erreur/ambiguïté, deux scans sur trois ports, handlers restaurés,
+transport fermé. `clean=false`, taint vraie et owned_shutdown false conservés.
+
+Archives canoniques sous `.app-loop/cycles/17/qualification/RPC-lot67-20261008/` :
+ROOT9-closed-v3.tar.gz, 2 049 201 octets, SHA `c51e6ce33a4feb7778898e95fcb816b97968eb8af356396469d80a53664eb7b7` ;
+V9-closed-root67.tar.gz, 218 816 octets, SHA `f61a95581c130e910c6a4eb720388764798610662e63e4f044114c5dda5aa516` ;
+FULL-composite-closed-root71.tar.gz, 487 147 octets, SHA `12721a02927015174aa3acf3b74ab590211865f82e4fd9792f23246807d272ca`.
+Contrôle `c6ee89` : copie/gzip/tar et 1 584/84/320 membres conformes, neuf
+documents préexistants identiques. Première archive TMP refusée sur un socket
+Chrome ; v2 refusée sur son lien SingletonSocket, déplacée vers TMP et
+conservée. Seule v3, sans sockets/liens SingletonSocket, est canonique.
+
+Usage `59d271` : 67 lots logiques, plancher natif 25 454 455 tokens,
+ajout 1 290 005, durée parallèle zéro, pas une facture API. Budget PASS,
+deadline/limites inchangées. Sources produit inchangées (`f49b41`). Aucun
+tag, version, main, installation, publication, release, FULL ou ronde A/B.
+Les nouveaux modèles restent dédiés à la prochaine boucle, lot62.
