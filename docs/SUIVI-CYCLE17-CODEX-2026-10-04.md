@@ -1650,3 +1650,82 @@ Usage effectivement consigné : 63 lots logiques, plancher natif conservateur
 Ce n'est pas une facture API. Le contrôle retourne `Budget: PASS`, code 0.
 Tokens sans plafond ; limites de temps/appels et gates inchangées.
 CALIBRATE reste active, zéro ronde actuelle et aucune release nouvelle.
+
+## Lot 64 : diagnostic IOKit, copie Chrome stricte et lecteur SQL/RPC
+
+Le diagnostic kernel ROOT6 est collecté en lecture seule sur la fenêtre
+du PID25577 et de son descendant25622. Ses 88 événements sont conservés
+intégralement. Le refus de `iokit-open-user-client RootDomainUserClient`
+est joint au même PID et au thread4420066 du rapport macOS, juste avant
+le crash. Cette jonction motive un essai ; elle ne prouve pas encore une
+cause unique ni une correction runtime.
+
+Le candidat Chrome ajoute uniquement cette classe IOKit exacte, soit
+216 octets. Ce droit possède une surface système réelle, au-delà des seules
+notifications d'alimentation ; il n'est pas présenté comme inoffensif.
+Les cinq tests purs root passent. Le constructeur V6 conserve les autres
+commandes, sources, SQL, environnements et bornes ; ses 37 tests purs root
+passent avec une revue indépendante favorable pour préparation seulement.
+Le profil reste non qualifié et aucun nouveau canari n'est lancé dans ce lot.
+
+Le contrôle strict initial de Chrome installé est rouge. L'audit hors
+sandbox précise le refus : FinderInfo sur des dossiers du bundle.
+La vérification profonde ordinaire et le strict du framework passent ;
+la signature Google/Apple est réellement vérifiée, sans transformer
+le strict rouge du bundle original en réussite.
+
+Une copie Chrome indépendante est préparée sous
+`/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app`.
+Les 1 339 entrées conservent octets, modes, UID/GID et liens ; aucun fichier
+n'est hardlinké à l'original. Seul FinderInfo est retiré de 69 chemins
+canoniques de la copie, avec les valeurs originales archivées. Chrome
+installé et ses attributs restent inchangés.
+
+L'écart de copie est explicite : 1 339 valeurs de `com.apple.provenance`
+diffèrent déjà avant le retrait FinderInfo. Elles ne sont pas réécrites et
+aucune cause système n'est affirmée. Tous les autres attributs de la baseline
+de copie restent identiques après le retrait ciblé. Les deux premiers
+retours rouges du collecteur sont conservés : format hexdump non reconnu,
+puis comparaison des attributs source/copie refusée avant tout retrait.
+Le successeur v3 exige ces limites exactes et passe réellement
+`codesign --verify --deep --strict`, code 0. Reçu SHA-256
+`f97793cb43454051da734685185cb5d4e5b5ffbabc516580287195ef3d32993c`.
+La copie n'est pas lancée. Le constructeur doit encore lier cette cible
+aux cinq argv, à G1, au profil et à un nouveau GO externe avant tout essai.
+Cette vérification Google ne signe aucune release THÉRÈSE.
+
+Une relecture indépendante rehash 26 refs et les 1 339 entrées physiques
+sans écart. La quarantaine est absente des inventaires source et copie :
+« préservée » signifie ici absence inchangée, pas présence attestée.
+
+La tranche lecteur RPC/SQL est fermée et revue indépendamment : 20 préimages
+byte-exactes, huit diffs reconstruits, 49 AST valides. Root rejoue réellement
+48 tests : 30 nouvelles jointures et 18 cas Q repris, sans erreur ni saut,
+avec références inchangées et garde anti-processus/socket/import complet G1.
+Les corps AST sont testés sur des fixtures synthétiques, pas sur une ronde.
+La demande SQL lie checkout/HEAD/binding/env ; ReadView est installée avant
+configure. Les six records de calibration ne sont construits qu'après le
+vrai stop prévu par le coordinateur. Aucun record A/B réel n'est émis ici.
+Reçu root SHA-256
+`aeac9be48cc34ed78f79520d821aeb52bee566d52a7fb9395f84998b88a0a111`.
+
+Deux archives locales ignorées sont copiées à l'identique et contrôlées
+gzip/CRC, headers et fin tar sous `qualification/RPC-lot64-20261008` :
+
+- `DIAGNOSTICS-CHROME.tar.gz`, 347 893 octets, SHA-256
+  `56c21015db62c1675dcece5e3b2c8238fc9cce504adb37efa431f1b0a22d5945`.
+- `SQL48-closed.tar.gz`, 362 532 octets, SHA-256
+  `39717feea557f62961a1e744d052680320a493a25a277152e8b039d1f227e524`.
+
+La copie binaire Chrome est exclue de l'archive, qui conserve ses manifests,
+scripts et bruts. Les références originales ne sont pas rebasées sur une
+extraction. V7, raccord A/B14 et bootstrap encore en travail ne sont pas
+archivés ni admis. Les neuf documents préexistants restent inchangés.
+Aucun changement produit, main, version, tag, app installée, landing,
+updater ou Discord. La demande modèles reste celle de la prochaine boucle.
+
+Usage effectivement consigné : 64 lots logiques, plancher natif conservateur
+21 634 059 tokens, ajout 1 273 539, durée ajoutée 0 pour le parallèle.
+Ce n'est pas une facture API. Le contrôle effectif retourne `Budget: PASS`,
+code 0. Plafonds de tokens désactivés ; limites temps/appels et gates
+inchangées. CALIBRATE reste active, zéro ronde actuelle, aucune release.
