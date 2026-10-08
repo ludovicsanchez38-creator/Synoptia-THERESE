@@ -1295,3 +1295,32 @@ transition forcée pour contourner ce coupe-circuit. Le goal reste actif et
 non accompli : transport réel, attribution complète, HEAD frais, cinq
 calibrations et deux rondes indépendantes manquent toujours. Aucune nouvelle
 release, publication, installation ou prolongation du heartbeat.
+
+## Reprise du 8 octobre : suppression humaine des plafonds de tokens
+
+Ludo demande de continuer jusqu'à la fin puis précise : « pas de plafond en
+token ». Cette dernière instruction remplace la proposition de relèvement
+à 12 millions ; elle ne supprime aucun gate de QA, de plateau ou de release.
+
+Le code actuel de `budget_reasons` interprète `0` comme limite désactivée.
+Root met donc uniquement `limits.max_tokens.{claude,grok,gpt}` et
+`limits.max_total_tokens` à 0 dans le budget local, sous le verrou canonique
+et par écriture atomique. L'historique complet, les cycles, les limites
+d'appels 300/38/150 et la limite murale 5 798 minutes restent inchangés.
+Les fichiers globaux du skill Claude ne sont pas modifiés. Le comptage
+d'usage continue ; il ne s'agit pas d'une mesure de facturation API.
+
+La sauvegarde d'avant mutation, le script exact et le reçu sont archivés
+dans `qualification/TOKENS-SANS-PLAFOND-20261008-gObOf0ef`. Les trois `cmp`
+source/copie sortent 0. SHA-256 budget avant :
+`54769026dcdf9d79a6e2b5a60efa0bc92c78fbb916da87995676c3437aa87017` ;
+juste après mutation :
+`285c705e3789baf4b30e13fe96ab63d52f408f83f847d014f126656c3ff6478e`.
+Ces empreintes décrivent ce changement, pas les futurs ajouts d'usage.
+
+Le contrôle effectif retourne `Budget: PASS`, code 0, et `next-action`
+`[continuer] DISCOVER`. Les cinq calibrations restent expirées ; les travaux
+reprennent par la réparation de l'instrument RPC, sans qualifier une chasse
+ou une ronde à partir de ces instruments. Trois agents distincts reprennent
+transport, adaptation de Session et tests des cinq vrais wrappers, sous un
+dossier neuf. Ni transition forcée, ni nouvelle release dans cette reprise.
