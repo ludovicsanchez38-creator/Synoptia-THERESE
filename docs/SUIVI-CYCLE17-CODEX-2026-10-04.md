@@ -1383,3 +1383,61 @@ additionner le travail parallèle. Ce n'est pas une facture API. Le contrôle
 effectif retourne `Budget: PASS`, code 0. L'objectif natif reste actif et
 inaccompli : HEAD frais, cinq calibrations et deux rondes indépendantes
 restent requis avant le processus de release.
+
+## Lot 61 : canaris RPC natifs positif et timeout fermés
+
+Le témoin réseau corrigé tente connect TCP et sendto UDP vers trois
+contreparties root-owned locales vivantes, et non la seule création de
+socket. Le profil SQL reste byte-exact. Le nouveau gel Nv1rIK possède
+25 pins communs ; sept suites pures rejouées par root donnent
+15 + 47 + 17 + 68 + 27 + 2 + 2 = 178 cas distincts, sans erreur/échec/saut.
+Les mêmes 47 corps rejoués par un autre agent ne sont pas des cas nouveaux.
+Ces pures ne qualifient pas le kernel ou les vrais parcours métier.
+
+Le positif réel, racine `therese-c17-rpc-canary-positive-jd1peu7_`,
+sort 0 : deux parents 0 reçoivent fidèlement Python 1 et Node 2.
+Les sorties sont distinctes, les peers réels rejoignent les births demandeurs,
+les ACK rejoignent les demandes, reçus et nettoyages. EPERM est observé pour
+les trois tentatives Unix/TCP/UDP précises ; aucune lisibilité n'est observée
+sur les contreparties pendant les snapshots. Cela ne démontre pas une
+interdiction exhaustive de tout réseau. Stop fermé, clean/stabilité vrais,
+aucun signal ou résidu attribué ; cleanup stop 0,006830208 s.
+Résultat SHA-256 `d111b5f4c1cbff310c17c2b2db14c03af5ab9d70bf40d588ae553fa6810b03a5`.
+
+Le négatif réel, racine `therese-c17-rpc-canary-timeout-ih9vq0d0`,
+conserve la borne enfant 240 s. L'enfant retourne -15 après nettoyage
+0,056500958 s ; cinq signaux ciblent exclusivement sa birth connue.
+Le parent retourne 86 avec erreur instrument. Audit attendu
+`expected_timeout_red_observed`, jamais réussite métier. Stop fermé,
+handlers restaurés, aucun handle/restant/ambiguïté/erreur de cleanup ;
+sa durée vaut 0,008491416 s. Le champ stop clean reste faux et la stabilité
+fausse par taint monotone, malgré cleanup.clean vrai et zéro résidu.
+Résultat SHA-256 `2ffee72281b3a0bc7436b6deef39d286288ecaf37cb7fb12327dbc07cb2ea115`.
+
+Root rehash 60 puis 41 références physiques, les 16 copies source de
+chaque essai et leurs originaux. Une relecture distincte des bruts par
+l'auteur du transport, non exécuteur des canaris, vérifie aussi les joins,
+enveloppes, digests et paires hardlink. Rapport `REVIEW.md` SHA-256
+`95007f76da59939bcb6f7065f8b38c9eb87e34003e15e2a0967315210f4f9a81`.
+La vérification répétée des refs est regroupée dans
+`root-close-verifier/verify-closed-rpc-proofs.mjs`, lecture seule sans
+processus enfant ni réseau. Le premier canari rouge reste inchangé.
+
+Archive locale ignorée byte-exacte, 3 708 186 octets :
+`qualification/RPC-G5-lot61-20261008-Nv1rIK/PROOFS.tar.gz`, SHA-256
+`22cd2188db9a47c18fe723eb55b980b86a56d5f2efd1dd7ba5b5aa5def0f895a`.
+Les références et inodes originaux ne sont ni rebasés ni requalifiés.
+Les bindings conservent leur HEAD documentaire 542cc6f7 ; le gel distingue
+le HEAD repo observé 6cb01029. Aucune ronde actuelle n'en est déduite.
+
+Le prochain raccord est préparé séparément : constructeur des onze sorties
+RPC et table15, G1/listener/web instrument-only puis Git/Chrome/lsof indirects.
+Il ne nécessite pas encore les recettes/density/package78, mais les cinq
+axes de boucle et le sixième axe screen_coverage du consommateur FULL
+devront être recalibrés sur une vraie pile QA fraîche et le HEAD gelé.
+Toutes les admissions FULL restent fermées ; zéro ronde ou release nouvelle.
+
+Usage consigné : 61 lots logiques, plancher natif conservateur 12 817 563
+tokens ; ajout 890 671, durée 0, pas une facture API. Contrôle effectif
+`Budget: PASS`, code 0, phase CALIBRATE active. Les plafonds de tokens
+restent désactivés ; ceux de temps/appels et les gates restent inchangés.
