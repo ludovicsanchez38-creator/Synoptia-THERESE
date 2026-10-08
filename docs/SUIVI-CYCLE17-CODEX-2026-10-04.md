@@ -2361,3 +2361,13 @@ goal bloqué réinitialisé. Coupe-circuit courant `883c6a` PASS, borne09/10
 État réel CALIBRATE, zéro ronde complète propre, aucune release/publication.
 Suite autonome : microcanari Mach limité au nom propre exact et source QA
 neuve, sans redemander les validations ordinaires déjà données.
+
+Contrôle MAIN `ee703b` : les 761 copies des lots71–73 sont byte-exactes et
+les neuf documents utilisateur inchangés ; index771 borné aux trois lots
+et au suivi (`cab5ea`). Commit documentaire réel `186288a0…`.
+Le check Git global staged `d7c29a` est rouge, pas PASS : 194 avertissements
+de whitespace/ligne EOF sur 50 bruts archivés. MAIN `cb9372` les joint tous
+à leurs membres de manifeste exacts, zéro sortie non classée ; les corriger
+altérerait les preuves. Le check séparé des sept fichiers éditoriaux et
+scripts hors bruts est réellement vert `9848a4`. Aucune preuve brute n'est
+modifiée et aucune permission, assertion ou gate native n'est assouplie.
