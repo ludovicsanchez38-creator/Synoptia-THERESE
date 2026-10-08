@@ -1561,3 +1561,92 @@ Préserver les réglages existants et les modèles encore supportés ; ne pas
 changer de modèle par défaut ni retirer une génération sans décision
 explicite. Les tests de disponibilité réels devront être bornés, sans
 données personnelles, avant toute annonce de compatibilité.
+
+## Lot 63 : deux nouveaux essais rouges clos, lecture Q bornée
+
+Les essais ROOT5 et ROOT6 sont réellement exécutés par root dans deux
+racines QA neuves. Ils retournent 86, avec sept demandes/ACK sur quinze
+et aucune qualification FULL ou ronde A/B. Les champs originaux faux de
+réussite, stabilité et owned shutdown ne sont pas réécrits après nettoyage.
+Le checkout produit détaché reste `2d69e30c`, différent du HEAD documentaire
+`c2acd0da` observé au lancement : il sert seulement au canari WRAPPER.
+Une future ronde complète exigera un nouveau checkout au HEAD courant.
+
+ROOT5 dépasse le précédent blocage AppKit, puis Chrome retourne 21.
+Ses bruts montrent le refus de bind du `SingletonSocket` sous le TMP QA
+et un refus Crashpad Mach distinct. Le candidat suivant ajoute seulement
+le domaine de socket Unix et le bind sous `TMP_ROOT`, sans port IP,
+lookup Mach ou écriture hors QA supplémentaires. Cinq tests purs root
+vérifient ce delta ; ils ne prouvent pas son comportement kernel.
+
+ROOT6 utilise ce profil exact de 1 698 octets, SHA-256
+`9c6d17def6fa847f0740bb2398d52a8ef6dfc3a8279563dd1bda815d7892e872`.
+Le constructeur V5 passe les 34 tests purs root et une revue indépendante.
+La préparation rehash 4 565 refs transitives courantes, vérifie les 3 579
+blobs/modes du checkout et les 36 sources SQL ; les relations B1753/B1760
+restent identiques. L'autorité SQL fraîche est externe au contrat,
+dont `root_reviewed=false` reste intact. Aucun succès historique n'est
+réutilisé comme calibration courante.
+
+Dans ROOT6, les quatre XML témoins pytest/Vitest ont leurs codes causaux
+1/0/1/0 et les deux contrôles logs passent réellement. Chrome25577 retourne
+-11 sans timeout ni interruption. Ses 600 octets stderr conservent le
+refus Crashpad25605 et deux avertissements CFURL ; le rapport macOS exact
+du PID25577 montre SIGSEGV à 0x10 dans IONotificationPortGetRunLoopSource.
+Ces observations seules ne prouvent pas une cause unique. Le descendant
+25622 est attribué dans le ledger ; Crashpad25605 ne possède pas de birth
+capturée, donc aucune exhaustivité de descendants très courts n'est annoncée.
+Résultat ROOT6 SHA-256
+`d1afb85175ed28facf8cc82fb9015a666a795efbc13bca9f6b3fe62729ac5cd1`.
+
+Les arrêts physiques des identités attribuées sont vérifiés. ROOT5 :
+services 1,035203375 s, close 0,954089792 s ; ROOT6 : 1,276678833 s et
+1,045646250 s. Les bornes de huit secondes sont respectées, les handlers
+restaurés et les ports 17593/5173/17594 absents. Zéro résidu, ambiguïté ou
+erreur de cleanup attribué. Root relit 943 refs pour ROOT5 et 1 058 pour
+ROOT6, avec 30 joins de signaux dans chaque jeu sélectionné. Pour ROOT6,
+la revue indépendante rehash 3 880 chemins, vérifie 50 liens de parenté,
+37 publications hardlink et 15 événements uniques de signaux ciblant
+seulement backend/Vite. Le résultat original reste rouge et FULL fermé.
+
+La lecture Seatbelt Q est testée séparément. V1 conserve son échec natif :
+le lanceur Apple Python appelle xcode-select et est refusé avant le témoin.
+V2 utilise le binaire Python QA physique déjà conforme, sans ajouter de
+droit au profil. Le canari natif lit trois fichiers synthétiques hors des
+cinq sous-arbres larges ; le quatrième fichier, existant mais non passé
+en paramètre, est refusé avec EPERM. Les deux processus sont reapés, sans
+signal, interruption ou erreur de cleanup. Root rehash 28 refs et une
+revue indépendante confirme les argv et les bruts. Ce succès qualifie
+uniquement les fixtures synthétiques, pas les trois décisions réelles du
+builder, G1, FULL ou une ronde A/B.
+
+Les préparations restent distinctes et fermées : contrat FULL31 et son
+rejeu root31 ; Q18 et root18 ; raccord HEAD/checkouts/bindings tardifs
+FULL25 et root25 ; candidat auxiliaire A/B14 v2 et root9. Les 14 éléments
+désignent des invocations Chrome, pas 14 obligations réussies. Ses contrôles
+sont lexicaux ; `activate()` refuse toujours. Le lecteur SQL/RPC en cours
+dans un autre gel n'est ni intégré ni inclus dans les archives de ce lot.
+
+Quatre archives locales ignorées, copies exactes et gzip/tar vérifiés,
+sont indexées sous `qualification/RPC-lot63-20261008/INDEX.json` :
+
+- `ROOT5-closed.tar.gz`, 5 701 575 octets, SHA-256
+  `f6fb08178057e2a18fb94c4518bf10bfa516bbb65554b23fab499a1233f52a57`.
+- `Q.tar.gz`, 39 453 octets, SHA-256
+  `86fbbe856f2b6feb041fe4d4e18a5dd1ca00bd2b7494b7ca43cfaaab90cdd3dd`.
+- `PREPARATIONS.tar.gz`, 443 107 octets, SHA-256
+  `bcf2d248d3ad8260b8171db6c64ac7a4aa5a4b7bc400d4406f4500531639d6b8`.
+- `ROOT6-closed-and-preparations.tar.gz`, 5 829 491 octets, SHA-256
+  `9479adf77613fd3bf948d314c8c64863891092f21d091a071bc5093791ac4caf`.
+
+Les références/inodes originaux restent historiques, non rebasés sur une
+extraction ; sockets et caches sont exclus. Les AppleDouble sont des
+métadonnées, pas des preuves. Les neuf documents déjà modifiés sont
+comparés à leurs hashes de départ et restent inchangés. Aucun changement
+produit, main, version, tag, installation, landing, updater ou Discord.
+
+Usage effectivement consigné : 63 lots logiques, plancher natif conservateur
+20 360 520 tokens, ajout 2 335 565, durée ajoutée 0 pour le parallèle.
+Ce n'est pas une facture API. Le contrôle retourne `Budget: PASS`, code 0.
+Tokens sans plafond ; limites de temps/appels et gates inchangées.
+CALIBRATE reste active, zéro ronde actuelle et aucune release nouvelle.
