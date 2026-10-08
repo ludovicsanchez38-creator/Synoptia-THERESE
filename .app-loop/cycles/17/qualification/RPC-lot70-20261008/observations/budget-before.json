@@ -1,0 +1,4181 @@
+{
+  "schema_version": 1,
+  "limits": {
+    "max_calls": {
+      "claude": 300,
+      "grok": 38,
+      "gpt": 150
+    },
+    "max_tokens": {
+      "claude": 0,
+      "grok": 0,
+      "gpt": 0
+    },
+    "max_total_tokens": 0,
+    "max_wall_minutes": 5798
+  },
+  "cycles": {
+    "1": {
+      "started_at": "2026-08-31T17:10:11+00:00",
+      "usage": {
+        "claude": {
+          "calls": 0,
+          "tokens": 0,
+          "duration_seconds": 0
+        },
+        "grok": {
+          "calls": 0,
+          "tokens": 0,
+          "duration_seconds": 0
+        },
+        "gpt": {
+          "calls": 0,
+          "tokens": 0,
+          "duration_seconds": 0
+        }
+      },
+      "events": []
+    },
+    "2": {
+      "started_at": "2026-09-02T06:24:43+00:00",
+      "usage": {
+        "claude": {
+          "calls": 114,
+          "tokens": 29419914,
+          "duration_seconds": 187732
+        },
+        "grok": {
+          "calls": 0,
+          "tokens": 0,
+          "duration_seconds": 0
+        },
+        "gpt": {
+          "calls": 6,
+          "tokens": 516001,
+          "duration_seconds": 3494
+        }
+      },
+      "events": [
+        {
+          "at": "2026-09-02T06:36:58+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 333622,
+          "duration_seconds": 461,
+          "purpose": "lecteur M01 WP-082 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T06:38:50+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 286661,
+          "duration_seconds": 570,
+          "purpose": "lecteur M02 WP-049 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T06:40:29+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 215361,
+          "duration_seconds": 675,
+          "purpose": "lecteur M04 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T06:42:21+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 254584,
+          "duration_seconds": 790,
+          "purpose": "lecteur M03 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T06:45:53+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 159439,
+          "duration_seconds": 406,
+          "purpose": "lecteur M06 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T06:47:55+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 233021,
+          "duration_seconds": 643,
+          "purpose": "lecteur M05 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T06:50:08+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 225725,
+          "duration_seconds": 733,
+          "purpose": "lecteur R1 (fable 5.1, seconde lecture)"
+        },
+        {
+          "at": "2026-09-02T06:50:53+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 169321,
+          "duration_seconds": 588,
+          "purpose": "lecteur M07 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T06:53:08+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 217641,
+          "duration_seconds": 633,
+          "purpose": "lecteur M08 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T07:01:04+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 176596,
+          "duration_seconds": 589,
+          "purpose": "lecteur M12 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T07:02:12+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 221085,
+          "duration_seconds": 843,
+          "purpose": "lecteur M10 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T07:03:10+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 150592,
+          "duration_seconds": 588,
+          "purpose": "lecteur M13 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T07:04:45+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 256528,
+          "duration_seconds": 1119,
+          "purpose": "lecteur M09 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T07:11:38+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 266292,
+          "duration_seconds": 1269,
+          "purpose": "lecteur M11 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T07:11:48+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 179330,
+          "duration_seconds": 617,
+          "purpose": "lecteur M14 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T07:13:50+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 157645,
+          "duration_seconds": 626,
+          "purpose": "lecteur M16 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T07:15:22+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 173533,
+          "duration_seconds": 622,
+          "purpose": "lecteur D01 (fable 5.1, seconde lecture)"
+        },
+        {
+          "at": "2026-09-02T07:19:37+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 216597,
+          "duration_seconds": 971,
+          "purpose": "lecteur M15 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T07:20:39+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 169390,
+          "duration_seconds": 495,
+          "purpose": "lecteur D03 (fable 5.1, seconde lecture)"
+        },
+        {
+          "at": "2026-09-02T07:23:17+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 221455,
+          "duration_seconds": 679,
+          "purpose": "lecteur D02 (fable 5.1, seconde lecture)"
+        },
+        {
+          "at": "2026-09-02T07:26:28+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 203355,
+          "duration_seconds": 652,
+          "purpose": "lecteur D05 (opus 5, seconde lecture)"
+        },
+        {
+          "at": "2026-09-02T07:26:41+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 236118,
+          "duration_seconds": 754,
+          "purpose": "lecteur D04 (fable 5.1, seconde lecture)"
+        },
+        {
+          "at": "2026-09-02T07:34:10+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 216467,
+          "duration_seconds": 790,
+          "purpose": "lecteur D07 (opus 5, seconde lecture)"
+        },
+        {
+          "at": "2026-09-02T07:34:55+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 185813,
+          "duration_seconds": 672,
+          "purpose": "lecteur D08 (opus 5, seconde lecture)"
+        },
+        {
+          "at": "2026-09-02T07:35:15+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 113476,
+          "duration_seconds": 490,
+          "purpose": "lecteur D10 (fable 5.1, seconde lecture)"
+        },
+        {
+          "at": "2026-09-02T07:39:02+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 246616,
+          "duration_seconds": 1146,
+          "purpose": "lecteur D06 (opus 5, seconde lecture)"
+        },
+        {
+          "at": "2026-09-02T07:41:19+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 178056,
+          "duration_seconds": 833,
+          "purpose": "lecteur D09 (opus 5, seconde lecture)"
+        },
+        {
+          "at": "2026-09-02T08:00:03+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 210215,
+          "duration_seconds": 1042,
+          "purpose": "lecteur D11 (opus 5, seconde lecture)"
+        },
+        {
+          "at": "2026-09-02T08:29:35+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 195022,
+          "duration_seconds": 1331,
+          "purpose": "persona A1 Sophie (opus 5) : bloque par pane replie, 2/48 etapes"
+        },
+        {
+          "at": "2026-09-02T08:33:43+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 265055,
+          "duration_seconds": 1549,
+          "purpose": "robustesse API (opus 5) : 16 constats sur 17401"
+        },
+        {
+          "at": "2026-09-02T09:12:00+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 325509,
+          "duration_seconds": 2077,
+          "purpose": "robustesse API 2 (opus 5) : 26 constats sur 17401"
+        },
+        {
+          "at": "2026-09-02T09:30:40+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 413161,
+          "duration_seconds": 3251,
+          "purpose": "persona A1 Sophie via Playwright (opus 5) : 46/48 etapes, 16 constats"
+        },
+        {
+          "at": "2026-09-02T10:18:53+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 373732,
+          "duration_seconds": 2809,
+          "purpose": "persona A2 Marc via Playwright (opus 5) : 39/44 etapes, 16 constats, 5 appels modele"
+        },
+        {
+          "at": "2026-09-02T11:07:25+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 418545,
+          "duration_seconds": 2849,
+          "purpose": "persona A3 Lea via Playwright (opus 5) : 44/55 etapes, 32 constats, 4 appels modele"
+        },
+        {
+          "at": "2026-09-02T11:23:40+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 211111,
+          "duration_seconds": 882,
+          "purpose": "reproduce RP02 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T11:25:36+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 213427,
+          "duration_seconds": 1000,
+          "purpose": "reproduce RP03 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T11:25:55+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 223277,
+          "duration_seconds": 1013,
+          "purpose": "reproduce RP04 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T11:26:51+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 235201,
+          "duration_seconds": 1085,
+          "purpose": "reproduce RP01 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T11:30:06+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 269074,
+          "duration_seconds": 1243,
+          "purpose": "reproduce RP10 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T11:39:11+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 184316,
+          "duration_seconds": 802,
+          "purpose": "reproduce RP06 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T11:39:30+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 215007,
+          "duration_seconds": 935,
+          "purpose": "reproduce RP05 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T11:46:26+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 220379,
+          "duration_seconds": 1156,
+          "purpose": "reproduce RP08 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T11:53:16+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 190812,
+          "duration_seconds": 830,
+          "purpose": "reproduce RP09 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T11:58:12+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 217798,
+          "duration_seconds": 1921,
+          "purpose": "reproduce RP07 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T12:00:35+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 309330,
+          "duration_seconds": 1806,
+          "purpose": "reproduce RP11 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T12:16:00+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 208569,
+          "duration_seconds": 1002,
+          "purpose": "reproduce RP12c (opus 5)"
+        },
+        {
+          "at": "2026-09-02T12:16:33+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 209758,
+          "duration_seconds": 1025,
+          "purpose": "reproduce RP14c (opus 5)"
+        },
+        {
+          "at": "2026-09-02T12:16:54+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 225819,
+          "duration_seconds": 1034,
+          "purpose": "reproduce RP13c (opus 5)"
+        },
+        {
+          "at": "2026-09-02T12:17:17+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 0,
+          "duration_seconds": 2201,
+          "purpose": "cross-review:gpt"
+        },
+        {
+          "at": "2026-09-02T12:28:08+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 272367,
+          "duration_seconds": 1634,
+          "purpose": "reproduce RP15c (opus 5)"
+        },
+        {
+          "at": "2026-09-02T12:30:03+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 238360,
+          "duration_seconds": 725,
+          "purpose": "cross-review:gpt"
+        },
+        {
+          "at": "2026-09-02T12:30:47+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 181266,
+          "duration_seconds": 808,
+          "purpose": "reproduce RP18c (opus 5)"
+        },
+        {
+          "at": "2026-09-02T12:31:44+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 214442,
+          "duration_seconds": 925,
+          "purpose": "reproduce RP16c (opus 5)"
+        },
+        {
+          "at": "2026-09-02T12:36:57+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 240702,
+          "duration_seconds": 1210,
+          "purpose": "reproduce RP17c (opus 5)"
+        },
+        {
+          "at": "2026-09-02T12:51:45+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 203808,
+          "duration_seconds": 1130,
+          "purpose": "reproduce RPnav1 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T13:18:24+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 288537,
+          "duration_seconds": 1558,
+          "purpose": "repair RE02 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T13:23:09+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 261464,
+          "duration_seconds": 1867,
+          "purpose": "repair RE01 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T13:50:32+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 258549,
+          "duration_seconds": 1845,
+          "purpose": "repair RE04 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T13:58:52+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 294359,
+          "duration_seconds": 2092,
+          "purpose": "repair RE03 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T14:28:18+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 311341,
+          "duration_seconds": 2197,
+          "purpose": "repair RE06 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T14:30:51+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 277111,
+          "duration_seconds": 1864,
+          "purpose": "repair RE05 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T15:15:11+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 258255,
+          "duration_seconds": 2590,
+          "purpose": "repair RE07 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T15:26:20+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 361713,
+          "duration_seconds": 3415,
+          "purpose": "repair RE08 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T15:45:14+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 255371,
+          "duration_seconds": 1714,
+          "purpose": "repair RE09 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T15:53:24+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 262144,
+          "duration_seconds": 1583,
+          "purpose": "repair RE10 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T16:19:56+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 304740,
+          "duration_seconds": 2025,
+          "purpose": "repair RE11 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T16:21:02+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 300729,
+          "duration_seconds": 1621,
+          "purpose": "repair RE12 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T16:56:02+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 294160,
+          "duration_seconds": 2032,
+          "purpose": "repair RE14 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T17:00:30+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 353424,
+          "duration_seconds": 2393,
+          "purpose": "repair RE13 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T17:21:47+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 275724,
+          "duration_seconds": 1507,
+          "purpose": "repair RE16 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T17:32:35+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 269824,
+          "duration_seconds": 1887,
+          "purpose": "repair RE15 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T17:49:49+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 278495,
+          "duration_seconds": 1629,
+          "purpose": "repair RE18 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T18:04:23+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 283580,
+          "duration_seconds": 1847,
+          "purpose": "repair RE17 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T18:19:40+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 283602,
+          "duration_seconds": 1742,
+          "purpose": "repair RE20 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T18:34:23+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 278576,
+          "duration_seconds": 1740,
+          "purpose": "repair RE19 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T19:18:45+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 388276,
+          "duration_seconds": 3500,
+          "purpose": "repair RE22 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T19:22:51+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 339920,
+          "duration_seconds": 2831,
+          "purpose": "repair RE21 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T19:40:35+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 263284,
+          "duration_seconds": 1703,
+          "purpose": "repair RECI (opus 5)"
+        },
+        {
+          "at": "2026-09-02T20:00:09+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 327392,
+          "duration_seconds": 2424,
+          "purpose": "repair RE24 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T20:08:40+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 274948,
+          "duration_seconds": 2697,
+          "purpose": "repair RE23 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T20:32:02+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 292506,
+          "duration_seconds": 1834,
+          "purpose": "repair RE26 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T20:47:05+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 288858,
+          "duration_seconds": 2246,
+          "purpose": "repair RE25 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T20:56:45+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 254509,
+          "duration_seconds": 1416,
+          "purpose": "repair RE28 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T21:29:28+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 368323,
+          "duration_seconds": 2495,
+          "purpose": "repair RE27 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T21:32:33+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 283772,
+          "duration_seconds": 2085,
+          "purpose": "repair RE30 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T22:04:59+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 267613,
+          "duration_seconds": 2036,
+          "purpose": "repair RE29 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T22:29:19+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 393333,
+          "duration_seconds": 3365,
+          "purpose": "repair RE34 e2e (opus 5)"
+        },
+        {
+          "at": "2026-09-02T22:32:37+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 209748,
+          "duration_seconds": 1606,
+          "purpose": "repair RE32 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T22:57:49+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 256328,
+          "duration_seconds": 1617,
+          "purpose": "reproduce RP19 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T23:15:09+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 322457,
+          "duration_seconds": 4151,
+          "purpose": "repair RE31 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T23:38:10+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 290305,
+          "duration_seconds": 3881,
+          "purpose": "repair RE35 (opus 5)"
+        },
+        {
+          "at": "2026-09-02T23:50:32+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 248362,
+          "duration_seconds": 4085,
+          "purpose": "repair RE36 e2e hermetique (opus 5)"
+        },
+        {
+          "at": "2026-09-03T00:01:21+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 173811,
+          "duration_seconds": 581,
+          "purpose": "reproduce RP20 (opus 5)"
+        },
+        {
+          "at": "2026-09-03T00:03:12+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 58454,
+          "duration_seconds": 111,
+          "purpose": "cross-review:gpt"
+        },
+        {
+          "at": "2026-09-03T00:19:04+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 185477,
+          "duration_seconds": 748,
+          "purpose": "reproduce RP21 (opus 5)"
+        },
+        {
+          "at": "2026-09-03T00:20:50+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 29198,
+          "duration_seconds": 82,
+          "purpose": "cross-review:gpt"
+        },
+        {
+          "at": "2026-09-03T00:27:16+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 178368,
+          "duration_seconds": 1513,
+          "purpose": "repair RE38 e2e amorcage (opus 5)"
+        },
+        {
+          "at": "2026-09-03T00:37:17+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 171107,
+          "duration_seconds": 576,
+          "purpose": "reproduce RP22 (opus 5)"
+        },
+        {
+          "at": "2026-09-03T00:41:09+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 364138,
+          "duration_seconds": 5078,
+          "purpose": "repair RE33 (opus 5)"
+        },
+        {
+          "at": "2026-09-03T00:52:10+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 170500,
+          "duration_seconds": 619,
+          "purpose": "reproduce RP23 (opus 5)"
+        },
+        {
+          "at": "2026-09-03T01:53:18+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 429914,
+          "duration_seconds": 4279,
+          "purpose": "repair RE37 (opus 5)"
+        },
+        {
+          "at": "2026-09-03T02:19:39+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 288361,
+          "duration_seconds": 1541,
+          "purpose": "repair RE39 (opus 5)"
+        },
+        {
+          "at": "2026-09-03T02:45:01+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 240778,
+          "duration_seconds": 1486,
+          "purpose": "calibration CAL2 (opus 5)"
+        },
+        {
+          "at": "2026-09-03T03:26:39+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 329354,
+          "duration_seconds": 2446,
+          "purpose": "zero_check ronde A (opus 5)"
+        },
+        {
+          "at": "2026-09-03T03:46:36+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 213401,
+          "duration_seconds": 1123,
+          "purpose": "repair RE40 (opus 5)"
+        },
+        {
+          "at": "2026-09-03T04:17:31+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 303400,
+          "duration_seconds": 1797,
+          "purpose": "zero_check ronde A2 (opus 5)"
+        },
+        {
+          "at": "2026-09-03T04:56:59+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 397621,
+          "duration_seconds": 2314,
+          "purpose": "zero_check ronde B (opus 5)"
+        },
+        {
+          "at": "2026-09-03T05:13:29+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 210688,
+          "duration_seconds": 963,
+          "purpose": "repair RE41 (opus 5)"
+        },
+        {
+          "at": "2026-09-03T05:52:22+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 326894,
+          "duration_seconds": 1208,
+          "purpose": "redaction changelog testeurs (opus 5)"
+        },
+        {
+          "at": "2026-09-03T05:56:29+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 390894,
+          "duration_seconds": 2538,
+          "purpose": "zero_check ronde A3 (opus 5)"
+        },
+        {
+          "at": "2026-09-03T06:17:27+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 250081,
+          "duration_seconds": 1135,
+          "purpose": "reproduce RP24 (opus 5)"
+        },
+        {
+          "at": "2026-09-03T06:18:14+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 251453,
+          "duration_seconds": 1183,
+          "purpose": "reproduce RP25 (opus 5)"
+        },
+        {
+          "at": "2026-09-03T06:20:16+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 79418,
+          "duration_seconds": 168,
+          "purpose": "cross-review:gpt"
+        },
+        {
+          "at": "2026-09-03T06:22:31+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 245765,
+          "duration_seconds": 1537,
+          "purpose": "repair RE42 (opus 5)"
+        },
+        {
+          "at": "2026-09-03T06:23:50+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 110571,
+          "duration_seconds": 207,
+          "purpose": "cross-review:gpt"
+        },
+        {
+          "at": "2026-09-03T07:24:02+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 238446,
+          "duration_seconds": 1736,
+          "purpose": "repair RE44 (opus 5)"
+        },
+        {
+          "at": "2026-09-03T07:49:36+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 344255,
+          "duration_seconds": 5179,
+          "purpose": "repair RE43 (opus 5)"
+        },
+        {
+          "at": "2026-09-03T08:13:15+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 215362,
+          "duration_seconds": 1375,
+          "purpose": "zero_check ronde A4 interrompue (opus 5)"
+        },
+        {
+          "at": "2026-09-03T08:40:00+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 207674,
+          "duration_seconds": 2050,
+          "purpose": "repair RE45 (opus 5)"
+        },
+        {
+          "at": "2026-09-03T10:20:51+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 358519,
+          "duration_seconds": 6004,
+          "purpose": "zero_check ronde A5 (opus 5)"
+        }
+      ]
+    },
+    "3": {
+      "started_at": "2026-09-03T15:58:09+00:00",
+      "usage": {
+        "claude": {
+          "calls": 49,
+          "tokens": 16382189,
+          "duration_seconds": 0
+        },
+        "grok": {
+          "calls": 0,
+          "tokens": 0,
+          "duration_seconds": 0
+        },
+        "gpt": {
+          "calls": 2,
+          "tokens": 0,
+          "duration_seconds": 0
+        }
+      },
+      "events": [
+        {
+          "at": "2026-09-05T09:54:26+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 247305,
+          "duration_seconds": 0,
+          "purpose": "lecteur R03 (WP-049)"
+        },
+        {
+          "at": "2026-09-05T09:56:47+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 261959,
+          "duration_seconds": 0,
+          "purpose": "lecteur R04 (WP-049, WP-050)"
+        },
+        {
+          "at": "2026-09-05T09:58:21+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 266808,
+          "duration_seconds": 0,
+          "purpose": "lecteur R02 (WP-047, WP-048)"
+        },
+        {
+          "at": "2026-09-05T09:59:16+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 284295,
+          "duration_seconds": 0,
+          "purpose": "lecteur R01 (WP-C-004, WP-046, WP-C-025, WP-047)"
+        },
+        {
+          "at": "2026-09-05T10:02:06+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 0,
+          "duration_seconds": 0,
+          "purpose": "COCO gpt-6-astra xhigh : challenge du brief DA/UX (tokens non rapportés par le CLI)"
+        },
+        {
+          "at": "2026-09-05T10:02:19+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 301478,
+          "duration_seconds": 0,
+          "purpose": "lecteur R05 (WP-050, WP-051)"
+        },
+        {
+          "at": "2026-09-05T10:10:31+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 279000,
+          "duration_seconds": 0,
+          "purpose": "lecteur R06 (WP-051, WP-052, WP-053)"
+        },
+        {
+          "at": "2026-09-05T10:11:24+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 224162,
+          "duration_seconds": 0,
+          "purpose": "lecteur R09 (WP-C-028, WP-056, WP-057)"
+        },
+        {
+          "at": "2026-09-05T10:11:53+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 289283,
+          "duration_seconds": 0,
+          "purpose": "lecteur R07 (WP-053, WP-054, WP-055)"
+        },
+        {
+          "at": "2026-09-05T10:11:53+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 285774,
+          "duration_seconds": 0,
+          "purpose": "lecteur R08 (WP-055, WP-C-026, WP-C-027)"
+        },
+        {
+          "at": "2026-09-05T10:22:18+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 323422,
+          "duration_seconds": 0,
+          "purpose": "lecteur R12 (WP-060, WP-061)"
+        },
+        {
+          "at": "2026-09-05T10:23:01+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 275215,
+          "duration_seconds": 0,
+          "purpose": "lecteur R15 (WP-066, WP-067)"
+        },
+        {
+          "at": "2026-09-05T10:26:06+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 278592,
+          "duration_seconds": 0,
+          "purpose": "lecteur R14 (WP-064, WP-065)"
+        },
+        {
+          "at": "2026-09-05T10:27:56+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 312277,
+          "duration_seconds": 0,
+          "purpose": "lecteur R13 (WP-061 à WP-064)"
+        },
+        {
+          "at": "2026-09-05T10:30:45+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 343211,
+          "duration_seconds": 0,
+          "purpose": "lecteur R16 (WP-067 à WP-070)"
+        },
+        {
+          "at": "2026-09-05T10:33:22+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 0,
+          "duration_seconds": 0,
+          "purpose": "COCO gpt-6-astra xhigh : jury à quatre regards sur le dépôt DA (54/100)"
+        },
+        {
+          "at": "2026-09-05T10:34:23+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 288118,
+          "duration_seconds": 0,
+          "purpose": "lecteur R20 (WP-082 test_regression.py)"
+        },
+        {
+          "at": "2026-09-05T10:36:49+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 169537,
+          "duration_seconds": 0,
+          "purpose": "lecteur R19 (WP-080, WP-081)"
+        },
+        {
+          "at": "2026-09-05T10:38:48+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 299711,
+          "duration_seconds": 0,
+          "purpose": "lecteur R18 (WP-078, WP-079, WP-080)"
+        },
+        {
+          "at": "2026-09-05T10:41:49+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 257412,
+          "duration_seconds": 0,
+          "purpose": "lecteur R21 (WP-083, WP-084)"
+        },
+        {
+          "at": "2026-09-05T10:42:43+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 360377,
+          "duration_seconds": 0,
+          "purpose": "lecteur R17 (WP-070 à WP-074, WP-C-029, WP-078)"
+        },
+        {
+          "at": "2026-09-05T10:46:48+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 276883,
+          "duration_seconds": 0,
+          "purpose": "lecteur R22 (WP-084, WP-085, WP-C-031, WP-086)"
+        },
+        {
+          "at": "2026-09-05T10:51:20+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 249232,
+          "duration_seconds": 0,
+          "purpose": "lecteur R23 (WP-086, WP-DIFF-001 à 008)"
+        },
+        {
+          "at": "2026-09-05T10:52:22+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 207714,
+          "duration_seconds": 0,
+          "purpose": "lecteur R24 (WP-DIFF-008)"
+        },
+        {
+          "at": "2026-09-05T10:58:29+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 234919,
+          "duration_seconds": 0,
+          "purpose": "lecteur R25 (WP-DIFF-008, WP-DIFF-009)"
+        },
+        {
+          "at": "2026-09-05T11:02:52+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 238654,
+          "duration_seconds": 0,
+          "purpose": "lecteur R27 (WP-DIFF-012, WP-DIFF-013)"
+        },
+        {
+          "at": "2026-09-05T11:04:07+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 304479,
+          "duration_seconds": 0,
+          "purpose": "lecteur R26 (WP-DIFF-009 à 012)"
+        },
+        {
+          "at": "2026-09-05T11:07:48+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 241564,
+          "duration_seconds": 0,
+          "purpose": "lecteur R28 (WP-DIFF-013 à 018)"
+        },
+        {
+          "at": "2026-09-05T11:08:51+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 291313,
+          "duration_seconds": 0,
+          "purpose": "second lecteur D01 (WP-C-004, WP-C-025, WP-047, WP-048)"
+        },
+        {
+          "at": "2026-09-05T11:18:34+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 332231,
+          "duration_seconds": 0,
+          "purpose": "second lecteur D02 (WP-048 à WP-054, WP-C-026, WP-C-027)"
+        },
+        {
+          "at": "2026-09-05T11:24:20+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 317494,
+          "duration_seconds": 0,
+          "purpose": "second lecteur D03 (WP-C-027, WP-C-028, WP-060 à WP-069)"
+        },
+        {
+          "at": "2026-09-05T11:28:16+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 247167,
+          "duration_seconds": 0,
+          "purpose": "second lecteur D06 (WP-DIFF-003, 006 à 009)"
+        },
+        {
+          "at": "2026-09-05T11:28:43+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 171157,
+          "duration_seconds": 0,
+          "purpose": "second lecteur D07 (WP-DIFF-011, 012, 014, 016, 017)"
+        },
+        {
+          "at": "2026-09-05T11:31:29+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 328898,
+          "duration_seconds": 0,
+          "purpose": "second lecteur D04 (WP-070 à 073, 076, 078, 079, WP-C-029)"
+        },
+        {
+          "at": "2026-09-05T11:33:28+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 147464,
+          "duration_seconds": 0,
+          "purpose": "second lecteur E01 (WP-086)"
+        },
+        {
+          "at": "2026-09-05T11:33:51+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 368477,
+          "duration_seconds": 0,
+          "purpose": "second lecteur D05 (WP-079 à 086, WP-C-031, WP-DIFF-001, 003)"
+        },
+        {
+          "at": "2026-09-05T11:46:15+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 331520,
+          "duration_seconds": 0,
+          "purpose": "tri T01 des 231 risques medium c3 (126 promus)"
+        },
+        {
+          "at": "2026-09-05T11:56:56+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 282087,
+          "duration_seconds": 0,
+          "purpose": "robustesse API X01 (713 essais, 14 candidats)"
+        },
+        {
+          "at": "2026-09-05T13:23:53+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 400000,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-05T13:23:53+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 350000,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-05T13:23:53+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 600000,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-05T13:43:51+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 555000,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-05T13:47:33+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 583000,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-05T13:49:01+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 520000,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-05T13:52:44+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 1330000,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-05T14:06:33+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 490000,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-05T14:07:17+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 500000,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-05T15:05:39+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 274000,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-05T15:23:03+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 299000,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-05T15:28:59+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 315000,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-05T15:38:33+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 247000,
+          "duration_seconds": 0,
+          "purpose": ""
+        }
+      ]
+    },
+    "4": {
+      "started_at": "2026-09-07T19:59:31+00:00",
+      "usage": {
+        "claude": {
+          "calls": 23,
+          "tokens": 7022904,
+          "duration_seconds": 29055
+        },
+        "grok": {
+          "calls": 0,
+          "tokens": 0,
+          "duration_seconds": 0
+        },
+        "gpt": {
+          "calls": 2,
+          "tokens": 0,
+          "duration_seconds": 2080
+        }
+      },
+      "events": [
+        {
+          "at": "2026-09-07T20:12:47+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 269063,
+          "duration_seconds": 632,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-07T20:12:47+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 275257,
+          "duration_seconds": 643,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-07T20:14:26+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 290861,
+          "duration_seconds": 743,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-07T20:14:42+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 297970,
+          "duration_seconds": 775,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-07T20:23:48+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 286913,
+          "duration_seconds": 656,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-07T20:26:38+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 276149,
+          "duration_seconds": 707,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-07T20:30:08+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 294166,
+          "duration_seconds": 994,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-07T20:34:52+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 369968,
+          "duration_seconds": 1164,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-07T20:46:23+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 317807,
+          "duration_seconds": 948,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-07T20:47:57+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 332667,
+          "duration_seconds": 1224,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-07T20:49:45+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 344482,
+          "duration_seconds": 1518,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-07T21:03:29+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 328542,
+          "duration_seconds": 1682,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-07T21:14:50+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 317751,
+          "duration_seconds": 1033,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-07T21:19:23+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 361043,
+          "duration_seconds": 1287,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-07T21:25:02+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 443913,
+          "duration_seconds": 1675,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-07T21:26:27+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 377835,
+          "duration_seconds": 1746,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-07T21:28:28+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 269671,
+          "duration_seconds": 1294,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-07T22:01:12+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 203750,
+          "duration_seconds": 1296,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-07T22:28:20+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 235016,
+          "duration_seconds": 1565,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-07T22:57:09+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 228384,
+          "duration_seconds": 1695,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-07T23:28:34+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 274720,
+          "duration_seconds": 1489,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-08T00:56:56+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 400806,
+          "duration_seconds": 2418,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-08T01:35:50+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 226170,
+          "duration_seconds": 1871,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-08T18:14:03+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 0,
+          "duration_seconds": 790,
+          "purpose": "Revue COCO 0.68.0 tentative 1 (codex exec review --base v0.67.0-alpha) interrompue par le filtre cyber d'OpenAI sur code_executor.py, sans verdict"
+        },
+        {
+          "at": "2026-09-08T18:41:50+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 0,
+          "duration_seconds": 1290,
+          "purpose": "Revue COCO 0.68.0 tentative 2 (prompt sans code_executor) : NO-GO, 2 P1 + 1 P2, 206 fichiers relus"
+        }
+      ]
+    },
+    "5": {
+      "started_at": "2026-09-08T20:27:42+00:00",
+      "usage": {
+        "claude": {
+          "calls": 0,
+          "tokens": 0,
+          "duration_seconds": 0
+        },
+        "grok": {
+          "calls": 0,
+          "tokens": 0,
+          "duration_seconds": 0
+        },
+        "gpt": {
+          "calls": 2,
+          "tokens": 0,
+          "duration_seconds": 2280
+        }
+      },
+      "events": [
+        {
+          "at": "2026-09-08T21:37:44+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 0,
+          "duration_seconds": 1260,
+          "purpose": "Challenge COCO du design vague 2 (cycle 5) : P-056 NO-GO 9 findings, 4 GO avec réserves, 63 fichiers relus"
+        },
+        {
+          "at": "2026-09-09T05:51:59+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 0,
+          "duration_seconds": 1020,
+          "purpose": "Revue adversariale COCO du diff v0.68.0-alpha..f1943c48 avant le tag 0.69.0 : NO-GO 3 P1 + 5 P2, 55 fichiers relus"
+        }
+      ]
+    },
+    "6": {
+      "started_at": "2026-09-10T09:02:10+00:00",
+      "usage": {
+        "claude": {
+          "calls": 16,
+          "tokens": 6137690,
+          "duration_seconds": 27643
+        },
+        "grok": {
+          "calls": 12,
+          "tokens": 0,
+          "duration_seconds": 5816
+        },
+        "gpt": {
+          "calls": 0,
+          "tokens": 0,
+          "duration_seconds": 0
+        }
+      },
+      "events": [
+        {
+          "at": "2026-09-10T09:05:25+00:00",
+          "model": "grok",
+          "calls": 1,
+          "tokens": 0,
+          "duration_seconds": 8,
+          "purpose": "cross-review:grok"
+        },
+        {
+          "at": "2026-09-10T09:19:56+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 343950,
+          "duration_seconds": 922,
+          "purpose": "Lecture carte c6 R03 (3 lots, 9 fichiers, 9 629 lignes)"
+        },
+        {
+          "at": "2026-09-10T09:20:38+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 346943,
+          "duration_seconds": 978,
+          "purpose": "Lecture carte c6 R01 (3 lots, 12 fichiers)"
+        },
+        {
+          "at": "2026-09-10T09:24:42+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 407304,
+          "duration_seconds": 1218,
+          "purpose": "Lecture carte c6 R02 (3 lots, 14 fichiers)"
+        },
+        {
+          "at": "2026-09-10T09:29:29+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 405281,
+          "duration_seconds": 1487,
+          "purpose": "Lecture carte c6 R05 (4 lots, 49 fichiers)"
+        },
+        {
+          "at": "2026-09-10T09:29:53+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 411511,
+          "duration_seconds": 1522,
+          "purpose": "Lecture carte c6 R04 (4 lots, 34 fichiers)"
+        },
+        {
+          "at": "2026-09-10T09:43:57+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 406234,
+          "duration_seconds": 1398,
+          "purpose": "Lecture carte c6 R07 (6 lots, 19 fichiers)"
+        },
+        {
+          "at": "2026-09-10T09:45:29+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 398197,
+          "duration_seconds": 1533,
+          "purpose": "Lecture carte c6 R06 (5 lots, 21 fichiers)"
+        },
+        {
+          "at": "2026-09-10T09:49:58+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 396269,
+          "duration_seconds": 1516,
+          "purpose": "Lecture carte c6 R08 (8 lots, 61 fichiers)"
+        },
+        {
+          "at": "2026-09-10T09:55:44+00:00",
+          "model": "grok",
+          "calls": 1,
+          "tokens": 0,
+          "duration_seconds": 203,
+          "purpose": "cross-review:grok"
+        },
+        {
+          "at": "2026-09-10T09:59:07+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 428014,
+          "duration_seconds": 1716,
+          "purpose": "Lecture carte c6 R09 (17 lots, 34 fichiers)"
+        },
+        {
+          "at": "2026-09-10T10:08:41+00:00",
+          "model": "grok",
+          "calls": 1,
+          "tokens": 0,
+          "duration_seconds": 561,
+          "purpose": "cross-review:grok"
+        },
+        {
+          "at": "2026-09-10T10:10:34+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 350201,
+          "duration_seconds": 1147,
+          "purpose": "Seconde lecture carte c6 D01 (6 lots, 11 fichiers)"
+        },
+        {
+          "at": "2026-09-10T10:15:45+00:00",
+          "model": "grok",
+          "calls": 1,
+          "tokens": 0,
+          "duration_seconds": 424,
+          "purpose": "cross-review:grok"
+        },
+        {
+          "at": "2026-09-10T10:15:58+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 372434,
+          "duration_seconds": 1466,
+          "purpose": "Seconde lecture carte c6 D02 (8 lots, 21 fichiers)"
+        },
+        {
+          "at": "2026-09-10T10:18:47+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 297507,
+          "duration_seconds": 1625,
+          "purpose": "Seconde lecture carte c6 D04 (20 lots, 39 fichiers)"
+        },
+        {
+          "at": "2026-09-10T10:25:44+00:00",
+          "model": "grok",
+          "calls": 1,
+          "tokens": 0,
+          "duration_seconds": 599,
+          "purpose": "cross-review:grok"
+        },
+        {
+          "at": "2026-09-10T10:27:58+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 482708,
+          "duration_seconds": 2178,
+          "purpose": "Seconde lecture carte c6 D03 (16 lots, 56 fichiers)"
+        },
+        {
+          "at": "2026-09-10T10:38:09+00:00",
+          "model": "grok",
+          "calls": 1,
+          "tokens": 0,
+          "duration_seconds": 744,
+          "purpose": "cross-review:grok"
+        },
+        {
+          "at": "2026-09-10T10:46:57+00:00",
+          "model": "grok",
+          "calls": 1,
+          "tokens": 0,
+          "duration_seconds": 525,
+          "purpose": "cross-review:grok"
+        },
+        {
+          "at": "2026-09-10T10:55:28+00:00",
+          "model": "grok",
+          "calls": 1,
+          "tokens": 0,
+          "duration_seconds": 511,
+          "purpose": "cross-review:grok"
+        },
+        {
+          "at": "2026-09-10T11:02:45+00:00",
+          "model": "grok",
+          "calls": 1,
+          "tokens": 0,
+          "duration_seconds": 437,
+          "purpose": "cross-review:grok"
+        },
+        {
+          "at": "2026-09-10T11:11:07+00:00",
+          "model": "grok",
+          "calls": 1,
+          "tokens": 0,
+          "duration_seconds": 498,
+          "purpose": "cross-review:grok"
+        },
+        {
+          "at": "2026-09-10T12:09:22+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 405134,
+          "duration_seconds": 5920,
+          "purpose": "Persona Sophie c6 (90 captures, 12 constats)"
+        },
+        {
+          "at": "2026-09-10T13:25:05+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 367435,
+          "duration_seconds": 1263,
+          "purpose": "auditeur visuel ronde A c6 (sonnet)"
+        },
+        {
+          "at": "2026-09-10T13:57:42+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 318568,
+          "duration_seconds": 1754,
+          "purpose": "auditeur indépendant ronde B c6 (sonnet)"
+        },
+        {
+          "at": "2026-09-10T14:02:47+00:00",
+          "model": "grok",
+          "calls": 1,
+          "tokens": 0,
+          "duration_seconds": 717,
+          "purpose": "cross-review:grok"
+        },
+        {
+          "at": "2026-09-10T14:12:38+00:00",
+          "model": "grok",
+          "calls": 1,
+          "tokens": 0,
+          "duration_seconds": 589,
+          "purpose": "cross-review:grok"
+        }
+      ]
+    },
+    "7": {
+      "started_at": "2026-09-10T16:02:23+00:00",
+      "usage": {
+        "claude": {
+          "calls": 30,
+          "tokens": 8021000,
+          "duration_seconds": 36000
+        },
+        "grok": {
+          "calls": 55,
+          "tokens": 3545000,
+          "duration_seconds": 18887
+        },
+        "gpt": {
+          "calls": 0,
+          "tokens": 0,
+          "duration_seconds": 0
+        }
+      },
+      "events": [
+        {
+          "at": "2026-09-10T16:21:46+00:00",
+          "model": "grok",
+          "calls": 1,
+          "tokens": 0,
+          "duration_seconds": 752,
+          "purpose": "cross-review:grok"
+        },
+        {
+          "at": "2026-09-10T16:27:20+00:00",
+          "model": "grok",
+          "calls": 1,
+          "tokens": 0,
+          "duration_seconds": 135,
+          "purpose": "cross-review:grok"
+        },
+        {
+          "at": "2026-09-10T16:28:00+00:00",
+          "model": "grok",
+          "calls": 1,
+          "tokens": 0,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-10T16:35:51+00:00",
+          "model": "grok",
+          "calls": 1,
+          "tokens": 0,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-10T16:41:52+00:00",
+          "model": "grok",
+          "calls": 1,
+          "tokens": 0,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-10T16:49:16+00:00",
+          "model": "grok",
+          "calls": 3,
+          "tokens": 45000,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-10T17:08:27+00:00",
+          "model": "grok",
+          "calls": 1,
+          "tokens": 0,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-10T17:09:24+00:00",
+          "model": "grok",
+          "calls": 1,
+          "tokens": 0,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-10T17:32:28+00:00",
+          "model": "grok",
+          "calls": 1,
+          "tokens": 0,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-10T17:38:14+00:00",
+          "model": "grok",
+          "calls": 1,
+          "tokens": 0,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-10T19:25:01+00:00",
+          "model": "grok",
+          "calls": 1,
+          "tokens": 60000,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-10T19:38:47+00:00",
+          "model": "grok",
+          "calls": 1,
+          "tokens": 70000,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-10T19:53:40+00:00",
+          "model": "grok",
+          "calls": 1,
+          "tokens": 70000,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-10T20:11:32+00:00",
+          "model": "grok",
+          "calls": 1,
+          "tokens": 80000,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-10T20:12:20+00:00",
+          "model": "grok",
+          "calls": 1,
+          "tokens": 60000,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-10T20:28:26+00:00",
+          "model": "grok",
+          "calls": 1,
+          "tokens": 80000,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-10T20:45:44+00:00",
+          "model": "grok",
+          "calls": 1,
+          "tokens": 80000,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-10T23:24:09+00:00",
+          "model": "grok",
+          "calls": 36,
+          "tokens": 3000000,
+          "duration_seconds": 18000,
+          "purpose": "estimation forfaitaire : tâches grok-task.sh et grok-design-loop.sh (lots 3 à 9) hors cross-review.sh, donc jamais comptées ; solde épuisé (402) à 04:05"
+        },
+        {
+          "at": "2026-09-11T10:53:35+00:00",
+          "model": "claude",
+          "calls": 30,
+          "tokens": 8021000,
+          "duration_seconds": 36000,
+          "purpose": "sous-agents Opus xhigh (usage extra) : revues, reprises et implémentations des lots 5 à 9, réparations B-750/752/753 ; somme des subagent_tokens des notifications"
+        }
+      ]
+    },
+    "8": {
+      "started_at": "2026-09-12T17:28:52+00:00",
+      "usage": {
+        "claude": {
+          "calls": 2,
+          "tokens": 9481423,
+          "duration_seconds": 988
+        },
+        "grok": {
+          "calls": 0,
+          "tokens": 0,
+          "duration_seconds": 0
+        },
+        "gpt": {
+          "calls": 0,
+          "tokens": 0,
+          "duration_seconds": 0
+        }
+      },
+      "events": [
+        {
+          "at": "2026-09-12T18:13:01+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 207236,
+          "duration_seconds": 14,
+          "purpose": "lecture témoin MAP avec Claude Fable 5.1 sur .github/workflows/ci.yml ; usage JSON réel"
+        },
+        {
+          "at": "2026-09-12T18:36:33+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 9274187,
+          "duration_seconds": 974,
+          "purpose": "contre-lecture Fable 5.1 du périmètre DA 0.73 avec trois explorateurs internes; somme modelUsage Fable et Opus"
+        }
+      ]
+    },
+    "9": {
+      "started_at": "2026-09-15T18:18:30+00:00",
+      "usage": {
+        "claude": {
+          "calls": 19,
+          "tokens": 5520854,
+          "duration_seconds": 0
+        },
+        "grok": {
+          "calls": 0,
+          "tokens": 0,
+          "duration_seconds": 0
+        },
+        "gpt": {
+          "calls": 0,
+          "tokens": 0,
+          "duration_seconds": 0
+        }
+      },
+      "events": [
+        {
+          "at": "2026-09-15T18:38:50+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 260016,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-15T18:38:50+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 280311,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-15T18:38:50+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 279455,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-15T18:42:28+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 209441,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-15T18:45:31+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 303734,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-15T19:06:58+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 292335,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-15T19:06:58+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 283091,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-15T19:07:30+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 283603,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-15T19:13:44+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 310726,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-15T19:49:00+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 257065,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-15T19:49:38+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 350269,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-15T19:52:54+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 256884,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-15T19:54:11+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 272897,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-15T19:56:12+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 297313,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-15T20:04:59+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 187666,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-15T20:26:06+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 178526,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-15T20:35:28+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 369295,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-15T20:44:27+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 415877,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-15T20:46:00+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 432350,
+          "duration_seconds": 0,
+          "purpose": ""
+        }
+      ]
+    },
+    "10": {
+      "started_at": "2026-09-22T17:18:12+00:00",
+      "usage": {
+        "claude": {
+          "calls": 0,
+          "tokens": 0,
+          "duration_seconds": 0
+        },
+        "grok": {
+          "calls": 1,
+          "tokens": 45000,
+          "duration_seconds": 1
+        },
+        "gpt": {
+          "calls": 30,
+          "tokens": 1195483,
+          "duration_seconds": 5160
+        }
+      },
+      "events": [
+        {
+          "at": "2026-09-22T17:40:43+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 74742,
+          "duration_seconds": 720,
+          "purpose": "lecteur cycle 10 A, estimation inventaire"
+        },
+        {
+          "at": "2026-09-22T17:40:43+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 59278,
+          "duration_seconds": 720,
+          "purpose": "lecteur cycle 10 B, estimation inventaire"
+        },
+        {
+          "at": "2026-09-22T17:40:43+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 44463,
+          "duration_seconds": 720,
+          "purpose": "lecteur cycle 10 C et défis, estimation inventaire"
+        },
+        {
+          "at": "2026-09-22T17:59:32+00:00",
+          "model": "grok",
+          "calls": 1,
+          "tokens": 45000,
+          "duration_seconds": 1,
+          "purpose": "cross-review:grok (tokens estimés)"
+        },
+        {
+          "at": "2026-09-22T18:20:30+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 45000,
+          "duration_seconds": 900,
+          "purpose": "DISCOVER cycle 10, producteur statique, estimation"
+        },
+        {
+          "at": "2026-09-22T18:20:30+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 35000,
+          "duration_seconds": 900,
+          "purpose": "DISCOVER cycle 10, contradicteur tests accessibilite, estimation"
+        },
+        {
+          "at": "2026-09-22T18:20:30+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 50000,
+          "duration_seconds": 1200,
+          "purpose": "DISCOVER cycle 10, persona UI jetable, estimation"
+        },
+        {
+          "at": "2026-09-22T18:29:26+00:00",
+          "model": "gpt",
+          "calls": 3,
+          "tokens": 160000,
+          "duration_seconds": 0,
+          "purpose": "Trois agents Astra REPRODUCE cycle10, estimation des tokens sans métrique runtime disponible"
+        },
+        {
+          "at": "2026-09-22T18:40:08+00:00",
+          "model": "gpt",
+          "calls": 4,
+          "tokens": 170000,
+          "duration_seconds": 0,
+          "purpose": "Trois lots REPAIR Astra et reproduction B939 complémentaire, tokens estimés faute de métrique runtime"
+        },
+        {
+          "at": "2026-09-22T19:01:46+00:00",
+          "model": "gpt",
+          "calls": 3,
+          "tokens": 95000,
+          "duration_seconds": 0,
+          "purpose": "Tokens estimés : revue finale projets, recette UI Images et orchestration de vérification post-correctifs ; métriques runtime natives indisponibles"
+        },
+        {
+          "at": "2026-09-22T19:04:40+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 42000,
+          "duration_seconds": 0,
+          "purpose": "Tokens estimés : double lecture indépendante B de 23 fichiers, 8 rapports MAP ; compte natif indisponible"
+        },
+        {
+          "at": "2026-09-22T19:06:11+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 42000,
+          "duration_seconds": 0,
+          "purpose": "Tokens estimés : lecture A de 23 fichiers post-correctifs et 8 rapports MAP ; compte natif indisponible"
+        },
+        {
+          "at": "2026-09-22T19:11:41+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 18000,
+          "duration_seconds": 0,
+          "purpose": "Tokens estimés : diagnostic indépendant des deux échecs frontend, recette Chromium de la course de montage Prompts ; compte natif indisponible"
+        },
+        {
+          "at": "2026-09-22T19:15:19+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 40000,
+          "duration_seconds": 0,
+          "purpose": "Tokens estimés : ronde UI A, 4 contextes projets/factures/contacts +4Images, 21 tests ciblés et44 captures ; compte natif indisponible"
+        },
+        {
+          "at": "2026-09-22T19:21:14+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 20000,
+          "duration_seconds": 0,
+          "purpose": "Tokens estimés : revue indépendante des avis, usages atteints et diff B-945 ; compte natif indisponible"
+        },
+        {
+          "at": "2026-09-22T19:32:30+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 45000,
+          "duration_seconds": 0,
+          "purpose": "Producteur B-945 en worktree isolé, revues et tests Python ; estimation explicite, métriques natives de tokens indisponibles."
+        },
+        {
+          "at": "2026-09-22T20:23:52+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 25000,
+          "duration_seconds": 0,
+          "purpose": "Ronde A post-dépendances, 84 transitions et44 captures. Estimation faute de métrique native."
+        },
+        {
+          "at": "2026-09-22T20:23:52+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 18000,
+          "duration_seconds": 0,
+          "purpose": "Diagnostic indépendant timeout Windows, comparaison logs/151dépendances et rejeu local. Estimation faute de métrique native."
+        },
+        {
+          "at": "2026-09-22T20:28:05+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 35000,
+          "duration_seconds": 0,
+          "purpose": "RondeB indépendante : 96transitions,16Images,44captures,94ciblés et2625complets. Estimation agent faute de métrique native."
+        },
+        {
+          "at": "2026-09-22T20:42:32+00:00",
+          "model": "gpt",
+          "calls": 2,
+          "tokens": 46000,
+          "duration_seconds": 0,
+          "purpose": "B-947 production et revue indépendante ; estimation indicative, non télémétrie fournisseur"
+        },
+        {
+          "at": "2026-09-22T20:55:04+00:00",
+          "model": "gpt",
+          "calls": 2,
+          "tokens": 125000,
+          "duration_seconds": 0,
+          "purpose": "Lectures A/B post-B947 et deux rondes post-scroll avec captures et suites ; estimation indicative, non métrique fournisseur"
+        },
+        {
+          "at": "2026-09-22T20:59:46+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 6000,
+          "duration_seconds": 0,
+          "purpose": "GAP_SCAN borné P092, lecture et déduplication ; estimation indicative non comptable"
+        }
+      ]
+    },
+    "11": {
+      "started_at": "2026-09-23T08:21:43+00:00",
+      "usage": {
+        "claude": {
+          "calls": 29,
+          "tokens": 8720030,
+          "duration_seconds": 15859
+        },
+        "grok": {
+          "calls": 0,
+          "tokens": 0,
+          "duration_seconds": 0
+        },
+        "gpt": {
+          "calls": 18,
+          "tokens": 1470951,
+          "duration_seconds": 3709
+        }
+      },
+      "events": [
+        {
+          "at": "2026-09-23T08:22:29+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 220000,
+          "duration_seconds": 0,
+          "purpose": "orchestrateur c11 MAP (refresh 0 fichier, validate 100 %, map) : tokens estimés depuis le contexte, pas un compte natif"
+        },
+        {
+          "at": "2026-09-23T08:25:31+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 19348,
+          "duration_seconds": 36,
+          "purpose": "cross-review:gpt"
+        },
+        {
+          "at": "2026-09-23T08:30:07+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 67566,
+          "duration_seconds": 0,
+          "purpose": "cross-review:gpt c11 Linux (Landlock) ; usage consigné à la main : cross-review.sh modifié pendant la course, fin du script en 127"
+        },
+        {
+          "at": "2026-09-23T08:47:43+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 74046,
+          "duration_seconds": 164,
+          "purpose": "cross-review:gpt"
+        },
+        {
+          "at": "2026-09-23T08:55:58+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 189139,
+          "duration_seconds": 0,
+          "purpose": "lecteur carte c11 n°1 (WP-046, WP-051, WP-055, WP-DIFF-056, WP-DIFF-057)"
+        },
+        {
+          "at": "2026-09-23T08:56:45+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 63989,
+          "duration_seconds": 213,
+          "purpose": "cross-review:gpt"
+        },
+        {
+          "at": "2026-09-23T08:58:31+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 258737,
+          "duration_seconds": 0,
+          "purpose": "lecteur carte c11 n°2 (WP-046, WP-051, WP-055, WP-DIFF-056, WP-DIFF-057)"
+        },
+        {
+          "at": "2026-09-23T09:02:45+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 57537,
+          "duration_seconds": 119,
+          "purpose": "cross-review:gpt"
+        },
+        {
+          "at": "2026-09-23T09:11:10+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 224405,
+          "duration_seconds": 0,
+          "purpose": "lecteur carte c11 n°3 (WP-C-004, WP-051, WP-055, WP-DIFF-057, WP-DIFF-058)"
+        },
+        {
+          "at": "2026-09-23T09:12:12+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 242269,
+          "duration_seconds": 0,
+          "purpose": "lecteur carte c11 n°4 (WP-C-004, WP-051, WP-055, WP-DIFF-057, WP-DIFF-058)"
+        },
+        {
+          "at": "2026-09-23T09:17:03+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 127023,
+          "duration_seconds": 195,
+          "purpose": "cross-review:gpt"
+        },
+        {
+          "at": "2026-09-23T09:18:31+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 22782,
+          "duration_seconds": 52,
+          "purpose": "cross-review:gpt"
+        },
+        {
+          "at": "2026-09-23T09:20:25+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 185910,
+          "duration_seconds": 0,
+          "purpose": "lecteur carte c11 n°6 (WP-051, WP-DIFF-058, WP-DIFF-059)"
+        },
+        {
+          "at": "2026-09-23T09:21:20+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 204364,
+          "duration_seconds": 0,
+          "purpose": "lecteur carte c11 n°5 (WP-051, WP-DIFF-058, WP-DIFF-059)"
+        },
+        {
+          "at": "2026-09-23T09:28:34+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 94927,
+          "duration_seconds": 313,
+          "purpose": "cross-review:gpt"
+        },
+        {
+          "at": "2026-09-23T09:32:29+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 23616,
+          "duration_seconds": 145,
+          "purpose": "cross-review:gpt"
+        },
+        {
+          "at": "2026-09-23T09:33:03+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 212159,
+          "duration_seconds": 0,
+          "purpose": "lecteur carte c11 n°7 (WP-051, WP-DIFF-059, WP-DIFF-060)"
+        },
+        {
+          "at": "2026-09-23T09:33:03+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 225937,
+          "duration_seconds": 0,
+          "purpose": "lecteur carte c11 n°8 (WP-051, WP-DIFF-059, WP-DIFF-060)"
+        },
+        {
+          "at": "2026-09-23T09:41:29+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 90885,
+          "duration_seconds": 294,
+          "purpose": "cross-review:gpt"
+        },
+        {
+          "at": "2026-09-23T09:45:35+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 35325,
+          "duration_seconds": 151,
+          "purpose": "cross-review:gpt"
+        },
+        {
+          "at": "2026-09-23T09:49:36+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 241831,
+          "duration_seconds": 0,
+          "purpose": "lecteur carte c11 n°9 (WP-051, WP-DIFF-060, WP-DIFF-061)"
+        },
+        {
+          "at": "2026-09-23T09:52:50+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 280057,
+          "duration_seconds": 0,
+          "purpose": "lecteur carte c11 n°10 (WP-051, WP-DIFF-060, WP-DIFF-061)"
+        },
+        {
+          "at": "2026-09-23T09:59:03+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 58233,
+          "duration_seconds": 222,
+          "purpose": "cross-review:gpt"
+        },
+        {
+          "at": "2026-09-23T10:02:41+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 48619,
+          "duration_seconds": 141,
+          "purpose": "cross-review:gpt"
+        },
+        {
+          "at": "2026-09-23T10:13:14+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 264539,
+          "duration_seconds": 0,
+          "purpose": "lecteur carte c11 n°11 (WP-051, WP-079, WP-DIFF-061, WP-DIFF-062)"
+        },
+        {
+          "at": "2026-09-23T10:13:14+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 228395,
+          "duration_seconds": 0,
+          "purpose": "lecteur carte c11 n°12 (WP-051, WP-079, WP-DIFF-061, WP-DIFF-062)"
+        },
+        {
+          "at": "2026-09-23T10:24:00+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 227373,
+          "duration_seconds": 0,
+          "purpose": "lecteur carte c11 n°13 (WP-051, WP-079, WP-DIFF-061, WP-DIFF-062)"
+        },
+        {
+          "at": "2026-09-23T10:24:55+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 238197,
+          "duration_seconds": 0,
+          "purpose": "lecteur carte c11 n°14 (WP-051, WP-079, WP-DIFF-061, WP-DIFF-062)"
+        },
+        {
+          "at": "2026-09-23T11:15:38+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 490618,
+          "duration_seconds": 0,
+          "purpose": "auditeur indépendant ronde B c11 (62 transitions, 5 défauts)"
+        },
+        {
+          "at": "2026-09-23T11:58:15+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 134176,
+          "duration_seconds": 313,
+          "purpose": "cross-review:gpt"
+        },
+        {
+          "at": "2026-09-23T12:10:00+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 422625,
+          "duration_seconds": 0,
+          "purpose": "lecteur carte c11 n°15 (21 fichiers, 11 lots sur 12)"
+        },
+        {
+          "at": "2026-09-23T12:21:45+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 464067,
+          "duration_seconds": 1169,
+          "purpose": "Lecteur carte c11 n°16 (sous-agent Claude, relecture indépendante des fichiers modifiés)"
+        },
+        {
+          "at": "2026-09-23T12:36:30+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 171786,
+          "duration_seconds": 350,
+          "purpose": "cross-review:gpt"
+        },
+        {
+          "at": "2026-09-23T12:46:36+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 342748,
+          "duration_seconds": 862,
+          "purpose": "Lecteur carte c11 n°18 (sous-agent Claude, relecture indépendante après B-978 à B-982)"
+        },
+        {
+          "at": "2026-09-23T12:49:08+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 347030,
+          "duration_seconds": 1028,
+          "purpose": "Lecteur carte c11 n°17 (sous-agent Claude, relecture indépendante après B-978 à B-982)"
+        },
+        {
+          "at": "2026-09-23T13:05:42+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 127963,
+          "duration_seconds": 356,
+          "purpose": "cross-review:gpt"
+        },
+        {
+          "at": "2026-09-23T13:12:18+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 350200,
+          "duration_seconds": 756,
+          "purpose": "Lecteur carte c11 n°20 (sous-agent Claude, relecture après B-988 à B-998)"
+        },
+        {
+          "at": "2026-09-23T13:21:32+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 367253,
+          "duration_seconds": 1306,
+          "purpose": "Lecteur carte c11 n°19 (sous-agent Claude, relecture après B-988 à B-998)"
+        },
+        {
+          "at": "2026-09-23T13:37:55+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 150623,
+          "duration_seconds": 342,
+          "purpose": "cross-review:gpt"
+        },
+        {
+          "at": "2026-09-23T13:46:25+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 349174,
+          "duration_seconds": 862,
+          "purpose": "Lecteur carte c11 n°21 (sous-agent Claude, relecture après B-1003 à B-1009)"
+        },
+        {
+          "at": "2026-09-23T13:52:07+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 393144,
+          "duration_seconds": 1192,
+          "purpose": "Lecteur carte c11 n°22 (sous-agent Claude, relecture après B-1003 à B-1009)"
+        },
+        {
+          "at": "2026-09-23T14:34:39+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 417624,
+          "duration_seconds": 3302,
+          "purpose": "Auditeur ronde B2 du ZERO_CHECK (sous-agent Claude indépendant)"
+        },
+        {
+          "at": "2026-09-23T15:25:09+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 102507,
+          "duration_seconds": 303,
+          "purpose": "cross-review:gpt"
+        },
+        {
+          "at": "2026-09-23T15:29:13+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 257414,
+          "duration_seconds": 564,
+          "purpose": "Lecteur carte c11 n°23 (sous-agent Claude, relecture de B-1021 et P-101)"
+        },
+        {
+          "at": "2026-09-23T15:31:54+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 272296,
+          "duration_seconds": 712,
+          "purpose": "Lecteur carte c11 n°24 (sous-agent Claude, relecture de B-1021 et P-101)"
+        },
+        {
+          "at": "2026-09-23T16:34:55+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 433165,
+          "duration_seconds": 2368,
+          "purpose": "Auditeur ronde B3 du ZERO_CHECK (sous-agent Claude indépendant)"
+        },
+        {
+          "at": "2026-09-23T17:27:02+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 369360,
+          "duration_seconds": 1738,
+          "purpose": "Auditeur ronde B4 du ZERO_CHECK (sous-agent Claude indépendant)"
+        }
+      ]
+    },
+    "12": {
+      "started_at": "2026-09-24T08:07:31+00:00",
+      "usage": {
+        "claude": {
+          "calls": 0,
+          "tokens": 0,
+          "duration_seconds": 0
+        },
+        "grok": {
+          "calls": 0,
+          "tokens": 0,
+          "duration_seconds": 0
+        },
+        "gpt": {
+          "calls": 0,
+          "tokens": 0,
+          "duration_seconds": 0
+        }
+      },
+      "events": []
+    },
+    "13": {
+      "started_at": "2026-09-24T18:21:44+00:00",
+      "usage": {
+        "claude": {
+          "calls": 103,
+          "tokens": 34057913,
+          "duration_seconds": 6188
+        },
+        "grok": {
+          "calls": 0,
+          "tokens": 0,
+          "duration_seconds": 0
+        },
+        "gpt": {
+          "calls": 0,
+          "tokens": 0,
+          "duration_seconds": 0
+        }
+      },
+      "events": [
+        {
+          "at": "2026-09-24T18:58:09+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 438694,
+          "duration_seconds": 0,
+          "purpose": "lecteur carte c13 A (16 fichiers moteur)"
+        },
+        {
+          "at": "2026-09-24T18:58:09+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 299482,
+          "duration_seconds": 0,
+          "purpose": "lecteur carte c13 B (15 fichiers interface)"
+        },
+        {
+          "at": "2026-09-24T18:58:09+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 151151,
+          "duration_seconds": 0,
+          "purpose": "lecteur carte c13 C (seconde lecture critique)"
+        },
+        {
+          "at": "2026-09-24T18:58:09+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 243043,
+          "duration_seconds": 0,
+          "purpose": "lecteur carte c13 D (défi, 3 fichiers)"
+        },
+        {
+          "at": "2026-09-24T18:58:09+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 135007,
+          "duration_seconds": 0,
+          "purpose": "contradicteur design B-1153 V1"
+        },
+        {
+          "at": "2026-09-24T19:13:17+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 267997,
+          "duration_seconds": 0,
+          "purpose": "reproducteur c13 (11 candidats)"
+        },
+        {
+          "at": "2026-09-24T19:27:05+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 118174,
+          "duration_seconds": 0,
+          "purpose": "contradicteur design B-1153 V2"
+        },
+        {
+          "at": "2026-09-24T19:55:40+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 130741,
+          "duration_seconds": 0,
+          "purpose": "contradicteur design B-1153 V3"
+        },
+        {
+          "at": "2026-09-24T20:23:51+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 146999,
+          "duration_seconds": 0,
+          "purpose": "contradicteur design B-1153 V4"
+        },
+        {
+          "at": "2026-09-24T20:23:51+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 270803,
+          "duration_seconds": 0,
+          "purpose": "contradicteur design P-096 V3"
+        },
+        {
+          "at": "2026-09-24T20:44:33+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 233499,
+          "duration_seconds": 0,
+          "purpose": "contradicteur design P-096 V4"
+        },
+        {
+          "at": "2026-09-24T20:49:14+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 181422,
+          "duration_seconds": 0,
+          "purpose": "contradicteur design B-1153 V5 (GO)"
+        },
+        {
+          "at": "2026-09-24T21:06:31+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 221424,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-24T21:29:16+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 375181,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-24T21:30:58+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 405462,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-24T21:31:41+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 341752,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-24T21:36:12+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 480050,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-24T21:41:51+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 397975,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-24T21:57:37+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 258312,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-24T22:02:15+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 264405,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-24T22:07:38+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 271230,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-24T22:47:06+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 342214,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-24T22:51:02+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 357121,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-24T22:53:01+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 361838,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-24T22:54:42+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 365379,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-24T22:56:51+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 331629,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-24T23:41:45+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 217423,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-24T23:44:05+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 217423,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-25T00:19:12+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 344893,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-25T00:26:12+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 354117,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-25T00:28:45+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 317660,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-25T00:30:25+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 336090,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-25T00:32:05+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 336776,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-25T00:48:07+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 255498,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-25T00:52:42+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 169591,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-25T00:55:04+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 359155,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-25T01:42:18+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 240825,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-25T02:20:16+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 220769,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-25T03:00:11+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 243365,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-25T05:44:36+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 308437,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-25T05:44:43+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 267458,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-25T05:45:43+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 295936,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-25T06:17:19+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 280671,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-25T06:19:51+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 298194,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-25T06:43:23+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 313814,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-25T06:46:27+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 302767,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-25T07:08:46+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 173712,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-25T07:15:51+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 190063,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-25T07:16:34+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 273375,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-25T08:04:56+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 470639,
+          "duration_seconds": 0,
+          "purpose": ""
+        },
+        {
+          "at": "2026-09-25T08:49:11+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 413020,
+          "duration_seconds": 2507,
+          "purpose": "persona Hugo, campagne c13"
+        },
+        {
+          "at": "2026-09-25T09:16:19+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 404672,
+          "duration_seconds": 1502,
+          "purpose": "persona Nathalie, campagne c13"
+        },
+        {
+          "at": "2026-09-25T09:53:08+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 491428,
+          "duration_seconds": 2179,
+          "purpose": "persona Zoé, campagne c13"
+        },
+        {
+          "at": "2026-09-26T04:45:33+00:00",
+          "model": "claude",
+          "calls": 11,
+          "tokens": 5823000,
+          "duration_seconds": 0,
+          "purpose": "vague 16 fin : P-132b correctifs, V4 P-107/108 et P-121/125, revue V4 P-105/106, contradicteur B-1520, P-148 (4 passes) et 2 revues du diff"
+        },
+        {
+          "at": "2026-09-26T05:14:14+00:00",
+          "model": "claude",
+          "calls": 5,
+          "tokens": 1747000,
+          "duration_seconds": 0,
+          "purpose": "carte différentielle STABILIZE, lecteurs c13s-01 à 05"
+        },
+        {
+          "at": "2026-09-26T05:34:18+00:00",
+          "model": "claude",
+          "calls": 5,
+          "tokens": 1797000,
+          "duration_seconds": 0,
+          "purpose": "carte différentielle STABILIZE, lecteurs c13s-06 à 10"
+        },
+        {
+          "at": "2026-09-26T06:20:31+00:00",
+          "model": "claude",
+          "calls": 5,
+          "tokens": 1791000,
+          "duration_seconds": 0,
+          "purpose": "carte différentielle STABILIZE, lecteurs c13s-11 à 15"
+        },
+        {
+          "at": "2026-09-26T06:37:16+00:00",
+          "model": "claude",
+          "calls": 5,
+          "tokens": 1789000,
+          "duration_seconds": 0,
+          "purpose": "carte différentielle STABILIZE, lecteurs c13s-16 à 20"
+        },
+        {
+          "at": "2026-09-26T07:18:11+00:00",
+          "model": "claude",
+          "calls": 10,
+          "tokens": 3000000,
+          "duration_seconds": 0,
+          "purpose": "carte STABILIZE lecteurs c13s-21 à 24, défis d1 à d5, arbitre des invariants (ESTIMATION : comptes exacts perdus à la compaction)"
+        },
+        {
+          "at": "2026-09-26T07:46:44+00:00",
+          "model": "claude",
+          "calls": 4,
+          "tokens": 1280787,
+          "duration_seconds": 0,
+          "purpose": "carte différentielle 508c048c, lecteurs c13r-1, 2, 3, 5"
+        },
+        {
+          "at": "2026-09-26T07:47:18+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 480583,
+          "duration_seconds": 0,
+          "purpose": "carte différentielle 508c048c, lecteur c13r-4"
+        },
+        {
+          "at": "2026-09-26T08:10:17+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 234485,
+          "duration_seconds": 0,
+          "purpose": "carte 945c878d, lecteur c13r-7 (secondes lectures)"
+        },
+        {
+          "at": "2026-09-26T08:14:26+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 320267,
+          "duration_seconds": 0,
+          "purpose": "carte 945c878d, lecteur c13r-6"
+        },
+        {
+          "at": "2026-09-26T08:23:59+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 136258,
+          "duration_seconds": 0,
+          "purpose": "carte 779383f5, lecteur c13r-9 (seconde lecture)"
+        },
+        {
+          "at": "2026-09-26T08:26:44+00:00",
+          "model": "claude",
+          "calls": 1,
+          "tokens": 169778,
+          "duration_seconds": 0,
+          "purpose": "carte 779383f5, lecteur c13r-8"
+        }
+      ]
+    },
+    "14": {
+      "started_at": "2026-09-26T19:22:40+00:00",
+      "usage": {
+        "claude": {
+          "calls": 0,
+          "tokens": 0,
+          "duration_seconds": 0
+        },
+        "grok": {
+          "calls": 0,
+          "tokens": 0,
+          "duration_seconds": 0
+        },
+        "gpt": {
+          "calls": 0,
+          "tokens": 0,
+          "duration_seconds": 0
+        }
+      },
+      "events": []
+    },
+    "15": {
+      "started_at": "2026-09-29T17:59:35+00:00",
+      "usage": {
+        "claude": {
+          "calls": 0,
+          "tokens": 0,
+          "duration_seconds": 0
+        },
+        "grok": {
+          "calls": 2,
+          "tokens": 400000,
+          "duration_seconds": 0
+        },
+        "gpt": {
+          "calls": 9,
+          "tokens": 300000,
+          "duration_seconds": 0
+        }
+      },
+      "events": [
+        {
+          "at": "2026-09-29T18:21:35+00:00",
+          "model": "grok",
+          "calls": 2,
+          "tokens": 400000,
+          "duration_seconds": 0,
+          "purpose": "ESTIMATION : lecteur de carte c15-g1 (8 fichiers) et calibration des six instruments ; le CLI Grok n'annonce pas ses jetons"
+        },
+        {
+          "at": "2026-09-30T19:36:25+00:00",
+          "model": "gpt",
+          "calls": 8,
+          "tokens": 200000,
+          "duration_seconds": 0,
+          "purpose": "ESTIMATION de reprise : orchestration et rôles Codex instrument, A/B, légal, concurrence et runtime. Runtime natif ne publie pas de comptage API exact; estimation de sécurité, pas mesure."
+        },
+        {
+          "at": "2026-10-02T12:02:53+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 100000,
+          "duration_seconds": 0,
+          "purpose": "ESTIMATION de reprise Codex : vérification lecture seule puis finalisation documentaire et synchronisations sous GO115421UTC ; pas une mesure API"
+        }
+      ]
+    },
+    "16": {
+      "started_at": "2026-10-02T12:07:46+00:00",
+      "usage": {
+        "claude": {
+          "calls": 0,
+          "tokens": 0,
+          "duration_seconds": 0
+        },
+        "grok": {
+          "calls": 0,
+          "tokens": 0,
+          "duration_seconds": 0
+        },
+        "gpt": {
+          "calls": 59,
+          "tokens": 3935000,
+          "duration_seconds": 0
+        }
+      },
+      "events": [
+        {
+          "at": "2026-10-02T12:12:29+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 20000,
+          "duration_seconds": 0,
+          "purpose": "ESTIMATION orchestration MAP cycle16 : provenance des instruments, refresh et validation différentielle, vérification authClaude et porte CLI ; pas une mesure API"
+        },
+        {
+          "at": "2026-10-02T13:02:34+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 40000,
+          "duration_seconds": 0,
+          "purpose": "lecteur16_interface : estimation des lectures et reproductions, pas mesure API"
+        },
+        {
+          "at": "2026-10-02T13:02:34+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 40000,
+          "duration_seconds": 0,
+          "purpose": "lecteur16_securite : estimation des lectures et reproductions, pas mesure API"
+        },
+        {
+          "at": "2026-10-02T13:26:56+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 25000,
+          "duration_seconds": 0,
+          "purpose": "ESTIMATION relecture interface et quatre cas complémentaires ; pas une mesure API"
+        },
+        {
+          "at": "2026-10-02T13:26:56+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 15000,
+          "duration_seconds": 0,
+          "purpose": "ESTIMATION analyse limitée cache restauration après refus ; pas une mesure API"
+        },
+        {
+          "at": "2026-10-02T13:26:56+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 20000,
+          "duration_seconds": 0,
+          "purpose": "ESTIMATION relecture backend B1772 ; pas une mesure API"
+        },
+        {
+          "at": "2026-10-02T13:26:56+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 0,
+          "duration_seconds": 0,
+          "purpose": "Appel lecteur HTTP refusé automatiquement avant résultat ; tokens inconnus, aucune consommation fictive déclarée"
+        },
+        {
+          "at": "2026-10-02T13:26:56+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 80000,
+          "duration_seconds": 0,
+          "purpose": "ESTIMATION orchestration c16, calibration, reproduction, cinq correctifs et contrôle des reçus ; pas une mesure API"
+        },
+        {
+          "at": "2026-10-02T13:47:13+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 60000,
+          "duration_seconds": 0,
+          "purpose": "Première relecture différentielle intégrale interface11fichiers ; ESTIMATION explicite, pas mesure API"
+        },
+        {
+          "at": "2026-10-02T13:47:13+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 60000,
+          "duration_seconds": 0,
+          "purpose": "Seconde relecture différentielle contradictoire11fichiers ; ESTIMATION explicite, pas mesure API"
+        },
+        {
+          "at": "2026-10-02T13:47:13+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 20000,
+          "duration_seconds": 0,
+          "purpose": "Reproduction mémoire B1686 indépendante ; ESTIMATION explicite, pas mesure API"
+        },
+        {
+          "at": "2026-10-02T13:47:13+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 25000,
+          "duration_seconds": 0,
+          "purpose": "Relecture contradictoire B1686 data2296lignes et test129lignes ; ESTIMATION explicite, pas mesure API"
+        },
+        {
+          "at": "2026-10-02T14:27:32+00:00",
+          "model": "gpt",
+          "calls": 6,
+          "tokens": 220000,
+          "duration_seconds": 0,
+          "purpose": "ESTIMATION explicite, aucun comptage API mesuré : relectures indépendantes B1686 sécurité/existence et calibration17 du consommateur ; sorties terminées contrôlées, aucune répétition de tests additionnée."
+        },
+        {
+          "at": "2026-10-02T15:01:08+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 60000,
+          "duration_seconds": 0,
+          "purpose": "ESTIMATION explicite, aucune mesure API : développement et calibration indépendante32 du consommateurv2, original et rouges conservés ; aucune répétition produit comptée."
+        },
+        {
+          "at": "2026-10-02T15:15:59+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 100000,
+          "duration_seconds": 0,
+          "purpose": "ESTIMATION explicite, pas mesure API : revue neutre terminée des94originaux et16candidats par carte16_contradiction ; vérification des117empreintes, aucun nouveau test ni plateau."
+        },
+        {
+          "at": "2026-10-02T15:52:11+00:00",
+          "model": "gpt",
+          "calls": 4,
+          "tokens": 380000,
+          "duration_seconds": 0,
+          "purpose": "ESTIMATION explicite sans mesure API : deux campagnes headless exécutées, audit129 et préparation65 obligations, build privé/helper natif ; gestes Chrome bloqués, aucun plateau. Lots terminés, compléments futurs non inclus."
+        },
+        {
+          "at": "2026-10-02T16:34:52+00:00",
+          "model": "gpt",
+          "calls": 5,
+          "tokens": 260000,
+          "duration_seconds": 0,
+          "purpose": "ESTIMATION explicite sans mesure API : orchestration/gardes/compléments root locaux, quatre tours des deux acteurs interrompus pour transport bloqué (aucun complément produit exécuté par eux), rapports exacts conservés ; aucune répétition ajoutée au nombre de tests."
+        },
+        {
+          "at": "2026-10-02T16:54:58+00:00",
+          "model": "gpt",
+          "calls": 3,
+          "tokens": 120000,
+          "duration_seconds": 0,
+          "purpose": "ESTIMATION explicite sans mesure API : segment root diagnostic IPv6/collector/docs et deux lecteurs indépendants (originaux94, compléments, copie Python, fenêtre moteur native) ; aucune répétition de tests ajoutée, pas de tokens Claude fictifs."
+        },
+        {
+          "at": "2026-10-03T07:42:10+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 100000,
+          "duration_seconds": 0,
+          "purpose": "ESTIMATION reprise du 3 octobre : instructions et checkpoint, push autorisé et SHA distant, PR brouillon pour CI, contrôles WIP/mémoires et capacités Mac ; pas une mesure API."
+        },
+        {
+          "at": "2026-10-03T07:55:26+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 15000,
+          "duration_seconds": 0,
+          "purpose": "ESTIMATION suivi CI du 3 octobre : veille des runs déjà déclenchés, vérification des états terminaux générale/Windows/E2E et checkpoint ; aucun contrôle relancé, pas une mesure API."
+        },
+        {
+          "at": "2026-10-03T09:15:12+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 25000,
+          "duration_seconds": 0,
+          "purpose": "ESTIMATION reprise GO090907UTC : checkpoint et dépôt, outils Mac réellement exposés, consignes pertinentes et disponibilité locale d’une voie macOS jetable distincte ; aucun test CI ou lancement GUI, pas une mesure API."
+        },
+        {
+          "at": "2026-10-03T11:06:48+00:00",
+          "model": "gpt",
+          "calls": 2,
+          "tokens": 200000,
+          "duration_seconds": 0,
+          "purpose": "ESTIMATION explicite sans mesure API : nouvelle session capacités16, lecture consignes/checkpoints, reprise normale, runtime neuf et six recalibrations, ChromeMac154 avec variante sandbox et nettoyage ; un lecteur indépendant /root/verification_capacites16 inspecte reçus/images/propositionQA. Deux unités de travail réelles, aucun comptage fictif de modèles, aucune campagne ni répétition ajoutée aux7780 tests produit."
+        },
+        {
+          "at": "2026-10-03T11:40:49+00:00",
+          "model": "gpt",
+          "calls": 2,
+          "tokens": 100000,
+          "duration_seconds": 0,
+          "purpose": "ESTIMATION explicite sans mesure API : poursuite root apres GO installation UTM et retour du relecteur pour sauvegarder son rapport, aucun nouveau controle produit"
+        },
+        {
+          "at": "2026-10-03T12:49:14+00:00",
+          "model": "gpt",
+          "calls": 5,
+          "tokens": 250000,
+          "duration_seconds": 0,
+          "purpose": "ESTIMATION NON API MESUREE : phase post-GO licence Apple, acteur root et4 tours de relecture existant; installation macOS QA, diagnostic MobileRestore35/ExFAT et conteneur APFS monte refuse; aucun test produit ou CI relance."
+        },
+        {
+          "at": "2026-10-03T14:03:35+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 10000,
+          "duration_seconds": 0,
+          "purpose": "ESTIMATION NON API MESUREE : verification terminal en lecture seule du montage apres voila Sentinel_ef8bf4cc670c81918990d4d9482a993c; APFS image et volume absents, aucune tentative montage ni installation."
+        },
+        {
+          "at": "2026-10-03T16:20:19+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 50000,
+          "duration_seconds": 0,
+          "purpose": "ESTIMATION NON API MESUREE : reprise root du 3 octobre 15:43 UTC, diagnostic ciblé montage/APFS, restauration Apple réussie et handoff UTM préparé ; estimation de 50000 tokens pour ce tour logique, aucun nouvel acteur."
+        },
+        {
+          "at": "2026-10-03T16:48:57+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 20000,
+          "duration_seconds": 0,
+          "purpose": "ESTIMATION NON API MESUREE : diagnostic écran noir du 3 octobre 16:32 UTC, fichiers ouverts de ancienne VM ExFAT identifiés, renommage APFS seul sauvegardé, ouverture conditionnelle bloquée avant action, analyse QA minimale ; estimation 20000 tokens."
+        },
+        {
+          "at": "2026-10-03T17:17:31+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 15000,
+          "duration_seconds": 0,
+          "purpose": "ESTIMATION NON API MESUREE : contrôle distant UTM du 3 octobre 17:07 UTC, aide CLI --request réelle, précontrôle Apple sans prompt -1744, sources officielles arrêt et URL vérifiées, aucune action de contrôle émise ; estimation 15000 tokens."
+        },
+        {
+          "at": "2026-10-03T17:50:29+00:00",
+          "model": "gpt",
+          "calls": 2,
+          "tokens": 50000,
+          "duration_seconds": 0,
+          "purpose": "ESTIMATION NON API MESUREE : tour consentement UTM et arrêt normal du 3 octobre 17:18-17:33 (20000 tokens estimés, non consigné à cause du STOP humain), puis reprise directe demandée par Ludo, vérification SDK Apple et capture UTM réelle, ouverture et démarrage APFS gardés (30000 tokens estimés). Aucun comptage produit supplémentaire ni ronde créée."
+        },
+        {
+          "at": "2026-10-03T18:13:18+00:00",
+          "model": "gpt",
+          "calls": 2,
+          "tokens": 25000,
+          "duration_seconds": 0,
+          "purpose": "ESTIMATION NON API MESUREE : deux tours indépendants verification_capacites16 de relecture native (5000 tokens chacun estimés), plus complément estimé de 15000 tokens de orchestration du tour de reprise déjà enregistré. Aucun nouveau appel root compté, aucune calibration ni ronde créée."
+        },
+        {
+          "at": "2026-10-04T08:28:11+00:00",
+          "model": "gpt",
+          "calls": 3,
+          "tokens": 1350000,
+          "duration_seconds": 0,
+          "purpose": "ESTIMATION NON API : 3 lots agrégés correspondant aux acteurs réels root, qa_directe_native et qa_directe_plan pour la campagne directe Mac depuis le dernier reçu18:13UTC. Estimation1350000tokens, nombre d appels fournisseur et durée de calcul indisponibles ; appels ici désignent ces lots logiques, aucun test répété ajouté aux7780 succès distincts. Build natif privé, démarrages/arrêts, deux campagnes Chrome, harnessSQL, relectures et qualification. Aucun usage Claude/Grok inventé."
+        },
+        {
+          "at": "2026-10-04T11:38:24+00:00",
+          "model": "gpt",
+          "calls": 4,
+          "tokens": 180000,
+          "duration_seconds": 0,
+          "purpose": "ESTIMATION NON API : préparation release 0.77.2 et trois revues indépendantes sécurité UX logique ; 4 lots logiques, sans décompte des outils ni prétention de mesure fournisseur."
+        }
+      ]
+    },
+    "17": {
+      "started_at": "2026-10-04T16:14:30+00:00",
+      "usage": {
+        "claude": {
+          "calls": 0,
+          "tokens": 0,
+          "duration_seconds": 0
+        },
+        "grok": {
+          "calls": 0,
+          "tokens": 0,
+          "duration_seconds": 0
+        },
+        "gpt": {
+          "calls": 69,
+          "tokens": 30201597,
+          "duration_seconds": 472
+        }
+      },
+      "events": [
+        {
+          "at": "2026-10-04T16:29:18+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 60000,
+          "duration_seconds": 472,
+          "purpose": "ESTIMATION non mesurée : lecteur indépendant c17_map_primary, 4 rapports MAP, estimation agent 60000 (fourchette45000-90000), un rôle logique, aucune API Claude."
+        },
+        {
+          "at": "2026-10-06T16:53:18+00:00",
+          "model": "gpt",
+          "calls": 2,
+          "tokens": 95000,
+          "duration_seconds": 0,
+          "purpose": "ESTIMATION non API, régularisation lecteurs C17 antérieurs : second lecteur MAP 45000, revue native 50000 ; deux rôles logiques, aucun token Claude inventé."
+        },
+        {
+          "at": "2026-10-06T19:25:01+00:00",
+          "model": "gpt",
+          "calls": 4,
+          "tokens": 175000,
+          "duration_seconds": 0,
+          "purpose": "ESTIMÉ : reprise root/build/calibration native 80000, durcissement natif 45000, préparation Chrome 30000, triage visuel 20000 ; consommation outil non mesurée. Lots suite statique et préservation native à comptabiliser séparément."
+        },
+        {
+          "at": "2026-10-06T19:38:21+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 60000,
+          "duration_seconds": 0,
+          "purpose": "Estimation non mesurée : qualification native, préservation et reconstitution des sources API, contradiction ; hors lots déjà comptés"
+        },
+        {
+          "at": "2026-10-06T19:50:39+00:00",
+          "model": "gpt",
+          "calls": 2,
+          "tokens": 45000,
+          "duration_seconds": 0,
+          "purpose": "Estimation non mesurée : harnais spécialisé, deux recalibrations et contradictions, lectures F et enregistrement cinq axes ; aucune donnée API tokens disponible"
+        },
+        {
+          "at": "2026-10-06T19:59:39+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 20000,
+          "duration_seconds": 0,
+          "purpose": "Estimation non mesurée : qualification finale indépendante15cas, copie exacte28preuves et états finaux ; aucune ronde UI"
+        },
+        {
+          "at": "2026-10-06T20:12:50+00:00",
+          "model": "gpt",
+          "calls": 3,
+          "tokens": 135000,
+          "duration_seconds": 0,
+          "purpose": "Estimation non API : suites complètes et préparation consommateur 65000 ; diagnostics Chrome G/H/I et garde asynchrone 35000 ; revue root origines et 129 liaisons unitaires 35000. Hors natif et spécialisés déjà comptabilisés. Aucun plateau."
+        },
+        {
+          "at": "2026-10-06T20:38:04+00:00",
+          "model": "gpt",
+          "calls": 3,
+          "tokens": 64000,
+          "duration_seconds": 0,
+          "purpose": "Estimation non mesurée : nouvelle revue native indépendante terminée 14000 ; exécution/diagnostics et préservation shared4 30000 ; contrôles root natif/J/recettes/origines et programmation nocturne 20000 depuis dernier lot root. Hors prochaine revue shared4 et prochaine clôture couverture, pas de donnée API tokens."
+        },
+        {
+          "at": "2026-10-06T21:04:55+00:00",
+          "model": "gpt",
+          "calls": 5,
+          "tokens": 183000,
+          "duration_seconds": 0,
+          "purpose": "ESTIMATION opérationnelle, pas facturation API: lots clos depuis20:38Z, root revue220+native préparation30k; revue indépendante shared4 native_policy28k; constructeur78 statique shared430k; gate préparation shared45k; env clôtureJ+K50k. Aucun run FULL, aucun positif native; hors nouvelles reprises en cours."
+        },
+        {
+          "at": "2026-10-06T21:22:39+00:00",
+          "model": "gpt",
+          "calls": 4,
+          "tokens": 182000,
+          "duration_seconds": 0,
+          "purpose": "Estimation opérationnelle non facturation : clôture lot root précédent 50000; shared4 statiques32k+revue natif12k=44000; gate sharedcal8k+préparation contrôleur30k=38000; environment diagnostic L clos50000. Hors lots M et correction contrôleur en cours et root courant. Aucun doublon des22calls837000 précédents."
+        },
+        {
+          "at": "2026-10-06T21:33:27+00:00",
+          "model": "gpt",
+          "calls": 7,
+          "tokens": 152000,
+          "duration_seconds": 0,
+          "purpose": "Estimation opérationnelle NON API ni facturation, lots terminés depuis26/1019000 : root précédent50k; gate revue native90a20k+préparation r02/r03 40k (milieu45-70k déclaré); shared4 revue contrôleur initial15k+second natif7k+M statique8k+r03statique12k. Sept lots logiques, pas sept appels fournisseur. Hors root courant, M exécution, r04 et intégration en cours. Aucun temps runtime ajouté et aucune ronde FULL."
+        },
+        {
+          "at": "2026-10-06T21:44:50+00:00",
+          "model": "gpt",
+          "calls": 3,
+          "tokens": 72000,
+          "duration_seconds": 0,
+          "purpose": "Estimation non API de trois lots logiques terminés, sans doublon des33: environment M complet et revue r04 errno32000; root qualification M six contrôles et registre20000; root revue décision et canari réel rouge20000. Outils inclus estimativement, durée non ajoutée pour éviter doublecompte parallèle. Aucun FULL. Essai CLI précédent refusé avant mutation pour argument note invalide."
+        },
+        {
+          "at": "2026-10-06T21:47:38+00:00",
+          "model": "gpt",
+          "calls": 2,
+          "tokens": 34000,
+          "duration_seconds": 0,
+          "purpose": "Estimation NON API : gate compléments statiques r04+errno24000 (fourchette18-30k), révision05 statique10000 (8-12k), lots terminés seulement. Aucun doublon native90a/r02/r03, hors port runtime G1 en cours. Aucun runtime ou FULL qualifié."
+        },
+        {
+          "at": "2026-10-06T22:11:11+00:00",
+          "model": "gpt",
+          "calls": 10,
+          "tokens": 213000,
+          "duration_seconds": 0,
+          "purpose": "Estimation opérationnelle non API : 10 lots logiques achevés, env r05/r06 lecteur et G5 revue G1 28000, gate r06 r07 refusée G1 extension 50000, shared de93 successeur 75000, root deux diagnostics canaris relectures archivage et arrêt heartbeat 60000. Aucun runtime/FULL, temps parallèle non cumulé."
+        },
+        {
+          "at": "2026-10-07T04:07:05+00:00",
+          "model": "gpt",
+          "calls": 4,
+          "tokens": 130000,
+          "duration_seconds": 0,
+          "purpose": "c17-20261007-r07-closure-ABI-root-bounded : 4 lots logiques root et 3 agents ; estimation 130000 tokens, pas compteur API. Canari r07 réel vert, 19 tests purs closure verts et rouge V1 conservé ; raccord ABI statique seulement, 42 tests non exécutés. Temps parallèle non additionné. Aucun produit/ronde/FULL/release."
+        },
+        {
+          "at": "2026-10-07T06:22:34+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 60000,
+          "duration_seconds": 0,
+          "purpose": "c17-20261007-oui-termine-ABI42-G1pure24-OSred-SQL36-root-plus-3agents-estimate-not-API"
+        },
+        {
+          "at": "2026-10-07T07:25:06+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 5848002,
+          "duration_seconds": 0,
+          "purpose": "c17-20261007-r08-metadata-OS-direct-joint-close-and-native-goal-floor: compteur natif goal tokensUsed=7528002 observe 07:24:13Z; cycle17 estimatif avant=1680000; ajout correctif=5848002 pour plancher conservateur, pas mesure API ou facture. 1 lot logique canaris/revues/root+agents, pas nombre appels fournisseur. Compteur goal commence apres cycle17; anciennes estimations conservees; temps parallele non ajoute. Hors suite des capacites listener/relay encore en cours."
+        },
+        {
+          "at": "2026-10-07T18:22:00+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 1185692,
+          "duration_seconds": 0,
+          "purpose": "c17-20261007-listener-rpc-red-green-and-relay-pure: native goal tokensUsed=8713694 observe 18:21:31Z moins plancher precedent=7528002; ajout correctif=1185692. 1 lot logique et plancher conservateur, pas mesure API/facture/appels fournisseur. Canari V3 rouge format lsof puis V4 positif; 13 puis15 tests listener et37 tests relais purs. Aucun temps parallele ajoute, aucune ronde FULL/release."
+        },
+        {
+          "at": "2026-10-07T18:40:06+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 254281,
+          "duration_seconds": 0,
+          "purpose": "c17-20261007-scope-shutdown-pure-closed: native goal tokensUsed=8967975 observe 18:39:33Z moins plancher precedent=8713694; delta positif=254281. 1 lot logique preparation/revue/tests scope et lecture G5, pas appels API ni facture. Root43 tests purs0.26s distincts de author43, sources stables. Pas OS ni FULL, temps parallele non ajoute, plafonds inchanges."
+        },
+        {
+          "at": "2026-10-07T19:25:30+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 713707,
+          "duration_seconds": 0,
+          "purpose": "Lot57 : G5 trois enfants séquentiels, 72 purs rejoués, deux canaris inertes et archives ; plancher natif conservateur 9681682 moins 8967975, sans relever de plafond ni additionner le temps parallèle, pas une mesure API"
+        },
+        {
+          "at": "2026-10-07T19:52:22+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 337870,
+          "duration_seconds": 0,
+          "purpose": "Lot 58 : cinq appelants réels, arbitrage RPC et six tests purs Session.wait ; plancher natif conservateur 10019552, pas une facture API ; plafond inchangé, travaux nouveaux suspendus"
+        },
+        {
+          "at": "2026-10-08T07:47:30+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 393098,
+          "duration_seconds": 0,
+          "purpose": "Lot 59 : reprise explicite sans plafond de tokens, suppression atomique bornée des seules limites de tokens, archives et commit 542cc6f7 ; plancher natif 10412650 conservateur, pas une facture API"
+        },
+        {
+          "at": "2026-10-08T08:47:28+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 1514242,
+          "duration_seconds": 0,
+          "purpose": "Lot 60 : RPC implémenté, relecture croisée et 176 cas purs distincts ; premier canari Mac rouge instrument réseau, deux parents fermés sans résidu ; plancher natif conservateur 11926892, pas une facture API, temps parallèle non additionné"
+        },
+        {
+          "at": "2026-10-08T09:09:42+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 890671,
+          "duration_seconds": 0,
+          "purpose": "Lot 61 : 178 cas purs puis RPC natif positif et timeout240 fermés ; plancher natif conservateur12817563, pas facturation API ; aucun temps parallèle additionné, aucun FULL ou publication"
+        },
+        {
+          "at": "2026-10-08T11:46:31+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 5207392,
+          "duration_seconds": 0,
+          "purpose": "lot62 WRAPPER4 rouges clos, replay pur et plancher compteur natif 18024955, lot logique non facture API"
+        },
+        {
+          "at": "2026-10-08T12:44:22+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 2335565,
+          "duration_seconds": 0,
+          "purpose": "Lot63 : ROOT5/ROOT6 natifs clos, Q synthétique V2, préparations FULL fermées et archives vérifiées ; plancher natif conservateur non facture API"
+        },
+        {
+          "at": "2026-10-08T13:12:45+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 1273539,
+          "duration_seconds": 0,
+          "purpose": "Lot64 diagnostic ROOT6, copie Chrome QA strict, preparations V6 et lecteur SQL48, preuves archivees sans FULL"
+        },
+        {
+          "at": "2026-10-08T14:07:57+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 1930081,
+          "duration_seconds": 0,
+          "purpose": "Lot65 V8 et pures62/80/47, ROOT7 natif rouge fermé, Chrome strict et Gatekeeper frais, plancher natif conservateur23564140 non facture API ; aucun FULL ni borne modifiée"
+        },
+        {
+          "at": "2026-10-08T14:29:42+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 600310,
+          "duration_seconds": 0,
+          "purpose": "Lot 66 : ROOT8 rouge clos, diagnostic NSBundle et lectures répertoires, archive et revue physique sans publication"
+        },
+        {
+          "at": "2026-10-08T14:58:31+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 1290005,
+          "duration_seconds": 0,
+          "purpose": "lot67 ROOT9 clos rouge et V9 composite revues pures, plancher natif conservateur 25454455, durée parallèle zéro"
+        },
+        {
+          "at": "2026-10-08T16:30:07+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 4123272,
+          "duration_seconds": 0,
+          "purpose": "Lot 68 : raccords purs, ROOT10 clos rouge, diagnostic graphique et archives vérifiées"
+        },
+        {
+          "at": "2026-10-08T16:51:49+00:00",
+          "model": "gpt",
+          "calls": 1,
+          "tokens": 623870,
+          "duration_seconds": 0,
+          "purpose": "Lot 69 : préparation WRAPPER11 ciblée, contrôle statique rouge UID système, aucun lancement natif"
+        }
+      ]
+    }
+  },
+  "notes": [
+    {
+      "at": "2026-10-06T16:52:25.107485+00:00",
+      "cycle": 17,
+      "note": "Reprise du cycle17 sous GO actuel de Ludo. Nouvelle fenêtre opérationnelle de48h choisie par orchestrateur, pas une échéance humaine. Départ, usages, preuves et compteurs conservés ; aucune publication nouvelle autorisée.",
+      "authorization": {
+        "source_thread_id": "01a06b34-eba4-7a22-b875-d95560fe93f8",
+        "user_text": "ok la suite?",
+        "scope": "Poursuivre le cycle17 direct Mac avec profils QA jetables isolés",
+        "additional_operational_minutes": 2880,
+        "previous_max_wall_minutes": 2880,
+        "new_max_wall_minutes": 5798,
+        "duration_chosen_by_orchestrator": true,
+        "backup": ".app-loop/cycles/17/reprise-2026-10-06/budget.json"
+      }
+    },
+    {
+      "at": "2026-09-02T14:59:02+00:00",
+      "note": "Ludo, 02/09 16:40 : « on va au bout » -> plafond Claude releve a 35 M tokens et mur du cycle a 48 h pour finir REPAIR (156 confirmes) puis ZERO_CHECK, HUMAN_GATE, RELEASE"
+    },
+    {
+      "at": "2026-10-02T11:58:11.203190+00:00",
+      "note": "Prolongation cycle15 sous GO Ludo115421UTC. Quatre heures opérationnelles choisies pour documents, synchronisations et clôture normale ; ancien midi abandonné. Budget16 distinct48h à configurer lors de new-cycle.",
+      "authorization": {
+        "source_thread_id": "01a0fb94-d82e-714f-a9a4-e99d0e3130dc",
+        "message_id": "Sentinel_ba1d5c1be3788191b1d26f9890bbbb6d",
+        "at_utc": "2026-10-02T11:54:21+00:00",
+        "user_text": "go, la durée qu'il faut sur le cycle 16",
+        "scope": "Clôture normale cycle15 puis cycle16 distinct, aucune nouvelle publication autorisée",
+        "operational_c15_additional_minutes": 240,
+        "planned_c16_wall_minutes": 2880,
+        "durations_chosen_by_orchestrator_not_user_deadlines": true
+      }
+    },
+    {
+      "at": "2026-10-02T12:07:46.132525+00:00",
+      "cycle": 16,
+      "note": "Budget16 DISTINCT : enveloppe48h et limitesstandard par modèle, choisies par orchestrateur sous GO Ludo115421UTC « la durée qu il faut ». Pas une heure humaine imposée, pas un héritage du plafond4199 du cycle15. Nouvelle publication non autorisée.",
+      "authorization_message_id": "Sentinel_ba1d5c1be3788191b1d26f9890bbbb6d",
+      "limits_chosen": {
+        "max_calls": {
+          "claude": 300,
+          "grok": 38,
+          "gpt": 150
+        },
+        "max_tokens": {
+          "claude": 20000000,
+          "grok": 2500000,
+          "gpt": 10000000
+        },
+        "max_total_tokens": 32500000,
+        "max_wall_minutes": 2880
+      }
+    }
+  ]
+}

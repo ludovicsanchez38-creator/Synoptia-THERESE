@@ -1,0 +1,20 @@
+[1008/225943.758033:ERROR:third_party/crashpad/crashpad/util/mach/bootstrap.cc:65] bootstrap_check_in org.chromium.crashpad.child_port_handshake.34817.5146052.HQEDXCJCWEHIBYMQ: Permission denied (1100)
+[1008/225943.758836:ERROR:third_party/crashpad/crashpad/util/file/file_io.cc:103] ReadExactly: expected 4, observed 0
+[34667:5145720:1008/225944.036542:ERROR:base/power_monitor/thermal_state_observer_mac.mm:122] ThermalStateObserverMac unable to register to power notifications. Result: 9
+2026-10-08 22:59:44.260 Google Chrome[34667:5145720] Error received in message reply handler: Connection invalid
+2026-10-08 22:59:44.260 Google Chrome[34667:5146074] Connection Invalid error for service com.apple.hiservices-xpcservice.
+2026-10-08 22:59:44.260 Google Chrome[34667:5145720] Error received in message reply handler: Connection invalid
+2026-10-08 22:59:44.262 Google Chrome[34667:5145720] Error received in message reply handler: Connection invalid
+2026-10-08 22:59:44.262 Google Chrome[34667:5145720] Error received in message reply handler: Connection invalid
+2026-10-08 22:59:44.262 Google Chrome[34667:5145720] Error received in message reply handler: Connection invalid
+2026-10-08 22:59:44.265 Google Chrome[34667:5145720] +[NSXPCSharedListener endpointForReply:withListenerName:replyErrorCode:]: an error occurred while attempting to obtain endpoint for listener 'ClientCallsAuxiliary': Connection invalid
+[34667:5146133:1008/225945.054483:ERROR:net/base/network_config_watcher_apple.cc:143] SCDynamicStoreCreate failed with Error: 1100 - Permission denied
+[34667:5146133:1008/225945.054619:ERROR:net/base/network_config_watcher_apple.cc:113] Retrying SystemConfiguration registration in 1 second.
+[34667:5146133:1008/225946.061505:ERROR:net/base/network_config_watcher_apple.cc:143] SCDynamicStoreCreate failed with Error: 1100 - Permission denied
+[34667:5146133:1008/225946.061642:ERROR:net/base/network_config_watcher_apple.cc:113] Retrying SystemConfiguration registration in 1 second.
+[34667:5146133:1008/225947.068947:ERROR:net/base/network_config_watcher_apple.cc:143] SCDynamicStoreCreate failed with Error: 1100 - Permission denied
+[34667:5146133:1008/225947.069549:ERROR:net/base/network_config_watcher_apple.cc:113] Retrying SystemConfiguration registration in 1 second.
+[34667:5146133:1008/225948.080253:ERROR:net/base/network_config_watcher_apple.cc:143] SCDynamicStoreCreate failed with Error: 1100 - Permission denied
+[34667:5146133:1008/225948.080697:ERROR:net/base/network_config_watcher_apple.cc:113] Retrying SystemConfiguration registration in 1 second.
+[34667:5146133:1008/225949.089715:ERROR:net/base/network_config_watcher_apple.cc:143] SCDynamicStoreCreate failed with Error: 1100 - Permission denied
+[34667:5146133:1008/225949.090225:ERROR:net/base/network_config_watcher_apple.cc:113] Retrying SystemConfiguration registration in 1 second.

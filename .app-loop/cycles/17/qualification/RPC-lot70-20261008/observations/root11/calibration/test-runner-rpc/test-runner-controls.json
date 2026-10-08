@@ -1,0 +1,63 @@
+{
+  "instrument": "test_runner",
+  "cycle": 17,
+  "status": "passed",
+  "head": "2d69e30c9c6dd18823ee6102271876003a6a67cc",
+  "repo": "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source",
+  "controls": {
+    "pytest-positive": {
+      "exit_code": 1,
+      "counts": {
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0
+      },
+      "xml": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/pytest-positive.xml",
+      "sha256": "889095cc9d9737e3aa58874ad147f027fb4cc4e66469a21d7ad23c6269c7a6c6",
+      "pass": true
+    },
+    "pytest-negative": {
+      "exit_code": 0,
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "xml": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/pytest-negative.xml",
+      "sha256": "1bd90b6bab7843a951e993c025c89b6641fac1905af2178c0080412c3afd6357",
+      "pass": true
+    },
+    "vitest-positive": {
+      "exit_code": 1,
+      "counts": {
+        "tests": 1,
+        "failures": 1,
+        "errors": 0,
+        "skipped": 0
+      },
+      "xml": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/vitest-positive.xml",
+      "sha256": "2cba55fc2fc8c25ec2edbbccc6143d19d6c149274b92129896389b8f08fe949c",
+      "pass": true
+    },
+    "vitest-negative": {
+      "exit_code": 0,
+      "counts": {
+        "tests": 1,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "xml": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/vitest-negative.xml",
+      "sha256": "8c42aa038843d22bc8878fa6fdc29668ce2aaaca31464ff4b0a32ee8eff61e1b",
+      "pass": true
+    }
+  },
+  "witnesses": {
+    "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/test_temoin_c17.py": "5e4acc7cc016d235850173d27f4d9ab06a901748085453b07087b309af30da55",
+    "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/calibrationC17.test.ts": "421e12140842c6b16149aabda4fe33ac6554bfe7e2935be0e45148179ecbfd66",
+    "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/vitest.runtime.config.mjs": "752281ee87b82290ae7f0dbcca4a7b4ff23678689ab32bce4b5b5b6922810d8f"
+  },
+  "note": "Témoins conservés uniquement dans le dossier ignoré de preuves, aucun retrait de source."
+}

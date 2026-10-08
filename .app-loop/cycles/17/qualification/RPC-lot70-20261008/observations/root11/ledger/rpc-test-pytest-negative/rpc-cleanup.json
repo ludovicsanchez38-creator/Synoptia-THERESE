@@ -1,0 +1,55 @@
+{
+  "schema": "c17-g1-rpc-child-cleanup-v1",
+  "stage": "rpc-test-pytest-negative",
+  "requester_id": "rpc-all-test_runner",
+  "logical_parent_id": "rpc-all-test_runner",
+  "child_identity": {
+    "pid": 34631,
+    "ppid": 34522,
+    "uid": 501,
+    "pgid": 34631,
+    "status": 2,
+    "start_sec": 1791493167,
+    "start_usec": 203685,
+    "role": "stage-rpc-test-pytest-negative",
+    "parent_birth": [
+      34522,
+      1791493148,
+      79483
+    ],
+    "attribution": "popen_child_before_workload",
+    "captured_at": "2026-10-08T20:59:27.205140+00:00"
+  },
+  "receipt_ref": {
+    "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-test-pytest-negative/receipt.json",
+    "sha256": "6bb7f39526a3cd5cc219dc1f749f00643b40a38adab39028e36c166d94dbf5a4",
+    "bytes": 141481
+  },
+  "request_ref": {
+    "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/request/rpc-test-pytest-negative-d59a2891221d0d8b817e58e9cc17d7c5.json",
+    "sha256": "5703eccc300b391bd97da0a6cb8104e05b1c9f734e052d27d81eee617da3201b",
+    "bytes": 20900
+  },
+  "exit_code": 0,
+  "state": "complete",
+  "clean": true,
+  "termination_proved": true,
+  "log_stability_proved": true,
+  "remaining_attributed": [],
+  "ambiguities": [],
+  "errors": [],
+  "signals": [],
+  "cleanup_elapsed_seconds": 0.71640516599291,
+  "cleanup_deadline_met": true,
+  "stdout_ref": {
+    "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/pytest-negative.stdout",
+    "sha256": "521e5478b650c281d8a0b916afd7abcb9f43af4119d27d2909f8bc8373ec0a9e",
+    "bytes": 828
+  },
+  "stderr_ref": {
+    "path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/pytest-negative.stderr",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "tainted": false
+}

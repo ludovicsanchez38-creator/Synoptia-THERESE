@@ -1,0 +1,35 @@
+{
+  "schema": "c17-root11-chrome34667-bounded-diagnostic-index-v1",
+  "actor": "/root/environment_routes",
+  "status": "diagnostic_only_cause_not_proved",
+  "main11_root": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3",
+  "chrome_pid": 34667,
+  "chrome_birth": {"start_sec": 1791493179, "start_usec": 848255, "uid": 501, "pgid": 34667},
+  "system_log_window_local": ["2026-10-08 22:59:39+0200", "2026-10-08 22:59:51+0200"],
+  "system_log_events": 133,
+  "system_log_query_exit_code": 0,
+  "initial_sandboxed_query_exit_code": 64,
+  "raw_refs": [
+    {"path": "raw/receipt.json", "sha256": "622015a931189b17f270fd8975f55e5eabf4b63983c0ec67d4c803e4754ddcaa", "bytes": 323552},
+    {"path": "raw/service-start.json", "sha256": "cf03f5ad6cf0482893dcb36320ea14341e6be1169751066b3bb2466dd8888647", "bytes": 7031},
+    {"path": "raw/stderr.log", "sha256": "8cf2a28b16fd7c75e801705e57df7d224c2d0bb7110d6804363423d858f224b7", "bytes": 2876},
+    {"path": "raw/stdout.log", "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "bytes": 0}
+  ],
+  "system_log_refs": [
+    {"path": "system-authorized/receipt.json", "sha256": "1d5d94ddbef77aa9bc9e966dd478fed52264b0be4d4968b58700247923ed313a", "bytes": 1524},
+    {"path": "system-authorized/stdout.json", "sha256": "0ac8e9ffd9f61de084f9a32696ee85e646d534ffb18a381e2a14290bd49f1b93", "bytes": 159069},
+    {"path": "system-authorized/stderr.log", "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855", "bytes": 0},
+    {"path": "system-authorized/collect.mjs", "sha256": "5b50097eb239e02f69b9968f9b99bc6a7ccbed444d925351cb0c7579ab7b3126", "bytes": 2515}
+  ],
+  "initial_refusal_refs": [
+    {"path": "receipt.json", "sha256": "e07ce7c36862af3abe4b95dfb89d353bd4e34e88bd5ac46e95180daa274fe534", "bytes": 1547},
+    {"path": "stderr.log", "sha256": "3d1bfc20628becabc4bda68e57c58ad567d3a8aa0c8aa281f68b58bb28a3d0e5", "bytes": 32},
+    {"path": "collect.mjs", "sha256": "ae2103c7c59d87b7ff1a5a85ad3eb3c13cd6bd7d20a77deb3168311cf4675ded", "bytes": 2511}
+  ],
+  "report_ref": {"path": "DIAGNOSIS.md", "sha256": "091d5e3759b1e7d20d064f4b979c795640ca8682c238fc61b10fc9f582e9c6e5", "bytes": 2795},
+  "profile_ref_read_only": {"path": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/g1/chrome.sb", "sha256": "bee3c2e780e58cbc80ed7e37d64115adf08997aab39dae8f11b56050785633a9"},
+  "new_profile_or_permission": false,
+  "chrome_relaunch": false,
+  "FULL": false,
+  "release": false
+}

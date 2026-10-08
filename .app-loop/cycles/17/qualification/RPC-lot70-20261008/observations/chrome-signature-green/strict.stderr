@@ -1,0 +1,70 @@
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/.
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/Helpers/web_app_shortcut_copier
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/Helpers/web_app_shortcut_copier
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/Helpers/Google Chrome Helper (GPU).app
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/Helpers/Google Chrome Helper (GPU).app
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/Helpers/Google Chrome Helper (Alerts).app
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/Helpers/Google Chrome Helper (Aperitif).app
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/Helpers/Google Chrome Helper (Alerts).app
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/Helpers/Google Chrome Helper (Aperitif).app
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/Helpers/Google Chrome Helper (Aperitif Renderer).app
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/Helpers/Google Chrome Helper (Aperitif Renderer).app
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/Helpers/app_mode_loader
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/Helpers/app_mode_loader
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/Helpers/chrome_crashpad_handler
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/Helpers/chrome_crashpad_handler
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/Helpers/Google Chrome Helper (Aperitif GPU).app
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/Helpers/Google Chrome Helper (Aperitif GPU).app
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/Helpers/Google Chrome Helper (Aperitif Alerts).app
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/Helpers/Google Chrome Helper (Aperitif Alerts).app
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/Helpers/Google Chrome Helper.app
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/Helpers/Google Chrome Helper.app
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/Helpers/Google Chrome Helper (Renderer).app
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/Helpers/Google Chrome Helper (Renderer).app
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/Helpers/GoogleUpdater.app
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/Helpers/GoogleUpdater.app/Contents/Helpers/launcher
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/Helpers/GoogleUpdater.app/Contents/Helpers/launcher
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/Helpers/GoogleUpdater.app/Contents/Helpers/GoogleSoftwareUpdate.bundle
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/Helpers/GoogleUpdater.app/Contents/Helpers/GoogleSoftwareUpdate.bundle/Contents/Helpers/ksinstall
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/Helpers/GoogleUpdater.app/Contents/Helpers/GoogleSoftwareUpdate.bundle/Contents/Helpers/ksinstall
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/Helpers/GoogleUpdater.app/Contents/Helpers/GoogleSoftwareUpdate.bundle/Contents/Helpers/ksadmin
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/Helpers/GoogleUpdater.app/Contents/Helpers/GoogleSoftwareUpdate.bundle/Contents/Helpers/ksadmin
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/Helpers/GoogleUpdater.app/Contents/Helpers/GoogleSoftwareUpdate.bundle
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/Helpers/GoogleUpdater.app
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/Current/.
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/web_app_shortcut_copier
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/web_app_shortcut_copier
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/Google Chrome Helper (Aperitif GPU).app
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/Google Chrome Helper (Aperitif GPU).app
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/Google Chrome Helper (Aperitif).app
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/Google Chrome Helper (Aperitif).app
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/Google Chrome Helper (GPU).app
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/Google Chrome Helper (Aperitif Renderer).app
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/Google Chrome Helper (GPU).app
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/Google Chrome Helper (Alerts).app
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/Google Chrome Helper (Aperitif Renderer).app
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/Google Chrome Helper (Alerts).app
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/Google Chrome Helper (Renderer).app
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/Google Chrome Helper (Renderer).app
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/Google Chrome Helper.app
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/Google Chrome Helper.app
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/GoogleUpdater.app
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/GoogleUpdater.app/Contents/Helpers/launcher
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/GoogleUpdater.app/Contents/Helpers/launcher
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/GoogleUpdater.app/Contents/Helpers/GoogleSoftwareUpdate.bundle
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/GoogleUpdater.app/Contents/Helpers/GoogleSoftwareUpdate.bundle/Contents/Helpers/ksinstall
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/GoogleUpdater.app/Contents/Helpers/GoogleSoftwareUpdate.bundle/Contents/Helpers/ksinstall
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/GoogleUpdater.app/Contents/Helpers/GoogleSoftwareUpdate.bundle/Contents/Helpers/ksadmin
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/GoogleUpdater.app/Contents/Helpers/GoogleSoftwareUpdate.bundle/Contents/Helpers/ksadmin
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/GoogleUpdater.app/Contents/Helpers/GoogleSoftwareUpdate.bundle
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/GoogleUpdater.app
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/app_mode_loader
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/app_mode_loader
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/chrome_crashpad_handler
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/chrome_crashpad_handler
+--prepared:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/Google Chrome Helper (Aperitif Alerts).app
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98/Helpers/Google Chrome Helper (Aperitif Alerts).app
+--validated:/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app/Contents/Frameworks/Google Chrome Framework.framework/Versions/154.0.8037.98
+/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app: valid on disk
+/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app: satisfies its Designated Requirement

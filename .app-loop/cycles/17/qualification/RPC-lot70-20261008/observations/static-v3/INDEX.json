@@ -1,0 +1,53 @@
+{
+  "schema": "c17-root11-static-controller-system-profile-owner-index-v3",
+  "actor": "/root/environment_routes",
+  "status": "prepared_only_not_executed_not_authority",
+  "predecessor_index": {
+    "path": "/private/tmp/therese-c17-root11-static-controls-v2-loPvxR/INDEX.json",
+    "sha256": "1b4ba999a1cd488f9d5342f706d09f5d198a671b8b2f4adcb57ba0b55c0fb6c9",
+    "bytes": 2683
+  },
+  "red_observation": {
+    "main_tool_chunk": "fa326c",
+    "main_result": "e6e3d3",
+    "exit_code": 1,
+    "before_native": true,
+    "reason": "UID 501 owner guard rejected three exact Apple system profiles owned by UID 0",
+    "predecessor_unchanged": true
+  },
+  "single_scope_delta": "ref() owner guard: UID 501 for every ordinary ref, UID 0 only for three exact pinned regular canonical Apple profiles",
+  "system_profile_refs": [
+    {"path": "/System/Library/Sandbox/Profiles/com.apple.GameOverlayUI.sb", "sha256": "6320ed0b8a6933b3c62cbfc8c3149a9f1dcc0a968cbfbc6f99a1270ab2c99257", "bytes": 10845, "uid": 0, "gid": 0, "mode": "100644", "nlink": 1},
+    {"path": "/System/Library/Sandbox/Profiles/com.apple.gputoolsserviced.sb", "sha256": "fb1381764287e32128b8d6db40353059667ca4a2a64e7b778d1ef5773bb51841", "bytes": 7234, "uid": 0, "gid": 0, "mode": "100644", "nlink": 1},
+    {"path": "/System/Library/Sandbox/Profiles/appsandbox-common.sb", "sha256": "b9ffebd2141aca32c609f4a707f5a6b980ae4be45299ee3f3c18534b69cb7cea", "bytes": 32355, "uid": 0, "gid": 0, "mode": "100644", "nlink": 1}
+  ],
+  "files": [
+    {"path": "/private/tmp/therese-c17-root11-static-controls-v3-hK9Iql/preimages/verify-prepared-wrapper-main11-v2.mjs", "sha256": "e8ea3ec950f8defce2e28fddfbfe1697b90425207b6dbcee045c88ffb5284a72", "bytes": 19296},
+    {"path": "/private/tmp/therese-c17-root11-static-controls-v3-hK9Iql/verify-prepared-wrapper.mjs", "sha256": "218074ae9af87dad19b4c5e542d9c965d5dbf2058420336d75a342c9ded06791", "bytes": 20131},
+    {"path": "/private/tmp/therese-c17-root11-static-controls-v3-hK9Iql/forward.diff", "sha256": "0f05a3c5e3829bb9451b56385c3b986e602b52026526f73cc46907071e91d260", "bytes": 1797},
+    {"path": "/private/tmp/therese-c17-root11-static-controls-v3-hK9Iql/inverse.diff", "sha256": "a34cf62707753b5a5ccbce55e2b86119db9a4b227a3215b7b8acacd70708f899", "bytes": 1797},
+    {"path": "/private/tmp/therese-c17-root11-static-controls-v3-hK9Iql/README.md", "sha256": "fd43d6f5e4581e57c5532c8caa400185a7f1d6c9a513a103e3db5519757b8c54", "bytes": 1890}
+  ],
+  "preserved": {
+    "main11_root": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3",
+    "builder_sha256": "ecca6ab61c8114f827ee020a6b28c2eb8a9c53a8942db646ae62fb059b34a9dc",
+    "profile_sha256": "bee3c2e780e58cbc80ed7e37d64115adf08997aab39dae8f11b56050785633a9",
+    "authority_repo_head_observed": "5f89164ca0907ed92058fb244847893fc34a059b",
+    "source_refs": 79,
+    "core_copies": 18,
+    "overlay_outputs": 28,
+    "overlay_scripts": 19,
+    "original_outputs": 11,
+    "SQL_sources": 36,
+    "FULL": false,
+    "release": false
+  },
+  "verification": {
+    "preimage_byte_exact": true,
+    "diff_forward_and_inverse_exact": true,
+    "metadata_three_exact_paths_read": true,
+    "checker_executed": false,
+    "Node_or_G1_or_native_executed": false,
+    "new_QA_or_GO_created": false
+  }
+}

@@ -1,0 +1,60 @@
+{
+  "schema": "c17-root-independent-chrome-copy-recheck-v1",
+  "actor": "/root",
+  "purpose": "read_only_pre_GO_chrome_QA_copy_recheck",
+  "original_receipt": {
+    "path": "/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/v3-receipt.json",
+    "sha256": "f97793cb43454051da734685185cb5d4e5b5ffbabc516580287195ef3d32993c",
+    "bytes": 17160
+  },
+  "original": "/Applications/Google Chrome.app",
+  "copy": "/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app",
+  "started_at": "2026-10-08T20:43:01.114Z",
+  "completed_at": "2026-10-08T20:43:03.645Z",
+  "source_current_ref": {
+    "path": "/private/tmp/therese-c17-chrome-recheck-oQS1S0/source-current.json",
+    "bytes": 403189,
+    "sha256": "c0194aef8706fde7c8fdc252e820f3357daa1679f2366508a22d030d56316820"
+  },
+  "copy_current_ref": {
+    "path": "/private/tmp/therese-c17-chrome-recheck-oQS1S0/copy-current.json",
+    "bytes": 403262,
+    "sha256": "d89e52ec0d6877aed99653b6f24d654cb20929c2d0007e45eb5d81ec276be472"
+  },
+  "source_matches_v3": true,
+  "copy_matches_v3": true,
+  "source_copy_byte_mode_uid_gid_links_equal": true,
+  "no_source_copy_hardlinks": true,
+  "strict_codesign": {
+    "argv": [
+      "/usr/bin/codesign",
+      "--verify",
+      "--deep",
+      "--strict",
+      "--verbose=4",
+      "/private/tmp/therese-c17-chrome-qa-copy-RoZmwsja/Google Chrome.app"
+    ],
+    "started_at": "2026-10-08T20:43:02.768Z",
+    "completed_at": "2026-10-08T20:43:03.637Z",
+    "status": 0,
+    "signal": null,
+    "error": null,
+    "stdout": {
+      "path": "/private/tmp/therese-c17-chrome-recheck-oQS1S0/strict.stdout",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "stderr": {
+      "path": "/private/tmp/therese-c17-chrome-recheck-oQS1S0/strict.stderr",
+      "bytes": 13701,
+      "sha256": "30f5b62854e5bee1b6301e639b90f66607bafcababa9c4999fc42913ebe1197c"
+    }
+  },
+  "passed": true,
+  "xattrs_rechecked": false,
+  "quarantine_presence_claimed": false,
+  "runtime_admitted": false,
+  "FULL": false,
+  "release": false,
+  "error": null
+}

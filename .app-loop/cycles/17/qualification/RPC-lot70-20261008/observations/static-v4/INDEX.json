@@ -1,0 +1,36 @@
+{
+  "schema": "c17-root11-static-controller-historical-ips-archive-index-v4",
+  "actor": "/root/environment_routes",
+  "status": "prepared_only_not_executed_not_authority",
+  "predecessor_index": {
+    "path": "/private/tmp/therese-c17-root11-static-controls-v3-hK9Iql/INDEX.json",
+    "sha256": "ab62bbb304cfa7f55b8472738664664bdf7520a5e170b32ff8b7eaab0d2efe07"
+  },
+  "red_observation": {
+    "main_tool_chunk": "ce62ad",
+    "exit_code": 1,
+    "before_native": true,
+    "reason": "historical ips original path ENOENT",
+    "predecessor_unchanged": true
+  },
+  "single_scope_delta": "collect() resolves only origin INDEX c0f542 at /origin_refs/4 with exact old path, sha256 and bytes to canonical byte-identical archival copy; all other missing refs still fail",
+  "historical_origin": {
+    "index": {"path": "/private/tmp/therese-c17-chrome-rootdomain-h5whIv/INDEX.json", "sha256": "c0f542c377d37efd8e88103e2d760fdc126b785793f167755a319f0f5fb8d3c6", "bytes": 2605},
+    "pointer": "/origin_refs/4",
+    "evidence": {"path": "/private/tmp/therese-c17-chrome-rootdomain-h5whIv/EVIDENCE.json", "sha256": "57253794719541add1642bc011ff0437248eb922eb798ec4b6132a8ff81c5f6a", "bytes": 803},
+    "old_ref": {"path": "/Users/synoptia/Library/Logs/DiagnosticReports/Google Chrome-2026-10-08-143832.000.ips", "sha256": "2e1d81e295a1a75af7498e1698b4284c53206f7a031058ebd3331aad6fc8a3b3", "bytes": 31835},
+    "old_path_stat": "ENOENT",
+    "archival_ref": {"path": "/private/tmp/therese-c17-root-close6-I9BhiHpZ/chrome25577.ips", "sha256": "2e1d81e295a1a75af7498e1698b4284c53206f7a031058ebd3331aad6fc8a3b3", "bytes": 31835},
+    "archival_metadata": {"uid": 501, "gid": 0, "mode": "100600", "nlink": 1},
+    "close6_receipt_provenance_claimed": false
+  },
+  "files": [
+    {"path": "/private/tmp/therese-c17-root11-static-controls-v4-25ix3j/preimages/verify-prepared-wrapper-v3.mjs", "sha256": "218074ae9af87dad19b4c5e542d9c965d5dbf2058420336d75a342c9ded06791", "bytes": 20131},
+    {"path": "/private/tmp/therese-c17-root11-static-controls-v4-25ix3j/verify-prepared-wrapper.mjs", "sha256": "af0a86273d02e5c750ab0561d5408b9dfeb44d3bbf9d60dcff59e775cc5de51c", "bytes": 23049},
+    {"path": "/private/tmp/therese-c17-root11-static-controls-v4-25ix3j/forward.diff", "sha256": "6d8032872715f16aa27a244c916524b66d85a1f8e1e640efba1d9db7bdfa8e5f", "bytes": 4864},
+    {"path": "/private/tmp/therese-c17-root11-static-controls-v4-25ix3j/inverse.diff", "sha256": "86ab78d8f895ca1220721201d22b8b2f5df5b621b2966a15c898420652ab082c", "bytes": 4864},
+    {"path": "/private/tmp/therese-c17-root11-static-controls-v4-25ix3j/README.md", "sha256": "eea168b89c095a9cd638508f5dc121277a4da7a5b67a76594e6065c9c346f14e", "bytes": 1880}
+  ],
+  "preserved": {"main11_root": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3", "builder_sha256": "ecca6ab61c8114f827ee020a6b28c2eb8a9c53a8942db646ae62fb059b34a9dc", "profile_sha256": "bee3c2e780e58cbc80ed7e37d64115adf08997aab39dae8f11b56050785633a9", "source_refs": 79, "core_copies": 18, "overlay_outputs": 28, "SQL_sources": 36, "FULL": false, "release": false},
+  "verification": {"preimage_byte_exact": true, "forward_diff_exact": true, "inverse_diff_exact": true, "origin_index_and_evidence_rehashed": true, "archival_copy_rehashed_and_statted": true, "old_path_ENOENT_observed": true, "controller_executed": false, "native_executed": false}
+}

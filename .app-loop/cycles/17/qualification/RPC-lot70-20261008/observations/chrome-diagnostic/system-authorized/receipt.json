@@ -1,0 +1,44 @@
+{
+  "schema": "c17-root11-chrome34667-system-log-v1",
+  "actor": "/root/environment_routes",
+  "scope": "PID 34667 and system messages naming only PID 34667, local 22:59:39–22:59:51",
+  "executable": "/usr/bin/log",
+  "argv": [
+    "show",
+    "--style",
+    "json",
+    "--start",
+    "2026-10-08 22:59:39",
+    "--end",
+    "2026-10-08 22:59:51",
+    "--predicate",
+    "(processID == 34667 OR ((process == \"kernel\" OR process == \"sandboxd\" OR process == \"syspolicyd\" OR process == \"amfid\" OR process == \"taskgated\") AND eventMessage CONTAINS \"34667\"))"
+  ],
+  "started_at": "2026-10-08T21:03:55.341Z",
+  "completed_at": "2026-10-08T21:03:56.874Z",
+  "exit_code": 0,
+  "signal": null,
+  "error": null,
+  "parse_error": null,
+  "stdout_ref": {
+    "path": "/private/tmp/therese-c17-root11-chrome34667-log-authorized-uemAbx/stdout.json",
+    "sha256": "0ac8e9ffd9f61de084f9a32696ee85e646d534ffb18a381e2a14290bd49f1b93",
+    "bytes": 159069
+  },
+  "stderr_ref": {
+    "path": "/private/tmp/therese-c17-root11-chrome34667-log-authorized-uemAbx/stderr.log",
+    "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+    "bytes": 0
+  },
+  "script_ref": {
+    "path": "/private/tmp/therese-c17-root11-chrome34667-log-authorized-uemAbx/collect.mjs",
+    "sha256": "5b50097eb239e02f69b9968f9b99bc6a7ccbed444d925351cb0c7579ab7b3126",
+    "bytes": 2515
+  },
+  "event_count": 133,
+  "passed": true,
+  "diagnostic_only": true,
+  "G1_imported": false,
+  "profile_changed": false,
+  "FULL": false
+}

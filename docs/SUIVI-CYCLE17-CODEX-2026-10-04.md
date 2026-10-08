@@ -2027,3 +2027,98 @@ copies ne donnent pas une preuve live d'inode ou d'ownership. Usage `a44439` :
 pas une facture API. Dernier budget réel PASS `786fad`. Deadline16:52:30 UTC
 inchangée ; prolongation de deux heures demandée, non accordée à ce lot.
 CALIBRATE0/2, FULL, A/B et release restent fermés, aucune publication.
+
+## Lot 70 : reprise autorisée jusqu'au 9 octobre à 23 h 59
+
+Après les trois refus réels de durée (code 75), Ludo a explicitement validé
+une poursuite jusqu'au vendredi 9 octobre 2026 à 23 h 59, heure de Paris.
+Le premier essai, fondé sur une heure interprétée, avait été refusé par le
+contrôle automatique ; le budget était resté byte-exact. L'accord précis
+ultérieur est conservé dans le dialogue utilisateur, pas déduit d'une note.
+
+Seule `limits.max_wall_minutes` passe de 5798 à 7544. La date de démarrage
+du cycle 17 reste `2026-10-04T16:14:30+00:00` ; cela arrête la boucle le
+9 octobre à 23 h 58 min 30 s Paris, trente secondes avant la borne validée.
+Les limites d'appels, les plafonds de tokens désactivés, tous les compteurs
+et tous les événements antérieurs sont conservés. Aucun nouveau cycle,
+reset, passage forcé ou hausse d'une autre limite.
+
+Sauvegarde récupérable :
+`/private/tmp/therese-c17-resume-deadline-20261008-GvYugGrD/budget-before.json`,
+SHA `03cb1c7f83f13cb879aa7b334203aaf17b3b79fa393b35b6051defaa8ecd17e2`.
+Budget après le seul remplacement :
+`f978a09be7feeef145f487a18ed860263b91d4d946570cc69511e96f854fa507`.
+Comparaison réelle MAIN `52adf1` : un seul changement, compteurs conservés.
+Coupe-circuit réel `34df22` : `Budget: PASS`, code 0. Ce passage concerne
+la durée autorisée, pas la qualité du produit ni une autorisation de release.
+
+Reprise au contrôle statique v3 non exécuté de WRAPPER11. Les cinq
+calibrations, la qualification native, deux rondes indépendantes sur HEAD
+frais et toutes les preuves de publication restent à obtenir. La copie
+Chrome QA et le profil réel ne sont pas confondus. Aucune publication.
+
+### Contrôle statique et essai natif effectivement réalisés
+
+Le contrôle v3 exécuté (`ce62ad`, code 1) refuse une ancienne référence
+IPS désormais absente. Sa copie historique conservée possède exactement
+les mêmes 31 835 octets et SHA `2e1d81e2…` ; aucune preuve runtime actuelle
+n'en dépend. Le v4 conserve ce traitement borné mais échoue à son tour
+(`5bcef0`, `6dcc24`, code 1) sur deux autres pointeurs vers ce même IPS.
+Le v5 limite explicitement la résolution aux trois origines/pointeurs,
+réhashés, en conservant le statut rouge du replay historique v2. Rien
+d'autre n'est ignoré ou remplacé.
+
+Exécution réelle MAIN v5 (`ef00c5`, `a22a8d`, code 0, 20:58 UTC) : 4917
+références, 3579 fichiers Git, 79 sources, core18/overlay28 et SQL36
+vérifiés. C'est un contrôle préparatoire statique, pas une calibration ou
+une ronde FULL. Signature Chrome : premier recheck sandboxé rouge,
+second hors sandbox vert (`278994`), mêmes sources et copie intactes.
+
+Le coordinateur WRAPPER11 est réellement lancé sous HOME/profils QA
+isolés (`a3ddc3`, session 9253), puis termine à 21:00 UTC avec code 86
+(`0a1043`). Résultat `40534457…` : sept ACK sur quinze, aucun des quatre
+parents complet, sources inchangées et transport RPC fermé ; fermeture
+qualifiée et propreté globale restent fausses. Les consommateurs
+test_runner/logs sont passés, pas l'ensemble des cinq calibrations.
+Le septième ACK conserve « Chrome absent/changé ou admission CDP hors
+délai5s ». Les ports QA 17593/5173/17594 sont physiquement libérés
+(`6db70b`), sans transformer cette absence en qualification propre.
+
+Diagnostic Environment ciblé sur PID34667 et sa birth, fenêtre locale
+22:59:39 à 22:59:51 : 133 événements système (`1d5d94dd…`), aucun
+SIGSEGV démontré. Exit -9 est celui du nettoyage exact SIGTERM/SIGKILL.
+Le refus de métadonnées sur le parent QA `root/auxiliary` et le profil
+resté vide donnent une hypothèse à tester, pas une causalité acquise.
+Les refus configd ne justifient pas d'élargir les droits. Le successeur
+WRAPPER12 se prépare avec ce seul accès metadata au parent exact ;
+aucune deadline augmentée, aucun lancement de ce successeur à ce stade.
+
+Copie canonique MAIN `6dca15`, sous `RPC-lot70-20261008/observations/` :
+187 fichiers, 7 011 023 octets, manifeste `a00ec3b2…`, copie et sources
+réhashées. Les paires hardlink fermées `.pending` sont identifiées par
+inode exact ; le seul socket `session-rpc/peer.sock` n'est pas suivi ou
+copié, sa metadata est conservée et revérifiée. Ce sont des copies de
+preuve, pas des preuves live d'inode ou d'ownership. Bruts rouges
+statique/signature/native et diagnostic conservés, aucune réécriture.
+
+La reprise nocturne existante est mise à jour, pas dupliquée : automation
+`th-r-se-cycle-17-reprise-nocturne`, ACTIVE, échéance 09/10 23:58:30 Paris,
+retour dans ce même chat, contrôle des agents/processus avant reprise.
+Le prompt impose silence si inchangé et arrêt borné ; il n'élargit aucune
+permission. Le fichier géré par le produit et la carte d'automatisation
+sont canoniques ; aucune commande cron ou directive brute ajoutée au dépôt.
+
+La qualification FULL n'est pas encore raccordée à des A/B actuels.
+Le constructeur physique et les ports CDP/Git/listener sont en cours
+d'implémentation préparatoire, sans admission ou reçu de succès inventé.
+CALIBRATE, zéro ronde propre et aucune publication restent l'état constaté.
+
+Usage réel `20b88f` : 70 lots logiques, plancher 30 259 333 tokens,
+ajout 57 736 correspondant au dernier compteur natif disponible.
+`get_goal` reste administrativement bloqué et ce compteur est figé : les
+tokens supplémentaires de la reprise ne sont pas mesurés, ni comptés
+comme zéro consommation ou comme une facture API. Le GO humain porte
+la reprise manuelle et l'automatisation bornée ; aucun outil ne simule un
+resume du goal. Coupe-circuit réel `076f5a` PASS, plafonds inchangés.
+Contrôle `fc0898` : 187 copies exactes et neuf documents préexistants
+byte-identiques ; `416420` : diff sans erreur de whitespace.

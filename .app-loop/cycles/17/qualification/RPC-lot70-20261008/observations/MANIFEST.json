@@ -1,0 +1,3207 @@
+{
+  "schema": "c17-lot70-actual-observations-copy-v1",
+  "actor": "/root",
+  "copied_at": "2026-10-08T21:09:28.106Z",
+  "original_root": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3",
+  "scope": "Closed WRAPPER11 observations and static/signature/diagnostic controls; not FULL, not a release",
+  "physical_source_identity_reverified_at_copy": true,
+  "copied_inode_or_ownership_proof_claimed": false,
+  "special_entries_not_copied": [
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/peer.sock",
+      "kind": "socket-not-copied-not-opened",
+      "observed_original_stat": [
+        16777233,
+        377369691,
+        49536,
+        501,
+        0,
+        1,
+        0,
+        1791493150238.628,
+        1791493150238.6602
+      ]
+    }
+  ],
+  "source_files": [
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/aux-chrome-rpc-all-runtime_ui-visual_capture-network_capture/gate.json",
+      "archived": "root11/ledger/aux-chrome-rpc-all-runtime_ui-visual_capture-network_capture/gate.json",
+      "sha256": "d4d1d172213875f4751cd5c3b2b1d45a2e78179d9bf17dd82e32e08be187965b",
+      "bytes": 3400,
+      "observed_original_stat": [
+        16777233,
+        377372397,
+        33152,
+        501,
+        0,
+        2,
+        3400,
+        1791493180624.15,
+        1791493180624.6057
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/aux-chrome-rpc-all-runtime_ui-visual_capture-network_capture/gate.json.pending",
+      "archived": "root11/ledger/aux-chrome-rpc-all-runtime_ui-visual_capture-network_capture/gate.json.pending",
+      "sha256": "d4d1d172213875f4751cd5c3b2b1d45a2e78179d9bf17dd82e32e08be187965b",
+      "bytes": 3400,
+      "observed_original_stat": [
+        16777233,
+        377372397,
+        33152,
+        501,
+        0,
+        2,
+        3400,
+        1791493180624.15,
+        1791493180624.6057
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/aux-chrome-rpc-all-runtime_ui-visual_capture-network_capture/gate.json.release",
+      "archived": "root11/ledger/aux-chrome-rpc-all-runtime_ui-visual_capture-network_capture/gate.json.release",
+      "sha256": "ab9edfdfcf4b96ea048242d36ae79300b5a652938e3010d6fac1b5f3e0facd1a",
+      "bytes": 4323,
+      "observed_original_stat": [
+        16777233,
+        377372400,
+        33152,
+        501,
+        0,
+        2,
+        4323,
+        1791493180629.7634,
+        1791493180629.97
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/aux-chrome-rpc-all-runtime_ui-visual_capture-network_capture/gate.json.release.pending",
+      "archived": "root11/ledger/aux-chrome-rpc-all-runtime_ui-visual_capture-network_capture/gate.json.release.pending",
+      "sha256": "ab9edfdfcf4b96ea048242d36ae79300b5a652938e3010d6fac1b5f3e0facd1a",
+      "bytes": 4323,
+      "observed_original_stat": [
+        16777233,
+        377372400,
+        33152,
+        501,
+        0,
+        2,
+        4323,
+        1791493180629.7634,
+        1791493180629.97
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/aux-chrome-rpc-all-runtime_ui-visual_capture-network_capture/receipt.json",
+      "archived": "root11/ledger/aux-chrome-rpc-all-runtime_ui-visual_capture-network_capture/receipt.json",
+      "sha256": "622015a931189b17f270fd8975f55e5eabf4b63983c0ec67d4c803e4754ddcaa",
+      "bytes": 323552,
+      "observed_original_stat": [
+        16777233,
+        377372445,
+        33152,
+        501,
+        0,
+        1,
+        323552,
+        1791493190170.7632,
+        1791493190170.7632
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/aux-chrome-rpc-all-runtime_ui-visual_capture-network_capture/service-start.json",
+      "archived": "root11/ledger/aux-chrome-rpc-all-runtime_ui-visual_capture-network_capture/service-start.json",
+      "sha256": "cf03f5ad6cf0482893dcb36320ea14341e6be1169751066b3bb2466dd8888647",
+      "bytes": 7031,
+      "observed_original_stat": [
+        16777233,
+        377372403,
+        33152,
+        501,
+        0,
+        1,
+        7031,
+        1791493180630.198,
+        1791493180630.198
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/backend/gate.json",
+      "archived": "root11/ledger/backend/gate.json",
+      "sha256": "fea8fa4a6670aa928401cd32c54c488d5e1a538ccae3db48e18a86c03b78855c",
+      "bytes": 1316,
+      "observed_original_stat": [
+        16777233,
+        377369712,
+        33152,
+        501,
+        0,
+        2,
+        1316,
+        1791493152765.6692,
+        1791493152765.9163
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/backend/gate.json.pending",
+      "archived": "root11/ledger/backend/gate.json.pending",
+      "sha256": "fea8fa4a6670aa928401cd32c54c488d5e1a538ccae3db48e18a86c03b78855c",
+      "bytes": 1316,
+      "observed_original_stat": [
+        16777233,
+        377369712,
+        33152,
+        501,
+        0,
+        2,
+        1316,
+        1791493152765.6692,
+        1791493152765.9163
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/backend/gate.json.release",
+      "archived": "root11/ledger/backend/gate.json.release",
+      "sha256": "8582778d8a7e4257ad36bac9b454c8ae06693a68570087e7f85292f92490e535",
+      "bytes": 1977,
+      "observed_original_stat": [
+        16777233,
+        377369715,
+        33152,
+        501,
+        0,
+        2,
+        1977,
+        1791493152777.3264,
+        1791493152777.5513
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/backend/gate.json.release.pending",
+      "archived": "root11/ledger/backend/gate.json.release.pending",
+      "sha256": "8582778d8a7e4257ad36bac9b454c8ae06693a68570087e7f85292f92490e535",
+      "bytes": 1977,
+      "observed_original_stat": [
+        16777233,
+        377369715,
+        33152,
+        501,
+        0,
+        2,
+        1977,
+        1791493152777.3264,
+        1791493152777.5513
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/backend/receipt.json",
+      "archived": "root11/ledger/backend/receipt.json",
+      "sha256": "7fab2daef96579726a357ae422aaffff9b65197347687034248cffe159701f87",
+      "bytes": 318866,
+      "observed_original_stat": [
+        16777233,
+        377372451,
+        33152,
+        501,
+        0,
+        1,
+        318866,
+        1791493191848.1482,
+        1791493191848.1482
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/backend/service-start.json",
+      "archived": "root11/ledger/backend/service-start.json",
+      "sha256": "560a99aae2676dfc69e6b5a392312206eeff2a2e1cce5e3bc4293a5cdac58e51",
+      "bytes": 6128,
+      "observed_original_stat": [
+        16777233,
+        377369718,
+        33152,
+        501,
+        0,
+        1,
+        6128,
+        1791493152777.8328,
+        1791493152777.8328
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/calibrate/gate.json",
+      "archived": "root11/ledger/calibrate/gate.json",
+      "sha256": "bd5b0a27b3dbedb6a39b8fe9b1a75c0e80dfaa9693f2ae2d50094a9ac11bf0ae",
+      "bytes": 1295,
+      "observed_original_stat": [
+        16777233,
+        377371776,
+        33152,
+        501,
+        0,
+        2,
+        1295,
+        1791493162059.6343,
+        1791493162059.89
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/calibrate/gate.json.pending",
+      "archived": "root11/ledger/calibrate/gate.json.pending",
+      "sha256": "bd5b0a27b3dbedb6a39b8fe9b1a75c0e80dfaa9693f2ae2d50094a9ac11bf0ae",
+      "bytes": 1295,
+      "observed_original_stat": [
+        16777233,
+        377371776,
+        33152,
+        501,
+        0,
+        2,
+        1295,
+        1791493162059.6343,
+        1791493162059.89
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/calibrate/gate.json.release",
+      "archived": "root11/ledger/calibrate/gate.json.release",
+      "sha256": "3cad340d34afe7e2056d1f116df81716bb12dc67cfd7b24ff3013a0c0bff3423",
+      "bytes": 1899,
+      "observed_original_stat": [
+        16777233,
+        377371782,
+        33152,
+        501,
+        0,
+        2,
+        1899,
+        1791493162072.1143,
+        1791493162072.2986
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/calibrate/gate.json.release.pending",
+      "archived": "root11/ledger/calibrate/gate.json.release.pending",
+      "sha256": "3cad340d34afe7e2056d1f116df81716bb12dc67cfd7b24ff3013a0c0bff3423",
+      "bytes": 1899,
+      "observed_original_stat": [
+        16777233,
+        377371782,
+        33152,
+        501,
+        0,
+        2,
+        1899,
+        1791493162072.1143,
+        1791493162072.2986
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/calibrate/receipt.json",
+      "archived": "root11/ledger/calibrate/receipt.json",
+      "sha256": "426f25c8f34b77c1c03e60202192d1f06a6941844fef49888fb42533d468d2ad",
+      "bytes": 314580,
+      "observed_original_stat": [
+        16777233,
+        377372450,
+        33152,
+        501,
+        0,
+        1,
+        314580,
+        1791493190904.9585,
+        1791493190904.9585
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/listener-observation-1.json",
+      "archived": "root11/ledger/listener-observation-1.json",
+      "sha256": "d43c46225d637d8d6241977473f1844b6e090d1ac348ad3f27d12689e9f186e0",
+      "bytes": 4278,
+      "observed_original_stat": [
+        16777233,
+        377369744,
+        33152,
+        501,
+        0,
+        1,
+        4278,
+        1791493155361.285,
+        1791493155361.285
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/listener-observation-2.json",
+      "archived": "root11/ledger/listener-observation-2.json",
+      "sha256": "ed54db5055de4b17a20ab7f6b2f9693108b656f93d99700a6463cbb725765adb",
+      "bytes": 4295,
+      "observed_original_stat": [
+        16777233,
+        377371751,
+        33152,
+        501,
+        0,
+        1,
+        4295,
+        1791493156343.8728,
+        1791493156343.8728
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/listener-observation-3.json",
+      "archived": "root11/ledger/listener-observation-3.json",
+      "sha256": "39f6f0d43bf26ce825df2d51cadfa31ff0f7535c454c7c2964f897e2303d924c",
+      "bytes": 4292,
+      "observed_original_stat": [
+        16777233,
+        377371754,
+        33152,
+        501,
+        0,
+        1,
+        4292,
+        1791493157172.6863,
+        1791493157172.6863
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/listener-observation-4.json",
+      "archived": "root11/ledger/listener-observation-4.json",
+      "sha256": "fc896b132c82c53add6a5796a28aa54fc0f8b8283ed17f469ce8e9ef89d78946",
+      "bytes": 4278,
+      "observed_original_stat": [
+        16777233,
+        377371757,
+        33152,
+        501,
+        0,
+        1,
+        4278,
+        1791493157965.5017,
+        1791493157965.5017
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/listener-observation-5.json",
+      "archived": "root11/ledger/listener-observation-5.json",
+      "sha256": "95f02393fa83c83a31ec110a8e9f6590b804d10ed275d43d25b7ffd536396e05",
+      "bytes": 4291,
+      "observed_original_stat": [
+        16777233,
+        377371758,
+        33152,
+        501,
+        0,
+        1,
+        4291,
+        1791493158970.1633,
+        1791493158970.1633
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/listener-observation-6.json",
+      "archived": "root11/ledger/listener-observation-6.json",
+      "sha256": "3f16701f59226365db06e200c122e15b175a1712fd9d1460f2f605451abbc36b",
+      "bytes": 4277,
+      "observed_original_stat": [
+        16777233,
+        377371759,
+        33152,
+        501,
+        0,
+        1,
+        4277,
+        1791493159760.728,
+        1791493159760.728
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/ports-absence-1.json",
+      "archived": "root11/ledger/ports-absence-1.json",
+      "sha256": "7c496b20d11176168422e8dad6a4c95decc723e6a1a71792eb3b69bad957b58d",
+      "bytes": 7811,
+      "observed_original_stat": [
+        16777233,
+        377369700,
+        33152,
+        501,
+        0,
+        1,
+        7811,
+        1791493151206.1758,
+        1791493151206.1758
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/ports-absence-2.json",
+      "archived": "root11/ledger/ports-absence-2.json",
+      "sha256": "d63507ed461412546fdcadd0c8ead9c071738767b4f4510c83c1178e9400ac95",
+      "bytes": 7812,
+      "observed_original_stat": [
+        16777233,
+        377372454,
+        33152,
+        501,
+        0,
+        1,
+        7812,
+        1791493192774.5066,
+        1791493192774.5066
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/ports-absence-3.json",
+      "archived": "root11/ledger/ports-absence-3.json",
+      "sha256": "58e3e11e67c433846aa81ad70617ad2061bb32ed500323eec2e90487a4931bac",
+      "bytes": 7814,
+      "observed_original_stat": [
+        16777233,
+        377372460,
+        33152,
+        501,
+        0,
+        1,
+        7814,
+        1791493194488.3296,
+        1791493194488.3296
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-all-logs/gate.json",
+      "archived": "root11/ledger/rpc-all-logs/gate.json",
+      "sha256": "24ecaa77b44d0820c42f16ab5a163ef756e581497032e4e7bd4cdebaeb6491f2",
+      "bytes": 1283,
+      "observed_original_stat": [
+        16777233,
+        377372369,
+        33152,
+        501,
+        0,
+        2,
+        1283,
+        1791493176712.0518,
+        1791493176712.3052
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-all-logs/gate.json.pending",
+      "archived": "root11/ledger/rpc-all-logs/gate.json.pending",
+      "sha256": "24ecaa77b44d0820c42f16ab5a163ef756e581497032e4e7bd4cdebaeb6491f2",
+      "bytes": 1283,
+      "observed_original_stat": [
+        16777233,
+        377372369,
+        33152,
+        501,
+        0,
+        2,
+        1283,
+        1791493176712.0518,
+        1791493176712.3052
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-all-logs/gate.json.release",
+      "archived": "root11/ledger/rpc-all-logs/gate.json.release",
+      "sha256": "8a5c9f285138b43953b5c83abef85096f02a098a1fb05a4a9470e624e7c8d3e4",
+      "bytes": 1890,
+      "observed_original_stat": [
+        16777233,
+        377372372,
+        33152,
+        501,
+        0,
+        2,
+        1890,
+        1791493176719.8545,
+        1791493176720.0469
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-all-logs/gate.json.release.pending",
+      "archived": "root11/ledger/rpc-all-logs/gate.json.release.pending",
+      "sha256": "8a5c9f285138b43953b5c83abef85096f02a098a1fb05a4a9470e624e7c8d3e4",
+      "bytes": 1890,
+      "observed_original_stat": [
+        16777233,
+        377372372,
+        33152,
+        501,
+        0,
+        2,
+        1890,
+        1791493176719.8545,
+        1791493176720.0469
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-all-logs/receipt.json",
+      "archived": "root11/ledger/rpc-all-logs/receipt.json",
+      "sha256": "4fb272005412c8e76a6ff708150676b7a3abeaeced42fa2b30ea023769aee7ab",
+      "bytes": 151655,
+      "observed_original_stat": [
+        16777233,
+        377372382,
+        33152,
+        501,
+        0,
+        1,
+        151655,
+        1791493177590.102,
+        1791493177590.102
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-all-logs/rpc-cleanup.json",
+      "archived": "root11/ledger/rpc-all-logs/rpc-cleanup.json",
+      "sha256": "425ab4154f75b0b86ae96b539ebcd9e56a6aafe72b22092c744652ade19c76c3",
+      "bytes": 1855,
+      "observed_original_stat": [
+        16777233,
+        377372383,
+        33152,
+        501,
+        0,
+        1,
+        1855,
+        1791493177591,
+        1791493177591
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-all-test_runner/gate.json",
+      "archived": "root11/ledger/rpc-all-test_runner/gate.json",
+      "sha256": "b794d977ebe198f21899e49dd4026710bae701c5e8d8815f0cf815994925afaa",
+      "bytes": 1313,
+      "observed_original_stat": [
+        16777233,
+        377371796,
+        33152,
+        501,
+        0,
+        2,
+        1313,
+        1791493163668.577,
+        1791493163669.0898
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-all-test_runner/gate.json.pending",
+      "archived": "root11/ledger/rpc-all-test_runner/gate.json.pending",
+      "sha256": "b794d977ebe198f21899e49dd4026710bae701c5e8d8815f0cf815994925afaa",
+      "bytes": 1313,
+      "observed_original_stat": [
+        16777233,
+        377371796,
+        33152,
+        501,
+        0,
+        2,
+        1313,
+        1791493163668.577,
+        1791493163669.0898
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-all-test_runner/gate.json.release",
+      "archived": "root11/ledger/rpc-all-test_runner/gate.json.release",
+      "sha256": "92da003f675c99f6302d26f490948a7281cdc4934e2ea5670765c5f89df77cc6",
+      "bytes": 1927,
+      "observed_original_stat": [
+        16777233,
+        377371802,
+        33152,
+        501,
+        0,
+        2,
+        1927,
+        1791493163690.633,
+        1791493163690.8054
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-all-test_runner/gate.json.release.pending",
+      "archived": "root11/ledger/rpc-all-test_runner/gate.json.release.pending",
+      "sha256": "92da003f675c99f6302d26f490948a7281cdc4934e2ea5670765c5f89df77cc6",
+      "bytes": 1927,
+      "observed_original_stat": [
+        16777233,
+        377371802,
+        33152,
+        501,
+        0,
+        2,
+        1927,
+        1791493163690.633,
+        1791493163690.8054
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-all-test_runner/receipt.json",
+      "archived": "root11/ledger/rpc-all-test_runner/receipt.json",
+      "sha256": "ab4ddd3b92087ebdb209d274f8a08d309ea4bcabdff236941dcb83d4b4480914",
+      "bytes": 148586,
+      "observed_original_stat": [
+        16777233,
+        377372356,
+        33152,
+        501,
+        0,
+        1,
+        148586,
+        1791493175150.8748,
+        1791493175150.8748
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-all-test_runner/rpc-cleanup.json",
+      "archived": "root11/ledger/rpc-all-test_runner/rpc-cleanup.json",
+      "sha256": "ab1e4d213f7500c9a63fd0f48bd2431c378a748037716bbeac47c398f20e6f32",
+      "bytes": 1897,
+      "observed_original_stat": [
+        16777233,
+        377372357,
+        33152,
+        501,
+        0,
+        1,
+        1897,
+        1791493175151.7634,
+        1791493175151.7634
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-test-pytest-negative/gate.json",
+      "archived": "root11/ledger/rpc-test-pytest-negative/gate.json",
+      "sha256": "af99e725640ca92a006bbb95b40f7519df9f6658f36e0272d067b9b92a393883",
+      "bytes": 1647,
+      "observed_original_stat": [
+        16777233,
+        377372249,
+        33152,
+        501,
+        0,
+        2,
+        1647,
+        1791493167969.2954,
+        1791493167969.7188
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-test-pytest-negative/gate.json.pending",
+      "archived": "root11/ledger/rpc-test-pytest-negative/gate.json.pending",
+      "sha256": "af99e725640ca92a006bbb95b40f7519df9f6658f36e0272d067b9b92a393883",
+      "bytes": 1647,
+      "observed_original_stat": [
+        16777233,
+        377372249,
+        33152,
+        501,
+        0,
+        2,
+        1647,
+        1791493167969.2954,
+        1791493167969.7188
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-test-pytest-negative/gate.json.release",
+      "archived": "root11/ledger/rpc-test-pytest-negative/gate.json.release",
+      "sha256": "217032dc635d57dfce9d621cae07b57118d90d8fa35aaa904e3ab087e14e6bc9",
+      "bytes": 2308,
+      "observed_original_stat": [
+        16777233,
+        377372252,
+        33152,
+        501,
+        0,
+        2,
+        2308,
+        1791493167983.6062,
+        1791493167983.8274
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-test-pytest-negative/gate.json.release.pending",
+      "archived": "root11/ledger/rpc-test-pytest-negative/gate.json.release.pending",
+      "sha256": "217032dc635d57dfce9d621cae07b57118d90d8fa35aaa904e3ab087e14e6bc9",
+      "bytes": 2308,
+      "observed_original_stat": [
+        16777233,
+        377372252,
+        33152,
+        501,
+        0,
+        2,
+        2308,
+        1791493167983.6062,
+        1791493167983.8274
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-test-pytest-negative/receipt.json",
+      "archived": "root11/ledger/rpc-test-pytest-negative/receipt.json",
+      "sha256": "6bb7f39526a3cd5cc219dc1f749f00643b40a38adab39028e36c166d94dbf5a4",
+      "bytes": 141481,
+      "observed_original_stat": [
+        16777233,
+        377372259,
+        33152,
+        501,
+        0,
+        1,
+        141481,
+        1791493169019.394,
+        1791493169019.394
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-test-pytest-negative/rpc-cleanup.json",
+      "archived": "root11/ledger/rpc-test-pytest-negative/rpc-cleanup.json",
+      "sha256": "73649c9a75b71d547d827d28a8544533855c5f2a07fce9ba6861f0f053800c4e",
+      "bytes": 1959,
+      "observed_original_stat": [
+        16777233,
+        377372260,
+        33152,
+        501,
+        0,
+        1,
+        1959,
+        1791493169020.2031,
+        1791493169020.2031
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-test-pytest-positive/gate.json",
+      "archived": "root11/ledger/rpc-test-pytest-positive/gate.json",
+      "sha256": "72829eddad8d6001aa51ce04e5ea9478b4722f0ece45818eefa5fc14657246ff",
+      "bytes": 1647,
+      "observed_original_stat": [
+        16777233,
+        377372215,
+        33152,
+        501,
+        0,
+        2,
+        1647,
+        1791493165304.525,
+        1791493165304.7954
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-test-pytest-positive/gate.json.pending",
+      "archived": "root11/ledger/rpc-test-pytest-positive/gate.json.pending",
+      "sha256": "72829eddad8d6001aa51ce04e5ea9478b4722f0ece45818eefa5fc14657246ff",
+      "bytes": 1647,
+      "observed_original_stat": [
+        16777233,
+        377372215,
+        33152,
+        501,
+        0,
+        2,
+        1647,
+        1791493165304.525,
+        1791493165304.7954
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-test-pytest-positive/gate.json.release",
+      "archived": "root11/ledger/rpc-test-pytest-positive/gate.json.release",
+      "sha256": "784fb2754ad2fb5393863178c18f7753c6fc2d28a6dafaeb50b59aed5322e958",
+      "bytes": 2308,
+      "observed_original_stat": [
+        16777233,
+        377372218,
+        33152,
+        501,
+        0,
+        2,
+        2308,
+        1791493165318.3765,
+        1791493165318.5925
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-test-pytest-positive/gate.json.release.pending",
+      "archived": "root11/ledger/rpc-test-pytest-positive/gate.json.release.pending",
+      "sha256": "784fb2754ad2fb5393863178c18f7753c6fc2d28a6dafaeb50b59aed5322e958",
+      "bytes": 2308,
+      "observed_original_stat": [
+        16777233,
+        377372218,
+        33152,
+        501,
+        0,
+        2,
+        2308,
+        1791493165318.3765,
+        1791493165318.5925
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-test-pytest-positive/receipt.json",
+      "archived": "root11/ledger/rpc-test-pytest-positive/receipt.json",
+      "sha256": "5ce3d8fae6f7bc4f148f0d1f6421a995f0f3e02c50c642560a8e4e3a49274e82",
+      "bytes": 140022,
+      "observed_original_stat": [
+        16777233,
+        377372230,
+        33152,
+        501,
+        0,
+        1,
+        140022,
+        1791493166434.4019,
+        1791493166434.4019
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-test-pytest-positive/rpc-cleanup.json",
+      "archived": "root11/ledger/rpc-test-pytest-positive/rpc-cleanup.json",
+      "sha256": "ad7bfd42fc32fbd306cd0f6adc1c8bfbc8357006b1bf13a6510eda373d054d91",
+      "bytes": 1962,
+      "observed_original_stat": [
+        16777233,
+        377372231,
+        33152,
+        501,
+        0,
+        1,
+        1962,
+        1791493166435.26,
+        1791493166435.26
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-test-vitest-negative/gate.json",
+      "archived": "root11/ledger/rpc-test-vitest-negative/gate.json",
+      "sha256": "abb40a53aa1ed0eaf90454509826201b4dd25b9b87b7f0a3e46ba97d4fc812a5",
+      "bytes": 1527,
+      "observed_original_stat": [
+        16777233,
+        377372336,
+        33152,
+        501,
+        0,
+        2,
+        1527,
+        1791493173308.0686,
+        1791493173308.5027
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-test-vitest-negative/gate.json.pending",
+      "archived": "root11/ledger/rpc-test-vitest-negative/gate.json.pending",
+      "sha256": "abb40a53aa1ed0eaf90454509826201b4dd25b9b87b7f0a3e46ba97d4fc812a5",
+      "bytes": 1527,
+      "observed_original_stat": [
+        16777233,
+        377372336,
+        33152,
+        501,
+        0,
+        2,
+        1527,
+        1791493173308.0686,
+        1791493173308.5027
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-test-vitest-negative/gate.json.release",
+      "archived": "root11/ledger/rpc-test-vitest-negative/gate.json.release",
+      "sha256": "71641fd4c2179ebe272fa2db5a37ba670d60cf187a6950f76074d6d1cbd58764",
+      "bytes": 2170,
+      "observed_original_stat": [
+        16777233,
+        377372339,
+        33152,
+        501,
+        0,
+        2,
+        2170,
+        1791493173319.4578,
+        1791493173319.6658
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-test-vitest-negative/gate.json.release.pending",
+      "archived": "root11/ledger/rpc-test-vitest-negative/gate.json.release.pending",
+      "sha256": "71641fd4c2179ebe272fa2db5a37ba670d60cf187a6950f76074d6d1cbd58764",
+      "bytes": 2170,
+      "observed_original_stat": [
+        16777233,
+        377372339,
+        33152,
+        501,
+        0,
+        2,
+        2170,
+        1791493173319.4578,
+        1791493173319.6658
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-test-vitest-negative/receipt.json",
+      "archived": "root11/ledger/rpc-test-vitest-negative/receipt.json",
+      "sha256": "ae88f685fe0ac3fdd29a09e50ef781facd1458fc4a2a31161eb1ab496378e250",
+      "bytes": 148083,
+      "observed_original_stat": [
+        16777233,
+        377372347,
+        33152,
+        501,
+        0,
+        1,
+        148083,
+        1791493174408.9092,
+        1791493174408.9092
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-test-vitest-negative/rpc-cleanup.json",
+      "archived": "root11/ledger/rpc-test-vitest-negative/rpc-cleanup.json",
+      "sha256": "8d01607543cec23c18a23aa76dca6e5e33d20b18342939811b4448e16c283ede",
+      "bytes": 1961,
+      "observed_original_stat": [
+        16777233,
+        377372348,
+        33152,
+        501,
+        0,
+        1,
+        1961,
+        1791493174409.734,
+        1791493174409.734
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-test-vitest-positive/gate.json",
+      "archived": "root11/ledger/rpc-test-vitest-positive/gate.json",
+      "sha256": "1bdaa5c33198aaa9b92be789355e27a47e557f8d2fe22d0ba87879a6eef3590e",
+      "bytes": 1527,
+      "observed_original_stat": [
+        16777233,
+        377372274,
+        33152,
+        501,
+        0,
+        2,
+        1527,
+        1791493170665.1565,
+        1791493170665.407
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-test-vitest-positive/gate.json.pending",
+      "archived": "root11/ledger/rpc-test-vitest-positive/gate.json.pending",
+      "sha256": "1bdaa5c33198aaa9b92be789355e27a47e557f8d2fe22d0ba87879a6eef3590e",
+      "bytes": 1527,
+      "observed_original_stat": [
+        16777233,
+        377372274,
+        33152,
+        501,
+        0,
+        2,
+        1527,
+        1791493170665.1565,
+        1791493170665.407
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-test-vitest-positive/gate.json.release",
+      "archived": "root11/ledger/rpc-test-vitest-positive/gate.json.release",
+      "sha256": "129c88589cd01654c2db66dae38d8e8a0e2c37bf36addf75d81f6367e0ebf9ce",
+      "bytes": 2170,
+      "observed_original_stat": [
+        16777233,
+        377372277,
+        33152,
+        501,
+        0,
+        2,
+        2170,
+        1791493170671.0476,
+        1791493170671.2412
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-test-vitest-positive/gate.json.release.pending",
+      "archived": "root11/ledger/rpc-test-vitest-positive/gate.json.release.pending",
+      "sha256": "129c88589cd01654c2db66dae38d8e8a0e2c37bf36addf75d81f6367e0ebf9ce",
+      "bytes": 2170,
+      "observed_original_stat": [
+        16777233,
+        377372277,
+        33152,
+        501,
+        0,
+        2,
+        2170,
+        1791493170671.0476,
+        1791493170671.2412
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-test-vitest-positive/receipt.json",
+      "archived": "root11/ledger/rpc-test-vitest-positive/receipt.json",
+      "sha256": "16099d3086e7c74d95492f29ab070f924e14ac54fe1363c2e30e8a5ab7e7b7c0",
+      "bytes": 143559,
+      "observed_original_stat": [
+        16777233,
+        377372302,
+        33152,
+        501,
+        0,
+        1,
+        143559,
+        1791493171782.6177,
+        1791493171782.6177
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/rpc-test-vitest-positive/rpc-cleanup.json",
+      "archived": "root11/ledger/rpc-test-vitest-positive/rpc-cleanup.json",
+      "sha256": "ddf80dce4166ba3c399e4fe5af38eb6f0438793a4f68ea2be3e213ddd647dc9d",
+      "bytes": 1961,
+      "observed_original_stat": [
+        16777233,
+        377372304,
+        33152,
+        501,
+        0,
+        1,
+        1961,
+        1791493171783.2942,
+        1791493171783.2942
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/session-close-1.json",
+      "archived": "root11/ledger/session-close-1.json",
+      "sha256": "69a588307a593a12c33b89ef50f5643a25353395799649fb0dc22eaab5b07e64",
+      "bytes": 251220,
+      "observed_original_stat": [
+        16777233,
+        377372462,
+        33152,
+        501,
+        0,
+        1,
+        251220,
+        1791493194490.0159,
+        1791493194490.0159
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/session-close-1.pre-restore.json",
+      "archived": "root11/ledger/session-close-1.pre-restore.json",
+      "sha256": "a09fc9fafbaecdc904a41e037760c8d7ee8a83abe8107cd0847120d66d4dc390",
+      "bytes": 250087,
+      "observed_original_stat": [
+        16777233,
+        377372461,
+        33152,
+        501,
+        0,
+        1,
+        250087,
+        1791493194489.1052,
+        1791493194489.1052
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/session-stop-services-1.json",
+      "archived": "root11/ledger/session-stop-services-1.json",
+      "sha256": "3deb1df1500773e07588e50f443a641c0347f0465cb203daa842efcc1f4a8902",
+      "bytes": 254458,
+      "observed_original_stat": [
+        16777233,
+        377372455,
+        33152,
+        501,
+        0,
+        1,
+        254458,
+        1791493192775.7627,
+        1791493192775.7627
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/vite/gate.json",
+      "archived": "root11/ledger/vite/gate.json",
+      "sha256": "1d9cbae755f04363b8d05c3082a9acb2578726061e2c30dd8c983e1a0d469e6f",
+      "bytes": 1388,
+      "observed_original_stat": [
+        16777233,
+        377369721,
+        33152,
+        501,
+        0,
+        2,
+        1388,
+        1791493154381.017,
+        1791493154381.253
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/vite/gate.json.pending",
+      "archived": "root11/ledger/vite/gate.json.pending",
+      "sha256": "1d9cbae755f04363b8d05c3082a9acb2578726061e2c30dd8c983e1a0d469e6f",
+      "bytes": 1388,
+      "observed_original_stat": [
+        16777233,
+        377369721,
+        33152,
+        501,
+        0,
+        2,
+        1388,
+        1791493154381.017,
+        1791493154381.253
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/vite/gate.json.release",
+      "archived": "root11/ledger/vite/gate.json.release",
+      "sha256": "5bb19f4330c7b3393f98e59c2bce34d7ff8348f560ed6ebf8cd10d560def4826",
+      "bytes": 2040,
+      "observed_original_stat": [
+        16777233,
+        377369724,
+        33152,
+        501,
+        0,
+        2,
+        2040,
+        1791493154394.6592,
+        1791493154394.8687
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/vite/gate.json.release.pending",
+      "archived": "root11/ledger/vite/gate.json.release.pending",
+      "sha256": "5bb19f4330c7b3393f98e59c2bce34d7ff8348f560ed6ebf8cd10d560def4826",
+      "bytes": 2040,
+      "observed_original_stat": [
+        16777233,
+        377369724,
+        33152,
+        501,
+        0,
+        2,
+        2040,
+        1791493154394.6592,
+        1791493154394.8687
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/vite/receipt.json",
+      "archived": "root11/ledger/vite/receipt.json",
+      "sha256": "be1a8f2ef9214402e7a3ee79c2ae733abe67618e6b5d042daf4c7337bb9ad107",
+      "bytes": 319073,
+      "observed_original_stat": [
+        16777233,
+        377372452,
+        33152,
+        501,
+        0,
+        1,
+        319073,
+        1791493191849.996,
+        1791493191849.996
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/ledger/vite/service-start.json",
+      "archived": "root11/ledger/vite/service-start.json",
+      "sha256": "43df5a92d8f0114374ce7992c38c0c71f343312ff8755b0ed56442cd8dd3b383",
+      "bytes": 6155,
+      "observed_original_stat": [
+        16777233,
+        377369727,
+        33152,
+        501,
+        0,
+        1,
+        6155,
+        1791493154395.0986,
+        1791493154395.0986
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/ack/rpc-all-logs-28fe1bb346eed0da217eb5a25745aa4f.json",
+      "archived": "root11/session-rpc/ack/rpc-all-logs-28fe1bb346eed0da217eb5a25745aa4f.json",
+      "sha256": "8bbd92130a84a609a3c002dca9efe18249324bc74953e22bd9adc26ae35879c2",
+      "bytes": 2317,
+      "observed_original_stat": [
+        16777233,
+        377372384,
+        33152,
+        501,
+        0,
+        2,
+        2317,
+        1791493177599.4956,
+        1791493177599.7432
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/ack/rpc-all-logs-28fe1bb346eed0da217eb5a25745aa4f.json.pending",
+      "archived": "root11/session-rpc/ack/rpc-all-logs-28fe1bb346eed0da217eb5a25745aa4f.json.pending",
+      "sha256": "8bbd92130a84a609a3c002dca9efe18249324bc74953e22bd9adc26ae35879c2",
+      "bytes": 2317,
+      "observed_original_stat": [
+        16777233,
+        377372384,
+        33152,
+        501,
+        0,
+        2,
+        2317,
+        1791493177599.4956,
+        1791493177599.7432
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/ack/rpc-all-runtime_ui-visual_capture-network_capture-5ce2f6e238c5681d0972ab34446191f1.json",
+      "archived": "root11/session-rpc/ack/rpc-all-runtime_ui-visual_capture-network_capture-5ce2f6e238c5681d0972ab34446191f1.json",
+      "sha256": "5bc1eaef898ca3d3f6761f6468171e9067789d0b96480bee1e47b0aa986d1f2a",
+      "bytes": 1905,
+      "observed_original_stat": [
+        16777233,
+        377372446,
+        33152,
+        501,
+        0,
+        2,
+        1905,
+        1791493190172.6895,
+        1791493190172.915
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/ack/rpc-all-runtime_ui-visual_capture-network_capture-5ce2f6e238c5681d0972ab34446191f1.json.pending",
+      "archived": "root11/session-rpc/ack/rpc-all-runtime_ui-visual_capture-network_capture-5ce2f6e238c5681d0972ab34446191f1.json.pending",
+      "sha256": "5bc1eaef898ca3d3f6761f6468171e9067789d0b96480bee1e47b0aa986d1f2a",
+      "bytes": 1905,
+      "observed_original_stat": [
+        16777233,
+        377372446,
+        33152,
+        501,
+        0,
+        2,
+        1905,
+        1791493190172.6895,
+        1791493190172.915
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/ack/rpc-all-test_runner-4cf75d08bf693aa25635581dc5043ed2.json",
+      "archived": "root11/session-rpc/ack/rpc-all-test_runner-4cf75d08bf693aa25635581dc5043ed2.json",
+      "sha256": "c11f9869785b79810674b6b2b609186e16fdadc01128e155b2e2138f6d83ee41",
+      "bytes": 2366,
+      "observed_original_stat": [
+        16777233,
+        377372358,
+        33152,
+        501,
+        0,
+        2,
+        2366,
+        1791493175160.095,
+        1791493175160.296
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/ack/rpc-all-test_runner-4cf75d08bf693aa25635581dc5043ed2.json.pending",
+      "archived": "root11/session-rpc/ack/rpc-all-test_runner-4cf75d08bf693aa25635581dc5043ed2.json.pending",
+      "sha256": "c11f9869785b79810674b6b2b609186e16fdadc01128e155b2e2138f6d83ee41",
+      "bytes": 2366,
+      "observed_original_stat": [
+        16777233,
+        377372358,
+        33152,
+        501,
+        0,
+        2,
+        2366,
+        1791493175160.095,
+        1791493175160.296
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/ack/rpc-test-pytest-negative-d59a2891221d0d8b817e58e9cc17d7c5.json",
+      "archived": "root11/session-rpc/ack/rpc-test-pytest-negative-d59a2891221d0d8b817e58e9cc17d7c5.json",
+      "sha256": "c399db7f74ddc60bd0d654c6293fc1c4a896270ad61c3c1f248de98c317b6c70",
+      "bytes": 2415,
+      "observed_original_stat": [
+        16777233,
+        377372261,
+        33152,
+        501,
+        0,
+        2,
+        2415,
+        1791493169028.5405,
+        1791493169028.7544
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/ack/rpc-test-pytest-negative-d59a2891221d0d8b817e58e9cc17d7c5.json.pending",
+      "archived": "root11/session-rpc/ack/rpc-test-pytest-negative-d59a2891221d0d8b817e58e9cc17d7c5.json.pending",
+      "sha256": "c399db7f74ddc60bd0d654c6293fc1c4a896270ad61c3c1f248de98c317b6c70",
+      "bytes": 2415,
+      "observed_original_stat": [
+        16777233,
+        377372261,
+        33152,
+        501,
+        0,
+        2,
+        2415,
+        1791493169028.5405,
+        1791493169028.7544
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/ack/rpc-test-pytest-positive-e88c179dfcfd95fb8789d451442fa533.json",
+      "archived": "root11/session-rpc/ack/rpc-test-pytest-positive-e88c179dfcfd95fb8789d451442fa533.json",
+      "sha256": "884c6425463641564b304157ea018839022acdff6bd0b92d8bbeb8d7d53e1528",
+      "bytes": 2416,
+      "observed_original_stat": [
+        16777233,
+        377372232,
+        33152,
+        501,
+        0,
+        2,
+        2416,
+        1791493166443.6372,
+        1791493166443.8489
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/ack/rpc-test-pytest-positive-e88c179dfcfd95fb8789d451442fa533.json.pending",
+      "archived": "root11/session-rpc/ack/rpc-test-pytest-positive-e88c179dfcfd95fb8789d451442fa533.json.pending",
+      "sha256": "884c6425463641564b304157ea018839022acdff6bd0b92d8bbeb8d7d53e1528",
+      "bytes": 2416,
+      "observed_original_stat": [
+        16777233,
+        377372232,
+        33152,
+        501,
+        0,
+        2,
+        2416,
+        1791493166443.6372,
+        1791493166443.8489
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/ack/rpc-test-vitest-negative-ac2297ac8c3b9acb52710dc160f322dc.json",
+      "archived": "root11/session-rpc/ack/rpc-test-vitest-negative-ac2297ac8c3b9acb52710dc160f322dc.json",
+      "sha256": "f5edc0277fdf997edf63ce5cb608bcdb30f7f338c290fb13f1ba6a3f051f4b97",
+      "bytes": 2415,
+      "observed_original_stat": [
+        16777233,
+        377372349,
+        33152,
+        501,
+        0,
+        2,
+        2415,
+        1791493174418.1147,
+        1791493174418.3208
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/ack/rpc-test-vitest-negative-ac2297ac8c3b9acb52710dc160f322dc.json.pending",
+      "archived": "root11/session-rpc/ack/rpc-test-vitest-negative-ac2297ac8c3b9acb52710dc160f322dc.json.pending",
+      "sha256": "f5edc0277fdf997edf63ce5cb608bcdb30f7f338c290fb13f1ba6a3f051f4b97",
+      "bytes": 2415,
+      "observed_original_stat": [
+        16777233,
+        377372349,
+        33152,
+        501,
+        0,
+        2,
+        2415,
+        1791493174418.1147,
+        1791493174418.3208
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/ack/rpc-test-vitest-positive-b91b7aee1ca64279e8827a49dfb37171.json",
+      "archived": "root11/session-rpc/ack/rpc-test-vitest-positive-b91b7aee1ca64279e8827a49dfb37171.json",
+      "sha256": "1ce851286262d6e1de8c3ba004fa169da76b9715f9c107a18ce45e06f9df14c9",
+      "bytes": 2415,
+      "observed_original_stat": [
+        16777233,
+        377372305,
+        33152,
+        501,
+        0,
+        2,
+        2415,
+        1791493171791.5493,
+        1791493171791.7566
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/ack/rpc-test-vitest-positive-b91b7aee1ca64279e8827a49dfb37171.json.pending",
+      "archived": "root11/session-rpc/ack/rpc-test-vitest-positive-b91b7aee1ca64279e8827a49dfb37171.json.pending",
+      "sha256": "1ce851286262d6e1de8c3ba004fa169da76b9715f9c107a18ce45e06f9df14c9",
+      "bytes": 2415,
+      "observed_original_stat": [
+        16777233,
+        377372305,
+        33152,
+        501,
+        0,
+        2,
+        2415,
+        1791493171791.5493,
+        1791493171791.7566
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/context.json",
+      "archived": "root11/session-rpc/context.json",
+      "sha256": "021d0b2721fd919672f5c17e2c883f2d6b168bf1d8731b82a514f27e398a50d9",
+      "bytes": 1619,
+      "observed_original_stat": [
+        16777233,
+        377369677,
+        33152,
+        501,
+        0,
+        1,
+        1619,
+        1791493148341.4016,
+        1791493148341.4016
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/enrollment/calibrate.json",
+      "archived": "root11/session-rpc/enrollment/calibrate.json",
+      "sha256": "58ab0e7c10aa06c32fb55176582775ac1bc0c54ee8b6bc028c88cd1b2af0ca62",
+      "bytes": 20859,
+      "observed_original_stat": [
+        16777233,
+        377371779,
+        33152,
+        501,
+        0,
+        2,
+        20859,
+        1791493162068.396,
+        1791493162068.607
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/enrollment/calibrate.json.pending",
+      "archived": "root11/session-rpc/enrollment/calibrate.json.pending",
+      "sha256": "58ab0e7c10aa06c32fb55176582775ac1bc0c54ee8b6bc028c88cd1b2af0ca62",
+      "bytes": 20859,
+      "observed_original_stat": [
+        16777233,
+        377371779,
+        33152,
+        501,
+        0,
+        2,
+        20859,
+        1791493162068.396,
+        1791493162068.607
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/enrollment/rpc-all-test_runner.json",
+      "archived": "root11/session-rpc/enrollment/rpc-all-test_runner.json",
+      "sha256": "24f2536c20a956dc76d61de1248a90f59ca1cccae906a232e72f7ef47667520c",
+      "bytes": 20909,
+      "observed_original_stat": [
+        16777233,
+        377371799,
+        33152,
+        501,
+        0,
+        2,
+        20909,
+        1791493163686.9324,
+        1791493163687.1458
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/enrollment/rpc-all-test_runner.json.pending",
+      "archived": "root11/session-rpc/enrollment/rpc-all-test_runner.json.pending",
+      "sha256": "24f2536c20a956dc76d61de1248a90f59ca1cccae906a232e72f7ef47667520c",
+      "bytes": 20909,
+      "observed_original_stat": [
+        16777233,
+        377371799,
+        33152,
+        501,
+        0,
+        2,
+        20909,
+        1791493163686.9324,
+        1791493163687.1458
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/envelope/B1753-power.json",
+      "archived": "root11/session-rpc/envelope/B1753-power.json",
+      "sha256": "d6690826aa3a08451512f50aa711c329d91bd5077c34b55afbd0f83a28e791ed",
+      "bytes": 1971,
+      "observed_original_stat": [
+        16777233,
+        377369679,
+        33152,
+        501,
+        0,
+        1,
+        1971,
+        1791493148341.941,
+        1791493148341.941
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/envelope/B1753.json",
+      "archived": "root11/session-rpc/envelope/B1753.json",
+      "sha256": "6faf0a87303e7afccb3e25ca2a15a2995cee81d035f4e857ee7c191d4a991d86",
+      "bytes": 1959,
+      "observed_original_stat": [
+        16777233,
+        377369678,
+        33152,
+        501,
+        0,
+        1,
+        1959,
+        1791493148341.7876,
+        1791493148341.7876
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/envelope/B1760.json",
+      "archived": "root11/session-rpc/envelope/B1760.json",
+      "sha256": "b2b9343d6d5380fcf6fd935861d5d933da97551815fa445121308c2a4a38344b",
+      "bytes": 1959,
+      "observed_original_stat": [
+        16777233,
+        377369680,
+        33152,
+        501,
+        0,
+        1,
+        1959,
+        1791493148342.0867,
+        1791493148342.0867
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/envelope/calibrate.json",
+      "archived": "root11/session-rpc/envelope/calibrate.json",
+      "sha256": "e32e4fd11f7b4f9e7292127c6ff997064775d59b0c7a8110d783b5ba51fc0169",
+      "bytes": 1967,
+      "observed_original_stat": [
+        16777233,
+        377369681,
+        33152,
+        501,
+        0,
+        1,
+        1967,
+        1791493148342.2231,
+        1791493148342.2231
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/envelope/rpc-all-screen_coverage.json",
+      "archived": "root11/session-rpc/envelope/rpc-all-screen_coverage.json",
+      "sha256": "7775d63d4a0f0bbb25eaeb1bf50da24df62d530431d1bfea229c64f12af64044",
+      "bytes": 1995,
+      "observed_original_stat": [
+        16777233,
+        377369682,
+        33152,
+        501,
+        0,
+        1,
+        1995,
+        1791493148342.358,
+        1791493148342.358
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/envelope/rpc-all-test_runner.json",
+      "archived": "root11/session-rpc/envelope/rpc-all-test_runner.json",
+      "sha256": "89937a9266d71bf617e68456a4f7aef709795315f1e837ebde2abdf41bc73cb7",
+      "bytes": 1987,
+      "observed_original_stat": [
+        16777233,
+        377369683,
+        33152,
+        501,
+        0,
+        1,
+        1987,
+        1791493148342.491,
+        1791493148342.491
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/plan.json",
+      "archived": "root11/session-rpc/plan.json",
+      "sha256": "973a86955d812f6882cf90a3e2c6ef5b3f8d044188cfa4ff9f3a047548b7b0c3",
+      "bytes": 309394,
+      "observed_original_stat": [
+        16777233,
+        377369684,
+        33152,
+        501,
+        0,
+        2,
+        309394,
+        1791493148343.4702,
+        1791493148344.0725
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/plan.json.pending",
+      "archived": "root11/session-rpc/plan.json.pending",
+      "sha256": "973a86955d812f6882cf90a3e2c6ef5b3f8d044188cfa4ff9f3a047548b7b0c3",
+      "bytes": 309394,
+      "observed_original_stat": [
+        16777233,
+        377369684,
+        33152,
+        501,
+        0,
+        2,
+        309394,
+        1791493148343.4702,
+        1791493148344.0725
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/request/rpc-all-logs-28fe1bb346eed0da217eb5a25745aa4f.json",
+      "archived": "root11/session-rpc/request/rpc-all-logs-28fe1bb346eed0da217eb5a25745aa4f.json",
+      "sha256": "2fc0213a77e277e6da4ffd1e3c99a3ad915879484a1662fa1dc4e295d208db86",
+      "bytes": 20853,
+      "observed_original_stat": [
+        16777233,
+        377372362,
+        33152,
+        501,
+        0,
+        2,
+        20853,
+        1791493175167.8425,
+        1791493175168.0496
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/request/rpc-all-logs-28fe1bb346eed0da217eb5a25745aa4f.json.pending",
+      "archived": "root11/session-rpc/request/rpc-all-logs-28fe1bb346eed0da217eb5a25745aa4f.json.pending",
+      "sha256": "2fc0213a77e277e6da4ffd1e3c99a3ad915879484a1662fa1dc4e295d208db86",
+      "bytes": 20853,
+      "observed_original_stat": [
+        16777233,
+        377372362,
+        33152,
+        501,
+        0,
+        2,
+        20853,
+        1791493175167.8425,
+        1791493175168.0496
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/request/rpc-all-runtime_ui-visual_capture-network_capture-5ce2f6e238c5681d0972ab34446191f1.json",
+      "archived": "root11/session-rpc/request/rpc-all-runtime_ui-visual_capture-network_capture-5ce2f6e238c5681d0972ab34446191f1.json",
+      "sha256": "0aafd5a59edbfb86b4f417af0e3799e4538be1f5857979f648226efabcf48020",
+      "bytes": 21164,
+      "observed_original_stat": [
+        16777233,
+        377372388,
+        33152,
+        501,
+        0,
+        2,
+        21164,
+        1791493177606.4434,
+        1791493177606.7002
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/request/rpc-all-runtime_ui-visual_capture-network_capture-5ce2f6e238c5681d0972ab34446191f1.json.pending",
+      "archived": "root11/session-rpc/request/rpc-all-runtime_ui-visual_capture-network_capture-5ce2f6e238c5681d0972ab34446191f1.json.pending",
+      "sha256": "0aafd5a59edbfb86b4f417af0e3799e4538be1f5857979f648226efabcf48020",
+      "bytes": 21164,
+      "observed_original_stat": [
+        16777233,
+        377372388,
+        33152,
+        501,
+        0,
+        2,
+        21164,
+        1791493177606.4434,
+        1791493177606.7002
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/request/rpc-all-test_runner-4cf75d08bf693aa25635581dc5043ed2.json",
+      "archived": "root11/session-rpc/request/rpc-all-test_runner-4cf75d08bf693aa25635581dc5043ed2.json",
+      "sha256": "693129d25b6e47c6d1fe16f9786b133e4816b392e0fffc7ca3c55f7970903428",
+      "bytes": 21039,
+      "observed_original_stat": [
+        16777233,
+        377371786,
+        33152,
+        501,
+        0,
+        2,
+        21039,
+        1791493162128.9336,
+        1791493162129.164
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/request/rpc-all-test_runner-4cf75d08bf693aa25635581dc5043ed2.json.pending",
+      "archived": "root11/session-rpc/request/rpc-all-test_runner-4cf75d08bf693aa25635581dc5043ed2.json.pending",
+      "sha256": "693129d25b6e47c6d1fe16f9786b133e4816b392e0fffc7ca3c55f7970903428",
+      "bytes": 21039,
+      "observed_original_stat": [
+        16777233,
+        377371786,
+        33152,
+        501,
+        0,
+        2,
+        21039,
+        1791493162128.9336,
+        1791493162129.164
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/request/rpc-test-pytest-negative-d59a2891221d0d8b817e58e9cc17d7c5.json",
+      "archived": "root11/session-rpc/request/rpc-test-pytest-negative-d59a2891221d0d8b817e58e9cc17d7c5.json",
+      "sha256": "5703eccc300b391bd97da0a6cb8104e05b1c9f734e052d27d81eee617da3201b",
+      "bytes": 20900,
+      "observed_original_stat": [
+        16777233,
+        377372236,
+        33152,
+        501,
+        0,
+        2,
+        20900,
+        1791493166451.8154,
+        1791493166452.0261
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/request/rpc-test-pytest-negative-d59a2891221d0d8b817e58e9cc17d7c5.json.pending",
+      "archived": "root11/session-rpc/request/rpc-test-pytest-negative-d59a2891221d0d8b817e58e9cc17d7c5.json.pending",
+      "sha256": "5703eccc300b391bd97da0a6cb8104e05b1c9f734e052d27d81eee617da3201b",
+      "bytes": 20900,
+      "observed_original_stat": [
+        16777233,
+        377372236,
+        33152,
+        501,
+        0,
+        2,
+        20900,
+        1791493166451.8154,
+        1791493166452.0261
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/request/rpc-test-pytest-positive-e88c179dfcfd95fb8789d451442fa533.json",
+      "archived": "root11/session-rpc/request/rpc-test-pytest-positive-e88c179dfcfd95fb8789d451442fa533.json",
+      "sha256": "d3159ab13a16c2f185a314452d63325fb407cae77efe335d904b6836f46d7d83",
+      "bytes": 20931,
+      "observed_original_stat": [
+        16777233,
+        377371809,
+        33152,
+        501,
+        0,
+        2,
+        20931,
+        1791493163745.5022,
+        1791493163745.7131
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/request/rpc-test-pytest-positive-e88c179dfcfd95fb8789d451442fa533.json.pending",
+      "archived": "root11/session-rpc/request/rpc-test-pytest-positive-e88c179dfcfd95fb8789d451442fa533.json.pending",
+      "sha256": "d3159ab13a16c2f185a314452d63325fb407cae77efe335d904b6836f46d7d83",
+      "bytes": 20931,
+      "observed_original_stat": [
+        16777233,
+        377371809,
+        33152,
+        501,
+        0,
+        2,
+        20931,
+        1791493163745.5022,
+        1791493163745.7131
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/request/rpc-test-vitest-negative-ac2297ac8c3b9acb52710dc160f322dc.json",
+      "archived": "root11/session-rpc/request/rpc-test-vitest-negative-ac2297ac8c3b9acb52710dc160f322dc.json",
+      "sha256": "75fc142135aa7557b8f0f59340f1a35ad787f4b694f26f5e6c463d0c8ad5df83",
+      "bytes": 20791,
+      "observed_original_stat": [
+        16777233,
+        377372309,
+        33152,
+        501,
+        0,
+        2,
+        20791,
+        1791493171799.5374,
+        1791493171799.772
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/request/rpc-test-vitest-negative-ac2297ac8c3b9acb52710dc160f322dc.json.pending",
+      "archived": "root11/session-rpc/request/rpc-test-vitest-negative-ac2297ac8c3b9acb52710dc160f322dc.json.pending",
+      "sha256": "75fc142135aa7557b8f0f59340f1a35ad787f4b694f26f5e6c463d0c8ad5df83",
+      "bytes": 20791,
+      "observed_original_stat": [
+        16777233,
+        377372309,
+        33152,
+        501,
+        0,
+        2,
+        20791,
+        1791493171799.5374,
+        1791493171799.772
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/request/rpc-test-vitest-positive-b91b7aee1ca64279e8827a49dfb37171.json",
+      "archived": "root11/session-rpc/request/rpc-test-vitest-positive-b91b7aee1ca64279e8827a49dfb37171.json",
+      "sha256": "5e8a78ce5fdef914b37e197cd8c80fcc2831ac8b29ee125f23fcc2433b535d3f",
+      "bytes": 20824,
+      "observed_original_stat": [
+        16777233,
+        377372265,
+        33152,
+        501,
+        0,
+        2,
+        20824,
+        1791493169036.3054,
+        1791493169036.5276
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/session-rpc/request/rpc-test-vitest-positive-b91b7aee1ca64279e8827a49dfb37171.json.pending",
+      "archived": "root11/session-rpc/request/rpc-test-vitest-positive-b91b7aee1ca64279e8827a49dfb37171.json.pending",
+      "sha256": "5e8a78ce5fdef914b37e197cd8c80fcc2831ac8b29ee125f23fcc2433b535d3f",
+      "bytes": 20824,
+      "observed_original_stat": [
+        16777233,
+        377372265,
+        33152,
+        501,
+        0,
+        2,
+        20824,
+        1791493169036.3054,
+        1791493169036.5276
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/binding.json",
+      "archived": "root11/binding.json",
+      "sha256": "f4b697a53c4c2938636f3a66cbf839b062a57047707a921bb0d27add22d694f2",
+      "bytes": 428701,
+      "observed_original_stat": [
+        16777233,
+        377369687,
+        33152,
+        501,
+        0,
+        1,
+        428701,
+        1791493148345.4321,
+        1791493148345.4321
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/decision.json",
+      "archived": "root11/decision.json",
+      "sha256": "6f8789266fa3a8dcaf574dfbac52409e824ad9cba830eaf92b3046e06f7f4b65",
+      "bytes": 18622,
+      "observed_original_stat": [
+        16777233,
+        377369688,
+        33152,
+        501,
+        0,
+        1,
+        18622,
+        1791493148345.817,
+        1791493148345.817
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/wrapper-canary-result.json",
+      "archived": "root11/result.json",
+      "sha256": "40534457f99a62dba89a0b8dc9ad91eb215f23d8f0dbc1ba9ce3def9e0239919",
+      "bytes": 2778,
+      "observed_original_stat": [
+        16777233,
+        377372463,
+        33152,
+        501,
+        0,
+        1,
+        2778,
+        1791493194494.5125,
+        1791493194494.5125
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/readiness.json",
+      "archived": "root11/readiness.json",
+      "sha256": "f41136bdd1951ed37560f2b4b4e0751322910634e75dfa7b1597e3b4ad314915",
+      "bytes": 1850,
+      "observed_original_stat": [
+        16777233,
+        377371760,
+        33152,
+        501,
+        0,
+        1,
+        1850,
+        1791493159760.946,
+        1791493159760.946
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/all-rpc/logs.log",
+      "archived": "root11/calibration/all-rpc/logs.log",
+      "sha256": "2e64aad3275ef6c11f4060dafb35f447351770b8ff41735abe5de98c67199985",
+      "bytes": 555,
+      "observed_original_stat": [
+        16777233,
+        377372387,
+        33188,
+        501,
+        0,
+        1,
+        555,
+        1791493177602.5513,
+        1791493177602.5513
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/all-rpc/logs.stderr",
+      "archived": "root11/calibration/all-rpc/logs.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "observed_original_stat": [
+        16777233,
+        377372367,
+        33152,
+        501,
+        0,
+        1,
+        0,
+        1791493175922.2595,
+        1791493175922.278
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/all-rpc/logs.stdout",
+      "archived": "root11/calibration/all-rpc/logs.stdout",
+      "sha256": "2e64aad3275ef6c11f4060dafb35f447351770b8ff41735abe5de98c67199985",
+      "bytes": 555,
+      "observed_original_stat": [
+        16777233,
+        377372366,
+        33152,
+        501,
+        0,
+        1,
+        555,
+        1791493176841.0068,
+        1791493176841.0068
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/all-rpc/test_runner.log",
+      "archived": "root11/calibration/all-rpc/test_runner.log",
+      "sha256": "c2a1b52ca39d8339e9feeaad7d7eafeb70a8d2dd97ec036ea1aaf02d3e151046",
+      "bytes": 168,
+      "observed_original_stat": [
+        16777233,
+        377372361,
+        33188,
+        501,
+        0,
+        1,
+        168,
+        1791493175164.0662,
+        1791493175164.0662
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/all-rpc/test_runner.stderr",
+      "archived": "root11/calibration/all-rpc/test_runner.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "observed_original_stat": [
+        16777233,
+        377371795,
+        33152,
+        501,
+        0,
+        1,
+        0,
+        1791493162882.1858,
+        1791493162882.1965
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/all-rpc/test_runner.stdout",
+      "archived": "root11/calibration/all-rpc/test_runner.stdout",
+      "sha256": "c2a1b52ca39d8339e9feeaad7d7eafeb70a8d2dd97ec036ea1aaf02d3e151046",
+      "bytes": 168,
+      "observed_original_stat": [
+        16777233,
+        377371794,
+        33152,
+        501,
+        0,
+        1,
+        168,
+        1791493174436.7263,
+        1791493174436.7263
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/logs-rpc/logs-controls.json",
+      "archived": "root11/calibration/logs-rpc/logs-controls.json",
+      "sha256": "ec4da45c5ef0e1f98807e359751ab38c07c5d32e6a202ae7ffa10ef44bfb6396",
+      "bytes": 716,
+      "observed_original_stat": [
+        16777233,
+        377372380,
+        33188,
+        501,
+        0,
+        1,
+        716,
+        1791493176840.9866,
+        1791493176840.9866
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/logs-rpc/therese-temoin.log",
+      "archived": "root11/calibration/logs-rpc/therese-temoin.log",
+      "sha256": "b9b5425d5fff43ff57d871c0d09f09130045d69e0ae080390e320333e6a0fea8",
+      "bytes": 752,
+      "observed_original_stat": [
+        16777233,
+        377372379,
+        33188,
+        501,
+        0,
+        1,
+        752,
+        1791493176840.6697,
+        1791493176840.8984
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/calibrationC17.test.ts",
+      "archived": "root11/calibration/test-runner-rpc/calibrationC17.test.ts",
+      "sha256": "421e12140842c6b16149aabda4fe33ac6554bfe7e2935be0e45148179ecbfd66",
+      "bytes": 126,
+      "observed_original_stat": [
+        16777233,
+        377371807,
+        33188,
+        501,
+        0,
+        1,
+        126,
+        1791493163741.8584,
+        1791493163741.8584
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/pytest-negative.log",
+      "archived": "root11/calibration/test-runner-rpc/pytest-negative.log",
+      "sha256": "521e5478b650c281d8a0b916afd7abcb9f43af4119d27d2909f8bc8373ec0a9e",
+      "bytes": 828,
+      "observed_original_stat": [
+        16777233,
+        377372264,
+        33188,
+        501,
+        0,
+        1,
+        828,
+        1791493169032.7744,
+        1791493169032.7744
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/pytest-negative.stderr",
+      "archived": "root11/calibration/test-runner-rpc/pytest-negative.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "observed_original_stat": [
+        16777233,
+        377372243,
+        33152,
+        501,
+        0,
+        1,
+        0,
+        1791493167203.5051,
+        1791493167203.525
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/pytest-negative.stdout",
+      "archived": "root11/calibration/test-runner-rpc/pytest-negative.stdout",
+      "sha256": "521e5478b650c281d8a0b916afd7abcb9f43af4119d27d2909f8bc8373ec0a9e",
+      "bytes": 828,
+      "observed_original_stat": [
+        16777233,
+        377372242,
+        33152,
+        501,
+        0,
+        1,
+        828,
+        1791493168258.7097,
+        1791493168258.7097
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/pytest-negative.xml",
+      "archived": "root11/calibration/test-runner-rpc/pytest-negative.xml",
+      "sha256": "1bd90b6bab7843a951e993c025c89b6641fac1905af2178c0080412c3afd6357",
+      "bytes": 326,
+      "observed_original_stat": [
+        16777233,
+        377372258,
+        33188,
+        501,
+        0,
+        1,
+        326,
+        1791493168258.612,
+        1791493168258.612
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/pytest-positive.log",
+      "archived": "root11/calibration/test-runner-rpc/pytest-positive.log",
+      "sha256": "f71c4b59ec366c592a3a8a9f1696b7d59a87adeefe272e421b87d72a9de9f444",
+      "bytes": 1488,
+      "observed_original_stat": [
+        16777233,
+        377372235,
+        33188,
+        501,
+        0,
+        1,
+        1488,
+        1791493166448.2632,
+        1791493166448.2632
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/pytest-positive.stderr",
+      "archived": "root11/calibration/test-runner-rpc/pytest-positive.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "observed_original_stat": [
+        16777233,
+        377372213,
+        33152,
+        501,
+        0,
+        1,
+        0,
+        1791493164517.531,
+        1791493164517.545
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/pytest-positive.stdout",
+      "archived": "root11/calibration/test-runner-rpc/pytest-positive.stdout",
+      "sha256": "f71c4b59ec366c592a3a8a9f1696b7d59a87adeefe272e421b87d72a9de9f444",
+      "bytes": 1488,
+      "observed_original_stat": [
+        16777233,
+        377372212,
+        33152,
+        501,
+        0,
+        1,
+        1488,
+        1791493165661.062,
+        1791493165661.062
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/pytest-positive.xml",
+      "archived": "root11/calibration/test-runner-rpc/pytest-positive.xml",
+      "sha256": "889095cc9d9737e3aa58874ad147f027fb4cc4e66469a21d7ad23c6269c7a6c6",
+      "bytes": 647,
+      "observed_original_stat": [
+        16777233,
+        377372228,
+        33188,
+        501,
+        0,
+        1,
+        647,
+        1791493165660.8333,
+        1791493165660.8333
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/test-runner-controls.json",
+      "archived": "root11/calibration/test-runner-rpc/test-runner-controls.json",
+      "sha256": "01aca274e5e1e9a46034e732a3de638f58b3d442b63da7008619315a2a440971",
+      "bytes": 2616,
+      "observed_original_stat": [
+        16777233,
+        377372353,
+        33188,
+        501,
+        0,
+        1,
+        2616,
+        1791493174436.6738,
+        1791493174436.6738
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/test_temoin_c17.py",
+      "archived": "root11/calibration/test-runner-rpc/test_temoin_c17.py",
+      "sha256": "5e4acc7cc016d235850173d27f4d9ab06a901748085453b07087b309af30da55",
+      "bytes": 112,
+      "observed_original_stat": [
+        16777233,
+        377371806,
+        33188,
+        501,
+        0,
+        1,
+        112,
+        1791493163741.7844,
+        1791493163741.7844
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/vitest-negative.log",
+      "archived": "root11/calibration/test-runner-rpc/vitest-negative.log",
+      "sha256": "f45aae64b28305775fa010c91fbaee0b9874f79dda20899fe84fa2553c3e0436",
+      "bytes": 153,
+      "observed_original_stat": [
+        16777233,
+        377372352,
+        33188,
+        501,
+        0,
+        1,
+        153,
+        1791493174422.4307,
+        1791493174422.4307
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/vitest-negative.stderr",
+      "archived": "root11/calibration/test-runner-rpc/vitest-negative.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "observed_original_stat": [
+        16777233,
+        377372333,
+        33152,
+        501,
+        0,
+        1,
+        0,
+        1791493172549.068,
+        1791493172549.0808
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/vitest-negative.stdout",
+      "archived": "root11/calibration/test-runner-rpc/vitest-negative.stdout",
+      "sha256": "f45aae64b28305775fa010c91fbaee0b9874f79dda20899fe84fa2553c3e0436",
+      "bytes": 153,
+      "observed_original_stat": [
+        16777233,
+        377372332,
+        33152,
+        501,
+        0,
+        1,
+        153,
+        1791493173609.2563,
+        1791493173609.2563
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/vitest-negative.xml",
+      "archived": "root11/calibration/test-runner-rpc/vitest-negative.xml",
+      "sha256": "8c42aa038843d22bc8878fa6fdc29668ce2aaaca31464ff4b0a32ee8eff61e1b",
+      "bytes": 471,
+      "observed_original_stat": [
+        16777233,
+        377372343,
+        33188,
+        501,
+        0,
+        1,
+        471,
+        1791493173609.1987,
+        1791493173609.1987
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/vitest-positive.log",
+      "archived": "root11/calibration/test-runner-rpc/vitest-positive.log",
+      "sha256": "5eb2f272d79c6c3e4943b443c8da7fca5464a8d92bb59882a99970f2695620d8",
+      "bytes": 153,
+      "observed_original_stat": [
+        16777233,
+        377372308,
+        33188,
+        501,
+        0,
+        1,
+        153,
+        1791493171795.776,
+        1791493171795.776
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/vitest-positive.stderr",
+      "archived": "root11/calibration/test-runner-rpc/vitest-positive.stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "observed_original_stat": [
+        16777233,
+        377372270,
+        33152,
+        501,
+        0,
+        1,
+        0,
+        1791493169788.5972,
+        1791493169788.6094
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/vitest-positive.stdout",
+      "archived": "root11/calibration/test-runner-rpc/vitest-positive.stdout",
+      "sha256": "5eb2f272d79c6c3e4943b443c8da7fca5464a8d92bb59882a99970f2695620d8",
+      "bytes": 153,
+      "observed_original_stat": [
+        16777233,
+        377372269,
+        33152,
+        501,
+        0,
+        1,
+        153,
+        1791493171009.3982,
+        1791493171009.3982
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/vitest-positive.xml",
+      "archived": "root11/calibration/test-runner-rpc/vitest-positive.xml",
+      "sha256": "2cba55fc2fc8c25ec2edbbccc6143d19d6c149274b92129896389b8f08fe949c",
+      "bytes": 710,
+      "observed_original_stat": [
+        16777233,
+        377372281,
+        33188,
+        501,
+        0,
+        1,
+        710,
+        1791493171009.3267,
+        1791493171009.3267
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/runtime/calibration/test-runner-rpc/vitest.runtime.config.mjs",
+      "archived": "root11/calibration/test-runner-rpc/vitest.runtime.config.mjs",
+      "sha256": "752281ee87b82290ae7f0dbcca4a7b4ff23678689ab32bce4b5b5b6922810d8f",
+      "bytes": 411,
+      "observed_original_stat": [
+        16777233,
+        377371808,
+        33188,
+        501,
+        0,
+        1,
+        411,
+        1791493163741.9626,
+        1791493163741.9626
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-root11-static-controls-v3-hK9Iql/INDEX.json",
+      "archived": "static-v3/INDEX.json",
+      "sha256": "ab62bbb304cfa7f55b8472738664664bdf7520a5e170b32ff8b7eaab0d2efe07",
+      "bytes": 3282,
+      "observed_original_stat": [
+        16777233,
+        377302730,
+        33188,
+        501,
+        0,
+        1,
+        3282,
+        1791478303202.0596,
+        1791478303202.0596
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-root11-static-controls-v3-hK9Iql/README.md",
+      "archived": "static-v3/README.md",
+      "sha256": "fd43d6f5e4581e57c5532c8caa400185a7f1d6c9a513a103e3db5519757b8c54",
+      "bytes": 1890,
+      "observed_original_stat": [
+        16777233,
+        377302680,
+        33188,
+        501,
+        0,
+        1,
+        1890,
+        1791478280063.8804,
+        1791478280063.8804
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-root11-static-controls-v3-hK9Iql/forward.diff",
+      "archived": "static-v3/forward.diff",
+      "sha256": "0f05a3c5e3829bb9451b56385c3b986e602b52026526f73cc46907071e91d260",
+      "bytes": 1797,
+      "observed_original_stat": [
+        16777233,
+        377302570,
+        33188,
+        501,
+        0,
+        1,
+        1797,
+        1791478264336.6162,
+        1791478264336.6162
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-root11-static-controls-v3-hK9Iql/inverse.diff",
+      "archived": "static-v3/inverse.diff",
+      "sha256": "a34cf62707753b5a5ccbce55e2b86119db9a4b227a3215b7b8acacd70708f899",
+      "bytes": 1797,
+      "observed_original_stat": [
+        16777233,
+        377302571,
+        33188,
+        501,
+        0,
+        1,
+        1797,
+        1791478264422.371,
+        1791478264422.371
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-root11-static-controls-v3-hK9Iql/preimages/verify-prepared-wrapper-main11-v2.mjs",
+      "archived": "static-v3/preimages/verify-prepared-wrapper-main11-v2.mjs",
+      "sha256": "e8ea3ec950f8defce2e28fddfbfe1697b90425207b6dbcee045c88ffb5284a72",
+      "bytes": 19296,
+      "observed_original_stat": [
+        16777233,
+        377302472,
+        33188,
+        501,
+        0,
+        1,
+        19296,
+        1791478230855.5981,
+        1791478230855.706
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-root11-static-controls-v3-hK9Iql/verify-prepared-wrapper.mjs",
+      "archived": "static-v3/verify-prepared-wrapper.mjs",
+      "sha256": "218074ae9af87dad19b4c5e542d9c965d5dbf2058420336d75a342c9ded06791",
+      "bytes": 20131,
+      "observed_original_stat": [
+        16777233,
+        377302473,
+        33188,
+        501,
+        0,
+        1,
+        20131,
+        1791478253232.9004,
+        1791478253232.9004
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-root11-static-controls-v4-25ix3j/INDEX.json",
+      "archived": "static-v4/INDEX.json",
+      "sha256": "dabc863e1906382b12f82da9765486f2b6387d8ae15987539e7d38ce90b3c9e5",
+      "bytes": 3391,
+      "observed_original_stat": [
+        16777233,
+        377368304,
+        33188,
+        501,
+        0,
+        1,
+        3391,
+        1791492629650.9363,
+        1791492629650.9363
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-root11-static-controls-v4-25ix3j/README.md",
+      "archived": "static-v4/README.md",
+      "sha256": "eea168b89c095a9cd638508f5dc121277a4da7a5b67a76594e6065c9c346f14e",
+      "bytes": 1880,
+      "observed_original_stat": [
+        16777233,
+        377368020,
+        33188,
+        501,
+        0,
+        1,
+        1880,
+        1791492596976.6,
+        1791492596976.6
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-root11-static-controls-v4-25ix3j/forward.diff",
+      "archived": "static-v4/forward.diff",
+      "sha256": "6d8032872715f16aa27a244c916524b66d85a1f8e1e640efba1d9db7bdfa8e5f",
+      "bytes": 4864,
+      "observed_original_stat": [
+        16777233,
+        377368008,
+        33188,
+        501,
+        0,
+        1,
+        4864,
+        1791492587750.1382,
+        1791492587750.1382
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-root11-static-controls-v4-25ix3j/inverse.diff",
+      "archived": "static-v4/inverse.diff",
+      "sha256": "86ab78d8f895ca1220721201d22b8b2f5df5b621b2966a15c898420652ab082c",
+      "bytes": 4864,
+      "observed_original_stat": [
+        16777233,
+        377368009,
+        33188,
+        501,
+        0,
+        1,
+        4864,
+        1791492587818.387,
+        1791492587818.387
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-root11-static-controls-v4-25ix3j/preimages/verify-prepared-wrapper-v3.mjs",
+      "archived": "static-v4/preimages/verify-prepared-wrapper-v3.mjs",
+      "sha256": "218074ae9af87dad19b4c5e542d9c965d5dbf2058420336d75a342c9ded06791",
+      "bytes": 20131,
+      "observed_original_stat": [
+        16777233,
+        377367936,
+        33188,
+        501,
+        0,
+        1,
+        20131,
+        1791478253232.9004,
+        1791492550579.176
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-root11-static-controls-v4-25ix3j/verify-prepared-wrapper.mjs",
+      "archived": "static-v4/verify-prepared-wrapper.mjs",
+      "sha256": "af0a86273d02e5c750ab0561d5408b9dfeb44d3bbf9d60dcff59e775cc5de51c",
+      "bytes": 23049,
+      "observed_original_stat": [
+        16777233,
+        377367945,
+        33188,
+        501,
+        0,
+        1,
+        23049,
+        1791492575166.0286,
+        1791492575166.0286
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-root11-static-controls-v5-CWh0zu/INDEX.json",
+      "archived": "static-v5/INDEX.json",
+      "sha256": "6366f843ed412be048c839495b8e54f17ffbf04dd9c99851a522193733ccb417",
+      "bytes": 3368,
+      "observed_original_stat": [
+        16777233,
+        377369294,
+        33188,
+        501,
+        0,
+        1,
+        3368,
+        1791493003992.5488,
+        1791493003992.5488
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-root11-static-controls-v5-CWh0zu/README.md",
+      "archived": "static-v5/README.md",
+      "sha256": "48e3be6cbd1462dac7fe2bdcaa5ff5e052205855b95c3bee822f0d50def037ac",
+      "bytes": 1714,
+      "observed_original_stat": [
+        16777233,
+        377369244,
+        33188,
+        501,
+        0,
+        1,
+        1714,
+        1791492974984.0393,
+        1791492974984.0393
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-root11-static-controls-v5-CWh0zu/forward.diff",
+      "archived": "static-v5/forward.diff",
+      "sha256": "8d26f350ae194c2dd11e61e27d8c53c4be48b5bbb21ed90a591205f32c183469",
+      "bytes": 6103,
+      "observed_original_stat": [
+        16777233,
+        377369215,
+        33188,
+        501,
+        0,
+        1,
+        6103,
+        1791492967377.2158,
+        1791492967377.2158
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-root11-static-controls-v5-CWh0zu/inverse.diff",
+      "archived": "static-v5/inverse.diff",
+      "sha256": "29a1aeb8a7f781b2c0a63196112d627fb8b8624a72f97498bc41324b58ec1100",
+      "bytes": 6103,
+      "observed_original_stat": [
+        16777233,
+        377369216,
+        33188,
+        501,
+        0,
+        1,
+        6103,
+        1791492967444.5334,
+        1791492967444.5334
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-root11-static-controls-v5-CWh0zu/preimages/verify-prepared-wrapper-v4.mjs",
+      "archived": "static-v5/preimages/verify-prepared-wrapper-v4.mjs",
+      "sha256": "af0a86273d02e5c750ab0561d5408b9dfeb44d3bbf9d60dcff59e775cc5de51c",
+      "bytes": 23049,
+      "observed_original_stat": [
+        16777233,
+        377369110,
+        33188,
+        501,
+        0,
+        1,
+        23049,
+        1791492575166.0286,
+        1791492931259.5117
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-root11-static-controls-v5-CWh0zu/verify-prepared-wrapper.mjs",
+      "archived": "static-v5/verify-prepared-wrapper.mjs",
+      "sha256": "2b1be55655a6db0dbbb96dd0726cf5317672487de62babe373eb012fb49e9840",
+      "bytes": 25610,
+      "observed_original_stat": [
+        16777233,
+        377369119,
+        33188,
+        501,
+        0,
+        1,
+        25610,
+        1791492957511.4148,
+        1791492957511.4148
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-chrome-recheck-OiYEpV/copy-current.json",
+      "archived": "chrome-signature-red/copy-current.json",
+      "sha256": "d89e52ec0d6877aed99653b6f24d654cb20929c2d0007e45eb5d81ec276be472",
+      "bytes": 403262,
+      "observed_original_stat": [
+        16777233,
+        377366689,
+        33152,
+        501,
+        0,
+        1,
+        403262,
+        1791492152904.0852,
+        1791492152904.0852
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-chrome-recheck-OiYEpV/recheck-receipt.json",
+      "archived": "chrome-signature-red/recheck-receipt.json",
+      "sha256": "e40ea57f4fe7af34a8693b35848be2625317bf2bc6bda0afe5f904276209e501",
+      "bytes": 2181,
+      "observed_original_stat": [
+        16777233,
+        377366692,
+        33152,
+        501,
+        0,
+        1,
+        2181,
+        1791492152941.441,
+        1791492152941.441
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-chrome-recheck-OiYEpV/source-current.json",
+      "archived": "chrome-signature-red/source-current.json",
+      "sha256": "c0194aef8706fde7c8fdc252e820f3357daa1679f2366508a22d030d56316820",
+      "bytes": 403189,
+      "observed_original_stat": [
+        16777233,
+        377366688,
+        33152,
+        501,
+        0,
+        1,
+        403189,
+        1791492152889.9573,
+        1791492152889.9573
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-chrome-recheck-OiYEpV/strict.stderr",
+      "archived": "chrome-signature-red/strict.stderr",
+      "sha256": "5f44dda261a99f30d3e7f0dd3ea02026d49230843413189175ad43ab1c11fb81",
+      "bytes": 148,
+      "observed_original_stat": [
+        16777233,
+        377366691,
+        33152,
+        501,
+        0,
+        1,
+        148,
+        1791492152932.1624,
+        1791492152932.1624
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-chrome-recheck-OiYEpV/strict.stdout",
+      "archived": "chrome-signature-red/strict.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "observed_original_stat": [
+        16777233,
+        377366690,
+        33152,
+        501,
+        0,
+        1,
+        0,
+        1791492152928.1633,
+        1791492152928.1885
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-chrome-recheck-oQS1S0/copy-current.json",
+      "archived": "chrome-signature-green/copy-current.json",
+      "sha256": "d89e52ec0d6877aed99653b6f24d654cb20929c2d0007e45eb5d81ec276be472",
+      "bytes": 403262,
+      "observed_original_stat": [
+        16777233,
+        377366928,
+        33152,
+        501,
+        0,
+        1,
+        403262,
+        1791492182761.6963,
+        1791492182761.6963
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-chrome-recheck-oQS1S0/recheck-receipt.json",
+      "archived": "chrome-signature-green/recheck-receipt.json",
+      "sha256": "98eb89a3e8c982a8f88a4d102fb0be7859d66a42d7bd05be2f7118a9c56c6ae8",
+      "bytes": 2089,
+      "observed_original_stat": [
+        16777233,
+        377366931,
+        33152,
+        501,
+        0,
+        1,
+        2089,
+        1791492183646.0623,
+        1791492183646.0623
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-chrome-recheck-oQS1S0/source-current.json",
+      "archived": "chrome-signature-green/source-current.json",
+      "sha256": "c0194aef8706fde7c8fdc252e820f3357daa1679f2366508a22d030d56316820",
+      "bytes": 403189,
+      "observed_original_stat": [
+        16777233,
+        377366927,
+        33152,
+        501,
+        0,
+        1,
+        403189,
+        1791492182756.1023,
+        1791492182756.1023
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-chrome-recheck-oQS1S0/strict.stderr",
+      "archived": "chrome-signature-green/strict.stderr",
+      "sha256": "30f5b62854e5bee1b6301e639b90f66607bafcababa9c4999fc42913ebe1197c",
+      "bytes": 13701,
+      "observed_original_stat": [
+        16777233,
+        377366930,
+        33152,
+        501,
+        0,
+        1,
+        13701,
+        1791492183641.93,
+        1791492183641.93
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-chrome-recheck-oQS1S0/strict.stdout",
+      "archived": "chrome-signature-green/strict.stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "observed_original_stat": [
+        16777233,
+        377366929,
+        33152,
+        501,
+        0,
+        1,
+        0,
+        1791492183637.5193,
+        1791492183637.549
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-root11-chrome34667-diagnostic-PrqxhI/DIAGNOSIS.md",
+      "archived": "chrome-diagnostic/DIAGNOSIS.md",
+      "sha256": "091d5e3759b1e7d20d064f4b979c795640ca8682c238fc61b10fc9f582e9c6e5",
+      "bytes": 2795,
+      "observed_original_stat": [
+        16777233,
+        377373426,
+        33188,
+        501,
+        0,
+        1,
+        2795,
+        1791493545815.3826,
+        1791493545815.3826
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-root11-chrome34667-diagnostic-PrqxhI/INDEX.json",
+      "archived": "chrome-diagnostic/INDEX.json",
+      "sha256": "16b1671ca7806602c1096bad091378f577a5714bee7a1957a33e7ea2dbf367d4",
+      "bytes": 2512,
+      "observed_original_stat": [
+        16777233,
+        377373478,
+        33188,
+        501,
+        0,
+        1,
+        2512,
+        1791493575489.145,
+        1791493575489.145
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-root11-chrome34667-diagnostic-PrqxhI/collect.mjs",
+      "archived": "chrome-diagnostic/collect.mjs",
+      "sha256": "ae2103c7c59d87b7ff1a5a85ad3eb3c13cd6bd7d20a77deb3168311cf4675ded",
+      "bytes": 2511,
+      "observed_original_stat": [
+        16777233,
+        377373126,
+        33188,
+        501,
+        0,
+        1,
+        2511,
+        1791493403824.92,
+        1791493403824.92
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-root11-chrome34667-diagnostic-PrqxhI/raw/receipt.json",
+      "archived": "chrome-diagnostic/raw/receipt.json",
+      "sha256": "622015a931189b17f270fd8975f55e5eabf4b63983c0ec67d4c803e4754ddcaa",
+      "bytes": 323552,
+      "observed_original_stat": [
+        16777233,
+        377373034,
+        33152,
+        501,
+        0,
+        1,
+        323552,
+        1791493190170.7632,
+        1791493375903.3308
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-root11-chrome34667-diagnostic-PrqxhI/raw/service-start.json",
+      "archived": "chrome-diagnostic/raw/service-start.json",
+      "sha256": "cf03f5ad6cf0482893dcb36320ea14341e6be1169751066b3bb2466dd8888647",
+      "bytes": 7031,
+      "observed_original_stat": [
+        16777233,
+        377373040,
+        33152,
+        501,
+        0,
+        1,
+        7031,
+        1791493180630.198,
+        1791493378549.5562
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-root11-chrome34667-diagnostic-PrqxhI/raw/stderr.log",
+      "archived": "chrome-diagnostic/raw/stderr.log",
+      "sha256": "8cf2a28b16fd7c75e801705e57df7d224c2d0bb7110d6804363423d858f224b7",
+      "bytes": 2876,
+      "observed_original_stat": [
+        16777233,
+        377373044,
+        33152,
+        501,
+        0,
+        1,
+        2876,
+        1791493189090.4326,
+        1791493381310.193
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-root11-chrome34667-diagnostic-PrqxhI/raw/stdout.log",
+      "archived": "chrome-diagnostic/raw/stdout.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "observed_original_stat": [
+        16777233,
+        377373051,
+        33152,
+        501,
+        0,
+        1,
+        0,
+        1791493179847.2097,
+        1791493384729.5283
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-root11-chrome34667-diagnostic-PrqxhI/receipt.json",
+      "archived": "chrome-diagnostic/receipt.json",
+      "sha256": "e07ce7c36862af3abe4b95dfb89d353bd4e34e88bd5ac46e95180daa274fe534",
+      "bytes": 1547,
+      "observed_original_stat": [
+        16777233,
+        377373141,
+        33152,
+        501,
+        0,
+        1,
+        1547,
+        1791493410382.1338,
+        1791493410382.1338
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-root11-chrome34667-diagnostic-PrqxhI/stderr.log",
+      "archived": "chrome-diagnostic/stderr.log",
+      "sha256": "3d1bfc20628becabc4bda68e57c58ad567d3a8aa0c8aa281f68b58bb28a3d0e5",
+      "bytes": 32,
+      "observed_original_stat": [
+        16777233,
+        377373140,
+        33152,
+        501,
+        0,
+        1,
+        32,
+        1791493410381.5518,
+        1791493410381.5518
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-root11-chrome34667-diagnostic-PrqxhI/stdout.json",
+      "archived": "chrome-diagnostic/stdout.json",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "observed_original_stat": [
+        16777233,
+        377373139,
+        33152,
+        501,
+        0,
+        1,
+        0,
+        1791493410381.362,
+        1791493410381.3835
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-root11-chrome34667-diagnostic-PrqxhI/system-authorized/collect.mjs",
+      "archived": "chrome-diagnostic/system-authorized/collect.mjs",
+      "sha256": "5b50097eb239e02f69b9968f9b99bc6a7ccbed444d925351cb0c7579ab7b3126",
+      "bytes": 2515,
+      "observed_original_stat": [
+        16777233,
+        377373313,
+        33188,
+        501,
+        0,
+        1,
+        2515,
+        1791493427296.9124,
+        1791493501588.8577
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-root11-chrome34667-diagnostic-PrqxhI/system-authorized/receipt.json",
+      "archived": "chrome-diagnostic/system-authorized/receipt.json",
+      "sha256": "1d5d94ddbef77aa9bc9e966dd478fed52264b0be4d4968b58700247923ed313a",
+      "bytes": 1524,
+      "observed_original_stat": [
+        16777233,
+        377373302,
+        33152,
+        501,
+        0,
+        1,
+        1524,
+        1791493436874.542,
+        1791493494009.9048
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-root11-chrome34667-diagnostic-PrqxhI/system-authorized/stderr.log",
+      "archived": "chrome-diagnostic/system-authorized/stderr.log",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0,
+      "observed_original_stat": [
+        16777233,
+        377373310,
+        33152,
+        501,
+        0,
+        1,
+        0,
+        1791493436873.7046,
+        1791493499059.4722
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-root11-chrome34667-diagnostic-PrqxhI/system-authorized/stdout.json",
+      "archived": "chrome-diagnostic/system-authorized/stdout.json",
+      "sha256": "0ac8e9ffd9f61de084f9a32696ee85e646d534ffb18a381e2a14290bd49f1b93",
+      "bytes": 159069,
+      "observed_original_stat": [
+        16777233,
+        377373307,
+        33152,
+        501,
+        0,
+        1,
+        159069,
+        1791493436873.5337,
+        1791493496621.006
+      ]
+    },
+    {
+      "original": "/private/tmp/therese-c17-resume-deadline-20261008-GvYugGrD/budget-before.json",
+      "archived": "budget-before.json",
+      "sha256": "03cb1c7f83f13cb879aa7b334203aaf17b3b79fa393b35b6051defaa8ecd17e2",
+      "bytes": 130919,
+      "observed_original_stat": [
+        16777233,
+        377347136,
+        33188,
+        501,
+        20,
+        1,
+        130919,
+        1791478309824.7375,
+        1791491464983.3025
+      ]
+    }
+  ]
+}

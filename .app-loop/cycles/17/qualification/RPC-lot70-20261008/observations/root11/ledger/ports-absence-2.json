@@ -1,0 +1,288 @@
+{
+  "schema": "c17-runtime78-ports-absence-v1",
+  "ports_absent": [
+    17593,
+    5173
+  ],
+  "auxiliary_ports_absent": [
+    17594
+  ],
+  "ports_absence_proved": true,
+  "scans": [
+    [
+      {
+        "port": 17593,
+        "argv": [
+          "/usr/sbin/lsof",
+          "-nP",
+          "-iTCP:17593",
+          "-sTCP:LISTEN",
+          "-F",
+          "p"
+        ],
+        "launch": [
+          "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source/.venv-conforme/bin/python",
+          "-I",
+          "-B",
+          "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/g1/lsof_gate.py",
+          "17593"
+        ],
+        "identity": {
+          "pid": 34918,
+          "ppid": 34522,
+          "uid": 501,
+          "pgid": 34918,
+          "status": 2,
+          "start_sec": 1791493192,
+          "start_usec": 551632,
+          "role": "diagnostic-lsof",
+          "parent_birth": [
+            34522,
+            1791493148,
+            79483
+          ],
+          "attribution": "popen_child_before_workload",
+          "captured_at": "2026-10-08T20:59:52.554149+00:00"
+        },
+        "returncode": 1,
+        "stdout": "",
+        "stderr": "",
+        "cleanup": null,
+        "elapsed_seconds": 0.03986562500358559,
+        "pids": [],
+        "observed_at": "2026-10-08T20:59:52.591591+00:00"
+      },
+      {
+        "port": 5173,
+        "argv": [
+          "/usr/sbin/lsof",
+          "-nP",
+          "-iTCP:5173",
+          "-sTCP:LISTEN",
+          "-F",
+          "p"
+        ],
+        "launch": [
+          "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source/.venv-conforme/bin/python",
+          "-I",
+          "-B",
+          "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/g1/lsof_gate.py",
+          "5173"
+        ],
+        "identity": {
+          "pid": 34920,
+          "ppid": 34522,
+          "uid": 501,
+          "pgid": 34920,
+          "status": 2,
+          "start_sec": 1791493192,
+          "start_usec": 591741,
+          "role": "diagnostic-lsof",
+          "parent_birth": [
+            34522,
+            1791493148,
+            79483
+          ],
+          "attribution": "popen_child_before_workload",
+          "captured_at": "2026-10-08T20:59:52.593041+00:00"
+        },
+        "returncode": 1,
+        "stdout": "",
+        "stderr": "",
+        "cleanup": null,
+        "elapsed_seconds": 0.03582295900559984,
+        "pids": [],
+        "observed_at": "2026-10-08T20:59:52.627662+00:00"
+      },
+      {
+        "port": 17594,
+        "argv": [
+          "/usr/sbin/lsof",
+          "-nP",
+          "-iTCP:17594",
+          "-sTCP:LISTEN",
+          "-F",
+          "p"
+        ],
+        "launch": [
+          "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source/.venv-conforme/bin/python",
+          "-I",
+          "-B",
+          "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/g1/lsof_gate.py",
+          "17594"
+        ],
+        "identity": {
+          "pid": 34922,
+          "ppid": 34522,
+          "uid": 501,
+          "pgid": 34922,
+          "status": 2,
+          "start_sec": 1791493192,
+          "start_usec": 627813,
+          "role": "diagnostic-lsof",
+          "parent_birth": [
+            34522,
+            1791493148,
+            79483
+          ],
+          "attribution": "popen_child_before_workload",
+          "captured_at": "2026-10-08T20:59:52.628979+00:00"
+        },
+        "returncode": 1,
+        "stdout": "",
+        "stderr": "",
+        "cleanup": null,
+        "elapsed_seconds": 0.03549104099511169,
+        "pids": [],
+        "observed_at": "2026-10-08T20:59:52.663402+00:00"
+      }
+    ],
+    [
+      {
+        "port": 17593,
+        "argv": [
+          "/usr/sbin/lsof",
+          "-nP",
+          "-iTCP:17593",
+          "-sTCP:LISTEN",
+          "-F",
+          "p"
+        ],
+        "launch": [
+          "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source/.venv-conforme/bin/python",
+          "-I",
+          "-B",
+          "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/g1/lsof_gate.py",
+          "17593"
+        ],
+        "identity": {
+          "pid": 34924,
+          "ppid": 34522,
+          "uid": 501,
+          "pgid": 34924,
+          "status": 2,
+          "start_sec": 1791493192,
+          "start_usec": 666037,
+          "role": "diagnostic-lsof",
+          "parent_birth": [
+            34522,
+            1791493148,
+            79483
+          ],
+          "attribution": "popen_child_before_workload",
+          "captured_at": "2026-10-08T20:59:52.667267+00:00"
+        },
+        "returncode": 1,
+        "stdout": "",
+        "stderr": "",
+        "cleanup": null,
+        "elapsed_seconds": 0.0361169170064386,
+        "pids": [],
+        "observed_at": "2026-10-08T20:59:52.702277+00:00"
+      },
+      {
+        "port": 5173,
+        "argv": [
+          "/usr/sbin/lsof",
+          "-nP",
+          "-iTCP:5173",
+          "-sTCP:LISTEN",
+          "-F",
+          "p"
+        ],
+        "launch": [
+          "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source/.venv-conforme/bin/python",
+          "-I",
+          "-B",
+          "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/g1/lsof_gate.py",
+          "5173"
+        ],
+        "identity": {
+          "pid": 34926,
+          "ppid": 34522,
+          "uid": 501,
+          "pgid": 34926,
+          "status": 2,
+          "start_sec": 1791493192,
+          "start_usec": 702442,
+          "role": "diagnostic-lsof",
+          "parent_birth": [
+            34522,
+            1791493148,
+            79483
+          ],
+          "attribution": "popen_child_before_workload",
+          "captured_at": "2026-10-08T20:59:52.703539+00:00"
+        },
+        "returncode": 1,
+        "stdout": "",
+        "stderr": "",
+        "cleanup": null,
+        "elapsed_seconds": 0.03585799998836592,
+        "pids": [],
+        "observed_at": "2026-10-08T20:59:52.738396+00:00"
+      },
+      {
+        "port": 17594,
+        "argv": [
+          "/usr/sbin/lsof",
+          "-nP",
+          "-iTCP:17594",
+          "-sTCP:LISTEN",
+          "-F",
+          "p"
+        ],
+        "launch": [
+          "/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source/.venv-conforme/bin/python",
+          "-I",
+          "-B",
+          "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3/g1/lsof_gate.py",
+          "17594"
+        ],
+        "identity": {
+          "pid": 34928,
+          "ppid": 34522,
+          "uid": 501,
+          "pgid": 34928,
+          "status": 2,
+          "start_sec": 1791493192,
+          "start_usec": 738576,
+          "role": "diagnostic-lsof",
+          "parent_birth": [
+            34522,
+            1791493148,
+            79483
+          ],
+          "attribution": "popen_child_before_workload",
+          "captured_at": "2026-10-08T20:59:52.739740+00:00"
+        },
+        "returncode": 1,
+        "stdout": "",
+        "stderr": "",
+        "cleanup": null,
+        "elapsed_seconds": 0.035463000007439405,
+        "pids": [],
+        "observed_at": "2026-10-08T20:59:52.774130+00:00"
+      }
+    ]
+  ],
+  "residuals": [],
+  "ambiguities": [],
+  "attribution_errors": [],
+  "owner": {
+    "pid": 34522,
+    "ppid": 75818,
+    "uid": 501,
+    "pgid": 34522,
+    "status": 2,
+    "start_sec": 1791493148,
+    "start_usec": 79483
+  },
+  "observed_at": "2026-10-08T20:59:52.774175+00:00",
+  "port_absence_elapsed_seconds": 0.22517133300425485,
+  "actor": "/root",
+  "round_id": "therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3",
+  "head": "2d69e30c9c6dd18823ee6102271876003a6a67cc",
+  "qa_root": "/private/tmp/therese-c17-wrapper-canary-eff7b4e4f24649dd8628503bc7bfc8b3",
+  "phase": "services-stop"
+}

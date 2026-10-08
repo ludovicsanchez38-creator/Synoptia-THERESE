@@ -1,0 +1,66 @@
+--- verify-prepared-wrapper.mjs
++++ preimages/verify-prepared-wrapper-v3.mjs
+@@ -52,16 +52,8 @@
+   '/private/tmp/therese-c17-g1-26-pure-bmy35r8g/receipt.json',
+   '/private/tmp/therese-c17-g1-26-pure-we_pel56/receipt.json',
+ ]);
+-const historicalCrashIndex='/private/tmp/therese-c17-chrome-rootdomain-h5whIv/INDEX.json';
+-const historicalCrashRef={
+-  path:'/Users/synoptia/Library/Logs/DiagnosticReports/Google Chrome-2026-10-08-143832.000.ips',
+-  sha256:'2e1d81e295a1a75af7498e1698b4284c53206f7a031058ebd3331aad6fc8a3b3',
+-  bytes:31835,
+-};
+-const archivalCrashPath='/private/tmp/therese-c17-root-close6-I9BhiHpZ/chrome25577.ips';
+-const pointerChild=(pointer,key)=>pointer+'/'+String(key).replace(/~/g,'~0').replace(/\//g,'~1');
+-const collect=(x,origin='direct',pointer='')=>{
+-  if(Array.isArray(x))x.forEach((y,i)=>collect(y,origin,pointerChild(pointer,i)));
++const collect=(x,origin='direct')=>{
++  if(Array.isArray(x))x.forEach(y=>collect(y,origin));
+   else if(x&&typeof x==='object'){
+     if(x.schema==='c17-g1-26-pure-tests-v1'&&historicalG1ReceiptPaths.has(origin)){
+       // Ce reçu observe le passé : son contenu est pinné, ses snapshots ne sont
+@@ -70,42 +62,11 @@
+         &&x.pins_unchanged===true&&x.passed===true&&x.native_OS_qualification===false
+         &&x.FULL_admission===false,'Reçu historique G1 inattendu '+JSON.stringify({origin,count:x.pins_before?.length,unchanged:x.pins_unchanged,passed:x.passed,native:x.native_OS_qualification,FULL:x.FULL_admission,equal:JSON.stringify(x.pins_before)===JSON.stringify(x.pins_after)}));
+       historicalObservations.push({origin,kind:'pure_test_observation',refs:x.pins_before.length});
+-      for(const [k,v] of Object.entries(x))if(!['pins_before','pins_after'].includes(k))collect(v,origin,pointerChild(pointer,k));
+-    }else if(origin===historicalCrashIndex&&pointer==='/origin_refs/4'){
+-      need(sameRef(x,historicalCrashRef),'Rapport historique non exactement épinglé');
+-      const indexRef=ref(origin);
+-      need(indexRef.sha256==='c0f542c377d37efd8e88103e2d760fdc126b785793f167755a319f0f5fb8d3c6'
+-        &&indexRef.bytes===2605,'Index historique non exact');
+-      const evidenceRef=ref('/private/tmp/therese-c17-chrome-rootdomain-h5whIv/EVIDENCE.json');
+-      need(evidenceRef.sha256==='57253794719541add1642bc011ff0437248eb922eb798ec4b6132a8ff81c5f6a'
+-        &&evidenceRef.bytes===803,'Preuve historique non exacte');
+-      const evidence=read(evidenceRef.path);
+-      need(evidence.diagnostic_only===true&&evidence.chrome_pid===25577
+-        &&evidence.origin_crash_report===historicalCrashRef.path,'Observation historique hors diagnostic');
+-      let oldPathAbsent=false;
+-      try{fs.lstatSync(historicalCrashRef.path);}catch(error){oldPathAbsent=error?.code==='ENOENT';}
+-      need(oldPathAbsent,'Rapport historique non absent avec ENOENT');
+-      const archivedStat=fs.lstatSync(archivalCrashPath);
+-      need(archivedStat.isFile()&&!archivedStat.isSymbolicLink()
+-        &&archivedStat.uid===501&&archivedStat.gid===0&&archivedStat.mode===0o100600
+-        &&archivedStat.nlink===1&&fs.realpathSync(archivalCrashPath)===archivalCrashPath,
+-        'Copie archivale non canonique ou métadonnées inattendues');
+-      const archivedRef=ref(archivalCrashPath);
+-      need(archivedRef.sha256===historicalCrashRef.sha256&&archivedRef.bytes===historicalCrashRef.bytes,
+-        'Copie archivale différente du rapport historique');
+-      const old=refs.get(archivedRef.path);
+-      need(!old||sameRef(old,archivedRef),'Pins contradictoires copie archivale');
+-      if(!old){refs.set(archivedRef.path,archivedRef);pending.push(archivedRef);}
+-      historicalObservations.push({kind:'historical_crash_report_archival_byte_match',
+-        origin_index:indexRef,origin_pointer:pointer,evidence:evidenceRef,
+-        original_ref:historicalCrashRef,original_path_absent_ENOENT:oldPathAbsent,
+-        archival_ref:archivedRef,archival_metadata:{uid:archivedStat.uid,gid:archivedStat.gid,
+-          mode:archivedStat.mode,nlink:archivedStat.nlink},measured_at:new Date().toISOString(),
+-        close6_receipt_provenance_claimed:false});
++      for(const [k,v] of Object.entries(x))if(!['pins_before','pins_after'].includes(k))collect(v,origin);
+     }else if(typeof x.path==='string'&&x.path.startsWith('/')&&/^[a-f0-9]{64}$/.test(x.sha256)&&Object.keys(x).every(k=>['path','sha256','bytes','git_blob'].includes(k))){
+       const old=refs.get(x.path);need(!old||old.sha256===x.sha256,'Pins contradictoires '+x.path+' origine='+origin+' '+JSON.stringify({old,new:x}));
+       if(!old){refs.set(x.path,x);pending.push(x);}
+-    }else for(const [k,v] of Object.entries(x))collect(v,origin,pointerChild(pointer,k));
++    }else Object.values(x).forEach(y=>collect(y,origin));
+   }
+ };
+ const construction=read(root+'/fresh-wrapper-construction.json');

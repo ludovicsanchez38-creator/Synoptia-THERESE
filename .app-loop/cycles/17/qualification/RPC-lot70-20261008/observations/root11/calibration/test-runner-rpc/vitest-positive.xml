@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<testsuites name="vitest tests" tests="1" failures="1" errors="0" time="0.002663709">
+    <testsuite name="calibrationC17.test.ts" timestamp="2026-10-08T20:59:31.008Z" hostname="device-67.home" tests="1" failures="1" errors="0" skipped="0" time="0.002663709">
+        <testcase classname="calibrationC17.test.ts" name="détecte le défaut puis l’état sain" time="0.002337">
+            <failure message="expected 2 to be 1 // Object.is equality" type="AssertionError">
+AssertionError: expected 2 to be 1 // Object.is equality
+
+- Expected
++ Received
+
+- 1
++ 2
+
+ ❯ calibrationC17.test.ts:1:109
+            </failure>
+        </testcase>
+    </testsuite>
+</testsuites>

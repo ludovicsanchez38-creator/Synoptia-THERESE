@@ -1,0 +1,30 @@
+--- verify-prepared-wrapper.mjs
++++ preimages/verify-prepared-wrapper-main11-v2.mjs
+@@ -16,25 +16,10 @@
+ }
+ const qa='/private/tmp/therese-c17-wrapper-source-kGvU1hdx/source';
+ const head='2d69e30c9c6dd18823ee6102271876003a6a67cc';
+-need(process.getuid()===501,'UID utilisateur 501 exact requis');
+-const systemProfiles=new Map([
+-  ['/System/Library/Sandbox/Profiles/com.apple.GameOverlayUI.sb',
+-    {sha256:'6320ed0b8a6933b3c62cbfc8c3149a9f1dcc0a968cbfbc6f99a1270ab2c99257',bytes:10845}],
+-  ['/System/Library/Sandbox/Profiles/com.apple.gputoolsserviced.sb',
+-    {sha256:'fb1381764287e32128b8d6db40353059667ca4a2a64e7b778d1ef5773bb51841',bytes:7234}],
+-  ['/System/Library/Sandbox/Profiles/appsandbox-common.sb',
+-    {sha256:'b9ffebd2141aca32c609f4a707f5a6b980ae4be45299ee3f3c18534b69cb7cea',bytes:32355}],
+-]);
+ const ref=p=>{
+   const s=fs.lstatSync(p),b=fs.readFileSync(p);
+-  const sha256=crypto.createHash('sha256').update(b).digest('hex');
+-  const expectedSystem=systemProfiles.get(p);
+-  const ownerExact=expectedSystem
+-    ? s.uid===0&&s.gid===0&&s.mode===0o100644&&s.nlink===1
+-      &&sha256===expectedSystem.sha256&&b.length===expectedSystem.bytes
+-    : s.uid===501;
+-  need(s.isFile()&&!s.isSymbolicLink()&&ownerExact&&fs.realpathSync(p)===p,'Ref non canonique ou propriétaire non admis '+p);
+-  return {path:p,sha256,bytes:b.length};
++  need(s.isFile()&&!s.isSymbolicLink()&&s.uid===process.getuid()&&fs.realpathSync(p)===p,'Ref non canonique '+p);
++  return {path:p,sha256:crypto.createHash('sha256').update(b).digest('hex'),bytes:b.length};
+ };
+ const builderRef=ref('/private/tmp/therese-c17-wrapper-profile-three-builder-G8n4Ef/build_fresh_wrapper.py');
+ const builderProposalIndexRef=ref('/private/tmp/therese-c17-wrapper-profile-three-builder-G8n4Ef/PLAN-INDEX.json');

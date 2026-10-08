@@ -1,0 +1,88 @@
+--- preimages/verify-prepared-wrapper-v4.mjs
++++ verify-prepared-wrapper.mjs
+@@ -58,6 +58,19 @@
+   sha256:'2e1d81e295a1a75af7498e1698b4284c53206f7a031058ebd3331aad6fc8a3b3',
+   bytes:31835,
+ };
++const historicalCrashOrigins=new Map([
++  [historicalCrashIndex,{pointer:'/origin_refs/4',
++    sha256:'c0f542c377d37efd8e88103e2d760fdc126b785793f167755a319f0f5fb8d3c6',
++    bytes:2605,kind:'diagnostic_index'}],
++  ['/private/tmp/therese-c17-root-v10-71-replay-v3-zRFPBqd5/receipt.json',
++    {pointer:'/source_refs/267',
++      sha256:'c0864b435265a4c485c78837207184d3964e966689eb97785fe3ab4ff9e3f8e5',
++      bytes:68793,kind:'pure_replay_green',source_refs:307,passed:true,errors:0}],
++  ['/private/tmp/therese-c17-root-v10-71-replay-v2-eaECHtDi/receipt.json',
++    {pointer:'/source_refs/267',
++      sha256:'1955d363f88493a62d6423baeed094f10ab53fbb6ced7eaac94251ba73cdfb57',
++      bytes:66947,kind:'pure_replay_red',source_refs:303,passed:false,errors:3}],
++]);
+ const archivalCrashPath='/private/tmp/therese-c17-root-close6-I9BhiHpZ/chrome25577.ips';
+ const pointerChild=(pointer,key)=>pointer+'/'+String(key).replace(/~/g,'~0').replace(/\//g,'~1');
+ const collect=(x,origin='direct',pointer='')=>{
+@@ -71,17 +84,45 @@
+         &&x.FULL_admission===false,'Reçu historique G1 inattendu '+JSON.stringify({origin,count:x.pins_before?.length,unchanged:x.pins_unchanged,passed:x.passed,native:x.native_OS_qualification,FULL:x.FULL_admission,equal:JSON.stringify(x.pins_before)===JSON.stringify(x.pins_after)}));
+       historicalObservations.push({origin,kind:'pure_test_observation',refs:x.pins_before.length});
+       for(const [k,v] of Object.entries(x))if(!['pins_before','pins_after'].includes(k))collect(v,origin,pointerChild(pointer,k));
+-    }else if(origin===historicalCrashIndex&&pointer==='/origin_refs/4'){
++    }else if(historicalCrashOrigins.has(origin)&&pointer===historicalCrashOrigins.get(origin).pointer){
++      const expectedOrigin=historicalCrashOrigins.get(origin);
+       need(sameRef(x,historicalCrashRef),'Rapport historique non exactement épinglé');
+-      const indexRef=ref(origin);
+-      need(indexRef.sha256==='c0f542c377d37efd8e88103e2d760fdc126b785793f167755a319f0f5fb8d3c6'
+-        &&indexRef.bytes===2605,'Index historique non exact');
+-      const evidenceRef=ref('/private/tmp/therese-c17-chrome-rootdomain-h5whIv/EVIDENCE.json');
+-      need(evidenceRef.sha256==='57253794719541add1642bc011ff0437248eb922eb798ec4b6132a8ff81c5f6a'
+-        &&evidenceRef.bytes===803,'Preuve historique non exacte');
+-      const evidence=read(evidenceRef.path);
+-      need(evidence.diagnostic_only===true&&evidence.chrome_pid===25577
+-        &&evidence.origin_crash_report===historicalCrashRef.path,'Observation historique hors diagnostic');
++      const originRef=ref(origin);
++      need(originRef.sha256===expectedOrigin.sha256&&originRef.bytes===expectedOrigin.bytes,
++        'Origine historique non exacte');
++      let evidenceRef=null;
++      if(expectedOrigin.kind==='diagnostic_index'){
++        const index=read(origin);
++        need(index.origin_refs?.length===5&&sameRef(index.origin_refs[4],historicalCrashRef),
++          'Pointeur du rapport historique non exact');
++        evidenceRef=ref('/private/tmp/therese-c17-chrome-rootdomain-h5whIv/EVIDENCE.json');
++        need(evidenceRef.sha256==='57253794719541add1642bc011ff0437248eb922eb798ec4b6132a8ff81c5f6a'
++          &&evidenceRef.bytes===803,'Preuve historique non exacte');
++        const evidence=read(evidenceRef.path);
++        need(evidence.diagnostic_only===true&&evidence.chrome_pid===25577
++          &&evidence.origin_crash_report===historicalCrashRef.path,'Observation historique hors diagnostic');
++      }else{
++        const receipt=read(origin);
++        need(receipt.schema==='c17-root-v10-71-pure-replay-v1'&&receipt.actor==='/root'
++          &&receipt.tests===71&&receipt.unchanged===true
++          &&receipt.passed===expectedOrigin.passed&&receipt.errors===expectedOrigin.errors
++          &&receipt.failures===0&&receipt.skipped===0
++          &&receipt.root_built===false&&receipt.G1_imported===false
++          &&receipt.native_workload_executed===false&&receipt.FULL===false&&receipt.release===false
++          &&Array.isArray(receipt.forbidden_attempts)&&receipt.forbidden_attempts.length===0
++          &&receipt.source_refs?.length===expectedOrigin.source_refs
++          &&sameRef(receipt.source_refs[267],historicalCrashRef),
++          'Reçu de tests purs historique inattendu ou réétiqueté');
++        if(expectedOrigin.kind==='pure_replay_green'){
++          need(Array.isArray(receipt.fixture_entries_after_cleanup)
++            &&receipt.fixture_entries_after_cleanup.length===0
++            &&sameRef(receipt.earlier_red_receipt_ref,{
++              path:'/private/tmp/therese-c17-root-v10-71-replay-v2-eaECHtDi/receipt.json',
++              sha256:'1955d363f88493a62d6423baeed094f10ab53fbb6ced7eaac94251ba73cdfb57',
++              bytes:66947}),
++            'Reçu vert historique détaché du rouge');
++        }
++      }
+       let oldPathAbsent=false;
+       try{fs.lstatSync(historicalCrashRef.path);}catch(error){oldPathAbsent=error?.code==='ENOENT';}
+       need(oldPathAbsent,'Rapport historique non absent avec ENOENT');
+@@ -97,7 +138,8 @@
+       need(!old||sameRef(old,archivedRef),'Pins contradictoires copie archivale');
+       if(!old){refs.set(archivedRef.path,archivedRef);pending.push(archivedRef);}
+       historicalObservations.push({kind:'historical_crash_report_archival_byte_match',
+-        origin_index:indexRef,origin_pointer:pointer,evidence:evidenceRef,
++        origin:originRef,origin_kind:expectedOrigin.kind,origin_pointer:pointer,evidence:evidenceRef,
++        pure_replay_passed:expectedOrigin.passed??null,pure_replay_errors:expectedOrigin.errors??null,
+         original_ref:historicalCrashRef,original_path_absent_ENOENT:oldPathAbsent,
+         archival_ref:archivedRef,archival_metadata:{uid:archivedStat.uid,gid:archivedStat.gid,
+           mode:archivedStat.mode,nlink:archivedStat.nlink},measured_at:new Date().toISOString(),
