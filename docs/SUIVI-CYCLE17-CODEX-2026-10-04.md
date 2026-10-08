@@ -1324,3 +1324,62 @@ reprennent par la réparation de l'instrument RPC, sans qualifier une chasse
 ou une ronde à partir de ces instruments. Trois agents distincts reprennent
 transport, adaptation de Session et tests des cinq vrais wrappers, sous un
 dossier neuf. Ni transition forcée, ni nouvelle release dans cette reprise.
+
+## Lot 60 : transport RPC implémenté, premier canari Mac rouge
+
+La transition normale `DISCOVER → CALIBRATE` est effectivement enregistrée
+le 8 octobre à 07:47:30 UTC. Le cycle reste actif ; aucun gate ou plafond de
+temps/appels n'est contourné. Les cinq calibrations expirées ne sont pas
+renouvelées par les travaux qui suivent.
+
+Le nouveau transport possède quinze commandes fermées, des contextes
+préémis sans PID futur et une empreinte de plan extérieure au contexte.
+La vraie birth est enrôlée après le gate et avant sa libération. Le peer
+Unix est observé hors payload ; les codes bruts non nuls restent conservés.
+Root corrige aussi une course Darwin : garder la connexion après l'ACK
+jusqu'à fermeture du client permet sa dernière vérification `LOCAL_PEERPID`.
+Les capacités produit/FULL restent toutes fermées.
+
+Après gel et relecture distincte, root rejoue six suites pures :
+15 + 47 + 17 + 68 + 27 + 2 = 176 cas distincts, zéro erreur/échec/saut.
+Les 24 pins communs sont identiques avant/après chaque suite et rehashés
+ensuite, ainsi que les six reçus et leurs douze sorties brutes. Les mêmes
+47 corps de wrappers sont également rejoués par un autre agent ; ils ne
+comptent pas comme 47 cas supplémentaires. Les essais intermédiaires
+restent historiques. Aucun de ces tests purs ne qualifie G1/kernel/Seatbelt.
+
+Le premier lancement natif root est réellement exécuté dans
+`/private/tmp/therese-c17-rpc-canary-positive-7gdu85a5`, avec seize sources
+copiées byte-exactes et un profil jetable. Résultat final : code 86,
+`unqualified_instrument_or_lifecycle`. Les deux parents inertes retournent
+86 avant toute requête RPC : leur contrôle confondait création d'une socket
+IP et accès réseau. Le second socket Unix vivant est bien refusé, errno 1 ;
+la création TCP est permise, sans qu'une connexion TCP ait été tentée.
+Ce refus de qualification n'est ni une fuite démontrée, ni un bug produit.
+
+Les deux births lancées sont terminées, sans handle attribué restant,
+ambiguïté, erreur ou signal de nettoyage. Le reçu d'arrêt indique
+`session_closed=true`, `clean=true`, borne respectée, 0,006509875 s.
+Les seize sources sont rehashées inchangées après l'essai. Aucun enfant
+RPC/Node n'a encore été lancé ; l'identité Unix du transport et son timeout
+ne sont donc pas qualifiés. Une nouvelle copie séparée prépare des témoins
+connect/send vers des counterparts loopback vivants, sans élargir le profil.
+
+Le gel précédent, ses préimages, les 176 cas, les lectures publiques et ce
+canari rouge sont sauvegardés dans l'archive locale ignorée
+`qualification/RPC-G5-lot60-20261008-gObOf0ef/PROOFS.tar.gz`, 11 277 107 octets,
+SHA-256 `cea6b4d5faf559fb55a47c86edbb952dd9ff5cf4969f28f755a3d576aff73516`.
+Copie `cmp` réellement égale. Les sockets et caches Python sont exclus ;
+les références/inodes originaux ne sont pas réécrits ou requalifiés.
+L'index root archivé est `ROOT-FREEZE-20261008.json`, SHA-256
+`2a1159a621747d69288bcde870b4122359a3df820b6f471921de8b76c2f2997d`.
+Les faits du contrôle des deux releases publiques sont dans le snapshot
+archivé `public-releases-20261008.json`, avec les réponses landing/updater.
+Ce contrôle n'a modifié aucune publication et ne revérifie pas les binaires.
+
+Usage consigné : 60 lots logiques, plancher natif conservateur 11 926 892
+tokens, correction positive de 1 514 242 ; durée ajoutée 0 pour ne pas
+additionner le travail parallèle. Ce n'est pas une facture API. Le contrôle
+effectif retourne `Budget: PASS`, code 0. L'objectif natif reste actif et
+inaccompli : HEAD frais, cinq calibrations et deux rondes indépendantes
+restent requis avant le processus de release.
