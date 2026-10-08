@@ -1441,3 +1441,123 @@ Usage consigné : 61 lots logiques, plancher natif conservateur 12 817 563
 tokens ; ajout 890 671, durée 0, pas une facture API. Contrôle effectif
 `Budget: PASS`, code 0, phase CALIBRATE active. Les plafonds de tokens
 restent désactivés ; ceux de temps/appels et les gates restent inchangés.
+
+## Lot 62 : raccord des wrappers réels, quatre essais clos
+
+Le constructeur prépare désormais la vraie table des quinze enfants et les
+cinq contextes Chrome sans PID futur. La copie produit QA est un checkout
+détaché sur `2d69e30c`, avec 3 579 blobs Git, modes et octets vérifiés.
+Les profils, données et ports QA restent distincts du profil réel de Ludo.
+Les onze sorties de base restent byte-exactes ; l'admission est WRAPPER
+seulement. Les capacités FULL, les 78 obligations et les rondes A/B restent
+fermées. Aucun fichier produit, version ou publication n'est modifié.
+
+Quatre essais natifs root sont réellement exécutés et terminent avec code
+86. Aucun n'est relabellé comme une réussite produit :
+
+- RED1 : Vite ne peut pas lire les métadonnées du parent du checkout QA ;
+  aucune readiness et zéro RPC.
+- RED2 : le parent `session-events` manquait ; la readiness est réelle,
+  mais Vite refuse aussi `stat /`. Zéro RPC. Ces deux défauts de construction
+  sont corrigés dans des racines neuves, sans relancer les racines closes.
+- RED3 : sept demandes/ACK, six feuilles réellement lancées. Pytest échoue
+  à la collecte du mauvais rootdir ; Vitest échoue sur DNS localhost ;
+  Chrome s'arrête sur l'exception NSBundle. Le témoin logs passe.
+- RED4 : rootdir pytest et host IPv4 Vitest sont bornés exactement.
+  Les quatre témoins ont désormais les vrais XML : codes 1/0/1/0,
+  un testcase chacun, le défaut injecté produit une assertion causale,
+  sans erreur de collecte ni saut. Les deux parents test-runner/logs
+  retournent 0. Chrome retourne -6 sans timeout : ses bruts montrent un
+  refus Crashpad distinct et son rapport SIGABRT la pile
+  `_RegisterApplication`/AppKit. Sept ACK sur quinze, aucun faux complet.
+
+Le dernier constructeur passe 27 tests purs root, dont 16 hérités non
+recomptés comme nouveaux cas ; le correctif des frontières test-runner
+passe 17 tests purs. Ces pures ne qualifient pas le kernel ou FULL.
+ROOT4 porte 76 références source, soit les 63 initiales conservées,
+sept copies de preuves et six diffs. La préparation root rehash 4 202
+références transitives courantes ; trois snapshots intermédiaires de
+tests G1 restent des observations historiques du reçu, jamais des bindings
+courants sur des chemins modifiés. La revue indépendante de préparation
+vérifie séparément 3 777 chemins physiques et les blobs/modes du checkout.
+
+L'arrêt physique est prouvé pour les identités attribuées des quatre essais.
+Pour RED4, root vérifie 515 refs et 30 joins de signaux dans son jeu de
+reçus sélectionné. La relecture indépendante vérifie 177 chemins,
+37 publications hardlink et 45 occurrences de signaux, soit 15 événements
+uniques sur les births backend/Vite/descendant. Aucun signal sur l'owner
+ou Chrome. Les deux scans finaux de chacun des trois ports QA sont vides.
+Nettoyages services puis close : 1,210509166 s et 0,939976208 s, bornes
+respectées, handlers restaurés, aucun résidu/ambiguïté/erreur attribué.
+Les champs originaux clean/stabilité faux, taint vrai et
+`owned_shutdown_proved=false` de RED2/3/4 restent inchangés.
+Ces preuves sont finies : elles ne garantissent pas l'exhaustivité de
+descendants très courts. Crashpad11321 est dans le rapport macOS avec
+PPID1, mais n'a pas de birth capturée dans le ledger Chrome.
+
+Les quatre archives locales ignorées sont sous
+`qualification/RPC-WRAPPER-lot62-20261008/` :
+
+- `RED1.tar.gz` : 768 635 octets, SHA-256
+  `71418861c2edb3e15eee1d3c98f28f72edf341adc5895ca8b5f2c8a2d99cb3a4`.
+- `RED2.tar.gz` : 1 812 161 octets, SHA-256
+  `b757566c55de9c1268bc86eba80d446399f5154bececc7a17a60b160fa9fa71a`.
+- `RED3.tar.gz` : 1 931 641 octets, SHA-256
+  `1934135e85944f679e3009065b7af33adbaaf56f0de433d3efd50025b9f75ff0`.
+- `RED4.tar.gz` : 2 010 932 octets, SHA-256
+  `91651dc7bda4b35077ce372bb0b220c9107b5dbaf4b320adc0eace189940934e`.
+
+`PREPARATIONS.tar.gz`, 69 001 octets, SHA-256
+`28699c7b8c08d84710f4358c6be0963209c3f2f06452786a7a82e282f69d469e`,
+conserve séparément le builder des six calibrations closes (55 pures root),
+le producteur Git A/B et sa demande après vrai stop (19 pures root),
+et le candidat Chrome à deux lookups UI exacts (six pures root).
+Les copies sont réellement égales par `cmp`, intégrité gzip contrôlée ;
+sockets/caches exclus, références et inodes originaux non rebasés.
+Ces préparations n'ont émis aucune calibration A/B réelle. Le prochain
+essai Chrome doit encore valider les deux lookups issus de ses diagnostics,
+sans permission globale Mach/presse-papiers/TCC/profil personnel/Internet.
+Le raccord FULL, notamment ses bindings tardifs et la lecture bornée des
+trois décisions externes par le builder, reste à qualifier séparément.
+
+Usage consigné : 62 lots logiques, plancher natif conservateur 18 024 955
+tokens ; ajout 5 207 392, durée ajoutée 0 pour le parallèle. Ce n'est pas
+une facture API. Le contrôle effectif retourne `Budget: PASS`, code 0.
+Les plafonds de tokens restent désactivés conformément à Ludo ; les
+limites de temps/appels et les gates restent appliquées. Phase CALIBRATE
+active, zéro ronde de plateau actuelle et aucune release nouvelle.
+
+## Demande pour la prochaine boucle : actualiser les modèles
+
+Ajout de Ludo le 8 octobre 2026 : intégrer les derniers modèles disponibles,
+en particulier Sonnet 5.5, Haiku 5.5, GPT-6.1 Sol, et examiner Grok 4.7 et
+Mistral Large 4. Cette demande vise la prochaine boucle, pas un élargissement
+du cycle 17 ni de la release actuellement en qualification.
+
+Le triage documentaire du 8 octobre confirme les cinq noms sur des pages
+officielles ouvertes par root et un relecteur indépendant. Ce relevé sera
+revérifié au moment de l'intégration. Il ne prouve ni l'accès des comptes
+de Ludo ni la compatibilité réelle des providers actuels.
+
+| Candidat | Identifiant API documenté | Fiche officielle |
+| --- | --- | --- |
+| Sonnet 5.5 | `claude-sonnet-5-5` | [Anthropic](https://platform.claude.com/docs/en/models/sonnet-5-5/overview) |
+| Haiku 5.5 | `claude-haiku-5-5` | [Anthropic](https://platform.claude.com/docs/en/models/haiku-5-5/overview) |
+| GPT-6.1 Sol | `gpt-6.1-sol` | [OpenAI](https://developers.openai.com/api/docs/models/gpt-6.1-sol) |
+| Grok 4.7 | `grok-4.7` | [xAI](https://docs.x.ai/developers/grok-4-7) |
+| Mistral Large 4 | `mistral-large-4` | [Mistral, Public Preview](https://docs.mistral.ai/models/mistral-large) |
+
+Points à ne pas réduire à un ajout de libellé : GPT-6.1 Sol exige Responses
+pour les appels d'outils ; Sonnet 5.5 documente des ruptures de compatibilité
+sur les outils et les blocs de réflexion. La variante Grok 4.7 Fast n'est
+pas disponible sur l'API publique selon sa fiche. Aucun second identifiant
+Mistral masqué par « +1 » n'est inventé.
+
+Travail prévu : mettre à jour la source unique
+`src/backend/app/services/modeles_catalogue.py`, les adaptateurs strictement
+nécessaires et leurs tests ; vérifier streaming, outils, raisonnement,
+limites de contexte/sortie et sélection persistée dans l'interface.
+Préserver les réglages existants et les modèles encore supportés ; ne pas
+changer de modèle par défaut ni retirer une génération sans décision
+explicite. Les tests de disponibilité réels devront être bornés, sans
+données personnelles, avant toute annonce de compatibilité.
