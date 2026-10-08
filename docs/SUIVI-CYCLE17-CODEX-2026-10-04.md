@@ -1800,3 +1800,53 @@ tokens, ajout 1 930 081, durée parallèle ajoutée 0 ; pas une facture API.
 Contrôle effectif `Budget: PASS`, code 0. Aucun produit, main, version,
 tag, installation, publication ou release modifié. Zéro ronde actuelle ;
 la demande nouveaux modèles reste dédiée à la prochaine boucle.
+
+## Lot 66 : ROOT8 rouge, diagnostic précis et clôture physique
+
+ROOT8 neuf `2cf6bb68…`, préparé à partir de V8 fermé sur le HEAD documentaire
+observé `727578fe…`, sources produit historiques `2d69…` explicitement WRAPPER
+seulement. Construction `b7699841…`, root-GO `a3b485f1…`, SQL `918b1027…`
+intégralement lu. Contrôle principal : 4 671 refs, 76 sources, 3 579 blobs et
+modes Git, 36 sources SQL. Revue Environment favorable aux sources fermées.
+Signature stricte/deep de la copie Chrome recontrôlée à 14:15:10 UTC, reçu
+`2e483318…`, aucun changement de la copie ou de Chrome installé.
+
+Essai natif unique `948edd` puis `056f6a`, exit 86. Résultat original
+`278e6737…`, sept ACK sur quinze, six témoins conformes, refus avant la feuille
+Node. L'assessment Gatekeeper préalable n'a pas suffi. Chrome PID 48739,
+birth 1791469046/912722, termine réellement à -6, sans signal de cleanup :
+SIGABRT distinct du -15 de ROOT7. stderr `cc9970e5…`, 987 octets, exception
+`-[NSBundle initWithURL:]: non-file URL argument`. Le rapport exact du PID a
+été lu ; il ne révèle ni l'URL fautive ni sa provenance. Aucune causalité
+interne n'est affirmée et aucun rapport machine brut n'est ajouté au dépôt.
+
+Diagnostic kernel exact, reçu `ca8b417a…`, onze événements physiques. Trois
+refus de lecture de répertoires, même thread 4586453, précèdent l'exception :
+metadata du parent exact de la copie Chrome QA, read-data du QA_ROOT exact et
+de `/private/tmp`. Hypothèse bornée proposée pour V9 : trois ajouts littéraux
+de lecture uniquement, pas de subpath supplémentaire, écriture, réseau,
+Mach/IOKit ni relèvement des bornes. Les refus dtracehelper, logd,
+notification_center et les événements AMFI d'abort ne justifient pas de
+permissions supplémentaires. V9 encore en préparation fermée à ce lot.
+
+Clôture principale `34d707` : 1 213 refs, 30 jointures signaux/birth, reçu
+`438574cc…`. Revue Shared4 : 1 456 occurrences sur 180 chemins, 76 sources,
+36 publications hardlink et dix jointures gate/birth/release, aucun écart.
+Quatre XML réels 1/0/1/0 conformes, logs corrélés, deux parents code 0.
+Nettoyage Chrome/services/Session : 0,845453 / 1,119227 / 0,895330 s ; aucun
+résidu, erreur ou ambiguïté, deux scans sur les trois ports, handlers
+restaurés et transport fermé. Les indicateurs globaux demeurent rouges :
+`clean=false`, taint vraie, `owned_shutdown_proved=false`, aucune admission.
+
+Archive canonique `.app-loop/cycles/17/qualification/RPC-lot66-20261008/ROOT8-closed-v2.tar.gz` :
+2 020 000 octets, SHA
+`9410af66ccd1e6eec711f9663df4797e092021643d393eb1572b5e0216a2838a`.
+Copie, gzip/tar et 1 538 membres vérifiés par `3311a5` ; cache Vite, binaire
+Chrome et socket Unix exclus. La première archive TMP a signalé le socket,
+elle est conservée sans remplacement ; v2 l'exclut explicitement. Les neuf
+documents préexistants et les sources produit sont inchangés.
+
+Usage : 66 lots logiques, plancher natif conservateur 24 164 450 tokens,
+ajout 600 310, durée parallèle ajoutée zéro, pas une facture API. Budget
+effectivement contrôlé PASS, limites et deadline inchangées. Aucune version,
+release, publication, installation, ronde A/B ou FULL validée par ce lot.
