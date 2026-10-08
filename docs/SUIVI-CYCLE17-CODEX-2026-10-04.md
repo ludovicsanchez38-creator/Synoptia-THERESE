@@ -1729,3 +1729,74 @@ Usage effectivement consigné : 64 lots logiques, plancher natif conservateur
 Ce n'est pas une facture API. Le contrôle effectif retourne `Budget: PASS`,
 code 0. Plafonds de tokens désactivés ; limites temps/appels et gates
 inchangées. CALIBRATE reste active, zéro ronde actuelle, aucune release.
+
+## Lot 65 : V8 cohérent, pures rejoués et ROOT7 rouge physiquement fermé
+
+Le constructeur V8 ferme la jonction helper/descripteurs/argv/defaults/G1 vers
+la seule copie Chrome QA. INDEX `278e5a8a…`, builder `57223365…`, helper
+`7922a13b…` ; profil `c9101b2a…` inchangé, sources 76, core 17 et six deltas.
+Scan frais complet avant/après préparation : 1 339 entrées, types 697/635/7,
+octets/modes/UID/GID/liens/inodes exacts, aucun hardlink vers Chrome installé.
+Revue Shared4 favorable à la préparation, pas au runtime.
+
+Rejeux root réels, tous sources inchangées et processus/socket/G1 interdits :
+
+- V8 : 62 tests, outil `1b7c8b` exit 0, reçu `fea5b4f…`.
+- A/B : 80 tests, outil `fe29c1` exit 0, reçu `ae3b80b5…` ; lecteur stop
+  exige deux passes ordonnées sur les trois ports. Le premier rejeu rouge
+  provient du harnais root sur mkdir existant, pas des sources ; 120 fixtures
+  résiduelles déplacées en quarantaine récupérable, aucune suppression.
+- Watchdog : 47 tests, outil `b41c89` exit 0, reçu `30258634…` ; tick léger,
+  rehash complet aux frontières, pas de relèvement des bornes. Les revues
+  indépendantes A/B et watchdog sont favorables aux gels fermés seulement.
+
+ROOT7 construit par `46ae84` puis `7c03de`, exit 0 : construction
+`5ac1b80d…`, root-GO `db72766e…`, contrat SQL `f4865f12…` intégralement lu.
+Contrôle root `7fa3e1` : 4 666 refs, 3 579 blobs/modes Git et 36 sources SQL.
+Revue physique Environment favorable, 3 788 refs. HEAD produit historique
+`2d69…`, jamais présenté comme FULL du HEAD courant `ee437969…`.
+Chrome fraîchement vérifié strict/deep : `73248b` exit 0, reçu `0e1b86b3…`
+à 13:54:37 UTC. Aucun xattr actuel ni Gatekeeper prétendu par ce contrôle.
+
+L'essai natif unique `b037a9` puis `c924e6` termine exit 86. Résultat
+`bbf48bc1…` : sept ACK sur quinze, six témoins causaux conformes, refus avant
+la feuille Node de capture navigateur. Chrome QA PID 44147 reste vivant,
+sans sortie ni profil créé, puis est arrêté par les signaux attribués ;
+code -15, aucun SIGSEGV inventé. La cause initiale est perdue dans l'ACK
+générique de refus, ce qui reste une limite d'observabilité.
+
+Sources inchangées et transport fermé ; cleanup physique Chrome 0,942 s,
+services 1,028 s, Session 0,852 s, zéro résidu/erreur/ambiguïté et deux passes
+sur 17593/5173/17594 archivées. La taint antérieure demeure vraie et les
+reçus globaux restent rouges. Clôture root `419e7a` : 1 208 refs et 35
+jointures signaux/birth, reçu `67ac7b0b…`. Shared4 confirme indépendamment
+193 chemins, 2 078 refs, 76 sources et 36 publications hardlink.
+
+Journaux système exacts : reçu `73e025e8…` puis `8b1c4bfd…`. Le refus ASP
+de chargement du framework survient trois microsecondes après l'interruption
+du wait au nettoyage ; sa causalité autonome n'est pas démontrée. Assessment
+standard de la copie QA `4c4b63`, spctl code 0, reçu `92dbaaed…` à 14:04:22
+UTC : accepted, Notarized Developer ID, Google LLC. Aucun disable, resign,
+xattr ou Chrome installé modifié par ces scripts ; effets du cache de
+politique système non mesurés. Aucun délai ni permission élargi.
+
+Archives canoniques sous `.app-loop/cycles/17/qualification/RPC-lot65-20261008` :
+
+- `CANDIDATS-PURS-closed.tar.gz`, 1 233 961 octets, SHA
+  `fe58a30866864034b322187832e1a3a6dd76e1c9e504283e8e6b0be1d3336835`.
+- `ROOT7-closed-v2.tar.gz`, 1 927 954 octets, SHA
+  `9c3650d5481be4b0b4f46c47ef756b3c94544925326ae907f86bca8ad812018a`.
+- `CLOTURE-ROOT7.tar.gz`, 63 538 octets, SHA
+  `f97dc7df711fee6945cebe086e01fc35746b3c0ff3fdc3e93511aa685cbde8e9`.
+
+Gzip/tar et copies vérifiés ; binaire Chrome, cache Vite et socket Unix
+exclus. Les premières erreurs de routage du lecteur root sont conservées,
+sans changement des bruts natifs. Le rapport de raccord FULL `e70d4fc7…`
+est archivé : collisions start/stop, relais/pin et lecteur/pin identifiées,
+assemblage futur encore fermé, préflight A/B et HEAD actuels non qualifiés.
+
+Usage consigné : 65 lots logiques, plancher natif conservateur 23 564 140
+tokens, ajout 1 930 081, durée parallèle ajoutée 0 ; pas une facture API.
+Contrôle effectif `Budget: PASS`, code 0. Aucun produit, main, version,
+tag, installation, publication ou release modifié. Zéro ronde actuelle ;
+la demande nouveaux modèles reste dédiée à la prochaine boucle.
