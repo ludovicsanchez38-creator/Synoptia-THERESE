@@ -825,3 +825,11 @@ Les reçus détaillés sont centralisés dans le suivi du cycle et ses preuves
   à nouveau la copie installée ; ne pas refaire la signature pour obtenir un
   vert. Le [rapport 0.77.2](releases/v0.77.2-alpha.md) porte l’observation et
   ses preuves.
+
+- Les portes pytest locales se jouent avec la commande canonique de la ronde A
+  (`OLLAMA_BASE_URL=http://127.0.0.1:1`, clés de fournisseurs retirées,
+  `--ignore=tests/e2e`, suite autonome à part). Lancée sans cette isolation sur
+  un Mac où Ollama répond, la suite complète fait échouer un test
+  d'anonymisation RGPD qui passe seul et dans la commande canonique (B-1786,
+  [rapport 0.78.0](releases/v0.78.0-alpha.md)). Un rouge hors isolation se
+  consigne ; il ne se masque pas par un rejeu, et un vert isolé ne l'explique pas.
