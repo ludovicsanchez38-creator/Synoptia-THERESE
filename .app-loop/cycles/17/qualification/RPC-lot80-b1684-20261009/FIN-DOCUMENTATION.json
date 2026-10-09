@@ -1,0 +1,28 @@
+{
+  "schema": "c17-lot80-documentary-eof-correction-v1",
+  "actor": "/root",
+  "failedStagedWhitespaceCheck": {
+    "chunk_id": "3357ba",
+    "exit_code": 2,
+    "output": ".app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/MAIN-tests-receipt.json:41: new blank line at EOF.\ntests/test_b1684_purge_reglage_illisible_memoire.py:203: new blank line at EOF.\n"
+  },
+  "commitCompletedDespiteThisCheck": {
+    "chunk_id": "c43614",
+    "wall_time_seconds": 0.072133708,
+    "exit_code": 0,
+    "original_token_count": 526,
+    "output": "[codex/cycle-17 9bca95fe] Sécurise le réglage de purge et documente la passation à Claude\n Committer: Ludovic Sanchez <synoptia@device-67.home>\nYour name and email address were configured automatically based\non your username and hostname. Please check that they are accurate.\nYou can suppress this message by setting them explicitly:\n\n    git config --global user.name \"Your Name\"\n    git config --global user.email you@example.com\n\nAfter doing this, you may fix the identity used for this commit with:\n\n    git commit --amend --reset-author\n\n 18 files changed, 1760 insertions(+), 2 deletions(-)\n create mode 100644 .app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/ARRET-PASSATION.json\n create mode 100644 .app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/CHROME-SCM-READ.json\n create mode 100644 .app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/INDEX.json\n create mode 100644 .app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/MAIN-lint-receipt.json\n create mode 100644 .app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/MAIN-loop-post-receipt.json\n create mode 100644 .app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/MAIN-tests-receipt.json\n create mode 100644 .app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/PISTES-SHARED.md\n create mode 100644 .app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/README.md\n create mode 100644 .app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/REVIEW-ENVIRONMENT.md\n create mode 100644 .app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/REVIEW-GATE.json\n create mode 100644 .app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/REVIEW-GATE.md\n create mode 100644 .app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/rgpd_auto-before.txt\n create mode 100644 .app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/rgpd_auto-mutant.txt\n create mode 100644 .app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/runner.py\n create mode 100644 docs/PASSATION-CLAUDE-CYCLE17-2026-10-09.md\n create mode 100644 tests/test_b1684_purge_reglage_illisible_memoire.py\n"
+  },
+  "correction": {
+    "chunk_id": "fd9d16",
+    "wall_time_seconds": 0.00000675,
+    "exit_code": 0,
+    "original_token_count": 171,
+    "output": "{\"name\":\"tests/test_b1684_purge_reglage_illisible_memoire.py\",\"before\":{\"bytes\":8771,\"sha256\":\"c755e7e1abebce3b569ca69f80a5d297da21b56989488965a830cf221f50c70b\"},\"after\":{\"bytes\":8770,\"sha256\":\"19738d2f0bdc72ab189fd8adf225009539ae47ccff63a977e062812446a9e026\"},\"onlyLastEmptyLineRemoved\":true,\"historicalCommit\":\"9bca95fe\"}\n{\"name\":\".app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/MAIN-tests-receipt.json\",\"before\":{\"bytes\":42259,\"sha256\":\"a92b6282215b673e9b144d8bd5a0637416762745daa6f8f930acf605ea910f0d\"},\"after\":{\"bytes\":42258,\"sha256\":\"fb3c100ed4bff6133087ccc2dece87f167fa1d34ce3ce204f2bf31b0cde85c64\"},\"onlyLastEmptyLineRemoved\":true,\"historicalCommit\":\"9bca95fe\"}\n"
+  },
+  "historicalEvidencePreservedAt": "9bca95fe",
+  "onlyOneFinalLFRemovedPerFile": true,
+  "noProductLogicOrRawResultChanged": true,
+  "noTestReplayed": true,
+  "noCalibrationOrReleaseClaim": true
+}

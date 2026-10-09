@@ -28,8 +28,8 @@
     {
       "name": "MAIN-tests-receipt.json",
       "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/MAIN-tests-receipt.json",
-      "bytes": 42259,
-      "sha256": "a92b6282215b673e9b144d8bd5a0637416762745daa6f8f930acf605ea910f0d"
+      "bytes": 42258,
+      "sha256": "fb3c100ed4bff6133087ccc2dece87f167fa1d34ce3ce204f2bf31b0cde85c64"
     },
     {
       "name": "PISTES-SHARED.md",
@@ -78,6 +78,12 @@
       "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/runner.py",
       "bytes": 1089,
       "sha256": "dc2abf88adbe8643b749c7f1c46be05d5db31117fedf0be3c2e2ef407e41ca96"
+    },
+    {
+      "name": "FIN-DOCUMENTATION.json",
+      "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/.app-loop/cycles/17/qualification/RPC-lot80-b1684-20261009/FIN-DOCUMENTATION.json",
+      "bytes": 3773,
+      "sha256": "96e073ef531651d75035e5bfeea1808ef8b32182cc9434ee435ea4053429c6e1"
     }
   ],
   "sources": [
@@ -88,8 +94,8 @@
     },
     {
       "path": "/Users/synoptia/Desktop/Dev Synoptia/Synoptia-THERESE-c15-codex/tests/test_b1684_purge_reglage_illisible_memoire.py",
-      "bytes": 8771,
-      "sha256": "c755e7e1abebce3b569ca69f80a5d297da21b56989488965a830cf221f50c70b"
+      "bytes": 8770,
+      "sha256": "19738d2f0bdc72ab189fd8adf225009539ae47ccff63a977e062812446a9e026"
     }
   ],
   "goal": "paused",
@@ -100,5 +106,10 @@
   "ChromeQualified": false,
   "FULL": false,
   "release": false,
-  "noAuthorityTransferred": true
+  "noAuthorityTransferred": true,
+  "documentaryCorrection": {
+    "historicalCommit": "9bca95fe",
+    "historicalGatePinsUnchangedInReviews": true,
+    "currentTestAndReceiptPinsUpdated": true
+  }
 }

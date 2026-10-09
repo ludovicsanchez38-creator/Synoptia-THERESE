@@ -3053,3 +3053,12 @@ Pas de bump, tag, publication, landing/updater/Discord, installation ou message
 externe. Le workflow release-therese reste intégralement obligatoire ; publication
 non atteinte. Point d'entrée de reprise documentaire :
 `docs/PASSATION-CLAUDE-CYCLE17-2026-10-09.md`. Cette passation n'est pas un nouveau GO.
+
+Clôture documentaire : le diffcheck indexé `3357ba` a trouvé deux lignes
+vides finales nouvelles, alors que le diffcheck non indexé précédent était vert.
+Le commit `9bca95fe` est malgré cela parti localement ; échec conservé, pas PASS
+inventé. Une LF finale seulement a ensuite été retirée du test et du reçu JSON,
+vérification byte-exacte `fd9d16` ; aucun corps de code ou brut ne change,
+aucun test rejoué après l'arrêt. Les empreintes historiques de Gate restent
+accessibles dans `9bca95fe`, les pins courants sont actualisés dans INDEX.
+FIN-DOCUMENTATION.json conserve cette correction et le reçu du premier commit.
