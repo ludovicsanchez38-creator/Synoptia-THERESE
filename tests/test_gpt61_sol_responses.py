@@ -257,6 +257,28 @@ class TestTransport:
         assert fini[0].output_tokens == 7
 
     @pytest.mark.asyncio
+    async def test_response_incomplete_n_est_pas_une_fin_normale(self):
+        """response.incomplete (limite de sortie) n'est pas un stop."""
+        client = _Client([
+            _ligne({"type": "response.output_text.delta", "delta": "Début"}),
+            _ligne({
+                "type": "response.incomplete",
+                "response": {
+                    "status": "incomplete",
+                    "incomplete_details": {"reason": "max_output_tokens"},
+                    "usage": {"input_tokens": 11, "output_tokens": 128000},
+                },
+            }),
+        ])
+        evenements = await _collecter(_provider(client).stream(None, MESSAGES, [OUTIL]))
+        assert [e.content for e in evenements if e.type == "text"] == ["Début"]
+        finis = [e for e in evenements if e.type == "done"]
+        assert len(finis) == 1
+        assert finis[0].stop_reason == "incomplete"
+        assert finis[0].input_tokens == 11
+        assert finis[0].output_tokens == 128000
+
+    @pytest.mark.asyncio
     async def test_piece_jointe_convertie_en_input_image(self):
         """Guide vision : Responses attend input_text et input_image, pas image_url."""
         image = "data:image/png;base64,iVBORw0KGgo="

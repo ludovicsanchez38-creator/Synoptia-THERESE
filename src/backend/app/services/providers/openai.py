@@ -510,6 +510,20 @@ class OpenAIProvider(BaseProvider):
                     )
                     done_emitted = True
                     break
+                elif type_evenement == "response.incomplete":
+                    # Limite de sortie (ou filtre) : la doc émet cet événement.
+                    # Le filet plus bas dirait « stop » et annoncerait une fin normale.
+                    usage = (event.get("response") or {}).get("usage") or {}
+                    input_tokens = usage.get("input_tokens", input_tokens)
+                    output_tokens = usage.get("output_tokens", output_tokens)
+                    yield StreamEvent(
+                        type="done",
+                        stop_reason="incomplete",
+                        input_tokens=input_tokens,
+                        output_tokens=output_tokens,
+                    )
+                    done_emitted = True
+                    break
                 elif type_evenement in ("error", "response.error", "response.failed"):
                     logger.warning(
                         "Réponse OpenAI en erreur (%s) : %s",
