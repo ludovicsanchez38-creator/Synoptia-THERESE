@@ -4,6 +4,7 @@ Les chiffres viennent des fiches citées dans
 docs/plans/2026-10-09-c18-m1-modeles.md. Aucun appel réseau.
 """
 
+import json
 from datetime import date, datetime
 
 import httpx
@@ -21,7 +22,7 @@ from app.services.providers.mistral import MistralProvider
 from app.services.token_tracker import TOKEN_PRICES, TokenLimits, TokenTracker
 
 from tests.test_anthropic_blocs_de_reflexion import _flux, _outil, _reflexion, _sse
-from tests.test_provider_tools import _collect, _FakeClient
+from tests.test_provider_tools import _collect, _FakeClient, _FakeStreamResponse
 
 # Listes servies AVANT ce lot. Chacune doit rester, dans le même ordre relatif.
 ANCIENS = {
@@ -507,6 +508,65 @@ async def test_sonnet_55_rejoue_un_bloc_de_reflexion_entre_deux_outils():
     assert assistant["content"] == brut
 
 
+@pytest.mark.asyncio
+async def test_mistral_large_4_fait_un_tour_doutil():
+    """La fiche confirme le function calling : un appel, puis le résultat."""
+    appel = {
+        "choices": [{
+            "delta": {
+                "tool_calls": [{
+                    "index": 0,
+                    "id": "call_lire",
+                    "function": {"name": "lire", "arguments": '{"id": "1"}'},
+                }],
+            },
+            "finish_reason": None,
+        }],
+    }
+    fin = {"choices": [{"delta": {}, "finish_reason": "tool_calls"}]}
+    texte = {"choices": [{"delta": {"content": "lu"}, "finish_reason": None}]}
+    client = _FakeClient(responses=[
+        _FakeStreamResponse([
+            f"data: {json.dumps(appel)}",
+            f"data: {json.dumps(fin)}",
+            "data: [DONE]",
+        ]),
+        _FakeStreamResponse([
+            f"data: {json.dumps(texte)}",
+            "data: [DONE]",
+        ]),
+    ])
+    config = LLMConfig(LLMProvider.MISTRAL, "mistral-large-4", api_key="m", effort="high")
+    provider = MistralProvider(config, client)
+    evenements = await _collect(provider.stream(
+        None, [{"role": "user", "content": "lis"}], OUTIL,
+    ))
+    appels = [e for e in evenements if e.type == "tool_call"]
+    assert len(appels) == 1
+    assert appels[0].tool_call.name == "lire"
+    assert appels[0].tool_call.arguments == {"id": "1"}
+    assert client.requests[0]["json"]["model"] == "mistral-large-4"
+    assert client.requests[0]["json"]["tools"] == OUTIL
+    assert "reasoning_effort" not in client.requests[0]["json"]
+
+    suite = await _collect(provider.continue_with_tool_results(
+        None,
+        [{"role": "user", "content": "lis"}],
+        assistant_content="",
+        tool_calls=[appels[0].tool_call],
+        tool_results=[ToolResult(tool_call_id="call_lire", result="ok")],
+        tools=OUTIL,
+    ))
+    assert any(e.type == "text" and e.content == "lu" for e in suite)
+    messages = client.last_request["json"]["messages"]
+    assistant = next(m for m in messages if m["role"] == "assistant" and m.get("tool_calls"))
+    assert assistant["tool_calls"][0]["function"]["name"] == "lire"
+    outil = next(m for m in messages if m["role"] == "tool")
+    assert outil["tool_call_id"] == "call_lire"
+    assert outil["content"] == "ok"
+    assert "reasoning_effort" not in client.last_request["json"]
+
+
 def test_les_agents_recoivent_les_modeles_a_outils_documentes():
     from app.services.agents.config import AVAILABLE_MODELS, AgentConfig
 
@@ -520,7 +580,8 @@ def test_les_agents_recoivent_les_modeles_a_outils_documentes():
     ):
         assert identifiant in par_id
         assert par_id[identifiant].get("recommended") is not True
-    assert "mistral-large-4" not in par_id
+    assert "mistral-large-4" in par_id
+    assert par_id["mistral-large-4"].get("recommended") is not True
     assert "grok-4.7-fast" not in par_id
     assert sum(1 for m in AVAILABLE_MODELS if m.get("recommended")) == 1
     assert AgentConfig(id="a", name="a", description="a").default_model == "claude-sonnet-4-6"

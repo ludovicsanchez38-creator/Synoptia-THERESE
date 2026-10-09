@@ -52,8 +52,10 @@ AVAILABLE_MODELS = [
     {"id": "grok-4.6", "name": "Grok 4.6", "provider": "grok"},
     {"id": "grok-4.5", "name": "Grok 4.5", "provider": "grok"},
     {"id": "grok-4.3", "name": "Grok 4.3", "provider": "grok"},
-    # Mistral
+    # Mistral. Large 4 : function calling documenté sur Chat Completions
+    # (docs.mistral.ai/models/mistral-large-4), donc éligible aux outils.
     {"id": "mistral-medium-latest", "name": "Mistral Medium 3.5", "provider": "mistral"},
+    {"id": "mistral-large-4", "name": "Mistral Large 4", "provider": "mistral"},
     {"id": "mistral-large-latest", "name": "Mistral Large", "provider": "mistral"},
     {"id": "codestral-2508", "name": "Codestral", "provider": "mistral"},
     # OpenRouter (repli statique : le sélecteur principal interroge l'API)
