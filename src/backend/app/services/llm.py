@@ -583,7 +583,7 @@ AUTORISÉ : les listes à puces (- point clé : valeur).
                             selected_provider = row[0]
                         elif key == "llm_model":
                             selected_model = row[0]
-                        elif row[0] in ("low", "medium", "high", "max"):
+                        elif row[0] in ("low", "medium", "high", "xhigh", "max"):
                             selected_effort = row[0]
         except Exception as e:
             logger.warning(f"Could not read LLM preferences from DB: {e}")
