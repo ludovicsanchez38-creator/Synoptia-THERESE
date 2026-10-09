@@ -38,6 +38,12 @@ export function modeleOpenAIRaisonnant(modele: string): boolean {
   return familleDeParametres(m);
 }
 
+/** Vrai quand ce message part avec des outils ET que le transport les force
+ * à « none » (Chat Completions). Responses et l'absence d'outils conservent l'effort. */
+export function effortRetireParLesOutils(modele: string, outilsUtilises: boolean): boolean {
+  return outilsUtilises && modeleOpenAIRaisonnant(modele);
+}
+
 /** Sans outils, l'effort n'est transmis qu'aux modèles dont le support est
  * vérifié dans le catalogue backend (fiches GPT-5.6 « tel quel »). */
 // P-122 (25/09/2026) : gpt-6-sol et gpt-6-luna, même contrat que gpt-6-astra.

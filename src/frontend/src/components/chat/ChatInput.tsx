@@ -43,6 +43,7 @@ import { useAutosave } from '../../hooks/useAutosave';
 import { cn } from '../../lib/utils';
 import { libelleDuFournisseur } from '../../lib/libellesFournisseurs';
 import { estModeleOllamaCloud, FOURNISSEUR_OLLAMA_CLOUD, fournisseurDAccord } from '../../lib/ollamaCloud';
+import { effortRetireParLesOutils } from '../../lib/effortOpenAI';
 import { PLACEHOLDER_COMPOSEUR } from '../../lib/etabli';
 import { ACCEPT_FICHIERS, FILTRES_SELECTEUR } from '../../lib/formatsIndexables';
 import {
@@ -117,15 +118,32 @@ const LIBELLES_EFFORT: Record<string, string> = {
   xhigh: 'effort très élevé',
 };
 
-/** Ce que la puce dit : l'effort transmis, ou que le réglage ne part pas. */
+const LIBELLE_EFFORT_RETIRE = 'effort désactivé avec les outils';
+
+/** Ce que la puce dit : l'effort transmis, retiré par les outils, ou non envoyé. */
 function libelleEffortPuce(
   effortDemande: string | null,
   effortResolu: string | null | undefined,
+  modele: string | null,
+  outilsUtilises: boolean,
 ): string | null {
   if (!effortDemande || effortDemande === 'auto') return null;
   if (effortResolu === undefined) return LIBELLES_EFFORT[effortDemande] ?? null;
+  if (effortResolu && modele && effortRetireParLesOutils(modele, outilsUtilises)) {
+    return LIBELLE_EFFORT_RETIRE;
+  }
   if (!effortResolu) return 'réglage non appliqué à ce modèle';
   return LIBELLES_EFFORT[effortResolu] ?? LIBELLES_EFFORT[effortResolu.toLowerCase()] ?? null;
+}
+
+function titreEffortPuce(texte: string): string {
+  if (texte === 'réglage non appliqué à ce modèle') {
+    return 'Ce réglage d’effort n’est pas envoyé à ce modèle';
+  }
+  if (texte === LIBELLE_EFFORT_RETIRE) {
+    return 'Les outils de la conversation désactivent l’effort pour ce modèle.';
+  }
+  return 'Effort de raisonnement envoyé à ce modèle';
 }
 
 export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId, onInitialPromptConsumed, userCommands, demandeDeFocus = 0 }: ChatInputProps) {
@@ -223,7 +241,8 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
   // B-1174 : même règle que la bulle (B-1156) : Ollama Cloud part chez ollama.com.
   const ollamaCloud = currentProvider === 'ollama' && !!currentModel && estModeleOllamaCloud(currentModel);
   const traitementLocal = currentProvider === 'ollama' && !ollamaCloud;
-  const texteEffort = libelleEffortPuce(currentEffort, effortResolu);
+  // Ce composeur envoie les outils à chaque message. Le mini-chat les coupe et n'a pas cette puce.
+  const texteEffort = libelleEffortPuce(currentEffort, effortResolu, currentModel, true);
 
   const loadLLMConfig = useCallback(() => {
     getLLMConfig()
@@ -1538,11 +1557,7 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
             {texteEffort && (
               <span
                 className="text-xs text-text-muted"
-                title={
-                  texteEffort === 'réglage non appliqué à ce modèle'
-                    ? 'Ce réglage d’effort n’est pas envoyé à ce modèle'
-                    : 'Effort de raisonnement envoyé à ce modèle'
-                }
+                title={titreEffortPuce(texteEffort)}
               >
                 {texteEffort}
               </span>

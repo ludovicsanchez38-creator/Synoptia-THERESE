@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import temoins from './effortOpenAI.temoins.json';
 import {
   effortConserveAvecOutils,
+  effortRetireParLesOutils,
   effortTransmisSansOutils,
   familleDeParametres,
   modeleOpenAIRaisonnant,
@@ -35,5 +36,14 @@ describe('effortOpenAI (P-045)', () => {
     expect(effortConserveAvecOutils('gpt-6.1-sol')).toBe(true);
     expect(effortTransmisSansOutils('gpt-6.1-sol')).toBe(true);
     expect(effortConserveAvecOutils('gpt-6-sol')).toBe(false);
+  });
+
+  it('les outils retirent l’effort seulement sur Chat Completions', () => {
+    expect(effortRetireParLesOutils('gpt-6-sol', true)).toBe(true);
+    expect(effortRetireParLesOutils('gpt-5.6-luna', true)).toBe(true);
+    expect(effortRetireParLesOutils('gpt-6-sol', false)).toBe(false);
+    expect(effortRetireParLesOutils('gpt-6.1-sol', true)).toBe(false);
+    expect(effortRetireParLesOutils('gpt-6-astra', true)).toBe(false);
+    expect(effortRetireParLesOutils('grok-4.7', true)).toBe(false);
   });
 });
