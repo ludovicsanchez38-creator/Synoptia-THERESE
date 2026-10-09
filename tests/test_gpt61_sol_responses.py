@@ -257,6 +257,29 @@ class TestTransport:
         assert fini[0].output_tokens == 7
 
     @pytest.mark.asyncio
+    async def test_piece_jointe_convertie_en_input_image(self):
+        """Guide vision : Responses attend input_text et input_image, pas image_url."""
+        image = "data:image/png;base64,iVBORw0KGgo="
+        messages = [
+            {"role": "system", "content": "Tu es THÉRÈSE."},
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": "Que vois-tu ?"},
+                    {"type": "image_url", "image_url": {"url": image}},
+                ],
+            },
+        ]
+        client = _Client(_flux_texte())
+        await _collecter(_provider(client).stream(None, messages, [OUTIL]))
+        assert client.requests[0]["url"].endswith("/v1/responses")
+        contenu = client.requests[0]["json"]["input"][1]["content"]
+        assert contenu == [
+            {"type": "input_text", "text": "Que vois-tu ?"},
+            {"type": "input_image", "image_url": image},
+        ]
+
+    @pytest.mark.asyncio
     async def test_sans_outils_chat_completions_et_effort_conserve(self):
         chunk = {"choices": [{"delta": {"content": "Texte"}, "finish_reason": "stop"}]}
         client = _Client([_ligne(chunk), "data: [DONE]"])

@@ -49,6 +49,33 @@ def _arguments_outil(brut: Any) -> dict[str, Any]:
     return lu if isinstance(lu, dict) else {}
 
 
+def _bloc_chat_vers_responses(bloc: Any) -> Any:
+    """Un bloc Chat (texte ou image) vers le bloc Responses correspondant.
+
+    Le guide vision (09/10/2026) : `input_text` et `input_image`, avec
+    `image_url` en chaîne (URL ou data URL), pas l'objet Chat `{url}`.
+    """
+    if not isinstance(bloc, dict):
+        return {"type": "input_text", "text": "" if bloc is None else str(bloc)}
+    type_bloc = bloc.get("type")
+    if type_bloc == "text":
+        return {"type": "input_text", "text": bloc.get("text") or ""}
+    if type_bloc == "image_url":
+        source = bloc.get("image_url")
+        url = source.get("url") if isinstance(source, dict) else source
+        return {"type": "input_image", "image_url": url or ""}
+    return bloc
+
+
+def _contenu_message_responses(contenu: Any) -> Any:
+    """Une chaîne reste une chaîne. Une liste de blocs est traduite."""
+    if contenu is None:
+        return ""
+    if not isinstance(contenu, list):
+        return contenu
+    return [_bloc_chat_vers_responses(bloc) for bloc in contenu]
+
+
 def _messages_vers_input_responses(messages: list[dict[Any, Any]]) -> list[dict[str, Any]]:
     """Traduit le transcript Chat déjà construit vers les items Responses."""
     items: list[dict[str, Any]] = []
@@ -76,8 +103,10 @@ def _messages_vers_input_responses(messages: list[dict[Any, Any]]) -> list[dict[
                 })
             continue
         if role in ("user", "assistant", "system", "developer"):
-            contenu = msg.get("content")
-            items.append({"role": role, "content": "" if contenu is None else contenu})
+            items.append({
+                "role": role,
+                "content": _contenu_message_responses(msg.get("content")),
+            })
     return items
 
 
