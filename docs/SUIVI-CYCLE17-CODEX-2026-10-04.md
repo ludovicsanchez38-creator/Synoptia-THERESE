@@ -2682,3 +2682,107 @@ ou extension d'autorité. Aucun nouveau réveil exécuté n'est revendiqué.
 L'assertion secteur temporaire reste séparée. Les portes du workflow
 release-therese demeurent fermées ; aucune conclusion de livraison n'est
 déduite de ce diagnostic synthétique.
+
+## Lot 77 : héritage fork observé, seconde policy refusée dans l'enfant
+
+Reprise sur HEAD `4edf160ace79f2cb59124d5b1a412df8358cd17d`, branche
+`codex/cycle-17`. État des agents et instantanés des processus QA contrôlés
+avant les sondes. Aucun nouveau Chrome ni campagne FULL n'a été lancé. Budget réel
+PASS `6b74d7`, puis `d902ff` avant le second cas ; l'essai de CLI `6dface`
+était une sous-commande inexistante, pas un refus budget. Les neuf documents
+préexistants restent byte-exacts, contrôle `af4c1d`.
+
+Cette sonde est distincte de LOT76 et de G1 : nouveau OUTER_FORK synthétique,
+deny-default, metadata des deux témoins, lecture A et process-fork seulement.
+Un parent C direct, puis son unique enfant fork, sans exec, réseau, instrument Mach ou
+profil personnel. ALPHA est précompilée en mémoire avant OUTER pour le second
+cas ; aucune nouvelle permission de lookup/path n'est ajoutée à G1.
+
+Gate1 conserve FD0 après ACK. Après OUTER, deux oracles parent A/B sont exigés
+avant fork. Le parent ferme son FD0 puis annonce le PID issu du fork ; cette
+déclaration n'est pas une birth. MAIN attribue l'enfant via libproc typé,
+six champs, statut vivant, exécutable exact, PPID et PGID hérités. Toute la
+filiation est relue après rehash et avant release2. ACK2 confirme la réception
+et les champs get* du child, pas une lecture de naissance par le C confiné.
+L'enfant ne mesure les témoins ou l'API qu'après sa seconde gate fermée.
+
+Délais fixes gates5/5, mesure5, cleanup8. Parent : timer propre one-shot23,
+SIGALRM default/débloqué et SIGCHLD default vérifiés ; avant fork, snapshot
+temps frais après getitimer, elapsed<=5 et restant>=18 sans rearmement.
+Enfant : timer propre10 comme premier garde après fork. Parent waitpid du
+seul child, sans retour prématuré si reap incertain. La queue started+28
+n'autorise qu'une attente du handle déjà possédé, jamais un signal tardif ou
+une clôture verte après cleanup8. Les signaux éventuels visent l'enfant
+d'abord, seulement après filiation et birth fraîches, jamais un groupe ou un
+PID reparenté. Ces mécanismes sont coopératifs, pas une preuve de préemption.
+Les branches d'échec watchdog/cleanup ne sont pas éprouvées nativement ici.
+
+Les préparés restent désactivés et gelés. Rejeu MAIN `2cfa92` :50 tests C
+textuels/mutants verts, zéro tentative native ; reçu `2ff3d914…`. Deux rouges
+préparatoires de validateurs C restent conservés avec leurs snapshots.
+Rejeu MAIN `957cca` :25 tests contrôleur sur doubles verts, distinct de
+`48e234` et du reçu auteur. Ces tests ne sont ni des calibrations FULL ni de
+nouveaux bugs produit corrigés. Le contrôleur ferme aussi les intentions
+Popen/release si la trace devient fautive, et décode le statut waitpid.
+
+Revue indépendante des copies actives et de leurs deltas avant compilation,
+puis rehash des neuf références du manifeste avant baseline. Compilation
+MAIN `1940cd`, C11/O2/Wall/Wextra/Werror, clang physique SHA `bd27e506…`,
+arm64, SDK Xcode, exit0 sans sortie. C actif SHA `d5db75bb…`, binaire
+`e6a7ae3e…`,36 312 octets ; le préparé `ec42972e…` est inchangé. Mac actuel
+vérifié `3ea939`/`c26435` : macOS26.6.2, build25G83, arm64. HOME/TMPDIR
+privés et env-i, interpréteur UV physique -I/-B, logs O_EXCL privés.
+
+| Mesure MAIN | Observation | Fermeture |
+| --- | --- | --- |
+| fork-baseline `a1ecad` | OUTER rc0 ; parent et enfant A lu correctement, B open EPERM1 après héritage | owner54336, parent54344, enfant54345 ; waitpid enfant0 puis wait parent0 ; clean=true |
+| fork-compiled-alpha `aca0bf` | même héritage ; sandbox_apply dans l'enfant rc-1/errno1 ; A reste lisible, B refusé ; inner_api_refused | owner54932, parent54942, enfant54943 ; waitpid22016/code86/signal0 puis wait parent86 ; clean=false conservé |
+
+Chaque cas a deux ACK exacts,66 événements de trace réels sans faute, stderr
+vide, zéro signal, sources et manifeste inchangés. Le parent a réellement
+réapé son enfant avant d'être réapé par MAIN. Les flags termination_proved
+et cleanup_deadline_met sont vrais dans les deux résultats ; ils ne changent
+pas le rouge du second cas. Aucun temps total de cleanup n'est inventé.
+La série s'arrête au premier rouge, seulement deux dossiers cas (`dc6020`).
+Scan QA ciblé post-lot `87cdc9` vide, pas une absence exhaustive de processus
+ni adoption/fermeture des anciens PID ROOT15 incertains.
+
+Revue indépendante des bruts terminaux : `NATIVE-REVIEW.json` SHA
+`37d22800…`,18 références distinctes rehashées, reçus/trace/stdout/stderr
+lus entièrement. INDEX préparatoire `c5b052d1…` conservé inchangé. Les
+résultats SHA `c67b830c…` et `5620a6a2…` sont joints aux deux réapages.
+MAIN ferme `SERIES-CLOSURE.json`, SHA `bd14097a…`, sans qualifier Chrome.
+
+Ce constat mesure un fork sans exec et ces deux témoins seulement. L'API
+privée et les bibliothèques après fork restent sans garantie générale,
+comme le rappelle le manuel SDK physique relu (SHA `e9ab8f14…`). Le refus
+se rapproche de LOT76, sans prouver une impossibilité universelle, une cause
+kernel exacte ou une parité du Chrome154. ROOT15 reste rouge ; ses quatre
+timestamps kernel légèrement pré-birth gardent leur réserve. Mach micro vert
+et FULLv4 statique ne deviennent toujours pas une admission.
+
+Preuves canoniques : `qualification/RPC-lot77-seatbelt-inheritance-20261009/`.
+Collecteur borné à des chemins explicites, original conservé et dérivation
+relue ; MAIN `bea9f8` crée une seule TAR.GZ,108 391 octets, SHA
+`f724cb3a…`,57 fichiers plus MANIFEST embarqué,58 membres rehashés sans
+extraction, sources inchangées. MANIFEST SHA `96b80115…`, reçu `ffeee0a0…`.
+Sources préparées/actives, rouges C, revues et deux cas sont conservés ;
+Mach-O, SDK et journal système complet exclus. L'archive ne crée pas de GO.
+Copie canonique byte-exacte vérifiée MAIN `161263` pour les trois artefacts.
+
+Usage enregistré une seule fois MAIN `0af949` :77 lots, plancher30 259 333
+tokens conservé. Ajouts tokens/durée non mesurés, pas une consommation ou
+facturation nulle. Budget post-lot `7a446d` réellement PASS. `ed361e`
+maintient CALIBRATE ; état `07df14` : cinq calibrations expirées, zéro ronde
+FULL, diversité dégradée et23 transitions forcées historiques inchangées.
+Aucun reset du goal déjà bloqué, de l'état ou des limites ; aucun bump,
+tag, release, landing, updater, changelog Discord ou installation.
+
+Heartbeat existant mis à jour par l'outil du produit : réponse réelle
+« Updated automation in the app », ACTIVE. Persistance relue `c97ba7`, prompt
+byte-exact avec LOT77 ; même chat, cadence et échéance09/10 23:58:30 Paris
+(`7f63f8`). Cette écriture ne prouve pas un nouveau réveil exécuté.
+Suite sûre : analyse statique des designs et options précises de frontière
+Chrome, G1 conservé. Pas de répétition des séries closes. Une exception
+Chrome ou un nouvel instrument réclamera une décision de sécurité ciblée,
+jamais inférée du GO général. Les portes release-therese restent fermées.

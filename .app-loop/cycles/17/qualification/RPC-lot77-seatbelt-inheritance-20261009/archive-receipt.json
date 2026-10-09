@@ -1,0 +1,67 @@
+{
+  "FULL": false,
+  "archive": {
+    "bytes": 108391,
+    "gid": 0,
+    "member": "therese-c17-seatbelt-inheritance-archive-tqIy9Wu3/seatbelt-inheritance-sources-and-evidence.tar.gz",
+    "mode": 384,
+    "path": "/private/tmp/therese-c17-seatbelt-inheritance-archive-tqIy9Wu3/seatbelt-inheritance-sources-and-evidence.tar.gz",
+    "physical_stat": [
+      16777233,
+      377548515,
+      501,
+      0,
+      33152,
+      1,
+      108391,
+      1791513575514085887,
+      1791513575514085887
+    ],
+    "sha256": "f724cb3a80ba154340065f18d81a2b334b5b7e34279a625a99f788347cff403e",
+    "uid": 501
+  },
+  "binary_ref_unarchived": {
+    "bytes": 36312,
+    "gid": 0,
+    "member": "therese-c17-inheritance-main-Pkcez7OG/probe",
+    "mode": 493,
+    "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/probe",
+    "physical_stat": [
+      16777233,
+      377546789,
+      501,
+      0,
+      33261,
+      1,
+      36312,
+      1791513015000972325,
+      1791513015000972325
+    ],
+    "sha256": "e6a7ae3ed5d22ea56b9fa16f9020b7f9ff92959d72fd0727c4644f4a1aae0615",
+    "uid": 501
+  },
+  "manifest": {
+    "bytes": 32030,
+    "gid": 0,
+    "member": "therese-c17-seatbelt-inheritance-archive-tqIy9Wu3/MANIFEST.json",
+    "mode": 384,
+    "path": "/private/tmp/therese-c17-seatbelt-inheritance-archive-tqIy9Wu3/MANIFEST.json",
+    "physical_stat": [
+      16777233,
+      377548514,
+      501,
+      0,
+      33152,
+      1,
+      32030,
+      1791513575493322016,
+      1791513575493322016
+    ],
+    "sha256": "96b801159683f80d2a36e464f90b25afc48b76ffbffa00ec402b5b01d88801fe",
+    "uid": 501
+  },
+  "members_verified_without_extraction": 58,
+  "native_authority_created": false,
+  "schema": "c17-seatbelt-inheritance-archive-receipt-v1",
+  "sources_unchanged": true
+}

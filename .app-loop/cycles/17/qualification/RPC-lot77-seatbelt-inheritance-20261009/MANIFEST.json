@@ -1,0 +1,1195 @@
+{
+  "Chrome_qualified": false,
+  "FULL": false,
+  "binary_ref_unarchived": {
+    "bytes": 36312,
+    "gid": 0,
+    "member": "therese-c17-inheritance-main-Pkcez7OG/probe",
+    "mode": 493,
+    "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/probe",
+    "physical_stat": [
+      16777233,
+      377546789,
+      501,
+      0,
+      33261,
+      1,
+      36312,
+      1791513015000972325,
+      1791513015000972325
+    ],
+    "sha256": "e6a7ae3ed5d22ea56b9fa16f9020b7f9ff92959d72fd0727c4644f4a1aae0615",
+    "uid": 501
+  },
+  "closure_ref": {
+    "bytes": 6401,
+    "gid": 0,
+    "member": "therese-c17-inheritance-main-Pkcez7OG/SERIES-CLOSURE.json",
+    "mode": 420,
+    "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/SERIES-CLOSURE.json",
+    "physical_stat": [
+      16777233,
+      377548483,
+      501,
+      0,
+      33188,
+      1,
+      6401,
+      1791513568420301743,
+      1791513568420301743
+    ],
+    "sha256": "bd14097a0cfe1f21206e03cc7b1bffa443ac4c72c4844fea6921a74a79d570e1",
+    "uid": 501
+  },
+  "controller_pure_tests": {
+    "count": 25,
+    "earlier_tool_chunk": "48e234",
+    "main_filesystem_receipt": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/controller-main-pure.json",
+    "main_tool_chunk": "957cca"
+  },
+  "files": [
+    {
+      "bytes": 11488,
+      "gid": 0,
+      "member": "therese-c17-seatbelt-fork-static-Dfnb6T/INDEX.json",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-seatbelt-fork-static-Dfnb6T/INDEX.json",
+      "physical_stat": [
+        16777233,
+        377545925,
+        501,
+        0,
+        33188,
+        1,
+        11488,
+        1791512577306286671,
+        1791512577306286671
+      ],
+      "sha256": "344b14cd5fb55a0ed9a3993e8d27add225007b2a9bf9b98fc2534271e0423f99",
+      "uid": 501
+    },
+    {
+      "bytes": 26078,
+      "gid": 0,
+      "member": "therese-c17-inheritance-main-Pkcez7OG/probe-prepared.c",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/probe-prepared.c",
+      "physical_stat": [
+        16777233,
+        377544251,
+        501,
+        0,
+        33188,
+        1,
+        26078,
+        1791512020825375070,
+        1791512020825375070
+      ],
+      "sha256": "ec42972e1af05cdaf1c816116d7583d260455918d23f0e0b6b5288f5db1771c8",
+      "uid": 501
+    },
+    {
+      "bytes": 21724,
+      "gid": 0,
+      "member": "therese-c17-inheritance-main-Pkcez7OG/test_c_static.py",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/test_c_static.py",
+      "physical_stat": [
+        16777233,
+        377544936,
+        501,
+        0,
+        33188,
+        1,
+        21724,
+        1791512302175016232,
+        1791512302175016232
+      ],
+      "sha256": "06c285225ae2b8b2e91b43157b3a96b6c0e377996af309c1f348e6cb47441498",
+      "uid": 501
+    },
+    {
+      "bytes": 335,
+      "gid": 0,
+      "member": "therese-c17-inheritance-main-Pkcez7OG/policies/outer-fork.sb",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/policies/outer-fork.sb",
+      "physical_stat": [
+        16777233,
+        377543690,
+        501,
+        0,
+        33188,
+        1,
+        335,
+        1791511697641131203,
+        1791511697641131203
+      ],
+      "sha256": "11d01f5fe9b8c644d29faf0400bea4aad44213966b06a113829fd75ee83c1f7a",
+      "uid": 501
+    },
+    {
+      "bytes": 314,
+      "gid": 0,
+      "member": "therese-c17-inheritance-main-Pkcez7OG/policies/alpha.sb",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/policies/alpha.sb",
+      "physical_stat": [
+        16777233,
+        377543691,
+        501,
+        0,
+        33188,
+        1,
+        314,
+        1791511697655354985,
+        1791511697655354985
+      ],
+      "sha256": "c6373d4165461c9e66d236749b1750763f06f62b0ee20c595b14b1976843c2a1",
+      "uid": 501
+    },
+    {
+      "bytes": 25,
+      "gid": 0,
+      "member": "therese-c17-inheritance-main-Pkcez7OG/witnesses/a.txt",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/witnesses/a.txt",
+      "physical_stat": [
+        16777233,
+        377543693,
+        501,
+        0,
+        33188,
+        1,
+        25,
+        1791511697696299187,
+        1791511697696299187
+      ],
+      "sha256": "949fcaafb5efcc39e8e9e18f61d1dfc7821b38a806eb875f2862fc26d7437054",
+      "uid": 501
+    },
+    {
+      "bytes": 25,
+      "gid": 0,
+      "member": "therese-c17-inheritance-main-Pkcez7OG/witnesses/b.txt",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/witnesses/b.txt",
+      "physical_stat": [
+        16777233,
+        377543694,
+        501,
+        0,
+        33188,
+        1,
+        25,
+        1791511697710060850,
+        1791511697710060850
+      ],
+      "sha256": "a0dd8eb73b985a5000c52fbd2ad7744fd1653d924a14296653c845474af82e6a",
+      "uid": 501
+    },
+    {
+      "bytes": 7049,
+      "gid": 0,
+      "member": "therese-c17-seatbelt-fork-static-Dfnb6T/README.md",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-seatbelt-fork-static-Dfnb6T/README.md",
+      "physical_stat": [
+        16777233,
+        377545820,
+        501,
+        0,
+        33188,
+        1,
+        7049,
+        1791512511458602526,
+        1791512511458602526
+      ],
+      "sha256": "d7a85cc6d6750574d632134da91bd909a69519e9c1b4c4e5862405cd6fb9a146",
+      "uid": 501
+    },
+    {
+      "bytes": 16733,
+      "gid": 0,
+      "member": "therese-c17-seatbelt-fork-static-Dfnb6T/preimages/probe-native-lot76.c",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-seatbelt-fork-static-Dfnb6T/preimages/probe-native-lot76.c",
+      "physical_stat": [
+        16777233,
+        377543688,
+        501,
+        0,
+        33188,
+        1,
+        16733,
+        1791511697597228287,
+        1791511697597228287
+      ],
+      "sha256": "8de3afdd3eccc89c65e60b11794f35866c95d3ebed95afb322f5cbc8ecff4f38",
+      "uid": 501
+    },
+    {
+      "bytes": 25594,
+      "gid": 0,
+      "member": "therese-c17-seatbelt-fork-static-Dfnb6T/preimages/probe-before-fresh-fork-clock.c",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-seatbelt-fork-static-Dfnb6T/preimages/probe-before-fresh-fork-clock.c",
+      "physical_stat": [
+        16777233,
+        377544602,
+        501,
+        0,
+        33188,
+        1,
+        25594,
+        1791512009684436623,
+        1791512009684436623
+      ],
+      "sha256": "509336c6371f0126999ec78ac3c5b874a57d70f8484239c403583044c8b455e9",
+      "uid": 501
+    },
+    {
+      "bytes": 21227,
+      "gid": 0,
+      "member": "therese-c17-seatbelt-fork-static-Dfnb6T/preimages/test-c-before-first-red-fix.py",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-seatbelt-fork-static-Dfnb6T/preimages/test-c-before-first-red-fix.py",
+      "physical_stat": [
+        16777233,
+        377545067,
+        501,
+        0,
+        33188,
+        1,
+        21227,
+        1791512242811795471,
+        1791512242811795471
+      ],
+      "sha256": "256f47a65ee85f544474ee7b0a18ab91b47099aabdd293a91202b5703f9379b4",
+      "uid": 501
+    },
+    {
+      "bytes": 21574,
+      "gid": 0,
+      "member": "therese-c17-seatbelt-fork-static-Dfnb6T/preimages/test-c-before-second-red-fix.py",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-seatbelt-fork-static-Dfnb6T/preimages/test-c-before-second-red-fix.py",
+      "physical_stat": [
+        16777233,
+        377545176,
+        501,
+        0,
+        33188,
+        1,
+        21574,
+        1791512302158894989,
+        1791512302158894989
+      ],
+      "sha256": "ccf021ed7c2d8adba77d85680e4512800e0e36e6f70472f4f7146cbf97532c4d",
+      "uid": 501
+    },
+    {
+      "bytes": 21718,
+      "gid": 0,
+      "member": "therese-c17-seatbelt-fork-static-Dfnb6T/diffs/C-lot76-to-fork.diff",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-seatbelt-fork-static-Dfnb6T/diffs/C-lot76-to-fork.diff",
+      "physical_stat": [
+        16777233,
+        377545423,
+        501,
+        0,
+        33188,
+        1,
+        21718,
+        1791512406658733884,
+        1791512406658733884
+      ],
+      "sha256": "4fe9e750d2bdcab2accacdd36e7ea93d48ee0d70a61a2705b35cf090bde1ef5d",
+      "uid": 501
+    },
+    {
+      "bytes": 21841,
+      "gid": 0,
+      "member": "therese-c17-seatbelt-fork-static-Dfnb6T/diffs/C-lot76-to-fork.inverse",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-seatbelt-fork-static-Dfnb6T/diffs/C-lot76-to-fork.inverse",
+      "physical_stat": [
+        16777233,
+        377545424,
+        501,
+        0,
+        33188,
+        1,
+        21841,
+        1791512406673095391,
+        1791512406673095391
+      ],
+      "sha256": "bc4069f87a5051e2a244529848ea5950678ae1cb224e3a6e3508d1656910b87b",
+      "uid": 501
+    },
+    {
+      "bytes": 1240,
+      "gid": 0,
+      "member": "therese-c17-seatbelt-fork-static-Dfnb6T/diffs/C-provisional-to-final.diff",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-seatbelt-fork-static-Dfnb6T/diffs/C-provisional-to-final.diff",
+      "physical_stat": [
+        16777233,
+        377545425,
+        501,
+        0,
+        33188,
+        1,
+        1240,
+        1791512406687213900,
+        1791512406687213900
+      ],
+      "sha256": "6113ebb01a2656ae6d3dfbd6a43c582adb9e7734149c211fc516c1a4ddd89900",
+      "uid": 501
+    },
+    {
+      "bytes": 1240,
+      "gid": 0,
+      "member": "therese-c17-seatbelt-fork-static-Dfnb6T/diffs/C-provisional-to-final.inverse",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-seatbelt-fork-static-Dfnb6T/diffs/C-provisional-to-final.inverse",
+      "physical_stat": [
+        16777233,
+        377545427,
+        501,
+        0,
+        33188,
+        1,
+        1240,
+        1791512406701305951,
+        1791512406701305951
+      ],
+      "sha256": "f4f65e05256141a81ef54e13347899af31a590ee29558777057a9d624ecb95da",
+      "uid": 501
+    },
+    {
+      "bytes": 4256,
+      "gid": 0,
+      "member": "therese-c17-seatbelt-fork-static-Dfnb6T/diffs/tests-first-red-to-final.diff",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-seatbelt-fork-static-Dfnb6T/diffs/tests-first-red-to-final.diff",
+      "physical_stat": [
+        16777233,
+        377545428,
+        501,
+        0,
+        33188,
+        1,
+        4256,
+        1791512406715612167,
+        1791512406715612167
+      ],
+      "sha256": "752c01ed3e6f83699e8f71aca6d62477fed9b32d968eeaf6c64c924fe2803a81",
+      "uid": 501
+    },
+    {
+      "bytes": 4256,
+      "gid": 0,
+      "member": "therese-c17-seatbelt-fork-static-Dfnb6T/diffs/tests-first-red-to-final.inverse",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-seatbelt-fork-static-Dfnb6T/diffs/tests-first-red-to-final.inverse",
+      "physical_stat": [
+        16777233,
+        377545429,
+        501,
+        0,
+        33188,
+        1,
+        4256,
+        1791512406729955758,
+        1791512406729955758
+      ],
+      "sha256": "5989ea7ff9880c6b9f6b641fa35a873ecf46bc3896c365d60e3ffbf91e30e644",
+      "uid": 501
+    },
+    {
+      "bytes": 1325,
+      "gid": 0,
+      "member": "therese-c17-seatbelt-fork-static-Dfnb6T/diffs/tests-second-red-to-final.diff",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-seatbelt-fork-static-Dfnb6T/diffs/tests-second-red-to-final.diff",
+      "physical_stat": [
+        16777233,
+        377545430,
+        501,
+        0,
+        33188,
+        1,
+        1325,
+        1791512406744565805,
+        1791512406744565805
+      ],
+      "sha256": "b48a0c4dca0c674374024643e97ab4637a4e54f8d95335a9cd0812a8ac6b5f59",
+      "uid": 501
+    },
+    {
+      "bytes": 1325,
+      "gid": 0,
+      "member": "therese-c17-seatbelt-fork-static-Dfnb6T/diffs/tests-second-red-to-final.inverse",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-seatbelt-fork-static-Dfnb6T/diffs/tests-second-red-to-final.inverse",
+      "physical_stat": [
+        16777233,
+        377545431,
+        501,
+        0,
+        33188,
+        1,
+        1325,
+        1791512406758892520,
+        1791512406758892520
+      ],
+      "sha256": "bb20ec217c38ad1508c71f0aadfcd04b3790279bbe602b8c70ede21634f3dc33",
+      "uid": 501
+    },
+    {
+      "bytes": 3631,
+      "gid": 0,
+      "member": "therese-c17-inheritance-c-pure-XLWgl4/receipt.json",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-inheritance-c-pure-XLWgl4/receipt.json",
+      "physical_stat": [
+        16777233,
+        377544983,
+        501,
+        0,
+        33188,
+        1,
+        3631,
+        1791512207321969894,
+        1791512207321969894
+      ],
+      "sha256": "80fd36b9e57b468d35e85b32eb354e8e2f35ad624885c665806719a3c412606c",
+      "uid": 501
+    },
+    {
+      "bytes": 5932,
+      "gid": 0,
+      "member": "therese-c17-inheritance-c-pure-XLWgl4/returned-test-output.log",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-inheritance-c-pure-XLWgl4/returned-test-output.log",
+      "physical_stat": [
+        16777233,
+        377544982,
+        501,
+        0,
+        33188,
+        1,
+        5932,
+        1791512207321780188,
+        1791512207321780188
+      ],
+      "sha256": "d90aac661a37b17a75c30f0d9f7ef55ae76eee61ce6b300bc49b1c3a875290e5",
+      "uid": 501
+    },
+    {
+      "bytes": 3631,
+      "gid": 0,
+      "member": "therese-c17-inheritance-c-pure-N0X1Zv/receipt.json",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-inheritance-c-pure-N0X1Zv/receipt.json",
+      "physical_stat": [
+        16777233,
+        377545099,
+        501,
+        0,
+        33188,
+        1,
+        3631,
+        1791512255941347897,
+        1791512255941347897
+      ],
+      "sha256": "6ce0e2f34614237043cedc4e4cc88b7776dfb4d222950b3bb58a6227a1de320f",
+      "uid": 501
+    },
+    {
+      "bytes": 5504,
+      "gid": 0,
+      "member": "therese-c17-inheritance-c-pure-N0X1Zv/returned-test-output.log",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-inheritance-c-pure-N0X1Zv/returned-test-output.log",
+      "physical_stat": [
+        16777233,
+        377545098,
+        501,
+        0,
+        33188,
+        1,
+        5504,
+        1791512255941168274,
+        1791512255941168274
+      ],
+      "sha256": "fdde4f49f76cbf07f6edb08209cc37d139cfad7532afe34bb97472735f6f459c",
+      "uid": 501
+    },
+    {
+      "bytes": 3630,
+      "gid": 0,
+      "member": "therese-c17-inheritance-c-pure-eTIaYL/receipt.json",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-inheritance-c-pure-eTIaYL/receipt.json",
+      "physical_stat": [
+        16777233,
+        377545215,
+        501,
+        0,
+        33188,
+        1,
+        3630,
+        1791512314196879208,
+        1791512314196879208
+      ],
+      "sha256": "ba54777bb034e8fe8afdcfe434a354671e25c8a5c558861153eface82178b9aa",
+      "uid": 501
+    },
+    {
+      "bytes": 4425,
+      "gid": 0,
+      "member": "therese-c17-inheritance-c-pure-eTIaYL/returned-test-output.log",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-inheritance-c-pure-eTIaYL/returned-test-output.log",
+      "physical_stat": [
+        16777233,
+        377545214,
+        501,
+        0,
+        33188,
+        1,
+        4425,
+        1791512314196653460,
+        1791512314196653460
+      ],
+      "sha256": "84c23aa04dbd7b6eb6d52e9879fdac646fb6dcd94d830e2a4524021bee529bc1",
+      "uid": 501
+    },
+    {
+      "bytes": 29086,
+      "gid": 0,
+      "member": "therese-c17-inheritance-main-Pkcez7OG/controller.py",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/controller.py",
+      "physical_stat": [
+        16777233,
+        377542232,
+        501,
+        0,
+        33188,
+        1,
+        29086,
+        1791512495920980533,
+        1791512495920980533
+      ],
+      "sha256": "6945b726a512d931f347c07bb47b8d3f90b3df7c562c32e1161416adbc2ad962",
+      "uid": 501
+    },
+    {
+      "bytes": 15632,
+      "gid": 0,
+      "member": "therese-c17-inheritance-main-Pkcez7OG/native_port.py",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/native_port.py",
+      "physical_stat": [
+        16777233,
+        377542233,
+        501,
+        0,
+        33188,
+        1,
+        15632,
+        1791512206836439464,
+        1791512206836439464
+      ],
+      "sha256": "29adf629bbf4d71a50e555576e6fb114f137056ad9f8600edda72093c056413a",
+      "uid": 501
+    },
+    {
+      "bytes": 10910,
+      "gid": 0,
+      "member": "therese-c17-inheritance-main-Pkcez7OG/native_main.py",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/native_main.py",
+      "physical_stat": [
+        16777233,
+        377542234,
+        501,
+        0,
+        33188,
+        1,
+        10910,
+        1791511905343018937,
+        1791511905343018937
+      ],
+      "sha256": "e0657d48eb860d48c3373b7576a70cb2ab01884d30585f810e152554238e2ccb",
+      "uid": 501
+    },
+    {
+      "bytes": 24022,
+      "gid": 0,
+      "member": "therese-c17-inheritance-main-Pkcez7OG/tests_controller.py",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/tests_controller.py",
+      "physical_stat": [
+        16777233,
+        377543610,
+        501,
+        0,
+        33188,
+        1,
+        24022,
+        1791512511760197841,
+        1791512511760197841
+      ],
+      "sha256": "07ba6fc6ec856e7d4ff4f4d118ca746e78205c506affaf1c33411e104533d363",
+      "uid": 501
+    },
+    {
+      "bytes": 29091,
+      "gid": 0,
+      "member": "therese-c17-inheritance-main-Pkcez7OG/controller-native.py",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/controller-native.py",
+      "physical_stat": [
+        16777233,
+        377546507,
+        501,
+        0,
+        33188,
+        1,
+        29091,
+        1791512907896439218,
+        1791512907896439218
+      ],
+      "sha256": "3b4240941eb20c82f946e63edbefac2c9c68de7a2a19df25e6e9269313150b87",
+      "uid": 501
+    },
+    {
+      "bytes": 15638,
+      "gid": 0,
+      "member": "therese-c17-inheritance-main-Pkcez7OG/native_port-native.py",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/native_port-native.py",
+      "physical_stat": [
+        16777233,
+        377546508,
+        501,
+        0,
+        33188,
+        1,
+        15638,
+        1791512907912614793,
+        1791512907912614793
+      ],
+      "sha256": "49e406ba861ecde7c657398fb2d5b94de6db9012ac93f9628c59d41ab6c57684",
+      "uid": 501
+    },
+    {
+      "bytes": 10969,
+      "gid": 0,
+      "member": "therese-c17-inheritance-main-Pkcez7OG/native_main-active.py",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/native_main-active.py",
+      "physical_stat": [
+        16777233,
+        377546510,
+        501,
+        0,
+        33188,
+        1,
+        10969,
+        1791512907929428947,
+        1791512907929428947
+      ],
+      "sha256": "c4dc3b6a64dbe642d8c0f13a212bfd8b05b881aa121f7d994be89284deef8ac1",
+      "uid": 501
+    },
+    {
+      "bytes": 26079,
+      "gid": 0,
+      "member": "therese-c17-inheritance-main-Pkcez7OG/probe-native.c",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/probe-native.c",
+      "physical_stat": [
+        16777233,
+        377546506,
+        501,
+        0,
+        33188,
+        1,
+        26079,
+        1791512907880822137,
+        1791512907880822137
+      ],
+      "sha256": "d5db75bbc4caa8d580ee3cac887282f3cb92e8e7b3d051b59d18295a669b88b0",
+      "uid": 501
+    },
+    {
+      "bytes": 2772,
+      "gid": 0,
+      "member": "therese-c17-inheritance-main-Pkcez7OG/PLAN.json",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/PLAN.json",
+      "physical_stat": [
+        16777233,
+        377542368,
+        501,
+        0,
+        33188,
+        1,
+        2772,
+        1791512483888762850,
+        1791512483888762850
+      ],
+      "sha256": "fdc2667e77d38a53d68a2b5dbdd86ec3e6ff437c5ec8425e9553ace4d73b4511",
+      "uid": 501
+    },
+    {
+      "bytes": 2903,
+      "gid": 0,
+      "member": "therese-c17-inheritance-main-Pkcez7OG/ACTIVATION-INDEX.json",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/ACTIVATION-INDEX.json",
+      "physical_stat": [
+        16777233,
+        377546992,
+        501,
+        0,
+        33188,
+        1,
+        2903,
+        1791513045572877370,
+        1791513045572877370
+      ],
+      "sha256": "6feeb50cae4e4e052c6c085df1d282b4395c34eb54bdb5c91c2c45215942cf57",
+      "uid": 501
+    },
+    {
+      "bytes": 738,
+      "gid": 0,
+      "member": "therese-c17-inheritance-main-Pkcez7OG/controller-main-pure.json",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/controller-main-pure.json",
+      "physical_stat": [
+        16777233,
+        377546991,
+        501,
+        0,
+        33188,
+        1,
+        738,
+        1791513045556642670,
+        1791513045556642670
+      ],
+      "sha256": "35277aa64b575c226105fef28615e328d724f81c15f346a7201961793ac7ba71",
+      "uid": 501
+    },
+    {
+      "bytes": 3614,
+      "gid": 0,
+      "member": "therese-c17-inheritance-c-pure-UCBlDfNr/receipt.json",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-inheritance-c-pure-UCBlDfNr/receipt.json",
+      "physical_stat": [
+        16777233,
+        377546450,
+        501,
+        0,
+        33188,
+        1,
+        3614,
+        1791512878956992022,
+        1791512878956992022
+      ],
+      "sha256": "2ff3d91430e46b1bab8776d97eabeb95089d2aea88b6f45eb7669cdd36d64f00",
+      "uid": 501
+    },
+    {
+      "bytes": 4425,
+      "gid": 0,
+      "member": "therese-c17-inheritance-c-pure-UCBlDfNr/returned-test-output.log",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-inheritance-c-pure-UCBlDfNr/returned-test-output.log",
+      "physical_stat": [
+        16777233,
+        377546449,
+        501,
+        0,
+        33188,
+        1,
+        4425,
+        1791512878956772523,
+        1791512878956772523
+      ],
+      "sha256": "d04c2a473edf1fba5ca21b61015aa2206244831fad26c439ec81f58c917ef835",
+      "uid": 501
+    },
+    {
+      "bytes": 3364,
+      "gid": 0,
+      "member": "therese-c17-inheritance-review-Vviw9m3w/REVIEW.md",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-inheritance-review-Vviw9m3w/REVIEW.md",
+      "physical_stat": [
+        16777233,
+        377546557,
+        501,
+        0,
+        33188,
+        1,
+        3364,
+        1791513198825149874,
+        1791513198825149874
+      ],
+      "sha256": "52928c0acd57958a8559332457c0f38103966c5f5f0d4ca3dc7096486c6ebce4",
+      "uid": 501
+    },
+    {
+      "bytes": 11338,
+      "gid": 0,
+      "member": "therese-c17-inheritance-review-Vviw9m3w/observations.json",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-inheritance-review-Vviw9m3w/observations.json",
+      "physical_stat": [
+        16777233,
+        377546556,
+        501,
+        0,
+        33188,
+        1,
+        11338,
+        1791513198804613043,
+        1791513198804613043
+      ],
+      "sha256": "adde90321558f3c3e8ca5b9612ae39f98cefff75f851b7fe4625b5d3b0687e70",
+      "uid": 501
+    },
+    {
+      "bytes": 18607,
+      "gid": 0,
+      "member": "therese-c17-inheritance-review-Vviw9m3w/INDEX.json",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-inheritance-review-Vviw9m3w/INDEX.json",
+      "physical_stat": [
+        16777233,
+        377547614,
+        501,
+        0,
+        33188,
+        1,
+        18607,
+        1791513228980796294,
+        1791513228980796294
+      ],
+      "sha256": "c5b052d145f7ddf23a41da55cccb7222c0a9bb5fecdd8318b1fdb894a463a7f0",
+      "uid": 501
+    },
+    {
+      "bytes": 16146,
+      "gid": 0,
+      "member": "therese-c17-inheritance-review-Vviw9m3w/NATIVE-REVIEW.json",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-inheritance-review-Vviw9m3w/NATIVE-REVIEW.json",
+      "physical_stat": [
+        16777233,
+        377548366,
+        501,
+        0,
+        33188,
+        1,
+        16146,
+        1791513513549937655,
+        1791513513549937655
+      ],
+      "sha256": "37d22800f105fc485b8ca8c3a3e601dd9041d269bd2c98c832753535fd5b3b34",
+      "uid": 501
+    },
+    {
+      "bytes": 1033,
+      "gid": 0,
+      "member": "therese-c17-lot77-archive-prep-PL0U4s/PREP-INDEX.json",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-lot77-archive-prep-PL0U4s/PREP-INDEX.json",
+      "physical_stat": [
+        16777233,
+        377547263,
+        501,
+        0,
+        33188,
+        1,
+        1033,
+        1791513176249957145,
+        1791513176249957145
+      ],
+      "sha256": "d7073ec7d3747757d668978ed8b64eb57ddab6d3d781841200bfc5922154f833",
+      "uid": 501
+    },
+    {
+      "bytes": 2035,
+      "gid": 0,
+      "member": "therese-c17-inheritance-main-Pkcez7OG/NATIVE-SOURCES.json",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/NATIVE-SOURCES.json",
+      "physical_stat": [
+        16777233,
+        377546989,
+        501,
+        0,
+        33188,
+        1,
+        2035,
+        1791513045525773590,
+        1791513045525773590
+      ],
+      "sha256": "f2ed24efe304df03223f3020e634d60d127a5b55ef05dcd4879bf526db4cd784",
+      "uid": 501
+    },
+    {
+      "bytes": 1489,
+      "gid": 0,
+      "member": "therese-c17-inheritance-main-Pkcez7OG/compile-enabled.json",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/compile-enabled.json",
+      "physical_stat": [
+        16777233,
+        377546990,
+        501,
+        0,
+        33188,
+        1,
+        1489,
+        1791513045541187005,
+        1791513045541187005
+      ],
+      "sha256": "df8ae590c27c1b0bb24d096cae68954d13dd624517b6de75f0f90ab7bee11d64",
+      "uid": 501
+    },
+    {
+      "bytes": 4054,
+      "gid": 0,
+      "member": "therese-c17-inheritance-main-Pkcez7OG/cases/fork-baseline/result.json",
+      "mode": 384,
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/cases/fork-baseline/result.json",
+      "physical_stat": [
+        16777233,
+        377547162,
+        501,
+        0,
+        33152,
+        1,
+        4054,
+        1791513126947789016,
+        1791513126947789016
+      ],
+      "sha256": "c67b830ca54c5c14c4cd3398ca65e9ba31030aa1cf23db84cb10a471ad469f86",
+      "uid": 501
+    },
+    {
+      "bytes": 1978,
+      "gid": 0,
+      "member": "therese-c17-inheritance-main-Pkcez7OG/cases/fork-baseline/stdout.log",
+      "mode": 384,
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/cases/fork-baseline/stdout.log",
+      "physical_stat": [
+        16777233,
+        377547159,
+        501,
+        0,
+        33152,
+        1,
+        1978,
+        1791513126942661766,
+        1791513126942661766
+      ],
+      "sha256": "1345c250c6f6f856890da4a7e64d008f174aa59c49072903e37ce576536dd503",
+      "uid": 501
+    },
+    {
+      "bytes": 0,
+      "gid": 0,
+      "member": "therese-c17-inheritance-main-Pkcez7OG/cases/fork-baseline/stderr.log",
+      "mode": 384,
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/cases/fork-baseline/stderr.log",
+      "physical_stat": [
+        16777233,
+        377547160,
+        501,
+        0,
+        33152,
+        1,
+        0,
+        1791513126489955483,
+        1791513126489967774
+      ],
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "uid": 501
+    },
+    {
+      "bytes": 6544,
+      "gid": 0,
+      "member": "therese-c17-inheritance-main-Pkcez7OG/cases/fork-baseline/trace.jsonl",
+      "mode": 384,
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/cases/fork-baseline/trace.jsonl",
+      "physical_stat": [
+        16777233,
+        377547158,
+        501,
+        0,
+        33152,
+        1,
+        6544,
+        1791513126946874440,
+        1791513126946874440
+      ],
+      "sha256": "b38b381443a14ac962ab380e33094130181c043d4c90fc59933aba20f5f86d27",
+      "uid": 501
+    },
+    {
+      "bytes": 4130,
+      "gid": 0,
+      "member": "therese-c17-inheritance-main-Pkcez7OG/cases/fork-compiled-alpha/result.json",
+      "mode": 384,
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/cases/fork-compiled-alpha/result.json",
+      "physical_stat": [
+        16777233,
+        377547882,
+        501,
+        0,
+        33152,
+        1,
+        4130,
+        1791513312041224356,
+        1791513312041224356
+      ],
+      "sha256": "5620a6a20bce42e42a3b57cd2ffb1cd0cfa35bf3c436b44e797081c47865ed12",
+      "uid": 501
+    },
+    {
+      "bytes": 2529,
+      "gid": 0,
+      "member": "therese-c17-inheritance-main-Pkcez7OG/cases/fork-compiled-alpha/stdout.log",
+      "mode": 384,
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/cases/fork-compiled-alpha/stdout.log",
+      "physical_stat": [
+        16777233,
+        377547880,
+        501,
+        0,
+        33152,
+        1,
+        2529,
+        1791513312037049223,
+        1791513312037049223
+      ],
+      "sha256": "4bba9f465a7837a9bfa7e363933dd0f8d6c6d76d135fe25bfe7e57185d56d0a4",
+      "uid": 501
+    },
+    {
+      "bytes": 0,
+      "gid": 0,
+      "member": "therese-c17-inheritance-main-Pkcez7OG/cases/fork-compiled-alpha/stderr.log",
+      "mode": 384,
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/cases/fork-compiled-alpha/stderr.log",
+      "physical_stat": [
+        16777233,
+        377547881,
+        501,
+        0,
+        33152,
+        1,
+        0,
+        1791513312002087343,
+        1791513312002099843
+      ],
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "uid": 501
+    },
+    {
+      "bytes": 6552,
+      "gid": 0,
+      "member": "therese-c17-inheritance-main-Pkcez7OG/cases/fork-compiled-alpha/trace.jsonl",
+      "mode": 384,
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/cases/fork-compiled-alpha/trace.jsonl",
+      "physical_stat": [
+        16777233,
+        377547879,
+        501,
+        0,
+        33152,
+        1,
+        6552,
+        1791513312040568486,
+        1791513312040568486
+      ],
+      "sha256": "8a5d7db185f255c6d47e4ce8729b834268bafbc44ca878780587ff4cf41c7845",
+      "uid": 501
+    },
+    {
+      "bytes": 6401,
+      "gid": 0,
+      "member": "therese-c17-inheritance-main-Pkcez7OG/SERIES-CLOSURE.json",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-inheritance-main-Pkcez7OG/SERIES-CLOSURE.json",
+      "physical_stat": [
+        16777233,
+        377548483,
+        501,
+        0,
+        33188,
+        1,
+        6401,
+        1791513568420301743,
+        1791513568420301743
+      ],
+      "sha256": "bd14097a0cfe1f21206e03cc7b1bffa443ac4c72c4844fea6921a74a79d570e1",
+      "uid": 501
+    },
+    {
+      "bytes": 14967,
+      "gid": 0,
+      "member": "therese-c17-lot77-archive-final-ItiV4a/archive_lot77-final.py",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-lot77-archive-final-ItiV4a/archive_lot77-final.py",
+      "physical_stat": [
+        16777233,
+        377548092,
+        501,
+        0,
+        33188,
+        1,
+        14967,
+        1791513396697708480,
+        1791513396697708480
+      ],
+      "sha256": "ee78522b9a7d3e27f116c858032db726f16d6f8add1d2351fcea2b30bccd10a4",
+      "uid": 501
+    },
+    {
+      "bytes": 2359,
+      "gid": 0,
+      "member": "therese-c17-lot77-archive-final-ItiV4a/README.md",
+      "mode": 420,
+      "path": "/private/tmp/therese-c17-lot77-archive-final-ItiV4a/README.md",
+      "physical_stat": [
+        16777233,
+        377548099,
+        501,
+        0,
+        33188,
+        1,
+        2359,
+        1791513396717561025,
+        1791513396717561025
+      ],
+      "sha256": "b93a3fa6ac01ae000858a64d73917bf7609318635d50904cb75f69367421bd64",
+      "uid": 501
+    }
+  ],
+  "qualification_created_by_archive": false,
+  "schema": "c17-seatbelt-inheritance-archive-manifest-v1",
+  "scope": "sources_and_terminal_evidence_archival_only"
+}
