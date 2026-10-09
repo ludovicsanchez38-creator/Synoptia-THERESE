@@ -263,6 +263,7 @@ class TestTransport:
             "parameters": OUTIL["function"]["parameters"],
         }]
         assert corps["tool_choice"] == "auto"
+        assert corps["max_output_tokens"] == 4096
         assert corps["input"][0] == {"role": "system", "content": "Tu es THÉRÈSE."}
         assert corps["input"][1] == {"role": "user", "content": "Quel temps à Manosque ?"}
         textes = [e.content for e in evenements if e.type == "text"]
@@ -272,6 +273,27 @@ class TestTransport:
         assert fini[0].stop_reason == "stop"
         assert fini[0].input_tokens == 42
         assert fini[0].output_tokens == 7
+
+    @pytest.mark.asyncio
+    async def test_max_output_tokens_borne_a_128_000(self):
+        """La fiche plafonne la sortie à 128 000, même si la config est plus haute."""
+        client = _Client(_flux_texte())
+        fournisseur = _provider(client)
+        fournisseur.config.max_tokens = 200_000
+        await _collecter(fournisseur.stream(None, MESSAGES, [OUTIL]))
+        assert client.requests[0]["json"]["max_output_tokens"] == 128_000
+
+        pile = _Client(_flux_texte())
+        au_plafond = _provider(pile)
+        au_plafond.config.max_tokens = 128_000
+        await _collecter(au_plafond.stream(None, MESSAGES, [OUTIL]))
+        assert pile.requests[0]["json"]["max_output_tokens"] == 128_000
+
+        court = _Client(_flux_texte())
+        sous_plafond = _provider(court)
+        sous_plafond.config.max_tokens = 4_000
+        await _collecter(sous_plafond.stream(None, MESSAGES, [OUTIL]))
+        assert court.requests[0]["json"]["max_output_tokens"] == 4_000
 
     @pytest.mark.asyncio
     async def test_response_incomplete_n_est_pas_une_fin_normale(self):
