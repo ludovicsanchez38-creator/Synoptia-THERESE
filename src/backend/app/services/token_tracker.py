@@ -129,7 +129,8 @@ TOKEN_PRICES = {
     "gpt-5.4-mini": {"input": 0.75, "output": 4.50},
     "gpt-5.3-codex": {"input": 1.75, "output": 14.00},
     # Gemini (juin 2026)
-    # Tarif en vigueur jusqu'au 31/12/2026 (puis 1.50/7.50 annoncés)
+    # Tarif en vigueur jusqu'au 31/12/2026. Dès le 01/01/2027 inclus,
+    # BASCULES_TARIF applique 1,50 / 7,50 (grille officielle).
     "gemini-3.7-flash": {"input": 0.75, "output": 3.75},
     # M1, 09/10/2026 : couple payant d'avant la bascule. Dès le 01/01/2027
     # inclus, BASCULES_TARIF applique 1,50 / 7,50 (grille officielle).
@@ -206,11 +207,17 @@ PALIERS_PROMPT: dict[str, tuple[PalierTarif, ...]] = {
 
 
 # Bascules datées. ``debut`` inclus. Le couple de TOKEN_PRICES est celui
-# d'avant. Gemini 3.8 Flash : la grille annonce 1,50 / 7,50 dès le
-# 1er janvier 2027 (0,75 / 3,75 jusqu'au 31 décembre 2026).
+# d'avant. Gemini 3.7 Flash et 3.8 Flash : la grille annonce 1,50 / 7,50
+# dès le 1er janvier 2027 (0,75 / 3,75 jusqu'au 31 décembre 2026).
 # Source : https://ai.google.dev/gemini-api/docs/pricing
 BASCULES_TARIF: dict[str, BasculeTarif] = {
     "gemini-3.8-flash": BasculeTarif(
+        entree=1.50,
+        sortie=7.50,
+        debut=date(2027, 1, 1),
+        source="https://ai.google.dev/gemini-api/docs/pricing",
+    ),
+    "gemini-3.7-flash": BasculeTarif(
         entree=1.50,
         sortie=7.50,
         debut=date(2027, 1, 1),

@@ -25,7 +25,16 @@ def _provider(model: str) -> AnthropicProvider:
 
 @pytest.mark.parametrize(
     "model",
-    ["claude-fable-5", "claude-opus-4-8", "claude-opus-4-7", "claude-sonnet-5"],
+    [
+        "claude-fable-5",
+        "claude-fable-5-1",
+        "claude-opus-4-8",
+        "claude-opus-4-7",
+        "claude-opus-5-5",
+        "claude-sonnet-5",
+        "claude-sonnet-5-5",
+        "claude-haiku-5-5",
+    ],
 )
 def test_pas_de_temperature_sur_les_modeles_recents(model):
     body = _provider(model)._build_request_body(

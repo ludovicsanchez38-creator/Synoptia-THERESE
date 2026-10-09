@@ -39,7 +39,15 @@ class TestAnthropicEffort:
 
     @pytest.mark.parametrize(
         "model",
-        ["claude-fable-5", "claude-sonnet-5", "claude-sonnet-4-6", "claude-opus-4-8"],
+        [
+            "claude-fable-5",
+            "claude-fable-5-1",
+            "claude-sonnet-5",
+            "claude-sonnet-5-5",
+            "claude-sonnet-4-6",
+            "claude-opus-4-8",
+            "claude-haiku-5-5",
+        ],
     )
     def test_effort_envoye_sur_les_modeles_supportes(self, model):
         body = self._body(model, "high")

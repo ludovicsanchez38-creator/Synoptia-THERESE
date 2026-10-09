@@ -93,13 +93,20 @@ class TestLeResolveurUnique:
             # traduit : la valeur MAX vérifiée à la source
             ("claude-opus-5", "max", "max"),
             ("claude-fable-5", "max", "max"),
+            ("claude-fable-5-1", "max", "max"),
+            ("claude-sonnet-5-5", "max", "max"),
+            ("claude-haiku-5-5", "max", "max"),
             ("grok-4.6", "max", "xhigh"),
+            ("grok-4.7", "max", "xhigh"),
             ("grok-4.5", "max", "high"),  # plafond existant conservé
             ("gemini-3.7-flash", "max", "HIGH"),
+            ("gemini-3.8-flash", "max", "HIGH"),
             ("mistral-medium-3-5", "max", "high"),
             ("mistral-medium-latest", "max", "high"),
+            ("mistral-large-4", "max", None),
             # transmis tel quel (support vérifié)
             ("gpt-5.6-sol", "max", "max"),
+            ("gpt-6.1-sol", "max", "max"),
             ("gpt-5.6-terra", "high", "high"),
             # NON envoyé (support non vérifié - contrat figé 0.31)
             ("gpt-5.5", "max", None),

@@ -71,3 +71,21 @@ class TestBasculeGemini38:
         assert bascule.sortie == 7.50
         assert "ai.google.dev/gemini-api/docs/pricing" in bascule.source
         assert TOKEN_PRICES["gemini-3.8-flash"] == {"input": 0.75, "output": 3.75}
+
+
+class TestBasculeGemini37:
+    """La grille officielle date le même couple pour Gemini 3.7 Flash.
+
+    0,75 / 3,75 jusqu'au 31 décembre 2026, 1,50 / 7,50 dès le 1er janvier 2027.
+    Source : https://ai.google.dev/gemini-api/docs/pricing
+    """
+
+    def test_le_31_decembre_2026_reste_au_couple_court(self, monkeypatch):
+        _figer_le_jour(monkeypatch, date(2026, 12, 31))
+        cout = _traceur().estimate_cost("gemini-3.7-flash", 1_000_000, 1_000_000)
+        assert cout == pytest.approx(0.75 + 3.75)
+
+    def test_le_1er_janvier_2027_passe_a_150_et_750(self, monkeypatch):
+        _figer_le_jour(monkeypatch, date(2027, 1, 1))
+        cout = _traceur().estimate_cost("gemini-3.7-flash", 1_000_000, 1_000_000)
+        assert cout == pytest.approx(1.50 + 7.50)

@@ -52,10 +52,17 @@ class TestLesGenerationsCourantesSontProposees:
         "fournisseur,attendu",
         [
             ("anthropic", "claude-opus-5"),
+            ("anthropic", "claude-fable-5-1"),
+            ("anthropic", "claude-sonnet-5-5"),
+            ("anthropic", "claude-haiku-5-5"),
             ("openai", "gpt-5.6-sol"),
+            ("openai", "gpt-6.1-sol"),
             ("grok", "grok-4.6"),
+            ("grok", "grok-4.7"),
             ("gemini", "gemini-3.7-flash"),
+            ("gemini", "gemini-3.8-flash"),
             ("mistral", "mistral-medium-latest"),
+            ("mistral", "mistral-large-4"),
             ("deepseek", "deepseek-v4-pro"),
         ],
     )
