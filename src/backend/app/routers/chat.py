@@ -1402,6 +1402,39 @@ def _jetons_du_dernier_message(contexte: Any) -> int:
     return int(estimer(contenu))
 
 
+def _jetons_de_continuation(
+    contexte: Any,
+    assistant_content: str,
+    tool_calls: list[Any],
+    tool_results: list[Any],
+    prior_turns: list[Any] | None,
+) -> int:
+    """Prompt de la suite : fenêtre déjà préparée, plus résultats et tours rejoués."""
+    total = _jetons_du_prompt_prepare(contexte)
+    blocs = [assistant_content or ""]
+    for appel in tool_calls:
+        blocs.append(getattr(appel, "name", "") or "")
+        blocs.append(str(getattr(appel, "arguments", "") or ""))
+    for resultat in tool_results:
+        blocs.append(str(getattr(resultat, "result", "") or ""))
+    for tour in prior_turns or []:
+        blocs.append(getattr(tour, "assistant_content", "") or "")
+        for appel in getattr(tour, "tool_calls", None) or []:
+            blocs.append(getattr(appel, "name", "") or "")
+            blocs.append(str(getattr(appel, "arguments", "") or ""))
+        for resultat in getattr(tour, "tool_results", None) or []:
+            blocs.append(str(getattr(resultat, "result", "") or ""))
+    estimer = getattr(contexte, "estimate_tokens", None)
+    for bloc in blocs:
+        if not bloc:
+            continue
+        if callable(estimer):
+            total += int(estimer(bloc))
+        else:
+            total += len(bloc) // 4
+    return total
+
+
 def _controle_du_prompt(llm_service: Any, contexte: Any, jetons: int | None = None) -> dict:
     """Budget et palier sur le prompt entier, taille sur le dernier message."""
     return get_token_tracker().check_limits(
@@ -3703,6 +3736,29 @@ async def _execute_tools_and_continue(
         else _is_cancelled(conversation_id)
     ):
         logger.info("Annulation demandée : pas de nouveau tour après les outils")
+        return
+
+    # Le résultat et les tours rejoués peuvent franchir un palier que le
+    # premier contrôle, antérieur à l'outil, ne voyait pas.
+    verdict_suite = _controle_du_prompt(
+        llm_service,
+        context,
+        _jetons_de_continuation(
+            context, assistant_content, tool_calls, tool_results, prior_turns,
+        ),
+    )
+    if not verdict_suite["allowed"]:
+        yield (
+            "data: "
+            + json.dumps(
+                {
+                    "type": "error",
+                    "content": "Désolée : " + " ".join(verdict_suite["errors"]),
+                },
+                ensure_ascii=False,
+            )
+            + "\n\n"
+        )
         return
 
     # Continue conversation with tool results
