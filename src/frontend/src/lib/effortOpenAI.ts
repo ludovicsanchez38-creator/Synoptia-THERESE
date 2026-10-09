@@ -8,8 +8,9 @@
  */
 /** Ces modèles gardent l'effort choisi quand des outils sont là : leurs
  * appels passent par Responses, qui accepte l'effort. gpt-6.1-sol refuse
- * none et minimal (fiche du 09/10/2026). */
-const EFFORT_CONSERVE_AVEC_OUTILS = new Set(['gpt-6.1-sol']);
+ * none et minimal (fiche du 09/10/2026). gpt-6-astra exige Responses pour
+ * les outils et refuse none (guides du 09/10/2026, B-1774). */
+const EFFORT_CONSERVE_AVEC_OUTILS = new Set(['gpt-6.1-sol', 'gpt-6-astra']);
 
 export function effortConserveAvecOutils(modele: string): boolean {
   return EFFORT_CONSERVE_AVEC_OUTILS.has(modele.toLowerCase());
@@ -24,7 +25,8 @@ export function modeleOpenAIRaisonnant(modele: string): boolean {
   const m = modele.toLowerCase();
   // P-c18-m2 : gpt-6.1-sol ne neutralise pas l'effort (transport Responses).
   if (effortConserveAvecOutils(m)) return false;
-  // P-057 (0.70.0) : la famille GPT-6 (gpt-6-astra) suit la même règle que GPT-5.
+  // P-057 : la famille GPT-6 suit la même règle que GPT-5, sauf les modèles
+  // dont les outils passent par Responses (effort conservé, plus haut).
   return m.startsWith('gpt-6') || m.startsWith('gpt-5') || m.startsWith('o1') || m.startsWith('o3') || m.startsWith('o4');
 }
 

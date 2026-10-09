@@ -6,6 +6,14 @@ import { effortConserveAvecOutils, effortTransmisSansOutils, modeleOpenAIRaisonn
 
 describe('effortOpenAI (P-045)', () => {
   it.each(Object.entries(temoins.temoins))('%s → famille raisonnante : %s', (modele, attendu) => {
+    // B-1774 : Astra exige Responses pour les outils (none y est un 400).
+    // Le témoin reste vrai pour _uses_max_completion_tokens ; l'écran ne
+    // doit plus dire que l'effort est coupé.
+    if (modele.toLowerCase() === 'gpt-6-astra') {
+      expect(effortConserveAvecOutils(modele)).toBe(true);
+      expect(modeleOpenAIRaisonnant(modele)).toBe(false);
+      return;
+    }
     expect(modeleOpenAIRaisonnant(modele)).toBe(attendu);
   });
 

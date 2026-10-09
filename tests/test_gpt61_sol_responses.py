@@ -370,13 +370,29 @@ class TestTransport:
             assert "reasoning_effort" not in client.requests[0]["json"]
 
     @pytest.mark.asyncio
-    async def test_gpt6_sol_et_astra_restent_sur_chat_completions(self):
-        """Le guide raisonnement cite aussi Astra. Ce lot ne le migre pas."""
-        for modele in ("gpt-6-sol", "gpt-6-astra"):
-            client = _Client(["data: [DONE]"])
-            await _collecter(_provider(client, modele, "high").stream(None, MESSAGES, [OUTIL]))
-            assert client.requests[0]["url"].endswith("/v1/chat/completions"), modele
-            assert client.requests[0]["json"]["reasoning_effort"] == "none", modele
+    async def test_gpt6_sol_reste_sur_chat_completions_avec_none(self):
+        """Fiche gpt-6-sol (09/10/2026) : Chat Completions accepte les outils
+        seulement si reasoning_effort vaut none. On ne migre pas ce modèle."""
+        client = _Client(["data: [DONE]"])
+        await _collecter(_provider(client, "gpt-6-sol", "high").stream(None, MESSAGES, [OUTIL]))
+        assert client.requests[0]["url"].endswith("/v1/chat/completions")
+        assert client.requests[0]["json"]["reasoning_effort"] == "none"
+
+    @pytest.mark.asyncio
+    async def test_gpt6_astra_avec_outils_passe_par_responses(self):
+        """Guides function-calling et raisonnement (09/10/2026) : Astra exige
+        Responses pour les outils, et none renvoie HTTP 400."""
+        from app.services.providers.openai import _outils_via_responses
+
+        client = _Client(_flux_texte())
+        await _collecter(_provider(client, "gpt-6-astra", "high").stream(None, MESSAGES, [OUTIL]))
+        appel = client.requests[0]
+        assert appel["url"].endswith("/v1/responses"), appel["url"]
+        corps = appel["json"]
+        assert corps["reasoning"] == {"effort": "high"}
+        assert "reasoning_effort" not in corps
+        assert corps["tools"][0]["name"] == "meteo"
+        assert _outils_via_responses("gpt-6-astra") is True
 
     @pytest.mark.asyncio
     async def test_appel_outil_puis_continuation_avec_historique(self):

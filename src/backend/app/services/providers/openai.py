@@ -27,10 +27,13 @@ logger = logging.getLogger(__name__)
 OPENAI_API_URL = "https://api.openai.com/v1/chat/completions"
 OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
 
-# Fiche gpt-6.1-sol (09/10/2026) : les outils exigent Responses.
-# Chat Completions reste le chemin sans outils. Astra est cité par le guide
-# raisonnement mais déjà servi : ce lot ne le migre pas.
-_MODELES_OUTILS_RESPONSES = frozenset({"gpt-6.1-sol"})
+# Outils via Responses (fiches lues le 09/10/2026) :
+# - gpt-6.1-sol : « Use the Responses API for tool calling ».
+# - gpt-6-astra : le guide function-calling et le guide raisonnement exigent
+#   Responses pour les outils. Poser none renvoie HTTP 400.
+# - gpt-6-sol : la fiche dit que Chat Completions accepte les outils avec
+#   reasoning_effort=none. On ne le migre pas.
+_MODELES_OUTILS_RESPONSES = frozenset({"gpt-6.1-sol", "gpt-6-astra"})
 
 # Fiche gpt-6.1-sol (09/10/2026) : 128 000 jetons de sortie au maximum.
 _MAX_SORTIE_RESPONSES = 128_000
