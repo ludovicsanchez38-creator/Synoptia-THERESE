@@ -359,6 +359,23 @@ class TestTransport:
         assert [e.content for e in evenements if e.type == "text"] == ["Texte"]
 
     @pytest.mark.asyncio
+    async def test_sans_outils_une_sortie_au_dessus_du_plafond_est_bornee(self):
+        """Le maximum officiel de 128 000 vaut aussi hors Responses."""
+        client = _Client(["data: [DONE]"])
+        fournisseur = _provider(client)
+        fournisseur.config.max_tokens = 200_000
+        await _collecter(fournisseur.stream(None, MESSAGES, None))
+        corps = client.requests[0]["json"]
+        assert client.requests[0]["url"].endswith("/v1/chat/completions")
+        assert corps["max_completion_tokens"] == 128_000
+
+        court = _Client(["data: [DONE]"])
+        sous = _provider(court)
+        sous.config.max_tokens = 4_000
+        await _collecter(sous.stream(None, MESSAGES, None))
+        assert court.requests[0]["json"]["max_completion_tokens"] == 4_000
+
+    @pytest.mark.asyncio
     async def test_none_et_minimal_absents_du_corps_sans_outils(self):
         temoin = _Client(["data: [DONE]"])
         await _collecter(_provider(temoin, effort="high").stream(None, MESSAGES, None))

@@ -36,14 +36,10 @@ OPENAI_RESPONSES_URL = "https://api.openai.com/v1/responses"
 #   reasoning_effort=none. On ne le migre pas.
 _MODELES_OUTILS_RESPONSES = frozenset({"gpt-6.1-sol", "gpt-6-astra"})
 
-# Fiche gpt-6.1-sol (09/10/2026) : 128 000 jetons de sortie au maximum.
-_MAX_SORTIE_RESPONSES = 128_000
-
-
-def _sortie_responses(demande: int) -> int:
-    if demande > _MAX_SORTIE_RESPONSES:
-        return _MAX_SORTIE_RESPONSES
-    return demande
+def _sortie_responses(modele: str, demande: int) -> int:
+    """Borne la sortie au plafond publié, le même que Chat Completions."""
+    plafond = plafond_sortie_a_envoyer(modele, demande)
+    return demande if plafond is None else plafond
 
 
 def _outils_via_responses(model: str) -> bool:
@@ -256,7 +252,9 @@ class OpenAIProvider(BaseProvider):
             "model": self.config.model,
             "input": _messages_vers_input_responses(messages),
             "stream": True,
-            "max_output_tokens": _sortie_responses(self.config.max_tokens),
+            "max_output_tokens": _sortie_responses(
+                self.config.model, self.config.max_tokens
+            ),
         }
         if self.config.effort_resolu:
             corps["reasoning"] = {"effort": self.config.effort_resolu}

@@ -76,10 +76,16 @@ def plafond_sortie_a_envoyer(modele: str, max_tokens: int) -> int | None:
     accepte l'absence du paramètre, et que la valeur est encore le défaut
     produit. Un plafond choisi explicitement part tout de même.
     """
-    from app.services.modeles_catalogue import omettre_plafond_par_defaut
+    from app.services.modeles_catalogue import (
+        limite_sortie_fournisseur,
+        omettre_plafond_par_defaut,
+    )
 
     if omettre_plafond_par_defaut(modele) and max_tokens == LIMITE_SORTIE_PRODUIT:
         return None
+    publie = limite_sortie_fournisseur(modele)
+    if publie is not None and max_tokens > publie:
+        return publie
     return max_tokens
 
 

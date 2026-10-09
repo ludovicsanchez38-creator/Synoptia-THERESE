@@ -116,16 +116,19 @@ CATALOGUE: dict[str, FicheFournisseur] = {
             "claude-fable-5-1": FicheModele(
                 effort=_EFFORT_ANTHROPIC_OPUS_55,
                 max_tokens_recommande=128_000,
+                limite_sortie_fournisseur=128_000,
                 context_window=1_000_000,
             ),
             "claude-sonnet-5-5": FicheModele(
                 effort=_EFFORT_ANTHROPIC_OPUS_55,
                 max_tokens_recommande=128_000,
+                limite_sortie_fournisseur=128_000,
                 context_window=1_000_000,
             ),
             "claude-haiku-5-5": FicheModele(
                 effort=_EFFORT_ANTHROPIC_OPUS_55,
                 max_tokens_recommande=128_000,
+                limite_sortie_fournisseur=128_000,
                 context_window=1_000_000,
             ),
             "claude-fable-5": _ANTHROPIC_EFFORT_OK,
@@ -166,7 +169,11 @@ CATALOGUE: dict[str, FicheFournisseur] = {
             "gpt-6-luna": FicheModele(effort=TEL_QUEL, context_window=1_050_000),
             # gpt-6.1-sol (fiche du 09/10/2026) : low, medium, high, xhigh, max.
             # none et minimal sont refusés : absents de la table, donc jamais émis.
-            "gpt-6.1-sol": FicheModele(effort=_EFFORT_GPT6, context_window=1_050_000),
+            "gpt-6.1-sol": FicheModele(
+                effort=_EFFORT_GPT6,
+                context_window=1_050_000,
+                limite_sortie_fournisseur=128_000,
+            ),
             # Fiches 5.6 : none/low/medium/high/xhigh/max, transmis tel quel.
             "gpt-5.6-sol": FicheModele(effort=TEL_QUEL),
             "gpt-5.6-terra": FicheModele(effort=TEL_QUEL),
@@ -197,6 +204,7 @@ CATALOGUE: dict[str, FicheFournisseur] = {
             "gemini-3.8-flash": FicheModele(
                 effort=_EFFORT_GEMINI_3,
                 max_tokens_recommande=65_536,
+                limite_sortie_fournisseur=65_536,
                 context_window=1_048_576,
             ),
             "gemini-3.7-flash": FicheModele(effort=_EFFORT_GEMINI_3),

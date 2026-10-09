@@ -183,6 +183,19 @@ class TestCatalogueM1:
         assert fenetre_de_contexte("gemini", "gemini-3.7-flash") == 1_000_000
         assert LLMConfig(LLMProvider.GEMINI, "gemini-3.8-flash").max_tokens == 65_536
 
+    def test_les_plafonds_publies_se_lisent(self):
+        """128 000 pour les trois Claude et gpt-6.1-sol, 65 536 pour Gemini 3.8."""
+        from app.services.modeles_catalogue import limite_sortie_fournisseur
+
+        for modele in (
+            "claude-fable-5-1",
+            "claude-sonnet-5-5",
+            "claude-haiku-5-5",
+            "gpt-6.1-sol",
+        ):
+            assert limite_sortie_fournisseur(modele) == 128_000, modele
+        assert limite_sortie_fournisseur("gemini-3.8-flash") == 65_536
+
     def test_efforts_traduits_sans_rien_inventer(self):
         for modele in ("claude-fable-5-1", "claude-sonnet-5-5", "claude-haiku-5-5"):
             assert resoudre_effort(modele, "xhigh") == "xhigh"
