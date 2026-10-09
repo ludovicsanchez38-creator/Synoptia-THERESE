@@ -271,6 +271,8 @@ export function ChatInput({ onOpenCommandPalette, initialPrompt, initialSkillId,
       setCurrentModel(cfg.model);
       setAvailableModels(cfg.available_models || []);
       setModelAvailable(cfg.available !== false);
+      setCurrentEffort(cfg.effort ?? null);
+      setEffortResolu(cfg.effort_resolu);
       setFailedModel(null);
       window.dispatchEvent(new Event('therese:llm-config-changed'));
     } catch (reason) {
