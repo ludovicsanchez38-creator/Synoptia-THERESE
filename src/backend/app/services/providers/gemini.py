@@ -19,6 +19,7 @@ from .base import (
     ToolCall,
     ToolResult,
     ToolTurn,
+    plafond_sortie_a_envoyer,
 )
 
 logger = logging.getLogger(__name__)
@@ -187,8 +188,9 @@ class GeminiProvider(BaseProvider):
         tools: list[dict[str, Any]] | None,
     ) -> dict[str, Any]:
         """Corps generateContent - extrait pour être testable (0.48)."""
+        plafond = plafond_sortie_a_envoyer(self.config.model, self.config.max_tokens)
         generation_config: dict[str, Any] = {
-            "maxOutputTokens": self.config.max_tokens,
+            "maxOutputTokens": self.config.max_tokens if plafond is None else plafond,
         }
         if not self.config.model.startswith(_SANS_SAMPLING):
             generation_config["temperature"] = self.config.temperature

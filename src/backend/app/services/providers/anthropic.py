@@ -18,6 +18,7 @@ from .base import (
     ToolResult,
     ToolTurn,
     message_erreur_http,
+    plafond_sortie_a_envoyer,
 )
 
 logger = logging.getLogger(__name__)
@@ -57,9 +58,10 @@ class AnthropicProvider(BaseProvider):
     ) -> dict[str, Any]:
         """Payload /v1/messages - `temperature` seulement sur les modèles qui
         l'acceptent (les récents la refusent avec un 400, cf. _NO_SAMPLING)."""
+        plafond = plafond_sortie_a_envoyer(self.config.model, self.config.max_tokens)
         request_body: dict[str, Any] = {
             "model": self.config.model,
-            "max_tokens": self.config.max_tokens,
+            "max_tokens": self.config.max_tokens if plafond is None else plafond,
             "system": system_prompt,
             "messages": messages,
             "stream": True,
