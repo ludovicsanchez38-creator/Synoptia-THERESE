@@ -50,6 +50,19 @@ class PalierTarif:
 
 
 @dataclass(frozen=True)
+class BasculeTarif:
+    """Nouveau couple à partir d'un jour, inclus.
+
+    TOKEN_PRICES garde le couple d'avant. ``debut`` vient de la grille.
+    """
+
+    entree: float
+    sortie: float
+    debut: date
+    source: str
+
+
+@dataclass(frozen=True)
 class PromotionTarif:
     """Tarif soldé entre deux dates. ``fin`` est exclusive.
 
@@ -113,7 +126,8 @@ TOKEN_PRICES = {
     # Gemini (juin 2026)
     # Tarif en vigueur jusqu'au 31/12/2026 (puis 1.50/7.50 annoncés)
     "gemini-3.7-flash": {"input": 0.75, "output": 3.75},
-    # M1, 09/10/2026 : palier payant jusqu'au 31/12/2026 (puis 1,50 / 7,50).
+    # M1, 09/10/2026 : couple payant d'avant la bascule. Dès le 01/01/2027
+    # inclus, BASCULES_TARIF applique 1,50 / 7,50 (grille officielle).
     "gemini-3.8-flash": {"input": 0.75, "output": 3.75},
     # Cycle 6 (D184, relevé ai.google.dev/gemini-api/docs/pricing le 10/09/2026, prompts <= 200k)
     "gemini-3.6-flash": {"input": 0.75, "output": 3.75},
@@ -183,6 +197,20 @@ PALIERS_TARIF: dict[str, PalierTarif] = {
 # Même registre, lu comme une suite (le lot M1 indexe ``[0]``).
 PALIERS_PROMPT: dict[str, tuple[PalierTarif, ...]] = {
     cle: (palier,) for cle, palier in PALIERS_TARIF.items()
+}
+
+
+# Bascules datées. ``debut`` inclus. Le couple de TOKEN_PRICES est celui
+# d'avant. Gemini 3.8 Flash : la grille annonce 1,50 / 7,50 dès le
+# 1er janvier 2027 (0,75 / 3,75 jusqu'au 31 décembre 2026).
+# Source : https://ai.google.dev/gemini-api/docs/pricing
+BASCULES_TARIF: dict[str, BasculeTarif] = {
+    "gemini-3.8-flash": BasculeTarif(
+        entree=1.50,
+        sortie=7.50,
+        debut=date(2027, 1, 1),
+        source="https://ai.google.dev/gemini-api/docs/pricing",
+    ),
 }
 
 
@@ -413,7 +441,10 @@ class TokenTracker:
         Le palier franchi remplace le couple court pour toute la requête.
         """
         cle = self._cle_grille(model)
-        retenu = self._appliquer_promotion(cle, TOKEN_PRICES.get(cle, TOKEN_PRICES["default"]))
+        prix = self._appliquer_bascule(
+            cle, TOKEN_PRICES.get(cle, TOKEN_PRICES["default"])
+        )
+        retenu = self._appliquer_promotion(cle, prix)
         for palier in PALIERS_PROMPT.get(cle, ()):
             franchi = (
                 jetons_prompt >= palier.seuil_entree
@@ -430,6 +461,15 @@ class TokenTracker:
                     "output": retenu["output"] * palier.multiplicateur_sortie,
                 }
         return retenu
+
+    def _appliquer_bascule(
+        self, cle: str, prix: dict[str, float]
+    ) -> dict[str, float]:
+        """Remplace le couple à partir du jour annoncé, inclus."""
+        bascule = BASCULES_TARIF.get(cle)
+        if bascule is None or datetime.now(UTC).date() < bascule.debut:
+            return prix
+        return {"input": bascule.entree, "output": bascule.sortie}
 
     def _appliquer_promotion(
         self, cle: str, prix: dict[str, float]
