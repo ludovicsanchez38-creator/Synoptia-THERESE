@@ -230,11 +230,89 @@ class TestLeChunkCatalogueStatus:
 
     @pytest.mark.asyncio
     async def test_sans_derive_aucun_chunk(self, monkeypatch):
+        """Aucune dérive : deliberate() n'émet pas de chunk catalogue.
+
+        L'ancienne assertion ne lisait que derives_connues(). Retirer
+        le `if derives` laissait le test vert.
+        """
+        from types import SimpleNamespace
+
+        from app.models.board import AdvisorRole, BoardMode, BoardRequest
         from app.services import board as board_module
+        from app.services.board import BoardService
+        from app.services.llm import LLMProvider
 
         monkeypatch.setattr(board_module, "_etat_catalogue", {"openai": False})
-        derives = board_module.derives_connues()
-        assert derives == {}
+        import datetime as _dt
+        monkeypatch.setattr(
+            board_module, "_date_derniere_sonde",
+            _dt.datetime.now(_dt.UTC).date().isoformat(),
+        )
+
+        synthesis = json.dumps({
+            "consensus_points": ["OK"], "divergence_points": [],
+            "recommendation": "Y aller.", "confidence": "high",
+            "next_steps": ["Cadrer"],
+        })
+
+        class FakeLLM:
+            def __init__(self, responses, provider=LLMProvider.OPENAI):
+                self.responses = responses
+                self.calls = 0
+                self.config = SimpleNamespace(provider=provider, model="modele-test")
+
+            def prepare_context(self, messages, system_prompt=None):
+                return messages, system_prompt
+
+            async def stream_response(self, context, usage_sink=None, raise_on_error=False):
+                response = self.responses[min(self.calls, len(self.responses) - 1)]
+                self.calls += 1
+                yield response
+
+        class FakeSession:
+            def add(self, _value):
+                pass
+
+            async def commit(self):
+                pass
+
+            async def rollback(self):
+                pass
+
+            async def refresh(self, _value):
+                pass
+
+        import contextlib
+
+        @contextlib.asynccontextmanager
+        async def _session_ok():
+            yield FakeSession()
+
+        async def _empty_context():
+            return ""
+
+        monkeypatch.setattr("app.models.database.get_session_context", _session_ok)
+        monkeypatch.setattr(board_module, "get_llm_service", lambda: FakeLLM([synthesis]))
+        monkeypatch.setattr(
+            board_module, "get_llm_service_for_provider",
+            lambda *a, **k: FakeLLM(["Avis mesuré."]),
+        )
+        monkeypatch.setattr(board_module, "_get_user_context", lambda: "")
+        monkeypatch.setattr(BoardService, "_track_usage", lambda *a, **k: None)
+        monkeypatch.setattr(
+            BoardService, "_search_web_for_context", lambda *a, **k: _empty_context()
+        )
+
+        service = BoardService(FakeSession())
+        request = BoardRequest(
+            question="Faut-il lancer ce pilote maintenant ?",
+            mode=BoardMode.CLOUD,
+            advisors=[AdvisorRole.STRATEGIST],
+        )
+        chunks = [chunk async for chunk in service.deliberate(request)]
+
+        statuts = [c for c in chunks if c.type == "catalogue_status"]
+        assert statuts == []
 
 
 class TestLaRouteAdvisors:
